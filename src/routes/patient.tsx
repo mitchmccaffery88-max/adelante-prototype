@@ -1,12 +1,5 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
-import { HealthieService, useHealthie } from "@/lib/healthie";
-import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
-import { Progress } from "@/components/ui/progress";
-import { Video, Smartphone, Calendar as CalIcon, HeartPulse, MapPin } from "lucide-react";
-import { toast } from "sonner";
-import { ClientDate } from "@/components/ClientDate";
+import { createFileRoute } from "@tanstack/react-router";
+import { PatientHome } from "@/components/PatientHome";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -15,10 +8,8 @@ export const Route = createFileRoute("/patient")({
       { name: "description", content: "Your care plan, appointments, and intake." },
     ],
   }),
-  component: PatientPage,
+  component: PatientHome,
 });
-
-function PatientPage() {
   // For the demo, use the first patient as the "logged in" user.
   const patient = useHealthie(() => HealthieService.getPatient("p1"));
   const appts = useHealthie(() => HealthieService.appointmentsForPatient("p1"));
