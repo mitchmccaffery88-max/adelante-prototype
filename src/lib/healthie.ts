@@ -188,7 +188,11 @@ const referrals: Referral[] = [
 
 type Listener = () => void;
 const listeners = new Set<Listener>();
-const emit = () => listeners.forEach((l) => l());
+let version = 0;
+const emit = () => {
+  version++;
+  listeners.forEach((l) => l());
+};
 
 export const HealthieService = {
   subscribe(l: Listener) {
@@ -263,9 +267,11 @@ export const HealthieService = {
 
 import { useSyncExternalStore } from "react";
 export function useHealthie<T>(selector: () => T): T {
-  return useSyncExternalStore(
+  // Subscribe to a stable version number so we don't loop on new-array snapshots.
+  useSyncExternalStore(
     (cb) => HealthieService.subscribe(cb),
-    selector,
-    selector,
+    () => version,
+    () => version,
   );
+  return selector();
 }

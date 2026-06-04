@@ -9,6 +9,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { CheckCircle2, MessageSquare, Send } from "lucide-react";
+import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/referral")({
   head: () => ({
@@ -156,7 +157,7 @@ function ReferralPage() {
                     {r.firstName} {r.lastName}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {r.referringAgency} · {new Date(r.createdAt).toLocaleString()}
+                    {r.referringAgency} · <ClientDate value={r.createdAt} />
                   </div>
                 </div>
                 <Badge className={`${statusStyles[r.status]} capitalize border-0`}>

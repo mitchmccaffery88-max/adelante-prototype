@@ -6,6 +6,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Video, Smartphone, Calendar as CalIcon, HeartPulse, MapPin } from "lucide-react";
 import { toast } from "sonner";
+import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/patient")({
   head: () => ({
@@ -66,13 +67,16 @@ function PatientPage() {
           {next ? (
             <>
               <div className="mt-2 font-display text-xl text-navy">
-                {new Date(next.start).toLocaleString(undefined, {
-                  weekday: "long",
-                  month: "short",
-                  day: "numeric",
-                  hour: "numeric",
-                  minute: "2-digit",
-                })}
+                <ClientDate
+                  value={next.start}
+                  options={{
+                    weekday: "long",
+                    month: "short",
+                    day: "numeric",
+                    hour: "numeric",
+                    minute: "2-digit",
+                  }}
+                />
               </div>
               <div className="text-sm text-muted-foreground">
                 {HealthieService.getClinician(next.clinicianId)?.name} · {next.durationMin} min · video
@@ -130,7 +134,7 @@ function PatientPage() {
             <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
               <div>
                 <div className="text-navy font-medium">
-                  {new Date(a.start).toLocaleString()}
+                  <ClientDate value={a.start} />
                 </div>
                 <div className="text-xs text-muted-foreground">
                   {HealthieService.getClinician(a.clinicianId)?.name}
