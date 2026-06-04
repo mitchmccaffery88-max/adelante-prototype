@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { SCREENERS, severityFor } from "@/lib/screeners";
-import { HealthieService } from "@/lib/healthie";
+import { HealthieService, useHealthie } from "@/lib/healthie";
 import { toast } from "sonner";
 import { ShieldCheck, Lock, CheckCircle2, Phone } from "lucide-react";
 
@@ -29,6 +29,10 @@ export const Route = createFileRoute("/intake")({
 type Mode = "self" | "assisted";
 
 function IntakePage() {
+  const navigate = useNavigate();
+  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
+  const patient = useHealthie(() => HealthieService.getPatient(currentId));
+  const alreadyComplete = Boolean(patient?.intakeCompletedAt);
   const [mode, setMode] = useState<Mode>("self");
   const [step, setStep] = useState(0);
   const [sudConsent, setSudConsent] = useState<boolean | null>(null);
@@ -62,20 +66,37 @@ function IntakePage() {
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
-      HealthieService.recordScreener("p2", {
+      HealthieService.recordScreener(currentId, {
         key: s.key,
         score,
         severity: severityFor(s, score),
         completedAt: new Date().toISOString(),
       });
     });
-    toast.success("Intake complete", {
-      description: "Results sent to your care team via Healthie.",
+    HealthieService.completeIntake(currentId, {
+      needs,
+      hipaa: hipaaConsent,
+      part2Sud: sudConsent === true,
     });
+    toast.success("Intake complete", {
+      description: "Your care team will see this before your first session.",
+    });
+    navigate({ to: "/" });
   };
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      {alreadyComplete && (
+        <Card className="mb-4 p-4 bg-teal/10 border-teal/30 flex items-start gap-3">
+          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">You've already completed intake.</div>
+            <div className="text-muted-foreground">
+              You can update your answers below — your care team will be notified of any changes.
+            </div>
+          </div>
+        </Card>
+      )}
       <header className="mb-4">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>

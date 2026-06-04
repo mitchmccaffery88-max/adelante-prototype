@@ -1,20 +1,46 @@
 import { Link, Outlet, useRouterState } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
-import { Heart, ShieldCheck, Calendar, Users, ClipboardList, FileInput, LayoutDashboard } from "lucide-react";
+import {
+  Heart,
+  ShieldCheck,
+  Calendar,
+  ClipboardList,
+  FileInput,
+  LayoutDashboard,
+  UserCog,
+  ChevronDown,
+  User as UserIcon,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
+import { HealthieService, useHealthie } from "@/lib/healthie";
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuItem,
+  DropdownMenuLabel,
+  DropdownMenuSeparator,
+  DropdownMenuTrigger,
+  DropdownMenuRadioGroup,
+  DropdownMenuRadioItem,
+} from "@/components/ui/dropdown-menu";
 
-const nav = [
+const patientNav = [
   { to: "/", label: "Home", icon: Heart },
-  { to: "/referral", label: "Referral", icon: FileInput },
   { to: "/intake", label: "Intake", icon: ClipboardList },
-  { to: "/patient", label: "Patient", icon: Users },
-  { to: "/clinician", label: "Clinician", icon: Calendar },
-  { to: "/admin", label: "Admin", icon: LayoutDashboard },
+] as const;
+
+const staffNav = [
+  { to: "/referral", label: "Referrals", icon: FileInput, desc: "Refer a client" },
+  { to: "/clinician", label: "Clinician", icon: Calendar, desc: "Caseload & sessions" },
+  { to: "/admin", label: "Admin", icon: LayoutDashboard, desc: "Pilot dashboard" },
 ] as const;
 
 export function AppShell() {
   const { lang, setLang, t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
+  const patient = useHealthie(() => HealthieService.getPatient(currentId));
+  const patients = useHealthie(() => HealthieService.listPatients());
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -28,7 +54,7 @@ export function AppShell() {
           </Link>
 
           <nav className="hidden md:flex items-center gap-1 ml-4">
-            {nav.slice(1).map((n) => {
+            {patientNav.map((n) => {
               const active = pathname === n.to;
               return (
                 <Link
@@ -72,13 +98,83 @@ export function AppShell() {
                 ES
               </button>
             </div>
+
+            {/* Staff portal */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary">
+                <UserCog className="h-3.5 w-3.5 text-teal" />
+                Staff
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-56">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Staff portal
+                </DropdownMenuLabel>
+                {staffNav.map((s) => (
+                  <DropdownMenuItem key={s.to} asChild>
+                    <Link to={s.to} className="flex items-start gap-2">
+                      <s.icon className="h-4 w-4 text-teal mt-0.5" />
+                      <span>
+                        <span className="block text-sm font-medium">{s.label}</span>
+                        <span className="block text-xs text-muted-foreground">{s.desc}</span>
+                      </span>
+                    </Link>
+                  </DropdownMenuItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+
+            {/* Demo patient switcher */}
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-2.5 py-1 text-xs font-medium text-navy hover:bg-navy/10">
+                <span className="h-6 w-6 rounded-full bg-navy text-navy-foreground grid place-items-center text-[10px]">
+                  {patient?.firstName?.[0] ?? "?"}
+                </span>
+                <span className="hidden sm:inline">
+                  {patient ? `${patient.firstName} ${patient.lastName}` : "Sign in"}
+                </span>
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Demo · switch patient
+                </DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={currentId}
+                  onValueChange={(v) => HealthieService.setCurrentPatientId(v)}
+                >
+                  {patients.map((p) => (
+                    <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">
+                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                      <span className="flex-1">
+                        {p.firstName} {p.lastName}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] rounded-full px-1.5 py-0.5",
+                          p.intakeCompletedAt
+                            ? "bg-teal/15 text-teal"
+                            : "bg-gold/20 text-navy",
+                        )}
+                      >
+                        {p.intakeCompletedAt ? "intake ✓" : "new"}
+                      </span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+                <DropdownMenuSeparator />
+                <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">
+                  Demo control: real builds will derive this from the auth session.
+                </DropdownMenuLabel>
+              </DropdownMenuContent>
+            </DropdownMenu>
           </div>
         </div>
 
         {/* Mobile nav */}
         <div className="md:hidden border-t overflow-x-auto">
           <div className="flex gap-1 px-3 py-2 min-w-max">
-            {nav.slice(1).map((n) => {
+            {patientNav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to;
               return (
@@ -90,6 +186,26 @@ export function AppShell() {
                     active
                       ? "bg-navy text-navy-foreground"
                       : "text-foreground/70 bg-secondary",
+                  )}
+                >
+                  <Icon className="h-3.5 w-3.5" />
+                  {n.label}
+                </Link>
+              );
+            })}
+            <span className="mx-1 self-center text-muted-foreground/50">·</span>
+            {staffNav.map((n) => {
+              const Icon = n.icon;
+              const active = pathname === n.to;
+              return (
+                <Link
+                  key={n.to}
+                  to={n.to}
+                  className={cn(
+                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
+                    active
+                      ? "bg-navy text-navy-foreground"
+                      : "text-foreground/60 border border-dashed",
                   )}
                 >
                   <Icon className="h-3.5 w-3.5" />
