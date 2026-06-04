@@ -15,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { Video, Calendar as CalIcon, CheckCircle2, XCircle, Clock, ShieldCheck } from "lucide-react";
+import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -109,8 +110,7 @@ function ClinicianPage() {
           )}
           {appts.map((a) => {
             const p = patients.find((x) => x.id === a.patientId);
-            const start = new Date(a.start);
-            const isFuture = start.getTime() > Date.now();
+            const isFuture = new Date(a.start).getTime() > Date.now();
             return (
               <Card key={a.id} className="p-4">
                 <div className="flex flex-wrap items-start justify-between gap-3">
@@ -123,7 +123,7 @@ function ClinicianPage() {
                         {p?.firstName} {p?.lastName}
                       </div>
                       <div className="text-xs text-muted-foreground">
-                        {start.toLocaleString()} · {a.durationMin} min
+                        <ClientDate value={a.start} /> · {a.durationMin} min
                       </div>
                       <div className="mt-2 flex flex-wrap gap-1.5">
                         <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
