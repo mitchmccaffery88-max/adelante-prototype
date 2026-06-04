@@ -36,6 +36,7 @@ export interface Patient {
   screeners: Record<string, ScreenerResult | undefined>;
   needs: { housing: boolean; food: boolean; employment: boolean; transport: boolean };
   carePlanSummary: string;
+  intakeCompletedAt?: string;
 }
 
 export interface ScreenerResult {
@@ -92,6 +93,7 @@ const patients: Patient[] = [
     },
     needs: { housing: true, food: false, employment: true, transport: true },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
+    intakeCompletedAt: "2026-05-12",
   },
   {
     id: "p2",
@@ -127,6 +129,7 @@ const patients: Patient[] = [
     },
     needs: { housing: true, food: true, employment: true, transport: true },
     carePlanSummary: "Co-occurring SUD + depression; weekly sessions + peer support.",
+    intakeCompletedAt: "2026-04-05",
   },
 ];
 
@@ -194,10 +197,35 @@ const emit = () => {
   listeners.forEach((l) => l());
 };
 
+// Session: which patient is "logged in" for the demo. Defaults to a patient
+// who has not yet completed intake so the first-time flow is visible.
+let currentPatientId = "p2";
+
 export const HealthieService = {
   subscribe(l: Listener) {
     listeners.add(l);
     return () => listeners.delete(l);
+  },
+  getCurrentPatientId: () => currentPatientId,
+  setCurrentPatientId(id: string) {
+    currentPatientId = id;
+    emit();
+  },
+  completeIntake(
+    patientId: string,
+    payload: {
+      needs: Patient["needs"];
+      hipaa: boolean;
+      part2Sud: boolean;
+    },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const now = new Date().toISOString();
+    p.needs = payload.needs;
+    p.consents = { hipaa: payload.hipaa, part2Sud: payload.part2Sud, signedAt: now };
+    p.intakeCompletedAt = now;
+    emit();
   },
   // Reads
   listReferrals: () => [...referrals].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
