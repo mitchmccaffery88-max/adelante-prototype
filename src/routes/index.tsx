@@ -1,21 +1,21 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { PatientHome } from "@/components/PatientHome";
+import { Landing } from "@/components/Landing";
 
 export const Route = createFileRoute("/")({
   head: () => ({
     meta: [
-      { title: "My care — Adelante" },
+      { title: "Adelante — Forward starts here." },
       {
         name: "description",
         content:
-          "Your 90-day care plan, sessions, and intake. HIPAA + 42 CFR Part 2 compliant.",
+          "Adelante helps you feel better and build a steady life after coming home — with real people in your corner. Free with Medi-Cal.",
       },
-      { property: "og:title", content: "Adelante — Your care" },
+      { property: "og:title", content: "Adelante — Forward starts here." },
       {
         property: "og:description",
-        content: "Teletherapy, screeners, and reentry support that meets you where you are.",
+        content: "Behavioral health and reentry support for your first 90 days back in the community.",
       },
     ],
   }),
-  component: PatientHome,
+  component: Landing,
 });

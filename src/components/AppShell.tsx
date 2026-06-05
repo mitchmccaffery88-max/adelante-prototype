@@ -25,7 +25,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 
 const patientNav = [
-  { to: "/", label: "Home", icon: Heart },
+  { to: "/home", label: "My care", icon: Heart },
   { to: "/intake", label: "Intake", icon: ClipboardList },
 ] as const;
 
