@@ -88,7 +88,7 @@ export function Landing() {
               Free with Medi-Cal · Private · No judgment.
             </p>
             <div className="mt-4">
-              <ReadAloudButton text={heroText} label="hero section" />
+              <ReadAloudButton text={readAloudText} label="this page" />
             </div>
           </div>
         </div>
