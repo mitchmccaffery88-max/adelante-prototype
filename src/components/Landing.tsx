@@ -1,6 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
+import { ReadAloudButton } from "@/components/ReadAloudButton";
 import {
   ArrowRight,
   Phone,
@@ -17,6 +18,13 @@ import {
   MessageCircle,
 } from "lucide-react";
 import heroImg from "@/assets/hero-sunrise.jpg";
+
+const heroText =
+  "Forward starts here. Adelante helps you feel better and build a steady life after coming home — with real people in your corner. Free with Medi-Cal. Private. No judgment.";
+
+const pageReadAloudText =
+  "Forward starts here. Adelante helps you feel better and build a steady life after coming home — with real people in your corner. Free with Medi-Cal. Private. No judgment. How it works. Three simple steps. We walk with you. Step 1. Connect. Tell us a little about you. It takes a few minutes, and we can help you do it by phone. Step 2. Make a plan. Meet your care team. Together you build a simple 90 day plan. Step 3. Move forward. Talk to a counselor, learn new skills, and get help with daily life. What you get. Tools and people that meet you where you are. Talk to someone who gets it. Private video or phone sessions with a counselor, on your schedule. Care for your mind. Support for stress, sleep, anger, sadness, and staying sober. Help with real life. Connections for housing, food, jobs, and getting back on your feet. A plan that's yours. A simple 90 day plan built around your goals, in plain language. On your phone. Use it anywhere. No smartphone? We can help with that too. A team in your corner. Counselors and navigators who actually show up — not a chatbot. Who it's for. Adelante is for people coming home from jail or prison who want support getting steady — especially in the first few months. If you're on probation or parole, or just got out, you belong here. For partners. Work with people reentering the community? You can refer someone in minutes. Probation, parole, drug courts, reentry navigators — we're here to make it easy. Covered by Medi-Cal — no cost to you. Your information is private and protected. Judgment-free, always. Available in English, Spanish coming soon. You've already taken the hardest step. Let's take the next one together.";
+
 
 export function Landing() {
   return (
@@ -82,6 +90,9 @@ export function Landing() {
             <p className="mt-5 text-sm text-navy-foreground/80">
               Free with Medi-Cal · Private · No judgment.
             </p>
+            <div className="mt-4">
+              <ReadAloudButton text={heroText} label="hero section" />
+            </div>
           </div>
         </div>
       </section>
