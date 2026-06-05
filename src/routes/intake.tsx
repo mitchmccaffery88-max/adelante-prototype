@@ -81,7 +81,7 @@ function IntakePage() {
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
     });
-    navigate({ to: "/" });
+    navigate({ to: "/home" });
   };
 
   return (
