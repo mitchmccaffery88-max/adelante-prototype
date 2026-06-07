@@ -10,6 +10,8 @@ import {
   UserCog,
   ChevronDown,
   User as UserIcon,
+  Phone,
+  HandHeart,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HealthieService, useHealthie } from "@/lib/healthie";
@@ -31,6 +33,7 @@ const patientNav = [
 
 const staffNav = [
   { to: "/referral", label: "Referrals", icon: FileInput, desc: "Refer a client" },
+  { to: "/case-manager", label: "Case Manager", icon: HandHeart, desc: "Check-ins & resources" },
   { to: "/clinician", label: "Clinician", icon: Calendar, desc: "Caseload & sessions" },
   { to: "/admin", label: "Admin", icon: LayoutDashboard, desc: "Pilot dashboard" },
 ] as const;
@@ -220,6 +223,25 @@ export function AppShell() {
       <main className="flex-1">
         <Outlet />
       </main>
+
+      {/* Persistent 988 crisis banner — §4c safety net */}
+      <div
+        role="region"
+        aria-label="Crisis support"
+        className="sticky bottom-0 z-30 border-t border-destructive/30 bg-destructive/5 backdrop-blur"
+      >
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
+          <Phone className="h-4 w-4 text-destructive shrink-0" />
+          <span>
+            <span className="font-semibold text-destructive">In crisis?</span>{" "}
+            Call or text{" "}
+            <a href="tel:988" className="underline font-semibold">
+              988
+            </a>{" "}
+            anytime. Spanish-capable.
+          </span>
+        </div>
+      </div>
 
       <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
