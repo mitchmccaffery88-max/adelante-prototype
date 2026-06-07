@@ -339,6 +339,10 @@ export const HealthieService = {
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
+  listCaseManagers: () => caseManagers,
+  getCaseManager: (id?: string) => caseManagers.find((c) => c.id === id),
+  patientsForCaseManager: (cmId: string) =>
+    patients.filter((p) => p.caseManagerId === cmId),
   listAppointments: () => [...appointments].sort((a, b) => +new Date(a.start) - +new Date(b.start)),
   appointmentsForPatient: (pid: string) => appointments.filter((a) => a.patientId === pid),
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
@@ -379,6 +383,37 @@ export const HealthieService = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.screeners[result.key] = result;
+    p.screenerHistory = [...(p.screenerHistory ?? []), result];
+    if (result.crisisFlag) {
+      p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
+    }
+    emit();
+  },
+  raiseCrisisFlag(patientId: string, source: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.crisisFlag = { source, raisedAt: new Date().toISOString() };
+    emit();
+  },
+  setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.coverage = coverage;
+    emit();
+  },
+  addCheckIn(patientId: string, checkIn: Omit<CheckIn, "id">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.checkIns = [{ ...checkIn, id: uid() }, ...(p.checkIns ?? [])];
+    emit();
+  },
+  addResourceReferral(patientId: string, r: Omit<ResourceReferral, "id" | "createdAt" | "status">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.resourceReferrals = [
+      { ...r, id: uid(), createdAt: new Date().toISOString(), status: "pending" },
+      ...(p.resourceReferrals ?? []),
+    ];
     emit();
   },
 
