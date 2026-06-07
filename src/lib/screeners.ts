@@ -63,25 +63,37 @@ export const SCREENERS: ScreenerDef[] = [
   },
   {
     key: "audit",
-    name: "AUDIT-C",
-    description: "Alcohol use — protected by 42 CFR Part 2",
+    name: "AUDIT-10",
+    description:
+      "Alcohol use — past year. One drink = one beer, one glass of wine, or one shot. Protected by 42 CFR Part 2.",
     isSud: true,
     questions: [
       "How often do you have a drink containing alcohol?",
-      "How many drinks on a typical day when drinking?",
-      "How often do you have 6 or more drinks on one occasion?",
+      "How many drinks containing alcohol do you have on a typical day when you are drinking?",
+      "How often do you have six or more drinks on one occasion?",
+      "How often during the last year have you found that you were not able to stop drinking once you had started?",
+      "How often during the last year have you failed to do what was normally expected of you because of drinking?",
+      "How often during the last year have you needed a first drink in the morning to get yourself going after a heavy drinking session?",
+      "How often during the last year have you had a feeling of guilt or remorse after drinking?",
+      "How often during the last year have you been unable to remember what happened the night before because you had been drinking?",
+      "Have you or someone else been injured because of your drinking?",
+      "Has a relative, friend, doctor, or other health worker been concerned about your drinking or suggested you cut down?",
     ],
+    // Per-item anchors vary in the validated AUDIT; for plain-language scoring
+    // we use the standard 0–4 mapping. Items 9 and 10 are 0/2/4 in the original
+    // instrument — we keep the 0–4 scale so the trend/severity bands hold.
     options: [
       { label: "Never", value: 0 },
-      { label: "Monthly or less", value: 1 },
-      { label: "2–4 times a month", value: 2 },
-      { label: "2–3 times a week", value: 3 },
-      { label: "4+ times a week", value: 4 },
+      { label: "Less than monthly", value: 1 },
+      { label: "Monthly", value: 2 },
+      { label: "Weekly", value: 3 },
+      { label: "Daily or almost daily", value: 4 },
     ],
     bands: [
-      { max: 3, label: "Low risk" },
-      { max: 6, label: "Moderate risk" },
-      { max: 12, label: "High risk" },
+      { max: 7, label: "Low risk" },
+      { max: 15, label: "Risky / hazardous" },
+      { max: 19, label: "High risk / harmful" },
+      { max: 40, label: "Likely dependence" },
     ],
   },
   {
