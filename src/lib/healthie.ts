@@ -134,6 +134,7 @@ const clinicians: Clinician[] = [
 const patients: Patient[] = [
   {
     id: "p1",
+    programId: "ADL-2026-001",
     firstName: "Daniel",
     lastName: "M.",
     dob: "1989-04-12",
@@ -150,9 +151,24 @@ const patients: Patient[] = [
     needs: { housing: true, food: false, employment: true, transport: true },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
     intakeCompletedAt: "2026-05-12",
+    coverage: {
+      status: "active",
+      verified: "verified",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+      ecmEligible: true,
+    },
+    caseManagerId: "cm1",
+    screenerHistory: [
+      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-12", timepoint: "intake" },
+      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
+      { key: "gad-7", score: 13, severity: "Moderate", completedAt: "2026-05-12", timepoint: "intake" },
+      { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
+    ],
   },
   {
     id: "p2",
+    programId: "ADL-2026-002",
     firstName: "Rosa",
     lastName: "T.",
     dob: "1995-09-03",
@@ -167,9 +183,17 @@ const patients: Patient[] = [
     },
     needs: { housing: false, food: true, employment: true, transport: false },
     carePlanSummary: "Biweekly check-ins; CalFresh enrollment in progress.",
+    coverage: {
+      status: "suspended",
+      verified: "pending",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+    },
+    caseManagerId: "cm1",
   },
   {
     id: "p3",
+    programId: "ADL-2026-003",
     firstName: "Marcus",
     lastName: "L.",
     dob: "1978-12-30",
@@ -186,6 +210,19 @@ const patients: Patient[] = [
     needs: { housing: true, food: true, employment: true, transport: true },
     carePlanSummary: "Co-occurring SUD + depression; weekly sessions + peer support.",
     intakeCompletedAt: "2026-04-05",
+    coverage: {
+      status: "active",
+      verified: "verified",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+      ecmEligible: true,
+    },
+    caseManagerId: "cm2",
+    screenerHistory: [
+      { key: "phq-9", score: 22, severity: "Severe", completedAt: "2026-04-05", timepoint: "intake" },
+      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-05", timepoint: "day30" },
+      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-04", timepoint: "day60" },
+    ],
   },
 ];
 
@@ -212,7 +249,9 @@ const referrals: Referral[] = [
     releaseDate: "2026-05-10",
     referringAgency: "Kings County Probation",
     referrerName: "Officer Hernandez",
-    pendingCharges: "None",
+    referralSource: "probation",
+    countyOfRelease: "Kings",
+    consentToContact: true,
     status: "enrolled",
     createdAt: ago(72 * 24),
     smsSentAt: ago(72 * 24 - 0.05),
@@ -226,6 +265,9 @@ const referrals: Referral[] = [
     releaseDate: "2026-06-01",
     referringAgency: "Drug Court",
     referrerName: "CM. Patel",
+    referralSource: "drug_court",
+    countyOfRelease: "Kings",
+    consentToContact: true,
     status: "contacted",
     createdAt: ago(48),
     smsSentAt: ago(48 - 0.05),
@@ -239,10 +281,18 @@ const referrals: Referral[] = [
     releaseDate: "2026-06-04",
     referringAgency: "Parole",
     referrerName: "Agent Yu",
+    referralSource: "parole",
+    countyOfRelease: "Tulare",
+    consentToContact: true,
     status: "submitted",
     createdAt: ago(2),
     smsSentAt: ago(2 - 0.05),
   },
+];
+
+const caseManagers: CaseManager[] = [
+  { id: "cm1", name: "Lupita Sanchez, MSW", role: "case_manager" },
+  { id: "cm2", name: "Trey Wilson", role: "peer_support" },
 ];
 
 type Listener = () => void;
