@@ -8,9 +8,20 @@ import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { SCREENERS, severityFor } from "@/lib/screeners";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import {
+  HealthieService,
+  useHealthie,
+  type CoverageStatus,
+} from "@/lib/healthie";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, CheckCircle2, Phone } from "lucide-react";
+import { ShieldCheck, Lock, CheckCircle2, Phone, AlertTriangle, Heart } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
   head: () => ({
@@ -39,6 +50,15 @@ function IntakePage() {
   const [hipaaConsent, setHipaaConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
   const [needs, setNeeds] = useState({ housing: false, food: false, employment: false, transport: false });
+  const [coverage, setCoverage] = useState<{
+    status: CoverageStatus;
+    countyOfRelease: string;
+    jiReentryFlag: boolean;
+  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false });
+
+  // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
+  const phqItem9 = answers["phq-9"]?.[8] ?? 0;
+  const crisisFlagged = phqItem9 > 0;
 
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
@@ -49,6 +69,7 @@ function IntakePage() {
     () => [
       { key: "welcome", label: "Welcome" },
       { key: "consent", label: "Consent" },
+      { key: "coverage", label: "Medi-Cal" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
       { key: "review", label: "Review" },
@@ -66,18 +87,36 @@ function IntakePage() {
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
+      const isPhq = s.key === "phq-9";
+      const itemFlag = isPhq && (ans[8] ?? 0) > 0;
       HealthieService.recordScreener(currentId, {
         key: s.key,
         score,
         severity: severityFor(s, score),
         completedAt: new Date().toISOString(),
+        timepoint: "intake",
+        crisisFlag: itemFlag,
       });
+    });
+    HealthieService.setCoverage(currentId, {
+      status: coverage.status,
+      verified:
+        coverage.status === "active"
+          ? "verified"
+          : coverage.status === "suspended"
+            ? "pending"
+            : "not_found",
+      countyOfRelease: coverage.countyOfRelease,
+      jiReentryFlag: coverage.jiReentryFlag,
     });
     HealthieService.completeIntake(currentId, {
       needs,
       hipaa: hipaaConsent,
       part2Sud: sudConsent === true,
     });
+    if (crisisFlagged) {
+      HealthieService.raiseCrisisFlag(currentId, "phq-9-item-9");
+    }
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
     });
@@ -86,6 +125,30 @@ function IntakePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      {crisisFlagged && (
+        <Card className="mb-4 p-4 border-2 border-destructive/40 bg-destructive/5">
+          <div className="flex items-start gap-3">
+            <Heart className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <div className="font-semibold text-destructive">
+                It sounds like things are really hard right now.
+              </div>
+              <p className="text-foreground/80 mt-1">
+                You're not alone — and help is here. Please call or text{" "}
+                <a href="tel:988" className="underline font-semibold">
+                  988
+                </a>{" "}
+                anytime to talk to someone. Your care team has also been notified.
+              </p>
+              <Button asChild className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                <a href="tel:988">
+                  <Phone className="h-4 w-4 mr-1.5" /> Talk to someone now
+                </a>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
       {alreadyComplete && (
         <Card className="mb-4 p-4 bg-teal/10 border-teal/30 flex items-start gap-3">
           <CheckCircle2 className="h-5 w-5 text-teal mt-0.5" />
@@ -137,6 +200,68 @@ function IntakePage() {
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete this with you by phone.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private and protected by federal law.</li>
             </ul>
+          </div>
+        )}
+
+        {current.key === "coverage" && (
+          <div className="space-y-5">
+            <div>
+              <Badge variant="outline" className="border-teal/40 text-teal">
+                Medi-Cal
+              </Badge>
+              <p className="mt-2 text-sm text-muted-foreground">
+                Adelante visits are free with Medi-Cal. If your Medi-Cal was
+                paused while you were away, it turns back on when you come home —
+                you don't have to reapply. We can help.
+              </p>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">Do you have Medi-Cal?</Label>
+              <Select
+                value={coverage.status}
+                onValueChange={(v) => setCoverage({ ...coverage, status: v as CoverageStatus })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="active">Yes — it's active</SelectItem>
+                  <SelectItem value="suspended">It was paused while I was away</SelectItem>
+                  <SelectItem value="none_unsure">No / I'm not sure</SelectItem>
+                  <SelectItem value="other">I have other coverage</SelectItem>
+                </SelectContent>
+              </Select>
+              {coverage.status === "suspended" && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  Good news — your Medi-Cal turns back on automatically. We'll
+                  confirm with the county.
+                </p>
+              )}
+              {coverage.status === "none_unsure" && (
+                <p className="text-xs text-muted-foreground mt-2">
+                  No problem — a case manager will help you apply through
+                  BenefitsCal. Most reentry adults qualify.
+                </p>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">County of release</Label>
+              <input
+                value={coverage.countyOfRelease}
+                onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
+              <Checkbox
+                checked={coverage.jiReentryFlag}
+                onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
+              />
+              <span>
+                I'm coming home within the next 90 days (Justice-Involved Reentry
+                Initiative — unlocks pre-release coordination).
+              </span>
+            </label>
           </div>
         )}
 

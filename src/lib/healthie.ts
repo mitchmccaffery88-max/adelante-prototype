@@ -4,19 +4,30 @@
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
+export type CoverageStatus = "active" | "suspended" | "none_unsure" | "other";
+export type ReferralSource =
+  | "probation"
+  | "parole"
+  | "drug_court"
+  | "correctional"
+  | "self"
+  | "other";
 
 export interface Referral {
   id: string;
   firstName: string;
   lastName: string;
-  dob: string;
+  dob?: string;
   phone: string;
   email?: string;
-  releaseDate: string;
+  releaseDate?: string;
   referringAgency: string;
   referrerName: string;
-  pendingCharges?: string;
-  priorBhRecords?: string;
+  referrerEmail?: string;
+  referrerPhone?: string;
+  referralSource: ReferralSource;
+  countyOfRelease?: string;
+  consentToContact: boolean;
   status: ReferralStatus;
   createdAt: string;
   smsSentAt?: string;
@@ -34,9 +45,27 @@ export interface Patient {
   smsFallback: boolean;
   consents: { hipaa: boolean; part2Sud: boolean; signedAt?: string };
   screeners: Record<string, ScreenerResult | undefined>;
+  // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
+  screenerHistory?: ScreenerResult[];
   needs: { housing: boolean; food: boolean; employment: boolean; transport: boolean };
   carePlanSummary: string;
   intakeCompletedAt?: string;
+  // Medi-Cal eligibility & coverage (§4d)
+  coverage?: {
+    status: CoverageStatus;
+    verified: "verified" | "pending" | "not_found";
+    countyOfRelease?: string;
+    jiReentryFlag?: boolean;
+    ecmEligible?: boolean;
+  };
+  // Case Manager workspace
+  caseManagerId?: string;
+  checkIns?: CheckIn[];
+  resourceReferrals?: ResourceReferral[];
+  // Crisis flag from §4c (PHQ-9 item 9 > 0, etc.)
+  crisisFlag?: { source: string; raisedAt: string };
+  // Programmatic, de-identified ID for Admin views
+  programId: string;
 }
 
 export interface ScreenerResult {
@@ -44,6 +73,8 @@ export interface ScreenerResult {
   score: number;
   severity: string;
   completedAt: string;
+  timepoint?: "intake" | "day30" | "day60" | "day90" | "adhoc";
+  crisisFlag?: boolean;
 }
 
 export interface Clinician {
@@ -65,6 +96,31 @@ export interface Appointment {
   videoUrl?: string;
 }
 
+export interface CheckIn {
+  id: string;
+  date: string;
+  modality: "video" | "phone" | "in_person" | "sms";
+  attended: boolean;
+  notes?: string;
+  needsFlagged: { housing?: boolean; food?: boolean; employment?: boolean; transport?: boolean };
+}
+
+export interface ResourceReferral {
+  id: string;
+  category: "housing" | "food" | "employment" | "legal" | "benefits" | "transport";
+  provider: string;
+  status: "pending" | "accepted" | "completed";
+  createdAt: string;
+  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
+  sudDisclosureConsent?: boolean;
+}
+
+export interface CaseManager {
+  id: string;
+  name: string;
+  role: "case_manager" | "peer_support";
+}
+
 // ---------- mock store ----------
 
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -78,6 +134,7 @@ const clinicians: Clinician[] = [
 const patients: Patient[] = [
   {
     id: "p1",
+    programId: "ADL-2026-001",
     firstName: "Daniel",
     lastName: "M.",
     dob: "1989-04-12",
@@ -94,9 +151,24 @@ const patients: Patient[] = [
     needs: { housing: true, food: false, employment: true, transport: true },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
     intakeCompletedAt: "2026-05-12",
+    coverage: {
+      status: "active",
+      verified: "verified",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+      ecmEligible: true,
+    },
+    caseManagerId: "cm1",
+    screenerHistory: [
+      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-12", timepoint: "intake" },
+      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
+      { key: "gad-7", score: 13, severity: "Moderate", completedAt: "2026-05-12", timepoint: "intake" },
+      { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
+    ],
   },
   {
     id: "p2",
+    programId: "ADL-2026-002",
     firstName: "Rosa",
     lastName: "T.",
     dob: "1995-09-03",
@@ -111,9 +183,17 @@ const patients: Patient[] = [
     },
     needs: { housing: false, food: true, employment: true, transport: false },
     carePlanSummary: "Biweekly check-ins; CalFresh enrollment in progress.",
+    coverage: {
+      status: "suspended",
+      verified: "pending",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+    },
+    caseManagerId: "cm1",
   },
   {
     id: "p3",
+    programId: "ADL-2026-003",
     firstName: "Marcus",
     lastName: "L.",
     dob: "1978-12-30",
@@ -130,6 +210,19 @@ const patients: Patient[] = [
     needs: { housing: true, food: true, employment: true, transport: true },
     carePlanSummary: "Co-occurring SUD + depression; weekly sessions + peer support.",
     intakeCompletedAt: "2026-04-05",
+    coverage: {
+      status: "active",
+      verified: "verified",
+      countyOfRelease: "Kings",
+      jiReentryFlag: true,
+      ecmEligible: true,
+    },
+    caseManagerId: "cm2",
+    screenerHistory: [
+      { key: "phq-9", score: 22, severity: "Severe", completedAt: "2026-04-05", timepoint: "intake" },
+      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-05", timepoint: "day30" },
+      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-04", timepoint: "day60" },
+    ],
   },
 ];
 
@@ -156,7 +249,9 @@ const referrals: Referral[] = [
     releaseDate: "2026-05-10",
     referringAgency: "Kings County Probation",
     referrerName: "Officer Hernandez",
-    pendingCharges: "None",
+    referralSource: "probation",
+    countyOfRelease: "Kings",
+    consentToContact: true,
     status: "enrolled",
     createdAt: ago(72 * 24),
     smsSentAt: ago(72 * 24 - 0.05),
@@ -170,6 +265,9 @@ const referrals: Referral[] = [
     releaseDate: "2026-06-01",
     referringAgency: "Drug Court",
     referrerName: "CM. Patel",
+    referralSource: "drug_court",
+    countyOfRelease: "Kings",
+    consentToContact: true,
     status: "contacted",
     createdAt: ago(48),
     smsSentAt: ago(48 - 0.05),
@@ -183,10 +281,18 @@ const referrals: Referral[] = [
     releaseDate: "2026-06-04",
     referringAgency: "Parole",
     referrerName: "Agent Yu",
+    referralSource: "parole",
+    countyOfRelease: "Tulare",
+    consentToContact: true,
     status: "submitted",
     createdAt: ago(2),
     smsSentAt: ago(2 - 0.05),
   },
+];
+
+const caseManagers: CaseManager[] = [
+  { id: "cm1", name: "Lupita Sanchez, MSW", role: "case_manager" },
+  { id: "cm2", name: "Trey Wilson", role: "peer_support" },
 ];
 
 type Listener = () => void;
@@ -233,6 +339,10 @@ export const HealthieService = {
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
+  listCaseManagers: () => caseManagers,
+  getCaseManager: (id?: string) => caseManagers.find((c) => c.id === id),
+  patientsForCaseManager: (cmId: string) =>
+    patients.filter((p) => p.caseManagerId === cmId),
   listAppointments: () => [...appointments].sort((a, b) => +new Date(a.start) - +new Date(b.start)),
   appointmentsForPatient: (pid: string) => appointments.filter((a) => a.patientId === pid),
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
@@ -273,6 +383,37 @@ export const HealthieService = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.screeners[result.key] = result;
+    p.screenerHistory = [...(p.screenerHistory ?? []), result];
+    if (result.crisisFlag) {
+      p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
+    }
+    emit();
+  },
+  raiseCrisisFlag(patientId: string, source: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.crisisFlag = { source, raisedAt: new Date().toISOString() };
+    emit();
+  },
+  setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.coverage = coverage;
+    emit();
+  },
+  addCheckIn(patientId: string, checkIn: Omit<CheckIn, "id">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.checkIns = [{ ...checkIn, id: uid() }, ...(p.checkIns ?? [])];
+    emit();
+  },
+  addResourceReferral(patientId: string, r: Omit<ResourceReferral, "id" | "createdAt" | "status">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.resourceReferrals = [
+      { ...r, id: uid(), createdAt: new Date().toISOString(), status: "pending" },
+      ...(p.resourceReferrals ?? []),
+    ];
     emit();
   },
 

@@ -14,6 +14,7 @@ import { Route as PatientRouteImport } from './routes/patient'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ClinicianRouteImport } from './routes/clinician'
+import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
@@ -42,6 +43,11 @@ const ClinicianRoute = ClinicianRouteImport.update({
   path: '/clinician',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CaseManagerRoute = CaseManagerRouteImport.update({
+  id: '/case-manager',
+  path: '/case-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
@@ -56,6 +62,7 @@ const IndexRoute = IndexRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -65,6 +72,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -75,6 +83,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -86,6 +95,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/case-manager'
     | '/clinician'
     | '/home'
     | '/intake'
@@ -95,6 +105,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/case-manager'
     | '/clinician'
     | '/home'
     | '/intake'
@@ -104,6 +115,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/case-manager'
     | '/clinician'
     | '/home'
     | '/intake'
@@ -114,6 +126,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  CaseManagerRoute: typeof CaseManagerRoute
   ClinicianRoute: typeof ClinicianRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
@@ -158,6 +171,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ClinicianRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/case-manager': {
+      id: '/case-manager'
+      path: '/case-manager'
+      fullPath: '/case-manager'
+      preLoaderRoute: typeof CaseManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin': {
       id: '/admin'
       path: '/admin'
@@ -178,6 +198,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  CaseManagerRoute: CaseManagerRoute,
   ClinicianRoute: ClinicianRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,
@@ -187,13 +208,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
