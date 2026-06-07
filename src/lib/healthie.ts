@@ -4,19 +4,30 @@
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
+export type CoverageStatus = "active" | "suspended" | "none_unsure" | "other";
+export type ReferralSource =
+  | "probation"
+  | "parole"
+  | "drug_court"
+  | "correctional"
+  | "self"
+  | "other";
 
 export interface Referral {
   id: string;
   firstName: string;
   lastName: string;
-  dob: string;
+  dob?: string;
   phone: string;
   email?: string;
-  releaseDate: string;
+  releaseDate?: string;
   referringAgency: string;
   referrerName: string;
-  pendingCharges?: string;
-  priorBhRecords?: string;
+  referrerEmail?: string;
+  referrerPhone?: string;
+  referralSource: ReferralSource;
+  countyOfRelease?: string;
+  consentToContact: boolean;
   status: ReferralStatus;
   createdAt: string;
   smsSentAt?: string;
@@ -34,9 +45,27 @@ export interface Patient {
   smsFallback: boolean;
   consents: { hipaa: boolean; part2Sud: boolean; signedAt?: string };
   screeners: Record<string, ScreenerResult | undefined>;
+  // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
+  screenerHistory?: ScreenerResult[];
   needs: { housing: boolean; food: boolean; employment: boolean; transport: boolean };
   carePlanSummary: string;
   intakeCompletedAt?: string;
+  // Medi-Cal eligibility & coverage (§4d)
+  coverage?: {
+    status: CoverageStatus;
+    verified: "verified" | "pending" | "not_found";
+    countyOfRelease?: string;
+    jiReentryFlag?: boolean;
+    ecmEligible?: boolean;
+  };
+  // Case Manager workspace
+  caseManagerId?: string;
+  checkIns?: CheckIn[];
+  resourceReferrals?: ResourceReferral[];
+  // Crisis flag from §4c (PHQ-9 item 9 > 0, etc.)
+  crisisFlag?: { source: string; raisedAt: string };
+  // Programmatic, de-identified ID for Admin views
+  programId: string;
 }
 
 export interface ScreenerResult {
@@ -44,6 +73,8 @@ export interface ScreenerResult {
   score: number;
   severity: string;
   completedAt: string;
+  timepoint?: "intake" | "day30" | "day60" | "day90" | "adhoc";
+  crisisFlag?: boolean;
 }
 
 export interface Clinician {
@@ -63,6 +94,31 @@ export interface Appointment {
   status: SessionStatus;
   billingStatus: BillingStatus;
   videoUrl?: string;
+}
+
+export interface CheckIn {
+  id: string;
+  date: string;
+  modality: "video" | "phone" | "in_person" | "sms";
+  attended: boolean;
+  notes?: string;
+  needsFlagged: { housing?: boolean; food?: boolean; employment?: boolean; transport?: boolean };
+}
+
+export interface ResourceReferral {
+  id: string;
+  category: "housing" | "food" | "employment" | "legal" | "benefits" | "transport";
+  provider: string;
+  status: "pending" | "accepted" | "completed";
+  createdAt: string;
+  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
+  sudDisclosureConsent?: boolean;
+}
+
+export interface CaseManager {
+  id: string;
+  name: string;
+  role: "case_manager" | "peer_support";
 }
 
 // ---------- mock store ----------
