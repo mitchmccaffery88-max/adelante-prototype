@@ -103,7 +103,29 @@ export function PatientHome() {
               </Button>
             </>
           ) : (
-            <div className="mt-2 text-sm text-muted-foreground">No upcoming sessions yet.</div>
+            <>
+              <div className="mt-2 text-sm text-muted-foreground">No upcoming sessions yet.</div>
+              <Button
+                asChild
+                className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
+              >
+                <Link to="/schedule">
+                  <CalendarPlus className="h-4 w-4 mr-2" /> Schedule a session
+                </Link>
+              </Button>
+            </>
+          )}
+          {next && (
+            <Button
+              asChild
+              variant="outline"
+              size="sm"
+              className="mt-2 w-full"
+            >
+              <Link to="/schedule">
+                <CalendarPlus className="h-4 w-4 mr-1.5" /> Book another time
+              </Link>
+            </Button>
           )}
         </Card>
 
@@ -124,6 +146,48 @@ export function PatientHome() {
           </div>
         </Card>
       </div>
+
+      {goals.length > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+            <Target className="h-4 w-4" /> Your goals
+          </div>
+          <p className="text-xs text-muted-foreground mt-1">
+            What you and your care team are working on together.
+          </p>
+          <ul className="mt-3 space-y-2">
+            {goals.map((g) => (
+              <li
+                key={g.id}
+                className="flex items-start gap-2 rounded-md border p-2.5 text-sm"
+              >
+                <CheckCircle2
+                  className={
+                    "h-4 w-4 mt-0.5 shrink-0 " +
+                    (g.status === "done"
+                      ? "text-success"
+                      : g.status === "in_progress"
+                        ? "text-teal"
+                        : "text-muted-foreground")
+                  }
+                />
+                <span className="flex-1">
+                  <span
+                    className={
+                      g.status === "done" ? "line-through text-muted-foreground" : "text-foreground"
+                    }
+                  >
+                    {g.text}
+                  </span>
+                </span>
+                <Badge variant="outline" className="capitalize text-xs">
+                  {g.status.replace("_", " ")}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+        </Card>
+      )}
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">All sessions</h2>
