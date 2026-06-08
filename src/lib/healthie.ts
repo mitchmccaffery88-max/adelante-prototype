@@ -438,6 +438,40 @@ export const HealthieService = {
     ];
     emit();
   },
+  updateCarePlanSummary(patientId: string, summary: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.carePlanSummary = summary;
+    emit();
+  },
+  addGoal(patientId: string, text: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !text.trim()) return;
+    p.goals = [
+      ...(p.goals ?? []),
+      { id: uid(), text: text.trim(), status: "open", createdAt: new Date().toISOString() },
+    ];
+    emit();
+  },
+  setGoalStatus(patientId: string, goalId: string, status: Goal["status"]) {
+    const p = patients.find((x) => x.id === patientId);
+    const g = p?.goals?.find((x) => x.id === goalId);
+    if (!g) return;
+    g.status = status;
+    emit();
+  },
+  removeGoal(patientId: string, goalId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.goals) return;
+    p.goals = p.goals.filter((g) => g.id !== goalId);
+    emit();
+  },
+  addProgressNote(patientId: string, note: Omit<ProgressNote, "id">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.progressNotes = [{ ...note, id: uid() }, ...(p.progressNotes ?? [])];
+    emit();
+  },
 
   // Analytics helpers
   stats() {
