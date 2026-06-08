@@ -14,6 +14,9 @@ import {
   ShieldCheck,
   ArrowRight,
   Sparkles,
+  Target,
+  CalendarPlus,
+  CheckCircle2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
@@ -33,6 +36,7 @@ export function PatientHome() {
   const upcoming = appts.filter((a) => a.status === "scheduled");
   const next = upcoming[0];
   const remaining = Math.max(0, 90 - patient.episodeDay);
+  const goals = patient.goals ?? [];
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
