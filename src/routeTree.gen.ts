@@ -9,6 +9,7 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as IntakeRouteImport } from './routes/intake'
@@ -18,6 +19,11 @@ import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
 
+const ScheduleRoute = ScheduleRouteImport.update({
+  id: '/schedule',
+  path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReferralRoute = ReferralRouteImport.update({
   id: '/referral',
   path: '/referral',
@@ -68,6 +74,7 @@ export interface FileRoutesByFullPath {
   '/intake': typeof IntakeRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -78,6 +85,7 @@ export interface FileRoutesByTo {
   '/intake': typeof IntakeRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -89,6 +97,7 @@ export interface FileRoutesById {
   '/intake': typeof IntakeRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/schedule': typeof ScheduleRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -101,6 +110,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/patient'
     | '/referral'
+    | '/schedule'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -111,6 +121,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/patient'
     | '/referral'
+    | '/schedule'
   id:
     | '__root__'
     | '/'
@@ -121,6 +132,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/patient'
     | '/referral'
+    | '/schedule'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -132,10 +144,18 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
+  ScheduleRoute: typeof ScheduleRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/schedule': {
+      id: '/schedule'
+      path: '/schedule'
+      fullPath: '/schedule'
+      preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/referral': {
       id: '/referral'
       path: '/referral'
@@ -204,17 +224,8 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,
+  ScheduleRoute: ScheduleRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

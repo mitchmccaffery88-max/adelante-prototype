@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { HealthieService, useHealthie, type SessionStatus } from "@/lib/healthie";
+import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,8 +17,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Video, Calendar as CalIcon, CheckCircle2, XCircle, Clock, ShieldCheck } from "lucide-react";
+import {
+  Video,
+  Calendar as CalIcon,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ShieldCheck,
+  Target,
+  Trash2,
+  Plus,
+  FileText,
+  TrendingUp,
+  CalendarPlus,
+} from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -44,6 +70,17 @@ function ClinicianPage() {
   );
 
   const [book, setBook] = useState({ patientId: patients[0]?.id ?? "", start: "", durationMin: 50 });
+  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
+  const selectedPatient = useHealthie(() => HealthieService.getPatient(selectedPatientId));
+  const [newGoal, setNewGoal] = useState("");
+  const [planDraft, setPlanDraft] = useState("");
+  const [note, setNote] = useState({
+    sessionType: "individual" as const,
+    subjective: "",
+    objective: "",
+    assessment: "",
+    plan: "",
+  });
 
   const doBook = () => {
     if (!book.patientId || !book.start) {
@@ -69,7 +106,7 @@ function ClinicianPage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Clinician</div>
-          <h1 className="font-display text-3xl text-navy mt-1">Today's schedule</h1>
+          <h1 className="font-display text-3xl text-navy mt-1">Clinician workspace</h1>
           {clinician && (
             <div className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-teal" />
@@ -102,6 +139,23 @@ function ClinicianPage() {
         </Select>
       </header>
 
+      <Tabs defaultValue="schedule" className="w-full">
+        <TabsList className="mb-4">
+          <TabsTrigger value="schedule">
+            <CalIcon className="h-4 w-4 mr-1.5" /> Schedule
+          </TabsTrigger>
+          <TabsTrigger value="care-plan">
+            <Target className="h-4 w-4 mr-1.5" /> Care Plan
+          </TabsTrigger>
+          <TabsTrigger value="notes">
+            <FileText className="h-4 w-4 mr-1.5" /> Notes
+          </TabsTrigger>
+          <TabsTrigger value="tracking">
+            <TrendingUp className="h-4 w-4 mr-1.5" /> Tracking
+          </TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="schedule">
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
           <h2 className="font-display text-lg text-navy">Appointments</h2>
@@ -231,6 +285,314 @@ function ClinicianPage() {
           </Card>
         </div>
       </div>
+        </TabsContent>
+
+        <TabsContent value="care-plan">
+          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
+          {selectedPatient && (
+            <div className="grid lg:grid-cols-3 gap-6 mt-4">
+              <Card className="p-5 lg:col-span-2">
+                <h3 className="font-display text-lg text-navy">Care plan summary</h3>
+                <p className="text-xs text-muted-foreground mt-1">
+                  Plain-language summary visible to the patient on their home screen.
+                </p>
+                <Textarea
+                  className="mt-3 min-h-[100px]"
+                  defaultValue={selectedPatient.carePlanSummary}
+                  onChange={(e) => setPlanDraft(e.target.value)}
+                />
+                <Button
+                  className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
+                  onClick={() => {
+                    HealthieService.updateCarePlanSummary(
+                      selectedPatient.id,
+                      planDraft || selectedPatient.carePlanSummary,
+                    );
+                    toast.success("Care plan updated");
+                  }}
+                >
+                  Save summary
+                </Button>
+              </Card>
+              <Card className="p-5">
+                <h3 className="font-display text-lg text-navy">Goals</h3>
+                <div className="mt-3 space-y-2">
+                  {(selectedPatient.goals ?? []).length === 0 && (
+                    <p className="text-sm text-muted-foreground">No goals yet.</p>
+                  )}
+                  {(selectedPatient.goals ?? []).map((g) => (
+                    <div
+                      key={g.id}
+                      className="flex items-start gap-2 rounded-md border p-2 text-sm"
+                    >
+                      <Select
+                        value={g.status}
+                        onValueChange={(v) =>
+                          HealthieService.setGoalStatus(selectedPatient.id, g.id, v as never)
+                        }
+                      >
+                        <SelectTrigger className="h-7 w-[120px] text-xs">
+                          <SelectValue />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="open">Open</SelectItem>
+                          <SelectItem value="in_progress">In progress</SelectItem>
+                          <SelectItem value="done">Done</SelectItem>
+                        </SelectContent>
+                      </Select>
+                      <span className="flex-1 pt-1">{g.text}</span>
+                      <Button
+                        size="icon"
+                        variant="ghost"
+                        className="h-7 w-7"
+                        onClick={() => HealthieService.removeGoal(selectedPatient.id, g.id)}
+                      >
+                        <Trash2 className="h-3.5 w-3.5" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+                <div className="mt-3 flex gap-2">
+                  <Input
+                    placeholder="Add a goal…"
+                    value={newGoal}
+                    onChange={(e) => setNewGoal(e.target.value)}
+                  />
+                  <Button
+                    size="sm"
+                    onClick={() => {
+                      HealthieService.addGoal(selectedPatient.id, newGoal);
+                      setNewGoal("");
+                    }}
+                  >
+                    <Plus className="h-4 w-4" />
+                  </Button>
+                </div>
+              </Card>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="notes">
+          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
+          {selectedPatient && (
+            <div className="grid lg:grid-cols-2 gap-6 mt-4">
+              <Card className="p-5">
+                <h3 className="font-display text-lg text-navy">New SOAP note</h3>
+                <div className="mt-3 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Session type</Label>
+                    <Select
+                      value={note.sessionType}
+                      onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="individual">Individual</SelectItem>
+                        <SelectItem value="group">Group</SelectItem>
+                        <SelectItem value="phone">Phone</SelectItem>
+                        <SelectItem value="check_in">Check-in</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
+                    <div key={k} className="space-y-1.5">
+                      <Label className="text-sm capitalize">{k}</Label>
+                      <Textarea
+                        value={note[k]}
+                        onChange={(e) => setNote({ ...note, [k]: e.target.value })}
+                        rows={2}
+                      />
+                    </div>
+                  ))}
+                  <Button
+                    className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+                    onClick={() => {
+                      if (!note.subjective.trim()) {
+                        toast.error("Add at least a subjective entry");
+                        return;
+                      }
+                      HealthieService.addProgressNote(selectedPatient.id, {
+                        clinicianId,
+                        date: new Date().toISOString(),
+                        sessionType: note.sessionType,
+                        subjective: note.subjective,
+                        objective: note.objective,
+                        assessment: note.assessment,
+                        plan: note.plan,
+                      });
+                      toast.success("Progress note saved");
+                      setNote({
+                        sessionType: "individual",
+                        subjective: "",
+                        objective: "",
+                        assessment: "",
+                        plan: "",
+                      });
+                    }}
+                  >
+                    Save note
+                  </Button>
+                </div>
+              </Card>
+              <div className="space-y-3">
+                <h3 className="font-display text-lg text-navy">Recent notes</h3>
+                {(selectedPatient.progressNotes ?? []).length === 0 && (
+                  <Card className="p-4 text-sm text-muted-foreground">No notes yet.</Card>
+                )}
+                {(selectedPatient.progressNotes ?? []).map((n) => (
+                  <Card key={n.id} className="p-4 text-sm">
+                    <div className="flex items-center justify-between">
+                      <Badge variant="outline" className="capitalize">
+                        {n.sessionType.replace("_", " ")}
+                      </Badge>
+                      <span className="text-xs text-muted-foreground">
+                        <ClientDate value={n.date} />
+                      </span>
+                    </div>
+                    <dl className="mt-2 space-y-1.5 text-xs">
+                      {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
+                        n[k] ? (
+                          <div key={k}>
+                            <dt className="font-medium text-navy capitalize">{k}</dt>
+                            <dd className="text-foreground/80">{n[k]}</dd>
+                          </div>
+                        ) : null,
+                      )}
+                    </dl>
+                  </Card>
+                ))}
+              </div>
+            </div>
+          )}
+        </TabsContent>
+
+        <TabsContent value="tracking">
+          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
+          {selectedPatient && (
+            <TrendPanel patientId={selectedPatient.id} />
+          )}
+        </TabsContent>
+      </Tabs>
+    </div>
+  );
+}
+
+function PatientPicker({
+  patients,
+  value,
+  onChange,
+}: {
+  patients: { id: string; firstName: string; lastName: string; episodeDay: number }[];
+  value: string;
+  onChange: (v: string) => void;
+}) {
+  return (
+    <div className="flex items-center gap-2">
+      <Label className="text-sm text-muted-foreground">Patient</Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-[280px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {patients.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              {p.firstName} {p.lastName} (day {p.episodeDay}/90)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+function TrendPanel({ patientId }: { patientId: string }) {
+  const patient = useHealthie(() => HealthieService.getPatient(patientId));
+  if (!patient) return null;
+  const history = patient.screenerHistory ?? [];
+  const screenerKeys = Array.from(new Set(history.map((h) => h.key)));
+
+  return (
+    <div className="space-y-6 mt-4">
+      <Card className="p-5">
+        <div className="flex items-center justify-between flex-wrap gap-3">
+          <div>
+            <h3 className="font-display text-lg text-navy">Screener trend</h3>
+            <p className="text-xs text-muted-foreground">
+              Markers at day 30 / 60 / 90 (re-screening timepoints).
+            </p>
+          </div>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() =>
+              toast.success("Re-screen scheduled", {
+                description: "Patient will be prompted at their next login.",
+              })
+            }
+          >
+            <CalendarPlus className="h-4 w-4 mr-1.5" /> Schedule re-screen
+          </Button>
+        </div>
+        {screenerKeys.length === 0 ? (
+          <p className="mt-4 text-sm text-muted-foreground">No screener history yet.</p>
+        ) : (
+          <div className="mt-4 space-y-6">
+            {screenerKeys.map((key) => {
+              const def = SCREENERS.find((s) => s.key === key);
+              const data = history
+                .filter((h) => h.key === key)
+                .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt))
+                .map((h) => ({
+                  date: new Date(h.completedAt).toLocaleDateString(),
+                  score: h.score,
+                  timepoint: h.timepoint,
+                }));
+              return (
+                <div key={key}>
+                  <div className="flex items-baseline justify-between">
+                    <h4 className="font-medium text-navy">{def?.name ?? key}</h4>
+                    <span className="text-xs text-muted-foreground">
+                      Latest: {data[data.length - 1]?.score} ·{" "}
+                      {def ? severityFor(def, data[data.length - 1]?.score ?? 0) : ""}
+                    </span>
+                  </div>
+                  <div className="h-44 mt-2">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <LineChart data={data}>
+                        <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                        <XAxis dataKey="date" fontSize={11} />
+                        <YAxis fontSize={11} />
+                        <RTooltip />
+                        {data.map((d, i) =>
+                          d.timepoint && d.timepoint !== "adhoc" ? (
+                            <ReferenceLine
+                              key={i}
+                              x={d.date}
+                              stroke="var(--teal)"
+                              strokeDasharray="4 4"
+                              label={{ value: d.timepoint, fontSize: 10, fill: "var(--teal)" }}
+                            />
+                          ) : null,
+                        )}
+                        <Line
+                          type="monotone"
+                          dataKey="score"
+                          stroke="var(--navy)"
+                          strokeWidth={2}
+                          dot={{ r: 4 }}
+                        />
+                      </LineChart>
+                    </ResponsiveContainer>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </Card>
     </div>
   );
 }

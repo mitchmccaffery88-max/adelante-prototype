@@ -233,12 +233,12 @@ export function AppShell() {
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
           <Phone className="h-4 w-4 text-destructive shrink-0" />
           <span>
-            <span className="font-semibold text-destructive">In crisis?</span>{" "}
-            Call or text{" "}
+            <span className="font-semibold text-destructive">{t("crisisInCrisis")}</span>{" "}
+            {t("crisisCallText")}{" "}
             <a href="tel:988" className="underline font-semibold">
               988
             </a>{" "}
-            anytime. Spanish-capable.
+            {t("crisisAnytime")}
           </span>
         </div>
       </div>
