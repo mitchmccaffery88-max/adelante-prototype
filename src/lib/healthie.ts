@@ -121,6 +121,25 @@ export interface CaseManager {
   role: "case_manager" | "peer_support";
 }
 
+export interface Goal {
+  id: string;
+  text: string;
+  status: "open" | "in_progress" | "done";
+  createdAt: string;
+}
+
+export interface ProgressNote {
+  id: string;
+  appointmentId?: string;
+  clinicianId: string;
+  date: string;
+  sessionType: "individual" | "group" | "phone" | "check_in";
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+}
+
 // ---------- mock store ----------
 
 const uid = () => Math.random().toString(36).slice(2, 10);
