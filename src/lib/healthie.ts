@@ -187,6 +187,23 @@ const patients: Patient[] = [
       { key: "gad-7", score: 13, severity: "Moderate", completedAt: "2026-05-12", timepoint: "intake" },
       { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
     ],
+    goals: [
+      { id: "g1", text: "Attend weekly therapy sessions", status: "in_progress", createdAt: "2026-05-12" },
+      { id: "g2", text: "Secure stable housing within 60 days", status: "open", createdAt: "2026-05-12" },
+      { id: "g3", text: "Reconnect with one supportive family member", status: "done", createdAt: "2026-05-12" },
+    ],
+    progressNotes: [
+      {
+        id: "n1",
+        clinicianId: "c1",
+        date: "2026-06-04",
+        sessionType: "individual",
+        subjective: "Daniel reports lower mood this week tied to housing stress.",
+        objective: "Engaged, oriented x3. PHQ-9 14 (down from 18).",
+        assessment: "Moderate depression, improving. Active housing stressor.",
+        plan: "Continue weekly CBT; coordinate with housing navigator.",
+      },
+    ],
   },
   {
     id: "p2",
