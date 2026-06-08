@@ -1,9 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
 import { HealthieService, useHealthie, type SessionStatus } from "@/lib/healthie";
+import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -14,8 +17,31 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
-import { Video, Calendar as CalIcon, CheckCircle2, XCircle, Clock, ShieldCheck } from "lucide-react";
+import {
+  Video,
+  Calendar as CalIcon,
+  CheckCircle2,
+  XCircle,
+  Clock,
+  ShieldCheck,
+  Target,
+  Trash2,
+  Plus,
+  FileText,
+  TrendingUp,
+  CalendarPlus,
+} from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
