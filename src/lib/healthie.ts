@@ -66,6 +66,9 @@ export interface Patient {
   crisisFlag?: { source: string; raisedAt: string };
   // Programmatic, de-identified ID for Admin views
   programId: string;
+  // Clinician care plan (editable)
+  goals?: Goal[];
+  progressNotes?: ProgressNote[];
 }
 
 export interface ScreenerResult {
