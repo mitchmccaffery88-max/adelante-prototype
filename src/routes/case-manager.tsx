@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
@@ -54,6 +55,7 @@ export const Route = createFileRoute("/case-manager")({
 });
 
 function CaseManagerPage() {
+  const { t } = useI18n();
   const cms = useHealthie(() => HealthieService.listCaseManagers());
   const [cmId, setCmId] = useState(cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
@@ -70,12 +72,10 @@ function CaseManagerPage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">
-            Case Manager / Peer Support
+            {t("navCaseManager")}
           </div>
-          <h1 className="font-display text-3xl text-navy mt-1">My caseload</h1>
-          <p className="text-muted-foreground mt-1 text-sm">
-            Non-clinical view — no diagnoses, no clinical notes.
-          </p>
+          <h1 className="font-display text-3xl text-navy mt-1">{t("cmTitle")}</h1>
+          <p className="text-muted-foreground mt-1 text-sm">{t("cmSubtitle")}</p>
         </div>
         <Select value={cmId} onValueChange={setCmId}>
           <SelectTrigger className="w-[280px]">
