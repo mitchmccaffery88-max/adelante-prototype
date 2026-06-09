@@ -66,15 +66,23 @@ function AdminPage() {
   );
 
   const downloadCsv = () => {
-    const headers = ["programId", "episodeDay", "coverageStatus", "verified", "jiReentry", "ecm", "smsFallback"];
+    const headers = [
+      "Program ID",
+      "Episode day (of 90)",
+      "Coverage status",
+      "Coverage verified",
+      "JI Reentry flag",
+      "ECM eligible",
+      "SMS reminders",
+    ];
     const rows = filteredPatients.map((p) => [
       p.programId,
       p.episodeDay,
       p.coverage?.status ?? "",
       p.coverage?.verified ?? "",
-      p.coverage?.jiReentryFlag ? "yes" : "no",
-      p.coverage?.ecmEligible ? "yes" : "no",
-      p.smsFallback ? "yes" : "no",
+      p.coverage?.jiReentryFlag ? "Yes" : "No",
+      p.coverage?.ecmEligible ? "Yes" : "No",
+      HealthieService.isSmsOn(p.id) ? "On" : "Off",
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -240,6 +248,14 @@ function ReferralTrackerCard({
 }: {
   referrals: ReturnType<typeof HealthieService.listReferrals>;
 }) {
+  const sourceLabels: Record<string, string> = {
+    probation: "Probation",
+    parole: "Parole",
+    drug_court: "Drug court",
+    correctional: "Correctional",
+    self: "Self-referred",
+    other: "Other",
+  };
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy mb-3">Referral status</h3>
@@ -251,8 +267,9 @@ function ReferralTrackerCard({
                 <div className="font-medium text-navy">
                   {r.firstName} {r.lastName}
                 </div>
-                <div className="text-xs text-muted-foreground capitalize">
-                  {r.referralSource.replace("_", " ")} ·{" "}
+                <div className="text-xs text-muted-foreground">
+                  {sourceLabels[r.referralSource] ?? r.referralSource}
+                  {r.referringAgency ? ` · ${r.referringAgency}` : ""} ·{" "}
                   <ClientDate value={r.createdAt} />
                 </div>
               </div>
@@ -343,6 +360,20 @@ function AuditLogCard({
 }: {
   events: ReturnType<typeof HealthieService.listAllConsentEvents>;
 }) {
+  const purposeLabels: Record<string, string> = {
+    part2Sud: "Part 2 SUD",
+    ecmShare: "ECM data share",
+    sms: "SMS reminders",
+    hipaa: "HIPAA",
+  };
+  const actionLabels: Record<string, string> = {
+    granted: "Granted",
+    revoked: "Revoked",
+  };
+  const actorLabels: Record<string, string> = {
+    patient: "Patient",
+    staff: "Staff",
+  };
   const [purpose, setPurpose] = useState<string>("all");
   const filtered = events.filter((e) => purpose === "all" || e.purpose === purpose).slice(0, 12);
   return (
@@ -367,19 +398,22 @@ function AuditLogCard({
       ) : (
         <ul className="space-y-1.5 text-xs">
           {filtered.map((e) => (
-            <li key={e.id} className="flex items-center justify-between border-b last:border-0 py-1.5">
+            <li key={e.id} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b last:border-0 py-1.5">
               <span className="font-mono text-navy">{e.programId}</span>
-              <span className="capitalize text-muted-foreground">{e.purpose}</span>
+              <span className="text-muted-foreground">
+                {purposeLabels[e.purpose] ?? e.purpose}
+                <span className="text-[10px]"> · by {actorLabels[e.actor] ?? e.actor}</span>
+              </span>
               <Badge
                 className={
                   (e.action === "granted"
                     ? "bg-success/20 text-success"
-                    : "bg-destructive/15 text-destructive") + " border-0 capitalize"
+                    : "bg-destructive/15 text-destructive") + " border-0"
                 }
               >
-                {e.action}
+                {actionLabels[e.action] ?? e.action}
               </Badge>
-              <span className="text-muted-foreground"><ClientDate value={e.at} /></span>
+              <span className="text-muted-foreground text-[10px]"><ClientDate value={e.at} /></span>
             </li>
           ))}
         </ul>
