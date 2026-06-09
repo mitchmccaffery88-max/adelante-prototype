@@ -159,6 +159,7 @@ function ClinicianPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
           <h2 className="font-display text-lg text-navy">Appointments</h2>
+          <RescreenDuePanel patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))} />
           {appts.length === 0 && (
             <Card className="p-6 text-sm text-muted-foreground">No appointments yet.</Card>
           )}
@@ -594,5 +595,46 @@ function TrendPanel({ patientId }: { patientId: string }) {
         )}
       </Card>
     </div>
+  );
+}
+
+function RescreenDuePanel({ patients }: { patients: { id: string; firstName: string; lastName: string }[] }) {
+  const rows = patients.flatMap((p) =>
+    HealthieService.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
+  );
+  if (rows.length === 0) return null;
+  return (
+    <Card className="p-4 bg-gold/10 border-gold/40">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-navy">
+        <CalendarPlus className="h-4 w-4" /> Re-screens due
+      </div>
+      <ul className="mt-2 space-y-1.5">
+        {rows.map((r, i) => (
+          <li key={i} className="flex items-center justify-between gap-2 text-sm">
+            <span>
+              <span className="font-medium text-navy">
+                {r.patient.firstName} {r.patient.lastName}
+              </span>{" "}
+              · {r.key.toUpperCase()}{" "}
+              <span className="text-xs text-muted-foreground">
+                (last {r.lastDays}d ago · day {r.nextDue} due)
+              </span>
+            </span>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                HealthieService.sendRescreenTask(r.patient.id, r.key);
+                toast.success("Re-screen task sent", {
+                  description: "Patient will see it on their home screen.",
+                });
+              }}
+            >
+              Send re-screen
+            </Button>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }

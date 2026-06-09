@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { HealthieService, type ReferralSource } from "@/lib/healthie";
+import { useEffect, useState } from "react";
+import { HealthieService, useHealthie, type ReferralSource, type ReferralStatus } from "@/lib/healthie";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/referral")({
   head: () => ({
@@ -41,6 +42,14 @@ const sources: { value: ReferralSource; label: string }[] = [
 
 function ReferralPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [referrerKey, setReferrerKey] = useState<string>("");
+  useEffect(() => {
+    try {
+      setReferrerKey(localStorage.getItem("adelante.referrerKey") ?? "");
+    } catch {
+      /* no-op */
+    }
+  }, []);
   const [form, setForm] = useState({
     referrerName: "",
     referringAgency: "",
@@ -89,6 +98,11 @@ function ReferralPage() {
       countyOfRelease: form.countyOfRelease || undefined,
       consentToContact: form.consentToContact,
     });
+    const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
+    try {
+      localStorage.setItem("adelante.referrerKey", key);
+    } catch { /* no-op */ }
+    setReferrerKey(key);
     toast.success("Referral submitted", {
       description: "A welcome text will be sent within 2 hours.",
     });
@@ -104,6 +118,9 @@ function ReferralPage() {
           We'll reach out to this person with a warm welcome and next steps.
           You'll hear back if we need anything from you.
         </p>
+        <div className="mt-8 text-left">
+          <ReferrerStatusTracker referrerKey={referrerKey} />
+        </div>
         <Button
           className="mt-6 bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={() => setSubmitted(false)}
@@ -116,6 +133,11 @@ function ReferralPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
+      {referrerKey && (
+        <div className="mb-6">
+          <ReferrerStatusTracker referrerKey={referrerKey} />
+        </div>
+      )}
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
           Refer someone
@@ -278,5 +300,65 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
       <Label className="text-sm">{label}</Label>
       {children}
     </div>
+  );
+}
+
+const stageOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
+const stageLabels: Record<ReferralStatus, string> = {
+  submitted: "Received",
+  contacted: "Eligibility verified · intake scheduled",
+  enrolled: "Enrolled",
+};
+
+function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
+  const all = useHealthie(() => HealthieService.listReferrals());
+  if (!referrerKey) return null;
+  const mine = all.filter((r) => {
+    const k = (r.referrerEmail || r.referrerName).trim().toLowerCase();
+    return k === referrerKey;
+  });
+  if (mine.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-teal" /> Your referrals
+        </h3>
+        <Badge variant="outline">{mine.length}</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Status only — no clinical detail.
+      </p>
+      <ul className="mt-3 space-y-3">
+        {mine.slice(0, 10).map((r) => {
+          const reachedIdx = stageOrder.indexOf(r.status);
+          return (
+            <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="font-medium text-navy">
+                    {r.firstName} {r.lastName}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {stageLabels[r.status]}
+                  </div>
+                </div>
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {r.status}
+                </Badge>
+              </div>
+              <div className="mt-2 flex gap-1">
+                {stageOrder.map((s, i) => (
+                  <div
+                    key={s}
+                    className={`h-1.5 flex-1 rounded-full ${i <= reachedIdx ? "bg-teal" : "bg-border"}`}
+                  />
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
   );
 }

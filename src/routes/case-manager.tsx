@@ -31,7 +31,12 @@ import {
   Lock,
   AlertTriangle,
   Phone,
+  ShieldCheck,
+  CheckCircle2,
+  RotateCw,
+  HelpingHand,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/case-manager")({
@@ -150,6 +155,8 @@ function CaseManagerPage() {
           {active ? (
             <>
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
+              <CoverageActionsCard patientId={active.id} />
+              <EligibilityFlagsCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
               <CoordinationCard patientName={`${active.firstName} ${active.lastName}`} consentSud={active.consents.part2Sud} />
             </>
@@ -332,5 +339,117 @@ function CoordinationCard({
         Logged: <ClientDate value={new Date().toISOString()} /> (demo)
       </p>
     </Card>
+  );
+}
+
+function CoverageActionsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  if (!p) return null;
+  const status = p.coverage?.verified ?? "not_found";
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy flex items-center gap-2">
+        <ShieldCheck className="h-4 w-4 text-teal" /> Medi-Cal actions
+      </h3>
+      <div className="mt-2 text-xs text-muted-foreground">
+        Coverage: <span className="capitalize text-foreground">{p.coverage?.status ?? "unknown"}</span>{" "}
+        · verification:{" "}
+        <Badge variant="outline" className="capitalize text-[10px]">{status}</Badge>
+      </div>
+      <div className="mt-3 grid grid-cols-1 gap-2">
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            HealthieService.markCoverageVerified(patientId);
+            toast.success("Marked verified");
+          }}
+          disabled={status === "verified"}
+        >
+          <CheckCircle2 className="h-4 w-4 mr-1.5" /> Mark verified
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            HealthieService.requestReactivation(patientId);
+            toast.success("Reactivation requested");
+          }}
+        >
+          <RotateCw className="h-4 w-4 mr-1.5" /> Request reactivation
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() => {
+            HealthieService.addEnrollmentAssistTask(patientId);
+            toast.success("Enrollment-assistance task created");
+          }}
+        >
+          <HelpingHand className="h-4 w-4 mr-1.5" /> Send enrollment-assistance task
+        </Button>
+      </div>
+    </Card>
+  );
+}
+
+function EligibilityFlagsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  if (!p) return null;
+  const ecm = Boolean(p.coverage?.ecmEligible);
+  const ji = Boolean(p.coverage?.jiReentryFlag);
+  const cs = p.coverage?.communitySupports ?? {};
+  const csRows: { k: "housing" | "food" | "transport"; label: string }[] = [
+    { k: "housing", label: "Housing support" },
+    { k: "food", label: "Food / CalFresh" },
+    { k: "transport", label: "Transportation" },
+  ];
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy">Eligibility flags</h3>
+      <p className="text-xs text-muted-foreground mt-1">
+        Toggle ECM, JI Reentry, and Community Supports for this client.
+      </p>
+      <div className="mt-3 space-y-2">
+        <FlagRow
+          label="ECM eligible"
+          checked={ecm}
+          onChange={(v) => HealthieService.setEcmEligible(patientId, v)}
+        />
+        <FlagRow
+          label="JI Reentry (90-day)"
+          checked={ji}
+          onChange={(v) => HealthieService.setJiReentry(patientId, v)}
+        />
+        <div className="pt-2 border-t mt-2 text-xs uppercase tracking-wider text-muted-foreground">
+          Community Supports
+        </div>
+        {csRows.map((r) => (
+          <FlagRow
+            key={r.k}
+            label={r.label}
+            checked={Boolean(cs[r.k])}
+            onChange={(v) => HealthieService.setCommunitySupport(patientId, r.k, v)}
+          />
+        ))}
+      </div>
+    </Card>
+  );
+}
+
+function FlagRow({
+  label,
+  checked,
+  onChange,
+}: {
+  label: string;
+  checked: boolean;
+  onChange: (v: boolean) => void;
+}) {
+  return (
+    <label className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm cursor-pointer">
+      <span>{label}</span>
+      <Switch checked={checked} onCheckedChange={onChange} />
+    </label>
   );
 }
