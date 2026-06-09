@@ -1,7 +1,16 @@
 import { createFileRoute } from "@tanstack/react-router";
+import { useMemo, useState } from "react";
 import { HealthieService, useHealthie, type ReferralStatus } from "@/lib/healthie";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import {
   Table,
   TableBody,
@@ -10,7 +19,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck } from "lucide-react";
+import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/admin")({
@@ -27,11 +36,53 @@ function AdminPage() {
   const stats = useHealthie(() => HealthieService.stats());
   const patients = useHealthie(() => HealthieService.listPatients());
   const referrals = useHealthie(() => HealthieService.listReferrals());
+  const consentEvents = useHealthie(() => HealthieService.listAllConsentEvents());
   const verifiedPct = Math.round(
     (patients.filter((p) => p.coverage?.verified === "verified").length /
       Math.max(patients.length, 1)) *
       100,
   );
+  const ecmCount = patients.filter((p) => p.coverage?.ecmEligible).length;
+  const ecmPct = Math.round((ecmCount / Math.max(patients.length, 1)) * 100);
+
+  // Cohort filters
+  const [coverageFilter, setCoverageFilter] = useState<string>("all");
+  const [bucketFilter, setBucketFilter] = useState<string>("all");
+  const filteredPatients = useMemo(
+    () =>
+      patients.filter((p) => {
+        if (coverageFilter !== "all" && p.coverage?.status !== coverageFilter) return false;
+        if (bucketFilter !== "all") {
+          const d = p.episodeDay;
+          if (bucketFilter === "0-30" && !(d <= 30)) return false;
+          if (bucketFilter === "31-60" && !(d > 30 && d <= 60)) return false;
+          if (bucketFilter === "61-90" && !(d > 60)) return false;
+        }
+        return true;
+      }),
+    [patients, coverageFilter, bucketFilter],
+  );
+
+  const downloadCsv = () => {
+    const headers = ["programId", "episodeDay", "coverageStatus", "verified", "jiReentry", "ecm", "smsFallback"];
+    const rows = filteredPatients.map((p) => [
+      p.programId,
+      p.episodeDay,
+      p.coverage?.status ?? "",
+      p.coverage?.verified ?? "",
+      p.coverage?.jiReentryFlag ? "yes" : "no",
+      p.coverage?.ecmEligible ? "yes" : "no",
+      p.smsFallback ? "yes" : "no",
+    ]);
+    const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `adelante-caseload-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -46,19 +97,44 @@ function AdminPage() {
         </p>
       </header>
 
-      <div className="grid sm:grid-cols-2 lg:grid-cols-5 gap-4 mb-6">
+      <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <Kpi icon={Users} label="Enrolled patients" value={stats.enrolled.toString()} accent="navy" />
         <Kpi icon={ClipboardCheck} label="Session completion" value={`${stats.completionRate}%`} accent="teal" />
         <Kpi icon={Timer} label="Intake velocity" value={`${stats.intakeVelocityDays}d`} sub="referral → 1st session" accent="gold" />
         <Kpi icon={TrendingUp} label="Active referrals" value={referrals.filter((r) => r.status !== "enrolled").length.toString()} accent="teal" />
         <Kpi icon={ShieldCheck} label="Medi-Cal verified" value={`${verifiedPct}%`} accent="navy" />
+        <Kpi icon={HandHeart} label="ECM caseload" value={`${ecmPct}%`} sub={`${ecmCount} of ${patients.length}`} accent="gold" />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
-          <div className="flex items-center justify-between mb-3">
+          <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
             <h2 className="font-display text-lg text-navy">Caseload</h2>
-            <Badge variant="outline">{patients.length} patients</Badge>
+            <div className="flex flex-wrap items-center gap-2">
+              <Select value={bucketFilter} onValueChange={setBucketFilter}>
+                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Episode day" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All days</SelectItem>
+                  <SelectItem value="0-30">Day 0–30</SelectItem>
+                  <SelectItem value="31-60">Day 31–60</SelectItem>
+                  <SelectItem value="61-90">Day 61–90</SelectItem>
+                </SelectContent>
+              </Select>
+              <Select value={coverageFilter} onValueChange={setCoverageFilter}>
+                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Coverage" /></SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">All coverage</SelectItem>
+                  <SelectItem value="active">Active</SelectItem>
+                  <SelectItem value="suspended">Suspended</SelectItem>
+                  <SelectItem value="none_unsure">None / unsure</SelectItem>
+                  <SelectItem value="other">Other</SelectItem>
+                </SelectContent>
+              </Select>
+              <Button size="sm" variant="outline" onClick={downloadCsv}>
+                <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV
+              </Button>
+              <Badge variant="outline">{filteredPatients.length}/{patients.length}</Badge>
+            </div>
           </div>
           <Table>
             <TableHeader>
@@ -72,7 +148,7 @@ function AdminPage() {
               </TableRow>
             </TableHeader>
             <TableBody>
-              {patients.map((p) => (
+              {filteredPatients.map((p) => (
                 <TableRow key={p.id}>
                   <TableCell className="font-mono text-xs text-navy">{p.programId}</TableCell>
                   <TableCell>
