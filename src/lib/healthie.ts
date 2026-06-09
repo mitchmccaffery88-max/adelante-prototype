@@ -580,6 +580,14 @@ export const HealthieService = {
       .sort((a, b) => +new Date(b.at) - +new Date(a.at));
   },
 
+  // Single source of truth for "is SMS reminders / fallback active?"
+  // Reads revocable consent first; falls back to legacy patient.smsFallback.
+  isSmsOn(patientId: string): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    return p.consentState?.sms ?? p.smsFallback;
+  },
+
   // ----- ECM / Community Supports flags -----
   setEcmEligible(patientId: string, eligible: boolean) {
     const p = patients.find((x) => x.id === patientId);
