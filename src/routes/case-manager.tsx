@@ -40,6 +40,19 @@ import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 
+function lastContactAt(p: ReturnType<typeof HealthieService.getPatient>) {
+  const c = p?.checkIns?.[0];
+  return c?.date;
+}
+
+function daysAgo(iso?: string) {
+  if (!iso) return null;
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d <= 0) return "today";
+  if (d === 1) return "1d ago";
+  return `${d}d ago`;
+}
+
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
     meta: [
@@ -105,6 +118,7 @@ function CaseManagerPage() {
                 <TableHead>Client</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
+                <TableHead>Last contact</TableHead>
                 <TableHead>Flags</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -123,6 +137,19 @@ function CaseManagerPage() {
                   </TableCell>
                   <TableCell>
                     <CoverageBadge status={p.coverage?.status} />
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {(() => {
+                      const iso = lastContactAt(p);
+                      if (!iso) return <span className="text-destructive">No contact</span>;
+                      const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+                      const stale = d > 7;
+                      return (
+                        <span className={stale ? "text-destructive" : ""}>
+                          {daysAgo(iso)}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="space-x-1">
                     {p.crisisFlag && (
@@ -155,9 +182,11 @@ function CaseManagerPage() {
           {active ? (
             <>
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
+              <RecentCheckInsCard patientId={active.id} />
               <CoverageActionsCard patientId={active.id} />
               <EligibilityFlagsCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
+              <RecentReferralsCard patientId={active.id} />
               <CoordinationCard patientName={`${active.firstName} ${active.lastName}`} consentSud={active.consents.part2Sud} />
             </>
           ) : (
