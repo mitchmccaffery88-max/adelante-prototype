@@ -615,6 +615,7 @@ function TrendPanel({ patientId }: { patientId: string }) {
 }
 
 function RescreenDuePanel({ patients }: { patients: { id: string; firstName: string; lastName: string }[] }) {
+  // (component continues below)
   const { t } = useI18n();
   const rows = patients.flatMap((p) =>
     HealthieService.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
