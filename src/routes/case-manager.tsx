@@ -31,7 +31,12 @@ import {
   Lock,
   AlertTriangle,
   Phone,
+  ShieldCheck,
+  CheckCircle2,
+  RotateCw,
+  HelpingHand,
 } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/case-manager")({
