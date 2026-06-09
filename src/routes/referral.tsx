@@ -223,11 +223,12 @@ function ReferralPage() {
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
               </Field>
-              <Field label="Phone *">
+              <Field label={form.noPhone ? "Phone (skipped)" : "Phone *"}>
                 <Input
                   type="tel"
                   placeholder="+1 555 555 0100"
                   value={form.phone}
+                  disabled={form.noPhone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
               </Field>
@@ -245,6 +246,18 @@ function ReferralPage() {
                 />
               </Field>
             </div>
+            <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
+              <Checkbox
+                checked={form.noPhone}
+                onCheckedChange={(v) =>
+                  setForm({ ...form, noPhone: Boolean(v) })
+                }
+              />
+              <span>
+                <strong>No reliable phone — request manual outreach.</strong>{" "}
+                Skip the welcome text and queue a manual call from the care team.
+              </span>
+            </label>
           </section>
 
           <div className="rounded-lg border-2 border-teal/30 bg-teal/5 p-4 space-y-3">
