@@ -115,6 +115,9 @@ const dict = {
     statusCompleted: "completada",
     statusCancelled: "cancelada",
     statusNoShow: "sin asistencia",
+    goalNotStarted: "sin empezar",
+    goalInProgress: "en progreso",
+    goalDone: "completada",
   },
 } as const;
 
