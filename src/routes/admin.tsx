@@ -331,3 +331,56 @@ function Kpi({
     </Card>
   );
 }
+
+function AuditLogCard({
+  events,
+}: {
+  events: ReturnType<typeof HealthieService.listAllConsentEvents>;
+}) {
+  const [purpose, setPurpose] = useState<string>("all");
+  const filtered = events.filter((e) => purpose === "all" || e.purpose === purpose).slice(0, 12);
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-2">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <ScrollText className="h-4 w-4 text-teal" /> Consent audit log
+        </h3>
+        <Select value={purpose} onValueChange={setPurpose}>
+          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All purposes</SelectItem>
+            <SelectItem value="part2Sud">Part 2 SUD</SelectItem>
+            <SelectItem value="ecmShare">ECM share</SelectItem>
+            <SelectItem value="sms">SMS</SelectItem>
+            <SelectItem value="hipaa">HIPAA</SelectItem>
+          </SelectContent>
+        </Select>
+      </div>
+      {filtered.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No consent changes recorded.</p>
+      ) : (
+        <ul className="space-y-1.5 text-xs">
+          {filtered.map((e) => (
+            <li key={e.id} className="flex items-center justify-between border-b last:border-0 py-1.5">
+              <span className="font-mono text-navy">{e.programId}</span>
+              <span className="capitalize text-muted-foreground">{e.purpose}</span>
+              <Badge
+                className={
+                  (e.action === "granted"
+                    ? "bg-success/20 text-success"
+                    : "bg-destructive/15 text-destructive") + " border-0 capitalize"
+                }
+              >
+                {e.action}
+              </Badge>
+              <span className="text-muted-foreground"><ClientDate value={e.at} /></span>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-2 text-[10px] text-muted-foreground">
+        Append-only. Patient identifiers are de-identified programIds only.
+      </p>
+    </Card>
+  );
+}
