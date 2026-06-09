@@ -523,6 +523,158 @@ export const HealthieService = {
     emit();
   },
 
+  // ----- Consent state + audit log -----
+  getConsentState(patientId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { part2Sud: false, ecmShare: false, sms: true };
+    return p.consentState ?? {
+      part2Sud: p.consents.part2Sud,
+      ecmShare: Boolean(p.coverage?.ecmEligible),
+      sms: p.smsFallback,
+    };
+  },
+  setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const prev = p.consentState ?? {
+      part2Sud: p.consents.part2Sud,
+      ecmShare: Boolean(p.coverage?.ecmEligible),
+      sms: p.smsFallback,
+    };
+    if (purpose !== "hipaa") {
+      p.consentState = { ...prev, [purpose]: granted } as Patient["consentState"];
+    }
+    if (purpose === "part2Sud") p.consents.part2Sud = granted;
+    if (purpose === "sms") p.smsFallback = granted;
+    p.consentEvents = [
+      ...(p.consentEvents ?? []),
+      {
+        id: uid(),
+        purpose,
+        action: granted ? "granted" : "revoked",
+        at: new Date().toISOString(),
+        actor: "patient",
+        note,
+      },
+    ];
+    emit();
+  },
+  listAllConsentEvents() {
+    return patients
+      .flatMap((p) =>
+        (p.consentEvents ?? []).map((e) => ({ ...e, programId: p.programId })),
+      )
+      .sort((a, b) => +new Date(b.at) - +new Date(a.at));
+  },
+
+  // ----- ECM / Community Supports flags -----
+  setEcmEligible(patientId: string, eligible: boolean) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.coverage = { ...(p.coverage ?? { status: "none_unsure", verified: "not_found" }), ecmEligible: eligible };
+    emit();
+  },
+  setCommunitySupport(
+    patientId: string,
+    key: "housing" | "food" | "transport",
+    on: boolean,
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const base = p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "not_found" as const };
+    p.coverage = {
+      ...base,
+      communitySupports: { ...(base.communitySupports ?? {}), [key]: on },
+    };
+    emit();
+  },
+  setJiReentry(patientId: string, on: boolean) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const base = p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "not_found" as const };
+    p.coverage = { ...base, jiReentryFlag: on };
+    emit();
+  },
+  markCoverageVerified(patientId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.coverage) return;
+    p.coverage = { ...p.coverage, verified: "verified", status: "active" };
+    emit();
+  },
+  requestReactivation(patientId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.tasks = [
+      {
+        id: uid(),
+        kind: "reactivation",
+        label: "Medi-Cal reactivation requested with county",
+        createdAt: new Date().toISOString(),
+      },
+      ...(p.tasks ?? []),
+    ];
+    if (p.coverage) p.coverage = { ...p.coverage, verified: "pending" };
+    emit();
+  },
+  addEnrollmentAssistTask(patientId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.tasks = [
+      {
+        id: uid(),
+        kind: "enrollment_assist",
+        label: "Case manager will help with BenefitsCal enrollment",
+        createdAt: new Date().toISOString(),
+      },
+      ...(p.tasks ?? []),
+    ];
+    emit();
+  },
+
+  // ----- Re-screening cadence -----
+  // Returns screener keys due for re-screening based on day 30/60/90 cadence.
+  rescreensDue(patientId: string): { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const keys = ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"];
+    const out: { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] = [];
+    const now = Date.now();
+    for (const key of keys) {
+      const history = (p.screenerHistory ?? []).filter((h) => h.key === key);
+      if (history.length === 0) continue;
+      const last = history.reduce((acc, h) =>
+        +new Date(h.completedAt) > +new Date(acc.completedAt) ? h : acc,
+      );
+      const days = Math.floor((now - +new Date(last.completedAt)) / (1000 * 60 * 60 * 24));
+      const intervals: (30 | 60 | 90)[] = [30, 60, 90];
+      const due = intervals.find((d) => days >= d);
+      if (due) out.push({ key, lastDays: days, nextDue: due });
+    }
+    return out;
+  },
+  sendRescreenTask(patientId: string, key: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.tasks = [
+      {
+        id: uid(),
+        kind: "rescreen",
+        label: `Re-screen requested: ${key.toUpperCase()}`,
+        screenerKey: key,
+        createdAt: new Date().toISOString(),
+      },
+      ...(p.tasks ?? []),
+    ];
+    emit();
+  },
+  completeTask(patientId: string, taskId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const t = p?.tasks?.find((x) => x.id === taskId);
+    if (!t) return;
+    t.completedAt = new Date().toISOString();
+    emit();
+  },
+
   // Analytics helpers
   stats() {
     const enrolled = patients.length;
