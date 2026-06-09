@@ -132,9 +132,9 @@ function AdminPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={downloadCsv}>
-                <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV
-              </Button>
+                <Button size="sm" variant="outline" onClick={downloadCsv}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
+                </Button>
               <Badge variant="outline">{filteredPatients.length}/{patients.length}</Badge>
             </div>
           </div>
