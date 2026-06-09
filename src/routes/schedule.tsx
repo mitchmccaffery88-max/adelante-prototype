@@ -13,7 +13,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ArrowLeft, CalendarPlus, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CalendarPlus, ShieldCheck, Video, Phone, Clock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/schedule")({
   head: () => ({
@@ -26,6 +27,7 @@ export const Route = createFileRoute("/schedule")({
 });
 
 function SchedulePage() {
+  const { t } = useI18n();
   const navigate = useNavigate();
   const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
   const patient = useHealthie(() => HealthieService.getPatient(currentId));
@@ -33,12 +35,33 @@ function SchedulePage() {
   const [clinicianId, setClinicianId] = useState(clinicians[0]?.id ?? "");
   const [start, setStart] = useState("");
   const [duration, setDuration] = useState(50);
+  const [modality, setModality] = useState<"video" | "phone">("video");
 
   if (!patient) return null;
 
+  // Constrain the datetime picker to weekdays 9:00–17:00 in the user's local
+  // tz. We derive min/max from "today at 09:00" → "+30 days at 17:00".
+  const fmt = (d: Date) => {
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  };
+  const minD = new Date();
+  minD.setHours(9, 0, 0, 0);
+  if (minD.getTime() < Date.now()) minD.setDate(minD.getDate() + 1);
+  const maxD = new Date();
+  maxD.setDate(maxD.getDate() + 30);
+  maxD.setHours(17, 0, 0, 0);
+
   const submit = () => {
     if (!start || !clinicianId) {
-      toast.error("Pick a counselor and a time.");
+      toast.error(t("schErrPickTime"));
+      return;
+    }
+    const d = new Date(start);
+    const dow = d.getDay();
+    const hour = d.getHours();
+    if (dow === 0 || dow === 6 || hour < 9 || hour >= 17) {
+      toast.error(t("schErrWeekday"));
       return;
     }
     HealthieService.bookAppointment({
@@ -47,8 +70,8 @@ function SchedulePage() {
       start: new Date(start).toISOString(),
       durationMin: duration,
     });
-    toast.success("Session requested", {
-      description: "Your care team will confirm shortly. We'll text you a reminder.",
+    toast.success(t("schRequested"), {
+      description: t("schRequestedDesc"),
     });
     navigate({ to: "/home" });
   };
@@ -57,22 +80,22 @@ function SchedulePage() {
     <div className="mx-auto max-w-2xl px-4 sm:px-6 py-8">
       <Button asChild variant="ghost" size="sm" className="mb-3">
         <Link to="/home">
-          <ArrowLeft className="h-4 w-4 mr-1.5" /> Back to my care
+          <ArrowLeft className="h-4 w-4 mr-1.5" /> {t("schBack")}
         </Link>
       </Button>
       <header className="mb-5">
-        <div className="text-xs font-medium uppercase tracking-wider text-teal">Schedule</div>
+        <div className="text-xs font-medium uppercase tracking-wider text-teal">{t("homeSchedule")}</div>
         <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">
-          Book a session
+          {t("schTitle")}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
-          Pick a time that works for you. Sessions are private video or phone — your choice.
+          {t("schSubtitle")}
         </p>
       </header>
 
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5">
-          <Label className="text-sm">Counselor</Label>
+          <Label className="text-sm">{t("schCounselor")}</Label>
           <Select value={clinicianId} onValueChange={setClinicianId}>
             <SelectTrigger>
               <SelectValue />
@@ -85,17 +108,23 @@ function SchedulePage() {
               ))}
             </SelectContent>
           </Select>
+          <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+            <Clock className="h-3 w-3 text-teal" /> {t("schAvailable")}
+          </p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Date & time</Label>
+          <Label className="text-sm">{t("schDate")}</Label>
           <Input
             type="datetime-local"
             value={start}
             onChange={(e) => setStart(e.target.value)}
+            min={fmt(minD)}
+            max={fmt(maxD)}
+            step={60 * 30}
           />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-sm">Length</Label>
+          <Label className="text-sm">{t("schLength")}</Label>
           <Select value={String(duration)} onValueChange={(v) => setDuration(Number(v))}>
             <SelectTrigger>
               <SelectValue />
@@ -107,12 +136,41 @@ function SchedulePage() {
             </SelectContent>
           </Select>
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-sm">{t("schPickFormat")}</Label>
+          <div className="grid grid-cols-2 gap-2">
+            <button
+              type="button"
+              onClick={() => setModality("video")}
+              className={
+                "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                (modality === "video"
+                  ? "border-teal bg-teal/10 text-navy"
+                  : "bg-card hover:border-teal/60 text-foreground/70")
+              }
+            >
+              <Video className="h-4 w-4" /> {t("schVideo")}
+            </button>
+            <button
+              type="button"
+              onClick={() => setModality("phone")}
+              className={
+                "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                (modality === "phone"
+                  ? "border-teal bg-teal/10 text-navy"
+                  : "bg-card hover:border-teal/60 text-foreground/70")
+              }
+            >
+              <Phone className="h-4 w-4" /> {t("schPhone")}
+            </button>
+          </div>
+        </div>
         <Button className="w-full bg-navy text-navy-foreground hover:bg-navy/90" onClick={submit}>
-          <CalendarPlus className="h-4 w-4 mr-1.5" /> Request session
+          <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("schRequest")}
         </Button>
         <p className="text-xs text-muted-foreground flex items-start gap-1.5">
           <ShieldCheck className="h-3.5 w-3.5 text-teal mt-0.5" />
-          Your session is private and protected. Free with Medi-Cal.
+          {t("schSafety")}
         </p>
       </Card>
     </div>
