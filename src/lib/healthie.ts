@@ -57,6 +57,11 @@ export interface Patient {
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
     ecmEligible?: boolean;
+    communitySupports?: {
+      housing?: boolean;
+      food?: boolean;
+      transport?: boolean;
+    };
   };
   // Case Manager workspace
   caseManagerId?: string;
@@ -69,6 +74,15 @@ export interface Patient {
   // Clinician care plan (editable)
   goals?: Goal[];
   progressNotes?: ProgressNote[];
+  // Per-purpose consent state (revocable) + append-only audit trail
+  consentState?: {
+    part2Sud: boolean;
+    ecmShare: boolean;
+    sms: boolean;
+  };
+  consentEvents?: ConsentEvent[];
+  // Patient-facing re-screen tasks created from clinician/case-manager workspaces
+  tasks?: PatientTask[];
 }
 
 export interface ScreenerResult {
@@ -141,6 +155,25 @@ export interface ProgressNote {
   objective: string;
   assessment: string;
   plan: string;
+}
+
+export type ConsentPurpose = "part2Sud" | "ecmShare" | "sms" | "hipaa";
+export interface ConsentEvent {
+  id: string;
+  purpose: ConsentPurpose;
+  action: "granted" | "revoked";
+  at: string;
+  actor: "patient" | "staff";
+  note?: string;
+}
+
+export interface PatientTask {
+  id: string;
+  kind: "rescreen" | "enrollment_assist" | "reactivation";
+  label: string;
+  screenerKey?: string;
+  createdAt: string;
+  completedAt?: string;
 }
 
 // ---------- mock store ----------
