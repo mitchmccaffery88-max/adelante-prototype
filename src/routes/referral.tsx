@@ -318,7 +318,7 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
     <Card className="p-5">
       <div className="flex items-center justify-between">
         <h3 className="font-display text-lg text-navy flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-teal" /> Your referrals
+          <ListChecks className="h-4 w-4 text-teal" /> {t("refYourReferrals")}
         </h3>
         <Badge variant="outline">{mine.length}</Badge>
       </div>
