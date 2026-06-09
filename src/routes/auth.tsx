@@ -8,8 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { HealthieService, useHealthie } from "@/lib/healthie";
 import { useI18n } from "@/lib/i18n";
-import { Sparkles, ShieldCheck, ArrowRight, UserIcon } from "lucide-react";
-import { User } from "lucide-react";
+import { Sparkles, ShieldCheck, ArrowRight, User } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/auth")({
