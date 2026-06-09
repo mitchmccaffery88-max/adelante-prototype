@@ -30,6 +30,8 @@ import {
   FileText,
   TrendingUp,
   CalendarPlus,
+  TrendingDown,
+  Minus,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -82,6 +84,7 @@ function ClinicianPage() {
     objective: "",
     assessment: "",
     plan: "",
+    appointmentId: "" as string,
   });
 
   const doBook = () => {
@@ -103,11 +106,36 @@ function ClinicianPage() {
     toast.success("Launching telehealth session", { description: `Healthie video room · session ${id}` });
   };
 
+  // Bucket appointments by time horizon for the schedule view.
+  const now = Date.now();
+  const endOfToday = (() => {
+    const d = new Date(); d.setHours(23, 59, 59, 999); return d.getTime();
+  })();
+  const endOfWeek = (() => {
+    const d = new Date();
+    const dow = d.getDay();
+    const daysUntilSun = 7 - dow;
+    d.setDate(d.getDate() + daysUntilSun);
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
+  })();
+  const sortedAppts = [...appts].sort((a, b) => +new Date(a.start) - +new Date(b.start));
+  const todayAppts = sortedAppts.filter((a) => +new Date(a.start) <= endOfToday && +new Date(a.start) >= now - 7 * 24 * 3600 * 1000);
+  const weekAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek);
+  const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
+
+  // Pre-fill the notes form's "Link to appointment" with the patient's most
+  // recent attended (or next scheduled) appointment, so the default isn't
+  // "unlinked".
+  const patientAppts = useHealthie(() =>
+    selectedPatientId ? HealthieService.appointmentsForPatient(selectedPatientId) : [],
+  );
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Clinician</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">{t("navClinician")}</div>
           <h1 className="font-display text-3xl text-navy mt-1">{t("clinTitle")}</h1>
           {clinician && (
             <div className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
@@ -129,7 +157,7 @@ function ClinicianPage() {
         </div>
         <Select value={clinicianId} onValueChange={setClinicianId}>
           <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder="Pick clinician" />
+            <SelectValue placeholder={t("clinPickClinician")} />
           </SelectTrigger>
           <SelectContent>
             {clinicians.map((c) => (
@@ -160,80 +188,38 @@ function ClinicianPage() {
         <TabsContent value="schedule">
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
-          <h2 className="font-display text-lg text-navy">Appointments</h2>
+          <h2 className="font-display text-lg text-navy">{t("clinAppointments")}</h2>
           <RescreenDuePanel patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))} />
           {appts.length === 0 && (
-            <Card className="p-6 text-sm text-muted-foreground">No appointments yet.</Card>
+            <Card className="p-6 text-sm text-muted-foreground">{t("clinNoAppts")}</Card>
           )}
-          {appts.map((a) => {
-            const p = patients.find((x) => x.id === a.patientId);
-            const isFuture = new Date(a.start).getTime() > Date.now();
-            return (
-              <Card key={a.id} className="p-4">
-                <div className="flex flex-wrap items-start justify-between gap-3">
-                  <div className="flex items-start gap-3">
-                    <div className="h-10 w-10 rounded-lg bg-navy/10 text-navy grid place-items-center">
-                      <CalIcon className="h-5 w-5" />
-                    </div>
-                    <div>
-                      <div className="font-medium text-navy">
-                        {p?.firstName} {p?.lastName}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        <ClientDate value={a.start} /> · {a.durationMin} min
-                      </div>
-                      <div className="mt-2 flex flex-wrap gap-1.5">
-                        <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
-                          {a.status.replace("_", " ")}
-                        </Badge>
-                        <Badge variant="outline" className="capitalize">
-                          Billing: {a.billingStatus}
-                        </Badge>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="flex gap-2">
-                    {isFuture && a.status === "scheduled" && (
-                      <Button
-                        size="sm"
-                        className="bg-teal text-teal-foreground hover:bg-teal/90"
-                        onClick={() => launch(a.id)}
-                      >
-                        <Video className="h-4 w-4 mr-1.5" /> Join
-                      </Button>
-                    )}
-                    {a.status === "scheduled" && !isFuture && (
-                      <>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => HealthieService.updateAppointmentStatus(a.id, "attended")}
-                        >
-                          <CheckCircle2 className="h-4 w-4 mr-1.5" /> Attended
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="outline"
-                          onClick={() => HealthieService.updateAppointmentStatus(a.id, "no_show")}
-                        >
-                          <XCircle className="h-4 w-4 mr-1.5" /> No-show
-                        </Button>
-                      </>
-                    )}
-                  </div>
-                </div>
-              </Card>
-            );
-          })}
+          {todayAppts.length > 0 && (
+            <>
+              <SectionHeader label={t("clinToday")} count={todayAppts.length} />
+              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+            </>
+          )}
+          {weekAppts.length > 0 && (
+            <>
+              <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
+              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+            </>
+          )}
+          {laterAppts.length > 0 && (
+            <>
+              <SectionHeader label={t("clinLater")} count={laterAppts.length} />
+              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+            </>
+          )}
         </div>
 
         {/* Book + availability */}
         <div className="space-y-3">
           <Card className="p-5">
-            <h3 className="font-display text-lg text-navy">Book session</h3>
+            <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
             <div className="mt-4 space-y-3">
               <div className="space-y-1.5">
-                <Label className="text-sm">Patient</Label>
+                <Label className="text-sm">{t("clinPatient")}</Label>
                 <Select value={book.patientId} onValueChange={(v) => setBook({ ...book, patientId: v })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -248,11 +234,11 @@ function ClinicianPage() {
                 </Select>
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Date & time</Label>
+                <Label className="text-sm">{t("clinDate")}</Label>
                 <Input type="datetime-local" value={book.start} onChange={(e) => setBook({ ...book, start: e.target.value })} />
               </div>
               <div className="space-y-1.5">
-                <Label className="text-sm">Duration</Label>
+                <Label className="text-sm">{t("clinDuration")}</Label>
                 <Select value={String(book.durationMin)} onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}>
                   <SelectTrigger>
                     <SelectValue />
@@ -265,15 +251,15 @@ function ClinicianPage() {
                 </Select>
               </div>
               <Button className="w-full bg-navy text-navy-foreground hover:bg-navy/90" onClick={doBook}>
-                Book
+                {t("clinBook")}
               </Button>
             </div>
           </Card>
 
           <Card className="p-5">
-            <h3 className="font-display text-lg text-navy">Availability</h3>
+            <h3 className="font-display text-lg text-navy">{t("clinAvailability")}</h3>
             <p className="mt-2 text-xs text-muted-foreground">
-              Default hours synced from Healthie provider profile.
+              {t("clinAvailHours")}
             </p>
             <ul className="mt-3 space-y-1.5 text-sm">
               {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
@@ -295,9 +281,9 @@ function ClinicianPage() {
           {selectedPatient && (
             <div className="grid lg:grid-cols-3 gap-6 mt-4">
               <Card className="p-5 lg:col-span-2">
-                <h3 className="font-display text-lg text-navy">Care plan summary</h3>
+                <h3 className="font-display text-lg text-navy">{t("clinCarePlanSummary")}</h3>
                 <p className="text-xs text-muted-foreground mt-1">
-                  Plain-language summary visible to the patient on their home screen.
+                  {t("clinPlanHelp")}
                 </p>
                 <Textarea
                   className="mt-3 min-h-[100px]"
@@ -314,14 +300,14 @@ function ClinicianPage() {
                     toast.success("Care plan updated");
                   }}
                 >
-                  Save summary
+                  {t("clinSaveSummary")}
                 </Button>
               </Card>
               <Card className="p-5">
-                <h3 className="font-display text-lg text-navy">Goals</h3>
+                <h3 className="font-display text-lg text-navy">{t("clinGoals")}</h3>
                 <div className="mt-3 space-y-2">
                   {(selectedPatient.goals ?? []).length === 0 && (
-                    <p className="text-sm text-muted-foreground">No goals yet.</p>
+                    <p className="text-sm text-muted-foreground">{t("clinNoGoals")}</p>
                   )}
                   {(selectedPatient.goals ?? []).map((g) => (
                     <div
@@ -357,7 +343,7 @@ function ClinicianPage() {
                 </div>
                 <div className="mt-3 flex gap-2">
                   <Input
-                    placeholder="Add a goal…"
+                    placeholder={t("clinAddGoal")}
                     value={newGoal}
                     onChange={(e) => setNewGoal(e.target.value)}
                   />
@@ -381,10 +367,10 @@ function ClinicianPage() {
           {selectedPatient && (
             <div className="grid lg:grid-cols-2 gap-6 mt-4">
               <Card className="p-5">
-                <h3 className="font-display text-lg text-navy">New SOAP note</h3>
+                <h3 className="font-display text-lg text-navy">{t("clinNewNote")}</h3>
                 <div className="mt-3 space-y-3">
                   <div className="space-y-1.5">
-                    <Label className="text-sm">Session type</Label>
+                    <Label className="text-sm">{t("clinSessionType")}</Label>
                     <Select
                       value={note.sessionType}
                       onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
@@ -400,9 +386,34 @@ function ClinicianPage() {
                       </SelectContent>
                     </Select>
                   </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">{t("clinLinkAppt")}</Label>
+                    <Select
+                      value={note.appointmentId || "__none"}
+                      onValueChange={(v) =>
+                        setNote({ ...note, appointmentId: v === "__none" ? "" : v })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="__none">{t("clinLinkApptNone")}</SelectItem>
+                        {patientAppts
+                          .slice()
+                          .sort((a, b) => +new Date(b.start) - +new Date(a.start))
+                          .slice(0, 8)
+                          .map((a) => (
+                            <SelectItem key={a.id} value={a.id}>
+                              {new Date(a.start).toLocaleString()} · {a.status}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
                   {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                     <div key={k} className="space-y-1.5">
-                      <Label className="text-sm capitalize">{k}</Label>
+                      <Label className="text-sm">{t((`clin${k.charAt(0).toUpperCase()}${k.slice(1)}`) as never)}</Label>
                       <Textarea
                         value={note[k]}
                         onChange={(e) => setNote({ ...note, [k]: e.target.value })}
@@ -425,6 +436,7 @@ function ClinicianPage() {
                         objective: note.objective,
                         assessment: note.assessment,
                         plan: note.plan,
+                        appointmentId: note.appointmentId || undefined,
                       });
                       toast.success("Progress note saved");
                       setNote({
@@ -433,17 +445,18 @@ function ClinicianPage() {
                         objective: "",
                         assessment: "",
                         plan: "",
+                        appointmentId: "",
                       });
                     }}
                   >
-                    Save note
+                    {t("clinSaveNote")}
                   </Button>
                 </div>
               </Card>
               <div className="space-y-3">
-                <h3 className="font-display text-lg text-navy">Recent notes</h3>
+                <h3 className="font-display text-lg text-navy">{t("clinRecentNotes")}</h3>
                 {(selectedPatient.progressNotes ?? []).length === 0 && (
-                  <Card className="p-4 text-sm text-muted-foreground">No notes yet.</Card>
+                  <Card className="p-4 text-sm text-muted-foreground">{t("clinNoNotes")}</Card>
                 )}
                 {(selectedPatient.progressNotes ?? []).map((n) => (
                   <Card key={n.id} className="p-4 text-sm">
@@ -511,7 +524,88 @@ function PatientPicker({
   );
 }
 
+function SectionHeader({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <span className="text-xs font-medium uppercase tracking-wider text-teal">{label}</span>
+      <span className="text-xs text-muted-foreground">· {count}</span>
+    </div>
+  );
+}
+
+function ApptCard({
+  a,
+  patients,
+  launch,
+  t,
+}: {
+  a: ReturnType<typeof HealthieService.appointmentsForClinician>[number];
+  patients: ReturnType<typeof HealthieService.listPatients>;
+  launch: (id: string) => void;
+  t: (k: never) => string;
+}) {
+  const p = patients.find((x) => x.id === a.patientId);
+  const isFuture = new Date(a.start).getTime() > Date.now();
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-navy/10 text-navy grid place-items-center">
+            <CalIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-medium text-navy">
+              {p?.firstName} {p?.lastName}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <ClientDate value={a.start} /> · {a.durationMin} min
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
+                {a.status.replace("_", " ")}
+              </Badge>
+              <Badge variant="outline" className="capitalize">
+                {(t as (k: string) => string)("clinBillingPrefix")}: {a.billingStatus}
+              </Badge>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {isFuture && a.status === "scheduled" && (
+            <Button
+              size="sm"
+              className="bg-teal text-teal-foreground hover:bg-teal/90"
+              onClick={() => launch(a.id)}
+            >
+              <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
+            </Button>
+          )}
+          {a.status === "scheduled" && !isFuture && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => HealthieService.updateAppointmentStatus(a.id, "attended")}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinAttended")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => HealthieService.updateAppointmentStatus(a.id, "no_show")}
+              >
+                <XCircle className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinNoShow")}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function TrendPanel({ patientId }: { patientId: string }) {
+  const { t } = useI18n();
   const patient = useHealthie(() => HealthieService.getPatient(patientId));
   if (!patient) return null;
   const history = patient.screenerHistory ?? [];
@@ -522,9 +616,9 @@ function TrendPanel({ patientId }: { patientId: string }) {
       <Card className="p-5">
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
-            <h3 className="font-display text-lg text-navy">Screener trend</h3>
+            <h3 className="font-display text-lg text-navy">{t("clinTrendTitle")}</h3>
             <p className="text-xs text-muted-foreground">
-              Markers at day 30 / 60 / 90 (re-screening timepoints).
+              {t("clinTrendHelp")}
             </p>
           </div>
           <Button
@@ -536,11 +630,11 @@ function TrendPanel({ patientId }: { patientId: string }) {
               })
             }
           >
-            <CalendarPlus className="h-4 w-4 mr-1.5" /> Schedule re-screen
+            <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("clinScheduleRescreen")}
           </Button>
         </div>
         {screenerKeys.length === 0 ? (
-          <p className="mt-4 text-sm text-muted-foreground">No screener history yet.</p>
+          <p className="mt-4 text-sm text-muted-foreground">{t("clinNoHistory")}</p>
         ) : (
           <div className="mt-4 space-y-6">
             {screenerKeys.map((key) => {
@@ -558,7 +652,7 @@ function TrendPanel({ patientId }: { patientId: string }) {
                   <div className="flex items-baseline justify-between">
                     <h4 className="font-medium text-navy">{def?.name ?? key}</h4>
                     <span className="text-xs text-muted-foreground">
-                      Latest: {data[data.length - 1]?.score} ·{" "}
+                      {t("clinLatest")}: {data[data.length - 1]?.score} ·{" "}
                       {def ? severityFor(def, data[data.length - 1]?.score ?? 0) : ""}
                     </span>
                   </div>
@@ -601,6 +695,8 @@ function TrendPanel({ patientId }: { patientId: string }) {
 }
 
 function RescreenDuePanel({ patients }: { patients: { id: string; firstName: string; lastName: string }[] }) {
+  // (component continues below)
+  const { t } = useI18n();
   const rows = patients.flatMap((p) =>
     HealthieService.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
   );
@@ -608,34 +704,57 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
   return (
     <Card className="p-4 bg-gold/10 border-gold/40">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-navy">
-        <CalendarPlus className="h-4 w-4" /> Re-screens due
+        <CalendarPlus className="h-4 w-4" /> {t("clinRescreensDue")}
       </div>
       <ul className="mt-2 space-y-1.5">
-        {rows.map((r, i) => (
-          <li key={i} className="flex items-center justify-between gap-2 text-sm">
-            <span>
-              <span className="font-medium text-navy">
-                {r.patient.firstName} {r.patient.lastName}
-              </span>{" "}
-              · {r.key.toUpperCase()}{" "}
-              <span className="text-xs text-muted-foreground">
-                (last {r.lastDays}d ago · day {r.nextDue} due)
+        {rows.map((r, i) => {
+          // Compute trend: latest score vs second-latest for this screener.
+          const fullPatient = HealthieService.getPatient(r.patient.id);
+          const hist = (fullPatient?.screenerHistory ?? [])
+            .filter((h) => h.key === r.key)
+            .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt));
+          const latest = hist[hist.length - 1];
+          const prev = hist[hist.length - 2];
+          let TrendIcon: typeof TrendingUp | null = null;
+          let trendCls = "";
+          if (latest && prev) {
+            if (latest.score < prev.score) { TrendIcon = TrendingDown; trendCls = "text-success"; }
+            else if (latest.score > prev.score) { TrendIcon = TrendingUp; trendCls = "text-destructive"; }
+            else { TrendIcon = Minus; trendCls = "text-muted-foreground"; }
+          }
+          return (
+            <li key={i} className="flex items-center justify-between gap-2 text-sm">
+              <span className="flex items-center gap-2">
+                <span className="font-medium text-navy">
+                  {r.patient.firstName} {r.patient.lastName}
+                </span>
+                · {r.key.toUpperCase()}
+                {latest && (
+                  <span className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+                    · {latest.score}
+                    {TrendIcon && <TrendIcon className={`h-3 w-3 ${trendCls}`} />}
+                    {prev && <span>vs {prev.score}</span>}
+                  </span>
+                )}
+                <span className="text-xs text-muted-foreground">
+                  (day {r.nextDue} due)
+                </span>
               </span>
-            </span>
-            <Button
-              size="sm"
-              variant="outline"
-              onClick={() => {
-                HealthieService.sendRescreenTask(r.patient.id, r.key);
-                toast.success("Re-screen task sent", {
-                  description: "Patient will see it on their home screen.",
-                });
-              }}
-            >
-              Send re-screen
-            </Button>
-          </li>
-        ))}
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  HealthieService.sendRescreenTask(r.patient.id, r.key);
+                  toast.success("Re-screen task sent", {
+                    description: "Patient will see it on their home screen.",
+                  });
+                }}
+              >
+                {t("clinSendRescreen")}
+              </Button>
+            </li>
+          );
+        })}
       </ul>
     </Card>
   );

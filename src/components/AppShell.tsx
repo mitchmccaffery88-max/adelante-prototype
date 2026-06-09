@@ -38,6 +38,13 @@ export function AppShell() {
     try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
   })();
 
+  // Surfaces where the patient-facing UI should feel private:
+  // hide the staff link strip in the mobile nav (still reachable via the
+  // Staff dropdown on desktop).
+  const isPatientSurface = pathname === "/home" || pathname === "/intake" || pathname === "/schedule";
+  // The intake route renders its own crisis card; avoid a second 988 banner.
+  const showCrisisBanner = pathname !== "/intake";
+
   const patientNav = [
     { to: "/home" as const, label: t("navMyCare"), icon: Heart },
     { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
@@ -216,8 +223,10 @@ export function AppShell() {
                 </Link>
               );
             })}
-            <span className="mx-1 self-center text-muted-foreground/50">·</span>
-            {staffNav.map((n) => {
+            {!isPatientSurface && (
+              <span className="mx-1 self-center text-muted-foreground/50">·</span>
+            )}
+            {!isPatientSurface && staffNav.map((n) => {
               const Icon = n.icon;
               const active = pathname === n.to;
               return (
@@ -245,7 +254,7 @@ export function AppShell() {
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
-      <div
+      {showCrisisBanner && <div
         role="region"
         aria-label="Crisis support"
         className="sticky bottom-0 z-30 border-t border-destructive/30 bg-destructive/5 backdrop-blur"
@@ -261,7 +270,7 @@ export function AppShell() {
             {t("crisisAnytime")}
           </span>
         </div>
-      </div>
+      </div>}
 
       <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
@@ -270,7 +279,7 @@ export function AppShell() {
           </span>
           <span className="flex items-center gap-1.5">
             <span className="h-2 w-2 rounded-full bg-teal" />
-            Healthie sandbox · mocked
+            Demo data · no real PHI
           </span>
         </div>
       </footer>
