@@ -1,4 +1,4 @@
-import { Link, Outlet, useRouterState } from "@tanstack/react-router";
+import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import {
   Heart,
@@ -12,6 +12,7 @@ import {
   User as UserIcon,
   Phone,
   HandHeart,
+  LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { HealthieService, useHealthie } from "@/lib/healthie";
@@ -26,24 +27,27 @@ import {
   DropdownMenuRadioItem,
 } from "@/components/ui/dropdown-menu";
 
-const patientNav = [
-  { to: "/home", label: "My care", icon: Heart },
-  { to: "/intake", label: "Intake", icon: ClipboardList },
-] as const;
-
-const staffNav = [
-  { to: "/referral", label: "Referrals", icon: FileInput, desc: "Refer a client" },
-  { to: "/case-manager", label: "Case Manager", icon: HandHeart, desc: "Check-ins & resources" },
-  { to: "/clinician", label: "Clinician", icon: Calendar, desc: "Caseload & sessions" },
-  { to: "/admin", label: "Admin", icon: LayoutDashboard, desc: "Pilot dashboard" },
-] as const;
-
 export function AppShell() {
   const { lang, setLang, t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
   const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
   const patient = useHealthie(() => HealthieService.getPatient(currentId));
   const patients = useHealthie(() => HealthieService.listPatients());
+  const signedIn = (() => {
+    try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
+  })();
+
+  const patientNav = [
+    { to: "/home" as const, label: t("navMyCare"), icon: Heart },
+    { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
+  ];
+  const staffNav = [
+    { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
+    { to: "/case-manager" as const, label: t("navCaseManager"), icon: HandHeart, desc: "Check-ins & resources" },
+    { to: "/clinician" as const, label: t("navClinician"), icon: Calendar, desc: "Caseload & sessions" },
+    { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
+  ];
 
   return (
     <div className="min-h-screen flex flex-col">
@@ -106,12 +110,12 @@ export function AppShell() {
             <DropdownMenu>
               <DropdownMenuTrigger className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary">
                 <UserCog className="h-3.5 w-3.5 text-teal" />
-                Staff
+                {t("navStaff")}
                 <ChevronDown className="h-3 w-3 opacity-60" />
               </DropdownMenuTrigger>
               <DropdownMenuContent align="end" className="w-56">
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Staff portal
+                  {t("navStaffPortal")}
                 </DropdownMenuLabel>
                 {staffNav.map((s) => (
                   <DropdownMenuItem key={s.to} asChild>
@@ -134,7 +138,7 @@ export function AppShell() {
                   {patient?.firstName?.[0] ?? "?"}
                 </span>
                 <span className="hidden sm:inline">
-                  {patient ? `${patient.firstName} ${patient.lastName}` : "Sign in"}
+                  {signedIn && patient ? `${patient.firstName} ${patient.lastName}` : t("navSignIn")}
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-60" />
               </DropdownMenuTrigger>
@@ -166,6 +170,22 @@ export function AppShell() {
                   ))}
                 </DropdownMenuRadioGroup>
                 <DropdownMenuSeparator />
+                {signedIn ? (
+                  <DropdownMenuItem
+                    onClick={() => {
+                      try { localStorage.removeItem("adelante.session"); } catch { /* no-op */ }
+                      navigate({ to: "/auth" });
+                    }}
+                  >
+                    <LogOut className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> {t("authSignOut")}
+                  </DropdownMenuItem>
+                ) : (
+                  <DropdownMenuItem asChild>
+                    <Link to="/auth">
+                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> {t("navSignIn")}
+                    </Link>
+                  </DropdownMenuItem>
+                )}
                 <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">
                   Demo control: real builds will derive this from the auth session.
                 </DropdownMenuLabel>
