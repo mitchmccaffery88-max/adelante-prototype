@@ -57,6 +57,9 @@ const dict = {
     statusCompleted: "completed",
     statusCancelled: "cancelled",
     statusNoShow: "no show",
+    goalNotStarted: "not started",
+    goalInProgress: "in progress",
+    goalDone: "done",
   },
   es: {
     appName: "Adelante",
