@@ -155,6 +155,8 @@ function CaseManagerPage() {
           {active ? (
             <>
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
+              <CoverageActionsCard patientId={active.id} />
+              <EligibilityFlagsCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
               <CoordinationCard patientName={`${active.firstName} ${active.lastName}`} consentSud={active.consents.part2Sud} />
             </>
