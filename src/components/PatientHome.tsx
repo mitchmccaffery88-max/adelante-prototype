@@ -304,3 +304,87 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
     </div>
   );
 }
+
+function TasksCard({ patientId }: { patientId: string }) {
+  const tasks = useHealthie(() => HealthieService.getPatient(patientId)?.tasks ?? []);
+  const open = tasks.filter((t) => !t.completedAt);
+  if (open.length === 0) return null;
+  return (
+    <Card className="p-5 border-teal/40 bg-teal/5">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+        <Bell className="h-4 w-4" /> Things to do
+      </div>
+      <ul className="mt-3 space-y-2">
+        {open.map((t) => (
+          <li key={t.id} className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
+            <span className="flex-1 text-foreground">{t.label}</span>
+            {t.kind === "rescreen" ? (
+              <Button asChild size="sm" variant="outline">
+                <Link to="/intake">Start</Link>
+              </Button>
+            ) : (
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => {
+                  HealthieService.completeTask(patientId, t.id);
+                  toast.success("Marked done");
+                }}
+              >
+                Done
+              </Button>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function ConsentCard({ patientId }: { patientId: string }) {
+  const consent = useHealthie(() => HealthieService.getConsentState(patientId));
+  const rows: { key: "part2Sud" | "ecmShare" | "sms"; label: string; help: string }[] = [
+    {
+      key: "part2Sud",
+      label: "Share substance-use information with my care team",
+      help: "42 CFR Part 2 — only your Adelante care team. Never probation/parole.",
+    },
+    {
+      key: "ecmShare",
+      label: "Share with Enhanced Care Management partners",
+      help: "Lets housing, food, and reentry partners coordinate.",
+    },
+    {
+      key: "sms",
+      label: "Text-message reminders",
+      help: "Appointment and check-in reminders by SMS.",
+    },
+  ];
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+        <Lock className="h-4 w-4" /> Privacy & consent
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        You can change these at any time. Changes apply right away.
+      </p>
+      <ul className="mt-3 space-y-3">
+        {rows.map((r) => (
+          <li key={r.key} className="flex items-start gap-3 rounded-md border p-3">
+            <Switch
+              checked={consent[r.key]}
+              onCheckedChange={(v) => {
+                HealthieService.setConsent(patientId, r.key, v);
+                toast.success(v ? "Consent granted" : "Consent withdrawn");
+              }}
+            />
+            <div className="text-sm flex-1">
+              <div className="font-medium text-foreground">{r.label}</div>
+              <div className="text-xs text-muted-foreground mt-0.5">{r.help}</div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
