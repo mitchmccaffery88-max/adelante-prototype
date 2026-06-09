@@ -197,6 +197,7 @@ function AdminPage() {
 
         <div className="space-y-4">
           <ReferralTrackerCard referrals={referrals} />
+          <AuditLogCard events={consentEvents} />
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
               <h3 className="font-display text-lg text-navy">Billing status</h3>
