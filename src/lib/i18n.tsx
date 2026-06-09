@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
 
 type Lang = "en" | "es";
 
@@ -60,6 +60,57 @@ const dict = {
     goalNotStarted: "not started",
     goalInProgress: "in progress",
     goalDone: "done",
+    // Nav
+    navMyCare: "My care",
+    navIntake: "Intake",
+    navReferrals: "Referrals",
+    navCaseManager: "Case Manager",
+    navClinician: "Clinician",
+    navAdmin: "Admin",
+    navStaff: "Staff",
+    navStaffPortal: "Staff portal",
+    navSignIn: "Sign in",
+    // Auth
+    authWelcome: "Welcome to Adelante",
+    authSignInTitle: "Sign in",
+    authSignUpTitle: "Create your account",
+    authEmail: "Email or phone",
+    authPassword: "Password",
+    authContinue: "Continue",
+    authSwitchToSignUp: "New here? Create an account",
+    authSwitchToSignIn: "Already have an account? Sign in",
+    authDemoNote: "Demo: pick the person you'd like to sign in as. Real authentication arrives in Build 2.",
+    authPickPerson: "Sign in as",
+    authSignOut: "Sign out",
+    // Staff surfaces
+    cmTitle: "My caseload",
+    cmSubtitle: "Non-clinical view — no diagnoses, no clinical notes.",
+    cmCaseload: "Caseload",
+    cmCheckIn: "Weekly check-in",
+    cmResource: "Resource referral",
+    cmCoordination: "External coordination",
+    cmCoverageActions: "Medi-Cal actions",
+    cmEligibilityFlags: "Eligibility flags",
+    clinTitle: "Clinician workspace",
+    clinSchedule: "Schedule",
+    clinCarePlan: "Care Plan",
+    clinNotes: "Notes",
+    clinTracking: "Tracking",
+    clinAppointments: "Appointments",
+    clinBookSession: "Book session",
+    clinAvailability: "Availability",
+    clinRescreensDue: "Re-screens due",
+    adminTitle: "Pilot dashboard",
+    adminSubtitle: "Kings County · 90-day reentry episode",
+    adminCaseload: "Caseload",
+    adminBilling: "Billing status",
+    adminReferralStatus: "Referral status",
+    adminAuditLog: "Consent audit log",
+    adminExportCsv: "Export CSV",
+    refTitle: "Help someone start care.",
+    refSubtitle:
+      "A short form — about 2 minutes. We only ask for the basics. Please do not include charges, diagnoses, or substance-use details here.",
+    refYourReferrals: "Your referrals",
   },
   es: {
     appName: "Adelante",
@@ -118,6 +169,57 @@ const dict = {
     goalNotStarted: "sin empezar",
     goalInProgress: "en progreso",
     goalDone: "completada",
+    // Nav
+    navMyCare: "Mi cuidado",
+    navIntake: "Preguntas iniciales",
+    navReferrals: "Referidos",
+    navCaseManager: "Coordinador",
+    navClinician: "Profesional clínico",
+    navAdmin: "Administración",
+    navStaff: "Equipo",
+    navStaffPortal: "Portal del equipo",
+    navSignIn: "Iniciar sesión",
+    // Auth
+    authWelcome: "Bienvenido a Adelante",
+    authSignInTitle: "Iniciar sesión",
+    authSignUpTitle: "Crear tu cuenta",
+    authEmail: "Correo o teléfono",
+    authPassword: "Contraseña",
+    authContinue: "Continuar",
+    authSwitchToSignUp: "¿Nuevo aquí? Crea una cuenta",
+    authSwitchToSignIn: "¿Ya tienes cuenta? Inicia sesión",
+    authDemoNote: "Demostración: elige la persona con la que quieres entrar. La autenticación real llega en la Versión 2.",
+    authPickPerson: "Entrar como",
+    authSignOut: "Cerrar sesión",
+    // Staff surfaces
+    cmTitle: "Mis clientes",
+    cmSubtitle: "Vista no clínica — sin diagnósticos ni notas clínicas.",
+    cmCaseload: "Clientes",
+    cmCheckIn: "Contacto semanal",
+    cmResource: "Referido de recursos",
+    cmCoordination: "Coordinación externa",
+    cmCoverageActions: "Acciones de Medi-Cal",
+    cmEligibilityFlags: "Indicadores de elegibilidad",
+    clinTitle: "Espacio del profesional",
+    clinSchedule: "Agenda",
+    clinCarePlan: "Plan de cuidado",
+    clinNotes: "Notas",
+    clinTracking: "Seguimiento",
+    clinAppointments: "Citas",
+    clinBookSession: "Reservar sesión",
+    clinAvailability: "Disponibilidad",
+    clinRescreensDue: "Reevaluaciones pendientes",
+    adminTitle: "Panel del piloto",
+    adminSubtitle: "Condado de Kings · episodio de 90 días",
+    adminCaseload: "Caseload",
+    adminBilling: "Estado de facturación",
+    adminReferralStatus: "Estado de referidos",
+    adminAuditLog: "Registro de consentimiento",
+    adminExportCsv: "Exportar CSV",
+    refTitle: "Ayuda a alguien a empezar su cuidado.",
+    refSubtitle:
+      "Un formulario corto, unos 2 minutos. Pedimos solo lo básico. Por favor no incluyas cargos, diagnósticos ni detalles sobre uso de sustancias.",
+    refYourReferrals: "Tus referidos",
   },
 } as const;
 
@@ -130,7 +232,17 @@ const I18nCtx = createContext<{
 }>({ lang: "en", setLang: () => {}, t: (k) => dict.en[k] });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
-  const [lang, setLang] = useState<Lang>("en");
+  const [lang, setLangState] = useState<Lang>("en");
+  useEffect(() => {
+    try {
+      const saved = localStorage.getItem("adelante.lang");
+      if (saved === "en" || saved === "es") setLangState(saved);
+    } catch { /* no-op */ }
+  }, []);
+  const setLang = (l: Lang) => {
+    setLangState(l);
+    try { localStorage.setItem("adelante.lang", l); } catch { /* no-op */ }
+  };
   const t = (k: Key) => dict[lang][k] ?? dict.en[k];
   return (
     <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>
