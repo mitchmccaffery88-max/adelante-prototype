@@ -159,6 +159,7 @@ function ClinicianPage() {
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-2 space-y-3">
           <h2 className="font-display text-lg text-navy">Appointments</h2>
+          <RescreenDuePanel patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))} />
           {appts.length === 0 && (
             <Card className="p-6 text-sm text-muted-foreground">No appointments yet.</Card>
           )}
