@@ -38,6 +38,12 @@ const statusMap: Record<string, string> = {
   no_show: "statusNoShow",
 };
 
+const goalStatusMap: Record<string, string> = {
+  not_started: "goalNotStarted",
+  in_progress: "goalInProgress",
+  done: "goalDone",
+};
+
 export function PatientHome() {
   const { t } = useI18n();
   const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
@@ -199,7 +205,7 @@ export function PatientHome() {
                   </span>
                 </span>
                 <Badge variant="outline" className="capitalize text-xs">
-                  {g.status.replace("_", " ")}
+                  {t((goalStatusMap[g.status] ?? g.status) as any)}
                 </Badge>
               </li>
             ))}
@@ -221,7 +227,7 @@ export function PatientHome() {
                 </div>
               </div>
               <Badge variant="outline" className="capitalize">
-                {t((statusMap[a.status] ?? a.status) as any).replace("_", " ")}
+                {t((statusMap[a.status] ?? a.status) as any)}
               </Badge>
             </Card>
           ))}
