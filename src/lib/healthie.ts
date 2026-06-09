@@ -18,7 +18,7 @@ export interface Referral {
   firstName: string;
   lastName: string;
   dob?: string;
-  phone: string;
+  phone?: string;
   email?: string;
   releaseDate?: string;
   referringAgency: string;
@@ -31,6 +31,7 @@ export interface Referral {
   status: ReferralStatus;
   createdAt: string;
   smsSentAt?: string;
+  outreachTask?: "manual_call";
 }
 
 export interface Patient {
