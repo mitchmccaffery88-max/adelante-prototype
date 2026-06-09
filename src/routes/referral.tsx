@@ -64,6 +64,7 @@ function ReferralPage() {
     releaseDate: "",
     countyOfRelease: "Kings",
     consentToContact: false,
+    noPhone: false,
     notARobot: false,
   });
 
@@ -72,14 +73,17 @@ function ReferralPage() {
     if (
       !form.firstName ||
       !form.lastName ||
-      !form.phone ||
       !form.referrerName ||
       !form.referringAgency
     ) {
       toast.error("Please complete the required fields");
       return;
     }
-    if (!form.consentToContact) {
+    if (!form.noPhone && !form.phone) {
+      toast.error("Add a phone number, or check 'No reliable phone'");
+      return;
+    }
+    if (!form.noPhone && !form.consentToContact) {
       toast.error("Please confirm consent to contact");
       return;
     }
@@ -87,10 +91,10 @@ function ReferralPage() {
       toast.error("Please verify you're not a robot");
       return;
     }
-    HealthieService.createReferral({
+    const result = HealthieService.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
-      phone: form.phone,
+      phone: form.noPhone ? undefined : form.phone,
       releaseDate: form.releaseDate || undefined,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
@@ -98,7 +102,8 @@ function ReferralPage() {
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,
       countyOfRelease: form.countyOfRelease || undefined,
-      consentToContact: form.consentToContact,
+      consentToContact: form.noPhone ? false : form.consentToContact,
+      requestManualOutreach: form.noPhone,
     });
     const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
     try {
@@ -106,7 +111,9 @@ function ReferralPage() {
     } catch { /* no-op */ }
     setReferrerKey(key);
     toast.success("Referral submitted", {
-      description: "A welcome text will be sent within 2 hours.",
+      description: result.outreachTask
+        ? "No SMS sent — a care-team member will call within one business day."
+        : "A welcome text will be sent within 2 hours.",
     });
     setSubmitted(true);
   };
