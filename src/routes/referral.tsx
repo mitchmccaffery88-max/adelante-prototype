@@ -16,6 +16,7 @@ import {
 import { toast } from "sonner";
 import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/referral")({
   head: () => ({
@@ -41,6 +42,7 @@ const sources: { value: ReferralSource; label: string }[] = [
 ];
 
 function ReferralPage() {
+  const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
   const [referrerKey, setReferrerKey] = useState<string>("");
   useEffect(() => {
@@ -140,16 +142,10 @@ function ReferralPage() {
       )}
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
-          Refer someone
+          {t("navReferrals")}
         </div>
-        <h1 className="font-display text-3xl text-navy mt-1">
-          Help someone start care.
-        </h1>
-        <p className="text-muted-foreground mt-2">
-          A short form — about 2 minutes. We only ask for the basics.
-          Please <strong>do not include</strong> charges, diagnoses, or substance-use
-          details here. Those are collected privately with the person's consent.
-        </p>
+        <h1 className="font-display text-3xl text-navy mt-1">{t("refTitle")}</h1>
+        <p className="text-muted-foreground mt-2">{t("refSubtitle")}</p>
       </header>
 
       <Card className="p-6">
@@ -311,6 +307,7 @@ const stageLabels: Record<ReferralStatus, string> = {
 };
 
 function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
+  const { t } = useI18n();
   const all = useHealthie(() => HealthieService.listReferrals());
   if (!referrerKey) return null;
   const mine = all.filter((r) => {
@@ -322,7 +319,7 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
     <Card className="p-5">
       <div className="flex items-center justify-between">
         <h3 className="font-display text-lg text-navy flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-teal" /> Your referrals
+          <ListChecks className="h-4 w-4 text-teal" /> {t("refYourReferrals")}
         </h3>
         <Badge variant="outline">{mine.length}</Badge>
       </div>

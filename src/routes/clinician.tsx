@@ -32,6 +32,7 @@ import {
   CalendarPlus,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { useI18n } from "@/lib/i18n";
 import {
   LineChart,
   Line,
@@ -61,6 +62,7 @@ const statusBadge: Record<SessionStatus, string> = {
 };
 
 function ClinicianPage() {
+  const { t } = useI18n();
   const clinicians = useHealthie(() => HealthieService.listClinicians());
   const patients = useHealthie(() => HealthieService.listPatients());
   const [clinicianId, setClinicianId] = useState(clinicians[0]?.id ?? "");
@@ -106,7 +108,7 @@ function ClinicianPage() {
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Clinician</div>
-          <h1 className="font-display text-3xl text-navy mt-1">Clinician workspace</h1>
+          <h1 className="font-display text-3xl text-navy mt-1">{t("clinTitle")}</h1>
           {clinician && (
             <div className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
               <ShieldCheck className="h-4 w-4 text-teal" />
@@ -142,16 +144,16 @@ function ClinicianPage() {
       <Tabs defaultValue="schedule" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="schedule">
-            <CalIcon className="h-4 w-4 mr-1.5" /> Schedule
+            <CalIcon className="h-4 w-4 mr-1.5" /> {t("clinSchedule")}
           </TabsTrigger>
           <TabsTrigger value="care-plan">
-            <Target className="h-4 w-4 mr-1.5" /> Care Plan
+            <Target className="h-4 w-4 mr-1.5" /> {t("clinCarePlan")}
           </TabsTrigger>
           <TabsTrigger value="notes">
-            <FileText className="h-4 w-4 mr-1.5" /> Notes
+            <FileText className="h-4 w-4 mr-1.5" /> {t("clinNotes")}
           </TabsTrigger>
           <TabsTrigger value="tracking">
-            <TrendingUp className="h-4 w-4 mr-1.5" /> Tracking
+            <TrendingUp className="h-4 w-4 mr-1.5" /> {t("clinTracking")}
           </TabsTrigger>
         </TabsList>
 

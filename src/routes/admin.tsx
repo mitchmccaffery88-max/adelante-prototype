@@ -21,6 +21,7 @@ import {
 } from "@/components/ui/table";
 import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { useI18n } from "@/lib/i18n";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -33,6 +34,7 @@ export const Route = createFileRoute("/admin")({
 });
 
 function AdminPage() {
+  const { t } = useI18n();
   const stats = useHealthie(() => HealthieService.stats());
   const patients = useHealthie(() => HealthieService.listPatients());
   const referrals = useHealthie(() => HealthieService.listReferrals());
@@ -88,9 +90,9 @@ function AdminPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">Administrator</div>
-        <h1 className="font-display text-3xl text-navy mt-1">Pilot dashboard</h1>
+        <h1 className="font-display text-3xl text-navy mt-1">{t("adminTitle")}</h1>
         <p className="text-muted-foreground mt-1 text-sm flex items-center gap-2">
-          Kings County · 90-day reentry episode
+          {t("adminSubtitle")}
           <Badge variant="outline" className="text-[10px] inline-flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-teal" /> De-identified · minimum-necessary
           </Badge>
@@ -130,9 +132,9 @@ function AdminPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-              <Button size="sm" variant="outline" onClick={downloadCsv}>
-                <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV
-              </Button>
+                <Button size="sm" variant="outline" onClick={downloadCsv}>
+                  <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
+                </Button>
               <Badge variant="outline">{filteredPatients.length}/{patients.length}</Badge>
             </div>
           </div>
