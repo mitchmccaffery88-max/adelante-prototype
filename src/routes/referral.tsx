@@ -98,6 +98,11 @@ function ReferralPage() {
       countyOfRelease: form.countyOfRelease || undefined,
       consentToContact: form.consentToContact,
     });
+    const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
+    try {
+      localStorage.setItem("adelante.referrerKey", key);
+    } catch { /* no-op */ }
+    setReferrerKey(key);
     toast.success("Referral submitted", {
       description: "A welcome text will be sent within 2 hours.",
     });
@@ -113,6 +118,9 @@ function ReferralPage() {
           We'll reach out to this person with a warm welcome and next steps.
           You'll hear back if we need anything from you.
         </p>
+        <div className="mt-8 text-left">
+          <ReferrerStatusTracker referrerKey={referrerKey} />
+        </div>
         <Button
           className="mt-6 bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={() => setSubmitted(false)}
@@ -125,6 +133,11 @@ function ReferralPage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
+      {referrerKey && (
+        <div className="mb-6">
+          <ReferrerStatusTracker referrerKey={referrerKey} />
+        </div>
+      )}
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
           Refer someone
