@@ -482,3 +482,68 @@ function FlagRow({
     </label>
   );
 }
+
+function RecentCheckInsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const items = (p?.checkIns ?? []).slice(0, 5);
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy flex items-center gap-2">
+        <CalendarCheck className="h-4 w-4 text-teal" /> Recent check-ins
+      </h3>
+      {items.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">No check-ins yet for this client.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-sm">
+          {items.map((c) => (
+            <li key={c.id} className="border-b last:border-0 pb-2 last:pb-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="capitalize text-navy">{c.modality.replace("_", " ")}</span>
+                <span className="text-xs text-muted-foreground">
+                  <ClientDate value={c.date} />
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2">
+                {c.attended ? (
+                  <Badge className="bg-success/20 text-success border-0 text-[10px]">Attended</Badge>
+                ) : (
+                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">Missed</Badge>
+                )}
+                {c.notes && <span className="truncate">{c.notes}</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function RecentReferralsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const items = (p?.resourceReferrals ?? []).slice(0, 5);
+  if (items.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy flex items-center gap-2">
+        <HandHeart className="h-4 w-4 text-teal" /> Recent referrals
+      </h3>
+      <ul className="mt-3 space-y-2 text-sm">
+        {items.map((r) => (
+          <li key={r.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
+            <div>
+              <div className="text-navy capitalize">{r.category}</div>
+              <div className="text-xs text-muted-foreground">{r.provider}</div>
+            </div>
+            <div className="text-right">
+              <Badge variant="outline" className="capitalize text-[10px]">{r.status}</Badge>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                <ClientDate value={r.createdAt} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
