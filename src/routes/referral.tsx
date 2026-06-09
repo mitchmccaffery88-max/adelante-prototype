@@ -302,3 +302,63 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
     </div>
   );
 }
+
+const stageOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
+const stageLabels: Record<ReferralStatus, string> = {
+  submitted: "Received",
+  contacted: "Eligibility verified · intake scheduled",
+  enrolled: "Enrolled",
+};
+
+function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
+  const all = useHealthie(() => HealthieService.listReferrals());
+  if (!referrerKey) return null;
+  const mine = all.filter((r) => {
+    const k = (r.referrerEmail || r.referrerName).trim().toLowerCase();
+    return k === referrerKey;
+  });
+  if (mine.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <ListChecks className="h-4 w-4 text-teal" /> Your referrals
+        </h3>
+        <Badge variant="outline">{mine.length}</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Status only — no clinical detail.
+      </p>
+      <ul className="mt-3 space-y-3">
+        {mine.slice(0, 10).map((r) => {
+          const reachedIdx = stageOrder.indexOf(r.status);
+          return (
+            <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
+              <div className="flex items-center justify-between">
+                <div className="text-sm">
+                  <div className="font-medium text-navy">
+                    {r.firstName} {r.lastName}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {stageLabels[r.status]}
+                  </div>
+                </div>
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {r.status}
+                </Badge>
+              </div>
+              <div className="mt-2 flex gap-1">
+                {stageOrder.map((s, i) => (
+                  <div
+                    key={s}
+                    className={`h-1.5 flex-1 rounded-full ${i <= reachedIdx ? "bg-teal" : "bg-border"}`}
+                  />
+                ))}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
