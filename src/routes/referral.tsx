@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
-import { useState } from "react";
-import { HealthieService, type ReferralSource } from "@/lib/healthie";
+import { useEffect, useState } from "react";
+import { HealthieService, useHealthie, type ReferralSource, type ReferralStatus } from "@/lib/healthie";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -14,7 +14,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
+import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 
 export const Route = createFileRoute("/referral")({
   head: () => ({
@@ -41,6 +42,14 @@ const sources: { value: ReferralSource; label: string }[] = [
 
 function ReferralPage() {
   const [submitted, setSubmitted] = useState(false);
+  const [referrerKey, setReferrerKey] = useState<string>("");
+  useEffect(() => {
+    try {
+      setReferrerKey(localStorage.getItem("adelante.referrerKey") ?? "");
+    } catch {
+      /* no-op */
+    }
+  }, []);
   const [form, setForm] = useState({
     referrerName: "",
     referringAgency: "",
