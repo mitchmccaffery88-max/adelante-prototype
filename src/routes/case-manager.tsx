@@ -40,6 +40,19 @@ import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 
+function lastContactAt(p: ReturnType<typeof HealthieService.getPatient>) {
+  const c = p?.checkIns?.[0];
+  return c?.date;
+}
+
+function daysAgo(iso?: string) {
+  if (!iso) return null;
+  const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+  if (d <= 0) return "today";
+  if (d === 1) return "1d ago";
+  return `${d}d ago`;
+}
+
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
     meta: [
@@ -105,6 +118,7 @@ function CaseManagerPage() {
                 <TableHead>Client</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
+                <TableHead>Last contact</TableHead>
                 <TableHead>Flags</TableHead>
                 <TableHead className="text-right">Action</TableHead>
               </TableRow>
@@ -123,6 +137,19 @@ function CaseManagerPage() {
                   </TableCell>
                   <TableCell>
                     <CoverageBadge status={p.coverage?.status} />
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground">
+                    {(() => {
+                      const iso = lastContactAt(p);
+                      if (!iso) return <span className="text-destructive">No contact</span>;
+                      const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+                      const stale = d > 7;
+                      return (
+                        <span className={stale ? "text-destructive" : ""}>
+                          {daysAgo(iso)}
+                        </span>
+                      );
+                    })()}
                   </TableCell>
                   <TableCell className="space-x-1">
                     {p.crisisFlag && (
@@ -155,9 +182,11 @@ function CaseManagerPage() {
           {active ? (
             <>
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
+              <RecentCheckInsCard patientId={active.id} />
               <CoverageActionsCard patientId={active.id} />
               <EligibilityFlagsCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
+              <RecentReferralsCard patientId={active.id} />
               <CoordinationCard patientName={`${active.firstName} ${active.lastName}`} consentSud={active.consents.part2Sud} />
             </>
           ) : (
@@ -451,5 +480,70 @@ function FlagRow({
       <span>{label}</span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
+  );
+}
+
+function RecentCheckInsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const items = (p?.checkIns ?? []).slice(0, 5);
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy flex items-center gap-2">
+        <CalendarCheck className="h-4 w-4 text-teal" /> Recent check-ins
+      </h3>
+      {items.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">No check-ins yet for this client.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-sm">
+          {items.map((c) => (
+            <li key={c.id} className="border-b last:border-0 pb-2 last:pb-0">
+              <div className="flex items-center justify-between gap-2">
+                <span className="capitalize text-navy">{c.modality.replace("_", " ")}</span>
+                <span className="text-xs text-muted-foreground">
+                  <ClientDate value={c.date} />
+                </span>
+              </div>
+              <div className="text-xs text-muted-foreground flex items-center gap-2">
+                {c.attended ? (
+                  <Badge className="bg-success/20 text-success border-0 text-[10px]">Attended</Badge>
+                ) : (
+                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">Missed</Badge>
+                )}
+                {c.notes && <span className="truncate">{c.notes}</span>}
+              </div>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function RecentReferralsCard({ patientId }: { patientId: string }) {
+  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const items = (p?.resourceReferrals ?? []).slice(0, 5);
+  if (items.length === 0) return null;
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-lg text-navy flex items-center gap-2">
+        <HandHeart className="h-4 w-4 text-teal" /> Recent referrals
+      </h3>
+      <ul className="mt-3 space-y-2 text-sm">
+        {items.map((r) => (
+          <li key={r.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
+            <div>
+              <div className="text-navy capitalize">{r.category}</div>
+              <div className="text-xs text-muted-foreground">{r.provider}</div>
+            </div>
+            <div className="text-right">
+              <Badge variant="outline" className="capitalize text-[10px]">{r.status}</Badge>
+              <div className="text-[10px] text-muted-foreground mt-1">
+                <ClientDate value={r.createdAt} />
+              </div>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
