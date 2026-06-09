@@ -307,6 +307,7 @@ const stageLabels: Record<ReferralStatus, string> = {
 };
 
 function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
+  const { t } = useI18n();
   const all = useHealthie(() => HealthieService.listReferrals());
   if (!referrerKey) return null;
   const mine = all.filter((r) => {
