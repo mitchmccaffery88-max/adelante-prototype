@@ -154,7 +154,7 @@ function AdminPage() {
                 <TableHead>Coverage</TableHead>
                 <TableHead>Next appt</TableHead>
                 <TableHead>Engagement</TableHead>
-                <TableHead>SMS fallback</TableHead>
+                <TableHead>SMS reminders</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -189,7 +189,7 @@ function AdminPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {p.smsFallback ? (
+                    {HealthieService.isSmsOn(p.id) ? (
                       <Badge className="bg-gold/30 text-navy border-0">On</Badge>
                     ) : (
                       <span className="text-xs text-muted-foreground">Off</span>
