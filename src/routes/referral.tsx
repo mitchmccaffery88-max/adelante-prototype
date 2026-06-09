@@ -64,6 +64,7 @@ function ReferralPage() {
     releaseDate: "",
     countyOfRelease: "Kings",
     consentToContact: false,
+    noPhone: false,
     notARobot: false,
   });
 
@@ -72,14 +73,17 @@ function ReferralPage() {
     if (
       !form.firstName ||
       !form.lastName ||
-      !form.phone ||
       !form.referrerName ||
       !form.referringAgency
     ) {
       toast.error("Please complete the required fields");
       return;
     }
-    if (!form.consentToContact) {
+    if (!form.noPhone && !form.phone) {
+      toast.error("Add a phone number, or check 'No reliable phone'");
+      return;
+    }
+    if (!form.noPhone && !form.consentToContact) {
       toast.error("Please confirm consent to contact");
       return;
     }
@@ -87,10 +91,10 @@ function ReferralPage() {
       toast.error("Please verify you're not a robot");
       return;
     }
-    HealthieService.createReferral({
+    const result = HealthieService.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
-      phone: form.phone,
+      phone: form.noPhone ? undefined : form.phone,
       releaseDate: form.releaseDate || undefined,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
@@ -98,7 +102,8 @@ function ReferralPage() {
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,
       countyOfRelease: form.countyOfRelease || undefined,
-      consentToContact: form.consentToContact,
+      consentToContact: form.noPhone ? false : form.consentToContact,
+      requestManualOutreach: form.noPhone,
     });
     const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
     try {
@@ -106,7 +111,9 @@ function ReferralPage() {
     } catch { /* no-op */ }
     setReferrerKey(key);
     toast.success("Referral submitted", {
-      description: "A welcome text will be sent within 2 hours.",
+      description: result.outreachTask
+        ? "No SMS sent — a care-team member will call within one business day."
+        : "A welcome text will be sent within 2 hours.",
     });
     setSubmitted(true);
   };
@@ -216,11 +223,12 @@ function ReferralPage() {
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
               </Field>
-              <Field label="Phone *">
+              <Field label={form.noPhone ? "Phone (skipped)" : "Phone *"}>
                 <Input
                   type="tel"
                   placeholder="+1 555 555 0100"
                   value={form.phone}
+                  disabled={form.noPhone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
                 />
               </Field>
@@ -238,6 +246,18 @@ function ReferralPage() {
                 />
               </Field>
             </div>
+            <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
+              <Checkbox
+                checked={form.noPhone}
+                onCheckedChange={(v) =>
+                  setForm({ ...form, noPhone: Boolean(v) })
+                }
+              />
+              <span>
+                <strong>No reliable phone — request manual outreach.</strong>{" "}
+                Skip the welcome text and queue a manual call from the care team.
+              </span>
+            </label>
           </section>
 
           <div className="rounded-lg border-2 border-teal/30 bg-teal/5 p-4 space-y-3">

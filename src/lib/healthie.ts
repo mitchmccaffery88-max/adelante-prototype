@@ -18,7 +18,7 @@ export interface Referral {
   firstName: string;
   lastName: string;
   dob?: string;
-  phone: string;
+  phone?: string;
   email?: string;
   releaseDate?: string;
   referringAgency: string;
@@ -31,6 +31,7 @@ export interface Referral {
   status: ReferralStatus;
   createdAt: string;
   smsSentAt?: string;
+  outreachTask?: "manual_call";
 }
 
 export interface Patient {
@@ -420,13 +421,25 @@ export const HealthieService = {
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
 
   // Writes (mocked — in production these become Healthie GraphQL mutations)
-  createReferral(input: Omit<Referral, "id" | "status" | "createdAt" | "smsSentAt">) {
+  createReferral(
+    input: Omit<Referral, "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask"> & {
+      requestManualOutreach?: boolean;
+    },
+  ) {
+    const { requestManualOutreach, ...rest } = input;
+    // Fallback: no phone, no contact consent, or referrer explicitly requested
+    // manual outreach → skip the Twilio welcome-text trigger and queue a
+    // manual-call task for the care team instead.
+    const canSendSms =
+      !requestManualOutreach && !!rest.phone && rest.consentToContact;
     const r: Referral = {
-      ...input,
+      ...rest,
       id: uid(),
       status: "submitted",
       createdAt: new Date().toISOString(),
-      smsSentAt: new Date().toISOString(), // Healthie webhook → Twilio in real impl
+      ...(canSendSms
+        ? { smsSentAt: new Date().toISOString() } // Healthie webhook → Twilio in real impl
+        : { outreachTask: "manual_call" as const }),
     };
     referrals.unshift(r);
     emit();

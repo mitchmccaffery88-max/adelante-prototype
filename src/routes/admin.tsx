@@ -271,11 +271,15 @@ function ReferralTrackerCard({
                 );
               })}
             </div>
-            {r.smsSentAt && (
+            {r.smsSentAt ? (
               <div className="mt-1.5 text-[10px] text-success">
                 ✓ Welcome SMS sent
               </div>
-            )}
+            ) : r.outreachTask === "manual_call" ? (
+              <div className="mt-1.5 text-[10px] text-gold-foreground">
+                ⚑ Manual outreach queued (no SMS)
+              </div>
+            ) : null}
           </div>
         ))}
       </div>
