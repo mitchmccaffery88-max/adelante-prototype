@@ -18,9 +18,12 @@ import {
   Target,
   CalendarPlus,
   CheckCircle2,
+  Lock,
+  Bell,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
+import { Switch } from "@/components/ui/switch";
 
 const needMap: Record<string, string> = {
   housing: "needHousing",
