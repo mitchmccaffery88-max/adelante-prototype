@@ -1,43 +1,88 @@
-# Build 1 MVP — Prioritized Close-Out Plan
+# Adelante Build 1 MVP — Remaining Work
 
-Five focused workstreams, ordered by clinical/compliance value. Each is small enough to ship in one pass.
+Gap analysis comparing the current build against the original MVP scope and the items previously deferred.
 
-## 1. Complete the screener battery (DAST-10 + PCL-5)
-- Extend `src/lib/screeners.ts` with `DAST-10` (0–10, drug-use severity bands) and `PCL-5` (0–80, PTSD cutoff ≥ 33).
-- Add both to the intake flow in `src/routes/intake.tsx` after AUDIT-10, with the same plain-language framing and 42 CFR Part 2 guardrails.
-- Persist results to `screenerHistory` (already in `src/lib/healthie.ts`) so the trend tab can render them.
+## Status snapshot
 
-## 2. Clinician workspace: care plan, notes, trend tab
-- New tabbed layout in `src/routes/clinician.tsx`: **Schedule | Care Plan | Notes | Tracking**.
-- **Care Plan**: editable goals + interventions per patient, stored on the patient record in the mock service.
-- **Notes**: SOAP-style progress note form (date, session type, subjective/objective/assessment/plan), list view per patient.
-- **Tracking**: render `screenerHistory` as a simple trend (PHQ-9 / GAD-7 / AUDIT-10 / DAST-10 / PCL-5) with day 30 / 60 / 90 markers and a "Schedule re-screen" action.
+Shipped: 4 role workspaces (Patient, Case Manager, Clinician, Referrer/Admin), intake with PHQ-9/GAD-7/AUDIT-10, crisis banner, care plan + SOAP notes + tracking trend, self-scheduling, manifest + icons, English/Spanish toggle on landing, intake, crisis banner, patient home.
 
-## 3. Patient portal upgrades
-- Add account stub (sign-in/sign-up screen reusing the existing demo patient switcher as the backing store — no real auth yet, scoped to MVP).
-- Patient-visible **Goals & Next Steps** card on `/home`, sourced from the clinician care plan.
-- **Self-scheduling**: let the patient request/book an open slot from the clinician scheduler.
+Not yet meeting MVP bar: items below.
 
-## 4. Spanish (es) language coverage
-- Expand the i18n stub beyond `appName` to cover landing page, intake prompts, crisis banner, and patient home.
-- Keep copy at 6th-grade reading level; mirror the warm tone of the English landing page.
+---
 
-## 5. PWA packaging
-- Add `public/manifest.webmanifest` (name "Adelante", theme, icons, standalone) and link it from `__root.tsx`.
-- Register a minimal service worker for offline shell (cache landing page + patient home).
-- Add an install prompt affordance on `/home`.
+## P0 — Clinical completeness
 
-## Explicitly deferred (not in this pass)
-- Consent revocation UI and audit-log viewer
-- Admin CSV export and cohort filters
-- Real auth provider / Lovable Cloud wiring
-- Referrer-facing status tracker view
-- Editable ECM / Community Supports flag toggles
+### 1. Wire DAST-10 and PCL-5 into the live flow
+Both screeners exist in `src/lib/screeners.ts` but are not used anywhere.
+- Add DAST-10 and PCL-5 steps to `src/routes/intake.tsx` after AUDIT-10, with the same 42 CFR Part 2 framing (DAST is substance-use, gated by consent).
+- Persist results into `screenerHistory` (already supported by `healthie.ts`).
+- Add both series to the Tracking tab chart in `src/routes/clinician.tsx` with the existing Day 30/60/90 reference lines.
 
-## Technical notes
-- All data stays in the existing mock `src/lib/healthie.ts` service — no backend changes this pass.
-- Screener scoring stays pure functions in `src/lib/screeners.ts` for easy unit reasoning.
-- Trend tab uses `recharts` (already in deps) — no new packages.
-- PWA: use a hand-rolled service worker registered from `src/router.tsx` to avoid adding a Vite PWA plugin.
+### 2. Re-screening cadence enforcement
+- Surface "Re-screen due" badges on the clinician schedule + case-manager check-in lists when ≥30 / 60 / 90 days have passed since last administration of each instrument.
+- One-click "Send re-screen" action that creates a patient task visible on `/home`.
 
-Confirm and I'll implement in this order — or tell me to drop/reorder any item.
+---
+
+## P1 — Compliance & data handling
+
+### 3. Consent revocation + audit log viewer
+- Patient-facing "Withdraw consent" control on `/home` (per-purpose: Part 2 SUD, ECM share, SMS).
+- Append-only audit entries in `healthie.ts` (`consentEvents[]`).
+- Read-only audit viewer in `/admin` with filter by patient programId + event type.
+
+### 4. Minimum-necessary admin export
+- CSV export from `/admin` (de-identified caseload + referral status), no PHI columns.
+- Cohort filters: episode day bucket, coverage status, referral status.
+
+---
+
+## P2 — Workflow completeness
+
+### 5. Referrer-facing status tracker
+- New view in `src/routes/referral.tsx` (or a `/referral/status` child) showing the referring partner the status of patients they sent in: received → eligibility verified → intake scheduled → enrolled. No clinical content.
+
+### 6. Editable ECM / Community Supports flags
+- Case-manager workspace: toggle ECM eligible, Community Supports (housing, food, transport), JI Reentry need. Persist on patient record.
+- Admin KPI tile: % of caseload with active ECM / CS flags.
+
+### 7. Eligibility & coverage actions
+- From case-manager workspace: "Mark verified", "Request reactivation", "Send enrollment-assistance task". Today coverage is read-only.
+
+---
+
+## P3 — Patient experience & i18n
+
+### 8. Spanish coverage gaps
+Currently translated: landing, intake, crisis banner, patient home.
+Still English-only: AppShell nav labels for non-patient roles, case-manager workspace, clinician workspace, admin dashboard, schedule page, referral page.
+- Decide scope: MVP target is patient-facing surfaces fully bilingual; staff surfaces can stay EN for Build 1. Confirm before expanding.
+
+### 9. Patient account stub
+- Lightweight sign-in/sign-up screen reusing the demo patient switcher as backing store (no real auth yet — explicit MVP scope).
+- "Remember me" via localStorage so the patient lands directly on `/home`.
+
+### 10. PWA install + offline shell
+Manifest and icons are present. Missing:
+- Service worker registered from `src/router.tsx` caching landing + `/home` shell.
+- "Add to Home Screen" prompt affordance on `/home`.
+
+---
+
+## Explicitly out of scope for Build 1 (confirm)
+
+- Real auth provider / Lovable Cloud wiring (Build 2).
+- Live Healthie API integration — current `healthie.ts` stays a mock.
+- Billing claim generation; admin only shows billing status.
+- Push notifications; SMS fallback stays a display-only indicator.
+
+---
+
+## Suggested sequencing
+
+1. P0 items 1–2 (one pass, ~half-day of edits, unblocks clinical credibility).
+2. P1 items 3–4 (compliance bar for pilot).
+3. P2 items 5–7 (workflow completeness).
+4. P3 items 8–10 (polish + packaging).
+
+Tell me which tier to start with — or to drop/reorder any item — and I will implement.
