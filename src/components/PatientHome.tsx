@@ -216,6 +216,9 @@ export function PatientHome() {
         </Card>
       )}
 
+      <TasksCard patientId={patient.id} />
+      <ConsentCard patientId={patient.id} />
+
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("homeAllSessions")}</h2>
         <div className="space-y-2">
