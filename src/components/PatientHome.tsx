@@ -52,6 +52,7 @@ export function PatientHome() {
   const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
   const patient = useHealthie(() => HealthieService.getPatient(currentId));
   const appts = useHealthie(() => HealthieService.appointmentsForPatient(currentId));
+  const smsOn = useHealthie(() => HealthieService.isSmsOn(currentId));
 
   if (!patient) return null;
 
@@ -64,6 +65,28 @@ export function PatientHome() {
   const next = upcoming[0];
   const remaining = Math.max(0, 90 - patient.episodeDay);
   const goals = patient.goals ?? [];
+
+  const now = Date.now();
+  const futureAppts = [...appts]
+    .filter((a) => new Date(a.start).getTime() > now)
+    .sort((a, b) => +new Date(a.start) - +new Date(b.start));
+  const pastAppts = [...appts]
+    .filter((a) => new Date(a.start).getTime() <= now)
+    .sort((a, b) => +new Date(b.start) - +new Date(a.start))
+    .slice(0, 5);
+
+  const cycleGoal = (goalId: string, current: "open" | "in_progress" | "done") => {
+    const nextStatus =
+      current === "open" ? "in_progress" : current === "in_progress" ? "done" : "open";
+    HealthieService.setGoalStatus(patient.id, goalId, nextStatus);
+    toast.success(
+      nextStatus === "done"
+        ? "Goal marked done — nice work."
+        : nextStatus === "in_progress"
+          ? "Goal in progress."
+          : "Goal reset.",
+    );
+  };
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
@@ -81,7 +104,7 @@ export function PatientHome() {
               {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining} {t("homeDaysRemain")}
             </p>
           </div>
-          {patient.smsFallback && (
+          {smsOn && (
             <Badge className="bg-gold/30 text-navy border-0 flex items-center gap-1.5">
               <Smartphone className="h-3.5 w-3.5" /> {t("homeSmsFallback")}
             </Badge>
@@ -180,13 +203,16 @@ export function PatientHome() {
             <Target className="h-4 w-4" /> {t("homeYourGoals")}
           </div>
           <p className="text-xs text-muted-foreground mt-1">
-            {t("homeGoalsHelp")}
+            {t("homeGoalsHelp")} {t("patGoalTapHint")}
           </p>
           <ul className="mt-3 space-y-2">
             {goals.map((g) => (
               <li
                 key={g.id}
-                className="flex items-start gap-2 rounded-md border p-2.5 text-sm"
+                className="flex items-start gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
+                onClick={() => cycleGoal(g.id, g.status)}
+                role="button"
+                aria-label={`Update goal: ${g.text}`}
               >
                 <CheckCircle2
                   className={
@@ -220,23 +246,51 @@ export function PatientHome() {
       <ConsentCard patientId={patient.id} />
 
       <div>
-        <h2 className="font-display text-lg text-navy mb-3">{t("homeAllSessions")}</h2>
+        <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
         <div className="space-y-2">
-          {appts.map((a) => (
-            <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
-              <div>
-                <div className="text-navy font-medium">
-                  <ClientDate value={a.start} />
+          {futureAppts.length === 0 ? (
+            <Card className="p-4 text-sm text-muted-foreground">{t("patNoneUpcoming")}</Card>
+          ) : (
+            futureAppts.map((a) => (
+              <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
+                <div>
+                  <div className="text-navy font-medium">
+                    <ClientDate value={a.start} />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {HealthieService.getClinician(a.clinicianId)?.name}
+                  </div>
                 </div>
-                <div className="text-xs text-muted-foreground">
-                  {HealthieService.getClinician(a.clinicianId)?.name}
+                <Badge variant="outline" className="capitalize">
+                  {t((statusMap[a.status] ?? a.status) as any)}
+                </Badge>
+              </Card>
+            ))
+          )}
+        </div>
+      </div>
+      <div>
+        <h2 className="font-display text-lg text-navy mb-3">{t("patHistory")}</h2>
+        <div className="space-y-2">
+          {pastAppts.length === 0 ? (
+            <Card className="p-4 text-sm text-muted-foreground">{t("patNoneHistory")}</Card>
+          ) : (
+            pastAppts.map((a) => (
+              <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
+                <div>
+                  <div className="text-navy font-medium">
+                    <ClientDate value={a.start} />
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {HealthieService.getClinician(a.clinicianId)?.name}
+                  </div>
                 </div>
-              </div>
-              <Badge variant="outline" className="capitalize">
-                {t((statusMap[a.status] ?? a.status) as any)}
-              </Badge>
-            </Card>
-          ))}
+                <Badge variant="outline" className="capitalize">
+                  {t((statusMap[a.status] ?? a.status) as any)}
+                </Badge>
+              </Card>
+            ))
+          )}
         </div>
       </div>
     </div>
