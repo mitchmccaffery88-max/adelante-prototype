@@ -524,6 +524,86 @@ function PatientPicker({
   );
 }
 
+function SectionHeader({ label, count }: { label: string; count: number }) {
+  return (
+    <div className="flex items-center gap-2 pt-2">
+      <span className="text-xs font-medium uppercase tracking-wider text-teal">{label}</span>
+      <span className="text-xs text-muted-foreground">· {count}</span>
+    </div>
+  );
+}
+
+function ApptCard({
+  a,
+  patients,
+  launch,
+  t,
+}: {
+  a: ReturnType<typeof HealthieService.appointmentsForClinician>[number];
+  patients: ReturnType<typeof HealthieService.listPatients>;
+  launch: (id: string) => void;
+  t: (k: never) => string;
+}) {
+  const p = patients.find((x) => x.id === a.patientId);
+  const isFuture = new Date(a.start).getTime() > Date.now();
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="flex items-start gap-3">
+          <div className="h-10 w-10 rounded-lg bg-navy/10 text-navy grid place-items-center">
+            <CalIcon className="h-5 w-5" />
+          </div>
+          <div>
+            <div className="font-medium text-navy">
+              {p?.firstName} {p?.lastName}
+            </div>
+            <div className="text-xs text-muted-foreground">
+              <ClientDate value={a.start} /> · {a.durationMin} min
+            </div>
+            <div className="mt-2 flex flex-wrap gap-1.5">
+              <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
+                {a.status.replace("_", " ")}
+              </Badge>
+              <Badge variant="outline" className="capitalize">
+                {(t as (k: string) => string)("clinBillingPrefix")}: {a.billingStatus}
+              </Badge>
+            </div>
+          </div>
+        </div>
+        <div className="flex gap-2">
+          {isFuture && a.status === "scheduled" && (
+            <Button
+              size="sm"
+              className="bg-teal text-teal-foreground hover:bg-teal/90"
+              onClick={() => launch(a.id)}
+            >
+              <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
+            </Button>
+          )}
+          {a.status === "scheduled" && !isFuture && (
+            <>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => HealthieService.updateAppointmentStatus(a.id, "attended")}
+              >
+                <CheckCircle2 className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinAttended")}
+              </Button>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => HealthieService.updateAppointmentStatus(a.id, "no_show")}
+              >
+                <XCircle className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinNoShow")}
+              </Button>
+            </>
+          )}
+        </div>
+      </div>
+    </Card>
+  );
+}
+
 function TrendPanel({ patientId }: { patientId: string }) {
   const { t } = useI18n();
   const patient = useHealthie(() => HealthieService.getPatient(patientId));
