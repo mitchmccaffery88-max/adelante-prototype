@@ -48,6 +48,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
     pronouns: "",
     preferredLanguage: "en" as PreferredLanguage,
     phone: "",
+    email: "",
     dob: "",
     releaseDate: "",
     contactChannel: "text" as ContactChannel,
@@ -67,6 +68,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
       pronouns: patient.pronouns ?? "",
       preferredLanguage: patient.preferredLanguage ?? "en",
       phone: patient.phone ?? "",
+      email: patient.email ?? "",
       dob: patient.dob ?? "",
       releaseDate: patient.releaseDate ?? "",
       contactChannel: patient.contactPrefs?.channel ?? "text",
@@ -88,6 +90,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
       pronouns: form.pronouns || undefined,
       preferredLanguage: form.preferredLanguage,
       phone: form.phone || undefined,
+      email: form.email || undefined,
       dob: form.dob || undefined,
       releaseDate: form.releaseDate || undefined,
       contactPrefs: { channel: form.contactChannel, bestTime: form.bestTime },
@@ -162,6 +165,13 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                 type="tel"
                 value={form.phone}
                 onChange={(e) => setForm({ ...form, phone: e.target.value })}
+              />
+            </Field>
+            <Field label="Email">
+              <Input
+                type="email"
+                value={form.email}
+                onChange={(e) => setForm({ ...form, email: e.target.value })}
               />
             </Field>
             <Field label="Preferred language">
