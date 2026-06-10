@@ -577,10 +577,110 @@ export const HealthieService = {
     emit();
   },
   bookAppointment(input: { patientId: string; clinicianId: string; start: string; durationMin: number }) {
+    // Validate against mock availability: reject if the slot is already taken.
+    const conflict = appointments.some(
+      (x) =>
+        x.clinicianId === input.clinicianId &&
+        x.status === "scheduled" &&
+        new Date(x.start).getTime() === new Date(input.start).getTime(),
+    );
+    if (conflict) {
+      throw new Error("That time was just taken. Please pick another slot.");
+    }
     const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
     appointments.push(a);
+    HealthieService.notifyAppointmentChange({
+      patientId: a.patientId,
+      apptId: a.id,
+      kind: "booked",
+    });
     emit();
     return a;
+  },
+  rescheduleAppointment(apptId: string, newStart: string) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) return;
+    const conflict = appointments.some(
+      (x) =>
+        x.id !== apptId &&
+        x.clinicianId === a.clinicianId &&
+        x.status === "scheduled" &&
+        new Date(x.start).getTime() === new Date(newStart).getTime(),
+    );
+    if (conflict) {
+      throw new Error("That time was just taken. Please pick another slot.");
+    }
+    a.start = newStart;
+    HealthieService.notifyAppointmentChange({
+      patientId: a.patientId,
+      apptId: a.id,
+      kind: "rescheduled",
+    });
+    emit();
+    return a;
+  },
+  // Mock Healthie `availabilities` query — seeded slots per clinician,
+  // Mon–Fri, three slots/day (10:00, 13:00, 15:30), with `taken` reflecting
+  // existing scheduled appointments.
+  getClinicianAvailability(clinicianId: string, days = 14): AvailabilitySlot[] {
+    const slots: AvailabilitySlot[] = [];
+    const base = new Date();
+    base.setHours(0, 0, 0, 0);
+    const hours = [10, 13, 15.5];
+    // Per-clinician day offset so the three clinicians don't show identical
+    // availability strips in the picker.
+    const offset =
+      clinicianId === "c1" ? 0 : clinicianId === "c2" ? 1 : 2;
+    for (let d = 1; d <= days + 7; d++) {
+      const day = new Date(base);
+      day.setDate(base.getDate() + d);
+      const dow = day.getDay();
+      if (dow === 0 || dow === 6) continue;
+      // Skip every Nth weekday per clinician to vary supply
+      if ((d + offset) % 4 === 0) continue;
+      for (const h of hours) {
+        const slot = new Date(day);
+        const hr = Math.floor(h);
+        const min = (h - hr) * 60;
+        slot.setHours(hr, min, 0, 0);
+        if (slot.getTime() < Date.now()) continue;
+        const iso = slot.toISOString();
+        const taken = appointments.some(
+          (x) =>
+            x.clinicianId === clinicianId &&
+            x.status === "scheduled" &&
+            new Date(x.start).getTime() === slot.getTime(),
+        );
+        slots.push({ start: iso, durationMin: 50, taken });
+      }
+    }
+    return slots;
+  },
+  notifyAppointmentChange(input: {
+    patientId: string;
+    apptId: string;
+    kind: ApptNotificationKind;
+  }) {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return;
+    const channels: CommsChannel[] = ["profile"];
+    if (HealthieService.isSmsOn(p.id) && p.phone) channels.push("sms");
+    if (p.email) channels.push("email");
+    p.notifications = [
+      {
+        id: uid(),
+        apptId: input.apptId,
+        kind: input.kind,
+        at: new Date().toISOString(),
+        channels,
+      },
+      ...(p.notifications ?? []),
+    ].slice(0, 20);
+    emit();
+  },
+  latestNotificationForAppt(patientId: string, apptId: string): ApptNotification | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    return p?.notifications?.find((n) => n.apptId === apptId);
   },
   updateAppointmentStatus(id: string, status: SessionStatus) {
     const a = appointments.find((x) => x.id === id);
