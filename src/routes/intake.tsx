@@ -282,8 +282,13 @@ function IntakePage() {
           </div>
         </div>
         <Progress value={pct} className="h-2" />
-        <div className="mt-1.5 text-xs text-muted-foreground">
-          Step {step + 1} of {total}
+        <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
+          <span>Step {step + 1} of {total}</span>
+          {savedAt && (
+            <span className="inline-flex items-center gap-1 text-teal">
+              <Save className="h-3 w-3" /> Saved
+            </span>
+          )}
         </div>
       </header>
 
@@ -300,6 +305,126 @@ function IntakePage() {
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete this with you by phone.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private and protected by federal law.</li>
             </ul>
+          </div>
+        )}
+
+        {current.key === "about" && (
+          <div className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              A few quick details so we can reach you the right way. You can
+              skip anything you're not ready to share.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Preferred name</Label>
+                <Input
+                  value={profile.preferredName}
+                  onChange={(e) => setProfile({ ...profile, preferredName: e.target.value })}
+                  placeholder="What should we call you?"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Pronouns (optional)</Label>
+                <Input
+                  value={profile.pronouns}
+                  onChange={(e) => setProfile({ ...profile, pronouns: e.target.value })}
+                  placeholder="she/her, he/him, they/them…"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Preferred language</Label>
+                <Select
+                  value={profile.preferredLanguage}
+                  onValueChange={(v) =>
+                    setProfile({ ...profile, preferredLanguage: v as PreferredLanguage })
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Phone</Label>
+                <Input
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  placeholder="+1 555 555 0123"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Best way to reach you</Label>
+                <Select
+                  value={profile.contactChannel}
+                  onValueChange={(v) =>
+                    setProfile({ ...profile, contactChannel: v as ContactChannel })
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="call">Phone call</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Best time to reach you</Label>
+                <Select
+                  value={profile.bestTime}
+                  onValueChange={(v) => setProfile({ ...profile, bestTime: v as BestTime })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm">Release date (if applicable)</Label>
+                <Input
+                  type="date"
+                  value={profile.releaseDate ? profile.releaseDate.slice(0, 10) : ""}
+                  onChange={(e) => setProfile({ ...profile, releaseDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm">Mailing or temporary address</Label>
+                <Input
+                  value={profile.address}
+                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                  placeholder="Street, city, state, zip"
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
+              <div className="text-sm font-medium text-navy">Emergency contact</div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <Input
+                  placeholder="Name"
+                  value={profile.emergencyName}
+                  onChange={(e) => setProfile({ ...profile, emergencyName: e.target.value })}
+                />
+                <Input
+                  placeholder="Relationship"
+                  value={profile.emergencyRelationship}
+                  onChange={(e) =>
+                    setProfile({ ...profile, emergencyRelationship: e.target.value })
+                  }
+                />
+                <Input
+                  type="tel"
+                  placeholder="Phone"
+                  value={profile.emergencyPhone}
+                  onChange={(e) => setProfile({ ...profile, emergencyPhone: e.target.value })}
+                />
+              </div>
+            </div>
           </div>
         )}
 
