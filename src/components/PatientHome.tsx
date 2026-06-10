@@ -24,6 +24,9 @@ import {
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
+import { PatientProfileDialog } from "@/components/PatientProfileDialog";
+import { useState } from "react";
+import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 
 const needMap: Record<string, string> = {
   housing: "needHousing",
@@ -243,6 +246,7 @@ export function PatientHome() {
       )}
 
       <TasksCard patientId={patient.id} />
+      <MyProfileCard patientId={patient.id} />
       <ConsentCard patientId={patient.id} />
 
       <div>
