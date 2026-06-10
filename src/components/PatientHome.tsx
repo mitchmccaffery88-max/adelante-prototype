@@ -364,6 +364,7 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
 }
 
 function TasksCard({ patientId }: { patientId: string }) {
+  // placeholder anchor
   const tasks = useHealthie(() => HealthieService.getPatient(patientId)?.tasks ?? []);
   const open = tasks.filter((t) => !t.completedAt);
   if (open.length === 0) return null;
