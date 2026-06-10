@@ -25,7 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, CheckCircle2, Phone, Heart, Save } from "lucide-react";
+import {
+  ShieldCheck,
+  Lock,
+  CheckCircle2,
+  Phone,
+  Heart,
+  Save,
+  Sparkles,
+  CalendarCheck,
+  HelpingHand,
+  Building2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
   head: () => ({
@@ -58,7 +69,8 @@ function IntakePage() {
     status: CoverageStatus;
     countyOfRelease: string;
     jiReentryFlag: boolean;
-  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false });
+    otherPlanName?: string;
+  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false, otherPlanName: "" });
   // P1 — About you
   const [profile, setProfile] = useState({
     preferredName: "",
@@ -203,6 +215,7 @@ function IntakePage() {
             : "not_found",
       countyOfRelease: coverage.countyOfRelease,
       jiReentryFlag: coverage.jiReentryFlag,
+      otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
     HealthieService.completeIntake(currentId, {
       needs,
