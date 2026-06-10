@@ -56,6 +56,7 @@ export interface Patient {
   lastName: string;
   dob: string;
   phone: string;
+  email?: string;
   releaseDate: string;
   enrolledAt: string;
   episodeDay: number; // day within 90-day window
@@ -64,7 +65,15 @@ export interface Patient {
   screeners: Record<string, ScreenerResult | undefined>;
   // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
   screenerHistory?: ScreenerResult[];
-  needs: { housing: boolean; food: boolean; employment: boolean; transport: boolean };
+  needs: {
+    housing: boolean;
+    food: boolean;
+    employment: boolean;
+    transport: boolean;
+    substanceUse?: boolean;
+    benefits?: boolean;
+    family?: boolean;
+  };
   carePlanSummary: string;
   intakeCompletedAt?: string;
   // Medi-Cal eligibility & coverage (§4d)
@@ -74,6 +83,7 @@ export interface Patient {
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
     ecmEligible?: boolean;
+    otherPlanName?: string;
     communitySupports?: {
       housing?: boolean;
       food?: boolean;
@@ -109,6 +119,8 @@ export interface Patient {
   address?: string;
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
+  // Appointment-related notifications (booked / rescheduled / cancelled).
+  notifications?: ApptNotification[];
 }
 
 export interface ScreenerResult {
@@ -200,6 +212,22 @@ export interface PatientTask {
   screenerKey?: string;
   createdAt: string;
   completedAt?: string;
+}
+
+export type ApptNotificationKind = "booked" | "rescheduled" | "cancelled" | "confirmed";
+export type CommsChannel = "profile" | "sms" | "email";
+export interface ApptNotification {
+  id: string;
+  apptId: string;
+  kind: ApptNotificationKind;
+  at: string;
+  channels: CommsChannel[];
+}
+
+export interface AvailabilitySlot {
+  start: string; // ISO
+  durationMin: number;
+  taken: boolean;
 }
 
 // ---------- mock store ----------
