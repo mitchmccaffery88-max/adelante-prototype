@@ -24,6 +24,9 @@ import {
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
+import { PatientProfileDialog } from "@/components/PatientProfileDialog";
+import { useState } from "react";
+import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 
 const needMap: Record<string, string> = {
   housing: "needHousing",
@@ -243,6 +246,7 @@ export function PatientHome() {
       )}
 
       <TasksCard patientId={patient.id} />
+      <MyProfileCard patientId={patient.id} />
       <ConsentCard patientId={patient.id} />
 
       <div>
@@ -392,6 +396,84 @@ function TasksCard({ patientId }: { patientId: string }) {
         ))}
       </ul>
     </Card>
+  );
+}
+
+function MyProfileCard({ patientId }: { patientId: string }) {
+  const patient = useHealthie(() => HealthieService.getPatient(patientId));
+  const [open, setOpen] = useState(false);
+  if (!patient) return null;
+  const channelLabel: Record<string, string> = {
+    text: "Text",
+    call: "Phone call",
+    video: "Video",
+  };
+  const timeLabel: Record<string, string> = {
+    morning: "Mornings",
+    afternoon: "Afternoons",
+    evening: "Evenings",
+  };
+  const langLabel: Record<string, string> = { en: "English", es: "Español" };
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+          <UserCog className="h-4 w-4" /> My profile
+        </div>
+        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+          Edit
+        </Button>
+      </div>
+      <dl className="mt-3 grid sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
+        <Row label="Name">
+          {patient.firstName} {patient.lastName}
+          {patient.preferredName ? (
+            <span className="text-muted-foreground"> · "{patient.preferredName}"</span>
+          ) : null}
+        </Row>
+        {patient.pronouns && <Row label="Pronouns">{patient.pronouns}</Row>}
+        <Row label="Phone">
+          {patient.phone ? (
+            <span className="inline-flex items-center gap-1.5">
+              <PhoneIcon className="h-3.5 w-3.5 text-muted-foreground" /> {patient.phone}
+            </span>
+          ) : (
+            <span className="text-muted-foreground">Not on file</span>
+          )}
+        </Row>
+        <Row label="Language">
+          <span className="inline-flex items-center gap-1.5">
+            <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
+            {langLabel[patient.preferredLanguage ?? "en"]}
+          </span>
+        </Row>
+        {patient.contactPrefs && (
+          <Row label="Contact">
+            {channelLabel[patient.contactPrefs.channel]} · {timeLabel[patient.contactPrefs.bestTime]}
+          </Row>
+        )}
+        {patient.address && <Row label="Address">{patient.address}</Row>}
+        {patient.emergencyContact?.name && (
+          <Row label="Emergency">
+            {patient.emergencyContact.name}
+            {patient.emergencyContact.relationship
+              ? ` (${patient.emergencyContact.relationship})`
+              : ""}
+            {patient.emergencyContact.phone ? ` · ${patient.emergencyContact.phone}` : ""}
+          </Row>
+        )}
+      </dl>
+      <PatientProfileDialog patientId={patientId} open={open} onOpenChange={setOpen} />
+    </Card>
+  );
+}
+
+function Row({ label, children }: { label: string; children: React.ReactNode }) {
+  return (
+    <div className="flex items-baseline gap-2">
+      <dt className="text-xs text-muted-foreground w-24 shrink-0">{label}</dt>
+      <dd className="text-foreground">{children}</dd>
+    </div>
   );
 }
 

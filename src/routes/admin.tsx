@@ -22,6 +22,7 @@ import {
 import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
+import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -39,6 +40,7 @@ function AdminPage() {
   const patients = useHealthie(() => HealthieService.listPatients());
   const referrals = useHealthie(() => HealthieService.listReferrals());
   const consentEvents = useHealthie(() => HealthieService.listAllConsentEvents());
+  const [openPatientId, setOpenPatientId] = useState<string | null>(null);
   const verifiedPct = Math.round(
     (patients.filter((p) => p.coverage?.verified === "verified").length /
       Math.max(patients.length, 1)) *
@@ -159,7 +161,11 @@ function AdminPage() {
             </TableHeader>
             <TableBody>
               {filteredPatients.map((p) => (
-                <TableRow key={p.id}>
+                <TableRow
+                  key={p.id}
+                  className="cursor-pointer hover:bg-secondary/40"
+                  onClick={() => setOpenPatientId(p.id)}
+                >
                   <TableCell className="font-mono text-xs text-navy">{p.programId}</TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
@@ -200,8 +206,8 @@ function AdminPage() {
             </TableBody>
           </Table>
           <p className="mt-3 text-xs text-muted-foreground">
-            No names, diagnoses, or care-plan narrative shown here. Clinical
-            detail lives only in Case Manager and Clinician workspaces.
+            Click a row to open the patient profile. No names, diagnoses, or care-plan narrative shown
+            in the table — clinical detail lives only in Case Manager and Clinician workspaces.
           </p>
         </Card>
 
@@ -232,6 +238,12 @@ function AdminPage() {
           </Card>
         </div>
       </div>
+      <PatientProfileDialog
+        patientId={openPatientId}
+        open={openPatientId !== null}
+        onOpenChange={(o) => !o && setOpenPatientId(null)}
+        showAdminMeta
+      />
     </div>
   );
 }
@@ -297,6 +309,14 @@ function ReferralTrackerCard({
                 ⚑ Manual outreach queued (no SMS)
               </div>
             ) : null}
+            {r.enrolledPatientId && (() => {
+              const enrolled = HealthieService.getPatient(r.enrolledPatientId);
+              return enrolled ? (
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Enrolled as <span className="font-mono text-navy">{enrolled.programId}</span>
+                </div>
+              ) : null;
+            })()}
           </div>
         ))}
       </div>

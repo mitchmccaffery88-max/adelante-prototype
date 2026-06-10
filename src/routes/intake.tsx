@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,7 +12,11 @@ import {
   HealthieService,
   useHealthie,
   type CoverageStatus,
+  type ContactChannel,
+  type BestTime,
+  type PreferredLanguage,
 } from "@/lib/healthie";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, CheckCircle2, Phone, AlertTriangle, Heart } from "lucide-react";
+import { ShieldCheck, Lock, CheckCircle2, Phone, Heart, Save } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
   head: () => ({
@@ -55,6 +59,79 @@ function IntakePage() {
     countyOfRelease: string;
     jiReentryFlag: boolean;
   }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false });
+  // P1 — About you
+  const [profile, setProfile] = useState({
+    preferredName: "",
+    pronouns: "",
+    preferredLanguage: "en" as PreferredLanguage,
+    phone: "",
+    contactChannel: "text" as ContactChannel,
+    bestTime: "morning" as BestTime,
+    emergencyName: "",
+    emergencyRelationship: "",
+    emergencyPhone: "",
+    address: "",
+    releaseDate: "",
+  });
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  // Seed profile defaults from the patient row, once.
+  useEffect(() => {
+    if (!patient) return;
+    setProfile((prev) => ({
+      ...prev,
+      preferredName: patient.preferredName ?? prev.preferredName,
+      pronouns: patient.pronouns ?? prev.pronouns,
+      preferredLanguage: patient.preferredLanguage ?? prev.preferredLanguage,
+      phone: patient.phone || prev.phone,
+      contactChannel: patient.contactPrefs?.channel ?? prev.contactChannel,
+      bestTime: patient.contactPrefs?.bestTime ?? prev.bestTime,
+      emergencyName: patient.emergencyContact?.name ?? prev.emergencyName,
+      emergencyRelationship: patient.emergencyContact?.relationship ?? prev.emergencyRelationship,
+      emergencyPhone: patient.emergencyContact?.phone ?? prev.emergencyPhone,
+      address: patient.address ?? prev.address,
+      releaseDate: patient.releaseDate || prev.releaseDate,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId]);
+
+  // P5 — save-and-resume to localStorage keyed by patient id.
+  const storageKey = currentId ? `adelante.intake.${currentId}` : "";
+  // Rehydrate on mount.
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved.step != null) setStep(saved.step);
+      if (saved.sudConsent !== undefined) setSudConsent(saved.sudConsent);
+      if (saved.hipaaConsent != null) setHipaaConsent(saved.hipaaConsent);
+      if (saved.answers) setAnswers(saved.answers);
+      if (saved.needs) setNeeds(saved.needs);
+      if (saved.coverage) setCoverage(saved.coverage);
+      if (saved.profile) setProfile((p) => ({ ...p, ...saved.profile }));
+      if (saved.savedAt) setSavedAt(saved.savedAt);
+    } catch {
+      /* no-op */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+  // Persist on every meaningful change.
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const at = new Date().toISOString();
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ step, sudConsent, hipaaConsent, answers, needs, coverage, profile, savedAt: at }),
+      );
+      setSavedAt(at);
+    } catch {
+      /* no-op */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, profile]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -68,6 +145,7 @@ function IntakePage() {
   const steps = useMemo(
     () => [
       { key: "welcome", label: "Welcome" },
+      { key: "about", label: "About you" },
       { key: "consent", label: "Consent" },
       { key: "coverage", label: "Medi-Cal" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
@@ -84,6 +162,23 @@ function IntakePage() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = () => {
+    // P1 — persist the About-you patch first.
+    HealthieService.updateProfile(currentId, {
+      preferredName: profile.preferredName || undefined,
+      pronouns: profile.pronouns || undefined,
+      preferredLanguage: profile.preferredLanguage,
+      phone: profile.phone || undefined,
+      releaseDate: profile.releaseDate || undefined,
+      contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
+      emergencyContact: profile.emergencyName
+        ? {
+            name: profile.emergencyName,
+            relationship: profile.emergencyRelationship,
+            phone: profile.emergencyPhone,
+          }
+        : undefined,
+      address: profile.address || undefined,
+    });
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
@@ -120,6 +215,11 @@ function IntakePage() {
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
     });
+    try {
+      if (storageKey) localStorage.removeItem(storageKey);
+    } catch {
+      /* no-op */
+    }
     navigate({ to: "/home" });
   };
 
@@ -182,8 +282,13 @@ function IntakePage() {
           </div>
         </div>
         <Progress value={pct} className="h-2" />
-        <div className="mt-1.5 text-xs text-muted-foreground">
-          Step {step + 1} of {total}
+        <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
+          <span>Step {step + 1} of {total}</span>
+          {savedAt && (
+            <span className="inline-flex items-center gap-1 text-teal">
+              <Save className="h-3 w-3" /> Saved
+            </span>
+          )}
         </div>
       </header>
 
@@ -200,6 +305,126 @@ function IntakePage() {
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete this with you by phone.</li>
               <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private and protected by federal law.</li>
             </ul>
+          </div>
+        )}
+
+        {current.key === "about" && (
+          <div className="space-y-5">
+            <p className="text-sm text-muted-foreground">
+              A few quick details so we can reach you the right way. You can
+              skip anything you're not ready to share.
+            </p>
+            <div className="grid sm:grid-cols-2 gap-3">
+              <div className="space-y-1.5">
+                <Label className="text-sm">Preferred name</Label>
+                <Input
+                  value={profile.preferredName}
+                  onChange={(e) => setProfile({ ...profile, preferredName: e.target.value })}
+                  placeholder="What should we call you?"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Pronouns (optional)</Label>
+                <Input
+                  value={profile.pronouns}
+                  onChange={(e) => setProfile({ ...profile, pronouns: e.target.value })}
+                  placeholder="she/her, he/him, they/them…"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Preferred language</Label>
+                <Select
+                  value={profile.preferredLanguage}
+                  onValueChange={(v) =>
+                    setProfile({ ...profile, preferredLanguage: v as PreferredLanguage })
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="en">English</SelectItem>
+                    <SelectItem value="es">Español</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Phone</Label>
+                <Input
+                  type="tel"
+                  value={profile.phone}
+                  onChange={(e) => setProfile({ ...profile, phone: e.target.value })}
+                  placeholder="+1 555 555 0123"
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Best way to reach you</Label>
+                <Select
+                  value={profile.contactChannel}
+                  onValueChange={(v) =>
+                    setProfile({ ...profile, contactChannel: v as ContactChannel })
+                  }
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="text">Text</SelectItem>
+                    <SelectItem value="call">Phone call</SelectItem>
+                    <SelectItem value="video">Video</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Best time to reach you</Label>
+                <Select
+                  value={profile.bestTime}
+                  onValueChange={(v) => setProfile({ ...profile, bestTime: v as BestTime })}
+                >
+                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="morning">Morning</SelectItem>
+                    <SelectItem value="afternoon">Afternoon</SelectItem>
+                    <SelectItem value="evening">Evening</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm">Release date (if applicable)</Label>
+                <Input
+                  type="date"
+                  value={profile.releaseDate ? profile.releaseDate.slice(0, 10) : ""}
+                  onChange={(e) => setProfile({ ...profile, releaseDate: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5 sm:col-span-2">
+                <Label className="text-sm">Mailing or temporary address</Label>
+                <Input
+                  value={profile.address}
+                  onChange={(e) => setProfile({ ...profile, address: e.target.value })}
+                  placeholder="Street, city, state, zip"
+                />
+              </div>
+            </div>
+            <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
+              <div className="text-sm font-medium text-navy">Emergency contact</div>
+              <div className="grid sm:grid-cols-3 gap-3">
+                <Input
+                  placeholder="Name"
+                  value={profile.emergencyName}
+                  onChange={(e) => setProfile({ ...profile, emergencyName: e.target.value })}
+                />
+                <Input
+                  placeholder="Relationship"
+                  value={profile.emergencyRelationship}
+                  onChange={(e) =>
+                    setProfile({ ...profile, emergencyRelationship: e.target.value })
+                  }
+                />
+                <Input
+                  type="tel"
+                  placeholder="Phone"
+                  value={profile.emergencyPhone}
+                  onChange={(e) => setProfile({ ...profile, emergencyPhone: e.target.value })}
+                />
+              </div>
+            </div>
           </div>
         )}
 
