@@ -21,6 +21,18 @@ import {
   Lock,
   Bell,
 } from "lucide-react";
+import {
+  Home,
+  Utensils,
+  Activity,
+  Briefcase,
+  FileText,
+  Users,
+  Car,
+  CalendarClock,
+  MessageSquare,
+  Mail,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
@@ -28,13 +40,20 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 
-const needMap: Record<string, string> = {
-  housing: "needHousing",
-  substanceUse: "needSubstanceUse",
-  employment: "needEmployment",
-  benefits: "needBenefits",
-  family: "needFamily",
-  transportation: "needTransportation",
+// Reconcile every Patient.needs key with both a translation key and an icon
+// so a true value never renders as a blank chip. Unknown keys are filtered
+// out defensively in the render below.
+const needMeta: Record<
+  string,
+  { tKey: string; Icon: typeof Home }
+> = {
+  housing: { tKey: "needHousing", Icon: Home },
+  food: { tKey: "needFood", Icon: Utensils },
+  substanceUse: { tKey: "needSubstanceUse", Icon: Activity },
+  employment: { tKey: "needEmployment", Icon: Briefcase },
+  benefits: { tKey: "needBenefits", Icon: FileText },
+  family: { tKey: "needFamily", Icon: Users },
+  transport: { tKey: "needTransport", Icon: Car },
 };
 
 const statusMap: Record<string, string> = {
