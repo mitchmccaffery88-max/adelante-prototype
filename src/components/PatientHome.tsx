@@ -163,6 +163,7 @@ export function PatientHome() {
               <div className="text-sm text-muted-foreground">
                 {HealthieService.getClinician(next.clinicianId)?.name} · {next.durationMin} {t("homeMin")} · {t("homeVideo")}
               </div>
+              <NotificationLine patientId={patient.id} apptId={next.id} />
               <Button
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
                 onClick={() =>
@@ -188,16 +189,18 @@ export function PatientHome() {
             </>
           )}
           {next && (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="mt-2 w-full"
-            >
-              <Link to="/schedule">
-                <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("homeBookAnother")}
-              </Link>
-            </Button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/schedule" search={{ reschedule: next.id }}>
+                  <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/schedule">
+                  <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("homeBookAnother")}
+                </Link>
+              </Button>
+            </div>
           )}
         </Card>
 
