@@ -309,6 +309,14 @@ function ReferralTrackerCard({
                 ⚑ Manual outreach queued (no SMS)
               </div>
             ) : null}
+            {r.enrolledPatientId && (() => {
+              const enrolled = HealthieService.getPatient(r.enrolledPatientId);
+              return enrolled ? (
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Enrolled as <span className="font-mono text-navy">{enrolled.programId}</span>
+                </div>
+              ) : null;
+            })()}
           </div>
         ))}
       </div>
