@@ -1,5 +1,5 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -12,7 +12,11 @@ import {
   HealthieService,
   useHealthie,
   type CoverageStatus,
+  type ContactChannel,
+  type BestTime,
+  type PreferredLanguage,
 } from "@/lib/healthie";
+import { Input } from "@/components/ui/input";
 import {
   Select,
   SelectContent,
@@ -21,7 +25,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, CheckCircle2, Phone, AlertTriangle, Heart } from "lucide-react";
+import { ShieldCheck, Lock, CheckCircle2, Phone, Heart, Save } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
   head: () => ({
@@ -55,6 +59,79 @@ function IntakePage() {
     countyOfRelease: string;
     jiReentryFlag: boolean;
   }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false });
+  // P1 — About you
+  const [profile, setProfile] = useState({
+    preferredName: "",
+    pronouns: "",
+    preferredLanguage: "en" as PreferredLanguage,
+    phone: "",
+    contactChannel: "text" as ContactChannel,
+    bestTime: "morning" as BestTime,
+    emergencyName: "",
+    emergencyRelationship: "",
+    emergencyPhone: "",
+    address: "",
+    releaseDate: "",
+  });
+  const [savedAt, setSavedAt] = useState<string | null>(null);
+
+  // Seed profile defaults from the patient row, once.
+  useEffect(() => {
+    if (!patient) return;
+    setProfile((prev) => ({
+      ...prev,
+      preferredName: patient.preferredName ?? prev.preferredName,
+      pronouns: patient.pronouns ?? prev.pronouns,
+      preferredLanguage: patient.preferredLanguage ?? prev.preferredLanguage,
+      phone: patient.phone || prev.phone,
+      contactChannel: patient.contactPrefs?.channel ?? prev.contactChannel,
+      bestTime: patient.contactPrefs?.bestTime ?? prev.bestTime,
+      emergencyName: patient.emergencyContact?.name ?? prev.emergencyName,
+      emergencyRelationship: patient.emergencyContact?.relationship ?? prev.emergencyRelationship,
+      emergencyPhone: patient.emergencyContact?.phone ?? prev.emergencyPhone,
+      address: patient.address ?? prev.address,
+      releaseDate: patient.releaseDate || prev.releaseDate,
+    }));
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [currentId]);
+
+  // P5 — save-and-resume to localStorage keyed by patient id.
+  const storageKey = currentId ? `adelante.intake.${currentId}` : "";
+  // Rehydrate on mount.
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const raw = localStorage.getItem(storageKey);
+      if (!raw) return;
+      const saved = JSON.parse(raw);
+      if (saved.step != null) setStep(saved.step);
+      if (saved.sudConsent !== undefined) setSudConsent(saved.sudConsent);
+      if (saved.hipaaConsent != null) setHipaaConsent(saved.hipaaConsent);
+      if (saved.answers) setAnswers(saved.answers);
+      if (saved.needs) setNeeds(saved.needs);
+      if (saved.coverage) setCoverage(saved.coverage);
+      if (saved.profile) setProfile((p) => ({ ...p, ...saved.profile }));
+      if (saved.savedAt) setSavedAt(saved.savedAt);
+    } catch {
+      /* no-op */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [storageKey]);
+  // Persist on every meaningful change.
+  useEffect(() => {
+    if (!storageKey) return;
+    try {
+      const at = new Date().toISOString();
+      localStorage.setItem(
+        storageKey,
+        JSON.stringify({ step, sudConsent, hipaaConsent, answers, needs, coverage, profile, savedAt: at }),
+      );
+      setSavedAt(at);
+    } catch {
+      /* no-op */
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, profile]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -68,6 +145,7 @@ function IntakePage() {
   const steps = useMemo(
     () => [
       { key: "welcome", label: "Welcome" },
+      { key: "about", label: "About you" },
       { key: "consent", label: "Consent" },
       { key: "coverage", label: "Medi-Cal" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
@@ -84,6 +162,23 @@ function IntakePage() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = () => {
+    // P1 — persist the About-you patch first.
+    HealthieService.updateProfile(currentId, {
+      preferredName: profile.preferredName || undefined,
+      pronouns: profile.pronouns || undefined,
+      preferredLanguage: profile.preferredLanguage,
+      phone: profile.phone || undefined,
+      releaseDate: profile.releaseDate || undefined,
+      contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
+      emergencyContact: profile.emergencyName
+        ? {
+            name: profile.emergencyName,
+            relationship: profile.emergencyRelationship,
+            phone: profile.emergencyPhone,
+          }
+        : undefined,
+      address: profile.address || undefined,
+    });
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
@@ -120,6 +215,11 @@ function IntakePage() {
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
     });
+    try {
+      if (storageKey) localStorage.removeItem(storageKey);
+    } catch {
+      /* no-op */
+    }
     navigate({ to: "/home" });
   };
 
