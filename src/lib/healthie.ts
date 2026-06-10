@@ -532,7 +532,20 @@ export const HealthieService = {
   advanceReferral(id: string) {
     const r = referrals.find((x) => x.id === id);
     if (!r) return;
-    r.status = r.status === "submitted" ? "contacted" : r.status === "contacted" ? "enrolled" : r.status;
+    const nextStatus: ReferralStatus =
+      r.status === "submitted" ? "contacted" : r.status === "contacted" ? "enrolled" : r.status;
+    r.status = nextStatus;
+    // P4 — materialize a Patient row the moment a referral flips to enrolled.
+    if (nextStatus === "enrolled" && !r.enrolledPatientId) {
+      const p = HealthieService.createPatient({
+        firstName: r.firstName,
+        lastName: r.lastName,
+        dob: r.dob,
+        phone: r.phone,
+        referralId: r.id,
+      });
+      r.enrolledPatientId = p.id;
+    }
     emit();
   },
   bookAppointment(input: { patientId: string; clinicianId: string; start: string; durationMin: number }) {
