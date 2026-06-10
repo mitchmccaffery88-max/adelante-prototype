@@ -278,7 +278,6 @@ export function PatientHome() {
 
       <TasksCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
-      <ConsentCard patientId={patient.id} />
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
@@ -328,6 +327,9 @@ export function PatientHome() {
           )}
         </div>
       </div>
+
+      {/* Privacy & Consent — moved to bottom so it sits beneath upcoming/history */}
+      <ConsentCard patientId={patient.id} />
     </div>
   );
 }
