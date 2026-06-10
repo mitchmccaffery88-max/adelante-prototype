@@ -499,6 +499,30 @@ function MyProfileCard({ patientId }: { patientId: string }) {
   );
 }
 
+function NotificationLine({ patientId, apptId }: { patientId: string; apptId: string }) {
+  const note = useHealthie(() =>
+    HealthieService.latestNotificationForAppt(patientId, apptId),
+  );
+  if (!note) return null;
+  const verb =
+    note.kind === "booked"
+      ? "Booked"
+      : note.kind === "rescheduled"
+        ? "Rescheduled"
+        : note.kind === "cancelled"
+          ? "Cancelled"
+          : "Confirmed";
+  const chans = note.channels
+    .map((c) => (c === "profile" ? "profile" : c === "sms" ? "text" : "email"))
+    .join(" + ");
+  return (
+    <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal">
+      <CheckCircle2 className="h-3 w-3" />
+      {verb} · notified via {chans}
+    </div>
+  );
+}
+
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <div className="flex items-baseline gap-2">
