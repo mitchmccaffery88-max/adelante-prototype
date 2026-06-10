@@ -13,6 +13,20 @@ export type ReferralSource =
   | "self"
   | "other";
 
+export type ContactChannel = "text" | "call" | "video";
+export type BestTime = "morning" | "afternoon" | "evening";
+export type PreferredLanguage = "en" | "es";
+
+export interface ContactPrefs {
+  channel: ContactChannel;
+  bestTime: BestTime;
+}
+export interface EmergencyContact {
+  name: string;
+  relationship: string;
+  phone: string;
+}
+
 export interface Referral {
   id: string;
   firstName: string;
@@ -32,6 +46,8 @@ export interface Referral {
   createdAt: string;
   smsSentAt?: string;
   outreachTask?: "manual_call";
+  // Set when advanceReferral → "enrolled" materializes a Patient row.
+  enrolledPatientId?: string;
 }
 
 export interface Patient {
@@ -84,6 +100,15 @@ export interface Patient {
   consentEvents?: ConsentEvent[];
   // Patient-facing re-screen tasks created from clinician/case-manager workspaces
   tasks?: PatientTask[];
+  // P1 — profile / contact preferences captured at signup + intake "About you"
+  preferredName?: string;
+  pronouns?: string;
+  preferredLanguage?: PreferredLanguage;
+  contactPrefs?: ContactPrefs;
+  emergencyContact?: EmergencyContact;
+  address?: string;
+  // Link back to the referral that enrolled this patient, if any.
+  referralId?: string;
 }
 
 export interface ScreenerResult {
