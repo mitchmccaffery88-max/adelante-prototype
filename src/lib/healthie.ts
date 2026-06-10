@@ -489,6 +489,7 @@ export const HealthieService = {
         | "pronouns"
         | "preferredLanguage"
         | "phone"
+        | "email"
         | "dob"
         | "releaseDate"
         | "contactPrefs"
