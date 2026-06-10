@@ -248,6 +248,7 @@ const patients: Patient[] = [
     lastName: "M.",
     dob: "1989-04-12",
     phone: "+15595550101",
+    email: "daniel.m@example.com",
     releaseDate: "2026-05-10",
     enrolledAt: "2026-05-12",
     episodeDay: 23,
@@ -257,7 +258,7 @@ const patients: Patient[] = [
       "phq-9": { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-05-12" },
       "gad-7": { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-05-12" },
     },
-    needs: { housing: true, food: false, employment: true, transport: true },
+    needs: { housing: true, food: false, employment: true, transport: true, family: true },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
     intakeCompletedAt: "2026-05-12",
     coverage: {
@@ -333,7 +334,7 @@ const patients: Patient[] = [
       "phq-9": { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-04-05" },
       "audit": { key: "audit", score: 16, severity: "High risk", completedAt: "2026-04-05" },
     },
-    needs: { housing: true, food: true, employment: true, transport: true },
+    needs: { housing: true, food: true, employment: true, transport: true, substanceUse: true, benefits: true },
     carePlanSummary: "Co-occurring SUD + depression; weekly sessions + peer support.",
     intakeCompletedAt: "2026-04-05",
     coverage: {
