@@ -415,6 +415,65 @@ export const HealthieService = {
     currentPatientId = id;
     emit();
   },
+  // P0 — create a new patient from signup. Minimal seed; intake fills the rest.
+  createPatient(input: {
+    firstName: string;
+    lastName: string;
+    dob?: string;
+    phone?: string;
+    preferredLanguage?: PreferredLanguage;
+    referralId?: string;
+  }): Patient {
+    const id = uid();
+    const seq = String(patients.length + 1).padStart(3, "0");
+    const now = new Date().toISOString();
+    const p: Patient = {
+      id,
+      programId: `ADL-${new Date().getFullYear()}-${seq}`,
+      firstName: input.firstName,
+      lastName: input.lastName,
+      dob: input.dob ?? "",
+      phone: input.phone ?? "",
+      releaseDate: "",
+      enrolledAt: now,
+      episodeDay: 1,
+      smsFallback: Boolean(input.phone),
+      consents: { hipaa: false, part2Sud: false },
+      screeners: {},
+      needs: { housing: false, food: false, employment: false, transport: false },
+      carePlanSummary: "Care plan will appear here after intake.",
+      preferredLanguage: input.preferredLanguage,
+      referralId: input.referralId,
+    };
+    patients.push(p);
+    emit();
+    return p;
+  },
+  // P1 — patch identity / contact-prefs fields.
+  updateProfile(
+    patientId: string,
+    patch: Partial<
+      Pick<
+        Patient,
+        | "firstName"
+        | "lastName"
+        | "preferredName"
+        | "pronouns"
+        | "preferredLanguage"
+        | "phone"
+        | "dob"
+        | "releaseDate"
+        | "contactPrefs"
+        | "emergencyContact"
+        | "address"
+      >
+    >,
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    Object.assign(p, patch);
+    emit();
+  },
   completeIntake(
     patientId: string,
     payload: {
