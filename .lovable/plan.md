@@ -1,116 +1,94 @@
 
-# Get-Started & Profile Audit — Lean MVP
+# Profile, Scheduling & Care Plan Polish
 
-Storage decision (confirmed): keep the in-memory `HealthieService` mock. No Cloud / DB this pass. All profile data lives in `src/lib/healthie.ts` and persists via existing `localStorage` session keys only for "which patient am I."
-
----
-
-## Findings — current state
-
-### 1. Signup is fake
-`src/routes/auth.tsx` toggles a "Sign in / Sign up" label but both paths just pick from three pre-seeded personas (`p1/p2/p3`) and call `setCurrentPatientId`. No form fields are collected. `mode === "signup"` is dead UI.
-
-### 2. No identity is ever captured by the user
-A `Patient` row already contains `firstName, lastName, dob, phone, releaseDate, enrolledAt, episodeDay, programId` before the user touches the app. Intake assumes the row exists. There is no step where the user (or a case manager doing assisted intake) types their own name, DOB, phone, preferred name, language, contact channel, or emergency contact.
-
-### 3. Intake gaps
-`src/routes/intake.tsx` steps: welcome → consent (HIPAA + Part 2) → coverage (Medi-Cal) → screeners → needs → review. Missing for a real first-time flow:
-- Preferred name / pronouns
-- Preferred language (UI has i18n but intake never asks)
-- Preferred contact channel + best time to reach
-- Emergency contact (name + phone + relationship)
-- Mailing/temporary address (housing stability also depends on this)
-- Confirm/update release date and phone (currently seeded)
-- Save-and-resume affordance (intake state is in-memory only; refresh wipes it even though `alreadyComplete` UI implies persistence)
-
-### 4. No profile surface for patients
-`PatientHome` has Welcome, Next session, Care plan, Goals, Tasks, Consents. There is no "My profile" card or route where the patient can see/update phone, language, contact prefs, emergency contact, or address. Consents (`ConsentCard`) are the only editable identity-adjacent thing.
-
-### 5. No profile surface for staff
-- `admin.tsx` has KPIs, filterable caseload table, CSV export, referral tracker, consent audit — but no per-patient drill-down. You cannot click a row to see/edit a patient.
-- `case-manager.tsx` shows caseload + last-contact + check-ins + resource referrals — also no patient detail / edit screen.
-- `clinician.tsx` has Schedule / Care Plan / Notes / Tracking — also no demographics view.
-Result: nowhere in the app can staff correct a phone number, language, or emergency contact.
-
-### 6. Referral → patient bridge is missing
-`HealthieService.createReferral` writes to the `referrals` array and (per recent work) either flags `smsSentAt` or queues `outreachTask: "manual_call"`. `advanceReferral` flips status to `enrolled` but **never creates a Patient row** from the referral. So the intended flow (partner refers → SMS welcome → person signs up → intake) terminates before the new patient ever lands in `listPatients()`.
-
-### 7. AppShell persona switcher leaks the demo
-`AppShell.tsx` exposes `setCurrentPatientId` as a top-level persona dropdown. Fine for demos, but it sits next to the "real" auth flow with no separation, which makes the auth page feel meaningless.
-
-### 8. Where profile data lives (answer to the literal question)
-- Source of truth: the `patients: Patient[]` array in `src/lib/healthie.ts` (in-memory, lost on reload).
-- Per-user "session": `localStorage["adelante.session"] = { patientId, email }` written by `auth.tsx`. Only the chosen patient id survives reload; field edits do not.
-- No write-through, no migration, no schema. This is correct for the mock decision but must be called out in any demo: **edits are ephemeral**.
+Five focused fixes, all mock-storage (no Cloud). Each is independently shippable.
 
 ---
 
-## Ranked fix plan (mock-only, no Cloud)
+## 1. Medi-Cal intake — make status messaging unmissable
 
-Each bucket is independent and independently testable in the preview. No new deps, no routes added except where called out.
+**Problem:** In `intake.tsx` (coverage step), the four status options each have unique downstream meaning, but only "suspended" and "none_unsure" show a tiny grey helper line. "active" and "other" show nothing. The signal is easy to miss.
 
-### P0 — Make signup real (so intake has somebody to talk about)
-**Files:** `src/routes/auth.tsx`, `src/lib/healthie.ts`, `src/lib/i18n.tsx`
-- Add `HealthieService.createPatient(input)` that seeds a minimal Patient (id, programId auto, `firstName, lastName, dob, phone, preferredLanguage`, empty consents/needs/screeners, `enrolledAt = now`, `episodeDay = 1`) and sets it current.
-- Split `auth.tsx` into two real modes:
-  - **Sign in**: keep persona picker, label it "Demo accounts" with a small "for the pilot demo" caption.
-  - **Sign up**: form with First name, Last name, DOB, Phone, Preferred language (en/es). On submit → `createPatient` → navigate to `/home` → `FirstTimeWelcome` → "Start intake."
-- Persist `adelante.session` with the new id so reload still lands on the new patient (data still ephemeral; surface a one-line "Demo: data resets on reload" note on the welcome card).
-
-### P1 — Add demographics + contact prefs step to intake
-**Files:** `src/routes/intake.tsx`, `src/lib/healthie.ts`, `src/lib/i18n.tsx`
-- New step inserted between Welcome and Consent: **About you**.
-  - Confirm/edit: preferred name, pronouns (optional), preferred language, phone, best time to reach (morning/afternoon/evening), preferred channel (text / call / video).
-  - Emergency contact: name, relationship, phone.
-  - Mailing or temporary address (free-text, single line; we are not doing address validation).
-- Extend `Patient` with `preferredName?`, `pronouns?`, `preferredLanguage`, `contactPrefs: { channel, bestTime }`, `emergencyContact?: { name, relationship, phone }`, `address?: string`.
-- `HealthieService.updateProfile(patientId, patch)` for partial writes; call from this step and from the new profile surfaces below.
-
-### P2 — Patient-facing "My profile" card
-**File:** `src/components/PatientHome.tsx`
-- New collapsible Card under `ConsentCard`: shows the fields from P1 with an Edit button that flips to inline form, calls `updateProfile`, toasts success.
-- Keep consent management where it is — profile card is identity/contact only.
-
-### P3 — Staff profile drill-down (admin + case manager)
-**Files:** `src/routes/admin.tsx`, `src/routes/case-manager.tsx`
-- Make the patient row in each caseload table open a `Dialog` (shadcn) with: demographics, contact prefs, emergency contact, address, coverage, consents (read-only summary), screener latest. Save calls `updateProfile`.
-- Admin dialog also shows the program id + audit trail filtered to that patient (already have `consentEvents`).
-- No new route; the Dialog is the lightweight drill-down.
-
-### P4 — Wire referral → patient
-**File:** `src/lib/healthie.ts`, `src/routes/admin.tsx`
-- When `advanceReferral` transitions to `enrolled`, call `createPatient` with the referral's name/dob/phone and link `patient.referralId = referral.id`.
-- In the admin referral tracker, show the resulting program id in the enrolled row.
-- This closes the loop tested in the earlier referral-to-welcome-SMS fallback work: referral → SMS or manual task → enroll → patient exists → first-time `FirstTimeWelcome` → intake.
-
-### P5 — Save-and-resume polish for intake
-**File:** `src/routes/intake.tsx`
-- Persist intake-in-progress to `localStorage["adelante.intake." + patientId]` on every step change; rehydrate on mount.
-- Clear on submit. Add a small "Saved" indicator next to the progress bar.
-- This makes the existing `alreadyComplete` UI honest and supports the assisted-by-phone flow that already exists in `mode`.
-
-### P6 — Separate demo persona switch from auth
-**File:** `src/components/AppShell.tsx`
-- Hide the persona dropdown behind a small "Demo" affordance (e.g. footer chip that opens a small popover), not the main shell row.
-- Removes the visual collision with the new signup form.
+**Fix in `src/routes/intake.tsx` (coverage step only):**
+- Replace the grey `text-xs text-muted-foreground` helper with a **status callout card** that always renders below the Select — color-coded and iconified per status:
+  - `active` → green/teal "You're all set" card: "Your visits are free. We'll verify your Medi-Cal ID with the county — no action needed from you."
+  - `suspended` → gold/amber "Auto-reactivating" card: "Your Medi-Cal turns back on automatically when you come home (CalAIM §1945). A case manager will confirm with {county} County within 5 business days."
+  - `none_unsure` → navy "We'll help you apply" card: "A case manager will start a BenefitsCal application with you. Most reentry adults qualify. Coverage is usually active within 10 days."
+  - `other` → neutral card with a small input: "Plan name (optional)" + "We'll bill your plan. If they don't cover it, your visits stay free under our reentry program."
+- Promote the County field above the status callout (county is what drives the message for `suspended`), and interpolate it into the callout text.
+- Add matching i18n keys (`intakeCoverageActive*`, `intakeCoverageSuspended*`, `intakeCoverageNone*`, `intakeCoverageOther*`) to `src/lib/i18n.tsx` for EN + ES.
+- No schema change — `coverage.status` already exists.
 
 ---
 
-## Suggested execution order
+## 2. Scheduling — bind Book/Reschedule to provider availability
 
-P0 → P1 → P5 (these are the user-visible first-time flow, end to end) →
-P2 (lets the patient verify their own profile) →
-P3 (gives staff parity) →
-P4 (only after P0 exists, since it depends on `createPatient`) →
-P6 (cleanup).
+**Problem:** `src/routes/schedule.tsx` lets a patient pick any weekday 9–17 slot regardless of whether the clinician is actually free, so they can request times that will be rejected later. Reschedule today has no dedicated path.
 
-P0+P1+P5 alone is a credible "real first-time flow on mock storage" and is shippable in one pass if you want a tighter scope.
+**Design (mock Healthie availability):**
+- Extend `HealthieService` in `src/lib/healthie.ts`:
+  - `getClinicianAvailability(clinicianId, dateRange) → Slot[]` — mock returns seeded slots per clinician for the next 30 days (M–F, three slots/day, minus already-booked ones).
+  - `bookAppointment` validates the chosen slot is still in the availability list; rejects with a typed error if taken.
+  - `rescheduleAppointment(apptId, newSlot)` — cancels old, books new, fires a notification (see §3).
+- Replace the free-form `datetime-local` in `schedule.tsx` with a **two-step picker**:
+  1. **Day strip** (next 14 weekdays) showing slot counts ("3 open" / "Full").
+  2. **Time chips** (only real open slots for the selected clinician on that day).
+- Add an optional `?reschedule={apptId}` query param to `/schedule` so the existing "Book another time" / a new "Reschedule" button on `PatientHome` can deep-link in; on submit it calls `rescheduleAppointment` instead of `bookAppointment`.
+- Empty state when no slots in 14 days: "No openings with {clinician} this week — try another counselor" with a clinician switch.
+- **Note for the user (technical caveat):** the real Healthie GraphQL `availabilities` query goes behind this same `getClinicianAvailability` shape, so the swap-in is mechanical when we wire the live API.
 
 ---
 
-## Technical notes
+## 3. Appointment notifications — profile + SMS + email
 
-- All edits stay in: `src/routes/{auth,intake,admin,case-manager}.tsx`, `src/components/{PatientHome,AppShell}.tsx`, `src/lib/{healthie,i18n}.tsx`. No new files required (Dialog is already in `src/components/ui/`).
-- No migrations, no new deps, no new routes.
-- Every new field on `Patient` is optional so existing seeded personas keep rendering.
-- Mock-storage caveat ("data resets on reload") gets surfaced once on the first-time welcome card so demos do not mislead.
+**Problem:** Today, booking just toasts "requested" and writes to mock state. The user wants: profile updates immediately, SMS if opted in, email if on file.
+
+**Fix:**
+- Add `HealthieService.notifyAppointmentChange({patientId, apptId, kind: "booked"|"rescheduled"|"cancelled"|"confirmed"})` that:
+  1. Appends to a per-patient `notifications: Notification[]` list (drives the profile update — surfaced as a new "Recent updates" line in the Next Session card and as a toast on next load).
+  2. If `smsConsent` is on and `phone` exists → enqueues a mock SMS log entry (visible in admin's existing SMS-vs-manual branch).
+  3. If `email` exists → enqueues a mock email log entry.
+  4. All three channels record to a single `commsLog` so admin/case-manager can audit delivery.
+- Call it from `bookAppointment`, `rescheduleAppointment`, `cancelAppointment`, and clinician confirm action.
+- In `PatientHome.tsx` Next Session card, add a small "Confirmed via text + email · 2m ago" line under the time when a notification exists for that appt — this is the "profile update" the user asked for.
+- Add an `email` field to `Patient` (optional) and surface it in `PatientProfileDialog` and the My Profile card (currently we only collect phone).
+
+---
+
+## 4. Patient profile layout — Privacy & Consent moves to the bottom
+
+**Problem:** In `PatientHome.tsx`, the render order is: Welcome → Next Session + Care Plan → Goals → Tasks → **My Profile → Consent** → Upcoming → History. User wants Privacy & Consent at the very bottom.
+
+**Fix in `src/components/PatientHome.tsx`:**
+- Reorder to: Welcome → Next Session + Care Plan → Goals → Tasks → **My Profile** → Upcoming → History → **Privacy & Consent** (last card before the crisis footer).
+- No content changes to the consent toggles themselves.
+
+---
+
+## 5. Care Plan card — blank badge + sparse visuals
+
+**Problem (root cause found):** `PatientHome.tsx` `needMap` keys are `housing | substanceUse | employment | benefits | family | transportation`, but the seeded `Patient.needs` schema in `healthie.ts` is `housing | food | employment | transport`. So `food` and `transport` render as badges with **no label** (the blank chip in the screenshot) and `substanceUse / benefits / family` are dead keys.
+
+**Fix:**
+- Reconcile `Patient.needs` schema in `src/lib/healthie.ts` to the full set the UI references: `housing | food | substanceUse | employment | benefits | family | transport`. Backfill the four seeded patients and the new-patient default.
+- Update `needMap` and the i18n keys: add `needFood`, rename `needTransportation → needTransport` (or keep both and map `transport → needTransport`). EN + ES.
+- Filter out falsy entries AND unknown keys defensively so a future schema drift cannot render a blank chip again.
+- "Care plan will appear here after intake" placeholder is intentional for pre-intake patients — leave as is, but for **post-intake** patients with no goals yet, show three skeleton goal rows + a "Your counselor will add goals after your first session" hint so the card never looks empty.
+- Add icons per need category (Home / Utensils / HeartPulse / Briefcase / FileText / Users / Car) in place of the single MapPin so the card reads as a real summary, not a tag dump.
+
+---
+
+## Files touched
+
+- `src/lib/healthie.ts` — availability, reschedule, notify, needs schema reconciliation, email field
+- `src/lib/i18n.tsx` — Medi-Cal callout copy, need labels, notification toasts (EN + ES)
+- `src/routes/intake.tsx` — Medi-Cal callout cards
+- `src/routes/schedule.tsx` — availability-driven picker, reschedule mode
+- `src/components/PatientHome.tsx` — reorder, notification line, fixed needs rendering
+- `src/components/PatientProfileDialog.tsx` — email field
+
+No new dependencies, no migrations, no new routes.
+
+## Suggested order
+
+§5 (smallest, fixes a visible bug) → §4 (pure reorder) → §1 (intake copy) → §2 (scheduling picker) → §3 (notifications, builds on §2).
