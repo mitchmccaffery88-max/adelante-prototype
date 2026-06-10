@@ -138,7 +138,7 @@ export function AppShell() {
               </DropdownMenuContent>
             </DropdownMenu>
 
-            {/* Demo patient switcher */}
+            {/* Account menu — sign in/out only. Persona switcher moved to footer. */}
             <DropdownMenu>
               <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-2.5 py-1 text-xs font-medium text-navy hover:bg-navy/10">
                 <span className="h-6 w-6 rounded-full bg-navy text-navy-foreground grid place-items-center text-[10px]">
@@ -149,34 +149,7 @@ export function AppShell() {
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-60" />
               </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Demo · switch patient
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={currentId}
-                  onValueChange={(v) => HealthieService.setCurrentPatientId(v)}
-                >
-                  {patients.map((p) => (
-                    <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">
-                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      <span className="flex-1">
-                        {p.firstName} {p.lastName}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[10px] rounded-full px-1.5 py-0.5",
-                          p.intakeCompletedAt
-                            ? "bg-teal/15 text-teal"
-                            : "bg-gold/20 text-navy",
-                        )}
-                      >
-                        {p.intakeCompletedAt ? "intake ✓" : "new"}
-                      </span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-                <DropdownMenuSeparator />
+              <DropdownMenuContent align="end" className="w-56">
                 {signedIn ? (
                   <DropdownMenuItem
                     onClick={() => {
@@ -193,9 +166,6 @@ export function AppShell() {
                     </Link>
                   </DropdownMenuItem>
                 )}
-                <DropdownMenuLabel className="text-[10px] text-muted-foreground font-normal">
-                  Demo control: real builds will derive this from the auth session.
-                </DropdownMenuLabel>
               </DropdownMenuContent>
             </DropdownMenu>
           </div>
@@ -277,10 +247,46 @@ export function AppShell() {
           <span>
             © {new Date().getFullYear()} Adelante · Kings County Pilot · Built with care
           </span>
-          <span className="flex items-center gap-1.5">
-            <span className="h-2 w-2 rounded-full bg-teal" />
-            Demo data · no real PHI
-          </span>
+          <div className="flex items-center gap-3">
+            <span className="flex items-center gap-1.5">
+              <span className="h-2 w-2 rounded-full bg-teal" />
+              Demo data · no real PHI
+            </span>
+            <DropdownMenu>
+              <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[10px] text-foreground/70 hover:bg-secondary">
+                Demo · switch patient
+                <ChevronDown className="h-3 w-3 opacity-60" />
+              </DropdownMenuTrigger>
+              <DropdownMenuContent align="end" className="w-60">
+                <DropdownMenuLabel className="text-xs text-muted-foreground">
+                  Demo control · resets on reload
+                </DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={currentId}
+                  onValueChange={(v) => HealthieService.setCurrentPatientId(v)}
+                >
+                  {patients.map((p) => (
+                    <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">
+                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
+                      <span className="flex-1">
+                        {p.firstName} {p.lastName}
+                      </span>
+                      <span
+                        className={cn(
+                          "text-[10px] rounded-full px-1.5 py-0.5",
+                          p.intakeCompletedAt
+                            ? "bg-teal/15 text-teal"
+                            : "bg-gold/20 text-navy",
+                        )}
+                      >
+                        {p.intakeCompletedAt ? "intake ✓" : "new"}
+                      </span>
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
+              </DropdownMenuContent>
+            </DropdownMenu>
+          </div>
         </div>
       </footer>
     </div>
