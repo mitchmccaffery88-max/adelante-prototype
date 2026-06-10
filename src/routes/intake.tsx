@@ -454,6 +454,16 @@ function IntakePage() {
               </p>
             </div>
             <div className="space-y-1.5">
+              <Label className="text-sm">County of release</Label>
+              <input
+                value={coverage.countyOfRelease}
+                onChange={(e) =>
+                  setCoverage({ ...coverage, countyOfRelease: e.target.value })
+                }
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label className="text-sm">Do you have Medi-Cal?</Label>
               <Select
                 value={coverage.status}
@@ -469,27 +479,15 @@ function IntakePage() {
                   <SelectItem value="other">I have other coverage</SelectItem>
                 </SelectContent>
               </Select>
-              {coverage.status === "suspended" && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Good news — your Medi-Cal turns back on automatically. We'll
-                  confirm with the county.
-                </p>
-              )}
-              {coverage.status === "none_unsure" && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  No problem — a case manager will help you apply through
-                  BenefitsCal. Most reentry adults qualify.
-                </p>
-              )}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm">County of release</Label>
-              <input
-                value={coverage.countyOfRelease}
-                onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              />
-            </div>
+            <CoverageCallout
+              status={coverage.status}
+              county={coverage.countyOfRelease}
+              otherPlanName={coverage.otherPlanName ?? ""}
+              onOtherPlanChange={(v) =>
+                setCoverage({ ...coverage, otherPlanName: v })
+              }
+            />
             <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
               <Checkbox
                 checked={coverage.jiReentryFlag}
