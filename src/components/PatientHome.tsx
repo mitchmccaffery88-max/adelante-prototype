@@ -208,13 +208,22 @@ export function PatientHome() {
           <p className="mt-2 text-foreground">{patient.carePlanSummary}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {Object.entries(patient.needs)
-              .filter(([, v]) => v)
-              .map(([k]) => (
-                <Badge key={k} variant="outline" className="capitalize">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  {t((needMap[k] ?? k) as any)}
-                </Badge>
-              ))}
+              .filter(([k, v]) => v && needMeta[k])
+              .map(([k]) => {
+                const meta = needMeta[k];
+                const Icon = meta.Icon;
+                return (
+                  <Badge key={k} variant="outline" className="gap-1">
+                    <Icon className="h-3 w-3" />
+                    {t(meta.tKey as any)}
+                  </Badge>
+                );
+              })}
+            {Object.values(patient.needs).every((v) => !v) && (
+              <span className="text-xs text-muted-foreground">
+                No support needs flagged yet.
+              </span>
+            )}
           </div>
         </Card>
       </div>
