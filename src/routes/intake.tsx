@@ -25,7 +25,18 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { ShieldCheck, Lock, CheckCircle2, Phone, Heart, Save } from "lucide-react";
+import {
+  ShieldCheck,
+  Lock,
+  CheckCircle2,
+  Phone,
+  Heart,
+  Save,
+  Sparkles,
+  CalendarCheck,
+  HelpingHand,
+  Building2,
+} from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
   head: () => ({
@@ -40,6 +51,98 @@ export const Route = createFileRoute("/intake")({
   }),
   component: IntakePage,
 });
+
+function CoverageCallout({
+  status,
+  county,
+  otherPlanName,
+  onOtherPlanChange,
+}: {
+  status: CoverageStatus;
+  county: string;
+  otherPlanName: string;
+  onOtherPlanChange: (v: string) => void;
+}) {
+  if (status === "active") {
+    return (
+      <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4">
+        <div className="flex items-start gap-3">
+          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">You're all set.</div>
+            <p className="text-muted-foreground mt-1">
+              Your visits are free. We'll verify your Medi-Cal ID with
+              {county ? ` ${county} County` : " the county"} — no action needed
+              from you.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (status === "suspended") {
+    return (
+      <div className="rounded-lg border-2 border-gold/50 bg-gold/10 p-4">
+        <div className="flex items-start gap-3">
+          <Sparkles className="h-5 w-5 text-navy mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">
+              Your Medi-Cal turns back on automatically.
+            </div>
+            <p className="text-foreground/80 mt-1">
+              Under CalAIM, your benefits reactivate when you come home — you
+              don't need to reapply. A case manager will confirm with
+              {county ? ` ${county} County` : " your county"} within 5 business
+              days.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  if (status === "none_unsure") {
+    return (
+      <div className="rounded-lg border-2 border-navy/30 bg-navy/5 p-4">
+        <div className="flex items-start gap-3">
+          <HelpingHand className="h-5 w-5 text-navy mt-0.5 shrink-0" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">We'll help you apply.</div>
+            <p className="text-muted-foreground mt-1">
+              A case manager will start a BenefitsCal application with you.
+              Most reentry adults qualify, and coverage is usually active within
+              10 days. Your visits stay free in the meantime.
+            </p>
+          </div>
+        </div>
+      </div>
+    );
+  }
+  // "other"
+  return (
+    <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
+      <div className="flex items-start gap-3">
+        <Building2 className="h-5 w-5 text-navy mt-0.5 shrink-0" />
+        <div className="text-sm">
+          <div className="font-medium text-navy">We'll bill your plan.</div>
+          <p className="text-muted-foreground mt-1">
+            If your plan doesn't cover the visit, your sessions stay free
+            through our reentry program — you will not get a bill.
+          </p>
+        </div>
+      </div>
+      <div className="space-y-1.5">
+        <Label className="text-xs text-muted-foreground">
+          Plan name (optional)
+        </Label>
+        <Input
+          value={otherPlanName}
+          onChange={(e) => onOtherPlanChange(e.target.value)}
+          placeholder="e.g. Kaiser, Anthem Blue Cross"
+        />
+      </div>
+    </div>
+  );
+}
 
 type Mode = "self" | "assisted";
 
@@ -58,7 +161,8 @@ function IntakePage() {
     status: CoverageStatus;
     countyOfRelease: string;
     jiReentryFlag: boolean;
-  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false });
+    otherPlanName?: string;
+  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false, otherPlanName: "" });
   // P1 — About you
   const [profile, setProfile] = useState({
     preferredName: "",
@@ -203,6 +307,7 @@ function IntakePage() {
             : "not_found",
       countyOfRelease: coverage.countyOfRelease,
       jiReentryFlag: coverage.jiReentryFlag,
+      otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
     HealthieService.completeIntake(currentId, {
       needs,
@@ -441,6 +546,16 @@ function IntakePage() {
               </p>
             </div>
             <div className="space-y-1.5">
+              <Label className="text-sm">County of release</Label>
+              <input
+                value={coverage.countyOfRelease}
+                onChange={(e) =>
+                  setCoverage({ ...coverage, countyOfRelease: e.target.value })
+                }
+                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
+              />
+            </div>
+            <div className="space-y-1.5">
               <Label className="text-sm">Do you have Medi-Cal?</Label>
               <Select
                 value={coverage.status}
@@ -456,27 +571,15 @@ function IntakePage() {
                   <SelectItem value="other">I have other coverage</SelectItem>
                 </SelectContent>
               </Select>
-              {coverage.status === "suspended" && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  Good news — your Medi-Cal turns back on automatically. We'll
-                  confirm with the county.
-                </p>
-              )}
-              {coverage.status === "none_unsure" && (
-                <p className="text-xs text-muted-foreground mt-2">
-                  No problem — a case manager will help you apply through
-                  BenefitsCal. Most reentry adults qualify.
-                </p>
-              )}
             </div>
-            <div className="space-y-1.5">
-              <Label className="text-sm">County of release</Label>
-              <input
-                value={coverage.countyOfRelease}
-                onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
-                className="w-full rounded-md border bg-background px-3 py-2 text-sm"
-              />
-            </div>
+            <CoverageCallout
+              status={coverage.status}
+              county={coverage.countyOfRelease}
+              otherPlanName={coverage.otherPlanName ?? ""}
+              onOtherPlanChange={(v) =>
+                setCoverage({ ...coverage, otherPlanName: v })
+              }
+            />
             <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
               <Checkbox
                 checked={coverage.jiReentryFlag}

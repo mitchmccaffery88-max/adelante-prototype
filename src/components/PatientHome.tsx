@@ -21,6 +21,18 @@ import {
   Lock,
   Bell,
 } from "lucide-react";
+import {
+  Home,
+  Utensils,
+  Activity,
+  Briefcase,
+  FileText,
+  Users,
+  Car,
+  CalendarClock,
+  MessageSquare,
+  Mail,
+} from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
@@ -28,13 +40,20 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 
-const needMap: Record<string, string> = {
-  housing: "needHousing",
-  substanceUse: "needSubstanceUse",
-  employment: "needEmployment",
-  benefits: "needBenefits",
-  family: "needFamily",
-  transportation: "needTransportation",
+// Reconcile every Patient.needs key with both a translation key and an icon
+// so a true value never renders as a blank chip. Unknown keys are filtered
+// out defensively in the render below.
+const needMeta: Record<
+  string,
+  { tKey: string; Icon: typeof Home }
+> = {
+  housing: { tKey: "needHousing", Icon: Home },
+  food: { tKey: "needFood", Icon: Utensils },
+  substanceUse: { tKey: "needSubstanceUse", Icon: Activity },
+  employment: { tKey: "needEmployment", Icon: Briefcase },
+  benefits: { tKey: "needBenefits", Icon: FileText },
+  family: { tKey: "needFamily", Icon: Users },
+  transport: { tKey: "needTransport", Icon: Car },
 };
 
 const statusMap: Record<string, string> = {
@@ -144,6 +163,7 @@ export function PatientHome() {
               <div className="text-sm text-muted-foreground">
                 {HealthieService.getClinician(next.clinicianId)?.name} · {next.durationMin} {t("homeMin")} · {t("homeVideo")}
               </div>
+              <NotificationLine patientId={patient.id} apptId={next.id} />
               <Button
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
                 onClick={() =>
@@ -169,16 +189,18 @@ export function PatientHome() {
             </>
           )}
           {next && (
-            <Button
-              asChild
-              variant="outline"
-              size="sm"
-              className="mt-2 w-full"
-            >
-              <Link to="/schedule">
-                <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("homeBookAnother")}
-              </Link>
-            </Button>
+            <div className="mt-2 grid grid-cols-2 gap-2">
+              <Button asChild variant="outline" size="sm">
+                <Link to="/schedule" search={{ reschedule: next.id }}>
+                  <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
+                </Link>
+              </Button>
+              <Button asChild variant="outline" size="sm">
+                <Link to="/schedule">
+                  <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("homeBookAnother")}
+                </Link>
+              </Button>
+            </div>
           )}
         </Card>
 
@@ -189,13 +211,22 @@ export function PatientHome() {
           <p className="mt-2 text-foreground">{patient.carePlanSummary}</p>
           <div className="mt-3 flex flex-wrap gap-1.5">
             {Object.entries(patient.needs)
-              .filter(([, v]) => v)
-              .map(([k]) => (
-                <Badge key={k} variant="outline" className="capitalize">
-                  <MapPin className="h-3 w-3 mr-1" />
-                  {t((needMap[k] ?? k) as any)}
-                </Badge>
-              ))}
+              .filter(([k, v]) => v && needMeta[k])
+              .map(([k]) => {
+                const meta = needMeta[k];
+                const Icon = meta.Icon;
+                return (
+                  <Badge key={k} variant="outline" className="gap-1">
+                    <Icon className="h-3 w-3" />
+                    {t(meta.tKey as any)}
+                  </Badge>
+                );
+              })}
+            {Object.values(patient.needs).every((v) => !v) && (
+              <span className="text-xs text-muted-foreground">
+                No support needs flagged yet.
+              </span>
+            )}
           </div>
         </Card>
       </div>
@@ -247,7 +278,6 @@ export function PatientHome() {
 
       <TasksCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
-      <ConsentCard patientId={patient.id} />
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
@@ -297,6 +327,9 @@ export function PatientHome() {
           )}
         </div>
       </div>
+
+      {/* Privacy & Consent — moved to bottom so it sits beneath upcoming/history */}
+      <ConsentCard patientId={patient.id} />
     </div>
   );
 }
@@ -465,6 +498,30 @@ function MyProfileCard({ patientId }: { patientId: string }) {
       </dl>
       <PatientProfileDialog patientId={patientId} open={open} onOpenChange={setOpen} />
     </Card>
+  );
+}
+
+function NotificationLine({ patientId, apptId }: { patientId: string; apptId: string }) {
+  const note = useHealthie(() =>
+    HealthieService.latestNotificationForAppt(patientId, apptId),
+  );
+  if (!note) return null;
+  const verb =
+    note.kind === "booked"
+      ? "Booked"
+      : note.kind === "rescheduled"
+        ? "Rescheduled"
+        : note.kind === "cancelled"
+          ? "Cancelled"
+          : "Confirmed";
+  const chans = note.channels
+    .map((c) => (c === "profile" ? "profile" : c === "sms" ? "text" : "email"))
+    .join(" + ");
+  return (
+    <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal">
+      <CheckCircle2 className="h-3 w-3" />
+      {verb} · notified via {chans}
+    </div>
   );
 }
 
