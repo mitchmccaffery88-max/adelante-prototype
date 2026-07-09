@@ -70,6 +70,7 @@ function AdminPage() {
   const downloadCsv = () => {
     const headers = [
       "Program ID",
+      "CIN (last 4)",
       "Episode day (of 90)",
       "Coverage status",
       "Coverage verified",
@@ -79,6 +80,7 @@ function AdminPage() {
     ];
     const rows = filteredPatients.map((p) => [
       p.programId,
+      p.cin ? `••••${p.cin.slice(-4)}` : "",
       p.episodeDay,
       p.coverage?.status ?? "",
       p.coverage?.verified ?? "",
@@ -152,6 +154,7 @@ function AdminPage() {
             <TableHeader>
               <TableRow>
                 <TableHead>Patient ID</TableHead>
+                <TableHead>CIN</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
                 <TableHead>Next appt</TableHead>
@@ -167,6 +170,9 @@ function AdminPage() {
                   onClick={() => setOpenPatientId(p.id)}
                 >
                   <TableCell className="font-mono text-xs text-navy">{p.programId}</TableCell>
+                  <TableCell className="font-mono text-xs text-muted-foreground">
+                    {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
+                  </TableCell>
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 rounded-full bg-border">
@@ -284,6 +290,11 @@ function ReferralTrackerCard({
                   {r.referringAgency ? ` · ${r.referringAgency}` : ""} ·{" "}
                   <ClientDate value={r.createdAt} />
                 </div>
+                {r.cin && (
+                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    CIN ••••{r.cin.slice(-4)}
+                  </div>
+                )}
               </div>
               <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
                 {r.status}

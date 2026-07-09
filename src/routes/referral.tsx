@@ -18,6 +18,14 @@ import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react"
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 
+function normalizeCin(v: string) {
+  return v.replace(/\s+/g, "").toUpperCase();
+}
+function maskCin(v?: string) {
+  if (!v) return "";
+  return v.length <= 4 ? v : `••••${v.slice(-4)}`;
+}
+
 export const Route = createFileRoute("/referral")({
   head: () => ({
     meta: [
@@ -61,12 +69,14 @@ function ReferralPage() {
     firstName: "",
     lastName: "",
     phone: "",
+    cin: "",
     releaseDate: "",
     countyOfRelease: "Kings",
     consentToContact: false,
     noPhone: false,
     notARobot: false,
   });
+  const [cinDup, setCinDup] = useState<string | null>(null);
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
@@ -95,6 +105,7 @@ function ReferralPage() {
       firstName: form.firstName,
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
+      cin: form.cin ? normalizeCin(form.cin) : undefined,
       releaseDate: form.releaseDate || undefined,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
@@ -222,6 +233,39 @@ function ReferralPage() {
                   value={form.lastName}
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
+              </Field>
+              <Field label="CIN / Medi-Cal ID (if known)">
+                <Input
+                  placeholder="9 characters — e.g. 90000000A"
+                  maxLength={20}
+                  value={form.cin}
+                  onChange={(e) => setForm({ ...form, cin: normalizeCin(e.target.value) })}
+                  onBlur={() => {
+                    const cin = normalizeCin(form.cin);
+                    if (!cin) return setCinDup(null);
+                    const existingR = HealthieService.listReferrals().find(
+                      (r) => r.cin && normalizeCin(r.cin) === cin,
+                    );
+                    const existingP = HealthieService.listPatients().find(
+                      (p) => p.cin && normalizeCin(p.cin) === cin,
+                    );
+                    if (existingR) {
+                      setCinDup(
+                        `Heads up: a referral already exists for CIN ${maskCin(cin)} — ${existingR.firstName} ${existingR.lastName}.`,
+                      );
+                    } else if (existingP) {
+                      setCinDup(
+                        `Heads up: this CIN ${maskCin(cin)} is already enrolled (${existingP.programId}).`,
+                      );
+                    } else setCinDup(null);
+                  }}
+                />
+                {cinDup && (
+                  <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>
+                )}
+                <p className="text-xs text-muted-foreground mt-1">
+                  Optional. Helps avoid duplicate records when names are similar.
+                </p>
               </Field>
               <Field label={form.noPhone ? "Phone (skipped)" : "Phone *"}>
                 <Input

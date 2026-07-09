@@ -35,6 +35,8 @@ export interface Referral {
   phone?: string;
   email?: string;
   releaseDate?: string;
+  /** CIN / Medi-Cal ID (9 characters). Optional — helps de-duplicate similar names. */
+  cin?: string;
   referringAgency: string;
   referrerName: string;
   referrerEmail?: string;
@@ -117,6 +119,8 @@ export interface Patient {
   contactPrefs?: ContactPrefs;
   emergencyContact?: EmergencyContact;
   address?: string;
+  /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
+  cin?: string;
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
   // Appointment-related notifications (booked / rescheduled / cancelled).
@@ -452,6 +456,7 @@ export const HealthieService = {
     phone?: string;
     preferredLanguage?: PreferredLanguage;
     referralId?: string;
+    cin?: string;
   }): Patient {
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
@@ -473,6 +478,7 @@ export const HealthieService = {
       carePlanSummary: "Care plan will appear here after intake.",
       preferredLanguage: input.preferredLanguage,
       referralId: input.referralId,
+      cin: input.cin,
     };
     patients.push(p);
     emit();
@@ -496,6 +502,7 @@ export const HealthieService = {
         | "contactPrefs"
         | "emergencyContact"
         | "address"
+        | "cin"
       >
     >,
   ) {
@@ -573,6 +580,7 @@ export const HealthieService = {
         dob: r.dob,
         phone: r.phone,
         referralId: r.id,
+        cin: r.cin,
       });
       r.enrolledPatientId = p.id;
     }

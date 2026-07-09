@@ -57,6 +57,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
     emergencyRelationship: "",
     emergencyPhone: "",
     address: "",
+    cin: "",
   });
 
   useEffect(() => {
@@ -77,6 +78,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
       emergencyRelationship: patient.emergencyContact?.relationship ?? "",
       emergencyPhone: patient.emergencyContact?.phone ?? "",
       address: patient.address ?? "",
+      cin: patient.cin ?? "",
     });
   }, [patient?.id]);
 
@@ -102,6 +104,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
           }
         : undefined,
       address: form.address || undefined,
+      cin: form.cin ? form.cin.replace(/\s+/g, "").toUpperCase() : undefined,
     });
     toast.success("Profile saved");
     onOpenChange(false);
@@ -218,6 +221,20 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                   value={form.address}
                   onChange={(e) => setForm({ ...form, address: e.target.value })}
                 />
+              </Field>
+            </div>
+            <div className="sm:col-span-2">
+              <Field label="CIN / Medi-Cal ID">
+                <Input
+                  placeholder="9 characters"
+                  value={form.cin}
+                  onChange={(e) =>
+                    setForm({ ...form, cin: e.target.value.replace(/\s+/g, "").toUpperCase() })
+                  }
+                />
+                <p className="text-xs text-muted-foreground mt-1">
+                  Helps disambiguate people with similar names.
+                </p>
               </Field>
             </div>
           </section>
