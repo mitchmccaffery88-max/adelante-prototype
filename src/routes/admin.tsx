@@ -286,6 +286,11 @@ function ReferralTrackerCard({
                   {r.referringAgency ? ` · ${r.referringAgency}` : ""} ·{" "}
                   <ClientDate value={r.createdAt} />
                 </div>
+                {r.cin && (
+                  <div className="text-[10px] font-mono text-muted-foreground mt-0.5">
+                    CIN ••••{r.cin.slice(-4)}
+                  </div>
+                )}
               </div>
               <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
                 {r.status}
