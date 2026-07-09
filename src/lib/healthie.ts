@@ -580,6 +580,7 @@ export const HealthieService = {
         dob: r.dob,
         phone: r.phone,
         referralId: r.id,
+        cin: r.cin,
       });
       r.enrolledPatientId = p.id;
     }
