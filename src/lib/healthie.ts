@@ -35,6 +35,8 @@ export interface Referral {
   phone?: string;
   email?: string;
   releaseDate?: string;
+  /** CIN / Medi-Cal ID (9 characters). Optional — helps de-duplicate similar names. */
+  cin?: string;
   referringAgency: string;
   referrerName: string;
   referrerEmail?: string;
@@ -117,6 +119,8 @@ export interface Patient {
   contactPrefs?: ContactPrefs;
   emergencyContact?: EmergencyContact;
   address?: string;
+  /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
+  cin?: string;
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
   // Appointment-related notifications (booked / rescheduled / cancelled).
