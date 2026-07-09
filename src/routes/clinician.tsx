@@ -92,14 +92,18 @@ function ClinicianPage() {
       toast.error("Pick a patient and a time");
       return;
     }
-    HealthieService.bookAppointment({
-      patientId: book.patientId,
-      clinicianId,
-      start: new Date(book.start).toISOString(),
-      durationMin: book.durationMin,
-    });
-    toast.success("Appointment booked", { description: "Synced to Healthie calendar (mock)" });
-    setBook({ ...book, start: "" });
+    try {
+      HealthieService.bookAppointment({
+        patientId: book.patientId,
+        clinicianId,
+        start: new Date(book.start).toISOString(),
+        durationMin: book.durationMin,
+      });
+      toast.success("Appointment booked", { description: "Synced to Healthie calendar (mock)" });
+      setBook({ ...book, start: "" });
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not book that time.");
+    }
   };
 
   const launch = (id: string) => {
