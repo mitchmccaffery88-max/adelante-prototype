@@ -73,10 +73,20 @@ function CaseManagerPage() {
   const cms = useHealthie(() => HealthieService.listCaseManagers());
   const [cmId, setCmId] = useState(cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
-  const caseload = useHealthie(() =>
+  const rawCaseload = useHealthie(() =>
     cmId ? HealthieService.patientsForCaseManager(cmId) : [],
   );
-  const [activeId, setActiveId] = useState<string | null>(caseload[0]?.id ?? null);
+  const [query, setQuery] = useState("");
+  const q = query.trim().toLowerCase();
+  const caseload = q
+    ? rawCaseload.filter((p) => {
+        const name = `${p.firstName} ${p.lastName}`.toLowerCase();
+        const cin = (p.cin ?? "").toLowerCase();
+        const pid = p.programId.toLowerCase();
+        return name.includes(q) || cin.includes(q) || pid.includes(q);
+      })
+    : rawCaseload;
+  const [activeId, setActiveId] = useState<string | null>(rawCaseload[0]?.id ?? null);
   const active = useHealthie(() =>
     activeId ? HealthieService.getPatient(activeId) : undefined,
   );
@@ -114,10 +124,19 @@ function CaseManagerPage() {
             </h2>
             <Badge variant="outline">{caseload.length} clients</Badge>
           </div>
+          <div className="mb-3">
+            <Input
+              placeholder="Search by name, CIN, or program ID"
+              value={query}
+              onChange={(e) => setQuery(e.target.value)}
+              className="max-w-sm"
+            />
+          </div>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
+                <TableHead>CIN</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
                 <TableHead>Last contact</TableHead>
@@ -133,6 +152,9 @@ function CaseManagerPage() {
                 >
                   <TableCell className="font-medium text-navy">
                     {p.firstName} {p.lastName}
+                  </TableCell>
+                  <TableCell className="text-xs font-mono text-muted-foreground">
+                    {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
                   </TableCell>
                   <TableCell className="text-xs">
                     {p.episodeDay}/90
