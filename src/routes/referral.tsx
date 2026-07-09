@@ -70,6 +70,7 @@ function ReferralPage() {
     lastName: "",
     phone: "",
     cin: "",
+    dob: "",
     releaseDate: "",
     countyOfRelease: "Kings",
     consentToContact: false,
@@ -106,6 +107,7 @@ function ReferralPage() {
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
       cin: form.cin ? normalizeCin(form.cin) : undefined,
+      dob: form.dob || undefined,
       releaseDate: form.releaseDate || undefined,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
@@ -274,6 +276,13 @@ function ReferralPage() {
                   value={form.phone}
                   disabled={form.noPhone}
                   onChange={(e) => setForm({ ...form, phone: e.target.value })}
+                />
+              </Field>
+              <Field label="Date of birth">
+                <Input
+                  type="date"
+                  value={form.dob}
+                  onChange={(e) => setForm({ ...form, dob: e.target.value })}
                 />
               </Field>
               <Field label="Expected release date">
