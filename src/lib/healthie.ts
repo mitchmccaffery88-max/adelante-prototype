@@ -456,6 +456,7 @@ export const HealthieService = {
     phone?: string;
     preferredLanguage?: PreferredLanguage;
     referralId?: string;
+    cin?: string;
   }): Patient {
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
@@ -477,6 +478,7 @@ export const HealthieService = {
       carePlanSummary: "Care plan will appear here after intake.",
       preferredLanguage: input.preferredLanguage,
       referralId: input.referralId,
+      cin: input.cin,
     };
     patients.push(p);
     emit();
@@ -500,6 +502,7 @@ export const HealthieService = {
         | "contactPrefs"
         | "emergencyContact"
         | "address"
+        | "cin"
       >
     >,
   ) {
