@@ -70,6 +70,7 @@ function AdminPage() {
   const downloadCsv = () => {
     const headers = [
       "Program ID",
+      "CIN (last 4)",
       "Episode day (of 90)",
       "Coverage status",
       "Coverage verified",
@@ -79,6 +80,7 @@ function AdminPage() {
     ];
     const rows = filteredPatients.map((p) => [
       p.programId,
+      p.cin ? `••••${p.cin.slice(-4)}` : "",
       p.episodeDay,
       p.coverage?.status ?? "",
       p.coverage?.verified ?? "",
