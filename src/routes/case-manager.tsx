@@ -77,15 +77,30 @@ function CaseManagerPage() {
     cmId ? HealthieService.patientsForCaseManager(cmId) : [],
   );
   const [query, setQuery] = useState("");
+  const [dobFrom, setDobFrom] = useState("");
+  const [dobTo, setDobTo] = useState("");
   const q = query.trim().toLowerCase();
-  const caseload = q
-    ? rawCaseload.filter((p) => {
-        const name = `${p.firstName} ${p.lastName}`.toLowerCase();
-        const cin = (p.cin ?? "").toLowerCase();
-        const pid = p.programId.toLowerCase();
-        return name.includes(q) || cin.includes(q) || pid.includes(q);
-      })
-    : rawCaseload;
+  const caseload = rawCaseload.filter((p) => {
+    if (q) {
+      const name = `${p.firstName} ${p.lastName}`.toLowerCase();
+      const cin = (p.cin ?? "").toLowerCase();
+      const pid = p.programId.toLowerCase();
+      const dob = (p.dob ?? "").toLowerCase();
+      if (
+        !name.includes(q) &&
+        !cin.includes(q) &&
+        !pid.includes(q) &&
+        !dob.includes(q)
+      )
+        return false;
+    }
+    if (dobFrom || dobTo) {
+      if (!p.dob) return false;
+      if (dobFrom && p.dob < dobFrom) return false;
+      if (dobTo && p.dob > dobTo) return false;
+    }
+    return true;
+  });
   const [activeId, setActiveId] = useState<string | null>(rawCaseload[0]?.id ?? null);
   const active = useHealthie(() =>
     activeId ? HealthieService.getPatient(activeId) : undefined,
@@ -124,19 +139,53 @@ function CaseManagerPage() {
             </h2>
             <Badge variant="outline">{caseload.length} clients</Badge>
           </div>
-          <div className="mb-3">
-            <Input
-              placeholder="Search by name, CIN, or program ID"
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              className="max-w-sm"
-            />
+          <div className="mb-3 flex flex-wrap items-end gap-3">
+            <div className="flex-1 min-w-[220px]">
+              <Label className="text-xs text-muted-foreground">Search</Label>
+              <Input
+                placeholder="Name, CIN, program ID, or DOB (YYYY-MM-DD)"
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">DOB from</Label>
+              <Input
+                type="date"
+                value={dobFrom}
+                onChange={(e) => setDobFrom(e.target.value)}
+                className="w-[160px]"
+              />
+            </div>
+            <div>
+              <Label className="text-xs text-muted-foreground">DOB to</Label>
+              <Input
+                type="date"
+                value={dobTo}
+                onChange={(e) => setDobTo(e.target.value)}
+                className="w-[160px]"
+              />
+            </div>
+            {(dobFrom || dobTo || query) && (
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={() => {
+                  setQuery("");
+                  setDobFrom("");
+                  setDobTo("");
+                }}
+              >
+                Clear
+              </Button>
+            )}
           </div>
           <Table>
             <TableHeader>
               <TableRow>
                 <TableHead>Client</TableHead>
                 <TableHead>CIN</TableHead>
+                <TableHead>DOB</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
                 <TableHead>Last contact</TableHead>
@@ -155,6 +204,9 @@ function CaseManagerPage() {
                   </TableCell>
                   <TableCell className="text-xs font-mono text-muted-foreground">
                     {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
+                  </TableCell>
+                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                    {p.dob ?? "—"}
                   </TableCell>
                   <TableCell className="text-xs">
                     {p.episodeDay}/90
