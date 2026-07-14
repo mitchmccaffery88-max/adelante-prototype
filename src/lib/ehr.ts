@@ -228,6 +228,13 @@ export interface Patient {
   sdohPlan?: { items: SdohPlanItem[] };
   /** Assigned self-help modules with completion. §3f */
   selfHelpPlan?: { modules: SelfHelpModule[] };
+  /** External coordination log (§4-CM). */
+  externalContacts?: ExternalContact[];
+  coordinationLog?: CoordinationEntry[];
+  /** Peer-specialist notes. */
+  peerNotes?: PeerNote[];
+  /** Per-flag context notes for eligibility (source, as-of, why). */
+  eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
 }
 
 export interface ScreenerResult {
