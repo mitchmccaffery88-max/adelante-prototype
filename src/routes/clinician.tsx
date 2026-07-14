@@ -99,7 +99,7 @@ function ClinicianPage() {
         start: new Date(book.start).toISOString(),
         durationMin: book.durationMin,
       });
-      toast.success("Appointment booked", { description: "Synced to Healthie calendar (mock)" });
+      toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
       setBook({ ...book, start: "" });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not book that time.");
@@ -107,7 +107,7 @@ function ClinicianPage() {
   };
 
   const launch = (id: string) => {
-    toast.success("Launching telehealth session", { description: `Healthie video room · session ${id}` });
+    toast.success("Launching telehealth session", { description: `Adelante video room · session ${id}` });
   };
 
   // Bucket appointments by time horizon for the schedule view.

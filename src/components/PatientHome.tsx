@@ -168,7 +168,7 @@ export function PatientHome() {
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
                 onClick={() =>
                   toast.success("Joining video session", {
-                    description: "Healthie telehealth (mock)",
+                    description: "Adelante telehealth (mock)",
                   })
                 }
               >

@@ -239,7 +239,7 @@ function AdminPage() {
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              Status display only. Claim filing flows through Healthie; deeper EDI/clearinghouse integration is in Build 2.
+              Status display only. Claim filing is tracked here; deeper EDI/clearinghouse integration is in Build 2.
             </p>
           </Card>
         </div>
