@@ -241,7 +241,7 @@ function ContactTab({ patientId }: { patientId: string }) {
       <Button
         className="w-full"
         onClick={() => {
-          AdelanteEHR.updatePatientProfile(patientId, {
+          AdelanteEHR.updateProfile(patientId, {
             phone,
             email,
             address,
