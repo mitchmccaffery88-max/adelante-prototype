@@ -296,6 +296,8 @@ interface State {
 }
 
 const listeners = new Set<() => void>();
+// Docs live in a separate mutable queue so multiple people can share verify state.
+const docQueue: UploadedDoc[] = [];
 let state: State = seedState();
 function emit() {
   listeners.forEach((l) => l());
@@ -530,8 +532,6 @@ function audit(role: Role, actor: string, action: string, personId?: string) {
   emit();
 }
 
-// Docs live in a separate mutable queue so multiple people can share verify state.
-const docQueue: UploadedDoc[] = [];
 function verifyDocInQueue(docId: string) {
   const d = docQueue.find((x) => x.id === docId);
   if (d) {
