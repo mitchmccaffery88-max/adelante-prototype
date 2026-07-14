@@ -1,21 +1,14 @@
 import { useEffect, useState } from "react";
-import { useI18n } from "@/lib/i18n";
 
-/** Renders a formatted date only after hydration to avoid SSR/client timezone mismatch. */
-export function ClientDate({
-  value,
-  options,
-  fallback = "—",
-}: {
-  value: string | number | Date;
-  options?: Intl.DateTimeFormatOptions;
-  fallback?: string;
-}) {
-  const { lang } = useI18n();
-  const [text, setText] = useState<string>(fallback);
+export function ClientDate({ value, dateOnly = false }: { value: string; dateOnly?: boolean }) {
+  const [text, setText] = useState<string>("");
   useEffect(() => {
-    const locale = lang === "es" ? "es-US" : "en-US";
-    setText(new Date(value).toLocaleString(locale, options));
-  }, [value, options, lang]);
-  return <span suppressHydrationWarning>{text}</span>;
+    const d = new Date(value);
+    setText(
+      dateOnly
+        ? d.toLocaleDateString("en-US", { dateStyle: "medium" })
+        : d.toLocaleString("en-US", { dateStyle: "medium", timeStyle: "short" }),
+    );
+  }, [value, dateOnly]);
+  return <span>{text || "—"}</span>;
 }

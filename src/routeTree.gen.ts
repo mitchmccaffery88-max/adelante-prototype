@@ -9,60 +9,13 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
-import { Route as ScheduleRouteImport } from './routes/schedule'
-import { Route as ReferralRouteImport } from './routes/referral'
-import { Route as PatientRouteImport } from './routes/patient'
-import { Route as IntakeRouteImport } from './routes/intake'
-import { Route as HomeRouteImport } from './routes/home'
-import { Route as ClinicianRouteImport } from './routes/clinician'
-import { Route as CaseManagerRouteImport } from './routes/case-manager'
-import { Route as AuthRouteImport } from './routes/auth'
-import { Route as AdminRouteImport } from './routes/admin'
+import { Route as PatientsRouteImport } from './routes/patients'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as PatientsIdRouteImport } from './routes/patients.$id'
 
-const ScheduleRoute = ScheduleRouteImport.update({
-  id: '/schedule',
-  path: '/schedule',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ReferralRoute = ReferralRouteImport.update({
-  id: '/referral',
-  path: '/referral',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const PatientRoute = PatientRouteImport.update({
-  id: '/patient',
-  path: '/patient',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const IntakeRoute = IntakeRouteImport.update({
-  id: '/intake',
-  path: '/intake',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const HomeRoute = HomeRouteImport.update({
-  id: '/home',
-  path: '/home',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const ClinicianRoute = ClinicianRouteImport.update({
-  id: '/clinician',
-  path: '/clinician',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const CaseManagerRoute = CaseManagerRouteImport.update({
-  id: '/case-manager',
-  path: '/case-manager',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AuthRoute = AuthRouteImport.update({
-  id: '/auth',
-  path: '/auth',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const AdminRoute = AdminRouteImport.update({
-  id: '/admin',
-  path: '/admin',
+const PatientsRoute = PatientsRouteImport.update({
+  id: '/patients',
+  path: '/patients',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IndexRoute = IndexRouteImport.update({
@@ -70,159 +23,48 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PatientsIdRoute = PatientsIdRouteImport.update({
+  id: '/$id',
+  path: '/$id',
+  getParentRoute: () => PatientsRoute,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
-  '/case-manager': typeof CaseManagerRoute
-  '/clinician': typeof ClinicianRoute
-  '/home': typeof HomeRoute
-  '/intake': typeof IntakeRoute
-  '/patient': typeof PatientRoute
-  '/referral': typeof ReferralRoute
-  '/schedule': typeof ScheduleRoute
+  '/patients': typeof PatientsRouteWithChildren
+  '/patients/$id': typeof PatientsIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
-  '/case-manager': typeof CaseManagerRoute
-  '/clinician': typeof ClinicianRoute
-  '/home': typeof HomeRoute
-  '/intake': typeof IntakeRoute
-  '/patient': typeof PatientRoute
-  '/referral': typeof ReferralRoute
-  '/schedule': typeof ScheduleRoute
+  '/patients': typeof PatientsRouteWithChildren
+  '/patients/$id': typeof PatientsIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
-  '/admin': typeof AdminRoute
-  '/auth': typeof AuthRoute
-  '/case-manager': typeof CaseManagerRoute
-  '/clinician': typeof ClinicianRoute
-  '/home': typeof HomeRoute
-  '/intake': typeof IntakeRoute
-  '/patient': typeof PatientRoute
-  '/referral': typeof ReferralRoute
-  '/schedule': typeof ScheduleRoute
+  '/patients': typeof PatientsRouteWithChildren
+  '/patients/$id': typeof PatientsIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths:
-    | '/'
-    | '/admin'
-    | '/auth'
-    | '/case-manager'
-    | '/clinician'
-    | '/home'
-    | '/intake'
-    | '/patient'
-    | '/referral'
-    | '/schedule'
+  fullPaths: '/' | '/patients' | '/patients/$id'
   fileRoutesByTo: FileRoutesByTo
-  to:
-    | '/'
-    | '/admin'
-    | '/auth'
-    | '/case-manager'
-    | '/clinician'
-    | '/home'
-    | '/intake'
-    | '/patient'
-    | '/referral'
-    | '/schedule'
-  id:
-    | '__root__'
-    | '/'
-    | '/admin'
-    | '/auth'
-    | '/case-manager'
-    | '/clinician'
-    | '/home'
-    | '/intake'
-    | '/patient'
-    | '/referral'
-    | '/schedule'
+  to: '/' | '/patients' | '/patients/$id'
+  id: '__root__' | '/' | '/patients' | '/patients/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
-  AdminRoute: typeof AdminRoute
-  AuthRoute: typeof AuthRoute
-  CaseManagerRoute: typeof CaseManagerRoute
-  ClinicianRoute: typeof ClinicianRoute
-  HomeRoute: typeof HomeRoute
-  IntakeRoute: typeof IntakeRoute
-  PatientRoute: typeof PatientRoute
-  ReferralRoute: typeof ReferralRoute
-  ScheduleRoute: typeof ScheduleRoute
+  PatientsRoute: typeof PatientsRouteWithChildren
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
-    '/schedule': {
-      id: '/schedule'
-      path: '/schedule'
-      fullPath: '/schedule'
-      preLoaderRoute: typeof ScheduleRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/referral': {
-      id: '/referral'
-      path: '/referral'
-      fullPath: '/referral'
-      preLoaderRoute: typeof ReferralRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/patient': {
-      id: '/patient'
-      path: '/patient'
-      fullPath: '/patient'
-      preLoaderRoute: typeof PatientRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/intake': {
-      id: '/intake'
-      path: '/intake'
-      fullPath: '/intake'
-      preLoaderRoute: typeof IntakeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/home': {
-      id: '/home'
-      path: '/home'
-      fullPath: '/home'
-      preLoaderRoute: typeof HomeRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/clinician': {
-      id: '/clinician'
-      path: '/clinician'
-      fullPath: '/clinician'
-      preLoaderRoute: typeof ClinicianRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/case-manager': {
-      id: '/case-manager'
-      path: '/case-manager'
-      fullPath: '/case-manager'
-      preLoaderRoute: typeof CaseManagerRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/auth': {
-      id: '/auth'
-      path: '/auth'
-      fullPath: '/auth'
-      preLoaderRoute: typeof AuthRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/admin': {
-      id: '/admin'
-      path: '/admin'
-      fullPath: '/admin'
-      preLoaderRoute: typeof AdminRouteImport
+    '/patients': {
+      id: '/patients'
+      path: '/patients'
+      fullPath: '/patients'
+      preLoaderRoute: typeof PatientsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/': {
@@ -232,31 +74,32 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/patients/$id': {
+      id: '/patients/$id'
+      path: '/$id'
+      fullPath: '/patients/$id'
+      preLoaderRoute: typeof PatientsIdRouteImport
+      parentRoute: typeof PatientsRoute
+    }
   }
 }
 
+interface PatientsRouteChildren {
+  PatientsIdRoute: typeof PatientsIdRoute
+}
+
+const PatientsRouteChildren: PatientsRouteChildren = {
+  PatientsIdRoute: PatientsIdRoute,
+}
+
+const PatientsRouteWithChildren = PatientsRoute._addFileChildren(
+  PatientsRouteChildren,
+)
+
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
-  AdminRoute: AdminRoute,
-  AuthRoute: AuthRoute,
-  CaseManagerRoute: CaseManagerRoute,
-  ClinicianRoute: ClinicianRoute,
-  HomeRoute: HomeRoute,
-  IntakeRoute: IntakeRoute,
-  PatientRoute: PatientRoute,
-  ReferralRoute: ReferralRoute,
-  ScheduleRoute: ScheduleRoute,
+  PatientsRoute: PatientsRouteWithChildren,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
