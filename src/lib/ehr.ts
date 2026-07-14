@@ -1,4 +1,4 @@
-// HealthieService — single seam for all clinical-backend reads/writes.
+// AdelanteEHR — single seam for all clinical-backend reads/writes.
 // Today this is an in-memory mock; swap implementations to wire Healthie GraphQL.
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
@@ -438,7 +438,7 @@ const emit = () => {
 // who has not yet completed intake so the first-time flow is visible.
 let currentPatientId = "p2";
 
-export const HealthieService = {
+export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
     return () => listeners.delete(l);
@@ -574,7 +574,7 @@ export const HealthieService = {
     r.status = nextStatus;
     // P4 — materialize a Patient row the moment a referral flips to enrolled.
     if (nextStatus === "enrolled" && !r.enrolledPatientId) {
-      const p = HealthieService.createPatient({
+      const p = AdelanteEHR.createPatient({
         firstName: r.firstName,
         lastName: r.lastName,
         dob: r.dob,
@@ -599,7 +599,7 @@ export const HealthieService = {
     }
     const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
     appointments.push(a);
-    HealthieService.notifyAppointmentChange({
+    AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
       kind: "booked",
@@ -621,7 +621,7 @@ export const HealthieService = {
       throw new Error("That time was just taken. Please pick another slot.");
     }
     a.start = newStart;
-    HealthieService.notifyAppointmentChange({
+    AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
       kind: "rescheduled",
@@ -674,7 +674,7 @@ export const HealthieService = {
     const p = patients.find((x) => x.id === input.patientId);
     if (!p) return;
     const channels: CommsChannel[] = ["profile"];
-    if (HealthieService.isSmsOn(p.id) && p.phone) channels.push("sms");
+    if (AdelanteEHR.isSmsOn(p.id) && p.phone) channels.push("sms");
     if (p.email) channels.push("email");
     p.notifications = [
       {
@@ -949,10 +949,10 @@ export const HealthieService = {
 };
 
 import { useSyncExternalStore } from "react";
-export function useHealthie<T>(selector: () => T): T {
+export function useEhr<T>(selector: () => T): T {
   // Subscribe to a stable version number so we don't loop on new-array snapshots.
   useSyncExternalStore(
-    (cb) => HealthieService.subscribe(cb),
+    (cb) => AdelanteEHR.subscribe(cb),
     () => version,
     () => version,
   );

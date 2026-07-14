@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { HealthieService, useHealthie, type SessionStatus } from "@/lib/healthie";
+import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -65,17 +65,17 @@ const statusBadge: Record<SessionStatus, string> = {
 
 function ClinicianPage() {
   const { t } = useI18n();
-  const clinicians = useHealthie(() => HealthieService.listClinicians());
-  const patients = useHealthie(() => HealthieService.listPatients());
+  const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const patients = useEhr(() => AdelanteEHR.listPatients());
   const [clinicianId, setClinicianId] = useState(clinicians[0]?.id ?? "");
   const clinician = clinicians.find((c) => c.id === clinicianId);
-  const appts = useHealthie(() =>
-    clinicianId ? HealthieService.appointmentsForClinician(clinicianId) : [],
+  const appts = useEhr(() =>
+    clinicianId ? AdelanteEHR.appointmentsForClinician(clinicianId) : [],
   );
 
   const [book, setBook] = useState({ patientId: patients[0]?.id ?? "", start: "", durationMin: 50 });
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
-  const selectedPatient = useHealthie(() => HealthieService.getPatient(selectedPatientId));
+  const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [newGoal, setNewGoal] = useState("");
   const [planDraft, setPlanDraft] = useState("");
   const [note, setNote] = useState({
@@ -93,7 +93,7 @@ function ClinicianPage() {
       return;
     }
     try {
-      HealthieService.bookAppointment({
+      AdelanteEHR.bookAppointment({
         patientId: book.patientId,
         clinicianId,
         start: new Date(book.start).toISOString(),
@@ -131,8 +131,8 @@ function ClinicianPage() {
   // Pre-fill the notes form's "Link to appointment" with the patient's most
   // recent attended (or next scheduled) appointment, so the default isn't
   // "unlinked".
-  const patientAppts = useHealthie(() =>
-    selectedPatientId ? HealthieService.appointmentsForPatient(selectedPatientId) : [],
+  const patientAppts = useEhr(() =>
+    selectedPatientId ? AdelanteEHR.appointmentsForPatient(selectedPatientId) : [],
   );
 
   return (
@@ -297,7 +297,7 @@ function ClinicianPage() {
                 <Button
                   className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
                   onClick={() => {
-                    HealthieService.updateCarePlanSummary(
+                    AdelanteEHR.updateCarePlanSummary(
                       selectedPatient.id,
                       planDraft || selectedPatient.carePlanSummary,
                     );
@@ -321,7 +321,7 @@ function ClinicianPage() {
                       <Select
                         value={g.status}
                         onValueChange={(v) =>
-                          HealthieService.setGoalStatus(selectedPatient.id, g.id, v as never)
+                          AdelanteEHR.setGoalStatus(selectedPatient.id, g.id, v as never)
                         }
                       >
                         <SelectTrigger className="h-7 w-[120px] text-xs">
@@ -338,7 +338,7 @@ function ClinicianPage() {
                         size="icon"
                         variant="ghost"
                         className="h-7 w-7"
-                        onClick={() => HealthieService.removeGoal(selectedPatient.id, g.id)}
+                        onClick={() => AdelanteEHR.removeGoal(selectedPatient.id, g.id)}
                       >
                         <Trash2 className="h-3.5 w-3.5" />
                       </Button>
@@ -354,7 +354,7 @@ function ClinicianPage() {
                   <Button
                     size="sm"
                     onClick={() => {
-                      HealthieService.addGoal(selectedPatient.id, newGoal);
+                      AdelanteEHR.addGoal(selectedPatient.id, newGoal);
                       setNewGoal("");
                     }}
                   >
@@ -432,7 +432,7 @@ function ClinicianPage() {
                         toast.error("Add at least a subjective entry");
                         return;
                       }
-                      HealthieService.addProgressNote(selectedPatient.id, {
+                      AdelanteEHR.addProgressNote(selectedPatient.id, {
                         clinicianId,
                         date: new Date().toISOString(),
                         sessionType: note.sessionType,
@@ -543,8 +543,8 @@ function ApptCard({
   launch,
   t,
 }: {
-  a: ReturnType<typeof HealthieService.appointmentsForClinician>[number];
-  patients: ReturnType<typeof HealthieService.listPatients>;
+  a: ReturnType<typeof AdelanteEHR.appointmentsForClinician>[number];
+  patients: ReturnType<typeof AdelanteEHR.listPatients>;
   launch: (id: string) => void;
   t: (k: never) => string;
 }) {
@@ -589,14 +589,14 @@ function ApptCard({
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => HealthieService.updateAppointmentStatus(a.id, "attended")}
+                onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "attended")}
               >
                 <CheckCircle2 className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinAttended")}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
-                onClick={() => HealthieService.updateAppointmentStatus(a.id, "no_show")}
+                onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "no_show")}
               >
                 <XCircle className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinNoShow")}
               </Button>
@@ -610,7 +610,7 @@ function ApptCard({
 
 function TrendPanel({ patientId }: { patientId: string }) {
   const { t } = useI18n();
-  const patient = useHealthie(() => HealthieService.getPatient(patientId));
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!patient) return null;
   const history = patient.screenerHistory ?? [];
   const screenerKeys = Array.from(new Set(history.map((h) => h.key)));
@@ -702,7 +702,7 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
   // (component continues below)
   const { t } = useI18n();
   const rows = patients.flatMap((p) =>
-    HealthieService.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
+    AdelanteEHR.rescreensDue(p.id).map((d) => ({ ...d, patient: p })),
   );
   if (rows.length === 0) return null;
   return (
@@ -713,7 +713,7 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
       <ul className="mt-2 space-y-1.5">
         {rows.map((r, i) => {
           // Compute trend: latest score vs second-latest for this screener.
-          const fullPatient = HealthieService.getPatient(r.patient.id);
+          const fullPatient = AdelanteEHR.getPatient(r.patient.id);
           const hist = (fullPatient?.screenerHistory ?? [])
             .filter((h) => h.key === r.key)
             .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt));
@@ -748,7 +748,7 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  HealthieService.sendRescreenTask(r.patient.id, r.key);
+                  AdelanteEHR.sendRescreenTask(r.patient.id, r.key);
                   toast.success("Re-screen task sent", {
                     description: "Patient will see it on their home screen.",
                   });

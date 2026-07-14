@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { HealthieService, useHealthie, type ReferralStatus } from "@/lib/healthie";
+import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,10 +36,10 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { t } = useI18n();
-  const stats = useHealthie(() => HealthieService.stats());
-  const patients = useHealthie(() => HealthieService.listPatients());
-  const referrals = useHealthie(() => HealthieService.listReferrals());
-  const consentEvents = useHealthie(() => HealthieService.listAllConsentEvents());
+  const stats = useEhr(() => AdelanteEHR.stats());
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const referrals = useEhr(() => AdelanteEHR.listReferrals());
+  const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
   const [openPatientId, setOpenPatientId] = useState<string | null>(null);
   const verifiedPct = Math.round(
     (patients.filter((p) => p.coverage?.verified === "verified").length /
@@ -86,7 +86,7 @@ function AdminPage() {
       p.coverage?.verified ?? "",
       p.coverage?.jiReentryFlag ? "Yes" : "No",
       p.coverage?.ecmEligible ? "Yes" : "No",
-      HealthieService.isSmsOn(p.id) ? "On" : "Off",
+      AdelanteEHR.isSmsOn(p.id) ? "On" : "Off",
     ]);
     const csv = [headers, ...rows].map((r) => r.join(",")).join("\n");
     const blob = new Blob([csv], { type: "text/csv" });
@@ -186,7 +186,7 @@ function AdminPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {(() => {
-                      const upcoming = HealthieService.appointmentsForPatient(p.id)
+                      const upcoming = AdelanteEHR.appointmentsForPatient(p.id)
                         .filter((a) => new Date(a.start).getTime() > Date.now())
                         .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
                       return upcoming ? <ClientDate value={upcoming.start} /> : "—";
@@ -201,7 +201,7 @@ function AdminPage() {
                     </Badge>
                   </TableCell>
                   <TableCell>
-                    {HealthieService.isSmsOn(p.id) ? (
+                    {AdelanteEHR.isSmsOn(p.id) ? (
                       <Badge className="bg-gold/30 text-navy border-0">On</Badge>
                     ) : (
                       <span className="text-xs text-muted-foreground">Off</span>
@@ -264,7 +264,7 @@ const trackerOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
 function ReferralTrackerCard({
   referrals,
 }: {
-  referrals: ReturnType<typeof HealthieService.listReferrals>;
+  referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
 }) {
   const sourceLabels: Record<string, string> = {
     probation: "Probation",
@@ -321,7 +321,7 @@ function ReferralTrackerCard({
               </div>
             ) : null}
             {r.enrolledPatientId && (() => {
-              const enrolled = HealthieService.getPatient(r.enrolledPatientId);
+              const enrolled = AdelanteEHR.getPatient(r.enrolledPatientId);
               return enrolled ? (
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   Enrolled as <span className="font-mono text-navy">{enrolled.programId}</span>
@@ -389,7 +389,7 @@ function Kpi({
 function AuditLogCard({
   events,
 }: {
-  events: ReturnType<typeof HealthieService.listAllConsentEvents>;
+  events: ReturnType<typeof AdelanteEHR.listAllConsentEvents>;
 }) {
   const purposeLabels: Record<string, string> = {
     part2Sud: "Part 2 SUD",

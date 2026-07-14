@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { HealthieService, useHealthie, type ReferralSource, type ReferralStatus } from "@/lib/healthie";
+import { AdelanteEHR, useEhr, type ReferralSource, type ReferralStatus } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -102,7 +102,7 @@ function ReferralPage() {
       toast.error("Please verify you're not a robot");
       return;
     }
-    const result = HealthieService.createReferral({
+    const result = AdelanteEHR.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
@@ -245,10 +245,10 @@ function ReferralPage() {
                   onBlur={() => {
                     const cin = normalizeCin(form.cin);
                     if (!cin) return setCinDup(null);
-                    const existingR = HealthieService.listReferrals().find(
+                    const existingR = AdelanteEHR.listReferrals().find(
                       (r) => r.cin && normalizeCin(r.cin) === cin,
                     );
-                    const existingP = HealthieService.listPatients().find(
+                    const existingP = AdelanteEHR.listPatients().find(
                       (p) => p.cin && normalizeCin(p.cin) === cin,
                     );
                     if (existingR) {
@@ -381,7 +381,7 @@ const stageLabels: Record<ReferralStatus, string> = {
 
 function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
   const { t } = useI18n();
-  const all = useHealthie(() => HealthieService.listReferrals());
+  const all = useEhr(() => AdelanteEHR.listReferrals());
   if (!referrerKey) return null;
   const mine = all.filter((r) => {
     const k = (r.referrerEmail || r.referrerName).trim().toLowerCase();

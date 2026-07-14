@@ -15,7 +15,7 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,9 +30,9 @@ export function AppShell() {
   const { lang, setLang, t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
-  const patient = useHealthie(() => HealthieService.getPatient(currentId));
-  const patients = useHealthie(() => HealthieService.listPatients());
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const patients = useEhr(() => AdelanteEHR.listPatients());
   const signedIn = (() => {
     try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
   })();
@@ -262,7 +262,7 @@ export function AppShell() {
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={currentId}
-                  onValueChange={(v) => HealthieService.setCurrentPatientId(v)}
+                  onValueChange={(v) => AdelanteEHR.setCurrentPatientId(v)}
                 >
                   {patients.map((p) => (
                     <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">

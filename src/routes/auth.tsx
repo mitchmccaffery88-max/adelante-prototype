@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { Sparkles, ShieldCheck, ArrowRight, User } from "lucide-react";
 import {
@@ -34,7 +34,7 @@ export const Route = createFileRoute("/auth")({
 function AuthPage() {
   const { t, setLang } = useI18n();
   const navigate = useNavigate();
-  const patients = useHealthie(() => HealthieService.listPatients());
+  const patients = useEhr(() => AdelanteEHR.listPatients());
   const [mode, setMode] = useState<"signin" | "signup">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -63,7 +63,7 @@ function AuthPage() {
       toast.error("Pick a person to continue");
       return;
     }
-    HealthieService.setCurrentPatientId(pickedId);
+    AdelanteEHR.setCurrentPatientId(pickedId);
     persist(pickedId);
     toast.success("Welcome back");
     navigate({ to: "/home" });
@@ -75,14 +75,14 @@ function AuthPage() {
       toast.error("First and last name are required");
       return;
     }
-    const created = HealthieService.createPatient({
+    const created = AdelanteEHR.createPatient({
       firstName: firstName.trim(),
       lastName: lastName.trim(),
       dob: dob || undefined,
       phone: phone || undefined,
       preferredLanguage: lang,
     });
-    HealthieService.setCurrentPatientId(created.id);
+    AdelanteEHR.setCurrentPatientId(created.id);
     persist(created.id);
     setLang(lang);
     toast.success("Account created", {

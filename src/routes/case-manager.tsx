@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useState } from "react";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,7 +41,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 
-function lastContactAt(p: ReturnType<typeof HealthieService.getPatient>) {
+function lastContactAt(p: ReturnType<typeof AdelanteEHR.getPatient>) {
   const c = p?.checkIns?.[0];
   return c?.date;
 }
@@ -70,11 +70,11 @@ export const Route = createFileRoute("/case-manager")({
 
 function CaseManagerPage() {
   const { t } = useI18n();
-  const cms = useHealthie(() => HealthieService.listCaseManagers());
+  const cms = useEhr(() => AdelanteEHR.listCaseManagers());
   const [cmId, setCmId] = useState(cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
-  const rawCaseload = useHealthie(() =>
-    cmId ? HealthieService.patientsForCaseManager(cmId) : [],
+  const rawCaseload = useEhr(() =>
+    cmId ? AdelanteEHR.patientsForCaseManager(cmId) : [],
   );
   const [query, setQuery] = useState("");
   const [dobFrom, setDobFrom] = useState("");
@@ -102,8 +102,8 @@ function CaseManagerPage() {
     return true;
   });
   const [activeId, setActiveId] = useState<string | null>(rawCaseload[0]?.id ?? null);
-  const active = useHealthie(() =>
-    activeId ? HealthieService.getPatient(activeId) : undefined,
+  const active = useEhr(() =>
+    activeId ? AdelanteEHR.getPatient(activeId) : undefined,
   );
   const [profileId, setProfileId] = useState<string | null>(null);
 
@@ -350,7 +350,7 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         <Button
           className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={() => {
-            HealthieService.addCheckIn(patientId, {
+            AdelanteEHR.addCheckIn(patientId, {
               date: new Date().toISOString(),
               modality,
               attended,
@@ -406,7 +406,7 @@ function ResourceReferralCard({
           variant="outline"
           onClick={() => {
             if (!provider) return toast.error("Add a provider name");
-            HealthieService.addResourceReferral(patientId, {
+            AdelanteEHR.addResourceReferral(patientId, {
               category,
               provider,
               sudDisclosureConsent: consentSud,
@@ -458,7 +458,7 @@ function CoordinationCard({
 }
 
 function CoverageActionsCard({ patientId }: { patientId: string }) {
-  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!p) return null;
   const status = p.coverage?.verified ?? "not_found";
   return (
@@ -476,7 +476,7 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
           size="sm"
           variant="outline"
           onClick={() => {
-            HealthieService.markCoverageVerified(patientId);
+            AdelanteEHR.markCoverageVerified(patientId);
             toast.success("Marked verified");
           }}
           disabled={status === "verified"}
@@ -487,7 +487,7 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
           size="sm"
           variant="outline"
           onClick={() => {
-            HealthieService.requestReactivation(patientId);
+            AdelanteEHR.requestReactivation(patientId);
             toast.success("Reactivation requested");
           }}
         >
@@ -497,7 +497,7 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
           size="sm"
           variant="outline"
           onClick={() => {
-            HealthieService.addEnrollmentAssistTask(patientId);
+            AdelanteEHR.addEnrollmentAssistTask(patientId);
             toast.success("Enrollment-assistance task created");
           }}
         >
@@ -509,7 +509,7 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
 }
 
 function EligibilityFlagsCard({ patientId }: { patientId: string }) {
-  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!p) return null;
   const ecm = Boolean(p.coverage?.ecmEligible);
   const ji = Boolean(p.coverage?.jiReentryFlag);
@@ -529,12 +529,12 @@ function EligibilityFlagsCard({ patientId }: { patientId: string }) {
         <FlagRow
           label="ECM eligible"
           checked={ecm}
-          onChange={(v) => HealthieService.setEcmEligible(patientId, v)}
+          onChange={(v) => AdelanteEHR.setEcmEligible(patientId, v)}
         />
         <FlagRow
           label="JI Reentry (90-day)"
           checked={ji}
-          onChange={(v) => HealthieService.setJiReentry(patientId, v)}
+          onChange={(v) => AdelanteEHR.setJiReentry(patientId, v)}
         />
         <div className="pt-2 border-t mt-2 text-xs uppercase tracking-wider text-muted-foreground">
           Community Supports
@@ -544,7 +544,7 @@ function EligibilityFlagsCard({ patientId }: { patientId: string }) {
             key={r.k}
             label={r.label}
             checked={Boolean(cs[r.k])}
-            onChange={(v) => HealthieService.setCommunitySupport(patientId, r.k, v)}
+            onChange={(v) => AdelanteEHR.setCommunitySupport(patientId, r.k, v)}
           />
         ))}
       </div>
@@ -570,7 +570,7 @@ function FlagRow({
 }
 
 function RecentCheckInsCard({ patientId }: { patientId: string }) {
-  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = (p?.checkIns ?? []).slice(0, 5);
   return (
     <Card className="p-5">
@@ -606,7 +606,7 @@ function RecentCheckInsCard({ patientId }: { patientId: string }) {
 }
 
 function RecentReferralsCard({ patientId }: { patientId: string }) {
-  const p = useHealthie(() => HealthieService.getPatient(patientId));
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = (p?.resourceReferrals ?? []).slice(0, 5);
   if (items.length === 0) return null;
   return (
