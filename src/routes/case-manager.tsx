@@ -267,6 +267,19 @@ function CaseManagerPage() {
         <div className="space-y-4">
           {active ? (
             <>
+              <Card className="p-4 flex items-center justify-between gap-3">
+                <div>
+                  <div className="font-display text-navy text-lg">
+                    {active.firstName} {active.lastName}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    Full record: SDOH, referrals, external coordination, peer notes.
+                  </div>
+                </div>
+                <Button size="sm" onClick={() => setRecordId(active.id)}>
+                  Open record
+                </Button>
+              </Card>
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
               <CoverageActionsCard patientId={active.id} />
