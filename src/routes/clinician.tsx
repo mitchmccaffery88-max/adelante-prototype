@@ -364,6 +364,7 @@ function ClinicianPage() {
               </Card>
             </div>
           )}
+          {selectedPatient && <SocialContextPanel patientId={selectedPatient.id} />}
         </TabsContent>
 
         <TabsContent value="notes">
