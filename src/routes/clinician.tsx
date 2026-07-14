@@ -364,6 +364,7 @@ function ClinicianPage() {
               </Card>
             </div>
           )}
+          {selectedPatient && <SocialContextPanel patientId={selectedPatient.id} />}
         </TabsContent>
 
         <TabsContent value="notes">
@@ -760,6 +761,72 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
           );
         })}
       </ul>
+    </Card>
+  );
+}
+
+function SocialContextPanel({ patientId }: { patientId: string }) {
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  if (!p) return null;
+  const sdoh = p.sdohPlan?.items ?? [];
+  const refs = p.resourceReferrals ?? [];
+  const coord = (p.coordinationLog ?? []).slice(0, 5);
+  if (sdoh.length === 0 && refs.length === 0 && coord.length === 0) return null;
+  return (
+    <Card className="mt-4 p-5">
+      <h3 className="font-display text-lg text-navy">Social drivers & coordination</h3>
+      <p className="text-xs text-muted-foreground mt-1">
+        Read-only view of what case management and peers are working on. Impacts care continuity.
+      </p>
+      <div className="grid md:grid-cols-3 gap-4 mt-4 text-sm">
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">SDOH plan</div>
+          {sdoh.length === 0 ? (
+            <div className="text-xs text-muted-foreground">None logged.</div>
+          ) : (
+            <ul className="space-y-1">
+              {sdoh.slice(0, 6).map((i) => (
+                <li key={i.id} className="flex items-start justify-between gap-2 border-b pb-1">
+                  <span>{i.need}</span>
+                  <span className="text-[10px] text-muted-foreground capitalize">{i.status.replace("_", " ")}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Referrals</div>
+          {refs.length === 0 ? (
+            <div className="text-xs text-muted-foreground">None logged.</div>
+          ) : (
+            <ul className="space-y-1">
+              {refs.slice(0, 6).map((r) => (
+                <li key={r.id} className="flex items-start justify-between gap-2 border-b pb-1">
+                  <span className="capitalize">{r.category} · {r.provider}</span>
+                  <span className="text-[10px] text-muted-foreground capitalize">{r.status}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+        <div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">External coordination</div>
+          {coord.length === 0 ? (
+            <div className="text-xs text-muted-foreground">No entries.</div>
+          ) : (
+            <ul className="space-y-1">
+              {coord.map((e) => (
+                <li key={e.id} className="border-b pb-1">
+                  <div className="capitalize text-navy text-xs">
+                    {e.direction === "out" ? "→" : "←"} {e.party}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">{e.summary}</div>
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </div>
     </Card>
   );
 }

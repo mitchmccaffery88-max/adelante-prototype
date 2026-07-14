@@ -79,10 +79,14 @@ export type SdohStatus =
   | "completed"
   | "not_completed";
 export interface SdohPlanItem {
+  id: string;
   need: string;
   referralId?: string;
   status: SdohStatus;
   note?: string;
+  createdAt: string;
+  updatedAt: string;
+  visibleToPatient?: boolean;
 }
 
 export interface SelfHelpModule {
@@ -224,6 +228,13 @@ export interface Patient {
   sdohPlan?: { items: SdohPlanItem[] };
   /** Assigned self-help modules with completion. §3f */
   selfHelpPlan?: { modules: SelfHelpModule[] };
+  /** External coordination log (§4-CM). */
+  externalContacts?: ExternalContact[];
+  coordinationLog?: CoordinationEntry[];
+  /** Peer-specialist notes. */
+  peerNotes?: PeerNote[];
+  /** Per-flag context notes for eligibility (source, as-of, why). */
+  eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
 }
 
 export interface ScreenerResult {
@@ -270,8 +281,63 @@ export interface ResourceReferral {
   provider: string;
   status: "pending" | "accepted" | "completed";
   createdAt: string;
+  updatedAt?: string;
+  note?: string;
+  followUpDate?: string;
+  visibleToPatient?: boolean;
   // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
   sudDisclosureConsent?: boolean;
+}
+
+export type ExternalPartyRole =
+  | "probation"
+  | "parole"
+  | "housing"
+  | "pcp"
+  | "county_bh"
+  | "family"
+  | "other";
+export interface ExternalContact {
+  id: string;
+  agency: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  role: ExternalPartyRole;
+  part2Sensitive?: boolean;
+  createdAt: string;
+}
+export type CoordinationDirection = "in" | "out";
+export type CoordinationChannel = "phone" | "email" | "in_person" | "letter" | "portal";
+export interface CoordinationEntry {
+  id: string;
+  date: string;
+  partyType: ExternalPartyRole;
+  party: string;
+  direction: CoordinationDirection;
+  channel: CoordinationChannel;
+  summary: string;
+  part2Disclosed: boolean;
+  createdBy: string;
+}
+
+export interface PeerNote {
+  id: string;
+  date: string;
+  author: string;
+  text: string;
+}
+
+export type EligibilityFlagKey =
+  | "ecm"
+  | "jiReentry"
+  | "cs_housing"
+  | "cs_food"
+  | "cs_transport";
+export interface EligibilityNote {
+  note?: string;
+  asOf?: string;
+  updatedAt: string;
 }
 
 export interface CaseManager {
@@ -1105,6 +1171,120 @@ export const AdelanteEHR = {
     const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
     if (!d) return;
     d.state = "rejected";
+    emit();
+  },
+
+  // ----- SDOH plan items -----
+  addSdohItem(patientId: string, input: { need: string; note?: string; visibleToPatient?: boolean }) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !input.need.trim()) return;
+    const item: SdohPlanItem = {
+      id: uid(),
+      need: input.need.trim(),
+      status: "identified",
+      note: input.note,
+      visibleToPatient: input.visibleToPatient ?? true,
+      createdAt: new Date().toISOString(),
+      updatedAt: new Date().toISOString(),
+    };
+    p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
+    emit();
+  },
+  setSdohStatus(patientId: string, itemId: string, status: SdohStatus, note?: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    item.status = status;
+    if (note !== undefined) item.note = note;
+    item.updatedAt = new Date().toISOString();
+    emit();
+  },
+  setSdohVisibility(patientId: string, itemId: string, visible: boolean) {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!item) return;
+    item.visibleToPatient = visible;
+    item.updatedAt = new Date().toISOString();
+    emit();
+  },
+  removeSdohItem(patientId: string, itemId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.sdohPlan) return;
+    p.sdohPlan.items = p.sdohPlan.items.filter((i) => i.id !== itemId);
+    emit();
+  },
+
+  // ----- Resource referral status/notes -----
+  setResourceReferralStatus(patientId: string, referralId: string, status: ResourceReferral["status"], note?: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const r = p?.resourceReferrals?.find((x) => x.id === referralId);
+    if (!r) return;
+    r.status = status;
+    if (note !== undefined) r.note = note;
+    r.updatedAt = new Date().toISOString();
+    emit();
+  },
+  setResourceReferralVisibility(patientId: string, referralId: string, visible: boolean) {
+    const p = patients.find((x) => x.id === patientId);
+    const r = p?.resourceReferrals?.find((x) => x.id === referralId);
+    if (!r) return;
+    r.visibleToPatient = visible;
+    r.updatedAt = new Date().toISOString();
+    emit();
+  },
+
+  // ----- External contacts -----
+  addExternalContact(patientId: string, input: Omit<ExternalContact, "id" | "createdAt">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.externalContacts = [
+      { ...input, id: uid(), createdAt: new Date().toISOString() },
+      ...(p.externalContacts ?? []),
+    ];
+    emit();
+  },
+  removeExternalContact(patientId: string, contactId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.externalContacts) return;
+    p.externalContacts = p.externalContacts.filter((c) => c.id !== contactId);
+    emit();
+  },
+
+  // ----- Coordination log -----
+  addCoordinationEntry(patientId: string, input: Omit<CoordinationEntry, "id">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.coordinationLog = [
+      { ...input, id: uid() },
+      ...(p.coordinationLog ?? []),
+    ];
+    emit();
+  },
+
+  // ----- Peer notes -----
+  addPeerNote(patientId: string, input: Omit<PeerNote, "id">) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !input.text.trim()) return;
+    p.peerNotes = [{ ...input, id: uid() }, ...(p.peerNotes ?? [])];
+    emit();
+  },
+
+  // ----- Contact preferences -----
+  setContactPrefs(patientId: string, prefs: NonNullable<Patient["contactPrefs"]>) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.contactPrefs = prefs;
+    emit();
+  },
+
+  // ----- Eligibility notes -----
+  setEligibilityNote(patientId: string, key: EligibilityFlagKey, note: string, asOf?: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    p.eligibilityNotes = {
+      ...(p.eligibilityNotes ?? {}),
+      [key]: { note, asOf, updatedAt: new Date().toISOString() },
+    };
     emit();
   },
 };
