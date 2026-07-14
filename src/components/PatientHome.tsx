@@ -278,6 +278,8 @@ export function PatientHome() {
 
       <TasksCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
+      <SupportPlanCard patientId={patient.id} />
+      <ReferralsForYouCard patientId={patient.id} />
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
