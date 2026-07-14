@@ -334,6 +334,8 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
   const [modality, setModality] = useState<"video" | "phone" | "in_person" | "sms">("phone");
   const [attended, setAttended] = useState(true);
   const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(() => todayLocal());
+  const [time, setTime] = useState(() => nowLocalTime());
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">
@@ -343,6 +345,16 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         Goal: weekly contact during active treatment. CM: {cm || "—"}.
       </p>
       <div className="mt-4 space-y-3">
+        <div className="grid grid-cols-2 gap-3">
+          <div className="space-y-1.5">
+            <Label className="text-sm">Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-sm">Time</Label>
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+        </div>
         <div className="space-y-1.5">
           <Label className="text-sm">Modality</Label>
           <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
@@ -373,14 +385,21 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         <Button
           className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={() => {
+            const iso = combineDateTime(date, time);
+            if (!iso) {
+              toast.error("Add date and time");
+              return;
+            }
             AdelanteEHR.addCheckIn(patientId, {
-              date: new Date().toISOString(),
+              date: iso,
               modality,
               attended,
               notes,
               needsFlagged: {},
             });
             setNotes("");
+            setDate(todayLocal());
+            setTime(nowLocalTime());
             toast.success("Check-in logged");
           }}
         >
