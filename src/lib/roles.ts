@@ -98,7 +98,7 @@ export function getActingRole(): StaffRole {
 }
 export function useActingRole(): [StaffRole, (r: StaffRole) => void] {
   const role = useSyncExternalStore(
-    (cb) => { subs.add(cb); return () => subs.delete(cb); },
+    (cb) => { subs.add(cb); return () => { subs.delete(cb); }; },
     () => acting,
     () => acting,
   );
