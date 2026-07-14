@@ -19,12 +19,12 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import {
-  HealthieService,
-  useHealthie,
+  AdelanteEHR,
+  useEhr,
   type BestTime,
   type ContactChannel,
   type PreferredLanguage,
-} from "@/lib/healthie";
+} from "@/lib/ehr";
 import { toast } from "sonner";
 
 interface Props {
@@ -36,10 +36,10 @@ interface Props {
 }
 
 export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminMeta }: Props) {
-  const patient = useHealthie(() =>
-    patientId ? HealthieService.getPatient(patientId) : undefined,
+  const patient = useEhr(() =>
+    patientId ? AdelanteEHR.getPatient(patientId) : undefined,
   );
-  const consentEvents = useHealthie(() => HealthieService.listAllConsentEvents());
+  const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
 
   const [form, setForm] = useState({
     firstName: "",
@@ -85,7 +85,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
   if (!patient) return null;
 
   const save = () => {
-    HealthieService.updateProfile(patient.id, {
+    AdelanteEHR.updateProfile(patient.id, {
       firstName: form.firstName,
       lastName: form.lastName,
       preferredName: form.preferredName || undefined,
@@ -110,7 +110,7 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
     onOpenChange(false);
   };
 
-  const consent = HealthieService.getConsentState(patient.id);
+  const consent = AdelanteEHR.getConsentState(patient.id);
   const eventsForPatient = consentEvents
     .filter((e) => e.programId === patient.programId)
     .slice(0, 5);

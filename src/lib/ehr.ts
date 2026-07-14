@@ -1,10 +1,16 @@
-// HealthieService — single seam for all clinical-backend reads/writes.
-// Today this is an in-memory mock; swap implementations to wire Healthie GraphQL.
+// AdelanteEHR — single seam for all clinical-backend reads/writes.
+// Today this is an in-memory mock; swap the in-memory store for a real backend when wiring the native Adelante EHR.
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
-export type CoverageStatus = "active" | "suspended" | "none_unsure" | "other";
+export type CoverageStatus =
+  | "active"
+  | "suspended"
+  | "none_unsure"
+  | "other"
+  | "private_pay"
+  | "uninsured";
 export type ReferralSource =
   | "probation"
   | "parole"
@@ -12,6 +18,86 @@ export type ReferralSource =
   | "correctional"
   | "self"
   | "other";
+
+// Funding lane classifies a billable event independently of its billingStatus.
+// A clinical event is authored first, then classified into a lane.
+export type FundingLane =
+  | "medi_cal_ffs"
+  | "dmc_ods"
+  | "ecm"
+  | "private_pay"
+  | "isl_non_medi_cal"
+  | "bhsa"
+  | "non_billable";
+
+export type EpisodeType =
+  | "mental_health"
+  | "sud_dmc_ods"
+  | "ecm"
+  | "ji_pre_release"
+  | "bhsa";
+
+export interface Episode {
+  id: string;
+  type: EpisodeType;
+  state: string;
+  openedAt: string;
+  closedAt?: string;
+}
+
+export type ReleaseSource = "court" | "custody" | "self_report" | "confirmed";
+export type ReleaseConfidence = "confirmed" | "estimated" | "self_reported";
+export interface ReleaseDateMeta {
+  source: ReleaseSource;
+  confidence: ReleaseConfidence;
+  history: { date: string; changedAt: string; source: ReleaseSource }[];
+}
+
+export type DocumentClass =
+  | "id"
+  | "release_paperwork"
+  | "benefits"
+  | "prior_clinical"
+  | "part2_program_record";
+
+export interface PatientDocument {
+  id: string;
+  fileName: string;
+  uploadedBy: "patient" | "staff";
+  uploadedAt: string;
+  state: "unverified" | "verified" | "rejected";
+  classification?: DocumentClass;
+  promotedBy?: string;
+  scan: "clean" | "pending";
+}
+
+export type SdohStatus =
+  | "identified"
+  | "sent"
+  | "accepted"
+  | "scheduled"
+  | "completed"
+  | "not_completed";
+export interface SdohPlanItem {
+  need: string;
+  referralId?: string;
+  status: SdohStatus;
+  note?: string;
+}
+
+export interface SelfHelpModule {
+  key: string;
+  title: string;
+  cadence: string;
+  assignedBy: string;
+  completedAt?: string;
+}
+
+export interface CoverageSnapshot {
+  asOf: string;
+  status: CoverageStatus;
+  countyOfResponsibility: string;
+}
 
 export type ContactChannel = "text" | "call" | "video";
 export type BestTime = "morning" | "afternoon" | "evening";
@@ -91,6 +177,8 @@ export interface Patient {
       food?: boolean;
       transport?: boolean;
     };
+    /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
+    snapshots?: CoverageSnapshot[];
   };
   // Case Manager workspace
   caseManagerId?: string;
@@ -125,6 +213,17 @@ export interface Patient {
   referralId?: string;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
+  // ----- MVP EMR extension (all optional, backward compatible) -----
+  /** Linked treatment episodes (not collapsed). §3a */
+  episodes?: Episode[];
+  /** Release date provenance. §3c — coexists with the flat `releaseDate` string. */
+  releaseDateMeta?: ReleaseDateMeta;
+  /** Patient-uploaded / staff-uploaded documents. §3d */
+  documents?: PatientDocument[];
+  /** SDOH need → referral → closed-loop status. §3e */
+  sdohPlan?: { items: SdohPlanItem[] };
+  /** Assigned self-help modules with completion. §3f */
+  selfHelpPlan?: { modules: SelfHelpModule[] };
 }
 
 export interface ScreenerResult {
@@ -153,6 +252,7 @@ export interface Appointment {
   status: SessionStatus;
   billingStatus: BillingStatus;
   videoUrl?: string;
+  fundingLane?: FundingLane;
 }
 
 export interface CheckIn {
@@ -200,9 +300,17 @@ export interface ProgressNote {
 }
 
 export type ConsentPurpose = "part2Sud" | "ecmShare" | "sms" | "hipaa";
+// Extended purposes (§3h). Added additively — existing code paths ignore new keys.
+export type ExtendedConsentPurpose =
+  | ConsentPurpose
+  | "telehealth"
+  | "roi"
+  | "portal"
+  | "proxy"
+  | "group";
 export interface ConsentEvent {
   id: string;
-  purpose: ConsentPurpose;
+  purpose: ExtendedConsentPurpose;
   action: "granted" | "revoked";
   at: string;
   actor: "patient" | "staff";
@@ -268,7 +376,7 @@ const patients: Patient[] = [
     coverage: {
       status: "active",
       verified: "verified",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
     },
@@ -317,7 +425,7 @@ const patients: Patient[] = [
     coverage: {
       status: "suspended",
       verified: "pending",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
     },
     caseManagerId: "cm1",
@@ -344,7 +452,7 @@ const patients: Patient[] = [
     coverage: {
       status: "active",
       verified: "verified",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
     },
@@ -353,6 +461,11 @@ const patients: Patient[] = [
       { key: "phq-9", score: 22, severity: "Severe", completedAt: "2026-04-05", timepoint: "intake" },
       { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-05", timepoint: "day30" },
       { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-04", timepoint: "day60" },
+    ],
+    // §3a — co-occurring: Marcus carries both a mental-health and a SUD/DMC-ODS episode.
+    episodes: [
+      { id: "ep-p3-mh", type: "mental_health", state: "active", openedAt: "2026-04-05" },
+      { id: "ep-p3-sud", type: "sud_dmc_ods", state: "engaged", openedAt: "2026-04-05" },
     ],
   },
 ];
@@ -378,10 +491,10 @@ const referrals: Referral[] = [
     dob: "1989-04-12",
     phone: "+15595550101",
     releaseDate: "2026-05-10",
-    referringAgency: "Kings County Probation",
+    referringAgency: "Tulare County Probation",
     referrerName: "Officer Hernandez",
     referralSource: "probation",
-    countyOfRelease: "Kings",
+    countyOfRelease: "Tulare",
     consentToContact: true,
     status: "enrolled",
     createdAt: ago(72 * 24),
@@ -438,7 +551,7 @@ const emit = () => {
 // who has not yet completed intake so the first-time flow is visible.
 let currentPatientId = "p2";
 
-export const HealthieService = {
+export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
     return () => listeners.delete(l);
@@ -541,7 +654,7 @@ export const HealthieService = {
   appointmentsForPatient: (pid: string) => appointments.filter((a) => a.patientId === pid),
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
 
-  // Writes (mocked — in production these become Healthie GraphQL mutations)
+  // Writes (mocked — in production these become native Adelante EHR mutations)
   createReferral(
     input: Omit<Referral, "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask"> & {
       requestManualOutreach?: boolean;
@@ -559,7 +672,7 @@ export const HealthieService = {
       status: "submitted",
       createdAt: new Date().toISOString(),
       ...(canSendSms
-        ? { smsSentAt: new Date().toISOString() } // Healthie webhook → Twilio in real impl
+        ? { smsSentAt: new Date().toISOString() } // SMS webhook in real impl
         : { outreachTask: "manual_call" as const }),
     };
     referrals.unshift(r);
@@ -574,7 +687,7 @@ export const HealthieService = {
     r.status = nextStatus;
     // P4 — materialize a Patient row the moment a referral flips to enrolled.
     if (nextStatus === "enrolled" && !r.enrolledPatientId) {
-      const p = HealthieService.createPatient({
+      const p = AdelanteEHR.createPatient({
         firstName: r.firstName,
         lastName: r.lastName,
         dob: r.dob,
@@ -599,7 +712,7 @@ export const HealthieService = {
     }
     const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
     appointments.push(a);
-    HealthieService.notifyAppointmentChange({
+    AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
       kind: "booked",
@@ -621,7 +734,7 @@ export const HealthieService = {
       throw new Error("That time was just taken. Please pick another slot.");
     }
     a.start = newStart;
-    HealthieService.notifyAppointmentChange({
+    AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
       kind: "rescheduled",
@@ -629,7 +742,7 @@ export const HealthieService = {
     emit();
     return a;
   },
-  // Mock Healthie `availabilities` query — seeded slots per clinician,
+  // Mock `availabilities` query — seeded slots per clinician,
   // Mon–Fri, three slots/day (10:00, 13:00, 15:30), with `taken` reflecting
   // existing scheduled appointments.
   getClinicianAvailability(clinicianId: string, days = 14): AvailabilitySlot[] {
@@ -674,7 +787,7 @@ export const HealthieService = {
     const p = patients.find((x) => x.id === input.patientId);
     if (!p) return;
     const channels: CommsChannel[] = ["profile"];
-    if (HealthieService.isSmsOn(p.id) && p.phone) channels.push("sms");
+    if (AdelanteEHR.isSmsOn(p.id) && p.phone) channels.push("sms");
     if (p.email) channels.push("email");
     p.notifications = [
       {
@@ -946,13 +1059,61 @@ export const HealthieService = {
     };
     return { enrolled, completionRate, intakeVelocityDays, billing };
   },
+
+  // ----- §3c — T-minus helper (days until release; negative = post-release) -----
+  tMinus(patientId: string): number | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.releaseDate) return null;
+    const ms = +new Date(p.releaseDate) - Date.now();
+    return Math.round(ms / (1000 * 60 * 60 * 24));
+  },
+
+  // ----- §3d — Documents (mock upload/verify queue) -----
+  uploadDocument(
+    patientId: string,
+    input: { fileName: string; uploadedBy: "patient" | "staff"; classification?: DocumentClass },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const doc: PatientDocument = {
+      id: uid(),
+      fileName: input.fileName,
+      uploadedBy: input.uploadedBy,
+      uploadedAt: new Date().toISOString(),
+      state: "unverified",
+      classification: input.classification,
+      scan: "clean", // real impl: kick off virus scan; §11 out-of-scope
+    };
+    p.documents = [doc, ...(p.documents ?? [])];
+    emit();
+    return doc;
+  },
+  classifyDocument(patientId: string, documentId: string, classification: DocumentClass) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.classification = classification;
+    emit();
+  },
+  verifyDocument(patientId: string, documentId: string, staffLabel: string) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.state = "verified";
+    d.promotedBy = staffLabel;
+    emit();
+  },
+  rejectDocument(patientId: string, documentId: string) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.state = "rejected";
+    emit();
+  },
 };
 
 import { useSyncExternalStore } from "react";
-export function useHealthie<T>(selector: () => T): T {
+export function useEhr<T>(selector: () => T): T {
   // Subscribe to a stable version number so we don't loop on new-array snapshots.
   useSyncExternalStore(
-    (cb) => HealthieService.subscribe(cb),
+    (cb) => AdelanteEHR.subscribe(cb),
     () => version,
     () => version,
   );

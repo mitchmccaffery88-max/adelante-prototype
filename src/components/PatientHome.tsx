@@ -1,5 +1,5 @@
 import { Link } from "@tanstack/react-router";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -71,10 +71,10 @@ const goalStatusMap: Record<string, string> = {
 
 export function PatientHome() {
   const { t } = useI18n();
-  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
-  const patient = useHealthie(() => HealthieService.getPatient(currentId));
-  const appts = useHealthie(() => HealthieService.appointmentsForPatient(currentId));
-  const smsOn = useHealthie(() => HealthieService.isSmsOn(currentId));
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
+  const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
 
   if (!patient) return null;
 
@@ -100,7 +100,7 @@ export function PatientHome() {
   const cycleGoal = (goalId: string, current: "open" | "in_progress" | "done") => {
     const nextStatus =
       current === "open" ? "in_progress" : current === "in_progress" ? "done" : "open";
-    HealthieService.setGoalStatus(patient.id, goalId, nextStatus);
+    AdelanteEHR.setGoalStatus(patient.id, goalId, nextStatus);
     toast.success(
       nextStatus === "done"
         ? "Goal marked done — nice work."
@@ -161,14 +161,14 @@ export function PatientHome() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {HealthieService.getClinician(next.clinicianId)?.name} · {next.durationMin} {t("homeMin")} · {t("homeVideo")}
+                {AdelanteEHR.getClinician(next.clinicianId)?.name} · {next.durationMin} {t("homeMin")} · {t("homeVideo")}
               </div>
               <NotificationLine patientId={patient.id} apptId={next.id} />
               <Button
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
                 onClick={() =>
                   toast.success("Joining video session", {
-                    description: "Healthie telehealth (mock)",
+                    description: "Adelante telehealth (mock)",
                   })
                 }
               >
@@ -292,7 +292,7 @@ export function PatientHome() {
                     <ClientDate value={a.start} />
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {HealthieService.getClinician(a.clinicianId)?.name}
+                    {AdelanteEHR.getClinician(a.clinicianId)?.name}
                   </div>
                 </div>
                 <Badge variant="outline" className="capitalize">
@@ -316,7 +316,7 @@ export function PatientHome() {
                     <ClientDate value={a.start} />
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {HealthieService.getClinician(a.clinicianId)?.name}
+                    {AdelanteEHR.getClinician(a.clinicianId)?.name}
                   </div>
                 </div>
                 <Badge variant="outline" className="capitalize">
@@ -397,7 +397,7 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
 }
 
 function TasksCard({ patientId }: { patientId: string }) {
-  const tasks = useHealthie(() => HealthieService.getPatient(patientId)?.tasks ?? []);
+  const tasks = useEhr(() => AdelanteEHR.getPatient(patientId)?.tasks ?? []);
   const open = tasks.filter((t) => !t.completedAt);
   if (open.length === 0) return null;
   return (
@@ -418,7 +418,7 @@ function TasksCard({ patientId }: { patientId: string }) {
                 size="sm"
                 variant="outline"
                 onClick={() => {
-                  HealthieService.completeTask(patientId, t.id);
+                  AdelanteEHR.completeTask(patientId, t.id);
                   toast.success("Marked done");
                 }}
               >
@@ -433,7 +433,7 @@ function TasksCard({ patientId }: { patientId: string }) {
 }
 
 function MyProfileCard({ patientId }: { patientId: string }) {
-  const patient = useHealthie(() => HealthieService.getPatient(patientId));
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [open, setOpen] = useState(false);
   if (!patient) return null;
   const channelLabel: Record<string, string> = {
@@ -502,8 +502,8 @@ function MyProfileCard({ patientId }: { patientId: string }) {
 }
 
 function NotificationLine({ patientId, apptId }: { patientId: string; apptId: string }) {
-  const note = useHealthie(() =>
-    HealthieService.latestNotificationForAppt(patientId, apptId),
+  const note = useEhr(() =>
+    AdelanteEHR.latestNotificationForAppt(patientId, apptId),
   );
   if (!note) return null;
   const verb =
@@ -535,7 +535,7 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 function ConsentCard({ patientId }: { patientId: string }) {
-  const consent = useHealthie(() => HealthieService.getConsentState(patientId));
+  const consent = useEhr(() => AdelanteEHR.getConsentState(patientId));
   const rows: { key: "part2Sud" | "ecmShare" | "sms"; label: string; help: string }[] = [
     {
       key: "part2Sud",
@@ -567,7 +567,7 @@ function ConsentCard({ patientId }: { patientId: string }) {
             <Switch
               checked={consent[r.key]}
               onCheckedChange={(v) => {
-                HealthieService.setConsent(patientId, r.key, v);
+                AdelanteEHR.setConsent(patientId, r.key, v);
                 toast.success(v ? "Consent granted" : "Consent withdrawn");
               }}
             />

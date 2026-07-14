@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -44,12 +44,12 @@ function SchedulePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
   const { reschedule: rescheduleId } = Route.useSearch();
-  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
-  const patient = useHealthie(() => HealthieService.getPatient(currentId));
-  const clinicians = useHealthie(() => HealthieService.listClinicians());
-  const existing = useHealthie(() =>
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const existing = useEhr(() =>
     rescheduleId
-      ? HealthieService.appointmentsForPatient(currentId).find(
+      ? AdelanteEHR.appointmentsForPatient(currentId).find(
           (a) => a.id === rescheduleId,
         )
       : undefined,
@@ -63,8 +63,8 @@ function SchedulePage() {
   const [modality, setModality] = useState<"video" | "phone">("video");
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
-  const availability = useHealthie(() =>
-    clinicianId ? HealthieService.getClinicianAvailability(clinicianId, 14) : [],
+  const availability = useEhr(() =>
+    clinicianId ? AdelanteEHR.getClinicianAvailability(clinicianId, 14) : [],
   );
 
   const dayGroups = useMemo(() => {
@@ -93,12 +93,12 @@ function SchedulePage() {
     }
     try {
       if (isReschedule && existing) {
-        HealthieService.rescheduleAppointment(existing.id, selectedStart);
+        AdelanteEHR.rescheduleAppointment(existing.id, selectedStart);
         toast.success("Session rescheduled", {
           description: "Your care team and you have been notified.",
         });
       } else {
-        HealthieService.bookAppointment({
+        AdelanteEHR.bookAppointment({
           patientId: patient.id,
           clinicianId,
           start: selectedStart,

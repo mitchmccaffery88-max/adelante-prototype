@@ -15,7 +15,8 @@ import {
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
-import { HealthieService, useHealthie } from "@/lib/healthie";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { STAFF_ROLES, useActingRole } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -30,9 +31,10 @@ export function AppShell() {
   const { lang, setLang, t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
-  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
-  const patient = useHealthie(() => HealthieService.getPatient(currentId));
-  const patients = useHealthie(() => HealthieService.listPatients());
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const [actingRole, setActingRole] = useActingRole();
   const signedIn = (() => {
     try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
   })();
@@ -52,6 +54,8 @@ export function AppShell() {
     { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
     { to: "/case-manager" as const, label: t("navCaseManager"), icon: HandHeart, desc: "Check-ins & resources" },
     { to: "/clinician" as const, label: t("navClinician"), icon: Calendar, desc: "Caseload & sessions" },
+    { to: "/billing" as const, label: "Billing", icon: LayoutDashboard, desc: "Claims, ISL & credentials" },
+    { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
 
@@ -134,6 +138,19 @@ export function AppShell() {
                     </Link>
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
+                  Acting as
+                </DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={actingRole}
+                  onValueChange={(v) => setActingRole(v as typeof actingRole)}
+                >
+                  {STAFF_ROLES.map((r) => (
+                    <DropdownMenuRadioItem key={r.key} value={r.key} className="text-xs">
+                      {r.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
 
@@ -244,7 +261,7 @@ export function AppShell() {
       <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
           <span>
-            © {new Date().getFullYear()} Adelante · Kings County Pilot · Built with care
+            © {new Date().getFullYear()} Adelante · Tulare County Pilot · Built with care
           </span>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
@@ -262,7 +279,7 @@ export function AppShell() {
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup
                   value={currentId}
-                  onValueChange={(v) => HealthieService.setCurrentPatientId(v)}
+                  onValueChange={(v) => AdelanteEHR.setCurrentPatientId(v)}
                 >
                   {patients.map((p) => (
                     <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">

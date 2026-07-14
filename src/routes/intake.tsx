@@ -9,13 +9,13 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
-  HealthieService,
-  useHealthie,
+  AdelanteEHR,
+  useEhr,
   type CoverageStatus,
   type ContactChannel,
   type BestTime,
   type PreferredLanguage,
-} from "@/lib/healthie";
+} from "@/lib/ehr";
 import { Input } from "@/components/ui/input";
 import {
   Select,
@@ -148,8 +148,8 @@ type Mode = "self" | "assisted";
 
 function IntakePage() {
   const navigate = useNavigate();
-  const currentId = useHealthie(() => HealthieService.getCurrentPatientId());
-  const patient = useHealthie(() => HealthieService.getPatient(currentId));
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const alreadyComplete = Boolean(patient?.intakeCompletedAt);
   const [mode, setMode] = useState<Mode>("self");
   const [step, setStep] = useState(0);
@@ -267,7 +267,7 @@ function IntakePage() {
 
   const submit = () => {
     // P1 — persist the About-you patch first.
-    HealthieService.updateProfile(currentId, {
+    AdelanteEHR.updateProfile(currentId, {
       preferredName: profile.preferredName || undefined,
       pronouns: profile.pronouns || undefined,
       preferredLanguage: profile.preferredLanguage,
@@ -288,7 +288,7 @@ function IntakePage() {
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
       const isPhq = s.key === "phq-9";
       const itemFlag = isPhq && (ans[8] ?? 0) > 0;
-      HealthieService.recordScreener(currentId, {
+      AdelanteEHR.recordScreener(currentId, {
         key: s.key,
         score,
         severity: severityFor(s, score),
@@ -297,7 +297,7 @@ function IntakePage() {
         crisisFlag: itemFlag,
       });
     });
-    HealthieService.setCoverage(currentId, {
+    AdelanteEHR.setCoverage(currentId, {
       status: coverage.status,
       verified:
         coverage.status === "active"
@@ -309,13 +309,13 @@ function IntakePage() {
       jiReentryFlag: coverage.jiReentryFlag,
       otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
-    HealthieService.completeIntake(currentId, {
+    AdelanteEHR.completeIntake(currentId, {
       needs,
       hipaa: hipaaConsent,
       part2Sud: sudConsent === true,
     });
     if (crisisFlagged) {
-      HealthieService.raiseCrisisFlag(currentId, "phq-9-item-9");
+      AdelanteEHR.raiseCrisisFlag(currentId, "phq-9-item-9");
     }
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
