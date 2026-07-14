@@ -43,23 +43,76 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
-  // Stale-chunk recovery: after a new deploy, cached HTML can reference a JS
-  // chunk hash that no longer exists. Hard-reload once to fetch fresh HTML.
+  const msg = String((error as { message?: string })?.message ?? "");
+  const isChunkError =
+    /Failed to fetch dynamically imported module/i.test(msg) ||
+    /Importing a module script failed/i.test(msg) ||
+    /ChunkLoadError/i.test(msg) ||
+    /Loading (chunk|CSS chunk) [\w-]+ failed/i.test(msg);
+
+  // Stale-chunk auto-recovery: try one silent hard-reload before showing the
+  // error screen. If that already happened recently, fall through and render
+  // the user-facing screen with a manual "Reload app" button.
+  const RELOAD_KEY = "__adelante_chunk_reload_at";
+  const recentlyReloaded =
+    typeof window !== "undefined" &&
+    Date.now() - Number(sessionStorage.getItem(RELOAD_KEY) ?? 0) < 10_000;
+
   useEffect(() => {
     if (typeof window === "undefined") return;
-    const msg = String((error as { message?: string })?.message ?? "");
-    const isChunkError =
-      /Failed to fetch dynamically imported module/i.test(msg) ||
-      /Importing a module script failed/i.test(msg) ||
-      /ChunkLoadError/i.test(msg) ||
-      /Loading (chunk|CSS chunk) [\w-]+ failed/i.test(msg);
-    if (!isChunkError) return;
-    const key = "__adelante_chunk_reload_at";
-    const last = Number(sessionStorage.getItem(key) ?? 0);
-    if (Date.now() - last < 10_000) return; // avoid reload loops
-    sessionStorage.setItem(key, String(Date.now()));
+    if (!isChunkError || recentlyReloaded) return;
+    sessionStorage.setItem(RELOAD_KEY, String(Date.now()));
     window.location.reload();
-  }, [error]);
+  }, [isChunkError, recentlyReloaded]);
+
+  const hardReload = () => {
+    if (typeof window === "undefined") return;
+    try {
+      sessionStorage.removeItem(RELOAD_KEY);
+    } catch {
+      // ignore storage failures
+    }
+    // Cache-bust so we don't re-hit a stale index.html referencing missing chunks.
+    const url = new URL(window.location.href);
+    url.searchParams.set("_r", String(Date.now()));
+    window.location.replace(url.toString());
+  };
+
+  if (isChunkError) {
+    return (
+      <div className="flex min-h-screen items-center justify-center bg-background px-4">
+        <div className="max-w-md text-center">
+          <div className="mx-auto mb-4 flex h-12 w-12 items-center justify-center rounded-full bg-primary/10 text-2xl">
+            ↻
+          </div>
+          <h1 className="text-xl font-semibold tracking-tight text-foreground">
+            A new version of Adelante is ready
+          </h1>
+          <p className="mt-2 text-sm text-muted-foreground">
+            The app was updated while you were using it, so some files couldn't
+            load. Reload to get the latest version — your information is safe.
+          </p>
+          <div className="mt-6 flex flex-wrap justify-center gap-2">
+            <button
+              onClick={hardReload}
+              className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
+            >
+              Reload app
+            </button>
+            <a
+              href="/"
+              className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+            >
+              Go home
+            </a>
+          </div>
+          <p className="mt-4 text-xs text-muted-foreground">
+            Still stuck? Close this tab and open Adelante again.
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
@@ -68,7 +121,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try refreshing or head back home.
+          Something went wrong on our end. You can try again, reload the app, or
+          head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -79,6 +133,12 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             className="inline-flex items-center justify-center rounded-md bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition-colors hover:bg-primary/90"
           >
             Try again
+          </button>
+          <button
+            onClick={hardReload}
+            className="inline-flex items-center justify-center rounded-md border border-input bg-background px-4 py-2 text-sm font-medium text-foreground transition-colors hover:bg-accent"
+          >
+            Reload app
           </button>
           <a
             href="/"
