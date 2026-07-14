@@ -491,7 +491,7 @@ const referrals: Referral[] = [
     dob: "1989-04-12",
     phone: "+15595550101",
     releaseDate: "2026-05-10",
-    referringAgency: "Kings County Probation",
+    referringAgency: "Tulare County Probation",
     referrerName: "Officer Hernandez",
     referralSource: "probation",
     countyOfRelease: "Tulare",
