@@ -271,11 +271,31 @@ function CheckInsTab({ patientId }: { patientId: string }) {
   const [modality, setModality] = useState<"phone" | "video" | "in_person" | "sms">("phone");
   const [attended, setAttended] = useState(true);
   const [notes, setNotes] = useState("");
+  const [date, setDate] = useState(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+  });
+  const [time, setTime] = useState(() => {
+    const d = new Date();
+    const pad = (n: number) => String(n).padStart(2, "0");
+    return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  });
   const items = p?.checkIns ?? [];
   return (
     <div className="space-y-3">
       <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">Log new check-in</div>
+        <div className="grid grid-cols-2 gap-2">
+          <div className="space-y-1">
+            <Label className="text-xs">Date</Label>
+            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+          </div>
+          <div className="space-y-1">
+            <Label className="text-xs">Time</Label>
+            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+          </div>
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
             <SelectTrigger><SelectValue /></SelectTrigger>
@@ -300,8 +320,17 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         <Button
           size="sm"
           onClick={() => {
+            if (!date || !time) {
+              toast.error("Add date and time");
+              return;
+            }
+            const dt = new Date(`${date}T${time}`);
+            if (isNaN(dt.getTime())) {
+              toast.error("Invalid date or time");
+              return;
+            }
             AdelanteEHR.addCheckIn(patientId, {
-              date: new Date().toISOString(),
+              date: dt.toISOString(),
               modality,
               attended,
               notes,
