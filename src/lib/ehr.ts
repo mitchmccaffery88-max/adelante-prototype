@@ -376,7 +376,7 @@ const patients: Patient[] = [
     coverage: {
       status: "active",
       verified: "verified",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
     },
@@ -425,7 +425,7 @@ const patients: Patient[] = [
     coverage: {
       status: "suspended",
       verified: "pending",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
     },
     caseManagerId: "cm1",
@@ -452,7 +452,7 @@ const patients: Patient[] = [
     coverage: {
       status: "active",
       verified: "verified",
-      countyOfRelease: "Kings",
+      countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
     },
@@ -461,6 +461,11 @@ const patients: Patient[] = [
       { key: "phq-9", score: 22, severity: "Severe", completedAt: "2026-04-05", timepoint: "intake" },
       { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-05", timepoint: "day30" },
       { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-04", timepoint: "day60" },
+    ],
+    // §3a — co-occurring: Marcus carries both a mental-health and a SUD/DMC-ODS episode.
+    episodes: [
+      { id: "ep-p3-mh", type: "mental_health", state: "active", openedAt: "2026-04-05" },
+      { id: "ep-p3-sud", type: "sud_dmc_ods", state: "engaged", openedAt: "2026-04-05" },
     ],
   },
 ];
