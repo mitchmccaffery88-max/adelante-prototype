@@ -494,7 +494,7 @@ const referrals: Referral[] = [
     referringAgency: "Kings County Probation",
     referrerName: "Officer Hernandez",
     referralSource: "probation",
-    countyOfRelease: "Kings",
+    countyOfRelease: "Tulare",
     consentToContact: true,
     status: "enrolled",
     createdAt: ago(72 * 24),
