@@ -450,7 +450,7 @@ const dict = {
     adminBillSubmitted: "Enviado",
     adminBillPaid: "Pagado",
     adminBillDenied: "Denegado",
-    adminBillNote: "Solo visualización. La facturación se gestiona en Healthie; la integración EDI llega en la Versión 2.",
+    adminBillNote: "Solo visualización. La facturación se registra aquí; la integración EDI llega en la Versión 2.",
     adminAuditEmpty: "No se han registrado cambios de consentimiento.",
     adminAuditNote: "Solo se agrega; los pacientes se identifican únicamente por programId.",
     adminAuditAll: "Todos los propósitos",
