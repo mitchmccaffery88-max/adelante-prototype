@@ -244,7 +244,7 @@ export function AppShell() {
       <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
           <span>
-            © {new Date().getFullYear()} Adelante · Kings County Pilot · Built with care
+            © {new Date().getFullYear()} Adelante · Tulare County Pilot · Built with care
           </span>
           <div className="flex items-center gap-3">
             <span className="flex items-center gap-1.5">
