@@ -32,6 +32,7 @@ import {
   CalendarClock,
   MessageSquare,
   Mail,
+  HandHeart,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
