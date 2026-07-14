@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { STAFF_ROLES, useActingRole } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -33,6 +34,7 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const [actingRole, setActingRole] = useActingRole();
   const signedIn = (() => {
     try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
   })();
@@ -52,6 +54,8 @@ export function AppShell() {
     { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
     { to: "/case-manager" as const, label: t("navCaseManager"), icon: HandHeart, desc: "Check-ins & resources" },
     { to: "/clinician" as const, label: t("navClinician"), icon: Calendar, desc: "Caseload & sessions" },
+    { to: "/billing" as const, label: "Billing", icon: LayoutDashboard, desc: "Claims, ISL & credentials" },
+    { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
 
@@ -134,6 +138,19 @@ export function AppShell() {
                     </Link>
                   </DropdownMenuItem>
                 ))}
+                <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
+                  Acting as
+                </DropdownMenuLabel>
+                <DropdownMenuRadioGroup
+                  value={actingRole}
+                  onValueChange={(v) => setActingRole(v as typeof actingRole)}
+                >
+                  {STAFF_ROLES.map((r) => (
+                    <DropdownMenuRadioItem key={r.key} value={r.key} className="text-xs">
+                      {r.label}
+                    </DropdownMenuRadioItem>
+                  ))}
+                </DropdownMenuRadioGroup>
               </DropdownMenuContent>
             </DropdownMenu>
 
