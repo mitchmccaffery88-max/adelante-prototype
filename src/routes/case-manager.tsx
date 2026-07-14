@@ -55,6 +55,25 @@ function daysAgo(iso?: string) {
   return `${d}d ago`;
 }
 
+function todayLocal() {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+}
+
+function nowLocalTime() {
+  const d = new Date();
+  const pad = (n: number) => String(n).padStart(2, "0");
+  return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
+}
+
+function combineDateTime(date: string, time: string): string | null {
+  if (!date || !time) return null;
+  const dt = new Date(`${date}T${time}`);
+  if (isNaN(dt.getTime())) return null;
+  return dt.toISOString();
+}
+
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
     meta: [
