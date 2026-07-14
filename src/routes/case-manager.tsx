@@ -40,6 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
+import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 
 function lastContactAt(p: ReturnType<typeof AdelanteEHR.getPatient>) {
   const c = p?.checkIns?.[0];
@@ -106,6 +107,7 @@ function CaseManagerPage() {
     activeId ? AdelanteEHR.getPatient(activeId) : undefined,
   );
   const [profileId, setProfileId] = useState<string | null>(null);
+  const [recordId, setRecordId] = useState<string | null>(null);
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -251,6 +253,9 @@ function CaseManagerPage() {
                       <Button size="sm" variant="ghost" onClick={() => setProfileId(p.id)}>
                         Profile
                       </Button>
+                      <Button size="sm" variant="secondary" onClick={() => setRecordId(p.id)}>
+                        Record
+                      </Button>
                     </div>
                   </TableCell>
                 </TableRow>
@@ -281,6 +286,11 @@ function CaseManagerPage() {
         patientId={profileId}
         open={profileId !== null}
         onOpenChange={(o) => !o && setProfileId(null)}
+      />
+      <ClientRecordDrawer
+        patientId={recordId}
+        open={recordId !== null}
+        onOpenChange={(o) => !o && setRecordId(null)}
       />
     </div>
   );
