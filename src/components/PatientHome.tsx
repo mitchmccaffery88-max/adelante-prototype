@@ -537,6 +537,85 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 }
 
 function ConsentCard({ patientId }: { patientId: string }) {
+  return <ConsentCardInner patientId={patientId} />;
+}
+
+function SupportPlanCard({ patientId }: { patientId: string }) {
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const items = (p?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
+  if (items.length === 0) return null;
+  const statusLabel: Record<string, string> = {
+    identified: "We noted this",
+    sent: "Sent to partner",
+    accepted: "Partner accepted",
+    scheduled: "Scheduled",
+    completed: "Done",
+    not_completed: "Didn't happen",
+  };
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+        <HeartPulse className="h-4 w-4" /> Your support plan
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Everyday needs your team is helping with.
+      </p>
+      <ul className="mt-3 space-y-2 text-sm">
+        {items.map((i) => (
+          <li key={i.id} className="rounded-md border p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <span className="text-navy">{i.need}</span>
+              <Badge variant="outline" className="text-[10px]">
+                {statusLabel[i.status] ?? i.status}
+              </Badge>
+            </div>
+            {i.note && (
+              <div className="text-xs text-muted-foreground mt-1">{i.note}</div>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function ReferralsForYouCard({ patientId }: { patientId: string }) {
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const items = (p?.resourceReferrals ?? []).filter((r) => r.visibleToPatient !== false);
+  if (items.length === 0) return null;
+  const statusLabel: Record<string, string> = {
+    pending: "In progress",
+    accepted: "Partner accepted",
+    completed: "Done",
+  };
+  return (
+    <Card className="p-5">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+        <HandHeart className="h-4 w-4" /> Referrals for you
+      </div>
+      <p className="text-xs text-muted-foreground mt-1">
+        Places your team connected you with.
+      </p>
+      <ul className="mt-3 space-y-2 text-sm">
+        {items.map((r) => (
+          <li key={r.id} className="rounded-md border p-2.5">
+            <div className="flex items-center justify-between gap-2">
+              <div>
+                <div className="text-navy capitalize">{r.category} — {r.provider}</div>
+                {r.note && <div className="text-xs text-muted-foreground mt-0.5">{r.note}</div>}
+              </div>
+              <Badge variant="outline" className="text-[10px]">
+                {statusLabel[r.status] ?? r.status}
+              </Badge>
+            </div>
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
+function ConsentCardInner({ patientId }: { patientId: string }) {
   const consent = useEhr(() => AdelanteEHR.getConsentState(patientId));
   const rows: { key: "part2Sud" | "ecmShare" | "sms"; label: string; help: string }[] = [
     {
