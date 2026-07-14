@@ -1059,6 +1059,54 @@ export const AdelanteEHR = {
     };
     return { enrolled, completionRate, intakeVelocityDays, billing };
   },
+
+  // ----- §3c — T-minus helper (days until release; negative = post-release) -----
+  tMinus(patientId: string): number | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.releaseDate) return null;
+    const ms = +new Date(p.releaseDate) - Date.now();
+    return Math.round(ms / (1000 * 60 * 60 * 24));
+  },
+
+  // ----- §3d — Documents (mock upload/verify queue) -----
+  uploadDocument(
+    patientId: string,
+    input: { fileName: string; uploadedBy: "patient" | "staff"; classification?: DocumentClass },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const doc: PatientDocument = {
+      id: uid(),
+      fileName: input.fileName,
+      uploadedBy: input.uploadedBy,
+      uploadedAt: new Date().toISOString(),
+      state: "unverified",
+      classification: input.classification,
+      scan: "clean", // real impl: kick off virus scan; §11 out-of-scope
+    };
+    p.documents = [doc, ...(p.documents ?? [])];
+    emit();
+    return doc;
+  },
+  classifyDocument(patientId: string, documentId: string, classification: DocumentClass) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.classification = classification;
+    emit();
+  },
+  verifyDocument(patientId: string, documentId: string, staffLabel: string) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.state = "verified";
+    d.promotedBy = staffLabel;
+    emit();
+  },
+  rejectDocument(patientId: string, documentId: string) {
+    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
+    if (!d) return;
+    d.state = "rejected";
+    emit();
+  },
 };
 
 import { useSyncExternalStore } from "react";
