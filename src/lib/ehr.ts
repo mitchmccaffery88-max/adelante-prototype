@@ -79,10 +79,14 @@ export type SdohStatus =
   | "completed"
   | "not_completed";
 export interface SdohPlanItem {
+  id: string;
   need: string;
   referralId?: string;
   status: SdohStatus;
   note?: string;
+  createdAt: string;
+  updatedAt: string;
+  visibleToPatient?: boolean;
 }
 
 export interface SelfHelpModule {
@@ -270,8 +274,63 @@ export interface ResourceReferral {
   provider: string;
   status: "pending" | "accepted" | "completed";
   createdAt: string;
+  updatedAt?: string;
+  note?: string;
+  followUpDate?: string;
+  visibleToPatient?: boolean;
   // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
   sudDisclosureConsent?: boolean;
+}
+
+export type ExternalPartyRole =
+  | "probation"
+  | "parole"
+  | "housing"
+  | "pcp"
+  | "county_bh"
+  | "family"
+  | "other";
+export interface ExternalContact {
+  id: string;
+  agency: string;
+  contactName?: string;
+  phone?: string;
+  email?: string;
+  role: ExternalPartyRole;
+  part2Sensitive?: boolean;
+  createdAt: string;
+}
+export type CoordinationDirection = "in" | "out";
+export type CoordinationChannel = "phone" | "email" | "in_person" | "letter" | "portal";
+export interface CoordinationEntry {
+  id: string;
+  date: string;
+  partyType: ExternalPartyRole;
+  party: string;
+  direction: CoordinationDirection;
+  channel: CoordinationChannel;
+  summary: string;
+  part2Disclosed: boolean;
+  createdBy: string;
+}
+
+export interface PeerNote {
+  id: string;
+  date: string;
+  author: string;
+  text: string;
+}
+
+export type EligibilityFlagKey =
+  | "ecm"
+  | "jiReentry"
+  | "cs_housing"
+  | "cs_food"
+  | "cs_transport";
+export interface EligibilityNote {
+  note?: string;
+  asOf?: string;
+  updatedAt: string;
 }
 
 export interface CaseManager {
