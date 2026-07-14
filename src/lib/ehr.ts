@@ -177,6 +177,8 @@ export interface Patient {
       food?: boolean;
       transport?: boolean;
     };
+    /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
+    snapshots?: CoverageSnapshot[];
   };
   // Case Manager workspace
   caseManagerId?: string;
