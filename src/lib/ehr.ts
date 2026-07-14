@@ -4,7 +4,13 @@
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
-export type CoverageStatus = "active" | "suspended" | "none_unsure" | "other";
+export type CoverageStatus =
+  | "active"
+  | "suspended"
+  | "none_unsure"
+  | "other"
+  | "private_pay"
+  | "uninsured";
 export type ReferralSource =
   | "probation"
   | "parole"
@@ -12,6 +18,86 @@ export type ReferralSource =
   | "correctional"
   | "self"
   | "other";
+
+// Funding lane classifies a billable event independently of its billingStatus.
+// A clinical event is authored first, then classified into a lane.
+export type FundingLane =
+  | "medi_cal_ffs"
+  | "dmc_ods"
+  | "ecm"
+  | "private_pay"
+  | "isl_non_medi_cal"
+  | "bhsa"
+  | "non_billable";
+
+export type EpisodeType =
+  | "mental_health"
+  | "sud_dmc_ods"
+  | "ecm"
+  | "ji_pre_release"
+  | "bhsa";
+
+export interface Episode {
+  id: string;
+  type: EpisodeType;
+  state: string;
+  openedAt: string;
+  closedAt?: string;
+}
+
+export type ReleaseSource = "court" | "custody" | "self_report" | "confirmed";
+export type ReleaseConfidence = "confirmed" | "estimated" | "self_reported";
+export interface ReleaseDateMeta {
+  source: ReleaseSource;
+  confidence: ReleaseConfidence;
+  history: { date: string; changedAt: string; source: ReleaseSource }[];
+}
+
+export type DocumentClass =
+  | "id"
+  | "release_paperwork"
+  | "benefits"
+  | "prior_clinical"
+  | "part2_program_record";
+
+export interface PatientDocument {
+  id: string;
+  fileName: string;
+  uploadedBy: "patient" | "staff";
+  uploadedAt: string;
+  state: "unverified" | "verified" | "rejected";
+  classification?: DocumentClass;
+  promotedBy?: string;
+  scan: "clean" | "pending";
+}
+
+export type SdohStatus =
+  | "identified"
+  | "sent"
+  | "accepted"
+  | "scheduled"
+  | "completed"
+  | "not_completed";
+export interface SdohPlanItem {
+  need: string;
+  referralId?: string;
+  status: SdohStatus;
+  note?: string;
+}
+
+export interface SelfHelpModule {
+  key: string;
+  title: string;
+  cadence: string;
+  assignedBy: string;
+  completedAt?: string;
+}
+
+export interface CoverageSnapshot {
+  asOf: string;
+  status: CoverageStatus;
+  countyOfResponsibility: string;
+}
 
 export type ContactChannel = "text" | "call" | "video";
 export type BestTime = "morning" | "afternoon" | "evening";
@@ -153,6 +239,7 @@ export interface Appointment {
   status: SessionStatus;
   billingStatus: BillingStatus;
   videoUrl?: string;
+  fundingLane?: FundingLane;
 }
 
 export interface CheckIn {
@@ -200,9 +287,17 @@ export interface ProgressNote {
 }
 
 export type ConsentPurpose = "part2Sud" | "ecmShare" | "sms" | "hipaa";
+// Extended purposes (§3h). Added additively — existing code paths ignore new keys.
+export type ExtendedConsentPurpose =
+  | ConsentPurpose
+  | "telehealth"
+  | "roi"
+  | "portal"
+  | "proxy"
+  | "group";
 export interface ConsentEvent {
   id: string;
-  purpose: ConsentPurpose;
+  purpose: ExtendedConsentPurpose;
   action: "granted" | "revoked";
   at: string;
   actor: "patient" | "staff";
