@@ -43,6 +43,24 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
     reportLovableError(error, { boundary: "tanstack_root_error_component" });
   }, [error]);
 
+  // Stale-chunk recovery: after a new deploy, cached HTML can reference a JS
+  // chunk hash that no longer exists. Hard-reload once to fetch fresh HTML.
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    const msg = String((error as { message?: string })?.message ?? "");
+    const isChunkError =
+      /Failed to fetch dynamically imported module/i.test(msg) ||
+      /Importing a module script failed/i.test(msg) ||
+      /ChunkLoadError/i.test(msg) ||
+      /Loading (chunk|CSS chunk) [\w-]+ failed/i.test(msg);
+    if (!isChunkError) return;
+    const key = "__adelante_chunk_reload_at";
+    const last = Number(sessionStorage.getItem(key) ?? 0);
+    if (Date.now() - last < 10_000) return; // avoid reload loops
+    sessionStorage.setItem(key, String(Date.now()));
+    window.location.reload();
+  }, [error]);
+
   return (
     <div className="flex min-h-screen items-center justify-center bg-background px-4">
       <div className="max-w-md text-center">
