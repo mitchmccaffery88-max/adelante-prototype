@@ -1,5 +1,5 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-// Today this is an in-memory mock; swap implementations to wire Healthie GraphQL.
+// Today this is an in-memory mock; swap the in-memory store for a real backend when wiring the native Adelante EHR.
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
@@ -541,7 +541,7 @@ export const AdelanteEHR = {
   appointmentsForPatient: (pid: string) => appointments.filter((a) => a.patientId === pid),
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
 
-  // Writes (mocked — in production these become Healthie GraphQL mutations)
+  // Writes (mocked — in production these become native Adelante EHR mutations)
   createReferral(
     input: Omit<Referral, "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask"> & {
       requestManualOutreach?: boolean;
@@ -559,7 +559,7 @@ export const AdelanteEHR = {
       status: "submitted",
       createdAt: new Date().toISOString(),
       ...(canSendSms
-        ? { smsSentAt: new Date().toISOString() } // Healthie webhook → Twilio in real impl
+        ? { smsSentAt: new Date().toISOString() } // SMS webhook in real impl
         : { outreachTask: "manual_call" as const }),
     };
     referrals.unshift(r);
@@ -629,7 +629,7 @@ export const AdelanteEHR = {
     emit();
     return a;
   },
-  // Mock Healthie `availabilities` query — seeded slots per clinician,
+  // Mock `availabilities` query — seeded slots per clinician,
   // Mon–Fri, three slots/day (10:00, 13:00, 15:30), with `taken` reflecting
   // existing scheduled appointments.
   getClinicianAvailability(clinicianId: string, days = 14): AvailabilitySlot[] {
