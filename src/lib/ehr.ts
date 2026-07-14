@@ -211,6 +211,17 @@ export interface Patient {
   referralId?: string;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
+  // ----- MVP EMR extension (all optional, backward compatible) -----
+  /** Linked treatment episodes (not collapsed). §3a */
+  episodes?: Episode[];
+  /** Release date provenance. §3c — coexists with the flat `releaseDate` string. */
+  releaseDateMeta?: ReleaseDateMeta;
+  /** Patient-uploaded / staff-uploaded documents. §3d */
+  documents?: PatientDocument[];
+  /** SDOH need → referral → closed-loop status. §3e */
+  sdohPlan?: { items: SdohPlanItem[] };
+  /** Assigned self-help modules with completion. §3f */
+  selfHelpPlan?: { modules: SelfHelpModule[] };
 }
 
 export interface ScreenerResult {
