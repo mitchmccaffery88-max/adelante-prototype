@@ -35,6 +35,7 @@ import { useActingRole, canAccess, type RecordClass } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus } from "lucide-react";
+import { TimePicker } from "@/components/TimePicker";
 
 interface Props {
   patientId: string | null;
@@ -281,6 +282,8 @@ function CheckInsTab({ patientId }: { patientId: string }) {
     const pad = (n: number) => String(n).padStart(2, "0");
     return `${pad(d.getHours())}:${pad(d.getMinutes())}`;
   });
+  const [dateError, setDateError] = useState<string | undefined>();
+  const [timeError, setTimeError] = useState<string | undefined>();
   const items = p?.checkIns ?? [];
   return (
     <div className="space-y-3">
@@ -289,11 +292,24 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-xs">Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setDateError(undefined); }}
+              aria-invalid={Boolean(dateError)}
+              className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
+            />
+            {dateError && <p className="text-xs text-destructive">{dateError}</p>}
           </div>
           <div className="space-y-1">
             <Label className="text-xs">Time</Label>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <TimePicker
+              id="drawer-checkin-time"
+              value={time}
+              onChange={(v) => { setTime(v); setTimeError(undefined); }}
+              error={timeError}
+              ariaLabel="Check-in time"
+            />
           </div>
         </div>
         <div className="grid grid-cols-2 gap-2">
@@ -320,15 +336,12 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         <Button
           size="sm"
           onClick={() => {
-            if (!date || !time) {
-              toast.error("Add date and time");
-              return;
-            }
+            setDateError(undefined);
+            setTimeError(undefined);
+            if (!date) { setDateError("Pick a date"); return; }
+            if (!time) { setTimeError("Pick a time"); return; }
             const dt = new Date(`${date}T${time}`);
-            if (isNaN(dt.getTime())) {
-              toast.error("Invalid date or time");
-              return;
-            }
+            if (isNaN(dt.getTime())) { setTimeError("That time isn't valid"); return; }
             AdelanteEHR.addCheckIn(patientId, {
               date: dt.toISOString(),
               modality,
