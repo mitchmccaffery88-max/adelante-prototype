@@ -41,6 +41,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
+import { TimePicker } from "@/components/TimePicker";
 
 function lastContactAt(p: ReturnType<typeof AdelanteEHR.getPatient>) {
   const c = p?.checkIns?.[0];
@@ -355,6 +356,8 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
   const [notes, setNotes] = useState("");
   const [date, setDate] = useState(() => todayLocal());
   const [time, setTime] = useState(() => nowLocalTime());
+  const [dateError, setDateError] = useState<string | undefined>();
+  const [timeError, setTimeError] = useState<string | undefined>();
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">
@@ -367,11 +370,24 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         <div className="grid grid-cols-2 gap-3">
           <div className="space-y-1.5">
             <Label className="text-sm">Date</Label>
-            <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
+            <Input
+              type="date"
+              value={date}
+              onChange={(e) => { setDate(e.target.value); setDateError(undefined); }}
+              aria-invalid={Boolean(dateError)}
+              className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
+            />
+            {dateError && <p className="text-xs text-destructive">{dateError}</p>}
           </div>
           <div className="space-y-1.5">
             <Label className="text-sm">Time</Label>
-            <Input type="time" value={time} onChange={(e) => setTime(e.target.value)} />
+            <TimePicker
+              id="checkin-time"
+              value={time}
+              onChange={(v) => { setTime(v); setTimeError(undefined); }}
+              error={timeError}
+              ariaLabel="Check-in time"
+            />
           </div>
         </div>
         <div className="space-y-1.5">
@@ -404,11 +420,12 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
         <Button
           className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
           onClick={() => {
+            setDateError(undefined);
+            setTimeError(undefined);
+            if (!date) { setDateError("Pick a date"); return; }
+            if (!time) { setTimeError("Pick a time"); return; }
             const iso = combineDateTime(date, time);
-            if (!iso) {
-              toast.error("Add date and time");
-              return;
-            }
+            if (!iso) { setTimeError("That time isn't valid"); return; }
             AdelanteEHR.addCheckIn(patientId, {
               date: iso,
               modality,
