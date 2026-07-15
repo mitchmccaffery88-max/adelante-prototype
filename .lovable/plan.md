@@ -1,26 +1,34 @@
-## Add date & time fields to "Log check-in"
+## Replace time text input with a friendly time picker + inline validation
 
-Currently `CheckInCard` in `src/routes/case-manager.tsx` stamps the check-in with `new Date().toISOString()` automatically. Staff can't back-date a phone call or record an in-person visit that happened yesterday.
+Both check-in entry points (`CheckInCard` in `src/routes/case-manager.tsx` and `CheckInsTab` in `src/components/ClientRecordDrawer.tsx`) currently use a raw `<Input type="time" />`. On some browsers this renders as a bare text field where users can type "9pm" or "25:00", and errors only surface as a generic toast after clicking Save.
 
-### Change
+### New component: `src/components/TimePicker.tsx`
 
-Add editable **Date** and **Time** inputs to the Weekly check-in card so the logged timestamp reflects when the contact actually occurred.
+A small controlled component built from shadcn primitives:
 
-### Implementation (single file: `src/routes/case-manager.tsx`)
+- Two `Select` dropdowns side by side — Hour (1–12) and Minute (00, 05, 10 … 55) — plus an AM/PM toggle (`ToggleGroup` or a third `Select`).
+- Value in/out is a canonical `HH:mm` 24-hour string so downstream `combineDateTime` / `new Date(\`${date}T${time}\`)` code is unchanged.
+- Props: `value: string`, `onChange: (v: string) => void`, `error?: string`, `id?`, `aria-label?`.
+- Renders a red ring + `<p className="text-xs text-destructive">` beneath when `error` is set (aria-invalid, aria-describedby).
+- Nothing invalid is representable, so bad free-text formats can't be produced.
 
-1. In `CheckInCard`, add two new state values:
-   - `date` — defaults to today (`YYYY-MM-DD`)
-   - `time` — defaults to current local time (`HH:mm`)
-2. Render them as a two-column row above the Modality select:
-   - `<Input type="date" />` labeled "Date"
-   - `<Input type="time" />` labeled "Time"
-3. On submit, combine into a local `Date` and pass its ISO string into `AdelanteEHR.addCheckIn(..., { date: combined.toISOString(), ... })`.
-4. Validate: if either field is empty, show `toast.error("Add date and time")` and abort.
-5. After success, reset date/time back to "now" alongside the existing notes reset.
-6. Mirror the same pattern in the `ClientRecordDrawer` check-ins tab if it has an equivalent quick-log form, so both entry points behave the same. (Will confirm during implementation and update only if present.)
+### Wire it into both check-in forms
+
+In `CheckInCard` (case-manager.tsx, ~line 374) and `CheckInsTab` (ClientRecordDrawer.tsx, ~line 296):
+
+1. Replace `<Input type="time" … />` with `<TimePicker value={time} onChange={setTime} error={timeError} />`.
+2. Add `const [timeError, setTimeError] = useState<string | undefined>()` and a matching `dateError` for consistency (invalid `date` string).
+3. Change the submit handler:
+   - Clear both errors at start.
+   - If `!date` → `setDateError("Pick a date")` and return (no toast).
+   - If `!time` → `setTimeError("Pick a time")` and return.
+   - If `combineDateTime` / `new Date(...)` yields `NaN` → `setTimeError("That time isn't valid")` and return.
+   - Only fall back to `toast.error` for unexpected save failures, not for format issues.
+4. Reset errors when the form resets after a successful save.
 
 ### Out of scope
 
-- No EHR model changes (`CheckIn.date` already stores an ISO string).
-- No timezone picker — uses the browser's local timezone, same as the rest of the app.
-- No edit-after-save UI for existing check-ins.
+- No changes to `AdelanteEHR.addCheckIn` or the stored `CheckIn.date` shape.
+- No date-picker replacement — `<Input type="date">` stays; only its inline error is added.
+- No i18n string additions beyond the two new English error messages (matches surrounding copy).
+- No changes to any other `type="time"` usage outside these two check-in forms.
