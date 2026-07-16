@@ -1,6 +1,6 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type ServiceType } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -18,6 +18,9 @@ import {
   ShieldCheck,
   Video,
   Phone,
+  MapPin,
+  Building2,
+  ExternalLink,
   CalendarClock,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
@@ -46,7 +49,6 @@ function SchedulePage() {
   const { reschedule: rescheduleId } = Route.useSearch();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
-  const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const existing = useEhr(() =>
     rescheduleId
       ? AdelanteEHR.appointmentsForPatient(currentId).find(
@@ -55,17 +57,53 @@ function SchedulePage() {
       : undefined,
   );
   const isReschedule = Boolean(rescheduleId && existing);
-  const [clinicianId, setClinicianId] = useState(
-    existing?.clinicianId ?? clinicians[0]?.id ?? "",
+  const serviceTypes = useEhr(() => AdelanteEHR.listServiceTypes());
+  const [serviceType, setServiceType] = useState<ServiceType | "">(
+    existing?.serviceType ?? "",
   );
+  const activeService = serviceTypes.find((s) => s.id === serviceType);
+  const allowedModalities = activeService?.allowedModalities ?? [
+    "video",
+    "phone",
+    "in_person",
+  ];
+  const [modality, setModality] = useState<"video" | "phone" | "in_person">(
+    existing?.modality ?? "video",
+  );
+  // If the picked service doesn't support current modality, snap to the first allowed.
+  const effectiveModality = allowedModalities.includes(modality)
+    ? modality
+    : allowedModalities[0] ?? "video";
+  const locations = useEhr(() =>
+    AdelanteEHR.locationsForService(serviceType || undefined),
+  );
+  const [locationId, setLocationId] = useState<string>(
+    existing?.locationId ?? "",
+  );
+  const clinicians = useEhr(() =>
+    AdelanteEHR.cliniciansForService(serviceType || undefined, {
+      locationId: effectiveModality === "in_person" ? locationId : undefined,
+    }),
+  );
+  const [clinicianId, setClinicianId] = useState(
+    existing?.clinicianId ?? "",
+  );
+  // Reset clinician if the current one isn't in the filtered list.
+  const clinicianStillValid = clinicians.some((c) => c.id === clinicianId);
+  const effectiveClinicianId = clinicianStillValid
+    ? clinicianId
+    : clinicians[0]?.id ?? "";
   const [selectedStart, setSelectedStart] = useState<string>("");
-  const [duration, setDuration] = useState(existing?.durationMin ?? 50);
-  const [modality, setModality] = useState<"video" | "phone">("video");
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
-    clinicianId ? AdelanteEHR.getClinicianAvailability(clinicianId, 14) : [],
+    effectiveClinicianId
+      ? AdelanteEHR.getClinicianAvailability(effectiveClinicianId, 14)
+      : [],
   );
+
+  const defaultDuration = activeService?.defaultDurationMin ?? existing?.durationMin ?? 50;
+  const activeLocation = AdelanteEHR.getLocation(locationId);
 
   const dayGroups = useMemo(() => {
     const map = new Map<
@@ -87,24 +125,44 @@ function SchedulePage() {
   if (!patient) return null;
 
   const submit = () => {
-    if (!selectedStart || !clinicianId) {
+    if (!serviceType) {
+      toast.error("Pick a service to continue.");
+      return;
+    }
+    if (effectiveModality === "in_person" && !locationId) {
+      toast.error("Pick a location for the in-person visit.");
+      return;
+    }
+    if (!selectedStart || !effectiveClinicianId) {
       toast.error("Pick a time that works for you.");
       return;
     }
     try {
       if (isReschedule && existing) {
-        AdelanteEHR.rescheduleAppointment(existing.id, selectedStart);
+        AdelanteEHR.rescheduleAppointment(existing.id, selectedStart, {
+          serviceType: serviceType as ServiceType,
+          modality: effectiveModality,
+          locationId: effectiveModality === "in_person" ? locationId : undefined,
+        });
         toast.success("Session rescheduled", {
           description: "Your care team and you have been notified.",
         });
       } else {
         AdelanteEHR.bookAppointment({
           patientId: patient.id,
-          clinicianId,
+          clinicianId: effectiveClinicianId,
           start: selectedStart,
-          durationMin: duration,
+          durationMin: defaultDuration,
+          serviceType: serviceType as ServiceType,
+          modality: effectiveModality,
+          locationId: effectiveModality === "in_person" ? locationId : undefined,
         });
-        toast.success(t("schRequested"), { description: t("schRequestedDesc") });
+        toast.success(t("schRequested"), {
+          description:
+            effectiveModality === "in_person" && activeLocation
+              ? `In person at ${activeLocation.name}.`
+              : t("schRequestedDesc"),
+        });
       }
       navigate({ to: "/home" });
     } catch (err) {
