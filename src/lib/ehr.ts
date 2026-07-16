@@ -252,6 +252,10 @@ export interface Clinician {
   credential: string;
   mediCalCredentialed: boolean;
   mediCalStatus: "active" | "pending" | "expired";
+  /** Services this clinician provides. When absent, treat as offering all services. */
+  services?: ServiceType[];
+  /** Physical locations where this clinician staffs in-person visits. */
+  locationIds?: string[];
 }
 
 export interface Appointment {
@@ -264,7 +268,69 @@ export interface Appointment {
   billingStatus: BillingStatus;
   videoUrl?: string;
   fundingLane?: FundingLane;
+  /** What kind of visit this is (added in scheduling v2). */
+  serviceType?: ServiceType;
+  /** How the visit happens. Legacy rows may be undefined; treat as "video". */
+  modality?: "video" | "phone" | "in_person";
+  /** Required when modality === "in_person". */
+  locationId?: string;
 }
+
+// ---------- Scheduling: service types + locations ----------
+
+export type ServiceType =
+  | "intake"
+  | "therapy_individual"
+  | "therapy_group"
+  | "med_management"
+  | "peer_support"
+  | "case_management"
+  | "care_coordination";
+
+export interface ServiceTypeInfo {
+  id: ServiceType;
+  label: string;
+  helper: string;
+  allowedModalities: ("video" | "phone" | "in_person")[];
+  defaultDurationMin: number;
+}
+
+export interface ClinicLocation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  room?: string;
+  inPersonServices: ServiceType[];
+}
+
+const SERVICE_TYPES: ServiceTypeInfo[] = [
+  { id: "intake", label: "First visit (intake)", helper: "Get set up with your care team.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60 },
+  { id: "therapy_individual", label: "Talk with a counselor", helper: "A private one-on-one session.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50 },
+  { id: "therapy_group", label: "Group session", helper: "Meet with others in a supported group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 60 },
+  { id: "med_management", label: "Medication visit", helper: "Talk with a prescriber about medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 30 },
+  { id: "peer_support", label: "Peer support", helper: "Connect with someone who's been there.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 45 },
+  { id: "case_management", label: "Meet your case manager", helper: "Get help with resources and next steps.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30 },
+  { id: "care_coordination", label: "Care coordination", helper: "Line up outside services and support.", allowedModalities: ["video", "phone"], defaultDurationMin: 30 },
+];
+
+const LOCATIONS: ClinicLocation[] = [
+  {
+    id: "loc-visalia",
+    name: "Adelante Visalia Hub",
+    address: "1201 S Mooney Blvd",
+    city: "Visalia, CA",
+    room: "Suite 200",
+    inPersonServices: ["intake", "therapy_individual", "therapy_group", "med_management", "peer_support", "case_management"],
+  },
+  {
+    id: "loc-porterville",
+    name: "Porterville Community Office",
+    address: "379 N Main St",
+    city: "Porterville, CA",
+    inPersonServices: ["therapy_individual", "peer_support", "case_management"],
+  },
+];
 
 export interface CheckIn {
   id: string;
@@ -413,9 +479,33 @@ export interface AvailabilitySlot {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const clinicians: Clinician[] = [
-  { id: "c1", name: "Dr. Marisol Reyes", credential: "LCSW", mediCalCredentialed: true, mediCalStatus: "active" },
-  { id: "c2", name: "Dr. James Okafor", credential: "PsyD", mediCalCredentialed: true, mediCalStatus: "active" },
-  { id: "c3", name: "Anita Brooks", credential: "LMFT", mediCalCredentialed: false, mediCalStatus: "pending" },
+  {
+    id: "c1",
+    name: "Dr. Marisol Reyes",
+    credential: "LCSW",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["intake", "therapy_individual", "therapy_group", "case_management", "care_coordination"],
+    locationIds: ["loc-visalia", "loc-porterville"],
+  },
+  {
+    id: "c2",
+    name: "Dr. James Okafor",
+    credential: "PsyD",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["therapy_individual", "med_management", "intake"],
+    locationIds: ["loc-visalia"],
+  },
+  {
+    id: "c3",
+    name: "Anita Brooks",
+    credential: "LMFT",
+    mediCalCredentialed: false,
+    mediCalStatus: "pending",
+    services: ["therapy_individual", "peer_support", "case_management"],
+    locationIds: ["loc-porterville"],
+  },
 ];
 
 const patients: Patient[] = [
@@ -712,6 +802,27 @@ export const AdelanteEHR = {
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
+  listServiceTypes: () => SERVICE_TYPES,
+  getServiceType: (id?: ServiceType) => SERVICE_TYPES.find((s) => s.id === id),
+  listLocations: () => LOCATIONS,
+  getLocation: (id?: string) => LOCATIONS.find((l) => l.id === id),
+  cliniciansForService(
+    serviceType?: ServiceType,
+    opts?: { locationId?: string },
+  ) {
+    return clinicians.filter((c) => {
+      const svcOk = !serviceType || !c.services || c.services.includes(serviceType);
+      const locOk =
+        !opts?.locationId ||
+        !c.locationIds ||
+        c.locationIds.includes(opts.locationId);
+      return svcOk && locOk;
+    });
+  },
+  locationsForService(serviceType?: ServiceType) {
+    if (!serviceType) return LOCATIONS;
+    return LOCATIONS.filter((l) => l.inPersonServices.includes(serviceType));
+  },
   listCaseManagers: () => caseManagers,
   getCaseManager: (id?: string) => caseManagers.find((c) => c.id === id),
   patientsForCaseManager: (cmId: string) =>
@@ -765,7 +876,24 @@ export const AdelanteEHR = {
     }
     emit();
   },
-  bookAppointment(input: { patientId: string; clinicianId: string; start: string; durationMin: number }) {
+  bookAppointment(input: {
+    patientId: string;
+    clinicianId: string;
+    start: string;
+    durationMin: number;
+    serviceType?: ServiceType;
+    modality?: "video" | "phone" | "in_person";
+    locationId?: string;
+  }) {
+    if (input.modality === "in_person" && !input.locationId) {
+      throw new Error("Pick a location for the in-person visit.");
+    }
+    if (input.serviceType) {
+      const svc = SERVICE_TYPES.find((s) => s.id === input.serviceType);
+      if (svc && input.modality && !svc.allowedModalities.includes(input.modality)) {
+        throw new Error(`${svc.label} isn't offered as ${input.modality.replace("_", " ")}.`);
+      }
+    }
     // Validate against mock availability: reject if the slot is already taken.
     const conflict = appointments.some(
       (x) =>
@@ -786,7 +914,16 @@ export const AdelanteEHR = {
     emit();
     return a;
   },
-  rescheduleAppointment(apptId: string, newStart: string) {
+  rescheduleAppointment(
+    apptId: string,
+    newStart: string,
+    patch?: {
+      serviceType?: ServiceType;
+      modality?: "video" | "phone" | "in_person";
+      locationId?: string;
+      durationMin?: number;
+    },
+  ) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) return;
     const conflict = appointments.some(
@@ -800,6 +937,15 @@ export const AdelanteEHR = {
       throw new Error("That time was just taken. Please pick another slot.");
     }
     a.start = newStart;
+    if (patch) {
+      if (patch.serviceType !== undefined) a.serviceType = patch.serviceType;
+      if (patch.modality !== undefined) a.modality = patch.modality;
+      if (patch.locationId !== undefined) a.locationId = patch.locationId;
+      if (patch.durationMin !== undefined) a.durationMin = patch.durationMin;
+      if (a.modality === "in_person" && !a.locationId) {
+        throw new Error("Pick a location for the in-person visit.");
+      }
+    }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
