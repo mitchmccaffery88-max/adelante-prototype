@@ -193,18 +193,134 @@ function SchedulePage() {
 
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5">
+          <Label className="text-sm">What kind of visit?</Label>
+          <Select
+            value={serviceType}
+            onValueChange={(v) => {
+              setServiceType(v as ServiceType);
+              setSelectedStart("");
+              setActiveDayKey("");
+              setLocationId("");
+              setClinicianId("");
+            }}
+            disabled={isReschedule}
+          >
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a visit type" />
+            </SelectTrigger>
+            <SelectContent>
+              {serviceTypes.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          {activeService && (
+            <p className="text-xs text-muted-foreground pt-0.5">
+              {activeService.helper}
+            </p>
+          )}
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-sm">{t("schPickFormat")}</Label>
+          <div
+            className={
+              "grid gap-2 " +
+              (allowedModalities.length >= 3 ? "grid-cols-3" : "grid-cols-2")
+            }
+          >
+            {allowedModalities.includes("video") && (
+              <button
+                type="button"
+                onClick={() => setModality("video")}
+                className={
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  (effectiveModality === "video"
+                    ? "border-teal bg-teal/10 text-navy"
+                    : "bg-card hover:border-teal/60 text-foreground/70")
+                }
+              >
+                <Video className="h-4 w-4" /> {t("schVideo")}
+              </button>
+            )}
+            {allowedModalities.includes("phone") && (
+              <button
+                type="button"
+                onClick={() => setModality("phone")}
+                className={
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  (effectiveModality === "phone"
+                    ? "border-teal bg-teal/10 text-navy"
+                    : "bg-card hover:border-teal/60 text-foreground/70")
+                }
+              >
+                <Phone className="h-4 w-4" /> {t("schPhone")}
+              </button>
+            )}
+            {allowedModalities.includes("in_person") && (
+              <button
+                type="button"
+                onClick={() => setModality("in_person")}
+                className={
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  (effectiveModality === "in_person"
+                    ? "border-teal bg-teal/10 text-navy"
+                    : "bg-card hover:border-teal/60 text-foreground/70")
+                }
+              >
+                <Building2 className="h-4 w-4" /> In person
+              </button>
+            )}
+          </div>
+        </div>
+
+        {effectiveModality === "in_person" && (
+          <div className="space-y-1.5">
+            <Label className="text-sm">Where would you like to meet?</Label>
+            <Select
+              value={locationId}
+              onValueChange={(v) => {
+                setLocationId(v);
+                setSelectedStart("");
+                setActiveDayKey("");
+              }}
+            >
+              <SelectTrigger>
+                <SelectValue placeholder="Pick a location" />
+              </SelectTrigger>
+              <SelectContent>
+                {locations.map((l) => (
+                  <SelectItem key={l.id} value={l.id}>
+                    {l.name} — {l.city}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {activeLocation && (
+              <p className="text-xs text-muted-foreground flex items-start gap-1.5 pt-0.5">
+                <MapPin className="h-3.5 w-3.5 text-teal mt-0.5" />
+                {activeLocation.address}, {activeLocation.city}
+                {activeLocation.room ? ` · ${activeLocation.room}` : ""}
+              </p>
+            )}
+          </div>
+        )}
+
+        <div className="space-y-1.5">
           <Label className="text-sm">{t("schCounselor")}</Label>
           <Select
-            value={clinicianId}
+            value={effectiveClinicianId}
             onValueChange={(v) => {
               setClinicianId(v);
               setSelectedStart("");
               setActiveDayKey("");
             }}
-            disabled={isReschedule}
+            disabled={isReschedule || clinicians.length === 0}
           >
             <SelectTrigger>
-              <SelectValue />
+              <SelectValue placeholder="Pick a counselor" />
             </SelectTrigger>
             <SelectContent>
               {clinicians.map((c) => (
@@ -214,10 +330,17 @@ function SchedulePage() {
               ))}
             </SelectContent>
           </Select>
-          <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
-            <CalendarClock className="h-3 w-3 text-teal" /> Times come from your
-            counselor's live calendar. You can only pick what's open.
-          </p>
+          {clinicians.length === 0 ? (
+            <p className="text-xs text-muted-foreground pt-1">
+              No counselors match that combination yet. Try another format or
+              location, or contact your case manager.
+            </p>
+          ) : (
+            <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
+              <CalendarClock className="h-3 w-3 text-teal" /> Times come from
+              your counselor's live calendar. You can only pick what's open.
+            </p>
+          )}
         </div>
 
         {dayGroups.length === 0 ? (
@@ -302,50 +425,12 @@ function SchedulePage() {
           </>
         )}
 
-        <div className="space-y-1.5">
-          <Label className="text-sm">{t("schLength")}</Label>
-          <Select
-            value={String(duration)}
-            onValueChange={(v) => setDuration(Number(v))}
-          >
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="30">30 minutes</SelectItem>
-              <SelectItem value="50">50 minutes</SelectItem>
-              <SelectItem value="60">60 minutes</SelectItem>
-            </SelectContent>
-          </Select>
-        </div>
-        <div className="space-y-1.5">
-          <Label className="text-sm">{t("schPickFormat")}</Label>
-          <div className="grid grid-cols-2 gap-2">
-            <button
-              type="button"
-              onClick={() => setModality("video")}
-              className={
-                "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
-                (modality === "video"
-                  ? "border-teal bg-teal/10 text-navy"
-                  : "bg-card hover:border-teal/60 text-foreground/70")
-              }
-            >
-              <Video className="h-4 w-4" /> {t("schVideo")}
-            </button>
-            <button
-              type="button"
-              onClick={() => setModality("phone")}
-              className={
-                "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
-                (modality === "phone"
-                  ? "border-teal bg-teal/10 text-navy"
-                  : "bg-card hover:border-teal/60 text-foreground/70")
-              }
-            >
-              <Phone className="h-4 w-4" /> {t("schPhone")}
-            </button>
-          </div>
+        <div className="rounded-md border bg-secondary/30 p-3 text-xs text-muted-foreground flex items-start gap-2">
+          <CalendarClock className="h-3.5 w-3.5 text-teal mt-0.5" />
+          <span>
+            Session length is {defaultDuration} minutes. Your care team sets
+            this — call your case manager if you need it changed.
+          </span>
         </div>
         <Button
           className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
