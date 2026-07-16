@@ -20,7 +20,6 @@ import {
   Phone,
   MapPin,
   Building2,
-  ExternalLink,
   CalendarClock,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
