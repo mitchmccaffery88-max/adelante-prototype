@@ -252,6 +252,10 @@ export interface Clinician {
   credential: string;
   mediCalCredentialed: boolean;
   mediCalStatus: "active" | "pending" | "expired";
+  /** Services this clinician provides. When absent, treat as offering all services. */
+  services?: ServiceType[];
+  /** Physical locations where this clinician staffs in-person visits. */
+  locationIds?: string[];
 }
 
 export interface Appointment {
@@ -264,7 +268,69 @@ export interface Appointment {
   billingStatus: BillingStatus;
   videoUrl?: string;
   fundingLane?: FundingLane;
+  /** What kind of visit this is (added in scheduling v2). */
+  serviceType?: ServiceType;
+  /** How the visit happens. Legacy rows may be undefined; treat as "video". */
+  modality?: "video" | "phone" | "in_person";
+  /** Required when modality === "in_person". */
+  locationId?: string;
 }
+
+// ---------- Scheduling: service types + locations ----------
+
+export type ServiceType =
+  | "intake"
+  | "therapy_individual"
+  | "therapy_group"
+  | "med_management"
+  | "peer_support"
+  | "case_management"
+  | "care_coordination";
+
+export interface ServiceTypeInfo {
+  id: ServiceType;
+  label: string;
+  helper: string;
+  allowedModalities: ("video" | "phone" | "in_person")[];
+  defaultDurationMin: number;
+}
+
+export interface ClinicLocation {
+  id: string;
+  name: string;
+  address: string;
+  city: string;
+  room?: string;
+  inPersonServices: ServiceType[];
+}
+
+const SERVICE_TYPES: ServiceTypeInfo[] = [
+  { id: "intake", label: "First visit (intake)", helper: "Get set up with your care team.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60 },
+  { id: "therapy_individual", label: "Talk with a counselor", helper: "A private one-on-one session.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50 },
+  { id: "therapy_group", label: "Group session", helper: "Meet with others in a supported group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 60 },
+  { id: "med_management", label: "Medication visit", helper: "Talk with a prescriber about medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 30 },
+  { id: "peer_support", label: "Peer support", helper: "Connect with someone who's been there.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 45 },
+  { id: "case_management", label: "Meet your case manager", helper: "Get help with resources and next steps.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30 },
+  { id: "care_coordination", label: "Care coordination", helper: "Line up outside services and support.", allowedModalities: ["video", "phone"], defaultDurationMin: 30 },
+];
+
+const LOCATIONS: ClinicLocation[] = [
+  {
+    id: "loc-visalia",
+    name: "Adelante Visalia Hub",
+    address: "1201 S Mooney Blvd",
+    city: "Visalia, CA",
+    room: "Suite 200",
+    inPersonServices: ["intake", "therapy_individual", "therapy_group", "med_management", "peer_support", "case_management"],
+  },
+  {
+    id: "loc-porterville",
+    name: "Porterville Community Office",
+    address: "379 N Main St",
+    city: "Porterville, CA",
+    inPersonServices: ["therapy_individual", "peer_support", "case_management"],
+  },
+];
 
 export interface CheckIn {
   id: string;
