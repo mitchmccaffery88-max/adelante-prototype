@@ -1,34 +1,57 @@
-## Replace time text input with a friendly time picker + inline validation
+# Scheduling — service type, modality, location, staff-only duration
 
-Both check-in entry points (`CheckInCard` in `src/routes/case-manager.tsx` and `CheckInsTab` in `src/components/ClientRecordDrawer.tsx`) currently use a raw `<Input type="time" />`. On some browsers this renders as a bare text field where users can type "9pm" or "25:00", and errors only surface as a generic toast after clicking Save.
+Extend the existing schedule flow so a patient (or staff booking on their behalf) chooses **service type**, **virtual vs in-person**, **date/time**, and — for in-person — a **location**. Session **duration** becomes staff-only.
 
-### New component: `src/components/TimePicker.tsx`
+## Data model (`src/lib/ehr.ts`)
 
-A small controlled component built from shadcn primitives:
+Extend `Appointment` (additive, all optional so seed data still compiles):
 
-- Two `Select` dropdowns side by side — Hour (1–12) and Minute (00, 05, 10 … 55) — plus an AM/PM toggle (`ToggleGroup` or a third `Select`).
-- Value in/out is a canonical `HH:mm` 24-hour string so downstream `combineDateTime` / `new Date(\`${date}T${time}\`)` code is unchanged.
-- Props: `value: string`, `onChange: (v: string) => void`, `error?: string`, `id?`, `aria-label?`.
-- Renders a red ring + `<p className="text-xs text-destructive">` beneath when `error` is set (aria-invalid, aria-describedby).
-- Nothing invalid is representable, so bad free-text formats can't be produced.
+```ts
+serviceType?: ServiceType;      // see below
+modality?: "video" | "phone" | "in_person";
+locationId?: string;            // required when modality === "in_person"
+```
 
-### Wire it into both check-in forms
+Add supporting types + seed data:
 
-In `CheckInCard` (case-manager.tsx, ~line 374) and `CheckInsTab` (ClientRecordDrawer.tsx, ~line 296):
+- `ServiceType`: `"intake" | "therapy_individual" | "therapy_group" | "med_management" | "peer_support" | "case_management" | "care_coordination"`. Each entry carries a label, allowed modalities, and a **default duration** used when staff don't override.
+- `Location`: `{ id, name, address, city, room?, inPersonServices: ServiceType[] }`. Seed 2 Tulare County sites (e.g., Visalia hub, Porterville satellite).
+- `listServiceTypes()`, `listLocations()`, `getServiceType(id)` helpers on `AdelanteEHR`.
+- `getClinicianAvailability(clinicianId, days, opts?)` gains an optional `{ serviceType?, locationId? }` filter so slots for in-person services only surface at locations the clinician staffs. Also filter by clinician's supported services (add `services: ServiceType[]` to `Clinician`, seed sensible values).
+- `bookAppointment` + `rescheduleAppointment` accept the new fields; validate that `in_person` bookings include `locationId` and that the service supports the chosen modality.
 
-1. Replace `<Input type="time" … />` with `<TimePicker value={time} onChange={setTime} error={timeError} />`.
-2. Add `const [timeError, setTimeError] = useState<string | undefined>()` and a matching `dateError` for consistency (invalid `date` string).
-3. Change the submit handler:
-   - Clear both errors at start.
-   - If `!date` → `setDateError("Pick a date")` and return (no toast).
-   - If `!time` → `setTimeError("Pick a time")` and return.
-   - If `combineDateTime` / `new Date(...)` yields `NaN` → `setTimeError("That time isn't valid")` and return.
-   - Only fall back to `toast.error` for unexpected save failures, not for format issues.
-4. Reset errors when the form resets after a successful save.
+## Scheduling UI (`src/routes/schedule.tsx`)
 
-### Out of scope
+Reorder to a guided flow:
 
-- No changes to `AdelanteEHR.addCheckIn` or the stored `CheckIn.date` shape.
-- No date-picker replacement — `<Input type="date">` stays; only its inline error is added.
-- No i18n string additions beyond the two new English error messages (matches surrounding copy).
-- No changes to any other `type="time"` usage outside these two check-in forms.
+1. **Service type** — card grid, plain-language labels ("Talk with a counselor", "Meet your care manager", etc.).
+2. **Virtual or in person** — two large buttons; only show modalities the selected service supports. If only one is allowed, auto-select and hide.
+3. **Location** — only when in-person; dropdown of locations that offer that service, showing address + city.
+4. **Counselor** — existing dropdown, filtered to clinicians supporting the service (and the location, when in-person).
+5. **Day + time** — existing pickers, now driven by the filtered availability call.
+6. **Duration** — **hidden for patients**. Show a read-only line: "Session length: {defaultDuration} min — your care team can adjust this." Render the existing Select **only** when `getActingRole()` returns a clinical/coordination role (`therapist`, `pmhnp`, `case_manager`, `peer_specialist`); import `getActingRole` from `@/lib/roles`. Billing/sys_admin/patient never see it.
+
+Submit passes `serviceType`, `modality`, `locationId` into `bookAppointment` / `rescheduleAppointment`. Confirmation toast includes the location line when in-person.
+
+## Surfacing on other screens
+
+Keep this change tightly scoped, but update the read-only spots that already render appointments so the new info shows through:
+
+- `src/components/PatientHome.tsx` upcoming-appointment card: append "In person — {location.name}" or "Video visit" under the time.
+- `src/routes/clinician.tsx` appointment list rows: small badge for modality + location name.
+- `src/routes/case-manager.tsx` right-sidebar upcoming list: same badge treatment.
+
+No changes to admin/billing/consent this pass.
+
+## Copy & accessibility
+
+- 6th-grade reading level, no jargon ("Meet in person" / "Meet by video").
+- Service type cards get a short one-line helper ("A private talk with a counselor.").
+- Location cards show address + city, and a "Get directions" link (`https://maps.google.com/?q=…`) opens in new tab.
+
+## Out of scope (call out if user wants next)
+
+- Group-session capacity / roster.
+- Rooms/resource booking beyond a free-text room name.
+- Real Healthie location sync — still mocked via `AdelanteEHR`.
+- Cancellation policy / travel-time buffers.
