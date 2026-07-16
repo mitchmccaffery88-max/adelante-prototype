@@ -479,9 +479,33 @@ export interface AvailabilitySlot {
 const uid = () => Math.random().toString(36).slice(2, 10);
 
 const clinicians: Clinician[] = [
-  { id: "c1", name: "Dr. Marisol Reyes", credential: "LCSW", mediCalCredentialed: true, mediCalStatus: "active" },
-  { id: "c2", name: "Dr. James Okafor", credential: "PsyD", mediCalCredentialed: true, mediCalStatus: "active" },
-  { id: "c3", name: "Anita Brooks", credential: "LMFT", mediCalCredentialed: false, mediCalStatus: "pending" },
+  {
+    id: "c1",
+    name: "Dr. Marisol Reyes",
+    credential: "LCSW",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["intake", "therapy_individual", "therapy_group", "case_management", "care_coordination"],
+    locationIds: ["loc-visalia", "loc-porterville"],
+  },
+  {
+    id: "c2",
+    name: "Dr. James Okafor",
+    credential: "PsyD",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["therapy_individual", "med_management", "intake"],
+    locationIds: ["loc-visalia"],
+  },
+  {
+    id: "c3",
+    name: "Anita Brooks",
+    credential: "LMFT",
+    mediCalCredentialed: false,
+    mediCalStatus: "pending",
+    services: ["therapy_individual", "peer_support", "case_management"],
+    locationIds: ["loc-porterville"],
+  },
 ];
 
 const patients: Patient[] = [
