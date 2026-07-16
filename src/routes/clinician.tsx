@@ -73,7 +73,26 @@ function ClinicianPage() {
     clinicianId ? AdelanteEHR.appointmentsForClinician(clinicianId) : [],
   );
 
-  const [book, setBook] = useState({ patientId: patients[0]?.id ?? "", start: "", durationMin: 50 });
+  const serviceTypes = useEhr(() => AdelanteEHR.listServiceTypes());
+  const [book, setBook] = useState<{
+    patientId: string;
+    start: string;
+    durationMin: number;
+    serviceType: import("@/lib/ehr").ServiceType;
+    modality: "video" | "phone" | "in_person";
+    locationId: string;
+  }>({
+    patientId: patients[0]?.id ?? "",
+    start: "",
+    durationMin: 50,
+    serviceType: "therapy_individual",
+    modality: "video",
+    locationId: "",
+  });
+  const bookService = serviceTypes.find((s) => s.id === book.serviceType);
+  const bookLocations = useEhr(() =>
+    AdelanteEHR.locationsForService(book.serviceType),
+  );
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [newGoal, setNewGoal] = useState("");
@@ -98,6 +117,9 @@ function ClinicianPage() {
         clinicianId,
         start: new Date(book.start).toISOString(),
         durationMin: book.durationMin,
+        serviceType: book.serviceType,
+        modality: book.modality,
+        locationId: book.modality === "in_person" ? book.locationId : undefined,
       });
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
       setBook({ ...book, start: "" });
