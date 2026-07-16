@@ -264,6 +264,79 @@ function ClinicianPage() {
                 <Input type="datetime-local" value={book.start} onChange={(e) => setBook({ ...book, start: e.target.value })} />
               </div>
               <div className="space-y-1.5">
+                <Label className="text-sm">Service type</Label>
+                <Select
+                  value={book.serviceType}
+                  onValueChange={(v) => {
+                    const svc = serviceTypes.find((s) => s.id === v);
+                    setBook({
+                      ...book,
+                      serviceType: v as import("@/lib/ehr").ServiceType,
+                      durationMin: svc?.defaultDurationMin ?? book.durationMin,
+                      modality: svc && !svc.allowedModalities.includes(book.modality)
+                        ? svc.allowedModalities[0] ?? "video"
+                        : book.modality,
+                      locationId: "",
+                    });
+                  }}
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {serviceTypes.map((s) => (
+                      <SelectItem key={s.id} value={s.id}>
+                        {s.label}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-sm">Format</Label>
+                <Select
+                  value={book.modality}
+                  onValueChange={(v) =>
+                    setBook({
+                      ...book,
+                      modality: v as "video" | "phone" | "in_person",
+                      locationId: v === "in_person" ? book.locationId : "",
+                    })
+                  }
+                >
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map((m) => (
+                      <SelectItem key={m} value={m}>
+                        {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              {book.modality === "in_person" && (
+                <div className="space-y-1.5">
+                  <Label className="text-sm">Location</Label>
+                  <Select
+                    value={book.locationId}
+                    onValueChange={(v) => setBook({ ...book, locationId: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue placeholder="Pick a location" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {bookLocations.map((l) => (
+                        <SelectItem key={l.id} value={l.id}>
+                          {l.name} — {l.city}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              )}
+              <div className="space-y-1.5">
                 <Label className="text-sm">{t("clinDuration")}</Label>
                 <Select value={String(book.durationMin)} onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}>
                   <SelectTrigger>
