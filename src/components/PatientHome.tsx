@@ -162,8 +162,29 @@ export function PatientHome() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {AdelanteEHR.getClinician(next.clinicianId)?.name} · {next.durationMin} {t("homeMin")} · {t("homeVideo")}
+                {AdelanteEHR.getClinician(next.clinicianId)?.name} ·{" "}
+                {next.durationMin} {t("homeMin")} ·{" "}
+                {next.modality === "phone"
+                  ? t("schPhone")
+                  : next.modality === "in_person"
+                    ? "In person"
+                    : t("homeVideo")}
+                {next.serviceType &&
+                  ` · ${AdelanteEHR.getServiceType(next.serviceType)?.label ?? ""}`}
               </div>
+              {next.modality === "in_person" && next.locationId && (() => {
+                const loc = AdelanteEHR.getLocation(next.locationId);
+                if (!loc) return null;
+                return (
+                  <div className="mt-1 text-xs text-muted-foreground flex items-start gap-1.5">
+                    <MapPin className="h-3.5 w-3.5 text-teal mt-0.5" />
+                    <span>
+                      {loc.name} — {loc.address}, {loc.city}
+                      {loc.room ? ` · ${loc.room}` : ""}
+                    </span>
+                  </div>
+                );
+              })()}
               <NotificationLine patientId={patient.id} apptId={next.id} />
               <Button
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
