@@ -39,7 +39,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
-import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
+import { UserCog, Phone as PhoneIcon, Globe2, MapPin, Building2 } from "lucide-react";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
