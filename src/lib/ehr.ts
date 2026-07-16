@@ -876,7 +876,24 @@ export const AdelanteEHR = {
     }
     emit();
   },
-  bookAppointment(input: { patientId: string; clinicianId: string; start: string; durationMin: number }) {
+  bookAppointment(input: {
+    patientId: string;
+    clinicianId: string;
+    start: string;
+    durationMin: number;
+    serviceType?: ServiceType;
+    modality?: "video" | "phone" | "in_person";
+    locationId?: string;
+  }) {
+    if (input.modality === "in_person" && !input.locationId) {
+      throw new Error("Pick a location for the in-person visit.");
+    }
+    if (input.serviceType) {
+      const svc = SERVICE_TYPES.find((s) => s.id === input.serviceType);
+      if (svc && input.modality && !svc.allowedModalities.includes(input.modality)) {
+        throw new Error(`${svc.label} isn't offered as ${input.modality.replace("_", " ")}.`);
+      }
+    }
     // Validate against mock availability: reject if the slot is already taken.
     const conflict = appointments.some(
       (x) =>
@@ -897,7 +914,16 @@ export const AdelanteEHR = {
     emit();
     return a;
   },
-  rescheduleAppointment(apptId: string, newStart: string) {
+  rescheduleAppointment(
+    apptId: string,
+    newStart: string,
+    patch?: {
+      serviceType?: ServiceType;
+      modality?: "video" | "phone" | "in_person";
+      locationId?: string;
+      durationMin?: number;
+    },
+  ) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) return;
     const conflict = appointments.some(
@@ -911,6 +937,15 @@ export const AdelanteEHR = {
       throw new Error("That time was just taken. Please pick another slot.");
     }
     a.start = newStart;
+    if (patch) {
+      if (patch.serviceType !== undefined) a.serviceType = patch.serviceType;
+      if (patch.modality !== undefined) a.modality = patch.modality;
+      if (patch.locationId !== undefined) a.locationId = patch.locationId;
+      if (patch.durationMin !== undefined) a.durationMin = patch.durationMin;
+      if (a.modality === "in_person" && !a.locationId) {
+        throw new Error("Pick a location for the in-person visit.");
+      }
+    }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
