@@ -802,6 +802,27 @@ export const AdelanteEHR = {
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
+  listServiceTypes: () => SERVICE_TYPES,
+  getServiceType: (id?: ServiceType) => SERVICE_TYPES.find((s) => s.id === id),
+  listLocations: () => LOCATIONS,
+  getLocation: (id?: string) => LOCATIONS.find((l) => l.id === id),
+  cliniciansForService(
+    serviceType?: ServiceType,
+    opts?: { locationId?: string },
+  ) {
+    return clinicians.filter((c) => {
+      const svcOk = !serviceType || !c.services || c.services.includes(serviceType);
+      const locOk =
+        !opts?.locationId ||
+        !c.locationIds ||
+        c.locationIds.includes(opts.locationId);
+      return svcOk && locOk;
+    });
+  },
+  locationsForService(serviceType?: ServiceType) {
+    if (!serviceType) return LOCATIONS;
+    return LOCATIONS.filter((l) => l.inPersonServices.includes(serviceType));
+  },
   listCaseManagers: () => caseManagers,
   getCaseManager: (id?: string) => caseManagers.find((c) => c.id === id),
   patientsForCaseManager: (cmId: string) =>
