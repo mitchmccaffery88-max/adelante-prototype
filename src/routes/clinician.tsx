@@ -660,6 +660,18 @@ function ApptCard({
             <div className="text-xs text-muted-foreground">
               <ClientDate value={a.start} /> · {a.durationMin} min
             </div>
+            <div className="text-xs text-muted-foreground mt-0.5">
+              {a.modality === "phone"
+                ? "Phone"
+                : a.modality === "in_person"
+                  ? "In person"
+                  : "Video"}
+              {a.serviceType &&
+                ` · ${AdelanteEHR.getServiceType(a.serviceType)?.label ?? ""}`}
+              {a.modality === "in_person" &&
+                a.locationId &&
+                ` · ${AdelanteEHR.getLocation(a.locationId)?.name ?? "Location"}`}
+            </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
                 {a.status.replace("_", " ")}
