@@ -2406,6 +2406,97 @@ export const AdelanteEHR = {
   lastVendorPings(vendor: string): PingResult[] {
     return vendorPings.filter((p) => p.vendor === vendor).slice(0, 5);
   },
+
+  // ---------- Provider switch notifications ----------
+  listProviderSwitches(filter: {
+    patientId?: string;
+    clinicianId?: string;
+    role?: "outgoing" | "incoming" | "either";
+    status?: ProviderSwitchStatus | "any";
+  } = {}): ProviderSwitch[] {
+    return providerSwitches.filter((s) => {
+      if (filter.patientId && s.patientId !== filter.patientId) return false;
+      if (filter.clinicianId) {
+        const role = filter.role ?? "outgoing";
+        if (role === "outgoing" && s.fromClinicianId !== filter.clinicianId) return false;
+        if (role === "incoming" && s.toClinicianId !== filter.clinicianId) return false;
+        if (role === "either" &&
+          s.fromClinicianId !== filter.clinicianId &&
+          s.toClinicianId !== filter.clinicianId) return false;
+      }
+      if (filter.status && filter.status !== "any" && s.status !== filter.status) return false;
+      return true;
+    });
+  },
+  getPreviousProviderFor(patientId: string, serviceType?: ServiceType): string | undefined {
+    return _previousProviderFor(patientId, serviceType);
+  },
+  acknowledgeProviderSwitch(id: string, actorId?: string, note?: string): ProviderSwitch | undefined {
+    const s = providerSwitches.find((x) => x.id === id);
+    if (!s) return undefined;
+    s.status = "acknowledged";
+    s.resolvedAt = new Date().toISOString();
+    s.resolvedBy = actorId;
+    s.resolutionNote = note;
+    // Close linked outgoing-clinician task.
+    const task = caseTasks.find((t) => t.dedupeKey === `switch-out:${s.id}` && t.status !== "done");
+    if (task) {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "provider_switch",
+      action: "switch_acknowledged",
+      patientId: s.patientId,
+      actorId,
+      detail: { switchId: s.id, note },
+    });
+    emit();
+    return s;
+  },
+  dismissProviderSwitch(id: string, actorId?: string, note?: string): ProviderSwitch | undefined {
+    const s = providerSwitches.find((x) => x.id === id);
+    if (!s) return undefined;
+    s.status = "dismissed";
+    s.resolvedAt = new Date().toISOString();
+    s.resolvedBy = actorId;
+    s.resolutionNote = note;
+    const task = caseTasks.find((t) => t.dedupeKey === `switch-out:${s.id}` && t.status !== "done");
+    if (task) {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "provider_switch",
+      action: "switch_dismissed",
+      patientId: s.patientId,
+      actorId,
+      detail: { switchId: s.id, note },
+    });
+    emit();
+    return s;
+  },
+  reassignPrimaryClinician(input: {
+    patientId: string;
+    clinicianId: string;
+    initiatedBy?: ProviderSwitch["initiatedBy"];
+    context?: string;
+  }): ProviderSwitch | undefined {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return undefined;
+    const prev = p.primaryClinicianId;
+    p.primaryClinicianId = input.clinicianId;
+    const sw = _flagProviderSwitch({
+      patientId: p.id,
+      fromClinicianId: prev,
+      toClinicianId: input.clinicianId,
+      reason: "primary_reassignment",
+      context: input.context,
+      initiatedBy: input.initiatedBy ?? "admin",
+    });
+    emit();
+    return sw;
+  },
 };
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
