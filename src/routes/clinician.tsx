@@ -299,6 +299,7 @@ function ClinicianPage() {
 
         {/* Book + availability */}
         <div className="space-y-3">
+          <ProviderSwitchAlerts clinicianId={clinicianId} />
           <RefillReviewCard />
           <Card className="p-5">
             <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
