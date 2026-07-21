@@ -1655,11 +1655,11 @@ export const AdelanteEHR = {
     switch (service) {
       case "intake":
         return 22500;
-      case "individual_therapy":
+      case "therapy_individual":
         return 16500;
       case "med_management":
         return 19500;
-      case "group_therapy":
+      case "therapy_group":
         return 9500;
       case "case_management":
         return 8000;
@@ -1713,7 +1713,7 @@ export const AdelanteEHR = {
   /** ISL/self-pay export: all appointments on ISL lane in the given range. */
   exportIslReport(range?: { from?: string; to?: string }): string {
     const rows = appointments
-      .filter((a) => a.fundingLane === "isl" || a.fundingLane === "self_pay")
+      .filter((a) => a.fundingLane === "isl_non_medi_cal" || a.fundingLane === "private_pay")
       .filter((a) => (range?.from ? a.start >= range.from : true))
       .filter((a) => (range?.to ? a.start <= range.to : true))
       .sort((a, b) => a.start.localeCompare(b.start));
