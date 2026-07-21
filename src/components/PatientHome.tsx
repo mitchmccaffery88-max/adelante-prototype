@@ -38,7 +38,7 @@ import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
-import { InstallAppButton } from "@/components/InstallAppButton";
+import { InstallAppButton, usePwaInstallPrompt } from "@/components/InstallAppButton";
 import { useEffect, useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill, X } from "lucide-react";
