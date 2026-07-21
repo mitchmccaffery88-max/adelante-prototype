@@ -97,7 +97,9 @@ function SchedulePage() {
 
   const availability = useEhr(() =>
     effectiveClinicianId
-      ? AdelanteEHR.getClinicianAvailability(effectiveClinicianId, 14)
+      ? AdelanteEHR.getClinicianAvailability(effectiveClinicianId, 14, {
+          excludeApptId: isReschedule ? existing?.id : undefined,
+        })
       : [],
   );
 
