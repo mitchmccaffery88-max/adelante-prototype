@@ -1798,6 +1798,35 @@ export const AdelanteEHR = {
     }
     return { ok: true };
   },
+  /** Clinicians whose license has expired or is expiring within `days`. */
+  expiringClinicianLicenses(days = 30): { clinician: Clinician; daysUntil: number; expired: boolean }[] {
+    const now = Date.now();
+    return clinicians
+      .filter((c) => Boolean(c.licenseExpiresOn))
+      .map((c) => {
+        const t = +new Date(c.licenseExpiresOn!);
+        const daysUntil = Math.ceil((t - now) / (1000 * 60 * 60 * 24));
+        return { clinician: c, daysUntil, expired: daysUntil < 0 };
+      })
+      .filter((r) => r.expired || r.daysUntil <= days)
+      .sort((a, b) => a.daysUntil - b.daysUntil);
+  },
+  /** Notification deliveries that failed within the given window. */
+  recentFailedNotifications(withinHours = 24): Array<{
+    patient: Patient;
+    notification: ApptNotification;
+  }> {
+    const cutoff = Date.now() - withinHours * 60 * 60 * 1000;
+    const out: Array<{ patient: Patient; notification: ApptNotification }> = [];
+    for (const p of patients) {
+      for (const n of p.notifications ?? []) {
+        if (n.state === "failed" && +new Date(n.at) >= cutoff) {
+          out.push({ patient: p, notification: n });
+        }
+      }
+    }
+    return out.sort((a, b) => +new Date(b.notification.at) - +new Date(a.notification.at));
+  },
 };
 
 import { useSyncExternalStore } from "react";
