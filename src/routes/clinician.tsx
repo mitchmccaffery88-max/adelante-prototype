@@ -274,6 +274,18 @@ function ClinicianPage() {
               <div className="space-y-1.5">
                 <Label className="text-sm">{t("clinDate")}</Label>
                 <Input type="datetime-local" value={book.start} onChange={(e) => setBook({ ...book, start: e.target.value })} />
+                {bookConflict && (
+                  <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      Conflict: you already have a session with{" "}
+                      {bookConflictPatient
+                        ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
+                        : "another patient"}{" "}
+                      at this time. Pick a different time.
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Service type</Label>
