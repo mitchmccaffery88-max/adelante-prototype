@@ -1,5 +1,9 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-// Today this is an in-memory mock; swap the in-memory store for a real backend when wiring the native Adelante EHR.
+// Adelante is the EHR of record. Do NOT import vendor SDKs outside
+// `src/lib/vendors/*`; route vendor traffic through the helpers below
+// (telehealth room, eRx medications) so adapters stay swappable.
+// Today this is an in-memory mock; swap the in-memory store for a real
+// backend when wiring the native Adelante EHR persistence layer.
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
