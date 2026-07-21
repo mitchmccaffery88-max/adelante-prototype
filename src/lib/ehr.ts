@@ -3,7 +3,13 @@
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
-export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
+export type BillingStatus =
+  | "draft"
+  | "ready"
+  | "submitted"
+  | "paid"
+  | "denied"
+  | "write_off";
 export type CoverageStatus =
   | "active"
   | "suspended"
