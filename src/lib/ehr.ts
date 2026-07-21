@@ -1580,6 +1580,186 @@ export const AdelanteEHR = {
     };
     emit();
   },
+
+  // ---------- Case task queue ----------
+  listCaseTasks(): CaseTask[] {
+    return [...caseTasks];
+  },
+  caseTasksForCM(cmId: string): CaseTask[] {
+    return caseTasks.filter((t) => t.assignedTo === cmId);
+  },
+  caseTasksForPatient(patientId: string): CaseTask[] {
+    return caseTasks.filter((t) => t.patientId === patientId);
+  },
+  createCaseTask(input: {
+    patientId: string;
+    assignedTo: string;
+    title: string;
+    detail?: string;
+    dueDate: string;
+    origin?: CaseTaskOrigin;
+    dedupeKey?: string;
+  }): CaseTask | undefined {
+    if (input.dedupeKey) {
+      const existing = caseTasks.find(
+        (t) => t.dedupeKey === input.dedupeKey && t.status !== "done",
+      );
+      if (existing) return existing;
+    }
+    const task: CaseTask = {
+      id: uid(),
+      patientId: input.patientId,
+      assignedTo: input.assignedTo,
+      title: input.title,
+      detail: input.detail,
+      dueDate: input.dueDate,
+      status: "open",
+      origin: input.origin ?? "manual",
+      createdAt: new Date().toISOString(),
+      dedupeKey: input.dedupeKey,
+    };
+    caseTasks.unshift(task);
+    emit();
+    return task;
+  },
+  completeCaseTask(id: string) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    t.status = "done";
+    t.completedAt = new Date().toISOString();
+    emit();
+  },
+  reopenCaseTask(id: string) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    t.status = "open";
+    t.completedAt = undefined;
+    t.snoozedUntil = undefined;
+    emit();
+  },
+  snoozeCaseTask(id: string, days = 3) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+    t.status = "snoozed";
+    t.snoozedUntil = until.toISOString();
+    emit();
+  },
+
+  // ---------- Billing lifecycle ----------
+  /** Rate card (cents) for demo pricing. */
+  chargeForService(service?: ServiceType): number {
+    switch (service) {
+      case "intake":
+        return 22500;
+      case "individual_therapy":
+        return 16500;
+      case "med_management":
+        return 19500;
+      case "group_therapy":
+        return 9500;
+      case "case_management":
+        return 8000;
+      case "peer_support":
+        return 6500;
+      default:
+        return 15000;
+    }
+  },
+  transitionBilling(
+    apptId: string,
+    to: BillingStatus,
+    opts?: { actor?: string; note?: string; denialReason?: string },
+  ): { ok: true } | { ok: false; error: string } {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) return { ok: false, error: "Appointment not found." };
+    const from = a.billingStatus;
+    const allowed: Record<BillingStatus, BillingStatus[]> = {
+      draft: ["ready", "write_off"],
+      ready: ["submitted", "write_off", "draft"],
+      submitted: ["paid", "denied"],
+      denied: ["ready", "write_off"],
+      paid: [],
+      write_off: ["draft"],
+    };
+    if (!allowed[from].includes(to)) {
+      return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    }
+    if (to === "denied" && !opts?.denialReason) {
+      return { ok: false, error: "Denial reason is required." };
+    }
+    a.billingStatus = to;
+    if (to === "submitted") a.submittedAt = new Date().toISOString();
+    if (to === "paid") a.paidAt = new Date().toISOString();
+    if (to === "denied") a.denialReason = opts?.denialReason;
+    a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
+    a.billingHistory = [
+      ...(a.billingHistory ?? []),
+      {
+        id: uid(),
+        at: new Date().toISOString(),
+        actor: opts?.actor ?? "billing",
+        from,
+        to,
+        note: opts?.note ?? opts?.denialReason,
+      },
+    ];
+    emit();
+    return { ok: true };
+  },
+  /** ISL/self-pay export: all appointments on ISL lane in the given range. */
+  exportIslReport(range?: { from?: string; to?: string }): string {
+    const rows = appointments
+      .filter((a) => a.fundingLane === "isl" || a.fundingLane === "self_pay")
+      .filter((a) => (range?.from ? a.start >= range.from : true))
+      .filter((a) => (range?.to ? a.start <= range.to : true))
+      .sort((a, b) => a.start.localeCompare(b.start));
+    const header = [
+      "appt_id",
+      "date",
+      "patient_program_id",
+      "clinician",
+      "service_type",
+      "modality",
+      "duration_min",
+      "funding_lane",
+      "isl_reason",
+      "billing_status",
+      "charge_usd",
+    ].join(",");
+    const lines = rows.map((a) => {
+      const p = patients.find((x) => x.id === a.patientId);
+      const c = clinicians.find((x) => x.id === a.clinicianId);
+      const charge = ((a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType)) / 100).toFixed(2);
+      return [
+        a.id,
+        a.start.slice(0, 10),
+        p?.programId ?? a.patientId,
+        c?.name ?? a.clinicianId,
+        a.serviceType ?? "",
+        a.modality ?? "video",
+        a.durationMin,
+        a.fundingLane ?? "",
+        a.islReason ?? "",
+        a.billingStatus,
+        charge,
+      ]
+        .map((v) => String(v).replace(/,/g, ";"))
+        .join(",");
+    });
+    return [header, ...lines].join("\n");
+  },
+  /** Credentialing hard-stop: block booking with clinicians whose license expired. */
+  canBook(clinicianId: string): { ok: true } | { ok: false; reason: string } {
+    const c = clinicians.find((x) => x.id === clinicianId);
+    if (!c) return { ok: false, reason: "Clinician not found." };
+    const exp = c.licenseExpiresOn;
+    if (exp && +new Date(exp) < Date.now()) {
+      return { ok: false, reason: `License expired ${exp.slice(0, 10)}. Cannot book.` };
+    }
+    return { ok: true };
+  },
 };
 
 import { useSyncExternalStore } from "react";
