@@ -2217,10 +2217,38 @@ export const AdelanteEHR = {
   }): RefillRequest | undefined {
     const req = refillRequests.find((r) => r.id === input.id);
     if (!req) return undefined;
+    // Detect a prescriber switch: compare against the most recent *prior* refill
+    // (any status) for the same medication that had a different reviewer.
+    const priorReviewer = refillRequests
+      .filter(
+        (r) =>
+          r.id !== req.id &&
+          r.medicationId === req.medicationId &&
+          r.patientId === req.patientId &&
+          r.reviewedBy,
+      )
+      .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]
+      ?.reviewedBy;
     req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
     req.reviewedBy = input.clinicianId;
     req.reviewedAt = new Date().toISOString();
     if (input.decision === "denied") req.denyReason = input.denyReason;
+    if (
+      input.decision === "approved" &&
+      priorReviewer &&
+      input.clinicianId &&
+      priorReviewer !== input.clinicianId
+    ) {
+      _flagProviderSwitch({
+        patientId: req.patientId,
+        fromClinicianId: priorReviewer,
+        toClinicianId: input.clinicianId,
+        reason: "refill_review",
+        context: `Medication: ${req.medicationName}.`,
+        initiatedBy: "clinician",
+        linkedRefillId: req.id,
+      });
+    }
     appendAudit({
       category: "rx",
       action:
