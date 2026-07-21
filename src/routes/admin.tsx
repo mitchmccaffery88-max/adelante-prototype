@@ -459,3 +459,109 @@ function AuditLogCard({
     </Card>
   );
 }
+
+function CredentialingCard() {
+  const rows = useEhr(() => AdelanteEHR.expiringClinicianLicenses(30));
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-teal" /> Credentialing
+        </h3>
+        <Badge variant="outline" className="text-[10px]">{rows.length}</Badge>
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">
+          All clinician licenses valid for at least 30 days.
+        </p>
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {rows.map((r) => (
+            <li key={r.clinician.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
+              <div>
+                <div className="font-medium text-navy">{r.clinician.name}</div>
+                <div className="text-[11px] text-muted-foreground">
+                  License expires {r.clinician.licenseExpiresOn?.slice(0, 10)}
+                </div>
+              </div>
+              {r.expired ? (
+                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+                  <AlertTriangle className="h-3 w-3 mr-1" /> Expired — booking blocked
+                </Badge>
+              ) : (
+                <Badge className="bg-gold/30 text-navy border-0 text-[10px]">
+                  {r.daysUntil}d
+                </Badge>
+              )}
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Expired licenses hard-stop new bookings on the clinician workspace.
+      </p>
+    </Card>
+  );
+}
+
+function NotificationHealthCard() {
+  const failed = useEhr(() => AdelanteEHR.recentFailedNotifications(24));
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <BellOff className="h-4 w-4 text-teal" /> Delivery health (24h)
+        </h3>
+        <Badge
+          className={
+            (failed.length === 0
+              ? "bg-success/20 text-success"
+              : "bg-destructive/15 text-destructive") + " border-0 text-[10px]"
+          }
+        >
+          {failed.length} failed
+        </Badge>
+      </div>
+      {failed.length === 0 ? (
+        <EmptyState
+          compact
+          icon={BellOff}
+          title="No delivery failures"
+          description="Notifications reached patients in the last 24 hours."
+        />
+      ) : (
+        <ul className="space-y-2 text-sm">
+          {failed.slice(0, 6).map(({ patient, notification }) => (
+            <li
+              key={notification.id}
+              className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
+            >
+              <div>
+                <div className="font-mono text-xs text-navy">{patient.programId}</div>
+                <div className="text-[11px] text-muted-foreground capitalize">
+                  {notification.channel} · {notification.kind} ·{" "}
+                  <ClientDate value={notification.at} />
+                </div>
+              </div>
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-[11px]"
+                onClick={() => {
+                  AdelanteEHR.resendNotification(patient.id, notification.id);
+                  toast.success("Retrying delivery");
+                }}
+                aria-label="Retry delivery"
+              >
+                <RotateCw className="h-3.5 w-3.5 mr-1" /> Retry
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Failed SMS/email deliveries auto-create a CM outreach task.
+      </p>
+    </Card>
+  );
+}
