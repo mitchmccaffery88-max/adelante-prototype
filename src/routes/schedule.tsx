@@ -145,6 +145,7 @@ function SchedulePage() {
           serviceType: serviceType as ServiceType,
           modality: effectiveModality,
           locationId: effectiveModality === "in_person" ? locationId : undefined,
+          clinicianId: effectiveClinicianId,
         });
         toast.success("Session rescheduled", {
           description: "Your care team and you have been notified.",
