@@ -132,7 +132,7 @@ function AuthPage() {
             <div className="rounded-md border bg-secondary/40 p-3 space-y-2">
               <div className="text-xs font-medium text-navy">{t("authDemoPersonas")}</div>
               <p className="text-[10px] text-muted-foreground">{t("authDemoPersonasNote")}</p>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5 max-h-[50vh] overflow-y-auto pr-1">
                 {patients.map((p) => (
                   <label
                     key={p.id}
@@ -168,7 +168,7 @@ function AuthPage() {
               Remember me on this device
             </label>
 
-            <Button type="submit" className="w-full bg-navy text-navy-foreground hover:bg-navy/90">
+            <Button type="submit" className="w-full min-h-11 bg-navy text-navy-foreground hover:bg-navy/90">
               {t("authContinue")} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </form>
@@ -211,7 +211,7 @@ function AuthPage() {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full bg-teal text-teal-foreground hover:bg-teal/90">
+            <Button type="submit" className="w-full min-h-11 bg-teal text-teal-foreground hover:bg-teal/90">
               {t("authCreateAccount")} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
             <p className="text-[10px] text-muted-foreground text-center">{t("authResetsNote")}</p>
