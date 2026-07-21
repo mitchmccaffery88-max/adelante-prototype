@@ -990,6 +990,7 @@ function TaskList({
     screener_flag: "Screener",
     referral_stale: "Stale referral",
     notification_failed: "Delivery failed",
+    provider_switch: "Provider switch",
   };
   return (
     <div className="space-y-1.5">
