@@ -14,20 +14,10 @@ interface InstallAppButtonProps {
   onInstalled?: () => void;
 }
 
-const DISMISS_KEY = "adelante.installNudge.dismissed";
+export const DISMISS_KEY = "adelante.installNudge.dismissed";
 
-/**
- * PWA install button. Listens for the browser's `beforeinstallprompt` event
- * and renders an install button when the app can be added to the home screen.
- * Renders nothing on platforms that do not support the prompt (e.g. iOS Safari
- * or already installed).
- */
-export function InstallAppButton({
-  variant = "default",
-  size = "sm",
-  className,
-  onInstalled,
-}: InstallAppButtonProps) {
+/** Shared hook for the browser's `beforeinstallprompt` event. */
+export function usePwaInstallPrompt() {
   const [deferredPrompt, setDeferredPrompt] = useState<BeforeInstallPromptEvent | null>(null);
   const [dismissed, setDismissed] = useState(true);
 
@@ -54,16 +44,32 @@ export function InstallAppButton({
     }
   };
 
+  return { prompt: deferredPrompt, dismissed, dismiss };
+}
+
+/**
+ * PWA install button. Listens for the browser's `beforeinstallprompt` event
+ * and renders an install button when the app can be added to the home screen.
+ * Renders nothing on platforms that do not support the prompt (e.g. iOS Safari
+ * or already installed).
+ */
+export function InstallAppButton({
+  variant = "default",
+  size = "sm",
+  className,
+  onInstalled,
+}: InstallAppButtonProps) {
+  const { prompt, dismiss } = usePwaInstallPrompt();
+
   const install = async () => {
-    if (!deferredPrompt) return;
-    await deferredPrompt.prompt();
-    await deferredPrompt.userChoice;
-    setDeferredPrompt(null);
+    if (!prompt) return;
+    await prompt.prompt();
+    await prompt.userChoice;
     dismiss();
     onInstalled?.();
   };
 
-  if (dismissed || !deferredPrompt) return null;
+  if (!prompt) return null;
 
   return (
     <Button
