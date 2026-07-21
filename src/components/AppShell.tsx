@@ -39,13 +39,18 @@ export function AppShell() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const [actingRole, setActingRole] = useActingRole();
   const signedIn = (() => {
-    try { return Boolean(localStorage.getItem("adelante.session")); } catch { return false; }
+    try {
+      return Boolean(localStorage.getItem("adelante.session"));
+    } catch {
+      return false;
+    }
   })();
 
   // Surfaces where the patient-facing UI should feel private:
   // hide the staff link strip in the mobile nav (still reachable via the
   // Staff dropdown on desktop).
-  const isPatientSurface = pathname === "/home" || pathname === "/intake" || pathname === "/schedule";
+  const isPatientSurface =
+    pathname === "/home" || pathname === "/intake" || pathname === "/schedule";
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake";
 
@@ -55,9 +60,24 @@ export function AppShell() {
   ];
   const staffNav = [
     { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
-    { to: "/case-manager" as const, label: t("navCaseManager"), icon: HandHeart, desc: "Check-ins & resources" },
-    { to: "/clinician" as const, label: t("navClinician"), icon: Calendar, desc: "Caseload & sessions" },
-    { to: "/billing" as const, label: "Billing", icon: LayoutDashboard, desc: "Claims, ISL & credentials" },
+    {
+      to: "/case-manager" as const,
+      label: t("navCaseManager"),
+      icon: HandHeart,
+      desc: "Check-ins & resources",
+    },
+    {
+      to: "/clinician" as const,
+      label: t("navClinician"),
+      icon: Calendar,
+      desc: "Caseload & sessions",
+    },
+    {
+      to: "/billing" as const,
+      label: "Billing",
+      icon: LayoutDashboard,
+      desc: "Claims, ISL & credentials",
+    },
     { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
@@ -170,7 +190,9 @@ export function AppShell() {
                   {patient?.firstName?.[0] ?? "?"}
                 </span>
                 <span className="hidden sm:inline">
-                  {signedIn && patient ? `${patient.firstName} ${patient.lastName}` : t("navSignIn")}
+                  {signedIn && patient
+                    ? `${patient.firstName} ${patient.lastName}`
+                    : t("navSignIn")}
                 </span>
                 <ChevronDown className="h-3 w-3 opacity-60" />
               </DropdownMenuTrigger>
@@ -178,7 +200,11 @@ export function AppShell() {
                 {signedIn ? (
                   <DropdownMenuItem
                     onClick={() => {
-                      try { localStorage.removeItem("adelante.session"); } catch { /* no-op */ }
+                      try {
+                        localStorage.removeItem("adelante.session");
+                      } catch {
+                        /* no-op */
+                      }
                       navigate({ to: "/auth" });
                     }}
                   >
@@ -187,7 +213,8 @@ export function AppShell() {
                 ) : (
                   <DropdownMenuItem asChild>
                     <Link to="/auth">
-                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" /> {t("navSignIn")}
+                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />{" "}
+                      {t("navSignIn")}
                     </Link>
                   </DropdownMenuItem>
                 )}
@@ -229,29 +256,29 @@ export function AppShell() {
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
-      {showCrisisBanner && <div
-        role="region"
-        aria-label="Crisis support"
-        className="sticky bottom-0 z-30 border-t border-destructive/30 bg-destructive/5 backdrop-blur"
-      >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
-          <Phone className="h-4 w-4 text-destructive shrink-0" />
-          <span>
-            <span className="font-semibold text-destructive">{t("crisisInCrisis")}</span>{" "}
-            {t("crisisCallText")}{" "}
-            <a href="tel:988" className="underline font-semibold">
-              988
-            </a>{" "}
-            {t("crisisAnytime")}
-          </span>
+      {showCrisisBanner && (
+        <div
+          role="region"
+          aria-label="Crisis support"
+          className="sticky bottom-0 z-30 border-t border-destructive/30 bg-destructive/5 backdrop-blur"
+        >
+          <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
+            <Phone className="h-4 w-4 text-destructive shrink-0" />
+            <span>
+              <span className="font-semibold text-destructive">{t("crisisInCrisis")}</span>{" "}
+              {t("crisisCallText")}{" "}
+              <a href="tel:988" className="underline font-semibold">
+                988
+              </a>{" "}
+              {t("crisisAnytime")}
+            </span>
+          </div>
         </div>
-      </div>}
+      )}
 
       <footer className={cn("border-t bg-secondary/40", isPatientSurface && "pb-20 md:pb-0")}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
-          <span>
-            © {new Date().getFullYear()} Adelante · Tulare County Pilot · Built with care
-          </span>
+          <span>© {new Date().getFullYear()} Adelante · Tulare County Pilot · Built with care</span>
           <div className="flex items-center gap-3">
             {isPatientSurface && <InstallAppButton />}
             <span className="flex items-center gap-1.5">
@@ -280,9 +307,7 @@ export function AppShell() {
                       <span
                         className={cn(
                           "text-[10px] rounded-full px-1.5 py-0.5",
-                          p.intakeCompletedAt
-                            ? "bg-teal/15 text-teal"
-                            : "bg-gold/20 text-navy",
+                          p.intakeCompletedAt ? "bg-teal/15 text-teal" : "bg-gold/20 text-navy",
                         )}
                       >
                         {p.intakeCompletedAt ? "intake ✓" : "new"}

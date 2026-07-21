@@ -81,12 +81,7 @@ function ReferralPage() {
 
   const onSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    if (
-      !form.firstName ||
-      !form.lastName ||
-      !form.referrerName ||
-      !form.referringAgency
-    ) {
+    if (!form.firstName || !form.lastName || !form.referrerName || !form.referringAgency) {
       toast.error("Please complete the required fields");
       return;
     }
@@ -121,7 +116,9 @@ function ReferralPage() {
     const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
     try {
       localStorage.setItem("adelante.referrerKey", key);
-    } catch { /* no-op */ }
+    } catch {
+      /* no-op */
+    }
     setReferrerKey(key);
     toast.success("Referral submitted", {
       description: result.outreachTask
@@ -137,8 +134,8 @@ function ReferralPage() {
         <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
         <h1 className="font-display text-3xl text-navy mt-4">Thank you.</h1>
         <p className="text-muted-foreground mt-2">
-          We'll reach out to this person with a warm welcome and next steps.
-          You'll hear back if we need anything from you.
+          We'll reach out to this person with a warm welcome and next steps. You'll hear back if we
+          need anything from you.
         </p>
         <div className="mt-8 text-left">
           <ReferrerStatusTracker referrerKey={referrerKey} />
@@ -202,9 +199,7 @@ function ReferralPage() {
               <Field label="Referral source">
                 <Select
                   value={form.referralSource}
-                  onValueChange={(v) =>
-                    setForm({ ...form, referralSource: v as ReferralSource })
-                  }
+                  onValueChange={(v) => setForm({ ...form, referralSource: v as ReferralSource })}
                 >
                   <SelectTrigger>
                     <SelectValue />
@@ -262,9 +257,7 @@ function ReferralPage() {
                     } else setCinDup(null);
                   }}
                 />
-                {cinDup && (
-                  <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>
-                )}
+                {cinDup && <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>}
                 <p className="text-xs text-muted-foreground mt-1">
                   Optional. Helps avoid duplicate records when names are similar.
                 </p>
@@ -302,13 +295,11 @@ function ReferralPage() {
             <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
               <Checkbox
                 checked={form.noPhone}
-                onCheckedChange={(v) =>
-                  setForm({ ...form, noPhone: Boolean(v) })
-                }
+                onCheckedChange={(v) => setForm({ ...form, noPhone: Boolean(v) })}
               />
               <span>
-                <strong>No reliable phone — request manual outreach.</strong>{" "}
-                Skip the welcome text and queue a manual call from the care team.
+                <strong>No reliable phone — request manual outreach.</strong> Skip the welcome text
+                and queue a manual call from the care team.
               </span>
             </label>
           </section>
@@ -317,21 +308,19 @@ function ReferralPage() {
             <div className="flex items-start gap-2 text-sm">
               <Lock className="h-4 w-4 text-teal mt-0.5" />
               <p>
-                We protect this information under HIPAA and 42 CFR Part 2.
-                Any details about substance use are only collected later —
-                directly from the person, with their consent.
+                We protect this information under HIPAA and 42 CFR Part 2. Any details about
+                substance use are only collected later — directly from the person, with their
+                consent.
               </p>
             </div>
             <label className="flex items-start gap-2 text-sm cursor-pointer">
               <Checkbox
                 checked={form.consentToContact}
-                onCheckedChange={(v) =>
-                  setForm({ ...form, consentToContact: Boolean(v) })
-                }
+                onCheckedChange={(v) => setForm({ ...form, consentToContact: Boolean(v) })}
               />
               <span>
-                <strong>Consent to contact:</strong> The person knows about this
-                referral and is OK with us reaching out by text or call.
+                <strong>Consent to contact:</strong> The person knows about this referral and is OK
+                with us reaching out by text or call.
               </span>
             </label>
             <label className="flex items-start gap-2 text-sm cursor-pointer">
@@ -396,9 +385,7 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
         </h3>
         <Badge variant="outline">{mine.length}</Badge>
       </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        Status only — no clinical detail.
-      </p>
+      <p className="text-xs text-muted-foreground mt-1">Status only — no clinical detail.</p>
       <ul className="mt-3 space-y-3">
         {mine.slice(0, 10).map((r) => {
           const reachedIdx = stageOrder.indexOf(r.status);
@@ -409,9 +396,7 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
                   <div className="font-medium text-navy">
                     {r.firstName} {r.lastName}
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {stageLabels[r.status]}
-                  </div>
+                  <div className="text-xs text-muted-foreground">{stageLabels[r.status]}</div>
                 </div>
                 <Badge variant="outline" className="capitalize text-[10px]">
                   {r.status}

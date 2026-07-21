@@ -17,21 +17,44 @@ export const Route = createFileRoute("/consent")({
       { title: "Consent ledger — Adelante" },
       { name: "description", content: "Per-purpose consent state and append-only disclosure log." },
       { property: "og:title", content: "Consent ledger — Adelante" },
-      { property: "og:description", content: "Per-purpose consent state and append-only disclosure log." },
+      {
+        property: "og:description",
+        content: "Per-purpose consent state and append-only disclosure log.",
+      },
     ],
   }),
   component: ConsentPage,
 });
 
 const PURPOSES: { key: ExtendedConsentPurpose; label: string; note: string }[] = [
-  { key: "part2Sud", label: "Part 2 (SUD)", note: "Unlocks SUD-identifying rows. Revoke re-locks immediately." },
-  { key: "ecmShare", label: "ECM information share", note: "Enhanced Care Management coordination." },
+  {
+    key: "part2Sud",
+    label: "Part 2 (SUD)",
+    note: "Unlocks SUD-identifying rows. Revoke re-locks immediately.",
+  },
+  {
+    key: "ecmShare",
+    label: "ECM information share",
+    note: "Enhanced Care Management coordination.",
+  },
   { key: "sms", label: "SMS reminders", note: "Text message reminders and welcome messages." },
   { key: "hipaa", label: "HIPAA authorization", note: "Baseline authorization signed at intake." },
-  { key: "telehealth", label: "Telehealth", note: "Video / phone visits. Video is delivered by a HIPAA-aligned integrated vendor; medication management uses eScribe." },
-  { key: "roi", label: "Release of Information", note: "External disclosure to a named third party." },
+  {
+    key: "telehealth",
+    label: "Telehealth",
+    note: "Video / phone visits. Video is delivered by a HIPAA-aligned integrated vendor; medication management uses eScribe.",
+  },
+  {
+    key: "roi",
+    label: "Release of Information",
+    note: "External disclosure to a named third party.",
+  },
   { key: "portal", label: "Patient portal", note: "Self-service portal access." },
-  { key: "proxy", label: "Proxy / staff-completed forms", note: "Staff may complete forms on the patient's behalf." },
+  {
+    key: "proxy",
+    label: "Proxy / staff-completed forms",
+    note: "Staff may complete forms on the patient's behalf.",
+  },
   { key: "group", label: "Group therapy", note: "Participation and shared attendance." },
 ];
 
@@ -54,8 +77,8 @@ function ConsentPage() {
         <div>
           <h1 className="font-display text-2xl text-navy">Consent ledger</h1>
           <p className="text-sm text-muted-foreground">
-            Per-purpose consent state, revocable, with an append-only audit trail.
-            Revoking <em>Part 2 (SUD)</em> immediately re-locks SUD-identifying rows across the app.
+            Per-purpose consent state, revocable, with an append-only audit trail. Revoking{" "}
+            <em>Part 2 (SUD)</em> immediately re-locks SUD-identifying rows across the app.
           </p>
         </div>
       </header>
@@ -65,7 +88,10 @@ function ConsentPage() {
           Patient:
         </label>
         <Select value={selected} onValueChange={(v) => setSelected(v)}>
-          <SelectTrigger aria-labelledby="consent-patient-label" className="min-h-11 w-full sm:w-72">
+          <SelectTrigger
+            aria-labelledby="consent-patient-label"
+            className="min-h-11 w-full sm:w-72"
+          >
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
@@ -84,7 +110,7 @@ function ConsentPage() {
             const granted =
               p.key === "hipaa"
                 ? patient.consents.hipaa
-                : (state as Record<string, boolean | undefined>)[p.key] ?? false;
+                : ((state as Record<string, boolean | undefined>)[p.key] ?? false);
             const isCore = ["part2Sud", "ecmShare", "sms"].includes(p.key);
             return (
               <div key={p.key} className="rounded-xl border bg-card p-4">
@@ -104,7 +130,12 @@ function ConsentPage() {
                 {isCore && (
                   <button
                     onClick={() => {
-                      AdelanteEHR.setConsent(patient.id, p.key as ConsentPurpose, !granted, "consent page");
+                      AdelanteEHR.setConsent(
+                        patient.id,
+                        p.key as ConsentPurpose,
+                        !granted,
+                        "consent page",
+                      );
                       toast.success(granted ? "Consent revoked" : "Consent granted");
                     }}
                     aria-label={granted ? `Revoke ${p.label} consent` : `Grant ${p.label} consent`}
@@ -129,7 +160,9 @@ function ConsentPage() {
         <h2 className="font-display text-lg text-navy mb-2">Disclosure log</h2>
         <div className="rounded-xl border bg-card overflow-hidden">
           {patientEvents.length === 0 ? (
-            <p className="p-4 text-sm text-muted-foreground">No consent events recorded for this patient.</p>
+            <p className="p-4 text-sm text-muted-foreground">
+              No consent events recorded for this patient.
+            </p>
           ) : (
             <>
               {/* Card list on mobile */}
@@ -140,13 +173,17 @@ function ConsentPage() {
                       <span className="text-sm font-medium">{e.purpose}</span>
                       <span
                         className={`text-[10px] rounded-full px-2 py-0.5 ${
-                          e.action === "granted" ? "bg-teal/15 text-teal" : "bg-destructive/10 text-destructive"
+                          e.action === "granted"
+                            ? "bg-teal/15 text-teal"
+                            : "bg-destructive/10 text-destructive"
                         }`}
                       >
                         {e.action}
                       </span>
                     </div>
-                    <div className="text-xs text-muted-foreground">{new Date(e.at).toLocaleString()}</div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(e.at).toLocaleString()}
+                    </div>
                     <div className="text-xs text-muted-foreground">Actor: {e.actor}</div>
                     <div className="text-xs text-muted-foreground">Note: {e.note ?? "—"}</div>
                   </li>
@@ -168,12 +205,16 @@ function ConsentPage() {
                   <tbody>
                     {patientEvents.map((e) => (
                       <tr key={e.id} className="border-t">
-                        <td className="px-3 py-2 whitespace-nowrap">{new Date(e.at).toLocaleString()}</td>
+                        <td className="px-3 py-2 whitespace-nowrap">
+                          {new Date(e.at).toLocaleString()}
+                        </td>
                         <td className="px-3 py-2">{e.purpose}</td>
                         <td className="px-3 py-2">
                           <span
                             className={`text-[10px] rounded-full px-2 py-0.5 ${
-                              e.action === "granted" ? "bg-teal/15 text-teal" : "bg-destructive/10 text-destructive"
+                              e.action === "granted"
+                                ? "bg-teal/15 text-teal"
+                                : "bg-destructive/10 text-destructive"
                             }`}
                           >
                             {e.action}

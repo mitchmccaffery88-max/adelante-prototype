@@ -19,7 +19,20 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart, AlertTriangle, BellOff, RotateCw } from "lucide-react";
+import {
+  TrendingUp,
+  Users,
+  ClipboardCheck,
+  Timer,
+  DollarSign,
+  ShieldCheck,
+  Download,
+  ScrollText,
+  HandHeart,
+  AlertTriangle,
+  BellOff,
+  RotateCw,
+} from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
@@ -30,7 +43,10 @@ export const Route = createFileRoute("/admin")({
   head: () => ({
     meta: [
       { title: "Admin Dashboard — Adelante" },
-      { name: "description", content: "Enrollment, completion rate, intake velocity, and billing status." },
+      {
+        name: "description",
+        content: "Enrollment, completion rate, intake velocity, and billing status.",
+      },
     ],
   }),
   component: AdminPage,
@@ -114,12 +130,39 @@ function AdminPage() {
       </header>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
-        <Kpi icon={Users} label="Enrolled patients" value={stats.enrolled.toString()} accent="navy" />
-        <Kpi icon={ClipboardCheck} label="Session completion" value={`${stats.completionRate}%`} accent="teal" />
-        <Kpi icon={Timer} label="Intake velocity" value={`${stats.intakeVelocityDays}d`} sub="referral → 1st session" accent="gold" />
-        <Kpi icon={TrendingUp} label="Active referrals" value={referrals.filter((r) => r.status !== "enrolled").length.toString()} accent="teal" />
+        <Kpi
+          icon={Users}
+          label="Enrolled patients"
+          value={stats.enrolled.toString()}
+          accent="navy"
+        />
+        <Kpi
+          icon={ClipboardCheck}
+          label="Session completion"
+          value={`${stats.completionRate}%`}
+          accent="teal"
+        />
+        <Kpi
+          icon={Timer}
+          label="Intake velocity"
+          value={`${stats.intakeVelocityDays}d`}
+          sub="referral → 1st session"
+          accent="gold"
+        />
+        <Kpi
+          icon={TrendingUp}
+          label="Active referrals"
+          value={referrals.filter((r) => r.status !== "enrolled").length.toString()}
+          accent="teal"
+        />
         <Kpi icon={ShieldCheck} label="Medi-Cal verified" value={`${verifiedPct}%`} accent="navy" />
-        <Kpi icon={HandHeart} label="ECM caseload" value={`${ecmPct}%`} sub={`${ecmCount} of ${patients.length}`} accent="gold" />
+        <Kpi
+          icon={HandHeart}
+          label="ECM caseload"
+          value={`${ecmPct}%`}
+          sub={`${ecmCount} of ${patients.length}`}
+          accent="gold"
+        />
       </div>
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -128,7 +171,9 @@ function AdminPage() {
             <h2 className="font-display text-lg text-navy">Caseload</h2>
             <div className="flex flex-wrap items-center gap-2">
               <Select value={bucketFilter} onValueChange={setBucketFilter}>
-                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Episode day" /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[140px] text-xs">
+                  <SelectValue placeholder="Episode day" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All days</SelectItem>
                   <SelectItem value="0-30">Day 0–30</SelectItem>
@@ -137,7 +182,9 @@ function AdminPage() {
                 </SelectContent>
               </Select>
               <Select value={coverageFilter} onValueChange={setCoverageFilter}>
-                <SelectTrigger className="h-8 w-[140px] text-xs"><SelectValue placeholder="Coverage" /></SelectTrigger>
+                <SelectTrigger className="h-8 w-[140px] text-xs">
+                  <SelectValue placeholder="Coverage" />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="all">All coverage</SelectItem>
                   <SelectItem value="active">Active</SelectItem>
@@ -146,10 +193,12 @@ function AdminPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
-                <Button size="sm" variant="outline" onClick={downloadCsv}>
-                  <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
-                </Button>
-              <Badge variant="outline">{filteredPatients.length}/{patients.length}</Badge>
+              <Button size="sm" variant="outline" onClick={downloadCsv}>
+                <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
+              </Button>
+              <Badge variant="outline">
+                {filteredPatients.length}/{patients.length}
+              </Badge>
             </div>
           </div>
           <Table>
@@ -178,7 +227,10 @@ function AdminPage() {
                   <TableCell>
                     <div className="flex items-center gap-2">
                       <div className="h-1.5 w-20 rounded-full bg-border">
-                        <div className="h-1.5 rounded-full bg-teal" style={{ width: `${(p.episodeDay / 90) * 100}%` }} />
+                        <div
+                          className="h-1.5 rounded-full bg-teal"
+                          style={{ width: `${(p.episodeDay / 90) * 100}%` }}
+                        />
                       </div>
                       <span className="text-xs text-muted-foreground">{p.episodeDay}/90</span>
                     </div>
@@ -214,8 +266,9 @@ function AdminPage() {
             </TableBody>
           </Table>
           <p className="mt-3 text-xs text-muted-foreground">
-            Click a row to open the patient profile. No names, diagnoses, or care-plan narrative shown
-            in the table — clinical detail lives only in Case Manager and Clinician workspaces.
+            Click a row to open the patient profile. No names, diagnoses, or care-plan narrative
+            shown in the table — clinical detail lives only in Case Manager and Clinician
+            workspaces.
           </p>
         </Card>
 
@@ -237,14 +290,18 @@ function AdminPage() {
                 ["Paid", stats.billing.paid, "bg-success/20 text-success"],
                 ["Denied", stats.billing.denied, "bg-destructive/15 text-destructive"],
               ].map(([label, n, cls]) => (
-                <li key={label as string} className="flex items-center justify-between border-b last:border-0 py-2">
+                <li
+                  key={label as string}
+                  className="flex items-center justify-between border-b last:border-0 py-2"
+                >
                   <span>{label}</span>
                   <Badge className={`${cls as string} border-0`}>{n as number}</Badge>
                 </li>
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              Status display only. Claim filing is tracked here; deeper EDI/clearinghouse integration is in Build 2.
+              Status display only. Claim filing is tracked here; deeper EDI/clearinghouse
+              integration is in Build 2.
             </p>
           </Card>
         </div>
@@ -301,9 +358,7 @@ function ReferralTrackerCard({
                   </div>
                 )}
               </div>
-              <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
-                {r.status}
-              </Badge>
+              <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>{r.status}</Badge>
             </div>
             <div className="mt-2 flex gap-1">
               {trackerOrder.map((s, i) => {
@@ -317,22 +372,21 @@ function ReferralTrackerCard({
               })}
             </div>
             {r.smsSentAt ? (
-              <div className="mt-1.5 text-[10px] text-success">
-                ✓ Welcome SMS sent
-              </div>
+              <div className="mt-1.5 text-[10px] text-success">✓ Welcome SMS sent</div>
             ) : r.outreachTask === "manual_call" ? (
               <div className="mt-1.5 text-[10px] text-gold-foreground">
                 ⚑ Manual outreach queued (no SMS)
               </div>
             ) : null}
-            {r.enrolledPatientId && (() => {
-              const enrolled = AdelanteEHR.getPatient(r.enrolledPatientId);
-              return enrolled ? (
-                <div className="mt-1 text-[10px] text-muted-foreground">
-                  Enrolled as <span className="font-mono text-navy">{enrolled.programId}</span>
-                </div>
-              ) : null;
-            })()}
+            {r.enrolledPatientId &&
+              (() => {
+                const enrolled = AdelanteEHR.getPatient(r.enrolledPatientId);
+                return enrolled ? (
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    Enrolled as <span className="font-mono text-navy">{enrolled.programId}</span>
+                  </div>
+                ) : null;
+              })()}
           </div>
         ))}
       </div>
@@ -355,9 +409,7 @@ function CoverageBadge({ status }: { status?: string }) {
     other: "Other",
   };
   return (
-    <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>
-      {labels[status] ?? status}
-    </Badge>
+    <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>{labels[status] ?? status}</Badge>
   );
 }
 
@@ -391,11 +443,7 @@ function Kpi({
   );
 }
 
-function AuditLogCard({
-  events,
-}: {
-  events: ReturnType<typeof AdelanteEHR.listAllConsentEvents>;
-}) {
+function AuditLogCard({ events }: { events: ReturnType<typeof AdelanteEHR.listAllConsentEvents> }) {
   const purposeLabels: Record<string, string> = {
     part2Sud: "Part 2 SUD",
     ecmShare: "ECM data share",
@@ -419,19 +467,21 @@ function AuditLogCard({
           <ScrollText className="h-4 w-4 text-teal" /> Consent audit log
         </h3>
         <div className="flex items-center gap-2">
-        <Link to="/admin-audit" className="text-[11px] text-teal underline underline-offset-2">
-          Full log
-        </Link>
-        <Select value={purpose} onValueChange={setPurpose}>
-          <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">All purposes</SelectItem>
-            <SelectItem value="part2Sud">Part 2 SUD</SelectItem>
-            <SelectItem value="ecmShare">ECM share</SelectItem>
-            <SelectItem value="sms">SMS</SelectItem>
-            <SelectItem value="hipaa">HIPAA</SelectItem>
-          </SelectContent>
-        </Select>
+          <Link to="/admin-audit" className="text-[11px] text-teal underline underline-offset-2">
+            Full log
+          </Link>
+          <Select value={purpose} onValueChange={setPurpose}>
+            <SelectTrigger className="h-8 w-[130px] text-xs">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">All purposes</SelectItem>
+              <SelectItem value="part2Sud">Part 2 SUD</SelectItem>
+              <SelectItem value="ecmShare">ECM share</SelectItem>
+              <SelectItem value="sms">SMS</SelectItem>
+              <SelectItem value="hipaa">HIPAA</SelectItem>
+            </SelectContent>
+          </Select>
         </div>
       </div>
       {filtered.length === 0 ? (
@@ -439,7 +489,10 @@ function AuditLogCard({
       ) : (
         <ul className="space-y-1.5 text-xs">
           {filtered.map((e) => (
-            <li key={e.id} className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b last:border-0 py-1.5">
+            <li
+              key={e.id}
+              className="grid grid-cols-[auto_1fr_auto_auto] items-center gap-2 border-b last:border-0 py-1.5"
+            >
               <span className="font-mono text-navy">{e.programId}</span>
               <span className="text-muted-foreground">
                 {purposeLabels[e.purpose] ?? e.purpose}
@@ -454,7 +507,9 @@ function AuditLogCard({
               >
                 {actionLabels[e.action] ?? e.action}
               </Badge>
-              <span className="text-muted-foreground text-[10px]"><ClientDate value={e.at} /></span>
+              <span className="text-muted-foreground text-[10px]">
+                <ClientDate value={e.at} />
+              </span>
             </li>
           ))}
         </ul>
@@ -474,7 +529,9 @@ function CredentialingCard() {
         <h3 className="font-display text-lg text-navy flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-teal" /> Credentialing
         </h3>
-        <Badge variant="outline" className="text-[10px]">{rows.length}</Badge>
+        <Badge variant="outline" className="text-[10px]">
+          {rows.length}
+        </Badge>
       </div>
       {rows.length === 0 ? (
         <p className="text-xs text-muted-foreground">
@@ -483,7 +540,10 @@ function CredentialingCard() {
       ) : (
         <ul className="space-y-2 text-sm">
           {rows.map((r) => (
-            <li key={r.clinician.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
+            <li
+              key={r.clinician.id}
+              className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
+            >
               <div>
                 <div className="font-medium text-navy">{r.clinician.name}</div>
                 <div className="text-[11px] text-muted-foreground">
@@ -495,9 +555,7 @@ function CredentialingCard() {
                   <AlertTriangle className="h-3 w-3 mr-1" /> Expired — booking blocked
                 </Badge>
               ) : (
-                <Badge className="bg-gold/30 text-navy border-0 text-[10px]">
-                  {r.daysUntil}d
-                </Badge>
+                <Badge className="bg-gold/30 text-navy border-0 text-[10px]">{r.daysUntil}d</Badge>
               )}
             </li>
           ))}
@@ -582,13 +640,12 @@ function VendorStatusCard() {
           <ShieldCheck className="h-4 w-4 text-teal" /> Integrated vendors
         </h3>
         <div className="flex items-center gap-2">
-          <Link
-            to="/admin-vendors"
-            className="text-[11px] text-teal underline underline-offset-2"
-          >
+          <Link to="/admin-vendors" className="text-[11px] text-teal underline underline-offset-2">
             Details
           </Link>
-          <Badge variant="outline" className="text-[10px]">mock</Badge>
+          <Badge variant="outline" className="text-[10px]">
+            mock
+          </Badge>
         </div>
       </div>
       <ul className="space-y-2 text-sm">
@@ -606,13 +663,9 @@ function VendorStatusCard() {
         <li className="flex items-center justify-between">
           <div>
             <div className="font-medium text-navy">Medication management (eScribe)</div>
-            <div className="text-[11px] text-muted-foreground font-mono">
-              {status.erx.name}
-            </div>
+            <div className="text-[11px] text-muted-foreground font-mono">{status.erx.name}</div>
           </div>
-          <Badge className="bg-gold/30 text-navy border-0 text-[10px]">
-            {status.erx.mode}
-          </Badge>
+          <Badge className="bg-gold/30 text-navy border-0 text-[10px]">{status.erx.mode}</Badge>
         </li>
       </ul>
       <div className="mt-3 flex items-center justify-between">

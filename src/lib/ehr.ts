@@ -7,13 +7,7 @@
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
-export type BillingStatus =
-  | "draft"
-  | "ready"
-  | "submitted"
-  | "paid"
-  | "denied"
-  | "write_off";
+export type BillingStatus = "draft" | "ready" | "submitted" | "paid" | "denied" | "write_off";
 export type CoverageStatus =
   | "active"
   | "suspended"
@@ -40,12 +34,7 @@ export type FundingLane =
   | "bhsa"
   | "non_billable";
 
-export type EpisodeType =
-  | "mental_health"
-  | "sud_dmc_ods"
-  | "ecm"
-  | "ji_pre_release"
-  | "bhsa";
+export type EpisodeType = "mental_health" | "sud_dmc_ods" | "ecm" | "ji_pre_release" | "bhsa";
 
 export interface Episode {
   id: string;
@@ -336,13 +325,55 @@ export interface ClinicLocation {
 }
 
 const SERVICE_TYPES: ServiceTypeInfo[] = [
-  { id: "intake", label: "First visit (intake)", helper: "Get set up with your care team.", allowedModalities: ["video", "in_person"], defaultDurationMin: 60 },
-  { id: "therapy_individual", label: "Talk with a counselor", helper: "A private one-on-one session.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50 },
-  { id: "therapy_group", label: "Group session", helper: "Meet with others in a supported group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 60 },
-  { id: "med_management", label: "Medication visit", helper: "Talk with a prescriber about medications.", allowedModalities: ["video", "in_person"], defaultDurationMin: 30 },
-  { id: "peer_support", label: "Peer support", helper: "Connect with someone who's been there.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 45 },
-  { id: "case_management", label: "Meet your case manager", helper: "Get help with resources and next steps.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 30 },
-  { id: "care_coordination", label: "Care coordination", helper: "Line up outside services and support.", allowedModalities: ["video", "phone"], defaultDurationMin: 30 },
+  {
+    id: "intake",
+    label: "First visit (intake)",
+    helper: "Get set up with your care team.",
+    allowedModalities: ["video", "in_person"],
+    defaultDurationMin: 60,
+  },
+  {
+    id: "therapy_individual",
+    label: "Talk with a counselor",
+    helper: "A private one-on-one session.",
+    allowedModalities: ["video", "phone", "in_person"],
+    defaultDurationMin: 50,
+  },
+  {
+    id: "therapy_group",
+    label: "Group session",
+    helper: "Meet with others in a supported group.",
+    allowedModalities: ["in_person", "video"],
+    defaultDurationMin: 60,
+  },
+  {
+    id: "med_management",
+    label: "Medication visit",
+    helper: "Talk with a prescriber about medications.",
+    allowedModalities: ["video", "in_person"],
+    defaultDurationMin: 30,
+  },
+  {
+    id: "peer_support",
+    label: "Peer support",
+    helper: "Connect with someone who's been there.",
+    allowedModalities: ["video", "phone", "in_person"],
+    defaultDurationMin: 45,
+  },
+  {
+    id: "case_management",
+    label: "Meet your case manager",
+    helper: "Get help with resources and next steps.",
+    allowedModalities: ["video", "phone", "in_person"],
+    defaultDurationMin: 30,
+  },
+  {
+    id: "care_coordination",
+    label: "Care coordination",
+    helper: "Line up outside services and support.",
+    allowedModalities: ["video", "phone"],
+    defaultDurationMin: 30,
+  },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
@@ -352,7 +383,14 @@ const LOCATIONS: ClinicLocation[] = [
     address: "1201 S Mooney Blvd",
     city: "Visalia, CA",
     room: "Suite 200",
-    inPersonServices: ["intake", "therapy_individual", "therapy_group", "med_management", "peer_support", "case_management"],
+    inPersonServices: [
+      "intake",
+      "therapy_individual",
+      "therapy_group",
+      "med_management",
+      "peer_support",
+      "case_management",
+    ],
   },
   {
     id: "loc-porterville",
@@ -426,12 +464,7 @@ export interface PeerNote {
   mode?: "in_person" | "phone" | "text" | "warmline" | "group";
 }
 
-export type EligibilityFlagKey =
-  | "ecm"
-  | "jiReentry"
-  | "cs_housing"
-  | "cs_food"
-  | "cs_transport";
+export type EligibilityFlagKey = "ecm" | "jiReentry" | "cs_housing" | "cs_food" | "cs_transport";
 export interface EligibilityNote {
   note?: string;
   asOf?: string;
@@ -549,7 +582,13 @@ const clinicians: Clinician[] = [
     credential: "LCSW",
     mediCalCredentialed: true,
     mediCalStatus: "active",
-    services: ["intake", "therapy_individual", "therapy_group", "case_management", "care_coordination"],
+    services: [
+      "intake",
+      "therapy_individual",
+      "therapy_group",
+      "case_management",
+      "care_coordination",
+    ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2026-08-15",
   },
@@ -605,15 +644,54 @@ const patients: Patient[] = [
     },
     caseManagerId: "cm1",
     screenerHistory: [
-      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-12", timepoint: "intake" },
-      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
-      { key: "gad-7", score: 13, severity: "Moderate", completedAt: "2026-05-12", timepoint: "intake" },
-      { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-06-11", timepoint: "day30" },
+      {
+        key: "phq-9",
+        score: 18,
+        severity: "Moderately Severe",
+        completedAt: "2026-05-12",
+        timepoint: "intake",
+      },
+      {
+        key: "phq-9",
+        score: 14,
+        severity: "Moderate",
+        completedAt: "2026-06-11",
+        timepoint: "day30",
+      },
+      {
+        key: "gad-7",
+        score: 13,
+        severity: "Moderate",
+        completedAt: "2026-05-12",
+        timepoint: "intake",
+      },
+      {
+        key: "gad-7",
+        score: 11,
+        severity: "Moderate",
+        completedAt: "2026-06-11",
+        timepoint: "day30",
+      },
     ],
     goals: [
-      { id: "g1", text: "Attend weekly therapy sessions", status: "in_progress", createdAt: "2026-05-12" },
-      { id: "g2", text: "Secure stable housing within 60 days", status: "open", createdAt: "2026-05-12" },
-      { id: "g3", text: "Reconnect with one supportive family member", status: "done", createdAt: "2026-05-12" },
+      {
+        id: "g1",
+        text: "Attend weekly therapy sessions",
+        status: "in_progress",
+        createdAt: "2026-05-12",
+      },
+      {
+        id: "g2",
+        text: "Secure stable housing within 60 days",
+        status: "open",
+        createdAt: "2026-05-12",
+      },
+      {
+        id: "g3",
+        text: "Reconnect with one supportive family member",
+        status: "done",
+        createdAt: "2026-05-12",
+      },
     ],
     progressNotes: [
       {
@@ -666,10 +744,22 @@ const patients: Patient[] = [
     smsFallback: false,
     consents: { hipaa: true, part2Sud: true, signedAt: "2026-04-05" },
     screeners: {
-      "phq-9": { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-04-05" },
-      "audit": { key: "audit", score: 16, severity: "High risk", completedAt: "2026-04-05" },
+      "phq-9": {
+        key: "phq-9",
+        score: 18,
+        severity: "Moderately Severe",
+        completedAt: "2026-04-05",
+      },
+      audit: { key: "audit", score: 16, severity: "High risk", completedAt: "2026-04-05" },
     },
-    needs: { housing: true, food: true, employment: true, transport: true, substanceUse: true, benefits: true },
+    needs: {
+      housing: true,
+      food: true,
+      employment: true,
+      transport: true,
+      substanceUse: true,
+      benefits: true,
+    },
     carePlanSummary: "Co-occurring SUD + depression; weekly sessions + peer support.",
     intakeCompletedAt: "2026-04-05",
     coverage: {
@@ -681,9 +771,27 @@ const patients: Patient[] = [
     },
     caseManagerId: "cm2",
     screenerHistory: [
-      { key: "phq-9", score: 22, severity: "Severe", completedAt: "2026-04-05", timepoint: "intake" },
-      { key: "phq-9", score: 18, severity: "Moderately Severe", completedAt: "2026-05-05", timepoint: "day30" },
-      { key: "phq-9", score: 14, severity: "Moderate", completedAt: "2026-06-04", timepoint: "day60" },
+      {
+        key: "phq-9",
+        score: 22,
+        severity: "Severe",
+        completedAt: "2026-04-05",
+        timepoint: "intake",
+      },
+      {
+        key: "phq-9",
+        score: 18,
+        severity: "Moderately Severe",
+        completedAt: "2026-05-05",
+        timepoint: "day30",
+      },
+      {
+        key: "phq-9",
+        score: 14,
+        severity: "Moderate",
+        completedAt: "2026-06-04",
+        timepoint: "day60",
+      },
     ],
     // §3a — co-occurring: Marcus carries both a mental-health and a SUD/DMC-ODS episode.
     episodes: [
@@ -698,12 +806,60 @@ const inHours = (h: number) => new Date(today.getTime() + h * 3600 * 1000).toISO
 const ago = (h: number) => new Date(today.getTime() - h * 3600 * 1000).toISOString();
 
 const appointments: Appointment[] = [
-  { id: "a1", patientId: "p1", clinicianId: "c1", start: inHours(26), durationMin: 50, status: "scheduled", billingStatus: "draft" },
-  { id: "a2", patientId: "p1", clinicianId: "c1", start: ago(72), durationMin: 50, status: "attended", billingStatus: "submitted" },
-  { id: "a3", patientId: "p2", clinicianId: "c2", start: inHours(4), durationMin: 50, status: "scheduled", billingStatus: "draft" },
-  { id: "a4", patientId: "p3", clinicianId: "c1", start: ago(48), durationMin: 50, status: "no_show", billingStatus: "draft" },
-  { id: "a5", patientId: "p3", clinicianId: "c1", start: ago(240), durationMin: 50, status: "attended", billingStatus: "paid" },
-  { id: "a6", patientId: "p2", clinicianId: "c2", start: ago(120), durationMin: 50, status: "attended", billingStatus: "denied" },
+  {
+    id: "a1",
+    patientId: "p1",
+    clinicianId: "c1",
+    start: inHours(26),
+    durationMin: 50,
+    status: "scheduled",
+    billingStatus: "draft",
+  },
+  {
+    id: "a2",
+    patientId: "p1",
+    clinicianId: "c1",
+    start: ago(72),
+    durationMin: 50,
+    status: "attended",
+    billingStatus: "submitted",
+  },
+  {
+    id: "a3",
+    patientId: "p2",
+    clinicianId: "c2",
+    start: inHours(4),
+    durationMin: 50,
+    status: "scheduled",
+    billingStatus: "draft",
+  },
+  {
+    id: "a4",
+    patientId: "p3",
+    clinicianId: "c1",
+    start: ago(48),
+    durationMin: 50,
+    status: "no_show",
+    billingStatus: "draft",
+  },
+  {
+    id: "a5",
+    patientId: "p3",
+    clinicianId: "c1",
+    start: ago(240),
+    durationMin: 50,
+    status: "attended",
+    billingStatus: "paid",
+  },
+  {
+    id: "a6",
+    patientId: "p2",
+    clinicianId: "c2",
+    start: ago(120),
+    durationMin: 50,
+    status: "attended",
+    billingStatus: "denied",
+  },
 ];
 
 const referrals: Referral[] = [
@@ -816,9 +972,7 @@ export interface AuditEvent {
 }
 const auditEvents: AuditEvent[] = [];
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
-  const patient = evt.patientId
-    ? patients.find((p) => p.id === evt.patientId)
-    : undefined;
+  const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
     id: `au_${auditEvents.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
     at: evt.at ?? new Date().toISOString(),
@@ -828,11 +982,7 @@ function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
 }
 
 // ----- Refill request lifecycle -------------------------------------------
-export type RefillStatus =
-  | "pending"
-  | "approved"
-  | "denied"
-  | "sent_to_pharmacy";
+export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy";
 export interface RefillRequest {
   id: string;
   patientId: string;
@@ -1094,7 +1244,8 @@ export const AdelanteEHR = {
     emit();
   },
   // Reads
-  listReferrals: () => [...referrals].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
+  listReferrals: () =>
+    [...referrals].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
   listPatients: () => patients,
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
@@ -1103,16 +1254,10 @@ export const AdelanteEHR = {
   getServiceType: (id?: ServiceType) => SERVICE_TYPES.find((s) => s.id === id),
   listLocations: () => LOCATIONS,
   getLocation: (id?: string) => LOCATIONS.find((l) => l.id === id),
-  cliniciansForService(
-    serviceType?: ServiceType,
-    opts?: { locationId?: string },
-  ) {
+  cliniciansForService(serviceType?: ServiceType, opts?: { locationId?: string }) {
     return clinicians.filter((c) => {
       const svcOk = !serviceType || !c.services || c.services.includes(serviceType);
-      const locOk =
-        !opts?.locationId ||
-        !c.locationIds ||
-        c.locationIds.includes(opts.locationId);
+      const locOk = !opts?.locationId || !c.locationIds || c.locationIds.includes(opts.locationId);
       return svcOk && locOk;
     });
   },
@@ -1122,8 +1267,7 @@ export const AdelanteEHR = {
   },
   listCaseManagers: () => caseManagers,
   getCaseManager: (id?: string) => caseManagers.find((c) => c.id === id),
-  patientsForCaseManager: (cmId: string) =>
-    patients.filter((p) => p.caseManagerId === cmId),
+  patientsForCaseManager: (cmId: string) => patients.filter((p) => p.caseManagerId === cmId),
   listAppointments: () => [...appointments].sort((a, b) => +new Date(a.start) - +new Date(b.start)),
   appointmentsForPatient: (pid: string) => appointments.filter((a) => a.patientId === pid),
   appointmentsForClinician: (cid: string) => appointments.filter((a) => a.clinicianId === cid),
@@ -1138,8 +1282,7 @@ export const AdelanteEHR = {
     // Fallback: no phone, no contact consent, or referrer explicitly requested
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
-    const canSendSms =
-      !requestManualOutreach && !!rest.phone && rest.consentToContact;
+    const canSendSms = !requestManualOutreach && !!rest.phone && rest.consentToContact;
     const r: Referral = {
       ...rest,
       id: uid(),
@@ -1310,8 +1453,7 @@ export const AdelanteEHR = {
     const hours = [10, 13, 15.5];
     // Per-clinician day offset so the three clinicians don't show identical
     // availability strips in the picker.
-    const offset =
-      clinicianId === "c1" ? 0 : clinicianId === "c2" ? 1 : 2;
+    const offset = clinicianId === "c1" ? 0 : clinicianId === "c2" ? 1 : 2;
     for (let d = 1; d <= days + 7; d++) {
       const day = new Date(base);
       day.setDate(base.getDate() + d);
@@ -1545,11 +1687,13 @@ export const AdelanteEHR = {
   getConsentState(patientId: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { part2Sud: false, ecmShare: false, sms: true };
-    return p.consentState ?? {
-      part2Sud: p.consents.part2Sud,
-      ecmShare: Boolean(p.coverage?.ecmEligible),
-      sms: p.smsFallback,
-    };
+    return (
+      p.consentState ?? {
+        part2Sud: p.consents.part2Sud,
+        ecmShare: Boolean(p.coverage?.ecmEligible),
+        sms: p.smsFallback,
+      }
+    );
   },
   setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string) {
     const p = patients.find((x) => x.id === patientId);
@@ -1585,9 +1729,7 @@ export const AdelanteEHR = {
   },
   listAllConsentEvents() {
     return patients
-      .flatMap((p) =>
-        (p.consentEvents ?? []).map((e) => ({ ...e, programId: p.programId })),
-      )
+      .flatMap((p) => (p.consentEvents ?? []).map((e) => ({ ...e, programId: p.programId })))
       .sort((a, b) => +new Date(b.at) - +new Date(a.at));
   },
 
@@ -1603,17 +1745,19 @@ export const AdelanteEHR = {
   setEcmEligible(patientId: string, eligible: boolean) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.coverage = { ...(p.coverage ?? { status: "none_unsure", verified: "not_found" }), ecmEligible: eligible };
+    p.coverage = {
+      ...(p.coverage ?? { status: "none_unsure", verified: "not_found" }),
+      ecmEligible: eligible,
+    };
     emit();
   },
-  setCommunitySupport(
-    patientId: string,
-    key: "housing" | "food" | "transport",
-    on: boolean,
-  ) {
+  setCommunitySupport(patientId: string, key: "housing" | "food" | "transport", on: boolean) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    const base = p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "not_found" as const };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
     p.coverage = {
       ...base,
       communitySupports: { ...(base.communitySupports ?? {}), [key]: on },
@@ -1623,7 +1767,10 @@ export const AdelanteEHR = {
   setJiReentry(patientId: string, on: boolean) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    const base = p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "not_found" as const };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
     p.coverage = { ...base, jiReentryFlag: on };
     emit();
   },
@@ -1665,7 +1812,9 @@ export const AdelanteEHR = {
 
   // ----- Re-screening cadence -----
   // Returns screener keys due for re-screening based on day 30/60/90 cadence.
-  rescreensDue(patientId: string): { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] {
+  rescreensDue(
+    patientId: string,
+  ): { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return [];
     const keys = ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"];
@@ -1772,7 +1921,10 @@ export const AdelanteEHR = {
   },
 
   // ----- SDOH plan items -----
-  addSdohItem(patientId: string, input: { need: string; note?: string; visibleToPatient?: boolean }) {
+  addSdohItem(
+    patientId: string,
+    input: { need: string; note?: string; visibleToPatient?: boolean },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.need.trim()) return;
     const item: SdohPlanItem = {
@@ -1812,7 +1964,12 @@ export const AdelanteEHR = {
   },
 
   // ----- Resource referral status/notes -----
-  setResourceReferralStatus(patientId: string, referralId: string, status: ResourceReferral["status"], note?: string) {
+  setResourceReferralStatus(
+    patientId: string,
+    referralId: string,
+    status: ResourceReferral["status"],
+    note?: string,
+  ) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
     if (!r) return;
@@ -1851,10 +2008,7 @@ export const AdelanteEHR = {
   addCoordinationEntry(patientId: string, input: Omit<CoordinationEntry, "id">) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.coordinationLog = [
-      { ...input, id: uid() },
-      ...(p.coordinationLog ?? []),
-    ];
+    p.coordinationLog = [{ ...input, id: uid() }, ...(p.coordinationLog ?? [])];
     emit();
   },
 
@@ -2035,7 +2189,9 @@ export const AdelanteEHR = {
     const lines = rows.map((a) => {
       const p = patients.find((x) => x.id === a.patientId);
       const c = clinicians.find((x) => x.id === a.clinicianId);
-      const charge = ((a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType)) / 100).toFixed(2);
+      const charge = ((a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType)) / 100).toFixed(
+        2,
+      );
       return [
         a.id,
         a.start.slice(0, 10),
@@ -2065,7 +2221,9 @@ export const AdelanteEHR = {
     return { ok: true };
   },
   /** Clinicians whose license has expired or is expiring within `days`. */
-  expiringClinicianLicenses(days = 30): { clinician: Clinician; daysUntil: number; expired: boolean }[] {
+  expiringClinicianLicenses(
+    days = 30,
+  ): { clinician: Clinician; daysUntil: number; expired: boolean }[] {
     const now = Date.now();
     return clinicians
       .filter((c) => Boolean(c.licenseExpiresOn))
@@ -2134,12 +2292,14 @@ export const AdelanteEHR = {
   },
 
   // ---------- Unified audit log ----------
-  listAuditEvents(filter: {
-    patientId?: string;
-    category?: AuditCategory | AuditCategory[];
-    since?: string;
-    limit?: number;
-  } = {}): AuditEvent[] {
+  listAuditEvents(
+    filter: {
+      patientId?: string;
+      category?: AuditCategory | AuditCategory[];
+      since?: string;
+      limit?: number;
+    } = {},
+  ): AuditEvent[] {
     const cats = Array.isArray(filter.category)
       ? new Set(filter.category)
       : filter.category
@@ -2227,8 +2387,7 @@ export const AdelanteEHR = {
           r.patientId === req.patientId &&
           r.reviewedBy,
       )
-      .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]
-      ?.reviewedBy;
+      .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]?.reviewedBy;
     req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
     req.reviewedBy = input.clinicianId;
     req.reviewedAt = new Date().toISOString();
@@ -2251,8 +2410,7 @@ export const AdelanteEHR = {
     }
     appendAudit({
       category: "rx",
-      action:
-        input.decision === "approved" ? "refill_approved" : "refill_denied",
+      action: input.decision === "approved" ? "refill_approved" : "refill_denied",
       patientId: req.patientId,
       actorId: input.clinicianId,
       detail: {
@@ -2263,9 +2421,7 @@ export const AdelanteEHR = {
       },
     });
     // Close the linked CM task.
-    const task = caseTasks.find(
-      (t) => t.dedupeKey === `refill:${req.id}` && t.status !== "done",
-    );
+    const task = caseTasks.find((t) => t.dedupeKey === `refill:${req.id}` && t.status !== "done");
     if (task) {
       task.status = "done";
       task.completedAt = new Date().toISOString();
@@ -2312,7 +2468,10 @@ export const AdelanteEHR = {
     emit();
     return session;
   },
-  markTelehealthJoin(appointmentId: string, role: "patient" | "clinician"): TelehealthSession | undefined {
+  markTelehealthJoin(
+    appointmentId: string,
+    role: "patient" | "clinician",
+  ): TelehealthSession | undefined {
     const session = this.startTelehealthSession(appointmentId);
     if (!session) return undefined;
     const now = new Date().toISOString();
@@ -2347,9 +2506,7 @@ export const AdelanteEHR = {
     session.endedAt = now.toISOString();
     session.endReason = reason;
     if (session.startedAt) {
-      session.durationSec = Math.round(
-        (now.getTime() - +new Date(session.startedAt)) / 1000,
-      );
+      session.durationSec = Math.round((now.getTime() - +new Date(session.startedAt)) / 1000);
     }
     appendAudit({
       category: "telehealth",
@@ -2364,11 +2521,7 @@ export const AdelanteEHR = {
     // Sweep expirations lazily on read.
     const now = Date.now();
     for (const s of telehealthSessions) {
-      if (
-        s.state !== "ended" &&
-        s.state !== "expired" &&
-        +new Date(s.expiresAt) < now
-      ) {
+      if (s.state !== "ended" && s.state !== "expired" && +new Date(s.expiresAt) < now) {
         s.state = "expired";
         appendAudit({
           category: "telehealth",
@@ -2391,10 +2544,7 @@ export const AdelanteEHR = {
 
   // ---------- Vendor pings ----------
   async pingVendors(): Promise<{ telehealth: PingResult; erx: PingResult }> {
-    const [th, er] = await Promise.all([
-      _vendors.telehealth.ping(),
-      _vendors.erx.ping(),
-    ]);
+    const [th, er] = await Promise.all([_vendors.telehealth.ping(), _vendors.erx.ping()]);
     const t: PingResult = { vendor: _vendors.telehealth.vendorName, ok: th.ok, at: th.at };
     const e: PingResult = { vendor: _vendors.erx.vendorName, ok: er.ok, at: er.at };
     vendorPings.unshift(t, e);
@@ -2408,21 +2558,26 @@ export const AdelanteEHR = {
   },
 
   // ---------- Provider switch notifications ----------
-  listProviderSwitches(filter: {
-    patientId?: string;
-    clinicianId?: string;
-    role?: "outgoing" | "incoming" | "either";
-    status?: ProviderSwitchStatus | "any";
-  } = {}): ProviderSwitch[] {
+  listProviderSwitches(
+    filter: {
+      patientId?: string;
+      clinicianId?: string;
+      role?: "outgoing" | "incoming" | "either";
+      status?: ProviderSwitchStatus | "any";
+    } = {},
+  ): ProviderSwitch[] {
     return providerSwitches.filter((s) => {
       if (filter.patientId && s.patientId !== filter.patientId) return false;
       if (filter.clinicianId) {
         const role = filter.role ?? "outgoing";
         if (role === "outgoing" && s.fromClinicianId !== filter.clinicianId) return false;
         if (role === "incoming" && s.toClinicianId !== filter.clinicianId) return false;
-        if (role === "either" &&
+        if (
+          role === "either" &&
           s.fromClinicianId !== filter.clinicianId &&
-          s.toClinicianId !== filter.clinicianId) return false;
+          s.toClinicianId !== filter.clinicianId
+        )
+          return false;
       }
       if (filter.status && filter.status !== "any" && s.status !== filter.status) return false;
       return true;
@@ -2431,7 +2586,11 @@ export const AdelanteEHR = {
   getPreviousProviderFor(patientId: string, serviceType?: ServiceType): string | undefined {
     return _previousProviderFor(patientId, serviceType);
   },
-  acknowledgeProviderSwitch(id: string, actorId?: string, note?: string): ProviderSwitch | undefined {
+  acknowledgeProviderSwitch(
+    id: string,
+    actorId?: string,
+    note?: string,
+  ): ProviderSwitch | undefined {
     const s = providerSwitches.find((x) => x.id === id);
     if (!s) return undefined;
     s.status = "acknowledged";

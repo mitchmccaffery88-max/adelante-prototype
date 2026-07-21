@@ -89,8 +89,8 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
             A new version of Adelante is ready
           </h1>
           <p className="mt-2 text-sm text-muted-foreground">
-            The app was updated while you were using it, so some files couldn't
-            load. Reload to get the latest version — your information is safe.
+            The app was updated while you were using it, so some files couldn't load. Reload to get
+            the latest version — your information is safe.
           </p>
           <div className="mt-6 flex flex-wrap justify-center gap-2">
             <button
@@ -121,8 +121,7 @@ function ErrorComponent({ error, reset }: { error: Error; reset: () => void }) {
           This page didn't load
         </h1>
         <p className="mt-2 text-sm text-muted-foreground">
-          Something went wrong on our end. You can try again, reload the app, or
-          head back home.
+          Something went wrong on our end. You can try again, reload the app, or head back home.
         </p>
         <div className="mt-6 flex flex-wrap justify-center gap-2">
           <button
@@ -161,15 +160,35 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
       { name: "apple-mobile-web-app-capable", content: "yes" },
       { name: "apple-mobile-web-app-title", content: "Adelante" },
       { title: "Adelante Pathways — Reentry Behavioral Health Care" },
-      { name: "description", content: "Adelante Pathways supports the first 90 days back in the community with bilingual teletherapy, case management, and reentry navigation." },
+      {
+        name: "description",
+        content:
+          "Adelante Pathways supports the first 90 days back in the community with bilingual teletherapy, case management, and reentry navigation.",
+      },
       { property: "og:title", content: "Adelante Pathways — Reentry Behavioral Health Care" },
-      { property: "og:description", content: "Bilingual teletherapy, case management, and reentry support for the first 90 days back in the community." },
+      {
+        property: "og:description",
+        content:
+          "Bilingual teletherapy, case management, and reentry support for the first 90 days back in the community.",
+      },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
       { name: "twitter:title", content: "Adelante Pathways — Reentry Behavioral Health Care" },
-      { name: "twitter:description", content: "Bilingual teletherapy, case management, and reentry support for the first 90 days back in the community." },
-      { property: "og:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png" },
-      { name: "twitter:image", content: "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png" },
+      {
+        name: "twitter:description",
+        content:
+          "Bilingual teletherapy, case management, and reentry support for the first 90 days back in the community.",
+      },
+      {
+        property: "og:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png",
+      },
+      {
+        name: "twitter:image",
+        content:
+          "https://pub-bb2e103a32db4e198524a2e9ed8f35b4.r2.dev/0460f7cb-8083-4725-84da-14871403dbfd/id-preview-6d25338c--e75ac755-e89b-4ae1-9959-b7981b3fab64.lovable.app-1780588024412.png",
+      },
     ],
     links: [
       {

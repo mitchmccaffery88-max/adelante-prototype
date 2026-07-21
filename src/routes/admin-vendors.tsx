@@ -12,9 +12,17 @@ export const Route = createFileRoute("/admin-vendors")({
   head: () => ({
     meta: [
       { title: "Vendor status — Adelante Admin" },
-      { name: "description", content: "Live health of integrated telehealth and eRx vendors, session lifecycle, and connection tests." },
+      {
+        name: "description",
+        content:
+          "Live health of integrated telehealth and eRx vendors, session lifecycle, and connection tests.",
+      },
       { property: "og:title", content: "Vendor status — Adelante Admin" },
-      { property: "og:description", content: "Monitor telehealth and eRx vendor health, session lifecycle, and recent connection tests." },
+      {
+        property: "og:description",
+        content:
+          "Monitor telehealth and eRx vendor health, session lifecycle, and recent connection tests.",
+      },
     ],
   }),
   component: AdminVendorsPage,
@@ -29,7 +37,9 @@ function AdminVendorsPage() {
   }));
   const [testing, setTesting] = useState(false);
 
-  useEffect(() => { AdelanteEHR.pingVendors().catch(() => {}); }, []);
+  useEffect(() => {
+    AdelanteEHR.pingVendors().catch(() => {});
+  }, []);
 
   const runTest = async () => {
     setTesting(true);
@@ -43,7 +53,10 @@ function AdminVendorsPage() {
     }
   };
 
-  const active = sessions.filter((s) => s.state === "in_progress" || s.state === "clinician_joined" || s.state === "patient_joined");
+  const active = sessions.filter(
+    (s) =>
+      s.state === "in_progress" || s.state === "clinician_joined" || s.state === "patient_joined",
+  );
   const recent = sessions.slice(0, 10);
 
   return (
@@ -53,7 +66,8 @@ function AdminVendorsPage() {
       </Link>
       <h1 className="font-display text-2xl text-navy">Vendor status</h1>
       <p className="text-sm text-muted-foreground">
-        Adelante Pathways is the EHR of record. Vendors below deliver bounded services (telehealth video, eRx).
+        Adelante Pathways is the EHR of record. Vendors below deliver bounded services (telehealth
+        video, eRx).
       </p>
 
       <div className="grid md:grid-cols-2 gap-4">
@@ -82,7 +96,9 @@ function AdminVendorsPage() {
       <Card className="p-5">
         <div className="flex items-center justify-between">
           <h2 className="font-display text-lg text-navy">Telehealth sessions</h2>
-          <Badge variant="outline" className="text-[10px]">{active.length} active</Badge>
+          <Badge variant="outline" className="text-[10px]">
+            {active.length} active
+          </Badge>
         </div>
         {recent.length === 0 ? (
           <p className="mt-3 text-sm text-muted-foreground">No telehealth sessions yet.</p>
@@ -101,8 +117,12 @@ function AdminVendorsPage() {
               {recent.map((s) => (
                 <tr key={s.id} className="border-t">
                   <td className="py-1.5 pr-2 font-mono text-[11px]">{s.roomId}</td>
-                  <td className="py-1.5 pr-2"><StateBadge state={s.state} /></td>
-                  <td className="py-1.5 pr-2 text-xs"><ClientDate value={s.createdAt} /></td>
+                  <td className="py-1.5 pr-2">
+                    <StateBadge state={s.state} />
+                  </td>
+                  <td className="py-1.5 pr-2 text-xs">
+                    <ClientDate value={s.createdAt} />
+                  </td>
                   <td className="py-1.5 pr-2 text-xs">
                     {s.durationSec ? `${Math.round(s.durationSec / 60)} min` : "—"}
                   </td>
@@ -117,19 +137,33 @@ function AdminVendorsPage() {
   );
 }
 
-function VendorPanel({ label, icon, name, mode, pings }: {
-  label: string; icon: React.ReactNode; name: string; mode: string;
+function VendorPanel({
+  label,
+  icon,
+  name,
+  mode,
+  pings,
+}: {
+  label: string;
+  icon: React.ReactNode;
+  name: string;
+  mode: string;
   pings: { ok: boolean; at: string }[];
 }) {
   const last = pings[0];
   return (
     <Card className="p-5">
-      <div className="flex items-center gap-2">{icon}<h3 className="font-display text-base text-navy">{label}</h3></div>
+      <div className="flex items-center gap-2">
+        {icon}
+        <h3 className="font-display text-base text-navy">{label}</h3>
+      </div>
       <div className="mt-2 text-[11px] text-muted-foreground font-mono">{name}</div>
       <div className="mt-2 flex items-center gap-2">
         <Badge className="bg-gold/30 text-navy border-0 text-[10px]">{mode}</Badge>
         {last && (
-          <Badge className={`${last.ok ? "bg-success/20 text-success" : "bg-destructive/15 text-destructive"} border-0 text-[10px]`}>
+          <Badge
+            className={`${last.ok ? "bg-success/20 text-success" : "bg-destructive/15 text-destructive"} border-0 text-[10px]`}
+          >
             {last.ok ? "healthy" : "degraded"}
           </Badge>
         )}
@@ -159,5 +193,9 @@ function StateBadge({ state }: { state: string }) {
     expired: "bg-muted text-muted-foreground",
     failed: "bg-destructive/15 text-destructive",
   };
-  return <Badge className={`${map[state] ?? "bg-muted"} border-0 text-[10px]`}>{state.replace("_", " ")}</Badge>;
+  return (
+    <Badge className={`${map[state] ?? "bg-muted"} border-0 text-[10px]`}>
+      {state.replace("_", " ")}
+    </Badge>
+  );
 }

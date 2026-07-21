@@ -7,8 +7,7 @@ export const Route = createFileRoute("/home")({
       { title: "My care — Adelante" },
       {
         name: "description",
-        content:
-          "Your 90-day care plan, sessions, and intake. HIPAA + 42 CFR Part 2 compliant.",
+        content: "Your 90-day care plan, sessions, and intake. HIPAA + 42 CFR Part 2 compliant.",
       },
     ],
   }),

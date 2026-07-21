@@ -54,7 +54,9 @@ export function TimePicker({ value, onChange, error, id, ariaLabel }: TimePicker
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {HOURS.map((h) => (
-              <SelectItem key={h} value={h}>{h}</SelectItem>
+              <SelectItem key={h} value={h}>
+                {h}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -64,7 +66,9 @@ export function TimePicker({ value, onChange, error, id, ariaLabel }: TimePicker
           </SelectTrigger>
           <SelectContent className="max-h-64">
             {MINUTES.map((mm) => (
-              <SelectItem key={mm} value={mm}>{mm}</SelectItem>
+              <SelectItem key={mm} value={mm}>
+                {mm}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
@@ -79,7 +83,9 @@ export function TimePicker({ value, onChange, error, id, ariaLabel }: TimePicker
         </Select>
       </div>
       {error && (
-        <p id={describedBy} className="mt-1 text-xs text-destructive">{error}</p>
+        <p id={describedBy} className="mt-1 text-xs text-destructive">
+          {error}
+        </p>
       )}
     </div>
   );

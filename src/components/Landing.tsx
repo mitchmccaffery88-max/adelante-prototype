@@ -22,7 +22,6 @@ import heroImg from "@/assets/hero-sunrise.jpg";
 const readAloudText =
   "Forward starts here. Adelante helps you feel better and build a steady life after coming home, with real people in your corner. Free with Medi-Cal. Private. No judgment. How it works. Three simple steps. We walk with you. Step 1. Connect. Tell us a little about you. It takes a few minutes, and we can help you do it by phone. Step 2. Make a plan. Meet your care team. Together you build a simple 90 day plan. Step 3. Move forward. Talk to a counselor, learn new skills, and get help with daily life. What you get. Tools and people that meet you where you are. Talk to someone who gets it. Private video or phone sessions with a counselor, on your schedule. Care for your mind. Support for stress, sleep, anger, sadness, and staying sober. Help with real life. Connections for housing, food, jobs, and getting back on your feet. A plan that's yours. A simple 90 day plan built around your goals, in plain language. On your phone. Use it anywhere. No smartphone? We can help with that too. A team in your corner. Counselors and navigators who actually show up, not a chatbot. Who it's for. Adelante is for people coming home from jail or prison who want support getting steady, especially in the first few months. If you're on probation or parole, or just got out, you belong here. For partners. Work with people reentering the community? You can refer someone in minutes. Probation, parole, drug courts, reentry navigators, we're here to make it easy. Covered by Medi-Cal, no cost to you. Your information is private and protected. Judgment-free, always. Available in English. Spanish coming soon. You've already taken the hardest step. Let's take the next one together.";
 
-
 export function Landing() {
   return (
     <div className="bg-background">
@@ -58,18 +57,21 @@ export function Landing() {
         <div className="relative mx-auto max-w-7xl px-5 sm:px-8 py-20 sm:py-28 lg:py-36">
           <div className="max-w-2xl text-navy-foreground">
             <span className="inline-flex items-center gap-2 rounded-full bg-navy-foreground/15 backdrop-blur px-3 py-1 text-xs font-medium">
-              <Sunrise className="h-3.5 w-3.5 text-gold" />
-              A new beginning, one step at a time
+              <Sunrise className="h-3.5 w-3.5 text-gold" />A new beginning, one step at a time
             </span>
             <h1 className="mt-5 font-display text-5xl sm:text-6xl lg:text-7xl leading-[1.05] tracking-tight">
               Forward starts here.
             </h1>
             <p className="mt-5 text-lg sm:text-xl text-navy-foreground/90 max-w-xl">
-              Adelante helps you feel better and build a steady life after coming home —
-              with real people in your corner.
+              Adelante helps you feel better and build a steady life after coming home — with real
+              people in your corner.
             </p>
             <div className="mt-8 flex flex-wrap gap-3">
-              <Button asChild size="lg" className="h-12 px-6 text-base bg-gold text-gold-foreground hover:bg-gold/90">
+              <Button
+                asChild
+                size="lg"
+                className="h-12 px-6 text-base bg-gold text-gold-foreground hover:bg-gold/90"
+              >
                 <Link to="/home">
                   Get started
                   <ArrowRight className="h-4 w-4" />
@@ -98,7 +100,9 @@ export function Landing() {
       <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="font-display text-4xl sm:text-5xl text-navy">How it works</h2>
-          <p className="mt-3 text-lg text-muted-foreground">Three simple steps. We walk with you.</p>
+          <p className="mt-3 text-lg text-muted-foreground">
+            Three simple steps. We walk with you.
+          </p>
         </div>
         <div className="mt-12 grid gap-6 md:grid-cols-3">
           {[
@@ -121,7 +125,10 @@ export function Landing() {
               body: "Talk to a counselor, learn new skills, and get help with daily life.",
             },
           ].map((s) => (
-            <Card key={s.n} className="p-7 border-border/60 shadow-none hover:shadow-md transition-shadow">
+            <Card
+              key={s.n}
+              className="p-7 border-border/60 shadow-none hover:shadow-md transition-shadow"
+            >
               <div className="flex items-center gap-3">
                 <div className="h-10 w-10 rounded-full bg-teal/15 text-teal grid place-items-center">
                   <s.icon className="h-5 w-5" />
@@ -195,9 +202,9 @@ export function Landing() {
           <Users className="h-7 w-7 text-gold" />
           <h2 className="mt-4 font-display text-3xl sm:text-4xl">Who it's for</h2>
           <p className="mt-4 text-lg leading-relaxed text-navy-foreground/90">
-            Adelante is for people coming home from jail or prison who want support
-            getting steady — especially in the first few months. If you're on probation
-            or parole, or just got out, you belong here.
+            Adelante is for people coming home from jail or prison who want support getting steady —
+            especially in the first few months. If you're on probation or parole, or just got out,
+            you belong here.
           </p>
           <Button asChild className="mt-7 h-11 px-5 bg-gold text-gold-foreground hover:bg-gold/90">
             <Link to="/home">
@@ -210,10 +217,14 @@ export function Landing() {
           <HeartHandshake className="h-7 w-7 text-teal" />
           <h2 className="mt-4 font-display text-3xl sm:text-4xl text-navy">For partners</h2>
           <p className="mt-4 text-lg leading-relaxed text-foreground/80">
-            Work with people reentering the community? You can refer someone in minutes.
-            Probation, parole, drug courts, reentry navigators — we're here to make it easy.
+            Work with people reentering the community? You can refer someone in minutes. Probation,
+            parole, drug courts, reentry navigators — we're here to make it easy.
           </p>
-          <Button asChild variant="outline" className="mt-7 h-11 px-5 border-teal text-teal hover:bg-teal hover:text-teal-foreground">
+          <Button
+            asChild
+            variant="outline"
+            className="mt-7 h-11 px-5 border-teal text-teal hover:bg-teal hover:text-teal-foreground"
+          >
             <Link to="/referral">
               Refer someone
               <ArrowRight className="h-4 w-4" />
@@ -256,7 +267,11 @@ export function Landing() {
           <p className="mt-5 font-display text-3xl sm:text-4xl leading-snug">
             You've already taken the hardest step. Let's take the next one together.
           </p>
-          <Button asChild size="lg" className="mt-8 h-12 px-7 text-base bg-gold text-gold-foreground hover:bg-gold/90">
+          <Button
+            asChild
+            size="lg"
+            className="mt-8 h-12 px-7 text-base bg-gold text-gold-foreground hover:bg-gold/90"
+          >
             <Link to="/home">
               Get started
               <ArrowRight className="h-4 w-4" />
@@ -275,16 +290,27 @@ export function Landing() {
           >
             <Phone className="h-5 w-5 text-destructive shrink-0" />
             <p className="text-sm sm:text-base">
-              <span className="font-semibold text-destructive">In crisis?</span>{" "}
-              Call or text <a href="tel:988" className="underline font-semibold">988</a> anytime. Spanish-capable.
+              <span className="font-semibold text-destructive">In crisis?</span> Call or text{" "}
+              <a href="tel:988" className="underline font-semibold">
+                988
+              </a>{" "}
+              anytime. Spanish-capable.
             </p>
           </div>
           <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
             <nav className="flex flex-wrap gap-x-5 gap-y-2">
-              <a href="#how" className="hover:text-foreground">How it works</a>
-              <Link to="/referral" className="hover:text-foreground">For partners</Link>
-              <a href="#privacy" className="hover:text-foreground">Privacy</a>
-              <a href="#contact" className="hover:text-foreground">Contact</a>
+              <a href="#how" className="hover:text-foreground">
+                How it works
+              </a>
+              <Link to="/referral" className="hover:text-foreground">
+                For partners
+              </Link>
+              <a href="#privacy" className="hover:text-foreground">
+                Privacy
+              </a>
+              <a href="#contact" className="hover:text-foreground">
+                Contact
+              </a>
             </nav>
             <span>© {new Date().getFullYear()} Adelante · Kings County Pilot</span>
           </div>

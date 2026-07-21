@@ -98,9 +98,7 @@ function CaseManagerPage() {
   const cms = useEhr(() => AdelanteEHR.listCaseManagers());
   const [cmId, setCmId] = useState(cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
-  const rawCaseload = useEhr(() =>
-    cmId ? AdelanteEHR.patientsForCaseManager(cmId) : [],
-  );
+  const rawCaseload = useEhr(() => (cmId ? AdelanteEHR.patientsForCaseManager(cmId) : []));
   const [query, setQuery] = useState("");
   const [dobFrom, setDobFrom] = useState("");
   const [dobTo, setDobTo] = useState("");
@@ -112,12 +110,7 @@ function CaseManagerPage() {
       const cin = (p.cin ?? "").toLowerCase();
       const pid = p.programId.toLowerCase();
       const dob = (p.dob ?? "").toLowerCase();
-      if (
-        !name.includes(q) &&
-        !cin.includes(q) &&
-        !pid.includes(q) &&
-        !dob.includes(q)
-      )
+      if (!name.includes(q) && !cin.includes(q) && !pid.includes(q) && !dob.includes(q))
         return false;
     }
     if (dobFrom || dobTo) {
@@ -128,9 +121,7 @@ function CaseManagerPage() {
     return true;
   });
   const [activeId, setActiveId] = useState<string | null>(rawCaseload[0]?.id ?? null);
-  const active = useEhr(() =>
-    activeId ? AdelanteEHR.getPatient(activeId) : undefined,
-  );
+  const active = useEhr(() => (activeId ? AdelanteEHR.getPatient(activeId) : undefined));
   const [profileId, setProfileId] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
 
@@ -270,97 +261,91 @@ function CaseManagerPage() {
             </div>
           </div>
           <div className="hidden sm:block">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Client</TableHead>
-                <TableHead>CIN</TableHead>
-                <TableHead>DOB</TableHead>
-                <TableHead>Episode day</TableHead>
-                <TableHead>Coverage</TableHead>
-                <TableHead>Last contact</TableHead>
-                <TableHead>Flags</TableHead>
-                <TableHead className="text-right">Action</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {caseload.map((p) => (
-                <TableRow
-                  key={p.id}
-                  data-state={activeId === p.id ? "selected" : undefined}
-                >
-                  <TableCell className="font-medium text-navy">
-                    {p.firstName} {p.lastName}
-                  </TableCell>
-                  <TableCell className="text-xs font-mono text-muted-foreground">
-                    {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
-                    {p.dob ?? "—"}
-                  </TableCell>
-                  <TableCell className="text-xs">
-                    {p.episodeDay}/90
-                  </TableCell>
-                  <TableCell>
-                    <CoverageBadge status={p.coverage?.status} />
-                  </TableCell>
-                  <TableCell className="text-xs text-muted-foreground">
-                    {(() => {
-                      const iso = lastContactAt(p);
-                      if (!iso) return <span className="text-destructive">No contact</span>;
-                      const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
-                      const stale = d > 7;
-                      return (
-                        <span className={stale ? "text-destructive" : ""}>
-                          {daysAgo(iso)}
-                        </span>
-                      );
-                    })()}
-                  </TableCell>
-                  <TableCell className="space-x-1">
-                    {p.crisisFlag && (
-                      <Badge className="bg-destructive/15 text-destructive border-0 inline-flex items-center gap-1">
-                        <AlertTriangle className="h-3 w-3" /> Crisis
-                      </Badge>
-                    )}
-                    {p.coverage?.ecmEligible && (
-                      <Badge className="bg-teal/15 text-teal border-0">
-                        ECM
-                      </Badge>
-                    )}
-                    {(() => {
-                      const pending = AdelanteEHR.listProviderSwitches({
-                        patientId: p.id,
-                        status: "pending_review",
-                      }).length;
-                      return pending > 0 ? (
-                        <Badge className="bg-warning/20 text-warning-foreground border-0" title="Pending provider switch review">
-                          Switch·{pending}
-                        </Badge>
-                      ) : null;
-                    })()}
-                  </TableCell>
-                  <TableCell className="text-right">
-                    <div className="inline-flex gap-1">
-                      <Button
-                        size="sm"
-                        variant={activeId === p.id ? "default" : "outline"}
-                        onClick={() => setActiveId(p.id)}
-                      >
-                        Open
-                      </Button>
-                      <Button size="sm" variant="ghost" onClick={() => setProfileId(p.id)}>
-                        Profile
-                      </Button>
-                      <Button size="sm" variant="secondary" onClick={() => setRecordId(p.id)}>
-                        Record
-                      </Button>
-                    </div>
-                  </TableCell>
+            <Table>
+              <TableHeader>
+                <TableRow>
+                  <TableHead>Client</TableHead>
+                  <TableHead>CIN</TableHead>
+                  <TableHead>DOB</TableHead>
+                  <TableHead>Episode day</TableHead>
+                  <TableHead>Coverage</TableHead>
+                  <TableHead>Last contact</TableHead>
+                  <TableHead>Flags</TableHead>
+                  <TableHead className="text-right">Action</TableHead>
                 </TableRow>
-              ))}
-            </TableBody>
-          </Table>
+              </TableHeader>
+              <TableBody>
+                {caseload.map((p) => (
+                  <TableRow key={p.id} data-state={activeId === p.id ? "selected" : undefined}>
+                    <TableCell className="font-medium text-navy">
+                      {p.firstName} {p.lastName}
+                    </TableCell>
+                    <TableCell className="text-xs font-mono text-muted-foreground">
+                      {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground whitespace-nowrap">
+                      {p.dob ?? "—"}
+                    </TableCell>
+                    <TableCell className="text-xs">{p.episodeDay}/90</TableCell>
+                    <TableCell>
+                      <CoverageBadge status={p.coverage?.status} />
+                    </TableCell>
+                    <TableCell className="text-xs text-muted-foreground">
+                      {(() => {
+                        const iso = lastContactAt(p);
+                        if (!iso) return <span className="text-destructive">No contact</span>;
+                        const d = Math.floor((Date.now() - new Date(iso).getTime()) / 86400000);
+                        const stale = d > 7;
+                        return (
+                          <span className={stale ? "text-destructive" : ""}>{daysAgo(iso)}</span>
+                        );
+                      })()}
+                    </TableCell>
+                    <TableCell className="space-x-1">
+                      {p.crisisFlag && (
+                        <Badge className="bg-destructive/15 text-destructive border-0 inline-flex items-center gap-1">
+                          <AlertTriangle className="h-3 w-3" /> Crisis
+                        </Badge>
+                      )}
+                      {p.coverage?.ecmEligible && (
+                        <Badge className="bg-teal/15 text-teal border-0">ECM</Badge>
+                      )}
+                      {(() => {
+                        const pending = AdelanteEHR.listProviderSwitches({
+                          patientId: p.id,
+                          status: "pending_review",
+                        }).length;
+                        return pending > 0 ? (
+                          <Badge
+                            className="bg-warning/20 text-warning-foreground border-0"
+                            title="Pending provider switch review"
+                          >
+                            Switch·{pending}
+                          </Badge>
+                        ) : null;
+                      })()}
+                    </TableCell>
+                    <TableCell className="text-right">
+                      <div className="inline-flex gap-1">
+                        <Button
+                          size="sm"
+                          variant={activeId === p.id ? "default" : "outline"}
+                          onClick={() => setActiveId(p.id)}
+                        >
+                          Open
+                        </Button>
+                        <Button size="sm" variant="ghost" onClick={() => setProfileId(p.id)}>
+                          Profile
+                        </Button>
+                        <Button size="sm" variant="secondary" onClick={() => setRecordId(p.id)}>
+                          Record
+                        </Button>
+                      </div>
+                    </TableCell>
+                  </TableRow>
+                ))}
+              </TableBody>
+            </Table>
           </div>
 
           {/* Mobile: card list */}
@@ -483,7 +468,10 @@ function CaseManagerPage() {
               <EligibilityFlagsCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
               <RecentReferralsCard patientId={active.id} />
-              <CoordinationCard patientName={`${active.firstName} ${active.lastName}`} consentSud={active.consents.part2Sud} />
+              <CoordinationCard
+                patientName={`${active.firstName} ${active.lastName}`}
+                consentSud={active.consents.part2Sud}
+              />
             </>
           ) : (
             <Card className="p-6 text-sm text-muted-foreground">
@@ -521,9 +509,7 @@ function CoverageBadge({ status }: { status?: string }) {
     other: "Other",
   };
   return (
-    <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>
-      {labels[status] ?? status}
-    </Badge>
+    <Badge className={`${styles[status] ?? ""} border-0 text-xs`}>{labels[status] ?? status}</Badge>
   );
 }
 
@@ -550,7 +536,10 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
             <Input
               type="date"
               value={date}
-              onChange={(e) => { setDate(e.target.value); setDateError(undefined); }}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setDateError(undefined);
+              }}
               aria-invalid={Boolean(dateError)}
               className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
             />
@@ -561,7 +550,10 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
             <TimePicker
               id="checkin-time"
               value={time}
-              onChange={(v) => { setTime(v); setTimeError(undefined); }}
+              onChange={(v) => {
+                setTime(v);
+                setTimeError(undefined);
+              }}
               error={timeError}
               ariaLabel="Check-in time"
             />
@@ -599,10 +591,19 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
           onClick={() => {
             setDateError(undefined);
             setTimeError(undefined);
-            if (!date) { setDateError("Pick a date"); return; }
-            if (!time) { setTimeError("Pick a time"); return; }
+            if (!date) {
+              setDateError("Pick a date");
+              return;
+            }
+            if (!time) {
+              setTimeError("Pick a time");
+              return;
+            }
             const iso = combineDateTime(date, time);
-            if (!iso) { setTimeError("That time isn't valid"); return; }
+            if (!iso) {
+              setTimeError("That time isn't valid");
+              return;
+            }
             AdelanteEHR.addCheckIn(patientId, {
               date: iso,
               modality,
@@ -630,7 +631,9 @@ function ResourceReferralCard({
   patientId: string;
   consentSud: boolean;
 }) {
-  const [category, setCategory] = useState<"housing" | "food" | "employment" | "legal" | "benefits" | "transport">("housing");
+  const [category, setCategory] = useState<
+    "housing" | "food" | "employment" | "legal" | "benefits" | "transport"
+  >("housing");
   const [provider, setProvider] = useState("");
   return (
     <Card className="p-5">
@@ -673,8 +676,8 @@ function ResourceReferralCard({
           Create referral
         </Button>
         <div className="text-xs text-muted-foreground flex items-start gap-1.5 pt-1">
-          <Lock className="h-3 w-3 mt-0.5 text-teal" />
-          A searchable resource library lands in Build 2. For now, log manually.
+          <Lock className="h-3 w-3 mt-0.5 text-teal" />A searchable resource library lands in Build
+          2. For now, log manually.
         </div>
       </div>
     </Card>
@@ -700,8 +703,8 @@ function CoordinationCard({
         <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs flex items-start gap-2">
           <Lock className="h-3.5 w-3.5 text-destructive mt-0.5" />
           <span>
-            <strong>42 CFR Part 2 guardrail:</strong> SUD-identifying detail
-            cannot be shared with probation/parole without specific patient consent.
+            <strong>42 CFR Part 2 guardrail:</strong> SUD-identifying detail cannot be shared with
+            probation/parole without specific patient consent.
           </span>
         </div>
       )}
@@ -722,9 +725,12 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
         <ShieldCheck className="h-4 w-4 text-teal" /> Medi-Cal actions
       </h3>
       <div className="mt-2 text-xs text-muted-foreground">
-        Coverage: <span className="capitalize text-foreground">{p.coverage?.status ?? "unknown"}</span>{" "}
-        · verification:{" "}
-        <Badge variant="outline" className="capitalize text-[10px]">{status}</Badge>
+        Coverage:{" "}
+        <span className="capitalize text-foreground">{p.coverage?.status ?? "unknown"}</span> ·
+        verification:{" "}
+        <Badge variant="outline" className="capitalize text-[10px]">
+          {status}
+        </Badge>
       </div>
       <div className="mt-3 grid grid-cols-1 gap-2">
         <Button
@@ -846,9 +852,13 @@ function RecentCheckInsCard({ patientId }: { patientId: string }) {
               </div>
               <div className="text-xs text-muted-foreground flex items-center gap-2">
                 {c.attended ? (
-                  <Badge className="bg-success/20 text-success border-0 text-[10px]">Attended</Badge>
+                  <Badge className="bg-success/20 text-success border-0 text-[10px]">
+                    Attended
+                  </Badge>
                 ) : (
-                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">Missed</Badge>
+                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+                    Missed
+                  </Badge>
                 )}
                 {c.notes && <span className="truncate">{c.notes}</span>}
               </div>
@@ -871,13 +881,18 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
       </h3>
       <ul className="mt-3 space-y-2 text-sm">
         {items.map((r) => (
-          <li key={r.id} className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0">
+          <li
+            key={r.id}
+            className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
+          >
             <div>
               <div className="text-navy capitalize">{r.category}</div>
               <div className="text-xs text-muted-foreground">{r.provider}</div>
             </div>
             <div className="text-right">
-              <Badge variant="outline" className="capitalize text-[10px]">{r.status}</Badge>
+              <Badge variant="outline" className="capitalize text-[10px]">
+                {r.status}
+              </Badge>
               <div className="text-[10px] text-muted-foreground mt-1">
                 <ClientDate value={r.createdAt} />
               </div>
@@ -916,7 +931,9 @@ function TaskQueueCard({
           <ClipboardList className="h-4 w-4 text-teal" /> My tasks
         </h2>
         <div className="flex items-center gap-2 text-xs">
-          <Badge className="bg-destructive/15 text-destructive border-0">{overdue.length} overdue</Badge>
+          <Badge className="bg-destructive/15 text-destructive border-0">
+            {overdue.length} overdue
+          </Badge>
           <Badge className="bg-gold/25 text-navy border-0">{dueToday.length} due today</Badge>
           <Badge variant="outline">{snoozed.length} snoozed</Badge>
           <Button size="sm" variant="ghost" onClick={() => setShowDone((v) => !v)}>
@@ -926,7 +943,8 @@ function TaskQueueCard({
       </div>
       {list.length === 0 ? (
         <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Nothing on the queue. New tasks appear here after no-shows, crisis flags, or failed messages.
+          Nothing on the queue. New tasks appear here after no-shows, crisis flags, or failed
+          messages.
         </div>
       ) : (
         <ul className="space-y-2">
@@ -952,7 +970,9 @@ function TaskQueueCard({
                       </Badge>
                     )}
                   </div>
-                  {t.detail && <div className="text-xs text-muted-foreground mt-0.5">{t.detail}</div>}
+                  {t.detail && (
+                    <div className="text-xs text-muted-foreground mt-0.5">{t.detail}</div>
+                  )}
                   <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2">
                     {p && (
                       <button className="underline" onClick={() => onOpenPatient(p.id)}>
@@ -966,16 +986,29 @@ function TaskQueueCard({
                 </div>
                 {t.status === "open" && (
                   <div className="shrink-0 flex gap-2 w-full sm:w-auto">
-                    <Button size="sm" className="h-11 flex-1 sm:flex-none" variant="outline" onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}>
+                    <Button
+                      size="sm"
+                      className="h-11 flex-1 sm:flex-none"
+                      variant="outline"
+                      onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}
+                    >
                       Snooze 3d
                     </Button>
-                    <Button size="sm" className="h-11 flex-1 sm:flex-none" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
+                    <Button
+                      size="sm"
+                      className="h-11 flex-1 sm:flex-none"
+                      onClick={() => AdelanteEHR.completeCaseTask(t.id)}
+                    >
                       Done
                     </Button>
                   </div>
                 )}
                 {t.status !== "open" && (
-                  <Button size="sm" variant="ghost" onClick={() => AdelanteEHR.reopenCaseTask(t.id)}>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    onClick={() => AdelanteEHR.reopenCaseTask(t.id)}
+                  >
                     Reopen
                   </Button>
                 )}
@@ -1024,13 +1057,22 @@ function PatientTasksCard({ patientId, cmId }: { patientId: string; cmId: string
       ) : (
         <ul className="mt-3 space-y-2 text-sm">
           {tasks.map((t) => (
-            <li key={t.id} className="flex items-start justify-between gap-2 border-b last:border-0 pb-2 last:pb-0">
+            <li
+              key={t.id}
+              className="flex items-start justify-between gap-2 border-b last:border-0 pb-2 last:pb-0"
+            >
               <div>
                 <div className="text-navy">{t.title}</div>
                 {t.detail && <div className="text-xs text-muted-foreground">{t.detail}</div>}
-                <div className="text-[10px] text-muted-foreground mt-0.5">Due {t.dueDate.slice(0, 10)} · {t.origin.replace("_", " ")}</div>
+                <div className="text-[10px] text-muted-foreground mt-0.5">
+                  Due {t.dueDate.slice(0, 10)} · {t.origin.replace("_", " ")}
+                </div>
               </div>
-              <Button size="sm" variant="outline" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
+              <Button
+                size="sm"
+                variant="outline"
+                onClick={() => AdelanteEHR.completeCaseTask(t.id)}
+              >
                 Done
               </Button>
             </li>
@@ -1040,10 +1082,20 @@ function PatientTasksCard({ patientId, cmId }: { patientId: string; cmId: string
       <div className="mt-4 space-y-2">
         <Label className="text-xs text-muted-foreground">Add follow-up</Label>
         <Input placeholder="Short title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Textarea rows={2} placeholder="Details (optional)" value={detail} onChange={(e) => setDetail(e.target.value)} />
-        <div className="flex items-center gap-2">
-          <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="w-[160px]" />
-          <Button size="sm" onClick={add} className="ml-auto">
+        <Textarea
+          rows={2}
+          placeholder="Details (optional)"
+          value={detail}
+          onChange={(e) => setDetail(e.target.value)}
+        />
+        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
+          <Input
+            type="date"
+            value={due}
+            onChange={(e) => setDue(e.target.value)}
+            className="w-full sm:w-[160px] h-11"
+          />
+          <Button size="sm" onClick={add} className="h-11 sm:ml-auto">
             <Plus className="h-3.5 w-3.5" /> Add
           </Button>
         </div>

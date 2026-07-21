@@ -47,9 +47,7 @@ interface Props {
 }
 
 export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
-  const patient = useEhr(() =>
-    patientId ? AdelanteEHR.getPatient(patientId) : undefined,
-  );
+  const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
   const [role] = useActingRole();
 
   if (!patient) return null;
@@ -213,7 +211,9 @@ function ContactTab({ patientId }: { patientId: string }) {
         </Field>
         <Field label="Preferred channel">
           <Select value={channel} onValueChange={(v) => setChannel(v as typeof channel)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="text">Text (SMS)</SelectItem>
               <SelectItem value="call">Phone call</SelectItem>
@@ -223,7 +223,9 @@ function ContactTab({ patientId }: { patientId: string }) {
         </Field>
         <Field label="Best time">
           <Select value={bestTime} onValueChange={(v) => setBestTime(v as typeof bestTime)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="morning">Mornings</SelectItem>
               <SelectItem value="afternoon">Afternoons</SelectItem>
@@ -243,10 +245,16 @@ function ContactTab({ patientId }: { patientId: string }) {
         <span>(patient controls this in Privacy & consent)</span>
       </div>
       <div className="rounded-md border p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Emergency contact</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Emergency contact
+        </div>
         <div className="grid grid-cols-3 gap-2">
           <Input placeholder="Name" value={ecName} onChange={(e) => setEcName(e.target.value)} />
-          <Input placeholder="Relationship" value={ecRel} onChange={(e) => setEcRel(e.target.value)} />
+          <Input
+            placeholder="Relationship"
+            value={ecRel}
+            onChange={(e) => setEcRel(e.target.value)}
+          />
           <Input placeholder="Phone" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} />
         </div>
       </div>
@@ -299,14 +307,19 @@ function CheckInsTab({ patientId }: { patientId: string }) {
   return (
     <div className="space-y-3">
       <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Log new check-in</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Log new check-in
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <div className="space-y-1">
             <Label className="text-xs">Date</Label>
             <Input
               type="date"
               value={date}
-              onChange={(e) => { setDate(e.target.value); setDateError(undefined); }}
+              onChange={(e) => {
+                setDate(e.target.value);
+                setDateError(undefined);
+              }}
               aria-invalid={Boolean(dateError)}
               className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
             />
@@ -317,7 +330,10 @@ function CheckInsTab({ patientId }: { patientId: string }) {
             <TimePicker
               id="drawer-checkin-time"
               value={time}
-              onChange={(v) => { setTime(v); setTimeError(undefined); }}
+              onChange={(v) => {
+                setTime(v);
+                setTimeError(undefined);
+              }}
               error={timeError}
               ariaLabel="Check-in time"
             />
@@ -325,7 +341,9 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         </div>
         <div className="grid grid-cols-2 gap-2">
           <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="phone">Phone</SelectItem>
               <SelectItem value="video">Video</SelectItem>
@@ -349,10 +367,19 @@ function CheckInsTab({ patientId }: { patientId: string }) {
           onClick={() => {
             setDateError(undefined);
             setTimeError(undefined);
-            if (!date) { setDateError("Pick a date"); return; }
-            if (!time) { setTimeError("Pick a time"); return; }
+            if (!date) {
+              setDateError("Pick a date");
+              return;
+            }
+            if (!time) {
+              setTimeError("Pick a time");
+              return;
+            }
             const dt = new Date(`${date}T${time}`);
-            if (isNaN(dt.getTime())) { setTimeError("That time isn't valid"); return; }
+            if (isNaN(dt.getTime())) {
+              setTimeError("That time isn't valid");
+              return;
+            }
             AdelanteEHR.addCheckIn(patientId, {
               date: dt.toISOString(),
               modality,
@@ -368,9 +395,7 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         </Button>
       </Card>
       <ul className="space-y-1">
-        {items.length === 0 && (
-          <li className="text-xs text-muted-foreground">No check-ins yet.</li>
-        )}
+        {items.length === 0 && <li className="text-xs text-muted-foreground">No check-ins yet.</li>}
         {items.map((c) => (
           <li key={c.id} className="rounded border p-2 text-sm">
             <div className="flex items-center justify-between">
@@ -418,8 +443,8 @@ function ProviderHistoryTab({ patientId }: { patientId: string }) {
                 s.status === "pending_review"
                   ? "text-warning-foreground bg-warning/15 border-0"
                   : s.status === "acknowledged"
-                  ? "text-success bg-success/15 border-0"
-                  : "text-muted-foreground bg-muted border-0"
+                    ? "text-success bg-success/15 border-0"
+                    : "text-muted-foreground bg-muted border-0"
               }
             >
               {s.status.replace("_", " ")}
@@ -450,15 +475,31 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
   const [note, setNote] = useState("");
   const [visible, setVisible] = useState(true);
   const statusOpts: SdohStatus[] = [
-    "identified", "sent", "accepted", "scheduled", "completed", "not_completed",
+    "identified",
+    "sent",
+    "accepted",
+    "scheduled",
+    "completed",
+    "not_completed",
   ];
   return (
     <div className="space-y-3">
       {!readOnly && (
         <Card className="p-3 space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Add SDOH item</div>
-          <Input placeholder="Need (e.g. transportation to appointment)" value={need} onChange={(e) => setNeed(e.target.value)} />
-          <Textarea rows={2} placeholder="Action item / note" value={note} onChange={(e) => setNote(e.target.value)} />
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Add SDOH item
+          </div>
+          <Input
+            placeholder="Need (e.g. transportation to appointment)"
+            value={need}
+            onChange={(e) => setNeed(e.target.value)}
+          />
+          <Textarea
+            rows={2}
+            placeholder="Action item / note"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+          />
           <label className="flex items-center gap-2 text-xs">
             <Switch checked={visible} onCheckedChange={setVisible} />
             Show on patient portal
@@ -467,7 +508,8 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
             size="sm"
             onClick={() => {
               AdelanteEHR.addSdohItem(patientId, { need, note, visibleToPatient: visible });
-              setNeed(""); setNote("");
+              setNeed("");
+              setNote("");
               toast.success("SDOH item added");
             }}
           >
@@ -483,7 +525,9 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
           <li key={i.id} className="rounded border p-3 space-y-2 text-sm">
             <div className="flex items-start justify-between gap-2">
               <div className="font-medium text-navy">{i.need}</div>
-              <Badge variant="outline" className="capitalize text-[10px]">{i.status.replace("_", " ")}</Badge>
+              <Badge variant="outline" className="capitalize text-[10px]">
+                {i.status.replace("_", " ")}
+              </Badge>
             </div>
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
             {!readOnly && (
@@ -492,10 +536,14 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
                   value={i.status}
                   onValueChange={(v) => AdelanteEHR.setSdohStatus(patientId, i.id, v as SdohStatus)}
                 >
-                  <SelectTrigger className="h-8 text-xs w-[160px]"><SelectValue /></SelectTrigger>
+                  <SelectTrigger className="h-8 text-xs w-[160px]">
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     {statusOpts.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">{s.replace("_", " ")}</SelectItem>
+                      <SelectItem key={s} value={s} className="capitalize">
+                        {s.replace("_", " ")}
+                      </SelectItem>
                     ))}
                   </SelectContent>
                 </Select>
@@ -507,9 +555,13 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
                   }
                 >
                   {i.visibleToPatient ? (
-                    <><Eye className="h-3.5 w-3.5 mr-1" /> Visible</>
+                    <>
+                      <Eye className="h-3.5 w-3.5 mr-1" /> Visible
+                    </>
                   ) : (
-                    <><EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden</>
+                    <>
+                      <EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden
+                    </>
                   )}
                 </Button>
                 <Button
@@ -541,7 +593,9 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
         <div className="text-xs uppercase tracking-wider text-muted-foreground">New referral</div>
         <div className="grid grid-cols-2 gap-2">
           <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="housing">Housing</SelectItem>
               <SelectItem value="food">Food</SelectItem>
@@ -551,9 +605,18 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
               <SelectItem value="transport">Transportation</SelectItem>
             </SelectContent>
           </Select>
-          <Input placeholder="Provider" value={provider} onChange={(e) => setProvider(e.target.value)} />
+          <Input
+            placeholder="Provider"
+            value={provider}
+            onChange={(e) => setProvider(e.target.value)}
+          />
         </div>
-        <Textarea rows={2} placeholder="Note (optional)" value={note} onChange={(e) => setNote(e.target.value)} />
+        <Textarea
+          rows={2}
+          placeholder="Note (optional)"
+          value={note}
+          onChange={(e) => setNote(e.target.value)}
+        />
         <Button
           size="sm"
           onClick={() => {
@@ -565,7 +628,8 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
               visibleToPatient: true,
               sudDisclosureConsent: !sudGated,
             });
-            setProvider(""); setNote("");
+            setProvider("");
+            setNote("");
             toast.success("Referral created");
           }}
         >
@@ -573,32 +637,42 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
         </Button>
       </Card>
       <ul className="space-y-2">
-        {items.length === 0 && (
-          <li className="text-xs text-muted-foreground">No referrals yet.</li>
-        )}
+        {items.length === 0 && <li className="text-xs text-muted-foreground">No referrals yet.</li>}
         {items.map((r) => (
           <li key={r.id} className="rounded border p-3 text-sm space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div>
-                <div className="capitalize text-navy">{r.category} · {r.provider}</div>
+                <div className="capitalize text-navy">
+                  {r.category} · {r.provider}
+                </div>
                 <div className="text-[11px] text-muted-foreground">
                   Created <ClientDate value={r.createdAt} />
                 </div>
               </div>
-              <Badge variant="outline" className="capitalize text-[10px]">{r.status}</Badge>
+              <Badge variant="outline" className="capitalize text-[10px]">
+                {r.status}
+              </Badge>
             </div>
             {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
             <div className="flex flex-wrap items-center gap-2">
               <Select
                 value={r.status}
                 onValueChange={(v) =>
-                  AdelanteEHR.setResourceReferralStatus(patientId, r.id, v as ResourceReferral["status"])
+                  AdelanteEHR.setResourceReferralStatus(
+                    patientId,
+                    r.id,
+                    v as ResourceReferral["status"],
+                  )
                 }
               >
-                <SelectTrigger className="h-8 text-xs w-[140px]"><SelectValue /></SelectTrigger>
+                <SelectTrigger className="h-8 text-xs w-[140px]">
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   {statusOpts.map((s) => (
-                    <SelectItem key={s} value={s} className="capitalize">{s}</SelectItem>
+                    <SelectItem key={s} value={s} className="capitalize">
+                      {s}
+                    </SelectItem>
                   ))}
                 </SelectContent>
               </Select>
@@ -610,9 +684,13 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
                 }
               >
                 {r.visibleToPatient !== false ? (
-                  <><Eye className="h-3.5 w-3.5 mr-1" /> Visible</>
+                  <>
+                    <Eye className="h-3.5 w-3.5 mr-1" /> Visible
+                  </>
                 ) : (
-                  <><EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden</>
+                  <>
+                    <EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden
+                  </>
                 )}
               </Button>
             </div>
@@ -628,12 +706,42 @@ function EligibilityTab({ patientId }: { patientId: string }) {
   if (!p) return null;
   const cov = p.coverage;
   const notes = p.eligibilityNotes ?? {};
-  const rows: { key: Parameters<typeof AdelanteEHR.setEligibilityNote>[1]; label: string; on: boolean; toggle: (v: boolean) => void }[] = [
-    { key: "ecm", label: "ECM eligible", on: Boolean(cov?.ecmEligible), toggle: (v) => AdelanteEHR.setEcmEligible(patientId, v) },
-    { key: "jiReentry", label: "JI Reentry (90-day)", on: Boolean(cov?.jiReentryFlag), toggle: (v) => AdelanteEHR.setJiReentry(patientId, v) },
-    { key: "cs_housing", label: "CS: Housing", on: Boolean(cov?.communitySupports?.housing), toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "housing", v) },
-    { key: "cs_food", label: "CS: Food", on: Boolean(cov?.communitySupports?.food), toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "food", v) },
-    { key: "cs_transport", label: "CS: Transport", on: Boolean(cov?.communitySupports?.transport), toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "transport", v) },
+  const rows: {
+    key: Parameters<typeof AdelanteEHR.setEligibilityNote>[1];
+    label: string;
+    on: boolean;
+    toggle: (v: boolean) => void;
+  }[] = [
+    {
+      key: "ecm",
+      label: "ECM eligible",
+      on: Boolean(cov?.ecmEligible),
+      toggle: (v) => AdelanteEHR.setEcmEligible(patientId, v),
+    },
+    {
+      key: "jiReentry",
+      label: "JI Reentry (90-day)",
+      on: Boolean(cov?.jiReentryFlag),
+      toggle: (v) => AdelanteEHR.setJiReentry(patientId, v),
+    },
+    {
+      key: "cs_housing",
+      label: "CS: Housing",
+      on: Boolean(cov?.communitySupports?.housing),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "housing", v),
+    },
+    {
+      key: "cs_food",
+      label: "CS: Food",
+      on: Boolean(cov?.communitySupports?.food),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "food", v),
+    },
+    {
+      key: "cs_transport",
+      label: "CS: Transport",
+      on: Boolean(cov?.communitySupports?.transport),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "transport", v),
+    },
   ];
   return (
     <ul className="space-y-2">
@@ -680,15 +788,28 @@ function NoteInline({
           className="h-8 text-xs"
         />
       </div>
-      <Button size="sm" variant="ghost" className="col-span-3 h-7 text-xs justify-end"
-        onClick={() => { onSave(note, when || undefined); toast.success("Saved"); }}>
+      <Button
+        size="sm"
+        variant="ghost"
+        className="col-span-3 h-7 text-xs justify-end"
+        onClick={() => {
+          onSave(note, when || undefined);
+          toast.success("Saved");
+        }}
+      >
         Save note
       </Button>
     </div>
   );
 }
 
-function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2Consent: boolean }) {
+function CoordinationTab({
+  patientId,
+  part2Consent,
+}: {
+  patientId: string;
+  part2Consent: boolean;
+}) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const contacts = p?.externalContacts ?? [];
   const log = p?.coordinationLog ?? [];
@@ -721,17 +842,23 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
         <Card className="p-3 border-destructive/30 bg-destructive/5 flex items-start gap-2 text-xs">
           <ShieldAlert className="h-4 w-4 text-destructive mt-0.5" />
           <span>
-            <strong>42 CFR Part 2:</strong> SUD-identifying detail cannot be shared with probation, parole, or external partners without the patient's specific Part 2 consent. Disclosure toggle is disabled.
+            <strong>42 CFR Part 2:</strong> SUD-identifying detail cannot be shared with probation,
+            parole, or external partners without the patient's specific Part 2 consent. Disclosure
+            toggle is disabled.
           </span>
         </Card>
       )}
 
       <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">External contacts</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          External contacts
+        </div>
         <div className="grid grid-cols-2 gap-2">
           <Input placeholder="Agency" value={agency} onChange={(e) => setAgency(e.target.value)} />
           <Select value={role} onValueChange={(v) => setRole(v as ExternalPartyRole)}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="probation">Probation</SelectItem>
               <SelectItem value="parole">Parole</SelectItem>
@@ -742,7 +869,11 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Input placeholder="Contact name" value={contactName} onChange={(e) => setContactName(e.target.value)} />
+          <Input
+            placeholder="Contact name"
+            value={contactName}
+            onChange={(e) => setContactName(e.target.value)}
+          />
           <Input placeholder="Phone" value={phone} onChange={(e) => setPhone(e.target.value)} />
         </div>
         <Button
@@ -750,9 +881,14 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
           onClick={() => {
             if (!agency.trim()) return toast.error("Add an agency");
             AdelanteEHR.addExternalContact(patientId, {
-              agency, contactName, phone, role,
+              agency,
+              contactName,
+              phone,
+              role,
             });
-            setAgency(""); setContactName(""); setPhone("");
+            setAgency("");
+            setContactName("");
+            setPhone("");
             toast.success("Contact saved");
           }}
         >
@@ -761,8 +897,15 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
         <ul className="space-y-1 pt-1">
           {contacts.map((c) => (
             <li key={c.id} className="text-xs flex items-center justify-between border-t pt-1">
-              <span>{c.agency}{c.contactName ? ` · ${c.contactName}` : ""} ({c.role.replace("_", " ")})</span>
-              <Button size="sm" variant="ghost" onClick={() => AdelanteEHR.removeExternalContact(patientId, c.id)}>
+              <span>
+                {c.agency}
+                {c.contactName ? ` · ${c.contactName}` : ""} ({c.role.replace("_", " ")})
+              </span>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => AdelanteEHR.removeExternalContact(patientId, c.id)}
+              >
                 <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </li>
@@ -771,11 +914,22 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
       </Card>
 
       <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Log coordination action</div>
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">
+          Log coordination action
+        </div>
         <div className="grid grid-cols-2 gap-2">
-          <Input placeholder="Who (agency / person)" value={entry.party} onChange={(e) => setEntry({ ...entry, party: e.target.value })} />
-          <Select value={entry.partyType} onValueChange={(v) => setEntry({ ...entry, partyType: v as ExternalPartyRole })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Input
+            placeholder="Who (agency / person)"
+            value={entry.party}
+            onChange={(e) => setEntry({ ...entry, party: e.target.value })}
+          />
+          <Select
+            value={entry.partyType}
+            onValueChange={(v) => setEntry({ ...entry, partyType: v as ExternalPartyRole })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="probation">Probation</SelectItem>
               <SelectItem value="parole">Parole</SelectItem>
@@ -786,15 +940,25 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
               <SelectItem value="other">Other</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={entry.direction} onValueChange={(v) => setEntry({ ...entry, direction: v as CoordinationDirection })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={entry.direction}
+            onValueChange={(v) => setEntry({ ...entry, direction: v as CoordinationDirection })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="out">Outbound</SelectItem>
               <SelectItem value="in">Inbound</SelectItem>
             </SelectContent>
           </Select>
-          <Select value={entry.channel} onValueChange={(v) => setEntry({ ...entry, channel: v as CoordinationChannel })}>
-            <SelectTrigger><SelectValue /></SelectTrigger>
+          <Select
+            value={entry.channel}
+            onValueChange={(v) => setEntry({ ...entry, channel: v as CoordinationChannel })}
+          >
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
             <SelectContent>
               <SelectItem value="phone">Phone</SelectItem>
               <SelectItem value="email">Email</SelectItem>
@@ -804,7 +968,12 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
             </SelectContent>
           </Select>
         </div>
-        <Textarea rows={2} placeholder="Summary of contact" value={entry.summary} onChange={(e) => setEntry({ ...entry, summary: e.target.value })} />
+        <Textarea
+          rows={2}
+          placeholder="Summary of contact"
+          value={entry.summary}
+          onChange={(e) => setEntry({ ...entry, summary: e.target.value })}
+        />
         <label className="flex items-center gap-2 text-xs">
           <Checkbox
             checked={entry.part2Disclosed}
@@ -816,7 +985,8 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
         <Button
           size="sm"
           onClick={() => {
-            if (!entry.party.trim() || !entry.summary.trim()) return toast.error("Add party & summary");
+            if (!entry.party.trim() || !entry.summary.trim())
+              return toast.error("Add party & summary");
             AdelanteEHR.addCoordinationEntry(patientId, {
               date: new Date().toISOString(),
               party: entry.party,
@@ -837,10 +1007,14 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
 
       <div className="space-y-2">
         <div className="flex flex-wrap items-center justify-between gap-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Recent coordination</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Recent coordination
+          </div>
           <div className="flex items-center gap-1">
             <Select value={filterType} onValueChange={setFilterType}>
-              <SelectTrigger className="h-7 w-[130px] text-[11px]"><SelectValue placeholder="Party" /></SelectTrigger>
+              <SelectTrigger className="h-7 w-[130px] text-[11px]">
+                <SelectValue placeholder="Party" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All parties</SelectItem>
                 <SelectItem value="probation">Probation</SelectItem>
@@ -853,7 +1027,9 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
               </SelectContent>
             </Select>
             <Select value={filterDir} onValueChange={setFilterDir}>
-              <SelectTrigger className="h-7 w-[110px] text-[11px]"><SelectValue placeholder="Direction" /></SelectTrigger>
+              <SelectTrigger className="h-7 w-[110px] text-[11px]">
+                <SelectValue placeholder="Direction" />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="all">All</SelectItem>
                 <SelectItem value="out">Outbound</SelectItem>
@@ -866,7 +1042,9 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
           <EmptyState
             compact
             title={log.length === 0 ? "No coordination yet" : "No entries match this filter"}
-            description={log.length === 0 ? "Log a call, email, or in-person contact above." : undefined}
+            description={
+              log.length === 0 ? "Log a call, email, or in-person contact above." : undefined
+            }
           />
         )}
         {filteredLog.slice(0, 20).map((e) => (
@@ -875,7 +1053,9 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
               <span className="text-navy font-medium capitalize">
                 {e.direction === "out" ? "→" : "←"} {e.party} ({e.partyType.replace("_", " ")})
               </span>
-              <span className="text-muted-foreground"><ClientDate value={e.date} /></span>
+              <span className="text-muted-foreground">
+                <ClientDate value={e.date} />
+              </span>
             </div>
             <div className="text-muted-foreground mt-1">{e.summary}</div>
             {e.part2Disclosed && (
@@ -899,11 +1079,15 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
     <div className="space-y-3">
       {canWrite && (
         <Card className="p-3 space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">Peer specialist note</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Peer specialist note
+          </div>
           <div>
             <Label className="text-[10px] text-muted-foreground">Modality</Label>
             <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
-              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectTrigger className="h-8 text-xs">
+                <SelectValue />
+              </SelectTrigger>
               <SelectContent>
                 <SelectItem value="in_person">In-person</SelectItem>
                 <SelectItem value="phone">Phone</SelectItem>
@@ -913,7 +1097,12 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
               </SelectContent>
             </Select>
           </div>
-          <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Peer-support note (non-clinical)." />
+          <Textarea
+            rows={3}
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+            placeholder="Peer-support note (non-clinical)."
+          />
           <Button
             size="sm"
             onClick={() => {

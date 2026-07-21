@@ -32,7 +32,10 @@ export function SkeletonCards({ cards = 3 }: { cards?: number }) {
 export function SkeletonTable({ rows = 5, cols = 5 }: { rows?: number; cols?: number }) {
   return (
     <div className="w-full space-y-2" aria-hidden>
-      <div className="grid gap-2" style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}>
+      <div
+        className="grid gap-2"
+        style={{ gridTemplateColumns: `repeat(${cols}, minmax(0, 1fr))` }}
+      >
         {Array.from({ length: cols }).map((_, i) => (
           <Skeleton key={`h${i}`} className="h-4 w-full" />
         ))}

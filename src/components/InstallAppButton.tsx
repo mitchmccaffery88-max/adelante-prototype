@@ -63,7 +63,11 @@ export function InstallAppButton() {
           Get faster access to your care plan and appointments.
         </p>
         <div className="mt-3 flex gap-2">
-          <Button size="sm" className="min-h-11 bg-teal text-teal-foreground hover:bg-teal/90" onClick={install}>
+          <Button
+            size="sm"
+            className="min-h-11 bg-teal text-teal-foreground hover:bg-teal/90"
+            onClick={install}
+          >
             Install app
           </Button>
           <Button size="sm" variant="ghost" className="min-h-11" onClick={dismiss}>
