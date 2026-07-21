@@ -298,6 +298,7 @@ function ClinicianPage() {
 
         {/* Book + availability */}
         <div className="space-y-3">
+          <RefillReviewCard />
           <Card className="p-5">
             <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
             <div className="mt-4 space-y-3">
