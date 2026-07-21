@@ -544,6 +544,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "active",
     services: ["intake", "therapy_individual", "therapy_group", "case_management", "care_coordination"],
     locationIds: ["loc-visalia", "loc-porterville"],
+    licenseExpiresOn: "2026-08-15",
   },
   {
     id: "c2",
