@@ -207,6 +207,37 @@ function ClinicianPage() {
         </Select>
       </header>
 
+      {clinician?.licenseExpiresOn && (() => {
+        const daysUntil = Math.ceil(
+          (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
+        );
+        if (daysUntil > 30) return null;
+        const expired = daysUntil < 0;
+        return (
+          <div
+            role="alert"
+            className={
+              "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
+              (expired
+                ? "border-destructive/40 bg-destructive/10 text-destructive"
+                : "border-gold/40 bg-gold/10 text-navy")
+            }
+          >
+            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+            <div>
+              <div className="font-semibold">
+                {expired
+                  ? "License expired — booking is blocked"
+                  : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
+              </div>
+              <div className="text-xs opacity-80">
+                Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing coordinator to renew.
+              </div>
+            </div>
+          </div>
+        );
+      })()}
+
       <Tabs defaultValue="schedule" className="w-full">
         <TabsList className="mb-4">
           <TabsTrigger value="schedule">
@@ -538,6 +569,42 @@ function ClinicianPage() {
                           ))}
                       </SelectContent>
                     </Select>
+                    {note.appointmentId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          const appt = patientAppts.find((a) => a.id === note.appointmentId);
+                          if (!appt) return;
+                          const svc = serviceTypes.find((s) => s.id === appt.serviceType);
+                          const goals = (selectedPatient.goals ?? [])
+                            .filter((g: { status: string }) => g.status !== "done")
+                            .slice(0, 3)
+                            .map((g: { text: string }) => `• ${g.text}`)
+                            .join("\n");
+                          setNote((prev) => ({
+                            ...prev,
+                            objective:
+                              prev.objective ||
+                              [
+                                svc ? `Service: ${svc.label}` : null,
+                                appt.modality ? `Modality: ${appt.modality}` : null,
+                                appt.durationMin ? `Duration: ${appt.durationMin} min` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · "),
+                            plan:
+                              prev.plan ||
+                              (goals ? `Active care-plan goals:\n${goals}` : ""),
+                          }));
+                          toast.success("Prefilled from appointment");
+                        }}
+                      >
+                        Prefill from appointment
+                      </Button>
+                    )}
                   </div>
                   {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                     <div key={k} className="space-y-1.5">

@@ -1,5 +1,6 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
+import { PatientHelpLink } from "@/components/PatientHelpLink";
 import {
   Heart,
   ShieldCheck,
@@ -98,6 +99,8 @@ export function AppShell() {
             <div className="rounded-full bg-secondary p-0.5 flex text-xs">
               <button
                 onClick={() => setLang("en")}
+                aria-label="Switch language to English"
+                aria-pressed={lang === "en"}
                 className={cn(
                   "px-2.5 py-1 rounded-full transition-colors",
                   lang === "en" ? "bg-navy text-navy-foreground" : "text-foreground/60",
@@ -107,6 +110,8 @@ export function AppShell() {
               </button>
               <button
                 onClick={() => setLang("es")}
+                aria-label="Cambiar idioma a español"
+                aria-pressed={lang === "es"}
                 className={cn(
                   "px-2.5 py-1 rounded-full transition-colors",
                   lang === "es" ? "bg-navy text-navy-foreground" : "text-foreground/60",
@@ -115,6 +120,8 @@ export function AppShell() {
                 ES
               </button>
             </div>
+
+            {isPatientSurface && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* Staff portal */}
             <DropdownMenu>
