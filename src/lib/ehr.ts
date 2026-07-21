@@ -415,6 +415,7 @@ export interface PeerNote {
   date: string;
   author: string;
   text: string;
+  mode?: "in_person" | "phone" | "text" | "warmline" | "group";
 }
 
 export type EligibilityFlagKey =
@@ -483,12 +484,43 @@ export interface PatientTask {
 
 export type ApptNotificationKind = "booked" | "rescheduled" | "cancelled" | "confirmed";
 export type CommsChannel = "profile" | "sms" | "email";
+export type NotificationState = "queued" | "sent" | "delivered" | "failed";
 export interface ApptNotification {
   id: string;
   apptId: string;
   kind: ApptNotificationKind;
   at: string;
-  channels: CommsChannel[];
+  channel: CommsChannel;
+  state: NotificationState;
+  sentAt?: string;
+  deliveredAt?: string;
+  error?: string;
+}
+
+// ---------- Case Manager task queue ----------
+
+export type CaseTaskStatus = "open" | "done" | "snoozed";
+export type CaseTaskOrigin =
+  | "manual"
+  | "missed_appt"
+  | "screener_flag"
+  | "referral_stale"
+  | "notification_failed";
+
+export interface CaseTask {
+  id: string;
+  patientId: string;
+  assignedTo: string; // caseManagerId
+  title: string;
+  detail?: string;
+  dueDate: string; // ISO date (YYYY-MM-DD) or ISO string
+  status: CaseTaskStatus;
+  origin: CaseTaskOrigin;
+  createdAt: string;
+  completedAt?: string;
+  snoozedUntil?: string;
+  /** Idempotency key so auto-generation doesn't duplicate. */
+  dedupeKey?: string;
 }
 
 export interface AvailabilitySlot {
