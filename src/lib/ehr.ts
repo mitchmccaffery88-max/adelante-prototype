@@ -513,7 +513,8 @@ export type CaseTaskOrigin =
   | "missed_appt"
   | "screener_flag"
   | "referral_stale"
-  | "notification_failed";
+  | "notification_failed"
+  | "provider_switch";
 
 export interface CaseTask {
   id: string;
