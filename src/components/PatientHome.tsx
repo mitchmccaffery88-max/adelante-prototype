@@ -417,7 +417,7 @@ export function PatientHome() {
                   </div>
                 </div>
                 <Badge variant="outline" className="capitalize">
-                  {t((statusMap[a.status] ?? a.status) as any)}
+                  {t(statusMap[a.status] ?? (a.status as Key))}
                 </Badge>
               </Card>
             ))
