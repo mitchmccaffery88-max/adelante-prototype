@@ -204,7 +204,6 @@ function SchedulePage() {
               setLocationId("");
               setClinicianId("");
             }}
-            disabled={isReschedule}
           >
             <SelectTrigger>
               <SelectValue placeholder="Pick a visit type" />
