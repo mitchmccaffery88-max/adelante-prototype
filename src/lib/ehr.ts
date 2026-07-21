@@ -1076,17 +1076,84 @@ export const AdelanteEHR = {
     const channels: CommsChannel[] = ["profile"];
     if (AdelanteEHR.isSmsOn(p.id) && p.phone) channels.push("sms");
     if (p.email) channels.push("email");
-    p.notifications = [
-      {
-        id: uid(),
-        apptId: input.apptId,
-        kind: input.kind,
-        at: new Date().toISOString(),
-        channels,
-      },
-      ...(p.notifications ?? []),
-    ].slice(0, 20);
+    const now = new Date().toISOString();
+    const entries: ApptNotification[] = channels.map((channel) => ({
+      id: uid(),
+      apptId: input.apptId,
+      kind: input.kind,
+      at: now,
+      channel,
+      state: channel === "profile" ? "delivered" : "queued",
+      sentAt: channel === "profile" ? now : undefined,
+      deliveredAt: channel === "profile" ? now : undefined,
+    }));
+    p.notifications = [...entries, ...(p.notifications ?? [])].slice(0, 40);
     emit();
+    // Mock async delivery for sms/email.
+    if (typeof setTimeout !== "undefined") {
+      for (const entry of entries) {
+        if (entry.channel === "profile") continue;
+        setTimeout(() => AdelanteEHR.promoteNotification(p.id, entry.id, "sent"), 400);
+        setTimeout(() => {
+          // ~15% simulated delivery failure on sms; email always succeeds
+          const fail = entry.channel === "sms" && Math.random() < 0.15;
+          AdelanteEHR.promoteNotification(
+            p.id,
+            entry.id,
+            fail ? "failed" : "delivered",
+            fail ? "Carrier reported undeliverable" : undefined,
+          );
+        }, 1400);
+      }
+    }
+  },
+  promoteNotification(
+    patientId: string,
+    notificationId: string,
+    state: NotificationState,
+    error?: string,
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.notifications?.find((x) => x.id === notificationId);
+    if (!p || !n) return;
+    n.state = state;
+    const now = new Date().toISOString();
+    if (state === "sent") n.sentAt = now;
+    if (state === "delivered") {
+      n.sentAt = n.sentAt ?? now;
+      n.deliveredAt = now;
+    }
+    if (state === "failed") {
+      n.error = error;
+      // Auto-generate a CM outreach task once per failed delivery.
+      const cmId = p.assignedCaseManagerId;
+      if (cmId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: cmId,
+          title: `Reach out — ${n.channel.toUpperCase()} delivery failed`,
+          detail: `${n.kind} notification did not reach ${p.legalName ?? p.programId} via ${n.channel}.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "notification_failed",
+          dedupeKey: `notif-fail:${n.id}`,
+        });
+      }
+    }
+    emit();
+  },
+  resendNotification(patientId: string, notificationId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.notifications?.find((x) => x.id === notificationId);
+    if (!p || !n) return;
+    n.state = "queued";
+    n.error = undefined;
+    n.sentAt = undefined;
+    n.deliveredAt = undefined;
+    emit();
+    if (typeof setTimeout !== "undefined") {
+      setTimeout(() => AdelanteEHR.promoteNotification(p.id, n.id, "sent"), 300);
+      setTimeout(() => AdelanteEHR.promoteNotification(p.id, n.id, "delivered"), 900);
+    }
   },
   latestNotificationForAppt(patientId: string, apptId: string): ApptNotification | undefined {
     const p = patients.find((x) => x.id === patientId);
