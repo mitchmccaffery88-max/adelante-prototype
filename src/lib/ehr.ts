@@ -262,6 +262,8 @@ export interface Clinician {
   services?: ServiceType[];
   /** Physical locations where this clinician staffs in-person visits. */
   locationIds?: string[];
+  /** Credentialing hard-stop (YYYY-MM-DD). Booking is blocked when past. */
+  licenseExpiresOn?: string;
 }
 
 export interface Appointment {
