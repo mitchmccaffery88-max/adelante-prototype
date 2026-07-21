@@ -950,6 +950,8 @@ export const AdelanteEHR = {
     modality?: "video" | "phone" | "in_person";
     locationId?: string;
   }) {
+    const cred = AdelanteEHR.canBook(input.clinicianId);
+    if (!cred.ok) throw new Error(cred.reason);
     if (input.modality === "in_person" && !input.locationId) {
       throw new Error("Pick a location for the in-person visit.");
     }
