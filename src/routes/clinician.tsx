@@ -810,6 +810,19 @@ function ApptCard({
               >
                 <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
               </Button>
+              {(() => {
+                const s = AdelanteEHR.getTelehealthSession(a.id);
+                if (!s || s.state === "ended" || s.state === "expired") return null;
+                return (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => endSession(a.id)}
+                  >
+                    End session
+                  </Button>
+                );
+              })()}
             </>
           )}
           {a.status === "scheduled" && !isFuture && (
