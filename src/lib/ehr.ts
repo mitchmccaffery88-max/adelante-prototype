@@ -1419,6 +1419,12 @@ export const AdelanteEHR = {
         note,
       },
     ];
+    appendAudit({
+      category: "consent",
+      action: granted ? "granted" : "revoked",
+      patientId: p.id,
+      detail: { purpose, note },
+    });
     emit();
   },
   listAllConsentEvents() {
