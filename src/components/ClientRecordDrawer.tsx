@@ -30,12 +30,15 @@ import {
   type ExternalPartyRole,
   type ResourceReferral,
   type SdohStatus,
+  type PeerNote,
+  type CaseTask,
 } from "@/lib/ehr";
 import { useActingRole, canAccess, type RecordClass } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
-import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus } from "lucide-react";
+import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
+import { EmptyState } from "@/components/EmptyState";
 
 interface Props {
   patientId: string | null;
@@ -85,6 +88,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <TabsTrigger value="referrals">Referrals</TabsTrigger>
             <TabsTrigger value="eligibility">Eligibility</TabsTrigger>
             <TabsTrigger value="coord">External</TabsTrigger>
+            <TabsTrigger value="tasks">Tasks</TabsTrigger>
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -116,6 +120,9 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             ) : (
               <CoordinationTab patientId={patient.id} part2Consent={patient.consents.part2Sud} />
             )}
+          </TabsContent>
+          <TabsContent value="tasks" className="mt-4">
+            <TasksTab patientId={patient.id} />
           </TabsContent>
           {canPeer.level !== "none" && (
             <TabsContent value="peer" className="mt-4">
