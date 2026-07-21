@@ -762,6 +762,11 @@ const emit = () => {
 // who has not yet completed intake so the first-time flow is visible.
 let currentPatientId = "p2";
 
+// Global case-task queue (across patients). Kept separately from Patient.tasks
+// (which is a legacy per-patient action list) so CM views can index by
+// assignee, status, and due date without walking every patient.
+const caseTasks: CaseTask[] = [];
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
