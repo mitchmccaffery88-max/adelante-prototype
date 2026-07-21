@@ -712,13 +712,24 @@ function ApptCard({
         </div>
         <div className="flex gap-2">
           {isFuture && a.status === "scheduled" && (
-            <Button
-              size="sm"
-              className="bg-teal text-teal-foreground hover:bg-teal/90"
-              onClick={() => launch(a.id)}
-            >
-              <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
-            </Button>
+            <>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+              >
+                <Link to="/schedule" search={{ reschedule: a.id }}>
+                  <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                className="bg-teal text-teal-foreground hover:bg-teal/90"
+                onClick={() => launch(a.id)}
+              >
+                <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
+              </Button>
+            </>
           )}
           {a.status === "scheduled" && !isFuture && (
             <>
