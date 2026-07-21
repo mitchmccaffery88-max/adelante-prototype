@@ -317,7 +317,7 @@ function SchedulePage() {
               setSelectedStart("");
               setActiveDayKey("");
             }}
-            disabled={isReschedule || clinicians.length === 0}
+            disabled={clinicians.length === 0}
           >
             <SelectTrigger>
               <SelectValue placeholder="Pick a counselor" />
