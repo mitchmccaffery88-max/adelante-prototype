@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
