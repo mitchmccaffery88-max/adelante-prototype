@@ -396,6 +396,16 @@ function SchedulePage() {
 
             <div className="space-y-1.5">
               <Label className="text-sm">Pick a time</Label>
+              <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-sm border border-teal bg-teal/20" />
+                  Open
+                </span>
+                <span className="inline-flex items-center gap-1">
+                  <span className="inline-block h-2 w-2 rounded-sm border bg-muted" />
+                  <span className="line-through">Taken</span>
+                </span>
+              </div>
               <div className="grid grid-cols-3 gap-2">
                 {activeDay?.slots.map((s) => {
                   const isActive = selectedStart === s.start;
