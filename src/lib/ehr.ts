@@ -280,6 +280,23 @@ export interface Appointment {
   modality?: "video" | "phone" | "in_person";
   /** Required when modality === "in_person". */
   locationId?: string;
+  /** Billing coordinator fields (pass-2 polish). */
+  chargeCents?: number;
+  denialReason?: string;
+  submittedAt?: string;
+  paidAt?: string;
+  billingHistory?: BillingHistoryEntry[];
+  /** When funding lane is ISL, why this encounter fell into ISL. */
+  islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
+}
+
+export interface BillingHistoryEntry {
+  id: string;
+  at: string;
+  actor: string;
+  from: BillingStatus;
+  to: BillingStatus;
+  note?: string;
 }
 
 // ---------- Scheduling: service types + locations ----------
