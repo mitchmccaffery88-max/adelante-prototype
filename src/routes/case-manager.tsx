@@ -936,7 +936,7 @@ function TaskQueueCard({
             return (
               <li
                 key={t.id}
-                className={`flex items-start justify-between gap-3 rounded-lg border p-3 text-sm ${
+                className={`flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-lg border p-3 text-sm ${
                   overdueTask ? "border-destructive/40 bg-destructive/5" : ""
                 }`}
               >
@@ -965,11 +965,11 @@ function TaskQueueCard({
                   </div>
                 </div>
                 {t.status === "open" && (
-                  <div className="shrink-0 flex gap-1">
-                    <Button size="sm" variant="outline" onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}>
+                  <div className="shrink-0 flex gap-2 w-full sm:w-auto">
+                    <Button size="sm" className="h-11 flex-1 sm:flex-none" variant="outline" onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}>
                       Snooze 3d
                     </Button>
-                    <Button size="sm" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
+                    <Button size="sm" className="h-11 flex-1 sm:flex-none" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
                       Done
                     </Button>
                   </div>

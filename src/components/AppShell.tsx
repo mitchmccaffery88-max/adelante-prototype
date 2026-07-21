@@ -247,12 +247,13 @@ export function AppShell() {
         </div>
       </div>}
 
-      <footer className="border-t bg-secondary/40">
+      <footer className={cn("border-t bg-secondary/40", isPatientSurface && "pb-20 md:pb-0")}>
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
           <span>
             © {new Date().getFullYear()} Adelante · Tulare County Pilot · Built with care
           </span>
           <div className="flex items-center gap-3">
+            {isPatientSurface && <InstallAppButton />}
             <span className="flex items-center gap-1.5">
               <span className="h-2 w-2 rounded-full bg-teal" />
               Demo data · no real PHI
@@ -294,6 +295,8 @@ export function AppShell() {
           </div>
         </div>
       </footer>
+
+      {isPatientSurface && <MobileNav />}
     </div>
   );
 }
