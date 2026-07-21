@@ -34,6 +34,7 @@ import {
   Minus,
   CalendarClock,
   AlertTriangle,
+  UserCog,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -298,6 +299,7 @@ function ClinicianPage() {
 
         {/* Book + availability */}
         <div className="space-y-3">
+          <ProviderSwitchAlerts clinicianId={clinicianId} />
           <RefillReviewCard />
           <Card className="p-5">
             <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
@@ -1074,6 +1076,94 @@ function SocialContextPanel({ patientId }: { patientId: string }) {
   );
 }
 function RefillReviewCard() {
+  return <RefillReviewCardInner />;
+}
+
+function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
+  const outgoing = useEhr(() =>
+    clinicianId
+      ? AdelanteEHR.listProviderSwitches({
+          clinicianId,
+          role: "outgoing",
+          status: "pending_review",
+        })
+      : [],
+  );
+  const patients = AdelanteEHR.listPatients();
+  const clinicians = AdelanteEHR.listClinicians();
+  if (!clinicianId || outgoing.length === 0) return null;
+  const reasonLabel: Record<string, string> = {
+    reschedule: "Rescheduled to another provider",
+    new_appointment: "Booked with a new provider",
+    refill_review: "Refill reviewed elsewhere",
+    primary_reassignment: "Primary provider reassigned",
+  };
+  return (
+    <Card className="p-5 border-warning/60 bg-warning/5">
+      <h3 className="font-display text-base text-navy flex items-center gap-2">
+        <UserCog className="h-4 w-4 text-warning" aria-hidden="true" />
+        Provider switch alerts
+        <Badge variant="outline" className="ml-1 text-[10px]">{outgoing.length}</Badge>
+      </h3>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Clients on your caseload who moved to another provider. Verify network status, coordinate hand-off, or flag conflicts.
+      </p>
+      <ul className="mt-3 space-y-2">
+        {outgoing.map((s) => {
+          const p = patients.find((x) => x.id === s.patientId);
+          const to = clinicians.find((c) => c.id === s.toClinicianId);
+          return (
+            <li key={s.id} className="rounded border bg-background p-2.5 text-xs">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="font-medium text-navy">
+                    {p ? `${p.firstName} ${p.lastName}` : s.patientId}
+                  </div>
+                  <div className="text-muted-foreground">
+                    {reasonLabel[s.reason] ?? s.reason} → {to?.name ?? s.toClinicianId}
+                    {s.serviceType ? ` · ${s.serviceType}` : ""}
+                  </div>
+                  {s.context ? (
+                    <div className="mt-1 text-muted-foreground">{s.context}</div>
+                  ) : null}
+                  <div className="mt-1 text-[10px] text-muted-foreground">
+                    <ClientDate value={s.createdAt} />
+                  </div>
+                </div>
+                <div className="flex flex-col gap-1">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      AdelanteEHR.acknowledgeProviderSwitch(s.id, clinicianId);
+                      toast.success("Switch acknowledged");
+                    }}
+                  >
+                    Acknowledge
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      AdelanteEHR.dismissProviderSwitch(s.id, clinicianId);
+                      toast("Alert dismissed");
+                    }}
+                  >
+                    Dismiss
+                  </Button>
+                </div>
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </Card>
+  );
+}
+
+function RefillReviewCardInner() {
   const pending = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }));
   const patients = AdelanteEHR.listPatients();
   const [openId, setOpenId] = useState<string | null>(null);

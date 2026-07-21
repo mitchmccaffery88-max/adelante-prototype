@@ -245,6 +245,8 @@ export interface Patient {
   peerNotes?: PeerNote[];
   /** Per-flag context notes for eligibility (source, as-of, why). */
   eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
+  /** Primary/assigned clinician of record (§ProviderSwitch). Optional. */
+  primaryClinicianId?: string;
 }
 
 export interface ScreenerResult {
@@ -511,7 +513,8 @@ export type CaseTaskOrigin =
   | "missed_appt"
   | "screener_flag"
   | "referral_stale"
-  | "notification_failed";
+  | "notification_failed"
+  | "provider_switch";
 
 export interface CaseTask {
   id: string;
@@ -798,7 +801,8 @@ export type AuditCategory =
   | "rx"
   | "telehealth"
   | "vendor"
-  | "access";
+  | "access"
+  | "provider_switch";
 export interface AuditEvent {
   id: string;
   at: string;
@@ -875,6 +879,130 @@ const telehealthSessions: TelehealthSession[] = [];
 // Cached last vendor ping results (last 5 per vendor).
 type PingResult = { vendor: string; ok: boolean; at: string };
 const vendorPings: PingResult[] = [];
+
+// ----- Provider switch notifications --------------------------------------
+// When a patient moves from one clinician to another (via reschedule, new
+// booking, refill decision, or reassignment), a ProviderSwitch is created
+// so the outgoing clinician + case manager can review continuity, network
+// status, and clinical hand-off.
+export type ProviderSwitchReason =
+  | "reschedule"
+  | "new_appointment"
+  | "refill_review"
+  | "primary_reassignment";
+export type ProviderSwitchStatus = "pending_review" | "acknowledged" | "dismissed";
+export interface ProviderSwitch {
+  id: string;
+  patientId: string;
+  fromClinicianId: string;
+  toClinicianId: string;
+  reason: ProviderSwitchReason;
+  serviceType?: ServiceType;
+  context?: string;
+  initiatedBy: "patient" | "clinician" | "case_manager" | "admin" | "system";
+  createdAt: string;
+  status: ProviderSwitchStatus;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionNote?: string;
+  linkedApptId?: string;
+  linkedRefillId?: string;
+}
+const providerSwitches: ProviderSwitch[] = [];
+
+/** Return the most recent scheduled/attended clinician for a patient. */
+function _previousProviderFor(patientId: string, serviceType?: ServiceType): string | undefined {
+  const rows = appointments
+    .filter(
+      (a) =>
+        a.patientId === patientId &&
+        (a.status === "scheduled" || a.status === "attended") &&
+        (!serviceType || !a.serviceType || a.serviceType === serviceType),
+    )
+    .sort((a, b) => +new Date(b.start) - +new Date(a.start));
+  return rows[0]?.clinicianId;
+}
+
+function _flagProviderSwitch(input: {
+  patientId: string;
+  fromClinicianId?: string;
+  toClinicianId: string;
+  reason: ProviderSwitchReason;
+  serviceType?: ServiceType;
+  context?: string;
+  initiatedBy: ProviderSwitch["initiatedBy"];
+  linkedApptId?: string;
+  linkedRefillId?: string;
+}): ProviderSwitch | undefined {
+  if (!input.fromClinicianId) return undefined;
+  if (input.fromClinicianId === input.toClinicianId) return undefined;
+  const sw: ProviderSwitch = {
+    id: `psw_${providerSwitches.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+    patientId: input.patientId,
+    fromClinicianId: input.fromClinicianId,
+    toClinicianId: input.toClinicianId,
+    reason: input.reason,
+    serviceType: input.serviceType,
+    context: input.context,
+    initiatedBy: input.initiatedBy,
+    createdAt: new Date().toISOString(),
+    status: "pending_review",
+    linkedApptId: input.linkedApptId,
+    linkedRefillId: input.linkedRefillId,
+  };
+  providerSwitches.unshift(sw);
+
+  const patient = patients.find((p) => p.id === input.patientId);
+  const fromClin = clinicians.find((c) => c.id === input.fromClinicianId);
+  const toClin = clinicians.find((c) => c.id === input.toClinicianId);
+  const dueDate = new Date().toISOString().slice(0, 10);
+  const reasonLabel: Record<ProviderSwitchReason, string> = {
+    reschedule: "Appointment moved to a new provider",
+    new_appointment: "Booked with a new provider",
+    refill_review: "Refill reviewed by a different prescriber",
+    primary_reassignment: "Primary provider reassigned",
+  };
+  const detail =
+    `${reasonLabel[input.reason]}. ` +
+    `From ${fromClin?.name ?? input.fromClinicianId} → ${toClin?.name ?? input.toClinicianId}.` +
+    (input.context ? ` ${input.context}` : "");
+
+  // Task to the outgoing clinician (assigned via clinicianId; separate from CM queue).
+  AdelanteEHR.createCaseTask({
+    patientId: input.patientId,
+    assignedTo: input.fromClinicianId,
+    title: `Provider switch review: ${patient?.firstName ?? ""} ${patient?.lastName ?? ""}`.trim(),
+    detail,
+    dueDate,
+    origin: "provider_switch",
+    dedupeKey: `switch-out:${sw.id}`,
+  });
+  // Task to the case manager for coordination review.
+  if (patient?.caseManagerId) {
+    AdelanteEHR.createCaseTask({
+      patientId: input.patientId,
+      assignedTo: patient.caseManagerId,
+      title: `Coordinate provider switch: ${patient.firstName} ${patient.lastName}`,
+      detail: `${detail} Verify in-network status, funding lane, and continuity of care.`,
+      dueDate,
+      origin: "provider_switch",
+      dedupeKey: `switch-cm:${sw.id}`,
+    });
+  }
+  appendAudit({
+    category: "provider_switch",
+    action: `switch_${input.reason}`,
+    patientId: input.patientId,
+    detail: {
+      from: input.fromClinicianId,
+      to: input.toClinicianId,
+      reason: input.reason,
+      serviceType: input.serviceType,
+      switchId: sw.id,
+    },
+  });
+  return sw;
+}
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {
@@ -1077,6 +1205,19 @@ export const AdelanteEHR = {
     }
     const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
     appointments.push(a);
+    // Detect provider switch vs. patient's last provider (same service type when set).
+    const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
+    if (prevProvider && prevProvider !== a.clinicianId) {
+      _flagProviderSwitch({
+        patientId: a.patientId,
+        fromClinicianId: prevProvider,
+        toClinicianId: a.clinicianId,
+        reason: "new_appointment",
+        serviceType: a.serviceType,
+        initiatedBy: "patient",
+        linkedApptId: a.id,
+      });
+    }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
@@ -1098,6 +1239,7 @@ export const AdelanteEHR = {
   ) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) return;
+    const originalClinicianId = a.clinicianId;
     const targetClinicianId = patch?.clinicianId ?? a.clinicianId;
     const conflict = appointments.some(
       (x) =>
@@ -1119,6 +1261,17 @@ export const AdelanteEHR = {
       if (a.modality === "in_person" && !a.locationId) {
         throw new Error("Pick a location for the in-person visit.");
       }
+    }
+    if (originalClinicianId !== a.clinicianId) {
+      _flagProviderSwitch({
+        patientId: a.patientId,
+        fromClinicianId: originalClinicianId,
+        toClinicianId: a.clinicianId,
+        reason: "reschedule",
+        serviceType: a.serviceType,
+        initiatedBy: "patient",
+        linkedApptId: a.id,
+      });
     }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
@@ -2064,10 +2217,38 @@ export const AdelanteEHR = {
   }): RefillRequest | undefined {
     const req = refillRequests.find((r) => r.id === input.id);
     if (!req) return undefined;
+    // Detect a prescriber switch: compare against the most recent *prior* refill
+    // (any status) for the same medication that had a different reviewer.
+    const priorReviewer = refillRequests
+      .filter(
+        (r) =>
+          r.id !== req.id &&
+          r.medicationId === req.medicationId &&
+          r.patientId === req.patientId &&
+          r.reviewedBy,
+      )
+      .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]
+      ?.reviewedBy;
     req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
     req.reviewedBy = input.clinicianId;
     req.reviewedAt = new Date().toISOString();
     if (input.decision === "denied") req.denyReason = input.denyReason;
+    if (
+      input.decision === "approved" &&
+      priorReviewer &&
+      input.clinicianId &&
+      priorReviewer !== input.clinicianId
+    ) {
+      _flagProviderSwitch({
+        patientId: req.patientId,
+        fromClinicianId: priorReviewer,
+        toClinicianId: input.clinicianId,
+        reason: "refill_review",
+        context: `Medication: ${req.medicationName}.`,
+        initiatedBy: "clinician",
+        linkedRefillId: req.id,
+      });
+    }
     appendAudit({
       category: "rx",
       action:
@@ -2224,6 +2405,97 @@ export const AdelanteEHR = {
   },
   lastVendorPings(vendor: string): PingResult[] {
     return vendorPings.filter((p) => p.vendor === vendor).slice(0, 5);
+  },
+
+  // ---------- Provider switch notifications ----------
+  listProviderSwitches(filter: {
+    patientId?: string;
+    clinicianId?: string;
+    role?: "outgoing" | "incoming" | "either";
+    status?: ProviderSwitchStatus | "any";
+  } = {}): ProviderSwitch[] {
+    return providerSwitches.filter((s) => {
+      if (filter.patientId && s.patientId !== filter.patientId) return false;
+      if (filter.clinicianId) {
+        const role = filter.role ?? "outgoing";
+        if (role === "outgoing" && s.fromClinicianId !== filter.clinicianId) return false;
+        if (role === "incoming" && s.toClinicianId !== filter.clinicianId) return false;
+        if (role === "either" &&
+          s.fromClinicianId !== filter.clinicianId &&
+          s.toClinicianId !== filter.clinicianId) return false;
+      }
+      if (filter.status && filter.status !== "any" && s.status !== filter.status) return false;
+      return true;
+    });
+  },
+  getPreviousProviderFor(patientId: string, serviceType?: ServiceType): string | undefined {
+    return _previousProviderFor(patientId, serviceType);
+  },
+  acknowledgeProviderSwitch(id: string, actorId?: string, note?: string): ProviderSwitch | undefined {
+    const s = providerSwitches.find((x) => x.id === id);
+    if (!s) return undefined;
+    s.status = "acknowledged";
+    s.resolvedAt = new Date().toISOString();
+    s.resolvedBy = actorId;
+    s.resolutionNote = note;
+    // Close linked outgoing-clinician task.
+    const task = caseTasks.find((t) => t.dedupeKey === `switch-out:${s.id}` && t.status !== "done");
+    if (task) {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "provider_switch",
+      action: "switch_acknowledged",
+      patientId: s.patientId,
+      actorId,
+      detail: { switchId: s.id, note },
+    });
+    emit();
+    return s;
+  },
+  dismissProviderSwitch(id: string, actorId?: string, note?: string): ProviderSwitch | undefined {
+    const s = providerSwitches.find((x) => x.id === id);
+    if (!s) return undefined;
+    s.status = "dismissed";
+    s.resolvedAt = new Date().toISOString();
+    s.resolvedBy = actorId;
+    s.resolutionNote = note;
+    const task = caseTasks.find((t) => t.dedupeKey === `switch-out:${s.id}` && t.status !== "done");
+    if (task) {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "provider_switch",
+      action: "switch_dismissed",
+      patientId: s.patientId,
+      actorId,
+      detail: { switchId: s.id, note },
+    });
+    emit();
+    return s;
+  },
+  reassignPrimaryClinician(input: {
+    patientId: string;
+    clinicianId: string;
+    initiatedBy?: ProviderSwitch["initiatedBy"];
+    context?: string;
+  }): ProviderSwitch | undefined {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return undefined;
+    const prev = p.primaryClinicianId;
+    p.primaryClinicianId = input.clinicianId;
+    const sw = _flagProviderSwitch({
+      patientId: p.id,
+      fromClinicianId: prev,
+      toClinicianId: input.clinicianId,
+      reason: "primary_reassignment",
+      context: input.context,
+      initiatedBy: input.initiatedBy ?? "admin",
+    });
+    emit();
+    return sw;
   },
 };
 

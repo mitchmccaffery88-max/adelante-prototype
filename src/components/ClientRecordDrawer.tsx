@@ -89,6 +89,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <TabsTrigger value="eligibility">Eligibility</TabsTrigger>
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="providers">Providers</TabsTrigger>
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -123,6 +124,9 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
           </TabsContent>
           <TabsContent value="tasks" className="mt-4">
             <TasksTab patientId={patient.id} />
+          </TabsContent>
+          <TabsContent value="providers" className="mt-4">
+            <ProviderHistoryTab patientId={patient.id} />
           </TabsContent>
           {canPeer.level !== "none" && (
             <TabsContent value="peer" className="mt-4">
@@ -380,6 +384,62 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         ))}
       </ul>
     </div>
+  );
+}
+
+function ProviderHistoryTab({ patientId }: { patientId: string }) {
+  const switches = useEhr(() => AdelanteEHR.listProviderSwitches({ patientId, status: "any" }));
+  const clinicians = AdelanteEHR.listClinicians();
+  const nameFor = (id: string) => clinicians.find((c) => c.id === id)?.name ?? id;
+  const reasonLabel: Record<string, string> = {
+    reschedule: "Reschedule",
+    new_appointment: "New booking",
+    refill_review: "Refill review",
+    primary_reassignment: "Primary reassignment",
+  };
+  if (switches.length === 0) {
+    return (
+      <div className="text-sm text-muted-foreground">
+        No provider switches recorded for this client.
+      </div>
+    );
+  }
+  return (
+    <ul className="space-y-2">
+      {switches.map((s) => (
+        <li key={s.id} className="rounded border p-3 text-sm">
+          <div className="flex items-center justify-between gap-2">
+            <div className="font-medium text-navy">
+              {nameFor(s.fromClinicianId)} → {nameFor(s.toClinicianId)}
+            </div>
+            <Badge
+              variant="outline"
+              className={
+                s.status === "pending_review"
+                  ? "text-warning-foreground bg-warning/15 border-0"
+                  : s.status === "acknowledged"
+                  ? "text-success bg-success/15 border-0"
+                  : "text-muted-foreground bg-muted border-0"
+              }
+            >
+              {s.status.replace("_", " ")}
+            </Badge>
+          </div>
+          <div className="mt-1 text-xs text-muted-foreground">
+            {reasonLabel[s.reason] ?? s.reason}
+            {s.serviceType ? ` · ${s.serviceType}` : ""}
+            {" · "}
+            {new Date(s.createdAt).toLocaleString()}
+          </div>
+          {s.context ? <div className="mt-1 text-xs">{s.context}</div> : null}
+          {s.resolutionNote ? (
+            <div className="mt-1 text-xs text-muted-foreground italic">
+              Note: {s.resolutionNote}
+            </div>
+          ) : null}
+        </li>
+      ))}
+    </ul>
   );
 }
 
@@ -990,6 +1050,7 @@ function TaskList({
     screener_flag: "Screener",
     referral_stale: "Stale referral",
     notification_failed: "Delivery failed",
+    provider_switch: "Provider switch",
   };
   return (
     <div className="space-y-1.5">

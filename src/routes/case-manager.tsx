@@ -266,6 +266,17 @@ function CaseManagerPage() {
                         ECM
                       </Badge>
                     )}
+                    {(() => {
+                      const pending = AdelanteEHR.listProviderSwitches({
+                        patientId: p.id,
+                        status: "pending_review",
+                      }).length;
+                      return pending > 0 ? (
+                        <Badge className="bg-warning/20 text-warning-foreground border-0" title="Pending provider switch review">
+                          Switch·{pending}
+                        </Badge>
+                      ) : null;
+                    })()}
                   </TableCell>
                   <TableCell className="text-right">
                     <div className="inline-flex gap-1">

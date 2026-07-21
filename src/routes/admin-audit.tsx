@@ -28,6 +28,7 @@ const CATEGORIES: { value: AuditCategory | "all"; label: string }[] = [
   { value: "telehealth", label: "Telehealth" },
   { value: "vendor", label: "Vendor" },
   { value: "access", label: "Access" },
+  { value: "provider_switch", label: "Provider switches" },
 ];
 
 function AdminAuditPage() {
