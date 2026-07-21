@@ -1093,14 +1093,16 @@ export const AdelanteEHR = {
       modality?: "video" | "phone" | "in_person";
       locationId?: string;
       durationMin?: number;
+      clinicianId?: string;
     },
   ) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) return;
+    const targetClinicianId = patch?.clinicianId ?? a.clinicianId;
     const conflict = appointments.some(
       (x) =>
         x.id !== apptId &&
-        x.clinicianId === a.clinicianId &&
+        x.clinicianId === targetClinicianId &&
         x.status === "scheduled" &&
         new Date(x.start).getTime() === new Date(newStart).getTime(),
     );
@@ -1109,6 +1111,7 @@ export const AdelanteEHR = {
     }
     a.start = newStart;
     if (patch) {
+      if (patch.clinicianId !== undefined) a.clinicianId = patch.clinicianId;
       if (patch.serviceType !== undefined) a.serviceType = patch.serviceType;
       if (patch.modality !== undefined) a.modality = patch.modality;
       if (patch.locationId !== undefined) a.locationId = patch.locationId;
