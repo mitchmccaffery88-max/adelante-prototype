@@ -1,59 +1,78 @@
-# Pivot to Native Adelante EHR + Vendor Adapters
+# Vendor status page, refill flow, telehealth lifecycle, audit viewer
 
-Adelante now owns the EHR record of truth. External vendors are only used for two bounded jobs: **telehealth video sessions** and **medication management / eRx (eScribe)**. Everything else — scheduling, charting, care plans, tasks, billing, consent, RBAC — lives in our own data model.
+Four related additions built on the existing `AdelanteEHR` + vendor adapter seam. All mock-backed; no real vendor calls. Existing `AuditLogCard` on Admin today only shows consent events — this pass generalizes it into a real audit stream.
 
-Prior renames already stripped `HealthieService` → `AdelanteEHR` and `useHealthie` → `useEhr`, so no code references to Healthie remain. This plan reframes intent, tightens vendor seams, and adds the eRx surface.
+## 1. Unified audit event stream (foundation for everything else)
 
-## 1. Product framing changes (copy + docs)
+`src/lib/ehr.ts`
+- Add `AuditEvent` type: `{ id, at, actorRole?, actorId?, patientId?, category: "consent" | "rx" | "telehealth" | "vendor" | "access", action, detail? }`.
+- Add internal `auditEvents: AuditEvent[]` array + `appendAudit(evt)` helper that also `emit()`s.
+- Fold existing consent-event writes and `recordRxEvent` through `appendAudit` so nothing is duplicated; keep back-compat `listRxEvents` reading from the unified store filtered by category.
+- New helpers: `listAuditEvents({ patientId?, category?, since?, limit? })`, `listTelehealthSessions(patientId?)`.
 
-- Schedule page: replace "Book a private video or phone session with your care team" wording that implies a third-party booking with Adelante-owned language ("Adelante schedules and hosts your visit").
-- Clinician "Launch telehealth" toast: change `Adelante video room · session {id}` to name the integrated vendor generically ("Secure video powered by our telehealth partner") so the vendor can swap without copy churn.
-- Consent page telehealth row: add a short note that video is delivered via a HIPAA-aligned integrated vendor; medication management is delivered via eScribe.
-- Admin "About" / footer: state Adelante Pathways is the EHR of record; list telehealth + eRx as integrated services.
+## 2. Medication refill request flow
 
-## 2. Vendor adapter seams (no business logic changes)
+Data (`src/lib/ehr.ts` + `src/lib/vendors/erx.ts`)
+- Add `RefillRequest` type: `{ id, patientId, medicationId, medicationName, requestedAt, requestedBy: "patient" | "clinician", pharmacyNote?, status: "pending" | "approved" | "denied" | "sent_to_pharmacy", reviewedBy?, reviewedAt?, denyReason? }`.
+- `AdelanteEHR.requestRefill({ patientId, medicationId, pharmacyNote? })` — creates a pending request, appends audit `rx:refill_requested`, and auto-generates a `CaseTask` (assignee = PMHNP) so it surfaces in the clinician queue.
+- `AdelanteEHR.reviewRefill({ id, decision: "approved"|"denied", denyReason?, clinicianId })` — updates status, appends audit `rx:refill_approved|denied`, marks task done. Approval moves status to `sent_to_pharmacy` after a short mock delay (immediate in-memory OK for MVP; annotate with source: "escribe-mock").
+- `listRefillRequests({ patientId?, status? })`.
 
-Introduce a thin, typed adapter layer so vendors are swappable and mockable. All calls flow through `AdelanteEHR`; adapters never touch UI directly.
+Patient surface (`src/components/PatientHome.tsx`)
+- On each row of the "My medications" card add a **Request refill** button.
+- Clicking opens a small inline form (pharmacy note optional). After submit, show status pill next to the med (Pending / Approved / Denied — with deny reason tooltip).
+- Bilingual copy via `useI18n` (EN + ES strings).
 
-New files:
-- `src/lib/vendors/telehealth.ts` — `TelehealthAdapter` interface: `createRoom(appointmentId) → { joinUrl, roomId, expiresAt }`, `endRoom(roomId)`, `getJoinUrl(appointmentId, role)`. Ship a `MockTelehealthAdapter` for MVP that returns a deterministic fake join URL and logs an audit event.
-- `src/lib/vendors/erx.ts` — `ErxAdapter` interface for eScribe: `ssoLaunchUrl(clinicianId, patientId) → string`, `listActiveMedications(patientId)`, `listRecentRx(patientId)`, `pushDemographics(patient)`. Ship a `MockEscribeAdapter` returning seeded medication rows.
-- `src/lib/vendors/index.ts` — resolves the active adapter (mock in MVP; real vendor keys wired later via Cloud secrets).
+Clinician surface (`src/routes/clinician.tsx`)
+- New **Refill requests** card near the credentialing banner: pending requests for the acting clinician's caseload, with Approve / Deny actions (deny requires reason). Only visible when acting role has `meds_erx` write (PMHNP); read-only for therapist/CM.
+- Existing "Open in eScribe" launch continues to write `sso_launch` through the unified audit store.
 
-Wire-in points (behavior identical, just routed through adapters):
-- `clinician.tsx` "Join" / "Launch telehealth" → `telehealth.getJoinUrl(apptId, "clinician")`.
-- `schedule.tsx` patient join button (post-booking confirmation) → `telehealth.getJoinUrl(apptId, "patient")`.
-- New Clinician + Patient "Medications" surface → `erx.listActiveMedications(patientId)`.
+## 3. Telehealth session lifecycle tracking
 
-## 3. EHR data-model additions (`src/lib/ehr.ts`)
+Data (`src/lib/ehr.ts` + `src/lib/vendors/telehealth.ts`)
+- Add `TelehealthSession` type: `{ id, appointmentId, patientId, clinicianId, vendor, roomId, joinUrlPatient, joinUrlClinician, state: "scheduled"|"clinician_joined"|"patient_joined"|"in_progress"|"ended"|"expired"|"failed", createdAt, startedAt?, endedAt?, durationSec? }`.
+- `AdelanteEHR.startTelehealthSession(appointmentId)` — idempotent; creates the session if missing, appends audit `telehealth:created`.
+- `AdelanteEHR.markTelehealthJoin(appointmentId, role)` — transitions to `clinician_joined` / `patient_joined` and to `in_progress` when both present. Audit each join.
+- `AdelanteEHR.endTelehealthSession(appointmentId, reason?)` — sets `ended`, computes duration, appends audit.
+- Auto-expire helper `sweepExpiredTelehealth()` called on session listing (mock: sessions past `expiresAt` with no `endedAt` become `expired`).
 
-Additive only — no breaking changes to existing seeds.
+Wire-in
+- `src/routes/clinician.tsx` "Launch telehealth" → open join URL + call `markTelehealthJoin(id, "clinician")`.
+- `src/routes/schedule.tsx` patient join button → `markTelehealthJoin(id, "patient")`.
+- New "End session" affordance in clinician view once state is `in_progress`.
+- Client Record Drawer "Telehealth" section (small): last 5 sessions with state + duration (read-gated by `telehealth_room`).
 
-- `Appointment`: add optional `telehealth?: { vendor: string; roomId: string; joinUrlPatient?: string; joinUrlClinician?: string; expiresAt?: string }`. Populated on booking when modality = `video`.
-- New `Medication` type: `{ id, patientId, name, dose, route, frequency, prescriberId, startedOn, endedOn?, source: "escribe" | "manual", status: "active" | "discontinued" }`.
-- New `RxEvent` type for audit-visible eRx actions (launch, refill request, discontinue) — no PHI beyond patient/clinician IDs and timestamps.
-- `AdelanteEHR` methods: `listMedications(patientId)`, `recordRxEvent(evt)`, `attachTelehealthRoom(apptId, room)`.
-- Extend the RBAC matrix in `src/lib/roles.ts`: `meds_erx` already exists; add `telehealth_room` record class (pmhnp/therapist: write, case_manager: read, peer: none). Consent-gated as usual.
+## 4. Vendor status page (`/admin/vendors`)
 
-## 4. New surfaces
+New route `src/routes/admin.vendors.tsx` (child of admin) — a full page instead of just the existing Admin dashboard card.
+- **Adapters panel**: telehealth + eRx with vendor name, mode (mock/live), last ping result and timestamp, "Test connection" button (calls `adapter.ping()`).
+- **Telehealth activity**: 24h / 7d counts by state (created, in_progress, ended, expired, failed). Table of recent sessions with jump-to-audit link.
+- **eRx activity**: counts of SSO launches, refill requests (pending/approved/denied), last activity per patient (aggregated). Table of recent RxEvents.
+- **Config readiness**: static checklist rows ("Telehealth SDK key", "eScribe SSO client ID", "Webhook secret") each showing `Missing (mock in use)` badge — placeholder for the eventual live wiring.
+- Keep the existing lightweight `VendorStatusCard` on the admin dashboard but link its header to the new page.
 
-- **Clinician → Medications tab** on the patient chart drawer: read-only list from `MockEscribeAdapter`, plus an "Open in eScribe" button that calls `erx.ssoLaunchUrl` (mock URL for now). Only visible to `pmhnp` and `therapist` (read).
-- **Patient Home → My medications card**: name + dose + frequency + prescriber, using patient-safe simplified copy. Hidden when list is empty.
-- **Admin → Vendor status card**: shows which adapter is active (mock vs live), last successful call timestamp, and a "Test connection" button. Sets up the eventual live-key rollout.
+## 5. Audit log viewer
 
-## 5. Cleanup + guardrails
+New route `src/routes/admin.audit.tsx` — full-page viewer over the unified `listAuditEvents`.
+- Filters: category (multi), actor role, patient (search-by-CIN or name from existing patient list), date range.
+- Table columns: timestamp, category (colored pill), action, actor, patient (masked CIN), detail. Row-expand shows full JSON detail.
+- CSV export button (reuses the pattern already in `billing.tsx`).
+- Replace the Admin dashboard's existing `AuditLogCard` body with a compact "Recent activity" preview (last 10 events across all categories) plus "View all" link to `/admin/audit`. Keep it consent-ledger-friendly by defaulting the filter to `category=consent` when navigated from the consent surface.
 
-- Add a lint-style check note in `src/lib/ehr.ts` header comment: "Adelante is the EHR of record. Do not import vendor SDKs outside `src/lib/vendors/*`."
-- Update landing / auth marketing copy that still hints at a third-party EHR partner (spot-check `Landing.tsx`, `PatientHome.tsx` help text).
-- i18n: add English + Spanish strings for the new Medications card and telehealth vendor phrasing.
+## 6. RBAC + i18n
 
-## Out of scope for this pass
+- `src/lib/roles.ts`: extend the matrix so `sys_admin` gets `read` on all audit categories; `pmhnp`/`therapist` read their own patients' telehealth/rx events; CM read (non-Part-2). No new record classes needed — reuse `meds_erx` and `telehealth_room`; audit viewer gate is `sys_admin` write / everyone else summary.
+- Add EN + ES strings in `src/lib/i18n.tsx` for refill request UI, session state labels, and audit categories.
 
-- Real eScribe SSO handshake, real telehealth vendor selection, and Cloud secret wiring — deferred until vendor contracts are signed. The mock adapters keep the UI and RBAC honest in the meantime.
-- Any change to billing, scheduling rules, or existing consent flows beyond the copy tweaks above.
+## Out of scope
+
+- Real vendor SDK wiring, real pharmacy transmission, real webhook receivers.
+- Persisting audit events to Cloud (still in-memory; matches current mock EHR posture).
+- New consent classes — refill and telehealth reuse existing `meds_erx` and `telehealth_room` gating.
 
 ## Technical notes
 
-- Adapters live under `src/lib/vendors/` and are pure TS with no network calls in MVP; swapping to real implementations is a one-file change per vendor.
-- `AdelanteEHR` remains the only module UI code imports for patient data. Vendor adapters are called *by* `AdelanteEHR` methods, never directly by components, except for `ssoLaunchUrl` which is a pass-through by design.
-- All new records flow through the existing audit log so 42 CFR Part 2 / consent gating stays intact.
+- All new mutations flow through `appendAudit` — no direct writes to `rxEvents` or consent arrays.
+- Vendor adapters (`src/lib/vendors/*`) grow `ping()` result caching (last N=5) and gain `endRoom` state emission; UI still only talks to `AdelanteEHR`.
+- Two new route files under `src/routes/admin.*.tsx` follow the existing flat dot-separated file-based routing convention; head() metadata unique to each. No changes to `src/routeTree.gen.ts` (auto-generated).
+- Refill task auto-creation reuses `CaseTask` + `TaskQueueCard`, so no new queue UI is needed on the CM side.
