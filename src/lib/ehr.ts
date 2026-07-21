@@ -1174,8 +1174,28 @@ export const AdelanteEHR = {
   updateAppointmentStatus(id: string, status: SessionStatus) {
     const a = appointments.find((x) => x.id === id);
     if (!a) return;
+    const prev = a.status;
     a.status = status;
-    if (status === "attended") a.billingStatus = "submitted";
+    if (status === "attended") {
+      // Attended visits become "ready" claims (require billing coordinator submit).
+      a.billingStatus = "ready";
+      a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
+    }
+    // Auto-generate CM follow-up on no_show.
+    if (status === "no_show" && prev !== "no_show") {
+      const p = patients.find((x) => x.id === a.patientId);
+      if (p?.caseManagerId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId,
+          title: `Missed session — reach out to ${p.firstName}`,
+          detail: `No-show on ${new Date(a.start).toLocaleDateString()}. Confirm status and rebook.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "missed_appt",
+          dedupeKey: `missed:${a.id}`,
+        });
+      }
+    }
     emit();
   },
   recordScreener(patientId: string, result: ScreenerResult) {
@@ -1185,6 +1205,17 @@ export const AdelanteEHR = {
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
     if (result.crisisFlag) {
       p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
+      if (p.caseManagerId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId,
+          title: `Crisis flag — ${result.key.toUpperCase()}`,
+          detail: `Screener flagged elevated risk. Follow safety protocol and document contact today.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "screener_flag",
+          dedupeKey: `crisis:${p.id}:${result.key}`,
+        });
+      }
     }
     emit();
   },
