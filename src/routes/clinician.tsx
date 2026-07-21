@@ -569,6 +569,42 @@ function ClinicianPage() {
                           ))}
                       </SelectContent>
                     </Select>
+                    {note.appointmentId && (
+                      <Button
+                        type="button"
+                        variant="outline"
+                        size="sm"
+                        className="w-full"
+                        onClick={() => {
+                          const appt = patientAppts.find((a) => a.id === note.appointmentId);
+                          if (!appt) return;
+                          const svc = serviceTypes.find((s) => s.id === appt.serviceType);
+                          const goals = (selectedPatient.carePlan?.goals ?? [])
+                            .filter((g) => g.status !== "done")
+                            .slice(0, 3)
+                            .map((g) => `• ${g.text}`)
+                            .join("\n");
+                          setNote((prev) => ({
+                            ...prev,
+                            objective:
+                              prev.objective ||
+                              [
+                                svc ? `Service: ${svc.label}` : null,
+                                appt.modality ? `Modality: ${appt.modality}` : null,
+                                appt.durationMin ? `Duration: ${appt.durationMin} min` : null,
+                              ]
+                                .filter(Boolean)
+                                .join(" · "),
+                            plan:
+                              prev.plan ||
+                              (goals ? `Active care-plan goals:\n${goals}` : ""),
+                          }));
+                          toast.success("Prefilled from appointment");
+                        }}
+                      >
+                        Prefill from appointment
+                      </Button>
+                    )}
                   </div>
                   {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                     <div key={k} className="space-y-1.5">
