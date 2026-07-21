@@ -75,6 +75,7 @@ const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
 
 function HomeScreenNudge() {
   const [dismissed, setDismissed] = useState(true);
+  const { prompt } = usePwaInstallPrompt();
 
   useEffect(() => {
     try {
@@ -84,7 +85,8 @@ function HomeScreenNudge() {
     }
   }, []);
 
-  if (dismissed) return null;
+  // Only show the nudge when the browser actually supports the install prompt.
+  if (dismissed || !prompt) return null;
 
   const dismiss = () => {
     setDismissed(true);
