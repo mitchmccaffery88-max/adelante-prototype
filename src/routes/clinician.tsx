@@ -141,10 +141,21 @@ function ClinicianPage() {
   };
 
   const launch = (id: string) => {
-    const url = AdelanteEHR.telehealthJoinUrl(id, "clinician");
+    const session = AdelanteEHR.markTelehealthJoin(id, "clinician");
+    if (!session) {
+      toast.error("Could not open that session.");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.open(session.joinUrlClinician, "_blank", "noopener,noreferrer");
+    }
     toast.success("Launching telehealth session", {
-      description: `Secure video powered by our telehealth partner · ${url}`,
+      description: `Secure video · session ${session.roomId}`,
     });
+  };
+  const endSession = (id: string) => {
+    const s = AdelanteEHR.endTelehealthSession(id, "clinician_ended");
+    if (s) toast.success("Session ended", { description: `${Math.round((s.durationSec ?? 0) / 60)} min logged` });
   };
 
   // Bucket appointments by time horizon for the schedule view.
