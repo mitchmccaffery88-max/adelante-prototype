@@ -362,7 +362,7 @@ export function PatientHome() {
                   </span>
                 </span>
                 <Badge variant="outline" className="capitalize text-xs">
-                  {t((goalStatusMap[g.status] ?? g.status) as any)}
+                  {t(goalStatusMap[g.status] ?? (g.status as Key))}
                 </Badge>
               </li>
             ))}
