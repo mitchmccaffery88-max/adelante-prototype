@@ -295,7 +295,7 @@ export function PatientHome() {
                 return (
                   <Badge key={k} variant="outline" className="gap-1">
                     <Icon className="h-3 w-3" />
-                    {t(meta.tKey as any)}
+                    {t(meta.tKey)}
                   </Badge>
                 );
               })}
