@@ -265,20 +265,7 @@ export function PatientHome() {
           </p>
           <ul className="mt-3 space-y-2 text-sm">
             {meds.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
-              >
-                <div>
-                  <div className="font-medium text-navy">
-                    {m.name} <span className="text-muted-foreground font-normal">· {m.dose}</span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {m.frequency} · {m.prescriber}
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-[10px]">active</Badge>
-              </li>
+              <MedRow key={m.id} med={m} patientId={patient.id} />
             ))}
           </ul>
           <p className="mt-3 text-[10px] text-muted-foreground">
