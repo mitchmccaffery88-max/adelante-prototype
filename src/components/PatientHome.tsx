@@ -526,10 +526,10 @@ function MyProfileCard({ patientId }: { patientId: string }) {
 }
 
 function NotificationLine({ patientId, apptId }: { patientId: string; apptId: string }) {
-  const note = useEhr(() =>
-    AdelanteEHR.latestNotificationForAppt(patientId, apptId),
-  );
-  if (!note) return null;
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const notes = (patient?.notifications ?? []).filter((n) => n.apptId === apptId);
+  if (notes.length === 0) return null;
+  const note = notes[0];
   const verb =
     note.kind === "booked"
       ? "Booked"
@@ -538,13 +538,37 @@ function NotificationLine({ patientId, apptId }: { patientId: string; apptId: st
         : note.kind === "cancelled"
           ? "Cancelled"
           : "Confirmed";
-  const chans = note.channels
-    .map((c) => (c === "profile" ? "profile" : c === "sms" ? "text" : "email"))
-    .join(" + ");
+  // Group latest state per channel across the batch tied to this event.
+  const latestByChannel = new Map<string, typeof note>();
+  for (const n of notes) {
+    if (n.kind !== note.kind) continue;
+    if (!latestByChannel.has(n.channel)) latestByChannel.set(n.channel, n);
+  }
+  const label = (c: string) => (c === "profile" ? "profile" : c === "sms" ? "text" : "email");
+  const dot = (s: string) =>
+    s === "delivered"
+      ? "bg-teal"
+      : s === "sent"
+        ? "bg-amber-500"
+        : s === "failed"
+          ? "bg-destructive"
+          : "bg-muted-foreground";
   return (
-    <div className="mt-2 inline-flex items-center gap-1.5 text-xs text-teal">
-      <CheckCircle2 className="h-3 w-3" />
-      {verb} · notified via {chans}
+    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+      <span className="inline-flex items-center gap-1.5 text-teal">
+        <CheckCircle2 className="h-3 w-3" />
+        {verb}
+      </span>
+      {Array.from(latestByChannel.values()).map((n) => (
+        <span
+          key={n.id}
+          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5"
+          title={n.error ?? n.state}
+        >
+          <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot(n.state)}`} />
+          {label(n.channel)} · {n.state}
+        </span>
+      ))}
     </div>
   );
 }

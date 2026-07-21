@@ -3,7 +3,13 @@
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
-export type BillingStatus = "draft" | "submitted" | "paid" | "denied";
+export type BillingStatus =
+  | "draft"
+  | "ready"
+  | "submitted"
+  | "paid"
+  | "denied"
+  | "write_off";
 export type CoverageStatus =
   | "active"
   | "suspended"
@@ -256,6 +262,8 @@ export interface Clinician {
   services?: ServiceType[];
   /** Physical locations where this clinician staffs in-person visits. */
   locationIds?: string[];
+  /** Credentialing hard-stop (YYYY-MM-DD). Booking is blocked when past. */
+  licenseExpiresOn?: string;
 }
 
 export interface Appointment {
@@ -274,6 +282,23 @@ export interface Appointment {
   modality?: "video" | "phone" | "in_person";
   /** Required when modality === "in_person". */
   locationId?: string;
+  /** Billing coordinator fields (pass-2 polish). */
+  chargeCents?: number;
+  denialReason?: string;
+  submittedAt?: string;
+  paidAt?: string;
+  billingHistory?: BillingHistoryEntry[];
+  /** When funding lane is ISL, why this encounter fell into ISL. */
+  islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
+}
+
+export interface BillingHistoryEntry {
+  id: string;
+  at: string;
+  actor: string;
+  from: BillingStatus;
+  to: BillingStatus;
+  note?: string;
 }
 
 // ---------- Scheduling: service types + locations ----------
@@ -392,6 +417,7 @@ export interface PeerNote {
   date: string;
   author: string;
   text: string;
+  mode?: "in_person" | "phone" | "text" | "warmline" | "group";
 }
 
 export type EligibilityFlagKey =
@@ -460,12 +486,43 @@ export interface PatientTask {
 
 export type ApptNotificationKind = "booked" | "rescheduled" | "cancelled" | "confirmed";
 export type CommsChannel = "profile" | "sms" | "email";
+export type NotificationState = "queued" | "sent" | "delivered" | "failed";
 export interface ApptNotification {
   id: string;
   apptId: string;
   kind: ApptNotificationKind;
   at: string;
-  channels: CommsChannel[];
+  channel: CommsChannel;
+  state: NotificationState;
+  sentAt?: string;
+  deliveredAt?: string;
+  error?: string;
+}
+
+// ---------- Case Manager task queue ----------
+
+export type CaseTaskStatus = "open" | "done" | "snoozed";
+export type CaseTaskOrigin =
+  | "manual"
+  | "missed_appt"
+  | "screener_flag"
+  | "referral_stale"
+  | "notification_failed";
+
+export interface CaseTask {
+  id: string;
+  patientId: string;
+  assignedTo: string; // caseManagerId
+  title: string;
+  detail?: string;
+  dueDate: string; // ISO date (YYYY-MM-DD) or ISO string
+  status: CaseTaskStatus;
+  origin: CaseTaskOrigin;
+  createdAt: string;
+  completedAt?: string;
+  snoozedUntil?: string;
+  /** Idempotency key so auto-generation doesn't duplicate. */
+  dedupeKey?: string;
 }
 
 export interface AvailabilitySlot {
@@ -487,6 +544,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "active",
     services: ["intake", "therapy_individual", "therapy_group", "case_management", "care_coordination"],
     locationIds: ["loc-visalia", "loc-porterville"],
+    licenseExpiresOn: "2026-08-15",
   },
   {
     id: "c2",
@@ -496,6 +554,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "active",
     services: ["therapy_individual", "med_management", "intake"],
     locationIds: ["loc-visalia"],
+    licenseExpiresOn: "2027-06-30",
   },
   {
     id: "c3",
@@ -505,6 +564,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "pending",
     services: ["therapy_individual", "peer_support", "case_management"],
     locationIds: ["loc-porterville"],
+    licenseExpiresOn: "2027-12-31",
   },
 ];
 
@@ -707,6 +767,11 @@ const emit = () => {
 // who has not yet completed intake so the first-time flow is visible.
 let currentPatientId = "p2";
 
+// Global case-task queue (across patients). Kept separately from Patient.tasks
+// (which is a legacy per-patient action list) so CM views can index by
+// assignee, status, and due date without walking every patient.
+const caseTasks: CaseTask[] = [];
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
@@ -885,6 +950,8 @@ export const AdelanteEHR = {
     modality?: "video" | "phone" | "in_person";
     locationId?: string;
   }) {
+    const cred = AdelanteEHR.canBook(input.clinicianId);
+    if (!cred.ok) throw new Error(cred.reason);
     if (input.modality === "in_person" && !input.locationId) {
       throw new Error("Pick a location for the in-person visit.");
     }
@@ -1021,17 +1088,84 @@ export const AdelanteEHR = {
     const channels: CommsChannel[] = ["profile"];
     if (AdelanteEHR.isSmsOn(p.id) && p.phone) channels.push("sms");
     if (p.email) channels.push("email");
-    p.notifications = [
-      {
-        id: uid(),
-        apptId: input.apptId,
-        kind: input.kind,
-        at: new Date().toISOString(),
-        channels,
-      },
-      ...(p.notifications ?? []),
-    ].slice(0, 20);
+    const now = new Date().toISOString();
+    const entries: ApptNotification[] = channels.map((channel) => ({
+      id: uid(),
+      apptId: input.apptId,
+      kind: input.kind,
+      at: now,
+      channel,
+      state: channel === "profile" ? "delivered" : "queued",
+      sentAt: channel === "profile" ? now : undefined,
+      deliveredAt: channel === "profile" ? now : undefined,
+    }));
+    p.notifications = [...entries, ...(p.notifications ?? [])].slice(0, 40);
     emit();
+    // Mock async delivery for sms/email.
+    if (typeof setTimeout !== "undefined") {
+      for (const entry of entries) {
+        if (entry.channel === "profile") continue;
+        setTimeout(() => AdelanteEHR.promoteNotification(p.id, entry.id, "sent"), 400);
+        setTimeout(() => {
+          // ~15% simulated delivery failure on sms; email always succeeds
+          const fail = entry.channel === "sms" && Math.random() < 0.15;
+          AdelanteEHR.promoteNotification(
+            p.id,
+            entry.id,
+            fail ? "failed" : "delivered",
+            fail ? "Carrier reported undeliverable" : undefined,
+          );
+        }, 1400);
+      }
+    }
+  },
+  promoteNotification(
+    patientId: string,
+    notificationId: string,
+    state: NotificationState,
+    error?: string,
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.notifications?.find((x) => x.id === notificationId);
+    if (!p || !n) return;
+    n.state = state;
+    const now = new Date().toISOString();
+    if (state === "sent") n.sentAt = now;
+    if (state === "delivered") {
+      n.sentAt = n.sentAt ?? now;
+      n.deliveredAt = now;
+    }
+    if (state === "failed") {
+      n.error = error;
+      // Auto-generate a CM outreach task once per failed delivery.
+      const cmId = p.caseManagerId;
+      if (cmId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: cmId,
+          title: `Reach out — ${n.channel.toUpperCase()} delivery failed`,
+          detail: `${n.kind} notification did not reach ${p.firstName} ${p.lastName} via ${n.channel}.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "notification_failed",
+          dedupeKey: `notif-fail:${n.id}`,
+        });
+      }
+    }
+    emit();
+  },
+  resendNotification(patientId: string, notificationId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.notifications?.find((x) => x.id === notificationId);
+    if (!p || !n) return;
+    n.state = "queued";
+    n.error = undefined;
+    n.sentAt = undefined;
+    n.deliveredAt = undefined;
+    emit();
+    if (typeof setTimeout !== "undefined") {
+      setTimeout(() => AdelanteEHR.promoteNotification(p.id, n.id, "sent"), 300);
+      setTimeout(() => AdelanteEHR.promoteNotification(p.id, n.id, "delivered"), 900);
+    }
   },
   latestNotificationForAppt(patientId: string, apptId: string): ApptNotification | undefined {
     const p = patients.find((x) => x.id === patientId);
@@ -1040,8 +1174,28 @@ export const AdelanteEHR = {
   updateAppointmentStatus(id: string, status: SessionStatus) {
     const a = appointments.find((x) => x.id === id);
     if (!a) return;
+    const prev = a.status;
     a.status = status;
-    if (status === "attended") a.billingStatus = "submitted";
+    if (status === "attended") {
+      // Attended visits become "ready" claims (require billing coordinator submit).
+      a.billingStatus = "ready";
+      a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
+    }
+    // Auto-generate CM follow-up on no_show.
+    if (status === "no_show" && prev !== "no_show") {
+      const p = patients.find((x) => x.id === a.patientId);
+      if (p?.caseManagerId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId,
+          title: `Missed session — reach out to ${p.firstName}`,
+          detail: `No-show on ${new Date(a.start).toLocaleDateString()}. Confirm status and rebook.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "missed_appt",
+          dedupeKey: `missed:${a.id}`,
+        });
+      }
+    }
     emit();
   },
   recordScreener(patientId: string, result: ScreenerResult) {
@@ -1051,6 +1205,17 @@ export const AdelanteEHR = {
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
     if (result.crisisFlag) {
       p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
+      if (p.caseManagerId) {
+        AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId,
+          title: `Crisis flag — ${result.key.toUpperCase()}`,
+          detail: `Screener flagged elevated risk. Follow safety protocol and document contact today.`,
+          dueDate: new Date().toISOString().slice(0, 10),
+          origin: "screener_flag",
+          dedupeKey: `crisis:${p.id}:${result.key}`,
+        });
+      }
     }
     emit();
   },
@@ -1452,6 +1617,186 @@ export const AdelanteEHR = {
       [key]: { note, asOf, updatedAt: new Date().toISOString() },
     };
     emit();
+  },
+
+  // ---------- Case task queue ----------
+  listCaseTasks(): CaseTask[] {
+    return [...caseTasks];
+  },
+  caseTasksForCM(cmId: string): CaseTask[] {
+    return caseTasks.filter((t) => t.assignedTo === cmId);
+  },
+  caseTasksForPatient(patientId: string): CaseTask[] {
+    return caseTasks.filter((t) => t.patientId === patientId);
+  },
+  createCaseTask(input: {
+    patientId: string;
+    assignedTo: string;
+    title: string;
+    detail?: string;
+    dueDate: string;
+    origin?: CaseTaskOrigin;
+    dedupeKey?: string;
+  }): CaseTask | undefined {
+    if (input.dedupeKey) {
+      const existing = caseTasks.find(
+        (t) => t.dedupeKey === input.dedupeKey && t.status !== "done",
+      );
+      if (existing) return existing;
+    }
+    const task: CaseTask = {
+      id: uid(),
+      patientId: input.patientId,
+      assignedTo: input.assignedTo,
+      title: input.title,
+      detail: input.detail,
+      dueDate: input.dueDate,
+      status: "open",
+      origin: input.origin ?? "manual",
+      createdAt: new Date().toISOString(),
+      dedupeKey: input.dedupeKey,
+    };
+    caseTasks.unshift(task);
+    emit();
+    return task;
+  },
+  completeCaseTask(id: string) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    t.status = "done";
+    t.completedAt = new Date().toISOString();
+    emit();
+  },
+  reopenCaseTask(id: string) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    t.status = "open";
+    t.completedAt = undefined;
+    t.snoozedUntil = undefined;
+    emit();
+  },
+  snoozeCaseTask(id: string, days = 3) {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return;
+    const until = new Date();
+    until.setDate(until.getDate() + days);
+    t.status = "snoozed";
+    t.snoozedUntil = until.toISOString();
+    emit();
+  },
+
+  // ---------- Billing lifecycle ----------
+  /** Rate card (cents) for demo pricing. */
+  chargeForService(service?: ServiceType): number {
+    switch (service) {
+      case "intake":
+        return 22500;
+      case "therapy_individual":
+        return 16500;
+      case "med_management":
+        return 19500;
+      case "therapy_group":
+        return 9500;
+      case "case_management":
+        return 8000;
+      case "peer_support":
+        return 6500;
+      default:
+        return 15000;
+    }
+  },
+  transitionBilling(
+    apptId: string,
+    to: BillingStatus,
+    opts?: { actor?: string; note?: string; denialReason?: string },
+  ): { ok: true } | { ok: false; error: string } {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) return { ok: false, error: "Appointment not found." };
+    const from = a.billingStatus;
+    const allowed: Record<BillingStatus, BillingStatus[]> = {
+      draft: ["ready", "write_off"],
+      ready: ["submitted", "write_off", "draft"],
+      submitted: ["paid", "denied"],
+      denied: ["ready", "write_off"],
+      paid: [],
+      write_off: ["draft"],
+    };
+    if (!allowed[from].includes(to)) {
+      return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    }
+    if (to === "denied" && !opts?.denialReason) {
+      return { ok: false, error: "Denial reason is required." };
+    }
+    a.billingStatus = to;
+    if (to === "submitted") a.submittedAt = new Date().toISOString();
+    if (to === "paid") a.paidAt = new Date().toISOString();
+    if (to === "denied") a.denialReason = opts?.denialReason;
+    a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
+    a.billingHistory = [
+      ...(a.billingHistory ?? []),
+      {
+        id: uid(),
+        at: new Date().toISOString(),
+        actor: opts?.actor ?? "billing",
+        from,
+        to,
+        note: opts?.note ?? opts?.denialReason,
+      },
+    ];
+    emit();
+    return { ok: true };
+  },
+  /** ISL/self-pay export: all appointments on ISL lane in the given range. */
+  exportIslReport(range?: { from?: string; to?: string }): string {
+    const rows = appointments
+      .filter((a) => a.fundingLane === "isl_non_medi_cal" || a.fundingLane === "private_pay")
+      .filter((a) => (range?.from ? a.start >= range.from : true))
+      .filter((a) => (range?.to ? a.start <= range.to : true))
+      .sort((a, b) => a.start.localeCompare(b.start));
+    const header = [
+      "appt_id",
+      "date",
+      "patient_program_id",
+      "clinician",
+      "service_type",
+      "modality",
+      "duration_min",
+      "funding_lane",
+      "isl_reason",
+      "billing_status",
+      "charge_usd",
+    ].join(",");
+    const lines = rows.map((a) => {
+      const p = patients.find((x) => x.id === a.patientId);
+      const c = clinicians.find((x) => x.id === a.clinicianId);
+      const charge = ((a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType)) / 100).toFixed(2);
+      return [
+        a.id,
+        a.start.slice(0, 10),
+        p?.programId ?? a.patientId,
+        c?.name ?? a.clinicianId,
+        a.serviceType ?? "",
+        a.modality ?? "video",
+        a.durationMin,
+        a.fundingLane ?? "",
+        a.islReason ?? "",
+        a.billingStatus,
+        charge,
+      ]
+        .map((v) => String(v).replace(/,/g, ";"))
+        .join(",");
+    });
+    return [header, ...lines].join("\n");
+  },
+  /** Credentialing hard-stop: block booking with clinicians whose license expired. */
+  canBook(clinicianId: string): { ok: true } | { ok: false; reason: string } {
+    const c = clinicians.find((x) => x.id === clinicianId);
+    if (!c) return { ok: false, reason: "Clinician not found." };
+    const exp = c.licenseExpiresOn;
+    if (exp && +new Date(exp) < Date.now()) {
+      return { ok: false, reason: `License expired ${exp.slice(0, 10)}. Cannot book.` };
+    }
+    return { ok: true };
   },
 };
 
