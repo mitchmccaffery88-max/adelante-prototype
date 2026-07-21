@@ -2041,7 +2041,7 @@ export const AdelanteEHR = {
     // Use a stable dedupeKey so multiple visits don't duplicate the task.
     (this as typeof AdelanteEHR).createCaseTask({
       patientId: input.patientId,
-      assignedTo: patient?.assignedCaseManagerId ?? "",
+      assignedTo: patient?.caseManagerId ?? "",
       title: `Refill request: ${med.name} ${med.dose}`,
       detail:
         `${med.frequency} · prescriber ${med.prescriber}` +
