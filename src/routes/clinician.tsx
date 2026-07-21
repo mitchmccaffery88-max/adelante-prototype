@@ -747,11 +747,13 @@ function ApptCard({
   patients,
   launch,
   t,
+  endSession,
 }: {
   a: ReturnType<typeof AdelanteEHR.appointmentsForClinician>[number];
   patients: ReturnType<typeof AdelanteEHR.listPatients>;
   launch: (id: string) => void;
   t: (k: never) => string;
+  endSession: (id: string) => void;
 }) {
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
