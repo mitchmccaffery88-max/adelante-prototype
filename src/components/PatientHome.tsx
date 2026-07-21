@@ -40,6 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
+import { Pill } from "lucide-react";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -88,6 +89,7 @@ export function PatientHome() {
   const next = upcoming[0];
   const remaining = Math.max(0, 90 - patient.episodeDay);
   const goals = patient.goals ?? [];
+  const meds = AdelanteEHR.listMedications(patient.id);
 
   const now = Date.now();
   const futureAppts = [...appts]
