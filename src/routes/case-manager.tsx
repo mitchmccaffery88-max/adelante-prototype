@@ -35,6 +35,9 @@ import {
   CheckCircle2,
   RotateCw,
   HelpingHand,
+  ClipboardList,
+  Plus,
+  Clock,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
@@ -154,6 +157,9 @@ function CaseManagerPage() {
       </header>
 
       <div className="grid lg:grid-cols-3 gap-6">
+        <div className="lg:col-span-3">
+          {cmId && <TaskQueueCard cmId={cmId} onOpenPatient={setActiveId} />}
+        </div>
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-3">
             <h2 className="font-display text-lg text-navy flex items-center gap-2">
@@ -300,6 +306,7 @@ function CaseManagerPage() {
                   Open record
                 </Button>
               </Card>
+              {cmId && <PatientTasksCard patientId={active.id} cmId={cmId} />}
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
               <CoverageActionsCard patientId={active.id} />
