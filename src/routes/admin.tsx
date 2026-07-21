@@ -566,3 +566,59 @@ function NotificationHealthCard() {
     </Card>
   );
 }
+
+function VendorStatusCard() {
+  const status = useEhr(() => AdelanteEHR.vendorStatus());
+  const [pingedAt, setPingedAt] = useState<string | null>(null);
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between mb-3">
+        <h3 className="font-display text-lg text-navy flex items-center gap-2">
+          <ShieldCheck className="h-4 w-4 text-teal" /> Integrated vendors
+        </h3>
+        <Badge variant="outline" className="text-[10px]">mock</Badge>
+      </div>
+      <ul className="space-y-2 text-sm">
+        <li className="flex items-center justify-between border-b pb-2">
+          <div>
+            <div className="font-medium text-navy">Telehealth video</div>
+            <div className="text-[11px] text-muted-foreground font-mono">
+              {status.telehealth.name}
+            </div>
+          </div>
+          <Badge className="bg-gold/30 text-navy border-0 text-[10px]">
+            {status.telehealth.mode}
+          </Badge>
+        </li>
+        <li className="flex items-center justify-between">
+          <div>
+            <div className="font-medium text-navy">Medication management (eScribe)</div>
+            <div className="text-[11px] text-muted-foreground font-mono">
+              {status.erx.name}
+            </div>
+          </div>
+          <Badge className="bg-gold/30 text-navy border-0 text-[10px]">
+            {status.erx.mode}
+          </Badge>
+        </li>
+      </ul>
+      <div className="mt-3 flex items-center justify-between">
+        <p className="text-[10px] text-muted-foreground">
+          Adelante is the EHR of record. Vendors are swappable.
+          {pingedAt ? ` · Last test ${new Date(pingedAt).toLocaleTimeString()}` : ""}
+        </p>
+        <Button
+          size="sm"
+          variant="ghost"
+          className="h-7 text-[11px]"
+          onClick={() => {
+            setPingedAt(new Date().toISOString());
+            toast.success("Vendor connections OK (mock)");
+          }}
+        >
+          Test connections
+        </Button>
+      </div>
+    </Card>
+  );
+}
