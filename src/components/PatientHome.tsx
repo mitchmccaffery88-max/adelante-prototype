@@ -43,6 +43,7 @@ import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
+import { InstallAppButton } from "@/components/InstallAppButton";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -119,7 +120,7 @@ export function PatientHome() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
       {/* Welcome */}
       <Card className="p-6 border-2 bg-gradient-to-br from-card to-secondary/40">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="text-xs font-medium uppercase tracking-wider text-teal">
               {t("homeWelcomeBack")}
@@ -146,7 +147,7 @@ export function PatientHome() {
         </div>
       </Card>
 
-      <div className="grid sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
             <CalIcon className="h-4 w-4" /> {t("homeNextSession")}
@@ -215,7 +216,7 @@ export function PatientHome() {
             </>
           )}
           {next && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Button asChild variant="outline" size="sm">
                 <Link to="/schedule" search={{ reschedule: next.id }}>
                   <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
@@ -288,7 +289,7 @@ export function PatientHome() {
             {goals.map((g) => (
               <li
                 key={g.id}
-                className="flex items-start gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
+                className="flex items-center min-h-11 gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
                 onClick={() => cycleGoal(g.id, g.status)}
                 role="button"
                 aria-label={`Update goal: ${g.text}`}
@@ -321,6 +322,7 @@ export function PatientHome() {
         </Card>
       )}
 
+      <InstallAppButton />
       <TasksCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
       <SupportPlanCard patientId={patient.id} />
@@ -542,7 +544,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-[11px]"
+              className="min-h-11 min-w-11 text-[11px]"
               onClick={() => setOpen((v) => !v)}
             >
               Request refill
@@ -562,14 +564,14 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 text-[11px]"
+              className="min-h-11 text-[11px]"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+              className="min-h-11 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
               onClick={submit}
             >
               Send request

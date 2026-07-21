@@ -38,6 +38,7 @@ import {
   ClipboardList,
   Plus,
   Clock,
+  Filter,
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
@@ -103,6 +104,7 @@ function CaseManagerPage() {
   const [query, setQuery] = useState("");
   const [dobFrom, setDobFrom] = useState("");
   const [dobTo, setDobTo] = useState("");
+  const [filtersOpen, setFiltersOpen] = useState(false);
   const q = query.trim().toLowerCase();
   const caseload = rawCaseload.filter((p) => {
     if (q) {
@@ -167,47 +169,107 @@ function CaseManagerPage() {
             </h2>
             <Badge variant="outline">{caseload.length} clients</Badge>
           </div>
-          <div className="mb-3 flex flex-wrap items-end gap-3">
-            <div className="flex-1 min-w-[220px]">
-              <Label className="text-xs text-muted-foreground">Search</Label>
+          <div className="mb-3">
+            {/* Mobile: search + expandable filter row */}
+            <div className="flex items-center gap-2 sm:hidden">
               <Input
-                placeholder="Name, CIN, program ID, or DOB (YYYY-MM-DD)"
+                placeholder="Search name, CIN, program ID, or DOB"
                 value={query}
                 onChange={(e) => setQuery(e.target.value)}
+                className="flex-1 h-11"
               />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">DOB from</Label>
-              <Input
-                type="date"
-                value={dobFrom}
-                onChange={(e) => setDobFrom(e.target.value)}
-                className="w-[160px]"
-              />
-            </div>
-            <div>
-              <Label className="text-xs text-muted-foreground">DOB to</Label>
-              <Input
-                type="date"
-                value={dobTo}
-                onChange={(e) => setDobTo(e.target.value)}
-                className="w-[160px]"
-              />
-            </div>
-            {(dobFrom || dobTo || query) && (
               <Button
-                variant="ghost"
-                size="sm"
-                onClick={() => {
-                  setQuery("");
-                  setDobFrom("");
-                  setDobTo("");
-                }}
+                type="button"
+                variant="outline"
+                size="icon"
+                className="h-11 w-11 shrink-0"
+                aria-label={filtersOpen ? "Hide date filters" : "Show date filters"}
+                aria-expanded={filtersOpen}
+                onClick={() => setFiltersOpen((v) => !v)}
               >
-                Clear
+                <Filter className="h-4 w-4" />
               </Button>
+            </div>
+            {filtersOpen && (
+              <div className="mt-2 grid grid-cols-2 gap-3 sm:hidden">
+                <div>
+                  <Label className="text-xs text-muted-foreground">DOB from</Label>
+                  <Input
+                    type="date"
+                    value={dobFrom}
+                    onChange={(e) => setDobFrom(e.target.value)}
+                    className="w-full h-11"
+                  />
+                </div>
+                <div>
+                  <Label className="text-xs text-muted-foreground">DOB to</Label>
+                  <Input
+                    type="date"
+                    value={dobTo}
+                    onChange={(e) => setDobTo(e.target.value)}
+                    className="w-full h-11"
+                  />
+                </div>
+                {(dobFrom || dobTo || query) && (
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    className="col-span-2 h-11"
+                    onClick={() => {
+                      setQuery("");
+                      setDobFrom("");
+                      setDobTo("");
+                    }}
+                  >
+                    Clear filters
+                  </Button>
+                )}
+              </div>
             )}
+            {/* Desktop: single row of filters */}
+            <div className="hidden sm:flex flex-wrap items-end gap-3">
+              <div className="flex-1 min-w-[220px]">
+                <Label className="text-xs text-muted-foreground">Search</Label>
+                <Input
+                  placeholder="Name, CIN, program ID, or DOB (YYYY-MM-DD)"
+                  value={query}
+                  onChange={(e) => setQuery(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">DOB from</Label>
+                <Input
+                  type="date"
+                  value={dobFrom}
+                  onChange={(e) => setDobFrom(e.target.value)}
+                  className="w-[160px]"
+                />
+              </div>
+              <div>
+                <Label className="text-xs text-muted-foreground">DOB to</Label>
+                <Input
+                  type="date"
+                  value={dobTo}
+                  onChange={(e) => setDobTo(e.target.value)}
+                  className="w-[160px]"
+                />
+              </div>
+              {(dobFrom || dobTo || query) && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setQuery("");
+                    setDobFrom("");
+                    setDobTo("");
+                  }}
+                >
+                  Clear
+                </Button>
+              )}
+            </div>
           </div>
+          <div className="hidden sm:block">
           <Table>
             <TableHeader>
               <TableRow>
@@ -299,6 +361,103 @@ function CaseManagerPage() {
               ))}
             </TableBody>
           </Table>
+          </div>
+
+          {/* Mobile: card list */}
+          <div className="sm:hidden space-y-3">
+            {caseload.map((p) => {
+              const iso = lastContactAt(p);
+              const contactDays = iso
+                ? Math.floor((Date.now() - new Date(iso).getTime()) / 86400000)
+                : null;
+              const stale = contactDays !== null && contactDays > 7;
+              const pendingSwitch = AdelanteEHR.listProviderSwitches({
+                patientId: p.id,
+                status: "pending_review",
+              }).length;
+              return (
+                <Card
+                  key={p.id}
+                  className={`p-4 ${activeId === p.id ? "border-teal ring-1 ring-teal" : ""}`}
+                >
+                  <div className="flex items-start justify-between gap-2">
+                    <div className="min-w-0">
+                      <div className="font-medium text-navy">
+                        {p.firstName} {p.lastName}
+                      </div>
+                      <div className="text-xs text-muted-foreground font-mono">
+                        CIN: {p.cin ? `••••${p.cin.slice(-4)}` : "—"}
+                      </div>
+                    </div>
+                    <CoverageBadge status={p.coverage?.status} />
+                  </div>
+                  <dl className="mt-3 grid grid-cols-2 gap-x-3 gap-y-1.5 text-xs">
+                    <div>
+                      <dt className="text-muted-foreground">DOB</dt>
+                      <dd className="text-foreground">{p.dob ?? "—"}</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Episode day</dt>
+                      <dd className="text-foreground">{p.episodeDay}/90</dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Last contact</dt>
+                      <dd className={stale ? "text-destructive" : "text-foreground"}>
+                        {iso ? daysAgo(iso) : <span className="text-destructive">No contact</span>}
+                      </dd>
+                    </div>
+                    <div>
+                      <dt className="text-muted-foreground">Flags</dt>
+                      <dd className="flex flex-wrap gap-1 mt-0.5">
+                        {p.crisisFlag && (
+                          <Badge className="bg-destructive/15 text-destructive border-0 inline-flex items-center gap-1 text-[10px]">
+                            <AlertTriangle className="h-3 w-3" /> Crisis
+                          </Badge>
+                        )}
+                        {p.coverage?.ecmEligible && (
+                          <Badge className="bg-teal/15 text-teal border-0 text-[10px]">ECM</Badge>
+                        )}
+                        {pendingSwitch > 0 && (
+                          <Badge className="bg-warning/20 text-warning-foreground border-0 text-[10px]">
+                            Switch·{pendingSwitch}
+                          </Badge>
+                        )}
+                        {!p.crisisFlag && !p.coverage?.ecmEligible && pendingSwitch === 0 && (
+                          <span className="text-muted-foreground">—</span>
+                        )}
+                      </dd>
+                    </div>
+                  </dl>
+                  <div className="mt-3 grid grid-cols-3 gap-2">
+                    <Button
+                      size="sm"
+                      className="h-11 col-span-1"
+                      variant={activeId === p.id ? "default" : "outline"}
+                      onClick={() => setActiveId(p.id)}
+                    >
+                      Open
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-11 col-span-1"
+                      variant="ghost"
+                      onClick={() => setProfileId(p.id)}
+                    >
+                      Profile
+                    </Button>
+                    <Button
+                      size="sm"
+                      className="h-11 col-span-1"
+                      variant="secondary"
+                      onClick={() => setRecordId(p.id)}
+                    >
+                      Record
+                    </Button>
+                  </div>
+                </Card>
+              );
+            })}
+          </div>
         </Card>
 
         <div className="space-y-4">

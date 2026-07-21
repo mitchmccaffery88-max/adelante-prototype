@@ -1,6 +1,8 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
+import { MobileNav } from "@/components/MobileNav";
+import { InstallAppButton } from "@/components/InstallAppButton";
 import {
   Heart,
   ShieldCheck,
@@ -61,7 +63,7 @@ export function AppShell() {
   ];
 
   return (
-    <div className="min-h-screen flex flex-col">
+    <div className="min-h-dvh flex flex-col">
       <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 group">
@@ -102,7 +104,7 @@ export function AppShell() {
                 aria-label="Switch language to English"
                 aria-pressed={lang === "en"}
                 className={cn(
-                  "px-2.5 py-1 rounded-full transition-colors",
+                  "min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-full transition-colors",
                   lang === "en" ? "bg-navy text-navy-foreground" : "text-foreground/60",
                 )}
               >
@@ -113,7 +115,7 @@ export function AppShell() {
                 aria-label="Cambiar idioma a español"
                 aria-pressed={lang === "es"}
                 className={cn(
-                  "px-2.5 py-1 rounded-full transition-colors",
+                  "min-h-[44px] min-w-[44px] px-2.5 py-1 rounded-full transition-colors",
                   lang === "es" ? "bg-navy text-navy-foreground" : "text-foreground/60",
                 )}
               >
@@ -163,7 +165,7 @@ export function AppShell() {
 
             {/* Account menu — sign in/out only. Persona switcher moved to footer. */}
             <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-2.5 py-1 text-xs font-medium text-navy hover:bg-navy/10">
+              <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full bg-navy/5 px-2.5 py-1 min-h-[44px] text-xs font-medium text-navy hover:bg-navy/10">
                 <span className="h-6 w-6 rounded-full bg-navy text-navy-foreground grid place-items-center text-[10px]">
                   {patient?.firstName?.[0] ?? "?"}
                 </span>
@@ -194,55 +196,35 @@ export function AppShell() {
           </div>
         </div>
 
-        {/* Mobile nav */}
-        <div className="md:hidden border-t overflow-x-auto">
-          <div className="flex gap-1 px-3 py-2 min-w-max">
-            {patientNav.map((n) => {
-              const Icon = n.icon;
-              const active = pathname === n.to;
-              return (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
-                    active
-                      ? "bg-navy text-navy-foreground"
-                      : "text-foreground/70 bg-secondary",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {n.label}
-                </Link>
-              );
-            })}
-            {!isPatientSurface && (
-              <span className="mx-1 self-center text-muted-foreground/50">·</span>
-            )}
-            {!isPatientSurface && staffNav.map((n) => {
-              const Icon = n.icon;
-              const active = pathname === n.to;
-              return (
-                <Link
-                  key={n.to}
-                  to={n.to}
-                  className={cn(
-                    "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap",
-                    active
-                      ? "bg-navy text-navy-foreground"
-                      : "text-foreground/60 border border-dashed",
-                  )}
-                >
-                  <Icon className="h-3.5 w-3.5" />
-                  {n.label}
-                </Link>
-              );
-            })}
+        {/* Mobile nav — staff links only; patient nav lives in the bottom tab bar. */}
+        {!isPatientSurface && (
+          <div className="md:hidden border-t overflow-x-auto">
+            <div className="flex gap-1 px-3 py-2 min-w-max">
+              {staffNav.map((n) => {
+                const Icon = n.icon;
+                const active = pathname === n.to;
+                return (
+                  <Link
+                    key={n.to}
+                    to={n.to}
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px]",
+                      active
+                        ? "bg-navy text-navy-foreground"
+                        : "text-foreground/60 border border-dashed",
+                    )}
+                  >
+                    <Icon className="h-3.5 w-3.5" />
+                    {n.label}
+                  </Link>
+                );
+              })}
+            </div>
           </div>
-        </div>
+        )}
       </header>
 
-      <main className="flex-1">
+      <main className={cn("flex-1", isPatientSurface && "pb-24 md:pb-0")}>
         <Outlet />
       </main>
 
