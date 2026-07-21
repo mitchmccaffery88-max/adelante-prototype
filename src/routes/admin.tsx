@@ -223,6 +223,7 @@ function AdminPage() {
           <ReferralTrackerCard referrals={referrals} />
           <CredentialingCard />
           <NotificationHealthCard />
+          <VendorStatusCard />
           <AuditLogCard events={consentEvents} />
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
