@@ -418,6 +418,10 @@ function AuditLogCard({
         <h3 className="font-display text-lg text-navy flex items-center gap-2">
           <ScrollText className="h-4 w-4 text-teal" /> Consent audit log
         </h3>
+        <div className="flex items-center gap-2">
+        <Link to="/admin-audit" className="text-[11px] text-teal underline underline-offset-2">
+          Full log
+        </Link>
         <Select value={purpose} onValueChange={setPurpose}>
           <SelectTrigger className="h-8 w-[130px] text-xs"><SelectValue /></SelectTrigger>
           <SelectContent>
@@ -428,6 +432,7 @@ function AuditLogCard({
             <SelectItem value="hipaa">HIPAA</SelectItem>
           </SelectContent>
         </Select>
+        </div>
       </div>
       {filtered.length === 0 ? (
         <p className="text-xs text-muted-foreground">No consent changes recorded.</p>
