@@ -577,7 +577,7 @@ const dict = {
   },
 } as const;
 
-type Key = keyof typeof dict.en;
+export type Key = keyof typeof dict.en;
 
 const I18nCtx = createContext<{
   lang: Lang;
