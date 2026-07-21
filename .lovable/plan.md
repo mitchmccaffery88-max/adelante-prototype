@@ -1,48 +1,54 @@
-# MVP Polish — Pass 3
+# MVP Polish Pass 4
 
-Pass 2 landed billing, tasks, and notification realism. Pass 3 closes the remaining rough edges before we consider new features. Grouped by user impact.
+Scope: Standard (1–2 tracks combined). Focus on **Patient Flow + Spanish i18n**, **Clinician Workspace Polish**, and a **WCAG AA Accessibility Sweep**. Admin/reporting depth deferred to a follow-up pass.
 
-## 1. Shared UX primitives (foundation)
-- `src/components/EmptyState.tsx`: icon + title + description + optional CTA. Replaces the ad-hoc "No X yet" divs in Billing, CM tasks, Clinician appts, Patient notifications.
-- `src/components/LoadingSkeleton.tsx`: table / card / list variants using shadcn `Skeleton`. Wire into routes that already have `useQuery` states.
-- Route-level error boundaries per role route (`/billing`, `/case-manager`, `/clinician`, `/admin`, `/patient`) so one bad record doesn't blank the workspace.
+## 1. Patient Flow + Spanish i18n
 
-## 2. Client Record Drawer parity
-- Tasks tab: reuse Pass-2 `caseTasks` store filtered by `patientId`; add / complete / snooze inline.
-- Coordination log filters: by agency type, date range, and outcome.
-- Peer notes: add `modality` field (Text / Call / In-person / Group) matching clinician SOAP note modality; surface in the check-in list.
+**Goal:** A patient can complete their journey (home → schedule → check-in → profile) entirely in Spanish, at a 6th-grade reading level.
 
-## 3. Admin experience
-- Surface audit log with filters (actor role, action, patient, date range) — the events already exist, they just aren't rendered.
-- Credentialing panel: show clinicians with license expiring in ≤30 days (mirrors Billing's hard-stop signal on the admin side).
-- Notification failure digest: count of failed SMS/email in the last 24h with a "regenerate tasks" action.
+- Expand `src/lib/i18n.ts` dictionary with keys for: Schedule page, Reschedule dialog, Check-in flow, Care Plan card, Profile dialog, Medi-Cal status, Notifications toasts.
+- Wire `useI18n()` into:
+  - `src/routes/schedule.tsx` (labels, service-type names, modality, conflict messages)
+  - `src/components/PatientProfileDialog.tsx`
+  - Care Plan + Goals cards on `src/routes/patient.tsx`
+  - Toast/notification strings surfaced to patients
+- Add a persistent language toggle (EN / ES) in the patient header; persist to localStorage.
+- Simplify remaining jargon: "modality" → "how you meet", "credentialing" hidden from patient view, "episode" → "care period".
+- Add a "Need help?" support link on every patient screen (single component).
 
-## 4. Patient flow polish
-- Consent capture: currently displayed at bottom of profile but never asks for a fresh signature when re-consent is due. Add a "Consent needs renewal" banner and simple checkbox capture that writes an audit event.
-- Screener → crisis flow: crisis-flag screener already spawns a CM task; also show the patient a warm-handoff card ("A team member will call you within X hours") instead of only a toast.
-- i18n gap: `useI18n` is wired only in `PatientHome`. Extend to `schedule.tsx`, `intake.tsx`, and consent copy. Keep the Spanish stub, but ensure every string routes through `t()`.
+## 2. Clinician Workspace Polish
 
-## 5. Accessibility & mobile pass
-- Icon-only buttons across `case-manager.tsx`, `billing.tsx`, `clinician.tsx`, `ClientRecordDrawer.tsx` need `aria-label`s.
-- Replace `h-screen` with `h-dvh` on any full-height layout.
-- Verify tap targets on Patient Home action tiles are ≥44px.
-- Confirm one `<main>` per route.
+**Goal:** Reduce clicks between caseload → appointment → note → care plan.
 
-## Out of scope (call out, don't build)
-- New feature surfaces (groups, messaging, document e-sign, real Healthie integration).
-- Real SMS/email vendor wiring — mock stays.
-- Roles beyond the current four.
+- Add a **caseload filter bar** to `src/routes/clinician.tsx`: search by name/CIN, filter by next-appointment window (today / this week / overdue), risk flag.
+- Add a **Recent SOAP notes** column showing last note date + modality per client; click opens the note in a drawer.
+- On the appointment detail, prefill SOAP note with: service type, modality, duration, goals from active Care Plan.
+- Add a lightweight **Goal progress sparkline** (last 4 check-ins) on the Care Plan card.
+- Surface **credentialing warning banner** (reuse `expiringClinicianLicenses`) at the top of the clinician workspace when the signed-in clinician's own license expires <30 days.
+
+## 3. Accessibility Sweep (WCAG AA)
+
+**Goal:** Pass the critical + warning tiers of the a11y checklist across all workspaces.
+
+- **Icon-only buttons:** add `aria-label` to every `size="icon"` Button across drawers, dialogs, tables (Client Record Drawer, Case Manager, Clinician, Admin, Billing, Schedule).
+- **Landmarks:** ensure exactly one `<main>` per route, rendered in `__root.tsx` around `<Outlet />` if not already; remove any duplicates in child routes.
+- **Headings:** verify no skipped levels on patient/clinician/admin/billing routes.
+- **Color tokens:** replace any hardcoded `text-gray-*` / `bg-white` / arbitrary hex with `text-foreground` / `text-muted-foreground` / `bg-background` / `bg-card` tokens.
+- **Focus states:** add `focus-visible:ring-2 focus-visible:ring-ring` to any custom-styled clickable divs; convert `onClick` divs to `<button>` where feasible.
+- **Forms:** confirm every `Input` / `Select` / `Textarea` has an associated `Label` (esp. `TimePicker`, ClientRecordDrawer tabs, referral form CIN/DOB, schedule filters).
+- **Mobile tap targets:** bump icon buttons in patient views to `min-h-11 min-w-11`.
+- **`h-screen` → `h-dvh`** on any full-height patient layout.
+- **`lang` attribute** on `<html>` reflects current i18n locale (updates on toggle).
+- **ReadAloud coverage:** ensure ReadAloudButton is present on Landing, Patient Home, and Schedule confirmation screens.
+
+## Out of scope (deferred)
+
+- Admin/reporting depth (funding lane utilization report, episode outcomes dashboard, audit-log filters, CSV exports) — plan separately in Pass 5.
+- New features; this is polish only.
 
 ## Technical notes
-- All work is additive to existing files; no schema breaks.
-- Shared primitives land first so sections 2–4 can adopt them as they go.
-- Estimated 5–7 focused edits per section; type-safe end-to-end.
 
-## Suggested order
-1. Section 1 (primitives + boundaries) — unblocks everything else
-2. Section 2 (drawer parity) — highest CM value
-3. Section 3 (admin surfaces) — makes existing data visible
-4. Section 4 (patient polish) — user-facing trust
-5. Section 5 (a11y sweep) — final pass
-
-Tell me which sections to include, or say "all" and I'll work top-to-bottom.
+- No new dependencies.
+- No schema/EHR model changes — this is UI + i18n + a11y work.
+- All new strings routed through `useI18n()`; English keys stay as source of truth, Spanish additive.
+- Verify with `tsgo` after edits; spot-check patient + clinician routes visually.
