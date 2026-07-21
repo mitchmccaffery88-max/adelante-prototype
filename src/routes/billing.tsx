@@ -8,23 +8,22 @@ import {
   type FundingLane,
 } from "@/lib/ehr";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  Building2,
-  Check,
-  Download,
-  FileText,
-  ShieldCheck,
-  X,
-} from "lucide-react";
+import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 
 export const Route = createFileRoute("/billing")({
   head: () => ({
     meta: [
       { title: "Billing coordinator — Adelante" },
-      { name: "description", content: "Claims worklist, ISL non-Medi-Cal reportable encounters, code & rate table, and credentialing tracker." },
+      {
+        name: "description",
+        content:
+          "Claims worklist, ISL non-Medi-Cal reportable encounters, code & rate table, and credentialing tracker.",
+      },
       { property: "og:title", content: "Billing coordinator — Adelante" },
-      { property: "og:description", content: "Claims worklist, ISL reportable encounters, code & rate table, credentialing." },
+      {
+        property: "og:description",
+        content: "Claims worklist, ISL reportable encounters, code & rate table, credentialing.",
+      },
     ],
   }),
   component: BillingPage,
@@ -43,11 +42,41 @@ const LANES: { key: FundingLane; label: string }[] = [
 // Tulare-scoped mock rate table (placeholder — real rates come from DHCS + contracts).
 const RATE_TABLE = [
   { code: "H0031", desc: "MH assessment", medi_cal: "$118.42", dmc_ods: "—", isl: "reportable" },
-  { code: "H0004", desc: "Individual counseling (SUD)", medi_cal: "—", dmc_ods: "$92.10", isl: "reportable" },
-  { code: "90834", desc: "Psychotherapy 45 min", medi_cal: "$96.55", dmc_ods: "—", isl: "reportable" },
-  { code: "90837", desc: "Psychotherapy 60 min", medi_cal: "$142.03", dmc_ods: "—", isl: "reportable" },
-  { code: "T1017", desc: "Targeted case management", medi_cal: "$32.18", dmc_ods: "—", isl: "reportable" },
-  { code: "H2019", desc: "Rehab / recovery services", medi_cal: "—", dmc_ods: "$68.75", isl: "reportable" },
+  {
+    code: "H0004",
+    desc: "Individual counseling (SUD)",
+    medi_cal: "—",
+    dmc_ods: "$92.10",
+    isl: "reportable",
+  },
+  {
+    code: "90834",
+    desc: "Psychotherapy 45 min",
+    medi_cal: "$96.55",
+    dmc_ods: "—",
+    isl: "reportable",
+  },
+  {
+    code: "90837",
+    desc: "Psychotherapy 60 min",
+    medi_cal: "$142.03",
+    dmc_ods: "—",
+    isl: "reportable",
+  },
+  {
+    code: "T1017",
+    desc: "Targeted case management",
+    medi_cal: "$32.18",
+    dmc_ods: "—",
+    isl: "reportable",
+  },
+  {
+    code: "H2019",
+    desc: "Rehab / recovery services",
+    medi_cal: "—",
+    dmc_ods: "$68.75",
+    isl: "reportable",
+  },
 ];
 
 type Tab = "claims" | "isl" | "rates" | "credentials";
@@ -166,15 +195,35 @@ function BillingPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
       <header>
         <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
-        <p className="text-sm text-muted-foreground">Tulare County pilot · 7 funding lanes tracked separately from billing status.</p>
+        <p className="text-sm text-muted-foreground">
+          Tulare County pilot · 7 funding lanes tracked separately from billing status.
+        </p>
       </header>
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
-        <Kpi label="Outstanding" value={DOLLARS(kpis.outstandingCents)} sub={`${kpis.byStatus.ready + kpis.byStatus.submitted} claims`} />
-        <Kpi label="Paid" value={DOLLARS(kpis.paidCents)} sub={`${kpis.byStatus.paid} claims`} tone="teal" />
-        <Kpi label="Denied" value={DOLLARS(kpis.deniedCents)} sub={`${kpis.byStatus.denied} claims`} tone="destructive" />
-        <Kpi label="Drafts / write-offs" value={String(kpis.byStatus.draft + kpis.byStatus.write_off)} sub={`${kpis.byStatus.draft} draft · ${kpis.byStatus.write_off} write-off`} />
+        <Kpi
+          label="Outstanding"
+          value={DOLLARS(kpis.outstandingCents)}
+          sub={`${kpis.byStatus.ready + kpis.byStatus.submitted} claims`}
+        />
+        <Kpi
+          label="Paid"
+          value={DOLLARS(kpis.paidCents)}
+          sub={`${kpis.byStatus.paid} claims`}
+          tone="teal"
+        />
+        <Kpi
+          label="Denied"
+          value={DOLLARS(kpis.deniedCents)}
+          sub={`${kpis.byStatus.denied} claims`}
+          tone="destructive"
+        />
+        <Kpi
+          label="Drafts / write-offs"
+          value={String(kpis.byStatus.draft + kpis.byStatus.write_off)}
+          sub={`${kpis.byStatus.draft} draft · ${kpis.byStatus.write_off} write-off`}
+        />
       </div>
 
       {/* Billing entity toggle — surfaces the unresolved contract-type decision */}
@@ -182,7 +231,9 @@ function BillingPage() {
         <Building2 className="h-4 w-4 text-amber-700 shrink-0" />
         <div className="flex-1">
           <div className="font-medium text-amber-900">Billing entity</div>
-          <div className="text-xs text-amber-800">Contract-type decision unresolved — toggle here for demo.</div>
+          <div className="text-xs text-amber-800">
+            Contract-type decision unresolved — toggle here for demo.
+          </div>
         </div>
         <div className="rounded-full bg-white p-0.5 flex text-xs border">
           {(["bagga_npi", "adelante"] as const).map((k) => (
@@ -203,24 +254,28 @@ function BillingPage() {
         <div>
           <div className="font-medium text-navy">ISL reportable encounters — mandate 1/1/2027</div>
           <div className="text-xs text-navy/80">
-            Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but county-reportable.
-            An annual export is stubbed on the ISL tab.
+            Uninsured, benefit-exhausted, and restricted-setting encounters are non-billable but
+            county-reportable. An annual export is stubbed on the ISL tab.
           </div>
         </div>
       </div>
 
       <div className="flex flex-wrap gap-2 border-b">
-        {([
-          { k: "claims", label: "Claims worklist" },
-          { k: "isl", label: `ISL (${islRows.length})` },
-          { k: "rates", label: "Code & rate table" },
-          { k: "credentials", label: "Credentialing" },
-        ] as const).map((x) => (
+        {(
+          [
+            { k: "claims", label: "Claims worklist" },
+            { k: "isl", label: `ISL (${islRows.length})` },
+            { k: "rates", label: "Code & rate table" },
+            { k: "credentials", label: "Credentialing" },
+          ] as const
+        ).map((x) => (
           <button
             key={x.k}
             onClick={() => setTab(x.k)}
             className={`px-3 py-2 text-sm border-b-2 -mb-px ${
-              tab === x.k ? "border-navy text-navy font-medium" : "border-transparent text-muted-foreground"
+              tab === x.k
+                ? "border-navy text-navy font-medium"
+                : "border-transparent text-muted-foreground"
             }`}
           >
             {x.label}
@@ -239,7 +294,9 @@ function BillingPage() {
             >
               <option value="all">All lanes</option>
               {LANES.map((l) => (
-                <option key={l.key} value={l.key}>{l.label}</option>
+                <option key={l.key} value={l.key}>
+                  {l.label}
+                </option>
               ))}
             </select>
             <label className="text-muted-foreground">Status:</label>
@@ -249,8 +306,12 @@ function BillingPage() {
               className="rounded-md border bg-card px-2 py-1"
             >
               <option value="all">All statuses</option>
-              {(["draft", "ready", "submitted", "paid", "denied", "write_off"] as BillingStatus[]).map((s) => (
-                <option key={s} value={s}>{s.replace("_", " ")}</option>
+              {(
+                ["draft", "ready", "submitted", "paid", "denied", "write_off"] as BillingStatus[]
+              ).map((s) => (
+                <option key={s} value={s}>
+                  {s.replace("_", " ")}
+                </option>
               ))}
             </select>
             {filtered.length === 0 && (
@@ -274,32 +335,47 @@ function BillingPage() {
                 {filtered.map(({ appt, patient, clinician, lane }) => {
                   const cents = appt.chargeCents ?? AdelanteEHR.chargeForService(appt.serviceType);
                   return (
-                  <tr key={appt.id} className="border-t">
-                    <td className="px-3 py-2 whitespace-nowrap">{new Date(appt.start).toLocaleDateString()}</td>
-                    <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
-                    <td className="px-3 py-2">{clinician?.name ?? "—"}</td>
-                    <td className="px-3 py-2">
-                      <span className="text-[10px] rounded-full px-2 py-0.5 bg-navy/10 text-navy">
-                        {LANES.find((l) => l.key === lane)?.label}
-                      </span>
-                    </td>
-                    <td className="px-3 py-2 font-mono text-xs">{DOLLARS(cents)}</td>
-                    <td className="px-3 py-2">
-                      <span className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[appt.billingStatus]}`}>
-                        {appt.billingStatus.replace("_", " ")}
-                      </span>
-                      {appt.denialReason && (
-                        <div className="text-[10px] text-destructive mt-0.5">{appt.denialReason}</div>
-                      )}
-                    </td>
-                    <td className="px-3 py-2 text-right">
-                      <ClaimActions appt={appt} lane={lane} onAdvance={advance} onDeny={markDenied} />
-                    </td>
-                  </tr>
+                    <tr key={appt.id} className="border-t">
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {new Date(appt.start).toLocaleDateString()}
+                      </td>
+                      <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
+                      <td className="px-3 py-2">{clinician?.name ?? "—"}</td>
+                      <td className="px-3 py-2">
+                        <span className="text-[10px] rounded-full px-2 py-0.5 bg-navy/10 text-navy">
+                          {LANES.find((l) => l.key === lane)?.label}
+                        </span>
+                      </td>
+                      <td className="px-3 py-2 font-mono text-xs">{DOLLARS(cents)}</td>
+                      <td className="px-3 py-2">
+                        <span
+                          className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[appt.billingStatus]}`}
+                        >
+                          {appt.billingStatus.replace("_", " ")}
+                        </span>
+                        {appt.denialReason && (
+                          <div className="text-[10px] text-destructive mt-0.5">
+                            {appt.denialReason}
+                          </div>
+                        )}
+                      </td>
+                      <td className="px-3 py-2 text-right">
+                        <ClaimActions
+                          appt={appt}
+                          lane={lane}
+                          onAdvance={advance}
+                          onDeny={markDenied}
+                        />
+                      </td>
+                    </tr>
                   );
                 })}
                 {filtered.length === 0 && (
-                  <tr><td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">No claims to show.</td></tr>
+                  <tr>
+                    <td colSpan={7} className="px-3 py-8 text-center text-sm text-muted-foreground">
+                      No claims to show.
+                    </td>
+                  </tr>
                 )}
               </tbody>
             </table>
@@ -310,12 +386,18 @@ function BillingPage() {
       {tab === "isl" && (
         <section className="space-y-3">
           <p className="text-sm text-muted-foreground">
-            Non-Medi-Cal, non-billable encounters that are county-reportable for uninsured / benefit-exhausted patients.
+            Non-Medi-Cal, non-billable encounters that are county-reportable for uninsured /
+            benefit-exhausted patients.
           </p>
           <div className="rounded-xl border bg-card p-4 flex flex-wrap items-center gap-4">
             <div className="text-sm">
-              <div className="font-medium">{islRows.length} reportable encounter{islRows.length === 1 ? "" : "s"} this period.</div>
-              <div className="text-xs text-muted-foreground">Charges shown at demo rates; export includes appt id, program id, clinician, service, and lane.</div>
+              <div className="font-medium">
+                {islRows.length} reportable encounter{islRows.length === 1 ? "" : "s"} this period.
+              </div>
+              <div className="text-xs text-muted-foreground">
+                Charges shown at demo rates; export includes appt id, program id, clinician,
+                service, and lane.
+              </div>
             </div>
             <button
               onClick={downloadIsl}
@@ -340,11 +422,21 @@ function BillingPage() {
                 <tbody>
                   {islRows.map(({ appt, patient }) => (
                     <tr key={appt.id} className="border-t">
-                      <td className="px-3 py-2 whitespace-nowrap">{new Date(appt.start).toLocaleDateString()}</td>
+                      <td className="px-3 py-2 whitespace-nowrap">
+                        {new Date(appt.start).toLocaleDateString()}
+                      </td>
                       <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs">{appt.serviceType?.replace("_", " ") ?? "—"}</td>
-                      <td className="px-3 py-2 text-xs text-muted-foreground">{appt.islReason ?? "uninsured"}</td>
-                      <td className="px-3 py-2 font-mono text-xs">{DOLLARS(appt.chargeCents ?? AdelanteEHR.chargeForService(appt.serviceType))}</td>
+                      <td className="px-3 py-2 text-xs">
+                        {appt.serviceType?.replace("_", " ") ?? "—"}
+                      </td>
+                      <td className="px-3 py-2 text-xs text-muted-foreground">
+                        {appt.islReason ?? "uninsured"}
+                      </td>
+                      <td className="px-3 py-2 font-mono text-xs">
+                        {DOLLARS(
+                          appt.chargeCents ?? AdelanteEHR.chargeForService(appt.serviceType),
+                        )}
+                      </td>
                     </tr>
                   ))}
                 </tbody>
@@ -379,7 +471,8 @@ function BillingPage() {
             </tbody>
           </table>
           <p className="p-3 text-xs text-muted-foreground">
-            Versioned rate table scoped to Tulare · demo values · billing entity: {entity === "bagga_npi" ? "Bagga's clinic NPI" : "Adelante"}.
+            Versioned rate table scoped to Tulare · demo values · billing entity:{" "}
+            {entity === "bagga_npi" ? "Bagga's clinic NPI" : "Adelante"}.
             {/* TODO(adelante): source rates from DHCS + local contracts */}
           </p>
         </section>
@@ -416,23 +509,30 @@ function BillingPage() {
                             c.mediCalStatus === "active"
                               ? "bg-teal/15 text-teal"
                               : c.mediCalStatus === "pending"
-                              ? "bg-gold/20 text-navy"
-                              : "bg-destructive/10 text-destructive"
+                                ? "bg-gold/20 text-navy"
+                                : "bg-destructive/10 text-destructive"
                           }`}
                         >
                           {c.mediCalStatus}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-mono text-xs">LIC-{1000 + i}</td>
-                      <td className="px-3 py-2 font-mono text-xs">193{i}45678{i}</td>
+                      <td className="px-3 py-2 font-mono text-xs">
+                        193{i}45678{i}
+                      </td>
                       <td className="px-3 py-2 font-mono text-xs">{i === 0 ? "BR1234567" : "—"}</td>
                       <td className="px-3 py-2 font-mono text-xs">{i === 0 ? "DMC-0042" : "—"}</td>
                       <td className="px-3 py-2 text-xs">{c.licenseExpiresOn ?? "—"}</td>
                       <td className="px-3 py-2">
                         {canBook.ok ? (
-                          <span className="text-[10px] rounded-full px-2 py-0.5 bg-teal/15 text-teal">Allowed</span>
+                          <span className="text-[10px] rounded-full px-2 py-0.5 bg-teal/15 text-teal">
+                            Allowed
+                          </span>
                         ) : (
-                          <span className="text-[10px] rounded-full px-2 py-0.5 bg-destructive/10 text-destructive" title={canBook.reason}>
+                          <span
+                            className="text-[10px] rounded-full px-2 py-0.5 bg-destructive/10 text-destructive"
+                            title={canBook.reason}
+                          >
                             Blocked
                           </span>
                         )}
@@ -445,7 +545,8 @@ function BillingPage() {
           </div>
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
             <ShieldCheck className="h-3.5 w-3.5 text-teal" />
-            Expired licenses now hard-stop booking on the clinician surface via <code>AdelanteEHR.canBook</code>.
+            Expired licenses now hard-stop booking on the clinician surface via{" "}
+            <code>AdelanteEHR.canBook</code>.
           </div>
         </section>
       )}
@@ -465,11 +566,7 @@ function Kpi({
   tone?: "teal" | "destructive";
 }) {
   const toneClass =
-    tone === "teal"
-      ? "text-teal"
-      : tone === "destructive"
-        ? "text-destructive"
-        : "text-navy";
+    tone === "teal" ? "text-teal" : tone === "destructive" ? "text-destructive" : "text-navy";
   return (
     <div className="rounded-xl border bg-card p-3">
       <div className="text-xs text-muted-foreground">{label}</div>
@@ -495,7 +592,8 @@ function ClaimActions({
     return <span className="text-[10px] text-muted-foreground">Non-billable</span>;
   }
   const s = appt.billingStatus;
-  const btn = "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-secondary";
+  const btn =
+    "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-secondary";
   return (
     <div className="inline-flex flex-wrap gap-1 justify-end">
       {s === "draft" && (
@@ -513,7 +611,9 @@ function ClaimActions({
           <button className={btn} onClick={() => onAdvance(appt, "submitted")}>
             <FileText className="h-3 w-3" /> Submit
           </button>
-          <button className={btn} onClick={() => onAdvance(appt, "draft")}>Back to draft</button>
+          <button className={btn} onClick={() => onAdvance(appt, "draft")}>
+            Back to draft
+          </button>
         </>
       )}
       {s === "submitted" && (
@@ -527,11 +627,15 @@ function ClaimActions({
         </>
       )}
       {s === "denied" && (
-        <button className={btn} onClick={() => onAdvance(appt, "ready")}>Resubmit</button>
+        <button className={btn} onClick={() => onAdvance(appt, "ready")}>
+          Resubmit
+        </button>
       )}
       {s === "paid" && <span className="text-[10px] text-teal">Closed</span>}
       {s === "write_off" && (
-        <button className={btn} onClick={() => onAdvance(appt, "draft")}>Reopen</button>
+        <button className={btn} onClick={() => onAdvance(appt, "draft")}>
+          Reopen
+        </button>
       )}
     </div>
   );

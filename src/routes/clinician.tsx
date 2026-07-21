@@ -95,17 +95,11 @@ function ClinicianPage() {
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
   const bookConflict = useEhr(() =>
     book.start && clinicianId
-      ? AdelanteEHR.findApptConflict(
-          clinicianId,
-          new Date(book.start).toISOString(),
-        )
+      ? AdelanteEHR.findApptConflict(clinicianId, new Date(book.start).toISOString())
       : undefined,
   );
-  const bookConflictPatient =
-    bookConflict && patients.find((p) => p.id === bookConflict.patientId);
-  const bookLocations = useEhr(() =>
-    AdelanteEHR.locationsForService(book.serviceType),
-  );
+  const bookConflictPatient = bookConflict && patients.find((p) => p.id === bookConflict.patientId);
+  const bookLocations = useEhr(() => AdelanteEHR.locationsForService(book.serviceType));
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [newGoal, setNewGoal] = useState("");
@@ -156,13 +150,18 @@ function ClinicianPage() {
   };
   const endSession = (id: string) => {
     const s = AdelanteEHR.endTelehealthSession(id, "clinician_ended");
-    if (s) toast.success("Session ended", { description: `${Math.round((s.durationSec ?? 0) / 60)} min logged` });
+    if (s)
+      toast.success("Session ended", {
+        description: `${Math.round((s.durationSec ?? 0) / 60)} min logged`,
+      });
   };
 
   // Bucket appointments by time horizon for the schedule view.
   const now = Date.now();
   const endOfToday = (() => {
-    const d = new Date(); d.setHours(23, 59, 59, 999); return d.getTime();
+    const d = new Date();
+    d.setHours(23, 59, 59, 999);
+    return d.getTime();
   })();
   const endOfWeek = (() => {
     const d = new Date();
@@ -173,8 +172,12 @@ function ClinicianPage() {
     return d.getTime();
   })();
   const sortedAppts = [...appts].sort((a, b) => +new Date(a.start) - +new Date(b.start));
-  const todayAppts = sortedAppts.filter((a) => +new Date(a.start) <= endOfToday && +new Date(a.start) >= now - 7 * 24 * 3600 * 1000);
-  const weekAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek);
+  const todayAppts = sortedAppts.filter(
+    (a) => +new Date(a.start) <= endOfToday && +new Date(a.start) >= now - 7 * 24 * 3600 * 1000,
+  );
+  const weekAppts = sortedAppts.filter(
+    (a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek,
+  );
   const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
 
   // Pre-fill the notes form's "Link to appointment" with the patient's most
@@ -188,7 +191,9 @@ function ClinicianPage() {
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
         <div>
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">{t("navClinician")}</div>
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">
+            {t("navClinician")}
+          </div>
           <h1 className="font-display text-3xl text-navy mt-1">{t("clinTitle")}</h1>
           {clinician && (
             <div className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
@@ -222,244 +227,293 @@ function ClinicianPage() {
         </Select>
       </header>
 
-      {clinician?.licenseExpiresOn && (() => {
-        const daysUntil = Math.ceil(
-          (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
-        );
-        if (daysUntil > 30) return null;
-        const expired = daysUntil < 0;
-        return (
-          <div
-            role="alert"
-            className={
-              "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
-              (expired
-                ? "border-destructive/40 bg-destructive/10 text-destructive"
-                : "border-gold/40 bg-gold/10 text-navy")
-            }
-          >
-            <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
-            <div>
-              <div className="font-semibold">
-                {expired
-                  ? "License expired — booking is blocked"
-                  : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
-              </div>
-              <div className="text-xs opacity-80">
-                Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing coordinator to renew.
+      {clinician?.licenseExpiresOn &&
+        (() => {
+          const daysUntil = Math.ceil(
+            (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
+          );
+          if (daysUntil > 30) return null;
+          const expired = daysUntil < 0;
+          return (
+            <div
+              role="alert"
+              className={
+                "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
+                (expired
+                  ? "border-destructive/40 bg-destructive/10 text-destructive"
+                  : "border-gold/40 bg-gold/10 text-navy")
+              }
+            >
+              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+              <div>
+                <div className="font-semibold">
+                  {expired
+                    ? "License expired — booking is blocked"
+                    : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
+                </div>
+                <div className="text-xs opacity-80">
+                  Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing
+                  coordinator to renew.
+                </div>
               </div>
             </div>
-          </div>
-        );
-      })()}
+          );
+        })()}
 
       <Tabs defaultValue="schedule" className="w-full">
-        <TabsList className="mb-4">
-          <TabsTrigger value="schedule">
-            <CalIcon className="h-4 w-4 mr-1.5" /> {t("clinSchedule")}
-          </TabsTrigger>
-          <TabsTrigger value="care-plan">
-            <Target className="h-4 w-4 mr-1.5" /> {t("clinCarePlan")}
-          </TabsTrigger>
-          <TabsTrigger value="notes">
-            <FileText className="h-4 w-4 mr-1.5" /> {t("clinNotes")}
-          </TabsTrigger>
-          <TabsTrigger value="tracking">
-            <TrendingUp className="h-4 w-4 mr-1.5" /> {t("clinTracking")}
-          </TabsTrigger>
-        </TabsList>
+        <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto snap-x snap-mandatory">
+          <TabsList className="w-max min-w-full sm:w-auto">
+            <TabsTrigger value="schedule" className="whitespace-nowrap snap-start">
+              <CalIcon className="h-4 w-4 mr-1.5" /> {t("clinSchedule")}
+            </TabsTrigger>
+            <TabsTrigger value="care-plan" className="whitespace-nowrap snap-start">
+              <Target className="h-4 w-4 mr-1.5" /> {t("clinCarePlan")}
+            </TabsTrigger>
+            <TabsTrigger value="notes" className="whitespace-nowrap snap-start">
+              <FileText className="h-4 w-4 mr-1.5" /> {t("clinNotes")}
+            </TabsTrigger>
+            <TabsTrigger value="tracking" className="whitespace-nowrap snap-start">
+              <TrendingUp className="h-4 w-4 mr-1.5" /> {t("clinTracking")}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
         <TabsContent value="schedule">
-      <div className="grid lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2 space-y-3">
-          <h2 className="font-display text-lg text-navy">{t("clinAppointments")}</h2>
-          <RescreenDuePanel patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))} />
-          {appts.length === 0 && (
-            <Card className="p-6 text-sm text-muted-foreground">{t("clinNoAppts")}</Card>
-          )}
-          {todayAppts.length > 0 && (
-            <>
-              <SectionHeader label={t("clinToday")} count={todayAppts.length} />
-              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
-            </>
-          )}
-          {weekAppts.length > 0 && (
-            <>
-              <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
-              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
-            </>
-          )}
-          {laterAppts.length > 0 && (
-            <>
-              <SectionHeader label={t("clinLater")} count={laterAppts.length} />
-              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
-            </>
-          )}
-        </div>
-
-        {/* Book + availability */}
-        <div className="space-y-3">
-          <ProviderSwitchAlerts clinicianId={clinicianId} />
-          <RefillReviewCard />
-          <Card className="p-5">
-            <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
-            <div className="mt-4 space-y-3">
-              <div className="space-y-1.5">
-                <Label className="text-sm">{t("clinPatient")}</Label>
-                <Select value={book.patientId} onValueChange={(v) => setBook({ ...book, patientId: v })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {patients.map((p) => (
-                      <SelectItem key={p.id} value={p.id}>
-                        {p.firstName} {p.lastName} (day {p.episodeDay}/90)
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">{t("clinDate")}</Label>
-                <Input type="datetime-local" value={book.start} onChange={(e) => setBook({ ...book, start: e.target.value })} />
-                {bookConflict && (
-                  <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                    <span>
-                      Conflict: you already have a session with{" "}
-                      {bookConflictPatient
-                        ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
-                        : "another patient"}{" "}
-                      at this time. Pick a different time.
-                    </span>
-                  </div>
-                )}
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Service type</Label>
-                <Select
-                  value={book.serviceType}
-                  onValueChange={(v) => {
-                    const svc = serviceTypes.find((s) => s.id === v);
-                    setBook({
-                      ...book,
-                      serviceType: v as import("@/lib/ehr").ServiceType,
-                      durationMin: svc?.defaultDurationMin ?? book.durationMin,
-                      modality: svc && !svc.allowedModalities.includes(book.modality)
-                        ? svc.allowedModalities[0] ?? "video"
-                        : book.modality,
-                      locationId: "",
-                    });
-                  }}
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {serviceTypes.map((s) => (
-                      <SelectItem key={s.id} value={s.id}>
-                        {s.label}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Format</Label>
-                <Select
-                  value={book.modality}
-                  onValueChange={(v) =>
-                    setBook({
-                      ...book,
-                      modality: v as "video" | "phone" | "in_person",
-                      locationId: v === "in_person" ? book.locationId : "",
-                    })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map((m) => (
-                      <SelectItem key={m} value={m}>
-                        {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-              {book.modality === "in_person" && (
-                <div className="space-y-1.5">
-                  <Label className="text-sm">Location</Label>
-                  <Select
-                    value={book.locationId}
-                    onValueChange={(v) => setBook({ ...book, locationId: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder="Pick a location" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {bookLocations.map((l) => (
-                        <SelectItem key={l.id} value={l.id}>
-                          {l.name} — {l.city}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
+          <div className="grid lg:grid-cols-3 gap-6">
+            <div className="lg:col-span-2 space-y-3">
+              <h2 className="font-display text-lg text-navy">{t("clinAppointments")}</h2>
+              <RescreenDuePanel
+                patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))}
+              />
+              {appts.length === 0 && (
+                <Card className="p-6 text-sm text-muted-foreground">{t("clinNoAppts")}</Card>
               )}
-              <div className="space-y-1.5">
-                <Label className="text-sm">{t("clinDuration")}</Label>
-                <Select value={String(book.durationMin)} onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}>
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="30">30 min</SelectItem>
-                    <SelectItem value="50">50 min</SelectItem>
-                    <SelectItem value="60">60 min</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-              <Button
-                className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-                onClick={doBook}
-                disabled={Boolean(bookConflict)}
-              >
-                {t("clinBook")}
-              </Button>
+              {todayAppts.length > 0 && (
+                <>
+                  <SectionHeader label={t("clinToday")} count={todayAppts.length} />
+                  {todayAppts.map((a) => (
+                    <ApptCard
+                      key={a.id}
+                      a={a}
+                      patients={patients}
+                      launch={launch}
+                      endSession={endSession}
+                      t={t}
+                    />
+                  ))}
+                </>
+              )}
+              {weekAppts.length > 0 && (
+                <>
+                  <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
+                  {weekAppts.map((a) => (
+                    <ApptCard
+                      key={a.id}
+                      a={a}
+                      patients={patients}
+                      launch={launch}
+                      endSession={endSession}
+                      t={t}
+                    />
+                  ))}
+                </>
+              )}
+              {laterAppts.length > 0 && (
+                <>
+                  <SectionHeader label={t("clinLater")} count={laterAppts.length} />
+                  {laterAppts.map((a) => (
+                    <ApptCard
+                      key={a.id}
+                      a={a}
+                      patients={patients}
+                      launch={launch}
+                      endSession={endSession}
+                      t={t}
+                    />
+                  ))}
+                </>
+              )}
             </div>
-          </Card>
 
-          <Card className="p-5">
-            <h3 className="font-display text-lg text-navy">{t("clinAvailability")}</h3>
-            <p className="mt-2 text-xs text-muted-foreground">
-              {t("clinAvailHours")}
-            </p>
-            <ul className="mt-3 space-y-1.5 text-sm">
-              {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
-                <li key={d} className="flex items-center justify-between border-b last:border-0 py-1.5">
-                  <span className="text-foreground/80">{d}</span>
-                  <span className="text-muted-foreground inline-flex items-center gap-1.5">
-                    <Clock className="h-3.5 w-3.5" /> 9:00 — 5:00
-                  </span>
-                </li>
-              ))}
-            </ul>
-          </Card>
-        </div>
-      </div>
+            {/* Book + availability */}
+            <div className="space-y-3">
+              <ProviderSwitchAlerts clinicianId={clinicianId} />
+              <RefillReviewCard />
+              <Card className="p-5">
+                <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
+                <div className="mt-4 space-y-3">
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">{t("clinPatient")}</Label>
+                    <Select
+                      value={book.patientId}
+                      onValueChange={(v) => setBook({ ...book, patientId: v })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {patients.map((p) => (
+                          <SelectItem key={p.id} value={p.id}>
+                            {p.firstName} {p.lastName} (day {p.episodeDay}/90)
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">{t("clinDate")}</Label>
+                    <Input
+                      type="datetime-local"
+                      value={book.start}
+                      onChange={(e) => setBook({ ...book, start: e.target.value })}
+                    />
+                    {bookConflict && (
+                      <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                        <span>
+                          Conflict: you already have a session with{" "}
+                          {bookConflictPatient
+                            ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
+                            : "another patient"}{" "}
+                          at this time. Pick a different time.
+                        </span>
+                      </div>
+                    )}
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Service type</Label>
+                    <Select
+                      value={book.serviceType}
+                      onValueChange={(v) => {
+                        const svc = serviceTypes.find((s) => s.id === v);
+                        setBook({
+                          ...book,
+                          serviceType: v as import("@/lib/ehr").ServiceType,
+                          durationMin: svc?.defaultDurationMin ?? book.durationMin,
+                          modality:
+                            svc && !svc.allowedModalities.includes(book.modality)
+                              ? (svc.allowedModalities[0] ?? "video")
+                              : book.modality,
+                          locationId: "",
+                        });
+                      }}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {serviceTypes.map((s) => (
+                          <SelectItem key={s.id} value={s.id}>
+                            {s.label}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">Format</Label>
+                    <Select
+                      value={book.modality}
+                      onValueChange={(v) =>
+                        setBook({
+                          ...book,
+                          modality: v as "video" | "phone" | "in_person",
+                          locationId: v === "in_person" ? book.locationId : "",
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map(
+                          (m) => (
+                            <SelectItem key={m} value={m}>
+                              {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
+                            </SelectItem>
+                          ),
+                        )}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  {book.modality === "in_person" && (
+                    <div className="space-y-1.5">
+                      <Label className="text-sm">Location</Label>
+                      <Select
+                        value={book.locationId}
+                        onValueChange={(v) => setBook({ ...book, locationId: v })}
+                      >
+                        <SelectTrigger>
+                          <SelectValue placeholder="Pick a location" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {bookLocations.map((l) => (
+                            <SelectItem key={l.id} value={l.id}>
+                              {l.name} — {l.city}
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  )}
+                  <div className="space-y-1.5">
+                    <Label className="text-sm">{t("clinDuration")}</Label>
+                    <Select
+                      value={String(book.durationMin)}
+                      onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="30">30 min</SelectItem>
+                        <SelectItem value="50">50 min</SelectItem>
+                        <SelectItem value="60">60 min</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <Button
+                    className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+                    onClick={doBook}
+                    disabled={Boolean(bookConflict)}
+                  >
+                    {t("clinBook")}
+                  </Button>
+                </div>
+              </Card>
+
+              <Card className="p-5">
+                <h3 className="font-display text-lg text-navy">{t("clinAvailability")}</h3>
+                <p className="mt-2 text-xs text-muted-foreground">{t("clinAvailHours")}</p>
+                <ul className="mt-3 space-y-1.5 text-sm">
+                  {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
+                    <li
+                      key={d}
+                      className="flex items-center justify-between border-b last:border-0 py-1.5"
+                    >
+                      <span className="text-foreground/80">{d}</span>
+                      <span className="text-muted-foreground inline-flex items-center gap-1.5">
+                        <Clock className="h-3.5 w-3.5" /> 9:00 — 5:00
+                      </span>
+                    </li>
+                  ))}
+                </ul>
+              </Card>
+            </div>
+          </div>
         </TabsContent>
 
         <TabsContent value="care-plan">
-          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
+          <PatientPicker
+            patients={patients}
+            value={selectedPatientId}
+            onChange={setSelectedPatientId}
+          />
           {selectedPatient && (
             <div className="grid lg:grid-cols-3 gap-6 mt-4">
               <Card className="p-5 lg:col-span-2">
                 <h3 className="font-display text-lg text-navy">{t("clinCarePlanSummary")}</h3>
-                <p className="text-xs text-muted-foreground mt-1">
-                  {t("clinPlanHelp")}
-                </p>
+                <p className="text-xs text-muted-foreground mt-1">{t("clinPlanHelp")}</p>
                 <Textarea
                   className="mt-3 min-h-[100px]"
                   defaultValue={selectedPatient.carePlanSummary}
@@ -539,7 +593,11 @@ function ClinicianPage() {
         </TabsContent>
 
         <TabsContent value="notes">
-          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
+          <PatientPicker
+            patients={patients}
+            value={selectedPatientId}
+            onChange={setSelectedPatientId}
+          />
           {selectedPatient && (
             <div className="grid lg:grid-cols-2 gap-6 mt-4">
               <Card className="p-5">
@@ -612,9 +670,7 @@ function ClinicianPage() {
                               ]
                                 .filter(Boolean)
                                 .join(" · "),
-                            plan:
-                              prev.plan ||
-                              (goals ? `Active care-plan goals:\n${goals}` : ""),
+                            plan: prev.plan || (goals ? `Active care-plan goals:\n${goals}` : ""),
                           }));
                           toast.success("Prefilled from appointment");
                         }}
@@ -625,7 +681,9 @@ function ClinicianPage() {
                   </div>
                   {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
                     <div key={k} className="space-y-1.5">
-                      <Label className="text-sm">{t((`clin${k.charAt(0).toUpperCase()}${k.slice(1)}`) as never)}</Label>
+                      <Label className="text-sm">
+                        {t(`clin${k.charAt(0).toUpperCase()}${k.slice(1)}` as never)}
+                      </Label>
                       <Textarea
                         value={note[k]}
                         onChange={(e) => setNote({ ...note, [k]: e.target.value })}
@@ -698,10 +756,12 @@ function ClinicianPage() {
         </TabsContent>
 
         <TabsContent value="tracking">
-          <PatientPicker patients={patients} value={selectedPatientId} onChange={setSelectedPatientId} />
-          {selectedPatient && (
-            <TrendPanel patientId={selectedPatient.id} />
-          )}
+          <PatientPicker
+            patients={patients}
+            value={selectedPatientId}
+            onChange={setSelectedPatientId}
+          />
+          {selectedPatient && <TrendPanel patientId={selectedPatient.id} />}
         </TabsContent>
       </Tabs>
     </div>
@@ -780,8 +840,7 @@ function ApptCard({
                 : a.modality === "in_person"
                   ? "In person"
                   : "Video"}
-              {a.serviceType &&
-                ` · ${AdelanteEHR.getServiceType(a.serviceType)?.label ?? ""}`}
+              {a.serviceType && ` · ${AdelanteEHR.getServiceType(a.serviceType)?.label ?? ""}`}
               {a.modality === "in_person" &&
                 a.locationId &&
                 ` · ${AdelanteEHR.getLocation(a.locationId)?.name ?? "Location"}`}
@@ -796,13 +855,14 @@ function ApptCard({
             </div>
           </div>
         </div>
-        <div className="flex gap-2">
+        <div className="flex flex-wrap gap-2 w-full sm:w-auto">
           {isFuture && a.status === "scheduled" && (
             <>
               <Button
                 asChild
                 size="sm"
                 variant="outline"
+                className="h-11 flex-1 sm:flex-none min-w-[44px]"
               >
                 <Link to="/schedule" search={{ reschedule: a.id }}>
                   <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
@@ -810,7 +870,7 @@ function ApptCard({
               </Button>
               <Button
                 size="sm"
-                className="bg-teal text-teal-foreground hover:bg-teal/90"
+                className="h-11 flex-1 sm:flex-none min-w-[44px] bg-teal text-teal-foreground hover:bg-teal/90"
                 onClick={() => launch(a.id)}
               >
                 <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
@@ -822,6 +882,7 @@ function ApptCard({
                   <Button
                     size="sm"
                     variant="outline"
+                    className="h-11 flex-1 sm:flex-none min-w-[44px]"
                     onClick={() => endSession(a.id)}
                   >
                     End session
@@ -835,13 +896,16 @@ function ApptCard({
               <Button
                 size="sm"
                 variant="outline"
+                className="h-11 flex-1 sm:flex-none min-w-[44px]"
                 onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "attended")}
               >
-                <CheckCircle2 className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinAttended")}
+                <CheckCircle2 className="h-4 w-4 mr-1.5" />{" "}
+                {(t as (k: string) => string)("clinAttended")}
               </Button>
               <Button
                 size="sm"
                 variant="outline"
+                className="h-11 flex-1 sm:flex-none min-w-[44px]"
                 onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "no_show")}
               >
                 <XCircle className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinNoShow")}
@@ -867,9 +931,7 @@ function TrendPanel({ patientId }: { patientId: string }) {
         <div className="flex items-center justify-between flex-wrap gap-3">
           <div>
             <h3 className="font-display text-lg text-navy">{t("clinTrendTitle")}</h3>
-            <p className="text-xs text-muted-foreground">
-              {t("clinTrendHelp")}
-            </p>
+            <p className="text-xs text-muted-foreground">{t("clinTrendHelp")}</p>
           </div>
           <Button
             size="sm"
@@ -944,7 +1006,11 @@ function TrendPanel({ patientId }: { patientId: string }) {
   );
 }
 
-function RescreenDuePanel({ patients }: { patients: { id: string; firstName: string; lastName: string }[] }) {
+function RescreenDuePanel({
+  patients,
+}: {
+  patients: { id: string; firstName: string; lastName: string }[];
+}) {
   // (component continues below)
   const { t } = useI18n();
   const rows = patients.flatMap((p) =>
@@ -968,13 +1034,23 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
           let TrendIcon: typeof TrendingUp | null = null;
           let trendCls = "";
           if (latest && prev) {
-            if (latest.score < prev.score) { TrendIcon = TrendingDown; trendCls = "text-success"; }
-            else if (latest.score > prev.score) { TrendIcon = TrendingUp; trendCls = "text-destructive"; }
-            else { TrendIcon = Minus; trendCls = "text-muted-foreground"; }
+            if (latest.score < prev.score) {
+              TrendIcon = TrendingDown;
+              trendCls = "text-success";
+            } else if (latest.score > prev.score) {
+              TrendIcon = TrendingUp;
+              trendCls = "text-destructive";
+            } else {
+              TrendIcon = Minus;
+              trendCls = "text-muted-foreground";
+            }
           }
           return (
-            <li key={i} className="flex items-center justify-between gap-2 text-sm">
-              <span className="flex items-center gap-2">
+            <li
+              key={i}
+              className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 text-sm"
+            >
+              <span className="flex flex-wrap items-center gap-x-2 gap-y-1">
                 <span className="font-medium text-navy">
                   {r.patient.firstName} {r.patient.lastName}
                 </span>
@@ -986,13 +1062,12 @@ function RescreenDuePanel({ patients }: { patients: { id: string; firstName: str
                     {prev && <span>vs {prev.score}</span>}
                   </span>
                 )}
-                <span className="text-xs text-muted-foreground">
-                  (day {r.nextDue} due)
-                </span>
+                <span className="text-xs text-muted-foreground">(day {r.nextDue} due)</span>
               </span>
               <Button
                 size="sm"
                 variant="outline"
+                className="h-11 sm:h-8 w-full sm:w-auto"
                 onClick={() => {
                   AdelanteEHR.sendRescreenTask(r.patient.id, r.key);
                   toast.success("Re-screen task sent", {
@@ -1025,7 +1100,9 @@ function SocialContextPanel({ patientId }: { patientId: string }) {
       </p>
       <div className="grid md:grid-cols-3 gap-4 mt-4 text-sm">
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">SDOH plan</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            SDOH plan
+          </div>
           {sdoh.length === 0 ? (
             <div className="text-xs text-muted-foreground">None logged.</div>
           ) : (
@@ -1033,21 +1110,27 @@ function SocialContextPanel({ patientId }: { patientId: string }) {
               {sdoh.slice(0, 6).map((i) => (
                 <li key={i.id} className="flex items-start justify-between gap-2 border-b pb-1">
                   <span>{i.need}</span>
-                  <span className="text-[10px] text-muted-foreground capitalize">{i.status.replace("_", " ")}</span>
+                  <span className="text-[10px] text-muted-foreground capitalize">
+                    {i.status.replace("_", " ")}
+                  </span>
                 </li>
               ))}
             </ul>
           )}
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">Referrals</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            Referrals
+          </div>
           {refs.length === 0 ? (
             <div className="text-xs text-muted-foreground">None logged.</div>
           ) : (
             <ul className="space-y-1">
               {refs.slice(0, 6).map((r) => (
                 <li key={r.id} className="flex items-start justify-between gap-2 border-b pb-1">
-                  <span className="capitalize">{r.category} · {r.provider}</span>
+                  <span className="capitalize">
+                    {r.category} · {r.provider}
+                  </span>
                   <span className="text-[10px] text-muted-foreground capitalize">{r.status}</span>
                 </li>
               ))}
@@ -1055,7 +1138,9 @@ function SocialContextPanel({ patientId }: { patientId: string }) {
           )}
         </div>
         <div>
-          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">External coordination</div>
+          <div className="text-xs uppercase tracking-wider text-muted-foreground mb-2">
+            External coordination
+          </div>
           {coord.length === 0 ? (
             <div className="text-xs text-muted-foreground">No entries.</div>
           ) : (
@@ -1103,10 +1188,13 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
       <h3 className="font-display text-base text-navy flex items-center gap-2">
         <UserCog className="h-4 w-4 text-warning" aria-hidden="true" />
         Provider switch alerts
-        <Badge variant="outline" className="ml-1 text-[10px]">{outgoing.length}</Badge>
+        <Badge variant="outline" className="ml-1 text-[10px]">
+          {outgoing.length}
+        </Badge>
       </h3>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Clients on your caseload who moved to another provider. Verify network status, coordinate hand-off, or flag conflicts.
+        Clients on your caseload who moved to another provider. Verify network status, coordinate
+        hand-off, or flag conflicts.
       </p>
       <ul className="mt-3 space-y-2">
         {outgoing.map((s) => {
@@ -1123,9 +1211,7 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
                     {reasonLabel[s.reason] ?? s.reason} → {to?.name ?? s.toClinicianId}
                     {s.serviceType ? ` · ${s.serviceType}` : ""}
                   </div>
-                  {s.context ? (
-                    <div className="mt-1 text-muted-foreground">{s.context}</div>
-                  ) : null}
+                  {s.context ? <div className="mt-1 text-muted-foreground">{s.context}</div> : null}
                   <div className="mt-1 text-[10px] text-muted-foreground">
                     <ClientDate value={s.createdAt} />
                   </div>
@@ -1235,7 +1321,10 @@ function RefillReviewCardInner() {
                       size="sm"
                       variant="ghost"
                       className="h-7 text-[11px]"
-                      onClick={() => { setOpenId(null); setReason(""); }}
+                      onClick={() => {
+                        setOpenId(null);
+                        setReason("");
+                      }}
                     >
                       Cancel
                     </Button>
@@ -1244,8 +1333,13 @@ function RefillReviewCardInner() {
                       variant="destructive"
                       className="h-7 text-[11px]"
                       onClick={() => {
-                        AdelanteEHR.reviewRefill({ id: r.id, decision: "denied", denyReason: reason.trim() || "Please schedule a visit" });
-                        setOpenId(null); setReason("");
+                        AdelanteEHR.reviewRefill({
+                          id: r.id,
+                          decision: "denied",
+                          denyReason: reason.trim() || "Please schedule a visit",
+                        });
+                        setOpenId(null);
+                        setReason("");
                         toast.success("Refill denied");
                       }}
                     >

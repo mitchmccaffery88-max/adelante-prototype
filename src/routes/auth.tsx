@@ -132,7 +132,7 @@ function AuthPage() {
             <div className="rounded-md border bg-secondary/40 p-3 space-y-2">
               <div className="text-xs font-medium text-navy">{t("authDemoPersonas")}</div>
               <p className="text-[10px] text-muted-foreground">{t("authDemoPersonasNote")}</p>
-              <div className="grid gap-1.5">
+              <div className="grid gap-1.5 max-h-[50vh] overflow-y-auto pr-1">
                 {patients.map((p) => (
                   <label
                     key={p.id}
@@ -153,7 +153,9 @@ function AuthPage() {
                       variant="outline"
                       className={
                         "text-[10px] " +
-                        (p.intakeCompletedAt ? "border-teal/40 text-teal" : "border-gold/50 text-navy")
+                        (p.intakeCompletedAt
+                          ? "border-teal/40 text-teal"
+                          : "border-gold/50 text-navy")
                       }
                     >
                       {p.intakeCompletedAt ? "intake ✓" : "new"}
@@ -168,7 +170,10 @@ function AuthPage() {
               Remember me on this device
             </label>
 
-            <Button type="submit" className="w-full bg-navy text-navy-foreground hover:bg-navy/90">
+            <Button
+              type="submit"
+              className="w-full min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
+            >
               {t("authContinue")} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </form>
@@ -177,16 +182,29 @@ function AuthPage() {
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">{t("authFirstName")}</Label>
-                <Input value={firstName} onChange={(e) => setFirstName(e.target.value)} autoComplete="given-name" />
+                <Input
+                  value={firstName}
+                  onChange={(e) => setFirstName(e.target.value)}
+                  autoComplete="given-name"
+                />
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">{t("authLastName")}</Label>
-                <Input value={lastName} onChange={(e) => setLastName(e.target.value)} autoComplete="family-name" />
+                <Input
+                  value={lastName}
+                  onChange={(e) => setLastName(e.target.value)}
+                  autoComplete="family-name"
+                />
               </div>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">{t("authDob")}</Label>
-              <Input type="date" value={dob} onChange={(e) => setDob(e.target.value)} autoComplete="bday" />
+              <Input
+                type="date"
+                value={dob}
+                onChange={(e) => setDob(e.target.value)}
+                autoComplete="bday"
+              />
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">{t("authPhone")}</Label>
@@ -211,24 +229,27 @@ function AuthPage() {
               </Select>
             </div>
 
-            <Button type="submit" className="w-full bg-teal text-teal-foreground hover:bg-teal/90">
+            <Button
+              type="submit"
+              className="w-full min-h-11 bg-teal text-teal-foreground hover:bg-teal/90"
+            >
               {t("authCreateAccount")} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
             <p className="text-[10px] text-muted-foreground text-center">{t("authResetsNote")}</p>
           </form>
         )}
 
-          <button
-            type="button"
-            onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-            className="mt-4 w-full text-center text-xs text-teal hover:underline"
-          >
-            {mode === "signin" ? t("authSwitchToSignUp") : t("authSwitchToSignIn")}
-          </button>
+        <button
+          type="button"
+          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
+          className="mt-4 w-full text-center text-xs text-teal hover:underline"
+        >
+          {mode === "signin" ? t("authSwitchToSignUp") : t("authSwitchToSignIn")}
+        </button>
 
-          <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
-            <ShieldCheck className="h-3 w-3 text-teal" /> HIPAA · 42 CFR Part 2
-          </p>
+        <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
+          <ShieldCheck className="h-3 w-3 text-teal" /> HIPAA · 42 CFR Part 2
+        </p>
       </Card>
     </div>
   );

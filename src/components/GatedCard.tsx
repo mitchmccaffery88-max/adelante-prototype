@@ -39,9 +39,7 @@ export function GatedCard({
         <Lock className="h-4 w-4 text-muted-foreground" />
         {title}
       </div>
-      <p className="mt-1 text-xs">
-        {reason ?? "Your role doesn't have access to this section."}
-      </p>
+      <p className="mt-1 text-xs">{reason ?? "Your role doesn't have access to this section."}</p>
     </div>
   );
 }

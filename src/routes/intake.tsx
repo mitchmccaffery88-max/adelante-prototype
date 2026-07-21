@@ -44,8 +44,7 @@ export const Route = createFileRoute("/intake")({
       { title: "Intake & Screening — Adelante" },
       {
         name: "description",
-        content:
-          "Standardized screeners and needs assessment with built-in 42 CFR Part 2 consent.",
+        content: "Standardized screeners and needs assessment with built-in 42 CFR Part 2 consent.",
       },
     ],
   }),
@@ -72,8 +71,7 @@ function CoverageCallout({
             <div className="font-medium text-navy">You're all set.</div>
             <p className="text-muted-foreground mt-1">
               Your visits are free. We'll verify your Medi-Cal ID with
-              {county ? ` ${county} County` : " the county"} — no action needed
-              from you.
+              {county ? ` ${county} County` : " the county"} — no action needed from you.
             </p>
           </div>
         </div>
@@ -86,14 +84,11 @@ function CoverageCallout({
         <div className="flex items-start gap-3">
           <Sparkles className="h-5 w-5 text-navy mt-0.5 shrink-0" />
           <div className="text-sm">
-            <div className="font-medium text-navy">
-              Your Medi-Cal turns back on automatically.
-            </div>
+            <div className="font-medium text-navy">Your Medi-Cal turns back on automatically.</div>
             <p className="text-foreground/80 mt-1">
-              Under CalAIM, your benefits reactivate when you come home — you
-              don't need to reapply. A case manager will confirm with
-              {county ? ` ${county} County` : " your county"} within 5 business
-              days.
+              Under CalAIM, your benefits reactivate when you come home — you don't need to reapply.
+              A case manager will confirm with
+              {county ? ` ${county} County` : " your county"} within 5 business days.
             </p>
           </div>
         </div>
@@ -108,9 +103,9 @@ function CoverageCallout({
           <div className="text-sm">
             <div className="font-medium text-navy">We'll help you apply.</div>
             <p className="text-muted-foreground mt-1">
-              A case manager will start a BenefitsCal application with you.
-              Most reentry adults qualify, and coverage is usually active within
-              10 days. Your visits stay free in the meantime.
+              A case manager will start a BenefitsCal application with you. Most reentry adults
+              qualify, and coverage is usually active within 10 days. Your visits stay free in the
+              meantime.
             </p>
           </div>
         </div>
@@ -125,15 +120,13 @@ function CoverageCallout({
         <div className="text-sm">
           <div className="font-medium text-navy">We'll bill your plan.</div>
           <p className="text-muted-foreground mt-1">
-            If your plan doesn't cover the visit, your sessions stay free
-            through our reentry program — you will not get a bill.
+            If your plan doesn't cover the visit, your sessions stay free through our reentry
+            program — you will not get a bill.
           </p>
         </div>
       </div>
       <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">
-          Plan name (optional)
-        </Label>
+        <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
         <Input
           value={otherPlanName}
           onChange={(e) => onOtherPlanChange(e.target.value)}
@@ -156,7 +149,12 @@ function IntakePage() {
   const [sudConsent, setSudConsent] = useState<boolean | null>(null);
   const [hipaaConsent, setHipaaConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
-  const [needs, setNeeds] = useState({ housing: false, food: false, employment: false, transport: false });
+  const [needs, setNeeds] = useState({
+    housing: false,
+    food: false,
+    employment: false,
+    transport: false,
+  });
   const [coverage, setCoverage] = useState<{
     status: CoverageStatus;
     countyOfRelease: string;
@@ -219,7 +217,6 @@ function IntakePage() {
     } catch {
       /* no-op */
     }
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
   // Persist on every meaningful change.
   useEffect(() => {
@@ -228,7 +225,16 @@ function IntakePage() {
       const at = new Date().toISOString();
       localStorage.setItem(
         storageKey,
-        JSON.stringify({ step, sudConsent, hipaaConsent, answers, needs, coverage, profile, savedAt: at }),
+        JSON.stringify({
+          step,
+          sudConsent,
+          hipaaConsent,
+          answers,
+          needs,
+          coverage,
+          profile,
+          savedAt: at,
+        }),
       );
       setSavedAt(at);
     } catch {
@@ -345,7 +351,10 @@ function IntakePage() {
                 </a>{" "}
                 anytime to talk to someone. Your care team has also been notified.
               </p>
-              <Button asChild className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90">
+              <Button
+                asChild
+                className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
                 <a href="tel:988">
                   <Phone className="h-4 w-4 mr-1.5" /> Talk to someone now
                 </a>
@@ -365,10 +374,12 @@ function IntakePage() {
           </div>
         </Card>
       )}
-      <header className="mb-4">
+      <header className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-4 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-teal">Intake & Screening</div>
+            <div className="text-xs font-medium uppercase tracking-wider text-teal">
+              Intake & Screening
+            </div>
             <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">{current.label}</h1>
           </div>
           <div className="flex rounded-full bg-secondary p-0.5 text-xs">
@@ -388,7 +399,9 @@ function IntakePage() {
         </div>
         <Progress value={pct} className="h-2" />
         <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
-          <span>Step {step + 1} of {total}</span>
+          <span>
+            Step {step + 1} of {total}
+          </span>
           {savedAt && (
             <span className="inline-flex items-center gap-1 text-teal">
               <Save className="h-3 w-3" /> Saved
@@ -401,14 +414,22 @@ function IntakePage() {
         {current.key === "welcome" && (
           <div className="space-y-4">
             <p className="text-foreground">
-              Welcome. This intake takes about 10–15 minutes. There are no right
-              or wrong answers — your honest responses help us plan care that
-              fits your life right now.
+              Welcome. This intake takes about 10–15 minutes. There are no right or wrong answers —
+              your honest responses help us plan care that fits your life right now.
             </p>
             <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> You can pause and come back anytime.</li>
-              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete this with you by phone.</li>
-              <li className="flex gap-2"><CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private and protected by federal law.</li>
+              <li className="flex gap-2">
+                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> You can pause and come back
+                anytime.
+              </li>
+              <li className="flex gap-2">
+                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete
+                this with you by phone.
+              </li>
+              <li className="flex gap-2">
+                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private
+                and protected by federal law.
+              </li>
             </ul>
           </div>
         )}
@@ -416,10 +437,10 @@ function IntakePage() {
         {current.key === "about" && (
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
-              A few quick details so we can reach you the right way. You can
-              skip anything you're not ready to share.
+              A few quick details so we can reach you the right way. You can skip anything you're
+              not ready to share.
             </p>
-            <div className="grid sm:grid-cols-2 gap-3">
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Preferred name</Label>
                 <Input
@@ -444,7 +465,9 @@ function IntakePage() {
                     setProfile({ ...profile, preferredLanguage: v as PreferredLanguage })
                   }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="en">English</SelectItem>
                     <SelectItem value="es">Español</SelectItem>
@@ -468,7 +491,9 @@ function IntakePage() {
                     setProfile({ ...profile, contactChannel: v as ContactChannel })
                   }
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="text">Text</SelectItem>
                     <SelectItem value="call">Phone call</SelectItem>
@@ -482,7 +507,9 @@ function IntakePage() {
                   value={profile.bestTime}
                   onValueChange={(v) => setProfile({ ...profile, bestTime: v as BestTime })}
                 >
-                  <SelectTrigger><SelectValue /></SelectTrigger>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="morning">Morning</SelectItem>
                     <SelectItem value="afternoon">Afternoon</SelectItem>
@@ -509,7 +536,7 @@ function IntakePage() {
             </div>
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
               <div className="text-sm font-medium text-navy">Emergency contact</div>
-              <div className="grid sm:grid-cols-3 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <Input
                   placeholder="Name"
                   value={profile.emergencyName}
@@ -540,18 +567,15 @@ function IntakePage() {
                 Medi-Cal
               </Badge>
               <p className="mt-2 text-sm text-muted-foreground">
-                Adelante visits are free with Medi-Cal. If your Medi-Cal was
-                paused while you were away, it turns back on when you come home —
-                you don't have to reapply. We can help.
+                Adelante visits are free with Medi-Cal. If your Medi-Cal was paused while you were
+                away, it turns back on when you come home — you don't have to reapply. We can help.
               </p>
             </div>
             <div className="space-y-1.5">
               <Label className="text-sm">County of release</Label>
               <input
                 value={coverage.countyOfRelease}
-                onChange={(e) =>
-                  setCoverage({ ...coverage, countyOfRelease: e.target.value })
-                }
+                onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
             </div>
@@ -576,9 +600,7 @@ function IntakePage() {
               status={coverage.status}
               county={coverage.countyOfRelease}
               otherPlanName={coverage.otherPlanName ?? ""}
-              onOtherPlanChange={(v) =>
-                setCoverage({ ...coverage, otherPlanName: v })
-              }
+              onOtherPlanChange={(v) => setCoverage({ ...coverage, otherPlanName: v })}
             />
             <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
               <Checkbox
@@ -586,8 +608,8 @@ function IntakePage() {
                 onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
               />
               <span>
-                I'm coming home within the next 90 days (Justice-Involved Reentry
-                Initiative — unlocks pre-release coordination).
+                I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
+                unlocks pre-release coordination).
               </span>
             </label>
           </div>
@@ -600,10 +622,14 @@ function IntakePage() {
                 <ShieldCheck className="h-4 w-4 text-teal" /> HIPAA — Notice of Privacy Practices
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Your protected health information is encrypted in transit and at rest. We share it only with people who help with your care.
+                Your protected health information is encrypted in transit and at rest. We share it
+                only with people who help with your care.
               </p>
               <label className="mt-3 flex items-start gap-2 text-sm cursor-pointer">
-                <Checkbox checked={hipaaConsent} onCheckedChange={(v) => setHipaaConsent(Boolean(v))} />
+                <Checkbox
+                  checked={hipaaConsent}
+                  onCheckedChange={(v) => setHipaaConsent(Boolean(v))}
+                />
                 <span>I acknowledge the HIPAA Notice of Privacy Practices.</span>
               </label>
             </div>
@@ -613,23 +639,26 @@ function IntakePage() {
                 <Lock className="h-4 w-4 text-teal" /> 42 CFR Part 2 — Substance Use Records
               </div>
               <p className="text-sm text-muted-foreground mt-2">
-                Federal law gives extra protection to information about alcohol
-                or drug use. <strong className="text-foreground">Nothing about substance use is
-                collected unless you agree.</strong> If you say no, your probation
-                officer and other referrers will not receive any SUD details.
+                Federal law gives extra protection to information about alcohol or drug use.{" "}
+                <strong className="text-foreground">
+                  Nothing about substance use is collected unless you agree.
+                </strong>{" "}
+                If you say no, your probation officer and other referrers will not receive any SUD
+                details.
               </p>
               <RadioGroup
                 className="mt-3 grid gap-2"
                 value={sudConsent === null ? "" : sudConsent ? "yes" : "no"}
                 onValueChange={(v) => setSudConsent(v === "yes")}
               >
-                <label className="flex items-start gap-2 rounded-md border bg-card p-3 cursor-pointer">
+                <label className="flex items-start min-h-11 gap-2 rounded-md border bg-card py-3 px-3 cursor-pointer">
                   <RadioGroupItem value="yes" />
                   <span className="text-sm">
-                    <strong>Yes</strong> — I consent to share substance-use information with my Adelante care team.
+                    <strong>Yes</strong> — I consent to share substance-use information with my
+                    Adelante care team.
                   </span>
                 </label>
-                <label className="flex items-start gap-2 rounded-md border bg-card p-3 cursor-pointer">
+                <label className="flex items-start min-h-11 gap-2 rounded-md border bg-card py-3 px-3 cursor-pointer">
                   <RadioGroupItem value="no" />
                   <span className="text-sm">
                     <strong>No</strong> — Skip substance-use screening for now.
@@ -649,7 +678,9 @@ function IntakePage() {
                     {s.name}
                   </Badge>
                   {s.isSud && (
-                    <Badge className="ml-2 bg-teal/15 text-teal border-0">42 CFR Part 2 protected</Badge>
+                    <Badge className="ml-2 bg-teal/15 text-teal border-0">
+                      42 CFR Part 2 protected
+                    </Badge>
                   )}
                   <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>
                 </div>
@@ -671,7 +702,7 @@ function IntakePage() {
                         {s.options.map((o) => (
                           <label
                             key={o.value}
-                            className="flex items-center gap-1.5 rounded-full border bg-card px-3 py-1.5 text-xs cursor-pointer hover:border-teal"
+                            className="flex items-center min-h-11 gap-1.5 rounded-full border bg-card px-3 py-2.5 text-xs cursor-pointer hover:border-teal"
                           >
                             <RadioGroupItem value={String(o.value)} />
                             {o.label}
@@ -690,15 +721,17 @@ function IntakePage() {
             <p className="text-sm text-muted-foreground">
               Tell us what support you need right now. Select all that apply.
             </p>
-            {([
-              ["housing", "Stable housing"],
-              ["food", "Food / CalFresh"],
-              ["employment", "Employment / job training"],
-              ["transport", "Transportation"],
-            ] as const).map(([k, l]) => (
+            {(
+              [
+                ["housing", "Stable housing"],
+                ["food", "Food / CalFresh"],
+                ["employment", "Employment / job training"],
+                ["transport", "Transportation"],
+              ] as const
+            ).map(([k, l]) => (
               <label
                 key={k}
-                className="flex items-center gap-3 rounded-lg border p-3 cursor-pointer hover:border-teal"
+                className="flex items-center min-h-11 gap-3 rounded-lg border py-3 px-3 cursor-pointer hover:border-teal"
               >
                 <Checkbox
                   checked={needs[k]}
@@ -739,20 +772,25 @@ function IntakePage() {
         )}
       </Card>
 
-      <div className="mt-5 flex justify-between gap-3">
-        <Button variant="outline" onClick={back} disabled={step === 0}>
+      {/* Spacer so the fixed mobile action bar doesn't cover content */}
+      <div className="h-20 sm:hidden" aria-hidden />
+      <div className="fixed sm:sticky bottom-0 left-0 right-0 sm:left-auto sm:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t sm:border-0 sm:bg-transparent px-4 sm:px-0 py-3 sm:py-0">
+        <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
           Back
         </Button>
         {step < total - 1 ? (
           <Button
-            className="bg-navy text-navy-foreground hover:bg-navy/90"
+            className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
             onClick={next}
             disabled={current.key === "consent" && (!hipaaConsent || sudConsent === null)}
           >
-            Continue
+            Save &amp; continue
           </Button>
         ) : (
-          <Button className="bg-teal text-teal-foreground hover:bg-teal/90" onClick={submit}>
+          <Button
+            className="min-h-11 bg-teal text-teal-foreground hover:bg-teal/90"
+            onClick={submit}
+          >
             Submit intake
           </Button>
         )}

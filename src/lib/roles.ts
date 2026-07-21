@@ -44,22 +44,61 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 // Matrix mirrors §4b. `consent_gated` = read/write allowed only when the
 // matching Part-2 consent is currently granted.
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
-  demographics:    { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read", billing: "read" },
-  screeners_mh:    { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
-  screeners_sud:   { case_manager: "consent_gated", peer_specialist: "consent_gated", therapist: "consent_gated", pmhnp: "read" },
-  psych_eval:      { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
-  care_plan:       { case_manager: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
-  therapy_notes:   { therapist: "write", pmhnp: "read", case_manager: "read" },
-  meds_erx:        { pmhnp: "write", therapist: "read", case_manager: "read" },
-  telehealth_room: { pmhnp: "write", therapist: "write", case_manager: "read", peer_specialist: "none" as AccessLevel },
-  sdoh:            { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
-  self_help:       { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
-  sud_treatment:   { pmhnp: "write", therapist: "consent_gated", case_manager: "consent_gated", peer_specialist: "consent_gated", billing: "consent_gated" },
-  case_notes:      { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
-  peer_notes:      { peer_specialist: "write", case_manager: "read", therapist: "read", pmhnp: "read" },
-  documents:       { case_manager: "write", therapist: "read", pmhnp: "read" },
-  billing:         { billing: "write" },
-  consent_ledger:  { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "read", billing: "read", sys_admin: "read" },
+  demographics: {
+    case_manager: "write",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "read",
+    billing: "read",
+  },
+  screeners_mh: {
+    case_manager: "write",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "read",
+  },
+  screeners_sud: {
+    case_manager: "consent_gated",
+    peer_specialist: "consent_gated",
+    therapist: "consent_gated",
+    pmhnp: "read",
+  },
+  psych_eval: { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
+  care_plan: { case_manager: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
+  therapy_notes: { therapist: "write", pmhnp: "read", case_manager: "read" },
+  meds_erx: { pmhnp: "write", therapist: "read", case_manager: "read" },
+  telehealth_room: {
+    pmhnp: "write",
+    therapist: "write",
+    case_manager: "read",
+    peer_specialist: "none" as AccessLevel,
+  },
+  sdoh: { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
+  self_help: {
+    case_manager: "write",
+    peer_specialist: "write",
+    therapist: "write",
+    pmhnp: "write",
+  },
+  sud_treatment: {
+    pmhnp: "write",
+    therapist: "consent_gated",
+    case_manager: "consent_gated",
+    peer_specialist: "consent_gated",
+    billing: "consent_gated",
+  },
+  case_notes: { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
+  peer_notes: { peer_specialist: "write", case_manager: "read", therapist: "read", pmhnp: "read" },
+  documents: { case_manager: "write", therapist: "read", pmhnp: "read" },
+  billing: { billing: "write" },
+  consent_ledger: {
+    case_manager: "read",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "read",
+    billing: "read",
+    sys_admin: "read",
+  },
 };
 
 export function canAccess(
@@ -92,7 +131,11 @@ const subs = new Set<() => void>();
 
 export function setActingRole(role: StaffRole) {
   acting = role;
-  try { window.localStorage.setItem(KEY, role); } catch { /* no-op */ }
+  try {
+    window.localStorage.setItem(KEY, role);
+  } catch {
+    /* no-op */
+  }
   subs.forEach((s) => s());
 }
 export function getActingRole(): StaffRole {
@@ -100,7 +143,12 @@ export function getActingRole(): StaffRole {
 }
 export function useActingRole(): [StaffRole, (r: StaffRole) => void] {
   const role = useSyncExternalStore(
-    (cb) => { subs.add(cb); return () => { subs.delete(cb); }; },
+    (cb) => {
+      subs.add(cb);
+      return () => {
+        subs.delete(cb);
+      };
+    },
     () => acting,
     () => acting,
   );

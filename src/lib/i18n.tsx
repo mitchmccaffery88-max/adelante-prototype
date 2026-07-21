@@ -81,7 +81,8 @@ const dict = {
     authContinue: "Continue",
     authSwitchToSignUp: "New here? Create an account",
     authSwitchToSignIn: "Already have an account? Sign in",
-    authDemoNote: "Demo: pick the person you'd like to sign in as. Real authentication arrives in Build 2.",
+    authDemoNote:
+      "Demo: pick the person you'd like to sign in as. Real authentication arrives in Build 2.",
     authPickPerson: "Sign in as",
     authSignOut: "Sign out",
     authFirstName: "First name",
@@ -173,12 +174,14 @@ const dict = {
     adminEngagementSteady: "Steady",
     adminOn: "On",
     adminOff: "Off",
-    adminTableNote: "No names, diagnoses, or care-plan narrative shown here. Clinical detail lives only in Case Manager and Clinician workspaces.",
+    adminTableNote:
+      "No names, diagnoses, or care-plan narrative shown here. Clinical detail lives only in Case Manager and Clinician workspaces.",
     adminBillDraft: "Draft",
     adminBillSubmitted: "Submitted",
     adminBillPaid: "Paid",
     adminBillDenied: "Denied",
-    adminBillNote: "Status display only. Claim filing tracked here; deeper EDI/clearinghouse integration is in Build 2.",
+    adminBillNote:
+      "Status display only. Claim filing tracked here; deeper EDI/clearinghouse integration is in Build 2.",
     adminAuditEmpty: "No consent changes recorded.",
     adminAuditNote: "Append-only. Patient identifiers are de-identified programIds only.",
     adminAuditAll: "All purposes",
@@ -221,7 +224,8 @@ const dict = {
     cmNoReferrals: "No resource referrals logged yet.",
     cmCoordHelpPrefix: "Contact log with probation, parole, housing partners for",
     cmPart2Guard: "42 CFR Part 2 guardrail:",
-    cmPart2GuardBody: "SUD-identifying detail cannot be shared with probation/parole without specific patient consent.",
+    cmPart2GuardBody:
+      "SUD-identifying detail cannot be shared with probation/parole without specific patient consent.",
     cmLoggedAt: "Logged",
     cmCoverageLabel: "Coverage",
     cmVerificationLabel: "verification",
@@ -251,7 +255,8 @@ const dict = {
     cmModSms: "SMS",
     schBack: "Back to my care",
     schTitle: "Book a session",
-    schSubtitle: "Pick a time that works for you. Sessions are private video or phone — your choice.",
+    schSubtitle:
+      "Pick a time that works for you. Sessions are private video or phone — your choice.",
     schCounselor: "Counselor",
     schDate: "Date & time",
     schLength: "Length",
@@ -360,7 +365,8 @@ const dict = {
     authContinue: "Continuar",
     authSwitchToSignUp: "¿Nuevo aquí? Crea una cuenta",
     authSwitchToSignIn: "¿Ya tienes cuenta? Inicia sesión",
-    authDemoNote: "Demostración: elige la persona con la que quieres entrar. La autenticación real llega en la Versión 2.",
+    authDemoNote:
+      "Demostración: elige la persona con la que quieres entrar. La autenticación real llega en la Versión 2.",
     authPickPerson: "Entrar como",
     authSignOut: "Cerrar sesión",
     authFirstName: "Nombre",
@@ -423,7 +429,8 @@ const dict = {
     clinTrendTitle: "Tendencia de evaluaciones",
     clinTrendHelp: "Marcadores en el día 30 / 60 / 90 (puntos de reevaluación).",
     clinScheduleRescreen: "Programar reevaluación",
-    clinNoHistory: "Aún no hay historial — reevalúa al paciente el día 30 para empezar la tendencia.",
+    clinNoHistory:
+      "Aún no hay historial — reevalúa al paciente el día 30 para empezar la tendencia.",
     clinLatest: "Última",
     clinBillingPrefix: "Facturación",
     clinPickClinician: "Elegir profesional",
@@ -452,12 +459,14 @@ const dict = {
     adminEngagementSteady: "Estable",
     adminOn: "Activo",
     adminOff: "Inactivo",
-    adminTableNote: "Aquí no se muestran nombres, diagnósticos ni narrativa del plan. El detalle clínico vive solo en los espacios de Coordinador y Clínico.",
+    adminTableNote:
+      "Aquí no se muestran nombres, diagnósticos ni narrativa del plan. El detalle clínico vive solo en los espacios de Coordinador y Clínico.",
     adminBillDraft: "Borrador",
     adminBillSubmitted: "Enviado",
     adminBillPaid: "Pagado",
     adminBillDenied: "Denegado",
-    adminBillNote: "Solo visualización. La facturación se registra aquí; la integración EDI llega en la Versión 2.",
+    adminBillNote:
+      "Solo visualización. La facturación se registra aquí; la integración EDI llega en la Versión 2.",
     adminAuditEmpty: "No se han registrado cambios de consentimiento.",
     adminAuditNote: "Solo se agrega; los pacientes se identifican únicamente por programId.",
     adminAuditAll: "Todos los propósitos",
@@ -495,12 +504,15 @@ const dict = {
     cmCreateReferral: "Crear referido",
     cmReferralCreated: "Referido creado",
     cmAddProvider: "Agrega el nombre del proveedor",
-    cmReferralLibraryNote: "Una biblioteca de recursos buscable llega en la Versión 2. Por ahora, regístralo manualmente.",
+    cmReferralLibraryNote:
+      "Una biblioteca de recursos buscable llega en la Versión 2. Por ahora, regístralo manualmente.",
     cmRecentReferrals: "Referidos recientes",
     cmNoReferrals: "Aún no se han registrado referidos.",
-    cmCoordHelpPrefix: "Registro de contacto con probatoria, libertad condicional y socios de vivienda para",
+    cmCoordHelpPrefix:
+      "Registro de contacto con probatoria, libertad condicional y socios de vivienda para",
     cmPart2Guard: "Protección 42 CFR Parte 2:",
-    cmPart2GuardBody: "El detalle sobre uso de sustancias no puede compartirse con probatoria/libertad condicional sin consentimiento específico del paciente.",
+    cmPart2GuardBody:
+      "El detalle sobre uso de sustancias no puede compartirse con probatoria/libertad condicional sin consentimiento específico del paciente.",
     cmLoggedAt: "Registrado",
     cmCoverageLabel: "Cobertura",
     cmVerificationLabel: "verificación",
@@ -530,11 +542,13 @@ const dict = {
     cmModSms: "SMS",
     schBack: "Volver a mi cuidado",
     schTitle: "Reservar una sesión",
-    schSubtitle: "Elige un horario que te convenga. Las sesiones son privadas, por video o teléfono — tú decides.",
+    schSubtitle:
+      "Elige un horario que te convenga. Las sesiones son privadas, por video o teléfono — tú decides.",
     schCounselor: "Consejero",
     schDate: "Fecha y hora",
     schLength: "Duración",
-    schAvailable: "Los consejeros están disponibles de lunes a viernes, de 9:00 a 17:00 (hora local).",
+    schAvailable:
+      "Los consejeros están disponibles de lunes a viernes, de 9:00 a 17:00 (hora local).",
     schPickFormat: "¿Cómo prefieres reunirte?",
     schVideo: "Video",
     schPhone: "Teléfono",
@@ -543,7 +557,8 @@ const dict = {
     schErrPickTime: "Elige un consejero y un horario.",
     schErrWeekday: "Elige un día entre semana, de 9:00 a 17:00.",
     schRequested: "Sesión solicitada",
-    schRequestedDesc: "Tu equipo de cuidado confirmará pronto. Te enviaremos un recordatorio por SMS.",
+    schRequestedDesc:
+      "Tu equipo de cuidado confirmará pronto. Te enviaremos un recordatorio por SMS.",
     patUpcoming: "Próximas",
     patHistory: "Anteriores",
     patNoneUpcoming: "No tienes sesiones próximas.",
@@ -562,7 +577,7 @@ const dict = {
   },
 } as const;
 
-type Key = keyof typeof dict.en;
+export type Key = keyof typeof dict.en;
 
 const I18nCtx = createContext<{
   lang: Lang;
@@ -576,7 +591,9 @@ export function I18nProvider({ children }: { children: ReactNode }) {
     try {
       const saved = localStorage.getItem("adelante.lang");
       if (saved === "en" || saved === "es") setLangState(saved);
-    } catch { /* no-op */ }
+    } catch {
+      /* no-op */
+    }
   }, []);
   // Keep <html lang="…"> in sync with the current language so screen readers
   // pronounce content in the right locale.
@@ -587,12 +604,14 @@ export function I18nProvider({ children }: { children: ReactNode }) {
   }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
-    try { localStorage.setItem("adelante.lang", l); } catch { /* no-op */ }
+    try {
+      localStorage.setItem("adelante.lang", l);
+    } catch {
+      /* no-op */
+    }
   };
   const t = (k: Key) => dict[lang][k] ?? dict.en[k];
-  return (
-    <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>
-  );
+  return <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>;
 }
 
 export const useI18n = () => useContext(I18nCtx);

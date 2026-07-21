@@ -63,7 +63,13 @@ export function ReadAloudButton({ text, label }: { text: string; label?: string 
         variant="outline"
         size="sm"
         onClick={toggle}
-        aria-label={isPlaying && !isPaused ? "Pause reading" : isPlaying && isPaused ? "Resume reading" : `Read aloud: ${label || "page content"}`}
+        aria-label={
+          isPlaying && !isPaused
+            ? "Pause reading"
+            : isPlaying && isPaused
+              ? "Resume reading"
+              : `Read aloud: ${label || "page content"}`
+        }
         className="h-10 px-3 text-sm border-navy-foreground/30 text-navy-foreground hover:bg-navy-foreground/10 hover:text-navy-foreground bg-transparent"
       >
         {isPlaying && !isPaused ? (

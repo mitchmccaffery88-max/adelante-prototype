@@ -36,9 +36,7 @@ export function EmptyState({
         <Icon className="h-5 w-5" aria-hidden />
       </div>
       <div className="mt-3 font-medium text-navy">{title}</div>
-      {description && (
-        <p className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</p>
-      )}
+      {description && <p className="mt-1 text-xs text-muted-foreground max-w-sm">{description}</p>}
       {action && (
         <Button size="sm" variant="outline" className="mt-3" onClick={action.onClick}>
           {action.label}

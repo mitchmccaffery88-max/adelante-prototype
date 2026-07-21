@@ -51,48 +51,32 @@ function SchedulePage() {
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const existing = useEhr(() =>
     rescheduleId
-      ? AdelanteEHR.appointmentsForPatient(currentId).find(
-          (a) => a.id === rescheduleId,
-        )
+      ? AdelanteEHR.appointmentsForPatient(currentId).find((a) => a.id === rescheduleId)
       : undefined,
   );
   const isReschedule = Boolean(rescheduleId && existing);
   const serviceTypes = useEhr(() => AdelanteEHR.listServiceTypes());
-  const [serviceType, setServiceType] = useState<ServiceType | "">(
-    existing?.serviceType ?? "",
-  );
+  const [serviceType, setServiceType] = useState<ServiceType | "">(existing?.serviceType ?? "");
   const activeService = serviceTypes.find((s) => s.id === serviceType);
-  const allowedModalities = activeService?.allowedModalities ?? [
-    "video",
-    "phone",
-    "in_person",
-  ];
+  const allowedModalities = activeService?.allowedModalities ?? ["video", "phone", "in_person"];
   const [modality, setModality] = useState<"video" | "phone" | "in_person">(
     existing?.modality ?? "video",
   );
   // If the picked service doesn't support current modality, snap to the first allowed.
   const effectiveModality = allowedModalities.includes(modality)
     ? modality
-    : allowedModalities[0] ?? "video";
-  const locations = useEhr(() =>
-    AdelanteEHR.locationsForService(serviceType || undefined),
-  );
-  const [locationId, setLocationId] = useState<string>(
-    existing?.locationId ?? "",
-  );
+    : (allowedModalities[0] ?? "video");
+  const locations = useEhr(() => AdelanteEHR.locationsForService(serviceType || undefined));
+  const [locationId, setLocationId] = useState<string>(existing?.locationId ?? "");
   const clinicians = useEhr(() =>
     AdelanteEHR.cliniciansForService(serviceType || undefined, {
       locationId: effectiveModality === "in_person" ? locationId : undefined,
     }),
   );
-  const [clinicianId, setClinicianId] = useState(
-    existing?.clinicianId ?? "",
-  );
+  const [clinicianId, setClinicianId] = useState(existing?.clinicianId ?? "");
   // Reset clinician if the current one isn't in the filtered list.
   const clinicianStillValid = clinicians.some((c) => c.id === clinicianId);
-  const effectiveClinicianId = clinicianStillValid
-    ? clinicianId
-    : clinicians[0]?.id ?? "";
+  const effectiveClinicianId = clinicianStillValid ? clinicianId : (clinicians[0]?.id ?? "");
   const [selectedStart, setSelectedStart] = useState<string>("");
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
@@ -108,10 +92,7 @@ function SchedulePage() {
   const activeLocation = AdelanteEHR.getLocation(locationId);
 
   const dayGroups = useMemo(() => {
-    const map = new Map<
-      string,
-      { date: Date; slots: typeof availability }
-    >();
+    const map = new Map<string, { date: Date; slots: typeof availability }>();
     for (const s of availability) {
       const d = new Date(s.start);
       const key = d.toDateString();
@@ -121,8 +102,7 @@ function SchedulePage() {
     return Array.from(map.values()).slice(0, 14);
   }, [availability]);
 
-  const activeDay =
-    dayGroups.find((g) => g.date.toDateString() === activeDayKey) ?? dayGroups[0];
+  const activeDay = dayGroups.find((g) => g.date.toDateString() === activeDayKey) ?? dayGroups[0];
 
   if (!patient) return null;
 
@@ -219,9 +199,7 @@ function SchedulePage() {
             </SelectContent>
           </Select>
           {activeService && (
-            <p className="text-xs text-muted-foreground pt-0.5">
-              {activeService.helper}
-            </p>
+            <p className="text-xs text-muted-foreground pt-0.5">{activeService.helper}</p>
           )}
         </div>
 
@@ -229,8 +207,8 @@ function SchedulePage() {
           <Label className="text-sm">{t("schPickFormat")}</Label>
           <div
             className={
-              "grid gap-2 " +
-              (allowedModalities.length >= 3 ? "grid-cols-3" : "grid-cols-2")
+              "grid grid-cols-1 gap-2 " +
+              (allowedModalities.length >= 3 ? "sm:grid-cols-3" : "sm:grid-cols-2")
             }
           >
             {allowedModalities.includes("video") && (
@@ -238,7 +216,7 @@ function SchedulePage() {
                 type="button"
                 onClick={() => setModality("video")}
                 className={
-                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 min-h-11 text-sm transition-colors " +
                   (effectiveModality === "video"
                     ? "border-teal bg-teal/10 text-navy"
                     : "bg-card hover:border-teal/60 text-foreground/70")
@@ -252,7 +230,7 @@ function SchedulePage() {
                 type="button"
                 onClick={() => setModality("phone")}
                 className={
-                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 min-h-11 text-sm transition-colors " +
                   (effectiveModality === "phone"
                     ? "border-teal bg-teal/10 text-navy"
                     : "bg-card hover:border-teal/60 text-foreground/70")
@@ -266,7 +244,7 @@ function SchedulePage() {
                 type="button"
                 onClick={() => setModality("in_person")}
                 className={
-                  "flex items-center justify-center gap-2 rounded-md border p-2.5 text-sm transition-colors " +
+                  "flex items-center justify-center gap-2 rounded-md border p-2.5 min-h-11 text-sm transition-colors " +
                   (effectiveModality === "in_person"
                     ? "border-teal bg-teal/10 text-navy"
                     : "bg-card hover:border-teal/60 text-foreground/70")
@@ -334,32 +312,31 @@ function SchedulePage() {
           </Select>
           {clinicians.length === 0 ? (
             <p className="text-xs text-muted-foreground pt-1">
-              No counselors match that combination yet. Try another format or
-              location, or contact your case manager.
+              No counselors match that combination yet. Try another format or location, or contact
+              your case manager.
             </p>
           ) : (
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
-              <CalendarClock className="h-3 w-3 text-teal" /> Times come from
-              your counselor's live calendar. You can only pick what's open.
+              <CalendarClock className="h-3 w-3 text-teal" /> Times come from your counselor's live
+              calendar. You can only pick what's open.
             </p>
           )}
         </div>
 
         {dayGroups.length === 0 ? (
           <div className="rounded-lg border border-dashed bg-secondary/30 p-4 text-sm text-muted-foreground">
-            No openings with this counselor in the next two weeks. Try another
-            counselor above, or contact your case manager for help.
+            No openings with this counselor in the next two weeks. Try another counselor above, or
+            contact your case manager for help.
           </div>
         ) : (
           <>
             <div className="space-y-1.5">
               <Label className="text-sm">Pick a day</Label>
-              <div className="flex gap-2 overflow-x-auto pb-1">
+              <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-px-4">
                 {dayGroups.map((g) => {
                   const key = g.date.toDateString();
                   const open = g.slots.filter((s) => !s.taken).length;
-                  const isActive =
-                    (activeDay?.date.toDateString() ?? "") === key;
+                  const isActive = (activeDay?.date.toDateString() ?? "") === key;
                   return (
                     <button
                       key={key}
@@ -370,7 +347,7 @@ function SchedulePage() {
                       }}
                       disabled={open === 0}
                       className={
-                        "shrink-0 rounded-lg border px-3 py-2 text-center text-xs transition-colors " +
+                        "shrink-0 snap-start min-h-11 rounded-lg border px-3 py-2 text-center text-xs transition-colors " +
                         (isActive
                           ? "border-teal bg-teal/10 text-navy"
                           : open === 0
@@ -383,9 +360,7 @@ function SchedulePage() {
                           weekday: "short",
                         })}
                       </div>
-                      <div className="text-base text-navy font-display">
-                        {g.date.getDate()}
-                      </div>
+                      <div className="text-base text-navy font-display">{g.date.getDate()}</div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
                         {open === 0 ? "Full" : `${open} open`}
                       </div>
@@ -407,7 +382,7 @@ function SchedulePage() {
                   <span className="line-through">Taken</span>
                 </span>
               </div>
-              <div className="grid grid-cols-3 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {activeDay?.slots.map((s) => {
                   const isActive = selectedStart === s.start;
                   return (
@@ -416,19 +391,35 @@ function SchedulePage() {
                       type="button"
                       onClick={() => !s.taken && setSelectedStart(s.start)}
                       disabled={s.taken}
+                      aria-label={
+                        (s.taken ? "Taken: " : "Open: ") +
+                        new Date(s.start).toLocaleTimeString(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })
+                      }
                       className={
-                        "rounded-md border p-2 text-sm transition-colors " +
+                        "min-h-11 rounded-md border p-2 text-sm transition-colors flex flex-col items-center justify-center gap-0.5 " +
                         (isActive
                           ? "border-teal bg-teal/10 text-navy font-medium"
                           : s.taken
-                            ? "opacity-40 line-through cursor-not-allowed"
+                            ? "opacity-60 cursor-not-allowed"
                             : "bg-card hover:border-teal/60")
                       }
                     >
-                      {new Date(s.start).toLocaleTimeString(undefined, {
-                        hour: "numeric",
-                        minute: "2-digit",
-                      })}
+                      <span className={s.taken ? "line-through" : ""}>
+                        {new Date(s.start).toLocaleTimeString(undefined, {
+                          hour: "numeric",
+                          minute: "2-digit",
+                        })}
+                      </span>
+                      <span
+                        className={
+                          "text-[10px] " + (s.taken ? "text-muted-foreground" : "text-teal")
+                        }
+                      >
+                        {s.taken ? "Taken" : "Open"}
+                      </span>
                     </button>
                   );
                 })}
@@ -440,8 +431,8 @@ function SchedulePage() {
         <div className="rounded-md border bg-secondary/30 p-3 text-xs text-muted-foreground flex items-start gap-2">
           <CalendarClock className="h-3.5 w-3.5 text-teal mt-0.5" />
           <span>
-            Session length is {defaultDuration} minutes. Your care team sets
-            this — call your case manager if you need it changed.
+            Session length is {defaultDuration} minutes. Your care team sets this — call your case
+            manager if you need it changed.
           </span>
         </div>
         <Button

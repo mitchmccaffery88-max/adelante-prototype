@@ -1,6 +1,6 @@
 import { Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { useI18n } from "@/lib/i18n";
+import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -38,19 +38,18 @@ import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
-import { useState } from "react";
+import { InstallAppButton } from "@/components/InstallAppButton";
+import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
+import { useEffect, useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
-import { Pill } from "lucide-react";
+import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
 // out defensively in the render below.
-const needMeta: Record<
-  string,
-  { tKey: string; Icon: typeof Home }
-> = {
+const needMeta: Record<string, { tKey: Key; Icon: typeof Home }> = {
   housing: { tKey: "needHousing", Icon: Home },
   food: { tKey: "needFood", Icon: Utensils },
   substanceUse: { tKey: "needSubstanceUse", Icon: Activity },
@@ -60,18 +59,69 @@ const needMeta: Record<
   transport: { tKey: "needTransport", Icon: Car },
 };
 
-const statusMap: Record<string, string> = {
+const statusMap: Record<string, Key> = {
   scheduled: "statusScheduled",
   completed: "statusCompleted",
   cancelled: "statusCancelled",
   no_show: "statusNoShow",
 };
 
-const goalStatusMap: Record<string, string> = {
+const goalStatusMap: Record<string, Key> = {
   not_started: "goalNotStarted",
   in_progress: "goalInProgress",
   done: "goalDone",
 };
+
+const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
+
+function HomeScreenNudge() {
+  const [dismissed, setDismissed] = useState(true);
+  const { prompt } = usePwaInstallPrompt();
+
+  useEffect(() => {
+    try {
+      setDismissed(localStorage.getItem(HOME_SCREEN_NUDGE_KEY) === "1");
+    } catch {
+      setDismissed(false);
+    }
+  }, []);
+
+  // Only show the nudge when the browser actually supports the install prompt.
+  if (dismissed || !prompt) return null;
+
+  const dismiss = () => {
+    setDismissed(true);
+    try {
+      localStorage.setItem(HOME_SCREEN_NUDGE_KEY, "1");
+    } catch {
+      /* no-op */
+    }
+  };
+
+  return (
+    <Card className="p-4 border-teal/40 bg-teal/5 flex flex-wrap items-center justify-between gap-3">
+      <div className="flex-1 min-w-[220px]">
+        <p className="text-sm font-medium text-navy">Keep Adelante one tap away</p>
+        <p className="text-xs text-muted-foreground mt-0.5">
+          Add this app to your home screen for quick access to your care.
+        </p>
+      </div>
+      <div className="flex items-center gap-2">
+        <InstallAppButton onInstalled={dismiss} />
+        <Button
+          type="button"
+          variant="ghost"
+          size="icon"
+          onClick={dismiss}
+          aria-label="Dismiss"
+          className="min-h-[44px] min-w-[44px]"
+        >
+          <X className="h-4 w-4" />
+        </Button>
+      </div>
+    </Card>
+  );
+}
 
 export function PatientHome() {
   const { t } = useI18n();
@@ -119,7 +169,7 @@ export function PatientHome() {
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
       {/* Welcome */}
       <Card className="p-6 border-2 bg-gradient-to-br from-card to-secondary/40">
-        <div className="flex flex-wrap items-start justify-between gap-4">
+        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
           <div>
             <div className="text-xs font-medium uppercase tracking-wider text-teal">
               {t("homeWelcomeBack")}
@@ -128,7 +178,8 @@ export function PatientHome() {
               {t("homeHi")}, {patient.firstName}.
             </h1>
             <p className="text-muted-foreground mt-1 max-w-md">
-              {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining} {t("homeDaysRemain")}
+              {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining}{" "}
+              {t("homeDaysRemain")}
             </p>
           </div>
           {smsOn && (
@@ -139,14 +190,18 @@ export function PatientHome() {
         </div>
         <div className="mt-5">
           <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <span>{t("homeDay")} {patient.episodeDay}</span>
+            <span>
+              {t("homeDay")} {patient.episodeDay}
+            </span>
             <span>{t("homeDay")} 90</span>
           </div>
           <Progress value={(patient.episodeDay / 90) * 100} className="h-2" />
         </div>
       </Card>
 
-      <div className="grid sm:grid-cols-2 gap-4">
+      <HomeScreenNudge />
+
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
             <CalIcon className="h-4 w-4" /> {t("homeNextSession")}
@@ -166,8 +221,8 @@ export function PatientHome() {
                 />
               </div>
               <div className="text-sm text-muted-foreground">
-                {AdelanteEHR.getClinician(next.clinicianId)?.name} ·{" "}
-                {next.durationMin} {t("homeMin")} ·{" "}
+                {AdelanteEHR.getClinician(next.clinicianId)?.name} · {next.durationMin}{" "}
+                {t("homeMin")} ·{" "}
                 {next.modality === "phone"
                   ? t("schPhone")
                   : next.modality === "in_person"
@@ -176,19 +231,21 @@ export function PatientHome() {
                 {next.serviceType &&
                   ` · ${AdelanteEHR.getServiceType(next.serviceType)?.label ?? ""}`}
               </div>
-              {next.modality === "in_person" && next.locationId && (() => {
-                const loc = AdelanteEHR.getLocation(next.locationId);
-                if (!loc) return null;
-                return (
-                  <div className="mt-1 text-xs text-muted-foreground flex items-start gap-1.5">
-                    <MapPin className="h-3.5 w-3.5 text-teal mt-0.5" />
-                    <span>
-                      {loc.name} — {loc.address}, {loc.city}
-                      {loc.room ? ` · ${loc.room}` : ""}
-                    </span>
-                  </div>
-                );
-              })()}
+              {next.modality === "in_person" &&
+                next.locationId &&
+                (() => {
+                  const loc = AdelanteEHR.getLocation(next.locationId);
+                  if (!loc) return null;
+                  return (
+                    <div className="mt-1 text-xs text-muted-foreground flex items-start gap-1.5">
+                      <MapPin className="h-3.5 w-3.5 text-teal mt-0.5" />
+                      <span>
+                        {loc.name} — {loc.address}, {loc.city}
+                        {loc.room ? ` · ${loc.room}` : ""}
+                      </span>
+                    </div>
+                  );
+                })()}
               <NotificationLine patientId={patient.id} apptId={next.id} />
               <Button
                 className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
@@ -204,10 +261,7 @@ export function PatientHome() {
           ) : (
             <>
               <div className="mt-2 text-sm text-muted-foreground">{t("homeNoSessions")}</div>
-              <Button
-                asChild
-                className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
-              >
+              <Button asChild className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90">
                 <Link to="/schedule">
                   <CalendarPlus className="h-4 w-4 mr-2" /> {t("homeSchedule")}
                 </Link>
@@ -215,7 +269,7 @@ export function PatientHome() {
             </>
           )}
           {next && (
-            <div className="mt-2 grid grid-cols-2 gap-2">
+            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
               <Button asChild variant="outline" size="sm">
                 <Link to="/schedule" search={{ reschedule: next.id }}>
                   <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
@@ -244,14 +298,12 @@ export function PatientHome() {
                 return (
                   <Badge key={k} variant="outline" className="gap-1">
                     <Icon className="h-3 w-3" />
-                    {t(meta.tKey as any)}
+                    {t(meta.tKey)}
                   </Badge>
                 );
               })}
             {Object.values(patient.needs).every((v) => !v) && (
-              <span className="text-xs text-muted-foreground">
-                No support needs flagged yet.
-              </span>
+              <span className="text-xs text-muted-foreground">No support needs flagged yet.</span>
             )}
           </div>
         </Card>
@@ -288,7 +340,7 @@ export function PatientHome() {
             {goals.map((g) => (
               <li
                 key={g.id}
-                className="flex items-start gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
+                className="flex items-center min-h-11 gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
                 onClick={() => cycleGoal(g.id, g.status)}
                 role="button"
                 aria-label={`Update goal: ${g.text}`}
@@ -313,7 +365,7 @@ export function PatientHome() {
                   </span>
                 </span>
                 <Badge variant="outline" className="capitalize text-xs">
-                  {t((goalStatusMap[g.status] ?? g.status) as any)}
+                  {t(goalStatusMap[g.status] ?? (g.status as Key))}
                 </Badge>
               </li>
             ))}
@@ -343,7 +395,7 @@ export function PatientHome() {
                   </div>
                 </div>
                 <Badge variant="outline" className="capitalize">
-                  {t((statusMap[a.status] ?? a.status) as any)}
+                  {t(statusMap[a.status] ?? (a.status as Key))}
                 </Badge>
               </Card>
             ))
@@ -367,7 +419,7 @@ export function PatientHome() {
                   </div>
                 </div>
                 <Badge variant="outline" className="capitalize">
-                  {t((statusMap[a.status] ?? a.status) as any)}
+                  {t(statusMap[a.status] ?? (a.status as Key))}
                 </Badge>
               </Card>
             ))
@@ -396,37 +448,25 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
         <h1 className="font-display text-3xl sm:text-4xl text-navy mt-4 leading-tight">
           {t("homeHi")} {firstName} — {t("homeSetupCare")}
         </h1>
-        <p className="text-muted-foreground mt-3 max-w-xl">
-          {t("homeIntakeBlurb")}
-        </p>
+        <p className="text-muted-foreground mt-3 max-w-xl">{t("homeIntakeBlurb")}</p>
 
         <ul className="mt-6 grid sm:grid-cols-3 gap-3 text-sm">
           <li className="rounded-lg border bg-card p-3">
             <div className="font-medium text-navy">{t("homePrivate")}</div>
-            <div className="text-muted-foreground text-xs mt-0.5">
-              {t("homePrivateDesc")}
-            </div>
+            <div className="text-muted-foreground text-xs mt-0.5">{t("homePrivateDesc")}</div>
           </li>
           <li className="rounded-lg border bg-card p-3">
             <div className="font-medium text-navy">{t("homeYourPace")}</div>
-            <div className="text-muted-foreground text-xs mt-0.5">
-              {t("homeYourPaceDesc")}
-            </div>
+            <div className="text-muted-foreground text-xs mt-0.5">{t("homeYourPaceDesc")}</div>
           </li>
           <li className="rounded-lg border bg-card p-3">
             <div className="font-medium text-navy">{t("homeRealHelp")}</div>
-            <div className="text-muted-foreground text-xs mt-0.5">
-              {t("homeRealHelpDesc")}
-            </div>
+            <div className="text-muted-foreground text-xs mt-0.5">{t("homeRealHelpDesc")}</div>
           </li>
         </ul>
 
         <div className="mt-7 flex flex-wrap gap-3">
-          <Button
-            asChild
-            size="lg"
-            className="bg-navy text-navy-foreground hover:bg-navy/90"
-          >
+          <Button asChild size="lg" className="bg-navy text-navy-foreground hover:bg-navy/90">
             <Link to="/intake">
               <ClipboardList className="mr-2 h-4 w-4" />
               {t("homeStartIntake")}
@@ -454,7 +494,10 @@ function TasksCard({ patientId }: { patientId: string }) {
       </div>
       <ul className="mt-3 space-y-2">
         {open.map((t) => (
-          <li key={t.id} className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
+          <li
+            key={t.id}
+            className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm"
+          >
             <span className="flex-1 text-foreground">{t.label}</span>
             {t.kind === "rescreen" ? (
               <Button asChild size="sm" variant="outline">
@@ -481,9 +524,7 @@ function TasksCard({ patientId }: { patientId: string }) {
 
 function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
   const requests = useEhr(() =>
-    AdelanteEHR.listRefillRequests({ patientId }).filter(
-      (r) => r.medicationId === med.id,
-    ),
+    AdelanteEHR.listRefillRequests({ patientId }).filter((r) => r.medicationId === med.id),
   );
   const latest = requests[0];
   const [open, setOpen] = useState(false);
@@ -518,8 +559,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
       <div className="flex items-center justify-between gap-2">
         <div className="min-w-0">
           <div className="font-medium text-navy">
-            {med.name}{" "}
-            <span className="text-muted-foreground font-normal">· {med.dose}</span>
+            {med.name} <span className="text-muted-foreground font-normal">· {med.dose}</span>
           </div>
           <div className="text-[11px] text-muted-foreground">
             {med.frequency} · {med.prescriber}
@@ -542,7 +582,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
             <Button
               size="sm"
               variant="outline"
-              className="h-7 text-[11px]"
+              className="min-h-11 min-w-11 text-[11px]"
               onClick={() => setOpen((v) => !v)}
             >
               Request refill
@@ -562,14 +602,14 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
             <Button
               size="sm"
               variant="ghost"
-              className="h-7 text-[11px]"
+              className="min-h-11 text-[11px]"
               onClick={() => setOpen(false)}
             >
               Cancel
             </Button>
             <Button
               size="sm"
-              className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+              className="min-h-11 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
               onClick={submit}
             >
               Send request
@@ -636,7 +676,8 @@ function MyProfileCard({ patientId }: { patientId: string }) {
         </Row>
         {patient.contactPrefs && (
           <Row label="Contact">
-            {channelLabel[patient.contactPrefs.channel]} · {timeLabel[patient.contactPrefs.bestTime]}
+            {channelLabel[patient.contactPrefs.channel]} ·{" "}
+            {timeLabel[patient.contactPrefs.bestTime]}
           </Row>
         )}
         {patient.address && <Row label="Address">{patient.address}</Row>}
@@ -745,9 +786,7 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
                 {statusLabel[i.status] ?? i.status}
               </Badge>
             </div>
-            {i.note && (
-              <div className="text-xs text-muted-foreground mt-1">{i.note}</div>
-            )}
+            {i.note && <div className="text-xs text-muted-foreground mt-1">{i.note}</div>}
           </li>
         ))}
       </ul>
@@ -769,15 +808,15 @@ function ReferralsForYouCard({ patientId }: { patientId: string }) {
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
         <HandHeart className="h-4 w-4" /> Referrals for you
       </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        Places your team connected you with.
-      </p>
+      <p className="text-xs text-muted-foreground mt-1">Places your team connected you with.</p>
       <ul className="mt-3 space-y-2 text-sm">
         {items.map((r) => (
           <li key={r.id} className="rounded-md border p-2.5">
             <div className="flex items-center justify-between gap-2">
               <div>
-                <div className="text-navy capitalize">{r.category} — {r.provider}</div>
+                <div className="text-navy capitalize">
+                  {r.category} — {r.provider}
+                </div>
                 {r.note && <div className="text-xs text-muted-foreground mt-0.5">{r.note}</div>}
               </div>
               <Badge variant="outline" className="text-[10px]">

@@ -4,7 +4,11 @@ import { AdelanteEHR, useEhr, type AuditCategory } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import {
-  Select, SelectContent, SelectItem, SelectTrigger, SelectValue,
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
@@ -13,9 +17,15 @@ export const Route = createFileRoute("/admin-audit")({
   head: () => ({
     meta: [
       { title: "Audit log — Adelante Admin" },
-      { name: "description", content: "Unified activity log across consent, eRx, telehealth, and vendor events." },
+      {
+        name: "description",
+        content: "Unified activity log across consent, eRx, telehealth, and vendor events.",
+      },
       { property: "og:title", content: "Audit log — Adelante Admin" },
-      { property: "og:description", content: "Cross-cutting activity trail for consent, medications, telehealth, and vendors." },
+      {
+        property: "og:description",
+        content: "Cross-cutting activity trail for consent, medications, telehealth, and vendors.",
+      },
     ],
   }),
   component: AdminAuditPage,
@@ -49,7 +59,8 @@ function AdminAuditPage() {
         <ShieldCheck className="h-5 w-5 text-teal" /> Audit log
       </h1>
       <p className="text-sm text-muted-foreground">
-        De-identified activity trail. Program IDs shown; no PHI beyond patient IDs used for internal linking.
+        De-identified activity trail. Program IDs shown; no PHI beyond patient IDs used for internal
+        linking.
       </p>
 
       <div className="flex items-center gap-3">
@@ -59,11 +70,15 @@ function AdminAuditPage() {
           </SelectTrigger>
           <SelectContent>
             {CATEGORIES.map((c) => (
-              <SelectItem key={c.value} value={c.value}>{c.label}</SelectItem>
+              <SelectItem key={c.value} value={c.value}>
+                {c.label}
+              </SelectItem>
             ))}
           </SelectContent>
         </Select>
-        <Badge variant="outline" className="text-[10px]">{events.length} events</Badge>
+        <Badge variant="outline" className="text-[10px]">
+          {events.length} events
+        </Badge>
       </div>
 
       <Card className="p-0 overflow-hidden">
@@ -83,12 +98,16 @@ function AdminAuditPage() {
             <tbody>
               {events.map((e) => (
                 <tr key={e.id} className="border-t align-top">
-                  <td className="p-2 whitespace-nowrap text-xs"><ClientDate value={e.at} /></td>
-                  <td className="p-2"><Badge variant="outline" className="text-[10px]">{e.category}</Badge></td>
-                  <td className="p-2 font-mono text-[11px]">{e.action}</td>
-                  <td className="p-2 font-mono text-[11px]">
-                    {e.programId ?? e.patientId ?? "—"}
+                  <td className="p-2 whitespace-nowrap text-xs">
+                    <ClientDate value={e.at} />
                   </td>
+                  <td className="p-2">
+                    <Badge variant="outline" className="text-[10px]">
+                      {e.category}
+                    </Badge>
+                  </td>
+                  <td className="p-2 font-mono text-[11px]">{e.action}</td>
+                  <td className="p-2 font-mono text-[11px]">{e.programId ?? e.patientId ?? "—"}</td>
                   <td className="p-2 text-[11px] text-muted-foreground">
                     {e.detail ? summarize(e.detail) : ""}
                   </td>

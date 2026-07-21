@@ -13,7 +13,8 @@ export const Route = createFileRoute("/")({
       { property: "og:title", content: "Adelante — Forward starts here." },
       {
         property: "og:description",
-        content: "Behavioral health and reentry support for your first 90 days back in the community.",
+        content:
+          "Behavioral health and reentry support for your first 90 days back in the community.",
       },
     ],
   }),

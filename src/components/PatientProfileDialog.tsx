@@ -36,9 +36,7 @@ interface Props {
 }
 
 export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminMeta }: Props) {
-  const patient = useEhr(() =>
-    patientId ? AdelanteEHR.getPatient(patientId) : undefined,
-  );
+  const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
 
   const [form, setForm] = useState({
@@ -132,10 +130,16 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
         <div className="space-y-5">
           <section className="grid sm:grid-cols-2 gap-3">
             <Field label="First name">
-              <Input value={form.firstName} onChange={(e) => setForm({ ...form, firstName: e.target.value })} />
+              <Input
+                value={form.firstName}
+                onChange={(e) => setForm({ ...form, firstName: e.target.value })}
+              />
             </Field>
             <Field label="Last name">
-              <Input value={form.lastName} onChange={(e) => setForm({ ...form, lastName: e.target.value })} />
+              <Input
+                value={form.lastName}
+                onChange={(e) => setForm({ ...form, lastName: e.target.value })}
+              />
             </Field>
             <Field label="Preferred name">
               <Input
@@ -180,9 +184,13 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
             <Field label="Preferred language">
               <Select
                 value={form.preferredLanguage}
-                onValueChange={(v) => setForm({ ...form, preferredLanguage: v as PreferredLanguage })}
+                onValueChange={(v) =>
+                  setForm({ ...form, preferredLanguage: v as PreferredLanguage })
+                }
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="en">English</SelectItem>
                   <SelectItem value="es">Español</SelectItem>
@@ -194,7 +202,9 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                 value={form.contactChannel}
                 onValueChange={(v) => setForm({ ...form, contactChannel: v as ContactChannel })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="text">Text</SelectItem>
                   <SelectItem value="call">Phone call</SelectItem>
@@ -207,7 +217,9 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                 value={form.bestTime}
                 onValueChange={(v) => setForm({ ...form, bestTime: v as BestTime })}
               >
-                <SelectTrigger><SelectValue /></SelectTrigger>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="morning">Morning</SelectItem>
                   <SelectItem value="afternoon">Afternoon</SelectItem>
@@ -265,10 +277,16 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
             <section className="rounded-lg border p-4 space-y-3 text-xs">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium text-navy">Consents</span>
-                <Badge variant="outline" className={consent.part2Sud ? "border-teal/40 text-teal" : ""}>
+                <Badge
+                  variant="outline"
+                  className={consent.part2Sud ? "border-teal/40 text-teal" : ""}
+                >
                   Part 2 SUD: {consent.part2Sud ? "On" : "Off"}
                 </Badge>
-                <Badge variant="outline" className={consent.ecmShare ? "border-teal/40 text-teal" : ""}>
+                <Badge
+                  variant="outline"
+                  className={consent.ecmShare ? "border-teal/40 text-teal" : ""}
+                >
                   ECM share: {consent.ecmShare ? "On" : "Off"}
                 </Badge>
                 <Badge variant="outline" className={consent.sms ? "border-teal/40 text-teal" : ""}>
