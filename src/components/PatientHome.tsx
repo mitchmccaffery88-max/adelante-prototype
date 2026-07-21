@@ -41,6 +41,8 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import type { Medication } from "@/lib/ehr";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -265,20 +267,7 @@ export function PatientHome() {
           </p>
           <ul className="mt-3 space-y-2 text-sm">
             {meds.map((m) => (
-              <li
-                key={m.id}
-                className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
-              >
-                <div>
-                  <div className="font-medium text-navy">
-                    {m.name} <span className="text-muted-foreground font-normal">· {m.dose}</span>
-                  </div>
-                  <div className="text-[11px] text-muted-foreground">
-                    {m.frequency} · {m.prescriber}
-                  </div>
-                </div>
-                <Badge variant="outline" className="text-[10px]">active</Badge>
-              </li>
+              <MedRow key={m.id} med={m} patientId={patient.id} />
             ))}
           </ul>
           <p className="mt-3 text-[10px] text-muted-foreground">
@@ -487,6 +476,113 @@ function TasksCard({ patientId }: { patientId: string }) {
         ))}
       </ul>
     </Card>
+  );
+}
+
+function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
+  const requests = useEhr(() =>
+    AdelanteEHR.listRefillRequests({ patientId }).filter(
+      (r) => r.medicationId === med.id,
+    ),
+  );
+  const latest = requests[0];
+  const [open, setOpen] = useState(false);
+  const [note, setNote] = useState("");
+
+  const submit = () => {
+    const req = AdelanteEHR.requestRefill({
+      patientId,
+      medicationId: med.id,
+      pharmacyNote: note.trim() || undefined,
+      requestedBy: "patient",
+    });
+    if (req) {
+      toast.success("Refill request sent to your care team");
+      setOpen(false);
+      setNote("");
+    } else {
+      toast.error("Could not send that request.");
+    }
+  };
+
+  const statusBadge = latest
+    ? latest.status === "pending"
+      ? { label: "Refill pending", cls: "bg-gold/30 text-navy" }
+      : latest.status === "sent_to_pharmacy" || latest.status === "approved"
+        ? { label: "Refill approved", cls: "bg-success/20 text-success" }
+        : { label: "Refill denied", cls: "bg-destructive/15 text-destructive" }
+    : null;
+
+  return (
+    <li className="border-b last:border-0 pb-2 last:pb-0">
+      <div className="flex items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="font-medium text-navy">
+            {med.name}{" "}
+            <span className="text-muted-foreground font-normal">· {med.dose}</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            {med.frequency} · {med.prescriber}
+          </div>
+        </div>
+        <div className="flex items-center gap-2 shrink-0">
+          {statusBadge ? (
+            <Badge
+              className={`${statusBadge.cls} border-0 text-[10px]`}
+              title={latest?.denyReason ?? undefined}
+            >
+              {statusBadge.label}
+            </Badge>
+          ) : (
+            <Badge variant="outline" className="text-[10px]">
+              active
+            </Badge>
+          )}
+          {(!latest || latest.status === "denied") && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-[11px]"
+              onClick={() => setOpen((v) => !v)}
+            >
+              Request refill
+            </Button>
+          )}
+        </div>
+      </div>
+      {open && (
+        <div className="mt-2 rounded-md border bg-muted/30 p-2 space-y-2">
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Note for your prescriber (optional) — e.g. pharmacy name, ran out early"
+            className="min-h-[60px] text-xs"
+          />
+          <div className="flex justify-end gap-2">
+            <Button
+              size="sm"
+              variant="ghost"
+              className="h-7 text-[11px]"
+              onClick={() => setOpen(false)}
+            >
+              Cancel
+            </Button>
+            <Button
+              size="sm"
+              className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+              onClick={submit}
+            >
+              Send request
+            </Button>
+          </div>
+        </div>
+      )}
+      {latest?.denyReason && latest.status === "denied" && (
+        <div className="mt-1 text-[10px] text-destructive">
+          Prescriber note: {latest.denyReason}
+        </div>
+      )}
+    </li>
   );
 }
 

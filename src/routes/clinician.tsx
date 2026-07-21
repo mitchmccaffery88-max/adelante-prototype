@@ -141,10 +141,21 @@ function ClinicianPage() {
   };
 
   const launch = (id: string) => {
-    const url = AdelanteEHR.telehealthJoinUrl(id, "clinician");
+    const session = AdelanteEHR.markTelehealthJoin(id, "clinician");
+    if (!session) {
+      toast.error("Could not open that session.");
+      return;
+    }
+    if (typeof window !== "undefined") {
+      window.open(session.joinUrlClinician, "_blank", "noopener,noreferrer");
+    }
     toast.success("Launching telehealth session", {
-      description: `Secure video powered by our telehealth partner · ${url}`,
+      description: `Secure video · session ${session.roomId}`,
     });
+  };
+  const endSession = (id: string) => {
+    const s = AdelanteEHR.endTelehealthSession(id, "clinician_ended");
+    if (s) toast.success("Session ended", { description: `${Math.round((s.durationSec ?? 0) / 60)} min logged` });
   };
 
   // Bucket appointments by time horizon for the schedule view.
@@ -268,25 +279,26 @@ function ClinicianPage() {
           {todayAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinToday")} count={todayAppts.length} />
-              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
           {weekAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
-              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
           {laterAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinLater")} count={laterAppts.length} />
-              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
         </div>
 
         {/* Book + availability */}
         <div className="space-y-3">
+          <RefillReviewCard />
           <Card className="p-5">
             <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
             <div className="mt-4 space-y-3">
@@ -736,11 +748,13 @@ function ApptCard({
   patients,
   launch,
   t,
+  endSession,
 }: {
   a: ReturnType<typeof AdelanteEHR.appointmentsForClinician>[number];
   patients: ReturnType<typeof AdelanteEHR.listPatients>;
   launch: (id: string) => void;
   t: (k: never) => string;
+  endSession: (id: string) => void;
 }) {
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
@@ -799,6 +813,19 @@ function ApptCard({
               >
                 <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
               </Button>
+              {(() => {
+                const s = AdelanteEHR.getTelehealthSession(a.id);
+                if (!s || s.state === "ended" || s.state === "expired") return null;
+                return (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => endSession(a.id)}
+                  >
+                    End session
+                  </Button>
+                );
+              })()}
             </>
           )}
           {a.status === "scheduled" && !isFuture && (
@@ -1043,6 +1070,104 @@ function SocialContextPanel({ patientId }: { patientId: string }) {
           )}
         </div>
       </div>
+    </Card>
+  );
+}
+function RefillReviewCard() {
+  const pending = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }));
+  const patients = AdelanteEHR.listPatients();
+  const [openId, setOpenId] = useState<string | null>(null);
+  const [reason, setReason] = useState("");
+
+  if (pending.length === 0) {
+    return (
+      <Card className="p-5">
+        <h3 className="font-display text-base text-navy flex items-center gap-2">
+          <Video className="h-4 w-4" aria-hidden="true" /> Refill requests
+        </h3>
+        <p className="mt-2 text-xs text-muted-foreground">No pending refill requests.</p>
+      </Card>
+    );
+  }
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-base text-navy">Refill requests</h3>
+      <ul className="mt-3 space-y-3 text-sm">
+        {pending.map((r) => {
+          const p = patients.find((x) => x.id === r.patientId);
+          return (
+            <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
+              <div className="flex items-start justify-between gap-2">
+                <div className="min-w-0">
+                  <div className="font-medium text-navy truncate">
+                    {p ? `${p.firstName} ${p.lastName}` : r.patientId}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {r.medicationName} · requested <ClientDate value={r.requestedAt} />
+                  </div>
+                  {r.pharmacyNote && (
+                    <div className="text-[11px] italic text-muted-foreground mt-1">
+                      "{r.pharmacyNote}"
+                    </div>
+                  )}
+                </div>
+                <div className="flex gap-1.5 shrink-0">
+                  <Button
+                    size="sm"
+                    className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+                    onClick={() => {
+                      AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
+                      toast.success("Refill approved and sent to pharmacy");
+                    }}
+                  >
+                    Approve
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                  >
+                    Deny
+                  </Button>
+                </div>
+              </div>
+              {openId === r.id && (
+                <div className="mt-2 space-y-2">
+                  <Textarea
+                    value={reason}
+                    onChange={(e) => setReason(e.target.value)}
+                    placeholder="Reason (shown to patient)"
+                    className="min-h-[50px] text-xs"
+                  />
+                  <div className="flex justify-end gap-2">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-[11px]"
+                      onClick={() => { setOpenId(null); setReason(""); }}
+                    >
+                      Cancel
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="destructive"
+                      className="h-7 text-[11px]"
+                      onClick={() => {
+                        AdelanteEHR.reviewRefill({ id: r.id, decision: "denied", denyReason: reason.trim() || "Please schedule a visit" });
+                        setOpenId(null); setReason("");
+                        toast.success("Refill denied");
+                      }}
+                    >
+                      Send denial
+                    </Button>
+                  </div>
+                </div>
+              )}
+            </li>
+          );
+        })}
+      </ul>
     </Card>
   );
 }

@@ -789,6 +789,93 @@ interface RxEventRow {
 }
 const rxEvents: RxEventRow[] = [];
 
+// ----- Unified audit stream ------------------------------------------------
+// One append-only log for consent, rx, telehealth, vendor, and access events.
+// Every mutating helper below should route through `appendAudit` so admin
+// tooling can show a coherent activity feed.
+export type AuditCategory =
+  | "consent"
+  | "rx"
+  | "telehealth"
+  | "vendor"
+  | "access";
+export interface AuditEvent {
+  id: string;
+  at: string;
+  category: AuditCategory;
+  action: string;
+  actorRole?: string;
+  actorId?: string;
+  patientId?: string;
+  programId?: string;
+  detail?: Record<string, unknown>;
+}
+const auditEvents: AuditEvent[] = [];
+function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
+  const patient = evt.patientId
+    ? patients.find((p) => p.id === evt.patientId)
+    : undefined;
+  auditEvents.unshift({
+    id: `au_${auditEvents.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+    at: evt.at ?? new Date().toISOString(),
+    programId: patient?.programId,
+    ...evt,
+  });
+}
+
+// ----- Refill request lifecycle -------------------------------------------
+export type RefillStatus =
+  | "pending"
+  | "approved"
+  | "denied"
+  | "sent_to_pharmacy";
+export interface RefillRequest {
+  id: string;
+  patientId: string;
+  medicationId: string;
+  medicationName: string;
+  requestedAt: string;
+  requestedBy: "patient" | "clinician";
+  pharmacyNote?: string;
+  status: RefillStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  denyReason?: string;
+}
+const refillRequests: RefillRequest[] = [];
+
+// ----- Telehealth session lifecycle ---------------------------------------
+export type TelehealthState =
+  | "scheduled"
+  | "clinician_joined"
+  | "patient_joined"
+  | "in_progress"
+  | "ended"
+  | "expired"
+  | "failed";
+export interface TelehealthSession {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  clinicianId: string;
+  vendor: string;
+  roomId: string;
+  joinUrlPatient: string;
+  joinUrlClinician: string;
+  state: TelehealthState;
+  createdAt: string;
+  expiresAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  durationSec?: number;
+  endReason?: string;
+}
+const telehealthSessions: TelehealthSession[] = [];
+
+// Cached last vendor ping results (last 5 per vendor).
+type PingResult = { vendor: string; ok: boolean; at: string };
+const vendorPings: PingResult[] = [];
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
@@ -1332,6 +1419,12 @@ export const AdelanteEHR = {
         note,
       },
     ];
+    appendAudit({
+      category: "consent",
+      action: granted ? "granted" : "revoked",
+      patientId: p.id,
+      detail: { purpose, note },
+    });
     emit();
   },
   listAllConsentEvents() {
@@ -1865,6 +1958,13 @@ export const AdelanteEHR = {
       at: new Date().toISOString(),
       ...evt,
     });
+    appendAudit({
+      category: "rx",
+      action: evt.kind,
+      patientId: evt.patientId,
+      actorId: evt.clinicianId,
+      detail: { note: evt.note },
+    });
     emit();
   },
   listRxEvents(patientId: string) {
@@ -1875,6 +1975,252 @@ export const AdelanteEHR = {
       telehealth: { name: _vendors.telehealth.vendorName, mode: "mock" as const },
       erx: { name: _vendors.erx.vendorName, mode: "mock" as const },
     };
+  },
+
+  // ---------- Unified audit log ----------
+  listAuditEvents(filter: {
+    patientId?: string;
+    category?: AuditCategory | AuditCategory[];
+    since?: string;
+    limit?: number;
+  } = {}): AuditEvent[] {
+    const cats = Array.isArray(filter.category)
+      ? new Set(filter.category)
+      : filter.category
+        ? new Set([filter.category])
+        : null;
+    const sinceMs = filter.since ? +new Date(filter.since) : 0;
+    const out = auditEvents.filter((e) => {
+      if (filter.patientId && e.patientId !== filter.patientId) return false;
+      if (cats && !cats.has(e.category)) return false;
+      if (sinceMs && +new Date(e.at) < sinceMs) return false;
+      return true;
+    });
+    return filter.limit ? out.slice(0, filter.limit) : out;
+  },
+
+  // ---------- Medication refill requests ----------
+  requestRefill(input: {
+    patientId: string;
+    medicationId: string;
+    pharmacyNote?: string;
+    requestedBy?: "patient" | "clinician";
+  }): RefillRequest | undefined {
+    const meds = _vendors.erx.listActiveMedications(input.patientId);
+    const med = meds.find((m) => m.id === input.medicationId);
+    if (!med) return undefined;
+    // Dedupe: don't stack pending requests for the same medication.
+    const existing = refillRequests.find(
+      (r) =>
+        r.patientId === input.patientId &&
+        r.medicationId === input.medicationId &&
+        r.status === "pending",
+    );
+    if (existing) return existing;
+    const req: RefillRequest = {
+      id: `rx_ref_${refillRequests.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+      patientId: input.patientId,
+      medicationId: input.medicationId,
+      medicationName: med.name,
+      requestedAt: new Date().toISOString(),
+      requestedBy: input.requestedBy ?? "patient",
+      pharmacyNote: input.pharmacyNote,
+      status: "pending",
+    };
+    refillRequests.unshift(req);
+    appendAudit({
+      category: "rx",
+      action: "refill_requested",
+      patientId: input.patientId,
+      detail: { medicationId: med.id, medicationName: med.name, requestedBy: req.requestedBy },
+    });
+    // Surface in the case-task queue so the prescribing team sees it.
+    // Assign to the patient's case manager if present; else park unassigned.
+    const patient = patients.find((p) => p.id === input.patientId);
+    const dueDate = new Date().toISOString().slice(0, 10);
+    // Use a stable dedupeKey so multiple visits don't duplicate the task.
+    (this as typeof AdelanteEHR).createCaseTask({
+      patientId: input.patientId,
+      assignedTo: patient?.caseManagerId ?? "",
+      title: `Refill request: ${med.name} ${med.dose}`,
+      detail:
+        `${med.frequency} · prescriber ${med.prescriber}` +
+        (input.pharmacyNote ? ` · note: ${input.pharmacyNote}` : ""),
+      dueDate,
+      origin: "manual",
+      dedupeKey: `refill:${req.id}`,
+    });
+    emit();
+    return req;
+  },
+  reviewRefill(input: {
+    id: string;
+    decision: "approved" | "denied";
+    denyReason?: string;
+    clinicianId?: string;
+  }): RefillRequest | undefined {
+    const req = refillRequests.find((r) => r.id === input.id);
+    if (!req) return undefined;
+    req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
+    req.reviewedBy = input.clinicianId;
+    req.reviewedAt = new Date().toISOString();
+    if (input.decision === "denied") req.denyReason = input.denyReason;
+    appendAudit({
+      category: "rx",
+      action:
+        input.decision === "approved" ? "refill_approved" : "refill_denied",
+      patientId: req.patientId,
+      actorId: input.clinicianId,
+      detail: {
+        medicationId: req.medicationId,
+        medicationName: req.medicationName,
+        denyReason: req.denyReason,
+        source: "escribe-mock",
+      },
+    });
+    // Close the linked CM task.
+    const task = caseTasks.find(
+      (t) => t.dedupeKey === `refill:${req.id}` && t.status !== "done",
+    );
+    if (task) {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    emit();
+    return req;
+  },
+  listRefillRequests(filter: { patientId?: string; status?: RefillStatus } = {}): RefillRequest[] {
+    return refillRequests.filter((r) => {
+      if (filter.patientId && r.patientId !== filter.patientId) return false;
+      if (filter.status && r.status !== filter.status) return false;
+      return true;
+    });
+  },
+
+  // ---------- Telehealth session lifecycle ----------
+  startTelehealthSession(appointmentId: string): TelehealthSession | undefined {
+    const appt = appointments.find((a) => a.id === appointmentId);
+    if (!appt) return undefined;
+    let session = telehealthSessions.find((s) => s.appointmentId === appointmentId);
+    if (session) return session;
+    const now = new Date();
+    const expires = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    session = {
+      id: `th_${telehealthSessions.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+      appointmentId,
+      patientId: appt.patientId,
+      clinicianId: appt.clinicianId,
+      vendor: _vendors.telehealth.vendorName,
+      roomId: `rm_${appointmentId}`,
+      joinUrlPatient: _vendors.telehealth.getJoinUrl(appointmentId, "patient"),
+      joinUrlClinician: _vendors.telehealth.getJoinUrl(appointmentId, "clinician"),
+      state: "scheduled",
+      createdAt: now.toISOString(),
+      expiresAt: expires.toISOString(),
+    };
+    telehealthSessions.unshift(session);
+    appendAudit({
+      category: "telehealth",
+      action: "session_created",
+      patientId: session.patientId,
+      detail: { appointmentId, roomId: session.roomId, vendor: session.vendor },
+    });
+    emit();
+    return session;
+  },
+  markTelehealthJoin(appointmentId: string, role: "patient" | "clinician"): TelehealthSession | undefined {
+    const session = this.startTelehealthSession(appointmentId);
+    if (!session) return undefined;
+    const now = new Date().toISOString();
+    if (role === "clinician") {
+      session.state =
+        session.state === "patient_joined" || session.state === "in_progress"
+          ? "in_progress"
+          : "clinician_joined";
+    } else {
+      session.state =
+        session.state === "clinician_joined" || session.state === "in_progress"
+          ? "in_progress"
+          : "patient_joined";
+    }
+    if (session.state === "in_progress" && !session.startedAt) {
+      session.startedAt = now;
+    }
+    appendAudit({
+      category: "telehealth",
+      action: role === "clinician" ? "clinician_joined" : "patient_joined",
+      patientId: session.patientId,
+      detail: { appointmentId, state: session.state },
+    });
+    emit();
+    return session;
+  },
+  endTelehealthSession(appointmentId: string, reason?: string): TelehealthSession | undefined {
+    const session = telehealthSessions.find((s) => s.appointmentId === appointmentId);
+    if (!session || session.state === "ended") return session;
+    const now = new Date();
+    session.state = "ended";
+    session.endedAt = now.toISOString();
+    session.endReason = reason;
+    if (session.startedAt) {
+      session.durationSec = Math.round(
+        (now.getTime() - +new Date(session.startedAt)) / 1000,
+      );
+    }
+    appendAudit({
+      category: "telehealth",
+      action: "session_ended",
+      patientId: session.patientId,
+      detail: { appointmentId, durationSec: session.durationSec, reason },
+    });
+    emit();
+    return session;
+  },
+  listTelehealthSessions(filter: { patientId?: string; since?: string } = {}): TelehealthSession[] {
+    // Sweep expirations lazily on read.
+    const now = Date.now();
+    for (const s of telehealthSessions) {
+      if (
+        s.state !== "ended" &&
+        s.state !== "expired" &&
+        +new Date(s.expiresAt) < now
+      ) {
+        s.state = "expired";
+        appendAudit({
+          category: "telehealth",
+          action: "session_expired",
+          patientId: s.patientId,
+          detail: { appointmentId: s.appointmentId },
+        });
+      }
+    }
+    const sinceMs = filter.since ? +new Date(filter.since) : 0;
+    return telehealthSessions.filter((s) => {
+      if (filter.patientId && s.patientId !== filter.patientId) return false;
+      if (sinceMs && +new Date(s.createdAt) < sinceMs) return false;
+      return true;
+    });
+  },
+  getTelehealthSession(appointmentId: string): TelehealthSession | undefined {
+    return telehealthSessions.find((s) => s.appointmentId === appointmentId);
+  },
+
+  // ---------- Vendor pings ----------
+  async pingVendors(): Promise<{ telehealth: PingResult; erx: PingResult }> {
+    const [th, er] = await Promise.all([
+      _vendors.telehealth.ping(),
+      _vendors.erx.ping(),
+    ]);
+    const t: PingResult = { vendor: _vendors.telehealth.vendorName, ok: th.ok, at: th.at };
+    const e: PingResult = { vendor: _vendors.erx.vendorName, ok: er.ok, at: er.at };
+    vendorPings.unshift(t, e);
+    if (vendorPings.length > 10) vendorPings.length = 10;
+    appendAudit({ category: "vendor", action: "ping", detail: { telehealth: t, erx: e } });
+    emit();
+    return { telehealth: t, erx: e };
+  },
+  lastVendorPings(vendor: string): PingResult[] {
+    return vendorPings.filter((p) => p.vendor === vendor).slice(0, 5);
   },
 };
 
