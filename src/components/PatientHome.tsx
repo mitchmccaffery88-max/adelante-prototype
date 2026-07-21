@@ -370,7 +370,6 @@ export function PatientHome() {
         </Card>
       )}
 
-      <InstallAppButton />
       <TasksCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
       <SupportPlanCard patientId={patient.id} />
