@@ -880,6 +880,130 @@ const telehealthSessions: TelehealthSession[] = [];
 type PingResult = { vendor: string; ok: boolean; at: string };
 const vendorPings: PingResult[] = [];
 
+// ----- Provider switch notifications --------------------------------------
+// When a patient moves from one clinician to another (via reschedule, new
+// booking, refill decision, or reassignment), a ProviderSwitch is created
+// so the outgoing clinician + case manager can review continuity, network
+// status, and clinical hand-off.
+export type ProviderSwitchReason =
+  | "reschedule"
+  | "new_appointment"
+  | "refill_review"
+  | "primary_reassignment";
+export type ProviderSwitchStatus = "pending_review" | "acknowledged" | "dismissed";
+export interface ProviderSwitch {
+  id: string;
+  patientId: string;
+  fromClinicianId: string;
+  toClinicianId: string;
+  reason: ProviderSwitchReason;
+  serviceType?: ServiceType;
+  context?: string;
+  initiatedBy: "patient" | "clinician" | "case_manager" | "admin" | "system";
+  createdAt: string;
+  status: ProviderSwitchStatus;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolutionNote?: string;
+  linkedApptId?: string;
+  linkedRefillId?: string;
+}
+const providerSwitches: ProviderSwitch[] = [];
+
+/** Return the most recent scheduled/attended clinician for a patient. */
+function _previousProviderFor(patientId: string, serviceType?: ServiceType): string | undefined {
+  const rows = appointments
+    .filter(
+      (a) =>
+        a.patientId === patientId &&
+        (a.status === "scheduled" || a.status === "attended") &&
+        (!serviceType || !a.serviceType || a.serviceType === serviceType),
+    )
+    .sort((a, b) => +new Date(b.start) - +new Date(a.start));
+  return rows[0]?.clinicianId;
+}
+
+function _flagProviderSwitch(input: {
+  patientId: string;
+  fromClinicianId?: string;
+  toClinicianId: string;
+  reason: ProviderSwitchReason;
+  serviceType?: ServiceType;
+  context?: string;
+  initiatedBy: ProviderSwitch["initiatedBy"];
+  linkedApptId?: string;
+  linkedRefillId?: string;
+}): ProviderSwitch | undefined {
+  if (!input.fromClinicianId) return undefined;
+  if (input.fromClinicianId === input.toClinicianId) return undefined;
+  const sw: ProviderSwitch = {
+    id: `psw_${providerSwitches.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+    patientId: input.patientId,
+    fromClinicianId: input.fromClinicianId,
+    toClinicianId: input.toClinicianId,
+    reason: input.reason,
+    serviceType: input.serviceType,
+    context: input.context,
+    initiatedBy: input.initiatedBy,
+    createdAt: new Date().toISOString(),
+    status: "pending_review",
+    linkedApptId: input.linkedApptId,
+    linkedRefillId: input.linkedRefillId,
+  };
+  providerSwitches.unshift(sw);
+
+  const patient = patients.find((p) => p.id === input.patientId);
+  const fromClin = clinicians.find((c) => c.id === input.fromClinicianId);
+  const toClin = clinicians.find((c) => c.id === input.toClinicianId);
+  const dueDate = new Date().toISOString().slice(0, 10);
+  const reasonLabel: Record<ProviderSwitchReason, string> = {
+    reschedule: "Appointment moved to a new provider",
+    new_appointment: "Booked with a new provider",
+    refill_review: "Refill reviewed by a different prescriber",
+    primary_reassignment: "Primary provider reassigned",
+  };
+  const detail =
+    `${reasonLabel[input.reason]}. ` +
+    `From ${fromClin?.name ?? input.fromClinicianId} → ${toClin?.name ?? input.toClinicianId}.` +
+    (input.context ? ` ${input.context}` : "");
+
+  // Task to the outgoing clinician (assigned via clinicianId; separate from CM queue).
+  AdelanteEHR.createCaseTask({
+    patientId: input.patientId,
+    assignedTo: input.fromClinicianId,
+    title: `Provider switch review: ${patient?.firstName ?? ""} ${patient?.lastName ?? ""}`.trim(),
+    detail,
+    dueDate,
+    origin: "provider_switch",
+    dedupeKey: `switch-out:${sw.id}`,
+  });
+  // Task to the case manager for coordination review.
+  if (patient?.caseManagerId) {
+    AdelanteEHR.createCaseTask({
+      patientId: input.patientId,
+      assignedTo: patient.caseManagerId,
+      title: `Coordinate provider switch: ${patient.firstName} ${patient.lastName}`,
+      detail: `${detail} Verify in-network status, funding lane, and continuity of care.`,
+      dueDate,
+      origin: "provider_switch",
+      dedupeKey: `switch-cm:${sw.id}`,
+    });
+  }
+  appendAudit({
+    category: "provider_switch",
+    action: `switch_${input.reason}`,
+    patientId: input.patientId,
+    detail: {
+      from: input.fromClinicianId,
+      to: input.toClinicianId,
+      reason: input.reason,
+      serviceType: input.serviceType,
+      switchId: sw.id,
+    },
+  });
+  return sw;
+}
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
