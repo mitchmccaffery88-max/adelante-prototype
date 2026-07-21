@@ -801,7 +801,8 @@ export type AuditCategory =
   | "rx"
   | "telehealth"
   | "vendor"
-  | "access";
+  | "access"
+  | "provider_switch";
 export interface AuditEvent {
   id: string;
   at: string;
