@@ -48,7 +48,7 @@ import type { Medication } from "@/lib/ehr";
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
 // out defensively in the render below.
-const needMeta: Record<string, { tKey: string; Icon: typeof Home }> = {
+const needMeta: Record<string, { tKey: Key; Icon: typeof Home }> = {
   housing: { tKey: "needHousing", Icon: Home },
   food: { tKey: "needFood", Icon: Utensils },
   substanceUse: { tKey: "needSubstanceUse", Icon: Activity },
