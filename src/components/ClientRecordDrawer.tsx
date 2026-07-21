@@ -89,6 +89,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <TabsTrigger value="eligibility">Eligibility</TabsTrigger>
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
+            <TabsTrigger value="providers">Providers</TabsTrigger>
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -123,6 +124,9 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
           </TabsContent>
           <TabsContent value="tasks" className="mt-4">
             <TasksTab patientId={patient.id} />
+          </TabsContent>
+          <TabsContent value="providers" className="mt-4">
+            <ProviderHistoryTab patientId={patient.id} />
           </TabsContent>
           {canPeer.level !== "none" && (
             <TabsContent value="peer" className="mt-4">
