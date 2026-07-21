@@ -40,6 +40,7 @@ import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
+import { Pill } from "lucide-react";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -88,6 +89,7 @@ export function PatientHome() {
   const next = upcoming[0];
   const remaining = Math.max(0, 90 - patient.episodeDay);
   const goals = patient.goals ?? [];
+  const meds = AdelanteEHR.listMedications(patient.id);
 
   const now = Date.now();
   const futureAppts = [...appts]
@@ -252,6 +254,38 @@ export function PatientHome() {
           </div>
         </Card>
       </div>
+
+      {meds.length > 0 && (
+        <Card className="p-5">
+          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+            <Pill className="h-4 w-4" /> My medications
+          </div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            Managed with your care team through eScribe.
+          </p>
+          <ul className="mt-3 space-y-2 text-sm">
+            {meds.map((m) => (
+              <li
+                key={m.id}
+                className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
+              >
+                <div>
+                  <div className="font-medium text-navy">
+                    {m.name} <span className="text-muted-foreground font-normal">· {m.dose}</span>
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    {m.frequency} · {m.prescriber}
+                  </div>
+                </div>
+                <Badge variant="outline" className="text-[10px]">active</Badge>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-3 text-[10px] text-muted-foreground">
+            Questions about your medication? Message your care team.
+          </p>
+        </Card>
+      )}
 
       {goals.length > 0 && (
         <Card className="p-5">

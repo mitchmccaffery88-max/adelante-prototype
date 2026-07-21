@@ -141,7 +141,10 @@ function ClinicianPage() {
   };
 
   const launch = (id: string) => {
-    toast.success("Launching telehealth session", { description: `Adelante video room · session ${id}` });
+    const url = AdelanteEHR.telehealthJoinUrl(id, "clinician");
+    toast.success("Launching telehealth session", {
+      description: `Secure video powered by our telehealth partner · ${url}`,
+    });
   };
 
   // Bucket appointments by time horizon for the schedule view.

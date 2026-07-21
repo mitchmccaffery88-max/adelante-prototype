@@ -1,5 +1,9 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-// Today this is an in-memory mock; swap the in-memory store for a real backend when wiring the native Adelante EHR.
+// Adelante is the EHR of record. Do NOT import vendor SDKs outside
+// `src/lib/vendors/*`; route vendor traffic through the helpers below
+// (telehealth room, eRx medications) so adapters stay swappable.
+// Today this is an in-memory mock; swap the in-memory store for a real
+// backend when wiring the native Adelante EHR persistence layer.
 
 export type ReferralStatus = "submitted" | "contacted" | "enrolled";
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
@@ -771,6 +775,19 @@ let currentPatientId = "p2";
 // (which is a legacy per-patient action list) so CM views can index by
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
+
+// Vendor adapters (telehealth video + eRx medication management). Kept
+// behind AdelanteEHR helpers so UI code never talks to vendors directly.
+import { vendors as _vendors } from "./vendors";
+interface RxEventRow {
+  id: string;
+  patientId: string;
+  clinicianId?: string;
+  kind: "sso_launch" | "refill_requested" | "discontinued";
+  at: string;
+  note?: string;
+}
+const rxEvents: RxEventRow[] = [];
 
 export const AdelanteEHR = {
   subscribe(l: Listener) {
@@ -1827,7 +1844,42 @@ export const AdelanteEHR = {
     }
     return out.sort((a, b) => +new Date(b.notification.at) - +new Date(a.notification.at));
   },
+  // --- Vendor pass-through helpers (telehealth + eRx) ------------------------
+  listMedications(patientId: string) {
+    return _vendors.erx.listActiveMedications(patientId);
+  },
+  telehealthJoinUrl(appointmentId: string, role: "patient" | "clinician") {
+    return _vendors.telehealth.getJoinUrl(appointmentId, role);
+  },
+  erxSsoLaunchUrl(clinicianId: string, patientId: string) {
+    return _vendors.erx.ssoLaunchUrl(clinicianId, patientId);
+  },
+  recordRxEvent(evt: {
+    patientId: string;
+    clinicianId?: string;
+    kind: "sso_launch" | "refill_requested" | "discontinued";
+    note?: string;
+  }) {
+    rxEvents.push({
+      id: `rxe_${rxEvents.length + 1}`,
+      at: new Date().toISOString(),
+      ...evt,
+    });
+    emit();
+  },
+  listRxEvents(patientId: string) {
+    return rxEvents.filter((e) => e.patientId === patientId);
+  },
+  vendorStatus() {
+    return {
+      telehealth: { name: _vendors.telehealth.vendorName, mode: "mock" as const },
+      erx: { name: _vendors.erx.vendorName, mode: "mock" as const },
+    };
+  },
 };
+
+// Re-export vendor types so consumers only import from "@/lib/ehr".
+export type { Medication } from "./vendors";
 
 import { useSyncExternalStore } from "react";
 export function useEhr<T>(selector: () => T): T {
