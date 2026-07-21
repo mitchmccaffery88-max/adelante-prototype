@@ -1126,13 +1126,13 @@ export const AdelanteEHR = {
     if (state === "failed") {
       n.error = error;
       // Auto-generate a CM outreach task once per failed delivery.
-      const cmId = p.assignedCaseManagerId;
+      const cmId = p.caseManagerId;
       if (cmId) {
         AdelanteEHR.createCaseTask({
           patientId: p.id,
           assignedTo: cmId,
           title: `Reach out — ${n.channel.toUpperCase()} delivery failed`,
-          detail: `${n.kind} notification did not reach ${p.legalName ?? p.programId} via ${n.channel}.`,
+          detail: `${n.kind} notification did not reach ${p.firstName} ${p.lastName} via ${n.channel}.`,
           dueDate: new Date().toISOString().slice(0, 10),
           origin: "notification_failed",
           dedupeKey: `notif-fail:${n.id}`,
