@@ -1831,36 +1831,16 @@ export const AdelanteEHR = {
     }
     return out.sort((a, b) => +new Date(b.notification.at) - +new Date(a.notification.at));
   },
-};
-
-// --- Vendor pass-through helpers (telehealth + eRx) --------------------------
-// UI reads medications through AdelanteEHR so the adapter stays swappable.
-// Import at the bottom to keep the export block above unchanged for callers.
-import { vendors as _vendors, type Medication as _Med } from "./vendors";
-
-const rxEvents: Array<{
-  id: string;
-  patientId: string;
-  clinicianId?: string;
-  kind: "sso_launch" | "refill_requested" | "discontinued";
-  at: string;
-  note?: string;
-}> = [];
-
-Object.assign(AdelanteEHR, {
-  /** Active medications for a patient (delegates to eRx adapter). */
-  listMedications(patientId: string): _Med[] {
+  // --- Vendor pass-through helpers (telehealth + eRx) ------------------------
+  listMedications(patientId: string) {
     return _vendors.erx.listActiveMedications(patientId);
   },
-  /** Deterministic join URL for a telehealth appointment. */
   telehealthJoinUrl(appointmentId: string, role: "patient" | "clinician") {
     return _vendors.telehealth.getJoinUrl(appointmentId, role);
   },
-  /** eScribe SSO launch URL (pass-through by design). */
   erxSsoLaunchUrl(clinicianId: string, patientId: string) {
     return _vendors.erx.ssoLaunchUrl(clinicianId, patientId);
   },
-  /** Log an eRx action for audit/consent visibility. */
   recordRxEvent(evt: {
     patientId: string;
     clinicianId?: string;
@@ -1877,14 +1857,13 @@ Object.assign(AdelanteEHR, {
   listRxEvents(patientId: string) {
     return rxEvents.filter((e) => e.patientId === patientId);
   },
-  /** Vendor status snapshot for the Admin card. */
   vendorStatus() {
     return {
       telehealth: { name: _vendors.telehealth.vendorName, mode: "mock" as const },
       erx: { name: _vendors.erx.vendorName, mode: "mock" as const },
     };
   },
-});
+};
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
 export type { Medication } from "./vendors";
