@@ -792,19 +792,35 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const notes = p?.peerNotes ?? [];
   const [text, setText] = useState("");
+  const [mode, setMode] = useState<NonNullable<PeerNote["mode"]>>("in_person");
   return (
     <div className="space-y-3">
       {canWrite && (
         <Card className="p-3 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">Peer specialist note</div>
+          <div>
+            <Label className="text-[10px] text-muted-foreground">Modality</Label>
+            <Select value={mode} onValueChange={(v) => setMode(v as typeof mode)}>
+              <SelectTrigger className="h-8 text-xs"><SelectValue /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="in_person">In-person</SelectItem>
+                <SelectItem value="phone">Phone</SelectItem>
+                <SelectItem value="text">Text</SelectItem>
+                <SelectItem value="warmline">Warmline</SelectItem>
+                <SelectItem value="group">Group</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
           <Textarea rows={3} value={text} onChange={(e) => setText(e.target.value)} placeholder="Peer-support note (non-clinical)." />
           <Button
             size="sm"
             onClick={() => {
+              if (!text.trim()) return toast.error("Add a note");
               AdelanteEHR.addPeerNote(patientId, {
                 date: new Date().toISOString(),
                 author: "Peer specialist",
                 text,
+                mode,
               });
               setText("");
               toast.success("Peer note added");
@@ -816,15 +832,173 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
       )}
       <ul className="space-y-2">
         {notes.length === 0 && (
-          <li className="text-xs text-muted-foreground">No peer notes yet.</li>
+          <EmptyState
+            compact
+            title="No peer notes yet"
+            description="Log a peer-support touchpoint above to start the timeline."
+          />
         )}
         {notes.map((n) => (
           <li key={n.id} className="rounded border p-3 text-sm">
             <div className="flex items-center justify-between text-xs text-muted-foreground">
-              <span>{n.author}</span>
+              <span>
+                {n.author}
+                {n.mode && (
+                  <Badge variant="outline" className="ml-2 text-[10px] capitalize">
+                    {n.mode.replace("_", " ")}
+                  </Badge>
+                )}
+              </span>
               <ClientDate value={n.date} />
             </div>
             <div className="mt-1">{n.text}</div>
+          </li>
+        ))}
+      </ul>
+    </div>
+  );
+}
+
+function TasksTab({ patientId }: { patientId: string }) {
+  const tasks = useEhr(() => AdelanteEHR.caseTasksForPatient(patientId));
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [title, setTitle] = useState("");
+  const [detail, setDetail] = useState("");
+  const [dueDate, setDueDate] = useState(() => new Date().toISOString().slice(0, 10));
+  const open = tasks.filter((t) => t.status === "open");
+  const snoozed = tasks.filter((t) => t.status === "snoozed");
+  const done = tasks.filter((t) => t.status === "done");
+  const cmId = patient?.caseManagerId;
+  return (
+    <div className="space-y-3">
+      <Card className="p-3 space-y-2">
+        <div className="text-xs uppercase tracking-wider text-muted-foreground">New follow-up</div>
+        <Input
+          placeholder="Task (e.g. Confirm housing intake Friday)"
+          value={title}
+          onChange={(e) => setTitle(e.target.value)}
+        />
+        <div className="grid grid-cols-2 gap-2">
+          <Textarea
+            rows={2}
+            placeholder="Detail (optional)"
+            value={detail}
+            onChange={(e) => setDetail(e.target.value)}
+          />
+          <div className="space-y-1">
+            <Label className="text-[10px] text-muted-foreground">Due</Label>
+            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+          </div>
+        </div>
+        <Button
+          size="sm"
+          disabled={!cmId}
+          onClick={() => {
+            if (!title.trim()) return toast.error("Add a task");
+            if (!cmId) return toast.error("Assign a case manager first");
+            AdelanteEHR.createCaseTask({
+              patientId,
+              assignedTo: cmId,
+              title,
+              detail,
+              dueDate,
+              origin: "manual",
+            });
+            setTitle("");
+            setDetail("");
+            toast.success("Task added");
+          }}
+        >
+          <Plus className="h-4 w-4 mr-1" /> Add task
+        </Button>
+        {!cmId && (
+          <p className="text-[11px] text-muted-foreground">
+            Assign a case manager on the client's profile before creating tasks.
+          </p>
+        )}
+      </Card>
+      <TaskList label="Open" items={open} showActions />
+      {snoozed.length > 0 && <TaskList label="Snoozed" items={snoozed} showActions />}
+      {done.length > 0 && <TaskList label="Completed" items={done.slice(0, 5)} />}
+      {tasks.length === 0 && (
+        <EmptyState
+          icon={ClipboardList}
+          compact
+          title="No follow-ups yet"
+          description="Missed visits and crisis screeners auto-create tasks here. You can also add one manually."
+        />
+      )}
+    </div>
+  );
+}
+
+function TaskList({
+  label,
+  items,
+  showActions,
+}: {
+  label: string;
+  items: CaseTask[];
+  showActions?: boolean;
+}) {
+  if (items.length === 0) return null;
+  const originLabels: Record<CaseTask["origin"], string> = {
+    manual: "Manual",
+    missed_appt: "No-show",
+    screener_flag: "Screener",
+    referral_stale: "Stale referral",
+    notification_failed: "Delivery failed",
+  };
+  return (
+    <div className="space-y-1.5">
+      <div className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</div>
+      <ul className="space-y-1.5">
+        {items.map((t) => (
+          <li key={t.id} className="rounded border p-2.5 text-sm">
+            <div className="flex items-start justify-between gap-2">
+              <div>
+                <div className="font-medium text-navy">{t.title}</div>
+                {t.detail && <div className="text-xs text-muted-foreground">{t.detail}</div>}
+                <div className="mt-1 text-[10px] text-muted-foreground">
+                  Due {t.dueDate.slice(0, 10)} · {originLabels[t.origin]}
+                </div>
+              </div>
+              {showActions && (
+                <div className="flex gap-1">
+                  {t.status === "open" && (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-[11px]"
+                        onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}
+                        aria-label="Snooze 3 days"
+                      >
+                        Snooze
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        className="h-7 text-[11px]"
+                        onClick={() => AdelanteEHR.completeCaseTask(t.id)}
+                      >
+                        Done
+                      </Button>
+                    </>
+                  )}
+                  {t.status === "snoozed" && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-[11px]"
+                      onClick={() => AdelanteEHR.reopenCaseTask(t.id)}
+                    >
+                      Reopen
+                    </Button>
+                  )}
+                </div>
+              )}
+            </div>
           </li>
         ))}
       </ul>
