@@ -373,7 +373,11 @@ function ClinicianPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full bg-navy text-navy-foreground hover:bg-navy/90" onClick={doBook}>
+              <Button
+                className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+                onClick={doBook}
+                disabled={Boolean(bookConflict)}
+              >
                 {t("clinBook")}
               </Button>
             </div>
