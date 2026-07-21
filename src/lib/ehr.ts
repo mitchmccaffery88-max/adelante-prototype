@@ -776,6 +776,19 @@ let currentPatientId = "p2";
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
 
+// Vendor adapters (telehealth video + eRx medication management). Kept
+// behind AdelanteEHR helpers so UI code never talks to vendors directly.
+import { vendors as _vendors } from "./vendors";
+interface RxEventRow {
+  id: string;
+  patientId: string;
+  clinicianId?: string;
+  kind: "sso_launch" | "refill_requested" | "discontinued";
+  at: string;
+  note?: string;
+}
+const rxEvents: RxEventRow[] = [];
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
