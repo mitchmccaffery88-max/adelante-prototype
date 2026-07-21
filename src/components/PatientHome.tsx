@@ -41,6 +41,8 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill } from "lucide-react";
+import { Textarea } from "@/components/ui/textarea";
+import type { Medication } from "@/lib/ehr";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
