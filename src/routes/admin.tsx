@@ -576,7 +576,15 @@ function VendorStatusCard() {
         <h3 className="font-display text-lg text-navy flex items-center gap-2">
           <ShieldCheck className="h-4 w-4 text-teal" /> Integrated vendors
         </h3>
-        <Badge variant="outline" className="text-[10px]">mock</Badge>
+        <div className="flex items-center gap-2">
+          <Link
+            to="/admin-vendors"
+            className="text-[11px] text-teal underline underline-offset-2"
+          >
+            Details
+          </Link>
+          <Badge variant="outline" className="text-[10px]">mock</Badge>
+        </div>
       </div>
       <ul className="space-y-2 text-sm">
         <li className="flex items-center justify-between border-b pb-2">
