@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
 import { SCREENERS, severityFor } from "@/lib/screeners";
@@ -32,6 +32,8 @@ import {
   CalendarPlus,
   TrendingDown,
   Minus,
+  CalendarClock,
+  AlertTriangle,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -90,6 +92,16 @@ function ClinicianPage() {
     locationId: "",
   });
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
+  const bookConflict = useEhr(() =>
+    book.start && clinicianId
+      ? AdelanteEHR.findApptConflict(
+          clinicianId,
+          new Date(book.start).toISOString(),
+        )
+      : undefined,
+  );
+  const bookConflictPatient =
+    bookConflict && patients.find((p) => p.id === bookConflict.patientId);
   const bookLocations = useEhr(() =>
     AdelanteEHR.locationsForService(book.serviceType),
   );
