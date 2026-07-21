@@ -19,10 +19,12 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart } from "lucide-react";
+import { TrendingUp, Users, ClipboardCheck, Timer, DollarSign, ShieldCheck, Download, ScrollText, HandHeart, AlertTriangle, BellOff, RotateCw } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
+import { EmptyState } from "@/components/EmptyState";
+import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -219,6 +221,8 @@ function AdminPage() {
 
         <div className="space-y-4">
           <ReferralTrackerCard referrals={referrals} />
+          <CredentialingCard />
+          <NotificationHealthCard />
           <AuditLogCard events={consentEvents} />
           <Card className="p-5">
             <div className="flex items-center justify-between mb-3">
