@@ -718,3 +718,166 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
     </Card>
   );
 }
+
+function TaskQueueCard({
+  cmId,
+  onOpenPatient,
+}: {
+  cmId: string;
+  onOpenPatient: (id: string) => void;
+}) {
+  const tasks = useEhr(() => AdelanteEHR.caseTasksForCM(cmId));
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const open = tasks.filter((t) => t.status === "open");
+  const snoozed = tasks.filter((t) => t.status === "snoozed");
+  const now = Date.now();
+  const overdue = open.filter((t) => +new Date(t.dueDate) < now - 86400000);
+  const dueToday = open.filter(
+    (t) => t.dueDate.slice(0, 10) === new Date().toISOString().slice(0, 10),
+  );
+
+  const [showDone, setShowDone] = useState(false);
+  const list = showDone ? tasks : open;
+
+  return (
+    <Card className="p-5">
+      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
+        <h2 className="font-display text-lg text-navy flex items-center gap-2">
+          <ClipboardList className="h-4 w-4 text-teal" /> My tasks
+        </h2>
+        <div className="flex items-center gap-2 text-xs">
+          <Badge className="bg-destructive/15 text-destructive border-0">{overdue.length} overdue</Badge>
+          <Badge className="bg-gold/25 text-navy border-0">{dueToday.length} due today</Badge>
+          <Badge variant="outline">{snoozed.length} snoozed</Badge>
+          <Button size="sm" variant="ghost" onClick={() => setShowDone((v) => !v)}>
+            {showDone ? "Hide done" : "Show all"}
+          </Button>
+        </div>
+      </div>
+      {list.length === 0 ? (
+        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
+          Nothing on the queue. New tasks appear here after no-shows, crisis flags, or failed messages.
+        </div>
+      ) : (
+        <ul className="space-y-2">
+          {list.slice(0, 12).map((t) => {
+            const p = patients.find((x) => x.id === t.patientId);
+            const overdueTask = t.status === "open" && +new Date(t.dueDate) < now - 86400000;
+            return (
+              <li
+                key={t.id}
+                className={`flex items-start justify-between gap-3 rounded-lg border p-3 text-sm ${
+                  overdueTask ? "border-destructive/40 bg-destructive/5" : ""
+                }`}
+              >
+                <div className="min-w-0">
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-navy">{t.title}</span>
+                    <Badge variant="outline" className="text-[10px] capitalize">
+                      {t.origin.replace("_", " ")}
+                    </Badge>
+                    {t.status !== "open" && (
+                      <Badge variant="outline" className="text-[10px] capitalize">
+                        {t.status}
+                      </Badge>
+                    )}
+                  </div>
+                  {t.detail && <div className="text-xs text-muted-foreground mt-0.5">{t.detail}</div>}
+                  <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2">
+                    {p && (
+                      <button className="underline" onClick={() => onOpenPatient(p.id)}>
+                        {p.firstName} {p.lastName}
+                      </button>
+                    )}
+                    <span className="inline-flex items-center gap-1">
+                      <Clock className="h-3 w-3" /> Due {t.dueDate.slice(0, 10)}
+                    </span>
+                  </div>
+                </div>
+                {t.status === "open" && (
+                  <div className="shrink-0 flex gap-1">
+                    <Button size="sm" variant="outline" onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}>
+                      Snooze 3d
+                    </Button>
+                    <Button size="sm" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
+                      Done
+                    </Button>
+                  </div>
+                )}
+                {t.status !== "open" && (
+                  <Button size="sm" variant="ghost" onClick={() => AdelanteEHR.reopenCaseTask(t.id)}>
+                    Reopen
+                  </Button>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
+function PatientTasksCard({ patientId, cmId }: { patientId: string; cmId: string }) {
+  const tasks = useEhr(() =>
+    AdelanteEHR.caseTasksForPatient(patientId).filter((t) => t.status === "open"),
+  );
+  const [title, setTitle] = useState("");
+  const [detail, setDetail] = useState("");
+  const [due, setDue] = useState(() => todayLocal());
+
+  function add() {
+    if (!title.trim()) {
+      toast.error("Give the task a short title.");
+      return;
+    }
+    AdelanteEHR.createCaseTask({
+      patientId,
+      assignedTo: cmId,
+      title: title.trim(),
+      detail: detail.trim() || undefined,
+      dueDate: due,
+      origin: "manual",
+    });
+    setTitle("");
+    setDetail("");
+    toast.success("Task added.");
+  }
+
+  return (
+    <Card className="p-5">
+      <h3 className="font-display text-navy flex items-center gap-2">
+        <ClipboardList className="h-4 w-4 text-teal" /> Follow-ups for this client
+      </h3>
+      {tasks.length === 0 ? (
+        <p className="mt-2 text-xs text-muted-foreground">No open tasks for this client.</p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-sm">
+          {tasks.map((t) => (
+            <li key={t.id} className="flex items-start justify-between gap-2 border-b last:border-0 pb-2 last:pb-0">
+              <div>
+                <div className="text-navy">{t.title}</div>
+                {t.detail && <div className="text-xs text-muted-foreground">{t.detail}</div>}
+                <div className="text-[10px] text-muted-foreground mt-0.5">Due {t.dueDate.slice(0, 10)} · {t.origin.replace("_", " ")}</div>
+              </div>
+              <Button size="sm" variant="outline" onClick={() => AdelanteEHR.completeCaseTask(t.id)}>
+                Done
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      <div className="mt-4 space-y-2">
+        <Label className="text-xs text-muted-foreground">Add follow-up</Label>
+        <Input placeholder="Short title" value={title} onChange={(e) => setTitle(e.target.value)} />
+        <Textarea rows={2} placeholder="Details (optional)" value={detail} onChange={(e) => setDetail(e.target.value)} />
+        <div className="flex items-center gap-2">
+          <Input type="date" value={due} onChange={(e) => setDue(e.target.value)} className="w-[160px]" />
+          <Button size="sm" onClick={add} className="ml-auto">
+            <Plus className="h-3.5 w-3.5" /> Add
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
