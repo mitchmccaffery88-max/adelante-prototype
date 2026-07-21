@@ -274,6 +274,13 @@ const dict = {
     refSubtitle:
       "A short form — about 2 minutes. We only ask for the basics. Please do not include charges, diagnoses, or substance-use details here.",
     refYourReferrals: "Your referrals",
+    // Patient help / support
+    helpNeedHelp: "Need help?",
+    helpCallUs: "Call us",
+    helpAriaLabel: "Need help? Call our support line",
+    // Jargon simplifications (patient surfaces)
+    plainCarePeriod: "care period",
+    plainHowYouMeet: "how you meet",
   },
   es: {
     appName: "Adelante",
@@ -546,6 +553,12 @@ const dict = {
     refSubtitle:
       "Un formulario corto, unos 2 minutos. Pedimos solo lo básico. Por favor no incluyas cargos, diagnósticos ni detalles sobre uso de sustancias.",
     refYourReferrals: "Tus referidos",
+    // Patient help / support
+    helpNeedHelp: "¿Necesitas ayuda?",
+    helpCallUs: "Llámanos",
+    helpAriaLabel: "¿Necesitas ayuda? Llama a nuestra línea de apoyo",
+    plainCarePeriod: "periodo de cuidado",
+    plainHowYouMeet: "cómo prefieres reunirte",
   },
 } as const;
 
@@ -565,6 +578,13 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       if (saved === "en" || saved === "es") setLangState(saved);
     } catch { /* no-op */ }
   }, []);
+  // Keep <html lang="…"> in sync with the current language so screen readers
+  // pronounce content in the right locale.
+  useEffect(() => {
+    if (typeof document !== "undefined") {
+      document.documentElement.lang = lang;
+    }
+  }, [lang]);
   const setLang = (l: Lang) => {
     setLangState(l);
     try { localStorage.setItem("adelante.lang", l); } catch { /* no-op */ }
