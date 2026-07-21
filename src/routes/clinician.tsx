@@ -279,19 +279,19 @@ function ClinicianPage() {
           {todayAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinToday")} count={todayAppts.length} />
-              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {todayAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
           {weekAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
-              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {weekAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
           {laterAppts.length > 0 && (
             <>
               <SectionHeader label={t("clinLater")} count={laterAppts.length} />
-              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} t={t} />)}
+              {laterAppts.map((a) => <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} t={t} />)}
             </>
           )}
         </div>
