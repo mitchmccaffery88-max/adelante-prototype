@@ -34,6 +34,7 @@ import {
   Minus,
   CalendarClock,
   AlertTriangle,
+  UserCog,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
