@@ -1127,7 +1127,7 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
                     <div className="mt-1 text-muted-foreground">{s.context}</div>
                   ) : null}
                   <div className="mt-1 text-[10px] text-muted-foreground">
-                    <ClientDate iso={s.createdAt} />
+                    <ClientDate value={s.createdAt} />
                   </div>
                 </div>
                 <div className="flex flex-col gap-1">
