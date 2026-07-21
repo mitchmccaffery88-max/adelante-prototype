@@ -1205,6 +1205,19 @@ export const AdelanteEHR = {
     }
     const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
     appointments.push(a);
+    // Detect provider switch vs. patient's last provider (same service type when set).
+    const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
+    if (prevProvider && prevProvider !== a.clinicianId) {
+      _flagProviderSwitch({
+        patientId: a.patientId,
+        fromClinicianId: prevProvider,
+        toClinicianId: a.clinicianId,
+        reason: "new_appointment",
+        serviceType: a.serviceType,
+        initiatedBy: "patient",
+        linkedApptId: a.id,
+      });
+    }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
       apptId: a.id,
@@ -1226,6 +1239,7 @@ export const AdelanteEHR = {
   ) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) return;
+    const originalClinicianId = a.clinicianId;
     const targetClinicianId = patch?.clinicianId ?? a.clinicianId;
     const conflict = appointments.some(
       (x) =>
@@ -1247,6 +1261,17 @@ export const AdelanteEHR = {
       if (a.modality === "in_person" && !a.locationId) {
         throw new Error("Pick a location for the in-person visit.");
       }
+    }
+    if (originalClinicianId !== a.clinicianId) {
+      _flagProviderSwitch({
+        patientId: a.patientId,
+        fromClinicianId: originalClinicianId,
+        toClinicianId: a.clinicianId,
+        reason: "reschedule",
+        serviceType: a.serviceType,
+        initiatedBy: "patient",
+        linkedApptId: a.id,
+      });
     }
     AdelanteEHR.notifyAppointmentChange({
       patientId: a.patientId,
