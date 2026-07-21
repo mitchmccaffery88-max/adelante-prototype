@@ -35,7 +35,8 @@ export const Route = createFileRoute("/schedule")({
       { title: "Schedule a session — Adelante" },
       {
         name: "description",
-        content: "Book a private video or phone session with your care team.",
+        content:
+          "Schedule a private visit with your Adelante care team — video, phone, or in person.",
       },
     ],
   }),

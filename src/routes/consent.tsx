@@ -21,7 +21,7 @@ const PURPOSES: { key: ExtendedConsentPurpose; label: string; note: string }[] =
   { key: "ecmShare", label: "ECM information share", note: "Enhanced Care Management coordination." },
   { key: "sms", label: "SMS reminders", note: "Text message reminders and welcome messages." },
   { key: "hipaa", label: "HIPAA authorization", note: "Baseline authorization signed at intake." },
-  { key: "telehealth", label: "Telehealth", note: "Video / phone visits." },
+  { key: "telehealth", label: "Telehealth", note: "Video / phone visits. Video is delivered by a HIPAA-aligned integrated vendor; medication management uses eScribe." },
   { key: "roi", label: "Release of Information", note: "External disclosure to a named third party." },
   { key: "portal", label: "Patient portal", note: "Self-service portal access." },
   { key: "proxy", label: "Proxy / staff-completed forms", note: "Staff may complete forms on the patient's behalf." },

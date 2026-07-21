@@ -29,6 +29,7 @@ export type RecordClass =
   | "care_plan"
   | "therapy_notes"
   | "meds_erx"
+  | "telehealth_room"
   | "sdoh"
   | "self_help"
   | "sud_treatment"
@@ -50,6 +51,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   care_plan:       { case_manager: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
   therapy_notes:   { therapist: "write", pmhnp: "read", case_manager: "read" },
   meds_erx:        { pmhnp: "write", therapist: "read", case_manager: "read" },
+  telehealth_room: { pmhnp: "write", therapist: "write", case_manager: "read", peer_specialist: "none" as AccessLevel },
   sdoh:            { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
   self_help:       { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
   sud_treatment:   { pmhnp: "write", therapist: "consent_gated", case_manager: "consent_gated", peer_specialist: "consent_gated", billing: "consent_gated" },
