@@ -579,10 +579,10 @@ function ClinicianPage() {
                           const appt = patientAppts.find((a) => a.id === note.appointmentId);
                           if (!appt) return;
                           const svc = serviceTypes.find((s) => s.id === appt.serviceType);
-                          const goals = (selectedPatient.carePlan?.goals ?? [])
-                            .filter((g) => g.status !== "done")
+                          const goals = (selectedPatient.goals ?? [])
+                            .filter((g: { status: string }) => g.status !== "done")
                             .slice(0, 3)
-                            .map((g) => `• ${g.text}`)
+                            .map((g: { text: string }) => `• ${g.text}`)
                             .join("\n");
                           setNote((prev) => ({
                             ...prev,
