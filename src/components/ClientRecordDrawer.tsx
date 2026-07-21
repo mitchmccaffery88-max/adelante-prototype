@@ -644,6 +644,17 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
     summary: "",
     part2Disclosed: false,
   });
+  const [filterType, setFilterType] = useState<string>("all");
+  const [filterDir, setFilterDir] = useState<string>("all");
+  const filteredLog = useMemo(
+    () =>
+      log.filter((e) => {
+        if (filterType !== "all" && e.partyType !== filterType) return false;
+        if (filterDir !== "all" && e.direction !== filterDir) return false;
+        return true;
+      }),
+    [log, filterType, filterDir],
+  );
   return (
     <div className="space-y-4">
       {!part2Consent && (
@@ -765,9 +776,40 @@ function CoordinationTab({ patientId, part2Consent }: { patientId: string; part2
       </Card>
 
       <div className="space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Recent coordination</div>
-        {log.length === 0 && <div className="text-xs text-muted-foreground">No entries yet.</div>}
-        {log.slice(0, 10).map((e) => (
+        <div className="flex flex-wrap items-center justify-between gap-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Recent coordination</div>
+          <div className="flex items-center gap-1">
+            <Select value={filterType} onValueChange={setFilterType}>
+              <SelectTrigger className="h-7 w-[130px] text-[11px]"><SelectValue placeholder="Party" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All parties</SelectItem>
+                <SelectItem value="probation">Probation</SelectItem>
+                <SelectItem value="parole">Parole</SelectItem>
+                <SelectItem value="housing">Housing</SelectItem>
+                <SelectItem value="pcp">PCP</SelectItem>
+                <SelectItem value="county_bh">County BH</SelectItem>
+                <SelectItem value="family">Family</SelectItem>
+                <SelectItem value="other">Other</SelectItem>
+              </SelectContent>
+            </Select>
+            <Select value={filterDir} onValueChange={setFilterDir}>
+              <SelectTrigger className="h-7 w-[110px] text-[11px]"><SelectValue placeholder="Direction" /></SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">All</SelectItem>
+                <SelectItem value="out">Outbound</SelectItem>
+                <SelectItem value="in">Inbound</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+        {filteredLog.length === 0 && (
+          <EmptyState
+            compact
+            title={log.length === 0 ? "No coordination yet" : "No entries match this filter"}
+            description={log.length === 0 ? "Log a call, email, or in-person contact above." : undefined}
+          />
+        )}
+        {filteredLog.slice(0, 20).map((e) => (
           <div key={e.id} className="rounded border p-2 text-xs">
             <div className="flex items-center justify-between">
               <span className="text-navy font-medium capitalize">
