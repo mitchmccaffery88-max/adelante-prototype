@@ -245,6 +245,8 @@ export interface Patient {
   peerNotes?: PeerNote[];
   /** Per-flag context notes for eligibility (source, as-of, why). */
   eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
+  /** Primary/assigned clinician of record (§ProviderSwitch). Optional. */
+  primaryClinicianId?: string;
 }
 
 export interface ScreenerResult {
