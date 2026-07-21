@@ -957,7 +957,26 @@ export const AdelanteEHR = {
   // Mock `availabilities` query — seeded slots per clinician,
   // Mon–Fri, three slots/day (10:00, 13:00, 15:30), with `taken` reflecting
   // existing scheduled appointments.
-  getClinicianAvailability(clinicianId: string, days = 14): AvailabilitySlot[] {
+  findApptConflict(
+    clinicianId: string,
+    startISO: string,
+    excludeApptId?: string,
+  ): Appointment | undefined {
+    const t = new Date(startISO).getTime();
+    if (Number.isNaN(t)) return undefined;
+    return appointments.find(
+      (x) =>
+        x.id !== excludeApptId &&
+        x.clinicianId === clinicianId &&
+        x.status === "scheduled" &&
+        new Date(x.start).getTime() === t,
+    );
+  },
+  getClinicianAvailability(
+    clinicianId: string,
+    days = 14,
+    opts?: { excludeApptId?: string },
+  ): AvailabilitySlot[] {
     const slots: AvailabilitySlot[] = [];
     const base = new Date();
     base.setHours(0, 0, 0, 0);
@@ -982,6 +1001,7 @@ export const AdelanteEHR = {
         const iso = slot.toISOString();
         const taken = appointments.some(
           (x) =>
+            x.id !== opts?.excludeApptId &&
             x.clinicianId === clinicianId &&
             x.status === "scheduled" &&
             new Date(x.start).getTime() === slot.getTime(),

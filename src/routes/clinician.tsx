@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
 import { SCREENERS, severityFor } from "@/lib/screeners";
@@ -32,6 +32,8 @@ import {
   CalendarPlus,
   TrendingDown,
   Minus,
+  CalendarClock,
+  AlertTriangle,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -90,6 +92,16 @@ function ClinicianPage() {
     locationId: "",
   });
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
+  const bookConflict = useEhr(() =>
+    book.start && clinicianId
+      ? AdelanteEHR.findApptConflict(
+          clinicianId,
+          new Date(book.start).toISOString(),
+        )
+      : undefined,
+  );
+  const bookConflictPatient =
+    bookConflict && patients.find((p) => p.id === bookConflict.patientId);
   const bookLocations = useEhr(() =>
     AdelanteEHR.locationsForService(book.serviceType),
   );
@@ -262,6 +274,18 @@ function ClinicianPage() {
               <div className="space-y-1.5">
                 <Label className="text-sm">{t("clinDate")}</Label>
                 <Input type="datetime-local" value={book.start} onChange={(e) => setBook({ ...book, start: e.target.value })} />
+                {bookConflict && (
+                  <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+                    <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+                    <span>
+                      Conflict: you already have a session with{" "}
+                      {bookConflictPatient
+                        ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
+                        : "another patient"}{" "}
+                      at this time. Pick a different time.
+                    </span>
+                  </div>
+                )}
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Service type</Label>
@@ -349,7 +373,11 @@ function ClinicianPage() {
                   </SelectContent>
                 </Select>
               </div>
-              <Button className="w-full bg-navy text-navy-foreground hover:bg-navy/90" onClick={doBook}>
+              <Button
+                className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+                onClick={doBook}
+                disabled={Boolean(bookConflict)}
+              >
                 {t("clinBook")}
               </Button>
             </div>
@@ -684,13 +712,24 @@ function ApptCard({
         </div>
         <div className="flex gap-2">
           {isFuture && a.status === "scheduled" && (
-            <Button
-              size="sm"
-              className="bg-teal text-teal-foreground hover:bg-teal/90"
-              onClick={() => launch(a.id)}
-            >
-              <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
-            </Button>
+            <>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+              >
+                <Link to="/schedule" search={{ reschedule: a.id }}>
+                  <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
+                </Link>
+              </Button>
+              <Button
+                size="sm"
+                className="bg-teal text-teal-foreground hover:bg-teal/90"
+                onClick={() => launch(a.id)}
+              >
+                <Video className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinJoin")}
+              </Button>
+            </>
           )}
           {a.status === "scheduled" && !isFuture && (
             <>
