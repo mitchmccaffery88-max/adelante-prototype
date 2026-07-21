@@ -58,14 +58,14 @@ const needMeta: Record<string, { tKey: Key; Icon: typeof Home }> = {
   transport: { tKey: "needTransport", Icon: Car },
 };
 
-const statusMap: Record<string, string> = {
+const statusMap: Record<string, Key> = {
   scheduled: "statusScheduled",
   completed: "statusCompleted",
   cancelled: "statusCancelled",
   no_show: "statusNoShow",
 };
 
-const goalStatusMap: Record<string, string> = {
+const goalStatusMap: Record<string, Key> = {
   not_started: "goalNotStarted",
   in_progress: "goalInProgress",
   done: "goalDone",
