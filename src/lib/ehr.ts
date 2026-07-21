@@ -789,6 +789,93 @@ interface RxEventRow {
 }
 const rxEvents: RxEventRow[] = [];
 
+// ----- Unified audit stream ------------------------------------------------
+// One append-only log for consent, rx, telehealth, vendor, and access events.
+// Every mutating helper below should route through `appendAudit` so admin
+// tooling can show a coherent activity feed.
+export type AuditCategory =
+  | "consent"
+  | "rx"
+  | "telehealth"
+  | "vendor"
+  | "access";
+export interface AuditEvent {
+  id: string;
+  at: string;
+  category: AuditCategory;
+  action: string;
+  actorRole?: string;
+  actorId?: string;
+  patientId?: string;
+  programId?: string;
+  detail?: Record<string, unknown>;
+}
+const auditEvents: AuditEvent[] = [];
+function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
+  const patient = evt.patientId
+    ? patients.find((p) => p.id === evt.patientId)
+    : undefined;
+  auditEvents.unshift({
+    id: `au_${auditEvents.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+    at: evt.at ?? new Date().toISOString(),
+    programId: patient?.programId,
+    ...evt,
+  });
+}
+
+// ----- Refill request lifecycle -------------------------------------------
+export type RefillStatus =
+  | "pending"
+  | "approved"
+  | "denied"
+  | "sent_to_pharmacy";
+export interface RefillRequest {
+  id: string;
+  patientId: string;
+  medicationId: string;
+  medicationName: string;
+  requestedAt: string;
+  requestedBy: "patient" | "clinician";
+  pharmacyNote?: string;
+  status: RefillStatus;
+  reviewedBy?: string;
+  reviewedAt?: string;
+  denyReason?: string;
+}
+const refillRequests: RefillRequest[] = [];
+
+// ----- Telehealth session lifecycle ---------------------------------------
+export type TelehealthState =
+  | "scheduled"
+  | "clinician_joined"
+  | "patient_joined"
+  | "in_progress"
+  | "ended"
+  | "expired"
+  | "failed";
+export interface TelehealthSession {
+  id: string;
+  appointmentId: string;
+  patientId: string;
+  clinicianId: string;
+  vendor: string;
+  roomId: string;
+  joinUrlPatient: string;
+  joinUrlClinician: string;
+  state: TelehealthState;
+  createdAt: string;
+  expiresAt: string;
+  startedAt?: string;
+  endedAt?: string;
+  durationSec?: number;
+  endReason?: string;
+}
+const telehealthSessions: TelehealthSession[] = [];
+
+// Cached last vendor ping results (last 5 per vendor).
+type PingResult = { vendor: string; ok: boolean; at: string };
+const vendorPings: PingResult[] = [];
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
