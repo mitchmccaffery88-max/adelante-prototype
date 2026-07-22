@@ -97,7 +97,7 @@ export function CarePlanCard({
           )}
         </div>
         <div className="text-[10px] text-muted-foreground">
-          Updated <ClientDate iso={plan.updatedAt} /> · {plan.updatedBy.replace("_", " ")}
+          Updated <ClientDate value={plan.updatedAt} /> · {plan.updatedBy.replace("_", " ")}
         </div>
       </div>
 
@@ -168,7 +168,7 @@ export function CarePlanCard({
                   {s.dueBy && (
                     <span className="text-muted-foreground">
                       {" "}
-                      · <ClientDate iso={s.dueBy} />
+                      · <ClientDate value={s.dueBy} />
                     </span>
                   )}
                 </li>
