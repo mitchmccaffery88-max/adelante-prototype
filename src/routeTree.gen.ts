@@ -16,6 +16,7 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
+import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -58,6 +59,11 @@ const ConsentRoute = ConsentRouteImport.update({
 const ClinicianProfileRoute = ClinicianProfileRouteImport.update({
   id: '/clinician-profile',
   path: '/clinician-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicianAvailabilityRoute = ClinicianAvailabilityRouteImport.update({
+  id: '/clinician-availability',
+  path: '/clinician-availability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicianRoute = ClinicianRouteImport.update({
@@ -110,6 +116,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -127,6 +134,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -145,6 +153,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -164,6 +173,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -181,6 +191,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -198,6 +209,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -216,6 +228,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   CaseManagerRoute: typeof CaseManagerRoute
   ClinicianRoute: typeof ClinicianRoute
+  ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   HomeRoute: typeof HomeRoute
@@ -274,6 +287,13 @@ declare module '@tanstack/react-router' {
       path: '/clinician-profile'
       fullPath: '/clinician-profile'
       preLoaderRoute: typeof ClinicianProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinician-availability': {
+      id: '/clinician-availability'
+      path: '/clinician-availability'
+      fullPath: '/clinician-availability'
+      preLoaderRoute: typeof ClinicianAvailabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinician': {
@@ -344,6 +364,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   CaseManagerRoute: CaseManagerRoute,
   ClinicianRoute: ClinicianRoute,
+  ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   HomeRoute: HomeRoute,
