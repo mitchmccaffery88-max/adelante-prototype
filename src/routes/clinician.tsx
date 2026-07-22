@@ -38,6 +38,7 @@ import {
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
+import { CarePlanCard } from "@/components/CarePlanCard";
 import {
   LineChart,
   Line,
