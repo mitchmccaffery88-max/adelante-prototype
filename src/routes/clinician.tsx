@@ -105,11 +105,19 @@ function ClinicianPage() {
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [newGoal, setNewGoal] = useState("");
   const [planDraft, setPlanDraft] = useState("");
+  // Track which patient the current draft belongs to so a mid-edit patient
+  // switch can't accidentally save one patient's text onto another's record.
+  const [planDraftPatientId, setPlanDraftPatientId] = useState<string>(selectedPatientId);
+  // True once the clinician has typed in the textarea for this patient —
+  // required before we allow saving an empty value (which deletes the
+  // existing override note).
+  const [planDraftDirty, setPlanDraftDirty] = useState(false);
   // Keep the Care Plan note textarea in sync with the selected patient so
-  // switching patients doesn't carry over another person's draft, and so
-  // an unedited Save doesn't wipe the existing override.
+  // switching patients doesn't carry over another person's draft.
   useEffect(() => {
     setPlanDraft(selectedPatient?.carePlanOverride?.text ?? "");
+    setPlanDraftPatientId(selectedPatientId);
+    setPlanDraftDirty(false);
   }, [selectedPatientId, selectedPatient?.carePlanOverride?.text]);
   const [note, setNote] = useState({
     sessionType: "individual" as const,
@@ -530,21 +538,70 @@ function ClinicianPage() {
                     className="mt-3 min-h-[100px]"
                     value={planDraft}
                     placeholder="Optional note to append to the auto-summary…"
-                    onChange={(e) => setPlanDraft(e.target.value)}
-                  />
-                  <Button
-                    className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
-                    onClick={() => {
-                      AdelanteEHR.updateCarePlanSummary(
-                        selectedPatient.id,
-                        planDraft,
-                        "clinician",
-                      );
-                      toast.success("Care plan updated");
+                    onChange={(e) => {
+                      setPlanDraft(e.target.value);
+                      setPlanDraftDirty(true);
                     }}
-                  >
-                    {t("clinSaveSummary")}
-                  </Button>
+                  />
+                  {(() => {
+                    const patientMismatch = planDraftPatientId !== selectedPatient.id;
+                    const existingText = selectedPatient.carePlanOverride?.text ?? "";
+                    const trimmed = planDraft.trim();
+                    const isClearing =
+                      planDraftDirty && trimmed.length === 0 && existingText.length > 0;
+                    const unchanged = !planDraftDirty && trimmed === existingText.trim();
+                    return (
+                      <>
+                        <Button
+                          className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
+                          disabled={patientMismatch || unchanged}
+                          onClick={() => {
+                            // Belt-and-suspenders: never write across patients.
+                            if (planDraftPatientId !== selectedPatient.id) {
+                              toast.error(
+                                "Patient changed while you were editing. Reopen the note to continue.",
+                              );
+                              return;
+                            }
+                            // Never silently delete an existing override on
+                            // an unedited Save — require an explicit clear.
+                            if (!planDraftDirty && trimmed.length === 0 && existingText.length > 0) {
+                              toast.info("Nothing to save yet.");
+                              return;
+                            }
+                            if (isClearing) {
+                              const ok = window.confirm(
+                                "Clear the existing care-plan note for this patient? This removes the clinician-added text from their plan.",
+                              );
+                              if (!ok) return;
+                            }
+                            AdelanteEHR.updateCarePlanSummary(
+                              selectedPatient.id,
+                              planDraft,
+                              "clinician",
+                            );
+                            setPlanDraftDirty(false);
+                            toast.success(
+                              isClearing ? "Care plan note cleared" : "Care plan updated",
+                            );
+                          }}
+                        >
+                          {t("clinSaveSummary")}
+                        </Button>
+                        {patientMismatch && (
+                          <p className="mt-2 text-xs text-destructive">
+                            You switched patients while editing. Saving is disabled to protect the
+                            other record — reopen this tab to continue.
+                          </p>
+                        )}
+                        {isClearing && !patientMismatch && (
+                          <p className="mt-2 text-xs text-muted-foreground">
+                            Saving now will clear the existing care-plan note for this patient.
+                          </p>
+                        )}
+                      </>
+                    );
+                  })()}
                 </Card>
               </div>
               <Card className="p-5">
