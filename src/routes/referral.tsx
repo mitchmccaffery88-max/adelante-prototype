@@ -72,7 +72,7 @@ function ReferralPage() {
     cin: "",
     dob: "",
     releaseDate: "",
-    countyOfRelease: "Kings",
+    countyOfRelease: "Tulare",
     consentToContact: false,
     noPhone: false,
     notARobot: false,

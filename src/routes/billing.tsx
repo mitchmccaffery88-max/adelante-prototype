@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
   AdelanteEHR,
@@ -193,11 +193,19 @@ function BillingPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8 space-y-6">
-      <header>
-        <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
-        <p className="text-sm text-muted-foreground">
-          Tulare County pilot · 7 funding lanes tracked separately from billing status.
-        </p>
+      <header className="flex items-start justify-between gap-4">
+        <div>
+          <h1 className="font-display text-2xl text-navy">Billing coordinator</h1>
+          <p className="text-sm text-muted-foreground">
+            Tulare County pilot · 7 funding lanes tracked separately from billing status.
+          </p>
+        </div>
+        <Link
+          to="/admin-claims"
+          className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary"
+        >
+          Open claims worklist →
+        </Link>
       </header>
 
       {/* KPI tiles */}

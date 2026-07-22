@@ -12,14 +12,21 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as PatientRouteImport } from './routes/patient'
+import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ConsentRouteImport } from './routes/consent'
+import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
+import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-credentials'
+import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
+import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
+import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
+import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -39,6 +46,11 @@ const PatientRoute = PatientRouteImport.update({
   path: '/patient',
   getParentRoute: () => rootRouteImport,
 } as any)
+const NotesQueueRoute = NotesQueueRouteImport.update({
+  id: '/notes-queue',
+  path: '/notes-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntakeRoute = IntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
@@ -52,6 +64,21 @@ const HomeRoute = HomeRouteImport.update({
 const ConsentRoute = ConsentRouteImport.update({
   id: '/consent',
   path: '/consent',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicianProfileRoute = ClinicianProfileRouteImport.update({
+  id: '/clinician-profile',
+  path: '/clinician-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicianCredentialsRoute = ClinicianCredentialsRouteImport.update({
+  id: '/clinician-credentials',
+  path: '/clinician-credentials',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicianAvailabilityRoute = ClinicianAvailabilityRouteImport.update({
+  id: '/clinician-availability',
+  path: '/clinician-availability',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicianRoute = ClinicianRouteImport.update({
@@ -79,6 +106,21 @@ const AdminVendorsRoute = AdminVendorsRouteImport.update({
   path: '/admin-vendors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
+  id: '/admin-credentialing',
+  path: '/admin-credentialing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminCoordinationRoute = AdminCoordinationRouteImport.update({
+  id: '/admin-coordination',
+  path: '/admin-coordination',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminClaimsRoute = AdminClaimsRouteImport.update({
+  id: '/admin-claims',
+  path: '/admin-claims',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/admin-audit',
   path: '/admin-audit',
@@ -99,14 +141,21 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-claims': typeof AdminClaimsRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
+  '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -115,14 +164,21 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-claims': typeof AdminClaimsRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
+  '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -132,14 +188,21 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-claims': typeof AdminClaimsRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
+  '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
+  '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -150,14 +213,21 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-claims'
+    | '/admin-coordination'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
+    | '/clinician-credentials'
+    | '/clinician-profile'
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -166,14 +236,21 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-claims'
+    | '/admin-coordination'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
+    | '/clinician-credentials'
+    | '/clinician-profile'
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -182,14 +259,21 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-claims'
+    | '/admin-coordination'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
     | '/case-manager'
     | '/clinician'
+    | '/clinician-availability'
+    | '/clinician-credentials'
+    | '/clinician-profile'
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -199,14 +283,21 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminClaimsRoute: typeof AdminClaimsRoute
+  AdminCoordinationRoute: typeof AdminCoordinationRoute
+  AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   CaseManagerRoute: typeof CaseManagerRoute
   ClinicianRoute: typeof ClinicianRoute
+  ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
+  ClinicianCredentialsRoute: typeof ClinicianCredentialsRoute
+  ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
+  NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
   ScheduleRoute: typeof ScheduleRoute
@@ -235,6 +326,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/notes-queue': {
+      id: '/notes-queue'
+      path: '/notes-queue'
+      fullPath: '/notes-queue'
+      preLoaderRoute: typeof NotesQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/intake': {
       id: '/intake'
       path: '/intake'
@@ -254,6 +352,27 @@ declare module '@tanstack/react-router' {
       path: '/consent'
       fullPath: '/consent'
       preLoaderRoute: typeof ConsentRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinician-profile': {
+      id: '/clinician-profile'
+      path: '/clinician-profile'
+      fullPath: '/clinician-profile'
+      preLoaderRoute: typeof ClinicianProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinician-credentials': {
+      id: '/clinician-credentials'
+      path: '/clinician-credentials'
+      fullPath: '/clinician-credentials'
+      preLoaderRoute: typeof ClinicianCredentialsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinician-availability': {
+      id: '/clinician-availability'
+      path: '/clinician-availability'
+      fullPath: '/clinician-availability'
+      preLoaderRoute: typeof ClinicianAvailabilityRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinician': {
@@ -291,6 +410,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVendorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-credentialing': {
+      id: '/admin-credentialing'
+      path: '/admin-credentialing'
+      fullPath: '/admin-credentialing'
+      preLoaderRoute: typeof AdminCredentialingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-coordination': {
+      id: '/admin-coordination'
+      path: '/admin-coordination'
+      fullPath: '/admin-coordination'
+      preLoaderRoute: typeof AdminCoordinationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-claims': {
+      id: '/admin-claims'
+      path: '/admin-claims'
+      fullPath: '/admin-claims'
+      preLoaderRoute: typeof AdminClaimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-audit': {
       id: '/admin-audit'
       path: '/admin-audit'
@@ -319,14 +459,21 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminClaimsRoute: AdminClaimsRoute,
+  AdminCoordinationRoute: AdminCoordinationRoute,
+  AdminCredentialingRoute: AdminCredentialingRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   CaseManagerRoute: CaseManagerRoute,
   ClinicianRoute: ClinicianRoute,
+  ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,
+  ClinicianCredentialsRoute: ClinicianCredentialsRoute,
+  ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,
+  NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,
   ScheduleRoute: ScheduleRoute,

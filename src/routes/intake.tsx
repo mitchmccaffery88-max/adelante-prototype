@@ -160,7 +160,7 @@ function IntakePage() {
     countyOfRelease: string;
     jiReentryFlag: boolean;
     otherPlanName?: string;
-  }>({ status: "active", countyOfRelease: "Kings", jiReentryFlag: false, otherPlanName: "" });
+  }>({ status: "active", countyOfRelease: "Tulare", jiReentryFlag: false, otherPlanName: "" });
   // P1 — About you
   const [profile, setProfile] = useState({
     preferredName: "",
