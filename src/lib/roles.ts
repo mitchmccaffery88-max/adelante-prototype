@@ -10,6 +10,9 @@ export type StaffRole =
   | "therapist"
   | "pmhnp"
   | "billing"
+  | "clinical_coordinator"
+  | "credentialing_coordinator"
+  | "billing_coordinator"
   | "sys_admin";
 
 export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
@@ -18,6 +21,9 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "therapist", label: "Therapist" },
   { key: "pmhnp", label: "PMHNP" },
   { key: "billing", label: "Billing coordinator" },
+  { key: "clinical_coordinator", label: "Clinical coordinator" },
+  { key: "credentialing_coordinator", label: "Credentialing coordinator" },
+  { key: "billing_coordinator", label: "Billing coordinator (expanded)" },
   { key: "sys_admin", label: "System admin" },
 ];
 
