@@ -1,5 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
@@ -105,6 +105,12 @@ function ClinicianPage() {
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [newGoal, setNewGoal] = useState("");
   const [planDraft, setPlanDraft] = useState("");
+  // Keep the Care Plan note textarea in sync with the selected patient so
+  // switching patients doesn't carry over another person's draft, and so
+  // an unedited Save doesn't wipe the existing override.
+  useEffect(() => {
+    setPlanDraft(selectedPatient?.carePlanOverride?.text ?? "");
+  }, [selectedPatientId, selectedPatient?.carePlanOverride?.text]);
   const [note, setNote] = useState({
     sessionType: "individual" as const,
     subjective: "",
@@ -520,8 +526,9 @@ function ClinicianPage() {
                     {t("clinPlanHelp")} Auto-summary updates on its own; this note is appended for the patient.
                   </p>
                   <Textarea
+                    key={selectedPatient.id}
                     className="mt-3 min-h-[100px]"
-                    defaultValue={selectedPatient.carePlanOverride?.text ?? ""}
+                    value={planDraft}
                     placeholder="Optional note to append to the auto-summary…"
                     onChange={(e) => setPlanDraft(e.target.value)}
                   />

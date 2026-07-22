@@ -260,7 +260,15 @@ export function AppShell() {
         <div
           role="region"
           aria-label="Crisis support"
-          className="sticky bottom-0 z-30 border-t border-destructive/30 bg-destructive/5 backdrop-blur"
+          className={cn(
+            "sticky z-50 border-t border-destructive/30 bg-destructive/5 backdrop-blur",
+            // On mobile patient surfaces, sit above the fixed bottom tab bar
+            // so the 988 link is never obscured. Reset on md+ where the
+            // MobileNav is hidden.
+            isPatientSurface
+              ? "bottom-[calc(env(safe-area-inset-bottom)+56px)] md:bottom-0"
+              : "bottom-0",
+          )}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
             <Phone className="h-4 w-4 text-destructive shrink-0" />
