@@ -23,6 +23,7 @@ import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
+import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -97,6 +98,11 @@ const AdminVendorsRoute = AdminVendorsRouteImport.update({
   path: '/admin-vendors',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
+  id: '/admin-credentialing',
+  path: '/admin-credentialing',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/admin-audit',
   path: '/admin-audit',
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -136,6 +143,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -156,6 +164,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -177,6 +186,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -196,6 +206,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -215,6 +226,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -235,6 +247,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -351,6 +364,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminVendorsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-credentialing': {
+      id: '/admin-credentialing'
+      path: '/admin-credentialing'
+      fullPath: '/admin-credentialing'
+      preLoaderRoute: typeof AdminCredentialingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-audit': {
       id: '/admin-audit'
       path: '/admin-audit'
@@ -379,6 +399,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminCredentialingRoute: AdminCredentialingRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
