@@ -236,6 +236,10 @@ export interface Patient {
   eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
   /** Primary/assigned clinician of record (§ProviderSwitch). Optional. */
   primaryClinicianId?: string;
+  /** Auto-derived care-plan snapshot; recomputed after clinical writes. */
+  carePlan?: CarePlanSnapshot;
+  /** Optional free-text overlay from a clinician; merged into the summary. */
+  carePlanOverride?: { text: string; setAt: string; by?: string };
 }
 
 
