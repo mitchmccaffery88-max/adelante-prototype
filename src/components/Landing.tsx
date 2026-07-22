@@ -312,7 +312,7 @@ export function Landing() {
                 Contact
               </a>
             </nav>
-            <span>© {new Date().getFullYear()} Adelante · Kings County Pilot</span>
+            <span>© {new Date().getFullYear()} Adelante · Tulare County Pilot</span>
           </div>
         </div>
       </footer>
