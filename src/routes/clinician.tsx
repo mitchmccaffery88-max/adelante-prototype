@@ -112,12 +112,16 @@ function ClinicianPage() {
   // required before we allow saving an empty value (which deletes the
   // existing override note).
   const [planDraftDirty, setPlanDraftDirty] = useState(false);
-  // Keep the Care Plan note textarea in sync with the selected patient so
-  // switching patients doesn't carry over another person's draft.
+  // Keep the Care Plan note textarea in sync with the selected patient.
+  // If the clinician has unsaved edits and switches patients, we keep the
+  // draft intact so the mismatch guard on Save can flag it — otherwise we
+  // safely sync to the newly selected patient's stored override.
   useEffect(() => {
+    if (planDraftDirty && planDraftPatientId !== selectedPatientId) return;
     setPlanDraft(selectedPatient?.carePlanOverride?.text ?? "");
     setPlanDraftPatientId(selectedPatientId);
     setPlanDraftDirty(false);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [selectedPatientId, selectedPatient?.carePlanOverride?.text]);
   const [note, setNote] = useState({
     sessionType: "individual" as const,
