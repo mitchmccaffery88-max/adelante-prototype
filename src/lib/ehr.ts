@@ -238,6 +238,7 @@ export interface Patient {
   primaryClinicianId?: string;
 }
 
+
 export interface ScreenerResult {
   key: string;
   score: number;
@@ -482,6 +483,68 @@ export interface Goal {
   text: string;
   status: "open" | "in_progress" | "done";
   createdAt: string;
+}
+
+// ---------- Care-plan snapshot (auto-derived) ----------
+// Structured summary of a patient's plan, recomputed after every clinical
+// event that could change it (intake screeners, goals, notes, meds, refills,
+// SDOH items, check-ins). Each slice carries a `sensitive` bit so surfaces
+// can gate SUD/Part-2 material without re-deriving it.
+export type CarePlanFocusKey = "mh" | "sud" | "sdoh" | "meds" | "engagement";
+export interface CarePlanFocusArea {
+  key: CarePlanFocusKey;
+  label: string;
+  severity?: string;
+  sensitive?: boolean;
+}
+export interface CarePlanNextStep {
+  label: string;
+  dueBy?: string;
+  source: "screener" | "clinician" | "case_manager" | "self_help";
+  sensitive?: boolean;
+}
+export interface CarePlanScreenerHighlight {
+  key: string;
+  name: string;
+  score: number;
+  band: string;
+  takenAt: string;
+  sensitive: boolean;
+}
+export interface CarePlanMedicationSlice {
+  name: string;
+  state: "active" | "refill_pending" | "changed";
+  sensitive: boolean;
+}
+export interface CarePlanSdohSlice {
+  need: string;
+  status: SdohStatus;
+}
+export interface CarePlanMetrics {
+  phq9Latest?: number;
+  gad7Latest?: number;
+  goalsOpen: number;
+  goalsDone: number;
+  sdohOpen: number;
+  sdohClosed: number;
+  lastContactAt?: string;
+  intakeComplete: boolean;
+  crisisFlag: boolean;
+  medsActive: number;
+  medsSensitive: number;
+}
+export interface CarePlanSnapshot {
+  updatedAt: string;
+  updatedBy: "system" | "clinician" | "case_manager";
+  summary: string;
+  focusAreas: CarePlanFocusArea[];
+  activeGoals: { id: string; text: string; status: Goal["status"] }[];
+  nextSteps: CarePlanNextStep[];
+  screenerHighlights: CarePlanScreenerHighlight[];
+  medications: CarePlanMedicationSlice[];
+  sdohOpen: CarePlanSdohSlice[];
+  metrics: CarePlanMetrics;
+  triggeredBy?: string;
 }
 
 export interface ProgressNote {
@@ -958,7 +1021,8 @@ export type AuditCategory =
   | "telehealth"
   | "vendor"
   | "access"
-  | "provider_switch";
+  | "provider_switch"
+  | "care_plan";
 export interface AuditEvent {
   id: string;
   at: string;
