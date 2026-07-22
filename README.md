@@ -53,6 +53,5 @@ In production, PHI lives only in Healthie and the AWS perimeter.
 Cognito handles auth with 42 CFR Part 2 role segmentation.
 
 ### Mocked integrations
-- Healthie: UI only, no real API calls
 - Twilio SMS: referenced in admin view, not wired
 - Billing/EDI: status display only, no clearinghouse connection
