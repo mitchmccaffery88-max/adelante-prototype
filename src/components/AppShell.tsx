@@ -79,6 +79,10 @@ export function AppShell() {
       desc: "Claims, ISL & credentials",
     },
     { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
+    { to: "/notes-queue" as const, label: "Unsigned notes", icon: ClipboardList, desc: "Sign to release billing" },
+    { to: "/clinician-profile" as const, label: "My profile", icon: UserCog, desc: "Specialty & languages" },
+    { to: "/clinician-availability" as const, label: "My availability", icon: Calendar, desc: "Weekly hours & time off" },
+    { to: "/clinician-credentials" as const, label: "My credentials", icon: ShieldCheck, desc: "License, DEA, malpractice" },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
 
