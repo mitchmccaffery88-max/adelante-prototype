@@ -16,6 +16,7 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
+import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-credentials'
 import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
@@ -59,6 +60,11 @@ const ConsentRoute = ConsentRouteImport.update({
 const ClinicianProfileRoute = ClinicianProfileRouteImport.update({
   id: '/clinician-profile',
   path: '/clinician-profile',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicianCredentialsRoute = ClinicianCredentialsRouteImport.update({
+  id: '/clinician-credentials',
+  path: '/clinician-credentials',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicianAvailabilityRoute = ClinicianAvailabilityRouteImport.update({
@@ -117,6 +123,7 @@ export interface FileRoutesByFullPath {
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -135,6 +142,7 @@ export interface FileRoutesByTo {
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -154,6 +162,7 @@ export interface FileRoutesById {
   '/case-manager': typeof CaseManagerRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
+  '/clinician-credentials': typeof ClinicianCredentialsRoute
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
@@ -174,6 +183,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/clinician'
     | '/clinician-availability'
+    | '/clinician-credentials'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -192,6 +202,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/clinician'
     | '/clinician-availability'
+    | '/clinician-credentials'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -210,6 +221,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/clinician'
     | '/clinician-availability'
+    | '/clinician-credentials'
     | '/clinician-profile'
     | '/consent'
     | '/home'
@@ -229,6 +241,7 @@ export interface RootRouteChildren {
   CaseManagerRoute: typeof CaseManagerRoute
   ClinicianRoute: typeof ClinicianRoute
   ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
+  ClinicianCredentialsRoute: typeof ClinicianCredentialsRoute
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   HomeRoute: typeof HomeRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/clinician-profile'
       fullPath: '/clinician-profile'
       preLoaderRoute: typeof ClinicianProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinician-credentials': {
+      id: '/clinician-credentials'
+      path: '/clinician-credentials'
+      fullPath: '/clinician-credentials'
+      preLoaderRoute: typeof ClinicianCredentialsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinician-availability': {
@@ -365,6 +385,7 @@ const rootRouteChildren: RootRouteChildren = {
   CaseManagerRoute: CaseManagerRoute,
   ClinicianRoute: ClinicianRoute,
   ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,
+  ClinicianCredentialsRoute: ClinicianCredentialsRoute,
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   HomeRoute: HomeRoute,
