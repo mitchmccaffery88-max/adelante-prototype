@@ -1409,6 +1409,65 @@ export const AdelanteEHR = {
     listeners.add(l);
     return () => listeners.delete(l);
   },
+  /** Force a care-plan recompute. Idempotent; safe to call from any surface. */
+  recomputeCarePlan(patientId: string, triggeredBy?: string) {
+    _recomputeCarePlan(patientId, triggeredBy);
+    emit();
+  },
+  /** Read the latest care-plan snapshot, recomputing lazily if missing. */
+  getCarePlan(patientId: string): CarePlanSnapshot | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return undefined;
+    if (!p.carePlan) _recomputeCarePlan(patientId, "lazy_read");
+    return p.carePlan;
+  },
+  /** De-identified population-health rollup for admin dashboards. */
+  getPopulationCarePlanMetrics(): {
+    patients: number;
+    withPlan: number;
+    intakeComplete: number;
+    avgPhq9?: number;
+    avgGad7?: number;
+    goalsOpen: number;
+    sdohOpen: number;
+    crisisFlags: number;
+    medsSensitive: number;
+  } {
+    let withPlan = 0;
+    let intakeComplete = 0;
+    let goalsOpen = 0;
+    let sdohOpen = 0;
+    let crisisFlags = 0;
+    let medsSensitive = 0;
+    const phq: number[] = [];
+    const gad: number[] = [];
+    for (const p of patients) {
+      if (!p.carePlan) _recomputeCarePlan(p.id, "population_rollup");
+      const cp = p.carePlan;
+      if (!cp) continue;
+      withPlan += 1;
+      if (cp.metrics.intakeComplete) intakeComplete += 1;
+      goalsOpen += cp.metrics.goalsOpen;
+      sdohOpen += cp.metrics.sdohOpen;
+      if (cp.metrics.crisisFlag) crisisFlags += 1;
+      medsSensitive += cp.metrics.medsSensitive;
+      if (cp.metrics.phq9Latest !== undefined) phq.push(cp.metrics.phq9Latest);
+      if (cp.metrics.gad7Latest !== undefined) gad.push(cp.metrics.gad7Latest);
+    }
+    const avg = (arr: number[]) =>
+      arr.length ? Math.round((arr.reduce((s, n) => s + n, 0) / arr.length) * 10) / 10 : undefined;
+    return {
+      patients: patients.length,
+      withPlan,
+      intakeComplete,
+      avgPhq9: avg(phq),
+      avgGad7: avg(gad),
+      goalsOpen,
+      sdohOpen,
+      crisisFlags,
+      medsSensitive,
+    };
+  },
   getCurrentPatientId: () => currentPatientId,
   setCurrentPatientId(id: string) {
     currentPatientId = id;
