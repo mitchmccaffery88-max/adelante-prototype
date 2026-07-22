@@ -511,27 +511,34 @@ function ClinicianPage() {
           />
           {selectedPatient && (
             <div className="grid lg:grid-cols-3 gap-6 mt-4">
-              <Card className="p-5 lg:col-span-2">
-                <h3 className="font-display text-lg text-navy">{t("clinCarePlanSummary")}</h3>
-                <p className="text-xs text-muted-foreground mt-1">{t("clinPlanHelp")}</p>
-                <Textarea
-                  className="mt-3 min-h-[100px]"
-                  defaultValue={selectedPatient.carePlanSummary}
-                  onChange={(e) => setPlanDraft(e.target.value)}
-                />
-                <Button
-                  className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
-                  onClick={() => {
-                    AdelanteEHR.updateCarePlanSummary(
-                      selectedPatient.id,
-                      planDraft || selectedPatient.carePlanSummary,
-                    );
-                    toast.success("Care plan updated");
-                  }}
-                >
-                  {t("clinSaveSummary")}
-                </Button>
-              </Card>
+              <div className="lg:col-span-2 space-y-4">
+                <CarePlanCard patientId={selectedPatient.id} audience="clinician" />
+                <Card className="p-5">
+                  <h3 className="font-display text-lg text-navy">{t("clinCarePlanSummary")}</h3>
+                  <p className="text-xs text-muted-foreground mt-1">
+                    {t("clinPlanHelp")} Auto-summary updates on its own; this note is appended for the patient.
+                  </p>
+                  <Textarea
+                    className="mt-3 min-h-[100px]"
+                    defaultValue={selectedPatient.carePlanOverride?.text ?? ""}
+                    placeholder="Optional note to append to the auto-summary…"
+                    onChange={(e) => setPlanDraft(e.target.value)}
+                  />
+                  <Button
+                    className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
+                    onClick={() => {
+                      AdelanteEHR.updateCarePlanSummary(
+                        selectedPatient.id,
+                        planDraft,
+                        "clinician",
+                      );
+                      toast.success("Care plan updated");
+                    }}
+                  >
+                    {t("clinSaveSummary")}
+                  </Button>
+                </Card>
+              </div>
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinGoals")}</h3>
                 <div className="mt-3 space-y-2">
