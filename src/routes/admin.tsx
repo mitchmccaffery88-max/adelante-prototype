@@ -37,6 +37,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
