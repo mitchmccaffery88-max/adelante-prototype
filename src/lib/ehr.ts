@@ -1491,6 +1491,7 @@ export const AdelanteEHR = {
     p.needs = payload.needs;
     p.consents = { hipaa: payload.hipaa, part2Sud: payload.part2Sud, signedAt: now };
     p.intakeCompletedAt = now;
+    _recomputeCarePlan(p.id, "intake_completed");
     emit();
   },
   // Reads
@@ -1869,6 +1870,7 @@ export const AdelanteEHR = {
         });
       }
     }
+    _recomputeCarePlan(p.id, `screener:${result.key}`);
     emit();
   },
   raiseCrisisFlag(patientId: string, source: string) {
@@ -1887,6 +1889,7 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.checkIns = [{ ...checkIn, id: uid() }, ...(p.checkIns ?? [])];
+    _recomputeCarePlan(p.id, "check_in");
     emit();
   },
   addResourceReferral(patientId: string, r: Omit<ResourceReferral, "id" | "createdAt" | "status">) {
@@ -1898,10 +1901,14 @@ export const AdelanteEHR = {
     ];
     emit();
   },
-  updateCarePlanSummary(patientId: string, summary: string) {
+  updateCarePlanSummary(patientId: string, summary: string, by?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.carePlanSummary = summary;
+    const trimmed = summary.trim();
+    p.carePlanOverride = trimmed
+      ? { text: trimmed, setAt: new Date().toISOString(), by }
+      : undefined;
+    _recomputeCarePlan(p.id, "clinician_summary");
     emit();
   },
   addGoal(patientId: string, text: string) {
@@ -1911,6 +1918,7 @@ export const AdelanteEHR = {
       ...(p.goals ?? []),
       { id: uid(), text: text.trim(), status: "open", createdAt: new Date().toISOString() },
     ];
+    _recomputeCarePlan(p.id, "goal_added");
     emit();
   },
   setGoalStatus(patientId: string, goalId: string, status: Goal["status"]) {
@@ -1918,18 +1926,21 @@ export const AdelanteEHR = {
     const g = p?.goals?.find((x) => x.id === goalId);
     if (!g) return;
     g.status = status;
+    if (p) _recomputeCarePlan(p.id, "goal_status");
     emit();
   },
   removeGoal(patientId: string, goalId: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p?.goals) return;
     p.goals = p.goals.filter((g) => g.id !== goalId);
+    _recomputeCarePlan(p.id, "goal_removed");
     emit();
   },
   addProgressNote(patientId: string, note: Omit<ProgressNote, "id">) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.progressNotes = [{ ...note, id: uid() }, ...(p.progressNotes ?? [])];
+    _recomputeCarePlan(p.id, "progress_note");
     emit();
   },
 
