@@ -24,6 +24,7 @@ import { Route as BillingRouteImport } from './routes/billing'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
+import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as IndexRouteImport } from './routes/index'
@@ -103,6 +104,11 @@ const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
   path: '/admin-credentialing',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminCoordinationRoute = AdminCoordinationRouteImport.update({
+  id: '/admin-coordination',
+  path: '/admin-coordination',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminAuditRoute = AdminAuditRouteImport.update({
   id: '/admin-audit',
   path: '/admin-audit',
@@ -123,6 +129,7 @@ export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
@@ -143,6 +150,7 @@ export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
@@ -164,6 +172,7 @@ export interface FileRoutesById {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
+  '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
@@ -186,6 +195,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
@@ -206,6 +216,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
@@ -226,6 +237,7 @@ export interface FileRouteTypes {
     | '/'
     | '/admin'
     | '/admin-audit'
+    | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-vendors'
     | '/auth'
@@ -247,6 +259,7 @@ export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
   AdminAuditRoute: typeof AdminAuditRoute
+  AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
@@ -371,6 +384,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminCredentialingRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-coordination': {
+      id: '/admin-coordination'
+      path: '/admin-coordination'
+      fullPath: '/admin-coordination'
+      preLoaderRoute: typeof AdminCoordinationRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-audit': {
       id: '/admin-audit'
       path: '/admin-audit'
@@ -399,6 +419,7 @@ const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
   AdminAuditRoute: AdminAuditRoute,
+  AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,

@@ -54,7 +54,7 @@ function CoordinationPage() {
               return (
                 <li key={a.id} className="py-2 text-sm flex items-center justify-between">
                   <span>
-                    <b>{pt?.firstName} {pt?.lastName}</b> · <ClientDate iso={a.start} /> with {cl?.name}
+                    <b>{pt?.firstName} {pt?.lastName}</b> · <ClientDate value={a.start} /> with {cl?.name}
                   </span>
                   <div className="flex gap-2">
                     <Button size="sm" variant="outline" onClick={() => { AdelanteEHR.updateAppointmentStatus(a.id, "cancelled"); toast.success("Cancelled — notify patient to rebook."); }}>
