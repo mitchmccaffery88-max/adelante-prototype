@@ -461,8 +461,10 @@ export const AdelanteEHRExt = {
   transitionAppointment(apptId: string, next: AppointmentStateExt, actor?: string, reason?: string) {
     apptStateHistory.push({ apptId, state: next, at: iso(), actor, reason });
     // Mirror onto underlying ehr where possible.
-    if (next === "completed") AdelanteEHR.markAppointmentAttended?.(apptId);
-    if (next === "no_show") AdelanteEHR.markAppointmentNoShow?.(apptId);
+    if (next === "completed") AdelanteEHR.updateAppointmentStatus(apptId, "attended");
+    if (next === "no_show") AdelanteEHR.updateAppointmentStatus(apptId, "no_show");
+    if (next === "cancelled_patient" || next === "cancelled_staff" || next === "late_cancel")
+      AdelanteEHR.updateAppointmentStatus(apptId, "cancelled");
     ehrBus.publish({ type: "appointment.state", apptId, state: next });
   },
 
