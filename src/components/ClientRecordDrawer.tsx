@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
+import { CarePlanCard } from "@/components/CarePlanCard";
 
 interface Props {
   patientId: string | null;
@@ -171,10 +172,7 @@ function OverviewTab({ patientId }: { patientId: string }) {
           value={lastCheckIn ? new Date(lastCheckIn.date).toLocaleDateString() : "—"}
         />
       </div>
-      <Card className="p-3">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">Care plan</div>
-        <p className="text-sm mt-1">{p.carePlanSummary ?? "No summary yet."}</p>
-      </Card>
+      <CarePlanCard patientId={p.id} audience="case_manager" />
     </div>
   );
 }

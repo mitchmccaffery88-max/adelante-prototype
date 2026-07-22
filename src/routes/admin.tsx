@@ -37,6 +37,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { EmptyState } from "@/components/EmptyState";
+import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/admin")({
@@ -164,6 +165,8 @@ function AdminPage() {
           accent="gold"
         />
       </div>
+
+      <PopulationCarePlanStrip className="mb-6" />
 
       <div className="grid lg:grid-cols-3 gap-6">
         <Card className="lg:col-span-2 p-5">
