@@ -2198,6 +2198,7 @@ export const AdelanteEHR = {
       updatedAt: new Date().toISOString(),
     };
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
+    _recomputeCarePlan(p.id, "sdoh_added");
     emit();
   },
   setSdohStatus(patientId: string, itemId: string, status: SdohStatus, note?: string) {
@@ -2207,6 +2208,7 @@ export const AdelanteEHR = {
     item.status = status;
     if (note !== undefined) item.note = note;
     item.updatedAt = new Date().toISOString();
+    if (p) _recomputeCarePlan(p.id, "sdoh_status");
     emit();
   },
   setSdohVisibility(patientId: string, itemId: string, visible: boolean) {
