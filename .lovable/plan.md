@@ -1,85 +1,157 @@
+# Adelante MVP Expansion — Implementation Plan
 
-## Goal
+Additive extension of the existing wireframe (last edit: 2026-07-22). Nothing existing is rebuilt, restyled, or re-worded unless a section below explicitly calls it out. All new surfaces reuse `Card`, `Tabs`, `Badge`, `Select`, `EmptyState`, `LoadingSkeleton`, `TimePicker`, `ClientDate`, `CarePlanCard`, `ClientRecordDrawer`, and the existing navy/teal token system.
 
-Turn `Patient.carePlanSummary` from a single free-text string into a **derived, structured care-plan snapshot** that auto-updates when intake screeners finish or clinicians edit goals/notes/meds, is surfaced consistently across Patient, Clinician, Case Manager, and Admin views, and is redacted through the existing RBAC + Part 2 consent gates.
+## 0. Global re-points (smallest safe edits)
 
-## What to build
+- `src/lib/ehr.ts` (line 959), `src/routes/referral.tsx` (75), `src/routes/intake.tsx` (163): default `countyOfRelease` → `"Tulare"`. Keep `"Kings"` selectable in the county dropdown (labelled "Tentative — future expansion").
+- `src/components/Landing.tsx` footer + `src/lib/i18n.tsx` `adminSubtitle` (EN + ES): "Kings County" → "Tulare County".
+- Seed one `Facility` row: **Premier SUD & Mental Health, Tulare** and attach existing clinicians + `ClinicLocation`s to it.
 
-### 1. Structured CarePlanSnapshot in `src/lib/ehr.ts`
+## 1. Data model additions (`src/lib/ehr.ts`)
 
-Add (additive, backward compatible):
+Additive types only; existing ones untouched.
 
-```ts
-export interface CarePlanSnapshot {
-  updatedAt: string;
-  updatedBy: "system" | "clinician" | "case_manager";
-  // Plain-language 6th-grade summary, auto-composed
-  summary: string;
-  // Structured slices used by every surface
-  focusAreas: { key: "mh" | "sud" | "sdoh" | "meds" | "engagement"; label: string; severity?: string }[];
-  activeGoals: { id: string; text: string; status: Goal["status"] }[];
-  nextSteps: { label: string; dueBy?: string; source: "screener" | "clinician" | "case_manager" | "self_help" }[];
-  screenerHighlights: { key: string; name: string; score: number; band: string; takenAt: string; sensitive: boolean }[];
-  medications: { name: string; state: "active" | "refill_pending" | "changed"; sensitive: boolean }[];
-  sdohOpen: { need: string; status: SdohStatus }[];
-  // Population-health aggregates (non-PHI safe)
-  metrics: {
-    phq9Latest?: number; gad7Latest?: number;
-    goalsOpen: number; goalsDone: number;
-    sdohOpen: number; sdohClosed: number;
-    lastContactAt?: string;
-  };
-}
+```text
+Organization { id, name }
+County        { id, orgId, name }              // Tulare seeded; Kings placeholder
+Facility      { id, countyId, name, address }  // Premier Tulare seeded
+Program       { id, facilityId, name, careTypes[] }
+
+CredentialDoc { id, clinicianId, kind: license|dea|malpractice|board|cv|caqh|other,
+                issuingState?, number?, issuedAt?, expiresAt?, fileRef,
+                status: current|expiring|expired|missing|under_review,
+                verifiedAt?, verifiedBy?, verificationMethod? }
+
+PayerEnrollment { id, clinicianId, payer, plan, billingTin, orgId,
+                  status: enrolled|pending|not_enrolled|terminated,
+                  effectiveFrom, effectiveTo? }
+
+CoverageSpan  { id, patientId, payer, plan, from, to?, source }   // dated eligibility
+
+ClinicianProfileExt { specialty, credentialType (PMHNP|LMFT|LCSW|MSW|Peer),
+                      careTypes[], languages[], baseFacilityId, active: boolean }
+
+AvailabilityBlock  { id, clinicianId, weekday, start, end, modality,
+                     locationId?, careTypes[] }
+AvailabilityException { id, clinicianId, date, kind: off|added, start?, end?, note }
+
+AppointmentState = scheduled|confirmed|completed|cancelled_patient|
+                   cancelled_staff|late_cancel|rescheduled|no_show
+Appointment gains: state, stateHistory[], cancellationReason?, facilityId?
+
+ProgressNote gains: source: human|machine_assisted, draftState: draft|signed,
+                    signedAt?, signedBy?, part2Derived: boolean
+AudioArtifact { id, encounterId, uri, part2Derived }   // schema-only, no UI
+Consent gains: kinds "recording", "ai_use" (accepted by model; not surfaced)
+
+Claim { id, encounterId, state: completed|documented|signed|coded|generated|
+        submitted|paid|denied|partial, denialReason?, denialAt?,
+        rendererId, patientCoverageAtDoS, enrollmentAtDoS }
 ```
 
-- Add `Patient.carePlan?: CarePlanSnapshot`. Keep `carePlanSummary` populated (mirror of `carePlan.summary`) so no reader breaks.
-- Add `AdelanteEHR.recomputeCarePlan(patientId)` — pure function that reads screeners, goals, notes, meds/refills, SDOH, check-ins, tasks and returns a fresh `CarePlanSnapshot`.
-- Auto-invoke `recomputeCarePlan` at the end of: `submitScreener`, `addGoal` / `setGoalStatus` / `removeGoal`, `updateCarePlanSummary` (merges clinician edits as an override paragraph), `addProgressNote`, `requestRefill` / `reviewRefill`, `addSdohItem` / `updateSdohItem`, `logCheckIn`. Append an `AuditEvent` of kind `care_plan_recomputed` with the trigger.
-- Summary composer: template in plain 6th-grade English + Spanish key via `useI18n`. Falls back to "Care plan will appear here after intake." until intake completes.
+Every new row carries `orgId` / `facilityId`. Reads scoped through a small
+`scope.ts` helper (pilot: single org, no UI). Event bus (already present via
+`Listener` in `ehr.ts`) fans out `appointment.stateChanged`,
+`note.signed`, `credential.expiring`, `enrollment.changed`,
+`coverage.changed` so dependent views re-render without polling.
 
-### 2. Shared `<CarePlanCard />` component
+## 2. RBAC extension (`src/lib/roles.ts`)
 
-New `src/components/CarePlanCard.tsx` used by all four surfaces so copy and gating stay identical.
+Add permission sets (independently grantable, layered on Admin):
 
-Props: `{ patient, audience: "patient" | "clinician" | "case_manager" | "admin" }`.
+- `clinical_coordinator` — roster, coverage
+- `credentialing_coordinator` — credential vault PII (tighter than PHI)
+- `billing_coordinator` — claims worklist + eligibility, **no clinical notes**
 
-Rendering rules per audience (all driven through `canAccess` from `src/lib/roles.ts`):
+New `RecordClass` values: `credential_docs`, `payer_enrollment`, `claims`,
+`roster`. Matrix wired so credentialing PII is only visible to
+`credentialing_coordinator` / `sys_admin`; claims worklist opens without
+therapy-note access.
 
-- **patient**: shows `summary`, `activeGoals`, `nextSteps`, non-sensitive `screenerHighlights` (PHQ-9/GAD-7/PCL-5), meds by name only if consent `part2Sud` unnecessary, SDOH items where `visibleToPatient`. Never shows SUD screeners / SUD meds unless the patient is viewing their own record (they always can).
-- **clinician** (therapist/pmhnp): full snapshot, SUD slices shown only when `canAccess(role, "screeners_sud" | "sud_treatment", patient).locked === false`. Locked slices render the existing `<GatedCard />` "42 CFR Part 2 — consent required" state instead of the data.
-- **case_manager / peer_specialist**: same as clinician but `therapy_notes`, `meds_erx` slices collapse to counts only ("2 active medications") when their matrix level is `read`-summary; SUD slices honor consent gating.
-- **admin / sys_admin / billing**: only `metrics` block + de-identified `programId`; never `activeGoals`, `screenerHighlights`, meds, or SDOH detail — used for population health tiles. Enforced by the component (audience === "admin" branch reads only `carePlan.metrics`).
+## 3. New / modified surfaces
 
-Every sensitive slice runs through `<GatedCard cls=... patient=... />` so the existing RBAC matrix is the single source of truth. No new access rules — we only classify each slice against an existing `RecordClass`.
+**New routes**
+- `/clinician-profile` — self-serve profile: specialty, credential type, care
+  types, languages, base facility, active toggle, link into credential vault.
+- `/clinician-availability` — recurring weekly blocks (weekday × time ×
+  modality × location × care types) + one-off exceptions. Uses `TimePicker`.
+- `/clinician-credentials` — clinician's own credential vault; upload,
+  expiration chips, "Under review" state, restricted-data banner.
+- `/admin-credentialing` — roster credential status table, upload on behalf,
+  mark verified, filter by status, payer-enrollment sub-table per clinician.
+  Gated by `credentialing_coordinator`.
+- `/admin-coordination` — clinical coordination roster: care types, current
+  availability, load vs capacity, specialty, active flag, payer + credential
+  status summaries; filter by care type / modality / facility / status.
+- `/admin-claims` — claims worklist with tabs: Ready to bill · Blocked on
+  documentation · Blocked on eligibility · Submitted · Denied. Denial reason
+  capture. Uses `EmptyState`.
+- `/notes-queue` — unsigned-note aging queue (clinician sees own; coordinator
+  sees all). Age-based escalation styling (neutral → attention → urgent).
 
-### 3. Surface integration
+**Modified surfaces (smallest change)**
+- `src/routes/clinician.tsx` — add "Today" and "My caseload" strip at top
+  (today's appts w/ modality + location; per-patient episode day, next
+  session, completion rate, PHQ-9/GAD-7 trend arrow). Existing tabs
+  untouched. Add badges linking to unsigned-note queue + expiring credentials.
+- `src/routes/schedule.tsx` + clinician booking in `clinician.tsx` — plug
+  bookings through new `SchedulingConstraints.evaluate()` (active clinician,
+  in availability window, modality match, care-type match, credentials
+  current, payer/plan enrollment at DoS). On fail, show plain-language
+  reason instead of hiding slots. Add inline "switch to virtual" affordance
+  in the cancel/reschedule flow when reason ∈ {transport, ride, weather}.
+- `src/routes/admin.tsx` — add cards linking to the four new admin surfaces;
+  keep everything else intact.
+- `src/routes/billing.tsx` — becomes the entry banner that links to the new
+  `/admin-claims` worklist; existing content preserved as "Claim history".
+- `src/routes/auth.tsx` persona picker — add "Clinical Coordinator",
+  "Credentialing", "Billing Coordinator" as admin sub-personas.
 
-- `src/components/PatientHome.tsx`: replace the current "Care plan" paragraph block with `<CarePlanCard audience="patient" />`. Keep the section heading and i18n keys.
-- `src/routes/clinician.tsx`: above the existing editable textarea, render `<CarePlanCard audience="clinician" />`. The textarea keeps writing to `updateCarePlanSummary`, which now sets `carePlan.summary` as a clinician override and marks `updatedBy: "clinician"`.
-- `src/components/ClientRecordDrawer.tsx`: replace the "Care plan" mini-panel with `<CarePlanCard audience="case_manager" />`.
-- `src/routes/admin.tsx`: add a "Population health" strip that iterates patients and aggregates `carePlan.metrics` (avg PHQ-9, % goals closed, SDOH closure rate, patients with open crisis flag). Uses `<CarePlanCard audience="admin" />` for per-patient rows in existing patient tables.
+**New components**
+- `CredentialCard`, `CredentialStatusChip`, `PayerEnrollmentTable`,
+  `AvailabilityEditor`, `AvailabilityBlockRow`, `RosterTable`,
+  `ClaimStateBadge`, `ClaimWorklistTable`, `NoteAgingRow`,
+  `TrendArrow`, `TodayList`, `CaseloadStrip`, `RestrictedDataBanner`,
+  `AppointmentStateBadge`.
 
-### 4. i18n + accessibility
+## 4. Cross-surface sync
 
-- Add English + Spanish strings for section title, focus-area labels, next-step verbs, locked-state message, "Updated {time} by {role}".
-- Card uses `aria-live="polite"` around the summary paragraph so screen readers announce auto-updates after intake completion.
-- Reuse existing shadcn Card / Badge components and design tokens; no new colors.
+Central `ehrBus` (extend existing subscription in `ehr.ts`). Mutations emit
+typed events; the following views subscribe via `useEhr`: clinician
+schedule, caseload strip, coordination roster, patient care plan, claims
+worklist, notes queue. No component fetches on its own timer.
 
-### 5. Verification
+## 5. Care-plan / crisis / accessibility guarantees preserved
 
-- Unit-style manual pass: run intake for the demo `enrolled` persona → PHQ-9 submit → confirm `PatientHome` summary changes without reload, clinician view shows updated snapshot, admin population-health tile increments.
-- RBAC pass: switch acting role (Peer Specialist without Part 2 consent) → confirm SUD screener + SUD meds slices show the locked card, non-SUD slices remain visible.
-- Playwright screenshot patient + clinician + case-manager + admin views at 390×844 and 1280×800 to confirm parity.
-- `bun run build` and `bun run lint` clean.
+- 988 banner and MobileNav offset logic unchanged.
+- All new patient-visible copy at 6th-grade reading level (staff surfaces
+  may use clinical terminology).
+- Every new surface receives an i18n key (EN populated, ES stubbed to match
+  current pattern in `i18n.tsx`).
+- Audit event emitted on every credential / claim / enrollment read + write
+  via existing `AuditEvent` pipeline.
 
-## Technical notes
+## 6. Explicitly NOT built (per Section 9)
 
-- Pure derivation in `recomputeCarePlan` keeps the in-memory store the single source of truth; no separate cache to invalidate. Notifiers already fan out on every EHR write, so React consumers re-render automatically.
-- Sensitivity classification lives in the composer (each slice tagged `sensitive: boolean` at build time) so the component doesn't have to re-derive it. Component still calls `canAccess` for the authoritative gate.
-- Admin metrics intentionally exclude names, screener item text, medication names, and SDOH free text; only counts, latest scores, and timestamps — matches current `programId` de-identification pattern.
+Adel/AI features, ambient recording UI, patient summarization, primary
+source verification, lab ordering, native app, secure messaging, tenant
+management UI, full analytics dashboards, e-prescribing UI, automated
+denial management. Schema seams only, per §7.3.
 
-## Out of scope
+## 7. Deliverable at completion
 
-- Persisting to a real backend.
-- Editable structured goals UI beyond what already exists in `clinician.tsx`.
-- New consent purposes or new RBAC roles.
+Changelog file `.lovable/changelog-expansion.md` listing: screens added
+(7), screens modified (5), components added (~14), data model additions
+(~15 types), plus a "judgment calls" section (e.g., defaults for credential
+"expiring soon" threshold — proposed 60 days; late-cancel window —
+proposed <24h; payer list — Medi-Cal FFS, Tulare County MHP, and the three
+Medi-Cal managed care plans active in Tulare as seed rows).
+
+## Judgment calls needing your sign-off (please flag before build)
+
+1. **Expiring-soon window**: 60 days for licenses/DEA, 30 for malpractice — OK?
+2. **Late-cancel threshold**: <24 hours before start — OK?
+3. **Seed payer list for Tulare**: Medi-Cal FFS, Tulare County MHP, Health Net Medi-Cal, Anthem Blue Cross Medi-Cal, CalViva — confirm the managed care set.
+4. **"Active/inactive" toggle**: does deactivating a clinician auto-cancel their future appts or just freeze new bookings? Proposal: freeze bookings, flag existing appts for coordinator review, no auto-cancel.
+5. **Notes queue escalation thresholds**: neutral 0–2 days, attention 3–6, urgent 7+ — OK?
