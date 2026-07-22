@@ -2629,6 +2629,7 @@ export const AdelanteEHR = {
       origin: "manual",
       dedupeKey: `refill:${req.id}`,
     });
+    _recomputeCarePlan(input.patientId, "refill_requested");
     emit();
     return req;
   },
@@ -2689,6 +2690,7 @@ export const AdelanteEHR = {
       task.status = "done";
       task.completedAt = new Date().toISOString();
     }
+    _recomputeCarePlan(req.patientId, `refill_${input.decision}`);
     emit();
     return req;
   },
