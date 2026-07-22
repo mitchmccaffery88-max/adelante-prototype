@@ -12,6 +12,7 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as PatientRouteImport } from './routes/patient'
+import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as ConsentRouteImport } from './routes/consent'
@@ -43,6 +44,11 @@ const ReferralRoute = ReferralRouteImport.update({
 const PatientRoute = PatientRouteImport.update({
   id: '/patient',
   path: '/patient',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotesQueueRoute = NotesQueueRouteImport.update({
+  id: '/notes-queue',
+  path: '/notes-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
 const IntakeRoute = IntakeRouteImport.update({
@@ -149,6 +155,7 @@ export interface FileRoutesByFullPath {
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -171,6 +178,7 @@ export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -194,6 +202,7 @@ export interface FileRoutesById {
   '/consent': typeof ConsentRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
@@ -218,6 +227,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -240,6 +250,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -262,6 +273,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/home'
     | '/intake'
+    | '/notes-queue'
     | '/patient'
     | '/referral'
     | '/schedule'
@@ -285,6 +297,7 @@ export interface RootRouteChildren {
   ConsentRoute: typeof ConsentRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
+  NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
   ScheduleRoute: typeof ScheduleRoute
@@ -311,6 +324,13 @@ declare module '@tanstack/react-router' {
       path: '/patient'
       fullPath: '/patient'
       preLoaderRoute: typeof PatientRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notes-queue': {
+      id: '/notes-queue'
+      path: '/notes-queue'
+      fullPath: '/notes-queue'
+      preLoaderRoute: typeof NotesQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/intake': {
@@ -453,6 +473,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentRoute: ConsentRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,
+  NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,
   ScheduleRoute: ScheduleRoute,
