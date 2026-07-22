@@ -531,13 +531,12 @@ export const AdelanteEHRExt = {
 
 // ---------- React hook ----------
 export function useEhrExt<T>(selector: () => T): T {
-  return useSyncExternalStore(
+  // Subscribe to a stable version number so selectors that return fresh
+  // arrays/objects don't trigger an infinite re-render loop.
+  useSyncExternalStore(
     (cb) => subscribe(cb),
-    () => {
-      // Bump on version; result is derived by selector.
-      void version;
-      return selector();
-    },
-    selector,
+    () => version,
+    () => version,
   );
+  return selector();
 }
