@@ -39,6 +39,7 @@ import { toast } from "sonner";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
+import { CarePlanCard } from "@/components/CarePlanCard";
 
 interface Props {
   patientId: string | null;
