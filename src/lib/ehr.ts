@@ -1222,6 +1222,188 @@ function _flagProviderSwitch(input: {
   return sw;
 }
 
+// ---------- Care-plan recomputation ----------
+// Derives a `CarePlanSnapshot` from the patient's current record and stores
+// it on `p.carePlan`. Called at the end of every mutation that could change
+// the plan (intake, screener submit, goal edit, note, refill, SDOH change,
+// check-in). Sensitivity flags stay on each slice so surfaces can gate the
+// SUD / 42 CFR Part 2 material without re-classifying it.
+const SUD_SCREENER_KEYS = new Set(["audit", "dast-10"]);
+const SUD_MED_RE = /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol/i;
+
+function _composeSummary(p: Patient, parts: {
+  goalsOpen: number;
+  sdohOpen: number;
+  medsActive: number;
+  nextApptStart?: string;
+}): string {
+  if (!p.intakeCompletedAt) return "Care plan will appear here after intake.";
+  const out: string[] = [];
+  const phq = p.screeners["phq-9"];
+  const gad = p.screeners["gad-7"];
+  if (phq) out.push(`Your mood check (PHQ-9) shows ${phq.severity.toLowerCase()} symptoms.`);
+  if (gad) out.push(`Your worry check (GAD-7) shows ${gad.severity.toLowerCase()} anxiety.`);
+  if (parts.goalsOpen)
+    out.push(`You're working on ${parts.goalsOpen} goal${parts.goalsOpen === 1 ? "" : "s"} with your care team.`);
+  if (parts.sdohOpen)
+    out.push(`${parts.sdohOpen} life need${parts.sdohOpen === 1 ? "" : "s"} (like housing or food) are in progress.`);
+  if (parts.medsActive)
+    out.push(`Your care team is managing ${parts.medsActive} medication${parts.medsActive === 1 ? "" : "s"} with you.`);
+  if (parts.nextApptStart) out.push("Your next session is scheduled — we'll see you soon.");
+  if (out.length === 0) out.push("Your care team will add next steps here as you start visits.");
+  return out.join(" ");
+}
+
+function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
+  const p = patients.find((x) => x.id === patientId);
+  if (!p) return;
+
+  const meds = _vendors.erx.listActiveMedications(p.id);
+  const pendingRefills = refillRequests.filter(
+    (r) => r.patientId === p.id && r.status === "pending",
+  );
+  const medications: CarePlanMedicationSlice[] = meds.map((m) => ({
+    name: m.name,
+    state: pendingRefills.some((r) => r.medicationId === m.id) ? "refill_pending" : "active",
+    sensitive: SUD_MED_RE.test(m.name),
+  }));
+
+  const screenerHighlights: CarePlanScreenerHighlight[] = [];
+  for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"]) {
+    const r = p.screeners[key];
+    if (!r) continue;
+    screenerHighlights.push({
+      key,
+      name: key.toUpperCase(),
+      score: r.score,
+      band: r.severity,
+      takenAt: r.completedAt,
+      sensitive: SUD_SCREENER_KEYS.has(key),
+    });
+  }
+
+  const goalsArr = p.goals ?? [];
+  const activeGoals = goalsArr
+    .filter((g) => g.status !== "done")
+    .map((g) => ({ id: g.id, text: g.text, status: g.status }));
+  const goalsOpen = activeGoals.length;
+  const goalsDone = goalsArr.length - goalsOpen;
+
+  const sdohItems = p.sdohPlan?.items ?? [];
+  const sdohOpenItems = sdohItems.filter(
+    (i) => i.status !== "completed" && i.status !== "not_completed",
+  );
+  const sdohOpen: CarePlanSdohSlice[] = sdohOpenItems.map((i) => ({
+    need: i.need,
+    status: i.status,
+  }));
+  const sdohClosed = sdohItems.filter((i) => i.status === "completed").length;
+
+  const upcoming = appointments
+    .filter((a) => a.patientId === p.id && a.status === "scheduled")
+    .sort((a, b) => +new Date(a.start) - +new Date(b.start));
+  const nextAppt = upcoming[0];
+
+  const focusAreas: CarePlanFocusArea[] = [];
+  const phq = p.screeners["phq-9"];
+  const gad = p.screeners["gad-7"];
+  if (phq) focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `PHQ-9 ${phq.severity}` });
+  else if (gad) focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `GAD-7 ${gad.severity}` });
+  const hasSud = p.needs?.substanceUse || p.screeners["audit"] || p.screeners["dast-10"];
+  if (hasSud)
+    focusAreas.push({ key: "sud", label: "Substance use support", sensitive: true });
+  if (sdohOpen.length)
+    focusAreas.push({ key: "sdoh", label: "Life needs", severity: `${sdohOpen.length} open` });
+  if (medications.length)
+    focusAreas.push({
+      key: "meds",
+      label: "Medications",
+      severity: `${medications.length} active`,
+      sensitive: medications.some((m) => m.sensitive),
+    });
+  if (upcoming.length)
+    focusAreas.push({
+      key: "engagement",
+      label: "Upcoming visits",
+      severity: `${upcoming.length} scheduled`,
+    });
+
+  const nextSteps: CarePlanNextStep[] = [];
+  if (nextAppt) {
+    nextSteps.push({
+      label: "Attend your next session",
+      dueBy: nextAppt.start,
+      source: "clinician",
+    });
+  }
+  for (const t of p.tasks ?? []) {
+    if (t.completedAt) continue;
+    nextSteps.push({
+      label: t.label,
+      source: t.kind === "rescreen" ? "screener" : "case_manager",
+    });
+  }
+  for (const m of p.selfHelpPlan?.modules ?? []) {
+    if (m.completedAt) continue;
+    nextSteps.push({ label: `Self-help: ${m.title}`, source: "self_help" });
+  }
+
+  const lastAttended = appointments
+    .filter((a) => a.patientId === p.id && a.status === "attended")
+    .sort((a, b) => +new Date(b.start) - +new Date(a.start))[0]?.start;
+  const lastCheckIn = p.checkIns?.[0]?.date;
+  const lastContactAt = [lastAttended, lastCheckIn]
+    .filter((v): v is string => Boolean(v))
+    .sort()
+    .reverse()[0];
+
+  const metrics: CarePlanMetrics = {
+    phq9Latest: phq?.score,
+    gad7Latest: gad?.score,
+    goalsOpen,
+    goalsDone,
+    sdohOpen: sdohOpen.length,
+    sdohClosed,
+    lastContactAt,
+    intakeComplete: Boolean(p.intakeCompletedAt),
+    crisisFlag: Boolean(p.crisisFlag),
+    medsActive: medications.length,
+    medsSensitive: medications.filter((m) => m.sensitive).length,
+  };
+
+  const auto = _composeSummary(p, {
+    goalsOpen,
+    sdohOpen: sdohOpen.length,
+    medsActive: medications.length,
+    nextApptStart: nextAppt?.start,
+  });
+  const override = p.carePlanOverride;
+  const summary = override ? `${auto}\n\nCare team note: ${override.text}` : auto;
+  const updatedBy: CarePlanSnapshot["updatedBy"] = override ? "clinician" : "system";
+
+  p.carePlan = {
+    updatedAt: new Date().toISOString(),
+    updatedBy,
+    summary,
+    focusAreas,
+    activeGoals,
+    nextSteps: nextSteps.slice(0, 6),
+    screenerHighlights,
+    medications,
+    sdohOpen,
+    metrics,
+    triggeredBy,
+  };
+  p.carePlanSummary = summary;
+
+  appendAudit({
+    category: "care_plan",
+    action: "recomputed",
+    patientId: p.id,
+    detail: { triggeredBy, updatedBy },
+  });
+}
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
