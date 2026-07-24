@@ -49,7 +49,7 @@ primitives — these ARE portable to the production build.
 
 ### PHI boundary
 No real PHI exists in this repo. All patient data is mocked.
-In production, PHI lives only in Healthie and the AWS perimeter.
+In production, PHI lives only in the native Adelante EHR and its AWS perimeter. Bounded outside vendors (telehealth video, eRx) receive the minimum data required for their service.
 Cognito handles auth with 42 CFR Part 2 role segmentation.
 
 ### Mocked integrations
