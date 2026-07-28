@@ -371,6 +371,9 @@ function CaseManagerPage() {
                         <Button size="sm" variant="secondary" onClick={() => setRecordId(p.id)}>
                           Record
                         </Button>
+                        {!p.primaryClinicianId && (
+                          <AssignClinicianButton patientId={p.id} size="sm" variant="outline" />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
