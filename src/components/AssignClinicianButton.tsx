@@ -145,7 +145,7 @@ export function AssignClinicianButton({
               AdelanteEHR.reassignPrimaryClinician({
                 patientId,
                 clinicianId: pick,
-                initiatedBy: role === "sys_admin" ? "admin" : "clinical_coordinator",
+                initiatedBy: role === "sys_admin" ? "admin" : "case_manager",
               });
               toast.success(
                 current
