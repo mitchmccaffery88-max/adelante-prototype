@@ -40,6 +40,7 @@ import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "luc
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 
 interface Props {
   patientId: string | null;
@@ -75,6 +76,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <span className="text-xs text-muted-foreground">
               Acting as: <span className="capitalize">{role.replace("_", " ")}</span>
             </span>
+            <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
           </SheetDescription>
         </SheetHeader>
 
