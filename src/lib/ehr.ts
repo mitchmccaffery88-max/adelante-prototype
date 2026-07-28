@@ -2981,35 +2981,26 @@ export const AdelanteEHR = {
     emit();
     return sw;
   },
-};
-
-// Late-bound assignment helpers attached after the object literal to avoid
-// re-flowing the large declaration.
-(AdelanteEHR as unknown as {
-  assignCaseManager: (input: {
+  assignCaseManager(input: {
     patientId: string;
     caseManagerId: string;
     actorId?: string;
-  }) => Patient | undefined;
-}).assignCaseManager = function assignCaseManager(input: {
-  patientId: string;
-  caseManagerId: string;
-  actorId?: string;
-}): Patient | undefined {
-  const p = patients.find((x) => x.id === input.patientId);
-  if (!p) return undefined;
-  const prev = p.caseManagerId;
-  if (prev === input.caseManagerId) return p;
-  p.caseManagerId = input.caseManagerId;
-  appendAudit({
-    category: "assignment",
-    action: prev ? "case_manager_reassigned" : "case_manager_assigned",
-    patientId: p.id,
-    actorId: input.actorId,
-    detail: { from: prev, to: input.caseManagerId },
-  });
-  emit();
-  return p;
+  }): Patient | undefined {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return undefined;
+    const prev = p.caseManagerId;
+    if (prev === input.caseManagerId) return p;
+    p.caseManagerId = input.caseManagerId;
+    appendAudit({
+      category: "assignment",
+      action: prev ? "case_manager_reassigned" : "case_manager_assigned",
+      patientId: p.id,
+      actorId: input.actorId,
+      detail: { from: prev, to: input.caseManagerId },
+    });
+    emit();
+    return p;
+  },
 };
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
