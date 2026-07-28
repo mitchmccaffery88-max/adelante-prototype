@@ -1,8 +1,24 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useMemo, useState } from "react";
+import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 import {
   TrendingUp,
   Users,
@@ -10,6 +26,7 @@ import {
   Timer,
   DollarSign,
   ShieldCheck,
+  Download,
   ScrollText,
   HandHeart,
   AlertTriangle,
@@ -22,8 +39,6 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
-import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
-import { CaseloadTable } from "@/components/admin/CaseloadTable";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
