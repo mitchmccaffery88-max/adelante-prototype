@@ -521,6 +521,14 @@ function CaseManagerPage() {
         open={recordId !== null}
         onOpenChange={(o) => !o && setRecordId(null)}
       />
+      {cmId && (
+        <CaseloadUploadDialog
+          caseManagerId={cmId}
+          caseManagerName={cm?.name}
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+        />
+      )}
     </div>
   );
 }
