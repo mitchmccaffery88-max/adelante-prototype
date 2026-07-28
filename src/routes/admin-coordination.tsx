@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { ClientDate } from "@/components/ClientDate";
+import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 
 export const Route = createFileRoute("/admin-coordination")({
   head: () => ({
@@ -78,7 +79,7 @@ function CoordinationPage() {
             {patientsWithoutPrimary.map((p) => (
               <li key={p.id} className="py-2 text-sm flex items-center justify-between">
                 <span>{p.firstName} {p.lastName}</span>
-                <Link to="/case-manager" className="text-xs underline">Assign in caseload</Link>
+                <AssignClinicianButton patientId={p.id} size="sm" />
               </li>
             ))}
           </ul>

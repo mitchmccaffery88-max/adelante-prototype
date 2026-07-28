@@ -46,6 +46,11 @@ import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { TimePicker } from "@/components/TimePicker";
+import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
+import { CaseloadTable } from "@/components/admin/CaseloadTable";
+import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { CaseloadUploadDialog } from "@/components/CaseloadUploadDialog";
+import { UploadCloud } from "lucide-react";
 
 function lastContactAt(p: ReturnType<typeof AdelanteEHR.getPatient>) {
   const c = p?.checkIns?.[0];
@@ -99,6 +104,9 @@ function CaseManagerPage() {
   const [cmId, setCmId] = useState(cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
   const rawCaseload = useEhr(() => (cmId ? AdelanteEHR.patientsForCaseManager(cmId) : []));
+  const allPatients = useEhr(() => AdelanteEHR.listPatients());
+  const referrals = useEhr(() => AdelanteEHR.listReferrals());
+  const [uploadOpen, setUploadOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [dobFrom, setDobFrom] = useState("");
   const [dobTo, setDobTo] = useState("");
@@ -135,19 +143,42 @@ function CaseManagerPage() {
           <h1 className="font-display text-3xl text-navy mt-1">{t("cmTitle")}</h1>
           <p className="text-muted-foreground mt-1 text-sm">{t("cmSubtitle")}</p>
         </div>
-        <Select value={cmId} onValueChange={setCmId}>
-          <SelectTrigger className="w-[280px]">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {cms.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name} · {c.role.replace("_", " ")}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            variant="outline"
+            size="sm"
+            disabled={!cmId}
+            onClick={() => setUploadOpen(true)}
+          >
+            <UploadCloud className="h-4 w-4 mr-1.5" /> Upload caseload
+          </Button>
+          <Select value={cmId} onValueChange={setCmId}>
+            <SelectTrigger className="w-[280px]">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {cms.map((c) => (
+                <SelectItem key={c.id} value={c.id}>
+                  {c.name} · {c.role.replace("_", " ")}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </header>
+
+      <section className="mb-6 grid gap-4 lg:grid-cols-3">
+        <div className="lg:col-span-2">
+          <CaseloadTable
+            patients={allPatients}
+            title="Program caseload (all clients)"
+            onOpenPatient={setRecordId}
+            showAssignClinician
+            exportFilename="cm-caseload"
+          />
+        </div>
+        <ReferralTrackerCard referrals={referrals} title="Referral status" />
+      </section>
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-3">
@@ -340,6 +371,9 @@ function CaseManagerPage() {
                         <Button size="sm" variant="secondary" onClick={() => setRecordId(p.id)}>
                           Record
                         </Button>
+                        {!p.primaryClinicianId && (
+                          <AssignClinicianButton patientId={p.id} size="sm" variant="outline" />
+                        )}
                       </div>
                     </TableCell>
                   </TableRow>
@@ -490,6 +524,14 @@ function CaseManagerPage() {
         open={recordId !== null}
         onOpenChange={(o) => !o && setRecordId(null)}
       />
+      {cmId && (
+        <CaseloadUploadDialog
+          caseManagerId={cmId}
+          caseManagerName={cm?.name}
+          open={uploadOpen}
+          onOpenChange={setUploadOpen}
+        />
+      )}
     </div>
   );
 }
