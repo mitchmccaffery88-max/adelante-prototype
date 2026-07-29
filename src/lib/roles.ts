@@ -170,6 +170,54 @@ export function canAccess(
 
 // ----- Acting-role store (localStorage-backed, subscribable) -----
 const KEY = "adelante.actingRole";
+const STAFF_KEY = "adelante.actingStaffId";
+
+// ----- Seeded staff roster -----
+// Adelante models authorship as a named person, not a role string. Every
+// role has at least one seeded staff member so there is always a real
+// identity available for authorship + per-record authorization.
+export interface StaffMember {
+  id: string;
+  name: string;
+  role: StaffRole;
+  credential?: string;
+  /** Links this staff member to a clinical provider record in AdelanteEHR. */
+  clinicianId?: string;
+}
+
+export const STAFF_ROSTER: StaffMember[] = [
+  { id: "s-cm1", name: "Luz Herrera", role: "case_manager", credential: "CCM" },
+  { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
+  {
+    id: "s-th1",
+    name: "Dr. Marisol Reyes",
+    role: "therapist",
+    credential: "LCSW",
+    clinicianId: "c1",
+  },
+  {
+    id: "s-th2",
+    name: "Dr. James Okafor",
+    role: "therapist",
+    credential: "PsyD",
+    clinicianId: "c2",
+  },
+  { id: "s-th3", name: "Anita Brooks", role: "therapist", credential: "LMFT", clinicianId: "c3" },
+  { id: "s-np1", name: "Dr. R. Bagga", role: "pmhnp", credential: "PMHNP-BC" },
+  { id: "s-bill1", name: "Tonya Price", role: "billing" },
+  { id: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
+  { id: "s-cred1", name: "Marcus Webb", role: "credentialing_coordinator" },
+  { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" },
+  { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin" },
+];
+
+export function staffForRole(role: StaffRole): StaffMember[] {
+  return STAFF_ROSTER.filter((s) => s.role === role);
+}
+export function getStaffMember(id: string | null | undefined): StaffMember | undefined {
+  return STAFF_ROSTER.find((s) => s.id === id);
+}
+
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
@@ -178,30 +226,91 @@ let acting: StaffRole = (() => {
     return "case_manager";
   }
 })();
-const subs = new Set<() => void>();
 
-export function setActingRole(role: StaffRole) {
-  acting = role;
+let actingStaffId: string = (() => {
   try {
-    window.localStorage.setItem(KEY, role);
+    const v = typeof window !== "undefined" ? window.localStorage.getItem(STAFF_KEY) : null;
+    const m = getStaffMember(v);
+    if (m && m.role === acting) return m.id;
   } catch {
     /* no-op */
   }
-  subs.forEach((s) => s());
+  return staffForRole(acting)[0]?.id ?? STAFF_ROSTER[0].id;
+})();
+
+const subs = new Set<() => void>();
+const notify = () => subs.forEach((s) => s());
+
+function persist(key: string, value: string) {
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* no-op */
+  }
+}
+
+export function setActingRole(role: StaffRole) {
+  acting = role;
+  persist(KEY, role);
+  // Keep the acting identity consistent with the acting role.
+  if (getStaffMember(actingStaffId)?.role !== role) {
+    actingStaffId = staffForRole(role)[0]?.id ?? actingStaffId;
+    persist(STAFF_KEY, actingStaffId);
+  }
+  notify();
+}
+
+/** Set the acting person; keeps the acting role in sync with their role. */
+export function setActingStaff(staffId: string) {
+  const m = getStaffMember(staffId);
+  if (!m) return;
+  actingStaffId = m.id;
+  persist(STAFF_KEY, m.id);
+  if (acting !== m.role) {
+    acting = m.role;
+    persist(KEY, m.role);
+  }
+  notify();
 }
 export function getActingRole(): StaffRole {
   return acting;
 }
+export function getActingStaff(): StaffMember {
+  return getStaffMember(actingStaffId) ?? STAFF_ROSTER[0];
+}
+
+function subscribe(cb: () => void) {
+  subs.add(cb);
+  return () => {
+    subs.delete(cb);
+  };
+}
+
 export function useActingRole(): [StaffRole, (r: StaffRole) => void] {
-  const role = useSyncExternalStore(
-    (cb) => {
-      subs.add(cb);
-      return () => {
-        subs.delete(cb);
-      };
-    },
-    () => acting,
-    () => acting,
-  );
+  const role = useSyncExternalStore(subscribe, () => acting, () => acting);
   return [role, setActingRole];
+}
+
+/**
+ * First-class acting staff identity. Authorship fields should capture
+ * `staffName` (human-readable, stable in the demo roster) and per-record
+ * authorization should compare `clinicianId` / `staffId`.
+ */
+export function useActingStaff(): {
+  role: StaffRole;
+  staffId: string;
+  staffName: string;
+  clinicianId?: string;
+  setActingStaff: (id: string) => void;
+} {
+  const id = useSyncExternalStore(subscribe, () => actingStaffId, () => actingStaffId);
+  const role = useSyncExternalStore(subscribe, () => acting, () => acting);
+  const member = getStaffMember(id) ?? STAFF_ROSTER[0];
+  return {
+    role,
+    staffId: member.id,
+    staffName: member.name,
+    clinicianId: member.clinicianId,
+    setActingStaff,
+  };
 }
