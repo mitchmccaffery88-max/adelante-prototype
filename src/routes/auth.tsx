@@ -332,7 +332,6 @@ function AuthPage() {
                     {clinicians.map((c) => (
                       <SelectItem key={c.id} value={c.id}>
                         {c.name}
-                        {c.title ? ` · ${c.title}` : ""}
                       </SelectItem>
                     ))}
                   </SelectContent>
