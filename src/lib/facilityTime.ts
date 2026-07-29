@@ -86,7 +86,14 @@ export function zoneOffsetMinutes(instant: Date, tz?: string): number {
  * way the reference implementation does (earliest valid instant wins).
  */
 export function fromFacilityWallClock(
-  wall: { year: number; month: number; day: number; hour?: number; minute?: number; second?: number },
+  wall: {
+    year: number;
+    month: number;
+    day: number;
+    hour?: number;
+    minute?: number;
+    second?: number;
+  },
   tz?: string,
 ): Date {
   const naive = Date.UTC(
@@ -121,7 +128,14 @@ export function startOfFacilityDay(instant: Date, tz?: string): Date {
 export function addFacilityDays(instant: Date, days: number, tz?: string): Date {
   const w = toFacilityParts(instant, tz);
   return fromFacilityWallClock(
-    { year: w.year, month: w.month, day: w.day + days, hour: w.hour, minute: w.minute, second: w.second },
+    {
+      year: w.year,
+      month: w.month,
+      day: w.day + days,
+      hour: w.hour,
+      minute: w.minute,
+      second: w.second,
+    },
     tz,
   );
 }

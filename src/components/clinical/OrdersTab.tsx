@@ -284,7 +284,8 @@ function DraftOrderCard({
         </div>
         <div>
           <Label className={cn("text-xs", blocked.has("daysSupply") && REQ_LABEL)}>
-            Days supply {order.isControlled ? "*" : ""} {order.daysSupplyManual ? "(manual)" : "(auto)"}
+            Days supply {order.isControlled ? "*" : ""}{" "}
+            {order.daysSupplyManual ? "(manual)" : "(auto)"}
           </Label>
           <Input
             className={cn("mt-1", blocked.has("daysSupply") && REQ_FIELD)}
@@ -353,9 +354,7 @@ function DraftOrderCard({
         </div>
       </div>
 
-      {needsAttribution && (
-        <AttributionSection order={order} blocked={blocked} onPatch={patch} />
-      )}
+      {needsAttribution && <AttributionSection order={order} blocked={blocked} onPatch={patch} />}
 
       {showIssues && issues.length > 0 && (
         <ul className="list-disc space-y-0.5 pl-5 text-xs text-amber-700 dark:text-amber-400">
@@ -377,12 +376,10 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   const problemRows = useEhr(() => AdelanteEHR.listProblems(patientId));
   const problems = useMemo(
     () =>
-      problemRows
-        .filter(isProblemClinicallyActive)
-        .map((p) => ({
-          id: p.id,
-          label: p.icd10Code ? `${p.icd10Code} — ${p.description}` : p.description,
-        })),
+      problemRows.filter(isProblemClinicallyActive).map((p) => ({
+        id: p.id,
+        label: p.icd10Code ? `${p.icd10Code} — ${p.description}` : p.description,
+      })),
     [problemRows],
   );
 

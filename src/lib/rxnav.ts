@@ -35,7 +35,10 @@ export interface CatalogProduct {
 
 interface DrugsResponse {
   drugGroup?: {
-    conceptGroup?: { tty?: string; conceptProperties?: { rxcui: string; name: string; tty: string; synonym?: string }[] }[];
+    conceptGroup?: {
+      tty?: string;
+      conceptProperties?: { rxcui: string; name: string; tty: string; synonym?: string }[];
+    }[];
   };
 }
 
@@ -47,20 +50,25 @@ const PICKABLE = new Set(["SCD", "SBD", "GPCK", "BPCK"]);
  * `approximateTerm.json` for misspellings, mirroring the reference's
  * "search then fuzzy" behaviour.
  */
-export async function searchProducts(term: string, signal?: AbortSignal): Promise<CatalogProduct[]> {
+export async function searchProducts(
+  term: string,
+  signal?: AbortSignal,
+): Promise<CatalogProduct[]> {
   const q = term.trim();
   if (q.length < 3) return [];
 
-  const direct = await fetchJson<DrugsResponse>(`${BASE}/drugs.json?name=${encodeURIComponent(q)}`, signal);
+  const direct = await fetchJson<DrugsResponse>(
+    `${BASE}/drugs.json?name=${encodeURIComponent(q)}`,
+    signal,
+  );
   let concepts = (direct?.drugGroup?.conceptGroup ?? [])
     .filter((g) => g.tty && PICKABLE.has(g.tty))
     .flatMap((g) => g.conceptProperties ?? []);
 
   if (concepts.length === 0) {
-    const approx = await fetchJson<{ approximateGroup?: { candidate?: { rxcui: string; name?: string }[] } }>(
-      `${BASE}/approximateTerm.json?term=${encodeURIComponent(q)}&maxEntries=15`,
-      signal,
-    );
+    const approx = await fetchJson<{
+      approximateGroup?: { candidate?: { rxcui: string; name?: string }[] };
+    }>(`${BASE}/approximateTerm.json?term=${encodeURIComponent(q)}&maxEntries=15`, signal);
     const seen = new Set<string>();
     const candidates = (approx?.approximateGroup?.candidate ?? [])
       .filter((c) => c.rxcui && !seen.has(c.rxcui) && seen.add(c.rxcui))
@@ -96,7 +104,9 @@ export async function loadProductDetail(
   signal?: AbortSignal,
 ): Promise<CatalogProduct> {
   const data = await fetchJson<{
-    propConceptGroup?: { propConcept?: { propCategory: string; propName: string; propValue: string }[] };
+    propConceptGroup?: {
+      propConcept?: { propCategory: string; propName: string; propValue: string }[];
+    };
   }>(`${BASE}/rxcui/${product.rxcui}/allProperties.json?prop=all`, signal);
 
   const props = data?.propConceptGroup?.propConcept ?? [];
@@ -116,11 +126,13 @@ export async function loadProductDetail(
  * shape "<ingredient> <strength> <dose form>" (combos join with " / ").
  * Used as the fast path so the picker renders before the detail call lands.
  */
-export function parseFromName(name: string): Pick<CatalogProduct, "strength" | "doseForm" | "ingredientNames"> {
+export function parseFromName(
+  name: string,
+): Pick<CatalogProduct, "strength" | "doseForm" | "ingredientNames"> {
   const cleaned = name.replace(/\s*\[[^\]]+\]\s*$/, ""); // drop brand bracket
-  const strengths = [...cleaned.matchAll(/([\d.]+\s*(?:MG|MCG|G|ML|UNT|%)(?:\s*\/\s*(?:[\d.]+\s*)?ML)?)/gi)].map(
-    (m) => m[1].trim(),
-  );
+  const strengths = [
+    ...cleaned.matchAll(/([\d.]+\s*(?:MG|MCG|G|ML|UNT|%)(?:\s*\/\s*(?:[\d.]+\s*)?ML)?)/gi),
+  ].map((m) => m[1].trim());
   const ingredientNames = cleaned
     .split("/")
     .map((seg) => seg.replace(/[\d.]+\s*(MG|MCG|G|ML|UNT|%).*/i, "").trim())

@@ -11,11 +11,7 @@
 
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
-import {
-  parseLiquidStrength,
-  parseStrength,
-  type DoseProduct,
-} from "@/lib/doseReconcile";
+import { parseLiquidStrength, parseStrength, type DoseProduct } from "@/lib/doseReconcile";
 
 /**
  * Build the dose-math product view of an order. Liquids are detected first
@@ -133,13 +129,15 @@ export function issueFields(issues: OrderIssue[]): Set<OrderFieldKey> {
 export const REQ_LABEL = "text-amber-700 dark:text-amber-400";
 export const REQ_FIELD = "border-amber-500 bg-amber-50/60 dark:bg-amber-950/20";
 
-export const ORDER_SOURCE_OPTIONS: { value: NonNullable<MedOrder["orderSource"]>; label: string }[] =
-  [
-    { value: "verbal", label: "Verbal" },
-    { value: "telephone", label: "Telephone" },
-    { value: "protocol", label: "Protocol" },
-    { value: "standing", label: "Standing order" },
-  ];
+export const ORDER_SOURCE_OPTIONS: {
+  value: NonNullable<MedOrder["orderSource"]>;
+  label: string;
+}[] = [
+  { value: "verbal", label: "Verbal" },
+  { value: "telephone", label: "Telephone" },
+  { value: "protocol", label: "Protocol" },
+  { value: "standing", label: "Standing order" },
+];
 
 export const ATTESTATION_TEXT =
   "I attest that these orders are clinically appropriate for this patient and that I take responsibility for them.";

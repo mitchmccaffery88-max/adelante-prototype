@@ -65,7 +65,9 @@ export function buildSigLine(input: SigInput): string {
   if (frequencyLabel) parts.push(frequencyLabel);
   if (isPrn) parts.push(prnReason ? `as needed for ${prnReason}` : "as needed");
   if (durationValue && durationUnit)
-    parts.push(durationUnit === "days" ? `for ${durationValue} days` : `for ${durationValue} doses`);
+    parts.push(
+      durationUnit === "days" ? `for ${durationValue} days` : `for ${durationValue} doses`,
+    );
 
   return `${parts.join(" ")}.`;
 }

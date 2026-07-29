@@ -63,7 +63,8 @@ export interface DoseResult {
   error?: DoseError;
 }
 
-const MODIFIED_RELEASE = /\b(er|xr|sr|cr|dr|la|xl|extended|delayed|sustained|controlled)[\s-]?release?\b|\b(er|xr|sr|cr|dr|xl|la)\b/i;
+const MODIFIED_RELEASE =
+  /\b(er|xr|sr|cr|dr|la|xl|extended|delayed|sustained|controlled)[\s-]?release?\b|\b(er|xr|sr|cr|dr|xl|la)\b/i;
 const CAPSULE = /capsule/i;
 const LIQUID = /(solution|suspension|syrup|elixir|concentrate|liquid|tincture|drops?)/i;
 const INJECTION = /(injection|injectable|prefilled|syringe|vial)/i;
@@ -215,7 +216,8 @@ export function reconcileComboByUnits(
   unitsPerAdmin: number,
 ): DoseResult {
   if (!product) return err("no_product", "Select a product before entering a dose.");
-  if (!product.ingredients.length) return err("no_strength", "This product has no usable strength.");
+  if (!product.ingredients.length)
+    return err("no_strength", "This product has no usable strength.");
   if (!Number.isFinite(unitsPerAdmin) || unitsPerAdmin <= 0)
     return err("invalid_target", "Enter a unit count greater than zero.");
 

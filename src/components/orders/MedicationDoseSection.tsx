@@ -222,9 +222,7 @@ export function MedicationDoseSection({
           </div>
         ) : (
           <div>
-            <Label className={cn("text-xs", blocked.has("dose") && REQ_LABEL)}>
-              Dose (mg) *
-            </Label>
+            <Label className={cn("text-xs", blocked.has("dose") && REQ_LABEL)}>Dose (mg) *</Label>
             <Input
               className={cn("mt-1", blocked.has("dose") && REQ_FIELD)}
               inputMode="decimal"
@@ -246,7 +244,9 @@ export function MedicationDoseSection({
         </div>
 
         <div>
-          <Label className={cn("text-xs", blocked.has("frequency") && REQ_LABEL)}>Frequency *</Label>
+          <Label className={cn("text-xs", blocked.has("frequency") && REQ_LABEL)}>
+            Frequency *
+          </Label>
           <Select
             value={order.frequencyCode ?? ""}
             onValueChange={(v) => onPatch({ frequencyCode: v })}
