@@ -8,6 +8,7 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Badge } from "@/components/ui/badge";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
+import { STAFF_ROLES, setActingRole, type StaffRole } from "@/lib/roles";
 import { Sparkles, ShieldCheck, ArrowRight, User } from "lucide-react";
 import {
   Select,
@@ -35,7 +36,8 @@ function AuthPage() {
   const { t, setLang } = useI18n();
   const navigate = useNavigate();
   const patients = useEhr(() => AdelanteEHR.listPatients());
-  const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const [mode, setMode] = useState<"signin" | "signup" | "staff">("signin");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [remember, setRemember] = useState(true);
@@ -46,6 +48,9 @@ function AuthPage() {
   const [dob, setDob] = useState("");
   const [phone, setPhone] = useState("");
   const [lang, setLangPref] = useState<"en" | "es">("en");
+  // Staff sign-in state
+  const [staffRole, setStaffRole] = useState<StaffRole>("therapist");
+  const [staffClinicianId, setStaffClinicianId] = useState<string>(clinicians[0]?.id ?? "");
 
   const persist = (patientId: string) => {
     try {
@@ -91,6 +96,54 @@ function AuthPage() {
     navigate({ to: "/home" });
   };
 
+  const staffRouteFor = (role: StaffRole) => {
+    switch (role) {
+      case "therapist":
+      case "pmhnp":
+        return "/clinician" as const;
+      case "case_manager":
+      case "peer_specialist":
+        return "/case-manager" as const;
+      case "clinical_coordinator":
+        return "/admin-coordination" as const;
+      case "credentialing_coordinator":
+        return "/admin-credentialing" as const;
+      case "billing":
+      case "billing_coordinator":
+        return "/billing" as const;
+      case "sys_admin":
+      default:
+        return "/admin" as const;
+    }
+  };
+
+  const handleStaffSignIn = (e: React.FormEvent) => {
+    e.preventDefault();
+    const needsClinician = staffRole === "therapist" || staffRole === "pmhnp";
+    if (needsClinician && !staffClinicianId) {
+      toast.error("Pick a clinician identity to continue");
+      return;
+    }
+    setActingRole(staffRole);
+    try {
+      const payload = JSON.stringify({
+        role: staffRole,
+        clinicianId: needsClinician ? staffClinicianId : undefined,
+        email,
+      });
+      if (remember) localStorage.setItem("adelante.staff.session", payload);
+      else sessionStorage.setItem("adelante.staff.session", payload);
+      // Don't stay signed in as a patient at the same time.
+      localStorage.removeItem("adelante.session");
+      sessionStorage.removeItem("adelante.session");
+    } catch {
+      /* no-op */
+    }
+    const label = STAFF_ROLES.find((r) => r.key === staffRole)?.label ?? "Staff";
+    toast.success(`Signed in as ${label}`);
+    navigate({ to: staffRouteFor(staffRole) });
+  };
+
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 py-10">
       <div className="text-center mb-6">
@@ -98,10 +151,19 @@ function AuthPage() {
           <Sparkles className="h-3.5 w-3.5" /> {t("authWelcome")}
         </div>
         <h1 className="font-display text-3xl text-navy mt-3">
-          {mode === "signin" ? t("authSignInTitle") : t("authSignUpTitle")}
+          {mode === "signin"
+            ? t("authSignInTitle")
+            : mode === "signup"
+              ? t("authSignUpTitle")
+              : "Staff sign in"}
         </h1>
         {mode === "signup" && (
           <p className="text-xs text-muted-foreground mt-1">{t("authNewSignupCaption")}</p>
+        )}
+        {mode === "staff" && (
+          <p className="text-xs text-muted-foreground mt-1">
+            Clinicians, coordinators, and admins — access the clinical and subclinical layers.
+          </p>
         )}
       </div>
 
@@ -177,7 +239,7 @@ function AuthPage() {
               {t("authContinue")} <ArrowRight className="h-4 w-4 ml-1.5" />
             </Button>
           </form>
-        ) : (
+        ) : mode === "signup" ? (
           <form onSubmit={handleSignUp} className="space-y-4">
             <div className="grid grid-cols-2 gap-3">
               <div className="space-y-1.5">
@@ -237,15 +299,117 @@ function AuthPage() {
             </Button>
             <p className="text-[10px] text-muted-foreground text-center">{t("authResetsNote")}</p>
           </form>
+        ) : (
+          <form onSubmit={handleStaffSignIn} className="space-y-4">
+            <div className="space-y-1.5">
+              <Label className="text-sm">Role</Label>
+              <Select value={staffRole} onValueChange={(v) => setStaffRole(v as StaffRole)}>
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {STAFF_ROLES.map((r) => (
+                    <SelectItem key={r.key} value={r.key}>
+                      {r.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                Determines which workspace opens and which record classes are visible per the RBAC
+                matrix.
+              </p>
+            </div>
+
+            {(staffRole === "therapist" || staffRole === "pmhnp") && (
+              <div className="space-y-1.5">
+                <Label className="text-sm">Clinician identity</Label>
+                <Select value={staffClinicianId} onValueChange={setStaffClinicianId}>
+                  <SelectTrigger>
+                    <SelectValue placeholder="Pick a clinician" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {clinicians.map((c) => (
+                      <SelectItem key={c.id} value={c.id}>
+                        {c.name}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[10px] text-muted-foreground">
+                  Ties this session to a real clinician record so unsigned notes, availability, and
+                  credentials load correctly.
+                </p>
+              </div>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t("authEmail")}</Label>
+              <Input
+                type="text"
+                autoComplete="username"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="you@adelante.org"
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-sm">{t("authPassword")}</Label>
+              <Input
+                type="password"
+                autoComplete="current-password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="••••••••"
+              />
+            </div>
+
+            <label className="flex items-center gap-2 text-xs text-muted-foreground cursor-pointer">
+              <Checkbox checked={remember} onCheckedChange={(v) => setRemember(Boolean(v))} />
+              Remember me on this device
+            </label>
+
+            <Button
+              type="submit"
+              className="w-full min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
+            >
+              Continue <ArrowRight className="h-4 w-4 ml-1.5" />
+            </Button>
+            <p className="text-[10px] text-muted-foreground text-center">
+              Demo staff sign-in — no password check. Role and identity are persisted locally.
+            </p>
+          </form>
         )}
 
-        <button
-          type="button"
-          onClick={() => setMode(mode === "signin" ? "signup" : "signin")}
-          className="mt-4 w-full text-center text-xs text-teal hover:underline"
-        >
-          {mode === "signin" ? t("authSwitchToSignUp") : t("authSwitchToSignIn")}
-        </button>
+        <div className="mt-4 flex flex-col gap-1.5 text-center text-xs">
+          {mode !== "signin" && (
+            <button
+              type="button"
+              onClick={() => setMode("signin")}
+              className="text-teal hover:underline"
+            >
+              {t("authSwitchToSignIn")}
+            </button>
+          )}
+          {mode !== "signup" && (
+            <button
+              type="button"
+              onClick={() => setMode("signup")}
+              className="text-teal hover:underline"
+            >
+              {t("authSwitchToSignUp")}
+            </button>
+          )}
+          {mode !== "staff" && (
+            <button
+              type="button"
+              onClick={() => setMode("staff")}
+              className="text-navy hover:underline"
+            >
+              Staff sign in (clinician, coordinator, admin)
+            </button>
+          )}
+        </div>
 
         <p className="text-[10px] text-muted-foreground flex items-center justify-center gap-1 pt-2">
           <ShieldCheck className="h-3 w-3 text-teal" /> HIPAA · 42 CFR Part 2
