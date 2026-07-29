@@ -35,10 +35,12 @@ import {
   CalendarClock,
   AlertTriangle,
   UserCog,
+  Lock,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { useActingRole, canAccess } from "@/lib/roles";
 import {
   LineChart,
   Line,
@@ -997,9 +999,11 @@ function ApptCard({
 function TrendPanel({ patientId }: { patientId: string }) {
   const { t } = useI18n();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [role] = useActingRole();
   if (!patient) return null;
   const history = patient.screenerHistory ?? [];
   const screenerKeys = Array.from(new Set(history.map((h) => h.key)));
+  const sudGate = canAccess(role, "screeners_sud", patient);
 
   return (
     <div className="space-y-6 mt-4">
@@ -1027,6 +1031,24 @@ function TrendPanel({ patientId }: { patientId: string }) {
           <div className="mt-4 space-y-6">
             {screenerKeys.map((key) => {
               const def = SCREENERS.find((s) => s.key === key);
+              if (def?.isSud && sudGate.locked) {
+                return (
+                  <div key={key}>
+                    <div className="flex items-baseline justify-between">
+                      <h4 className="font-medium text-navy">{def?.name ?? key}</h4>
+                    </div>
+                    <div className="mt-2 flex items-start gap-2 rounded-md border border-destructive/30 bg-destructive/5 p-3">
+                      <Lock className="h-4 w-4 text-destructive mt-0.5" />
+                      <div className="text-xs">
+                        <div className="font-medium text-destructive">Access restricted</div>
+                        <div className="text-muted-foreground mt-0.5">
+                          {sudGate.reason ?? "42 CFR Part 2 — consent required"}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+                );
+              }
               const data = history
                 .filter((h) => h.key === key)
                 .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt))
