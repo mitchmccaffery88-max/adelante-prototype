@@ -41,7 +41,10 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, canAccess } from "@/lib/roles";
-import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
+import {
+  ClientRecordDrawer,
+  confirmDiscardDrawerEdits,
+} from "@/components/ClientRecordDrawer";
 import {
   LineChart,
   Line,
@@ -355,7 +358,15 @@ function ClinicianPage() {
 
             {/* Book + availability */}
             <div className="space-y-3">
-              <ProviderSwitchAlerts clinicianId={clinicianId} />
+              <ProviderSwitchAlerts
+                clinicianId={clinicianId}
+                onOpen={(pid) => {
+                  if (!confirmDiscardDrawerEdits()) return;
+                  setSelectedPatientId(pid);
+                  setDrawerTab("providers");
+                  setDrawerOpen(true);
+                }}
+              />
               <RefillReviewCard />
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
@@ -525,7 +536,11 @@ function ClinicianPage() {
           <PatientPicker
             patients={patients}
             value={selectedPatientId}
-            onChange={setSelectedPatientId}
+            onChange={(id) => {
+              if (id === selectedPatientId) return;
+              if (!confirmDiscardDrawerEdits()) return;
+              setSelectedPatientId(id);
+            }}
           />
           {selectedPatient && (
             <div className="mt-4 space-y-4">
