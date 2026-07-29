@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { STAFF_ROLES, useActingRole } from "@/lib/roles";
+import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,7 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
-  const [actingRole, setActingRole] = useActingRole();
+  const { staffId, setActingStaff } = useActingStaff();
   const signedIn = (() => {
     try {
       return Boolean(localStorage.getItem("adelante.session"));
@@ -175,12 +175,15 @@ export function AppShell() {
                   Acting as
                 </DropdownMenuLabel>
                 <DropdownMenuRadioGroup
-                  value={actingRole}
-                  onValueChange={(v) => setActingRole(v as typeof actingRole)}
+                  value={staffId}
+                  onValueChange={(v) => setActingStaff(v)}
                 >
-                  {STAFF_ROLES.map((r) => (
-                    <DropdownMenuRadioItem key={r.key} value={r.key} className="text-xs">
-                      {r.label}
+                  {STAFF_ROSTER.map((s) => (
+                    <DropdownMenuRadioItem key={s.id} value={s.id} className="text-xs">
+                      {s.name}
+                      <span className="ml-1 text-muted-foreground">
+                        · {STAFF_ROLES.find((r) => r.key === s.role)?.label ?? s.role}
+                      </span>
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>
