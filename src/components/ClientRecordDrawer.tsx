@@ -33,7 +33,7 @@ import {
   type PeerNote,
   type CaseTask,
 } from "@/lib/ehr";
-import { useActingRole, canAccess, type RecordClass } from "@/lib/roles";
+import { useActingRole, useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
   LineChart,
@@ -71,6 +71,35 @@ interface Props {
   open: boolean;
   onOpenChange: (open: boolean) => void;
   initialTab?: string;
+}
+
+// ---------- Unsaved-draft registry ----------
+// Drawer tabs hold local drafts (care-plan note, progress note). Callers that
+// can swap the drawer's patient out from under an in-progress edit (e.g. the
+// clinician route's patient picker) check this before switching.
+const dirtyDrafts = new Set<string>();
+
+export function hasUnsavedDrawerEdits(): boolean {
+  return dirtyDrafts.size > 0;
+}
+
+/** Confirm before an action that would discard in-progress drawer edits. */
+export function confirmDiscardDrawerEdits(
+  message = "You have unsaved changes in the patient record. Switch patients and discard them?",
+): boolean {
+  if (!hasUnsavedDrawerEdits()) return true;
+  if (typeof window === "undefined") return true;
+  return window.confirm(message);
+}
+
+function useDraftDirty(key: string, dirty: boolean) {
+  useEffect(() => {
+    if (dirty) dirtyDrafts.add(key);
+    else dirtyDrafts.delete(key);
+    return () => {
+      dirtyDrafts.delete(key);
+    };
+  }, [key, dirty]);
 }
 
 export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }: Props) {
