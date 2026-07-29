@@ -93,36 +93,91 @@ export function CaseloadTable({
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h2 className="font-display text-lg text-navy">{title}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Select value={bucketFilter} onValueChange={setBucketFilter}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
-              <SelectValue placeholder="Episode day" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All days</SelectItem>
-              <SelectItem value="0-30">Day 0–30</SelectItem>
-              <SelectItem value="31-60">Day 31–60</SelectItem>
-              <SelectItem value="61-90">Day 61–90</SelectItem>
-            </SelectContent>
-          </Select>
-          <Select value={coverageFilter} onValueChange={setCoverageFilter}>
-            <SelectTrigger className="h-8 w-[140px] text-xs">
-              <SelectValue placeholder="Coverage" />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="all">All coverage</SelectItem>
-              <SelectItem value="active">Active</SelectItem>
-              <SelectItem value="suspended">Suspended</SelectItem>
-              <SelectItem value="none_unsure">None / unsure</SelectItem>
-              <SelectItem value="other">Other</SelectItem>
-            </SelectContent>
-          </Select>
-          <Button size="sm" variant="outline" onClick={downloadCsv}>
-            <Download className="h-3.5 w-3.5 mr-1.5" /> {exportLabel}
-          </Button>
           <Badge variant="outline">
             {filtered.length}/{patients.length}
           </Badge>
+          <Button size="sm" variant="outline" onClick={downloadCsv}>
+            <Download className="h-3.5 w-3.5 mr-1.5" /> {exportLabel}
+          </Button>
         </div>
+      </div>
+      <div className="mb-4 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap sm:items-center">
+        <Select value={bucketFilter} onValueChange={setBucketFilter}>
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs">
+            <SelectValue placeholder="Episode day" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All days</SelectItem>
+            <SelectItem value="0-30">Day 0–30</SelectItem>
+            <SelectItem value="31-60">Day 31–60</SelectItem>
+            <SelectItem value="61-90">Day 61–90</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={coverageFilter} onValueChange={setCoverageFilter}>
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[140px] text-xs">
+            <SelectValue placeholder="Coverage" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All coverage</SelectItem>
+            <SelectItem value="active">Active</SelectItem>
+            <SelectItem value="suspended">Suspended</SelectItem>
+            <SelectItem value="none_unsure">None / unsure</SelectItem>
+            <SelectItem value="other">Other</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={programFilter} onValueChange={setProgramFilter}>
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs">
+            <SelectValue placeholder="Program" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All programs</SelectItem>
+            <SelectItem value="mental_health">Mental health</SelectItem>
+            <SelectItem value="sud_dmc_ods">SUD (DMC-ODS)</SelectItem>
+            <SelectItem value="ecm">ECM</SelectItem>
+            <SelectItem value="ji_pre_release">JI pre-release</SelectItem>
+            <SelectItem value="bhsa">BHSA</SelectItem>
+          </SelectContent>
+        </Select>
+        <Select value={clinicianFilter} onValueChange={setClinicianFilter}>
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[180px] text-xs">
+            <SelectValue placeholder="Clinician" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All clinicians</SelectItem>
+            <SelectItem value="unassigned">Unassigned</SelectItem>
+            {clinicians.map((c) => (
+              <SelectItem key={c.id} value={c.id}>{c.name}</SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={careNeedFilter} onValueChange={setCareNeedFilter}>
+          <SelectTrigger className="h-9 sm:h-8 w-full sm:w-[160px] text-xs">
+            <SelectValue placeholder="Care need" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All care needs</SelectItem>
+            <SelectItem value="crisis">Crisis flagged</SelectItem>
+            <SelectItem value="ecm">ECM eligible</SelectItem>
+            <SelectItem value="ji_reentry">JI reentry</SelectItem>
+            <SelectItem value="unassigned">Unassigned clinician</SelectItem>
+          </SelectContent>
+        </Select>
+        {activeFilters && (
+          <Button
+            size="sm"
+            variant="ghost"
+            className="col-span-2 h-9 sm:h-8 sm:col-span-1"
+            onClick={() => {
+              setCoverageFilter("all");
+              setBucketFilter("all");
+              setProgramFilter("all");
+              setClinicianFilter("all");
+              setCareNeedFilter("all");
+            }}
+          >
+            Clear
+          </Button>
+        )}
       </div>
       <div className="overflow-x-auto">
         <Table>
