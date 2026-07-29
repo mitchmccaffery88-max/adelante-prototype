@@ -41,6 +41,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, canAccess } from "@/lib/roles";
+import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import {
   LineChart,
   Line,
@@ -105,6 +106,8 @@ function ClinicianPage() {
   const bookLocations = useEhr(() => AdelanteEHR.locationsForService(book.serviceType));
   const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
+  const [drawerOpen, setDrawerOpen] = useState(false);
+  const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
   const [newGoal, setNewGoal] = useState("");
   const [planDraft, setPlanDraft] = useState("");
   // Track which patient the current draft belongs to so a mid-edit patient
