@@ -1788,6 +1788,12 @@ function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boole
                 <ClientDate value={n.date} />
               </span>
             </div>
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              By{" "}
+              {clinicians.find((c) => c.id === n.clinicianId)?.name ??
+                getStaffMember(n.clinicianId)?.name ??
+                n.clinicianId}
+            </div>
             <dl className="mt-2 space-y-1.5">
               {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
                 n[k] ? (
