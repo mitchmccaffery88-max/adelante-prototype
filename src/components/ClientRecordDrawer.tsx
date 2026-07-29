@@ -76,11 +76,13 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
   const canAllergies = gate("allergies");
   const canAlerts = gate("alerts");
 
-  const snapshot = patient.carePlanSnapshot;
+  const snapshot = patient.carePlan;
   const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
   const hiddenSud = snapshot?.hiddenSudProblems ?? 0;
   const allergyEntries = snapshot?.allergySummary ?? [];
-  const severeAllergy = allergyEntries.some((a) => a.severity === "severe");
+  const severeAllergy = allergyEntries.some(
+    (a: { severity: string }) => a.severity === "severe",
+  );
   const activeAlerts = (patient.alerts ?? []).filter((a) => !a.removedAt);
   const criticalAlert = activeAlerts.some((a) => a.severity === "critical");
 
@@ -120,7 +122,10 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
                     <TooltipContent side="bottom" className="max-w-xs text-xs">
                       {snapshot?.activeProblems
                         ?.slice(0, 6)
-                        .map((p) => `${p.icd10Code ?? ""} ${p.description}`.trim())
+                        .map(
+                          (p: { icd10Code?: string; description: string }) =>
+                            `${p.icd10Code ?? ""} ${p.description}`.trim(),
+                        )
                         .join(" · ")}
                     </TooltipContent>
                   </Tooltip>
@@ -155,7 +160,10 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
                     <TooltipContent side="bottom" className="max-w-xs text-xs">
                       {allergyEntries
                         .slice(0, 6)
-                        .map((a) => `${a.substance} (${a.severity})`)
+                        .map(
+                          (a: { substance: string; severity: string }) =>
+                            `${a.substance} (${a.severity})`,
+                        )
                         .join(" · ")}
                     </TooltipContent>
                   </Tooltip>
