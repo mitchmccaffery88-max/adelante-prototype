@@ -521,322 +521,78 @@ function ClinicianPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="care-plan">
+        <TabsContent value="record">
           <PatientPicker
             patients={patients}
             value={selectedPatientId}
             onChange={setSelectedPatientId}
           />
           {selectedPatient && (
-            <div className="grid lg:grid-cols-3 gap-6 mt-4">
-              <div className="lg:col-span-2 space-y-4">
-                <CarePlanCard patientId={selectedPatient.id} audience="clinician" />
-                <Card className="p-5">
-                  <h3 className="font-display text-lg text-navy">{t("clinCarePlanSummary")}</h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {t("clinPlanHelp")} Auto-summary updates on its own; this note is appended for the patient.
+            <div className="mt-4 space-y-4">
+              <CarePlanCard patientId={selectedPatient.id} audience="clinician" />
+              <Card className="p-4 flex flex-wrap items-center justify-between gap-3">
+                <div>
+                  <h3 className="font-display text-sm text-navy">Full patient record</h3>
+                  <p className="text-xs text-muted-foreground">
+                    Open the chart to review Problems, Allergies, Alerts, Care plan, Notes, Tracking,
+                    SDOH, and more — with role-based access enforced.
                   </p>
-                  <Textarea
-                    key={selectedPatient.id}
-                    className="mt-3 min-h-[100px]"
-                    value={planDraft}
-                    placeholder="Optional note to append to the auto-summary…"
-                    onChange={(e) => {
-                      setPlanDraft(e.target.value);
-                      setPlanDraftDirty(true);
-                    }}
-                  />
-                  {(() => {
-                    const patientMismatch = planDraftPatientId !== selectedPatient.id;
-                    const existingText = selectedPatient.carePlanOverride?.text ?? "";
-                    const trimmed = planDraft.trim();
-                    const isClearing =
-                      planDraftDirty && trimmed.length === 0 && existingText.length > 0;
-                    const unchanged = !planDraftDirty && trimmed === existingText.trim();
-                    return (
-                      <>
-                        <Button
-                          className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
-                          disabled={patientMismatch || unchanged}
-                          onClick={() => {
-                            // Belt-and-suspenders: never write across patients.
-                            if (planDraftPatientId !== selectedPatient.id) {
-                              toast.error(
-                                "Patient changed while you were editing. Reopen the note to continue.",
-                              );
-                              return;
-                            }
-                            // Never silently delete an existing override on
-                            // an unedited Save — require an explicit clear.
-                            if (!planDraftDirty && trimmed.length === 0 && existingText.length > 0) {
-                              toast.info("Nothing to save yet.");
-                              return;
-                            }
-                            if (isClearing) {
-                              const ok = window.confirm(
-                                "Clear the existing care-plan note for this patient? This removes the clinician-added text from their plan.",
-                              );
-                              if (!ok) return;
-                            }
-                            AdelanteEHR.updateCarePlanSummary(
-                              selectedPatient.id,
-                              planDraft,
-                              "clinician",
-                            );
-                            setPlanDraftDirty(false);
-                            toast.success(
-                              isClearing ? "Care plan note cleared" : "Care plan updated",
-                            );
-                          }}
-                        >
-                          {t("clinSaveSummary")}
-                        </Button>
-                        {patientMismatch && (
-                          <p className="mt-2 text-xs text-destructive">
-                            You switched patients while editing. Saving is disabled to protect the
-                            other record — reopen this tab to continue.
-                          </p>
-                        )}
-                        {isClearing && !patientMismatch && (
-                          <p className="mt-2 text-xs text-muted-foreground">
-                            Saving now will clear the existing care-plan note for this patient.
-                          </p>
-                        )}
-                      </>
-                    );
-                  })()}
-                </Card>
-              </div>
-              <Card className="p-5">
-                <h3 className="font-display text-lg text-navy">{t("clinGoals")}</h3>
-                <div className="mt-3 space-y-2">
-                  {(selectedPatient.goals ?? []).length === 0 && (
-                    <p className="text-sm text-muted-foreground">{t("clinNoGoals")}</p>
-                  )}
-                  {(selectedPatient.goals ?? []).map((g) => (
-                    <div
-                      key={g.id}
-                      className="flex items-start gap-2 rounded-md border p-2 text-sm"
-                    >
-                      <Select
-                        value={g.status}
-                        onValueChange={(v) =>
-                          AdelanteEHR.setGoalStatus(selectedPatient.id, g.id, v as never)
-                        }
-                      >
-                        <SelectTrigger className="h-7 w-[120px] text-xs">
-                          <SelectValue />
-                        </SelectTrigger>
-                        <SelectContent>
-                          <SelectItem value="open">Open</SelectItem>
-                          <SelectItem value="in_progress">In progress</SelectItem>
-                          <SelectItem value="done">Done</SelectItem>
-                        </SelectContent>
-                      </Select>
-                      <span className="flex-1 pt-1">{g.text}</span>
-                      <Button
-                        size="icon"
-                        variant="ghost"
-                        className="h-7 w-7"
-                        onClick={() => AdelanteEHR.removeGoal(selectedPatient.id, g.id)}
-                      >
-                        <Trash2 className="h-3.5 w-3.5" />
-                      </Button>
-                    </div>
-                  ))}
                 </div>
-                <div className="mt-3 flex gap-2">
-                  <Input
-                    placeholder={t("clinAddGoal")}
-                    value={newGoal}
-                    onChange={(e) => setNewGoal(e.target.value)}
-                  />
+                <div className="flex flex-wrap gap-2">
                   <Button
                     size="sm"
+                    variant="outline"
                     onClick={() => {
-                      AdelanteEHR.addGoal(selectedPatient.id, newGoal);
-                      setNewGoal("");
+                      setDrawerTab("sdoh");
+                      setDrawerOpen(true);
                     }}
                   >
-                    <Plus className="h-4 w-4" />
+                    Social context (SDOH)
                   </Button>
-                </div>
-              </Card>
-            </div>
-          )}
-          {selectedPatient && <SocialContextPanel patientId={selectedPatient.id} />}
-        </TabsContent>
-
-        <TabsContent value="notes">
-          <PatientPicker
-            patients={patients}
-            value={selectedPatientId}
-            onChange={setSelectedPatientId}
-          />
-          {selectedPatient && (
-            <div className="grid lg:grid-cols-2 gap-6 mt-4">
-              <Card className="p-5">
-                <h3 className="font-display text-lg text-navy">{t("clinNewNote")}</h3>
-                <div className="mt-3 space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">{t("clinSessionType")}</Label>
-                    <Select
-                      value={note.sessionType}
-                      onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="individual">Individual</SelectItem>
-                        <SelectItem value="group">Group</SelectItem>
-                        <SelectItem value="phone">Phone</SelectItem>
-                        <SelectItem value="check_in">Check-in</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">{t("clinLinkAppt")}</Label>
-                    <Select
-                      value={note.appointmentId || "__none"}
-                      onValueChange={(v) =>
-                        setNote({ ...note, appointmentId: v === "__none" ? "" : v })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="__none">{t("clinLinkApptNone")}</SelectItem>
-                        {patientAppts
-                          .slice()
-                          .sort((a, b) => +new Date(b.start) - +new Date(a.start))
-                          .slice(0, 8)
-                          .map((a) => (
-                            <SelectItem key={a.id} value={a.id}>
-                              {new Date(a.start).toLocaleString()} · {a.status}
-                            </SelectItem>
-                          ))}
-                      </SelectContent>
-                    </Select>
-                    {note.appointmentId && (
-                      <Button
-                        type="button"
-                        variant="outline"
-                        size="sm"
-                        className="w-full"
-                        onClick={() => {
-                          const appt = patientAppts.find((a) => a.id === note.appointmentId);
-                          if (!appt) return;
-                          const svc = serviceTypes.find((s) => s.id === appt.serviceType);
-                          const goals = (selectedPatient.goals ?? [])
-                            .filter((g: { status: string }) => g.status !== "done")
-                            .slice(0, 3)
-                            .map((g: { text: string }) => `• ${g.text}`)
-                            .join("\n");
-                          setNote((prev) => ({
-                            ...prev,
-                            objective:
-                              prev.objective ||
-                              [
-                                svc ? `Service: ${svc.label}` : null,
-                                appt.modality ? `Modality: ${appt.modality}` : null,
-                                appt.durationMin ? `Duration: ${appt.durationMin} min` : null,
-                              ]
-                                .filter(Boolean)
-                                .join(" · "),
-                            plan: prev.plan || (goals ? `Active care-plan goals:\n${goals}` : ""),
-                          }));
-                          toast.success("Prefilled from appointment");
-                        }}
-                      >
-                        Prefill from appointment
-                      </Button>
-                    )}
-                  </div>
-                  {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
-                    <div key={k} className="space-y-1.5">
-                      <Label className="text-sm">
-                        {t(`clin${k.charAt(0).toUpperCase()}${k.slice(1)}` as never)}
-                      </Label>
-                      <Textarea
-                        value={note[k]}
-                        onChange={(e) => setNote({ ...note, [k]: e.target.value })}
-                        rows={2}
-                      />
-                    </div>
-                  ))}
                   <Button
-                    className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+                    size="sm"
+                    variant="outline"
                     onClick={() => {
-                      if (!note.subjective.trim()) {
-                        toast.error("Add at least a subjective entry");
-                        return;
-                      }
-                      AdelanteEHR.addProgressNote(selectedPatient.id, {
-                        clinicianId,
-                        date: new Date().toISOString(),
-                        sessionType: note.sessionType,
-                        subjective: note.subjective,
-                        objective: note.objective,
-                        assessment: note.assessment,
-                        plan: note.plan,
-                        appointmentId: note.appointmentId || undefined,
-                      });
-                      toast.success("Progress note saved");
-                      setNote({
-                        sessionType: "individual",
-                        subjective: "",
-                        objective: "",
-                        assessment: "",
-                        plan: "",
-                        appointmentId: "",
-                      });
+                      setDrawerTab("care-plan");
+                      setDrawerOpen(true);
                     }}
                   >
-                    {t("clinSaveNote")}
+                    Care plan
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setDrawerTab("notes");
+                      setDrawerOpen(true);
+                    }}
+                  >
+                    Notes
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      setDrawerTab("tracking");
+                      setDrawerOpen(true);
+                    }}
+                  >
+                    Tracking
+                  </Button>
+                  <Button
+                    size="sm"
+                    className="bg-navy text-navy-foreground hover:bg-navy/90"
+                    onClick={() => {
+                      setDrawerTab(undefined);
+                      setDrawerOpen(true);
+                    }}
+                  >
+                    Open patient record
                   </Button>
                 </div>
               </Card>
-              <div className="space-y-3">
-                <h3 className="font-display text-lg text-navy">{t("clinRecentNotes")}</h3>
-                {(selectedPatient.progressNotes ?? []).length === 0 && (
-                  <Card className="p-4 text-sm text-muted-foreground">{t("clinNoNotes")}</Card>
-                )}
-                {(selectedPatient.progressNotes ?? []).map((n) => (
-                  <Card key={n.id} className="p-4 text-sm">
-                    <div className="flex items-center justify-between">
-                      <Badge variant="outline" className="capitalize">
-                        {n.sessionType.replace("_", " ")}
-                      </Badge>
-                      <span className="text-xs text-muted-foreground">
-                        <ClientDate value={n.date} />
-                      </span>
-                    </div>
-                    <dl className="mt-2 space-y-1.5 text-xs">
-                      {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
-                        n[k] ? (
-                          <div key={k}>
-                            <dt className="font-medium text-navy capitalize">{k}</dt>
-                            <dd className="text-foreground/80">{n[k]}</dd>
-                          </div>
-                        ) : null,
-                      )}
-                    </dl>
-                  </Card>
-                ))}
-              </div>
             </div>
           )}
-        </TabsContent>
-
-        <TabsContent value="tracking">
-          <PatientPicker
-            patients={patients}
-            value={selectedPatientId}
-            onChange={setSelectedPatientId}
-          />
-          {selectedPatient && <TrendPanel patientId={selectedPatient.id} />}
         </TabsContent>
       </Tabs>
     </div>
