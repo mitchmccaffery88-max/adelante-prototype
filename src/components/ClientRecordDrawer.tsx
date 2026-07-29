@@ -110,7 +110,7 @@ function useDraftDirty(key: string, dirty: boolean) {
 
 export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }: Props) {
   const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
-  const [role] = useActingRole();
+  const { role, staffName } = useActingStaff();
 
   if (!patient) return null;
 
@@ -156,7 +156,8 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
               {patient.dob ? ` · DOB ${patient.dob}` : ""}
             </span>
             <span className="text-xs text-muted-foreground">
-              Acting as: <span className="capitalize">{role.replace("_", " ")}</span>
+              Acting as: <span className="text-navy">{staffName}</span> ·{" "}
+              <span className="capitalize">{role.replace("_", " ")}</span>
             </span>
             <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
           </SheetDescription>
