@@ -11,6 +11,42 @@
 
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
+import {
+  parseLiquidStrength,
+  parseStrength,
+  type DoseProduct,
+} from "@/lib/doseReconcile";
+
+/**
+ * Build the dose-math product view of an order. Liquids are detected first
+ * ("20 MG/ML"), because the ingredient "/" split would otherwise mistake the
+ * per-mL denominator for a second ingredient.
+ */
+export function productFromOrder(order: MedOrder): DoseProduct | undefined {
+  if (!order.productName && !order.drugName) return undefined;
+  const name = order.productName ?? order.drugName;
+  const liquid = parseLiquidStrength(order.strengthText);
+  if (liquid) {
+    return {
+      name,
+      rxcui: order.rxcui,
+      doseForm: order.doseForm,
+      ingredients: [
+        {
+          name: order.ingredientNames?.[0] ?? name,
+          strengthMg: liquid.mgPerMl,
+          perMl: liquid.mgPerMl,
+        },
+      ],
+    };
+  }
+  return {
+    name,
+    rxcui: order.rxcui,
+    doseForm: order.doseForm,
+    ingredients: parseStrength(order.strengthText, order.ingredientNames ?? []),
+  };
+}
 
 /** Field keys the UI highlights (amber) when they block signing. */
 export type OrderFieldKey =
@@ -21,6 +57,7 @@ export type OrderFieldKey =
   | "duration"
   | "daysSupply"
   | "indication"
+  | "offCatalogJustification"
   | "orderingProviderId"
   | "orderSource"
   | "readBackConfirmed";
@@ -45,8 +82,15 @@ export function validateOrder(order: MedOrder, opts: { needsAttribution: boolean
   const blank = (v?: string) => !v || !v.trim();
 
   if (blank(order.drugName)) issues.push({ field: "drugName", message: "Medication is required." });
+  // Off-catalog governance: justification is a hard gate, never a soft warning.
+  if (order.offCatalog && blank(order.offCatalogJustification))
+    issues.push({
+      field: "offCatalogJustification",
+      message: "Off-catalog medications require a clinical justification.",
+    });
   if (blank(order.dose)) issues.push({ field: "dose", message: "Dose is required." });
-  if (blank(order.frequency)) issues.push({ field: "frequency", message: "Frequency is required." });
+  if (blank(order.frequencyCode) && blank(order.frequency))
+    issues.push({ field: "frequency", message: "Frequency is required." });
   if (order.quantity === undefined || order.quantity === null || Number.isNaN(order.quantity))
     issues.push({ field: "quantity", message: "Quantity is required." });
   // STAT orders are a single immediate administration — no duration.
