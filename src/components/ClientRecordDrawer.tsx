@@ -665,6 +665,12 @@ function CheckInsTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
 function ProviderHistoryTab({ patientId }: { patientId: string }) {
   const switches = useEhr(() => AdelanteEHR.listProviderSwitches({ patientId, status: "any" }));
   const clinicians = AdelanteEHR.listClinicians();
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { role, staffName, clinicianId } = useActingStaff();
+  const [noteFor, setNoteFor] = useState<string | null>(null);
+  const [note, setNote] = useState("");
+  const canWrite =
+    patient ? canAccess(role, "care_coordination", patient).level === "write" : false;
   const nameFor = (id: string) => clinicians.find((c) => c.id === id)?.name ?? id;
   const reasonLabel: Record<string, string> = {
     reschedule: "Reschedule",
@@ -681,7 +687,13 @@ function ProviderHistoryTab({ patientId }: { patientId: string }) {
   }
   return (
     <ul className="space-y-2">
-      {switches.map((s) => (
+      {switches.map((s) => {
+        // Per-record authorization: only the outgoing provider this alert is
+        // addressed to may resolve it — role-level write is necessary but
+        // not sufficient.
+        const isAddressee = Boolean(clinicianId && clinicianId === s.fromClinicianId);
+        const actionable = s.status === "pending_review";
+        return (
         <li key={s.id} className="rounded border p-3 text-sm">
           <div className="flex items-center justify-between gap-2">
             <div className="font-medium text-navy">
@@ -712,8 +724,81 @@ function ProviderHistoryTab({ patientId }: { patientId: string }) {
               Note: {s.resolutionNote}
             </div>
           ) : null}
+          {s.resolvedBy ? (
+            <div className="mt-1 text-[10px] text-muted-foreground">
+              Resolved by {nameFor(s.resolvedBy)}
+            </div>
+          ) : null}
+          {actionable &&
+            (canWrite && isAddressee ? (
+              <div className="mt-2 space-y-2">
+                {noteFor === s.id && (
+                  <Textarea
+                    rows={2}
+                    className="text-xs"
+                    placeholder="Hand-off / coordination note (optional)"
+                    value={note}
+                    onChange={(e) => setNote(e.target.value)}
+                  />
+                )}
+                <div className="flex flex-wrap gap-2">
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      AdelanteEHR.acknowledgeProviderSwitch(
+                        s.id,
+                        s.fromClinicianId,
+                        note.trim() || undefined,
+                      );
+                      setNote("");
+                      setNoteFor(null);
+                      toast.success(`Switch acknowledged by ${staffName}`);
+                    }}
+                  >
+                    Acknowledge
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    onClick={() => {
+                      AdelanteEHR.dismissProviderSwitch(
+                        s.id,
+                        s.fromClinicianId,
+                        note.trim() || undefined,
+                      );
+                      setNote("");
+                      setNoteFor(null);
+                      toast("Alert dismissed");
+                    }}
+                  >
+                    Dismiss
+                  </Button>
+                  {noteFor !== s.id && (
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="h-7 text-[11px]"
+                      onClick={() => setNoteFor(s.id)}
+                    >
+                      Add note
+                    </Button>
+                  )}
+                </div>
+              </div>
+            ) : (
+              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Lock className="h-3 w-3" />
+                {canWrite
+                  ? `Only ${nameFor(s.fromClinicianId)} can resolve this hand-off.`
+                  : "Your role cannot resolve provider switches."}
+              </div>
+            ))}
         </li>
-      ))}
+        );
+      })}
     </ul>
   );
 }
