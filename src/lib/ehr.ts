@@ -240,6 +240,13 @@ export interface Patient {
   carePlan?: CarePlanSnapshot;
   /** Optional free-text overlay from a clinician; merged into the summary. */
   carePlanOverride?: { text: string; setAt: string; by?: string };
+  // ----- Clinical record layer (Problems / Allergies / Alerts). §BaggaEMR mirror -----
+  /** Diagnosed problems (active + resolved + soft-deleted). Mirror of BaggaEMR `patient_problems`. */
+  problems?: Problem[];
+  /** Allergies (active + removed). Mirror of BaggaEMR `patient_allergies`. */
+  allergies?: Allergy[];
+  /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
+  alerts?: PatientAlert[];
 }
 
 
@@ -549,6 +556,89 @@ export interface CarePlanSnapshot {
   sdohOpen: CarePlanSdohSlice[];
   metrics: CarePlanMetrics;
   triggeredBy?: string;
+  /** Plain-language allergy summary for patient/staff surfaces. Excludes soft-removed rows. */
+  allergySummary?: CarePlanAllergyEntry[];
+  /** Non-SUD active problems for patient/staff summary. SUD problems live only in the SUD-gated view. */
+  activeProblems?: CarePlanProblemEntry[];
+  /** Count of active SUD problems hidden from non-Part-2 viewers (never leaks descriptions). */
+  hiddenSudProblems?: number;
+}
+
+export interface CarePlanAllergyEntry {
+  substance: string;
+  reaction?: string;
+  severity: "mild" | "moderate" | "severe";
+}
+export interface CarePlanProblemEntry {
+  code?: string;
+  label: string;
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  sensitive: boolean;
+}
+
+// ============================================================================
+// Clinical record layer — Problems, Allergies, Alerts.
+// Field-for-field mirror of Dr. Bagga's BaggaEMR schemas. Mutations route
+// through `appendAudit`, soft-deletes require a reason, and problem/allergy
+// writes trigger a care-plan recompute so patient/staff summaries stay live.
+// ============================================================================
+
+export interface Problem {
+  id: string;
+  patientId: string;
+  icd10Code?: string;
+  snomedCode?: string;
+  snomedDisplay?: string;
+  description: string;
+  status: "active" | "resolved";
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  priority?: number;
+  onsetDate?: string;
+  enteredBy: string;
+  createdAt: string;
+  resolvedDate?: string;
+  resolvedBy?: string;
+  clinicianComment?: string;
+  notes?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletionReason?: string;
+}
+
+export interface Allergy {
+  id: string;
+  patientId: string;
+  substance: string;
+  reaction?: string;
+  severity: "mild" | "moderate" | "severe";
+  notes?: string;
+  active: boolean;
+  enteredBy: string;
+  enteredAt: string;
+  removedBy?: string;
+  removedAt?: string;
+  removedReason?: string;
+}
+
+export interface PatientAlert {
+  id: string;
+  patientId: string;
+  /** Free text (e.g. "Fall Risk", "Suicide Watch"). Deliberately not a fixed enum. */
+  label: string;
+  severity: "info" | "warning" | "critical";
+  notes?: string;
+  active: boolean;
+  enteredBy: string;
+  enteredAt: string;
+  removedBy?: string;
+  removedAt?: string;
+  removedReason?: string;
+}
+
+/** Naming mirrors Dr. Bagga's `isProblemClinicallyActive` helper. */
+export function isProblemClinicallyActive(problem: Problem): boolean {
+  return problem.status === "active" && !problem.deletedAt;
 }
 
 export interface ProgressNote {
