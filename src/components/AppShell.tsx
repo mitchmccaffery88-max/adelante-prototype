@@ -19,7 +19,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { STAFF_ROLES, useActingRole } from "@/lib/roles";
+import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -37,7 +37,7 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
-  const [actingRole, setActingRole] = useActingRole();
+  const { staffId, setActingStaff } = useActingStaff();
   const signedIn = (() => {
     try {
       return Boolean(localStorage.getItem("adelante.session"));
@@ -79,10 +79,30 @@ export function AppShell() {
       desc: "Claims, ISL & credentials",
     },
     { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
-    { to: "/notes-queue" as const, label: "Unsigned notes", icon: ClipboardList, desc: "Sign to release billing" },
-    { to: "/clinician-profile" as const, label: "My profile", icon: UserCog, desc: "Specialty & languages" },
-    { to: "/clinician-availability" as const, label: "My availability", icon: Calendar, desc: "Weekly hours & time off" },
-    { to: "/clinician-credentials" as const, label: "My credentials", icon: ShieldCheck, desc: "License, DEA, malpractice" },
+    {
+      to: "/notes-queue" as const,
+      label: "Unsigned notes",
+      icon: ClipboardList,
+      desc: "Sign to release billing",
+    },
+    {
+      to: "/clinician-profile" as const,
+      label: "My profile",
+      icon: UserCog,
+      desc: "Specialty & languages",
+    },
+    {
+      to: "/clinician-availability" as const,
+      label: "My availability",
+      icon: Calendar,
+      desc: "Weekly hours & time off",
+    },
+    {
+      to: "/clinician-credentials" as const,
+      label: "My credentials",
+      icon: ShieldCheck,
+      desc: "License, DEA, malpractice",
+    },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
 
@@ -174,13 +194,13 @@ export function AppShell() {
                 <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
                   Acting as
                 </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={actingRole}
-                  onValueChange={(v) => setActingRole(v as typeof actingRole)}
-                >
-                  {STAFF_ROLES.map((r) => (
-                    <DropdownMenuRadioItem key={r.key} value={r.key} className="text-xs">
-                      {r.label}
+                <DropdownMenuRadioGroup value={staffId} onValueChange={(v) => setActingStaff(v)}>
+                  {STAFF_ROSTER.map((s) => (
+                    <DropdownMenuRadioItem key={s.id} value={s.id} className="text-xs">
+                      {s.name}
+                      <span className="ml-1 text-muted-foreground">
+                        · {STAFF_ROLES.find((r) => r.key === s.role)?.label ?? s.role}
+                      </span>
                     </DropdownMenuRadioItem>
                   ))}
                 </DropdownMenuRadioGroup>

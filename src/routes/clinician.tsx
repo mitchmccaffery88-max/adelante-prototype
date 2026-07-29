@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
-import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +23,6 @@ import {
   XCircle,
   Clock,
   ShieldCheck,
-  Target,
-  Trash2,
-  Plus,
   FileText,
   TrendingUp,
   CalendarPlus,
@@ -42,16 +38,7 @@ import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, canAccess } from "@/lib/roles";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  CartesianGrid,
-} from "recharts";
+import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -108,34 +95,6 @@ function ClinicianPage() {
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
-  const [newGoal, setNewGoal] = useState("");
-  const [planDraft, setPlanDraft] = useState("");
-  // Track which patient the current draft belongs to so a mid-edit patient
-  // switch can't accidentally save one patient's text onto another's record.
-  const [planDraftPatientId, setPlanDraftPatientId] = useState<string>(selectedPatientId);
-  // True once the clinician has typed in the textarea for this patient —
-  // required before we allow saving an empty value (which deletes the
-  // existing override note).
-  const [planDraftDirty, setPlanDraftDirty] = useState(false);
-  // Keep the Care Plan note textarea in sync with the selected patient.
-  // If the clinician has unsaved edits and switches patients, we keep the
-  // draft intact so the mismatch guard on Save can flag it — otherwise we
-  // safely sync to the newly selected patient's stored override.
-  useEffect(() => {
-    if (planDraftDirty && planDraftPatientId !== selectedPatientId) return;
-    setPlanDraft(selectedPatient?.carePlanOverride?.text ?? "");
-    setPlanDraftPatientId(selectedPatientId);
-    setPlanDraftDirty(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPatientId, selectedPatient?.carePlanOverride?.text]);
-  const [note, setNote] = useState({
-    sessionType: "individual" as const,
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: "",
-    appointmentId: "" as string,
-  });
 
   const doBook = () => {
     if (!book.patientId || !book.start) {
@@ -203,13 +162,6 @@ function ClinicianPage() {
     (a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek,
   );
   const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
-
-  // Pre-fill the notes form's "Link to appointment" with the patient's most
-  // recent attended (or next scheduled) appointment, so the default isn't
-  // "unlinked".
-  const patientAppts = useEhr(() =>
-    selectedPatientId ? AdelanteEHR.appointmentsForPatient(selectedPatientId) : [],
-  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -355,7 +307,15 @@ function ClinicianPage() {
 
             {/* Book + availability */}
             <div className="space-y-3">
-              <ProviderSwitchAlerts clinicianId={clinicianId} />
+              <ProviderSwitchAlerts
+                clinicianId={clinicianId}
+                onOpen={(pid) => {
+                  if (!confirmDiscardDrawerEdits()) return;
+                  setSelectedPatientId(pid);
+                  setDrawerTab("providers");
+                  setDrawerOpen(true);
+                }}
+              />
               <RefillReviewCard />
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
@@ -525,7 +485,11 @@ function ClinicianPage() {
           <PatientPicker
             patients={patients}
             value={selectedPatientId}
-            onChange={setSelectedPatientId}
+            onChange={(id) => {
+              if (id === selectedPatientId) return;
+              if (!confirmDiscardDrawerEdits()) return;
+              setSelectedPatientId(id);
+            }}
           />
           {selectedPatient && (
             <div className="mt-4 space-y-4">
@@ -534,8 +498,8 @@ function ClinicianPage() {
                 <div>
                   <h3 className="font-display text-sm text-navy">Full patient record</h3>
                   <p className="text-xs text-muted-foreground">
-                    Open the chart to review Problems, Allergies, Alerts, Care plan, Notes, Tracking,
-                    SDOH, and more — with role-based access enforced.
+                    Open the chart to review Problems, Allergies, Alerts, Care plan, Notes,
+                    Tracking, SDOH, and more — with role-based access enforced.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -755,7 +719,6 @@ function ApptCard({
   );
 }
 
-
 function RescreenDuePanel({
   patients,
 }: {
@@ -839,7 +802,18 @@ function RefillReviewCard() {
   return <RefillReviewCardInner />;
 }
 
-function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
+/**
+ * Passive notification banner. Acknowledge/dismiss actions live in the
+ * patient record drawer's Providers tab (single source of truth); this only
+ * surfaces that something needs attention and links there.
+ */
+function ProviderSwitchAlerts({
+  clinicianId,
+  onOpen,
+}: {
+  clinicianId: string;
+  onOpen: (patientId: string) => void;
+}) {
   const outgoing = useEhr(() =>
     clinicianId
       ? AdelanteEHR.listProviderSwitches({
@@ -868,8 +842,8 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
         </Badge>
       </h3>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Clients on your caseload who moved to another provider. Verify network status, coordinate
-        hand-off, or flag conflicts.
+        Clients on your caseload who moved to another provider. Open the patient record to verify
+        network status, coordinate hand-off, and acknowledge or dismiss the alert.
       </p>
       <ul className="mt-3 space-y-2">
         {outgoing.map((s) => {
@@ -896,23 +870,9 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
                     size="sm"
                     variant="outline"
                     className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.acknowledgeProviderSwitch(s.id, clinicianId);
-                      toast.success("Switch acknowledged");
-                    }}
+                    onClick={() => onOpen(s.patientId)}
                   >
-                    Acknowledge
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.dismissProviderSwitch(s.id, clinicianId);
-                      toast("Alert dismissed");
-                    }}
-                  >
-                    Dismiss
+                    Review in record
                   </Button>
                 </div>
               </div>
@@ -970,26 +930,26 @@ function RefillReviewCardInner() {
                   )}
                 </div>
                 {canWrite && (
-                <div className="flex gap-1.5 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
-                    onClick={() => {
-                      AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
-                      toast.success("Refill approved and sent to pharmacy");
-                    }}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => setOpenId(openId === r.id ? null : r.id)}
-                  >
-                    Deny
-                  </Button>
-                </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+                      onClick={() => {
+                        AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
+                        toast.success("Refill approved and sent to pharmacy");
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                    >
+                      Deny
+                    </Button>
+                  </div>
                 )}
               </div>
               {canWrite && openId === r.id && (
