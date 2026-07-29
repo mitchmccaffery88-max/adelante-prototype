@@ -795,7 +795,15 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
   );
 }
 
-function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: boolean }) {
+function ReferralsTab({
+  patientId,
+  sudGated,
+  readOnly,
+}: {
+  patientId: string;
+  sudGated: boolean;
+  readOnly?: boolean;
+}) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = p?.resourceReferrals ?? [];
   const [category, setCategory] = useState<ResourceReferral["category"]>("housing");
@@ -804,7 +812,7 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
   const statusOpts: ResourceReferral["status"][] = ["pending", "accepted", "completed"];
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">New referral</div>
         <div className="grid grid-cols-2 gap-2">
           <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
@@ -850,7 +858,7 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
         >
           Create referral
         </Button>
-      </Card>
+      </Card>}
       <ul className="space-y-2">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No referrals yet.</li>}
         {items.map((r) => (
