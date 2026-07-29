@@ -1485,6 +1485,21 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     sdohOpen,
     metrics,
     triggeredBy,
+    allergySummary: (p.allergies ?? [])
+      .filter((a) => a.active)
+      .map((a) => ({ substance: a.substance, reaction: a.reaction, severity: a.severity })),
+    activeProblems: (p.problems ?? [])
+      .filter(isProblemClinicallyActive)
+      .filter((pr) => pr.category !== "sud")
+      .map((pr) => ({
+        code: pr.icd10Code,
+        label: pr.description,
+        category: pr.category,
+        sensitive: false,
+      })),
+    hiddenSudProblems: (p.problems ?? []).filter(
+      (pr) => isProblemClinicallyActive(pr) && pr.category === "sud",
+    ).length,
   };
   p.carePlanSummary = summary;
 
