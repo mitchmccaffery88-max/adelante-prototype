@@ -1,0 +1,101 @@
+// §Orders — validation gate + attribution rules.
+//
+// Faithful port of the pre-sign checks in Dr. Bagga's reference EMR
+// (`OrderCart.canSign`). Kept in a standalone module (not inside the UI
+// component) so a future server-side order API can re-run the exact same
+// gate — client-only validation is not a safety control on its own.
+//
+// TODO(orders): later passes add duplicate-therapy checking, allergy
+// cross-checks, and DEA-schedule-aware cosigner rules. Add them as extra
+// entries in `validateOrder` so every consumer picks them up for free.
+
+import type { MedOrder } from "@/lib/ehr";
+import { canAccess, type StaffRole } from "@/lib/roles";
+
+/** Field keys the UI highlights (amber) when they block signing. */
+export type OrderFieldKey =
+  | "drugName"
+  | "dose"
+  | "frequency"
+  | "quantity"
+  | "duration"
+  | "daysSupply"
+  | "indication"
+  | "orderingProviderId"
+  | "orderSource"
+  | "readBackConfirmed";
+
+export interface OrderIssue {
+  field: OrderFieldKey;
+  message: string;
+}
+
+/**
+ * Attribution is required when the acting staff member cannot prescribe —
+ * i.e. they lack write access to the `meds_erx` record class. Prescribers
+ * (pmhnp) order under their own identity and never see the section.
+ */
+export function requiresAttribution(role: StaffRole): boolean {
+  return canAccess(role, "meds_erx").level !== "write";
+}
+
+/** Per-field validation. Empty array = this order may be signed. */
+export function validateOrder(order: MedOrder, opts: { needsAttribution: boolean }): OrderIssue[] {
+  const issues: OrderIssue[] = [];
+  const blank = (v?: string) => !v || !v.trim();
+
+  if (blank(order.drugName)) issues.push({ field: "drugName", message: "Medication is required." });
+  if (blank(order.dose)) issues.push({ field: "dose", message: "Dose is required." });
+  if (blank(order.frequency)) issues.push({ field: "frequency", message: "Frequency is required." });
+  if (order.quantity === undefined || order.quantity === null || Number.isNaN(order.quantity))
+    issues.push({ field: "quantity", message: "Quantity is required." });
+  // STAT orders are a single immediate administration — no duration.
+  if (!order.isStat && (order.durationValue === undefined || !order.durationUnit))
+    issues.push({ field: "duration", message: "Duration is required (or mark the order STAT)." });
+  if (order.isControlled && (order.daysSupply === undefined || Number.isNaN(order.daysSupply)))
+    issues.push({
+      field: "daysSupply",
+      message: "Days supply is required for controlled medications.",
+    });
+  if (!order.indicationProblemId && blank(order.indicationText))
+    issues.push({
+      field: "indication",
+      message: "Indication is required — link a problem or enter free text.",
+    });
+
+  if (opts.needsAttribution) {
+    if (blank(order.orderingProviderId))
+      issues.push({ field: "orderingProviderId", message: "Ordering provider is required." });
+    if (!order.orderSource)
+      issues.push({ field: "orderSource", message: "Order source is required." });
+    if (
+      (order.orderSource === "verbal" || order.orderSource === "telephone") &&
+      !order.readBackConfirmed
+    )
+      issues.push({
+        field: "readBackConfirmed",
+        message: "Read-back confirmation is required for verbal and telephone orders.",
+      });
+  }
+
+  return issues;
+}
+
+export function issueFields(issues: OrderIssue[]): Set<OrderFieldKey> {
+  return new Set(issues.map((i) => i.field));
+}
+
+/** Amber highlight classes — equivalent of the reference EMR's REQ_LABEL / REQ_FIELD. */
+export const REQ_LABEL = "text-amber-700 dark:text-amber-400";
+export const REQ_FIELD = "border-amber-500 bg-amber-50/60 dark:bg-amber-950/20";
+
+export const ORDER_SOURCE_OPTIONS: { value: NonNullable<MedOrder["orderSource"]>; label: string }[] =
+  [
+    { value: "verbal", label: "Verbal" },
+    { value: "telephone", label: "Telephone" },
+    { value: "protocol", label: "Protocol" },
+    { value: "standing", label: "Standing order" },
+  ];
+
+export const ATTESTATION_TEXT =
+  "I attest that these orders are clinically appropriate for this patient and that I take responsibility for them.";
