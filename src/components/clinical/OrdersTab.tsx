@@ -33,6 +33,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { CatalogPicker, type CatalogSelection } from "@/components/orders/CatalogPicker";
+import { MedicationDoseSection } from "@/components/orders/MedicationDoseSection";
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
@@ -222,6 +224,7 @@ function DraftOrderCard({
         <div className="flex items-center gap-2">
           {order.isStat && <Badge variant="secondary">STAT</Badge>}
           {order.isControlled && <Badge variant="outline">Controlled</Badge>}
+          {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
           <Button
             size="icon"
             variant="ghost"
@@ -233,46 +236,21 @@ function DraftOrderCard({
         </div>
       </div>
 
-      {/* TODO(orders): replace these free-text inputs with the dose / route /
-          frequency catalogs and sig editor in the deferred pass. */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        <div>
-          <Label className={cn("text-xs", blocked.has("dose") && REQ_LABEL)}>Dose *</Label>
-          <Input
-            className={cn("mt-1", blocked.has("dose") && REQ_FIELD)}
-            value={order.dose ?? ""}
-            onChange={(e) => patch({ dose: e.target.value })}
-            placeholder="50 mg"
-          />
-        </div>
-        <div>
-          <Label className="text-xs">Route</Label>
-          <Input
-            className="mt-1"
-            value={order.route ?? ""}
-            onChange={(e) => patch({ route: e.target.value })}
-            placeholder="oral"
-          />
-        </div>
-        <div>
-          <Label className={cn("text-xs", blocked.has("frequency") && REQ_LABEL)}>Frequency *</Label>
-          <Input
-            className={cn("mt-1", blocked.has("frequency") && REQ_FIELD)}
-            value={order.frequency ?? ""}
-            onChange={(e) => patch({ frequency: e.target.value })}
-            placeholder="daily"
-          />
-        </div>
-      </div>
+      {/* Phase 1: real catalog product + reconciled dose math + frequency
+          catalog. TODO(orders, Phase 2): pharmacy routing, duplicate-therapy
+          check, manual Sig override. */}
+      <MedicationDoseSection order={order} blocked={blocked} onPatch={patch} />
 
       <div className="grid gap-3 sm:grid-cols-4">
         <div>
-          <Label className={cn("text-xs", blocked.has("quantity") && REQ_LABEL)}>Quantity *</Label>
+          <Label className={cn("text-xs", blocked.has("quantity") && REQ_LABEL)}>
+            Quantity * {order.quantityManual ? "(manual)" : "(auto)"}
+          </Label>
           <Input
             className={cn("mt-1", blocked.has("quantity") && REQ_FIELD)}
             inputMode="numeric"
             value={order.quantity ?? ""}
-            onChange={(e) => patch({ quantity: num(e.target.value) })}
+            onChange={(e) => patch({ quantity: num(e.target.value), quantityManual: true })}
           />
         </div>
         <div>
@@ -306,13 +284,14 @@ function DraftOrderCard({
         </div>
         <div>
           <Label className={cn("text-xs", blocked.has("daysSupply") && REQ_LABEL)}>
-            Days supply {order.isControlled ? "*" : ""}
+            Days supply {order.isControlled ? "*" : ""}{" "}
+            {order.daysSupplyManual ? "(manual)" : "(auto)"}
           </Label>
           <Input
             className={cn("mt-1", blocked.has("daysSupply") && REQ_FIELD)}
             inputMode="numeric"
             value={order.daysSupply ?? ""}
-            onChange={(e) => patch({ daysSupply: num(e.target.value) })}
+            onChange={(e) => patch({ daysSupply: num(e.target.value), daysSupplyManual: true })}
             disabled={!order.isControlled}
           />
         </div>
@@ -375,9 +354,7 @@ function DraftOrderCard({
         </div>
       </div>
 
-      {needsAttribution && (
-        <AttributionSection order={order} blocked={blocked} onPatch={patch} />
-      )}
+      {needsAttribution && <AttributionSection order={order} blocked={blocked} onPatch={patch} />}
 
       {showIssues && issues.length > 0 && (
         <ul className="list-disc space-y-0.5 pl-5 text-xs text-amber-700 dark:text-amber-400">
@@ -399,16 +376,13 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   const problemRows = useEhr(() => AdelanteEHR.listProblems(patientId));
   const problems = useMemo(
     () =>
-      problemRows
-        .filter(isProblemClinicallyActive)
-        .map((p) => ({
-          id: p.id,
-          label: p.icd10Code ? `${p.icd10Code} — ${p.description}` : p.description,
-        })),
+      problemRows.filter(isProblemClinicallyActive).map((p) => ({
+        id: p.id,
+        label: p.icd10Code ? `${p.icd10Code} — ${p.description}` : p.description,
+      })),
     [problemRows],
   );
 
-  const [drugName, setDrugName] = useState("");
   const [attested, setAttested] = useState(false);
   const [showIssues, setShowIssues] = useState(false);
 
@@ -419,14 +393,18 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
   const canSign = !readOnly && gatePasses && attested;
 
-  const stage = () => {
-    const name = drugName.trim();
-    if (!name) {
-      toast.error("Enter a medication name.");
-      return;
-    }
-    AdelanteEHR.addDraftOrder(patientId, { drugName: name, createdBy: staffName });
-    setDrugName("");
+  const stage = (sel: CatalogSelection) => {
+    AdelanteEHR.addDraftOrder(patientId, {
+      drugName: sel.productName,
+      productName: sel.productName,
+      rxcui: sel.rxcui,
+      strengthText: sel.strengthText,
+      doseForm: sel.doseForm,
+      ingredientNames: sel.ingredientNames,
+      offCatalog: sel.offCatalog,
+      offCatalogJustification: sel.offCatalogJustification,
+      createdBy: staffName,
+    });
     setShowIssues(true);
   };
 
@@ -446,19 +424,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
     <div className="space-y-4">
       {!readOnly && (
         <Card className="p-4">
-          <Label className="text-xs">Add medication order</Label>
-          <div className="mt-1 flex gap-2">
-            {/* TODO(orders): swap for the drug catalog / formulary lookup. */}
-            <Input
-              value={drugName}
-              onChange={(e) => setDrugName(e.target.value)}
-              placeholder="Medication name"
-              aria-label="Medication name"
-            />
-            <Button onClick={stage}>
-              <Plus className="mr-1 h-4 w-4" /> Stage order
-            </Button>
-          </div>
+          <CatalogPicker onSelect={stage} />
         </Card>
       )}
 
@@ -512,7 +478,14 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.frequency && <span className="text-muted-foreground">{o.frequency}</span>}
                 {o.isStat && <Badge variant="secondary">STAT</Badge>}
                 {o.isControlled && <Badge variant="outline">Controlled</Badge>}
+                {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
               </div>
+              {o.sig && <div className="mt-1 text-xs italic text-muted-foreground">{o.sig}</div>}
+              {o.offCatalog && o.offCatalogJustification && (
+                <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  Off-catalog justification: {o.offCatalogJustification}
+                </div>
+              )}
               <div className="mt-1 text-xs text-muted-foreground">
                 Attested by {o.attestedBy} ·{" "}
                 {o.attestedAt ? <ClientDate value={o.attestedAt} /> : null}

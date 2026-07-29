@@ -11,6 +11,47 @@
 
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
+import {
+  isComboProduct,
+  parseLiquidStrength,
+  parseStrength,
+  reconcileComboByIngredient,
+  reconcileComboByUnits,
+  reconcileDose,
+  type DoseProduct,
+  type DoseResult,
+} from "@/lib/doseReconcile";
+
+/**
+ * Build the dose-math product view of an order. Liquids are detected first
+ * ("20 MG/ML"), because the ingredient "/" split would otherwise mistake the
+ * per-mL denominator for a second ingredient.
+ */
+export function productFromOrder(order: MedOrder): DoseProduct | undefined {
+  if (!order.productName && !order.drugName) return undefined;
+  const name = order.productName ?? order.drugName;
+  const liquid = parseLiquidStrength(order.strengthText);
+  if (liquid) {
+    return {
+      name,
+      rxcui: order.rxcui,
+      doseForm: order.doseForm,
+      ingredients: [
+        {
+          name: order.ingredientNames?.[0] ?? name,
+          strengthMg: liquid.mgPerMl,
+          perMl: liquid.mgPerMl,
+        },
+      ],
+    };
+  }
+  return {
+    name,
+    rxcui: order.rxcui,
+    doseForm: order.doseForm,
+    ingredients: parseStrength(order.strengthText, order.ingredientNames ?? []),
+  };
+}
 
 /** Field keys the UI highlights (amber) when they block signing. */
 export type OrderFieldKey =
@@ -21,6 +62,7 @@ export type OrderFieldKey =
   | "duration"
   | "daysSupply"
   | "indication"
+  | "offCatalogJustification"
   | "orderingProviderId"
   | "orderSource"
   | "readBackConfirmed";
@@ -45,8 +87,15 @@ export function validateOrder(order: MedOrder, opts: { needsAttribution: boolean
   const blank = (v?: string) => !v || !v.trim();
 
   if (blank(order.drugName)) issues.push({ field: "drugName", message: "Medication is required." });
+  // Off-catalog governance: justification is a hard gate, never a soft warning.
+  if (order.offCatalog && blank(order.offCatalogJustification))
+    issues.push({
+      field: "offCatalogJustification",
+      message: "Off-catalog medications require a clinical justification.",
+    });
   if (blank(order.dose)) issues.push({ field: "dose", message: "Dose is required." });
-  if (blank(order.frequency)) issues.push({ field: "frequency", message: "Frequency is required." });
+  if (blank(order.frequencyCode) && blank(order.frequency))
+    issues.push({ field: "frequency", message: "Frequency is required." });
   if (order.quantity === undefined || order.quantity === null || Number.isNaN(order.quantity))
     issues.push({ field: "quantity", message: "Quantity is required." });
   // STAT orders are a single immediate administration — no duration.
@@ -89,13 +138,32 @@ export function issueFields(issues: OrderIssue[]): Set<OrderFieldKey> {
 export const REQ_LABEL = "text-amber-700 dark:text-amber-400";
 export const REQ_FIELD = "border-amber-500 bg-amber-50/60 dark:bg-amber-950/20";
 
-export const ORDER_SOURCE_OPTIONS: { value: NonNullable<MedOrder["orderSource"]>; label: string }[] =
-  [
-    { value: "verbal", label: "Verbal" },
-    { value: "telephone", label: "Telephone" },
-    { value: "protocol", label: "Protocol" },
-    { value: "standing", label: "Standing order" },
-  ];
+export const ORDER_SOURCE_OPTIONS: {
+  value: NonNullable<MedOrder["orderSource"]>;
+  label: string;
+}[] = [
+  { value: "verbal", label: "Verbal" },
+  { value: "telephone", label: "Telephone" },
+  { value: "protocol", label: "Protocol" },
+  { value: "standing", label: "Standing order" },
+];
 
 export const ATTESTATION_TEXT =
   "I attest that these orders are clinically appropriate for this patient and that I take responsibility for them.";
+
+/** Run the correct engine entry point for the order's chosen axis. */
+export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
+  const product = productFromOrder(order);
+  if (!product || product.ingredients.length === 0) return undefined;
+  const combo = isComboProduct(product);
+  if (!combo) {
+    if (order.doseTargetMg === undefined) return undefined;
+    return reconcileDose(product, order.doseTargetMg);
+  }
+  if (order.doseAxis === "ingredient") {
+    if (order.doseTargetMg === undefined) return undefined;
+    return reconcileComboByIngredient(product, order.doseIngredientIndex ?? 0, order.doseTargetMg);
+  }
+  if (order.unitsPerAdmin === undefined) return undefined;
+  return reconcileComboByUnits(product, order.unitsPerAdmin);
+}

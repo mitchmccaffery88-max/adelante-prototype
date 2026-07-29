@@ -158,10 +158,42 @@ export interface MedOrder {
   dose?: string;
   route?: string;
   frequency?: string;
+  // ----- Catalog product (Phase 1: RxNav-backed) -----------------------------
+  /** RxNorm concept id when the product was picked from the catalog. */
+  rxcui?: string;
+  /** Full catalog product name as returned by RxNav. */
+  productName?: string;
+  /** RxNav strength string, e.g. "50 MG" or "2 MG / 0.5 MG" or "20 MG/ML". */
+  strengthText?: string;
+  /** RxNav dose form, e.g. "Oral Tablet". Drives splitting rules. */
+  doseForm?: string;
+  /** Positional ingredient names for combo products. */
+  ingredientNames?: string[];
+  /** True when the clinician typed a product NOT found in the catalog. */
+  offCatalog?: boolean;
+  /** REQUIRED whenever offCatalog is true — governance control, do not weaken. */
+  offCatalogJustification?: string;
+  // ----- Reconciled dose (see src/lib/doseReconcile.ts) ----------------------
+  /** Which axis the clinician dosed on. */
+  doseAxis?: "mg" | "units" | "ingredient";
+  /** Index into ingredientNames when doseAxis === "ingredient". */
+  doseIngredientIndex?: number;
+  /** Intended mg per administration (mg / ingredient axes). */
+  doseTargetMg?: number;
+  /** Units per administration (units axis, or reconciled from mg). */
+  unitsPerAdmin?: number;
+  /** Generated Sig line (src/lib/sigLine.ts). */
+  sig?: string;
+  /** Frequency catalog code, e.g. "BID". Source of truth for scheduling. */
+  frequencyCode?: string;
   durationValue?: number;
   durationUnit?: "days" | "doses";
   quantity?: number;
   daysSupply?: number;
+  /** Set once the clinician edits quantity by hand — suppresses auto-calc. */
+  quantityManual?: boolean;
+  /** Set once the clinician edits days supply by hand — suppresses auto-calc. */
+  daysSupplyManual?: boolean;
   /** DEA-schedule-adjacent flag. Drives the days-supply requirement and, later, cosigner scoping. */
   isControlled?: boolean;
   /** STAT orders skip the duration requirement (single immediate administration). */
@@ -191,6 +223,13 @@ export interface Patient {
   phone: string;
   email?: string;
   releaseDate: string;
+  /**
+   * Facility/site timezone used to anchor MAR administration times.
+   * Adelante has no Site entity yet, so the zone lives on the patient — a
+   * single program serves community clients and custody partner sites, and
+   * those can differ. TODO(sites): move to a Site record when one exists.
+   */
+  facilityTimezone?: string;
   enrolledAt: string;
   episodeDay: number; // day within 90-day window
   smsFallback: boolean;
