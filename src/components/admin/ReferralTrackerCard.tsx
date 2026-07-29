@@ -257,7 +257,7 @@ export function ReferralTrackerCard({
       <ReferralTimelineDrawer
         referralId={openRefId}
         open={!!openRefId}
-        onOpenChange={(o) => !o && setOpenRefId(null)}
+        onOpenChange={(o: boolean) => !o && setOpenRefId(null)}
       />
     </Card>
   );
