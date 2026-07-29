@@ -7,7 +7,7 @@ import {
   type Allergy,
   type PatientAlert,
 } from "@/lib/ehr";
-import { useActingRole, canAccess } from "@/lib/roles";
+import { useActingStaff, canAccess } from "@/lib/roles";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -114,7 +114,7 @@ function RemovalReasonDialog({
 export function ProblemsTab({ patientId }: { patientId: string }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const problems = useEhr(() => AdelanteEHR.listProblems(patientId));
-  const [role] = useActingRole();
+  const { role, staffName } = useActingStaff();
   const gate = canAccess(role, "problems", patient);
   const sudGate = canAccess(role, "sud_treatment", patient);
   const canWrite = gate.level === "write";
@@ -133,7 +133,7 @@ export function ProblemsTab({ patientId }: { patientId: string }) {
         snomedCode: pick.snomedCode,
         snomedDisplay: pick.snomedDisplay,
         category: pick.category,
-        enteredBy: role,
+        enteredBy: staffName,
       });
       toast.success(`Added: ${pick.icd10Code ?? ""} ${pick.description}`.trim());
       setAdding(false);
@@ -178,8 +178,8 @@ export function ProblemsTab({ patientId }: { patientId: string }) {
               problem={p}
               canWrite={canWrite}
               sudLocked={sudGate.locked}
-              onResolve={() => AdelanteEHR.resolveProblem(patientId, p.id, role)}
-              onReactivate={() => AdelanteEHR.reactivateProblem(patientId, p.id, role)}
+              onResolve={() => AdelanteEHR.resolveProblem(patientId, p.id, staffName)}
+              onReactivate={() => AdelanteEHR.reactivateProblem(patientId, p.id, staffName)}
               onRemove={() => setToRemove(p)}
             />
           ))}
@@ -194,7 +194,7 @@ export function ProblemsTab({ patientId }: { patientId: string }) {
         onConfirm={(reason) => {
           if (!toRemove) return;
           try {
-            AdelanteEHR.softDeleteProblem(patientId, toRemove.id, reason, role);
+            AdelanteEHR.softDeleteProblem(patientId, toRemove.id, reason, staffName);
             toast.success("Problem removed.");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Could not remove.");
@@ -311,7 +311,7 @@ function ProblemRow({
 export function AllergiesTab({ patientId }: { patientId: string }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const allergies = useEhr(() => AdelanteEHR.listAllergies(patientId));
-  const [role] = useActingRole();
+  const { role, staffName } = useActingStaff();
   const gate = canAccess(role, "allergies", patient);
   const canWrite = gate.level === "write";
   const [substance, setSubstance] = useState("");
@@ -334,7 +334,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
         reaction: reaction.trim() || undefined,
         severity,
         notes: notes.trim() || undefined,
-        enteredBy: role,
+        enteredBy: staffName,
       });
       setSubstance("");
       setReaction("");
@@ -435,7 +435,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
         onConfirm={(reason) => {
           if (!toRemove) return;
           try {
-            AdelanteEHR.softDeleteAllergy(patientId, toRemove.id, reason, role);
+            AdelanteEHR.softDeleteAllergy(patientId, toRemove.id, reason, staffName);
             toast.success("Allergy removed.");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Could not remove.");
@@ -463,7 +463,7 @@ function SeverityBadge({ severity }: { severity: Allergy["severity"] }) {
 export function AlertsTab({ patientId }: { patientId: string }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const alerts = useEhr(() => AdelanteEHR.listAlerts(patientId));
-  const [role] = useActingRole();
+  const { role, staffName } = useActingStaff();
   const gate = canAccess(role, "alerts", patient);
   const canWrite = gate.level === "write";
   const [label, setLabel] = useState("");
@@ -484,7 +484,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
         label: l,
         severity,
         notes: notes.trim() || undefined,
-        enteredBy: role,
+        enteredBy: staffName,
       });
       setLabel("");
       setSeverity("info");
@@ -582,7 +582,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
         onConfirm={(reason) => {
           if (!toRemove) return;
           try {
-            AdelanteEHR.softDeleteAlert(patientId, toRemove.id, reason, role);
+            AdelanteEHR.softDeleteAlert(patientId, toRemove.id, reason, staffName);
             toast.success("Alert removed.");
           } catch (e) {
             toast.error(e instanceof Error ? e.message : "Could not remove.");
