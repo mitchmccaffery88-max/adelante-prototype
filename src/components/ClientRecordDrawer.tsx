@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +34,17 @@ import {
   type CaseTask,
 } from "@/lib/ehr";
 import { useActingRole, canAccess, type RecordClass } from "@/lib/roles";
+import { SCREENERS, severityFor } from "@/lib/screeners";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
@@ -59,9 +70,10 @@ interface Props {
   patientId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 }
 
-export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
+export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }: Props) {
   const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
   const [role] = useActingRole();
 
@@ -75,6 +87,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
   const canProblems = gate("problems");
   const canAllergies = gate("allergies");
   const canAlerts = gate("alerts");
+  const canContact = gate("demographics");
+  const canCheckins = gate("case_notes");
+  const canTasks = gate("case_notes");
+  const canReferrals = gate("sdoh");
+  const canEligibility = gate("eligibility");
+  const canProviders = gate("care_coordination");
+  const canCarePlan = gate("care_plan");
+  const canNotes = gate("therapy_notes");
+  const canScreenersMh = gate("screeners_mh");
 
   const snapshot = patient.carePlan;
   const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
@@ -197,7 +218,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
           <ReferralStatusTimeline patient={patient} />
         </div>
 
-        <Tabs defaultValue="overview" className="mt-4">
+        <Tabs defaultValue={initialTab ?? "overview"} className="mt-4">
           <TabsList className="w-full flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
@@ -224,10 +245,18 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <OverviewTab patientId={patient.id} />
           </TabsContent>
           <TabsContent value="contact" className="mt-4">
-            <ContactTab patientId={patient.id} />
+            {canContact.locked ? (
+              <LockedNote reason={canContact.reason} />
+            ) : (
+              <ContactTab patientId={patient.id} readOnly={canContact.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="checkins" className="mt-4">
-            <CheckInsTab patientId={patient.id} />
+            {canCheckins.locked ? (
+              <LockedNote reason={canCheckins.reason} />
+            ) : (
+              <CheckInsTab patientId={patient.id} readOnly={canCheckins.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="sdoh" className="mt-4">
             {canSdoh.locked ? (
@@ -237,10 +266,22 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             )}
           </TabsContent>
           <TabsContent value="referrals" className="mt-4">
-            <ReferralsTab patientId={patient.id} sudGated={canSud.locked} />
+            {canReferrals.locked ? (
+              <LockedNote reason={canReferrals.reason} />
+            ) : (
+              <ReferralsTab
+                patientId={patient.id}
+                sudGated={canSud.locked}
+                readOnly={canReferrals.level === "read"}
+              />
+            )}
           </TabsContent>
           <TabsContent value="eligibility" className="mt-4">
-            <EligibilityTab patientId={patient.id} />
+            {canEligibility.locked ? (
+              <LockedNote reason={canEligibility.reason} />
+            ) : (
+              <EligibilityTab patientId={patient.id} readOnly={canEligibility.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="coord" className="mt-4">
             {canCoord.locked ? (
@@ -250,11 +291,34 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             )}
           </TabsContent>
           <TabsContent value="tasks" className="mt-4">
-            <TasksTab patientId={patient.id} />
+            {canTasks.locked ? (
+              <LockedNote reason={canTasks.reason} />
+            ) : (
+              <TasksTab patientId={patient.id} readOnly={canTasks.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="providers" className="mt-4">
-            <ProviderHistoryTab patientId={patient.id} />
+            {canProviders.locked ? (
+              <LockedNote reason={canProviders.reason} />
+            ) : (
+              <ProviderHistoryTab patientId={patient.id} />
+            )}
           </TabsContent>
+          {canCarePlan.level !== "none" && (
+            <TabsContent value="care-plan" className="mt-4">
+              <CarePlanTab patientId={patient.id} readOnly={canCarePlan.level === "read"} />
+            </TabsContent>
+          )}
+          {canNotes.level !== "none" && (
+            <TabsContent value="notes" className="mt-4">
+              <NotesTab patientId={patient.id} readOnly={canNotes.level !== "write"} />
+            </TabsContent>
+          )}
+          {canScreenersMh.level !== "none" && (
+            <TabsContent value="tracking" className="mt-4">
+              <TrackingTab patientId={patient.id} />
+            </TabsContent>
+          )}
           {canProblems.level !== "none" && (
             <TabsContent value="problems" className="mt-4">
               <ProblemsTab patientId={patient.id} />
