@@ -122,10 +122,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
                     <TooltipContent side="bottom" className="max-w-xs text-xs">
                       {snapshot?.activeProblems
                         ?.slice(0, 6)
-                        .map(
-                          (p: { icd10Code?: string; description: string }) =>
-                            `${p.icd10Code ?? ""} ${p.description}`.trim(),
-                        )
+                        .map((p) => `${p.code ?? ""} ${p.label}`.trim())
                         .join(" · ")}
                     </TooltipContent>
                   </Tooltip>
