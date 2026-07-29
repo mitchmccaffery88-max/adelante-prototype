@@ -927,6 +927,7 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
 function RefillReviewCardInner() {
   const pending = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }));
   const patients = AdelanteEHR.listPatients();
+  const [role] = useActingRole();
   const [openId, setOpenId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
@@ -946,6 +947,7 @@ function RefillReviewCardInner() {
       <ul className="mt-3 space-y-3 text-sm">
         {pending.map((r) => {
           const p = patients.find((x) => x.id === r.patientId);
+          const canWrite = p ? canAccess(role, "meds_erx", p).level === "write" : false;
           return (
             <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
               <div className="flex items-start justify-between gap-2">
@@ -961,7 +963,13 @@ function RefillReviewCardInner() {
                       "{r.pharmacyNote}"
                     </div>
                   )}
+                  {!canWrite && (
+                    <div className="text-[11px] text-muted-foreground mt-1 inline-flex items-center gap-1">
+                      <Lock className="h-3 w-3" /> Prescriber review required
+                    </div>
+                  )}
                 </div>
+                {canWrite && (
                 <div className="flex gap-1.5 shrink-0">
                   <Button
                     size="sm"
@@ -982,8 +990,9 @@ function RefillReviewCardInner() {
                     Deny
                   </Button>
                 </div>
+                )}
               </div>
-              {openId === r.id && (
+              {canWrite && openId === r.id && (
                 <div className="mt-2 space-y-2">
                   <Textarea
                     value={reason}
