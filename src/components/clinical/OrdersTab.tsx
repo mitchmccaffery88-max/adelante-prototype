@@ -401,7 +401,10 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
     () =>
       problemRows
         .filter(isProblemClinicallyActive)
-        .map((p) => ({ id: p.id, label: p.displayName ?? p.code ?? p.id })),
+        .map((p) => ({
+          id: p.id,
+          label: p.icd10Code ? `${p.icd10Code} — ${p.description}` : p.description,
+        })),
     [problemRows],
   );
 
@@ -512,7 +515,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
               </div>
               <div className="mt-1 text-xs text-muted-foreground">
                 Attested by {o.attestedBy} ·{" "}
-                {o.attestedAt ? <ClientDate iso={o.attestedAt} /> : null}
+                {o.attestedAt ? <ClientDate value={o.attestedAt} /> : null}
                 {o.orderingProviderId
                   ? ` · for ${getStaffMember(o.orderingProviderId)?.name ?? o.orderingProviderId}` +
                     (o.orderSource ? ` (${o.orderSource})` : "")
