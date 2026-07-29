@@ -33,7 +33,13 @@ import {
   type PeerNote,
   type CaseTask,
 } from "@/lib/ehr";
-import { useActingRole, useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
+import {
+  useActingRole,
+  useActingStaff,
+  getStaffMember,
+  canAccess,
+  type RecordClass,
+} from "@/lib/roles";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
   LineChart,
