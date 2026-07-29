@@ -1117,7 +1117,8 @@ export type AuditCategory =
   | "access"
   | "provider_switch"
   | "care_plan"
-  | "assignment";
+  | "assignment"
+  | "clinical";
 export interface AuditEvent {
   id: string;
   at: string;
