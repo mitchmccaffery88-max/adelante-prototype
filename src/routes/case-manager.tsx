@@ -167,16 +167,14 @@ function CaseManagerPage() {
         </div>
       </header>
 
-      <section className="mb-6 grid gap-4 lg:grid-cols-3">
-        <div className="lg:col-span-2">
-          <CaseloadTable
-            patients={allPatients}
-            title="Program caseload (all clients)"
-            onOpenPatient={setRecordId}
-            showAssignClinician
-            exportFilename="cm-caseload"
-          />
-        </div>
+      <section className="mb-6 flex flex-col gap-4">
+        <CaseloadTable
+          patients={allPatients}
+          title="Program caseload (all clients)"
+          onOpenPatient={setRecordId}
+          showAssignClinician
+          exportFilename="cm-caseload"
+        />
         <ReferralTrackerCard referrals={referrals} title="Referral status" />
       </section>
 
