@@ -924,7 +924,7 @@ function ReferralsTab({
   );
 }
 
-function EligibilityTab({ patientId }: { patientId: string }) {
+function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!p) return null;
   const cov = p.coverage;
@@ -972,13 +972,13 @@ function EligibilityTab({ patientId }: { patientId: string }) {
         <li key={r.key} className="rounded border p-3 text-sm space-y-2">
           <div className="flex items-center justify-between">
             <span>{r.label}</span>
-            <Switch checked={r.on} onCheckedChange={r.toggle} />
+            <Switch checked={r.on} onCheckedChange={r.toggle} disabled={readOnly} />
           </div>
-          <NoteInline
+          {!readOnly && <NoteInline
             value={notes[r.key]?.note ?? ""}
             asOf={notes[r.key]?.asOf}
             onSave={(note, asOf) => AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)}
-          />
+          />}
         </li>
       ))}
     </ul>
