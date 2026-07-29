@@ -43,7 +43,10 @@ export type RecordClass =
   | "peer_notes"
   | "documents"
   | "billing"
-  | "consent_ledger";
+  | "consent_ledger"
+  | "problems"
+  | "allergies"
+  | "alerts";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -104,6 +107,31 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     billing: "read",
     sys_admin: "read",
+  },
+  // Clinical record layer (BaggaEMR mirror). Prescribers (pmhnp) and
+  // therapists write; case_manager / peer_specialist can read for
+  // coordination; billing reads Problems only for claim coding.
+  problems: {
+    pmhnp: "write",
+    therapist: "write",
+    case_manager: "read",
+    peer_specialist: "read",
+    billing: "read",
+    clinical_coordinator: "read",
+  },
+  allergies: {
+    pmhnp: "write",
+    therapist: "write",
+    case_manager: "read",
+    peer_specialist: "read",
+    clinical_coordinator: "read",
+  },
+  alerts: {
+    pmhnp: "write",
+    therapist: "write",
+    case_manager: "write",
+    peer_specialist: "read",
+    clinical_coordinator: "read",
   },
 };
 

@@ -240,6 +240,13 @@ export interface Patient {
   carePlan?: CarePlanSnapshot;
   /** Optional free-text overlay from a clinician; merged into the summary. */
   carePlanOverride?: { text: string; setAt: string; by?: string };
+  // ----- Clinical record layer (Problems / Allergies / Alerts). §BaggaEMR mirror -----
+  /** Diagnosed problems (active + resolved + soft-deleted). Mirror of BaggaEMR `patient_problems`. */
+  problems?: Problem[];
+  /** Allergies (active + removed). Mirror of BaggaEMR `patient_allergies`. */
+  allergies?: Allergy[];
+  /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
+  alerts?: PatientAlert[];
 }
 
 
@@ -549,6 +556,89 @@ export interface CarePlanSnapshot {
   sdohOpen: CarePlanSdohSlice[];
   metrics: CarePlanMetrics;
   triggeredBy?: string;
+  /** Plain-language allergy summary for patient/staff surfaces. Excludes soft-removed rows. */
+  allergySummary?: CarePlanAllergyEntry[];
+  /** Non-SUD active problems for patient/staff summary. SUD problems live only in the SUD-gated view. */
+  activeProblems?: CarePlanProblemEntry[];
+  /** Count of active SUD problems hidden from non-Part-2 viewers (never leaks descriptions). */
+  hiddenSudProblems?: number;
+}
+
+export interface CarePlanAllergyEntry {
+  substance: string;
+  reaction?: string;
+  severity: "mild" | "moderate" | "severe";
+}
+export interface CarePlanProblemEntry {
+  code?: string;
+  label: string;
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  sensitive: boolean;
+}
+
+// ============================================================================
+// Clinical record layer — Problems, Allergies, Alerts.
+// Field-for-field mirror of Dr. Bagga's BaggaEMR schemas. Mutations route
+// through `appendAudit`, soft-deletes require a reason, and problem/allergy
+// writes trigger a care-plan recompute so patient/staff summaries stay live.
+// ============================================================================
+
+export interface Problem {
+  id: string;
+  patientId: string;
+  icd10Code?: string;
+  snomedCode?: string;
+  snomedDisplay?: string;
+  description: string;
+  status: "active" | "resolved";
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  priority?: number;
+  onsetDate?: string;
+  enteredBy: string;
+  createdAt: string;
+  resolvedDate?: string;
+  resolvedBy?: string;
+  clinicianComment?: string;
+  notes?: string;
+  updatedAt?: string;
+  updatedBy?: string;
+  deletedAt?: string;
+  deletionReason?: string;
+}
+
+export interface Allergy {
+  id: string;
+  patientId: string;
+  substance: string;
+  reaction?: string;
+  severity: "mild" | "moderate" | "severe";
+  notes?: string;
+  active: boolean;
+  enteredBy: string;
+  enteredAt: string;
+  removedBy?: string;
+  removedAt?: string;
+  removedReason?: string;
+}
+
+export interface PatientAlert {
+  id: string;
+  patientId: string;
+  /** Free text (e.g. "Fall Risk", "Suicide Watch"). Deliberately not a fixed enum. */
+  label: string;
+  severity: "info" | "warning" | "critical";
+  notes?: string;
+  active: boolean;
+  enteredBy: string;
+  enteredAt: string;
+  removedBy?: string;
+  removedAt?: string;
+  removedReason?: string;
+}
+
+/** Naming mirrors Dr. Bagga's `isProblemClinicallyActive` helper. */
+export function isProblemClinicallyActive(problem: Problem): boolean {
+  return problem.status === "active" && !problem.deletedAt;
 }
 
 export interface ProgressNote {
@@ -1027,7 +1117,8 @@ export type AuditCategory =
   | "access"
   | "provider_switch"
   | "care_plan"
-  | "assignment";
+  | "assignment"
+  | "clinical";
 export interface AuditEvent {
   id: string;
   at: string;
@@ -1394,6 +1485,21 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     sdohOpen,
     metrics,
     triggeredBy,
+    allergySummary: (p.allergies ?? [])
+      .filter((a) => a.active)
+      .map((a) => ({ substance: a.substance, reaction: a.reaction, severity: a.severity })),
+    activeProblems: (p.problems ?? [])
+      .filter(isProblemClinicallyActive)
+      .filter((pr) => pr.category !== "sud")
+      .map((pr) => ({
+        code: pr.icd10Code,
+        label: pr.description,
+        category: pr.category,
+        sensitive: false,
+      })),
+    hiddenSudProblems: (p.problems ?? []).filter(
+      (pr) => isProblemClinicallyActive(pr) && pr.category === "sud",
+    ).length,
   };
   p.carePlanSummary = summary;
 
@@ -3000,6 +3106,276 @@ export const AdelanteEHR = {
     });
     emit();
     return p;
+  },
+
+  // ---------- Clinical record layer: Problems / Allergies / Alerts ----------
+  // Field-for-field mirror of BaggaEMR. Every write appends an audit event
+  // with category "clinical"; soft-deletes require a non-empty reason;
+  // problem/allergy writes trigger `_recomputeCarePlan` so the patient's
+  // plain-language summary stays live.
+
+  listProblems(patientId: string, opts?: { includeDeleted?: boolean }): Problem[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.problems ?? [];
+    return opts?.includeDeleted ? [...rows] : rows.filter((r) => !r.deletedAt);
+  },
+  addProblem(
+    patientId: string,
+    input: {
+      description: string;
+      icd10Code?: string;
+      snomedCode?: string;
+      snomedDisplay?: string;
+      category?: Problem["category"];
+      priority?: number;
+      onsetDate?: string;
+      clinicianComment?: string;
+      notes?: string;
+      enteredBy: string;
+    },
+  ): Problem {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const now = new Date().toISOString();
+    const row: Problem = {
+      id: uid(),
+      patientId,
+      description: input.description.trim(),
+      icd10Code: input.icd10Code,
+      snomedCode: input.snomedCode,
+      snomedDisplay: input.snomedDisplay,
+      category: input.category,
+      priority: input.priority,
+      onsetDate: input.onsetDate,
+      clinicianComment: input.clinicianComment,
+      notes: input.notes,
+      status: "active",
+      enteredBy: input.enteredBy,
+      createdAt: now,
+    };
+    p.problems = [row, ...(p.problems ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "problem_added",
+      patientId,
+      actorId: input.enteredBy,
+      detail: { icd10: row.icd10Code, snomed: row.snomedCode, category: row.category },
+    });
+    _recomputeCarePlan(patientId, "problem_added");
+    emit();
+    return row;
+  },
+  updateProblem(
+    patientId: string,
+    problemId: string,
+    patch: Partial<
+      Pick<
+        Problem,
+        | "description"
+        | "icd10Code"
+        | "snomedCode"
+        | "snomedDisplay"
+        | "category"
+        | "priority"
+        | "onsetDate"
+        | "clinicianComment"
+        | "notes"
+      >
+    >,
+    actor: string,
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.problems?.find((r) => r.id === problemId);
+    if (!p || !row || row.deletedAt) return;
+    Object.assign(row, patch);
+    row.updatedAt = new Date().toISOString();
+    row.updatedBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "problem_updated",
+      patientId,
+      actorId: actor,
+      detail: { problemId, patch },
+    });
+    _recomputeCarePlan(patientId, "problem_updated");
+    emit();
+  },
+  resolveProblem(patientId: string, problemId: string, actor: string, resolvedDate?: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.problems?.find((r) => r.id === problemId);
+    if (!p || !row || row.deletedAt) return;
+    row.status = "resolved";
+    row.resolvedBy = actor;
+    row.resolvedDate = resolvedDate ?? new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "problem_resolved",
+      patientId,
+      actorId: actor,
+      detail: { problemId },
+    });
+    _recomputeCarePlan(patientId, "problem_resolved");
+    emit();
+  },
+  reactivateProblem(patientId: string, problemId: string, actor: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.problems?.find((r) => r.id === problemId);
+    if (!p || !row || row.deletedAt) return;
+    row.status = "active";
+    row.resolvedBy = undefined;
+    row.resolvedDate = undefined;
+    row.updatedAt = new Date().toISOString();
+    row.updatedBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "problem_reactivated",
+      patientId,
+      actorId: actor,
+      detail: { problemId },
+    });
+    _recomputeCarePlan(patientId, "problem_reactivated");
+    emit();
+  },
+  softDeleteProblem(patientId: string, problemId: string, reason: string, actor: string) {
+    const trimmed = reason?.trim();
+    if (!trimmed) throw new Error("A reason is required to remove a problem.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.problems?.find((r) => r.id === problemId);
+    if (!p || !row || row.deletedAt) return;
+    row.deletedAt = new Date().toISOString();
+    row.deletionReason = trimmed;
+    row.updatedAt = row.deletedAt;
+    row.updatedBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "problem_soft_deleted",
+      patientId,
+      actorId: actor,
+      detail: { problemId, reason: trimmed },
+    });
+    _recomputeCarePlan(patientId, "problem_soft_deleted");
+    emit();
+  },
+
+  listAllergies(patientId: string, opts?: { includeRemoved?: boolean }): Allergy[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.allergies ?? [];
+    return opts?.includeRemoved ? [...rows] : rows.filter((r) => r.active);
+  },
+  addAllergy(
+    patientId: string,
+    input: {
+      substance: string;
+      reaction?: string;
+      severity: Allergy["severity"];
+      notes?: string;
+      enteredBy: string;
+    },
+  ): Allergy {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row: Allergy = {
+      id: uid(),
+      patientId,
+      substance: input.substance.trim(),
+      reaction: input.reaction?.trim() || undefined,
+      severity: input.severity,
+      notes: input.notes?.trim() || undefined,
+      active: true,
+      enteredBy: input.enteredBy,
+      enteredAt: new Date().toISOString(),
+    };
+    p.allergies = [row, ...(p.allergies ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "allergy_added",
+      patientId,
+      actorId: input.enteredBy,
+      detail: { substance: row.substance, severity: row.severity },
+    });
+    _recomputeCarePlan(patientId, "allergy_added");
+    emit();
+    return row;
+  },
+  softDeleteAllergy(patientId: string, allergyId: string, reason: string, actor: string) {
+    const trimmed = reason?.trim();
+    if (!trimmed) throw new Error("A reason is required to remove an allergy.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.allergies?.find((r) => r.id === allergyId);
+    if (!p || !row || !row.active) return;
+    row.active = false;
+    row.removedAt = new Date().toISOString();
+    row.removedBy = actor;
+    row.removedReason = trimmed;
+    appendAudit({
+      category: "clinical",
+      action: "allergy_removed",
+      patientId,
+      actorId: actor,
+      detail: { allergyId, reason: trimmed },
+    });
+    _recomputeCarePlan(patientId, "allergy_removed");
+    emit();
+  },
+
+  listAlerts(patientId: string, opts?: { includeRemoved?: boolean }): PatientAlert[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.alerts ?? [];
+    return opts?.includeRemoved ? [...rows] : rows.filter((r) => r.active);
+  },
+  addAlert(
+    patientId: string,
+    input: {
+      label: string;
+      severity: PatientAlert["severity"];
+      notes?: string;
+      enteredBy: string;
+    },
+  ): PatientAlert {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row: PatientAlert = {
+      id: uid(),
+      patientId,
+      label: input.label.trim(),
+      severity: input.severity,
+      notes: input.notes?.trim() || undefined,
+      active: true,
+      enteredBy: input.enteredBy,
+      enteredAt: new Date().toISOString(),
+    };
+    p.alerts = [row, ...(p.alerts ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "alert_added",
+      patientId,
+      actorId: input.enteredBy,
+      detail: { label: row.label, severity: row.severity },
+    });
+    emit();
+    return row;
+  },
+  softDeleteAlert(patientId: string, alertId: string, reason: string, actor: string) {
+    const trimmed = reason?.trim();
+    if (!trimmed) throw new Error("A reason is required to remove an alert.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.alerts?.find((r) => r.id === alertId);
+    if (!p || !row || !row.active) return;
+    row.active = false;
+    row.removedAt = new Date().toISOString();
+    row.removedBy = actor;
+    row.removedReason = trimmed;
+    appendAudit({
+      category: "clinical",
+      action: "alert_removed",
+      patientId,
+      actorId: actor,
+      detail: { alertId, reason: trimmed },
+    });
+    emit();
   },
 };
 

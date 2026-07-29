@@ -42,6 +42,18 @@ import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
+import {
+  ProblemsTab,
+  AllergiesTab,
+  AlertsTab,
+} from "@/components/clinical/ClinicalRecordTabs";
+import { AlertTriangle, HeartPulse } from "lucide-react";
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface Props {
   patientId: string | null;
@@ -60,6 +72,19 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
   const canSdoh = gate("sdoh");
   const canCoord = gate("case_notes"); // coordination log lives with case notes
   const canSud = gate("sud_treatment");
+  const canProblems = gate("problems");
+  const canAllergies = gate("allergies");
+  const canAlerts = gate("alerts");
+
+  const snapshot = patient.carePlan;
+  const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
+  const hiddenSud = snapshot?.hiddenSudProblems ?? 0;
+  const allergyEntries = snapshot?.allergySummary ?? [];
+  const severeAllergy = allergyEntries.some(
+    (a: { severity: string }) => a.severity === "severe",
+  );
+  const activeAlerts = (patient.alerts ?? []).filter((a) => !a.removedAt);
+  const criticalAlert = activeAlerts.some((a) => a.severity === "critical");
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -79,6 +104,93 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             </span>
             <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
           </SheetDescription>
+          {(activeProblemsCount > 0 ||
+            hiddenSud > 0 ||
+            allergyEntries.length > 0 ||
+            activeAlerts.length > 0) && (
+            <TooltipProvider delayDuration={150}>
+              <div className="mt-2 flex flex-wrap items-center gap-1.5">
+                {activeProblemsCount > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className="bg-teal/15 text-teal border-0 text-[10px] gap-1">
+                        <HeartPulse className="h-3 w-3" />
+                        {activeProblemsCount} active problem
+                        {activeProblemsCount === 1 ? "" : "s"}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      {snapshot?.activeProblems
+                        ?.slice(0, 6)
+                        .map((p) => `${p.code ?? ""} ${p.label}`.trim())
+                        .join(" · ")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {hiddenSud > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge className="bg-destructive/10 text-destructive border-0 text-[10px] gap-1">
+                        <Lock className="h-3 w-3" />
+                        {hiddenSud} 42 CFR 2 masked
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      SUD problems present but hidden without Part 2 consent for your role.
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {allergyEntries.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        className={
+                          severeAllergy
+                            ? "bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
+                            : "bg-gold/25 text-navy border-0 text-[10px] gap-1"
+                        }
+                      >
+                        <AlertTriangle className="h-3 w-3" />
+                        {allergyEntries.length} allerg{allergyEntries.length === 1 ? "y" : "ies"}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      {allergyEntries
+                        .slice(0, 6)
+                        .map(
+                          (a: { substance: string; severity: string }) =>
+                            `${a.substance} (${a.severity})`,
+                        )
+                        .join(" · ")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+                {activeAlerts.length > 0 && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge
+                        className={
+                          criticalAlert
+                            ? "bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
+                            : "bg-muted text-navy border-0 text-[10px] gap-1"
+                        }
+                      >
+                        <ShieldAlert className="h-3 w-3" />
+                        {activeAlerts.length} alert
+                        {activeAlerts.length === 1 ? "" : "s"}
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent side="bottom" className="max-w-xs text-xs">
+                      {activeAlerts
+                        .slice(0, 6)
+                        .map((a) => `${a.label} (${a.severity})`)
+                        .join(" · ")}
+                    </TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
+            </TooltipProvider>
+          )}
         </SheetHeader>
 
         <div className="mt-4">
@@ -96,6 +208,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            {canProblems.level !== "none" && (
+              <TabsTrigger value="problems">Problems</TabsTrigger>
+            )}
+            {canAllergies.level !== "none" && (
+              <TabsTrigger value="allergies">Allergies</TabsTrigger>
+            )}
+            {canAlerts.level !== "none" && (
+              <TabsTrigger value="alerts">Alerts</TabsTrigger>
+            )}
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -134,6 +255,21 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
           <TabsContent value="providers" className="mt-4">
             <ProviderHistoryTab patientId={patient.id} />
           </TabsContent>
+          {canProblems.level !== "none" && (
+            <TabsContent value="problems" className="mt-4">
+              <ProblemsTab patientId={patient.id} />
+            </TabsContent>
+          )}
+          {canAllergies.level !== "none" && (
+            <TabsContent value="allergies" className="mt-4">
+              <AllergiesTab patientId={patient.id} />
+            </TabsContent>
+          )}
+          {canAlerts.level !== "none" && (
+            <TabsContent value="alerts" className="mt-4">
+              <AlertsTab patientId={patient.id} />
+            </TabsContent>
+          )}
           {canPeer.level !== "none" && (
             <TabsContent value="peer" className="mt-4">
               <PeerNotesTab patientId={patient.id} canWrite={canPeer.level === "write"} />
