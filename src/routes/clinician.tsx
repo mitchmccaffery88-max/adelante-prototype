@@ -37,10 +37,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, canAccess } from "@/lib/roles";
-import {
-  ClientRecordDrawer,
-  confirmDiscardDrawerEdits,
-} from "@/components/ClientRecordDrawer";
+import { ClientRecordDrawer, confirmDiscardDrawerEdits } from "@/components/ClientRecordDrawer";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -500,8 +497,8 @@ function ClinicianPage() {
                 <div>
                   <h3 className="font-display text-sm text-navy">Full patient record</h3>
                   <p className="text-xs text-muted-foreground">
-                    Open the chart to review Problems, Allergies, Alerts, Care plan, Notes, Tracking,
-                    SDOH, and more — with role-based access enforced.
+                    Open the chart to review Problems, Allergies, Alerts, Care plan, Notes,
+                    Tracking, SDOH, and more — with role-based access enforced.
                   </p>
                 </div>
                 <div className="flex flex-wrap gap-2">
@@ -721,7 +718,6 @@ function ApptCard({
   );
 }
 
-
 function RescreenDuePanel({
   patients,
 }: {
@@ -933,26 +929,26 @@ function RefillReviewCardInner() {
                   )}
                 </div>
                 {canWrite && (
-                <div className="flex gap-1.5 shrink-0">
-                  <Button
-                    size="sm"
-                    className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
-                    onClick={() => {
-                      AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
-                      toast.success("Refill approved and sent to pharmacy");
-                    }}
-                  >
-                    Approve
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => setOpenId(openId === r.id ? null : r.id)}
-                  >
-                    Deny
-                  </Button>
-                </div>
+                  <div className="flex gap-1.5 shrink-0">
+                    <Button
+                      size="sm"
+                      className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
+                      onClick={() => {
+                        AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
+                        toast.success("Refill approved and sent to pharmacy");
+                      }}
+                    >
+                      Approve
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={() => setOpenId(openId === r.id ? null : r.id)}
+                    >
+                      Deny
+                    </Button>
+                  </div>
                 )}
               </div>
               {canWrite && openId === r.id && (

@@ -32,15 +32,7 @@ import { EmptyState } from "@/components/EmptyState";
 import { DiagnosisPicker, type DiagnosisPick } from "./DiagnosisPicker";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
-import {
-  AlertTriangle,
-  Lock,
-  Plus,
-  RotateCcw,
-  ShieldAlert,
-  Trash2,
-  Check,
-} from "lucide-react";
+import { AlertTriangle, Lock, Plus, RotateCcw, ShieldAlert, Trash2, Check } from "lucide-react";
 
 // ---------- Removal-reason dialog (soft-delete gate) ----------
 function RemovalReasonDialog({
@@ -405,9 +397,7 @@ export function AllergiesTab({ patientId }: { patientId: string }) {
                         Reaction: {a.reaction}
                       </div>
                     )}
-                    {a.notes && (
-                      <div className="text-[11px] text-muted-foreground">{a.notes}</div>
-                    )}
+                    {a.notes && <div className="text-[11px] text-muted-foreground">{a.notes}</div>}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <SeverityBadge severity={a.severity} />
                       <span className="text-[10px] text-muted-foreground">
@@ -552,9 +542,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
                 <div className="flex items-start justify-between gap-2">
                   <div className="min-w-0">
                     <div className="text-sm text-navy font-medium">{a.label}</div>
-                    {a.notes && (
-                      <div className="text-[11px] text-muted-foreground">{a.notes}</div>
-                    )}
+                    {a.notes && <div className="text-[11px] text-muted-foreground">{a.notes}</div>}
                     <div className="mt-1 flex flex-wrap items-center gap-1.5">
                       <AlertSeverityBadge severity={a.severity} />
                       <span className="text-[10px] text-muted-foreground">

@@ -287,7 +287,11 @@ function subscribe(cb: () => void) {
 }
 
 export function useActingRole(): [StaffRole, (r: StaffRole) => void] {
-  const role = useSyncExternalStore(subscribe, () => acting, () => acting);
+  const role = useSyncExternalStore(
+    subscribe,
+    () => acting,
+    () => acting,
+  );
   return [role, setActingRole];
 }
 
@@ -303,8 +307,16 @@ export function useActingStaff(): {
   clinicianId?: string;
   setActingStaff: (id: string) => void;
 } {
-  const id = useSyncExternalStore(subscribe, () => actingStaffId, () => actingStaffId);
-  const role = useSyncExternalStore(subscribe, () => acting, () => acting);
+  const id = useSyncExternalStore(
+    subscribe,
+    () => actingStaffId,
+    () => actingStaffId,
+  );
+  const role = useSyncExternalStore(
+    subscribe,
+    () => acting,
+    () => acting,
+  );
   const member = getStaffMember(id) ?? STAFF_ROSTER[0];
   return {
     role,

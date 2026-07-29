@@ -59,18 +59,9 @@ import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
-import {
-  ProblemsTab,
-  AllergiesTab,
-  AlertsTab,
-} from "@/components/clinical/ClinicalRecordTabs";
+import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { AlertTriangle, HeartPulse } from "lucide-react";
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger,
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface Props {
   patientId: string | null;
@@ -136,9 +127,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
   const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
   const hiddenSud = snapshot?.hiddenSudProblems ?? 0;
   const allergyEntries = snapshot?.allergySummary ?? [];
-  const severeAllergy = allergyEntries.some(
-    (a: { severity: string }) => a.severity === "severe",
-  );
+  const severeAllergy = allergyEntries.some((a: { severity: string }) => a.severity === "severe");
   const activeAlerts = (patient.alerts ?? []).filter((a) => !a.removedAt);
   const criticalAlert = activeAlerts.some((a) => a.severity === "critical");
 
@@ -265,24 +254,16 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
-            {canCarePlan.level !== "none" && (
-              <TabsTrigger value="care-plan">Care plan</TabsTrigger>
-            )}
-            {canNotes.level !== "none" && (
-              <TabsTrigger value="notes">Notes</TabsTrigger>
-            )}
+            {canCarePlan.level !== "none" && <TabsTrigger value="care-plan">Care plan</TabsTrigger>}
+            {canNotes.level !== "none" && <TabsTrigger value="notes">Notes</TabsTrigger>}
             {canScreenersMh.level !== "none" && (
               <TabsTrigger value="tracking">Tracking</TabsTrigger>
             )}
-            {canProblems.level !== "none" && (
-              <TabsTrigger value="problems">Problems</TabsTrigger>
-            )}
+            {canProblems.level !== "none" && <TabsTrigger value="problems">Problems</TabsTrigger>}
             {canAllergies.level !== "none" && (
               <TabsTrigger value="allergies">Allergies</TabsTrigger>
             )}
-            {canAlerts.level !== "none" && (
-              <TabsTrigger value="alerts">Alerts</TabsTrigger>
-            )}
+            {canAlerts.level !== "none" && <TabsTrigger value="alerts">Alerts</TabsTrigger>}
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -557,94 +538,96 @@ function CheckInsTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
   const items = p?.checkIns ?? [];
   return (
     <div className="space-y-3">
-      {!readOnly && <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">
-          Log new check-in
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="space-y-1">
-            <Label className="text-xs">Date</Label>
-            <Input
-              type="date"
-              value={date}
-              onChange={(e) => {
-                setDate(e.target.value);
-                setDateError(undefined);
-              }}
-              aria-invalid={Boolean(dateError)}
-              className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
-            />
-            {dateError && <p className="text-xs text-destructive">{dateError}</p>}
+      {!readOnly && (
+        <Card className="p-3 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            Log new check-in
           </div>
-          <div className="space-y-1">
-            <Label className="text-xs">Time</Label>
-            <TimePicker
-              id="drawer-checkin-time"
-              value={time}
-              onChange={(v) => {
-                setTime(v);
-                setTimeError(undefined);
-              }}
-              error={timeError}
-              ariaLabel="Check-in time"
-            />
+          <div className="grid grid-cols-2 gap-2">
+            <div className="space-y-1">
+              <Label className="text-xs">Date</Label>
+              <Input
+                type="date"
+                value={date}
+                onChange={(e) => {
+                  setDate(e.target.value);
+                  setDateError(undefined);
+                }}
+                aria-invalid={Boolean(dateError)}
+                className={dateError ? "ring-2 ring-destructive border-destructive" : undefined}
+              />
+              {dateError && <p className="text-xs text-destructive">{dateError}</p>}
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs">Time</Label>
+              <TimePicker
+                id="drawer-checkin-time"
+                value={time}
+                onChange={(v) => {
+                  setTime(v);
+                  setTimeError(undefined);
+                }}
+                error={timeError}
+                ariaLabel="Check-in time"
+              />
+            </div>
           </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="phone">Phone</SelectItem>
-              <SelectItem value="video">Video</SelectItem>
-              <SelectItem value="in_person">In-person</SelectItem>
-              <SelectItem value="sms">SMS</SelectItem>
-            </SelectContent>
-          </Select>
-          <label className="flex items-center gap-2 text-sm">
-            <Checkbox checked={attended} onCheckedChange={(v) => setAttended(Boolean(v))} />
-            Attended
-          </label>
-        </div>
-        <Textarea
-          rows={2}
-          placeholder="Non-clinical note (e.g. confirmed housing intake Friday)."
-          value={notes}
-          onChange={(e) => setNotes(e.target.value)}
-        />
-        <Button
-          size="sm"
-          onClick={() => {
-            setDateError(undefined);
-            setTimeError(undefined);
-            if (!date) {
-              setDateError("Pick a date");
-              return;
-            }
-            if (!time) {
-              setTimeError("Pick a time");
-              return;
-            }
-            const dt = new Date(`${date}T${time}`);
-            if (isNaN(dt.getTime())) {
-              setTimeError("That time isn't valid");
-              return;
-            }
-            AdelanteEHR.addCheckIn(patientId, {
-              date: dt.toISOString(),
-              modality,
-              attended,
-              notes,
-              needsFlagged: {},
-            });
-            setNotes("");
-            toast.success("Check-in logged");
-          }}
-        >
-          Log check-in
-        </Button>
-      </Card>}
+          <div className="grid grid-cols-2 gap-2">
+            <Select value={modality} onValueChange={(v) => setModality(v as typeof modality)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="phone">Phone</SelectItem>
+                <SelectItem value="video">Video</SelectItem>
+                <SelectItem value="in_person">In-person</SelectItem>
+                <SelectItem value="sms">SMS</SelectItem>
+              </SelectContent>
+            </Select>
+            <label className="flex items-center gap-2 text-sm">
+              <Checkbox checked={attended} onCheckedChange={(v) => setAttended(Boolean(v))} />
+              Attended
+            </label>
+          </div>
+          <Textarea
+            rows={2}
+            placeholder="Non-clinical note (e.g. confirmed housing intake Friday)."
+            value={notes}
+            onChange={(e) => setNotes(e.target.value)}
+          />
+          <Button
+            size="sm"
+            onClick={() => {
+              setDateError(undefined);
+              setTimeError(undefined);
+              if (!date) {
+                setDateError("Pick a date");
+                return;
+              }
+              if (!time) {
+                setTimeError("Pick a time");
+                return;
+              }
+              const dt = new Date(`${date}T${time}`);
+              if (isNaN(dt.getTime())) {
+                setTimeError("That time isn't valid");
+                return;
+              }
+              AdelanteEHR.addCheckIn(patientId, {
+                date: dt.toISOString(),
+                modality,
+                attended,
+                notes,
+                needsFlagged: {},
+              });
+              setNotes("");
+              toast.success("Check-in logged");
+            }}
+          >
+            Log check-in
+          </Button>
+        </Card>
+      )}
       <ul className="space-y-1">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No check-ins yet.</li>}
         {items.map((c) => (
@@ -670,8 +653,9 @@ function ProviderHistoryTab({ patientId }: { patientId: string }) {
   const { role, staffName, clinicianId } = useActingStaff();
   const [noteFor, setNoteFor] = useState<string | null>(null);
   const [note, setNote] = useState("");
-  const canWrite =
-    patient ? canAccess(role, "care_coordination", patient).level === "write" : false;
+  const canWrite = patient
+    ? canAccess(role, "care_coordination", patient).level === "write"
+    : false;
   const nameFor = (id: string) => clinicians.find((c) => c.id === id)?.name ?? id;
   const reasonLabel: Record<string, string> = {
     reschedule: "Reschedule",
@@ -695,109 +679,109 @@ function ProviderHistoryTab({ patientId }: { patientId: string }) {
         const isAddressee = Boolean(clinicianId && clinicianId === s.fromClinicianId);
         const actionable = s.status === "pending_review";
         return (
-        <li key={s.id} className="rounded border p-3 text-sm">
-          <div className="flex items-center justify-between gap-2">
-            <div className="font-medium text-navy">
-              {nameFor(s.fromClinicianId)} → {nameFor(s.toClinicianId)}
+          <li key={s.id} className="rounded border p-3 text-sm">
+            <div className="flex items-center justify-between gap-2">
+              <div className="font-medium text-navy">
+                {nameFor(s.fromClinicianId)} → {nameFor(s.toClinicianId)}
+              </div>
+              <Badge
+                variant="outline"
+                className={
+                  s.status === "pending_review"
+                    ? "text-warning-foreground bg-warning/15 border-0"
+                    : s.status === "acknowledged"
+                      ? "text-success bg-success/15 border-0"
+                      : "text-muted-foreground bg-muted border-0"
+                }
+              >
+                {s.status.replace("_", " ")}
+              </Badge>
             </div>
-            <Badge
-              variant="outline"
-              className={
-                s.status === "pending_review"
-                  ? "text-warning-foreground bg-warning/15 border-0"
-                  : s.status === "acknowledged"
-                    ? "text-success bg-success/15 border-0"
-                    : "text-muted-foreground bg-muted border-0"
-              }
-            >
-              {s.status.replace("_", " ")}
-            </Badge>
-          </div>
-          <div className="mt-1 text-xs text-muted-foreground">
-            {reasonLabel[s.reason] ?? s.reason}
-            {s.serviceType ? ` · ${s.serviceType}` : ""}
-            {" · "}
-            {new Date(s.createdAt).toLocaleString()}
-          </div>
-          {s.context ? <div className="mt-1 text-xs">{s.context}</div> : null}
-          {s.resolutionNote ? (
-            <div className="mt-1 text-xs text-muted-foreground italic">
-              Note: {s.resolutionNote}
+            <div className="mt-1 text-xs text-muted-foreground">
+              {reasonLabel[s.reason] ?? s.reason}
+              {s.serviceType ? ` · ${s.serviceType}` : ""}
+              {" · "}
+              {new Date(s.createdAt).toLocaleString()}
             </div>
-          ) : null}
-          {s.resolvedBy ? (
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              Resolved by {nameFor(s.resolvedBy)}
-            </div>
-          ) : null}
-          {actionable &&
-            (canWrite && isAddressee ? (
-              <div className="mt-2 space-y-2">
-                {noteFor === s.id && (
-                  <Textarea
-                    rows={2}
-                    className="text-xs"
-                    placeholder="Hand-off / coordination note (optional)"
-                    value={note}
-                    onChange={(e) => setNote(e.target.value)}
-                  />
-                )}
-                <div className="flex flex-wrap gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.acknowledgeProviderSwitch(
-                        s.id,
-                        s.fromClinicianId,
-                        note.trim() || undefined,
-                      );
-                      setNote("");
-                      setNoteFor(null);
-                      toast.success(`Switch acknowledged by ${staffName}`);
-                    }}
-                  >
-                    Acknowledge
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.dismissProviderSwitch(
-                        s.id,
-                        s.fromClinicianId,
-                        note.trim() || undefined,
-                      );
-                      setNote("");
-                      setNoteFor(null);
-                      toast("Alert dismissed");
-                    }}
-                  >
-                    Dismiss
-                  </Button>
-                  {noteFor !== s.id && (
+            {s.context ? <div className="mt-1 text-xs">{s.context}</div> : null}
+            {s.resolutionNote ? (
+              <div className="mt-1 text-xs text-muted-foreground italic">
+                Note: {s.resolutionNote}
+              </div>
+            ) : null}
+            {s.resolvedBy ? (
+              <div className="mt-1 text-[10px] text-muted-foreground">
+                Resolved by {nameFor(s.resolvedBy)}
+              </div>
+            ) : null}
+            {actionable &&
+              (canWrite && isAddressee ? (
+                <div className="mt-2 space-y-2">
+                  {noteFor === s.id && (
+                    <Textarea
+                      rows={2}
+                      className="text-xs"
+                      placeholder="Hand-off / coordination note (optional)"
+                      value={note}
+                      onChange={(e) => setNote(e.target.value)}
+                    />
+                  )}
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={() => {
+                        AdelanteEHR.acknowledgeProviderSwitch(
+                          s.id,
+                          s.fromClinicianId,
+                          note.trim() || undefined,
+                        );
+                        setNote("");
+                        setNoteFor(null);
+                        toast.success(`Switch acknowledged by ${staffName}`);
+                      }}
+                    >
+                      Acknowledge
+                    </Button>
                     <Button
                       size="sm"
                       variant="ghost"
                       className="h-7 text-[11px]"
-                      onClick={() => setNoteFor(s.id)}
+                      onClick={() => {
+                        AdelanteEHR.dismissProviderSwitch(
+                          s.id,
+                          s.fromClinicianId,
+                          note.trim() || undefined,
+                        );
+                        setNote("");
+                        setNoteFor(null);
+                        toast("Alert dismissed");
+                      }}
                     >
-                      Add note
+                      Dismiss
                     </Button>
-                  )}
+                    {noteFor !== s.id && (
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-[11px]"
+                        onClick={() => setNoteFor(s.id)}
+                      >
+                        Add note
+                      </Button>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ) : (
-              <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
-                <Lock className="h-3 w-3" />
-                {canWrite
-                  ? `Only ${nameFor(s.fromClinicianId)} can resolve this hand-off.`
-                  : "Your role cannot resolve provider switches."}
-              </div>
-            ))}
-        </li>
+              ) : (
+                <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                  <Lock className="h-3 w-3" />
+                  {canWrite
+                    ? `Only ${nameFor(s.fromClinicianId)} can resolve this hand-off.`
+                    : "Your role cannot resolve provider switches."}
+                </div>
+              ))}
+          </li>
         );
       })}
     </ul>
@@ -933,53 +917,55 @@ function ReferralsTab({
   const statusOpts: ResourceReferral["status"][] = ["pending", "accepted", "completed"];
   return (
     <div className="space-y-3">
-      {!readOnly && <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">New referral</div>
-        <div className="grid grid-cols-2 gap-2">
-          <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
-            <SelectTrigger>
-              <SelectValue />
-            </SelectTrigger>
-            <SelectContent>
-              <SelectItem value="housing">Housing</SelectItem>
-              <SelectItem value="food">Food</SelectItem>
-              <SelectItem value="employment">Employment</SelectItem>
-              <SelectItem value="legal">Legal</SelectItem>
-              <SelectItem value="benefits">Benefits / Medi-Cal</SelectItem>
-              <SelectItem value="transport">Transportation</SelectItem>
-            </SelectContent>
-          </Select>
-          <Input
-            placeholder="Provider"
-            value={provider}
-            onChange={(e) => setProvider(e.target.value)}
+      {!readOnly && (
+        <Card className="p-3 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">New referral</div>
+          <div className="grid grid-cols-2 gap-2">
+            <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
+              <SelectTrigger>
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="housing">Housing</SelectItem>
+                <SelectItem value="food">Food</SelectItem>
+                <SelectItem value="employment">Employment</SelectItem>
+                <SelectItem value="legal">Legal</SelectItem>
+                <SelectItem value="benefits">Benefits / Medi-Cal</SelectItem>
+                <SelectItem value="transport">Transportation</SelectItem>
+              </SelectContent>
+            </Select>
+            <Input
+              placeholder="Provider"
+              value={provider}
+              onChange={(e) => setProvider(e.target.value)}
+            />
+          </div>
+          <Textarea
+            rows={2}
+            placeholder="Note (optional)"
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
           />
-        </div>
-        <Textarea
-          rows={2}
-          placeholder="Note (optional)"
-          value={note}
-          onChange={(e) => setNote(e.target.value)}
-        />
-        <Button
-          size="sm"
-          onClick={() => {
-            if (!provider.trim()) return toast.error("Add a provider");
-            AdelanteEHR.addResourceReferral(patientId, {
-              category,
-              provider,
-              note,
-              visibleToPatient: true,
-              sudDisclosureConsent: !sudGated,
-            });
-            setProvider("");
-            setNote("");
-            toast.success("Referral created");
-          }}
-        >
-          Create referral
-        </Button>
-      </Card>}
+          <Button
+            size="sm"
+            onClick={() => {
+              if (!provider.trim()) return toast.error("Add a provider");
+              AdelanteEHR.addResourceReferral(patientId, {
+                category,
+                provider,
+                note,
+                visibleToPatient: true,
+                sudDisclosureConsent: !sudGated,
+              });
+              setProvider("");
+              setNote("");
+              toast.success("Referral created");
+            }}
+          >
+            Create referral
+          </Button>
+        </Card>
+      )}
       <ul className="space-y-2">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No referrals yet.</li>}
         {items.map((r) => (
@@ -1095,11 +1081,13 @@ function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?:
             <span>{r.label}</span>
             <Switch checked={r.on} onCheckedChange={r.toggle} disabled={readOnly} />
           </div>
-          {!readOnly && <NoteInline
-            value={notes[r.key]?.note ?? ""}
-            asOf={notes[r.key]?.asOf}
-            onSave={(note, asOf) => AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)}
-          />}
+          {!readOnly && (
+            <NoteInline
+              value={notes[r.key]?.note ?? ""}
+              asOf={notes[r.key]?.asOf}
+              onSave={(note, asOf) => AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)}
+            />
+          )}
         </li>
       ))}
     </ul>
@@ -1506,52 +1494,56 @@ function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?: boole
   const cmId = patient?.caseManagerId;
   return (
     <div className="space-y-3">
-      {!readOnly && <Card className="p-3 space-y-2">
-        <div className="text-xs uppercase tracking-wider text-muted-foreground">New follow-up</div>
-        <Input
-          placeholder="Task (e.g. Confirm housing intake Friday)"
-          value={title}
-          onChange={(e) => setTitle(e.target.value)}
-        />
-        <div className="grid grid-cols-2 gap-2">
-          <Textarea
-            rows={2}
-            placeholder="Detail (optional)"
-            value={detail}
-            onChange={(e) => setDetail(e.target.value)}
-          />
-          <div className="space-y-1">
-            <Label className="text-[10px] text-muted-foreground">Due</Label>
-            <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+      {!readOnly && (
+        <Card className="p-3 space-y-2">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            New follow-up
           </div>
-        </div>
-        <Button
-          size="sm"
-          disabled={!cmId}
-          onClick={() => {
-            if (!title.trim()) return toast.error("Add a task");
-            if (!cmId) return toast.error("Assign a case manager first");
-            AdelanteEHR.createCaseTask({
-              patientId,
-              assignedTo: cmId,
-              title,
-              detail,
-              dueDate,
-              origin: "manual",
-            });
-            setTitle("");
-            setDetail("");
-            toast.success("Task added");
-          }}
-        >
-          <Plus className="h-4 w-4 mr-1" /> Add task
-        </Button>
-        {!cmId && (
-          <p className="text-[11px] text-muted-foreground">
-            Assign a case manager on the client's profile before creating tasks.
-          </p>
-        )}
-      </Card>}
+          <Input
+            placeholder="Task (e.g. Confirm housing intake Friday)"
+            value={title}
+            onChange={(e) => setTitle(e.target.value)}
+          />
+          <div className="grid grid-cols-2 gap-2">
+            <Textarea
+              rows={2}
+              placeholder="Detail (optional)"
+              value={detail}
+              onChange={(e) => setDetail(e.target.value)}
+            />
+            <div className="space-y-1">
+              <Label className="text-[10px] text-muted-foreground">Due</Label>
+              <Input type="date" value={dueDate} onChange={(e) => setDueDate(e.target.value)} />
+            </div>
+          </div>
+          <Button
+            size="sm"
+            disabled={!cmId}
+            onClick={() => {
+              if (!title.trim()) return toast.error("Add a task");
+              if (!cmId) return toast.error("Assign a case manager first");
+              AdelanteEHR.createCaseTask({
+                patientId,
+                assignedTo: cmId,
+                title,
+                detail,
+                dueDate,
+                origin: "manual",
+              });
+              setTitle("");
+              setDetail("");
+              toast.success("Task added");
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Add task
+          </Button>
+          {!cmId && (
+            <p className="text-[11px] text-muted-foreground">
+              Assign a case manager on the client's profile before creating tasks.
+            </p>
+          )}
+        </Card>
+      )}
       <TaskList label="Open" items={open} showActions={!readOnly} />
       {snoozed.length > 0 && <TaskList label="Snoozed" items={snoozed} showActions />}
       {done.length > 0 && <TaskList label="Completed" items={done.slice(0, 5)} />}
@@ -1683,9 +1675,7 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
             disabled={unchanged}
             onClick={() => {
               if (isClearing) {
-                const ok = window.confirm(
-                  "Clear the existing care-plan note for this patient?",
-                );
+                const ok = window.confirm("Clear the existing care-plan note for this patient?");
                 if (!ok) return;
               }
               AdelanteEHR.updateCarePlanSummary(patient.id, planDraft, staffName);
@@ -1778,10 +1768,7 @@ function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boole
   useDraftDirty(
     `notes:${patientId}`,
     Boolean(
-      note.subjective.trim() ||
-        note.objective.trim() ||
-        note.assessment.trim() ||
-        note.plan.trim(),
+      note.subjective.trim() || note.objective.trim() || note.assessment.trim() || note.plan.trim(),
     ),
   );
   if (!patient) return null;
