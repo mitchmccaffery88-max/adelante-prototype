@@ -41,6 +41,7 @@ import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 
 interface Props {
   patientId: string | null;
@@ -79,6 +80,10 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
           </SheetDescription>
         </SheetHeader>
+
+        <div className="mt-4">
+          <ReferralStatusTimeline patient={patient} />
+        </div>
 
         <Tabs defaultValue="overview" className="mt-4">
           <TabsList className="w-full flex-wrap h-auto">
