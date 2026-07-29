@@ -35,10 +35,12 @@ import {
   CalendarClock,
   AlertTriangle,
   UserCog,
+  Lock,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { useActingRole, canAccess } from "@/lib/roles";
 import {
   LineChart,
   Line,
