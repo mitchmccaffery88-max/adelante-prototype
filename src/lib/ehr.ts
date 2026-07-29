@@ -141,6 +141,48 @@ export interface Referral {
   enrolledPatientId?: string;
 }
 
+/**
+ * Medication order (§Orders — port of BaggaEMR `OrderCart`).
+ *
+ * DEV HANDOFF: this pass covers the *core* only — data model, the pre-sign
+ * validation gate, non-prescriber attribution, and attestation. Deliberately
+ * NOT modeled yet (deferred pass): sig/dose/route/frequency catalogs,
+ * dispense-quantity auto-calc, pharmacy routing/transmission, duplicate
+ * therapy checking, DEA schedule (only the coarse `isControlled` flag exists).
+ * When those land, extend this interface additively — do not reshape it.
+ */
+export interface MedOrder {
+  id: string;
+  patientId: string;
+  drugName: string;
+  dose?: string;
+  route?: string;
+  frequency?: string;
+  durationValue?: number;
+  durationUnit?: "days" | "doses";
+  quantity?: number;
+  daysSupply?: number;
+  /** DEA-schedule-adjacent flag. Drives the days-supply requirement and, later, cosigner scoping. */
+  isControlled?: boolean;
+  /** STAT orders skip the duration requirement (single immediate administration). */
+  isStat?: boolean;
+  /** References `Problem.id` when the indication is a coded diagnosis on file. */
+  indicationProblemId?: string;
+  /** Free-text indication; fallback when no coded problem is linked. */
+  indicationText?: string;
+  // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
+  orderingProviderId?: string;
+  orderSource?: "verbal" | "telephone" | "protocol" | "standing";
+  readBackConfirmed?: boolean;
+  // ----- Attestation -----
+  /** staffName from useActingStaff() at sign time. */
+  attestedBy?: string;
+  attestedAt?: string;
+  status: "draft" | "signed";
+  createdBy?: string;
+  createdAt?: string;
+}
+
 export interface Patient {
   id: string;
   firstName: string;
