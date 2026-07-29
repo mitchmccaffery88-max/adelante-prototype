@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import { AdelanteEHR, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, type Patient, type EpisodeType } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -41,6 +41,9 @@ export function CaseloadTable({
 }: Props) {
   const [coverageFilter, setCoverageFilter] = useState<string>("all");
   const [bucketFilter, setBucketFilter] = useState<string>("all");
+  const [programFilter, setProgramFilter] = useState<string>("all");
+  const [clinicianFilter, setClinicianFilter] = useState<string>("all");
+  const [careNeedFilter, setCareNeedFilter] = useState<string>("all");
   const filtered = useMemo(
     () =>
       patients.filter((p) => {
@@ -51,11 +54,34 @@ export function CaseloadTable({
           if (bucketFilter === "31-60" && !(d > 30 && d <= 60)) return false;
           if (bucketFilter === "61-90" && !(d > 60)) return false;
         }
+        if (programFilter !== "all") {
+          const hasProgram = (p.episodes ?? []).some(
+            (e) => !e.closedAt && e.type === (programFilter as EpisodeType),
+          );
+          if (!hasProgram) return false;
+        }
+        if (clinicianFilter !== "all") {
+          if (clinicianFilter === "unassigned") {
+            if (p.primaryClinicianId) return false;
+          } else if (p.primaryClinicianId !== clinicianFilter) return false;
+        }
+        if (careNeedFilter !== "all") {
+          if (careNeedFilter === "crisis" && !p.crisisFlag) return false;
+          if (careNeedFilter === "ecm" && !p.coverage?.ecmEligible) return false;
+          if (careNeedFilter === "ji_reentry" && !p.coverage?.jiReentryFlag) return false;
+          if (careNeedFilter === "unassigned" && p.primaryClinicianId) return false;
+        }
         return true;
       }),
-    [patients, coverageFilter, bucketFilter],
+    [patients, coverageFilter, bucketFilter, programFilter, clinicianFilter, careNeedFilter],
   );
   const clinicians = AdelanteEHR.listClinicians();
+  const activeFilters =
+    coverageFilter !== "all" ||
+    bucketFilter !== "all" ||
+    programFilter !== "all" ||
+    clinicianFilter !== "all" ||
+    careNeedFilter !== "all";
 
   const downloadCsv = () => {
     const headers = [
