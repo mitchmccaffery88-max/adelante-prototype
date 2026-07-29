@@ -595,6 +595,12 @@ function ClinicianPage() {
           )}
         </TabsContent>
       </Tabs>
+      <ClientRecordDrawer
+        patientId={selectedPatientId}
+        open={drawerOpen}
+        onOpenChange={setDrawerOpen}
+        initialTab={drawerTab}
+      />
     </div>
   );
 }
