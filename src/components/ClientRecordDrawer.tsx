@@ -402,7 +402,7 @@ function StatBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ContactTab({ patientId }: { patientId: string }) {
+function ContactTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [phone, setPhone] = useState(p?.phone ?? "");
   const [email, setEmail] = useState(p?.email ?? "");
@@ -474,6 +474,7 @@ function ContactTab({ patientId }: { patientId: string }) {
       </div>
       <Button
         className="w-full"
+        disabled={readOnly}
         onClick={() => {
           AdelanteEHR.updateProfile(patientId, {
             phone,
