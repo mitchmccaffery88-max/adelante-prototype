@@ -110,6 +110,61 @@ export function CarePlanCard({
 
       <p className="mt-3 whitespace-pre-line text-sm text-foreground">{plan.summary}</p>
 
+      {/* Allergies + non-SUD active problems — safe for patient audience.
+          Alert content is intentionally NOT rendered here (staff-coordination). */}
+      {(plan.allergySummary?.length ?? 0) > 0 && (
+        <div className="mt-3">
+          <div className="text-xs font-medium uppercase tracking-wider text-navy inline-flex items-center gap-1.5">
+            <ShieldAlert className="h-3.5 w-3.5" />
+            {audience === "patient" ? "Things you're allergic to" : "Allergies"}
+          </div>
+          <div className="mt-1.5 flex flex-wrap gap-1.5">
+            {plan.allergySummary!.map((a, i) => (
+              <Badge
+                key={`${a.substance}-${i}`}
+                variant="outline"
+                className={
+                  a.severity === "severe"
+                    ? "text-destructive border-destructive/40 text-xs"
+                    : "text-xs"
+                }
+              >
+                {a.substance}
+                {a.reaction ? ` — ${a.reaction}` : ""}
+                <span className="ml-1 text-[10px] text-muted-foreground capitalize">
+                  · {a.severity}
+                </span>
+              </Badge>
+            ))}
+          </div>
+        </div>
+      )}
+
+      {(plan.activeProblems?.length ?? 0) > 0 && (
+        <div className="mt-3">
+          <div className="text-xs font-medium uppercase tracking-wider text-navy">
+            {audience === "patient" ? "What we're working on together" : "Active problems"}
+          </div>
+          <ul className="mt-1.5 space-y-1">
+            {plan.activeProblems!.map((p, i) => (
+              <li key={`${p.code ?? "np"}-${i}`} className="text-xs text-foreground">
+                • {p.label}
+                {p.code && audience !== "patient" && (
+                  <span className="text-muted-foreground"> · {p.code}</span>
+                )}
+              </li>
+            ))}
+          </ul>
+          {audience !== "patient" && (plan.hiddenSudProblems ?? 0) > 0 && (
+            <div className="mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1">
+              <Lock className="h-3 w-3" />
+              {plan.hiddenSudProblems} additional SUD problem
+              {plan.hiddenSudProblems === 1 ? "" : "s"} hidden — 42 CFR Part 2 consent required.
+            </div>
+          )}
+        </div>
+      )}
+
       {filteredFocus.length > 0 && (
         <div className="mt-3 flex flex-wrap gap-1.5">
           {filteredFocus.map((f) => (
