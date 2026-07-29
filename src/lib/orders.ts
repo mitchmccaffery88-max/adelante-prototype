@@ -11,7 +11,16 @@
 
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
-import { parseLiquidStrength, parseStrength, type DoseProduct } from "@/lib/doseReconcile";
+import {
+  isComboProduct,
+  parseLiquidStrength,
+  parseStrength,
+  reconcileComboByIngredient,
+  reconcileComboByUnits,
+  reconcileDose,
+  type DoseProduct,
+  type DoseResult,
+} from "@/lib/doseReconcile";
 
 /**
  * Build the dose-math product view of an order. Liquids are detected first
@@ -141,3 +150,20 @@ export const ORDER_SOURCE_OPTIONS: {
 
 export const ATTESTATION_TEXT =
   "I attest that these orders are clinically appropriate for this patient and that I take responsibility for them.";
+
+/** Run the correct engine entry point for the order's chosen axis. */
+export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
+  const product = productFromOrder(order);
+  if (!product || product.ingredients.length === 0) return undefined;
+  const combo = isComboProduct(product);
+  if (!combo) {
+    if (order.doseTargetMg === undefined) return undefined;
+    return reconcileDose(product, order.doseTargetMg);
+  }
+  if (order.doseAxis === "ingredient") {
+    if (order.doseTargetMg === undefined) return undefined;
+    return reconcileComboByIngredient(product, order.doseIngredientIndex ?? 0, order.doseTargetMg);
+  }
+  if (order.unitsPerAdmin === undefined) return undefined;
+  return reconcileComboByUnits(product, order.unitsPerAdmin);
+}

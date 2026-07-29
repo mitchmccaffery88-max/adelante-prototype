@@ -17,15 +17,14 @@
 
 import { useEffect, useMemo } from "react";
 import type { MedOrder } from "@/lib/ehr";
+import { isComboProduct, smallestUnitFraction } from "@/lib/doseReconcile";
 import {
-  isComboProduct,
-  reconcileComboByIngredient,
-  reconcileComboByUnits,
-  reconcileDose,
-  smallestUnitFraction,
-  type DoseResult,
-} from "@/lib/doseReconcile";
-import { productFromOrder, REQ_FIELD, REQ_LABEL, type OrderFieldKey } from "@/lib/orders";
+  productFromOrder,
+  reconcileForOrder,
+  REQ_FIELD,
+  REQ_LABEL,
+  type OrderFieldKey,
+} from "@/lib/orders";
 import { FREQUENCY_CATALOG, frequencyByCode } from "@/lib/frequencies";
 import { computeDispenseQuantity } from "@/lib/medSchedule";
 import { buildSigLine } from "@/lib/sigLine";
@@ -46,23 +45,6 @@ function num(v: string): number | undefined {
   if (!v.trim()) return undefined;
   const n = Number(v);
   return Number.isNaN(n) ? undefined : n;
-}
-
-/** Run the correct engine entry point for the order's chosen axis. */
-export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
-  const product = productFromOrder(order);
-  if (!product || product.ingredients.length === 0) return undefined;
-  const combo = isComboProduct(product);
-  if (!combo) {
-    if (order.doseTargetMg === undefined) return undefined;
-    return reconcileDose(product, order.doseTargetMg);
-  }
-  if (order.doseAxis === "ingredient") {
-    if (order.doseTargetMg === undefined) return undefined;
-    return reconcileComboByIngredient(product, order.doseIngredientIndex ?? 0, order.doseTargetMg);
-  }
-  if (order.unitsPerAdmin === undefined) return undefined;
-  return reconcileComboByUnits(product, order.unitsPerAdmin);
 }
 
 export function MedicationDoseSection({
