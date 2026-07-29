@@ -1617,7 +1617,7 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
                 value={g.status}
                 disabled={readOnly}
                 onValueChange={(v) =>
-                  AdelanteEHR.setGoalStatus(patient.id, g.id, v as never)
+                  AdelanteEHR.setGoalStatus(patient.id, g.id, v as never, staffName)
                 }
               >
                 <SelectTrigger className="h-7 w-[120px] text-xs">
@@ -1630,6 +1630,11 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
                 </SelectContent>
               </Select>
               <span className="flex-1 pt-1">{g.text}</span>
+              {g.createdBy && (
+                <span className="pt-1 text-[10px] text-muted-foreground whitespace-nowrap">
+                  {g.createdBy}
+                </span>
+              )}
               {!readOnly && (
                 <Button
                   size="icon"
@@ -1654,7 +1659,7 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
               size="sm"
               onClick={() => {
                 if (!newGoal.trim()) return;
-                AdelanteEHR.addGoal(patient.id, newGoal);
+                AdelanteEHR.addGoal(patient.id, newGoal, staffName);
                 setNewGoal("");
               }}
             >
