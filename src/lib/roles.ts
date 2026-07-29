@@ -46,7 +46,9 @@ export type RecordClass =
   | "consent_ledger"
   | "problems"
   | "allergies"
-  | "alerts";
+  | "alerts"
+  | "eligibility"
+  | "care_coordination";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -130,6 +132,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     therapist: "write",
     case_manager: "write",
+    peer_specialist: "read",
+    clinical_coordinator: "read",
+  },
+  eligibility: {
+    case_manager: "write",
+    billing: "write",
+    billing_coordinator: "write",
+    therapist: "read",
+    pmhnp: "read",
+    clinical_coordinator: "read",
+  },
+  care_coordination: {
+    case_manager: "write",
+    therapist: "write",
+    pmhnp: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
   },

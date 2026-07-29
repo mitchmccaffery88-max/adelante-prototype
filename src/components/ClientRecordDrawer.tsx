@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useMemo, useState, useEffect } from "react";
 import {
   Sheet,
   SheetContent,
@@ -34,6 +34,17 @@ import {
   type CaseTask,
 } from "@/lib/ehr";
 import { useActingRole, canAccess, type RecordClass } from "@/lib/roles";
+import { SCREENERS, severityFor } from "@/lib/screeners";
+import {
+  LineChart,
+  Line,
+  XAxis,
+  YAxis,
+  Tooltip as RTooltip,
+  ResponsiveContainer,
+  ReferenceLine,
+  CartesianGrid,
+} from "recharts";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
@@ -59,9 +70,10 @@ interface Props {
   patientId: string | null;
   open: boolean;
   onOpenChange: (open: boolean) => void;
+  initialTab?: string;
 }
 
-export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
+export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }: Props) {
   const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
   const [role] = useActingRole();
 
@@ -75,6 +87,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
   const canProblems = gate("problems");
   const canAllergies = gate("allergies");
   const canAlerts = gate("alerts");
+  const canContact = gate("demographics");
+  const canCheckins = gate("case_notes");
+  const canTasks = gate("case_notes");
+  const canReferrals = gate("sdoh");
+  const canEligibility = gate("eligibility");
+  const canProviders = gate("care_coordination");
+  const canCarePlan = gate("care_plan");
+  const canNotes = gate("therapy_notes");
+  const canScreenersMh = gate("screeners_mh");
 
   const snapshot = patient.carePlan;
   const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
@@ -197,7 +218,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
           <ReferralStatusTimeline patient={patient} />
         </div>
 
-        <Tabs defaultValue="overview" className="mt-4">
+        <Tabs defaultValue={initialTab ?? "overview"} className="mt-4">
           <TabsList className="w-full flex-wrap h-auto">
             <TabsTrigger value="overview">Overview</TabsTrigger>
             <TabsTrigger value="contact">Contact</TabsTrigger>
@@ -208,6 +229,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            {canCarePlan.level !== "none" && (
+              <TabsTrigger value="care-plan">Care plan</TabsTrigger>
+            )}
+            {canNotes.level !== "none" && (
+              <TabsTrigger value="notes">Notes</TabsTrigger>
+            )}
+            {canScreenersMh.level !== "none" && (
+              <TabsTrigger value="tracking">Tracking</TabsTrigger>
+            )}
             {canProblems.level !== "none" && (
               <TabsTrigger value="problems">Problems</TabsTrigger>
             )}
@@ -224,10 +254,18 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             <OverviewTab patientId={patient.id} />
           </TabsContent>
           <TabsContent value="contact" className="mt-4">
-            <ContactTab patientId={patient.id} />
+            {canContact.locked ? (
+              <LockedNote reason={canContact.reason} />
+            ) : (
+              <ContactTab patientId={patient.id} readOnly={canContact.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="checkins" className="mt-4">
-            <CheckInsTab patientId={patient.id} />
+            {canCheckins.locked ? (
+              <LockedNote reason={canCheckins.reason} />
+            ) : (
+              <CheckInsTab patientId={patient.id} readOnly={canCheckins.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="sdoh" className="mt-4">
             {canSdoh.locked ? (
@@ -237,10 +275,22 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             )}
           </TabsContent>
           <TabsContent value="referrals" className="mt-4">
-            <ReferralsTab patientId={patient.id} sudGated={canSud.locked} />
+            {canReferrals.locked ? (
+              <LockedNote reason={canReferrals.reason} />
+            ) : (
+              <ReferralsTab
+                patientId={patient.id}
+                sudGated={canSud.locked}
+                readOnly={canReferrals.level === "read"}
+              />
+            )}
           </TabsContent>
           <TabsContent value="eligibility" className="mt-4">
-            <EligibilityTab patientId={patient.id} />
+            {canEligibility.locked ? (
+              <LockedNote reason={canEligibility.reason} />
+            ) : (
+              <EligibilityTab patientId={patient.id} readOnly={canEligibility.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="coord" className="mt-4">
             {canCoord.locked ? (
@@ -250,11 +300,34 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange }: Props) {
             )}
           </TabsContent>
           <TabsContent value="tasks" className="mt-4">
-            <TasksTab patientId={patient.id} />
+            {canTasks.locked ? (
+              <LockedNote reason={canTasks.reason} />
+            ) : (
+              <TasksTab patientId={patient.id} readOnly={canTasks.level === "read"} />
+            )}
           </TabsContent>
           <TabsContent value="providers" className="mt-4">
-            <ProviderHistoryTab patientId={patient.id} />
+            {canProviders.locked ? (
+              <LockedNote reason={canProviders.reason} />
+            ) : (
+              <ProviderHistoryTab patientId={patient.id} />
+            )}
           </TabsContent>
+          {canCarePlan.level !== "none" && (
+            <TabsContent value="care-plan" className="mt-4">
+              <CarePlanTab patientId={patient.id} readOnly={canCarePlan.level === "read"} />
+            </TabsContent>
+          )}
+          {canNotes.level !== "none" && (
+            <TabsContent value="notes" className="mt-4">
+              <NotesTab patientId={patient.id} readOnly={canNotes.level !== "write"} />
+            </TabsContent>
+          )}
+          {canScreenersMh.level !== "none" && (
+            <TabsContent value="tracking" className="mt-4">
+              <TrackingTab patientId={patient.id} />
+            </TabsContent>
+          )}
           {canProblems.level !== "none" && (
             <TabsContent value="problems" className="mt-4">
               <ProblemsTab patientId={patient.id} />
@@ -329,7 +402,7 @@ function StatBox({ label, value }: { label: string; value: string }) {
   );
 }
 
-function ContactTab({ patientId }: { patientId: string }) {
+function ContactTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [phone, setPhone] = useState(p?.phone ?? "");
   const [email, setEmail] = useState(p?.email ?? "");
@@ -401,6 +474,7 @@ function ContactTab({ patientId }: { patientId: string }) {
       </div>
       <Button
         className="w-full"
+        disabled={readOnly}
         onClick={() => {
           AdelanteEHR.updateProfile(patientId, {
             phone,
@@ -427,7 +501,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function CheckInsTab({ patientId }: { patientId: string }) {
+function CheckInsTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [modality, setModality] = useState<"phone" | "video" | "in_person" | "sms">("phone");
   const [attended, setAttended] = useState(true);
@@ -447,7 +521,7 @@ function CheckInsTab({ patientId }: { patientId: string }) {
   const items = p?.checkIns ?? [];
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">
           Log new check-in
         </div>
@@ -534,7 +608,7 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         >
           Log check-in
         </Button>
-      </Card>
+      </Card>}
       <ul className="space-y-1">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No check-ins yet.</li>}
         {items.map((c) => (
@@ -721,7 +795,15 @@ function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean
   );
 }
 
-function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: boolean }) {
+function ReferralsTab({
+  patientId,
+  sudGated,
+  readOnly,
+}: {
+  patientId: string;
+  sudGated: boolean;
+  readOnly?: boolean;
+}) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = p?.resourceReferrals ?? [];
   const [category, setCategory] = useState<ResourceReferral["category"]>("housing");
@@ -730,7 +812,7 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
   const statusOpts: ResourceReferral["status"][] = ["pending", "accepted", "completed"];
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">New referral</div>
         <div className="grid grid-cols-2 gap-2">
           <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
@@ -776,7 +858,7 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
         >
           Create referral
         </Button>
-      </Card>
+      </Card>}
       <ul className="space-y-2">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No referrals yet.</li>}
         {items.map((r) => (
@@ -842,7 +924,7 @@ function ReferralsTab({ patientId, sudGated }: { patientId: string; sudGated: bo
   );
 }
 
-function EligibilityTab({ patientId }: { patientId: string }) {
+function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!p) return null;
   const cov = p.coverage;
@@ -890,13 +972,13 @@ function EligibilityTab({ patientId }: { patientId: string }) {
         <li key={r.key} className="rounded border p-3 text-sm space-y-2">
           <div className="flex items-center justify-between">
             <span>{r.label}</span>
-            <Switch checked={r.on} onCheckedChange={r.toggle} />
+            <Switch checked={r.on} onCheckedChange={r.toggle} disabled={readOnly} />
           </div>
-          <NoteInline
+          {!readOnly && <NoteInline
             value={notes[r.key]?.note ?? ""}
             asOf={notes[r.key]?.asOf}
             onSave={(note, asOf) => AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)}
-          />
+          />}
         </li>
       ))}
     </ul>
@@ -1291,7 +1373,7 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
   );
 }
 
-function TasksTab({ patientId }: { patientId: string }) {
+function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const tasks = useEhr(() => AdelanteEHR.caseTasksForPatient(patientId));
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [title, setTitle] = useState("");
@@ -1303,7 +1385,7 @@ function TasksTab({ patientId }: { patientId: string }) {
   const cmId = patient?.caseManagerId;
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">New follow-up</div>
         <Input
           placeholder="Task (e.g. Confirm housing intake Friday)"
@@ -1348,8 +1430,8 @@ function TasksTab({ patientId }: { patientId: string }) {
             Assign a case manager on the client's profile before creating tasks.
           </p>
         )}
-      </Card>
-      <TaskList label="Open" items={open} showActions />
+      </Card>}
+      <TaskList label="Open" items={open} showActions={!readOnly} />
       {snoozed.length > 0 && <TaskList label="Snoozed" items={snoozed} showActions />}
       {done.length > 0 && <TaskList label="Completed" items={done.slice(0, 5)} />}
       {tasks.length === 0 && (
@@ -1435,6 +1517,327 @@ function TaskList({
           </li>
         ))}
       </ul>
+    </div>
+  );
+}
+
+// ---------- Care Plan tab (consolidated from clinician.tsx) ----------
+function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [planDraft, setPlanDraft] = useState(patient?.carePlanOverride?.text ?? "");
+  const [dirty, setDirty] = useState(false);
+  const [newGoal, setNewGoal] = useState("");
+  useEffect(() => {
+    setPlanDraft(patient?.carePlanOverride?.text ?? "");
+    setDirty(false);
+  }, [patient?.carePlanOverride?.text]);
+  if (!patient) return null;
+  const existing = patient.carePlanOverride?.text ?? "";
+  const trimmed = planDraft.trim();
+  const isClearing = dirty && trimmed.length === 0 && existing.length > 0;
+  const unchanged = !dirty && trimmed === existing.trim();
+  return (
+    <div className="space-y-4">
+      <CarePlanCard patientId={patient.id} audience="clinician" />
+      <Card className="p-4">
+        <h4 className="font-display text-sm text-navy">Care plan note</h4>
+        <p className="text-[11px] text-muted-foreground mt-0.5">
+          Optional clinician note appended to the auto-summary shown to the patient.
+        </p>
+        <Textarea
+          className="mt-2 min-h-[100px]"
+          value={planDraft}
+          disabled={readOnly}
+          placeholder="Optional note…"
+          onChange={(e) => {
+            setPlanDraft(e.target.value);
+            setDirty(true);
+          }}
+        />
+        {!readOnly && (
+          <Button
+            className="mt-3 bg-navy text-navy-foreground hover:bg-navy/90"
+            disabled={unchanged}
+            onClick={() => {
+              if (isClearing) {
+                const ok = window.confirm(
+                  "Clear the existing care-plan note for this patient?",
+                );
+                if (!ok) return;
+              }
+              AdelanteEHR.updateCarePlanSummary(patient.id, planDraft, "clinician");
+              setDirty(false);
+              toast.success(isClearing ? "Care plan note cleared" : "Care plan updated");
+            }}
+          >
+            Save note
+          </Button>
+        )}
+      </Card>
+      <Card className="p-4">
+        <h4 className="font-display text-sm text-navy">Goals</h4>
+        <div className="mt-2 space-y-2">
+          {(patient.goals ?? []).length === 0 && (
+            <p className="text-xs text-muted-foreground">No goals yet.</p>
+          )}
+          {(patient.goals ?? []).map((g) => (
+            <div key={g.id} className="flex items-start gap-2 rounded-md border p-2 text-sm">
+              <Select
+                value={g.status}
+                disabled={readOnly}
+                onValueChange={(v) =>
+                  AdelanteEHR.setGoalStatus(patient.id, g.id, v as never)
+                }
+              >
+                <SelectTrigger className="h-7 w-[120px] text-xs">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="open">Open</SelectItem>
+                  <SelectItem value="in_progress">In progress</SelectItem>
+                  <SelectItem value="done">Done</SelectItem>
+                </SelectContent>
+              </Select>
+              <span className="flex-1 pt-1">{g.text}</span>
+              {!readOnly && (
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="h-7 w-7"
+                  onClick={() => AdelanteEHR.removeGoal(patient.id, g.id)}
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              )}
+            </div>
+          ))}
+        </div>
+        {!readOnly && (
+          <div className="mt-3 flex gap-2">
+            <Input
+              placeholder="Add a goal…"
+              value={newGoal}
+              onChange={(e) => setNewGoal(e.target.value)}
+            />
+            <Button
+              size="sm"
+              onClick={() => {
+                if (!newGoal.trim()) return;
+                AdelanteEHR.addGoal(patient.id, newGoal);
+                setNewGoal("");
+              }}
+            >
+              <Plus className="h-4 w-4" />
+            </Button>
+          </div>
+        )}
+      </Card>
+    </div>
+  );
+}
+
+// ---------- Notes tab (progress SOAP notes) ----------
+function getStaffClinicianId(): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    const raw =
+      window.localStorage.getItem("adelante.staff.session") ||
+      window.sessionStorage.getItem("adelante.staff.session");
+    if (!raw) return null;
+    const parsed = JSON.parse(raw);
+    return typeof parsed?.clinicianId === "string" ? parsed.clinicianId : null;
+  } catch {
+    return null;
+  }
+}
+
+function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [note, setNote] = useState({
+    sessionType: "individual" as "individual" | "group" | "phone" | "check_in",
+    subjective: "",
+    objective: "",
+    assessment: "",
+    plan: "",
+  });
+  if (!patient) return null;
+  const clinicianId = getStaffClinicianId();
+  const canWrite = !readOnly;
+  return (
+    <div className="space-y-4">
+      {canWrite && (
+        <Card className="p-4">
+          <h4 className="font-display text-sm text-navy">New progress note</h4>
+          {!clinicianId && (
+            <p className="mt-1 text-[11px] text-destructive">
+              Sign in as a clinician (Staff sign-in) to author notes — no clinician identity on this
+              session.
+            </p>
+          )}
+          <div className="mt-3 space-y-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Session type</Label>
+              <Select
+                value={note.sessionType}
+                onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="individual">Individual</SelectItem>
+                  <SelectItem value="group">Group</SelectItem>
+                  <SelectItem value="phone">Phone</SelectItem>
+                  <SelectItem value="check_in">Check-in</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
+              <div key={k} className="space-y-1.5">
+                <Label className="text-xs capitalize">{k}</Label>
+                <Textarea
+                  value={note[k]}
+                  rows={2}
+                  onChange={(e) => setNote({ ...note, [k]: e.target.value })}
+                />
+              </div>
+            ))}
+            <Button
+              className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+              disabled={!clinicianId}
+              onClick={() => {
+                if (!clinicianId) return;
+                if (!note.subjective.trim()) {
+                  toast.error("Add at least a subjective entry");
+                  return;
+                }
+                AdelanteEHR.addProgressNote(patient.id, {
+                  clinicianId,
+                  date: new Date().toISOString(),
+                  sessionType: note.sessionType,
+                  subjective: note.subjective,
+                  objective: note.objective,
+                  assessment: note.assessment,
+                  plan: note.plan,
+                });
+                toast.success("Progress note saved");
+                setNote({
+                  sessionType: "individual",
+                  subjective: "",
+                  objective: "",
+                  assessment: "",
+                  plan: "",
+                });
+              }}
+            >
+              Save note
+            </Button>
+          </div>
+        </Card>
+      )}
+      <div className="space-y-2">
+        <h4 className="font-display text-sm text-navy">Recent notes</h4>
+        {(patient.progressNotes ?? []).length === 0 && (
+          <Card className="p-3 text-xs text-muted-foreground">No progress notes yet.</Card>
+        )}
+        {(patient.progressNotes ?? []).map((n) => (
+          <Card key={n.id} className="p-3 text-xs">
+            <div className="flex items-center justify-between">
+              <Badge variant="outline" className="capitalize">
+                {n.sessionType.replace("_", " ")}
+              </Badge>
+              <span className="text-[10px] text-muted-foreground">
+                <ClientDate value={n.date} />
+              </span>
+            </div>
+            <dl className="mt-2 space-y-1.5">
+              {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
+                n[k] ? (
+                  <div key={k}>
+                    <dt className="font-medium text-navy capitalize">{k}</dt>
+                    <dd className="text-foreground/80">{n[k]}</dd>
+                  </div>
+                ) : null,
+              )}
+            </dl>
+          </Card>
+        ))}
+      </div>
+    </div>
+  );
+}
+
+// ---------- Tracking tab (screener trends, SUD per-item masked) ----------
+function TrackingTab({ patientId }: { patientId: string }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [role] = useActingRole();
+  if (!patient) return null;
+  const history = patient.screenerHistory ?? [];
+  const screenerKeys = Array.from(new Set(history.map((h) => h.key)));
+  const sudGate = canAccess(role, "screeners_sud", patient);
+  if (screenerKeys.length === 0) {
+    return <p className="text-sm text-muted-foreground">No screener history yet.</p>;
+  }
+  return (
+    <div className="space-y-6">
+      {screenerKeys.map((key) => {
+        const def = SCREENERS.find((s) => s.key === key);
+        if (def?.isSud && sudGate.locked) {
+          return (
+            <div key={key}>
+              <h4 className="font-medium text-navy text-sm">{def?.name ?? key}</h4>
+              <LockedNote reason={sudGate.reason} />
+            </div>
+          );
+        }
+        const data = history
+          .filter((h) => h.key === key)
+          .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt))
+          .map((h) => ({
+            date: new Date(h.completedAt).toLocaleDateString(),
+            score: h.score,
+            timepoint: h.timepoint,
+          }));
+        return (
+          <div key={key}>
+            <div className="flex items-baseline justify-between">
+              <h4 className="font-medium text-navy text-sm">{def?.name ?? key}</h4>
+              <span className="text-[11px] text-muted-foreground">
+                Latest: {data[data.length - 1]?.score} ·{" "}
+                {def ? severityFor(def, data[data.length - 1]?.score ?? 0) : ""}
+              </span>
+            </div>
+            <div className="h-40 mt-2">
+              <ResponsiveContainer width="100%" height="100%">
+                <LineChart data={data}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                  <XAxis dataKey="date" fontSize={11} />
+                  <YAxis fontSize={11} />
+                  <RTooltip />
+                  {data.map((d, i) =>
+                    d.timepoint && d.timepoint !== "adhoc" ? (
+                      <ReferenceLine
+                        key={i}
+                        x={d.date}
+                        stroke="var(--teal)"
+                        strokeDasharray="4 4"
+                        label={{ value: d.timepoint, fontSize: 10, fill: "var(--teal)" }}
+                      />
+                    ) : null,
+                  )}
+                  <Line
+                    type="monotone"
+                    dataKey="score"
+                    stroke="var(--navy)"
+                    strokeWidth={2}
+                    dot={{ r: 4 }}
+                  />
+                </LineChart>
+              </ResponsiveContainer>
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
