@@ -289,6 +289,8 @@ export interface Patient {
   allergies?: Allergy[];
   /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
   alerts?: PatientAlert[];
+  /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
+  orders?: MedOrder[];
 }
 
 
