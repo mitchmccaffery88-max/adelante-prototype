@@ -79,10 +79,30 @@ export function AppShell() {
       desc: "Claims, ISL & credentials",
     },
     { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
-    { to: "/notes-queue" as const, label: "Unsigned notes", icon: ClipboardList, desc: "Sign to release billing" },
-    { to: "/clinician-profile" as const, label: "My profile", icon: UserCog, desc: "Specialty & languages" },
-    { to: "/clinician-availability" as const, label: "My availability", icon: Calendar, desc: "Weekly hours & time off" },
-    { to: "/clinician-credentials" as const, label: "My credentials", icon: ShieldCheck, desc: "License, DEA, malpractice" },
+    {
+      to: "/notes-queue" as const,
+      label: "Unsigned notes",
+      icon: ClipboardList,
+      desc: "Sign to release billing",
+    },
+    {
+      to: "/clinician-profile" as const,
+      label: "My profile",
+      icon: UserCog,
+      desc: "Specialty & languages",
+    },
+    {
+      to: "/clinician-availability" as const,
+      label: "My availability",
+      icon: Calendar,
+      desc: "Weekly hours & time off",
+    },
+    {
+      to: "/clinician-credentials" as const,
+      label: "My credentials",
+      icon: ShieldCheck,
+      desc: "License, DEA, malpractice",
+    },
     { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
   ];
 
@@ -174,10 +194,7 @@ export function AppShell() {
                 <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
                   Acting as
                 </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={staffId}
-                  onValueChange={(v) => setActingStaff(v)}
-                >
+                <DropdownMenuRadioGroup value={staffId} onValueChange={(v) => setActingStaff(v)}>
                   {STAFF_ROSTER.map((s) => (
                     <DropdownMenuRadioItem key={s.id} value={s.id} className="text-xs">
                       {s.name}
