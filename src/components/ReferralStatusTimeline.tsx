@@ -34,16 +34,16 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
     (referral?.outreachTask === "manual_call" ? referral.createdAt : undefined);
   const enrolledAt =
     referral?.status === "enrolled"
-      ? (referral.enrolledPatientId ? patient.createdAt ?? referral.createdAt : referral.createdAt)
+      ? patient.enrolledAt ?? referral.createdAt
       : referral
         ? undefined
-        : patient.createdAt;
+        : patient.enrolledAt;
 
   const cmAssignedAt = patient.caseManagerId
-    ? findAssignmentAt(patient.id, /case[_ ]?manager|caseManager|assign_case/i) ?? patient.createdAt
+    ? findAssignmentAt(patient.id, /case[_ ]?manager|caseManager|assign_case/i) ?? patient.enrolledAt
     : undefined;
   const clinicianAssignedAt = patient.primaryClinicianId
-    ? findAssignmentAt(patient.id, /clinician|provider|primary/i) ?? patient.createdAt
+    ? findAssignmentAt(patient.id, /clinician|provider|primary/i) ?? patient.enrolledAt
     : undefined;
 
   const steps: Step[] = [
