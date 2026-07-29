@@ -501,7 +501,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-function CheckInsTab({ patientId }: { patientId: string }) {
+function CheckInsTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [modality, setModality] = useState<"phone" | "video" | "in_person" | "sms">("phone");
   const [attended, setAttended] = useState(true);
@@ -521,7 +521,7 @@ function CheckInsTab({ patientId }: { patientId: string }) {
   const items = p?.checkIns ?? [];
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">
           Log new check-in
         </div>
@@ -608,7 +608,7 @@ function CheckInsTab({ patientId }: { patientId: string }) {
         >
           Log check-in
         </Button>
-      </Card>
+      </Card>}
       <ul className="space-y-1">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No check-ins yet.</li>}
         {items.map((c) => (
