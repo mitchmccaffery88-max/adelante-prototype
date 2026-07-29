@@ -37,7 +37,8 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, canAccess } from "@/lib/roles";
-import { ClientRecordDrawer, confirmDiscardDrawerEdits } from "@/components/ClientRecordDrawer";
+import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
+import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
