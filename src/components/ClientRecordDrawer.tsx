@@ -1553,6 +1553,7 @@ function TaskList({
 // ---------- Care Plan tab (consolidated from clinician.tsx) ----------
 function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { staffName } = useActingStaff();
   const [planDraft, setPlanDraft] = useState(patient?.carePlanOverride?.text ?? "");
   const [dirty, setDirty] = useState(false);
   const [newGoal, setNewGoal] = useState("");
@@ -1560,6 +1561,7 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
     setPlanDraft(patient?.carePlanOverride?.text ?? "");
     setDirty(false);
   }, [patient?.carePlanOverride?.text]);
+  useDraftDirty(`care-plan:${patientId}`, dirty || newGoal.trim().length > 0);
   if (!patient) return null;
   const existing = patient.carePlanOverride?.text ?? "";
   const trimmed = planDraft.trim();
@@ -1594,7 +1596,7 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
                 );
                 if (!ok) return;
               }
-              AdelanteEHR.updateCarePlanSummary(patient.id, planDraft, "clinician");
+              AdelanteEHR.updateCarePlanSummary(patient.id, planDraft, staffName);
               setDirty(false);
               toast.success(isClearing ? "Care plan note cleared" : "Care plan updated");
             }}
