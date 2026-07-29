@@ -290,14 +290,8 @@ function ClinicianPage() {
             <TabsTrigger value="schedule" className="whitespace-nowrap snap-start">
               <CalIcon className="h-4 w-4 mr-1.5" /> {t("clinSchedule")}
             </TabsTrigger>
-            <TabsTrigger value="care-plan" className="whitespace-nowrap snap-start">
-              <Target className="h-4 w-4 mr-1.5" /> {t("clinCarePlan")}
-            </TabsTrigger>
-            <TabsTrigger value="notes" className="whitespace-nowrap snap-start">
-              <FileText className="h-4 w-4 mr-1.5" /> {t("clinNotes")}
-            </TabsTrigger>
-            <TabsTrigger value="tracking" className="whitespace-nowrap snap-start">
-              <TrendingUp className="h-4 w-4 mr-1.5" /> {t("clinTracking")}
+            <TabsTrigger value="record" className="whitespace-nowrap snap-start">
+              <FileText className="h-4 w-4 mr-1.5" /> Patient record
             </TabsTrigger>
           </TabsList>
         </div>
