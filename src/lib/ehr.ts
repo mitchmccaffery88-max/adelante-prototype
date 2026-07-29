@@ -494,6 +494,8 @@ export interface Goal {
   text: string;
   status: "open" | "in_progress" | "done";
   createdAt: string;
+  createdBy?: string;
+  updatedBy?: string;
 }
 
 // ---------- Care-plan snapshot (auto-derived) ----------
@@ -2272,21 +2274,28 @@ export const AdelanteEHR = {
     _recomputeCarePlan(p.id, "clinician_summary");
     emit();
   },
-  addGoal(patientId: string, text: string) {
+  addGoal(patientId: string, text: string, createdBy?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !text.trim()) return;
     p.goals = [
       ...(p.goals ?? []),
-      { id: uid(), text: text.trim(), status: "open", createdAt: new Date().toISOString() },
+      {
+        id: uid(),
+        text: text.trim(),
+        status: "open",
+        createdAt: new Date().toISOString(),
+        createdBy,
+      },
     ];
     _recomputeCarePlan(p.id, "goal_added");
     emit();
   },
-  setGoalStatus(patientId: string, goalId: string, status: Goal["status"]) {
+  setGoalStatus(patientId: string, goalId: string, status: Goal["status"], updatedBy?: string) {
     const p = patients.find((x) => x.id === patientId);
     const g = p?.goals?.find((x) => x.id === goalId);
     if (!g) return;
     g.status = status;
+    if (updatedBy) g.updatedBy = updatedBy;
     if (p) _recomputeCarePlan(p.id, "goal_status");
     emit();
   },
