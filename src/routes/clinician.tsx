@@ -1,7 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
-import { SCREENERS, severityFor } from "@/lib/screeners";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -24,9 +23,6 @@ import {
   XCircle,
   Clock,
   ShieldCheck,
-  Target,
-  Trash2,
-  Plus,
   FileText,
   TrendingUp,
   CalendarPlus,
@@ -45,16 +41,6 @@ import {
   ClientRecordDrawer,
   confirmDiscardDrawerEdits,
 } from "@/components/ClientRecordDrawer";
-import {
-  LineChart,
-  Line,
-  XAxis,
-  YAxis,
-  Tooltip as RTooltip,
-  ResponsiveContainer,
-  ReferenceLine,
-  CartesianGrid,
-} from "recharts";
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -111,34 +97,6 @@ function ClinicianPage() {
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
-  const [newGoal, setNewGoal] = useState("");
-  const [planDraft, setPlanDraft] = useState("");
-  // Track which patient the current draft belongs to so a mid-edit patient
-  // switch can't accidentally save one patient's text onto another's record.
-  const [planDraftPatientId, setPlanDraftPatientId] = useState<string>(selectedPatientId);
-  // True once the clinician has typed in the textarea for this patient —
-  // required before we allow saving an empty value (which deletes the
-  // existing override note).
-  const [planDraftDirty, setPlanDraftDirty] = useState(false);
-  // Keep the Care Plan note textarea in sync with the selected patient.
-  // If the clinician has unsaved edits and switches patients, we keep the
-  // draft intact so the mismatch guard on Save can flag it — otherwise we
-  // safely sync to the newly selected patient's stored override.
-  useEffect(() => {
-    if (planDraftDirty && planDraftPatientId !== selectedPatientId) return;
-    setPlanDraft(selectedPatient?.carePlanOverride?.text ?? "");
-    setPlanDraftPatientId(selectedPatientId);
-    setPlanDraftDirty(false);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [selectedPatientId, selectedPatient?.carePlanOverride?.text]);
-  const [note, setNote] = useState({
-    sessionType: "individual" as const,
-    subjective: "",
-    objective: "",
-    assessment: "",
-    plan: "",
-    appointmentId: "" as string,
-  });
 
   const doBook = () => {
     if (!book.patientId || !book.start) {
@@ -206,13 +164,6 @@ function ClinicianPage() {
     (a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek,
   );
   const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
-
-  // Pre-fill the notes form's "Link to appointment" with the patient's most
-  // recent attended (or next scheduled) appointment, so the default isn't
-  // "unlinked".
-  const patientAppts = useEhr(() =>
-    selectedPatientId ? AdelanteEHR.appointmentsForPatient(selectedPatientId) : [],
-  );
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
