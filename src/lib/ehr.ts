@@ -3625,6 +3625,100 @@ export const AdelanteEHR = {
     });
     emit();
   },
+
+  // ----- Orders (§Orders — BaggaEMR OrderCart port, core only) -------------
+  // TODO(orders): pharmacy routing / transmission and dispense are NOT here by
+  // design. `signOrders` only releases the order to the chart; a later pass
+  // must add the transmit step and its own audit action.
+  listOrders(patientId: string, opts?: { status?: MedOrder["status"] }): MedOrder[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.orders ?? [];
+    return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
+  },
+  addDraftOrder(
+    patientId: string,
+    input: Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">,
+  ): MedOrder {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row: MedOrder = {
+      ...input,
+      id: uid(),
+      patientId,
+      drugName: input.drugName.trim(),
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    };
+    p.orders = [row, ...(p.orders ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "order_drafted",
+      patientId,
+      actorId: input.createdBy,
+      detail: { orderId: row.id, drugName: row.drugName, isControlled: !!row.isControlled },
+    });
+    emit();
+    return row;
+  },
+  updateDraftOrder(patientId: string, orderId: string, patch: Partial<MedOrder>): void {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.orders?.find((o) => o.id === orderId);
+    // Signed orders are immutable — amendments belong to a later pass.
+    if (!row || row.status !== "draft") return;
+    Object.assign(row, patch, { id: row.id, patientId: row.patientId, status: "draft" as const });
+    emit();
+  },
+  removeDraftOrder(patientId: string, orderId: string, actor?: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const row = p.orders?.find((o) => o.id === orderId);
+    if (!row || row.status !== "draft") return;
+    p.orders = (p.orders ?? []).filter((o) => o.id !== orderId);
+    appendAudit({
+      category: "clinical",
+      action: "order_draft_removed",
+      patientId,
+      actorId: actor,
+      detail: { orderId, drugName: row.drugName },
+    });
+    emit();
+  },
+  /**
+   * Release draft orders to the chart. Callers MUST have run the validation
+   * gate (`validateOrder`) and captured attestation first — this method trusts
+   * the caller, matching the reference EMR where the cart owns the gate.
+   */
+  signOrders(patientId: string, orderIds: string[], attestedBy: string): MedOrder[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const at = new Date().toISOString();
+    const signed: MedOrder[] = [];
+    for (const id of orderIds) {
+      const row = p.orders?.find((o) => o.id === id && o.status === "draft");
+      if (!row) continue;
+      row.status = "signed";
+      row.attestedBy = attestedBy;
+      row.attestedAt = at;
+      signed.push(row);
+    }
+    if (signed.length) {
+      appendAudit({
+        category: "clinical",
+        action: "orders_signed",
+        patientId,
+        actorId: attestedBy,
+        detail: {
+          orderIds: signed.map((o) => o.id),
+          drugNames: signed.map((o) => o.drugName),
+          // Flagged so audit reviewers know identity was not re-verified.
+          attestationMethod: "checkbox_only",
+        },
+      });
+      emit();
+    }
+    return signed;
+  },
 };
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
