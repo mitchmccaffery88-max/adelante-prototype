@@ -1673,22 +1673,9 @@ function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: bo
 }
 
 // ---------- Notes tab (progress SOAP notes) ----------
-function getStaffClinicianId(): string | null {
-  if (typeof window === "undefined") return null;
-  try {
-    const raw =
-      window.localStorage.getItem("adelante.staff.session") ||
-      window.sessionStorage.getItem("adelante.staff.session");
-    if (!raw) return null;
-    const parsed = JSON.parse(raw);
-    return typeof parsed?.clinicianId === "string" ? parsed.clinicianId : null;
-  } catch {
-    return null;
-  }
-}
-
 function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { staffName, staffId, clinicianId } = useActingStaff();
   const [note, setNote] = useState({
     sessionType: "individual" as "individual" | "group" | "phone" | "check_in",
     subjective: "",
@@ -1696,18 +1683,33 @@ function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boole
     assessment: "",
     plan: "",
   });
+  useDraftDirty(
+    `notes:${patientId}`,
+    Boolean(
+      note.subjective.trim() ||
+        note.objective.trim() ||
+        note.assessment.trim() ||
+        note.plan.trim(),
+    ),
+  );
   if (!patient) return null;
-  const clinicianId = getStaffClinicianId();
+  // Acting staff always resolves to a named person; `clinicianId` is only
+  // present for staff linked to a provider record. Notes are attributed to
+  // the provider record when there is one, otherwise to the staff id.
+  const authorId = clinicianId ?? staffId;
   const canWrite = !readOnly;
+  const clinicians = AdelanteEHR.listClinicians();
   return (
     <div className="space-y-4">
       {canWrite && (
         <Card className="p-4">
           <h4 className="font-display text-sm text-navy">New progress note</h4>
-          {!clinicianId && (
+          <p className="mt-0.5 text-[11px] text-muted-foreground">
+            Authoring as <span className="text-navy font-medium">{staffName}</span>
+          </p>
+          {!authorId && (
             <p className="mt-1 text-[11px] text-destructive">
-              Sign in as a clinician (Staff sign-in) to author notes — no clinician identity on this
-              session.
+              No acting staff identity on this session — pick a staff member to author notes.
             </p>
           )}
           <div className="mt-3 space-y-3">
@@ -1740,15 +1742,15 @@ function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boole
             ))}
             <Button
               className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-              disabled={!clinicianId}
+              disabled={!authorId}
               onClick={() => {
-                if (!clinicianId) return;
+                if (!authorId) return;
                 if (!note.subjective.trim()) {
                   toast.error("Add at least a subjective entry");
                   return;
                 }
                 AdelanteEHR.addProgressNote(patient.id, {
-                  clinicianId,
+                  clinicianId: authorId,
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
                   subjective: note.subjective,
