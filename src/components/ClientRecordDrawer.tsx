@@ -1373,7 +1373,7 @@ function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWrite: bo
   );
 }
 
-function TasksTab({ patientId }: { patientId: string }) {
+function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const tasks = useEhr(() => AdelanteEHR.caseTasksForPatient(patientId));
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [title, setTitle] = useState("");
@@ -1385,7 +1385,7 @@ function TasksTab({ patientId }: { patientId: string }) {
   const cmId = patient?.caseManagerId;
   return (
     <div className="space-y-3">
-      <Card className="p-3 space-y-2">
+      {!readOnly && <Card className="p-3 space-y-2">
         <div className="text-xs uppercase tracking-wider text-muted-foreground">New follow-up</div>
         <Input
           placeholder="Task (e.g. Confirm housing intake Friday)"
@@ -1430,8 +1430,8 @@ function TasksTab({ patientId }: { patientId: string }) {
             Assign a case manager on the client's profile before creating tasks.
           </p>
         )}
-      </Card>
-      <TaskList label="Open" items={open} showActions />
+      </Card>}
+      <TaskList label="Open" items={open} showActions={!readOnly} />
       {snoozed.length > 0 && <TaskList label="Snoozed" items={snoozed} showActions />}
       {done.length > 0 && <TaskList label="Completed" items={done.slice(0, 5)} />}
       {tasks.length === 0 && (
