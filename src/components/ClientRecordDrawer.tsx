@@ -61,6 +61,7 @@ import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { useDraftDirty } from "@/lib/drawer-drafts";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
+import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { AlertTriangle, HeartPulse } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
@@ -94,6 +95,9 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
   const canCarePlan = gate("care_plan");
   const canNotes = gate("therapy_notes");
   const canScreenersMh = gate("screeners_mh");
+  // §Orders lives under the existing meds_erx record class — orders are
+  // medication actions, so reusing that gate keeps one permission surface.
+  const canOrders = gate("meds_erx");
 
   const snapshot = patient.carePlan;
   const activeProblemsCount = snapshot?.activeProblems?.length ?? 0;
@@ -236,6 +240,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
               <TabsTrigger value="allergies">Allergies</TabsTrigger>
             )}
             {canAlerts.level !== "none" && <TabsTrigger value="alerts">Alerts</TabsTrigger>}
+            {canOrders.level !== "none" && <TabsTrigger value="orders">Orders</TabsTrigger>}
             {canPeer.level !== "none" && <TabsTrigger value="peer">Peer notes</TabsTrigger>}
           </TabsList>
 
@@ -330,6 +335,14 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
           {canAlerts.level !== "none" && (
             <TabsContent value="alerts" className="mt-4">
               <AlertsTab patientId={patient.id} />
+            </TabsContent>
+          )}
+          {canOrders.level !== "none" && (
+            <TabsContent value="orders" className="mt-4">
+              {/* Read-only roles (no meds_erx write) can still stage orders with
+                  attribution in the reference EMR; here "read" = view-only, and
+                  staging requires at least read+attribution-capable roles. */}
+              <OrdersTab patientId={patient.id} readOnly={false} />
             </TabsContent>
           )}
           {canPeer.level !== "none" && (

@@ -141,6 +141,48 @@ export interface Referral {
   enrolledPatientId?: string;
 }
 
+/**
+ * Medication order (§Orders — port of BaggaEMR `OrderCart`).
+ *
+ * DEV HANDOFF: this pass covers the *core* only — data model, the pre-sign
+ * validation gate, non-prescriber attribution, and attestation. Deliberately
+ * NOT modeled yet (deferred pass): sig/dose/route/frequency catalogs,
+ * dispense-quantity auto-calc, pharmacy routing/transmission, duplicate
+ * therapy checking, DEA schedule (only the coarse `isControlled` flag exists).
+ * When those land, extend this interface additively — do not reshape it.
+ */
+export interface MedOrder {
+  id: string;
+  patientId: string;
+  drugName: string;
+  dose?: string;
+  route?: string;
+  frequency?: string;
+  durationValue?: number;
+  durationUnit?: "days" | "doses";
+  quantity?: number;
+  daysSupply?: number;
+  /** DEA-schedule-adjacent flag. Drives the days-supply requirement and, later, cosigner scoping. */
+  isControlled?: boolean;
+  /** STAT orders skip the duration requirement (single immediate administration). */
+  isStat?: boolean;
+  /** References `Problem.id` when the indication is a coded diagnosis on file. */
+  indicationProblemId?: string;
+  /** Free-text indication; fallback when no coded problem is linked. */
+  indicationText?: string;
+  // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
+  orderingProviderId?: string;
+  orderSource?: "verbal" | "telephone" | "protocol" | "standing";
+  readBackConfirmed?: boolean;
+  // ----- Attestation -----
+  /** staffName from useActingStaff() at sign time. */
+  attestedBy?: string;
+  attestedAt?: string;
+  status: "draft" | "signed";
+  createdBy?: string;
+  createdAt?: string;
+}
+
 export interface Patient {
   id: string;
   firstName: string;
@@ -247,6 +289,8 @@ export interface Patient {
   allergies?: Allergy[];
   /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
   alerts?: PatientAlert[];
+  /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
+  orders?: MedOrder[];
 }
 
 
@@ -3580,6 +3624,100 @@ export const AdelanteEHR = {
       detail: { alertId, reason: trimmed },
     });
     emit();
+  },
+
+  // ----- Orders (§Orders — BaggaEMR OrderCart port, core only) -------------
+  // TODO(orders): pharmacy routing / transmission and dispense are NOT here by
+  // design. `signOrders` only releases the order to the chart; a later pass
+  // must add the transmit step and its own audit action.
+  listOrders(patientId: string, opts?: { status?: MedOrder["status"] }): MedOrder[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.orders ?? [];
+    return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
+  },
+  addDraftOrder(
+    patientId: string,
+    input: Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">,
+  ): MedOrder {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row: MedOrder = {
+      ...input,
+      id: uid(),
+      patientId,
+      drugName: input.drugName.trim(),
+      status: "draft",
+      createdAt: new Date().toISOString(),
+    };
+    p.orders = [row, ...(p.orders ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "order_drafted",
+      patientId,
+      actorId: input.createdBy,
+      detail: { orderId: row.id, drugName: row.drugName, isControlled: !!row.isControlled },
+    });
+    emit();
+    return row;
+  },
+  updateDraftOrder(patientId: string, orderId: string, patch: Partial<MedOrder>): void {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.orders?.find((o) => o.id === orderId);
+    // Signed orders are immutable — amendments belong to a later pass.
+    if (!row || row.status !== "draft") return;
+    Object.assign(row, patch, { id: row.id, patientId: row.patientId, status: "draft" as const });
+    emit();
+  },
+  removeDraftOrder(patientId: string, orderId: string, actor?: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const row = p.orders?.find((o) => o.id === orderId);
+    if (!row || row.status !== "draft") return;
+    p.orders = (p.orders ?? []).filter((o) => o.id !== orderId);
+    appendAudit({
+      category: "clinical",
+      action: "order_draft_removed",
+      patientId,
+      actorId: actor,
+      detail: { orderId, drugName: row.drugName },
+    });
+    emit();
+  },
+  /**
+   * Release draft orders to the chart. Callers MUST have run the validation
+   * gate (`validateOrder`) and captured attestation first — this method trusts
+   * the caller, matching the reference EMR where the cart owns the gate.
+   */
+  signOrders(patientId: string, orderIds: string[], attestedBy: string): MedOrder[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const at = new Date().toISOString();
+    const signed: MedOrder[] = [];
+    for (const id of orderIds) {
+      const row = p.orders?.find((o) => o.id === id && o.status === "draft");
+      if (!row) continue;
+      row.status = "signed";
+      row.attestedBy = attestedBy;
+      row.attestedAt = at;
+      signed.push(row);
+    }
+    if (signed.length) {
+      appendAudit({
+        category: "clinical",
+        action: "orders_signed",
+        patientId,
+        actorId: attestedBy,
+        detail: {
+          orderIds: signed.map((o) => o.id),
+          drugNames: signed.map((o) => o.drugName),
+          // Flagged so audit reviewers know identity was not re-verified.
+          attestationMethod: "checkbox_only",
+        },
+      });
+      emit();
+    }
+    return signed;
   },
 };
 
