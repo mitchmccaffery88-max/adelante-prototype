@@ -839,7 +839,18 @@ function RefillReviewCard() {
   return <RefillReviewCardInner />;
 }
 
-function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
+/**
+ * Passive notification banner. Acknowledge/dismiss actions live in the
+ * patient record drawer's Providers tab (single source of truth); this only
+ * surfaces that something needs attention and links there.
+ */
+function ProviderSwitchAlerts({
+  clinicianId,
+  onOpen,
+}: {
+  clinicianId: string;
+  onOpen: (patientId: string) => void;
+}) {
   const outgoing = useEhr(() =>
     clinicianId
       ? AdelanteEHR.listProviderSwitches({
@@ -868,8 +879,8 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
         </Badge>
       </h3>
       <p className="mt-1 text-[11px] text-muted-foreground">
-        Clients on your caseload who moved to another provider. Verify network status, coordinate
-        hand-off, or flag conflicts.
+        Clients on your caseload who moved to another provider. Open the patient record to verify
+        network status, coordinate hand-off, and acknowledge or dismiss the alert.
       </p>
       <ul className="mt-3 space-y-2">
         {outgoing.map((s) => {
@@ -896,23 +907,9 @@ function ProviderSwitchAlerts({ clinicianId }: { clinicianId: string }) {
                     size="sm"
                     variant="outline"
                     className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.acknowledgeProviderSwitch(s.id, clinicianId);
-                      toast.success("Switch acknowledged");
-                    }}
+                    onClick={() => onOpen(s.patientId)}
                   >
-                    Acknowledge
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    className="h-7 text-[11px]"
-                    onClick={() => {
-                      AdelanteEHR.dismissProviderSwitch(s.id, clinicianId);
-                      toast("Alert dismissed");
-                    }}
-                  >
-                    Dismiss
+                    Review in record
                   </Button>
                 </div>
               </div>
