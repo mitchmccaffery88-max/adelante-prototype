@@ -229,6 +229,15 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
             <TabsTrigger value="coord">External</TabsTrigger>
             <TabsTrigger value="tasks">Tasks</TabsTrigger>
             <TabsTrigger value="providers">Providers</TabsTrigger>
+            {canCarePlan.level !== "none" && (
+              <TabsTrigger value="care-plan">Care plan</TabsTrigger>
+            )}
+            {canNotes.level !== "none" && (
+              <TabsTrigger value="notes">Notes</TabsTrigger>
+            )}
+            {canScreenersMh.level !== "none" && (
+              <TabsTrigger value="tracking">Tracking</TabsTrigger>
+            )}
             {canProblems.level !== "none" && (
               <TabsTrigger value="problems">Problems</TabsTrigger>
             )}
