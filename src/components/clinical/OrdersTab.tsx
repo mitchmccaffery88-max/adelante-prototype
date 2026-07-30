@@ -20,6 +20,9 @@ import {
   REQ_LABEL,
   type OrderFieldKey,
   strengthProvenanceFor,
+  DISPENSE_ROUTE_OPTIONS,
+  findDuplicateTherapy,
+  isPrnOrder,
 } from "@/lib/orders";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -201,17 +204,25 @@ function DraftOrderCard({
   needsAttribution,
   problems,
   showIssues,
+  activeOrders,
 }: {
   order: MedOrder;
   patientId: string;
   needsAttribution: boolean;
   problems: { id: string; label: string }[];
   showIssues: boolean;
+  activeOrders: MedOrder[];
 }) {
   const { staffName } = useActingStaff();
   const issues = validateOrder(order, { needsAttribution });
   const blocked = showIssues ? issueFields(issues) : new Set<OrderFieldKey>();
   const patch = (p: Partial<MedOrder>) => AdelanteEHR.updateDraftOrder(patientId, order.id, p);
+  // Warning only — never gates signing, matching the reference EMR.
+  const duplicate = useMemo(
+    () => findDuplicateTherapy(order, activeOrders),
+    [order, activeOrders],
+  );
+  const prn = isPrnOrder(order);
 
   return (
     <Card className="space-y-3 p-4">
@@ -224,6 +235,8 @@ function DraftOrderCard({
         </div>
         <div className="flex items-center gap-2">
           {order.isStat && <Badge variant="secondary">STAT</Badge>}
+          {prn && <Badge variant="secondary">PRN</Badge>}
+          {order.isKop && <Badge variant="outline">KOP</Badge>}
           {order.isControlled && <Badge variant="outline">Controlled</Badge>}
           {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
           {order.manualDose && <Badge variant="destructive">Manual dose</Badge>}
@@ -239,9 +252,24 @@ function DraftOrderCard({
         </div>
       </div>
 
+      {duplicate && (
+        <div className="flex items-start gap-2 rounded-lg border border-amber-500 bg-amber-50/60 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
+          <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          <span>
+            May duplicate an active order: {duplicate.order.drugName}
+            {duplicate.order.attestedAt ? (
+              <>
+                , signed <ClientDate value={duplicate.order.attestedAt} />
+              </>
+            ) : null}
+            . Review before signing — this warning does not block the order.
+          </span>
+        </div>
+      )}
+
       {/* Phase 1: real catalog product + reconciled dose math + frequency
-          catalog. TODO(orders, Phase 2): pharmacy routing, duplicate-therapy
-          check, manual Sig override. */}
+          catalog. Phase 2 adds dispense routing, KOP, duplicate-therapy
+          warning, PRN duration exemption, and the manual Sig override. */}
       <MedicationDoseSection order={order} blocked={blocked} onPatch={patch} />
 
       <div className="grid gap-3 sm:grid-cols-4">
@@ -258,7 +286,7 @@ function DraftOrderCard({
         </div>
         <div>
           <Label className={cn("text-xs", blocked.has("duration") && REQ_LABEL)}>
-            Duration {order.isStat ? "" : "*"}
+            Duration {order.isStat || prn ? "" : "*"}
           </Label>
           <Input
             className={cn("mt-1", blocked.has("duration") && REQ_FIELD)}
@@ -317,6 +345,44 @@ function DraftOrderCard({
           />
           STAT (no duration required)
         </label>
+        <label className="flex items-center gap-2 text-xs">
+          <Checkbox
+            checked={!!order.isKop}
+            onCheckedChange={(v) => patch({ isKop: v === true })}
+            aria-label="Keep on person"
+          />
+          KOP — patient may keep on person and self-administer
+        </label>
+      </div>
+
+      {/* Dispense routing (port of PharmacyRoutingStep). Routing FLAG only —
+          nothing is transmitted to a pharmacy system in this pass. */}
+      <div className="[.chart-pane_&]:max-w-md">
+        <Label className={cn("text-xs", blocked.has("dispenseRoute") && REQ_LABEL)}>
+          Dispense route *
+        </Label>
+        <Select
+          value={order.dispenseRoute ?? ""}
+          onValueChange={(v) => patch({ dispenseRoute: v as MedOrder["dispenseRoute"] })}
+        >
+          <SelectTrigger
+            className={cn("mt-1", blocked.has("dispenseRoute") && REQ_FIELD)}
+            aria-label="Dispense route"
+          >
+            <SelectValue placeholder="Select dispense route" />
+          </SelectTrigger>
+          <SelectContent>
+            {DISPENSE_ROUTE_OPTIONS.map((o) => (
+              <SelectItem key={o.value} value={o.value}>
+                {o.label}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {DISPENSE_ROUTE_OPTIONS.find((o) => o.value === order.dispenseRoute)?.hint ??
+            "Sets a routing flag on the order; no pharmacy transmission yet."}
+        </p>
       </div>
 
       <div className="grid gap-3 sm:grid-cols-2">
