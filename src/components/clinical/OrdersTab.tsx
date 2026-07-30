@@ -23,6 +23,8 @@ import {
   DISPENSE_ROUTE_OPTIONS,
   findDuplicateTherapy,
   isPrnOrder,
+  isTherapyActive,
+  ORDER_STATUS_LABEL,
 } from "@/lib/orders";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,6 +32,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Dialog,
+  DialogContent,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
 import {
   Select,
   SelectContent,
@@ -46,6 +56,82 @@ import { AlertTriangle, ClipboardList, Info, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const NONE = "__none__";
+
+// ---------------------------------------------------------------------------
+// Lifecycle reason dialog — mirrors RemovalReasonDialog's mandatory-reason gate
+// used for problem/allergy/alert removal.
+// ---------------------------------------------------------------------------
+function OrderReasonDialog({
+  open,
+  onOpenChange,
+  title,
+  body,
+  confirmLabel,
+  destructive,
+  onConfirm,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  title: string;
+  body: string;
+  confirmLabel: string;
+  destructive?: boolean;
+  onConfirm: (reason: string) => void;
+}) {
+  const [reason, setReason] = useState("");
+  const submit = () => {
+    const trimmed = reason.trim();
+    if (!trimmed) {
+      toast.error("A reason is required.");
+      return;
+    }
+    onConfirm(trimmed);
+    setReason("");
+    onOpenChange(false);
+  };
+  return (
+    <Dialog
+      open={open}
+      onOpenChange={(v) => {
+        if (!v) setReason("");
+        onOpenChange(v);
+      }}
+    >
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>{title}</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-2 text-sm">
+          <p className="text-muted-foreground">{body}</p>
+          <Label htmlFor="order-status-reason">Reason</Label>
+          <Textarea
+            id="order-status-reason"
+            value={reason}
+            onChange={(e) => setReason(e.target.value)}
+            placeholder="e.g. Held pending LFT results"
+            rows={3}
+            autoFocus
+          />
+        </div>
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button variant={destructive ? "destructive" : "default"} onClick={submit}>
+            {confirmLabel}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+function statusBadgeVariant(status: MedOrder["status"]) {
+  if (status === "signed") return "default" as const;
+  if (status === "held") return "secondary" as const;
+  if (status === "discontinued") return "destructive" as const;
+  return "outline" as const;
+}
 
 function num(v: string): number | undefined {
   if (!v.trim()) return undefined;
@@ -460,7 +546,12 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   const needsAttribution = requiresAttribution(role);
   const drafts = orders.filter((o) => o.status === "draft");
-  const signed = orders.filter((o) => o.status === "signed");
+  // Everything released to the chart, in any lifecycle state.
+  const released = orders.filter((o) => o.status !== "draft");
+  const activeTherapy = released.filter(isTherapyActive);
+  const [pending, setPending] = useState<{ order: MedOrder; kind: "hold" | "discontinue" } | null>(
+    null,
+  );
   const allIssues = drafts.flatMap((o) => validateOrder(o, { needsAttribution }));
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
   const canSign = !viewOnly && gatePasses && attested;
@@ -526,7 +617,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
               needsAttribution={needsAttribution}
               problems={problems}
               showIssues={showIssues}
-              activeOrders={signed}
+              activeOrders={activeTherapy}
             />
           ))}
         </div>
@@ -546,13 +637,14 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
         </div>
       )}
 
-      {signed.length > 0 && (
+      {released.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-medium text-navy">Signed orders</div>
-          {signed.map((o) => (
+          {released.map((o) => (
             <Card key={o.id} className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{o.drugName}</span>
+                <Badge variant={statusBadgeVariant(o.status)}>{ORDER_STATUS_LABEL[o.status]}</Badge>
                 {o.dose && <span className="text-muted-foreground">{o.dose}</span>}
                 {o.frequency && <span className="text-muted-foreground">{o.frequency}</span>}
                 {o.isStat && <Badge variant="secondary">STAT</Badge>}
@@ -597,10 +689,100 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                     (o.orderSource ? ` (${o.orderSource})` : "")
                   : ""}
               </div>
+              {o.status !== "signed" && o.statusChangedBy && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  {ORDER_STATUS_LABEL[o.status]} by {o.statusChangedBy}
+                  {o.statusChangedAt ? (
+                    <>
+                      {" · "}
+                      <ClientDate value={o.statusChangedAt} />
+                    </>
+                  ) : null}
+                  {o.statusReason ? ` · ${o.statusReason}` : ""}
+                </div>
+              )}
+              {/* Terminal states (discontinued/completed) intentionally get no
+                  actions — restarting therapy means placing a new order. */}
+              {!viewOnly && isTherapyActive(o) && (
+                <div className="mt-2 flex flex-wrap gap-2">
+                  {o.status === "signed" ? (
+                    <>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => setPending({ order: o, kind: "hold" })}
+                      >
+                        Hold
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() => {
+                          try {
+                            AdelanteEHR.completeOrder(patientId, o.id, staffName);
+                            toast.success("Order marked completed.");
+                          } catch (e) {
+                            toast.error(e instanceof Error ? e.message : "Could not update order.");
+                          }
+                        }}
+                      >
+                        Mark completed
+                      </Button>
+                    </>
+                  ) : (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => {
+                        try {
+                          AdelanteEHR.resumeOrder(patientId, o.id, staffName);
+                          toast.success("Order resumed.");
+                        } catch (e) {
+                          toast.error(e instanceof Error ? e.message : "Could not update order.");
+                        }
+                      }}
+                    >
+                      Resume
+                    </Button>
+                  )}
+                  <Button
+                    size="sm"
+                    variant="destructive"
+                    onClick={() => setPending({ order: o, kind: "discontinue" })}
+                  >
+                    Discontinue
+                  </Button>
+                </div>
+              )}
             </Card>
           ))}
         </div>
       )}
+
+      <OrderReasonDialog
+        open={!!pending}
+        onOpenChange={(v) => !v && setPending(null)}
+        title={pending?.kind === "hold" ? "Hold order" : "Discontinue order"}
+        body={
+          pending?.kind === "hold"
+            ? `Holding ${pending?.order.drugName}. It can be resumed later. This is audit-logged and a reason is required.`
+            : `Discontinuing ${pending?.order.drugName}. This is terminal — a new order is required to restart therapy. This is audit-logged and a reason is required.`
+        }
+        confirmLabel={pending?.kind === "hold" ? "Hold order" : "Discontinue"}
+        destructive={pending?.kind === "discontinue"}
+        onConfirm={(reason) => {
+          if (!pending) return;
+          try {
+            if (pending.kind === "hold")
+              AdelanteEHR.holdOrder(patientId, pending.order.id, staffName, reason);
+            else AdelanteEHR.discontinueOrder(patientId, pending.order.id, staffName, reason);
+            toast.success(pending.kind === "hold" ? "Order held." : "Order discontinued.");
+          } catch (e) {
+            toast.error(e instanceof Error ? e.message : "Could not update order.");
+          }
+          setPending(null);
+        }}
+      />
     </div>
   );
 }

@@ -12,6 +12,7 @@ import {
   productFromOrder,
   isPrnOrder,
   findDuplicateTherapy,
+  isTherapyActive,
 } from "@/lib/orders";
 import { buildSigLine } from "@/lib/sigLine";
 import { normalizeDailyMedStrength } from "@/lib/dailymed.server";
@@ -225,5 +226,31 @@ describe("duplicate therapy warning", () => {
         [{ ...signed, status: "draft" }],
       ),
     ).toBeUndefined();
+  });
+});
+
+describe("lifecycle-aware duplicate therapy", () => {
+  const active = base({
+    id: "signed1",
+    status: "signed",
+    drugName: "sertraline 50 MG Oral Tablet",
+    ingredientNames: ["sertraline"],
+  });
+  const draft = base({
+    id: "d1",
+    drugName: "sertraline 100 MG Oral Tablet",
+    ingredientNames: ["sertraline"],
+  });
+
+  it("counts held orders as active therapy", () => {
+    expect(isTherapyActive({ ...active, status: "held" })).toBe(true);
+    expect(findDuplicateTherapy(draft, [{ ...active, status: "held" }])?.order.id).toBe("signed1");
+  });
+
+  it("ignores discontinued and completed orders", () => {
+    for (const status of ["discontinued", "completed"] as const) {
+      expect(isTherapyActive({ ...active, status })).toBe(false);
+      expect(findDuplicateTherapy(draft, [{ ...active, status }])).toBeUndefined();
+    }
   });
 });

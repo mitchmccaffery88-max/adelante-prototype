@@ -247,7 +247,17 @@ export interface MedOrder {
   /** staffName from useActingStaff() at sign time. */
   attestedBy?: string;
   attestedAt?: string;
-  status: "draft" | "signed";
+  /**
+   * Lifecycle. "signed" is the active state; "held" is a reversible pause;
+   * "discontinued" and "completed" are TERMINAL — restarting therapy means
+   * placing a new order, never reviving one of these.
+   */
+  status: "draft" | "signed" | "held" | "discontinued" | "completed";
+  /** Reason for the latest lifecycle transition. Required for hold/discontinue. */
+  statusReason?: string;
+  /** staffName of whoever made the latest lifecycle transition. */
+  statusChangedBy?: string;
+  statusChangedAt?: string;
   createdBy?: string;
   createdAt?: string;
 }
@@ -3917,6 +3927,79 @@ export const AdelanteEHR = {
       emit();
     }
     return signed;
+  },
+
+  // ----- Order lifecycle (manual transitions only) --------------------------
+  // No full per-order history array: every transition below writes an audit
+  // event carrying actor, timestamp, from/to status and reason, so the audit
+  // trail IS the history — same convention as problem/allergy soft-deletes.
+  // The latest-transition fields on the row are the fast read path.
+  _transitionOrder(
+    patientId: string,
+    orderId: string,
+    to: Extract<MedOrder["status"], "signed" | "held" | "discontinued" | "completed">,
+    staffName: string,
+    reason: string | undefined,
+    opts: { from: MedOrder["status"][]; requireReason: boolean; action: string },
+  ): MedOrder {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.orders?.find((o) => o.id === orderId);
+    if (!row) throw new Error("Order not found");
+    if (!opts.from.includes(row.status))
+      throw new Error(`This order cannot move from ${row.status} to ${to}.`);
+    const trimmed = reason?.trim();
+    if (opts.requireReason && !trimmed) throw new Error("A reason is required.");
+    const from = row.status;
+    row.status = to;
+    row.statusReason = trimmed || undefined;
+    row.statusChangedBy = staffName;
+    row.statusChangedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: opts.action,
+      patientId,
+      actorId: staffName,
+      detail: { orderId, drugName: row.drugName, from, to, reason: trimmed ?? null },
+    });
+    emit();
+    return row;
+  },
+  /** Reversible pause. Reason required. */
+  holdOrder(patientId: string, orderId: string, staffName: string, reason: string): MedOrder {
+    return AdelanteEHR._transitionOrder(patientId, orderId, "held", staffName, reason, {
+      from: ["signed"],
+      requireReason: true,
+      action: "order_held",
+    });
+  },
+  /** Resume a held order. Resuming is not the risky direction — no reason required. */
+  resumeOrder(patientId: string, orderId: string, staffName: string): MedOrder {
+    return AdelanteEHR._transitionOrder(patientId, orderId, "signed", staffName, undefined, {
+      from: ["held"],
+      requireReason: false,
+      action: "order_resumed",
+    });
+  },
+  /** Terminal stop. Reason required; there is no path back to signed. */
+  discontinueOrder(
+    patientId: string,
+    orderId: string,
+    staffName: string,
+    reason: string,
+  ): MedOrder {
+    return AdelanteEHR._transitionOrder(patientId, orderId, "discontinued", staffName, reason, {
+      from: ["signed", "held"],
+      requireReason: true,
+      action: "order_discontinued",
+    });
+  },
+  /** Terminal "course finished" marker. Manual only — no scheduling tie-in. */
+  completeOrder(patientId: string, orderId: string, staffName: string): MedOrder {
+    return AdelanteEHR._transitionOrder(patientId, orderId, "completed", staffName, undefined, {
+      from: ["signed", "held"],
+      requireReason: false,
+      action: "order_completed",
+    });
   },
 };
 
