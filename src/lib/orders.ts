@@ -413,3 +413,6 @@ export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
   if (order.unitsPerAdmin === undefined) return undefined;
   return reconcileComboByUnits(product, order.unitsPerAdmin);
 }
+
+/** Alias: an order is "active" when it is still on the books (signed or held). */
+export const isOrderActive = isTherapyActive;
