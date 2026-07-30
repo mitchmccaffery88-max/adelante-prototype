@@ -64,6 +64,20 @@ export function MedicationDoseSection({
   const combo = isComboProduct(product);
   const dose = useMemo(() => reconcileForOrder(order), [order]);
   const freq = frequencyByCode(order.frequencyCode);
+  const unitsPerMl = product?.ingredients.find((i) => i.unitsPerMl)?.unitsPerMl;
+  // Persisted axis, so downstream readers know which model produced `dose`.
+  const axisValue: NonNullable<MedOrder["doseAxis"]> =
+    mode === "topical"
+      ? "topical"
+      : mode === "manual"
+        ? "manual"
+        : mode === "units"
+          ? "drugUnits"
+          : combo && order.doseAxis === "ingredient"
+            ? "ingredient"
+            : combo
+              ? "units"
+              : "mg";
 
   // Amount actually dispensed per administration: mL for liquids, units otherwise.
   const amountPerAdmin = dose?.volumeMl ?? dose?.unitsPerAdmin;
