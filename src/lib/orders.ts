@@ -365,13 +365,29 @@ export function findDuplicateTherapy(
   const mine = therapyTokens(candidate);
   if (mine.size === 0) return undefined;
   for (const other of activeOrders) {
-    if (other.id === candidate.id || other.status !== "signed") continue;
+    // "Active" = still capable of being administered. A held order can be
+    // resumed, so it counts; discontinued/completed never do.
+    if (other.id === candidate.id || !isTherapyActive(other)) continue;
     for (const t of therapyTokens(other)) {
       if (mine.has(t)) return { order: other, ingredient: t };
     }
   }
   return undefined;
 }
+
+/** Orders that still represent live therapy for duplicate checking. */
+export function isTherapyActive(order: MedOrder): boolean {
+  return order.status === "signed" || order.status === "held";
+}
+
+/** Display label for an order's lifecycle state ("signed" reads as Active). */
+export const ORDER_STATUS_LABEL: Record<MedOrder["status"], string> = {
+  draft: "Draft",
+  signed: "Active",
+  held: "Held",
+  discontinued: "Discontinued",
+  completed: "Completed",
+};
 
 /** Run the correct engine entry point for the order's chosen axis. */
 export function reconcileForOrder(order: MedOrder): DoseResult | undefined {

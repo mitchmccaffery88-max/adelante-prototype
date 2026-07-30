@@ -59,10 +59,12 @@ export function MedicationDoseSection({
   blocked: Set<OrderFieldKey>;
   onPatch: (patch: Partial<MedOrder>) => void;
 }) {
-  const product = useMemo(() => productFromOrder(order), [order]);
-  const mode = useMemo(() => doseModeFor(order), [order]);
+  // NOTE: the order row is mutated in place by the store, so its identity is a
+  // useless memo key — these derivations are cheap and must run every render.
+  const product = productFromOrder(order);
+  const mode = doseModeFor(order);
   const combo = isComboProduct(product);
-  const dose = useMemo(() => reconcileForOrder(order), [order]);
+  const dose = reconcileForOrder(order);
   const freq = frequencyByCode(order.frequencyCode);
   const unitsPerMl = product?.ingredients.find((i) => i.unitsPerMl)?.unitsPerMl;
   // Persisted axis, so downstream readers know which model produced `dose`.
@@ -169,6 +171,10 @@ export function MedicationDoseSection({
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     order.id,
+    order.doseTargetMg,
+    order.doseTargetUnits,
+    order.doseIngredientIndex,
+    order.unitsPerAdmin,
     order.frequencyCode,
     order.durationValue,
     order.durationUnit,
@@ -346,6 +352,7 @@ export function MedicationDoseSection({
               value={order.doseTargetMg ?? ""}
               onChange={(e) => onPatch({ doseTargetMg: num(e.target.value) })}
               placeholder="50"
+              aria-label="Dose in mg"
             />
             {quickDoses.length > 0 && (
               <div className="mt-1.5 flex flex-wrap gap-1">
