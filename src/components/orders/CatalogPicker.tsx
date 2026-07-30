@@ -13,7 +13,7 @@
 import { useEffect, useRef, useState } from "react";
 import { searchProducts, loadProductDetail, type CatalogProduct } from "@/lib/rxnav";
 import { getDailyMedStrength } from "@/lib/dailymed.functions";
-import { isTopicalForm, parseStrength, parseUnitsStrength } from "@/lib/doseReconcile";
+import { needsDailyMedFallback } from "@/lib/orders";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -81,10 +81,14 @@ export function CatalogPicker({
     // DailyMed fallback: only for products that are neither unit-dosed nor
     // topical, where RxNav genuinely yields no parseable strength. Unit-dosed
     // and topical products are NOT data gaps — they use their own axis.
-    const usable =
-      !!parseUnitsStrength(strength) ||
-      parseStrength(strength, detail.ingredientNames, detail.name).length > 0;
-    if (!usable && !isTopicalForm(detail.doseForm) && !isTopicalForm(detail.name)) {
+    if (
+      needsDailyMedFallback({
+        name: detail.name,
+        strength,
+        doseForm: detail.doseForm,
+        ingredientNames: detail.ingredientNames,
+      })
+    ) {
       const hit = await getDailyMedStrength({
         data: {
           rxcui: detail.rxcui,
