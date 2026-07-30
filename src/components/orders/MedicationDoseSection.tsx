@@ -224,7 +224,7 @@ export function MedicationDoseSection({
           also came back empty. Same governance shape as off-catalog entry. */}
       {mode === "manual" && (
         <div className="space-y-2 rounded-lg border border-dashed border-amber-500 p-3 [.chart-pane_&]:grid [.chart-pane_&]:grid-cols-2 [.chart-pane_&]:gap-3 [.chart-pane_&]:space-y-0">
-          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400 [.chart-pane_&]:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             Dose cannot be machine-verified for this product
           </div>
