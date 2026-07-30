@@ -11,6 +11,7 @@
 
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
+import { frequencyByCode } from "@/lib/frequencies";
 import {
   didFallbackToPositionalNames,
   extractIngredientNames,
@@ -90,6 +91,7 @@ export type OrderFieldKey =
   | "indication"
   | "offCatalogJustification"
   | "manualDoseJustification"
+  | "dispenseRoute"
   | "orderingProviderId"
   | "orderSource"
   | "readBackConfirmed";
@@ -290,6 +292,75 @@ export const ORDER_SOURCE_OPTIONS: {
 
 export const ATTESTATION_TEXT =
   "I attest that these orders are clinically appropriate for this patient and that I take responsibility for them.";
+
+/** Dispense routing options (port of the reference's PharmacyRoutingStep). */
+export const DISPENSE_ROUTE_OPTIONS: {
+  value: NonNullable<MedOrder["dispenseRoute"]>;
+  label: string;
+  hint: string;
+}[] = [
+  {
+    value: "pharmacy",
+    label: "Send to pharmacy",
+    hint: "Routed for dispense. (Flag only — no transmission integration yet.)",
+  },
+  {
+    value: "chart_only",
+    label: "Chart only, no dispense",
+    hint: "Recorded on the chart; nothing is routed for dispense.",
+  },
+];
+
+/** True when the order's frequency is an as-needed (PRN) cadence. */
+export function isPrnOrder(order: MedOrder): boolean {
+  return !!frequencyByCode(order.frequencyCode)?.isPrn;
+}
+
+// ---------------------------------------------------------------------------
+// Duplicate-therapy check (port of the reference's useActiveMedications).
+// Deliberately NAME/INGREDIENT overlap only — this is a prompt for the
+// clinician, not a drug-interaction engine, and it never blocks signing.
+// ---------------------------------------------------------------------------
+
+const STOPWORDS =
+  /^(oral|tablet|tablets|capsule|capsules|solution|injection|injectable|pen|injector|topical|cream|ointment|gel|lotion|foam|patch|extended|release|er|xr|mg|ml|unt|hr|prefilled|syringe|kit|dose|per)$/i;
+
+function therapyTokens(order: MedOrder): Set<string> {
+  const fromIngredients = order.ingredientNames ?? [];
+  const source = fromIngredients.length
+    ? fromIngredients.join(" ")
+    : (order.productName ?? order.drugName);
+  return new Set(
+    source
+      .toLowerCase()
+      .split(/[^a-z]+/)
+      .filter((t) => t.length > 3 && !STOPWORDS.test(t)),
+  );
+}
+
+export interface DuplicateTherapyMatch {
+  order: MedOrder;
+  ingredient: string;
+}
+
+/**
+ * Likely duplicate therapy for `candidate` among the patient's signed active
+ * orders. Warning-only by design.
+ */
+export function findDuplicateTherapy(
+  candidate: MedOrder,
+  activeOrders: MedOrder[],
+): DuplicateTherapyMatch | undefined {
+  const mine = therapyTokens(candidate);
+  if (mine.size === 0) return undefined;
+  for (const other of activeOrders) {
+    if (other.id === candidate.id || other.status !== "signed") continue;
+    for (const t of therapyTokens(other)) {
+      if (mine.has(t)) return { order: other, ingredient: t };
+    }
+  }
+  return undefined;
+}
 
 /** Run the correct engine entry point for the order's chosen axis. */
 export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
