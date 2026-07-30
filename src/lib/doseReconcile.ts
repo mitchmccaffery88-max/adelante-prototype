@@ -92,9 +92,29 @@ const MODIFIED_RELEASE =
 const CAPSULE = /capsule/i;
 const LIQUID = /(solution|suspension|syrup|elixir|concentrate|liquid|tincture|drops?)/i;
 const INJECTION = /(injection|injectable|prefilled|syringe|vial)/i;
+/**
+ * Topical / external forms. These are NOT dosed to a systemic mg target in
+ * real practice — they are dosed by APPLICATION (amount, site, frequency), so
+ * they bypass mg reconciliation entirely. Patches are included: a transdermal
+ * system delivers its own rate, the clinician does not compute mg per dose.
+ */
+const TOPICAL = /\b(cream|ointment|gel|lotion|foam|patch|transdermal)\b/i;
 
 export function isLiquidForm(doseForm?: string): boolean {
   return !!doseForm && (LIQUID.test(doseForm) || INJECTION.test(doseForm));
+}
+
+/** True for creams/ointments/gels/lotions/foams/patches — apply-amount dosing. */
+export function isTopicalForm(doseForm?: string): boolean {
+  return !!doseForm && TOPICAL.test(doseForm);
+}
+
+/** True when every ingredient is expressed in UNITS rather than mg. */
+export function isUnitDosedProduct(product?: DoseProduct): boolean {
+  if (!product || product.ingredients.length === 0) return false;
+  return product.ingredients.every(
+    (i) => i.strengthMg === undefined && (i.strengthUnits !== undefined || i.unitsPerMl !== undefined),
+  );
 }
 
 /**
@@ -257,6 +277,24 @@ export function parseLiquidStrength(strength?: string): { mgPerMl: number } | un
   const per = m[3] ? Number(m[3]) : 1;
   if (mg === undefined || !per) return undefined;
   return { mgPerMl: mg / per };
+}
+
+/**
+ * Detect a UNIT-DOSED strength: "100 UNT/ML" (concentration) or "100 UNT"
+ * (units per dosage unit). RxNav uses UNT; labels also print "U"/"UNITS".
+ */
+export function parseUnitsStrength(
+  strength?: string,
+): { unitsPerMl?: number; strengthUnits?: number } | undefined {
+  if (!strength) return undefined;
+  const conc = strength.match(/([\d.]+)\s*(?:unt|units?|u)\s*\/\s*([\d.]*)\s*ml\b/i);
+  if (conc) {
+    const per = conc[2] ? Number(conc[2]) : 1;
+    if (per) return { unitsPerMl: Number(conc[1]) / per };
+  }
+  const flat = strength.match(/([\d.]+)\s*(?:unt|units?)\b/i);
+  if (flat) return { strengthUnits: Number(flat[1]) };
+  return undefined;
 }
 
 function err(code: DoseErrorCode, message: string): DoseResult {
