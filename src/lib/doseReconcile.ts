@@ -376,16 +376,16 @@ export function reconcileComboByIngredient(
     return err("invalid_target", "Enter a dose greater than zero.");
 
   const step = smallestUnitFraction(product.doseForm);
-  if (targetMg + EPS < ing.strengthMg * step)
+  if (targetMg / ing.strengthMg + EPS < 0.5)
     return err(
       "target_lt_product",
-      `Smallest dispensable amount of ${ing.name} in this product is ${ing.strengthMg * step} mg.`,
+      `Smallest dispensable amount of ${ing.name} in this product is ${ing.strengthMg * 0.5} mg.`,
     );
 
   const units = targetMg / ing.strengthMg;
   if (!isMultipleOf(units, step))
     return err(
-      step === 1 ? "fraction_not_allowed" : "not_a_multiple",
+      step === 1 ? "fraction_not_allowed" : "quarter_not_allowed",
       `${targetMg} mg of ${ing.name} needs ${units.toFixed(3)} units of this product, which it cannot be split into.`,
     );
 
