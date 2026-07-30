@@ -6,7 +6,13 @@ import {
   parseUnitsStrength,
   reconcileDoseByUnits,
 } from "@/lib/doseReconcile";
-import { doseModeFor, validateOrder, productFromOrder } from "@/lib/orders";
+import {
+  doseModeFor,
+  validateOrder,
+  productFromOrder,
+  isPrnOrder,
+  findDuplicateTherapy,
+} from "@/lib/orders";
 import { buildSigLine } from "@/lib/sigLine";
 import { normalizeDailyMedStrength } from "@/lib/dailymed.server";
 import type { MedOrder } from "@/lib/ehr";
@@ -16,6 +22,8 @@ const base = (o: Partial<MedOrder>): MedOrder => ({
   patientId: "p1",
   drugName: "test",
   status: "draft",
+  // Phase 2: dispense routing is a required field on every order.
+  dispenseRoute: "pharmacy",
   ...o,
 });
 
@@ -139,5 +147,83 @@ describe("DailyMed strength normalisation", () => {
   it("feeds a DailyMed-resolved strength straight into the mg engine", () => {
     const strength = normalizeDailyMedStrength("25 mg")!;
     expect(parseStrength(strength, [], "sertraline 25 mg")[0].strengthMg).toBe(25);
+  });
+});
+
+// ---------------------------------------------------------------------------
+// Orders Phase 2 — routing, PRN duration exemption, duplicate therapy.
+// ---------------------------------------------------------------------------
+describe("dispense routing", () => {
+  const order = base({
+    strengthText: "50 MG",
+    doseForm: "Oral Tablet",
+    frequencyCode: "QD",
+    quantity: 30,
+    isStat: true,
+    indicationText: "x",
+    doseTargetMg: 50,
+    dose: "50 mg",
+  });
+
+  it("blocks signing until a dispense route is chosen", () => {
+    const missing = validateOrder({ ...order, dispenseRoute: undefined }, {
+      needsAttribution: false,
+    });
+    expect(missing.map((i) => i.field)).toContain("dispenseRoute");
+    expect(validateOrder({ ...order, dispenseRoute: "chart_only" }, { needsAttribution: false }))
+      .toHaveLength(0);
+  });
+});
+
+describe("PRN duration exemption", () => {
+  const order = base({
+    strengthText: "50 MG",
+    doseForm: "Oral Tablet",
+    quantity: 30,
+    indicationText: "x",
+    doseTargetMg: 50,
+    dose: "50 mg",
+  });
+
+  it("requires duration for a scheduled cadence", () => {
+    const issues = validateOrder({ ...order, frequencyCode: "BID" }, { needsAttribution: false });
+    expect(issues.map((i) => i.field)).toContain("duration");
+  });
+
+  it("exempts PRN cadences exactly like STAT", () => {
+    expect(isPrnOrder({ ...order, frequencyCode: "Q6H_PRN" })).toBe(true);
+    expect(
+      validateOrder({ ...order, frequencyCode: "Q6H_PRN" }, { needsAttribution: false }),
+    ).toHaveLength(0);
+  });
+});
+
+describe("duplicate therapy warning", () => {
+  const signed = base({
+    id: "signed1",
+    status: "signed",
+    drugName: "sertraline 50 MG Oral Tablet",
+    ingredientNames: ["sertraline"],
+    attestedAt: "2026-01-02T00:00:00.000Z",
+  });
+
+  it("flags an overlapping ingredient", () => {
+    const draft = base({
+      id: "d1",
+      drugName: "sertraline 100 MG Oral Tablet",
+      ingredientNames: ["sertraline"],
+    });
+    expect(findDuplicateTherapy(draft, [signed])?.order.id).toBe("signed1");
+  });
+
+  it("does not flag an unrelated drug, and ignores drafts", () => {
+    const draft = base({ id: "d2", drugName: "lisinopril 10 MG Oral Tablet" });
+    expect(findDuplicateTherapy(draft, [signed])).toBeUndefined();
+    expect(
+      findDuplicateTherapy(
+        base({ id: "d3", ingredientNames: ["sertraline"], drugName: "sertraline" }),
+        [{ ...signed, status: "draft" }],
+      ),
+    ).toBeUndefined();
   });
 });

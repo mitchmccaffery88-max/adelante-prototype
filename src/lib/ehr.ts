@@ -203,6 +203,13 @@ export interface MedOrder {
   unitsPerAdmin?: number;
   /** Generated Sig line (src/lib/sigLine.ts). */
   sig?: string;
+  /**
+   * Clinician-edited Sig. When set it supersedes `sig` for display/print,
+   * while `sig` keeps the auto-generated text so the two stay comparable.
+   */
+  sigOverride?: string;
+  /** True when the Sig on this order was hand-edited rather than derived. */
+  sigManualOverride?: boolean;
   /** Frequency catalog code, e.g. "BID". Source of truth for scheduling. */
   frequencyCode?: string;
   durationValue?: number;
@@ -217,6 +224,17 @@ export interface MedOrder {
   isControlled?: boolean;
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
+  /**
+   * KOP (Keep-On-Person): prescriber approves the patient to keep this
+   * medication on their person and self-administer. Read by the future MAR
+   * pass to pick the administration workflow.
+   */
+  isKop?: boolean;
+  /**
+   * Dispense routing decision. "pharmacy" flags the order for dispense;
+   * "chart_only" records it without routing. Flag only — no transmission.
+   */
+  dispenseRoute?: "pharmacy" | "chart_only";
   /** References `Problem.id` when the indication is a coded diagnosis on file. */
   indicationProblemId?: string;
   /** Free-text indication; fallback when no coded problem is linked. */

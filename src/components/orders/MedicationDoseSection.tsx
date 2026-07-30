@@ -429,6 +429,40 @@ export function MedicationDoseSection({
           {w}
         </p>
       ))}
+
+      {/* Sig manual override. `order.sig` always holds the auto-generated
+          text; the override is stored separately so downstream readers can
+          tell a hand-edited Sig from a derived one. */}
+      <div className="[.chart-pane_&]:max-w-3xl">
+        <div className="flex items-center justify-between gap-2">
+          <Label className="text-xs" htmlFor={`sig-${order.id}`}>
+            Sig line {order.sigManualOverride ? "(edited)" : "(auto-generated)"}
+          </Label>
+          {order.sigManualOverride && (
+            <Button
+              type="button"
+              size="sm"
+              variant="ghost"
+              className="h-6 px-2 text-xs"
+              onClick={() => onPatch({ sigOverride: undefined, sigManualOverride: false })}
+            >
+              Reset to auto-generated
+            </Button>
+          )}
+        </div>
+        <Textarea
+          id={`sig-${order.id}`}
+          aria-label="Sig line"
+          rows={2}
+          className="mt-1"
+          value={order.sigOverride ?? order.sig ?? ""}
+          onChange={(e) => onPatch({ sigOverride: e.target.value, sigManualOverride: true })}
+          placeholder="Sig will generate from the dose and frequency above"
+        />
+        {order.sigManualOverride && (order.sig ?? "").trim() && (
+          <p className="mt-1 text-xs text-muted-foreground">Auto-generated: {order.sig}</p>
+        )}
+      </div>
     </div>
   );
 }
