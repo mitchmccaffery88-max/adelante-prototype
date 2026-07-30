@@ -3119,30 +3119,6 @@ export const AdelanteEHR = {
     }
     return m;
   },
-
-  _listAuditEventsUnused(
-    filter: {
-      patientId?: string;
-      category?: AuditCategory | AuditCategory[];
-      since?: string;
-      limit?: number;
-    } = {},
-  ): AuditEvent[] {
-    const cats = Array.isArray(filter.category)
-      ? new Set(filter.category)
-      : filter.category
-        ? new Set([filter.category])
-        : null;
-    const sinceMs = filter.since ? +new Date(filter.since) : 0;
-    const out = auditEvents.filter((e) => {
-      if (filter.patientId && e.patientId !== filter.patientId) return false;
-      if (cats && !cats.has(e.category)) return false;
-      if (sinceMs && +new Date(e.at) < sinceMs) return false;
-      return true;
-    });
-    return filter.limit ? out.slice(0, filter.limit) : out;
-  },
-
   // ---------- Medication refill requests ----------
   requestRefill(input: {
     patientId: string;
