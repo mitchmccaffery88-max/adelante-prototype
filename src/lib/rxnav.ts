@@ -138,7 +138,7 @@ export function parseFromName(
     .map((seg) => seg.replace(/[\d.]+\s*(MG|MCG|G|ML|UNT|%).*/i, "").trim())
     .filter(Boolean);
   const formMatch = cleaned.match(
-    /(Oral Tablet[^/]*|Oral Capsule[^/]*|Extended Release Oral Tablet|Delayed Release Oral Tablet|Oral Solution|Oral Suspension|Sublingual Tablet|Sublingual Film|Injectable Solution|Transdermal System|Chewable Tablet|Disintegrating Oral Tablet)/i,
+    /(Oral Tablet[^/]*|Oral Capsule[^/]*|Extended Release Oral Tablet|Delayed Release Oral Tablet|Oral Solution|Oral Suspension|Sublingual Tablet|Sublingual Film|Injectable Solution|Transdermal System|Chewable Tablet|Disintegrating Oral Tablet|Topical Cream|Topical Ointment|Topical Gel|Topical Lotion|Topical Foam|Medicated Patch|Cream|Ointment|Gel|Lotion|Foam|Pen Injector|Prefilled Syringe|Auto-Injector)/i,
   );
   return {
     strength: strengths.join(" / ") || undefined,

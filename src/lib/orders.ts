@@ -15,11 +15,15 @@ import {
   didFallbackToPositionalNames,
   extractIngredientNames,
   isComboProduct,
+  isTopicalForm,
+  isUnitDosedProduct,
   parseLiquidStrength,
   parseStrength,
+  parseUnitsStrength,
   reconcileComboByIngredient,
   reconcileComboByUnits,
   reconcileDose,
+  reconcileDoseByUnits,
   type DoseProduct,
   type DoseResult,
 } from "@/lib/doseReconcile";
@@ -48,6 +52,23 @@ export function productFromOrder(order: MedOrder): DoseProduct | undefined {
       ],
     };
   }
+  // Unit-dosed concentration ("100 UNT/ML") — same shape as the liquid path,
+  // but the axis is drug units, not mg.
+  const unitConc = parseUnitsStrength(order.strengthText);
+  if (unitConc?.unitsPerMl) {
+    return {
+      name,
+      rxcui: order.rxcui,
+      doseForm: order.doseForm,
+      route: order.route,
+      ingredients: [
+        {
+          name: extractIngredientNames(name)[0] ?? order.ingredientNames?.[0] ?? name,
+          unitsPerMl: unitConc.unitsPerMl,
+        },
+      ],
+    };
+  }
   return {
     name,
     rxcui: order.rxcui,
@@ -68,6 +89,7 @@ export type OrderFieldKey =
   | "daysSupply"
   | "indication"
   | "offCatalogJustification"
+  | "manualDoseJustification"
   | "orderingProviderId"
   | "orderSource"
   | "readBackConfirmed";
@@ -75,6 +97,32 @@ export type OrderFieldKey =
 export interface OrderIssue {
   field: OrderFieldKey;
   message: string;
+}
+
+/**
+ * Which dosing model applies to this order. Resolved in priority order:
+ *   topical  — cream/ointment/gel/lotion/foam/patch: apply-amount, never mg
+ *   units    — strength expressed in UNT: insulin/heparin/biologics
+ *   manual   — reconciliation exhausted (incl. DailyMed) + clinician override
+ *   mg       — the normal reconciled path
+ */
+export type DoseMode = "mg" | "units" | "topical" | "manual";
+
+export function doseModeFor(order: MedOrder): DoseMode {
+  // RxNav's DOSE_FORM property is frequently absent, so the product NAME text
+  // is checked too — "hydrocortisone 10 MG/ML Topical Cream" is a topical
+  // whether or not the dose-form property came back.
+  if (isTopicalForm(order.doseForm) || isTopicalForm(order.productName ?? order.drugName))
+    return "topical";
+  const product = productFromOrder(order);
+  if (isUnitDosedProduct(product)) return "units";
+  if (!product || product.ingredients.length === 0) return "manual";
+  return "mg";
+}
+
+/** True when the ONLY remaining path is manual dose entry with a justification. */
+export function reconciliationExhausted(order: MedOrder): boolean {
+  return doseModeFor(order) === "manual";
 }
 
 /**
@@ -98,7 +146,28 @@ export function validateOrder(order: MedOrder, opts: { needsAttribution: boolean
       field: "offCatalogJustification",
       message: "Off-catalog medications require a clinical justification.",
     });
-  if (blank(order.dose)) issues.push({ field: "dose", message: "Dose is required." });
+  const mode = doseModeFor(order);
+  if (mode === "topical") {
+    // Topicals are dosed by application, not by a systemic mg target — never
+    // gate signing on a missing mg value for these forms.
+    if (blank(order.applicationInstruction))
+      issues.push({
+        field: "dose",
+        message: "Application amount and site are required for topical products.",
+      });
+  } else if (mode === "manual") {
+    if (blank(order.manualDose))
+      issues.push({ field: "dose", message: "Dose is required (entered manually)." });
+    // Same governance as off-catalog: a manually reconciled dose is not
+    // machine-validated, so it needs a written reason.
+    if (blank(order.manualDoseJustification))
+      issues.push({
+        field: "manualDoseJustification",
+        message: "A manually reconciled dose requires a clinical justification.",
+      });
+  } else if (blank(order.dose)) {
+    issues.push({ field: "dose", message: "Dose is required." });
+  }
   if (blank(order.frequencyCode) && blank(order.frequency))
     issues.push({ field: "frequency", message: "Frequency is required." });
   if (order.quantity === undefined || order.quantity === null || Number.isNaN(order.quantity))
@@ -160,6 +229,14 @@ export const ATTESTATION_TEXT =
 export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
   const product = productFromOrder(order);
   if (!product || product.ingredients.length === 0) return undefined;
+  if (doseModeFor(order) === "topical") return undefined;
+  if (isUnitDosedProduct(product)) {
+    if (order.doseTargetUnits === undefined) return undefined;
+    return reconcileDoseByUnits(product, order.doseTargetUnits, {
+      // Pen/syringe products with a concentration support half-unit dosing.
+      allowHalfUnits: product.ingredients.some((i) => !!i.unitsPerMl),
+    });
+  }
   const combo = isComboProduct(product);
   if (!combo) {
     if (order.doseTargetMg === undefined) return undefined;

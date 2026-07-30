@@ -12,6 +12,8 @@
 
 import { useEffect, useRef, useState } from "react";
 import { searchProducts, loadProductDetail, type CatalogProduct } from "@/lib/rxnav";
+import { getDailyMedStrength } from "@/lib/dailymed.functions";
+import { isTopicalForm, parseStrength, parseUnitsStrength } from "@/lib/doseReconcile";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -24,6 +26,7 @@ export interface CatalogSelection {
   rxcui?: string;
   productName: string;
   strengthText?: string;
+  strengthSource?: "rxnav" | "dailymed";
   doseForm?: string;
   ingredientNames?: string[];
   offCatalog: boolean;
@@ -72,11 +75,35 @@ export function CatalogPicker({
   const choose = async (p: CatalogProduct) => {
     setResolving(p.rxcui);
     const detail = await loadProductDetail(p);
+    let strength = detail.strength;
+    let strengthSource: "rxnav" | "dailymed" = "rxnav";
+
+    // DailyMed fallback: only for products that are neither unit-dosed nor
+    // topical, where RxNav genuinely yields no parseable strength. Unit-dosed
+    // and topical products are NOT data gaps — they use their own axis.
+    const usable =
+      !!parseUnitsStrength(strength) ||
+      parseStrength(strength, detail.ingredientNames, detail.name).length > 0;
+    if (!usable && !isTopicalForm(detail.doseForm) && !isTopicalForm(detail.name)) {
+      const hit = await getDailyMedStrength({
+        data: {
+          rxcui: detail.rxcui,
+          name: detail.name,
+          expectedIngredients: detail.ingredientNames?.length || undefined,
+        },
+      }).catch(() => null);
+      if (hit?.strength) {
+        strength = hit.strength;
+        strengthSource = "dailymed";
+      }
+    }
+
     setResolving(null);
     onSelect({
       rxcui: detail.rxcui,
       productName: detail.name,
-      strengthText: detail.strength,
+      strengthText: strength,
+      strengthSource,
       doseForm: detail.doseForm,
       ingredientNames: detail.ingredientNames,
       offCatalog: false,

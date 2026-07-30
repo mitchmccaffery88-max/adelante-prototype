@@ -169,17 +169,36 @@ export interface MedOrder {
   doseForm?: string;
   /** Positional ingredient names for combo products. */
   ingredientNames?: string[];
+  /**
+   * Where `strengthText` came from. "dailymed" means RxNav had no parseable
+   * quantitative strength and the DailyMed SPL fallback resolved it.
+   */
+  strengthSource?: "rxnav" | "dailymed";
   /** True when the clinician typed a product NOT found in the catalog. */
   offCatalog?: boolean;
   /** REQUIRED whenever offCatalog is true — governance control, do not weaken. */
   offCatalogJustification?: string;
   // ----- Reconciled dose (see src/lib/doseReconcile.ts) ----------------------
   /** Which axis the clinician dosed on. */
-  doseAxis?: "mg" | "units" | "ingredient";
+  doseAxis?: "mg" | "units" | "ingredient" | "drugUnits" | "topical" | "manual";
   /** Index into ingredientNames when doseAxis === "ingredient". */
   doseIngredientIndex?: number;
   /** Intended mg per administration (mg / ingredient axes). */
   doseTargetMg?: number;
+  /**
+   * Intended DRUG UNITS per administration for unit-dosed products (insulin,
+   * heparin). Distinct from `unitsPerAdmin`, which counts dosage units.
+   */
+  doseTargetUnits?: number;
+  /** Topical/external forms: "thin layer to affected area". Feeds the Sig directly. */
+  applicationInstruction?: string;
+  /**
+   * Manual dose text, available ONLY when reconciliation is genuinely
+   * exhausted (not unit-dosed, not topical, and DailyMed also came back empty).
+   */
+  manualDose?: string;
+  /** REQUIRED whenever manualDose is set — same governance as off-catalog. */
+  manualDoseJustification?: string;
   /** Units per administration (units axis, or reconciled from mg). */
   unitsPerAdmin?: number;
   /** Generated Sig line (src/lib/sigLine.ts). */
