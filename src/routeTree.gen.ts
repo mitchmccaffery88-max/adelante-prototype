@@ -30,6 +30,7 @@ import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -136,6 +137,11 @@ const ScheduleRoute = ScheduleRouteImport.update({
   path: '/schedule',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
+  id: '/record/$patientId',
+  path: '/record/$patientId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -159,6 +165,7 @@ export interface FileRoutesByFullPath {
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
+  '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -182,6 +189,7 @@ export interface FileRoutesByTo {
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
+  '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -206,6 +214,7 @@ export interface FileRoutesById {
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
   '/schedule': typeof ScheduleRoute
+  '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -231,6 +240,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/referral'
     | '/schedule'
+    | '/record/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -254,6 +264,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/referral'
     | '/schedule'
+    | '/record/$patientId'
   id:
     | '__root__'
     | '/'
@@ -277,6 +288,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/referral'
     | '/schedule'
+    | '/record/$patientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -301,6 +313,7 @@ export interface RootRouteChildren {
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
   ScheduleRoute: typeof ScheduleRoute
+  RecordPatientIdRoute: typeof RecordPatientIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -452,6 +465,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ScheduleRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/record/$patientId': {
+      id: '/record/$patientId'
+      path: '/record/$patientId'
+      fullPath: '/record/$patientId'
+      preLoaderRoute: typeof RecordPatientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -477,7 +497,18 @@ const rootRouteChildren: RootRouteChildren = {
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,
   ScheduleRoute: ScheduleRoute,
+  RecordPatientIdRoute: RecordPatientIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
