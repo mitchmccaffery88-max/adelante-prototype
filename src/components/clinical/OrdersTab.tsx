@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isProblemClinicallyActive, type MedOrder } from "@/lib/ehr";
-import { useActingStaff, staffForRole, getStaffMember } from "@/lib/roles";
+import { useActingStaff, staffForRole, getStaffMember, canAccess } from "@/lib/roles";
 import {
   validateOrder,
   issueFields,
