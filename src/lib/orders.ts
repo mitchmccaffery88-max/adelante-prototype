@@ -126,6 +126,23 @@ export function reconciliationExhausted(order: MedOrder): boolean {
 }
 
 /**
+ * Should the DailyMed SPL fallback be queried for this catalog product?
+ * Only when RxNav yields no parseable strength AND the product is neither
+ * unit-dosed nor topical — those two are their own axes, not data gaps.
+ * Pure so the ordering (RxNav -> DailyMed -> manual) is testable.
+ */
+export function needsDailyMedFallback(detail: {
+  name: string;
+  strength?: string;
+  doseForm?: string;
+  ingredientNames?: string[];
+}): boolean {
+  if (isTopicalForm(detail.doseForm) || isTopicalForm(detail.name)) return false;
+  if (parseUnitsStrength(detail.strength)) return false;
+  return parseStrength(detail.strength, detail.ingredientNames, detail.name).length === 0;
+}
+
+/**
  * Where an ingredient's machine-readable strength ultimately came from.
  *   rxnav        — RxNav's own strength/properties parsed cleanly
  *   dailymed     — RxNav had no parseable strength; the DailyMed SPL fallback did
