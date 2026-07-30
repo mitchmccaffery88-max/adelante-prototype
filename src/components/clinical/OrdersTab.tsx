@@ -19,6 +19,7 @@ import {
   REQ_FIELD,
   REQ_LABEL,
   type OrderFieldKey,
+  strengthProvenanceFor,
 } from "@/lib/orders";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
