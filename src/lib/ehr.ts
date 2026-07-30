@@ -3747,7 +3747,19 @@ export const AdelanteEHR = {
    * gate (`validateOrder`) and captured attestation first — this method trusts
    * the caller, matching the reference EMR where the cart owns the gate.
    */
-  signOrders(patientId: string, orderIds: string[], attestedBy: string): MedOrder[] {
+  signOrders(
+    patientId: string,
+    orderIds: string[],
+    attestedBy: string,
+    opts?: {
+      /**
+       * Per-order, per-ingredient strength provenance keyed by order id.
+       * Computed by the caller (src/lib/orders.ts `strengthProvenanceFor`) —
+       * kept out of the store to avoid an ehr <-> roles import cycle.
+       */
+      strengthProvenance?: Record<string, unknown[]>;
+    },
+  ): MedOrder[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found");
     const at = new Date().toISOString();
@@ -3773,6 +3785,28 @@ export const AdelanteEHR = {
           attestationMethod: "checkbox_only",
         },
       });
+      // Separate entry per order so reviewers can tell a machine-validated
+      // strength (RxNav/DailyMed/units) from a hand-typed one.
+      for (const o of signed) {
+        const ingredients = opts?.strengthProvenance?.[o.id];
+        if (!ingredients?.length) continue;
+        appendAudit({
+          category: "clinical",
+          action: "order_strength_provenance",
+          patientId,
+          actorId: attestedBy,
+          detail: {
+            orderId: o.id,
+            drugName: o.drugName,
+            rxcui: o.rxcui,
+            strengthText: o.strengthText,
+            doseAxis: o.doseAxis,
+            manualDose: o.manualDose ?? undefined,
+            manualDoseJustification: o.manualDoseJustification ?? undefined,
+            ingredients,
+          },
+        });
+      }
       emit();
     }
     return signed;
