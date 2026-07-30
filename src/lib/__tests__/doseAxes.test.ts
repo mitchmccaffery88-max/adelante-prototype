@@ -16,6 +16,8 @@ const base = (o: Partial<MedOrder>): MedOrder => ({
   patientId: "p1",
   drugName: "test",
   status: "draft",
+  // Phase 2: dispense routing is a required field on every order.
+  dispenseRoute: "pharmacy",
   ...o,
 });
 
