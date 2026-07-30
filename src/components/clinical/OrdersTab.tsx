@@ -225,6 +225,8 @@ function DraftOrderCard({
           {order.isStat && <Badge variant="secondary">STAT</Badge>}
           {order.isControlled && <Badge variant="outline">Controlled</Badge>}
           {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
+          {order.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+          {order.strengthSource === "dailymed" && <Badge variant="outline">Strength: DailyMed</Badge>}
           <Button
             size="icon"
             variant="ghost"
@@ -403,6 +405,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
       productName: sel.productName,
       rxcui: sel.rxcui,
       strengthText: sel.strengthText,
+      strengthSource: sel.strengthSource,
       doseForm: sel.doseForm,
       ingredientNames: sel.ingredientNames,
       offCatalog: sel.offCatalog,
@@ -483,8 +486,17 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.isStat && <Badge variant="secondary">STAT</Badge>}
                 {o.isControlled && <Badge variant="outline">Controlled</Badge>}
                 {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
+                {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+                {o.strengthSource === "dailymed" && (
+                  <Badge variant="outline">Strength: DailyMed</Badge>
+                )}
               </div>
               {o.sig && <div className="mt-1 text-xs italic text-muted-foreground">{o.sig}</div>}
+              {o.manualDose && o.manualDoseJustification && (
+                <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
+                  Dose reconciled manually because: {o.manualDoseJustification}
+                </div>
+              )}
               {o.offCatalog && o.offCatalogJustification && (
                 <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
                   Off-catalog justification: {o.offCatalogJustification}
