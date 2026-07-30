@@ -526,6 +526,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
               needsAttribution={needsAttribution}
               problems={problems}
               showIssues={showIssues}
+              activeOrders={signed}
             />
           ))}
         </div>
@@ -555,14 +556,29 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.dose && <span className="text-muted-foreground">{o.dose}</span>}
                 {o.frequency && <span className="text-muted-foreground">{o.frequency}</span>}
                 {o.isStat && <Badge variant="secondary">STAT</Badge>}
+                {isPrnOrder(o) && <Badge variant="secondary">PRN</Badge>}
+                {o.isKop && <Badge variant="outline">KOP</Badge>}
                 {o.isControlled && <Badge variant="outline">Controlled</Badge>}
                 {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
                 {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
                 {o.strengthSource === "dailymed" && (
                   <Badge variant="outline">Strength: DailyMed</Badge>
                 )}
+                {o.dispenseRoute && (
+                  <Badge variant="outline">
+                    {o.dispenseRoute === "pharmacy" ? "To pharmacy" : "Chart only"}
+                  </Badge>
+                )}
+                {o.sigManualOverride && <Badge variant="secondary">Sig edited</Badge>}
               </div>
-              {o.sig && <div className="mt-1 text-xs italic text-muted-foreground">{o.sig}</div>}
+              {(o.sigOverride ?? o.sig) && (
+                <div className="mt-1 text-xs italic text-muted-foreground">
+                  {o.sigOverride ?? o.sig}
+                </div>
+              )}
+              {o.sigManualOverride && o.sig && (
+                <div className="mt-0.5 text-xs text-muted-foreground">Auto-generated: {o.sig}</div>
+              )}
               {o.manualDose && o.manualDoseJustification && (
                 <div className="mt-1 text-xs text-amber-700 dark:text-amber-400">
                   Dose reconciled manually because: {o.manualDoseJustification}
