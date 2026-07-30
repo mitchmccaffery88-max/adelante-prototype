@@ -489,9 +489,16 @@ function CaseManagerPage() {
                     Full record: SDOH, referrals, external coordination, peer notes.
                   </div>
                 </div>
-                <Button size="sm" onClick={() => setRecordId(active.id)}>
-                  Open record
-                </Button>
+                <div className="flex shrink-0 items-center gap-2">
+                  <Button size="sm" variant="outline" onClick={() => setRecordId(active.id)}>
+                    Quick peek
+                  </Button>
+                  <Button size="sm" asChild>
+                    <Link to="/record/$patientId" params={{ patientId: active.id }} search={{}}>
+                      Open record
+                    </Link>
+                  </Button>
+                </div>
               </Card>
               {cmId && <PatientTasksCard patientId={active.id} cmId={cmId} />}
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
