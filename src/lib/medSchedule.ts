@@ -163,6 +163,8 @@ export interface DispenseInput {
   durationValue?: number;
   durationUnit?: "days" | "doses";
   isStat?: boolean;
+  /** True when `amountPerAdmin` is mL — switches rounding to bottle sizes. */
+  isLiquid?: boolean;
 }
 
 export interface DispenseResult {
@@ -174,17 +176,44 @@ export interface DispenseResult {
   totalDoses?: number;
 }
 
+/** Standard oral-liquid bottle sizes (mL) a pharmacy actually dispenses. */
+export const STANDARD_BOTTLE_SIZES_ML = [30, 60, 120, 240, 480];
+
+/**
+ * Round a computed liquid volume UP to a dispensable bottle size. Above the
+ * largest standard bottle, round up to the next 60 mL (multiple bottles).
+ */
+export function roundLiquid(ml: number): number {
+  for (const size of STANDARD_BOTTLE_SIZES_ML) if (ml <= size + 1e-9) return size;
+  return Math.ceil(ml / 60) * 60;
+}
+
+/** Solids are never dispensed fractionally — always ceil to a whole unit. */
+function roundSolid(units: number): number {
+  return Math.ceil(units - 1e-9);
+}
+
+function roundDispense(amount: number, isLiquid?: boolean): number {
+  return isLiquid ? roundLiquid(amount) : roundSolid(amount);
+}
+
 /**
  * Dispense quantity = amount per administration x total administrations.
- * PRN uses the frequency's worst-case ceiling, matching the reference: a PRN
- * order must be dispensed for the maximum the patient could legitimately take.
+ * PRN uses the frequency catalog's worst-case ceiling (an Adelante extension —
+ * see frequencies.ts): a PRN order must be dispensed for the maximum the
+ * patient could legitimately take.
+ *
+ * Rounding mirrors the reference: liquids round UP to a standard bottle size,
+ * solids ceil to whole tablets/capsules. Never round DOWN — that short-supplies
+ * the course.
  */
 export function computeDispenseQuantity(input: DispenseInput): DispenseResult {
   const freq = frequencyByCode(input.frequencyCode);
   const per = input.amountPerAdmin;
   if (!per || !Number.isFinite(per) || per <= 0) return {};
 
-  if (input.isStat) return { quantity: round2(per), daysSupply: 1, totalDoses: 1 };
+  if (input.isStat)
+    return { quantity: roundDispense(per, input.isLiquid), daysSupply: 1, totalDoses: 1 };
   if (!freq) return {};
 
   const perDay = dosesPerDay(freq);
@@ -201,9 +230,5 @@ export function computeDispenseQuantity(input: DispenseInput): DispenseResult {
     return {};
   }
 
-  return { quantity: round2(per * totalDoses), daysSupply: days, totalDoses };
-}
-
-function round2(n: number): number {
-  return Math.round(n * 100) / 100;
+  return { quantity: roundDispense(per * totalDoses, input.isLiquid), daysSupply: days, totalDoses };
 }
