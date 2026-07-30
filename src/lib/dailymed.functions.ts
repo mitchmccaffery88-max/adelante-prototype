@@ -7,6 +7,12 @@ import { lookupDailyMedStrength } from "./dailymed.server";
 
 export const getDailyMedStrength = createServerFn({ method: "GET" })
   .inputValidator((data) =>
-    z.object({ rxcui: z.string().optional(), name: z.string().optional() }).parse(data),
+    z
+      .object({
+        rxcui: z.string().optional(),
+        name: z.string().optional(),
+        expectedIngredients: z.number().int().positive().optional(),
+      })
+      .parse(data),
   )
   .handler(async ({ data }) => (await lookupDailyMedStrength(data)) ?? null);

@@ -86,7 +86,11 @@ export function CatalogPicker({
       parseStrength(strength, detail.ingredientNames, detail.name).length > 0;
     if (!usable && !isTopicalForm(detail.doseForm) && !isTopicalForm(detail.name)) {
       const hit = await getDailyMedStrength({
-        data: { rxcui: detail.rxcui, name: detail.name },
+        data: {
+          rxcui: detail.rxcui,
+          name: detail.name,
+          expectedIngredients: detail.ingredientNames?.length || undefined,
+        },
       }).catch(() => null);
       if (hit?.strength) {
         strength = hit.strength;
