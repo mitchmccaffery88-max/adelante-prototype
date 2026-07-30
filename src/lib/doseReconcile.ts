@@ -246,11 +246,20 @@ export function parseStrength(
       // "20 MG" | "20 MG/ML" already split on "/", so per-mL arrives as a bare unit.
       const m = chunk.match(/([\d.]+)\s*([a-zA-Zµ%]+)/);
       const name = names[i] ?? `Ingredient ${i + 1}`;
-      if (!m) return { name, strengthMg: NaN };
+      if (!m) return { name, strengthMg: NaN } as DoseIngredient;
+      // Unit-dosed segment ("100 UNT") — mg is the wrong axis, keep the units.
+      const asUnits = parseUnitsStrength(chunk);
+      if (asUnits && (asUnits.strengthUnits !== undefined || asUnits.unitsPerMl !== undefined))
+        return { name, ...asUnits } as DoseIngredient;
       const mg = normalizeStrengthToMg(Number(m[1]), m[2]);
-      return { name, strengthMg: mg ?? NaN };
+      return { name, strengthMg: mg ?? NaN } as DoseIngredient;
     })
-    .filter((x) => Number.isFinite(x.strengthMg));
+    .filter(
+      (x) =>
+        Number.isFinite(x.strengthMg) ||
+        x.strengthUnits !== undefined ||
+        x.unitsPerMl !== undefined,
+    );
 }
 
 /** True when parseStrength had to fall back to positional ingredient names. */
