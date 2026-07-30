@@ -12,6 +12,8 @@
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import {
+  didFallbackToPositionalNames,
+  extractIngredientNames,
   isComboProduct,
   parseLiquidStrength,
   parseStrength,
@@ -36,9 +38,10 @@ export function productFromOrder(order: MedOrder): DoseProduct | undefined {
       name,
       rxcui: order.rxcui,
       doseForm: order.doseForm,
+      route: order.route,
       ingredients: [
         {
-          name: order.ingredientNames?.[0] ?? name,
+          name: extractIngredientNames(name)[0] ?? order.ingredientNames?.[0] ?? name,
           strengthMg: liquid.mgPerMl,
           perMl: liquid.mgPerMl,
         },
@@ -49,7 +52,9 @@ export function productFromOrder(order: MedOrder): DoseProduct | undefined {
     name,
     rxcui: order.rxcui,
     doseForm: order.doseForm,
-    ingredients: parseStrength(order.strengthText, order.ingredientNames ?? []),
+    route: order.route,
+    ingredients: parseStrength(order.strengthText, order.ingredientNames ?? [], name),
+    ingredientNamesFallback: didFallbackToPositionalNames(order.strengthText, name),
   };
 }
 
