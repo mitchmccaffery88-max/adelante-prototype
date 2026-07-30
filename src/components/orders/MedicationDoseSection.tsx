@@ -17,7 +17,7 @@
 
 import { useEffect, useMemo } from "react";
 import type { MedOrder } from "@/lib/ehr";
-import { isComboProduct, smallestUnitFraction } from "@/lib/doseReconcile";
+import { commonDosesFor, isComboProduct, smallestUnitFraction } from "@/lib/doseReconcile";
 import {
   productFromOrder,
   reconcileForOrder,
@@ -31,6 +31,7 @@ import { buildSigLine } from "@/lib/sigLine";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -39,7 +40,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { cn } from "@/lib/utils";
-import { AlertTriangle } from "lucide-react";
+import { AlertTriangle, Info } from "lucide-react";
 
 function num(v: string): number | undefined {
   if (!v.trim()) return undefined;
@@ -63,6 +64,15 @@ export function MedicationDoseSection({
 
   // Amount actually dispensed per administration: mL for liquids, units otherwise.
   const amountPerAdmin = dose?.volumeMl ?? dose?.unitsPerAdmin;
+  const isLiquid = dose?.volumeMl !== undefined;
+
+  // Quick-pick chips are keyed to the axis ingredient (combo) or the single
+  // ingredient, matching the reference's common-dose shortcuts.
+  const axisIngredient =
+    combo && order.doseAxis === "ingredient"
+      ? product?.ingredients[order.doseIngredientIndex ?? 0]?.name
+      : product?.ingredients[0]?.name;
+  const quickDoses = commonDosesFor(axisIngredient);
 
   const sig = useMemo(
     () =>
@@ -102,6 +112,7 @@ export function MedicationDoseSection({
       durationValue: order.durationValue,
       durationUnit: order.durationUnit,
       isStat: order.isStat,
+      isLiquid,
     });
     if (!order.quantityManual && calc.quantity !== undefined && calc.quantity !== order.quantity)
       patch.quantity = calc.quantity;
@@ -125,6 +136,7 @@ export function MedicationDoseSection({
     order.quantityManual,
     order.daysSupplyManual,
     amountPerAdmin,
+    isLiquid,
     sig,
     dose?.error?.code,
   ]);
@@ -212,6 +224,23 @@ export function MedicationDoseSection({
               onChange={(e) => onPatch({ doseTargetMg: num(e.target.value) })}
               placeholder="50"
             />
+            {quickDoses.length > 0 && (
+              <div className="mt-1.5 flex flex-wrap gap-1">
+                {quickDoses.map((d) => (
+                  <Button
+                    key={d}
+                    type="button"
+                    size="sm"
+                    variant={order.doseTargetMg === d ? "default" : "outline"}
+                    className="h-7 px-2 text-xs"
+                    onClick={() => onPatch({ doseTargetMg: d })}
+                    aria-label={`Common dose ${d} mg`}
+                  >
+                    {d} mg
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
@@ -270,6 +299,13 @@ export function MedicationDoseSection({
           {sig && <div className="mt-1.5 italic">{sig}</div>}
         </div>
       )}
+
+      {dose?.warnings?.map((w) => (
+        <p key={w} className="flex items-start gap-1.5 text-xs text-amber-700 dark:text-amber-400">
+          <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+          {w}
+        </p>
+      ))}
     </div>
   );
 }
