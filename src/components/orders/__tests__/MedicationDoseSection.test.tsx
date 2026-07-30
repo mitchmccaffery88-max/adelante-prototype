@@ -46,7 +46,8 @@ describe("insulin — UNT/ML units axis", () => {
   it("shows the pen fill volume once a unit count is entered", () => {
     renderDose({ ...insulin, doseTargetUnits: 18 });
     // 18 units at 100 units/mL = 0.18 mL of pen fill.
-    expect(screen.getByText(/0\.18\s*mL/)).toBeDefined();
+    expect(screen.getAllByText(/0\.18\s*mL/).length).toBeGreaterThan(0);
+    expect(screen.getByText("0.18 mL per dose")).toBeDefined();
   });
 
   it("still gates signing on the units field when it is blocked", () => {
@@ -72,12 +73,15 @@ describe("hydrocortisone cream — topical apply-amount flow", () => {
   });
 
   it("feeds the application text straight into the Sig line", () => {
-    renderDose({
+    // Topicals have no reconciled dose, so the Sig is not rendered inline —
+    // it is pushed to the order via the derived-output patch.
+    const { onPatch } = renderDose({
       ...cream,
       applicationInstruction: "thin layer to affected area",
       frequencyCode: "BID",
     });
-    expect(screen.getByText(/thin layer to affected area/i)).toBeDefined();
+    const sig = onPatch.mock.calls.map((c) => (c[0] as { sig?: string }).sig).find(Boolean);
+    expect(sig).toMatch(/apply thin layer to affected area/i);
   });
 });
 
