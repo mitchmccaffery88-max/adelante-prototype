@@ -543,15 +543,16 @@ function ClinicianPage() {
                   >
                     Tracking
                   </Button>
-                  <Button
-                    size="sm"
-                    className="bg-navy text-navy-foreground hover:bg-navy/90"
-                    onClick={() => {
-                      setDrawerTab(undefined);
-                      setDrawerOpen(true);
-                    }}
-                  >
-                    Open patient record
+                  {/* Clinicians go straight to the full chart — deeper work
+                      than the caseload quick peek. */}
+                  <Button size="sm" asChild className="bg-navy text-navy-foreground hover:bg-navy/90">
+                    <Link
+                      to="/record/$patientId"
+                      params={{ patientId: selectedPatientId! }}
+                      search={{}}
+                    >
+                      Open patient record
+                    </Link>
                   </Button>
                 </div>
               </Card>

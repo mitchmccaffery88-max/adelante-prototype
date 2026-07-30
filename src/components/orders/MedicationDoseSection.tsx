@@ -204,7 +204,7 @@ export function MedicationDoseSection({
       {/* Topical / external: no mg reconciliation at all — the clinically
           correct model for creams, ointments, gels, lotions, foams, patches. */}
       {mode === "topical" && (
-        <div>
+        <div className="[.chart-pane_&]:max-w-2xl">
           <Label className={cn("text-xs", blocked.has("dose") && REQ_LABEL)}>
             Apply amount / site *
           </Label>
@@ -223,12 +223,12 @@ export function MedicationDoseSection({
       {/* Reconciliation exhausted: unit axis N/A, not topical, and DailyMed
           also came back empty. Same governance shape as off-catalog entry. */}
       {mode === "manual" && (
-        <div className="space-y-2 rounded-lg border border-dashed border-amber-500 p-3">
-          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400">
+        <div className="space-y-2 rounded-lg border border-dashed border-amber-500 p-3 [.chart-pane_&]:grid [.chart-pane_&]:grid-cols-2 [.chart-pane_&]:gap-3 [.chart-pane_&]:space-y-0">
+          <div className="flex items-center gap-2 text-sm font-medium text-amber-700 dark:text-amber-400 [.chart-pane_&]:col-span-2">
             <AlertTriangle className="h-4 w-4" />
             Dose cannot be machine-verified for this product
           </div>
-          <p className="text-xs text-muted-foreground">
+          <p className="text-xs text-muted-foreground [.chart-pane_&]:col-span-2">
             No usable strength from RxNorm or the DailyMed label. Enter the dose manually — it will
             be flagged everywhere this order appears.
           </p>
@@ -257,7 +257,7 @@ export function MedicationDoseSection({
         </div>
       )}
 
-      <div className="grid gap-3 sm:grid-cols-3">
+      <div className="grid gap-3 sm:grid-cols-3 [.chart-pane_&]:xl:grid-cols-4">
         {/* Unit axis — insulin, heparin, some biologics. */}
         {mode === "units" && (
           <div>
