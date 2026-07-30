@@ -42,7 +42,7 @@ async function getJson<T>(url: string): Promise<T | undefined> {
  */
 export function normalizeDailyMedStrength(raw: string): string | undefined {
   const s = raw.trim();
-  const ratio = s.match(/^([\d.]+)\s*([A-Za-z%]+)\s+in\s+([\d.]+)\s*([A-Za-z]+)$/i);
+  const ratio = s.match(/^([\d.]+)\s*([A-Za-z%]+)\s+in\s+([\d.]+)\s*([A-Za-z0-9]+)$/i);
   if (ratio) {
     const [, amount, unit, perQty, perUnit] = ratio;
     const u = unit.toUpperCase() === "U" ? "UNT" : unit.toUpperCase();
