@@ -3050,6 +3050,99 @@ export const AdelanteEHR = {
     return filter.limit ? out.slice(0, filter.limit) : out;
   },
 
+  // ---------- Catalog strength-resolution telemetry ----------
+  // Recorded at catalog-selection time so admins can see how often RxNav data
+  // was insufficient, not just which orders ended up manually dosed.
+  recordCatalogResolution(input: {
+    rxcui?: string;
+    productName: string;
+    path: CatalogResolutionPath;
+    doseForm?: string;
+  }) {
+    appendAudit({
+      category: "rx",
+      action: "catalog_strength_resolution",
+      detail: {
+        rxcui: input.rxcui,
+        productName: input.productName,
+        path: input.path,
+        doseForm: input.doseForm,
+      },
+    });
+    emit();
+  },
+
+  catalogResolutionMetrics(since?: string): CatalogResolutionMetrics {
+    const sinceMs = since ? +new Date(since) : 0;
+    const inWindow = (e: AuditEvent) => !sinceMs || +new Date(e.at) >= sinceMs;
+    const m: CatalogResolutionMetrics = {
+      selections: 0,
+      rxnav: 0,
+      unitsParsed: 0,
+      topical: 0,
+      dailymedAttempted: 0,
+      dailymedResolved: 0,
+      dailymedEmpty: 0,
+      signedOrders: 0,
+      manualDoseOrders: 0,
+      recentManualJustifications: [],
+    };
+    for (const e of auditEvents) {
+      if (!inWindow(e)) continue;
+      if (e.action === "catalog_strength_resolution") {
+        const path = e.detail?.path as CatalogResolutionPath | undefined;
+        m.selections += 1;
+        if (path === "rxnav") m.rxnav += 1;
+        else if (path === "units_parsed") m.unitsParsed += 1;
+        else if (path === "topical") m.topical += 1;
+        else if (path === "dailymed_resolved") {
+          m.dailymedAttempted += 1;
+          m.dailymedResolved += 1;
+        } else if (path === "dailymed_empty") {
+          m.dailymedAttempted += 1;
+          m.dailymedEmpty += 1;
+        }
+      } else if (e.action === "order_strength_provenance") {
+        m.signedOrders += 1;
+        const justification = e.detail?.manualDoseJustification as string | undefined;
+        if (justification) {
+          m.manualDoseOrders += 1;
+          if (m.recentManualJustifications.length < 5) {
+            m.recentManualJustifications.push({
+              at: e.at,
+              drugName: String(e.detail?.drugName ?? "—"),
+              justification,
+            });
+          }
+        }
+      }
+    }
+    return m;
+  },
+
+  _listAuditEventsUnused(
+    filter: {
+      patientId?: string;
+      category?: AuditCategory | AuditCategory[];
+      since?: string;
+      limit?: number;
+    } = {},
+  ): AuditEvent[] {
+    const cats = Array.isArray(filter.category)
+      ? new Set(filter.category)
+      : filter.category
+        ? new Set([filter.category])
+        : null;
+    const sinceMs = filter.since ? +new Date(filter.since) : 0;
+    const out = auditEvents.filter((e) => {
+      if (filter.patientId && e.patientId !== filter.patientId) return false;
+      if (cats && !cats.has(e.category)) return false;
+      if (sinceMs && +new Date(e.at) < sinceMs) return false;
+      return true;
+    });
+    return filter.limit ? out.slice(0, filter.limit) : out;
+  },
+
   // ---------- Medication refill requests ----------
   requestRefill(input: {
     patientId: string;
