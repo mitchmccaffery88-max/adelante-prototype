@@ -8,8 +8,15 @@
 //
 // `adminTimes` is the facility-local hour-of-day grid. It is the single source
 // of truth for BOTH dispense-quantity math (doses per day = adminTimes.length)
-// and MAR admin-time scheduling in medSchedule.ts. PRN entries carry an empty
-// grid and a `maxPerDay` ceiling used for worst-case dispense quantity.
+// and MAR admin-time scheduling in medSchedule.ts.
+//
+// ADELANTE EXTENSION (does NOT mirror the reference): PRN entries carry an
+// empty admin grid plus an explicit `maxPerDay` ceiling. The reference EMR
+// computed dosesPerDay as `adminTimes.length || (is_prn ? 1 : 0)` — i.e. any
+// PRN fell back to a flat 1 dose/day for quantity estimation. That under-
+// dispenses a Q4H PRN analgesic, so Adelante encodes the real worst-case
+// ceiling per PRN cadence instead. `dosesPerDay` still falls back to 1 when a
+// PRN entry has no `maxPerDay`, matching the reference behaviour exactly.
 
 export interface MedFrequency {
   code: string;

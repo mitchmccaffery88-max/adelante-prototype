@@ -25,7 +25,7 @@ export type DoseErrorCode =
   | "combo_ambiguous"
   | "target_lt_product"
   | "fraction_not_allowed"
-  | "not_a_multiple";
+  | "quarter_not_allowed";
 
 export interface DoseError {
   code: DoseErrorCode;
@@ -48,7 +48,15 @@ export interface DoseProduct {
   rxcui?: string;
   /** Dose form string as returned by RxNav, e.g. "Oral Tablet", "Oral Solution". */
   doseForm?: string;
+  /** Administration route, e.g. "oral", "IM", "SQ". Drives large-volume warnings. */
+  route?: string;
   ingredients: DoseIngredient[];
+  /**
+   * True when ingredient names could NOT be extracted from the product name
+   * text and the positional-zip fallback was used instead. Surfaced as a
+   * warning so a clinician never trusts a mis-zipped combo label silently.
+   */
+  ingredientNamesFallback?: boolean;
 }
 
 export interface DoseResult {
@@ -60,6 +68,8 @@ export interface DoseResult {
   perIngredientMg: { name: string; mg: number }[];
   /** Total mg delivered per administration (single-ingredient products only). */
   totalMg?: number;
+  /** Non-blocking advisories (large volume, name-extraction fallback, ...). */
+  warnings?: string[];
   error?: DoseError;
 }
 
@@ -98,29 +108,126 @@ export function normalizeStrengthToMg(value: number, unit: string): number | und
 }
 
 /**
+ * Common starting doses per ingredient (mg), rendered as quick-pick chips on
+ * the dose axis. Ported from the reference EMR; these are convenience values,
+ * NOT a clinical dosing guideline — the engine still validates every pick.
+ */
+export const COMMON_INGREDIENT_DOSES: Record<string, number[]> = {
+  buprenorphine: [2, 4, 8, 12, 16],
+  methadone: [5, 10, 20, 40],
+  oxycodone: [5, 10, 15, 20],
+  hydrocodone: [5, 7.5, 10],
+  acetaminophen: [325, 500, 650, 1000],
+  ibuprofen: [200, 400, 600, 800],
+  naloxone: [0.5, 1, 2],
+};
+
+export function commonDosesFor(ingredient?: string): number[] {
+  if (!ingredient) return [];
+  return COMMON_INGREDIENT_DOSES[ingredient.trim().toLowerCase()] ?? [];
+}
+
+// Trailing dose-form / route words trimmed off a name-extracted ingredient.
+const NAME_STOP_WORDS = new Set([
+  "oral",
+  "sublingual",
+  "buccal",
+  "topical",
+  "transdermal",
+  "injectable",
+  "injection",
+  "tablet",
+  "tablets",
+  "capsule",
+  "capsules",
+  "film",
+  "strip",
+  "patch",
+  "solution",
+  "suspension",
+  "syrup",
+  "elixir",
+  "concentrate",
+  "extended",
+  "delayed",
+  "sustained",
+  "controlled",
+  "release",
+  "chewable",
+  "disintegrating",
+  "product",
+  "in",
+  "and",
+]);
+
+/**
+ * Extract ingredient names from an RxNav concept name.
+ *
+ * The reference EMR reads names out of the product-name TEXT rather than
+ * relying on a parallel names array, because the text is what the clinician
+ * sees and it never de-syncs from the strengths printed beside it.
+ * "buprenorphine 8 MG / naloxone 2 MG sublingual tablet" -> ["buprenorphine","naloxone"].
+ */
+export function extractIngredientNames(productName?: string): string[] {
+  if (!productName) return [];
+  const cleaned = productName.replace(/\s*\[[^\]]+\]\s*/g, " ");
+  const re = /([A-Za-z][A-Za-z-]*(?:\s+[A-Za-z][A-Za-z-]*){0,2})\s+(\d+(?:\.\d+)?)\s*(mg|mcg|g)\b/gi;
+  const names: string[] = [];
+  for (const m of cleaned.matchAll(re)) {
+    const words = m[1]
+      .split(/\s+/)
+      .filter((w) => !NAME_STOP_WORDS.has(w.toLowerCase()) && !/^\d/.test(w));
+    const name = words.join(" ").trim();
+    if (name) names.push(name);
+  }
+  return names;
+}
+
+/**
  * Parse an RxNav-style strength string into ingredients.
  * Accepts "50 MG", "2 MG / 0.5 MG", "20 MG/ML", "5 MG / 325 MG".
- * `ingredientNames` (when known) is zipped positionally, as RxNav orders
- * SCD ingredient names and strengths consistently.
+ *
+ * Naming precedence (matching the reference):
+ *   1. names extracted from the product-name text (primary)
+ *   2. positionally-zipped `ingredientNames` (FALLBACK ONLY, when extraction
+ *      yields fewer names than the strength string has segments)
+ *   3. "Ingredient N" placeholder
+ * Use `didFallbackToPositionalNames` to flag case 2 to the user.
  */
 export function parseStrength(
   strength: string | undefined,
   ingredientNames: string[] = [],
+  productName?: string,
 ): DoseIngredient[] {
   if (!strength) return [];
-  return strength
+  const segments = strength
     .split("/")
     .map((s) => s.trim())
-    .filter(Boolean)
+    .filter(Boolean);
+  const extracted = extractIngredientNames(productName);
+  const useExtracted = extracted.length >= segments.length && extracted.length > 0;
+  const names = useExtracted ? extracted : ingredientNames;
+  return segments
     .map((chunk, i) => {
       // "20 MG" | "20 MG/ML" already split on "/", so per-mL arrives as a bare unit.
       const m = chunk.match(/([\d.]+)\s*([a-zA-Zµ%]+)/);
-      const name = ingredientNames[i] ?? `Ingredient ${i + 1}`;
+      const name = names[i] ?? `Ingredient ${i + 1}`;
       if (!m) return { name, strengthMg: NaN };
       const mg = normalizeStrengthToMg(Number(m[1]), m[2]);
       return { name, strengthMg: mg ?? NaN };
     })
     .filter((x) => Number.isFinite(x.strengthMg));
+}
+
+/** True when parseStrength had to fall back to positional ingredient names. */
+export function didFallbackToPositionalNames(
+  strength: string | undefined,
+  productName?: string,
+): boolean {
+  if (!strength) return false;
+  const segments = strength.split("/").filter((s) => s.trim()).length;
+  if (segments < 2) return false;
+  return extractIngredientNames(productName).length < segments;
 }
 
 /**
@@ -165,40 +272,54 @@ export function reconcileDose(product: DoseProduct | undefined, targetMg: number
     );
 
   const ing = product.ingredients[0];
+  const warnings: string[] = [];
 
   // Liquids are continuous — no splitting rules apply.
   if (ing.perMl) {
     const volumeMl = targetMg / ing.perMl;
+    // Large-volume advisories, ported verbatim from the reference: parenteral
+    // routes cannot absorb big boluses, and any large oral volume is worth a
+    // second look before it reaches the MAR.
+    if (/\b(im|sq|subcut)\b/i.test(product.route ?? "") && volumeMl > 5) {
+      warnings.push(
+        `${Math.round(volumeMl * 100) / 100} mL is a large volume for the ${product.route} route — split doses may be needed.`,
+      );
+    } else if (volumeMl > 30) {
+      warnings.push(
+        `${Math.round(volumeMl * 100) / 100} mL is a large single dose — double-check the concentration and intended dose.`,
+      );
+    }
     return {
       volumeMl: Math.round(volumeMl * 100) / 100,
       perIngredientMg: [{ name: ing.name, mg: targetMg }],
       totalMg: targetMg,
+      warnings: warnings.length ? warnings : undefined,
     };
   }
 
-  if (targetMg + EPS < ing.strengthMg * smallestUnitFraction(product.doseForm)) {
+  // Reference taxonomy: exactly two failure branches after the low-target check.
+  const step = smallestUnitFraction(product.doseForm);
+  const ratio = targetMg / ing.strengthMg;
+  if (ratio + EPS < 0.5) {
     return err(
       "target_lt_product",
-      `Smallest dispensable dose of this product is ${ing.strengthMg * smallestUnitFraction(product.doseForm)} mg — lower than the ${targetMg} mg requested. Choose a lower strength.`,
+      `Smallest dispensable dose of this product is ${ing.strengthMg * 0.5} mg (half a ${ing.strengthMg} mg unit) — lower than the ${targetMg} mg requested. Choose a lower strength.`,
     );
   }
-
-  const units = targetMg / ing.strengthMg;
-  const step = smallestUnitFraction(product.doseForm);
-  if (!isMultipleOf(units, step)) {
-    if (step === 1 && isMultipleOf(units, 0.5)) {
-      return err(
-        "fraction_not_allowed",
-        `${product.doseForm ?? "This form"} cannot be split. ${targetMg} mg would require ${units} units.`,
-      );
-    }
+  if (step === 1 && !isMultipleOf(ratio, 1)) {
     return err(
-      "not_a_multiple",
-      `${targetMg} mg is not achievable with ${ing.strengthMg} mg units (needs ${units.toFixed(3)} units).`,
+      "fraction_not_allowed",
+      `${product.doseForm ?? "This form"} cannot be split. ${targetMg} mg would require ${ratio.toFixed(3)} units.`,
+    );
+  }
+  if (step === 0.5 && !isMultipleOf(ratio, 0.5)) {
+    return err(
+      "quarter_not_allowed",
+      `Tablets may only be halved. ${targetMg} mg would require ${ratio.toFixed(3)} units of a ${ing.strengthMg} mg tablet.`,
     );
   }
 
-  const rounded = Math.round(units / step) * step;
+  const rounded = Math.round(ratio / step) * step;
   return {
     unitsPerAdmin: rounded,
     perIngredientMg: [{ name: ing.name, mg: rounded * ing.strengthMg }],
@@ -234,6 +355,11 @@ export function reconcileComboByUnits(
       name: i.name,
       mg: Math.round(i.strengthMg * unitsPerAdmin * 1000) / 1000,
     })),
+    warnings: product.ingredientNamesFallback
+      ? [
+          "Ingredient names could not be read from the product name — they are matched to strengths by position. Verify each ingredient before signing.",
+        ]
+      : undefined,
   };
 }
 
@@ -255,16 +381,16 @@ export function reconcileComboByIngredient(
     return err("invalid_target", "Enter a dose greater than zero.");
 
   const step = smallestUnitFraction(product.doseForm);
-  if (targetMg + EPS < ing.strengthMg * step)
+  if (targetMg / ing.strengthMg + EPS < 0.5)
     return err(
       "target_lt_product",
-      `Smallest dispensable amount of ${ing.name} in this product is ${ing.strengthMg * step} mg.`,
+      `Smallest dispensable amount of ${ing.name} in this product is ${ing.strengthMg * 0.5} mg.`,
     );
 
   const units = targetMg / ing.strengthMg;
   if (!isMultipleOf(units, step))
     return err(
-      step === 1 ? "fraction_not_allowed" : "not_a_multiple",
+      step === 1 ? "fraction_not_allowed" : "quarter_not_allowed",
       `${targetMg} mg of ${ing.name} needs ${units.toFixed(3)} units of this product, which it cannot be split into.`,
     );
 
