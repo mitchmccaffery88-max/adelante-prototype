@@ -9,7 +9,7 @@
 
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isProblemClinicallyActive, type MedOrder } from "@/lib/ehr";
-import { useActingStaff, staffForRole, getStaffMember } from "@/lib/roles";
+import { useActingStaff, staffForRole, getStaffMember, canAccess } from "@/lib/roles";
 import {
   validateOrder,
   issueFields,
@@ -372,6 +372,9 @@ function DraftOrderCard({
 // ---------------------------------------------------------------------------
 export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const { role, staffName } = useActingStaff();
+  // Defense in depth: even if a caller forgets to pass readOnly, only roles with
+  // meds_erx WRITE may author or sign orders. "read" on meds_erx is view-only.
+  const viewOnly = readOnly || canAccess(role, "meds_erx").level !== "write";
   const orders = useEhr(() => AdelanteEHR.listOrders(patientId));
   const problemRows = useEhr(() => AdelanteEHR.listProblems(patientId));
   const problems = useMemo(
@@ -391,9 +394,10 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   const signed = orders.filter((o) => o.status === "signed");
   const allIssues = drafts.flatMap((o) => validateOrder(o, { needsAttribution }));
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
-  const canSign = !readOnly && gatePasses && attested;
+  const canSign = !viewOnly && gatePasses && attested;
 
   const stage = (sel: CatalogSelection) => {
+    if (viewOnly) return;
     AdelanteEHR.addDraftOrder(patientId, {
       drugName: sel.productName,
       productName: sel.productName,
@@ -422,7 +426,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   return (
     <div className="space-y-4">
-      {!readOnly && (
+      {!viewOnly && (
         <Card className="p-4">
           <CatalogPicker onSelect={stage} />
         </Card>
@@ -433,7 +437,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
           icon={ClipboardList}
           title="No draft orders"
           description={
-            readOnly
+            viewOnly
               ? "You can view signed orders but cannot create new ones."
               : "Stage a medication above to begin an order."
           }
@@ -453,7 +457,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
         </div>
       )}
 
-      {!readOnly && drafts.length > 0 && (
+      {!viewOnly && drafts.length > 0 && (
         <div className="space-y-3">
           <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
           <Button className="w-full" disabled={!canSign} onClick={sign}>

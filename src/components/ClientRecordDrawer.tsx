@@ -342,7 +342,7 @@ export function ClientRecordDrawer({ patientId, open, onOpenChange, initialTab }
               {/* Read-only roles (no meds_erx write) can still stage orders with
                   attribution in the reference EMR; here "read" = view-only, and
                   staging requires at least read+attribution-capable roles. */}
-              <OrdersTab patientId={patient.id} readOnly={false} />
+              <OrdersTab patientId={patient.id} readOnly={canOrders.level !== "write"} />
             </TabsContent>
           )}
           {canPeer.level !== "none" && (
