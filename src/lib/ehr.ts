@@ -1430,6 +1430,26 @@ export interface AuditEvent {
   detail?: Record<string, unknown>;
 }
 const auditEvents: AuditEvent[] = [];
+
+// How a catalog selection's strength was resolved, recorded at pick time.
+export type CatalogResolutionPath =
+  | "rxnav"
+  | "units_parsed"
+  | "topical"
+  | "dailymed_resolved"
+  | "dailymed_empty";
+export interface CatalogResolutionMetrics {
+  selections: number;
+  rxnav: number;
+  unitsParsed: number;
+  topical: number;
+  dailymedAttempted: number;
+  dailymedResolved: number;
+  dailymedEmpty: number;
+  signedOrders: number;
+  manualDoseOrders: number;
+  recentManualJustifications: { at: string; drugName: string; justification: string }[];
+}
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
   const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
