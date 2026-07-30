@@ -109,7 +109,11 @@ export interface OrderIssue {
 export type DoseMode = "mg" | "units" | "topical" | "manual";
 
 export function doseModeFor(order: MedOrder): DoseMode {
-  if (isTopicalForm(order.doseForm)) return "topical";
+  // RxNav's DOSE_FORM property is frequently absent, so the product NAME text
+  // is checked too — "hydrocortisone 10 MG/ML Topical Cream" is a topical
+  // whether or not the dose-form property came back.
+  if (isTopicalForm(order.doseForm) || isTopicalForm(order.productName ?? order.drugName))
+    return "topical";
   const product = productFromOrder(order);
   if (isUnitDosedProduct(product)) return "units";
   if (!product || product.ingredients.length === 0) return "manual";
@@ -225,7 +229,7 @@ export const ATTESTATION_TEXT =
 export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
   const product = productFromOrder(order);
   if (!product || product.ingredients.length === 0) return undefined;
-  if (isTopicalForm(order.doseForm)) return undefined;
+  if (doseModeFor(order) === "topical") return undefined;
   if (isUnitDosedProduct(product)) {
     if (order.doseTargetUnits === undefined) return undefined;
     return reconcileDoseByUnits(product, order.doseTargetUnits, {
