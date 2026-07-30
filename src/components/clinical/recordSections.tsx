@@ -1,0 +1,283 @@
+// §Clinical record — single source of truth for chart sections.
+// Both the quick-peek drawer and the full-page chart derive their navigation,
+// gating and content from this registry, so neither can drift from the other.
+import type { ReactNode } from "react";
+import {
+  AlertTriangle,
+  Bell,
+  Building2,
+  CalendarCheck,
+  ClipboardCheck,
+  FileText,
+  HeartPulse,
+  Home,
+  LayoutDashboard,
+  ListChecks,
+  Pill,
+  Route as RouteIcon,
+  ShieldAlert,
+  Stethoscope,
+  TrendingUp,
+  UserRound,
+  Users,
+} from "lucide-react";
+import type { LucideIcon } from "lucide-react";
+import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
+import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
+import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
+import { OrdersTab } from "@/components/clinical/OrdersTab";
+import {
+  OverviewTab,
+  ContactTab,
+  CheckInsTab,
+  SdohTab,
+  ReferralsTab,
+  EligibilityTab,
+  CoordinationTab,
+  TasksTab,
+  ProviderHistoryTab,
+  CarePlanTab,
+  NotesTab,
+  TrackingTab,
+  PeerNotesTab,
+  LockedNote,
+} from "@/components/clinical/RecordTabs";
+
+export type RecordSectionGroup = "chart" | "case" | "coordination";
+
+export interface RecordSection {
+  id: string;
+  label: string;
+  icon: LucideIcon;
+  group: RecordSectionGroup;
+  /** Inline count badge, when the section has a meaningful one. */
+  count?: number;
+  /** Emphasis for the count badge (severe allergy / critical alert). */
+  urgent?: boolean;
+  render: () => ReactNode;
+}
+
+export const GROUP_LABELS: Record<RecordSectionGroup, string> = {
+  chart: "Chart",
+  case: "Case management",
+  coordination: "Coordination",
+};
+
+/**
+ * Safety counts shown in the header badge row. The sidebar reuses these exact
+ * numbers rather than recomputing them.
+ */
+export function safetyCounts(patient: Patient) {
+  const snapshot = patient.carePlan;
+  const activeProblems = snapshot?.activeProblems ?? [];
+  const hiddenSud = snapshot?.hiddenSudProblems ?? 0;
+  const allergyEntries = (snapshot?.allergySummary ?? []) as {
+    substance: string;
+    severity: string;
+  }[];
+  const activeAlerts = (patient.alerts ?? []).filter((a) => !a.removedAt);
+  return {
+    activeProblems,
+    activeProblemsCount: activeProblems.length,
+    hiddenSud,
+    allergyEntries,
+    severeAllergy: allergyEntries.some((a) => a.severity === "severe"),
+    activeAlerts,
+    criticalAlert: activeAlerts.some((a) => a.severity === "critical"),
+  };
+}
+
+/**
+ * Gated section list for the acting role. A section the role cannot access is
+ * omitted entirely — same rule the drawer's tab list has always used.
+ */
+export function useRecordSections(patient: Patient): RecordSection[] {
+  const { role } = useActingStaff();
+  const counts = useEhr(() => {
+    const fresh = AdelanteEHR.getPatient(patient.id) ?? patient;
+    const s = safetyCounts(fresh);
+    return {
+      problems: s.activeProblemsCount,
+      allergies: s.allergyEntries.length,
+      alerts: s.activeAlerts.length,
+      severeAllergy: s.severeAllergy,
+      criticalAlert: s.criticalAlert,
+      tasks: (fresh.tasks ?? []).filter((t) => !t.completedAt).length,
+      referrals: (fresh.resourceReferrals ?? []).filter((r) => r.status !== "completed").length,
+      sdoh: (fresh.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length,
+    };
+  });
+
+  const gate = (cls: RecordClass) => canAccess(role, cls, patient);
+  const pid = patient.id;
+  const sections: RecordSection[] = [];
+
+  const add = (
+    cls: RecordClass,
+    def: Omit<RecordSection, "render"> & {
+      render: (access: ReturnType<typeof gate>) => ReactNode;
+      /** Sections that are always listed (never hidden), matching today's tabs. */
+      alwaysVisible?: boolean;
+    },
+  ) => {
+    const access = gate(cls);
+    if (!def.alwaysVisible && access.level === "none") return;
+    const { render, alwaysVisible: _av, ...rest } = def;
+    sections.push({
+      ...rest,
+      render: () => (access.locked ? <LockedNote reason={access.reason} /> : render(access)),
+    });
+  };
+
+  // ----- Chart -----
+  add("demographics", {
+    id: "overview",
+    label: "Overview",
+    icon: LayoutDashboard,
+    group: "chart",
+    alwaysVisible: true,
+    render: () => <OverviewTab patientId={pid} />,
+  });
+  add("problems", {
+    id: "problems",
+    label: "Problems",
+    icon: HeartPulse,
+    group: "chart",
+    count: counts.problems,
+    render: () => <ProblemsTab patientId={pid} />,
+  });
+  add("allergies", {
+    id: "allergies",
+    label: "Allergies",
+    icon: ShieldAlert,
+    group: "chart",
+    count: counts.allergies,
+    urgent: counts.severeAllergy,
+    render: () => <AllergiesTab patientId={pid} />,
+  });
+  add("alerts", {
+    id: "alerts",
+    label: "Alerts",
+    icon: Bell,
+    group: "chart",
+    count: counts.alerts,
+    urgent: counts.criticalAlert,
+    render: () => <AlertsTab patientId={pid} />,
+  });
+  add("care_plan", {
+    id: "care-plan",
+    label: "Care plan",
+    icon: ClipboardCheck,
+    group: "chart",
+    render: (a) => <CarePlanTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  add("therapy_notes", {
+    id: "notes",
+    label: "Notes",
+    icon: FileText,
+    group: "chart",
+    render: (a) => <NotesTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  add("screeners_mh", {
+    id: "tracking",
+    label: "Tracking",
+    icon: TrendingUp,
+    group: "chart",
+    render: () => <TrackingTab patientId={pid} />,
+  });
+  add("meds_erx", {
+    id: "orders",
+    label: "Orders",
+    icon: Pill,
+    group: "chart",
+    render: (a) => <OrdersTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+
+  // ----- Case management -----
+  add("demographics", {
+    id: "contact",
+    label: "Contact",
+    icon: UserRound,
+    group: "case",
+    alwaysVisible: true,
+    render: (a) => <ContactTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  add("case_notes", {
+    id: "checkins",
+    label: "Check-ins",
+    icon: CalendarCheck,
+    group: "case",
+    alwaysVisible: true,
+    render: (a) => <CheckInsTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  add("sdoh", {
+    id: "sdoh",
+    label: "SDOH",
+    icon: Home,
+    group: "case",
+    alwaysVisible: true,
+    count: counts.sdoh,
+    render: (a) => <SdohTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  add("sdoh", {
+    id: "referrals",
+    label: "Referrals",
+    icon: RouteIcon,
+    group: "case",
+    alwaysVisible: true,
+    count: counts.referrals,
+    render: (a) => (
+      <ReferralsTab
+        patientId={pid}
+        sudGated={gate("sud_treatment").locked}
+        readOnly={a.level === "read"}
+      />
+    ),
+  });
+  add("eligibility", {
+    id: "eligibility",
+    label: "Eligibility",
+    icon: ClipboardCheck,
+    group: "case",
+    alwaysVisible: true,
+    render: (a) => <EligibilityTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  add("case_notes", {
+    id: "tasks",
+    label: "Tasks",
+    icon: ListChecks,
+    group: "case",
+    alwaysVisible: true,
+    count: counts.tasks,
+    render: () => <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />,
+  });
+  add("peer_notes", {
+    id: "peer",
+    label: "Peer notes",
+    icon: Users,
+    group: "case",
+    render: (a) => <PeerNotesTab patientId={pid} canWrite={a.level === "write"} />,
+  });
+
+  // ----- Coordination -----
+  add("case_notes", {
+    id: "coord",
+    label: "External",
+    icon: Building2,
+    group: "coordination",
+    alwaysVisible: true,
+    render: () => <CoordinationTab patientId={pid} part2Consent={patient.consents.part2Sud} />,
+  });
+  add("care_coordination", {
+    id: "providers",
+    label: "Providers",
+    icon: Stethoscope,
+    group: "coordination",
+    alwaysVisible: true,
+    render: () => <ProviderHistoryTab patientId={pid} />,
+  });
+
+  return sections;
+}
+
+export { AlertTriangle };
