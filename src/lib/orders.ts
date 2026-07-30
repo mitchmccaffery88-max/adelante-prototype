@@ -126,6 +126,55 @@ export function reconciliationExhausted(order: MedOrder): boolean {
 }
 
 /**
+ * Where an ingredient's machine-readable strength ultimately came from.
+ *   rxnav        — RxNav's own strength/properties parsed cleanly
+ *   dailymed     — RxNav had no parseable strength; the DailyMed SPL fallback did
+ *   units_parsed — strength was expressed in drug UNITS ("100 UNT/ML"), not mg
+ *   manual       — no machine-readable strength anywhere; clinician typed it
+ */
+export type StrengthSource = "rxnav" | "dailymed" | "units_parsed" | "manual";
+
+export interface IngredientStrengthProvenance {
+  ingredient: string;
+  source: StrengthSource;
+  strengthMg?: number;
+  strengthUnits?: number;
+  unitsPerMl?: number;
+}
+
+/**
+ * Per-ingredient strength provenance for the audit trail. Reviewers must be
+ * able to tell a machine-validated strength from a hand-typed one, so this is
+ * recorded at sign time and never inferred after the fact.
+ */
+export function strengthProvenanceFor(order: MedOrder): IngredientStrengthProvenance[] {
+  const product = productFromOrder(order);
+  const fallbackName = order.productName ?? order.drugName;
+  if (!product || product.ingredients.length === 0) {
+    return [{ ingredient: fallbackName, source: "manual" }];
+  }
+  const catalogSource: StrengthSource = order.strengthSource === "dailymed" ? "dailymed" : "rxnav";
+  return product.ingredients.map((ing) => {
+    const unitDosed = ing.strengthUnits !== undefined || ing.unitsPerMl !== undefined;
+    const hasMg = ing.strengthMg !== undefined;
+    const source: StrengthSource = unitDosed
+      ? "units_parsed"
+      : hasMg
+        ? catalogSource
+        : // Topicals and exhausted products carry no quantitative strength; the
+          // clinician's apply-amount / manual text is the operative instruction.
+          "manual";
+    return {
+      ingredient: ing.name || fallbackName,
+      source,
+      strengthMg: ing.strengthMg,
+      strengthUnits: ing.strengthUnits,
+      unitsPerMl: ing.unitsPerMl,
+    };
+  });
+}
+
+/**
  * Attribution is required when the acting staff member cannot prescribe —
  * i.e. they lack write access to the `meds_erx` record class. Prescribers
  * (pmhnp) order under their own identity and never see the section.

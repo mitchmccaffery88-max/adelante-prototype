@@ -19,6 +19,7 @@ import {
   REQ_FIELD,
   REQ_LABEL,
   type OrderFieldKey,
+  strengthProvenanceFor,
 } from "@/lib/orders";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -417,10 +418,14 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   const sign = () => {
     if (!canSign) return;
+    const strengthProvenance = Object.fromEntries(
+      drafts.map((d) => [d.id, strengthProvenanceFor(d)]),
+    );
     const n = AdelanteEHR.signOrders(
       patientId,
       drafts.map((d) => d.id),
       staffName,
+      { strengthProvenance },
     ).length;
     setAttested(false);
     setShowIssues(false);
