@@ -355,6 +355,11 @@ export function reconcileComboByUnits(
       name: i.name,
       mg: Math.round(i.strengthMg * unitsPerAdmin * 1000) / 1000,
     })),
+    warnings: product.ingredientNamesFallback
+      ? [
+          "Ingredient names could not be read from the product name — they are matched to strengths by position. Verify each ingredient before signing.",
+        ]
+      : undefined,
   };
 }
 
