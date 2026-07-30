@@ -25,7 +25,8 @@ export type DoseErrorCode =
   | "combo_ambiguous"
   | "target_lt_product"
   | "fraction_not_allowed"
-  | "quarter_not_allowed";
+  | "quarter_not_allowed"
+  | "unit_fraction_not_allowed";
 
 export interface DoseError {
   code: DoseErrorCode;
@@ -35,10 +36,18 @@ export interface DoseError {
 /** One active ingredient of the selected product. */
 export interface DoseIngredient {
   name: string;
-  /** Strength numerator, always normalised to mg by `normalizeStrength`. */
-  strengthMg: number;
+  /**
+   * Strength numerator normalised to mg. Undefined for UNIT-DOSED products
+   * (insulin, heparin, some biologics) where mg is simply the wrong axis —
+   * see `strengthUnits` / `unitsPerMl`.
+   */
+  strengthMg?: number;
   /** Present for liquids: the volume the strength is expressed per (mL). */
   perMl?: number;
+  /** Strength expressed in international/USP UNITS per dosage unit ("100 UNT"). */
+  strengthUnits?: number;
+  /** Concentration for unit-dosed liquids: U-100 insulin = 100 units/mL. */
+  unitsPerMl?: number;
 }
 
 export interface DoseProduct {
@@ -64,6 +73,11 @@ export interface DoseResult {
   unitsPerAdmin?: number;
   /** Volume per administration for liquids, in mL. */
   volumeMl?: number;
+  /**
+   * True when `unitsPerAdmin` counts DRUG UNITS (insulin/heparin units), not
+   * dosage units (tablets). Changes labelling and dispense rounding.
+   */
+  isUnitDose?: boolean;
   /** Delivered mg per ingredient at the reconciled unit count. */
   perIngredientMg: { name: string; mg: number }[];
   /** Total mg delivered per administration (single-ingredient products only). */
