@@ -334,6 +334,12 @@ export function reconcileDose(product: DoseProduct | undefined, targetMg: number
 
   const ing = product.ingredients[0];
   const warnings: string[] = [];
+  if (ing.strengthMg === undefined)
+    return err(
+      "no_strength",
+      "This product's strength is expressed in units, not mg — dose it by units.",
+    );
+  const strengthMg = ing.strengthMg;
 
   // Liquids are continuous — no splitting rules apply.
   if (ing.perMl) {
@@ -360,11 +366,11 @@ export function reconcileDose(product: DoseProduct | undefined, targetMg: number
 
   // Reference taxonomy: exactly two failure branches after the low-target check.
   const step = smallestUnitFraction(product.doseForm);
-  const ratio = targetMg / ing.strengthMg;
+  const ratio = targetMg / strengthMg;
   if (ratio + EPS < 0.5) {
     return err(
       "target_lt_product",
-      `Smallest dispensable dose of this product is ${ing.strengthMg * 0.5} mg (half a ${ing.strengthMg} mg unit) — lower than the ${targetMg} mg requested. Choose a lower strength.`,
+      `Smallest dispensable dose of this product is ${strengthMg * 0.5} mg (half a ${strengthMg} mg unit) — lower than the ${targetMg} mg requested. Choose a lower strength.`,
     );
   }
   if (step === 1 && !isMultipleOf(ratio, 1)) {
@@ -376,15 +382,15 @@ export function reconcileDose(product: DoseProduct | undefined, targetMg: number
   if (step === 0.5 && !isMultipleOf(ratio, 0.5)) {
     return err(
       "quarter_not_allowed",
-      `Tablets may only be halved. ${targetMg} mg would require ${ratio.toFixed(3)} units of a ${ing.strengthMg} mg tablet.`,
+      `Tablets may only be halved. ${targetMg} mg would require ${ratio.toFixed(3)} units of a ${strengthMg} mg tablet.`,
     );
   }
 
   const rounded = Math.round(ratio / step) * step;
   return {
     unitsPerAdmin: rounded,
-    perIngredientMg: [{ name: ing.name, mg: rounded * ing.strengthMg }],
-    totalMg: rounded * ing.strengthMg,
+    perIngredientMg: [{ name: ing.name, mg: rounded * strengthMg }],
+    totalMg: rounded * strengthMg,
   };
 }
 
@@ -412,10 +418,12 @@ export function reconcileComboByUnits(
 
   return {
     unitsPerAdmin,
-    perIngredientMg: product.ingredients.map((i) => ({
-      name: i.name,
-      mg: Math.round(i.strengthMg * unitsPerAdmin * 1000) / 1000,
-    })),
+    perIngredientMg: product.ingredients
+      .filter((i) => i.strengthMg !== undefined)
+      .map((i) => ({
+        name: i.name,
+        mg: Math.round((i.strengthMg as number) * unitsPerAdmin * 1000) / 1000,
+      })),
     warnings: product.ingredientNamesFallback
       ? [
           "Ingredient names could not be read from the product name — they are matched to strengths by position. Verify each ingredient before signing.",
@@ -438,17 +446,20 @@ export function reconcileComboByIngredient(
   if (!product) return err("no_product", "Select a product before entering a dose.");
   const ing = product.ingredients[ingredientIndex];
   if (!ing) return err("no_strength", "Pick which ingredient the dose refers to.");
+  if (ing.strengthMg === undefined)
+    return err("no_strength", `${ing.name} has no mg strength — dose this product by units.`);
+  const strengthMg = ing.strengthMg;
   if (!Number.isFinite(targetMg) || targetMg <= 0)
     return err("invalid_target", "Enter a dose greater than zero.");
 
   const step = smallestUnitFraction(product.doseForm);
-  if (targetMg / ing.strengthMg + EPS < 0.5)
+  if (targetMg / strengthMg + EPS < 0.5)
     return err(
       "target_lt_product",
-      `Smallest dispensable amount of ${ing.name} in this product is ${ing.strengthMg * 0.5} mg.`,
+      `Smallest dispensable amount of ${ing.name} in this product is ${strengthMg * 0.5} mg.`,
     );
 
-  const units = targetMg / ing.strengthMg;
+  const units = targetMg / strengthMg;
   if (!isMultipleOf(units, step))
     return err(
       step === 1 ? "fraction_not_allowed" : "quarter_not_allowed",
@@ -456,6 +467,53 @@ export function reconcileComboByIngredient(
     );
 
   return reconcileComboByUnits(product, Math.round(units / step) * step);
+}
+
+/**
+ * UNIT-AXIS reconciliation (insulin, heparin, some biologics).
+ *
+ * Deliberately NOT tablet-splitting math: for unit-dosed products the
+ * clinician's stated unit count IS the dispensable instruction ("18 units
+ * subcutaneously nightly"). The only validation is that the count is positive
+ * and lands on a legal granularity — whole units, or half units for products
+ * whose concentration makes half-unit dosing real (pens/syringes). If the
+ * product carries a concentration, the fill volume in mL is computed as a
+ * CONVENIENCE (what to draw up), never as a constraint on the dose.
+ */
+export function reconcileDoseByUnits(
+  product: DoseProduct | undefined,
+  targetUnits: number,
+  opts: { allowHalfUnits?: boolean } = {},
+): DoseResult {
+  if (!product) return err("no_product", "Select a product before entering a dose.");
+  if (!Number.isFinite(targetUnits) || targetUnits <= 0)
+    return err("invalid_target", "Enter a unit dose greater than zero.");
+
+  const step = opts.allowHalfUnits ? 0.5 : 1;
+  if (!isMultipleOf(targetUnits, step))
+    return err(
+      "unit_fraction_not_allowed",
+      `This product is dosed in ${step === 1 ? "whole" : "half"} units — ${targetUnits} units cannot be measured.`,
+    );
+
+  const conc = product.ingredients.find((i) => i.unitsPerMl)?.unitsPerMl;
+  const warnings: string[] = [];
+  let volumeMl: number | undefined;
+  if (conc) {
+    volumeMl = Math.round((targetUnits / conc) * 1000) / 1000;
+    if (/\b(im|sq|subcut)\b/i.test(product.route ?? "") && volumeMl > 5)
+      warnings.push(
+        `${volumeMl} mL is a large volume for the ${product.route} route — split doses may be needed.`,
+      );
+  }
+
+  return {
+    unitsPerAdmin: targetUnits,
+    isUnitDose: true,
+    volumeMl,
+    perIngredientMg: [],
+    warnings: warnings.length ? warnings : undefined,
+  };
 }
 
 /** True when the product needs the axis-picker UI. */
