@@ -272,40 +272,54 @@ export function reconcileDose(product: DoseProduct | undefined, targetMg: number
     );
 
   const ing = product.ingredients[0];
+  const warnings: string[] = [];
 
   // Liquids are continuous — no splitting rules apply.
   if (ing.perMl) {
     const volumeMl = targetMg / ing.perMl;
+    // Large-volume advisories, ported verbatim from the reference: parenteral
+    // routes cannot absorb big boluses, and any large oral volume is worth a
+    // second look before it reaches the MAR.
+    if (/\b(im|sq|subcut)\b/i.test(product.route ?? "") && volumeMl > 5) {
+      warnings.push(
+        `${Math.round(volumeMl * 100) / 100} mL is a large volume for the ${product.route} route — split doses may be needed.`,
+      );
+    } else if (volumeMl > 30) {
+      warnings.push(
+        `${Math.round(volumeMl * 100) / 100} mL is a large single dose — double-check the concentration and intended dose.`,
+      );
+    }
     return {
       volumeMl: Math.round(volumeMl * 100) / 100,
       perIngredientMg: [{ name: ing.name, mg: targetMg }],
       totalMg: targetMg,
+      warnings: warnings.length ? warnings : undefined,
     };
   }
 
-  if (targetMg + EPS < ing.strengthMg * smallestUnitFraction(product.doseForm)) {
+  // Reference taxonomy: exactly two failure branches after the low-target check.
+  const step = smallestUnitFraction(product.doseForm);
+  const ratio = targetMg / ing.strengthMg;
+  if (ratio + EPS < 0.5) {
     return err(
       "target_lt_product",
-      `Smallest dispensable dose of this product is ${ing.strengthMg * smallestUnitFraction(product.doseForm)} mg — lower than the ${targetMg} mg requested. Choose a lower strength.`,
+      `Smallest dispensable dose of this product is ${ing.strengthMg * 0.5} mg (half a ${ing.strengthMg} mg unit) — lower than the ${targetMg} mg requested. Choose a lower strength.`,
     );
   }
-
-  const units = targetMg / ing.strengthMg;
-  const step = smallestUnitFraction(product.doseForm);
-  if (!isMultipleOf(units, step)) {
-    if (step === 1 && isMultipleOf(units, 0.5)) {
-      return err(
-        "fraction_not_allowed",
-        `${product.doseForm ?? "This form"} cannot be split. ${targetMg} mg would require ${units} units.`,
-      );
-    }
+  if (step === 1 && !isMultipleOf(ratio, 1)) {
     return err(
-      "not_a_multiple",
-      `${targetMg} mg is not achievable with ${ing.strengthMg} mg units (needs ${units.toFixed(3)} units).`,
+      "fraction_not_allowed",
+      `${product.doseForm ?? "This form"} cannot be split. ${targetMg} mg would require ${ratio.toFixed(3)} units.`,
+    );
+  }
+  if (step === 0.5 && !isMultipleOf(ratio, 0.5)) {
+    return err(
+      "quarter_not_allowed",
+      `Tablets may only be halved. ${targetMg} mg would require ${ratio.toFixed(3)} units of a ${ing.strengthMg} mg tablet.`,
     );
   }
 
-  const rounded = Math.round(units / step) * step;
+  const rounded = Math.round(ratio / step) * step;
   return {
     unitsPerAdmin: rounded,
     perIngredientMg: [{ name: ing.name, mg: rounded * ing.strengthMg }],
