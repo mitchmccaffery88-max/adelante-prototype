@@ -168,7 +168,6 @@ export function MedicationDoseSection({
       patch.daysSupply = calc.daysSupply;
 
     if (Object.keys(patch).length > 0) onPatch(patch);
-    console.log('DBG2', JSON.stringify({mode, doseLabel, dose, mg: order.doseTargetMg, product}));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [
     order.id,
