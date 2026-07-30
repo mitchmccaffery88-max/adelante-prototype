@@ -549,6 +549,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   // Everything released to the chart, in any lifecycle state.
   const released = orders.filter((o) => o.status !== "draft");
   const activeTherapy = released.filter(isTherapyActive);
+  const inactiveTherapy = released.filter((o) => !isTherapyActive(o));
   const [pending, setPending] = useState<{ order: MedOrder; kind: "hold" | "discontinue" } | null>(
     null,
   );
@@ -556,91 +557,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
   const canSign = !viewOnly && gatePasses && attested;
 
-  const stage = (sel: CatalogSelection) => {
-    if (viewOnly) return;
-    AdelanteEHR.addDraftOrder(patientId, {
-      drugName: sel.productName,
-      productName: sel.productName,
-      rxcui: sel.rxcui,
-      strengthText: sel.strengthText,
-      strengthSource: sel.strengthSource,
-      doseForm: sel.doseForm,
-      ingredientNames: sel.ingredientNames,
-      offCatalog: sel.offCatalog,
-      offCatalogJustification: sel.offCatalogJustification,
-      createdBy: staffName,
-    });
-    setShowIssues(true);
-  };
-
-  const sign = () => {
-    if (!canSign) return;
-    const strengthProvenance = Object.fromEntries(
-      drafts.map((d) => [d.id, strengthProvenanceFor(d)]),
-    );
-    const n = AdelanteEHR.signOrders(
-      patientId,
-      drafts.map((d) => d.id),
-      staffName,
-      { strengthProvenance },
-    ).length;
-    setAttested(false);
-    setShowIssues(false);
-    toast.success(`${n} order${n === 1 ? "" : "s"} signed.`);
-  };
-
-  return (
-    <div className="space-y-4">
-      {!viewOnly && (
-        <Card className="p-4">
-          <CatalogPicker onSelect={stage} />
-        </Card>
-      )}
-
-      {drafts.length === 0 ? (
-        <EmptyState
-          icon={ClipboardList}
-          title="No draft orders"
-          description={
-            viewOnly
-              ? "You can view signed orders but cannot create new ones."
-              : "Stage a medication above to begin an order."
-          }
-        />
-      ) : (
-        <div className="space-y-3">
-          {drafts.map((o) => (
-            <DraftOrderCard
-              key={o.id}
-              order={o}
-              patientId={patientId}
-              needsAttribution={needsAttribution}
-              problems={problems}
-              showIssues={showIssues}
-              activeOrders={activeTherapy}
-            />
-          ))}
-        </div>
-      )}
-
-      {!viewOnly && drafts.length > 0 && (
-        <div className="space-y-3">
-          <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
-          <Button className="w-full" disabled={!canSign} onClick={sign}>
-            Sign {drafts.length} order{drafts.length === 1 ? "" : "s"}
-          </Button>
-          {!gatePasses && (
-            <p className="text-xs text-amber-700 dark:text-amber-400">
-              Complete every highlighted required field before signing.
-            </p>
-          )}
-        </div>
-      )}
-
-      {released.length > 0 && (
-        <div className="space-y-2">
-          <div className="text-sm font-medium text-navy">Signed orders</div>
-          {released.map((o) => (
+  const renderReleasedOrder = (o: MedOrder) => (
             <Card key={o.id} className="p-3 text-sm">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{o.drugName}</span>
@@ -755,8 +672,103 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 </div>
               )}
             </Card>
+  );
+
+  const stage = (sel: CatalogSelection) => {
+    if (viewOnly) return;
+    AdelanteEHR.addDraftOrder(patientId, {
+      drugName: sel.productName,
+      productName: sel.productName,
+      rxcui: sel.rxcui,
+      strengthText: sel.strengthText,
+      strengthSource: sel.strengthSource,
+      doseForm: sel.doseForm,
+      ingredientNames: sel.ingredientNames,
+      offCatalog: sel.offCatalog,
+      offCatalogJustification: sel.offCatalogJustification,
+      createdBy: staffName,
+    });
+    setShowIssues(true);
+  };
+
+  const sign = () => {
+    if (!canSign) return;
+    const strengthProvenance = Object.fromEntries(
+      drafts.map((d) => [d.id, strengthProvenanceFor(d)]),
+    );
+    const n = AdelanteEHR.signOrders(
+      patientId,
+      drafts.map((d) => d.id),
+      staffName,
+      { strengthProvenance },
+    ).length;
+    setAttested(false);
+    setShowIssues(false);
+    toast.success(`${n} order${n === 1 ? "" : "s"} signed.`);
+  };
+
+  return (
+    <div className="space-y-4">
+      {!viewOnly && (
+        <Card className="p-4">
+          <CatalogPicker onSelect={stage} />
+        </Card>
+      )}
+
+      {drafts.length === 0 ? (
+        <EmptyState
+          icon={ClipboardList}
+          title="No draft orders"
+          description={
+            viewOnly
+              ? "You can view signed orders but cannot create new ones."
+              : "Stage a medication above to begin an order."
+          }
+        />
+      ) : (
+        <div className="space-y-3">
+          {drafts.map((o) => (
+            <DraftOrderCard
+              key={o.id}
+              order={o}
+              patientId={patientId}
+              needsAttribution={needsAttribution}
+              problems={problems}
+              showIssues={showIssues}
+              activeOrders={activeTherapy}
+            />
           ))}
         </div>
+      )}
+
+      {!viewOnly && drafts.length > 0 && (
+        <div className="space-y-3">
+          <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
+          <Button className="w-full" disabled={!canSign} onClick={sign}>
+            Sign {drafts.length} order{drafts.length === 1 ? "" : "s"}
+          </Button>
+          {!gatePasses && (
+            <p className="text-xs text-amber-700 dark:text-amber-400">
+              Complete every highlighted required field before signing.
+            </p>
+          )}
+        </div>
+      )}
+
+      {activeTherapy.length > 0 && (
+        <div className="space-y-2">
+          <div className="text-sm font-medium text-navy">Signed orders</div>
+          {activeTherapy.map(renderReleasedOrder)}
+        </div>
+      )}
+
+      {inactiveTherapy.length > 0 && (
+        <details className="rounded-md border border-border p-3">
+          <summary className="cursor-pointer text-sm font-medium text-navy">
+            Inactive orders ({inactiveTherapy.length})
+          </summary>
+          <div className="mt-2 space-y-2">{inactiveTherapy.map(renderReleasedOrder)}</div>
+        </details>
       )}
 
       <OrderReasonDialog
