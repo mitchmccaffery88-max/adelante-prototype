@@ -22,6 +22,11 @@ export interface SigInput {
   route?: string;
   durationValue?: number;
   durationUnit?: "days" | "doses";
+  /**
+   * Topical/external forms are dosed by application, not by mg — this text
+   * ("thin layer to affected area") IS the dose portion of the Sig.
+   */
+  applicationInstruction?: string;
 }
 
 function unitNoun(doseForm: string | undefined, count: number): string {
@@ -39,9 +44,40 @@ function fmtNum(n: number): string {
 }
 
 export function buildSigLine(input: SigInput): string {
-  const { product, dose, frequencyLabel, isPrn, prnReason, route, durationValue, durationUnit } =
-    input;
+  const {
+    product,
+    dose,
+    frequencyLabel,
+    isPrn,
+    prnReason,
+    route,
+    durationValue,
+    durationUnit,
+    applicationInstruction,
+  } = input;
+
+  const tail = (parts: string[]): string => {
+    if (frequencyLabel) parts.push(frequencyLabel);
+    if (isPrn) parts.push(prnReason ? `as needed for ${prnReason}` : "as needed");
+    if (durationValue && durationUnit)
+      parts.push(
+        durationUnit === "days" ? `for ${durationValue} days` : `for ${durationValue} doses`,
+      );
+    return `${parts.join(" ")}.`;
+  };
+
+  // Topical: "Apply thin layer to affected area twice daily."
+  if (applicationInstruction?.trim()) return tail(["Apply", applicationInstruction.trim()]);
+
   if (!product || !dose || dose.error) return "";
+
+  // Unit-dosed products (insulin, heparin): the unit count IS the instruction.
+  if (dose.isUnitDose && dose.unitsPerAdmin !== undefined) {
+    const parts = [`Give ${fmtNum(dose.unitsPerAdmin)} units`];
+    if (dose.volumeMl !== undefined) parts.push(`(${fmtNum(dose.volumeMl)} mL)`);
+    if (route) parts.push(`by ${route.toLowerCase()} route`);
+    return tail(parts);
+  }
 
   const parts: string[] = ["Take"];
 
@@ -62,12 +98,5 @@ export function buildSigLine(input: SigInput): string {
   }
 
   if (route) parts.push(`by ${route.toLowerCase()} route`);
-  if (frequencyLabel) parts.push(frequencyLabel);
-  if (isPrn) parts.push(prnReason ? `as needed for ${prnReason}` : "as needed");
-  if (durationValue && durationUnit)
-    parts.push(
-      durationUnit === "days" ? `for ${durationValue} days` : `for ${durationValue} doses`,
-    );
-
-  return `${parts.join(" ")}.`;
+  return tail(parts);
 }
