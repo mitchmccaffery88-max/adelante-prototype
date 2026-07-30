@@ -240,9 +240,20 @@ export function validateOrder(order: MedOrder, opts: { needsAttribution: boolean
     issues.push({ field: "frequency", message: "Frequency is required." });
   if (order.quantity === undefined || order.quantity === null || Number.isNaN(order.quantity))
     issues.push({ field: "quantity", message: "Quantity is required." });
-  // STAT orders are a single immediate administration — no duration.
-  if (!order.isStat && (order.durationValue === undefined || !order.durationUnit))
+  // STAT orders are a single immediate administration — no duration. PRN
+  // cadences are open-ended by definition, so they are exempt the same way.
+  if (
+    !order.isStat &&
+    !isPrnOrder(order) &&
+    (order.durationValue === undefined || !order.durationUnit)
+  )
     issues.push({ field: "duration", message: "Duration is required (or mark the order STAT)." });
+  // Dispense routing: every order must say whether it leaves the chart.
+  if (!order.dispenseRoute)
+    issues.push({
+      field: "dispenseRoute",
+      message: "Dispense route is required — send to pharmacy or chart only.",
+    });
   if (order.isControlled && (order.daysSupply === undefined || Number.isNaN(order.daysSupply)))
     issues.push({
       field: "daysSupply",
