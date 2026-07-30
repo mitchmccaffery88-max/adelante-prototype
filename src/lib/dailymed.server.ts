@@ -68,10 +68,20 @@ interface PackagingResponse {
   };
 }
 
-/** Look up a quantitative strength for an RxCUI (preferred) or product name. */
+/**
+ * Look up a quantitative strength for an RxCUI (preferred) or product name.
+ *
+ * RELIABILITY CAVEAT (measured against live data): one SPL can cover several
+ * products (repackagers, multi-strength kits), so a naive "first product" read
+ * can concatenate strengths that belong to different products. When the caller
+ * knows how many active ingredients the concept has, pass `expectedIngredients`
+ * and the matching product is preferred. The result is still surfaced with a
+ * visible "Strength: DailyMed" provenance badge — never silently trusted.
+ */
 export async function lookupDailyMedStrength(input: {
   rxcui?: string;
   name?: string;
+  expectedIngredients?: number;
 }): Promise<DailyMedStrength | undefined> {
   const queries: string[] = [];
   if (input.rxcui) queries.push(`${BASE}/spls.json?rxcui=${encodeURIComponent(input.rxcui)}&pagesize=3`);
@@ -83,7 +93,14 @@ export async function lookupDailyMedStrength(input: {
     for (const entry of list?.data ?? []) {
       const pack = await getJson<PackagingResponse>(`${BASE}/spls/${entry.setid}/packaging.json`);
       const products = pack?.data?.products ?? [];
-      for (const p of products) {
+      const ordered = input.expectedIngredients
+        ? [...products].sort(
+            (a, b) =>
+              Math.abs((a.active_ingredients?.length ?? 0) - input.expectedIngredients!) -
+              Math.abs((b.active_ingredients?.length ?? 0) - input.expectedIngredients!),
+          )
+        : products;
+      for (const p of ordered) {
         const parts = (p.active_ingredients ?? [])
           .map((a) => (a.strength ? normalizeDailyMedStrength(a.strength) : undefined))
           .filter((x): x is string => !!x);
