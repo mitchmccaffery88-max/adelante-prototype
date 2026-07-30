@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
 
 export const Route = createFileRoute("/admin-audit")({
   head: () => ({
@@ -62,6 +63,8 @@ function AdminAuditPage() {
         De-identified activity trail. Program IDs shown; no PHI beyond patient IDs used for internal
         linking.
       </p>
+
+      <CatalogResolutionMetricsCard />
 
       <div className="flex items-center gap-3">
         <Select value={cat} onValueChange={(v) => setCat(v as AuditCategory | "all")}>

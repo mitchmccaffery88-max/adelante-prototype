@@ -14,6 +14,8 @@ import { useEffect, useRef, useState } from "react";
 import { searchProducts, loadProductDetail, type CatalogProduct } from "@/lib/rxnav";
 import { getDailyMedStrength } from "@/lib/dailymed.functions";
 import { needsDailyMedFallback } from "@/lib/orders";
+import { isTopicalForm, parseUnitsStrength } from "@/lib/doseReconcile";
+import { AdelanteEHR, type CatalogResolutionPath } from "@/lib/ehr";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -77,11 +79,16 @@ export function CatalogPicker({
     const detail = await loadProductDetail(p);
     let strength = detail.strength;
     let strengthSource: "rxnav" | "dailymed" = "rxnav";
+    let path: CatalogResolutionPath = "rxnav";
 
     // DailyMed fallback: only for products that are neither unit-dosed nor
     // topical, where RxNav genuinely yields no parseable strength. Unit-dosed
     // and topical products are NOT data gaps — they use their own axis.
-    if (
+    if (isTopicalForm(detail.doseForm) || isTopicalForm(detail.name)) {
+      path = "topical";
+    } else if (parseUnitsStrength(detail.strength)) {
+      path = "units_parsed";
+    } else if (
       needsDailyMedFallback({
         name: detail.name,
         strength,
@@ -99,8 +106,19 @@ export function CatalogPicker({
       if (hit?.strength) {
         strength = hit.strength;
         strengthSource = "dailymed";
+        path = "dailymed_resolved";
+      } else {
+        path = "dailymed_empty";
       }
     }
+
+    // Admin-visible telemetry: how often RxNav alone was enough.
+    AdelanteEHR.recordCatalogResolution({
+      rxcui: detail.rxcui,
+      productName: detail.name,
+      path,
+      doseForm: detail.doseForm,
+    });
 
     setResolving(null);
     onSelect({
