@@ -188,12 +188,12 @@ export function CatalogPicker({
       )}
 
       {/* Off-catalog governance path — justification is mandatory. */}
-      <Card className="space-y-2 border-dashed p-3">
-        <div className="flex items-center gap-2 text-sm font-medium">
+      <Card className="space-y-2 border-dashed p-3 [.chart-pane_&]:grid [.chart-pane_&]:grid-cols-2 [.chart-pane_&]:gap-3 [.chart-pane_&]:space-y-0">
+        <div className="flex items-center gap-2 text-sm font-medium [.chart-pane_&]:col-span-2">
           <TriangleAlert className="h-4 w-4 text-amber-600" />
           Off-catalog medication
         </div>
-        <p className="text-xs text-muted-foreground">
+        <p className="text-xs text-muted-foreground [.chart-pane_&]:col-span-2">
           Only for products RxNorm does not carry. Dose math cannot be verified for off-catalog
           entries, so a clinical justification is required and the order is flagged for review.
         </p>
@@ -213,6 +213,7 @@ export function CatalogPicker({
         <Button
           variant="outline"
           size="sm"
+          className="[.chart-pane_&]:col-span-2 [.chart-pane_&]:w-fit"
           disabled={!offCatalogReady}
           onClick={() =>
             onSelect({
