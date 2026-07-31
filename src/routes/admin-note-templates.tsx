@@ -14,6 +14,7 @@ import {
   spanishReviewPending,
   type FieldType,
   type ScoringRule,
+  type ScoringBand,
   type TemplateField,
   type TemplateLanguage,
   type TemplateSchema,
