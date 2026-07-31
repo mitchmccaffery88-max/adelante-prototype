@@ -418,11 +418,37 @@ function DraftOrderCard({
         <label className="flex items-center gap-2 text-xs">
           <Checkbox
             checked={!!order.isControlled}
-            onCheckedChange={(v) => patch({ isControlled: v === true })}
+            onCheckedChange={(v) =>
+              patch({ isControlled: v === true, deaSchedule: v === true ? order.deaSchedule : undefined })
+            }
             aria-label="Controlled medication"
           />
           Controlled medication
         </label>
+        {order.isControlled && (
+          <div className="flex items-center gap-2 text-xs">
+            <Label className="text-xs">DEA schedule</Label>
+            <Select
+              value={order.deaSchedule ?? ""}
+              onValueChange={(v) => patch({ deaSchedule: v as MedOrder["deaSchedule"] })}
+            >
+              <SelectTrigger className="h-8 w-28" aria-label="DEA schedule">
+                <SelectValue placeholder="Unset" />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="CII">CII</SelectItem>
+                <SelectItem value="CIII">CIII</SelectItem>
+                <SelectItem value="CIV">CIV</SelectItem>
+                <SelectItem value="CV">CV</SelectItem>
+              </SelectContent>
+            </Select>
+            {!order.deaSchedule && (
+              <span className="text-amber-700 dark:text-amber-400">
+                Schedule not specified — administration will require a witness.
+              </span>
+            )}
+          </div>
+        )}
         <label className="flex items-center gap-2 text-xs">
           <Checkbox
             checked={!!order.isStat}
