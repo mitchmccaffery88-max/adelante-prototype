@@ -3937,6 +3937,9 @@ export const AdelanteEHR = {
       patientId,
       drugName: input.drugName.trim(),
       status: "draft",
+      // First-class start date, defaulted to the facility's today. Editable in
+      // the Orders tab before signing.
+      startDate: input.startDate ?? facilityDateKey(new Date(), p.facilityTimezone),
       createdAt: new Date().toISOString(),
     };
     p.orders = [row, ...(p.orders ?? [])];
