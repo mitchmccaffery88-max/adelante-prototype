@@ -8938,3 +8938,56 @@ export function useEhr<T>(selector: () => T): T {
     /* Seeding is best-effort; a validation change must never break boot. */
   }
 }
+
+// ---------------------------------------------------------------------------
+// DEMO SEED — §Worklist Phase A. A handful of cross-facility tasks so the
+// worklist isn't an empty shell: a mix of directly-assigned and pool-open
+// rows, two facilities, one overdue and one STAT. Written through the real
+// createCaseTask API so the notification feed behaves exactly as in live use.
+// ---------------------------------------------------------------------------
+{
+  const day = (n: number) => new Date(Date.now() + n * 86400_000).toISOString().slice(0, 10);
+  try {
+    AdelanteEHR.createCaseTask({
+      patientId: "p1",
+      assignedTo: "cm1",
+      title: "Medication pass — morning",
+      detail: "Chart the 08:00 pass for Unit 3B.",
+      dueDate: day(-2),
+      taskType: "med_pass",
+      priority: "urgent",
+      allowedRoles: ["pmhnp", "therapist"],
+      facilityId: "fac-fresno-main",
+      housingUnit: "Unit 3B",
+      source: "manual",
+      dedupeKey: "worklist-seed-1",
+    });
+    AdelanteEHR.createCaseTask({
+      patientId: "p2",
+      assignedTo: "",
+      title: "Intake packet review",
+      detail: "Unclaimed — open to the case management pool.",
+      dueDate: day(0),
+      taskType: "intake_packet",
+      priority: "stat",
+      allowedRoles: ["case_manager"],
+      facilityId: "fac-tulare-adult",
+      housingUnit: "Unit 1A",
+      source: "manual",
+      dedupeKey: "worklist-seed-2",
+    });
+    AdelanteEHR.createCaseTask({
+      patientId: "p1",
+      assignedTo: "",
+      title: "Housing move follow-up call",
+      dueDate: day(3),
+      taskType: "coordination",
+      allowedRoles: [],
+      facilityId: "fac-fresno-north",
+      source: "manual",
+      dedupeKey: "worklist-seed-3",
+    });
+  } catch {
+    /* Seeding is best-effort; never break boot. */
+  }
+}
