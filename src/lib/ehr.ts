@@ -1,6 +1,11 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-import { schemaContentEquals } from "./templateSchema";
-import type { AutofillSnapshot, TemplateAnswers, TemplateSchema } from "./templateSchema";
+import { plannedAutomations, schemaContentEquals, summarizeAutomation } from "./templateSchema";
+import type {
+  Automation,
+  AutofillSnapshot,
+  TemplateAnswers,
+  TemplateSchema,
+} from "./templateSchema";
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
