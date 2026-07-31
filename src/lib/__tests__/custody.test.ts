@@ -383,15 +383,16 @@ describe("facility administration", () => {
       CM,
     );
 
-    expect(() => AdelanteEHR.mergeFacilities(dupe.facilityId, survivor.id, "", CM)).toThrow(
+    const dupeFacilityId = dupe.facilityId;
+    expect(() => AdelanteEHR.mergeFacilities(dupeFacilityId, survivor.id, "", CM)).toThrow(
       /reason/i,
     );
-    const res = AdelanteEHR.mergeFacilities(dupe.facilityId, survivor.id, "Typo duplicate", CM);
+    const res = AdelanteEHR.mergeFacilities(dupeFacilityId, survivor.id, "Typo duplicate", CM);
     expect(res.bookings).toBe(1);
     expect(res.housingMoves).toBe(1);
     expect(AdelanteEHR.listBookings(pid)[0].facilityId).toBe(survivor.id);
     expect(AdelanteEHR.listBookings(pid)[0].facilityName).toBe("Tulare County Jail");
     expect(AdelanteEHR.listHousingMoves(pid)[0].facilityId).toBe(survivor.id);
-    expect(AdelanteEHR.getFacility(dupe.facilityId)?.active).toBe(false);
+    expect(AdelanteEHR.getFacility(dupeFacilityId)?.active).toBe(false);
   });
 });
