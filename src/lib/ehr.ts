@@ -4367,6 +4367,93 @@ export const AdelanteEHR = {
     emit();
     return rows;
   },
+
+  // ----- KOP issuance (§MAR Phase 2) ----------------------------------------
+  listKopIssuances(patientId: string, opts?: { orderId?: string }): KopIssuance[] {
+    const rows = patients.find((x) => x.id === patientId)?.kopIssuances ?? [];
+    return opts?.orderId ? rows.filter((r) => r.orderId === opts.orderId) : [...rows];
+  },
+  /** The open (not-yet-returned) issuance for an order, if any. */
+  activeKopIssuance(patientId: string, orderId: string): KopIssuance | undefined {
+    return (patients.find((x) => x.id === patientId)?.kopIssuances ?? []).find(
+      (r) => r.orderId === orderId && !r.returnedAt,
+    );
+  },
+  /**
+   * Issue a KOP supply. Refuses a second ACTIVE issuance for the same order —
+   * the existing one must be returned first.
+   */
+  issueKop(input: {
+    patientId: string;
+    orderId: string;
+    daysSupply: number;
+    quantity: number;
+    patientSignatureName: string;
+    issuedBy: string;
+    notes?: string;
+  }): KopIssuance {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) throw new Error("Patient not found");
+    const order = p.orders?.find((o) => o.id === input.orderId);
+    if (!order) throw new Error("Order not found");
+    if (!order.isKop) throw new Error("This order is not marked keep-on-person.");
+    const open = AdelanteEHR.activeKopIssuance(input.patientId, input.orderId);
+    if (open)
+      throw new Error(
+        `An active KOP supply already exists for this order — ${open.daysSupply} day(s) issued ${new Date(open.issuedAt).toLocaleDateString()}. Record its return first.`,
+      );
+    const signature = input.patientSignatureName?.trim();
+    if (!signature) throw new Error("The patient's typed signature name is required.");
+    if (!(input.daysSupply > 0)) throw new Error("Days supply must be greater than zero.");
+    if (!(input.quantity > 0)) throw new Error("Quantity must be greater than zero.");
+    const row: KopIssuance = {
+      id: uid(),
+      patientId: input.patientId,
+      orderId: input.orderId,
+      daysSupply: input.daysSupply,
+      quantity: input.quantity,
+      patientSignatureName: signature,
+      issuedBy: input.issuedBy,
+      issuedAt: new Date().toISOString(),
+      notes: input.notes?.trim() || undefined,
+    };
+    p.kopIssuances = [row, ...(p.kopIssuances ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "kop_issued",
+      patientId: input.patientId,
+      actorId: input.issuedBy,
+      detail: {
+        issuanceId: row.id,
+        orderId: row.orderId,
+        drugName: order.drugName,
+        daysSupply: row.daysSupply,
+        quantity: row.quantity,
+        patientSignatureName: row.patientSignatureName,
+      },
+    });
+    emit();
+    return row;
+  },
+  /** Record the return of an issued KOP supply. */
+  returnKop(patientId: string, issuanceId: string, staffName: string): KopIssuance {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row = (p.kopIssuances ?? []).find((r) => r.id === issuanceId);
+    if (!row) throw new Error("KOP issuance not found");
+    if (row.returnedAt) throw new Error("This supply has already been returned.");
+    row.returnedAt = new Date().toISOString();
+    row.returnedBy = staffName;
+    appendAudit({
+      category: "clinical",
+      action: "kop_returned",
+      patientId,
+      actorId: staffName,
+      detail: { issuanceId: row.id, orderId: row.orderId },
+    });
+    emit();
+    return row;
+  },
 };
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
