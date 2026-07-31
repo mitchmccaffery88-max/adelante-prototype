@@ -165,4 +165,32 @@ describe("care message Part 2 flagging", () => {
       expect(n.body).not.toContain("do not echo");
     }
   });
+
+  it("adds an un-gated backstop notification when a self-flag would blind the case manager", () => {
+    const gatedPatient = AdelanteEHR.listPatients().find(
+      (x) => canAccess("case_manager", "screeners_sud", x).locked,
+    )!;
+    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length;
+    AdelanteEHR.sendPatientMessage(gatedPatient.id, "sensitive ask", true);
+    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+      (n) => n.category === "patient_message" && n.patientId === gatedPatient.id,
+    );
+    expect(after.length).toBeGreaterThan(0);
+    expect(AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length).toBeGreaterThan(before);
+    expect(after.at(-1)!.body).toBe("A patient sent a message to their care team.");
+  });
+
+  it("does not add the backstop when the case manager is not gated for that patient", () => {
+    const openPatient = AdelanteEHR.listPatients().find(
+      (x) => !canAccess("case_manager", "screeners_sud", x).locked,
+    )!;
+    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+      (n) => n.patientId === openPatient.id,
+    ).length;
+    AdelanteEHR.sendPatientMessage(openPatient.id, "sensitive ask", true);
+    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+      (n) => n.patientId === openPatient.id,
+    ).length;
+    expect(after).toBe(before);
+  });
 });
