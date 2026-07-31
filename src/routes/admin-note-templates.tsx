@@ -400,6 +400,36 @@ function TemplateBuilderDialog({
           />
         </div>
 
+        {/* Spanish authoring. Optional and collapsed: template authors are not
+            forced to translate, and an untranslated field simply renders its
+            English label to the clinician. */}
+        <div className="space-y-2 rounded-md border border-border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="flex items-center gap-2 text-xs text-navy">
+              <Checkbox
+                checked={showEs}
+                aria-label="Show Spanish translation fields"
+                onCheckedChange={(v) => setShowEs(Boolean(v))}
+              />
+              <span>Spanish translations (optional)</span>
+            </label>
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={esReviewed}
+                aria-label="Spanish translation clinically reviewed"
+                onCheckedChange={(v) => setEsReviewed(Boolean(v))}
+              />
+              <span>Spanish translation clinically reviewed</span>
+            </label>
+          </div>
+          {esPending && (
+            <p className="text-[11px] text-navy">
+              {ES_DRAFT_NOTICE_EN} — clinicians in Spanish see a draft indicator until this is
+              marked reviewed.
+            </p>
+          )}
+        </div>
+
         <div className="space-y-3">
           {sections.map((section, si) => (
             <Card key={section.id} className="space-y-3 p-3">
@@ -411,6 +441,16 @@ function TemplateBuilderDialog({
                     onChange={(e) => updateSection(si, { title: e.target.value })}
                   />
                 </div>
+                {showEs && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Section title (ES)</Label>
+                    <Input
+                      value={section.titleEs ?? ""}
+                      placeholder={section.title}
+                      onChange={(e) => updateSection(si, { titleEs: e.target.value || undefined })}
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Show if (optional)</Label>
                   <Input
