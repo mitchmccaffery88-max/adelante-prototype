@@ -222,6 +222,14 @@ export interface MedOrder {
   daysSupplyManual?: boolean;
   /** DEA-schedule-adjacent flag. Drives the days-supply requirement and, later, cosigner scoping. */
   isControlled?: boolean;
+  /**
+   * §MAR Phase 2 — DEA schedule, set by hand whenever `isControlled` is checked
+   * (RxNav does not reliably expose it). Witness at administration is required
+   * for CII only; CIII–CV are covered by the attestation paths instead. When
+   * `isControlled` is true and this is unset we conservatively require a
+   * witness anyway.
+   */
+  deaSchedule?: "CII" | "CIII" | "CIV" | "CV";
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
   /**
@@ -286,6 +294,15 @@ export interface DoseAdministration {
   chartedAt: string;
   /** Required when chartedAt is more than 4h after scheduledAt. */
   lateEntryReason?: string;
+  /**
+   * §MAR Phase 2 — second clinician who witnessed a Schedule II administration.
+   * Required before a CII dose can be charted as given.
+   */
+  witnessedBy?: string;
+  /** True when this row is a PRN administration (reason carries the indication). */
+  isPrn?: boolean;
+  /** True when the batch carried the Suboxone/buprenorphine mouth-check attestation. */
+  mouthCheckAttested?: boolean;
   /** Groups everything committed in one attested pass, so it can be voided together. */
   batchId: string;
   voided?: boolean;
@@ -307,8 +324,38 @@ export interface DoseClaim {
   claimedAt: string;
 }
 
+/**
+ * §MAR Phase 2 — KOP (Keep-On-Person) supply issuance. This is a SUPPLY event,
+ * not a bedside administration: no dose claim, no MAR slot. The patient's
+ * signature is a TYPED acknowledgment, deliberately weaker than the Refusal
+ * document's drawn legal signature.
+ */
+export interface KopIssuance {
+  id: string;
+  patientId: string;
+  orderId: string;
+  daysSupply: number;
+  quantity: number;
+  patientSignatureName: string;
+  issuedBy: string;
+  issuedAt: string;
+  notes?: string;
+  returnedAt?: string;
+  returnedBy?: string;
+}
+
 /** Hours after which charting a dose counts as a late entry. */
 export const LATE_ENTRY_THRESHOLD_HOURS = 4;
+
+/**
+ * Witness requirement at administration. CII always; an order flagged
+ * controlled with no schedule recorded is treated as CII (conservative).
+ * CIII–CV do NOT require a witness.
+ */
+export function requiresDoseWitness(order: Pick<MedOrder, "isControlled" | "deaSchedule">): boolean {
+  if (!order.isControlled) return false;
+  return !order.deaSchedule || order.deaSchedule === "CII";
+}
 
 export interface Patient {
   id: string;
