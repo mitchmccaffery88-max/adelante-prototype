@@ -1,0 +1,414 @@
+// §Clinical documentation Phase 3a — note-template schema engine.
+//
+// Port of BaggaEMR's templateSchema.ts. Two properties matter here and are
+// deliberately preserved:
+//   1. `show_if` expressions are parsed by a hand-written tokenizer +
+//      recursive-descent parser. This is NOT `eval()` / `new Function()` and
+//      must never become one — template text is authored data that renders in
+//      a clinical context, so it must not be able to execute arbitrary code.
+//   2. A score whose inputs are incomplete is reported as incomplete, never as
+//      a smaller-but-plausible total.
+
+export type FieldType =
+  | "text"
+  | "textarea"
+  | "number"
+  | "select"
+  | "multiselect"
+  | "checkbox"
+  | "radio"
+  | "date"
+  | "datetime";
+
+export interface TemplateFieldOption {
+  value: string;
+  label: string;
+  /** Optional numeric weight used by scoring rules. */
+  score?: number;
+}
+
+export interface TemplateField {
+  key: string;
+  type: FieldType;
+  label: string;
+  required?: boolean;
+  options?: TemplateFieldOption[];
+  /** Conditional visibility expression, e.g. `risk == "yes" && phq9 >= 10`. */
+  show_if?: string;
+  help?: string;
+  min?: number;
+  max?: number;
+  rows?: number;
+  /**
+   * ADEL SEAM: this field is read by the future AI-drafting layer (see Agentic
+   * AI Adel Scaffolding in ClickUp) to know what a field is asking for. No
+   * consumer exists yet — do not build AI-fill UI against this field.
+   */
+  ai_hint?: string;
+}
+
+export interface TemplateSection {
+  id: string;
+  title: string;
+  show_if?: string;
+  /** Only "fields" in this pass — orders_section / autofill_section are 3b/3c. */
+  type?: "fields";
+  fields: TemplateField[];
+}
+
+export interface ScoringBand {
+  min: number;
+  max: number;
+  label: string;
+}
+
+export interface ScoringRule {
+  id: string;
+  label: string;
+  /** Field keys whose numeric (or option-weighted) answers are summed. */
+  sum_of: string[];
+  bands?: ScoringBand[];
+}
+
+export interface TemplateSchema {
+  sections: TemplateSection[];
+  scoring?: ScoringRule[];
+}
+
+export type AnswerValue = string | number | boolean | string[] | null | undefined;
+export type TemplateAnswers = Record<string, AnswerValue>;
+
+// ---------------------------------------------------------------------------
+// Expression evaluator (no eval)
+// ---------------------------------------------------------------------------
+
+type Token =
+  | { t: "num"; v: number }
+  | { t: "str"; v: string }
+  | { t: "bool"; v: boolean }
+  | { t: "ident"; v: string }
+  | { t: "op"; v: string }
+  | { t: "lparen" }
+  | { t: "rparen" };
+
+const OPERATORS = ["==", "!=", ">=", "<=", "&&", "||", ">", "<"];
+
+export function tokenize(src: string): Token[] {
+  const out: Token[] = [];
+  let i = 0;
+  while (i < src.length) {
+    const c = src[i]!;
+    if (/\s/.test(c)) {
+      i++;
+      continue;
+    }
+    if (c === "(") {
+      out.push({ t: "lparen" });
+      i++;
+      continue;
+    }
+    if (c === ")") {
+      out.push({ t: "rparen" });
+      i++;
+      continue;
+    }
+    if (c === '"' || c === "'") {
+      const quote = c;
+      let j = i + 1;
+      let s = "";
+      while (j < src.length && src[j] !== quote) {
+        if (src[j] === "\\" && j + 1 < src.length) {
+          s += src[j + 1];
+          j += 2;
+          continue;
+        }
+        s += src[j];
+        j++;
+      }
+      if (j >= src.length) throw new Error("Unterminated string in expression.");
+      out.push({ t: "str", v: s });
+      i = j + 1;
+      continue;
+    }
+    const two = src.slice(i, i + 2);
+    const op = OPERATORS.find((o) => (o.length === 2 ? o === two : o === c));
+    if (op) {
+      out.push({ t: "op", v: op });
+      i += op.length;
+      continue;
+    }
+    if (/[0-9]/.test(c) || (c === "-" && /[0-9]/.test(src[i + 1] ?? ""))) {
+      let j = i + 1;
+      while (j < src.length && /[0-9.]/.test(src[j]!)) j++;
+      out.push({ t: "num", v: Number(src.slice(i, j)) });
+      i = j;
+      continue;
+    }
+    if (/[A-Za-z_]/.test(c)) {
+      let j = i;
+      while (j < src.length && /[A-Za-z0-9_.]/.test(src[j]!)) j++;
+      const word = src.slice(i, j);
+      if (word === "true" || word === "false") out.push({ t: "bool", v: word === "true" });
+      else out.push({ t: "ident", v: word });
+      i = j;
+      continue;
+    }
+    throw new Error(`Unexpected character "${c}" in expression.`);
+  }
+  return out;
+}
+
+function truthy(v: unknown): boolean {
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "string") return v.trim().length > 0;
+  return Boolean(v);
+}
+
+function compare(op: string, a: unknown, b: unknown): boolean {
+  if (op === "==" || op === "!=") {
+    let eq: boolean;
+    if (Array.isArray(a)) eq = a.map(String).includes(String(b));
+    else if (typeof a === "number" || typeof b === "number") eq = Number(a) === Number(b);
+    else if (typeof a === "boolean" || typeof b === "boolean") eq = Boolean(a) === Boolean(b);
+    else eq = String(a ?? "") === String(b ?? "");
+    return op === "==" ? eq : !eq;
+  }
+  const x = Number(a);
+  const y = Number(b);
+  if (Number.isNaN(x) || Number.isNaN(y)) return false;
+  if (op === ">") return x > y;
+  if (op === "<") return x < y;
+  if (op === ">=") return x >= y;
+  if (op === "<=") return x <= y;
+  return false;
+}
+
+/**
+ * Evaluate a `show_if` expression against the current answers.
+ * Grammar (lowest → highest precedence): `||`, `&&`, comparison, primary.
+ */
+export function evalExpr(expr: string | undefined, answers: TemplateAnswers): boolean {
+  if (!expr || !expr.trim()) return true;
+  let tokens: Token[];
+  try {
+    tokens = tokenize(expr);
+  } catch {
+    // A malformed author expression must not hide a field silently.
+    return true;
+  }
+  let pos = 0;
+  const peek = () => tokens[pos];
+
+  function parsePrimary(): unknown {
+    const tk = peek();
+    if (!tk) throw new Error("Unexpected end of expression.");
+    if (tk.t === "lparen") {
+      pos++;
+      const v = parseOr();
+      const close = peek();
+      if (!close || close.t !== "rparen") throw new Error("Missing closing parenthesis.");
+      pos++;
+      return v;
+    }
+    if (tk.t === "op" && tk.v === "!") {
+      pos++;
+      return !truthy(parsePrimary());
+    }
+    pos++;
+    if (tk.t === "num") return tk.v;
+    if (tk.t === "str") return tk.v;
+    if (tk.t === "bool") return tk.v;
+    if (tk.t === "ident") return answers[tk.v];
+    throw new Error("Unexpected token in expression.");
+  }
+
+  function parseComparison(): unknown {
+    let left = parsePrimary();
+    for (;;) {
+      const tk = peek();
+      if (tk && tk.t === "op" && ["==", "!=", ">", "<", ">=", "<="].includes(tk.v)) {
+        pos++;
+        const right = parsePrimary();
+        left = compare(tk.v, left, right);
+        continue;
+      }
+      return left;
+    }
+  }
+
+  function parseAnd(): unknown {
+    let left = parseComparison();
+    for (;;) {
+      const tk = peek();
+      if (tk && tk.t === "op" && tk.v === "&&") {
+        pos++;
+        const right = parseComparison();
+        left = truthy(left) && truthy(right);
+        continue;
+      }
+      return left;
+    }
+  }
+
+  function parseOr(): unknown {
+    let left = parseAnd();
+    for (;;) {
+      const tk = peek();
+      if (tk && tk.t === "op" && tk.v === "||") {
+        pos++;
+        const right = parseAnd();
+        left = truthy(left) || truthy(right);
+        continue;
+      }
+      return left;
+    }
+  }
+
+  try {
+    const result = parseOr();
+    if (pos !== tokens.length) return true;
+    return truthy(result);
+  } catch {
+    return true;
+  }
+}
+
+// ---------------------------------------------------------------------------
+// Visibility, required-field gating, scoring
+// ---------------------------------------------------------------------------
+
+export function isSectionVisible(section: TemplateSection, answers: TemplateAnswers): boolean {
+  return evalExpr(section.show_if, answers);
+}
+
+export function isFieldVisible(field: TemplateField, answers: TemplateAnswers): boolean {
+  return evalExpr(field.show_if, answers);
+}
+
+export function isAnswered(v: AnswerValue): boolean {
+  if (v === null || v === undefined) return false;
+  if (Array.isArray(v)) return v.length > 0;
+  if (typeof v === "string") return v.trim().length > 0;
+  if (typeof v === "number") return !Number.isNaN(v);
+  return true; // booleans: an explicit false is an answer
+}
+
+export interface MissingField {
+  sectionId: string;
+  sectionTitle: string;
+  key: string;
+  label: string;
+}
+
+/**
+ * Required fields that are visible under the current answers and unanswered.
+ * Hidden (show_if false) fields are never required — that is the whole point
+ * of conditional sections.
+ */
+export function findMissingRequired(
+  schema: TemplateSchema | undefined,
+  answers: TemplateAnswers,
+): MissingField[] {
+  if (!schema) return [];
+  const out: MissingField[] = [];
+  for (const section of schema.sections ?? []) {
+    if (!isSectionVisible(section, answers)) continue;
+    for (const field of section.fields ?? []) {
+      if (!field.required) continue;
+      if (!isFieldVisible(field, answers)) continue;
+      // A required checkbox means "must be ticked", not "must be touched".
+      const v = answers[field.key];
+      const ok = field.type === "checkbox" ? v === true : isAnswered(v);
+      if (!ok) {
+        out.push({
+          sectionId: section.id,
+          sectionTitle: section.title,
+          key: field.key,
+          label: field.label,
+        });
+      }
+    }
+  }
+  return out;
+}
+
+export interface ScoreResult {
+  id: string;
+  label: string;
+  total: number;
+  /** True when one or more summed inputs are unanswered or non-numeric. */
+  incomplete: boolean;
+  missingKeys: string[];
+  band?: string;
+}
+
+function numericValueFor(
+  key: string,
+  answers: TemplateAnswers,
+  schema: TemplateSchema,
+): number | null {
+  const raw = answers[key];
+  if (!isAnswered(raw)) return null;
+  if (typeof raw === "number") return raw;
+  if (typeof raw === "boolean") return raw ? 1 : 0;
+  const field = schema.sections
+    ?.flatMap((s) => s.fields ?? [])
+    .find((f) => f.key === key);
+  const values = Array.isArray(raw) ? raw : [String(raw)];
+  let sum = 0;
+  for (const v of values) {
+    const opt = field?.options?.find((o) => o.value === v);
+    if (opt && typeof opt.score === "number") {
+      sum += opt.score;
+      continue;
+    }
+    const n = Number(v);
+    if (Number.isNaN(n)) return null;
+    sum += n;
+  }
+  return sum;
+}
+
+/**
+ * Sum each scoring rule. Missing inputs do NOT silently lower the total — the
+ * rule is flagged incomplete so the UI can tell the clinician not to rely on it.
+ */
+export function computeScore(
+  schema: TemplateSchema | undefined,
+  answers: TemplateAnswers,
+): ScoreResult[] {
+  if (!schema?.scoring?.length) return [];
+  return schema.scoring.map((rule) => {
+    let total = 0;
+    const missingKeys: string[] = [];
+    for (const key of rule.sum_of ?? []) {
+      const n = numericValueFor(key, answers, schema);
+      if (n === null) {
+        missingKeys.push(key);
+        continue;
+      }
+      total += n;
+    }
+    const incomplete = missingKeys.length > 0;
+    const band = incomplete
+      ? undefined
+      : rule.bands?.find((b) => total >= b.min && total <= b.max)?.label;
+    return { id: rule.id, label: rule.label, total, incomplete, missingKeys, band };
+  });
+}
+
+/** The fixed SOAP structure used when no template is selected/exists. */
+export const DEFAULT_SOAP_SCHEMA: TemplateSchema = {
+  sections: [
+    {
+      id: "soap",
+      title: "SOAP",
+      fields: [
+        { key: "subjective", type: "textarea", label: "Subjective", required: true, rows: 3 },
+        { key: "objective", type: "textarea", label: "Objective", rows: 3 },
+        { key: "assessment", type: "textarea", label: "Assessment", rows: 3 },
+        { key: "plan", type: "textarea", label: "Plan", rows: 3 },
+      ],
+    },
+  ],
+};
