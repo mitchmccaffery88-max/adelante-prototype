@@ -1598,6 +1598,54 @@ let currentPatientId = "p2";
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
 
+// ---------------------------------------------------------------------------
+// §Risk-text translation governance.
+//
+// A draft translation (es-v1-draft) is only promoted to a reviewed version
+// (es-v1) after BOTH required clinical sign-offs are recorded. Sign-offs are
+// per-language, append-only in the audit trail, and revocable (which demotes
+// the language back to draft). Already-created RefusalForms are NEVER
+// retro-edited: their snapshot, version, and English snapshot are frozen at
+// creation, which is the whole point of snapshotting a legal disclosure.
+// ---------------------------------------------------------------------------
+
+export interface RiskTextSignoff {
+  role: RiskTextReviewerRole;
+  reviewerName: string;
+  signedAt: string;
+  note?: string;
+}
+
+export interface RiskTextReview {
+  language: string;
+  languageLabel: string;
+  draftVersion: string;
+  /** Version presented on new forms — the draft until both sign-offs land. */
+  effectiveVersion: string;
+  status: "draft" | "approved";
+  signoffs: RiskTextSignoff[];
+  approvedAt?: string;
+  /** Free-text reason recorded when an approval is revoked. */
+  revokedReason?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+}
+
+const riskTextReviews: RiskTextReview[] = [
+  {
+    language: "es",
+    languageLabel: "Spanish",
+    draftVersion: RISK_TEXT_CATALOG_ES["*"].version,
+    effectiveVersion: RISK_TEXT_CATALOG_ES["*"].version,
+    status: "draft",
+    signoffs: [],
+  },
+];
+
+const riskTextApprovalLookup = () => ({
+  approvedLanguages: riskTextReviews.filter((r) => r.status === "approved").map((r) => r.language),
+});
+
 // Vendor adapters (telehealth video + eRx medication management). Kept
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
