@@ -49,7 +49,6 @@ function fallbackReason(decision: "stop" | "modify") {
   return `${decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
 }
 
-
 export function MedReconTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const active = useEhr(() => AdelanteEHR.activeMedReconciliation(patientId));
   const history = useEhr(() => AdelanteEHR.listMedReconciliations(patientId));
