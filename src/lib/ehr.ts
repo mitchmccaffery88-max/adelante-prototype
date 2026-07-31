@@ -3728,6 +3728,25 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    // §Notification feed — cosign routing. No named-cosigner field exists on
+    // ProgressNote, so a note routes to its eligible cosign role pool.
+    if (cosignRequired) {
+      const roles = (n.cosignRole?.length
+        ? n.cosignRole
+        : (NOTE_SELF_SIGN_ROLES as readonly string[])) as StaffRole[];
+      const subject = `Cosignature needed — ${n.templateTitle ?? "progress note"}`;
+      const body = `${input.signedBy} signed a note for ${patientLabel(patientId)} that requires your cosignature.`;
+      for (const r of roles) {
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "cosign_request",
+          subject,
+          body,
+          linkRoute: "/cosign-inbox",
+          patientId,
+        });
+      }
+    }
     if (crisisScores.length > 0 && input.crisisDecision) {
       const detail = crisisScores.map(describeCrisisScore).join("; ");
       if (input.crisisDecision.kind === "escalate") {
