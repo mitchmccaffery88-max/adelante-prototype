@@ -52,6 +52,7 @@ export type RecordClass =
   | "custody_tracking"
   | "population_health"
   | "crisis_queue"
+  | "patient_messaging"
   | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
@@ -210,6 +211,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     case_manager: "read",
     peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+  // §Patient<->clinician messaging (Phase 2). Its own class rather than
+  // reusing `case_notes`: case_notes gives therapist/pmhnp read-only, but a
+  // clinician who can see a patient's message must be able to answer it.
+  // Treating roles write, peer_specialist reads (they coordinate but don't
+  // own the reply), clinical_coordinator reads for oversight, billing gets
+  // nothing — message content is not claim data.
+  patient_messaging: {
+    case_manager: "write",
+    therapist: "write",
+    pmhnp: "write",
+    peer_specialist: "read",
+    clinical_coordinator: "read",
+    sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
   },

@@ -15,6 +15,7 @@ import {
   LayoutDashboard,
   ListChecks,
   MapPin,
+  MessageSquare,
   Pill,
   Repeat2,
   Route as RouteIcon,
@@ -33,6 +34,7 @@ import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
+import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import {
   OverviewTab,
   ContactTab,
@@ -115,6 +117,7 @@ export function useRecordSections(patient: Patient): RecordSection[] {
       bookings: (fresh.bookings ?? []).length,
       currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),
       housingMoves: (fresh.housingMoves ?? []).length,
+      unreadMessages: AdelanteEHR.unreadCountForStaff(fresh.id),
       unreviewedRecon: (() => {
         const open = AdelanteEHR.activeMedReconciliation(fresh.id);
         return open ? AdelanteEHR.unreviewedReconItems(fresh.id, open.id).length : 0;
@@ -308,6 +311,18 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     group: "coordination",
     alwaysVisible: true,
     render: () => <ProviderHistoryTab patientId={pid} />,
+  });
+  // §Messaging Phase 2 — Coordination group: this is a communication channel
+  // with the patient, not clinical charting, and it sits next to the other
+  // "who is talking to whom" surfaces (External, Providers).
+  add("patient_messaging", {
+    id: "messages",
+    label: "Messages",
+    icon: MessageSquare,
+    group: "coordination",
+    count: counts.unreadMessages || undefined,
+    urgent: counts.unreadMessages > 0,
+    render: (a) => <StaffMessagesTab patientId={pid} readOnly={a.level !== "write"} />,
   });
   // §Custody tracking — coordination data, not clinical charting.
   add("custody_tracking", {
