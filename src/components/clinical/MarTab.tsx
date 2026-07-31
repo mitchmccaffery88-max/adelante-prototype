@@ -30,7 +30,6 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
-import { EmptyState as _Empty } from "@/components/EmptyState";
 import { toast } from "sonner";
 import { CalendarClock, Info, Lock, Syringe } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -221,8 +220,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
 
   if (!patient) return null;
 
-  const charted = (patient.administrations ?? []).filter((a) => a.scheduledAt.slice(0, 10) >= "0");
-  const chartedForDay = charted.filter((a) =>
+  const chartedForDay = (patient.administrations ?? []).filter((a) =>
     day.slots.some((s) => s.order.id === a.orderId && s.scheduledAt === a.scheduledAt),
   );
 
