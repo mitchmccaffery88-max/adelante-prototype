@@ -262,6 +262,54 @@ export interface MedOrder {
   createdAt?: string;
 }
 
+/**
+ * §MAR Phase 1 — a charted administration of one scheduled dose.
+ *
+ * DEV HANDOFF: Phase 1 covers SCHEDULED, non-PRN, non-KOP, non-controlled
+ * doses only. Deferred (coming, not dropped): PRN eligibility + reason chips,
+ * controlled-substance witness, KOP issuance, Suboxone mouth-check
+ * attestation, cart/keyboard mode, voice pass, and the Refusal legal document.
+ * Entries are NEVER deleted — voiding sets `voided` with a reason, matching the
+ * reference EMR's retention rationale (HIPAA / 42 CFR Part 2).
+ */
+export interface DoseAdministration {
+  id: string;
+  patientId: string;
+  /** References `MedOrder.id`. */
+  orderId: string;
+  /** ISO instant the dose was due (from the derived MAR grid). */
+  scheduledAt: string;
+  action: "given" | "refused" | "held";
+  /** Required for refused/held. Free text in Phase 1; chips come in Phase 2. */
+  reason?: string;
+  chartedBy: string;
+  chartedAt: string;
+  /** Required when chartedAt is more than 4h after scheduledAt. */
+  lateEntryReason?: string;
+  /** Groups everything committed in one attested pass, so it can be voided together. */
+  batchId: string;
+  voided?: boolean;
+  voidReason?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+}
+
+/**
+ * Soft lock on an un-charted dose so two nurses don't chart the same slot.
+ * Single-session demos can't exercise real concurrency, but the state machine
+ * (claim / release / takeover-with-reason) is built faithfully so it is
+ * structurally correct once multi-user sessions exist.
+ */
+export interface DoseClaim {
+  orderId: string;
+  scheduledAt: string;
+  claimedBy: string;
+  claimedAt: string;
+}
+
+/** Hours after which charting a dose counts as a late entry. */
+export const LATE_ENTRY_THRESHOLD_HOURS = 4;
+
 export interface Patient {
   id: string;
   firstName: string;
