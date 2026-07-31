@@ -38,6 +38,7 @@ import {
   type PeerNote,
   type CaseTask,
   type ProgressNote,
+  type MedOrder,
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
