@@ -297,6 +297,7 @@ const dict = {
     msgSent: "Message sent to your care team",
     msgNewReplies: "new",
     msgAsyncNotice: "This is not for emergencies. We don't reply right away.",
+    msgSensitive: "This is private — please handle it with care",
   },
   es: {
     appName: "Adelante",
@@ -597,6 +598,7 @@ const dict = {
     msgSent: "Mensaje enviado a tu equipo de cuidado",
     msgNewReplies: "nuevos",
     msgAsyncNotice: "Esto no es para emergencias. No respondemos de inmediato.",
+    msgSensitive: "Esto es privado — por favor trátenlo con cuidado",
   },
 } as const;
 
