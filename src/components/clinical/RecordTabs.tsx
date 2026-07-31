@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AutoCreatedFromNote,
+  AutoStartedNoteTrace,
+} from "@/components/clinical/AutomationTrace";
+import {
   AdelanteEHR,
   useEhr,
   isNoteSudSensitive,
