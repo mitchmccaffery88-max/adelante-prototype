@@ -79,7 +79,7 @@ describe("claim mechanics", () => {
     const t = make();
     AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "case_manager");
     AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "case_manager");
-    const actions = AdelanteEHR.listAudit()
+    const actions = AdelanteEHR.listAuditEvents()
       .filter((a) => (a.detail as { taskId?: string } | undefined)?.taskId === t.id)
       .map((a) => a.action);
     expect(actions).toContain("worklist_task_claimed");
