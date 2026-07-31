@@ -1324,6 +1324,12 @@ export interface ProgressNote {
   templateId?: string;
   templateKey?: string;
   templateTitle?: string;
+  /**
+   * Version number of the template row the note was answered against. The
+   * schema snapshot below is authoritative; this exists so the UI/audit can
+   * say "Answered against Behavioral health intake v2" unambiguously.
+   */
+  templateVersion?: number;
   /** Schema snapshot at authoring time — history survives template edits. */
   templateSchema?: TemplateSchema;
   templateAnswers?: TemplateAnswers;
@@ -1331,12 +1337,20 @@ export interface ProgressNote {
 
 /**
  * §Clinical documentation Phase 3a — a reusable structured note template.
- * Templates are versionless config; a note snapshots the schema it was written
- * against so deactivating or editing a template never rewrites signed history.
+ * Rows are immutable with respect to `schema`: a schema edit appends a NEW row
+ * (same `key`, new `id`, `version + 1`) and marks the old row `supersededBy`.
+ * Title/description/encounterType edits are presentation-only and patch in
+ * place. A note also snapshots the schema it was written against, so history
+ * survives even if a version row is somehow lost.
  */
 export interface NoteTemplate {
   id: string;
+  /** Stable identity across versions. */
   key: string;
+  /** 1-based, increments on every schema change. */
+  version: number;
+  /** Set on the older row when a schema edit creates a successor. */
+  supersededBy?: string;
   title: string;
   /** Short author-facing summary shown in the note-start picker. */
   description?: string;
