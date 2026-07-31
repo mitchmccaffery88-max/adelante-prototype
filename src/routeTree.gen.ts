@@ -31,6 +31,7 @@ import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as HomeRouteImport } from './routes/home'
+import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
@@ -151,6 +152,11 @@ const HomeRoute = HomeRouteImport.update({
   path: '/home',
   getParentRoute: () => rootRouteImport,
 } as any)
+const InboxRoute = InboxRouteImport.update({
+  id: '/inbox',
+  path: '/inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const IntakeRoute = IntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
@@ -220,6 +226,7 @@ export interface FileRoutesByFullPath {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
+  '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -253,6 +260,7 @@ export interface FileRoutesByTo {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
+  '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -287,6 +295,7 @@ export interface FileRoutesById {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
+  '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -322,6 +331,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/home'
+    | '/inbox'
     | '/intake'
     | '/message-queue'
     | '/notes-queue'
@@ -355,6 +365,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/home'
+    | '/inbox'
     | '/intake'
     | '/message-queue'
     | '/notes-queue'
@@ -388,6 +399,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/home'
+    | '/inbox'
     | '/intake'
     | '/message-queue'
     | '/notes-queue'
@@ -422,6 +434,7 @@ export interface RootRouteChildren {
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   HomeRoute: typeof HomeRoute
+  InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
   MessageQueueRoute: typeof MessageQueueRoute
   NotesQueueRoute: typeof NotesQueueRoute
@@ -589,6 +602,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof HomeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/inbox': {
+      id: '/inbox'
+      path: '/inbox'
+      fullPath: '/inbox'
+      preLoaderRoute: typeof InboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/intake': {
       id: '/intake'
       path: '/intake'
@@ -678,6 +698,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   HomeRoute: HomeRoute,
+  InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
   MessageQueueRoute: MessageQueueRoute,
   NotesQueueRoute: NotesQueueRoute,
