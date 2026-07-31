@@ -16,6 +16,7 @@ import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
 import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
+import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -70,6 +71,11 @@ const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
 const AdminFacilitiesRoute = AdminFacilitiesRouteImport.update({
   id: '/admin-facilities',
   path: '/admin-facilities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
+  id: '/admin-kpi-targets',
+  path: '/admin-kpi-targets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
@@ -181,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -210,6 +217,7 @@ export interface FileRoutesByTo {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -240,6 +248,7 @@ export interface FileRoutesById {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -271,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -300,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -329,6 +340,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -359,6 +371,7 @@ export interface RootRouteChildren {
   AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
+  AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -430,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-facilities'
       fullPath: '/admin-facilities'
       preLoaderRoute: typeof AdminFacilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-kpi-targets': {
+      id: '/admin-kpi-targets'
+      path: '/admin-kpi-targets'
+      fullPath: '/admin-kpi-targets'
+      preLoaderRoute: typeof AdminKpiTargetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-vendors': {
@@ -583,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
   AdminFacilitiesRoute: AdminFacilitiesRoute,
+  AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
@@ -607,3 +628,13 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { startInstance } from './start.ts'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+    config: Awaited<ReturnType<typeof startInstance.getOptions>>
+  }
+}
