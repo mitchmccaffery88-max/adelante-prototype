@@ -12,6 +12,37 @@ import type {
   TemplateAnswers,
   TemplateSchema,
 } from "./templateSchema";
+// Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
+// import here would create a cycle.
+import type { StaffRole } from "./roles";
+
+// ---------------------------------------------------------------------------
+// §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
+// Patient<->clinician messaging is explicitly out of scope (Phase 2).
+// In-app only: there is no email/SMS/push transport anywhere in this build.
+// ---------------------------------------------------------------------------
+export type NotificationCategory =
+  | "cosign_request"
+  | "crisis_flagged"
+  | "mar_witness_needed"
+  | "task_assigned";
+
+export interface AppNotification {
+  id: string;
+  /** Specific staff identity (STAFF_ROSTER id or staff name). */
+  recipientStaffId?: string;
+  /** OR broadcast to everyone holding this role. Exactly one of the two is set. */
+  recipientRole?: StaffRole;
+  category: NotificationCategory;
+  subject: string;
+  body: string;
+  linkRoute?: string;
+  linkParams?: Record<string, string>;
+  /** Context/traceability only — never used for access control. */
+  patientId?: string;
+  createdAt: string;
+  readAt?: string;
+}
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
@@ -2113,6 +2144,16 @@ const caseTasks: CaseTask[] = [];
 // whether an automation may fire. Keyed by (noteId, automationId).
 const noteAutomationRuns: NoteAutomationRun[] = [];
 
+// §Notification feed — top-level, keyed to a staff identity (not a patient
+// record), because a notification belongs to a person's worklist.
+const notifications: AppNotification[] = [];
+
+/** Display name for notification copy. Never used for access control. */
+function patientLabel(patientId?: string): string {
+  const p = patients.find((x) => x.id === patientId);
+  return p ? `${p.firstName} ${p.lastName}` : "a patient";
+}
+
 // ---------------------------------------------------------------------------
 // §Risk-text translation governance.
 //
@@ -3693,6 +3734,25 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    // §Notification feed — cosign routing. No named-cosigner field exists on
+    // ProgressNote, so a note routes to its eligible cosign role pool.
+    if (cosignRequired) {
+      const roles = (n.cosignRole?.length
+        ? n.cosignRole
+        : (NOTE_SELF_SIGN_ROLES as readonly string[])) as StaffRole[];
+      const subject = `Cosignature needed — ${n.templateTitle ?? "progress note"}`;
+      const body = `${input.signedBy} signed a note for ${patientLabel(patientId)} that requires your cosignature.`;
+      for (const r of roles) {
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "cosign_request",
+          subject,
+          body,
+          linkRoute: "/cosign-inbox",
+          patientId,
+        });
+      }
+    }
     if (crisisScores.length > 0 && input.crisisDecision) {
       const detail = crisisScores.map(describeCrisisScore).join("; ");
       if (input.crisisDecision.kind === "escalate") {
@@ -4350,6 +4410,85 @@ export const AdelanteEHR = {
   caseTasksForPatient(patientId: string): CaseTask[] {
     return caseTasks.filter((t) => t.patientId === patientId);
   },
+
+  // ----- §Notification feed (Phase 1) -----
+  /**
+   * Internal helper. UI never calls this directly — every notification is
+   * raised from inside the method that already performs the action.
+   */
+  notify(input: {
+    recipientStaffId?: string;
+    recipientRole?: StaffRole;
+    category: NotificationCategory;
+    subject: string;
+    body: string;
+    linkRoute?: string;
+    linkParams?: Record<string, string>;
+    patientId?: string;
+  }): AppNotification | undefined {
+    if (!input.recipientStaffId && !input.recipientRole) return undefined;
+    const row: AppNotification = {
+      id: uid(),
+      recipientStaffId: input.recipientStaffId || undefined,
+      // Exactly one addressing mode — a specific person wins over a broadcast.
+      recipientRole: input.recipientStaffId ? undefined : input.recipientRole,
+      category: input.category,
+      subject: input.subject,
+      body: input.body,
+      linkRoute: input.linkRoute,
+      linkParams: input.linkParams,
+      patientId: input.patientId,
+      createdAt: new Date().toISOString(),
+    };
+    notifications.unshift(row);
+    emit();
+    return row;
+  },
+  listNotifications(): AppNotification[] {
+    return [...notifications];
+  },
+  /**
+   * Everything addressed to this staff identity: direct (by roster id OR
+   * display name — both are used as identity tokens across this build) or
+   * broadcast to their role. Newest first.
+   */
+  listNotificationsFor(staffName: string, role?: StaffRole): AppNotification[] {
+    const me = (staffName ?? "").trim();
+    return notifications
+      .filter(
+        (n) =>
+          (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
+          (!!n.recipientRole && !!role && n.recipientRole === role),
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  markNotificationRead(id: string, staffName: string): void {
+    const row = notifications.find((n) => n.id === id);
+    if (!row || row.readAt) return;
+    row.readAt = new Date().toISOString();
+    appendAudit({
+      category: "access",
+      action: "notification_read",
+      actorId: staffName,
+      patientId: row.patientId,
+      detail: { notificationId: row.id, notificationCategory: row.category },
+    });
+    emit();
+  },
+  markAllNotificationsRead(staffName: string, role?: StaffRole): void {
+    const rows = AdelanteEHR.listNotificationsFor(staffName, role).filter((n) => !n.readAt);
+    if (!rows.length) return;
+    const now = new Date().toISOString();
+    for (const r of rows) r.readAt = now;
+    appendAudit({
+      category: "access",
+      action: "notifications_all_read",
+      actorId: staffName,
+      detail: { count: rows.length },
+    });
+    emit();
+  },
+
   createCaseTask(input: {
     patientId: string;
     assignedTo: string;
@@ -4387,6 +4526,19 @@ export const AdelanteEHR = {
       priority: input.priority,
     };
     caseTasks.unshift(task);
+    // §Notification feed — direct-address the assignee only (never their whole
+    // role). `assignedTo` is a caseManagerId; the roster identity token is the
+    // person's display name, so resolve it when we can.
+    const assigneeName = caseManagers.find((c) => c.id === task.assignedTo)?.name;
+    AdelanteEHR.notify({
+      recipientStaffId: assigneeName || task.assignedTo,
+      category: "task_assigned",
+      subject: `Task assigned — ${task.title}`,
+      body: `${task.detail ?? `New task for ${patientLabel(task.patientId)}`} (due ${task.dueDate})`,
+      linkRoute: "/record/$patientId",
+      linkParams: { patientId: task.patientId, section: "tasks" },
+      patientId: task.patientId,
+    });
     emit();
     return task;
   },
@@ -5410,6 +5562,16 @@ export const AdelanteEHR = {
         sourceNoteId: opts?.sourceNoteId ?? null,
       },
     });
+    // §Notification feed — clinical_coordinator owns crisis disposition. This
+    // is the single call site for both manual and screener-triggered flags.
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "crisis_flagged",
+      subject: `Crisis flagged — ${patientLabel(patientId)}`,
+      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : "manual"}): ${detail}`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
     emit();
     return row;
   },
@@ -5850,6 +6012,23 @@ export const AdelanteEHR = {
       actorId: staffName,
       detail: { orderId, scheduledAt },
     });
+    // §Notification feed — a staged CII dose cannot be charted without a
+    // second clinician. The witness pool is the same pmhnp/therapist pool
+    // `witnessCandidates` offers in the MAR UI, so broadcast to both roles.
+    const claimedOrder = p.orders?.find((o) => o.id === orderId);
+    if (claimedOrder && requiresDoseWitness(claimedOrder)) {
+      for (const r of ["pmhnp", "therapist"] as StaffRole[]) {
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "mar_witness_needed",
+          subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
+          body: `${staffName} staged ${claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          linkRoute: "/record/$patientId",
+          linkParams: { patientId, section: "mar" },
+          patientId,
+        });
+      }
+    }
     emit();
     return claim;
   },
