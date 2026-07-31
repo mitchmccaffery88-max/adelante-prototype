@@ -257,4 +257,47 @@ describe("care message Part 2 flagging", () => {
     AdelanteEHR.flagMessageAsSud(open.id, m.id, "Dr. Bagga", "pmhnp");
     expect(count()).toBe(before);
   });
+
+  // ---- Backstop selection is derived from the RBAC matrix ----
+  it("selects a backstop that is genuinely un-gated and is never the flagger's own role", () => {
+    const gated = AdelanteEHR.listPatients().find(
+      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+    )!;
+    // Only roles that pass the SAME screeners_sud check may be a backstop.
+    expect(canAccess("case_manager", "screeners_sud", gated).locked).toBe(true);
+    expect(canAccess("peer_specialist", "screeners_sud", gated).locked).toBe(true);
+    expect(canAccess("therapist", "screeners_sud", gated).locked).toBe(false);
+    expect(canAccess("pmhnp", "screeners_sud", gated).locked).toBe(false);
+
+    // Flagged by a therapist → backstop must fall through to pmhnp.
+    const m1 = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Marisol Reyes", "note a")!;
+    const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
+      (n) => n.patientId === gated.id,
+    ).length;
+    const npBefore = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+      (n) => n.patientId === gated.id,
+    ).length;
+    AdelanteEHR.flagMessageAsSud(gated.id, m1.id, "Dr. Marisol Reyes", "therapist");
+    expect(
+      AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
+        (n) => n.patientId === gated.id,
+      ).length,
+    ).toBe(thBefore);
+    expect(
+      AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter((n) => n.patientId === gated.id)
+        .length,
+    ).toBeGreaterThan(npBefore);
+
+    // Flagged by a pmhnp → backstop resolves to therapist (un-gated per policy).
+    const m2 = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Bagga", "note b")!;
+    const thBefore2 = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
+      (n) => n.patientId === gated.id,
+    ).length;
+    AdelanteEHR.flagMessageAsSud(gated.id, m2.id, "Dr. Bagga", "pmhnp");
+    expect(
+      AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
+        (n) => n.patientId === gated.id,
+      ).length,
+    ).toBeGreaterThan(thBefore2);
+  });
 });
