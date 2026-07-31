@@ -201,6 +201,7 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
   const [form, setForm] = useState({
     bookingId: "",
     movedAt: "",
+    facilityId: undefined as string | undefined,
     facilityName: "",
     housingUnit: "",
     reason: "",
@@ -210,7 +211,14 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
     try {
       AdelanteEHR.addHousingMove(patientId, form, staffName);
       toast.success("Housing move recorded.");
-      setForm({ bookingId: "", movedAt: "", facilityName: "", housingUnit: "", reason: "" });
+      setForm({
+        bookingId: "",
+        movedAt: "",
+        facilityId: undefined,
+        facilityName: "",
+        housingUnit: "",
+        reason: "",
+      });
       setOpen(false);
     } catch (e) {
       toast.error((e as Error).message);
@@ -268,6 +276,17 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
             <Input
               value={form.housingUnit}
               onChange={(e) => setForm({ ...form, housingUnit: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs" htmlFor="move-facility">
+              Facility (only if transferred)
+            </Label>
+            <FacilityCombobox
+              id="move-facility"
+              placeholder="Defaults to the booking's facility"
+              value={{ facilityId: form.facilityId, facilityName: form.facilityName }}
+              onChange={(next) => setForm({ ...form, ...next })}
             />
           </div>
           <div>
