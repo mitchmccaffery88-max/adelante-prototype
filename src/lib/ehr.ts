@@ -2249,6 +2249,39 @@ const kpiTargets: KpiTarget[] = [
   },
 ];
 
+// §CalAIM — the qualifying ICD-10 registry. Seeded with two category prefixes
+// and one exact code so both matching interpretations are exercised on first
+// load. Admins curate this list; nothing here is auto-suggested.
+const calaimQualifyingCodes: CalaimQualifyingCode[] = [
+  {
+    id: "calaim-f10",
+    codeSystem: "icd10",
+    code: "F10",
+    description: "Alcohol-related disorders (all F10.x)",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "calaim-f11",
+    codeSystem: "icd10",
+    code: "F11",
+    description: "Opioid-related disorders (all F11.x)",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "calaim-f33",
+    codeSystem: "icd10",
+    code: "F33.1",
+    description: "Major depressive disorder, recurrent, moderate",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 /**
  * §Facility registry — top-level, not patient-scoped: a facility is shared by
  * every patient booked there, which is the whole point of having ids.
