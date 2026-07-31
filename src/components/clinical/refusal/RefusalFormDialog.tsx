@@ -179,8 +179,9 @@ export function RefusalFormDialog({
                 />
               )}
               <p className="text-xs text-muted-foreground">
-                Risk text below is English only in this release — a Spanish version requires
-                clinical review before it can be presented as a legal disclosure.
+                {form.riskTextReviewed === false
+                  ? "The risk text below is shown in the patient's language as a DRAFT translation pending clinical review. Read it with an interpreter and confirm understanding; the reviewed English wording is kept on the record."
+                  : "No reviewed translation exists for this language — the risk text below is presented in English and must be interpreted for the patient."}
               </p>
             </div>
           )}
@@ -190,7 +191,22 @@ export function RefusalFormDialog({
             <div className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
               Risks of refusing this medication
             </div>
+            {form.riskTextReviewed === false && (
+              <div className="mt-2 flex gap-2 rounded-md border border-amber-500/60 bg-amber-50/40 p-2 text-xs dark:bg-amber-950/10">
+                <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0 text-amber-600" />
+                <span>
+                  Draft translation ({form.riskTextVersion}) — awaiting clinical sign-off. The
+                  reviewed English wording is retained below and on the signed record.
+                </span>
+              </div>
+            )}
             <p className="mt-2 whitespace-pre-line">{form.riskTextSnapshot}</p>
+            {form.riskTextReviewed === false && form.riskTextSnapshotEn && (
+              <details className="mt-2 text-xs text-muted-foreground">
+                <summary className="cursor-pointer">Reviewed English wording</summary>
+                <p className="mt-1 whitespace-pre-line">{form.riskTextSnapshotEn}</p>
+              </details>
+            )}
             <label className="mt-3 flex items-start gap-2">
               <Checkbox
                 checked={payload.nurseAttested}
