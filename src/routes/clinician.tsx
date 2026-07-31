@@ -202,6 +202,13 @@ function ClinicianPage() {
             ))}
           </SelectContent>
         </Select>
+        {/* §Shift count — cross-patient controlled reconciliation. */}
+        <Link
+          to="/shift-count"
+          className="text-xs text-teal underline-offset-2 hover:underline self-center"
+        >
+          Controlled shift count
+        </Link>
       </header>
 
       {clinician?.licenseExpiresOn &&
