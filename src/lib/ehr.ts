@@ -5106,6 +5106,11 @@ export const AdelanteEHR = {
     sourceAutomationId?: string;
     sourceTemplateTitle?: string;
     priority?: CaseTask["priority"];
+    taskType?: string;
+    allowedRoles?: StaffRole[];
+    facilityId?: string;
+    housingUnit?: string;
+    source?: string;
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -5128,6 +5133,12 @@ export const AdelanteEHR = {
       sourceAutomationId: input.sourceAutomationId,
       sourceTemplateTitle: input.sourceTemplateTitle,
       priority: input.priority,
+      worklistStatus: "pending",
+      taskType: input.taskType,
+      allowedRoles: input.allowedRoles?.length ? [...input.allowedRoles] : undefined,
+      facilityId: input.facilityId,
+      housingUnit: input.housingUnit,
+      source: input.source ?? input.origin ?? "manual",
     };
     caseTasks.unshift(task);
     // §Notification feed — direct-address the assignee only (never their whole
@@ -5151,6 +5162,7 @@ export const AdelanteEHR = {
     if (!t) return;
     t.status = "done";
     t.completedAt = new Date().toISOString();
+    t.worklistStatus = "completed";
     emit();
   },
   reopenCaseTask(id: string) {
@@ -5159,6 +5171,7 @@ export const AdelanteEHR = {
     t.status = "open";
     t.completedAt = undefined;
     t.snoozedUntil = undefined;
+    t.worklistStatus = t.claimedBy ? "in_progress" : "pending";
     emit();
   },
   snoozeCaseTask(id: string, days = 3) {
@@ -5169,6 +5182,86 @@ export const AdelanteEHR = {
     t.status = "snoozed";
     t.snoozedUntil = until.toISOString();
     emit();
+  },
+
+  // ---------- §Worklist Phase A: pool claim + status ----------
+  /**
+   * Claim an unclaimed task. Simple claim/release (the Provider Request
+   * pattern), not the reasoned-takeover pattern used for controlled-substance
+   * dose claims: a second claim fails cleanly and release is the escape hatch.
+   */
+  claimWorklistTask(id: string, staffName: string, role: StaffRole): boolean {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t || t.claimedBy || worklistStatusFor(t) === "completed") return false;
+    t.claimedBy = staffName;
+    t.claimedAt = new Date().toISOString();
+    t.worklistStatus = "in_progress";
+    appendAudit({
+      category: "clinical",
+      action: "worklist_task_claimed",
+      patientId: t.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { taskId: t.id, title: t.title },
+    });
+    emit();
+    return true;
+  },
+  /** Return a claimed task to the pool. Only the claimer may release it. */
+  releaseWorklistTask(id: string, staffName: string, role: StaffRole): boolean {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t || t.claimedBy !== staffName) return false;
+    t.claimedBy = undefined;
+    t.claimedAt = undefined;
+    t.worklistStatus = worklistStatusFor(t) === "completed" ? "completed" : "pending";
+    appendAudit({
+      category: "clinical",
+      action: "worklist_task_released",
+      patientId: t.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { taskId: t.id },
+    });
+    emit();
+    return true;
+  },
+  /** Explicit worklist status change (cancel / miss / complete / reopen). */
+  setWorklistStatus(
+    id: string,
+    next: WorklistStatus,
+    staffName: string,
+    role: StaffRole,
+  ): boolean {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t || worklistStatusFor(t) === next) return false;
+    const prev = worklistStatusFor(t);
+    t.worklistStatus = next;
+    // Keep the legacy CM-queue lifecycle consistent so existing consumers
+    // (caseTasksForCM, overdueTasks) never disagree with the worklist.
+    if (next === "completed") {
+      t.status = "done";
+      t.completedAt = t.completedAt ?? new Date().toISOString();
+    } else if (next === "cancelled" || next === "missed") {
+      t.status = "done";
+      t.completedAt = t.completedAt ?? new Date().toISOString();
+    } else {
+      t.status = "open";
+      t.completedAt = undefined;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "worklist_task_status",
+      patientId: t.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { taskId: t.id, from: prev, to: next },
+    });
+    emit();
+    return true;
+  },
+  /** Distinct task types actually in use, for the filter facet. */
+  worklistTaskTypes(): string[] {
+    return [...new Set(caseTasks.map((t) => t.taskType).filter(Boolean) as string[])].sort();
   },
 
   // ---------- Billing lifecycle ----------
