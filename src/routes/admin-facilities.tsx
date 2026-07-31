@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import {
   AdelanteEHR,
   FACILITY_KINDS,
+  facilityAddressLine,
   facilityKindLabel,
   useEhr,
   type Facility,
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -43,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, GitMerge, Lock, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Building2, GitMerge, Lock, Pencil, Phone, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 
@@ -69,7 +71,25 @@ export const Route = createFileRoute("/admin-facilities")({
   component: AdminFacilitiesPage,
 });
 
-const BLANK = { name: "", kind: "clinic" as FacilityKind, city: "", timezone: "" };
+const BLANK = {
+  name: "",
+  kind: "clinic" as FacilityKind,
+  city: "",
+  timezone: "",
+  addressLine1: "",
+  addressLine2: "",
+  state: "",
+  postalCode: "",
+  county: "",
+  phone: "",
+  fax: "",
+  website: "",
+  contactName: "",
+  contactTitle: "",
+  contactPhone: "",
+  contactEmail: "",
+  notes: "",
+};
 
 function AdminFacilitiesPage() {
   const { role, staffName } = useActingStaff();
@@ -173,7 +193,8 @@ function AdminFacilitiesPage() {
             <TableRow>
               <TableHead>Facility</TableHead>
               <TableHead>Type</TableHead>
-              <TableHead>City</TableHead>
+              <TableHead>Location</TableHead>
+              <TableHead>Primary contact</TableHead>
               <TableHead className="text-right">Bookings</TableHead>
               <TableHead className="text-right">Currently in</TableHead>
               <TableHead className="text-right">Moves</TableHead>
@@ -196,7 +217,36 @@ function AdminFacilitiesPage() {
                   <div className="font-mono text-[10px] text-muted-foreground">{f.id}</div>
                 </TableCell>
                 <TableCell className="text-sm">{facilityKindLabel(f.kind)}</TableCell>
-                <TableCell className="text-sm">{f.city ?? "—"}</TableCell>
+                <TableCell className="text-sm">
+                  <div>{[f.city, f.state].filter(Boolean).join(", ") || "—"}</div>
+                  {facilityAddressLine(f) && (
+                    <div className="text-[11px] text-muted-foreground">
+                      {facilityAddressLine(f)}
+                    </div>
+                  )}
+                  {f.phone && (
+                    <div className="flex items-center gap-1 text-[11px] text-muted-foreground">
+                      <Phone className="h-3 w-3" /> {f.phone}
+                    </div>
+                  )}
+                </TableCell>
+                <TableCell className="text-sm">
+                  {f.contactName ? (
+                    <div>
+                      <div className="font-medium text-navy">{f.contactName}</div>
+                      {f.contactTitle && (
+                        <div className="text-[11px] text-muted-foreground">{f.contactTitle}</div>
+                      )}
+                      {(f.contactPhone || f.contactEmail) && (
+                        <div className="text-[11px] text-muted-foreground">
+                          {[f.contactPhone, f.contactEmail].filter(Boolean).join(" · ")}
+                        </div>
+                      )}
+                    </div>
+                  ) : (
+                    <span className="text-muted-foreground">—</span>
+                  )}
+                </TableCell>
                 <TableCell className="text-right text-sm">{b}</TableCell>
                 <TableCell className="text-right text-sm">{currentlyBooked}</TableCell>
                 <TableCell className="text-right text-sm">{housingMoves}</TableCell>
@@ -216,7 +266,7 @@ function AdminFacilitiesPage() {
             ))}
             {rows.length === 0 && (
               <TableRow>
-                <TableCell colSpan={7} className="py-8 text-center text-sm text-muted-foreground">
+                <TableCell colSpan={8} className="py-8 text-center text-sm text-muted-foreground">
                   No facilities match this filter.
                 </TableCell>
               </TableRow>
@@ -226,7 +276,7 @@ function AdminFacilitiesPage() {
       </Card>
 
       <Dialog open={creating} onOpenChange={setCreating}>
-        <DialogContent>
+        <DialogContent className="max-h-[85vh] overflow-y-auto">
           <DialogHeader>
             <DialogTitle>New facility</DialogTitle>
             <DialogDescription>
@@ -303,26 +353,173 @@ function FacilityFields({
           </SelectContent>
         </Select>
       </div>
-      <div className="grid gap-3 sm:grid-cols-2">
+      <Section title="Address">
         <div>
-          <Label htmlFor="fac-city">City</Label>
+          <Label htmlFor="fac-addr1">Street address</Label>
           <Input
-            id="fac-city"
-            value={value.city}
-            onChange={(e) => onChange({ ...value, city: e.target.value })}
+            id="fac-addr1"
+            value={value.addressLine1}
+            placeholder="1225 M Street"
+            onChange={(e) => onChange({ ...value, addressLine1: e.target.value })}
           />
         </div>
         <div>
-          <Label htmlFor="fac-tz">Timezone</Label>
+          <Label htmlFor="fac-addr2">Suite / building / unit</Label>
           <Input
-            id="fac-tz"
-            value={value.timezone}
-            placeholder="America/Los_Angeles"
-            onChange={(e) => onChange({ ...value, timezone: e.target.value })}
+            id="fac-addr2"
+            value={value.addressLine2}
+            placeholder="Building C, Intake"
+            onChange={(e) => onChange({ ...value, addressLine2: e.target.value })}
           />
         </div>
-      </div>
+        <div className="grid gap-3 sm:grid-cols-3">
+          <div>
+            <Label htmlFor="fac-city">City</Label>
+            <Input
+              id="fac-city"
+              value={value.city}
+              onChange={(e) => onChange({ ...value, city: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-state">State</Label>
+            <Input
+              id="fac-state"
+              value={value.state}
+              maxLength={2}
+              placeholder="CA"
+              onChange={(e) => onChange({ ...value, state: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-zip">ZIP</Label>
+            <Input
+              id="fac-zip"
+              value={value.postalCode}
+              inputMode="numeric"
+              placeholder="93721"
+              onChange={(e) => onChange({ ...value, postalCode: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="fac-county">County</Label>
+            <Input
+              id="fac-county"
+              value={value.county}
+              placeholder="Fresno"
+              onChange={(e) => onChange({ ...value, county: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-tz">Timezone</Label>
+            <Input
+              id="fac-tz"
+              value={value.timezone}
+              placeholder="America/Los_Angeles"
+              onChange={(e) => onChange({ ...value, timezone: e.target.value })}
+            />
+          </div>
+        </div>
+      </Section>
+
+      <Section title="Site contact">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="fac-phone">Main phone</Label>
+            <Input
+              id="fac-phone"
+              type="tel"
+              value={value.phone}
+              placeholder="(559) 555-0142"
+              onChange={(e) => onChange({ ...value, phone: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-fax">Fax</Label>
+            <Input
+              id="fac-fax"
+              type="tel"
+              value={value.fax}
+              onChange={(e) => onChange({ ...value, fax: e.target.value })}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="fac-web">Website</Label>
+          <Input
+            id="fac-web"
+            value={value.website}
+            placeholder="https://…"
+            onChange={(e) => onChange({ ...value, website: e.target.value })}
+          />
+        </div>
+      </Section>
+
+      <Section title="Primary point of contact">
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="fac-cname">Name</Label>
+            <Input
+              id="fac-cname"
+              value={value.contactName}
+              placeholder="Lt. Dana Ruiz"
+              onChange={(e) => onChange({ ...value, contactName: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-ctitle">Title / role</Label>
+            <Input
+              id="fac-ctitle"
+              value={value.contactTitle}
+              placeholder="Medical liaison"
+              onChange={(e) => onChange({ ...value, contactTitle: e.target.value })}
+            />
+          </div>
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div>
+            <Label htmlFor="fac-cphone">Direct phone</Label>
+            <Input
+              id="fac-cphone"
+              type="tel"
+              value={value.contactPhone}
+              onChange={(e) => onChange({ ...value, contactPhone: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label htmlFor="fac-cemail">Email</Label>
+            <Input
+              id="fac-cemail"
+              type="email"
+              value={value.contactEmail}
+              onChange={(e) => onChange({ ...value, contactEmail: e.target.value })}
+            />
+          </div>
+        </div>
+        <div>
+          <Label htmlFor="fac-notes">Access / operational notes</Label>
+          <Textarea
+            id="fac-notes"
+            rows={2}
+            value={value.notes}
+            placeholder="Intake hours, gate procedure, badge requirements…"
+            onChange={(e) => onChange({ ...value, notes: e.target.value })}
+          />
+        </div>
+      </Section>
     </div>
+  );
+}
+
+/** Labelled grouping inside the facility dialogs. */
+function Section({ title, children }: { title: string; children: React.ReactNode }) {
+  return (
+    <fieldset className="space-y-3 rounded-md border border-border p-3">
+      <legend className="px-1 text-xs font-medium text-muted-foreground">{title}</legend>
+      {children}
+    </fieldset>
   );
 }
 
@@ -335,11 +532,13 @@ function EditDialog({
   staffName: string;
   onClose: () => void;
 }) {
-  const [draft, setDraft] = useState<Draft>({
-    name: facility.name,
-    kind: facility.kind,
-    city: facility.city ?? "",
-    timezone: facility.timezone ?? "",
+  const [draft, setDraft] = useState<Draft>(() => {
+    const seeded = { ...BLANK, name: facility.name, kind: facility.kind };
+    for (const key of Object.keys(BLANK) as (keyof Draft)[]) {
+      const current = facility[key as keyof Facility];
+      if (typeof current === "string") (seeded as Record<string, string>)[key] = current;
+    }
+    return seeded;
   });
   const [reason, setReason] = useState("");
 
@@ -365,7 +564,7 @@ function EditDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Edit {facility.name}</DialogTitle>
           <DialogDescription>
@@ -435,7 +634,7 @@ function MergeDialog({
 
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
-      <DialogContent>
+      <DialogContent className="max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Merge “{source.name}”</DialogTitle>
           <DialogDescription>

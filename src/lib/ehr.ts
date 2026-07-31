@@ -483,6 +483,70 @@ export interface Facility {
   createdAt: string;
 }
 
+/**
+ * Optional profile detail on a facility. Every field is nullable on purpose:
+ * facilities are frequently created inline from a booking (`ensureFacility`),
+ * where only a name is known. Admins fill the rest in on the facility page.
+ */
+export interface FacilityProfile {
+  addressLine1?: string;
+  addressLine2?: string;
+  /** Two-letter USPS state code, upper-cased on write. */
+  state?: string;
+  postalCode?: string;
+  county?: string;
+  /** Main switchboard / front-desk line. */
+  phone?: string;
+  fax?: string;
+  website?: string;
+  /** Primary point of contact for care coordination at this site. */
+  contactName?: string;
+  contactTitle?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  /** Free-text operational notes: intake hours, gate procedure, badge rules. */
+  notes?: string;
+}
+
+export interface Facility extends FacilityProfile {}
+
+/** Profile keys, used for uniform trim/normalize/audit handling. */
+export const FACILITY_PROFILE_FIELDS = [
+  "addressLine1",
+  "addressLine2",
+  "state",
+  "postalCode",
+  "county",
+  "phone",
+  "fax",
+  "website",
+  "contactName",
+  "contactTitle",
+  "contactPhone",
+  "contactEmail",
+  "notes",
+] as const satisfies readonly (keyof FacilityProfile)[];
+
+/** Trim, drop empties, and upper-case the state code. */
+export function normalizeFacilityProfile(input: Partial<FacilityProfile>): FacilityProfile {
+  const out: FacilityProfile = {};
+  for (const key of FACILITY_PROFILE_FIELDS) {
+    const raw = input[key];
+    if (raw === undefined) continue;
+    const value = String(raw).trim();
+    out[key] = value ? (key === "state" ? value.toUpperCase() : value) : undefined;
+  }
+  return out;
+}
+
+/** One-line postal address, or undefined when nothing is recorded. */
+export function facilityAddressLine(f: Facility): string | undefined {
+  const street = [f.addressLine1, f.addressLine2].filter(Boolean).join(", ");
+  const region = [f.city, f.state].filter(Boolean).join(", ");
+  const line = [street, region, f.postalCode].filter(Boolean).join(" · ");
+  return line || undefined;
+}
+
 export type FacilityKind =
   | "clinic"
   | "community_health_center"
@@ -5621,7 +5685,9 @@ export const AdelanteEHR = {
    * reuse a normalized-name match — the admin should merge instead.
    */
   createFacility(
-    input: { name: string; kind: FacilityKind; city?: string; timezone?: string },
+    input: { name: string; kind: FacilityKind; city?: string; timezone?: string } & Partial<
+      FacilityProfile
+    >,
     staffName: string,
   ): Facility {
     const name = (input.name ?? "").trim().replace(/\s+/g, " ");
@@ -5634,6 +5700,7 @@ export const AdelanteEHR = {
       kind: input.kind,
       city: input.city?.trim() || undefined,
       timezone: input.timezone?.trim() || undefined,
+      ...normalizeFacilityProfile(input),
       active: true,
       createdBy: staffName,
       createdAt: new Date().toISOString(),
@@ -5652,25 +5719,37 @@ export const AdelanteEHR = {
   /** Edit name/type/city/timezone. Name changes route through renameFacility rules. */
   updateFacility(
     facilityId: string,
-    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string },
+    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string } & Partial<
+      FacilityProfile
+    >,
     staffName: string,
   ): Facility {
     const row = facilities.find((f) => f.id === facilityId);
     if (!row) throw new Error("Facility not found.");
     if (patch.name !== undefined) AdelanteEHR.renameFacility(facilityId, patch.name, staffName);
-    const before = { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null };
+    // Snapshot only the fields this patch can touch, so the audit diff stays
+    // readable instead of dumping the whole record on every keystroke-save.
+    const snapshot = () => {
+      const out: Record<string, string | null> = {
+        kind: row.kind,
+        city: row.city ?? null,
+        timezone: row.timezone ?? null,
+      };
+      for (const key of FACILITY_PROFILE_FIELDS) {
+        if (patch[key] !== undefined) out[key] = row[key] ?? null;
+      }
+      return out;
+    };
+    const before = snapshot();
     if (patch.kind !== undefined) row.kind = patch.kind;
     if (patch.city !== undefined) row.city = patch.city.trim() || undefined;
     if (patch.timezone !== undefined) row.timezone = patch.timezone.trim() || undefined;
+    Object.assign(row, normalizeFacilityProfile(patch));
     appendAudit({
       category: "clinical",
       action: "facility_updated",
       actorId: staffName,
-      detail: {
-        facilityId,
-        before,
-        after: { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null },
-      },
+      detail: { facilityId, before, after: snapshot() },
     });
     emit();
     return row;
