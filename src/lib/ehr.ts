@@ -1342,6 +1342,11 @@ export interface ProgressNote {
   /** Schema snapshot at authoring time — history survives template edits. */
   templateSchema?: TemplateSchema;
   templateAnswers?: TemplateAnswers;
+  /**
+   * §Phase 3b — resolved autofill_section content, frozen alongside the
+   * answers. Never recomputed on read.
+   */
+  autofillSnapshots?: AutofillSnapshot[];
 }
 
 /**
