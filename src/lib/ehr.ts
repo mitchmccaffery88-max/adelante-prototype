@@ -3411,7 +3411,7 @@ export const AdelanteEHR = {
       category: "clinical",
       action: "refusal_form_exported",
       patientId: input.patientId,
-      actor: input.staffName,
+      actorId: input.staffName,
       detail: { formId: input.formId, filename: input.filename, format: "pdf" },
     });
     emit();
