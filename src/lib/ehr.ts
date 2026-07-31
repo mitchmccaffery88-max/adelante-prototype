@@ -63,32 +63,9 @@ export interface AppNotification {
 // patient can disclose Part 2 content in a message and it will be shown to
 // anyone with messaging access. Same standing-gap treatment as vitals/labs.
 
-// ═══════════════════════════════════════════════════════════════
-// RESERVED — NOT IMPLEMENTED. Lab/imaging results do not exist
-// anywhere in this EHR build. This type exists ONLY as a schema
-// anchor for the dev team building real lab integration — no UI,
-// no methods, no seeded data reference this type anywhere.
-// See ClickUp: [link to be added] for the full requirement.
-// ═══════════════════════════════════════════════════════════════
-export interface LabResult {
-  id: string;
-  patientId: string;
-  testCode?: string;
-  testName: string;
-  category?: string;
-  valueNumeric?: number;
-  valueText?: string;
-  units?: string;
-  referenceLow?: number;
-  referenceHigh?: number;
-  abnormalFlag?: string;
-  collectedAt?: string;
-  resultedAt?: string;
-  reviewStatus: "unreviewed" | "acknowledged";
-  acknowledgedBy?: string;
-  acknowledgedAt?: string;
-  acknowledgmentNote?: string;
-}
+// Labs/imaging results and vitals do not exist in this build. The target
+// schema for the dev team lives in `src/lib/labsVitalsScaffold.ts`
+// (NOT IMPLEMENTED — zero runtime consumers).
 
 // §Inbox — Provider Request queue. A cross-patient, lightweight ask between
 // staff ("can you clarify this?", "please enter this order"). Deliberately
