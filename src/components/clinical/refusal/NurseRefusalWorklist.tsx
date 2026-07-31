@@ -18,6 +18,7 @@ import { RefusalFormDialog } from "./RefusalFormDialog";
 import { RefusalEscalationDialog } from "./RefusalEscalationDialog";
 
 type EscalationTarget = {
+  patientId: string;
   formId: string;
   orderId: string;
   drugName: string;
@@ -48,6 +49,7 @@ export function NurseRefusalWorklist({
     const pid = target.patient.id;
     if (AdelanteEHR.refusalEscalationDue(pid, orderId)) {
       setEscalation({
+        patientId: pid,
         formId: form.id,
         orderId,
         drugName: target.order?.productName ?? target.order?.drugName ?? "This medication",
@@ -116,10 +118,7 @@ export function NurseRefusalWorklist({
 
       {escalation && (
         <RefusalEscalationDialog
-          patientId={
-            rows.find((r) => r.form.id === escalation.formId)?.patient.id ??
-            (patientId ?? "")
-          }
+          patientId={escalation.patientId}
           target={escalation}
           staffName={staffName}
           onClose={() => setEscalation(null)}
