@@ -7,7 +7,9 @@ import { resetFrequencyCatalog, frequencyByCode } from "@/lib/frequencies";
 import { waitLabel } from "@/lib/facilityTime";
 
 const NURSE = "N. Ramirez";
-const at = () => new Date().toISOString();
+// Each charted dose needs a distinct scheduledAt — chartDose dedupes on it.
+let tick = 0;
+const at = () => new Date(Date.now() + tick++ * 1000).toISOString();
 
 function prnOrder(frequencyCode: string) {
   const pid = AdelanteEHR.listPatients()[0].id;
