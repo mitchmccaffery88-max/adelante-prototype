@@ -4750,6 +4750,112 @@ export const AdelanteEHR = {
       (r) => r.id === formId,
     );
   },
+  /** Required sign-off slots for promoting a draft translation. */
+  riskTextReviewerRoles() {
+    return REQUIRED_RISK_TEXT_REVIEWER_ROLES.map((r) => ({ ...r }));
+  },
+  /** Governance state for every translated risk-text catalog. */
+  listRiskTextReviews(): RiskTextReview[] {
+    return riskTextReviews.map((r) => ({ ...r, signoffs: r.signoffs.map((s) => ({ ...s })) }));
+  },
+  getRiskTextReview(language: string): RiskTextReview | undefined {
+    const r = riskTextReviews.find((x) => x.language === language.toLowerCase().split("-")[0]);
+    return r ? { ...r, signoffs: r.signoffs.map((s) => ({ ...s })) } : undefined;
+  },
+  /**
+   * Record one clinical sign-off. When both required roles are present the
+   * language is promoted (es-v1-draft → es-v1) and new forms are created with
+   * `riskTextReviewed: true` and a LOCKED English snapshot.
+   */
+  signRiskTextReview(input: {
+    language: string;
+    role: RiskTextReviewerRole;
+    reviewerName: string;
+    note?: string;
+  }): RiskTextReview {
+    const lang = input.language.toLowerCase().split("-")[0];
+    const review = riskTextReviews.find((x) => x.language === lang);
+    if (!review) throw new Error("No translated risk-text catalog for this language.");
+    if (!REQUIRED_RISK_TEXT_REVIEWER_ROLES.some((r) => r.role === input.role))
+      throw new Error("Unknown reviewer role.");
+    const reviewerName = input.reviewerName.trim();
+    if (!reviewerName) throw new Error("Reviewer name is required to record a sign-off.");
+    if (review.signoffs.some((s) => s.role === input.role))
+      throw new Error("This role has already signed off. Revoke the approval to re-sign.");
+
+    const signoff: RiskTextSignoff = {
+      role: input.role,
+      reviewerName,
+      signedAt: new Date().toISOString(),
+      note: input.note?.trim() || undefined,
+    };
+    review.signoffs = [...review.signoffs, signoff];
+    review.revokedReason = undefined;
+    review.revokedAt = undefined;
+    review.revokedBy = undefined;
+
+    appendAudit({
+      category: "clinical",
+      action: "risk_text_review_signed",
+      actorId: reviewerName,
+      detail: {
+        language: lang,
+        role: input.role,
+        draftVersion: review.draftVersion,
+        note: signoff.note ?? null,
+        signoffCount: review.signoffs.length,
+        requiredSignoffs: REQUIRED_RISK_TEXT_REVIEWER_ROLES.length,
+      },
+    });
+
+    const complete = REQUIRED_RISK_TEXT_REVIEWER_ROLES.every((r) =>
+      review.signoffs.some((s) => s.role === r.role),
+    );
+    if (complete && review.status !== "approved") {
+      review.status = "approved";
+      review.effectiveVersion =
+        PROMOTED_RISK_TEXT_VERSION[review.draftVersion] ?? review.draftVersion;
+      review.approvedAt = signoff.signedAt;
+      appendAudit({
+        category: "clinical",
+        action: "risk_text_version_promoted",
+        actorId: reviewerName,
+        detail: {
+          language: lang,
+          fromVersion: review.draftVersion,
+          toVersion: review.effectiveVersion,
+          signedOffBy: review.signoffs.map((s) => `${s.reviewerName} (${s.role})`),
+          englishSnapshotLocked: true,
+        },
+      });
+    }
+    emit();
+    return { ...review, signoffs: review.signoffs.map((s) => ({ ...s })) };
+  },
+  /** Demote an approved translation back to draft. Reason required. */
+  revokeRiskTextReview(language: string, reason: string, actorName: string): RiskTextReview {
+    const lang = language.toLowerCase().split("-")[0];
+    const review = riskTextReviews.find((x) => x.language === lang);
+    if (!review) throw new Error("No translated risk-text catalog for this language.");
+    const why = reason.trim();
+    if (!why) throw new Error("A reason is required to revoke clinical sign-off.");
+    const previous = review.effectiveVersion;
+    review.signoffs = [];
+    review.status = "draft";
+    review.effectiveVersion = review.draftVersion;
+    review.approvedAt = undefined;
+    review.revokedReason = why;
+    review.revokedAt = new Date().toISOString();
+    review.revokedBy = actorName;
+    appendAudit({
+      category: "clinical",
+      action: "risk_text_review_revoked",
+      actorId: actorName,
+      detail: { language: lang, fromVersion: previous, toVersion: review.draftVersion, reason: why },
+    });
+    emit();
+    return { ...review, signoffs: [] };
+  },
   /**
    * Create the pending shell for a refused dose. Called automatically right
    * after the refusal is charted — the shell exists whether or not the nurse
