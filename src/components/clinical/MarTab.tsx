@@ -62,7 +62,15 @@ import {
 } from "@/components/clinical/refusal/RefusalEscalationDialog";
 import { medClassGuess } from "@/lib/refusal";
 import { toast } from "sonner";
-import { CalendarClock, FileSignature, Info, PackageCheck, ShieldCheck, Syringe } from "lucide-react";
+import {
+  CalendarClock,
+  Download,
+  FileSignature,
+  Info,
+  PackageCheck,
+  ShieldCheck,
+  Syringe,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MAR_ATTESTATION_TEXT =
