@@ -55,6 +55,8 @@ const EMPTY = {
   dob: "",
   releasedFrom: "",
   releasedTo: "",
+  /** Empty means "all facilities". Filtering is by ID, never by display name. */
+  facilityId: "",
 };
 
 function ReleasedSearchPage() {
@@ -66,6 +68,7 @@ function ReleasedSearchPage() {
 
   const released = useEhr(() => AdelanteEHR.searchReleasedPatients(criteria));
   const active = useEhr(() => AdelanteEHR.searchBookedPatients(criteria));
+  const facilities = useEhr(() => AdelanteEHR.listFacilities(true));
 
   if (!canWrite) {
     return (
@@ -115,6 +118,25 @@ function ReleasedSearchPage() {
         <div>
           <Label className="text-xs">DOB</Label>
           <Input type="date" value={form.dob} onChange={(e) => set("dob")(e.target.value)} />
+        </div>
+        <div>
+          <Label className="text-xs" htmlFor="facility-filter">
+            Facility
+          </Label>
+          <select
+            id="facility-filter"
+            aria-label="Facility"
+            className="h-9 w-full rounded-md border border-input bg-background px-3 text-sm"
+            value={form.facilityId}
+            onChange={(e) => set("facilityId")(e.target.value)}
+          >
+            <option value="">All facilities</option>
+            {facilities.map((f) => (
+              <option key={f.id} value={f.id}>
+                {f.name}
+              </option>
+            ))}
+          </select>
         </div>
         {mode === "released" && (
           <>
