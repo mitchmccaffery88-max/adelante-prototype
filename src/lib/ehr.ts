@@ -2251,6 +2251,31 @@ const notifications: AppNotification[] = [];
 // §Inbox — provider requests live cross-patient (like tasks/notifications),
 // not on the Patient record: the queue is the primary surface.
 const providerRequests: ProviderRequest[] = [];
+// Two demo rows so the queue isn't an empty shell on first load.
+if (patients[0]) {
+  providerRequests.push({
+    id: "pr-demo-1",
+    patientId: patients[0].id,
+    requestType: "order_entry",
+    context: "Please enter the sertraline 50 mg refill we discussed at today's check-in.",
+    requestedBy: "Luz Herrera",
+    requestedByRole: "case_manager",
+    status: "open",
+    createdAt: ago(30),
+  });
+}
+if (patients[1]) {
+  providerRequests.push({
+    id: "pr-demo-2",
+    patientId: patients[1].id,
+    requestType: "question",
+    context: "Is the patient cleared to restart group therapy this week?",
+    requestedBy: "Dr. R. Bagga",
+    requestedByRole: "pmhnp",
+    status: "open",
+    createdAt: ago(90),
+  });
+}
 
 /** Display name for notification copy. Never used for access control. */
 function patientLabel(patientId?: string): string {
