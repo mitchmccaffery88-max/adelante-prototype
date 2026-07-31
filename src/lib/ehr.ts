@@ -5729,3 +5729,127 @@ export function useEhr<T>(selector: () => T): T {
   );
   return selector();
 }
+
+// ---------------------------------------------------------------------------
+// DEMO SEED — §Custody tracking + controlled shift count.
+// Bookings/housing moves are written through the real store API so the audit
+// trail matches live use. One patient stays currently booked, one is released
+// TODAY (exercising the calendar-date boundary in released search), and a CIV
+// order is charted for two patients so Shift Count has real MAR data to
+// aggregate. Remove with the rest of the mock store.
+// ---------------------------------------------------------------------------
+{
+  const CM = "Luz Herrera";
+  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const NURSE = "Rosa T., LVN";
+  const iso = (d: Date) => d.toISOString();
+  const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
+  const todayAt = (hour: number) => {
+    const d = new Date();
+    d.setHours(hour, 0, 0, 0);
+    return iso(d);
+  };
+
+  try {
+    // p1 — released today at 14:00 (the boundary case the reference had wrong).
+    const b1 = AdelanteEHR.addBooking(
+      "p1",
+      {
+        bookingNumber: "BK-2026-1041",
+        facilityName: "Fresno County Jail — Main",
+        bookedAt: daysAgo(46),
+        bookingReason: "Probation violation",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p1",
+      {
+        bookingId: b1.id,
+        movedAt: daysAgo(45),
+        facilityName: "Fresno County Jail — Main",
+        housingUnit: "Unit 3B",
+        reason: "Initial classification",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p1",
+      {
+        bookingId: b1.id,
+        movedAt: daysAgo(12),
+        facilityName: "Fresno County Jail — Main",
+        housingUnit: "Med Obs 1",
+        reason: "Medical observation",
+      },
+      CM,
+    );
+    AdelanteEHR.closeBooking(b1.id, todayAt(14), CM);
+
+    // p2 — currently booked, no release recorded.
+    const b2 = AdelanteEHR.addBooking(
+      "p2",
+      {
+        bookingNumber: "BK-2026-1177",
+        facilityName: "Fresno County Jail — North Annex",
+        bookedAt: daysAgo(9),
+        bookingReason: "Pending arraignment",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p2",
+      {
+        bookingId: b2.id,
+        movedAt: daysAgo(9),
+        facilityName: "Fresno County Jail — North Annex",
+        housingUnit: "Unit 1A",
+        reason: "Intake housing",
+      },
+      CM,
+    );
+
+    // Controlled (CIV) order charted for two patients — Shift Count fodder.
+    for (const pid of ["p1", "p2"]) {
+      const draft = AdelanteEHR.addDraftOrder(pid, {
+        drugName: "Lorazepam",
+        productName: "Lorazepam 1 MG Oral Tablet",
+        rxcui: "197898",
+        strengthText: "1 MG",
+        strengthSource: "rxnav",
+        doseForm: "Oral Tablet",
+        ingredientNames: ["Lorazepam"],
+        doseAxis: "mg",
+        doseTargetMg: 1,
+        unitsPerAdmin: 1,
+        route: "PO",
+        frequency: "twice daily",
+        frequencyCode: "BID",
+        durationValue: 14,
+        durationUnit: "days",
+        quantity: 28,
+        daysSupply: 14,
+        sig: "Take 1 tablet (1 mg) by mouth twice daily",
+        dispenseRoute: "pharmacy",
+        isControlled: true,
+        deaSchedule: "CIV",
+        indicationText: "Alcohol withdrawal management",
+        startDate: new Date().toISOString().slice(0, 10),
+        createdBy: PMHNP,
+      } as Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">);
+      AdelanteEHR.signOrders(pid, [draft.id], PMHNP);
+      AdelanteEHR.chartDose(
+        pid,
+        draft.id,
+        todayAt(8),
+        pid === "p2" ? "refused" : "given",
+        pid === "p2" ? "Patient declined the morning dose." : undefined,
+        NURSE,
+        `batch-shiftcount-seed-${pid}`,
+        "Seeded demo entry charted outside the scheduled window.",
+      );
+    }
+  } catch {
+    /* Seeding is best-effort; a validation change must never break boot. */
+  }
+}
