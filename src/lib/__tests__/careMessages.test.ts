@@ -117,6 +117,42 @@ describe("care message Part 2 flagging", () => {
     expect(visibleMessageBody(cur(), "case_manager", patient)).toBe("secret content");
   });
 
+  it("patient self-flag at send time masks identically to a staff flag", () => {
+    const patient = AdelanteEHR.getPatient(pid)!;
+    const m = AdelanteEHR.sendPatientMessage(pid, "self flagged content", true)!;
+    const cur = () => AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!;
+
+    expect(cur().sudFlagged).toBe(true);
+    expect(cur().sudFlaggedByPatient).toBe(true);
+    expect(cur().sudFlaggedBy).toBe(`${patient.firstName} ${patient.lastName}`);
+    expect(cur().sudFlaggedAt).toBeTruthy();
+
+    // Exact same masking check as the staff-flagged path.
+    const gated = canAccess("case_manager", "screeners_sud", patient).locked;
+    expect(isMessageBodyMasked(cur(), "case_manager", patient)).toBe(gated);
+    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe(
+      gated ? MASKED_MESSAGE_BODY : "self flagged content",
+    );
+
+    const selfFlagAudit = AdelanteEHR.listAuditEvents().filter(
+      (a) => a.action === "care_message_sud_flagged" && (a.detail as any)?.messageId === m.id,
+    );
+    expect(selfFlagAudit.length).toBe(1);
+    expect((selfFlagAudit[0].detail as any).selfFlagged).toBe(true);
+
+    // Staff can still override a patient self-flag; provenance becomes theirs.
+    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    expect(cur().sudFlagged).toBe(false);
+    expect(cur().sudFlaggedByPatient).toBeUndefined();
+    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe("self flagged content");
+  });
+
+  it("does not flag when the patient opts out (default)", () => {
+    const m = AdelanteEHR.sendPatientMessage(pid, "ordinary message")!;
+    expect(m.sudFlagged).toBeUndefined();
+    expect(m.sudFlaggedByPatient).toBeUndefined();
+  });
+
   it("keeps the patient_message notification body generic", () => {
     const cmPid = AdelanteEHR.listPatients().find((x) => x.caseManagerId === "cm1")!.id;
     AdelanteEHR.sendPatientMessage(cmPid, "do not echo this text");

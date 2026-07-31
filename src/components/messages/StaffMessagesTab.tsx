@@ -51,6 +51,9 @@ export function StaffMessagesTab({
         translated or edited. Bodies are <strong>not</strong> screened automatically for 42 CFR
         Part 2 content; a reviewer who reads Part 2 content here can flag that message, which masks
         it from staff without SUD consent access.
+        {" "}
+        A patient can also ask for a message to be handled carefully when they send it — but an
+        unflagged message is <strong>not</strong> a clearance; this never replaces your own review.
       </p>
       <CareMessageThread
         messages={messages}
@@ -61,6 +64,7 @@ export function StaffMessagesTab({
         maskBody={(m) => isMessageBodyMasked(m, role, patient)}
         canFlag={canFlag}
         onToggleFlag={toggleFlag}
+        showFlagProvenance
       />
       {!readOnly && (
         <div className="space-y-2 border-t pt-3">

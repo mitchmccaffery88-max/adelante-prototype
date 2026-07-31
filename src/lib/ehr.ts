@@ -78,6 +78,12 @@ export interface CareMessage {
   sudFlagged?: boolean;
   sudFlaggedBy?: string;
   sudFlaggedAt?: string;
+  /**
+   * True when the PATIENT asked for careful handling at compose time, rather
+   * than a staff reviewer flagging after reading. Masking behavior is
+   * identical either way — this only records provenance.
+   */
+  sudFlaggedByPatient?: boolean;
 }
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
@@ -2214,6 +2220,8 @@ function setCareMessageSudFlag(
   msg.sudFlagged = flagged;
   msg.sudFlaggedBy = staffName;
   msg.sudFlaggedAt = new Date().toISOString();
+  // A staff override replaces the provenance: it is now a reviewer decision.
+  msg.sudFlaggedByPatient = undefined;
   appendAudit({
     category: "access",
     action: flagged ? "care_message_sud_flagged" : "care_message_sud_unflagged",
@@ -4571,18 +4579,33 @@ export const AdelanteEHR = {
    * translated, trimmed of meaning, or rewritten (same rule as every other
    * patient-authored surface in this build).
    */
-  sendPatientMessage(patientId: string, body: string): CareMessage | undefined {
+  sendPatientMessage(
+    patientId: string,
+    body: string,
+    selfFlagged?: boolean,
+  ): CareMessage | undefined {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !body.trim()) return undefined;
+    const now = new Date().toISOString();
     const msg: CareMessage = {
       id: uid(),
       threadPatientId: patientId,
       authorType: "patient",
       authorName: `${p.firstName} ${p.lastName}`,
       body,
-      createdAt: new Date().toISOString(),
+      createdAt: now,
       // Authoring is reading, for the author's own side only.
-      readByPatientAt: new Date().toISOString(),
+      readByPatientAt: now,
+      // §Patient self-flag — same fields the staff reviewer path writes, so
+      // the existing mask check needs no special case.
+      ...(selfFlagged
+        ? {
+            sudFlagged: true,
+            sudFlaggedBy: `${p.firstName} ${p.lastName}`,
+            sudFlaggedAt: now,
+            sudFlaggedByPatient: true,
+          }
+        : {}),
     };
     p.careMessages = [...(p.careMessages ?? []), msg];
     appendAudit({
@@ -4592,6 +4615,15 @@ export const AdelanteEHR = {
       actorId: msg.authorName,
       detail: { authorType: "patient", messageId: msg.id },
     });
+    if (selfFlagged) {
+      appendAudit({
+        category: "access",
+        action: "care_message_sud_flagged",
+        patientId,
+        actorId: msg.authorName,
+        detail: { messageId: msg.id, authorType: "patient", selfFlagged: true },
+      });
+    }
     // §Notification feed — direct-address the assigned case manager when the
     // id resolves to a roster identity; otherwise broadcast to the role.
     const cmName = caseManagers.find((c) => c.id === p.caseManagerId)?.name;

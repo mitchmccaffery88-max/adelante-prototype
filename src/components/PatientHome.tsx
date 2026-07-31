@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { CrisisNotice } from "@/components/CrisisNotice";
@@ -614,6 +615,8 @@ function MessagesCard({ patientId }: { patientId: string }) {
   const messages = useEhr(() => AdelanteEHR.listCareMessages(patientId));
   const unread = useEhr(() => AdelanteEHR.unreadCountForPatient(patientId));
   const [draft, setDraft] = useState("");
+  // Opt-in, unchecked by default — never an assumption about every message.
+  const [sensitive, setSensitive] = useState(false);
 
   // Opening the card is the patient's "view" — clears their side only.
   useEffect(() => {
@@ -622,9 +625,10 @@ function MessagesCard({ patientId }: { patientId: string }) {
 
   const send = () => {
     // Sent verbatim: no trimming of content, no translation, no rewriting.
-    const sent = AdelanteEHR.sendPatientMessage(patientId, draft);
+    const sent = AdelanteEHR.sendPatientMessage(patientId, draft, sensitive);
     if (sent) {
       setDraft("");
+      setSensitive(false);
       toast.success(t("msgSent"));
     }
   };
@@ -660,6 +664,15 @@ function MessagesCard({ patientId }: { patientId: string }) {
         />
         {/* Persistent 988 notice directly above Send — safety boundary. */}
         <CrisisNotice />
+        <label className="flex items-start gap-2 text-xs text-muted-foreground">
+          <Checkbox
+            checked={sensitive}
+            onCheckedChange={(v) => setSensitive(v === true)}
+            className="mt-0.5"
+            aria-label={t("msgSensitive")}
+          />
+          <span>{t("msgSensitive")}</span>
+        </label>
         <div className="flex justify-end">
           <Button
             size="sm"

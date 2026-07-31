@@ -15,6 +15,7 @@ export function CareMessageThread({
   maskBody,
   canFlag,
   onToggleFlag,
+  showFlagProvenance,
 }: {
   messages: CareMessage[];
   /** Whose perspective is reading — their own messages align right. */
@@ -27,6 +28,8 @@ export function CareMessageThread({
   maskBody?: (m: CareMessage) => boolean;
   canFlag?: boolean;
   onToggleFlag?: (m: CareMessage) => void;
+  /** Staff side only — shows WHO flagged (patient vs reviewer). */
+  showFlagProvenance?: boolean;
 }) {
   if (messages.length === 0) {
     return <p className="py-4 text-center text-xs text-muted-foreground">{emptyLabel}</p>;
@@ -52,7 +55,12 @@ export function CareMessageThread({
                   flagged here, not find a silently missing message. */}
               {m.sudFlagged && (
                 <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-destructive">
-                  <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
+                  <ShieldAlert className="h-3 w-3" />
+                  {showFlagProvenance
+                    ? m.sudFlaggedByPatient
+                      ? "Sensitive content flagged — patient requested"
+                      : `Sensitive content flagged — flagged by ${m.sudFlaggedBy ?? "staff"}`
+                    : "Sensitive content flagged"}
                 </div>
               )}
               {masked ? (
