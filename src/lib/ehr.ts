@@ -5685,7 +5685,9 @@ export const AdelanteEHR = {
    * reuse a normalized-name match — the admin should merge instead.
    */
   createFacility(
-    input: { name: string; kind: FacilityKind; city?: string; timezone?: string },
+    input: { name: string; kind: FacilityKind; city?: string; timezone?: string } & Partial<
+      FacilityProfile
+    >,
     staffName: string,
   ): Facility {
     const name = (input.name ?? "").trim().replace(/\s+/g, " ");
@@ -5698,6 +5700,7 @@ export const AdelanteEHR = {
       kind: input.kind,
       city: input.city?.trim() || undefined,
       timezone: input.timezone?.trim() || undefined,
+      ...normalizeFacilityProfile(input),
       active: true,
       createdBy: staffName,
       createdAt: new Date().toISOString(),
@@ -5716,25 +5719,37 @@ export const AdelanteEHR = {
   /** Edit name/type/city/timezone. Name changes route through renameFacility rules. */
   updateFacility(
     facilityId: string,
-    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string },
+    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string } & Partial<
+      FacilityProfile
+    >,
     staffName: string,
   ): Facility {
     const row = facilities.find((f) => f.id === facilityId);
     if (!row) throw new Error("Facility not found.");
     if (patch.name !== undefined) AdelanteEHR.renameFacility(facilityId, patch.name, staffName);
-    const before = { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null };
+    // Snapshot only the fields this patch can touch, so the audit diff stays
+    // readable instead of dumping the whole record on every keystroke-save.
+    const snapshot = () => {
+      const out: Record<string, string | null> = {
+        kind: row.kind,
+        city: row.city ?? null,
+        timezone: row.timezone ?? null,
+      };
+      for (const key of FACILITY_PROFILE_FIELDS) {
+        if (patch[key] !== undefined) out[key] = row[key] ?? null;
+      }
+      return out;
+    };
+    const before = snapshot();
     if (patch.kind !== undefined) row.kind = patch.kind;
     if (patch.city !== undefined) row.city = patch.city.trim() || undefined;
     if (patch.timezone !== undefined) row.timezone = patch.timezone.trim() || undefined;
+    Object.assign(row, normalizeFacilityProfile(patch));
     appendAudit({
       category: "clinical",
       action: "facility_updated",
       actorId: staffName,
-      detail: {
-        facilityId,
-        before,
-        after: { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null },
-      },
+      detail: { facilityId, before, after: snapshot() },
     });
     emit();
     return row;
