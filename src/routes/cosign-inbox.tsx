@@ -6,7 +6,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
-import { AdelanteEHR, isNoteSudSensitive, useEhr, type ProgressNote } from "@/lib/ehr";
+import { AdelanteEHR, isNoteSudSensitive, useEhr, type Patient, type ProgressNote } from "@/lib/ehr";
 import { canSignNotes, isMyCosign } from "@/lib/notes";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
@@ -105,7 +105,7 @@ function CosignInboxPage() {
   );
 }
 
-type Row = { patient: { id: string; firstName: string; lastName: string }; note: ProgressNote };
+type Row = { patient: Patient; note: ProgressNote };
 
 function Section({
   title,
