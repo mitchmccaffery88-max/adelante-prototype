@@ -49,7 +49,8 @@ export type RecordClass =
   | "alerts"
   | "eligibility"
   | "care_coordination"
-  | "custody_tracking";
+  | "custody_tracking"
+  | "population_health";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -162,6 +163,25 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     peer_specialist: "read",
     sys_admin: "read",
+  },
+  // §Population health dashboards. Cross-patient aggregate + drill-down to
+  // PHI, and revenue-adjacent, so this is read-by-default and write only for
+  // the two roles that own reporting configuration:
+  //  - sys_admin: config/oversight tier (KPI targets are operational config,
+  //    not clinical authorship), consistent with its role elsewhere.
+  //  - clinical_coordinator: owns the clinical targets themselves.
+  // Billing + billing_coordinator read (revenue-relevant), clinical roles
+  // read, peer_specialist gets nothing — aggregate cross-patient exposure is
+  // outside the peer scope everywhere else in this matrix.
+  population_health: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    billing: "read",
+    billing_coordinator: "read",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
   },
 };
 
