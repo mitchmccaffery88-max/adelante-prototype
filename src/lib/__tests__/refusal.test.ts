@@ -342,6 +342,22 @@ describe("risk text language routing", () => {
       expect(RISK_TEXT_CATALOG_ES[k]?.text?.length ?? 0).toBeGreaterThan(80);
     }
   });
+
+  // A non-English language with NO catalog must never be treated as a draft:
+  // the wording presented is the reviewed English text, so nothing on the form
+  // may imply the patient was read unapproved copy.
+  it("falls back to reviewed English (never draft) for languages with no catalog", () => {
+    for (const lang of ["fr", "vi-VN", "ht", "ZH", "ar"]) {
+      const r = riskTextFor("psychiatric", lang, { approvedLanguages: ["es"] });
+      expect(r.text).toBe(RISK_TEXT_CATALOG.psychiatric.text);
+      expect(r.version).toBe(RISK_TEXT_CATALOG.psychiatric.version);
+      expect(r.reviewed).toBe(true);
+      expect(r.englishSnapshotLocked).toBe(true);
+      // Snapshot equals the presented text, so the dialog shows no translation
+      // disclosure section at all.
+      expect(r.englishText).toBe(r.text);
+    }
+  });
 });
 
 // §Risk-text translation review → promotion (es-v1-draft → es-v1).
