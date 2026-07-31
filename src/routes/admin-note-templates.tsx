@@ -629,6 +629,7 @@ function TemplateBuilderDialog({
                     {HAS_OPTIONS.includes(field.type) && (
                       <OptionsEditor
                         field={field}
+                        showEs={showEs}
                         onChange={(options) => updateField(si, fi, { options })}
                       />
                     )}
@@ -676,8 +677,23 @@ function TemplateBuilderDialog({
         <ScoringEditor rules={scoring} onChange={setScoring} />
 
         <div className="space-y-2 rounded-md border border-border p-3">
-          <h4 className="font-display text-sm text-navy">Live preview</h4>
-          <TemplateForm schema={schema} answers={preview} onChange={setPreview} />
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-display text-sm text-navy">Live preview</h4>
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={previewLang === "es"}
+                aria-label="Preview in Spanish"
+                onCheckedChange={(v) => setPreviewLang(v ? "es" : ("en" as TemplateLanguage))}
+              />
+              <span>Preview in Spanish</span>
+            </label>
+          </div>
+          <TemplateForm
+            schema={schema}
+            answers={preview}
+            onChange={setPreview}
+            language={previewLang}
+          />
         </div>
 
         <DialogFooter>
@@ -695,9 +711,11 @@ function TemplateBuilderDialog({
 
 function OptionsEditor({
   field,
+  showEs,
   onChange,
 }: {
   field: TemplateField;
+  showEs: boolean;
   onChange: (options: TemplateField["options"]) => void;
 }) {
   const options = field.options ?? [];
@@ -705,7 +723,10 @@ function OptionsEditor({
     <div className="space-y-2">
       <Label className="text-[11px]">Options</Label>
       {options.map((o, i) => (
-        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_6rem_auto]">
+        <div
+          key={i}
+          className={`grid gap-2 ${showEs ? "sm:grid-cols-[1fr_1fr_1fr_6rem_auto]" : "sm:grid-cols-[1fr_1fr_6rem_auto]"}`}
+        >
           <Input
             value={o.label}
             placeholder="Label"
@@ -719,6 +740,20 @@ function OptionsEditor({
               )
             }
           />
+          {showEs && (
+            <Input
+              value={o.labelEs ?? ""}
+              placeholder="Label (ES)"
+              aria-label="Option label (ES)"
+              onChange={(e) =>
+                onChange(
+                  options.map((x, j) =>
+                    j === i ? { ...x, labelEs: e.target.value || undefined } : x,
+                  ),
+                )
+              }
+            />
+          )}
           <Input
             value={o.value}
             placeholder="Value"
