@@ -614,6 +614,8 @@ function MessagesCard({ patientId }: { patientId: string }) {
   const { t } = useI18n();
   const messages = useEhr(() => AdelanteEHR.listCareMessages(patientId));
   const unread = useEhr(() => AdelanteEHR.unreadCountForPatient(patientId));
+  // Same consent field the Privacy & Consent card reads/writes.
+  const part2Consent = useEhr(() => AdelanteEHR.getConsentState(patientId).part2Sud);
   const [draft, setDraft] = useState("");
   // Opt-in, unchecked by default — never an assumption about every message.
   const [sensitive, setSensitive] = useState(false);
@@ -673,6 +675,12 @@ function MessagesCard({ patientId }: { patientId: string }) {
           />
           <span>{t("msgSensitive")}</span>
         </label>
+        {/* Transparency nudge — informational only, never blocks sending. */}
+        {sensitive && !part2Consent && (
+          <p className="rounded-md bg-muted/60 px-2.5 py-2 text-xs text-muted-foreground">
+            {t("msgSensitiveConsentOff")}
+          </p>
+        )}
         <div className="flex justify-end">
           <Button
             size="sm"
