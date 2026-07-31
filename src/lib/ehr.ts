@@ -4005,6 +4005,9 @@ export const AdelanteEHR = {
       row.status = "signed";
       row.attestedBy = attestedBy;
       row.attestedAt = at;
+      // Safety net for drafts created before startDate existed, or cleared in
+      // the UI: a signed order always carries a real start date.
+      row.startDate ??= facilityDateKey(new Date(), p.facilityTimezone);
       signed.push(row);
     }
     if (signed.length) {
