@@ -147,14 +147,34 @@ function ActiveSession({
   const unreviewed = items.filter((i) => i.source === "active_order" && i.decision === "not_reviewed");
   const [notes, setNotes] = useState(recon.notes ?? "");
   const [home, setHome] = useState({ drugName: "", dose: "", frequency: "", route: "" });
+  const [pendingDecision, setPendingDecision] = useState<{
+    item: MedReconItem;
+    decision: MedReconItem["decision"];
+  } | null>(null);
 
-  const decide = (item: MedReconItem, decision: MedReconItem["decision"]) => {
+  const applyDecision = (item: MedReconItem, decision: MedReconItem["decision"]) => {
     try {
       AdelanteEHR.updateReconItem(patientId, recon.id, item.id, { decision }, staffName);
+      toast.success(`${item.drugName} marked ${MED_RECON_DECISION_LABEL[decision]}.`);
     } catch (e) {
       toast.error((e as Error).message);
+    } finally {
+      setPendingDecision(null);
     }
   };
+
+  const decide = (item: MedReconItem, decision: MedReconItem["decision"]) => {
+    if (
+      item.source === "active_order" &&
+      (decision === "stop" || decision === "modify") &&
+      !item.decisionNote?.trim()
+    ) {
+      setPendingDecision({ item, decision });
+      return;
+    }
+    applyDecision(item, decision);
+  };
+
 
   const patch = (item: MedReconItem, p: Partial<MedReconItem>) => {
     try {
