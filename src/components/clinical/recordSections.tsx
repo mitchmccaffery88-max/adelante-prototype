@@ -11,8 +11,10 @@ import {
   FileText,
   HeartPulse,
   Home,
+  KeyRound,
   LayoutDashboard,
   ListChecks,
+  MapPin,
   Pill,
   Route as RouteIcon,
   ShieldAlert,
@@ -28,6 +30,7 @@ import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
+import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import {
   OverviewTab,
   ContactTab,
@@ -107,6 +110,9 @@ export function useRecordSections(patient: Patient): RecordSection[] {
       tasks: (fresh.tasks ?? []).filter((t) => !t.completedAt).length,
       referrals: (fresh.resourceReferrals ?? []).filter((r) => r.status !== "completed").length,
       sdoh: (fresh.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length,
+      bookings: (fresh.bookings ?? []).length,
+      currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),
+      housingMoves: (fresh.housingMoves ?? []).length,
     };
   });
 
@@ -286,6 +292,24 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     group: "coordination",
     alwaysVisible: true,
     render: () => <ProviderHistoryTab patientId={pid} />,
+  });
+  // §Custody tracking — coordination data, not clinical charting.
+  add("custody_tracking", {
+    id: "bookings",
+    label: "Bookings",
+    icon: KeyRound,
+    group: "coordination",
+    count: counts.bookings,
+    urgent: counts.currentlyBooked,
+    render: (a) => <BookingsTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  add("custody_tracking", {
+    id: "housing-moves",
+    label: "Housing moves",
+    icon: MapPin,
+    group: "coordination",
+    count: counts.housingMoves,
+    render: (a) => <HousingMovesTab patientId={pid} readOnly={a.level !== "write"} />,
   });
 
   return sections;

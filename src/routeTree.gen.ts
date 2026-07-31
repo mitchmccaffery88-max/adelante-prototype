@@ -29,7 +29,9 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as ReferralRouteImport } from './routes/referral'
+import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ScheduleRouteImport } from './routes/schedule'
+import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -132,9 +134,19 @@ const ReferralRoute = ReferralRouteImport.update({
   path: '/referral',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReleasedSearchRoute = ReleasedSearchRouteImport.update({
+  id: '/released-search',
+  path: '/released-search',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ShiftCountRoute = ShiftCountRouteImport.update({
+  id: '/shift-count',
+  path: '/shift-count',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
@@ -164,7 +176,9 @@ export interface FileRoutesByFullPath {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
+  '/shift-count': typeof ShiftCountRoute
   '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRoutesByTo {
@@ -188,7 +202,9 @@ export interface FileRoutesByTo {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
+  '/shift-count': typeof ShiftCountRoute
   '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRoutesById {
@@ -213,7 +229,9 @@ export interface FileRoutesById {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
+  '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
+  '/shift-count': typeof ShiftCountRoute
   '/record/$patientId': typeof RecordPatientIdRoute
 }
 export interface FileRouteTypes {
@@ -239,7 +257,9 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/referral'
+    | '/released-search'
     | '/schedule'
+    | '/shift-count'
     | '/record/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -263,7 +283,9 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/referral'
+    | '/released-search'
     | '/schedule'
+    | '/shift-count'
     | '/record/$patientId'
   id:
     | '__root__'
@@ -287,7 +309,9 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/referral'
+    | '/released-search'
     | '/schedule'
+    | '/shift-count'
     | '/record/$patientId'
   fileRoutesById: FileRoutesById
 }
@@ -312,7 +336,9 @@ export interface RootRouteChildren {
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
+  ReleasedSearchRoute: typeof ReleasedSearchRoute
   ScheduleRoute: typeof ScheduleRoute
+  ShiftCountRoute: typeof ShiftCountRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
 }
 
@@ -458,11 +484,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReferralRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/released-search': {
+      id: '/released-search'
+      path: '/released-search'
+      fullPath: '/released-search'
+      preLoaderRoute: typeof ReleasedSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/schedule': {
       id: '/schedule'
       path: '/schedule'
       fullPath: '/schedule'
       preLoaderRoute: typeof ScheduleRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/shift-count': {
+      id: '/shift-count'
+      path: '/shift-count'
+      fullPath: '/shift-count'
+      preLoaderRoute: typeof ShiftCountRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/record/$patientId': {
@@ -496,7 +536,9 @@ const rootRouteChildren: RootRouteChildren = {
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,
+  ReleasedSearchRoute: ReleasedSearchRoute,
   ScheduleRoute: ScheduleRoute,
+  ShiftCountRoute: ShiftCountRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
 }
 export const routeTree = rootRouteImport

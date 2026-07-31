@@ -422,6 +422,72 @@ export interface RefusalForm {
 export const LATE_ENTRY_THRESHOLD_HOURS = 4;
 
 /**
+ * §Custody tracking — a jail/facility booking episode.
+ *
+ * NOTE(facility): `facilityName` is free text. Adelante has no first-class
+ * Facility entity, so multi-facility reporting (rollups, per-site counts,
+ * per-site timezones) is NOT possible without one. Flag this the moment
+ * cross-facility reporting is asked for.
+ */
+export interface Booking {
+  id: string;
+  patientId: string;
+  bookingNumber: string;
+  facilityName: string;
+  bookedAt: string;
+  releasedAt?: string;
+  bookingReason?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** A housing/unit move inside one booking episode. */
+export interface HousingMove {
+  id: string;
+  patientId: string;
+  /** References `Booking.id`. */
+  bookingId: string;
+  movedAt: string;
+  facilityName: string;
+  housingUnit: string;
+  reason?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** One aggregated controlled-substance line in a shift count. */
+export interface ShiftCountLine {
+  key: string;
+  drugName: string;
+  doseLabel: string;
+  deaSchedule: string;
+  given: number;
+  refusedOrHeld: number;
+  patients: number;
+  firstAt?: string;
+  lastAt?: string;
+}
+
+/**
+ * Immutable, locked controlled-substance shift count. Top-level (NOT on a
+ * Patient) — it is a facility/shift artifact that spans the population.
+ */
+export interface ShiftCount {
+  id: string;
+  windowStart: string;
+  windowEnd: string;
+  housingUnit?: string;
+  scheduleFilter: string;
+  lines: ShiftCountLine[];
+  totalGiven: number;
+  totalRefusedOrHeld: number;
+  counterName: string;
+  witnessName: string;
+  notes?: string;
+  signedAt: string;
+}
+
+/**
  * Witness requirement at administration. CII always; an order flagged
  * controlled with no schedule recorded is treated as CII (conservative).
  * CIII–CV do NOT require a witness.
@@ -557,6 +623,10 @@ export interface Patient {
   kopIssuances?: KopIssuance[];
   /** Refusal legal documents (§MAR Phase 3). Never deleted. */
   refusalForms?: RefusalForm[];
+  /** §Custody tracking — booking episodes (append-only; closing sets releasedAt). */
+  bookings?: Booking[];
+  /** §Custody tracking — housing moves within bookings. */
+  housingMoves?: HousingMove[];
 }
 
 export interface ScreenerResult {
@@ -1817,6 +1887,12 @@ export interface AuditEvent {
   detail?: Record<string, unknown>;
 }
 const auditEvents: AuditEvent[] = [];
+
+/**
+ * §Shift count — locked controlled-substance reconciliations. Top-level store:
+ * a shift count spans every patient on the unit, so it has no owning Patient.
+ */
+const shiftCounts: ShiftCount[] = [];
 
 // How a catalog selection's strength was resolved, recorded at pick time.
 export type CatalogResolutionPath =
@@ -5110,6 +5186,367 @@ export const AdelanteEHR = {
     });
     emit();
   },
+
+  // ----- §Custody tracking: bookings + housing moves ----------------------
+
+  addBooking(
+    patientId: string,
+    input: {
+      bookingNumber: string;
+      facilityName: string;
+      bookedAt: string;
+      bookingReason?: string;
+      releasedAt?: string;
+    },
+    staffName: string,
+  ): Booking {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const bookingNumber = input.bookingNumber?.trim();
+    if (!bookingNumber) throw new Error("A booking number is required.");
+    const facilityName = input.facilityName?.trim();
+    if (!facilityName) throw new Error("A facility name is required.");
+    if (!input.bookedAt) throw new Error("A booked date is required.");
+    if (input.releasedAt && input.releasedAt < input.bookedAt)
+      throw new Error("Release cannot precede booking.");
+    const row: Booking = {
+      id: uid(),
+      patientId,
+      bookingNumber,
+      facilityName,
+      bookedAt: input.bookedAt,
+      releasedAt: input.releasedAt || undefined,
+      bookingReason: input.bookingReason?.trim() || undefined,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    p.bookings = [row, ...(p.bookings ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "booking_added",
+      patientId,
+      actorId: staffName,
+      detail: {
+        bookingId: row.id,
+        bookingNumber: row.bookingNumber,
+        facilityName: row.facilityName,
+        bookedAt: row.bookedAt,
+        releasedAt: row.releasedAt ?? null,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /** Close an open booking. Idempotence is deliberately rejected, not silent. */
+  closeBooking(bookingId: string, releasedAt: string, staffName: string): Booking {
+    const p = patients.find((x) => (x.bookings ?? []).some((b) => b.id === bookingId));
+    const row = p?.bookings?.find((b) => b.id === bookingId);
+    if (!p || !row) throw new Error("Booking not found");
+    if (row.releasedAt) throw new Error("This booking has already been released.");
+    if (!releasedAt) throw new Error("A release date is required.");
+    if (releasedAt < row.bookedAt) throw new Error("Release cannot precede booking.");
+    row.releasedAt = releasedAt;
+    appendAudit({
+      category: "clinical",
+      action: "booking_released",
+      patientId: p.id,
+      actorId: staffName,
+      detail: { bookingId: row.id, bookingNumber: row.bookingNumber, releasedAt },
+    });
+    emit();
+    return row;
+  },
+
+  addHousingMove(
+    patientId: string,
+    input: {
+      bookingId: string;
+      movedAt: string;
+      facilityName: string;
+      housingUnit: string;
+      reason?: string;
+    },
+    staffName: string,
+  ): HousingMove {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const booking = (p.bookings ?? []).find((b) => b.id === input.bookingId);
+    if (!booking) throw new Error("Select the booking this move belongs to.");
+    const housingUnit = input.housingUnit?.trim();
+    if (!housingUnit) throw new Error("A housing unit is required.");
+    if (!input.movedAt) throw new Error("A move date is required.");
+    const row: HousingMove = {
+      id: uid(),
+      patientId,
+      bookingId: booking.id,
+      movedAt: input.movedAt,
+      facilityName: input.facilityName?.trim() || booking.facilityName,
+      housingUnit,
+      reason: input.reason?.trim() || undefined,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    p.housingMoves = [row, ...(p.housingMoves ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "housing_move_added",
+      patientId,
+      actorId: staffName,
+      detail: {
+        moveId: row.id,
+        bookingId: row.bookingId,
+        bookingNumber: booking.bookingNumber,
+        housingUnit: row.housingUnit,
+        facilityName: row.facilityName,
+        movedAt: row.movedAt,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /** Newest booking first. Omit `patientId` for the cross-patient list. */
+  listBookings(patientId?: string): Booking[] {
+    return patients
+      .filter((p) => !patientId || p.id === patientId)
+      .flatMap((p) => p.bookings ?? [])
+      .slice()
+      .sort((a, b) => b.bookedAt.localeCompare(a.bookedAt));
+  },
+
+  listHousingMoves(patientId?: string, bookingId?: string): HousingMove[] {
+    return patients
+      .filter((p) => !patientId || p.id === patientId)
+      .flatMap((p) => p.housingMoves ?? [])
+      .filter((m) => !bookingId || m.bookingId === bookingId)
+      .slice()
+      .sort((a, b) => b.movedAt.localeCompare(a.movedAt));
+  },
+
+  /** True when the most recent booking episode has no release recorded. */
+  isCurrentlyBooked(patientId: string): boolean {
+    const latest = AdelanteEHR.listBookings(patientId)[0];
+    return Boolean(latest && !latest.releasedAt);
+  },
+
+  /** Current housing unit = the newest move on the patient's newest booking. */
+  currentHousingUnit(patientId: string): string | undefined {
+    const latest = AdelanteEHR.listBookings(patientId)[0];
+    if (!latest) return undefined;
+    return AdelanteEHR.listHousingMoves(patientId, latest.id)[0]?.housingUnit;
+  },
+
+  /**
+   * §Released patient search — cross-patient roster query.
+   *
+   * Date range is compared on CALENDAR DATE ONLY (YYYY-MM-DD), never on the
+   * full timestamp: a release recorded at 14:00 on the `to` date must be
+   * included, which a raw `<= to` timestamp compare silently drops.
+   */
+  searchReleasedPatients(criteria: {
+    programId?: string;
+    lastName?: string;
+    firstName?: string;
+    dob?: string;
+    releasedFrom?: string;
+    releasedTo?: string;
+  }): {
+    patient: Patient;
+    lastReleasedAt: string;
+    facilityName: string;
+    bookingCount: number;
+  }[] {
+    const norm = (v?: string) => (v ?? "").trim().toLowerCase();
+    const dayOf = (iso: string) => iso.slice(0, 10);
+    const out: {
+      patient: Patient;
+      lastReleasedAt: string;
+      facilityName: string;
+      bookingCount: number;
+    }[] = [];
+    for (const p of patients) {
+      const bookings = p.bookings ?? [];
+      if (!bookings.length) continue;
+      if (criteria.programId && !norm(p.programId).includes(norm(criteria.programId))) continue;
+      if (criteria.lastName && !norm(p.lastName).includes(norm(criteria.lastName))) continue;
+      if (criteria.firstName && !norm(p.firstName).includes(norm(criteria.firstName))) continue;
+      if (criteria.dob && p.dob !== criteria.dob) continue;
+      const released = bookings
+        .filter((b) => b.releasedAt)
+        .filter((b) => {
+          const day = dayOf(b.releasedAt!);
+          if (criteria.releasedFrom && day < dayOf(criteria.releasedFrom)) return false;
+          if (criteria.releasedTo && day > dayOf(criteria.releasedTo)) return false;
+          return true;
+        })
+        .sort((a, b) => b.releasedAt!.localeCompare(a.releasedAt!));
+      const latest = released[0];
+      if (!latest) continue;
+      out.push({
+        patient: p,
+        lastReleasedAt: latest.releasedAt!,
+        facilityName: latest.facilityName,
+        bookingCount: bookings.length,
+      });
+    }
+    return out.sort((a, b) => b.lastReleasedAt.localeCompare(a.lastReleasedAt));
+  },
+
+  /** Roster of patients whose newest booking is still open. */
+  searchBookedPatients(criteria: {
+    programId?: string;
+    lastName?: string;
+    firstName?: string;
+    dob?: string;
+  }): { patient: Patient; booking: Booking; housingUnit?: string }[] {
+    const norm = (v?: string) => (v ?? "").trim().toLowerCase();
+    return patients
+      .filter((p) => AdelanteEHR.isCurrentlyBooked(p.id))
+      .filter(
+        (p) =>
+          (!criteria.programId || norm(p.programId).includes(norm(criteria.programId))) &&
+          (!criteria.lastName || norm(p.lastName).includes(norm(criteria.lastName))) &&
+          (!criteria.firstName || norm(p.firstName).includes(norm(criteria.firstName))) &&
+          (!criteria.dob || p.dob === criteria.dob),
+      )
+      .map((p) => ({
+        patient: p,
+        booking: AdelanteEHR.listBookings(p.id)[0],
+        housingUnit: AdelanteEHR.currentHousingUnit(p.id),
+      }));
+  },
+
+  /**
+   * §Shift count — FIRST cross-patient MAR query in this codebase. Every other
+   * MAR read is patient-scoped; this one walks the whole population because a
+   * controlled count is a unit-level artifact, not a chart-level one.
+   */
+  listAllAdministrations(
+    filter: { from?: string; to?: string; includeVoided?: boolean } = {},
+  ): { patient: Patient; order: MedOrder; administration: DoseAdministration }[] {
+    const rows: { patient: Patient; order: MedOrder; administration: DoseAdministration }[] = [];
+    for (const p of patients) {
+      for (const a of p.administrations ?? []) {
+        if (a.voided && !filter.includeVoided) continue;
+        if (filter.from && a.chartedAt < filter.from) continue;
+        if (filter.to && a.chartedAt > filter.to) continue;
+        const order = (p.orders ?? []).find((o) => o.id === a.orderId);
+        if (!order) continue;
+        rows.push({ patient: p, order, administration: a });
+      }
+    }
+    return rows.sort((a, b) => a.administration.chartedAt.localeCompare(b.administration.chartedAt));
+  },
+
+  /** Aggregate controlled administrations in a window into count lines. */
+  aggregateShiftCount(opts: {
+    windowStart: string;
+    windowEnd: string;
+    housingUnit?: string;
+    schedule?: string;
+  }): ShiftCountLine[] {
+    const rows = AdelanteEHR.listAllAdministrations({
+      from: opts.windowStart,
+      to: opts.windowEnd,
+    }).filter(({ order, patient }) => {
+      if (!order.deaSchedule) return false;
+      if (opts.schedule && opts.schedule !== "all" && order.deaSchedule !== opts.schedule)
+        return false;
+      if (opts.housingUnit && AdelanteEHR.currentHousingUnit(patient.id) !== opts.housingUnit)
+        return false;
+      return true;
+    });
+    const map = new Map<string, ShiftCountLine & { patientIds: Set<string> }>();
+    for (const { order, patient, administration } of rows) {
+      const doseLabel = order.strengthText || (order.doseTargetMg ? `${order.doseTargetMg} mg` : "—");
+      const key = `${order.drugName}|${doseLabel}|${order.deaSchedule}`;
+      let line = map.get(key);
+      if (!line) {
+        line = {
+          key,
+          drugName: order.drugName,
+          doseLabel,
+          deaSchedule: order.deaSchedule!,
+          given: 0,
+          refusedOrHeld: 0,
+          patients: 0,
+          patientIds: new Set<string>(),
+        };
+        map.set(key, line);
+      }
+      if (administration.action === "given") line.given += 1;
+      else line.refusedOrHeld += 1;
+      line.patientIds.add(patient.id);
+      const at = administration.chartedAt;
+      if (!line.firstAt || at < line.firstAt) line.firstAt = at;
+      if (!line.lastAt || at > line.lastAt) line.lastAt = at;
+    }
+    return [...map.values()]
+      .map(({ patientIds, ...line }) => ({ ...line, patients: patientIds.size }))
+      .sort((a, b) => a.drugName.localeCompare(b.drugName));
+  },
+
+  /** Sign & lock. Two people, never the same person; the record is immutable. */
+  lockShiftCount(input: {
+    windowStart: string;
+    windowEnd: string;
+    housingUnit?: string;
+    schedule?: string;
+    counterName: string;
+    witnessName: string;
+    notes?: string;
+  }): ShiftCount {
+    const counterName = input.counterName?.trim();
+    const witnessName = input.witnessName?.trim();
+    if (!counterName) throw new Error("A counting staff identity is required.");
+    if (!witnessName) throw new Error("A witness is required.");
+    if (counterName === witnessName)
+      throw new Error("The witness must be a different person than the counter.");
+    if (!input.windowStart || !input.windowEnd) throw new Error("A count window is required.");
+    if (input.windowEnd <= input.windowStart)
+      throw new Error("The window end must be after the start.");
+    const lines = AdelanteEHR.aggregateShiftCount(input);
+    const row: ShiftCount = {
+      id: uid(),
+      windowStart: input.windowStart,
+      windowEnd: input.windowEnd,
+      housingUnit: input.housingUnit || undefined,
+      scheduleFilter: input.schedule || "all",
+      // Frozen snapshot — later charting never rewrites a locked count.
+      lines: lines.map((l) => ({ ...l })),
+      totalGiven: lines.reduce((n, l) => n + l.given, 0),
+      totalRefusedOrHeld: lines.reduce((n, l) => n + l.refusedOrHeld, 0),
+      counterName,
+      witnessName,
+      notes: input.notes?.trim() || undefined,
+      signedAt: new Date().toISOString(),
+    };
+    shiftCounts.unshift(row);
+    appendAudit({
+      category: "clinical",
+      action: "shift_count_locked",
+      actorId: counterName,
+      detail: {
+        shiftCountId: row.id,
+        windowStart: row.windowStart,
+        windowEnd: row.windowEnd,
+        housingUnit: row.housingUnit ?? null,
+        scheduleFilter: row.scheduleFilter,
+        lineCount: row.lines.length,
+        totalGiven: row.totalGiven,
+        totalRefusedOrHeld: row.totalRefusedOrHeld,
+        witnessName: row.witnessName,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /** Locked counts, newest first. Copies out so callers cannot mutate history. */
+  listShiftCounts(limit = 20): ShiftCount[] {
+    return shiftCounts.slice(0, limit).map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
+  },
 };
 
 // Re-export vendor types so consumers only import from "@/lib/ehr".
@@ -5291,4 +5728,128 @@ export function useEhr<T>(selector: () => T): T {
     () => version,
   );
   return selector();
+}
+
+// ---------------------------------------------------------------------------
+// DEMO SEED — §Custody tracking + controlled shift count.
+// Bookings/housing moves are written through the real store API so the audit
+// trail matches live use. One patient stays currently booked, one is released
+// TODAY (exercising the calendar-date boundary in released search), and a CIV
+// order is charted for two patients so Shift Count has real MAR data to
+// aggregate. Remove with the rest of the mock store.
+// ---------------------------------------------------------------------------
+{
+  const CM = "Luz Herrera";
+  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const NURSE = "Rosa T., LVN";
+  const iso = (d: Date) => d.toISOString();
+  const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
+  const todayAt = (hour: number) => {
+    const d = new Date();
+    d.setHours(hour, 0, 0, 0);
+    return iso(d);
+  };
+
+  try {
+    // p1 — released today at 14:00 (the boundary case the reference had wrong).
+    const b1 = AdelanteEHR.addBooking(
+      "p1",
+      {
+        bookingNumber: "BK-2026-1041",
+        facilityName: "Fresno County Jail — Main",
+        bookedAt: daysAgo(46),
+        bookingReason: "Probation violation",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p1",
+      {
+        bookingId: b1.id,
+        movedAt: daysAgo(45),
+        facilityName: "Fresno County Jail — Main",
+        housingUnit: "Unit 3B",
+        reason: "Initial classification",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p1",
+      {
+        bookingId: b1.id,
+        movedAt: daysAgo(12),
+        facilityName: "Fresno County Jail — Main",
+        housingUnit: "Med Obs 1",
+        reason: "Medical observation",
+      },
+      CM,
+    );
+    AdelanteEHR.closeBooking(b1.id, todayAt(14), CM);
+
+    // p2 — currently booked, no release recorded.
+    const b2 = AdelanteEHR.addBooking(
+      "p2",
+      {
+        bookingNumber: "BK-2026-1177",
+        facilityName: "Fresno County Jail — North Annex",
+        bookedAt: daysAgo(9),
+        bookingReason: "Pending arraignment",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      "p2",
+      {
+        bookingId: b2.id,
+        movedAt: daysAgo(9),
+        facilityName: "Fresno County Jail — North Annex",
+        housingUnit: "Unit 1A",
+        reason: "Intake housing",
+      },
+      CM,
+    );
+
+    // Controlled (CIV) order charted for two patients — Shift Count fodder.
+    for (const pid of ["p1", "p2"]) {
+      const draft = AdelanteEHR.addDraftOrder(pid, {
+        drugName: "Lorazepam",
+        productName: "Lorazepam 1 MG Oral Tablet",
+        rxcui: "197898",
+        strengthText: "1 MG",
+        strengthSource: "rxnav",
+        doseForm: "Oral Tablet",
+        ingredientNames: ["Lorazepam"],
+        doseAxis: "mg",
+        doseTargetMg: 1,
+        unitsPerAdmin: 1,
+        route: "PO",
+        frequency: "twice daily",
+        frequencyCode: "BID",
+        durationValue: 14,
+        durationUnit: "days",
+        quantity: 28,
+        daysSupply: 14,
+        sig: "Take 1 tablet (1 mg) by mouth twice daily",
+        dispenseRoute: "pharmacy",
+        isControlled: true,
+        deaSchedule: "CIV",
+        indicationText: "Alcohol withdrawal management",
+        startDate: new Date().toISOString().slice(0, 10),
+        createdBy: PMHNP,
+      } as Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">);
+      AdelanteEHR.signOrders(pid, [draft.id], PMHNP);
+      AdelanteEHR.chartDose(
+        pid,
+        draft.id,
+        todayAt(8),
+        pid === "p2" ? "refused" : "given",
+        pid === "p2" ? "Patient declined the morning dose." : undefined,
+        NURSE,
+        `batch-shiftcount-seed-${pid}`,
+        "Seeded demo entry charted outside the scheduled window.",
+      );
+    }
+  } catch {
+    /* Seeding is best-effort; a validation change must never break boot. */
+  }
 }

@@ -152,6 +152,10 @@ function CaseManagerPage() {
           >
             <UploadCloud className="h-4 w-4 mr-1.5" /> Upload caseload
           </Button>
+          {/* §Custody tracking — population-level released/active search. */}
+          <Button asChild variant="outline" size="sm">
+            <Link to="/released-search">Patient search (custody)</Link>
+          </Button>
           <Select value={cmId} onValueChange={setCmId}>
             <SelectTrigger className="w-[280px]">
               <SelectValue />
