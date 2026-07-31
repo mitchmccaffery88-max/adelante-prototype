@@ -1599,6 +1599,119 @@ import {
   ESCALATION_WINDOW_DAYS,
   type RefusalFinalizePayload,
 } from "./refusal";
+
+// ---------------------------------------------------------------------------
+// DEMO SEED — refusal walkthrough patient (§MAR Phase 3).
+// A signed psychiatric order with one dose already charted as REFUSED plus the
+// matching pending refusal document, so the RefusalFormDialog (SignaturePad,
+// witness branch, escalation) can be exercised end-to-end without first
+// running a MAR pass. Remove alongside the rest of the mock store when the
+// real persistence layer lands.
+// ---------------------------------------------------------------------------
+{
+  const facilityDayAt = (hour: number, daysAgo = 0) => {
+    const d = new Date(today.getTime() - daysAgo * 86400000);
+    d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+  const startDate = new Date(today.getTime() - 6 * 86400000).toISOString().slice(0, 10);
+  const order: MedOrder = {
+    id: "ord-demo-refusal",
+    patientId: "p-demo-refusal",
+    drugName: "Sertraline",
+    productName: "Sertraline 50 MG Oral Tablet",
+    rxcui: "312940",
+    strengthText: "50 MG",
+    strengthSource: "rxnav",
+    doseForm: "Oral Tablet",
+    ingredientNames: ["Sertraline"],
+    doseAxis: "mg",
+    doseTargetMg: 50,
+    unitsPerAdmin: 1,
+    route: "PO",
+    frequency: "once daily",
+    frequencyCode: "QD",
+    durationValue: 30,
+    durationUnit: "days",
+    quantity: 30,
+    daysSupply: 30,
+    sig: "Take 1 tablet (50 mg) by mouth once daily",
+    dispenseRoute: "pharmacy",
+    indicationText: "Major depressive disorder",
+    startDate,
+    status: "signed",
+    attestedBy: "Dr. James Okafor",
+    attestedAt: facilityDayAt(9, 6),
+    createdBy: "Dr. James Okafor",
+    createdAt: facilityDayAt(9, 6),
+  };
+  const refusedDose: DoseAdministration = {
+    id: "adm-demo-refusal-1",
+    patientId: "p-demo-refusal",
+    orderId: order.id,
+    scheduledAt: facilityDayAt(8, 0),
+    action: "refused",
+    reason: "Patient declined — reports nausea after morning dose.",
+    batchId: "batch-demo-refusal-0",
+    chartedBy: "Rosa T., LVN",
+    chartedAt: facilityDayAt(8, 0),
+  };
+  const priorRefusals: DoseAdministration[] = [1, 2].map((daysAgo) => ({
+    id: `adm-demo-refusal-prior-${daysAgo}`,
+    patientId: "p-demo-refusal",
+    orderId: order.id,
+    scheduledAt: facilityDayAt(8, daysAgo),
+    action: "refused" as const,
+    reason: "Patient declined.",
+    batchId: `batch-demo-refusal-${daysAgo}`,
+    chartedBy: "Rosa T., LVN",
+    chartedAt: facilityDayAt(8, daysAgo),
+  }));
+  const risk = RISK_TEXT_CATALOG.psychiatric;
+  const demoPatient: Patient = {
+    id: "p-demo-refusal",
+    programId: "ADL-2026-900",
+    firstName: "Alicia",
+    lastName: "R.",
+    dob: "1994-02-18",
+    phone: "+15595550190",
+    releaseDate: "2026-06-01",
+    enrolledAt: "2026-06-03",
+    episodeDay: 12,
+    smsFallback: true,
+    consents: { hipaa: true, part2Sud: true, signedAt: "2026-06-03" },
+    screeners: {},
+    needs: { housing: false, food: false, employment: false, transport: false },
+    carePlanSummary: "Demo record for MAR refusal-document walkthrough.",
+    caseManagerId: "cm1",
+    alerts: [],
+    allergies: [],
+    problems: [],
+    orders: [order],
+    administrations: [refusedDose, ...priorRefusals],
+    refusalForms: [
+      {
+        id: "rf-demo-refusal-1",
+        patientId: "p-demo-refusal",
+        administrationId: refusedDose.id,
+        status: "pending_signature",
+        medClass: "psychiatric",
+        riskTextVersion: risk.version,
+        riskTextSnapshot: risk.text,
+        languageCode: "en",
+        capacityFlagsAtSigning: [],
+        guardianRequired: false,
+        nurseAttested: false,
+        patientSigned: false,
+        witnessRequired: false,
+        attestationMethod: "checkbox_only",
+        createdAt: refusedDose.chartedAt,
+        createdBy: "Rosa T., LVN",
+      },
+    ],
+  };
+  patients.push(demoPatient);
+}
 interface RxEventRow {
   id: string;
   patientId: string;
