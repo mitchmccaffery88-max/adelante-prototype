@@ -147,6 +147,9 @@ function AdminNoteTemplatesPage() {
                 <div className="flex items-center gap-2">
                   <span className="font-medium text-navy">{t.title}</span>
                   <Badge variant="outline" className="text-[10px]">
+                    v{t.version}
+                  </Badge>
+                  <Badge variant="outline" className="text-[10px]">
                     {t.encounterType}
                   </Badge>
                   {!t.active && (
@@ -277,6 +280,11 @@ function TemplateBuilderDialog({
   const [preview, setPreview] = useState<TemplateAnswers>({});
 
   const schema: TemplateSchema = { sections, scoring: scoring.length ? scoring : undefined };
+  // A schema edit changes answer semantics, so it publishes a new version
+  // instead of rewriting the one existing notes were answered against.
+  const schemaChanged =
+    !!template && JSON.stringify(schema) !== JSON.stringify(template.schema);
+  const nextVersion = (template?.version ?? 0) + 1;
 
   const updateSection = (i: number, patch: Partial<TemplateSection>) =>
     setSections((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -292,12 +300,19 @@ function TemplateBuilderDialog({
   const save = () => {
     try {
       if (template) {
+        if (schemaChanged) {
+          const ok = window.confirm(
+            `Saving will create version ${nextVersion} of "${template.title}". ` +
+              `Existing notes stay on version ${template.version} and are unchanged.`,
+          );
+          if (!ok) return;
+        }
         AdelanteEHR.updateNoteTemplate(
           template.id,
           { title, description, encounterType, schema },
           staffName,
         );
-        toast.success("Template updated");
+        toast.success(schemaChanged ? `Published version ${nextVersion}` : "Template updated");
       } else {
         AdelanteEHR.createNoteTemplate(
           { key: key.trim() || slug(title), title, description, encounterType, schema },
@@ -315,12 +330,28 @@ function TemplateBuilderDialog({
     <Dialog open onOpenChange={(o) => !o && onClose()}>
       <DialogContent className="max-h-[90vh] max-w-4xl overflow-y-auto">
         <DialogHeader>
-          <DialogTitle>{template ? "Edit template" : "New template"}</DialogTitle>
+          <DialogTitle>
+            {template ? `Edit template (v${template.version})` : "New template"}
+          </DialogTitle>
           <DialogDescription>
             Build sections and fields. `show_if` accepts simple expressions like{" "}
             <code>substance_use == "yes" && phq2_total &gt;= 3</code>.
           </DialogDescription>
         </DialogHeader>
+
+        {template && (
+          <p
+            className={
+              schemaChanged
+                ? "rounded-md border border-amber-300 bg-amber-50 p-2 text-[11px] text-amber-900"
+                : "text-muted-foreground text-[11px]"
+            }
+          >
+            {schemaChanged
+              ? `Saving will create version ${nextVersion}; existing notes stay on version ${template.version}.`
+              : `Editing version ${template.version}. Title, description and encounter type save in place — only a schema change creates a new version.`}
+          </p>
+        )}
 
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
