@@ -18,13 +18,16 @@ import {
   type TemplateLanguage,
   type TemplateSchema,
   type TemplateSection,
-  type TemplateSchema,
   type SectionType,
   type QuickPickMed,
   type AutofillSource,
   isFieldsSection,
   type TemplateAnswers,
 } from "@/lib/templateSchema";
+import {
+  NoteAutofillCard,
+  useNoteAutofillSnapshots,
+} from "@/components/clinical/NoteAutofillCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
