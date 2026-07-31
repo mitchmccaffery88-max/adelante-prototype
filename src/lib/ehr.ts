@@ -2459,7 +2459,18 @@ const riskTextApprovalLookup = () => ({
 // Vendor adapters (telehealth video + eRx medication management). Kept
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
-import { frequencyByCode } from "./frequencies";
+import {
+  frequencyByCode,
+  listFrequencies,
+  putFrequency,
+  dropFrequency,
+  type MedFrequency,
+} from "./frequencies";
+import type { CatalogSuppression } from "./catalogSuppressions";
+export type { CatalogSuppression } from "./catalogSuppressions";
+
+/** §Admin governance — local RxNav suppression rules (seeded empty). */
+const catalogSuppressions: CatalogSuppression[] = [];
 import { facilityDateKey, fromFacilityWallClock } from "./facilityTime";
 import {
   RISK_TEXT_CATALOG,
@@ -8200,7 +8211,7 @@ export const AdelanteEHR = {
         if (!o.offCatalog || !o.drugName) continue;
         const key = o.drugName.trim().toLowerCase();
         if (!key) continue;
-        const at = o.signedAt ?? o.createdAt ?? "";
+        const at = o.statusChangedAt ?? o.createdAt ?? "";
         const prev = byName.get(key);
         if (!prev) {
           byName.set(key, {
@@ -8219,13 +8230,6 @@ export const AdelanteEHR = {
       }
     }
     return [...byName.values()].sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
-  },
-
-  _listKpiTargetsUnused(includeInactive = false): KpiTarget[] {
-    return kpiTargets
-      .filter((t) => includeInactive || t.active)
-      .map((t) => ({ ...t }))
-      .sort((a, b) => a.label.localeCompare(b.label));
   },
 
   createKpiTarget(
