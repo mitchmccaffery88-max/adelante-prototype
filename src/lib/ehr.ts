@@ -776,6 +776,59 @@ export interface Patient {
   housingMoves?: HousingMove[];
 }
 
+/**
+ * §Medication reconciliation (BaggaEMR MedReconciliationDialog port).
+ *
+ * Storage note: reconciliations and their items live in TWO parallel arrays on
+ * the patient (`medReconciliations` + `medReconItems`, joined on
+ * `reconciliationId`). Nesting items inside the header would have forced a
+ * shape change to the agreed interfaces, and the flat array makes per-item
+ * patches (the dominant write) a single find instead of a nested walk.
+ */
+export interface MedReconItem {
+  id: string;
+  reconciliationId: string;
+  source: "active_order" | "home";
+  /** Set when source is "active_order" — the link used by the stop cascade. */
+  orderId?: string;
+  drugName: string;
+  dose?: string;
+  frequency?: string;
+  route?: string;
+  decision: "continue" | "modify" | "stop" | "add" | "not_reviewed";
+  newDose?: string;
+  newFrequency?: string;
+  newRoute?: string;
+  decisionNote?: string;
+  decidedBy?: string;
+  decidedAt?: string;
+}
+
+export interface MedReconciliation {
+  id: string;
+  patientId: string;
+  type: "intake" | "transfer" | "release";
+  status: "in_progress" | "completed" | "canceled";
+  performedBy: string;
+  performedAt: string;
+  completedAt?: string;
+  notes?: string;
+}
+
+export const MED_RECON_TYPE_LABEL: Record<MedReconciliation["type"], string> = {
+  intake: "Intake",
+  transfer: "Transfer",
+  release: "Release",
+};
+
+export const MED_RECON_DECISION_LABEL: Record<MedReconItem["decision"], string> = {
+  continue: "Continue",
+  modify: "Modify",
+  stop: "Stop",
+  add: "Add",
+  not_reviewed: "Not reviewed",
+};
+
 export interface ScreenerResult {
   key: string;
   score: number;
