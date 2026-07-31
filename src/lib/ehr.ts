@@ -354,6 +354,54 @@ export interface KopIssuance {
   returnedBy?: string;
 }
 
+/**
+ * §MAR Phase 3 — the Refusal legal document.
+ *
+ * A refused dose is charted as a DoseAdministration the moment the batch is
+ * committed; this form is a SEPARATE follow-on legal artifact. Abandoning the
+ * form never un-charts the refusal — it just leaves the document in
+ * `pending_signature` on the to-do surface.
+ *
+ * Signatures here are DRAWN (canvas data URLs) with anti-tap-fraud validation,
+ * deliberately higher-rigor than KOP's typed acknowledgment. The nurse's
+ * IDENTITY attestation remains checkbox-only — TODO(auth), same as Orders/MAR.
+ */
+export interface RefusalForm {
+  id: string;
+  patientId: string;
+  /** References the `DoseAdministration` this refusal documents. */
+  administrationId: string;
+  status: "pending_signature" | "finalized";
+  medClass: "psychiatric" | "controlled" | "anticoagulant" | "antibiotic" | "*";
+  riskTextVersion: string;
+  /** Frozen copy of the risk text the patient was actually read. */
+  riskTextSnapshot: string;
+  languageCode: string;
+  /** Active alert labels matching the capacity heuristic at signing time. */
+  capacityFlagsAtSigning: string[];
+  /** True when the patient is a minor per DOB. */
+  guardianRequired: boolean;
+  nurseAttested: boolean;
+  nurseSignatureDataUrl?: string;
+  nurseNote?: string;
+  patientSigned: boolean;
+  patientSignatureDataUrl?: string;
+  patientDeclineReason?: string;
+  patientDeclineNotes?: string;
+  witnessRequired: boolean;
+  witnessStaffName?: string;
+  witnessSignatureDataUrl?: string;
+  interpreterUsed?: boolean;
+  interpreterMethod?: string;
+  interpreterName?: string;
+  interpreterAbsentJustification?: string;
+  finalizedBy?: string;
+  finalizedAt?: string;
+  attestationMethod: "checkbox_only";
+  createdAt: string;
+  createdBy: string;
+}
+
 /** Hours after which charting a dose counts as a late entry. */
 export const LATE_ENTRY_THRESHOLD_HOURS = 4;
 
@@ -491,6 +539,8 @@ export interface Patient {
   doseClaims?: DoseClaim[];
   /** KOP supply issuances (§MAR Phase 2). Never deleted; returns are recorded. */
   kopIssuances?: KopIssuance[];
+  /** Refusal legal documents (§MAR Phase 3). Never deleted. */
+  refusalForms?: RefusalForm[];
 }
 
 export interface ScreenerResult {
@@ -1537,6 +1587,18 @@ const caseTasks: CaseTask[] = [];
 import { vendors as _vendors } from "./vendors";
 import { frequencyByCode } from "./frequencies";
 import { facilityDateKey } from "./facilityTime";
+import {
+  RISK_TEXT_CATALOG,
+  capacityFlagsFrom,
+  isMinorPatient,
+  medClassGuess,
+  refusalFinalizeProblems,
+  validateEscalationTime,
+  witnessRequiredFor,
+  ESCALATION_REFUSAL_THRESHOLD,
+  ESCALATION_WINDOW_DAYS,
+  type RefusalFinalizePayload,
+} from "./refusal";
 interface RxEventRow {
   id: string;
   patientId: string;
@@ -4470,6 +4532,231 @@ export const AdelanteEHR = {
     });
     emit();
     return row;
+  },
+
+  // ----- Refusal legal document (§MAR Phase 3) ------------------------------
+  listRefusalForms(
+    patientId: string,
+    opts?: { status?: RefusalForm["status"] },
+  ): RefusalForm[] {
+    const rows = patients.find((x) => x.id === patientId)?.refusalForms ?? [];
+    return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
+  },
+  /** Simple queryable to-do surface for "Sign later" forms. No worklist yet. */
+  pendingRefusalForms(patientId: string): RefusalForm[] {
+    return AdelanteEHR.listRefusalForms(patientId, { status: "pending_signature" });
+  },
+  getRefusalForm(patientId: string, formId: string): RefusalForm | undefined {
+    return (patients.find((x) => x.id === patientId)?.refusalForms ?? []).find(
+      (r) => r.id === formId,
+    );
+  },
+  /**
+   * Create the pending shell for a refused dose. Called automatically right
+   * after the refusal is charted — the shell exists whether or not the nurse
+   * ever opens the dialog, so an abandoned form is visible as outstanding work
+   * rather than silently absent.
+   */
+  createRefusalFormShell(patientId: string, administrationId: string, staffName: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const admin = (p.administrations ?? []).find((a) => a.id === administrationId);
+    if (!admin) throw new Error("Administration not found");
+    if (admin.action !== "refused")
+      throw new Error("A refusal document only applies to a refused dose.");
+    const existing = (p.refusalForms ?? []).find((r) => r.administrationId === administrationId);
+    if (existing) return existing;
+    const order = p.orders?.find((o) => o.id === admin.orderId);
+    const medClass = medClassGuess(
+      [order?.drugName, order?.productName, ...(order?.ingredientNames ?? [])]
+        .filter(Boolean)
+        .join(" "),
+    );
+    const risk = RISK_TEXT_CATALOG[medClass] ?? RISK_TEXT_CATALOG["*"];
+    const capacityFlagsAtSigning = capacityFlagsFrom(p.alerts);
+    const row: RefusalForm = {
+      id: uid(),
+      patientId,
+      administrationId,
+      status: "pending_signature",
+      medClass,
+      riskTextVersion: risk.version,
+      riskTextSnapshot: risk.text,
+      // Risk text is English-only this pass — see refusal.ts for why a legal
+      // document is not machine-translated.
+      languageCode: p.preferredLanguage ?? "en",
+      capacityFlagsAtSigning,
+      guardianRequired: isMinorPatient(p),
+      nurseAttested: false,
+      patientSigned: false,
+      witnessRequired: false,
+      attestationMethod: "checkbox_only",
+      createdAt: new Date().toISOString(),
+      createdBy: staffName,
+    };
+    p.refusalForms = [row, ...(p.refusalForms ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "refusal_form_created",
+      patientId,
+      actorId: staffName,
+      detail: {
+        formId: row.id,
+        administrationId,
+        orderId: admin.orderId,
+        drugName: order?.drugName ?? null,
+        medClass,
+        riskTextVersion: row.riskTextVersion,
+        languageCode: row.languageCode,
+        capacityFlagsAtSigning,
+        guardianRequired: row.guardianRequired,
+      },
+    });
+    emit();
+    return row;
+  },
+  /**
+   * Finalize a refusal document. Validation is the ported `canFinalize` rule
+   * set (nurse attestation, patient signed/declined branch, interpreter when
+   * non-English, witness when a non-capacity-flagged patient declines, nurse
+   * signature always).
+   */
+  finalizeRefusalForm(
+    patientId: string,
+    formId: string,
+    payload: RefusalFinalizePayload,
+    staffName: string,
+  ): RefusalForm {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const form = (p.refusalForms ?? []).find((r) => r.id === formId);
+    if (!form) throw new Error("Refusal form not found");
+    if (form.status === "finalized") throw new Error("This refusal form is already finalized.");
+    const problems = refusalFinalizeProblems(form, payload);
+    if (problems.length) throw new Error(problems[0]);
+
+    form.nurseAttested = true;
+    form.nurseSignatureDataUrl = payload.nurseSignatureDataUrl;
+    form.nurseNote = payload.nurseNote?.trim() || undefined;
+    form.patientSigned = payload.patientMode === "signed";
+    form.patientSignatureDataUrl =
+      payload.patientMode === "signed" ? payload.patientSignatureDataUrl : undefined;
+    form.patientDeclineReason =
+      payload.patientMode === "declined" ? payload.patientDeclineReason?.trim() : undefined;
+    form.patientDeclineNotes =
+      payload.patientMode === "declined"
+        ? payload.patientDeclineNotes?.trim() || undefined
+        : undefined;
+    form.witnessRequired = witnessRequiredFor(payload.patientMode, form.capacityFlagsAtSigning);
+    form.witnessStaffName = form.witnessRequired
+      ? payload.witnessStaffName?.trim()
+      : payload.witnessStaffName?.trim() || undefined;
+    form.witnessSignatureDataUrl = payload.witnessSignatureDataUrl;
+    form.interpreterUsed = payload.interpreterUsed;
+    form.interpreterMethod = payload.interpreterMethod;
+    form.interpreterName = payload.interpreterName?.trim() || undefined;
+    form.interpreterAbsentJustification =
+      payload.interpreterAbsentJustification?.trim() || undefined;
+    form.status = "finalized";
+    form.finalizedBy = staffName;
+    form.finalizedAt = new Date().toISOString();
+
+    appendAudit({
+      category: "clinical",
+      action: "refusal_form_finalized",
+      patientId,
+      actorId: staffName,
+      detail: {
+        formId: form.id,
+        administrationId: form.administrationId,
+        medClass: form.medClass,
+        riskTextVersion: form.riskTextVersion,
+        patientSigned: form.patientSigned,
+        patientDeclineReason: form.patientDeclineReason ?? null,
+        witnessRequired: form.witnessRequired,
+        witnessStaffName: form.witnessStaffName ?? null,
+        capacityFlagsAtSigning: form.capacityFlagsAtSigning,
+        guardianRequired: form.guardianRequired,
+        interpreterMethod: form.interpreterMethod ?? null,
+        attestationMethod: "checkbox_only",
+      },
+    });
+    emit();
+    return form;
+  },
+  /**
+   * Live (non-voided) refusals of one order in the trailing window. Drives the
+   * 3-in-7-days escalation trigger.
+   */
+  refusalsInWindow(
+    patientId: string,
+    orderId: string,
+    days: number = ESCALATION_WINDOW_DAYS,
+    now: Date = new Date(),
+  ): DoseAdministration[] {
+    const since = now.getTime() - days * 86_400_000;
+    return (patients.find((x) => x.id === patientId)?.administrations ?? []).filter(
+      (a) =>
+        a.orderId === orderId &&
+        a.action === "refused" &&
+        !a.voided &&
+        new Date(a.chartedAt).getTime() >= since,
+    );
+  },
+  /** True once this order hits the refusal threshold inside the window. */
+  refusalEscalationDue(patientId: string, orderId: string, now?: Date): boolean {
+    return (
+      AdelanteEHR.refusalsInWindow(patientId, orderId, ESCALATION_WINDOW_DAYS, now).length >=
+      ESCALATION_REFUSAL_THRESHOLD
+    );
+  },
+  /**
+   * Record the escalation decision — scheduled provider follow-up or a
+   * documented deferral. Either way it lands on the audit trail; there is no
+   * silent dismissal.
+   */
+  recordRefusalEscalation(
+    patientId: string,
+    input: {
+      formId: string;
+      orderId: string;
+      decision: "scheduled" | "deferred";
+      discipline?: string;
+      followUpAt?: string;
+      deferralReason?: string;
+      notes?: string;
+    },
+    staffName: string,
+  ): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    if (input.decision === "scheduled") {
+      const err = validateEscalationTime(input.followUpAt ?? "");
+      if (err) throw new Error(err);
+      if (!input.discipline) throw new Error("Select the provider discipline to follow up.");
+    } else if (!input.deferralReason?.trim()) {
+      throw new Error("A deferral reason is required.");
+    }
+    appendAudit({
+      category: "clinical",
+      action:
+        input.decision === "scheduled"
+          ? "refusal_escalation_scheduled"
+          : "refusal_escalation_deferred",
+      patientId,
+      actorId: staffName,
+      detail: {
+        formId: input.formId,
+        orderId: input.orderId,
+        discipline: input.discipline ?? null,
+        followUpAt: input.followUpAt ?? null,
+        deferralReason: input.deferralReason?.trim() ?? null,
+        notes: input.notes?.trim() || null,
+        refusalsInWindow: AdelanteEHR.refusalsInWindow(patientId, input.orderId).length,
+        windowDays: ESCALATION_WINDOW_DAYS,
+      },
+    });
+    emit();
   },
 };
 
