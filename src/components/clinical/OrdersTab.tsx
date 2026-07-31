@@ -392,13 +392,6 @@ function DraftOrderCard({
             onChange={(e) => patch({ durationValue: num(e.target.value) })}
           />
         </div>
-          <Input
-            className={cn("mt-1", blocked.has("duration") && REQ_FIELD)}
-            inputMode="numeric"
-            value={order.durationValue ?? ""}
-            onChange={(e) => patch({ durationValue: num(e.target.value) })}
-          />
-        </div>
         <div>
           <Label className={cn("text-xs", blocked.has("duration") && REQ_LABEL)}>Unit</Label>
           <Select
