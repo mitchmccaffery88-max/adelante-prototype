@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, ShieldCheck } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
+import { RiskTextReviewPanel } from "@/components/admin/RiskTextReviewPanel";
 
 export const Route = createFileRoute("/admin-audit")({
   head: () => ({
@@ -65,6 +66,8 @@ function AdminAuditPage() {
       </p>
 
       <CatalogResolutionMetricsCard />
+
+      <RiskTextReviewPanel />
 
       <div className="flex items-center gap-3">
         <Select value={cat} onValueChange={(v) => setCat(v as AuditCategory | "all")}>
