@@ -5280,11 +5280,114 @@ export const AdelanteEHR = {
 
   // ----- §Custody tracking: bookings + housing moves ----------------------
 
+  /** Active facilities first, then alphabetical. */
+  listFacilities(includeInactive = false): Facility[] {
+    return facilities
+      .filter((f) => includeInactive || f.active)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  getFacility(facilityId: string | undefined): Facility | undefined {
+    return facilities.find((f) => f.id === facilityId);
+  },
+
+  /** Match on the normalized name, so typo/dash/case variants collapse. */
+  findFacilityByName(name: string): Facility | undefined {
+    const key = normalizeFacilityName(name);
+    if (!key) return undefined;
+    return facilities.find((f) => normalizeFacilityName(f.name) === key);
+  },
+
+  /**
+   * Resolve a facility for a write. Prefers an explicit id, then a normalized
+   * name match, and only then creates a new facility — so a clinician typing
+   * an existing site slightly differently reuses that site's id instead of
+   * spawning a duplicate bucket.
+   */
+  ensureFacility(
+    input: { facilityId?: string; facilityName?: string; kind?: FacilityKind; city?: string },
+    staffName: string,
+  ): Facility {
+    if (input.facilityId) {
+      const byId = AdelanteEHR.getFacility(input.facilityId);
+      if (!byId) throw new Error("Facility not found.");
+      return byId;
+    }
+    const name = (input.facilityName ?? "").trim().replace(/\s+/g, " ");
+    if (!name) throw new Error("A facility is required.");
+    const existing = AdelanteEHR.findFacilityByName(name);
+    if (existing) return existing;
+    const row: Facility = {
+      id: uid(),
+      name,
+      kind: input.kind ?? "other",
+      city: input.city?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    facilities.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "facility_created",
+      actorId: staffName,
+      detail: { facilityId: row.id, name: row.name, kind: row.kind, city: row.city ?? null },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Rename a facility. Existing bookings/moves keep their display snapshot;
+   * only future writes and id-based rollups pick up the new name.
+   */
+  renameFacility(facilityId: string, name: string, staffName: string): Facility {
+    const row = facilities.find((f) => f.id === facilityId);
+    if (!row) throw new Error("Facility not found.");
+    const next = (name ?? "").trim().replace(/\s+/g, " ");
+    if (!next) throw new Error("A facility name is required.");
+    const clash = AdelanteEHR.findFacilityByName(next);
+    if (clash && clash.id !== facilityId)
+      throw new Error(`"${clash.name}" already exists — merge instead of renaming.`);
+    const from = row.name;
+    row.name = next;
+    appendAudit({
+      category: "clinical",
+      action: "facility_renamed",
+      actorId: staffName,
+      detail: { facilityId, from, to: next },
+    });
+    emit();
+    return row;
+  },
+
+  /** Per-facility rollup — the reporting this entity exists to make possible. */
+  facilityBookingStats(): {
+    facility: Facility;
+    bookings: number;
+    currentlyBooked: number;
+    housingMoves: number;
+  }[] {
+    const all = AdelanteEHR.listBookings();
+    const moves = AdelanteEHR.listHousingMoves();
+    return AdelanteEHR.listFacilities(true)
+      .map((facility) => ({
+        facility,
+        bookings: all.filter((b) => b.facilityId === facility.id).length,
+        currentlyBooked: all.filter((b) => b.facilityId === facility.id && !b.releasedAt).length,
+        housingMoves: moves.filter((m) => m.facilityId === facility.id).length,
+      }))
+      .filter((r) => r.bookings > 0 || r.facility.active);
+  },
+
   addBooking(
     patientId: string,
     input: {
       bookingNumber: string;
-      facilityName: string;
+      /** Either an id (autocomplete pick) or a name (free-typed, resolved). */
+      facilityId?: string;
+      facilityName?: string;
       bookedAt: string;
       bookingReason?: string;
       releasedAt?: string;
@@ -5295,8 +5398,10 @@ export const AdelanteEHR = {
     if (!p) throw new Error("Patient not found");
     const bookingNumber = input.bookingNumber?.trim();
     if (!bookingNumber) throw new Error("A booking number is required.");
-    const facilityName = input.facilityName?.trim();
-    if (!facilityName) throw new Error("A facility name is required.");
+    const facility = AdelanteEHR.ensureFacility(
+      { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+      staffName,
+    );
     if (!input.bookedAt) throw new Error("A booked date is required.");
     if (input.releasedAt && input.releasedAt < input.bookedAt)
       throw new Error("Release cannot precede booking.");
@@ -5304,7 +5409,8 @@ export const AdelanteEHR = {
       id: uid(),
       patientId,
       bookingNumber,
-      facilityName,
+      facilityId: facility.id,
+      facilityName: facility.name,
       bookedAt: input.bookedAt,
       releasedAt: input.releasedAt || undefined,
       bookingReason: input.bookingReason?.trim() || undefined,
@@ -5320,6 +5426,7 @@ export const AdelanteEHR = {
       detail: {
         bookingId: row.id,
         bookingNumber: row.bookingNumber,
+        facilityId: row.facilityId,
         facilityName: row.facilityName,
         bookedAt: row.bookedAt,
         releasedAt: row.releasedAt ?? null,
