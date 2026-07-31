@@ -2324,6 +2324,7 @@ const noteTemplates: NoteTemplate[] = [
     id: "tpl-bh-intake",
     key: "bh_intake",
     title: "Behavioral health intake",
+    description: "First-visit behavioral health assessment with PHQ-2 screen and plan.",
     encounterType: "intake",
     active: true,
     createdBy: "Adelante System Admin",
