@@ -15,6 +15,8 @@ import {
   type MetricKey,
 } from "@/lib/dashboardMetrics";
 import { KpiVsTargetSection } from "@/components/dashboards/KpiVsTargetSection";
+import { CalAimSection } from "@/components/dashboards/CalAimSection";
+import { calaimEligibleDischarges, calaimEligiblePatients, distinctPatients } from "@/lib/calaim";
 import {
   DrillDownDialog,
   PatientLink,
@@ -46,7 +48,7 @@ export const Route = createFileRoute("/dashboards")({
   component: DashboardsPage,
 });
 
-type DrillKind = MetricKey | null;
+type DrillKind = MetricKey | "calaim_caseload" | "calaim_discharges" | null;
 
 function DashboardsPage() {
   const { role } = useActingStaff();
@@ -55,6 +57,9 @@ function DashboardsPage() {
 
   const targets = useEhr(() => AdelanteEHR.listKpiTargets());
   const metrics = useEhr(() => computeLiveMetrics());
+  const qualifyingCodes = useEhr(() => AdelanteEHR.listQualifyingCodes());
+  const calaimCaseload = useEhr(() => calaimEligiblePatients());
+  const calaimDischarges = useEhr(() => calaimEligibleDischarges());
   const [drill, setDrill] = useState<DrillKind>(null);
 
   const drillConfig = useMemo(() => {
@@ -128,6 +133,59 @@ function DashboardsPage() {
         emptyMessage: "No refused or held doses in the window.",
       };
     }
+    if (drill === "calaim_caseload") {
+      const columns: DrillDownColumn<ReturnType<typeof calaimEligiblePatients>[number]>[] = [
+        {
+          key: "patient",
+          header: "Patient",
+          render: (r) => <PatientLink patientId={r.patientId} name={r.patientName} />,
+        },
+        { key: "icd", header: "ICD-10", render: (r) => r.icd10Code || "—" },
+        { key: "problem", header: "Problem", render: (r) => r.problemDescription },
+        {
+          key: "matched",
+          header: "Qualifying code",
+          render: (r) => `${r.matchedCode} (${r.matchKind})`,
+        },
+      ];
+      return {
+        title: "CalAIM caseload",
+        description:
+          "Clinically active problems matching an active qualifying code, exact or category prefix.",
+        columns,
+        loader: () => calaimEligiblePatients(),
+        emptyMessage: "No active problems match a qualifying code.",
+      };
+    }
+    if (drill === "calaim_discharges") {
+      const columns: DrillDownColumn<ReturnType<typeof calaimEligibleDischarges>[number]>[] = [
+        {
+          key: "patient",
+          header: "Patient",
+          render: (r) => <PatientLink patientId={r.patientId} name={r.patientName} />,
+        },
+        {
+          key: "released",
+          header: "Released",
+          render: (r) => r.releasedAt.slice(0, 16).replace("T", " "),
+        },
+        { key: "facility", header: "Facility", render: (r) => r.facilityName },
+        {
+          key: "matched",
+          header: "Qualifying code",
+          render: (r) => `${r.matchedCode} (${r.matchKind})`,
+        },
+        { key: "problem", header: "Condition", render: (r) => r.problemDescription },
+      ];
+      return {
+        title: "Eligible discharges (last 24h)",
+        description:
+          "Releases in the trailing 24 hours where the patient has, or ever had, a qualifying condition.",
+        columns,
+        loader: () => calaimEligibleDischarges(),
+        emptyMessage: "No qualifying releases in the last 24 hours.",
+      };
+    }
     return null;
   }, [drill]);
 
@@ -173,10 +231,19 @@ function DashboardsPage() {
         onDrillDown={(key) => setDrill(key)}
       />
 
+      <CalAimSection
+        codeCount={qualifyingCodes.length}
+        caseloadCount={distinctPatients(calaimCaseload)}
+        dischargeCount={calaimDischarges.length}
+        canManage={canManage}
+        onOpenCaseload={() => setDrill("calaim_caseload")}
+        onOpenDischarges={() => setDrill("calaim_discharges")}
+      />
+
       <p className="text-xs text-muted-foreground">
-        Phase 1 covers KPI vs target only. CalAIM eligibility reporting, NCCHC measures and kite
-        volume are deferred — the NCCHC and kite rows above have no data source and are shown as
-        gaps rather than as zeros.
+        NCCHC measures and kite volume remain deferred — those rows have no data source and are
+        shown as gaps rather than as zeros. CalAIM here is eligibility visibility only, not a
+        claims feed.
       </p>
 
       {drillConfig && (

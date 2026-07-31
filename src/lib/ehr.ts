@@ -641,6 +641,27 @@ export interface KpiTarget {
 }
 
 /**
+ * §Population health / CalAIM — an admin-curated ICD-10 code that makes a
+ * patient CalAIM-eligible. Shared registry (top-level, not patient-scoped),
+ * same pattern as Facility and KpiTarget, gated on `population_health` write.
+ *
+ * `code` may be a full code ("F11.20") or a category prefix ("F10", meaning
+ * every F10.x). Matching supports both — see `src/lib/calaim.ts`.
+ */
+export interface CalaimQualifyingCode {
+  id: string;
+  codeSystem: "icd10";
+  code: string;
+  description?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  deactivatedBy?: string;
+  deactivatedAt?: string;
+  deactivationReason?: string;
+}
+
+/**
  * Immutable, locked controlled-substance shift count. Top-level (NOT on a
  * Patient) — it is a facility/shift artifact that spans the population.
  */
@@ -2222,6 +2243,39 @@ const kpiTargets: KpiTarget[] = [
     unit: "count",
     source: "Custody partner requirement",
     notes: "No live metric — shift count has no discrepancy field yet.",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+];
+
+// §CalAIM — the qualifying ICD-10 registry. Seeded with two category prefixes
+// and one exact code so both matching interpretations are exercised on first
+// load. Admins curate this list; nothing here is auto-suggested.
+const calaimQualifyingCodes: CalaimQualifyingCode[] = [
+  {
+    id: "calaim-f10",
+    codeSystem: "icd10",
+    code: "F10",
+    description: "Alcohol-related disorders (all F10.x)",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "calaim-f11",
+    codeSystem: "icd10",
+    code: "F11",
+    description: "Opioid-related disorders (all F11.x)",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "calaim-f33",
+    codeSystem: "icd10",
+    code: "F33.1",
+    description: "Major depressive disorder, recurrent, moderate",
     active: true,
     createdBy: "Adelante System Admin",
     createdAt: new Date().toISOString(),
@@ -6501,6 +6555,94 @@ export const AdelanteEHR = {
       action: active ? "kpi_target_reactivated" : "kpi_target_deactivated",
       actorId: staffName,
       detail: { targetId, metricKey: row.metricKey, reason: reason?.trim() ?? null },
+    });
+    emit();
+    return { ...row };
+  },
+
+  // ----- §Population health: CalAIM qualifying codes -----------------------
+
+  listQualifyingCodes(includeInactive = false): CalaimQualifyingCode[] {
+    return calaimQualifyingCodes
+      .filter((c) => includeInactive || c.active)
+      .map((c) => ({ ...c }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  },
+
+  /** Add a qualifying code. Rejects an exact duplicate on codeSystem+code. */
+  addQualifyingCode(
+    input: { codeSystem?: "icd10"; code: string; description?: string },
+    staffName: string,
+  ): CalaimQualifyingCode {
+    const codeSystem = input.codeSystem ?? "icd10";
+    const code = (input.code ?? "").trim().toUpperCase();
+    if (!code) throw new Error("An ICD-10 code is required.");
+    const dupe = calaimQualifyingCodes.find(
+      (c) => c.codeSystem === codeSystem && c.code.toUpperCase() === code,
+    );
+    if (dupe)
+      throw new Error(
+        dupe.active
+          ? `${code} is already a qualifying code.`
+          : `${code} already exists as an inactive qualifying code — reactivate it instead.`,
+      );
+    const row: CalaimQualifyingCode = {
+      id: uid(),
+      codeSystem,
+      code,
+      description: input.description?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    calaimQualifyingCodes.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_added",
+      actorId: staffName,
+      detail: { codeId: row.id, codeSystem, code: row.code, description: row.description ?? null },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate with a required reason. Never deleted — history stays auditable. */
+  deactivateQualifyingCode(
+    codeId: string,
+    staffName: string,
+    reason: string,
+  ): CalaimQualifyingCode {
+    const row = calaimQualifyingCodes.find((c) => c.id === codeId);
+    if (!row) throw new Error("Qualifying code not found.");
+    if (!(reason ?? "").trim())
+      throw new Error("A reason is required to deactivate a qualifying code.");
+    row.active = false;
+    row.deactivatedBy = staffName;
+    row.deactivatedAt = new Date().toISOString();
+    row.deactivationReason = reason.trim();
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_deactivated",
+      actorId: staffName,
+      detail: { codeId, code: row.code, reason: row.deactivationReason },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Reactivate a previously retired code. */
+  reactivateQualifyingCode(codeId: string, staffName: string): CalaimQualifyingCode {
+    const row = calaimQualifyingCodes.find((c) => c.id === codeId);
+    if (!row) throw new Error("Qualifying code not found.");
+    row.active = true;
+    row.deactivatedBy = undefined;
+    row.deactivatedAt = undefined;
+    row.deactivationReason = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_reactivated",
+      actorId: staffName,
+      detail: { codeId, code: row.code },
     });
     emit();
     return { ...row };
