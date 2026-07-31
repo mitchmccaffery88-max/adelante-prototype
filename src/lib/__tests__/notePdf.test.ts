@@ -57,20 +57,22 @@ describe("note PDF export gate", () => {
 
   it("blocks a SUD note for a consent-gated role without Part 2 consent", () => {
     const sudNote = { ...base, category: "sud" as const };
-    const gate = noteExportGate(sudNote, "therapist", patient);
+    // case_manager stays consent_gated for screeners_sud; therapist is not.
+    const gate = noteExportGate(sudNote, "case_manager", patient);
     expect(gate.allowed).toBe(false);
     expect(gate.reason).toMatch(/42 CFR Part 2/i);
   });
 
   it("allows a SUD note for a role that reads SUD without consent gating", () => {
     expect(noteExportGate({ ...base, category: "sud" }, "pmhnp", patient).allowed).toBe(true);
+    expect(noteExportGate({ ...base, category: "sud" }, "therapist", patient).allowed).toBe(true);
   });
 });
 
 describe("note PDF builder", () => {
   it("refuses to render content a role could not see on screen", () => {
     expect(() =>
-      buildProgressNotePdf({ note: { ...base, category: "sud" }, patient, role: "therapist" }),
+      buildProgressNotePdf({ note: { ...base, category: "sud" }, patient, role: "case_manager" }),
     ).toThrow(/42 CFR Part 2/i);
     expect(() =>
       buildProgressNotePdf({ note: { ...base, status: "draft" }, patient, role: "therapist" }),
