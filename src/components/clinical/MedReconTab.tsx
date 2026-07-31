@@ -24,6 +24,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,6 +44,11 @@ import { ClientDate } from "@/components/ClientDate";
 import { AlertTriangle, ChevronDown, ChevronRight, Pill, Trash2 } from "lucide-react";
 
 const DECISIONS: MedReconItem["decision"][] = ["continue", "modify", "stop"];
+
+function fallbackReason(decision: "stop" | "modify") {
+  return `${decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
+}
+
 
 export function MedReconTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const active = useEhr(() => AdelanteEHR.activeMedReconciliation(patientId));
