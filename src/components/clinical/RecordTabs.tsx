@@ -1577,6 +1577,21 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   answers={answers}
                   onChange={setAnswers}
                   language={patient.preferredLanguage === "es" ? "es" : "en"}
+                  renderSection={(section) =>
+                    section.type === "orders_section" ? (
+                      <NoteOrdersSection
+                        patientId={patient.id}
+                        section={section}
+                        stagedIds={stagedOrderIds}
+                        onStage={(id) => setStagedOrderIds((prev) => [...prev, id])}
+                      />
+                    ) : (
+                      (() => {
+                        const snap = composeAutofill.find((s) => s.sectionId === section.id);
+                        return snap ? <NoteAutofillCard snapshot={snap} /> : null;
+                      })()
+                    )
+                  }
                 />
               </div>
             )}
@@ -1619,7 +1634,10 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   templateSchema: activeTemplate?.schema,
                   templateAnswers: activeTemplate ? answers : undefined,
                 });
+                // Traceability only — the orders keep their own lifecycle.
+                AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
                 toast.success("Progress note saved as draft");
+                setStagedOrderIds([]);
                 setAnswers({});
                 setNote({
                   sessionType: "individual",
