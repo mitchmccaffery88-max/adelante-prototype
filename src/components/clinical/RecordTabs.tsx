@@ -1480,6 +1480,11 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
   const [templateId, setTemplateId] = useState<string>("none");
   const [answers, setAnswers] = useState<TemplateAnswers>({});
   const activeTemplate = templates.find((t) => t.id === templateId);
+  // §Phase 3b — draft orders staged from this note's orders_section. They are
+  // real draft MedOrders from the moment they are created; this only tracks
+  // which ones came from the note so they can be stamped with its id.
+  const [stagedOrderIds, setStagedOrderIds] = useState<string[]>([]);
+  const composeAutofill = useNoteAutofillSnapshots(patientId, activeTemplate?.schema);
   useDraftDirty(
     `notes:${patientId}`,
     Boolean(
