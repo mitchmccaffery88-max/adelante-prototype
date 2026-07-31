@@ -2084,7 +2084,9 @@ function ProgressNoteCard({
           <Button
             size="sm"
             className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-            disabled={!attested || (mustCosign && !cosignerId) || missing.length > 0}
+            disabled={
+              !attested || (mustCosign && !cosignerId) || missing.length > 0 || crisisBlocked
+            }
             onClick={sign}
           >
             Sign note
