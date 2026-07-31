@@ -1608,7 +1608,11 @@ import {
   witnessRequiredFor,
   ESCALATION_REFUSAL_THRESHOLD,
   ESCALATION_WINDOW_DAYS,
+  REQUIRED_RISK_TEXT_REVIEWER_ROLES,
+  RISK_TEXT_CATALOG_ES,
+  PROMOTED_RISK_TEXT_VERSION,
   type RefusalFinalizePayload,
+  type RiskTextReviewerRole,
 } from "./refusal";
 
 // ---------------------------------------------------------------------------
