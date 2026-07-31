@@ -68,9 +68,9 @@ describe("autofill — medications_active", () => {
 
 describe("autofill — SUD masking", () => {
   const problems = [
-    { id: "pr1", description: "Hypertension", active: true } as Problem,
-    { id: "pr2", description: "Opioid use disorder", active: true, category: "sud" } as Problem,
-  ];
+    { id: "pr1", description: "Hypertension", status: "active" },
+    { id: "pr2", description: "Opioid use disorder", status: "active", category: "sud" },
+  ] as Problem[];
 
   it("includes SUD problems when the consent gate is open", () => {
     const out = resolveAutofill(section({ source: "problems_active" }), ctx({ problems }));
@@ -126,8 +126,8 @@ describe("autofill — mar window and allergies", () => {
 
   it("lists active allergies only", () => {
     const allergies = [
-      { id: "a1", substance: "Penicillin", reaction: "hives", active: true },
-      { id: "a2", substance: "Latex", active: false },
+      { id: "a1", substance: "Penicillin", reaction: "hives", severity: "mild", active: true },
+      { id: "a2", substance: "Latex", severity: "mild", active: false },
     ] as Allergy[];
     const out = resolveAutofill(section({ source: "allergies" }), ctx({ allergies }));
     expect(out.lines.map((l) => l.primary)).toEqual(["Penicillin"]);
