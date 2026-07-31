@@ -5565,9 +5565,11 @@ export const AdelanteEHR = {
     dob?: string;
     releasedFrom?: string;
     releasedTo?: string;
+    facilityId?: string;
   }): {
     patient: Patient;
     lastReleasedAt: string;
+    facilityId: string;
     facilityName: string;
     bookingCount: number;
   }[] {
@@ -5576,6 +5578,7 @@ export const AdelanteEHR = {
     const out: {
       patient: Patient;
       lastReleasedAt: string;
+      facilityId: string;
       facilityName: string;
       bookingCount: number;
     }[] = [];
@@ -5588,6 +5591,8 @@ export const AdelanteEHR = {
       if (criteria.dob && p.dob !== criteria.dob) continue;
       const released = bookings
         .filter((b) => b.releasedAt)
+        // Facility filter groups on the ID, never the display snapshot.
+        .filter((b) => !criteria.facilityId || b.facilityId === criteria.facilityId)
         .filter((b) => {
           const day = dayOf(b.releasedAt!);
           if (criteria.releasedFrom && day < dayOf(criteria.releasedFrom)) return false;
@@ -5600,6 +5605,7 @@ export const AdelanteEHR = {
       out.push({
         patient: p,
         lastReleasedAt: latest.releasedAt!,
+        facilityId: latest.facilityId,
         facilityName: latest.facilityName,
         bookingCount: bookings.length,
       });
@@ -5613,6 +5619,7 @@ export const AdelanteEHR = {
     lastName?: string;
     firstName?: string;
     dob?: string;
+    facilityId?: string;
   }): { patient: Patient; booking: Booking; housingUnit?: string }[] {
     const norm = (v?: string) => (v ?? "").trim().toLowerCase();
     return patients
@@ -5628,7 +5635,8 @@ export const AdelanteEHR = {
         patient: p,
         booking: AdelanteEHR.listBookings(p.id)[0],
         housingUnit: AdelanteEHR.currentHousingUnit(p.id),
-      }));
+      }))
+      .filter((r) => !criteria.facilityId || r.booking.facilityId === criteria.facilityId);
   },
 
   /**
