@@ -115,6 +115,10 @@ export function useRecordSections(patient: Patient): RecordSection[] {
       bookings: (fresh.bookings ?? []).length,
       currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),
       housingMoves: (fresh.housingMoves ?? []).length,
+      unreviewedRecon: (() => {
+        const open = AdelanteEHR.activeMedReconciliation(fresh.id);
+        return open ? AdelanteEHR.unreviewedReconItems(fresh.id, open.id).length : 0;
+      })(),
     };
   });
 
