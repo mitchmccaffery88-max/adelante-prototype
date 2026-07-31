@@ -15,6 +15,9 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+// Value import of the shared consent gate. Only ever called inside methods,
+// so the roles<->ehr module cycle resolves before any call happens.
+import { canAccess } from "./roles";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
@@ -4637,6 +4640,28 @@ export const AdelanteEHR = {
       linkParams: { patientId, section: "messages" },
       patientId,
     });
+    // §Self-flag blind-spot safety net — a self-flagged message is masked from
+    // any role that fails the SUD consent check for THIS patient, which can
+    // include the very case manager the notification above targets. When that
+    // happens, also broadcast to a role that is genuinely un-gated for this
+    // content class, so a real authorized reader is alerted. Same generic body
+    // and link — no new information is disclosed.
+    if (selfFlagged && canAccess("case_manager", "screeners_sud", p).locked) {
+      const backstop = (["therapist", "pmhnp"] as StaffRole[]).find(
+        (r) => !canAccess(r, "screeners_sud", p).locked,
+      );
+      if (backstop) {
+        AdelanteEHR.notify({
+          recipientRole: backstop,
+          category: "patient_message",
+          subject: `New message — ${patientLabel(patientId)}`,
+          body: "A patient sent a message to their care team.",
+          linkRoute: "/record/$patientId",
+          linkParams: { patientId, section: "messages" },
+          patientId,
+        });
+      }
+    }
     emit();
     return msg;
   },

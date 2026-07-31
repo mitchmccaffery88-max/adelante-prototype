@@ -298,6 +298,8 @@ const dict = {
     msgNewReplies: "new",
     msgAsyncNotice: "This is not for emergencies. We don't reply right away.",
     msgSensitive: "This is private — please handle it with care",
+    msgSensitiveConsentOff:
+      "Your care team may not be able to see this unless you also turn on sharing substance-use info in Privacy & Consent.",
   },
   es: {
     appName: "Adelante",
@@ -599,6 +601,8 @@ const dict = {
     msgNewReplies: "nuevos",
     msgAsyncNotice: "Esto no es para emergencias. No respondemos de inmediato.",
     msgSensitive: "Esto es privado — por favor trátenlo con cuidado",
+    msgSensitiveConsentOff:
+      "Es posible que tu equipo de atención no pueda ver esto a menos que también actives compartir información sobre el uso de sustancias en Privacidad y Consentimiento.",
   },
 } as const;
 
