@@ -73,12 +73,117 @@ function answerText(v: AnswerValue): string {
   return String(v);
 }
 
+export type NoteDocBlock =
+  | { kind: "title"; text: string }
+  | { kind: "meta"; text: string }
+  | { kind: "heading"; text: string }
+  | { kind: "subheading"; text: string }
+  | { kind: "field"; label: string; value: string }
+  | { kind: "paragraph"; text: string };
+
 /**
- * Renders a finalized progress note. Structured (template) notes render their
- * snapshotted schema — sections, labels, answers and scoring — so the export
- * matches exactly what was answered, independent of later template edits.
- * Untemplated notes render the classic SOAP structure.
+ * Content model for the export, built once and rendered by jsPDF below.
+ * Keeping the content separate from the drawing calls means tests can assert
+ * on exactly what the legal record says.
+ *
+ * Structured (template) notes render their SNAPSHOTTED schema — sections,
+ * labels, answers and scoring — so the export matches what was answered,
+ * independent of later template edits. Untemplated notes render classic SOAP.
  */
+export function buildNoteDocumentModel(args: {
+  note: ProgressNote;
+  patient: Patient;
+  role: StaffRole;
+  authorLabel?: string;
+  exportedBy?: string;
+}): NoteDocBlock[] {
+  const { note, patient, role, authorLabel, exportedBy } = args;
+  const gate = noteExportGate(note, role, patient);
+  if (!gate.allowed) throw new Error(gate.reason ?? "Export not permitted");
+
+  const out: NoteDocBlock[] = [];
+  const status = noteStatus(note);
+  out.push({ kind: "title", text: "Progress Note — Signed Clinical Record" });
+  out.push({ kind: "meta", text: `Note ${note.id} · status ${status}` });
+
+  out.push({ kind: "heading", text: "Patient" });
+  out.push({ kind: "field", label: "Name", value: `${patient.firstName} ${patient.lastName}` });
+  out.push({ kind: "field", label: "Date of birth", value: patient.dob ?? "—" });
+  out.push({ kind: "field", label: "Patient ID (MRN)", value: patient.id });
+
+  out.push({ kind: "heading", text: "Encounter" });
+  out.push({ kind: "field", label: "Date of service", value: fmt(note.date) });
+  out.push({ kind: "field", label: "Session type", value: note.sessionType.replace("_", " ") });
+  out.push({ kind: "field", label: "Author", value: authorLabel ?? note.clinicianId });
+  out.push({
+    kind: "field",
+    label: "Authorship",
+    value: note.authorSource === "ai_draft" ? "Machine draft, human signed" : "Human",
+  });
+  if (note.category)
+    out.push({ kind: "field", label: "Sensitivity", value: note.category.replace("_", " ") });
+
+  if (note.templateSchema) {
+    out.push({
+      kind: "heading",
+      text: `Template — ${note.templateTitle ?? note.templateKey ?? "Structured note"}${
+        note.templateVersion ? ` v${note.templateVersion}` : ""
+      }`,
+    });
+    const answers = note.templateAnswers ?? {};
+    for (const section of note.templateSchema.sections ?? []) {
+      if (!isSectionVisible(section, answers)) continue;
+      out.push({ kind: "subheading", text: section.title });
+      for (const field of section.fields ?? []) {
+        if (!isFieldVisible(field, answers)) continue;
+        out.push({ kind: "field", label: field.label, value: answerText(answers[field.key]) });
+      }
+    }
+    const scores = computeScore(note.templateSchema, answers);
+    if (scores.length > 0) {
+      out.push({ kind: "heading", text: "Scoring" });
+      for (const s of scores) {
+        out.push({
+          kind: "field",
+          label: s.label,
+          value: `${s.total}${s.band ? ` — ${s.band}` : ""}${
+            s.incomplete ? " (incomplete: unanswered inputs)" : ""
+          }`,
+        });
+      }
+    }
+  } else {
+    out.push({ kind: "heading", text: "SOAP" });
+    for (const key of ["subjective", "objective", "assessment", "plan"] as const) {
+      if (!note[key]) continue;
+      out.push({ kind: "subheading", text: key.charAt(0).toUpperCase() + key.slice(1) });
+      out.push({ kind: "paragraph", text: note[key] });
+    }
+  }
+
+  out.push({ kind: "heading", text: "Attestation & provenance" });
+  out.push({ kind: "field", label: "Status", value: status });
+  out.push({ kind: "field", label: "Signed by", value: note.signedBy ?? "—" });
+  out.push({ kind: "field", label: "Signed at", value: fmt(note.signedAt) });
+  out.push({ kind: "field", label: "Cosign required", value: note.cosignRequired ? "Yes" : "No" });
+  if (note.cosignedAt || note.cosignedBy) {
+    out.push({ kind: "field", label: "Cosigned by", value: note.cosignedBy ?? "—" });
+    out.push({ kind: "field", label: "Cosigned at", value: fmt(note.cosignedAt) });
+    if (note.cosignComment)
+      out.push({ kind: "field", label: "Cosign comment", value: note.cosignComment });
+  }
+  out.push({
+    kind: "paragraph",
+    text: "This document reproduces the attested clinical record as stored. Signature attestation is captured in the electronic record; the names and timestamps above are the legally binding attestation of record.",
+  });
+  out.push({
+    kind: "meta",
+    text: `Exported ${new Date().toLocaleString()}${exportedBy ? ` by ${exportedBy}` : ""} · acting role ${role}`,
+  });
+  return out;
+}
+
+/** Renders the content model with jsPDF (same pipeline as refusalPdf.ts). */
 export function buildProgressNotePdf(args: {
   note: ProgressNote;
   patient: Patient;
@@ -86,10 +191,7 @@ export function buildProgressNotePdf(args: {
   authorLabel?: string;
   exportedBy?: string;
 }): jsPDF {
-  const { note, patient, role, authorLabel, exportedBy } = args;
-  const gate = noteExportGate(note, role, patient);
-  if (!gate.allowed) throw new Error(gate.reason ?? "Export not permitted");
-
+  const blocks = buildNoteDocumentModel(args);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
   let y = MARGIN;
 
@@ -99,126 +201,67 @@ export function buildProgressNotePdf(args: {
       y = MARGIN;
     }
   };
-  const heading = (text: string) => {
-    ensure(30);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(11);
-    doc.text(text, MARGIN, y);
-    y += 14;
-    doc.setDrawColor(190);
-    doc.line(MARGIN, y - 6, WIDTH - MARGIN, y - 6);
-  };
-  const line = (label: string, value: string) => {
-    const wrapped = doc.splitTextToSize(value || "—", WIDTH - MARGIN * 2 - 140);
-    ensure(wrapped.length * 13 + 4);
-    doc.setFont("helvetica", "bold");
-    doc.setFontSize(9.5);
-    doc.text(label, MARGIN, y);
-    doc.setFont("helvetica", "normal");
-    doc.text(wrapped, MARGIN + 140, y);
-    y += wrapped.length * 13 + 2;
-  };
-  const paragraph = (text: string) => {
-    const wrapped = doc.splitTextToSize(text, WIDTH - MARGIN * 2);
-    ensure(wrapped.length * 12 + 6);
-    doc.setFont("helvetica", "normal");
-    doc.setFontSize(9.5);
-    doc.text(wrapped, MARGIN, y);
-    y += wrapped.length * 12 + 6;
-  };
 
-  const status = noteStatus(note);
-  doc.setFont("helvetica", "bold");
-  doc.setFontSize(15);
-  doc.text("Progress Note — Signed Clinical Record", MARGIN, y);
-  y += 18;
-  doc.setFont("helvetica", "normal");
-  doc.setFontSize(9);
-  doc.setTextColor(110);
-  doc.text(`Note ${note.id} · status ${status}`, MARGIN, y);
-  doc.setTextColor(0);
-  y += 20;
-
-  heading("Patient");
-  line("Name", `${patient.firstName} ${patient.lastName}`);
-  line("Date of birth", patient.dob ?? "—");
-  line("Patient ID (MRN)", patient.id);
-
-  heading("Encounter");
-  line("Date of service", fmt(note.date));
-  line("Session type", note.sessionType.replace("_", " "));
-  line("Author", authorLabel ?? note.clinicianId);
-  line("Authorship", note.authorSource === "ai_draft" ? "Machine draft, human signed" : "Human");
-  if (note.category) line("Sensitivity", note.category.replace("_", " "));
-
-  if (note.templateSchema) {
-    heading(
-      `Template — ${note.templateTitle ?? note.templateKey ?? "Structured note"}${
-        note.templateVersion ? ` v${note.templateVersion}` : ""
-      }`,
-    );
-    const answers = note.templateAnswers ?? {};
-    for (const section of note.templateSchema.sections ?? []) {
-      if (!isSectionVisible(section, answers)) continue;
-      ensure(20);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text(section.title, MARGIN, y);
-      y += 14;
-      for (const field of section.fields ?? []) {
-        if (!isFieldVisible(field, answers)) continue;
-        line(field.label, answerText(answers[field.key]));
+  for (const block of blocks) {
+    switch (block.kind) {
+      case "title": {
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(15);
+        ensure(24);
+        doc.text(block.text, MARGIN, y);
+        y += 18;
+        break;
       }
-      y += 4;
-    }
-    const scores = computeScore(note.templateSchema, answers);
-    if (scores.length > 0) {
-      heading("Scoring");
-      for (const s of scores) {
-        line(
-          s.label,
-          `${s.total}${s.band ? ` — ${s.band}` : ""}${
-            s.incomplete ? " (incomplete: unanswered inputs)" : ""
-          }`,
-        );
+      case "meta": {
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9);
+        doc.setTextColor(110);
+        ensure(16);
+        doc.text(block.text, MARGIN, y);
+        doc.setTextColor(0);
+        y += 18;
+        break;
+      }
+      case "heading": {
+        ensure(30);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(11);
+        doc.text(block.text, MARGIN, y);
+        y += 14;
+        doc.setDrawColor(190);
+        doc.line(MARGIN, y - 6, WIDTH - MARGIN, y - 6);
+        break;
+      }
+      case "subheading": {
+        ensure(20);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(10);
+        doc.text(block.text, MARGIN, y);
+        y += 14;
+        break;
+      }
+      case "field": {
+        const wrapped = doc.splitTextToSize(block.value || "—", WIDTH - MARGIN * 2 - 140);
+        ensure(wrapped.length * 13 + 4);
+        doc.setFont("helvetica", "bold");
+        doc.setFontSize(9.5);
+        doc.text(block.label, MARGIN, y);
+        doc.setFont("helvetica", "normal");
+        doc.text(wrapped, MARGIN + 140, y);
+        y += wrapped.length * 13 + 2;
+        break;
+      }
+      case "paragraph": {
+        const wrapped = doc.splitTextToSize(block.text, WIDTH - MARGIN * 2);
+        ensure(wrapped.length * 12 + 6);
+        doc.setFont("helvetica", "normal");
+        doc.setFontSize(9.5);
+        doc.text(wrapped, MARGIN, y);
+        y += wrapped.length * 12 + 6;
+        break;
       }
     }
-  } else {
-    heading("SOAP");
-    for (const key of ["subjective", "objective", "assessment", "plan"] as const) {
-      if (!note[key]) continue;
-      ensure(20);
-      doc.setFont("helvetica", "bold");
-      doc.setFontSize(10);
-      doc.text(key.charAt(0).toUpperCase() + key.slice(1), MARGIN, y);
-      y += 13;
-      paragraph(note[key]);
-    }
   }
-
-  heading("Attestation & provenance");
-  line("Status", status);
-  line("Signed by", note.signedBy ?? "—");
-  line("Signed at", fmt(note.signedAt));
-  line("Cosign required", note.cosignRequired ? "Yes" : "No");
-  if (note.cosignedAt || note.cosignedBy) {
-    line("Cosigned by", note.cosignedBy ?? "—");
-    line("Cosigned at", fmt(note.cosignedAt));
-    if (note.cosignComment) line("Cosign comment", note.cosignComment);
-  }
-  paragraph(
-    "This document reproduces the attested clinical record as stored. Signature attestation is captured in the electronic record; the names and timestamps above are the legally binding attestation of record.",
-  );
-
-  ensure(24);
-  doc.setFontSize(8);
-  doc.setTextColor(120);
-  doc.text(
-    `Exported ${new Date().toLocaleString()}${exportedBy ? ` by ${exportedBy}` : ""} · acting role ${role}`,
-    MARGIN,
-    HEIGHT - MARGIN + 16,
-  );
-  doc.setTextColor(0);
 
   return doc;
 }
