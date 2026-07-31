@@ -4702,9 +4702,9 @@ export const AdelanteEHR = {
     // content class, so a real authorized reader is alerted. Same generic body
     // and link — no new information is disclosed.
     if (selfFlagged && canAccess("case_manager", "screeners_sud", p).locked) {
-      const backstop = (["therapist", "pmhnp"] as StaffRole[]).find(
-        (r) => !canAccess(r, "screeners_sud", p).locked,
-      );
+      // Same matrix-derived selection as the staff-flag path. No flagger to
+      // exclude here — the patient authored the flag, not a staff member.
+      const backstop = pickSudBackstopRole(p);
       if (backstop) {
         AdelanteEHR.notify({
           recipientRole: backstop,
