@@ -4117,6 +4117,36 @@ export const AdelanteEHR = {
     return [...(patients.find((x) => x.id === patientId)?.doseClaims ?? [])];
   },
   /**
+   * §MAR Phase 2 — PRN eligibility. Counts live (non-voided) GIVEN
+   * administrations for this order in the trailing 24h against the frequency
+   * catalog's `maxPerDay` ceiling.
+   */
+  prnEligibility(
+    patientId: string,
+    orderId: string,
+    now: Date = new Date(),
+  ): { given: number; max?: number; lastGivenAt?: string; blocked: boolean } {
+    const p = patients.find((x) => x.id === patientId);
+    const order = p?.orders?.find((o) => o.id === orderId);
+    const max = frequencyByCode(order?.frequencyCode)?.maxPerDay;
+    const since = now.getTime() - 24 * 3600_000;
+    const rows = (p?.administrations ?? [])
+      .filter(
+        (a) =>
+          a.orderId === orderId &&
+          !a.voided &&
+          a.action === "given" &&
+          new Date(a.chartedAt).getTime() >= since,
+      )
+      .sort((a, b) => b.chartedAt.localeCompare(a.chartedAt));
+    return {
+      given: rows.length,
+      max,
+      lastGivenAt: rows[0]?.chartedAt,
+      blocked: max !== undefined && rows.length >= max,
+    };
+  },
+  /**
    * Chart one scheduled dose. Validation is action-specific: refused/held need
    * a reason, and anything charted more than 4h after the scheduled time needs
    * a late-entry reason. Voided prior entries do not block re-charting.
