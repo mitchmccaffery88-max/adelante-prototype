@@ -640,18 +640,6 @@ export interface KpiTarget {
   updatedAt?: string;
 }
 
-interface UnusedShiftCountLineShim {
-  key: string;
-  drugName: string;
-  doseLabel: string;
-  deaSchedule: string;
-  given: number;
-  refusedOrHeld: number;
-  patients: number;
-  firstAt?: string;
-  lastAt?: string;
-}
-
 /**
  * Immutable, locked controlled-substance shift count. Top-level (NOT on a
  * Patient) — it is a facility/shift artifact that spans the population.
