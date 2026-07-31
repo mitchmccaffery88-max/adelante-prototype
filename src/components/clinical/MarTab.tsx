@@ -227,10 +227,10 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const pendingCount = Object.keys(entries).length;
 
   const setEntry = (key: string, patch: Partial<PendingEntry>) =>
-    setEntries((prev) => ({
-      ...prev,
-      [key]: { action: "given", reason: "", lateEntryReason: "", ...prev[key], ...patch },
-    }));
+    setEntries((prev) => {
+      const base: PendingEntry = prev[key] ?? { action: "given", reason: "", lateEntryReason: "" };
+      return { ...prev, [key]: { ...base, ...patch } };
+    });
 
   const clearEntry = (key: string) =>
     setEntries((prev) => {
