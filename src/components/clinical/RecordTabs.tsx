@@ -1599,6 +1599,9 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   authorSource: "human",
                   status: "draft",
                   templateId: activeTemplate?.id,
+                  templateKey: activeTemplate?.key,
+                  templateTitle: activeTemplate?.title,
+                  templateVersion: activeTemplate?.version,
                   // Snapshot the schema so a later template edit never rewrites
                   // the questions a clinician actually answered.
                   templateSchema: activeTemplate?.schema,
