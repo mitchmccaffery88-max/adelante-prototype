@@ -5296,6 +5296,118 @@ export const AdelanteEHR = {
     emit();
   },
 
+  // ----- §Crisis escalation ------------------------------------------------
+  // Two records, one act: the PatientAlert (the visible flag, created through
+  // the SAME addAlert path as every other alert) and the CrisisEscalation
+  // (the workflow wrapper the cross-patient queue reads). Resolution closes
+  // the alert through softDeleteAlert — there is no second alert-closing path.
+  CRISIS_ALERT_LABEL: "Crisis escalation — active",
+
+  listCrisisEscalations(patientId: string, opts?: { status?: CrisisEscalation["status"] }) {
+    const p = patients.find((x) => x.id === patientId);
+    const rows = p?.crisisEscalations ?? [];
+    return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
+  },
+
+  /** Cross-patient open queue, oldest-open first (longest open = most urgent). */
+  listOpenCrisisEscalations(): { patient: Patient; escalation: CrisisEscalation }[] {
+    const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
+    for (const p of patients) {
+      for (const e of p.crisisEscalations ?? []) {
+        if (e.status === "open") out.push({ patient: p, escalation: e });
+      }
+    }
+    return out.sort((a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt));
+  },
+
+  flagCrisis(
+    patientId: string,
+    staffName: string,
+    reason: string,
+    opts?: { triggerSource?: CrisisEscalation["triggerSource"]; sourceNoteId?: string },
+  ): CrisisEscalation {
+    const detail = reason?.trim();
+    if (!detail || detail.length < 3)
+      throw new Error("A reason of at least 3 characters is required to flag a crisis.");
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const alert = AdelanteEHR.addAlert(patientId, {
+      label: AdelanteEHR.CRISIS_ALERT_LABEL,
+      severity: "critical",
+      notes: detail,
+      enteredBy: staffName,
+    });
+    const row: CrisisEscalation = {
+      id: uid(),
+      patientId,
+      alertId: alert.id,
+      triggerSource: opts?.triggerSource ?? "manual",
+      triggerDetail: detail,
+      triggeredBy: staffName,
+      triggeredAt: new Date().toISOString(),
+      status: "open",
+    };
+    p.crisisEscalations = [row, ...(p.crisisEscalations ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_flagged",
+      patientId,
+      actorId: staffName,
+      detail: {
+        escalationId: row.id,
+        alertId: alert.id,
+        triggerSource: row.triggerSource,
+        triggerDetail: detail,
+        sourceNoteId: opts?.sourceNoteId ?? null,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  resolveCrisisEscalation(
+    patientId: string,
+    id: string,
+    staffName: string,
+    input: { contactedWhom?: string; actionsTaken?: string; disposition: string },
+  ): CrisisEscalation {
+    const disposition = input.disposition?.trim();
+    if (!disposition) throw new Error("A disposition is required to resolve a crisis escalation.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    if (row.status === "resolved") throw new Error("This escalation is already resolved.");
+    row.status = "resolved";
+    row.contactedWhom = input.contactedWhom?.trim() || undefined;
+    row.actionsTaken = input.actionsTaken?.trim() || undefined;
+    row.disposition = disposition;
+    row.resolutionReason = disposition;
+    row.resolvedBy = staffName;
+    row.resolvedAt = new Date().toISOString();
+    // Close the visible flag through the existing remove-alert-with-reason path.
+    AdelanteEHR.softDeleteAlert(
+      patientId,
+      row.alertId,
+      `Crisis escalation resolved — ${disposition}`,
+      staffName,
+    );
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_resolved",
+      patientId,
+      actorId: staffName,
+      detail: {
+        escalationId: row.id,
+        alertId: row.alertId,
+        disposition,
+        contactedWhom: row.contactedWhom ?? null,
+        actionsTaken: row.actionsTaken ?? null,
+      },
+    });
+    emit();
+    return row;
+  },
+
   // ----- Orders (§Orders — BaggaEMR OrderCart port, core only) -------------
   // TODO(orders): pharmacy routing / transmission and dispense are NOT here by
   // design. `signOrders` only releases the order to the chart; a later pass
