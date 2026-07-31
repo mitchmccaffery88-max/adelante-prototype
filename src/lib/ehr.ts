@@ -3642,6 +3642,14 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    // §Phase 3c — automations fire on the transition to a FINAL signature.
+    // A note routed for cosignature is not final yet, so nothing runs until
+    // the cosigner attests (see cosignProgressNote).
+    if (n.status === "signed")
+      AdelanteEHR.runNoteAutomations(patientId, noteId, {
+        actorId: input.signedBy,
+        actorRole: input.role,
+      });
     emit();
     return n;
   },
@@ -3674,8 +3682,168 @@ export const AdelanteEHR = {
       actorRole: input.role,
       detail: { noteId, comment: n.cosignComment ?? null, signedBy: n.signedBy ?? null },
     });
+    AdelanteEHR.runNoteAutomations(patientId, noteId, {
+      actorId: input.cosignedBy,
+      actorRole: input.role,
+    });
     emit();
     return n;
+  },
+
+  // ----- §Phase 3c: post-sign automations ---------------------------------
+  //
+  // Conservative by construction:
+  //   visible   — every artifact carries sourceNoteId + sourceAutomationId and
+  //               renders an "Auto-created from …" trace in the UI.
+  //   reversible— a task can be completed/snoozed and a draft note deleted or
+  //               simply left unsigned. Nothing here touches the signed record.
+  //   idempotent— the run log below is checked before firing and appended to
+  //               after, so a (noteId, automationId) pair fires at most once
+  //               for the life of the note.
+  //
+  // NOT SUPPORTED, deliberately: order / order_set actions. See the scope note
+  // in templateSchema.ts — nothing here can place a medication order.
+
+  listNoteAutomationRuns(noteId?: string): NoteAutomationRun[] {
+    return noteAutomationRuns
+      .filter((r) => !noteId || r.noteId === noteId)
+      .map((r) => ({ ...r }));
+  },
+
+  hasAutomationRun(noteId: string, automationId: string): boolean {
+    return noteAutomationRuns.some((r) => r.noteId === noteId && r.automationId === automationId);
+  },
+
+  /**
+   * The automations that WOULD fire for a note right now, given its answers
+   * and the patient's active problems. Backs the pre-sign summary the
+   * clinician sees, and is the same selection the runner uses — one source of
+   * truth, so the preview cannot disagree with the behaviour.
+   */
+  plannedNoteAutomations(
+    patientId: string,
+    schema: TemplateSchema | undefined,
+    answers: TemplateAnswers | undefined,
+  ): Automation[] {
+    const active = AdelanteEHR.listProblems(patientId)
+      .filter(isProblemClinicallyActive)
+      .map((p) => ({ category: p.category, icd10Code: p.icd10Code }));
+    return plannedAutomations(schema, answers ?? {}, active);
+  },
+
+  /**
+   * Execute a signed note's automations exactly once each. Safe to call again:
+   * already-logged pairs are skipped.
+   */
+  runNoteAutomations(
+    patientId: string,
+    noteId: string,
+    actor: { actorId: string; actorRole?: string },
+  ): NoteAutomationRun[] {
+    const { p, n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!p || !n) return [];
+    const planned = AdelanteEHR.plannedNoteAutomations(patientId, n.templateSchema, n.templateAnswers);
+    const fired: NoteAutomationRun[] = [];
+
+    for (const automation of planned) {
+      // Idempotency gate. Non-negotiable — checked before ANY side effect.
+      if (AdelanteEHR.hasAutomationRun(noteId, automation.id)) continue;
+
+      const run: NoteAutomationRun = {
+        noteId,
+        automationId: automation.id,
+        patientId,
+        ranAt: new Date().toISOString(),
+        resultKind: "skipped",
+      };
+
+      if (automation.action.kind === "schedule_task") {
+        const { taskType, dueInDays, priority } = automation.action;
+        const due = new Date();
+        due.setDate(due.getDate() + (Number.isFinite(dueInDays) ? dueInDays : 0));
+        // Reuses the ONE task creation path — no parallel task system.
+        const task = AdelanteEHR.createCaseTask({
+          patientId,
+          // Automations create work for the patient's case manager when there
+          // is one; otherwise it lands with the signer so it is never orphaned.
+          assignedTo: p.caseManagerId ?? actor.actorId,
+          title: taskType,
+          detail: `${automation.label} — auto-created when "${n.templateTitle ?? "a progress note"}" was signed.`,
+          dueDate: due.toISOString().slice(0, 10),
+          origin: "note_automation",
+          sourceNoteId: noteId,
+          sourceAutomationId: automation.id,
+          sourceTemplateTitle: n.templateTitle,
+          priority: priority ?? "routine",
+        });
+        run.resultKind = task ? "case_task" : "skipped";
+        run.resultId = task?.id;
+        if (!task) run.skipReason = "task_creation_failed";
+      } else {
+        const key = automation.action.templateKey?.trim() || n.templateKey;
+        // Latest active version of the target key — never a superseded row.
+        const target = key
+          ? AdelanteEHR.listNoteTemplates().find((t) => t.key.toLowerCase() === key.toLowerCase())
+          : undefined;
+        if (!target) {
+          run.skipReason = key
+            ? `no_active_template_for_key:${key}`
+            : "no_template_key_on_source_note";
+        } else {
+          const draft = AdelanteEHR.addProgressNote(patientId, {
+            clinicianId: n.clinicianId,
+            date: new Date().toISOString(),
+            sessionType: n.sessionType,
+            subjective: "",
+            objective: "",
+            assessment: "",
+            plan: "",
+            category: n.category,
+            // Authored by a human later; the automation only opened the draft.
+            authorSource: "human",
+            status: "draft",
+            templateId: target.id,
+            templateKey: target.key,
+            templateTitle: target.title,
+            templateVersion: target.version,
+            templateSchema: target.schema,
+            templateAnswers: {},
+            automationOrigin: {
+              sourceNoteId: noteId,
+              automationId: automation.id,
+              label: automation.label,
+              sourceTemplateTitle: n.templateTitle,
+            },
+          });
+          run.resultKind = draft ? "draft_note" : "skipped";
+          run.resultId = draft?.id;
+          if (!draft) run.skipReason = "draft_creation_failed";
+        }
+      }
+
+      noteAutomationRuns.push(run);
+      fired.push(run);
+      appendAudit({
+        category: "clinical",
+        action: "note_automation_ran",
+        patientId,
+        actorId: actor.actorId,
+        actorRole: actor.actorRole,
+        detail: {
+          noteId,
+          automationId: automation.id,
+          label: automation.label,
+          summary: summarizeAutomation(automation),
+          actionKind: automation.action.kind,
+          resultKind: run.resultKind,
+          resultId: run.resultId ?? null,
+          skipReason: run.skipReason ?? null,
+        },
+      });
+    }
+
+    if (fired.length) emit();
+    return fired;
   },
 
   /**
