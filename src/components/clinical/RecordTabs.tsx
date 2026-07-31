@@ -1766,6 +1766,14 @@ function ProgressNoteCard({
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
   const [attested, setAttested] = useState(false);
   const [cosignerId, setCosignerId] = useState<string>("");
+  // §Phase 3b — a finalized note shows its FROZEN autofill snapshot; a draft
+  // shows the live resolution, which is what gets frozen at sign time.
+  const liveAutofill = useNoteAutofillSnapshots(patientId, note.templateSchema, {
+    excludeNoteId: note.id,
+  });
+  const autofill = note.autofillSnapshots ?? liveAutofill;
+  const cardOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const noteOrders = cardOrders.filter((o) => o.sourceNoteId === note.id);
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
@@ -1787,6 +1795,8 @@ function ProgressNoteCard({
         attested,
         cosignRequired: mustCosign,
         cosignRole: cosigner ? [cosigner.role] : undefined,
+        // Freeze what the autofill cards showed at attestation time.
+        autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       setAttested(false);
@@ -1841,6 +1851,28 @@ function ProgressNoteCard({
                 readOnly
                 missingKeys={missing.map((m) => m.key)}
                 language={noteLanguage}
+                renderSection={(section) =>
+                  section.type === "orders_section" ? (
+                    canWrite && status === "draft" ? (
+                      <NoteOrdersSection
+                        patientId={patientId}
+                        section={section}
+                        sourceNoteId={note.id}
+                        stagedIds={noteOrders
+                          .filter((o) => o.status === "draft")
+                          .map((o) => o.id)}
+                        onStage={() => {}}
+                      />
+                    ) : (
+                      <NoteOrderTrace orders={noteOrders} title={section.title} />
+                    )
+                  ) : (
+                    (() => {
+                      const snap = autofill.find((s) => s.sectionId === section.id);
+                      return snap ? <NoteAutofillCard snapshot={snap} /> : null;
+                    })()
+                  )
+                }
               />
             </div>
           )}
