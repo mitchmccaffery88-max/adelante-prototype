@@ -289,6 +289,14 @@ function TemplateBuilderDialog({
   const [scoring, setScoring] = useState<ScoringRule[]>(
     template?.schema.scoring?.map((r) => ({ ...r, sum_of: [...r.sum_of] })) ?? [],
   );
+  // §Phase 3c — post-sign automations authored with the template.
+  const [automations, setAutomations] = useState<Automation[]>(
+    template?.schema.automations?.map((a) => ({
+      ...a,
+      when: a.when ? { ...a.when } : undefined,
+      action: { ...a.action },
+    })) ?? [],
+  );
   const [preview, setPreview] = useState<TemplateAnswers>({});
   // Spanish authoring is optional and collapsed by default so English-only
   // authors are not forced through translation fields.
@@ -299,6 +307,7 @@ function TemplateBuilderDialog({
   const schema: TemplateSchema = {
     sections,
     scoring: scoring.length ? scoring : undefined,
+    automations: automations.length ? automations : undefined,
     esReviewed: esReviewed || undefined,
   };
   // A schema edit changes answer semantics, so it publishes a new version
@@ -757,6 +766,8 @@ function TemplateBuilderDialog({
 
         <ScoringEditor rules={scoring} onChange={setScoring} />
 
+        <AutomationsEditor automations={automations} onChange={setAutomations} />
+
         <div className="space-y-2 rounded-md border border-border p-3">
           <div className="flex items-center justify-between gap-2">
             <h4 className="font-display text-sm text-navy">Live preview</h4>
@@ -776,6 +787,20 @@ function TemplateBuilderDialog({
             language={previewLang}
             renderSection={(section) => <PreviewSection section={section} schema={schema} />}
           />
+          {automations.length > 0 && (
+            <div className="mt-3 rounded-md border border-teal/40 bg-teal/10 p-2">
+              <p className="text-[11px] font-medium text-navy">
+                After a clinician signs a note on this template:
+              </p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4 text-[11px] text-navy">
+                {automations.map((a) => (
+                  <li key={a.id} className={a.enabled ? "" : "text-muted-foreground line-through"}>
+                    {summarizeAutomation(a)}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
         </div>
 
         <DialogFooter>
