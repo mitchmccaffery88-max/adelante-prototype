@@ -50,7 +50,8 @@ export type RecordClass =
   | "eligibility"
   | "care_coordination"
   | "custody_tracking"
-  | "population_health";
+  | "population_health"
+  | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -182,6 +183,18 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     case_manager: "read",
     peer_specialist: "none",
+  },
+  // §Clinical documentation templates. Authoring a template is clinical
+  // configuration, not patient care: sys_admin + clinical_coordinator write,
+  // documenting clinicians read (they pick templates when writing notes),
+  // billing gets nothing — template structure is not claim data.
+  note_templates: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "read",
   },
 };
 

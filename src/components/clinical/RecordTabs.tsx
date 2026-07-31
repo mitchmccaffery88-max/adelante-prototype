@@ -41,6 +41,8 @@ import {
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
+import { TemplateForm } from "@/components/clinical/TemplateForm";
+import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import {
   useActingRole,
   useActingStaff,
@@ -1471,6 +1473,11 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
     plan: "",
     category: "none" as "none" | "sud" | "mental_health" | "pregnancy" | "medical",
   });
+  // Template layer: "none" keeps the existing free-text SOAP editor untouched.
+  const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  const [templateId, setTemplateId] = useState<string>("none");
+  const [answers, setAnswers] = useState<TemplateAnswers>({});
+  const activeTemplate = templates.find((t) => t.id === templateId);
   useDraftDirty(
     `notes:${patientId}`,
     Boolean(
@@ -1502,6 +1509,30 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
           <div className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Session type</Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Template</Label>
+              <Select
+                value={templateId}
+                onValueChange={(v) => {
+                  setTemplateId(v);
+                  setAnswers({});
+                }}
+              >
+                <SelectTrigger aria-label="Note template">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">SOAP (no template)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Select
                 value={note.sessionType}
                 onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
@@ -1538,6 +1569,15 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                 A SUD note is masked by the same consent gate as SUD problem entries.
               </p>
             </div>
+            {activeTemplate && (
+              <div className="rounded-md border border-border p-3">
+                <TemplateForm
+                  schema={activeTemplate.schema}
+                  answers={answers}
+                  onChange={setAnswers}
+                />
+              </div>
+            )}
             {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
               <div key={k} className="space-y-1.5">
                 <Label className="text-xs capitalize">{k}</Label>
@@ -1568,8 +1608,14 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   category: note.category === "none" ? undefined : note.category,
                   authorSource: "human",
                   status: "draft",
+                  templateId: activeTemplate?.id,
+                  // Snapshot the schema so a later template edit never rewrites
+                  // the questions a clinician actually answered.
+                  templateSchema: activeTemplate?.schema,
+                  templateAnswers: activeTemplate ? answers : undefined,
                 });
                 toast.success("Progress note saved as draft");
+                setAnswers({});
                 setNote({
                   sessionType: "individual",
                   subjective: "",
@@ -1654,9 +1700,18 @@ function ProgressNoteCard({
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
+  // Structured templates gate signing: a required question left blank is the
+  // same class of defect as an unattested signature.
+  const missing = note.templateSchema
+    ? findMissingRequired(note.templateSchema, note.templateAnswers ?? {})
+    : [];
 
   const sign = () => {
     try {
+      if (missing.length > 0) {
+        toast.error(`Answer ${missing.length} required template field(s) before signing.`);
+        return;
+      }
       AdelanteEHR.signProgressNote(patientId, note.id, {
         signedBy: staffName,
         role,
@@ -1701,7 +1756,19 @@ function ProgressNoteCard({
           <span>{sudReason ?? "SUD note — 42 CFR Part 2 consent required"}</span>
         </div>
       ) : (
-        <dl className="mt-2 space-y-1.5">
+        <>
+          {note.templateSchema && (
+            <div className="mt-2 rounded-md border border-border p-2">
+              <TemplateForm
+                schema={note.templateSchema}
+                answers={note.templateAnswers ?? {}}
+                onChange={() => {}}
+                readOnly
+                missingKeys={missing.map((m) => m.key)}
+              />
+            </div>
+          )}
+          <dl className="mt-2 space-y-1.5">
           {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
             note[k] ? (
               <div key={k}>
@@ -1710,7 +1777,8 @@ function ProgressNoteCard({
               </div>
             ) : null,
           )}
-        </dl>
+          </dl>
+        </>
       )}
       {note.signedAt && (
         <p className="mt-2 text-[10px] text-muted-foreground">
@@ -1751,6 +1819,11 @@ function ProgressNoteCard({
               </p>
             </div>
           )}
+          {missing.length > 0 && (
+            <p className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+              {missing.length} required template field(s) still unanswered — signing is blocked.
+            </p>
+          )}
           <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
             <Checkbox
               checked={attested}
@@ -1762,7 +1835,7 @@ function ProgressNoteCard({
           <Button
             size="sm"
             className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-            disabled={!attested || (mustCosign && !cosignerId)}
+            disabled={!attested || (mustCosign && !cosignerId) || missing.length > 0}
             onClick={sign}
           >
             Sign note

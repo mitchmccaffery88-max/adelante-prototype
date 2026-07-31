@@ -1,4 +1,6 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
+import type { TemplateAnswers, TemplateSchema } from "./templateSchema";
+
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
 // (telehealth room, eRx medications) so adapters stay swappable.
@@ -1318,6 +1320,37 @@ export interface ProgressNote {
   declineReason?: string;
   declinedBy?: string;
   declinedAt?: string;
+  /** Template layer (Phase 3a). Absent = classic fixed SOAP note. */
+  templateId?: string;
+  templateKey?: string;
+  templateTitle?: string;
+  /** Schema snapshot at authoring time — history survives template edits. */
+  templateSchema?: TemplateSchema;
+  templateAnswers?: TemplateAnswers;
+}
+
+/**
+ * §Clinical documentation Phase 3a — a reusable structured note template.
+ * Templates are versionless config; a note snapshots the schema it was written
+ * against so deactivating or editing a template never rewrites signed history.
+ */
+export interface NoteTemplate {
+  id: string;
+  key: string;
+  title: string;
+  /**
+   * Free text. Adelante has no encounter-type enum today (appointments carry a
+   * free-form `serviceType`), so this matches that concept rather than
+   * inventing a competing taxonomy.
+   */
+  encounterType: string;
+  schema: TemplateSchema;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedBy?: string;
+  updatedAt?: string;
+  deactivationReason?: string;
 }
 
 export type NoteAuthorSource = "human" | "ai_draft";
@@ -2279,6 +2312,106 @@ const calaimQualifyingCodes: CalaimQualifyingCode[] = [
     active: true,
     createdBy: "Adelante System Admin",
     createdAt: new Date().toISOString(),
+  },
+];
+
+// §Clinical documentation — note template registry. One seeded template so the
+// renderer's conditional fields and scoring path are exercised on first load.
+const noteTemplates: NoteTemplate[] = [
+  {
+    id: "tpl-bh-intake",
+    key: "bh_intake",
+    title: "Behavioral health intake",
+    encounterType: "intake",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+    schema: {
+      sections: [
+        {
+          id: "presenting",
+          title: "Presenting concern",
+          fields: [
+            {
+              key: "chief_complaint",
+              type: "textarea",
+              label: "Chief complaint",
+              required: true,
+              rows: 3,
+              ai_hint: "Patient's own words describing why they came in today.",
+            },
+            {
+              key: "substance_use",
+              type: "radio",
+              label: "Current substance use reported?",
+              required: true,
+              options: [
+                { value: "yes", label: "Yes" },
+                { value: "no", label: "No" },
+              ],
+            },
+            {
+              key: "substances",
+              type: "multiselect",
+              label: "Substances reported",
+              show_if: 'substance_use == "yes"',
+              options: [
+                { value: "alcohol", label: "Alcohol" },
+                { value: "opioids", label: "Opioids" },
+                { value: "stimulants", label: "Stimulants" },
+              ],
+            },
+          ],
+        },
+        {
+          id: "phq2",
+          title: "PHQ-2 screen",
+          fields: [
+            {
+              key: "phq2_interest",
+              type: "select",
+              label: "Little interest or pleasure in doing things",
+              options: [
+                { value: "0", label: "Not at all", score: 0 },
+                { value: "1", label: "Several days", score: 1 },
+                { value: "2", label: "More than half the days", score: 2 },
+                { value: "3", label: "Nearly every day", score: 3 },
+              ],
+            },
+            {
+              key: "phq2_down",
+              type: "select",
+              label: "Feeling down, depressed or hopeless",
+              options: [
+                { value: "0", label: "Not at all", score: 0 },
+                { value: "1", label: "Several days", score: 1 },
+                { value: "2", label: "More than half the days", score: 2 },
+                { value: "3", label: "Nearly every day", score: 3 },
+              ],
+            },
+          ],
+        },
+        {
+          id: "plan",
+          title: "Plan",
+          fields: [
+            { key: "plan_text", type: "textarea", label: "Plan", required: true, rows: 3 },
+            { key: "followup_date", type: "date", label: "Follow-up date" },
+          ],
+        },
+      ],
+      scoring: [
+        {
+          id: "phq2_total",
+          label: "PHQ-2 total",
+          sum_of: ["phq2_interest", "phq2_down"],
+          bands: [
+            { min: 0, max: 2, label: "Negative screen" },
+            { min: 3, max: 6, label: "Positive — administer PHQ-9" },
+          ],
+        },
+      ],
+    },
   },
 ];
 
@@ -6643,6 +6776,111 @@ export const AdelanteEHR = {
       action: "calaim_qualifying_code_reactivated",
       actorId: staffName,
       detail: { codeId, code: row.code },
+    });
+    emit();
+    return { ...row };
+  },
+
+  // ----- §Clinical documentation: note templates ---------------------------
+  // Registry semantics match every other admin registry here: never deleted,
+  // deactivation requires a reason, and notes keep their own schema snapshot
+  // so retiring a template cannot rewrite documentation history.
+
+  listNoteTemplates(includeInactive = false): NoteTemplate[] {
+    return noteTemplates
+      .filter((t) => includeInactive || t.active)
+      .map((t) => ({ ...t }))
+      .sort((a, b) => a.title.localeCompare(b.title));
+  },
+
+  getNoteTemplate(templateId: string): NoteTemplate | undefined {
+    const row = noteTemplates.find((t) => t.id === templateId);
+    return row ? { ...row } : undefined;
+  },
+
+  createNoteTemplate(
+    input: { key: string; title: string; encounterType: string; schema: TemplateSchema },
+    staffName: string,
+  ): NoteTemplate {
+    const key = (input.key ?? "").trim();
+    const title = (input.title ?? "").trim();
+    if (!key) throw new Error("A template key is required.");
+    if (!title) throw new Error("A template title is required.");
+    if (noteTemplates.some((t) => t.key.toLowerCase() === key.toLowerCase()))
+      throw new Error(`A template with the key "${key}" already exists.`);
+    const row: NoteTemplate = {
+      id: uid(),
+      key,
+      title,
+      encounterType: (input.encounterType ?? "").trim() || "general",
+      schema: input.schema ?? { sections: [] },
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    noteTemplates.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "note_template_created",
+      actorId: staffName,
+      detail: { templateId: row.id, key: row.key, encounterType: row.encounterType },
+    });
+    emit();
+    return { ...row };
+  },
+
+  updateNoteTemplate(
+    templateId: string,
+    patch: Partial<Pick<NoteTemplate, "title" | "encounterType" | "schema">>,
+    staffName: string,
+  ): NoteTemplate {
+    const row = noteTemplates.find((t) => t.id === templateId);
+    if (!row) throw new Error("Template not found.");
+    if (patch.title !== undefined) {
+      const title = patch.title.trim();
+      if (!title) throw new Error("A template title is required.");
+      row.title = title;
+    }
+    if (patch.encounterType !== undefined)
+      row.encounterType = patch.encounterType.trim() || "general";
+    if (patch.schema) row.schema = patch.schema;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "note_template_updated",
+      actorId: staffName,
+      detail: {
+        templateId,
+        key: row.key,
+        sections: row.schema.sections?.length ?? 0,
+        fields: (row.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0),
+      },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate / reactivate. Templates are never deleted. */
+  setNoteTemplateActive(
+    templateId: string,
+    active: boolean,
+    staffName: string,
+    reason?: string,
+  ): NoteTemplate {
+    const row = noteTemplates.find((t) => t.id === templateId);
+    if (!row) throw new Error("Template not found.");
+    if (!active && !(reason ?? "").trim())
+      throw new Error("A reason is required to deactivate a template.");
+    row.active = active;
+    row.deactivationReason = active ? undefined : reason!.trim();
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: active ? "note_template_reactivated" : "note_template_deactivated",
+      actorId: staffName,
+      detail: { templateId, key: row.key, reason: reason?.trim() ?? null },
     });
     emit();
     return { ...row };
