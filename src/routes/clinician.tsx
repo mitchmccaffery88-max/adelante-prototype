@@ -223,6 +223,13 @@ function ClinicianPage() {
         >
           Cosign inbox
         </Link>
+        {/* §Worklist Phase A — cross-facility operational task table. */}
+        <Link
+          to="/worklist"
+          className="text-xs text-teal underline-offset-2 hover:underline self-center"
+        >
+          Worklist
+        </Link>
         {/* §Crisis escalation — cross-patient queue of open escalations. */}
         <Link
           to="/crisis-queue"
