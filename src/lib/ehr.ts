@@ -6922,8 +6922,10 @@ export const AdelanteEHR = {
       throw new Error("This template version has been superseded. Edit the latest version.");
     const nextTitle = patch.title !== undefined ? patch.title.trim() : row.title;
     if (!nextTitle) throw new Error("A template title is required.");
-    const schemaChanged =
-      !!patch.schema && JSON.stringify(patch.schema) !== JSON.stringify(row.schema);
+    // `esReviewed` is a translation-review flag, not answer semantics, so it is
+    // excluded from this comparison — approving a translation updates in place
+    // instead of publishing a new version. Translated TEXT changes still version.
+    const schemaChanged = !!patch.schema && !schemaContentEquals(patch.schema, row.schema);
 
     if (schemaChanged) {
       const next: NoteTemplate = {
@@ -6970,6 +6972,8 @@ export const AdelanteEHR = {
     if (patch.description !== undefined) row.description = patch.description.trim() || undefined;
     if (patch.encounterType !== undefined)
       row.encounterType = patch.encounterType.trim() || "general";
+    // Review-flag-only schema edits land on the existing row.
+    if (patch.schema) row.schema = patch.schema;
     row.updatedBy = staffName;
     row.updatedAt = new Date().toISOString();
     appendAudit({
