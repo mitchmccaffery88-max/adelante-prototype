@@ -1,4 +1,4 @@
-// §MAR Phase 1 — due-dose derivation for a single patient.
+// §MAR Phase 1–2 — due-dose derivation for a single patient.
 //
 // ARCHITECTURE NOTE: the reference EMR's MedPass is a FACILITY-WIDE roster grid
 // (one nurse charts across every patient on a unit in one pass). Adelante's
@@ -17,6 +17,7 @@ import {
   type Patient,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
+import { frequencyByCode } from "@/lib/frequencies";
 import { deriveMedicationSchedule } from "@/lib/medSchedule";
 import {
   addFacilityDays,
@@ -25,29 +26,32 @@ import {
   facilityTimeLabel,
 } from "@/lib/facilityTime";
 
-/** Why an order's doses are visible but not chartable in Phase 1. */
+/**
+ * Phase 1 kept PRN / KOP / controlled orders read-only in a deferred section.
+ * Phase 2 moved all three into the actionable queue, so nothing defers today —
+ * the type and labels are retained for any future staged rollout.
+ */
 export type MarDeferralReason = "prn" | "kop" | "controlled";
 
 export const MAR_DEFERRAL_LABEL: Record<MarDeferralReason, string> = {
-  prn: "PRN — eligibility & reason capture arrive in Phase 2",
-  kop: "KOP — patient self-administration issuance arrives in Phase 2",
-  controlled: "Controlled — witness workflow arrives in Phase 2",
+  prn: "PRN — eligibility & reason capture",
+  kop: "KOP — patient self-administration issuance",
+  controlled: "Controlled — witness workflow",
 };
 
-/**
- * Orders that must NOT be chartable yet. They are still surfaced (read-only) so
- * nothing silently disappears from the record.
- */
+/** Phase 2: no order class is deferred any more. */
 export function deferralReasonFor(order: MedOrder): MarDeferralReason | undefined {
-  if (order.isControlled) return "controlled";
-  if (order.isKop) return "kop";
-  if (isPrnOrder(order)) return "prn";
+  void order;
   return undefined;
 }
+
+/** What kind of MAR row this is — drives which actions the row offers. */
+export type MarSlotKind = "scheduled" | "prn" | "kop";
 
 export interface MarSlot {
   /** Stable key for the slot: order + scheduled instant. */
   key: string;
+  kind: MarSlotKind;
   order: MedOrder;
   /** ISO instant the dose is due. */
   scheduledAt: string;
@@ -66,6 +70,10 @@ export interface MarDay {
   dateKey: string;
   /** Chartable scheduled doses. */
   slots: MarSlot[];
+  /** As-needed orders — chartable on demand, one row per active PRN order. */
+  prn: MarSlot[];
+  /** Keep-on-person orders — issued as a supply, never charted here. */
+  kop: MarSlot[];
   /** Active orders shown read-only until their Phase 2 workflow exists. */
   deferred: { order: MedOrder; reason: MarDeferralReason }[];
 }
