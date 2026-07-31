@@ -2248,6 +2248,9 @@ const noteAutomationRuns: NoteAutomationRun[] = [];
 // §Notification feed — top-level, keyed to a staff identity (not a patient
 // record), because a notification belongs to a person's worklist.
 const notifications: AppNotification[] = [];
+// §Inbox — provider requests live cross-patient (like tasks/notifications),
+// not on the Patient record: the queue is the primary surface.
+const providerRequests: ProviderRequest[] = [];
 
 /** Display name for notification copy. Never used for access control. */
 function patientLabel(patientId?: string): string {
