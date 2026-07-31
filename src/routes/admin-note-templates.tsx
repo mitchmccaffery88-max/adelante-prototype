@@ -1107,6 +1107,228 @@ function PreviewSection({
   );
 }
 
+/**
+ * §Clinical documentation Phase 3c — automations editor.
+ *
+ * Only two action kinds exist and both create work a human reviews. There is
+ * deliberately NO order / order_set action: nothing authored here can place a
+ * medication order. See the scope note in templateSchema.ts.
+ */
+function AutomationsEditor({
+  automations,
+  onChange,
+}: {
+  automations: Automation[];
+  onChange: (next: Automation[]) => void;
+}) {
+  const patch = (i: number, next: Partial<Automation>) =>
+    onChange(automations.map((a, j) => (j === i ? { ...a, ...next } : a)));
+  const patchAction = (i: number, next: Partial<AutomationAction>) =>
+    onChange(
+      automations.map((a, j) =>
+        j === i ? { ...a, action: { ...a.action, ...next } as AutomationAction } : a,
+      ),
+    );
+  const patchWhen = (i: number, next: Partial<NonNullable<Automation["when"]>>) =>
+    onChange(automations.map((a, j) => (j === i ? { ...a, when: { ...a.when, ...next } } : a)));
+
+  return (
+    <div className="space-y-3 rounded-md border border-border p-3">
+      <div>
+        <h4 className="font-display text-sm text-navy">Post-sign automations</h4>
+        <p className="mt-0.5 text-[11px] text-muted-foreground">
+          Run once, when a note on this template reaches a final signature. Both actions create
+          work for a human to review — an automation can never place a medication order or sign
+          anything.
+        </p>
+      </div>
+
+      {automations.map((a, i) => (
+        <Card key={a.id} className="space-y-3 p-3">
+          <div className="grid gap-2 sm:grid-cols-[1fr_12rem_auto]">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Label</Label>
+              <Input
+                value={a.label}
+                placeholder="72-hour safety follow-up"
+                onChange={(e) =>
+                  patch(i, { label: e.target.value, id: a.id || slug(e.target.value) })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Action</Label>
+              <Select
+                value={a.action.kind}
+                onValueChange={(v) =>
+                  patch(i, {
+                    action:
+                      v === "schedule_task"
+                        ? { kind: "schedule_task", taskType: "Follow-up", dueInDays: 3 }
+                        : { kind: "start_template", templateKey: "" },
+                  })
+                }
+              >
+                <SelectTrigger aria-label="Automation action">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="schedule_task">Schedule a task</SelectItem>
+                  <SelectItem value="start_template">Start a draft note</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Remove automation"
+              className="self-end"
+              onClick={() => onChange(automations.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+
+          {a.action.kind === "schedule_task" ? (
+            <div className="grid gap-2 sm:grid-cols-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Task type</Label>
+                <Input
+                  value={a.action.taskType}
+                  onChange={(e) => patchAction(i, { taskType: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Due in (days)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={a.action.dueInDays}
+                  onChange={(e) => patchAction(i, { dueInDays: Number(e.target.value) || 0 })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Priority</Label>
+                <Select
+                  value={a.action.priority ?? "routine"}
+                  onValueChange={(v) => patchAction(i, { priority: v as AutomationPriority })}
+                >
+                  <SelectTrigger aria-label="Task priority">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="routine">Routine</SelectItem>
+                    <SelectItem value="urgent">Urgent</SelectItem>
+                    <SelectItem value="stat">Stat</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            </div>
+          ) : (
+            <div className="grid gap-2 sm:grid-cols-2">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Template key</Label>
+                <Input
+                  value={a.action.templateKey}
+                  placeholder="Leave blank to reuse this template"
+                  onChange={(e) => patchAction(i, { templateKey: e.target.value })}
+                />
+              </div>
+              <div className="space-y-1.5">
+                <Label className="text-xs">Due in (days, optional)</Label>
+                <Input
+                  type="number"
+                  min={0}
+                  value={a.action.dueInDays ?? ""}
+                  onChange={(e) =>
+                    patchAction(i, {
+                      dueInDays: e.target.value === "" ? undefined : Number(e.target.value),
+                    })
+                  }
+                />
+              </div>
+            </div>
+          )}
+
+          <div className="grid gap-2 sm:grid-cols-3">
+            <div className="space-y-1.5">
+              <Label className="text-xs">Run only if (expression)</Label>
+              <Input
+                value={a.when?.condition ?? ""}
+                placeholder='phq9_total >= 10'
+                onChange={(e) => patchWhen(i, { condition: e.target.value || undefined })}
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Active problem category</Label>
+              <Input
+                value={a.when?.requiresActiveProblem?.category ?? ""}
+                placeholder="sud"
+                onChange={(e) =>
+                  patchWhen(i, {
+                    requiresActiveProblem: {
+                      ...a.when?.requiresActiveProblem,
+                      category: e.target.value || undefined,
+                    },
+                  })
+                }
+              />
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">ICD-10 prefixes (comma separated)</Label>
+              <Input
+                value={(a.when?.requiresActiveProblem?.icd10Prefixes ?? []).join(", ")}
+                placeholder="F11, F32"
+                onChange={(e) => {
+                  const list = e.target.value
+                    .split(",")
+                    .map((s) => s.trim())
+                    .filter(Boolean);
+                  patchWhen(i, {
+                    requiresActiveProblem: {
+                      ...a.when?.requiresActiveProblem,
+                      icd10Prefixes: list.length ? list : undefined,
+                    },
+                  });
+                }}
+              />
+            </div>
+          </div>
+
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={a.enabled}
+                aria-label={`Enable ${a.label || "automation"}`}
+                onCheckedChange={(v) => patch(i, { enabled: Boolean(v) })}
+              />
+              <span>Enabled</span>
+            </label>
+            <p className="text-[11px] text-navy">{summarizeAutomation(a)}</p>
+          </div>
+        </Card>
+      ))}
+
+      <Button
+        variant="outline"
+        onClick={() =>
+          onChange([
+            ...automations,
+            {
+              id: `automation_${automations.length + 1}`,
+              label: `Automation ${automations.length + 1}`,
+              enabled: true,
+              action: { kind: "schedule_task", taskType: "Follow-up", dueInDays: 3 },
+            },
+          ])
+        }
+      >
+        <Plus className="mr-1 h-4 w-4" /> Add automation
+      </Button>
+    </div>
+  );
+}
+
 function ScoringEditor({
   rules,
   onChange,
