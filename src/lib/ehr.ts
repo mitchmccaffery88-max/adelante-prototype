@@ -4695,8 +4695,11 @@ export const AdelanteEHR = {
         .filter(Boolean)
         .join(" "),
     );
-    const risk = RISK_TEXT_CATALOG[medClass] ?? RISK_TEXT_CATALOG["*"];
     const capacityFlagsAtSigning = capacityFlagsFrom(p.alerts);
+    const languageCode = p.preferredLanguage ?? "en";
+    // Presented in the patient's language when a catalog exists; Spanish is a
+    // DRAFT translation pending clinical sign-off (see refusal.ts).
+    const risk = riskTextFor(medClass, languageCode);
     const row: RefusalForm = {
       id: uid(),
       patientId,
@@ -4705,9 +4708,9 @@ export const AdelanteEHR = {
       medClass,
       riskTextVersion: risk.version,
       riskTextSnapshot: risk.text,
-      // Risk text is English-only this pass — see refusal.ts for why a legal
-      // document is not machine-translated.
-      languageCode: p.preferredLanguage ?? "en",
+      riskTextSnapshotEn: risk.englishText,
+      riskTextReviewed: risk.reviewed,
+      languageCode,
       capacityFlagsAtSigning,
       guardianRequired: isMinorPatient(p),
       nurseAttested: false,
