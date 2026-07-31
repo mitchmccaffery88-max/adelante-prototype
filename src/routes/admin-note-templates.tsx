@@ -837,6 +837,173 @@ function OptionsEditor({
   );
 }
 
+/**
+ * §Phase 3b — config UI for orders_section and autofill_section.
+ *
+ * Only sources Adelante can actually fulfil are offered. Vitals and labs are
+ * absent on purpose: those entities do not exist in this system, so offering
+ * them would wire a UI to a source that can never return data.
+ */
+function NonFieldSectionEditor({
+  section,
+  onChange,
+}: {
+  section: TemplateSection;
+  onChange: (patch: Partial<TemplateSection>) => void;
+}) {
+  if (section.type === "autofill_section") {
+    const cfg = section.autofill ?? { source: "medications_active" as AutofillSource };
+    const set = (patch: Partial<typeof cfg>) => onChange({ autofill: { ...cfg, ...patch } });
+    return (
+      <div className="space-y-3 rounded-md border border-border p-3">
+        <div className="space-y-1.5">
+          <Label className="text-xs">Source</Label>
+          <Select value={cfg.source} onValueChange={(v) => set({ source: v as AutofillSource })}>
+            <SelectTrigger aria-label="Autofill source">
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="medications_active">Active medications</SelectItem>
+              <SelectItem value="allergies">Allergies</SelectItem>
+              <SelectItem value="problems_active">Active problems</SelectItem>
+              <SelectItem value="mar_last_24h">MAR — recent administrations</SelectItem>
+              <SelectItem value="last_note_summary">Last note summary</SelectItem>
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="grid gap-2 sm:grid-cols-2">
+          {cfg.source === "mar_last_24h" && (
+            <div className="space-y-1.5">
+              <Label className="text-[11px]">Lookback hours</Label>
+              <Input
+                type="number"
+                min={1}
+                value={cfg.hours ?? 24}
+                onChange={(e) => set({ hours: Number(e.target.value) || undefined })}
+              />
+            </div>
+          )}
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">Max rows (optional)</Label>
+            <Input
+              type="number"
+              min={1}
+              value={cfg.limit ?? ""}
+              onChange={(e) => set({ limit: Number(e.target.value) || undefined })}
+            />
+          </div>
+        </div>
+        {cfg.source === "medications_active" && (
+          <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+            <Checkbox
+              checked={cfg.includePrn !== false}
+              aria-label="Include PRN medications"
+              onCheckedChange={(v) => set({ includePrn: Boolean(v) })}
+            />
+            <span>Include PRN medications</span>
+          </label>
+        )}
+        <p className="text-[10px] text-muted-foreground">
+          Read-only. Content is frozen onto the note when it is signed, and SUD entries stay behind
+          the same 42 CFR Part 2 consent gate as everywhere else.
+        </p>
+      </div>
+    );
+  }
+
+  const allow = section.allow ?? { meds: true };
+  const picks = section.quick_picks?.meds ?? [];
+  const setPicks = (next: QuickPickMed[]) =>
+    onChange({ quick_picks: { ...section.quick_picks, meds: next } });
+  return (
+    <div className="space-y-3 rounded-md border border-border p-3">
+      <div className="flex flex-wrap gap-4">
+        <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Checkbox
+            checked={allow.meds !== false}
+            aria-label="Allow medication orders"
+            onCheckedChange={(v) => onChange({ allow: { ...allow, meds: Boolean(v) } })}
+          />
+          <span>Medication orders</span>
+        </label>
+        <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+          <Checkbox
+            checked={Boolean(allow.referrals)}
+            aria-label="Allow referrals"
+            onCheckedChange={(v) => onChange({ allow: { ...allow, referrals: Boolean(v) } })}
+          />
+          <span>Referrals</span>
+        </label>
+      </div>
+      <div className="space-y-2">
+        <Label className="text-xs">Medication quick picks</Label>
+        {picks.map((qp, i) => (
+          <div key={qp.id} className="grid gap-2 sm:grid-cols-[1fr_1fr_8rem_8rem_auto]">
+            <Input
+              value={qp.drugName}
+              placeholder="Drug name"
+              aria-label={`Quick pick ${i + 1} drug`}
+              onChange={(e) =>
+                setPicks(picks.map((p, j) => (j === i ? { ...p, drugName: e.target.value } : p)))
+              }
+            />
+            <Input
+              value={qp.label ?? ""}
+              placeholder="Chip label (optional)"
+              onChange={(e) =>
+                setPicks(
+                  picks.map((p, j) => (j === i ? { ...p, label: e.target.value || undefined } : p)),
+                )
+              }
+            />
+            <Input
+              value={qp.dose ?? ""}
+              placeholder="Dose"
+              onChange={(e) =>
+                setPicks(
+                  picks.map((p, j) => (j === i ? { ...p, dose: e.target.value || undefined } : p)),
+                )
+              }
+            />
+            <Input
+              value={qp.frequencyCode ?? ""}
+              placeholder="Freq code"
+              onChange={(e) =>
+                setPicks(
+                  picks.map((p, j) =>
+                    j === i ? { ...p, frequencyCode: e.target.value || undefined } : p,
+                  ),
+                )
+              }
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label={`Remove quick pick ${i + 1}`}
+              onClick={() => setPicks(picks.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+        ))}
+        <Button
+          size="sm"
+          variant="outline"
+          onClick={() =>
+            setPicks([...picks, { id: `qp_${picks.length + 1}`, drugName: "", dose: "" }])
+          }
+        >
+          <Plus className="mr-1 h-3.5 w-3.5" /> Add quick pick
+        </Button>
+        <p className="text-[10px] text-muted-foreground">
+          A quick pick pre-fills a draft order. It still clears the full order validation gate
+          before it can be signed — it is a starting point, not a bypass.
+        </p>
+      </div>
+    </div>
+  );
+}
+
 function ScoringEditor({
   rules,
   onChange,
