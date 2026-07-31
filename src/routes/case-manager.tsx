@@ -1034,6 +1034,7 @@ function TaskQueueCard({
                       <Clock className="h-3 w-3" /> Due {t.dueDate.slice(0, 10)}
                     </span>
                   </div>
+                  <AutoCreatedFromNote task={t} />
                 </div>
                 {t.status === "open" && (
                   <div className="shrink-0 flex gap-2 w-full sm:w-auto">
