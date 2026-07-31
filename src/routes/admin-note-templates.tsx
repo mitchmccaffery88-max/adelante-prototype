@@ -260,6 +260,7 @@ function TemplateBuilderDialog({
   onClose: () => void;
 }) {
   const [title, setTitle] = useState(template?.title ?? "");
+  const [description, setDescription] = useState(template?.description ?? "");
   const [key, setKey] = useState(template?.key ?? "");
   const [encounterType, setEncounterType] = useState(template?.encounterType ?? "general");
   const [sections, setSections] = useState<TemplateSection[]>(
@@ -286,11 +287,15 @@ function TemplateBuilderDialog({
   const save = () => {
     try {
       if (template) {
-        AdelanteEHR.updateNoteTemplate(template.id, { title, encounterType, schema }, staffName);
+        AdelanteEHR.updateNoteTemplate(
+          template.id,
+          { title, description, encounterType, schema },
+          staffName,
+        );
         toast.success("Template updated");
       } else {
         AdelanteEHR.createNoteTemplate(
-          { key: key.trim() || slug(title), title, encounterType, schema },
+          { key: key.trim() || slug(title), title, description, encounterType, schema },
           staffName,
         );
         toast.success("Template created");
@@ -334,6 +339,15 @@ function TemplateBuilderDialog({
               placeholder="intake, follow_up, group…"
             />
           </div>
+        </div>
+
+        <div className="space-y-1.5">
+          <Label className="text-xs">Description</Label>
+          <Input
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="One line clinicians see when picking this template"
+          />
         </div>
 
         <div className="space-y-3">
