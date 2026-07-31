@@ -2144,6 +2144,10 @@ const caseTasks: CaseTask[] = [];
 // whether an automation may fire. Keyed by (noteId, automationId).
 const noteAutomationRuns: NoteAutomationRun[] = [];
 
+// §Notification feed — top-level, keyed to a staff identity (not a patient
+// record), because a notification belongs to a person's worklist.
+const notifications: AppNotification[] = [];
+
 // ---------------------------------------------------------------------------
 // §Risk-text translation governance.
 //
