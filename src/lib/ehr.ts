@@ -1888,6 +1888,12 @@ export interface AuditEvent {
 }
 const auditEvents: AuditEvent[] = [];
 
+/**
+ * §Shift count — locked controlled-substance reconciliations. Top-level store:
+ * a shift count spans every patient on the unit, so it has no owning Patient.
+ */
+const shiftCounts: ShiftCount[] = [];
+
 // How a catalog selection's strength was resolved, recorded at pick time.
 export type CatalogResolutionPath =
   | "rxnav"
