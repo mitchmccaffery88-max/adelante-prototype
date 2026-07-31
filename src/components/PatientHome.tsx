@@ -39,6 +39,8 @@ import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { CrisisNotice } from "@/components/CrisisNotice";
+import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { useEffect, useState } from "react";
@@ -353,6 +355,7 @@ export function PatientHome() {
       )}
 
       <TasksCard patientId={patient.id} />
+      <MessagesCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
       <SupportPlanCard patientId={patient.id} />
       <ReferralsForYouCard patientId={patient.id} />
@@ -602,6 +605,73 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
         </div>
       )}
     </li>
+  );
+}
+
+// §Messaging Phase 2 — "message your care team". One ongoing thread.
+function MessagesCard({ patientId }: { patientId: string }) {
+  const { t } = useI18n();
+  const messages = useEhr(() => AdelanteEHR.listCareMessages(patientId));
+  const unread = useEhr(() => AdelanteEHR.unreadCountForPatient(patientId));
+  const [draft, setDraft] = useState("");
+
+  // Opening the card is the patient's "view" — clears their side only.
+  useEffect(() => {
+    if (unread > 0) AdelanteEHR.markMessagesReadByPatient(patientId);
+  }, [patientId, unread]);
+
+  const send = () => {
+    // Sent verbatim: no trimming of content, no translation, no rewriting.
+    const sent = AdelanteEHR.sendPatientMessage(patientId, draft);
+    if (sent) {
+      setDraft("");
+      toast.success(t("msgSent"));
+    }
+  };
+
+  return (
+    <Card className="p-5">
+      <div className="flex items-center justify-between gap-3">
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+          <MessageSquare className="h-4 w-4" /> {t("msgTitle")}
+        </div>
+        {unread > 0 && (
+          <Badge className="border-0 bg-teal/20 text-teal text-[10px]">
+            {unread} {t("msgNewReplies")}
+          </Badge>
+        )}
+      </div>
+      <p className="mt-1 text-xs text-muted-foreground">{t("msgSubtitle")}</p>
+      <div className="mt-3">
+        <CareMessageThread
+          messages={messages.slice(-8)}
+          side="patient"
+          emptyLabel={t("msgNoneYet")}
+          youLabel={t("msgYou")}
+          themLabel={t("msgCareTeam")}
+        />
+      </div>
+      <div className="mt-3 space-y-2">
+        <Textarea
+          value={draft}
+          onChange={(e) => setDraft(e.target.value)}
+          placeholder={t("msgPlaceholder")}
+          className="min-h-[70px] text-sm"
+        />
+        {/* Persistent 988 notice directly above Send — safety boundary. */}
+        <CrisisNotice />
+        <div className="flex justify-end">
+          <Button
+            size="sm"
+            className="min-h-11 bg-teal text-teal-foreground hover:bg-teal/90"
+            disabled={!draft.trim()}
+            onClick={send}
+          >
+            {t("msgSend")}
+          </Button>
+        </div>
+      </div>
+    </Card>
   );
 }
 

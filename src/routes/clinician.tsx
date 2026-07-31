@@ -223,6 +223,13 @@ function ClinicianPage() {
         >
           Crisis queue
         </Link>
+        {/* §Messaging Phase 2 — cross-patient queue of unanswered patient messages. */}
+        <Link
+          to="/message-queue"
+          className="text-xs text-teal underline-offset-2 hover:underline self-center"
+        >
+          Message queue
+        </Link>
       </header>
 
       {clinician?.licenseExpiresOn &&

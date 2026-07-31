@@ -25,7 +25,9 @@ export type NotificationCategory =
   | "cosign_request"
   | "crisis_flagged"
   | "mar_witness_needed"
-  | "task_assigned";
+  | "task_assigned"
+  // §Notification feed Phase 2 — patient<->clinician messaging.
+  | "patient_message";
 
 export interface AppNotification {
   id: string;
@@ -42,6 +44,30 @@ export interface AppNotification {
   patientId?: string;
   createdAt: string;
   readAt?: string;
+}
+
+// §Messaging Phase 2 — patient<->clinician care-team thread.
+// One ongoing thread per patient ("message your care team" is the UI's own
+// framing), so the thread key IS the patient id. In-app only: there is no
+// email/SMS/push transport anywhere in this build.
+//
+// KNOWN GAP: message bodies are free text and are NOT screened, classified,
+// or masked for 42 CFR Part 2 / SUD content. Reliable automatic PHI-content
+// classification does not exist here and faking it would be unsafe, so a
+// patient can disclose Part 2 content in a message and it will be shown to
+// anyone with messaging access. Same standing-gap treatment as vitals/labs.
+export interface CareMessage {
+  id: string;
+  /** The thread. One thread per patient. */
+  threadPatientId: string;
+  authorType: "patient" | "staff";
+  /** Patient's own name, or the staff display name. Never altered. */
+  authorName: string;
+  /** Verbatim as authored. Patient messages are NEVER translated or edited. */
+  body: string;
+  createdAt: string;
+  readByPatientAt?: string;
+  readByStaffAt?: string;
 }
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
@@ -825,6 +851,8 @@ export interface Patient {
   referralId?: string;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
+  // §Messaging Phase 2 — one ongoing care-team thread per patient.
+  careMessages?: CareMessage[];
   // ----- MVP EMR extension (all optional, backward compatible) -----
   /** Linked treatment episodes (not collapsed). §3a */
   episodes?: Episode[];
@@ -4487,6 +4515,149 @@ export const AdelanteEHR = {
       detail: { count: rows.length },
     });
     emit();
+  },
+
+  // ----- §Care messaging (Phase 2): one thread per patient -----
+  /** Thread contents, oldest first. Bodies are returned verbatim. */
+  listCareMessages(patientId: string): CareMessage[] {
+    const p = patients.find((x) => x.id === patientId);
+    return [...(p?.careMessages ?? [])].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  },
+  /**
+   * Patient-authored message. The body is stored exactly as typed — never
+   * translated, trimmed of meaning, or rewritten (same rule as every other
+   * patient-authored surface in this build).
+   */
+  sendPatientMessage(patientId: string, body: string): CareMessage | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !body.trim()) return undefined;
+    const msg: CareMessage = {
+      id: uid(),
+      threadPatientId: patientId,
+      authorType: "patient",
+      authorName: `${p.firstName} ${p.lastName}`,
+      body,
+      createdAt: new Date().toISOString(),
+      // Authoring is reading, for the author's own side only.
+      readByPatientAt: new Date().toISOString(),
+    };
+    p.careMessages = [...(p.careMessages ?? []), msg];
+    appendAudit({
+      category: "access",
+      action: "care_message_sent",
+      patientId,
+      actorId: msg.authorName,
+      detail: { authorType: "patient", messageId: msg.id },
+    });
+    // §Notification feed — direct-address the assigned case manager when the
+    // id resolves to a roster identity; otherwise broadcast to the role.
+    const cmName = caseManagers.find((c) => c.id === p.caseManagerId)?.name;
+    AdelanteEHR.notify({
+      recipientStaffId: cmName || undefined,
+      recipientRole: cmName ? undefined : "case_manager",
+      category: "patient_message",
+      subject: `New message — ${patientLabel(patientId)}`,
+      body: "A patient sent a message to their care team.",
+      linkRoute: "/record/$patientId",
+      linkParams: { patientId, section: "messages" },
+      patientId,
+    });
+    emit();
+    return msg;
+  },
+  sendStaffMessage(patientId: string, staffName: string, body: string): CareMessage | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !body.trim()) return undefined;
+    const msg: CareMessage = {
+      id: uid(),
+      threadPatientId: patientId,
+      authorType: "staff",
+      authorName: staffName,
+      body,
+      createdAt: new Date().toISOString(),
+      readByStaffAt: new Date().toISOString(),
+    };
+    p.careMessages = [...(p.careMessages ?? []), msg];
+    appendAudit({
+      category: "access",
+      action: "care_message_sent",
+      patientId,
+      actorId: staffName,
+      detail: { authorType: "staff", messageId: msg.id },
+    });
+    emit();
+    return msg;
+  },
+  /** Clears the PATIENT's unread side only. Staff unread is untouched. */
+  markMessagesReadByPatient(patientId: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.careMessages?.length) return;
+    const now = new Date().toISOString();
+    let touched = 0;
+    for (const m of p.careMessages) {
+      if (m.authorType === "staff" && !m.readByPatientAt) {
+        m.readByPatientAt = now;
+        touched++;
+      }
+    }
+    if (!touched) return;
+    emit();
+  },
+  /** Clears the STAFF unread side only. Patient unread is untouched. */
+  markMessagesReadByStaff(patientId: string, staffName: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p?.careMessages?.length) return;
+    const now = new Date().toISOString();
+    let touched = 0;
+    for (const m of p.careMessages) {
+      if (m.authorType === "patient" && !m.readByStaffAt) {
+        m.readByStaffAt = now;
+        touched++;
+      }
+    }
+    if (!touched) return;
+    appendAudit({
+      category: "access",
+      action: "care_messages_read",
+      patientId,
+      actorId: staffName,
+      detail: { count: touched },
+    });
+    emit();
+  },
+  /** Staff replies the patient hasn't seen yet. */
+  unreadCountForPatient(patientId: string): number {
+    const p = patients.find((x) => x.id === patientId);
+    return (p?.careMessages ?? []).filter((m) => m.authorType === "staff" && !m.readByPatientAt)
+      .length;
+  },
+  /** Patient messages no staff member has opened yet. */
+  unreadCountForStaff(patientId: string): number {
+    const p = patients.find((x) => x.id === patientId);
+    return (p?.careMessages ?? []).filter((m) => m.authorType === "patient" && !m.readByStaffAt)
+      .length;
+  },
+  /**
+   * Cross-patient message queue. Threads with staff-unread messages, oldest
+   * unread first — the longest-waiting patient is the top of the list.
+   */
+  listUnreadMessageThreads(): {
+    patient: Patient;
+    unread: number;
+    oldestUnreadAt: string;
+    latest: CareMessage;
+  }[] {
+    const rows: { patient: Patient; unread: number; oldestUnreadAt: string; latest: CareMessage }[] =
+      [];
+    for (const p of patients) {
+      const msgs = p.careMessages ?? [];
+      const unread = msgs.filter((m) => m.authorType === "patient" && !m.readByStaffAt);
+      if (!unread.length) continue;
+      const oldest = unread.reduce((a, b) => (a.createdAt <= b.createdAt ? a : b));
+      const latest = msgs.reduce((a, b) => (a.createdAt >= b.createdAt ? a : b));
+      rows.push({ patient: p, unread: unread.length, oldestUnreadAt: oldest.createdAt, latest });
+    }
+    return rows.sort((a, b) => a.oldestUnreadAt.localeCompare(b.oldestUnreadAt));
   },
 
   createCaseTask(input: {

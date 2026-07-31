@@ -32,6 +32,7 @@ import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntakeRouteImport } from './routes/intake'
+import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as ReferralRouteImport } from './routes/referral'
@@ -155,6 +156,11 @@ const IntakeRoute = IntakeRouteImport.update({
   path: '/intake',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MessageQueueRoute = MessageQueueRouteImport.update({
+  id: '/message-queue',
+  path: '/message-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const NotesQueueRoute = NotesQueueRouteImport.update({
   id: '/notes-queue',
   path: '/notes-queue',
@@ -215,6 +221,7 @@ export interface FileRoutesByFullPath {
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
@@ -247,6 +254,7 @@ export interface FileRoutesByTo {
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
@@ -280,6 +288,7 @@ export interface FileRoutesById {
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
+  '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/referral': typeof ReferralRoute
@@ -314,6 +323,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/home'
     | '/intake'
+    | '/message-queue'
     | '/notes-queue'
     | '/patient'
     | '/referral'
@@ -346,6 +356,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/home'
     | '/intake'
+    | '/message-queue'
     | '/notes-queue'
     | '/patient'
     | '/referral'
@@ -378,6 +389,7 @@ export interface FileRouteTypes {
     | '/dashboards'
     | '/home'
     | '/intake'
+    | '/message-queue'
     | '/notes-queue'
     | '/patient'
     | '/referral'
@@ -411,6 +423,7 @@ export interface RootRouteChildren {
   DashboardsRoute: typeof DashboardsRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
+  MessageQueueRoute: typeof MessageQueueRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   ReferralRoute: typeof ReferralRoute
@@ -583,6 +596,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/message-queue': {
+      id: '/message-queue'
+      path: '/message-queue'
+      fullPath: '/message-queue'
+      preLoaderRoute: typeof MessageQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/notes-queue': {
       id: '/notes-queue'
       path: '/notes-queue'
@@ -659,6 +679,7 @@ const rootRouteChildren: RootRouteChildren = {
   DashboardsRoute: DashboardsRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,
+  MessageQueueRoute: MessageQueueRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   ReferralRoute: ReferralRoute,

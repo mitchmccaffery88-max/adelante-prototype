@@ -286,6 +286,17 @@ const dict = {
     // Jargon simplifications (patient surfaces)
     plainCarePeriod: "care period",
     plainHowYouMeet: "how you meet",
+    // Messages (patient <-> care team)
+    msgTitle: "Messages",
+    msgSubtitle: "Message your care team. Replies usually take 1–2 business days.",
+    msgNoneYet: "No messages yet. Send the first one below.",
+    msgYou: "You",
+    msgCareTeam: "Care team",
+    msgPlaceholder: "Write your message…",
+    msgSend: "Send message",
+    msgSent: "Message sent to your care team",
+    msgNewReplies: "new",
+    msgAsyncNotice: "This is not for emergencies. We don't reply right away.",
   },
   es: {
     appName: "Adelante",
@@ -574,6 +585,18 @@ const dict = {
     helpAriaLabel: "¿Necesitas ayuda? Llama a nuestra línea de apoyo",
     plainCarePeriod: "periodo de cuidado",
     plainHowYouMeet: "cómo prefieres reunirte",
+    // Mensajes (paciente <-> equipo de cuidado)
+    msgTitle: "Mensajes",
+    msgSubtitle:
+      "Envía un mensaje a tu equipo de cuidado. Las respuestas suelen tardar 1–2 días hábiles.",
+    msgNoneYet: "Aún no hay mensajes. Envía el primero abajo.",
+    msgYou: "Tú",
+    msgCareTeam: "Equipo de cuidado",
+    msgPlaceholder: "Escribe tu mensaje…",
+    msgSend: "Enviar mensaje",
+    msgSent: "Mensaje enviado a tu equipo de cuidado",
+    msgNewReplies: "nuevos",
+    msgAsyncNotice: "Esto no es para emergencias. No respondemos de inmediato.",
   },
 } as const;
 
