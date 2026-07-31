@@ -2471,7 +2471,7 @@ export type { CatalogSuppression } from "./catalogSuppressions";
 
 /** §Admin governance — local RxNav suppression rules (seeded empty). */
 const catalogSuppressions: CatalogSuppression[] = [];
-import { facilityDateKey, fromFacilityWallClock } from "./facilityTime";
+import { facilityDateKey, fromFacilityWallClock, waitLabel } from "./facilityTime";
 import {
   RISK_TEXT_CATALOG,
   capacityFlagsFrom,
