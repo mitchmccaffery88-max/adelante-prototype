@@ -16,13 +16,15 @@ import { getDailyMedStrength } from "@/lib/dailymed.functions";
 import { needsDailyMedFallback } from "@/lib/orders";
 import { isTopicalForm, parseUnitsStrength } from "@/lib/doseReconcile";
 import { AdelanteEHR, type CatalogResolutionPath } from "@/lib/ehr";
+import { useEhr } from "@/lib/ehr";
+import { applySuppressions } from "@/lib/catalogSuppressions";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
-import { Loader2, Search, TriangleAlert } from "lucide-react";
+import { Loader2, Search, TriangleAlert, Ban, History } from "lucide-react";
 
 export interface CatalogSelection {
   rxcui?: string;
@@ -50,6 +52,13 @@ export function CatalogPicker({
   const [offJustification, setOffJustification] = useState("");
   const [resolving, setResolving] = useState<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  // §Admin governance: local exclusions applied to RxNav RESULTS (there is no
+  // local catalog to filter). The off-catalog path below stays available.
+  const suppressions = useEhr(() => AdelanteEHR.listCatalogSuppressions());
+  // §Local additions (minimal fix): reuse of house-brand names already
+  // ordered off-catalog, so the next clinician doesn't re-type them.
+  const priorOffCatalog = useEhr(() => AdelanteEHR.listOffCatalogProducts()).slice(0, 6);
+  const { visible: shownResults, suppressed } = applySuppressions(results, suppressions);
 
   // Debounced live search — RxNav is public and rate-friendly, but we still
   // avoid a request per keystroke.
@@ -154,9 +163,9 @@ export function CatalogPicker({
         </div>
       </div>
 
-      {results.length > 0 && (
+      {shownResults.length > 0 && (
         <div className="max-h-64 space-y-1.5 overflow-y-auto rounded-lg border border-border p-1.5">
-          {results.map((p) => (
+          {shownResults.map((p) => (
             <button
               key={p.rxcui}
               type="button"
@@ -181,7 +190,22 @@ export function CatalogPicker({
         </div>
       )}
 
-      {searched && !loading && results.length === 0 && (
+      {suppressed.length > 0 && (
+        <div className="space-y-1 rounded-lg border border-dashed border-border p-2 text-xs text-muted-foreground">
+          <div className="flex items-center gap-1.5 font-medium text-foreground">
+            <Ban className="h-3.5 w-3.5" />
+            {suppressed.length} result{suppressed.length === 1 ? "" : "s"} hidden by local
+            suppression
+          </div>
+          {suppressed.map(({ product, rule }) => (
+            <div key={product.rxcui}>
+              {product.name} — {rule.reason}
+            </div>
+          ))}
+        </div>
+      )}
+
+      {searched && !loading && shownResults.length === 0 && (
         <p className="text-xs text-muted-foreground">
           No catalog match. Use the off-catalog path below if this product is genuinely needed.
         </p>
@@ -203,6 +227,24 @@ export function CatalogPicker({
           placeholder="Product name as it should appear on the order"
           aria-label="Off-catalog medication name"
         />
+        {priorOffCatalog.length > 0 && (
+          <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground [.chart-pane_&]:col-span-2">
+            <span className="flex items-center gap-1">
+              <History className="h-3 w-3" /> Used before:
+            </span>
+            {priorOffCatalog.map((p) => (
+              <button
+                key={p.name}
+                type="button"
+                className="rounded-full border border-border px-2 py-0.5 hover:bg-muted"
+                onClick={() => setOffName(p.name)}
+                title={`${p.uses} prior order${p.uses === 1 ? "" : "s"}`}
+              >
+                {p.name}
+              </button>
+            ))}
+          </div>
+        )}
         <Textarea
           value={offJustification}
           onChange={(e) => setOffJustification(e.target.value)}
