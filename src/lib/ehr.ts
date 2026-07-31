@@ -2471,7 +2471,7 @@ export type { CatalogSuppression } from "./catalogSuppressions";
 
 /** §Admin governance — local RxNav suppression rules (seeded empty). */
 const catalogSuppressions: CatalogSuppression[] = [];
-import { facilityDateKey, fromFacilityWallClock } from "./facilityTime";
+import { facilityDateKey, fromFacilityWallClock, waitLabel } from "./facilityTime";
 import {
   RISK_TEXT_CATALOG,
   capacityFlagsFrom,
@@ -6571,30 +6571,70 @@ export const AdelanteEHR = {
    * §MAR Phase 2 — PRN eligibility. Counts live (non-voided) GIVEN
    * administrations for this order in the trailing 24h against the frequency
    * catalog's `maxPerDay` ceiling.
+   *
+   * §Admin governance — also enforces the catalog's `minGapMinutes` spacing
+   * rule against the most recent live GIVEN dose. The two rules share one
+   * `blocked` flag on purpose: charting sees a single ineligible state, and
+   * `blockedBy` only says which rule produced it (for the message). A
+   * frequency with no `minGapMinutes` is unaffected — `eligibleAt` stays
+   * undefined and the gap branch never runs.
+   *
+   * The gap looks at the last live GIVEN dose regardless of the 24h window,
+   * so a gap longer than a day still measures from the real dose rather than
+   * silently unblocking when the dose ages out of the count window.
    */
   prnEligibility(
     patientId: string,
     orderId: string,
     now: Date = new Date(),
-  ): { given: number; max?: number; lastGivenAt?: string; blocked: boolean } {
+  ): {
+    given: number;
+    max?: number;
+    lastGivenAt?: string;
+    blocked: boolean;
+    /** Which rule blocked, when one did. */
+    blockedBy?: "max" | "gap";
+    minGapMinutes?: number;
+    /** Instant the gap rule clears. Absent when no gap rule applies. */
+    eligibleAt?: string;
+    /** Milliseconds still to wait under the gap rule; 0 once elapsed. */
+    waitMs: number;
+  } {
     const p = patients.find((x) => x.id === patientId);
     const order = p?.orders?.find((o) => o.id === orderId);
-    const max = frequencyByCode(order?.frequencyCode)?.maxPerDay;
+    const freq = frequencyByCode(order?.frequencyCode);
+    const max = freq?.maxPerDay;
+    const minGapMinutes = freq?.minGapMinutes;
     const since = now.getTime() - 24 * 3600_000;
-    const rows = (p?.administrations ?? [])
+    const live = (p?.administrations ?? [])
       .filter(
         (a) =>
           a.orderId === orderId &&
           !a.voided &&
-          a.action === "given" &&
-          new Date(a.chartedAt).getTime() >= since,
+          a.action === "given",
       )
       .sort((a, b) => b.chartedAt.localeCompare(a.chartedAt));
+    const rows = live.filter((a) => new Date(a.chartedAt).getTime() >= since);
+    const lastGivenAt = live[0]?.chartedAt;
+
+    const maxBlocked = max !== undefined && rows.length >= max;
+    let eligibleAt: string | undefined;
+    let waitMs = 0;
+    if (minGapMinutes !== undefined && minGapMinutes > 0 && lastGivenAt) {
+      const clearsAt = new Date(lastGivenAt).getTime() + minGapMinutes * 60_000;
+      eligibleAt = new Date(clearsAt).toISOString();
+      waitMs = Math.max(0, clearsAt - now.getTime());
+    }
+    const gapBlocked = waitMs > 0;
     return {
       given: rows.length,
       max,
-      lastGivenAt: rows[0]?.chartedAt,
-      blocked: max !== undefined && rows.length >= max,
+      lastGivenAt,
+      blocked: maxBlocked || gapBlocked,
+      blockedBy: maxBlocked ? "max" : gapBlocked ? "gap" : undefined,
+      minGapMinutes,
+      eligibleAt,
+      waitMs,
     };
   },
   /**
@@ -6632,8 +6672,12 @@ export const AdelanteEHR = {
     if (action === "given") {
       if (prn) {
         const elig = AdelanteEHR.prnEligibility(patientId, orderId);
-        if (elig.blocked)
+        if (elig.blockedBy === "max")
           throw new Error(`PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`);
+        if (elig.blockedBy === "gap")
+          throw new Error(
+            `Minimum interval not met — this order requires ${elig.minGapMinutes} minutes between doses. Eligible in ${waitLabel(elig.waitMs)}.`,
+          );
       }
       if (requiresDoseWitness(order) && !witness)
         throw new Error(
@@ -8032,6 +8076,8 @@ export const AdelanteEHR = {
       throw new Error("A PRN frequency has no fixed administration times.");
     if (input.isPrn && input.maxPerDay !== undefined && input.maxPerDay < 1)
       throw new Error("Max per day must be at least 1.");
+    if (input.isPrn && input.minGapMinutes !== undefined && input.minGapMinutes < 1)
+      throw new Error("Minimum interval must be at least 1 minute.");
 
     const existing = frequencyByCode(code);
     const row = putFrequency({

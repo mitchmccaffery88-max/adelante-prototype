@@ -31,7 +31,7 @@ import {
   type MarSlot,
 } from "@/lib/mar";
 import { ORDER_STATUS_LABEL } from "@/lib/orders";
-import { facilityDateKey } from "@/lib/facilityTime";
+import { facilityDateKey, waitLabel } from "@/lib/facilityTime";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -383,6 +383,14 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const [openFormId, setOpenFormId] = useState<string | null>(null);
   const [escalation, setEscalation] = useState<EscalationTarget | null>(null);
 
+  /**
+   * Ticks while PRN rows are on screen so the "eligible in Nm" countdown and
+   * the Given button unblock on their own when a minimum-interval gap
+   * elapses. Everything reads this same instant, so the label the nurse sees
+   * and the state the button is in can never disagree.
+   */
+  const [now, setNow] = useState(() => Date.now());
+
   const day = useMemo(
     () =>
       patient
@@ -390,6 +398,13 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         : { dateKey, slots: [], prn: [], kop: [], deferred: [] },
     [patient, dateKey],
   );
+
+  const hasPrn = day.prn.length > 0;
+  useEffect(() => {
+    if (!hasPrn) return;
+    const id = setInterval(() => setNow(Date.now()), 15_000);
+    return () => clearInterval(id);
+  }, [hasPrn]);
 
   const witnesses = useMemo(() => witnessCandidates(staffName), [staffName]);
 
@@ -496,7 +511,9 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
     const isPrn = slot.kind === "prn";
     const late = !isPrn && isLateEntry(slot.scheduledAt);
     const needsWitness = requiresDoseWitness(slot.order);
-    const elig = isPrn ? AdelanteEHR.prnEligibility(patientId, slot.order.id) : undefined;
+    const elig = isPrn
+      ? AdelanteEHR.prnEligibility(patientId, slot.order.id, new Date(now))
+      : undefined;
     const givenBlocked = !!elig?.blocked;
 
     const pick = (a: Action, reason?: string) => {
@@ -518,7 +535,12 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
                 <ClientDate value={elig.lastGivenAt} />
               </>
             )}
-            {givenBlocked && (
+            {elig.blockedBy === "gap" && (
+              <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">
+                {elig.minGapMinutes}m minimum interval — eligible in {waitLabel(elig.waitMs)}.
+              </span>
+            )}
+            {elig.blockedBy === "max" && (
               <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">
                 PRN limit reached — cannot chart as given.
               </span>
