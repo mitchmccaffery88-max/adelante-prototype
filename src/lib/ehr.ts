@@ -1338,6 +1338,8 @@ export interface NoteTemplate {
   id: string;
   key: string;
   title: string;
+  /** Short author-facing summary shown in the note-start picker. */
+  description?: string;
   /**
    * Free text. Adelante has no encounter-type enum today (appointments carry a
    * free-form `serviceType`), so this matches that concept rather than
