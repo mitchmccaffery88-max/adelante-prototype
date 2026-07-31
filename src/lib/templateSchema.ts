@@ -187,6 +187,11 @@ export interface TemplateSchema {
   sections: TemplateSection[];
   scoring?: ScoringRule[];
   /**
+   * §Clinical documentation Phase 3c — post-sign automations. Absent on every
+   * 3a/3b template. See the Automation block below for the scope boundary.
+   */
+  automations?: Automation[];
+  /**
    * Spanish translations in this schema have passed clinical review.
    * Undefined / false = draft. This mirrors the Refusal form's risk-text
    * treatment: it is a VISIBILITY flag, not a hard gate — clinicians may still
@@ -194,6 +199,145 @@ export interface TemplateSchema {
    * clinical language.
    */
   esReviewed?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// §Clinical documentation Phase 3c — post-sign automations
+//
+// SCOPE BOUNDARY, deliberate: the reference EMR also supports "orders" and
+// "order_set" automation actions. Those are NOT ported. Auto-placing a
+// medication order with no human confirming that specific order at that
+// specific moment is a higher bar than this pass crosses: an automation would
+// either have to bypass the dose/justification/off-catalog gate that every
+// quick pick still goes through (unsafe), or satisfy it programmatically
+// (worse — a machine-authored clinical justification).
+//
+// Both supported actions create WORK FOR A HUMAN TO REVIEW. Neither one
+// modifies the medical record on its own: `schedule_task` puts a task on a
+// queue, `start_template` creates an unsigned DRAFT note that a human must
+// still author and sign.
+// ---------------------------------------------------------------------------
+
+/** Gate on the patient's ACTIVE problem list. Resolved problems never match. */
+export interface AutomationProblemGate {
+  /** Matches `Problem.category` exactly, e.g. "sud". */
+  category?: string;
+  /** Any ICD-10 code on an active problem starting with one of these. */
+  icd10Prefixes?: string[];
+}
+
+export interface AutomationWhen {
+  /** `show_if`-style expression over the note's OWN answers. */
+  condition?: string;
+  requiresActiveProblem?: AutomationProblemGate;
+}
+
+export type AutomationPriority = "routine" | "urgent" | "stat";
+
+export type AutomationAction =
+  | {
+      kind: "schedule_task";
+      taskType: string;
+      dueInDays: number;
+      priority?: AutomationPriority;
+    }
+  | { kind: "start_template"; templateKey: string; dueInDays?: number };
+
+export interface Automation {
+  id: string;
+  label: string;
+  enabled: boolean;
+  when?: AutomationWhen;
+  action: AutomationAction;
+}
+
+/**
+ * The subset of a `Problem` an automation gate reads. Declared structurally so
+ * this module stays free of any EHR import — the same reason the expression
+ * evaluator takes plain answers rather than a note.
+ */
+export interface AutomationProblemRef {
+  category?: string;
+  icd10Code?: string;
+}
+
+/** True when at least one ACTIVE problem satisfies the gate. */
+export function problemGateMet(
+  gate: AutomationProblemGate | undefined,
+  activeProblems: AutomationProblemRef[],
+): boolean {
+  if (!gate) return true;
+  const prefixes = (gate.icd10Prefixes ?? []).map((p) => p.trim().toUpperCase()).filter(Boolean);
+  const category = gate.category?.trim();
+  // An empty gate object constrains nothing.
+  if (!category && prefixes.length === 0) return true;
+  return activeProblems.some((p) => {
+    if (category && p.category !== category) return false;
+    if (prefixes.length === 0) return true;
+    const code = (p.icd10Code ?? "").trim().toUpperCase();
+    if (!code) return false;
+    return prefixes.some((prefix) => code.startsWith(prefix));
+  });
+}
+
+/** Every gate on an automation, evaluated together. */
+export function automationApplies(
+  automation: Automation,
+  answers: TemplateAnswers,
+  activeProblems: AutomationProblemRef[],
+): boolean {
+  if (!automation.enabled) return false;
+  if (!evalExpr(automation.when?.condition, answers)) return false;
+  return problemGateMet(automation.when?.requiresActiveProblem, activeProblems);
+}
+
+/**
+ * Enabled automations whose gates are met, in author order. This is the single
+ * source of truth behind BOTH the pre-sign "this will also…" summary and the
+ * post-sign execution, so the clinician can never be shown one thing and have
+ * another happen.
+ */
+export function plannedAutomations(
+  schema: TemplateSchema | undefined,
+  answers: TemplateAnswers,
+  activeProblems: AutomationProblemRef[] = [],
+): Automation[] {
+  return (schema?.automations ?? []).filter((a) => automationApplies(a, answers, activeProblems));
+}
+
+function dayPhrase(days: number): string {
+  if (days === 0) return "due today";
+  if (days === 1) return "due in 1 day";
+  return `due in ${days} days`;
+}
+
+/**
+ * Plain-English description of what an automation does, so a template author
+ * can sanity-check the configuration without reading the raw expression, and
+ * so the clinician's pre-sign summary reads as a sentence.
+ */
+export function summarizeAutomation(automation: Automation): string {
+  const a = automation.action;
+  let what: string;
+  if (a.kind === "schedule_task") {
+    const priority = a.priority && a.priority !== "routine" ? ` (${a.priority})` : "";
+    what = `Schedule a "${a.taskType}" task${priority}, ${dayPhrase(a.dueInDays)}`;
+  } else {
+    const due = a.dueInDays === undefined ? "" : `, ${dayPhrase(a.dueInDays)}`;
+    what = `Start a draft "${a.templateKey || "same template"}" note for a clinician to complete${due}`;
+  }
+  const conditions: string[] = [];
+  const cond = automation.when?.condition?.trim();
+  if (cond) conditions.push(`when ${cond}`);
+  const gate = automation.when?.requiresActiveProblem;
+  const prefixes = (gate?.icd10Prefixes ?? []).filter((p) => p.trim());
+  if (gate?.category?.trim() || prefixes.length) {
+    const parts: string[] = [];
+    if (gate?.category?.trim()) parts.push(`category "${gate.category.trim()}"`);
+    if (prefixes.length) parts.push(`ICD-10 starting ${prefixes.join(" / ")}`);
+    conditions.push(`only if an active problem matches ${parts.join(" and ")}`);
+  }
+  return conditions.length ? `${what} — ${conditions.join(", ")}.` : `${what}.`;
 }
 
 // ---------------------------------------------------------------------------
