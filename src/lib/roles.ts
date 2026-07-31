@@ -231,6 +231,24 @@ export function canAccess(
   return { level, locked: level === "none" };
 }
 
+/**
+ * §Crisis escalation — flagging is deliberately broader than the crisis QUEUE.
+ * Anyone clinical-facing can observe a crisis and raise the flag; cross-patient
+ * visibility and disposition remain gated by the `crisis_queue` record class.
+ */
+export const CRISIS_FLAG_ROLES: StaffRole[] = [
+  "pmhnp",
+  "therapist",
+  "case_manager",
+  "peer_specialist",
+  "clinical_coordinator",
+  "sys_admin",
+];
+
+export function canFlagCrisis(role: StaffRole): boolean {
+  return CRISIS_FLAG_ROLES.includes(role);
+}
+
 // ----- Acting-role store (localStorage-backed, subscribable) -----
 const KEY = "adelante.actingRole";
 const STAFF_KEY = "adelante.actingStaffId";
