@@ -153,3 +153,17 @@ export function adminHourLabel(hour: number): string {
   const display = h % 12 === 0 ? 12 : h % 12;
   return `${display}:00 ${suffix}`;
 }
+
+/**
+ * Compact remaining-wait label, e.g. "47m", "2h 05m", "<1m". Rounds UP so the
+ * label never reads "0m" while the underlying gate is still closed — the
+ * display and the eligibility check always agree.
+ */
+export function waitLabel(ms: number): string {
+  if (ms <= 0) return "0m";
+  const totalMinutes = Math.ceil(ms / 60_000);
+  if (totalMinutes < 1) return "<1m";
+  const h = Math.floor(totalMinutes / 60);
+  const m = totalMinutes % 60;
+  return h > 0 ? `${h}h ${String(m).padStart(2, "0")}m` : `${m}m`;
+}
