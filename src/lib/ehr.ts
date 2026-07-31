@@ -1347,6 +1347,19 @@ export interface ProgressNote {
    * answers. Never recomputed on read.
    */
   autofillSnapshots?: AutofillSnapshot[];
+  /**
+   * §Phase 3c — set when a `start_template` automation created this draft.
+   * Automation output is never auto-signed: this note is a draft like any
+   * other and a human must author and sign it.
+   */
+  automationOrigin?: {
+    sourceNoteId: string;
+    automationId: string;
+    /** The automation's author-facing label. */
+    label: string;
+    /** Template title of the note that triggered it. */
+    sourceTemplateTitle?: string;
+  };
 }
 
 /**
