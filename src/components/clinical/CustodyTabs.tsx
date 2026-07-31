@@ -30,6 +30,7 @@ import {
 } from "@/components/ui/table";
 import { ClientDate } from "@/components/ClientDate";
 import { FacilityCombobox } from "@/components/clinical/FacilityCombobox";
+import { FacilityContactCell } from "@/components/clinical/FacilityContactCell";
 
 const DAY_MS = 86400_000;
 
@@ -160,7 +161,9 @@ export function BookingsTab({ patientId, readOnly }: { patientId: string; readOn
             {bookings.map((b) => (
               <TableRow key={b.id}>
                 <TableCell className="font-medium">{b.bookingNumber}</TableCell>
-                <TableCell>{b.facilityName}</TableCell>
+                <TableCell>
+                  <FacilityContactCell facilityId={b.facilityId} facilityName={b.facilityName} />
+                </TableCell>
                 <TableCell>
                   <ClientDate value={b.bookedAt} options={dateOnly} />
                 </TableCell>
@@ -326,7 +329,9 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
                 <TableCell className="font-medium">
                   {byBooking.get(m.bookingId)?.bookingNumber ?? "—"}
                 </TableCell>
-                <TableCell>{m.facilityName}</TableCell>
+                <TableCell>
+                  <FacilityContactCell facilityId={m.facilityId} facilityName={m.facilityName} />
+                </TableCell>
                 <TableCell>{m.housingUnit}</TableCell>
                 <TableCell>{m.reason ?? "—"}</TableCell>
               </TableRow>
