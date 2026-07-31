@@ -1701,14 +1701,6 @@ function NoteExportButton({
   );
 }
 
-const NOTE_STATUS_LABEL_UNUSED: Record<NoteStatus, string> = {
-  draft: "Draft",
-  signed: "Signed",
-  cosign_pending: "Awaiting cosign",
-  cosigned: "Cosigned",
-  declined: "Declined",
-};
-
 export function NoteStatusBadge({ note }: { note: ProgressNote }) {
   const s = noteStatus(note);
   const tone =
