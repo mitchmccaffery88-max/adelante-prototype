@@ -81,7 +81,9 @@ describe("expression evaluator", () => {
   });
 
   it("is not eval() — arbitrary JS is inert, not executed", () => {
-    expect(() => evalExpr('globalThis.__pwned = 1; a == "yes"', { a: "yes" })).toThrow();
+    // The parser never executes JS: an injected statement is treated as an
+    // unparseable expression, not code.
+    expect(evalExpr('globalThis.__pwned = 1; a == "yes"', { a: "yes" })).toBe(false);
     expect((globalThis as Record<string, unknown>)["__pwned"]).toBeUndefined();
   });
 });
