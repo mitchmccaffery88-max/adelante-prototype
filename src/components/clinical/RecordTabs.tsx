@@ -1752,6 +1752,12 @@ function ProgressNoteCard({
         <>
           {note.templateSchema && (
             <div className="mt-2 rounded-md border border-border p-2">
+              {note.templateTitle && (
+                <p className="text-muted-foreground mb-1.5 text-[10px]">
+                  Answered against {note.templateTitle}
+                  {note.templateVersion ? ` v${note.templateVersion}` : ""}
+                </p>
+              )}
               <TemplateForm
                 schema={note.templateSchema}
                 answers={note.templateAnswers ?? {}}
