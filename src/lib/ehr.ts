@@ -5192,6 +5192,87 @@ export type { Medication } from "./vendors";
   AdelanteEHR.createRefusalFormShell(PATIENT_ID, refused.id, NURSE);
 }
 
+// ---------------------------------------------------------------------------
+// DEMO SEED — Spanish-language refusal walkthrough. Same store-API path as the
+// English seed above, but `preferredLanguage: "es"` so the refusal shell
+// snapshots the DRAFT Spanish risk text (amber banner + English disclosure)
+// and the interpreter section is required. Drives the browser e2e in e2e/.
+// ---------------------------------------------------------------------------
+{
+  const PATIENT_ID = "p-demo-mar-seed-es";
+  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const NURSE = "Rosa T., LVN";
+  const tz = "America/Los_Angeles";
+  const seedPatient: Patient = {
+    id: PATIENT_ID,
+    programId: "ADL-2026-902",
+    firstName: "Lucía",
+    lastName: "Moreno",
+    dob: "1991-03-22",
+    phone: "+15595550192",
+    releaseDate: "2026-07-08",
+    enrolledAt: "2026-07-11",
+    episodeDay: 20,
+    smsFallback: true,
+    facilityTimezone: tz,
+    preferredLanguage: "es",
+    consents: { hipaa: true, part2Sud: true, signedAt: "2026-07-11" },
+    screeners: {},
+    needs: { housing: false, food: false, employment: false, transport: false },
+    carePlanSummary:
+      "Spanish-preferred demo record seeded through the store API for the refusal translation walkthrough.",
+    caseManagerId: "cm1",
+    alerts: [],
+    allergies: [],
+    problems: [],
+    orders: [],
+    administrations: [],
+    refusalForms: [],
+  };
+  patients.push(seedPatient);
+
+  const draft = AdelanteEHR.addDraftOrder(PATIENT_ID, {
+    drugName: "Sertraline",
+    productName: "Sertraline 50 MG Oral Tablet",
+    rxcui: "312940",
+    strengthText: "50 MG",
+    strengthSource: "rxnav",
+    doseForm: "Oral Tablet",
+    ingredientNames: ["Sertraline"],
+    doseAxis: "mg",
+    doseTargetMg: 50,
+    unitsPerAdmin: 1,
+    route: "PO",
+    frequency: "twice daily",
+    frequencyCode: "BID",
+    durationValue: 30,
+    durationUnit: "days",
+    quantity: 60,
+    daysSupply: 30,
+    sig: "Take 1 tablet (50 mg) by mouth twice daily",
+    dispenseRoute: "pharmacy",
+    indicationText: "Major depressive disorder",
+    startDate: facilityDateKey(new Date(), tz),
+    createdBy: PMHNP,
+  } as Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">);
+  AdelanteEHR.signOrders(PATIENT_ID, [draft.id], PMHNP);
+
+  const dateKeyEs = facilityDateKey(new Date(), tz);
+  const [ey, em, ed] = dateKeyEs.split("-").map(Number);
+  const esHour = frequencyByCode("BID")?.adminTimes[0] ?? 8;
+  const refusedEs = AdelanteEHR.chartDose(
+    PATIENT_ID,
+    draft.id,
+    fromFacilityWallClock({ year: ey, month: em, day: ed, hour: esHour }, tz).toISOString(),
+    "refused",
+    "La paciente rechazó la dosis de la mañana.",
+    NURSE,
+    `batch-${PATIENT_ID}-seed`,
+    "Seeded demo entry charted after the scheduled window.",
+  );
+  AdelanteEHR.createRefusalFormShell(PATIENT_ID, refusedEs.id, NURSE);
+}
+
 import { useSyncExternalStore } from "react";
 export function useEhr<T>(selector: () => T): T {
   // Subscribe to a stable version number so we don't loop on new-array snapshots.
