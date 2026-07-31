@@ -706,17 +706,53 @@ function TemplateBuilderDialog({
               )}
             </Card>
           ))}
-          <Button
-            variant="outline"
-            onClick={() =>
-              setSections((p) => [
-                ...p,
-                { id: `section_${p.length + 1}`, title: `Section ${p.length + 1}`, fields: [] },
-              ])
-            }
-          >
-            <Plus className="mr-1 h-4 w-4" /> Add section
-          </Button>
+          <div className="flex flex-wrap gap-2">
+            <Button
+              variant="outline"
+              onClick={() =>
+                setSections((p) => [
+                  ...p,
+                  { id: `section_${p.length + 1}`, title: `Section ${p.length + 1}`, fields: [] },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add fields section
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setSections((p) => [
+                  ...p,
+                  {
+                    id: `section_${p.length + 1}`,
+                    title: "Orders",
+                    type: "orders_section",
+                    fields: [],
+                    allow: { meds: true },
+                  },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add orders section
+            </Button>
+            <Button
+              variant="outline"
+              onClick={() =>
+                setSections((p) => [
+                  ...p,
+                  {
+                    id: `section_${p.length + 1}`,
+                    title: "Active medications",
+                    type: "autofill_section",
+                    fields: [],
+                    autofill: { source: "medications_active" },
+                  },
+                ])
+              }
+            >
+              <Plus className="mr-1 h-4 w-4" /> Add autofill section
+            </Button>
+          </div>
         </div>
 
         <ScoringEditor rules={scoring} onChange={setScoring} />
