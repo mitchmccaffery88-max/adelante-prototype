@@ -193,3 +193,50 @@ export function marRowLabel(order: MedOrder): string {
     .filter(Boolean)
     .join(" · ");
 }
+
+// ---------------------------------------------------------------------------
+// §MAR Phase 2 — PRN reasons, witness scoping, Suboxone detection.
+// ---------------------------------------------------------------------------
+
+/** Reference EMR's PRN indication chip set, ported verbatim. Free text still allowed. */
+export const PRN_REASONS = [
+  "Pain",
+  "Anxiety",
+  "Nausea",
+  "Insomnia",
+  "Withdrawal",
+  "Headache",
+  "Allergy",
+  "Other",
+] as const;
+
+/**
+ * "Not indicated" is charted as a HELD dose with this exact reason, matching
+ * the reference — it is a distinct clinical outcome, not a generic hold.
+ */
+export const NOT_INDICATED_REASON = "Not indicated";
+
+/** Staff who may witness a Schedule II administration: clinical/prescriber roles only. */
+export function witnessCandidates(exclude?: string): StaffMember[] {
+  return STAFF_ROSTER.filter(
+    (s) => (s.role === "pmhnp" || s.role === "therapist") && s.name !== exclude,
+  );
+}
+
+/**
+ * Buprenorphine (Suboxone) sublingual detection — drives the extra mouth-check
+ * attestation on batch commit. Matches on ingredient/drug name plus a
+ * sublingual dose form or route.
+ */
+export function isSuboxoneOrder(order: MedOrder): boolean {
+  const name = [order.drugName, order.productName, ...(order.ingredientNames ?? [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!/buprenorphine|suboxone|zubsolv/.test(name)) return false;
+  const form = `${order.doseForm ?? ""} ${order.route ?? ""} ${name}`.toLowerCase();
+  return /sublingual|\bsl\b|film|buccal/.test(form);
+}
+
+export const MOUTH_CHECK_ATTESTATION_TEXT =
+  "I confirm mouth checks were completed for all Suboxone/buprenorphine sublingual doses in this pass.";
