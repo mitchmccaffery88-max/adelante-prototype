@@ -774,6 +774,10 @@ export interface Patient {
   bookings?: Booking[];
   /** §Custody tracking — housing moves within bookings. */
   housingMoves?: HousingMove[];
+  /** §Med reconciliation — session headers, newest first. */
+  medReconciliations?: MedReconciliation[];
+  /** §Med reconciliation — flat item rows joined on `reconciliationId`. */
+  medReconItems?: MedReconItem[];
 }
 
 /**
