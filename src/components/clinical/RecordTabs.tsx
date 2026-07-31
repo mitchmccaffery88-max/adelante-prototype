@@ -41,6 +41,8 @@ import {
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
+import { TemplateForm } from "@/components/clinical/TemplateForm";
+import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import {
   useActingRole,
   useActingStaff,
