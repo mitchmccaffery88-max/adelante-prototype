@@ -4600,6 +4600,31 @@ export const AdelanteEHR = {
   },
   /** Clears the PATIENT's unread side only. Staff unread is untouched. */
   markMessagesReadByPatient(patientId: string): void {
+    return AdelanteEHR._markMessagesReadByPatient(patientId);
+  },
+  /**
+   * §Part 2 gate on a specific message. Protective action — no reason
+   * required — but always audited. Gated to write-level `patient_messaging`
+   * roles (the same roles that can reply); when `role` is omitted the caller
+   * is treated as an already-gated UI path.
+   */
+  flagMessageAsSud(
+    patientId: string,
+    messageId: string,
+    staffName: string,
+    role?: StaffRole,
+  ): boolean {
+    return setCareMessageSudFlag(patientId, messageId, staffName, role, true);
+  },
+  unflagMessageAsSud(
+    patientId: string,
+    messageId: string,
+    staffName: string,
+    role?: StaffRole,
+  ): boolean {
+    return setCareMessageSudFlag(patientId, messageId, staffName, role, false);
+  },
+  _markMessagesReadByPatient(patientId: string): void {
     const p = patients.find((x) => x.id === patientId);
     if (!p?.careMessages?.length) return;
     const now = new Date().toISOString();
