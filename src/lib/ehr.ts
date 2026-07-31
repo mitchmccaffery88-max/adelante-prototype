@@ -1115,6 +1115,48 @@ export interface ProgressNote {
   objective: string;
   assessment: string;
   plan: string;
+  /**
+   * Sensitivity context, deliberately the SAME shape used by `Problem.category`
+   * so a SUD-tied note masks through the existing 42 CFR Part 2 consent gate
+   * rather than a second masking mechanism. Absent = not sensitive.
+   */
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  /**
+   * Provenance seam for a future AI-drafting layer ("Adel", separate project).
+   * Schema only: nothing in this app writes "ai_draft" today. The point is that
+   * authorship and signature are already distinct states — content may in
+   * principle be machine-drafted, but only a human signature makes it a signed
+   * legal record, and masking is unaffected by this field.
+   */
+  authorSource?: NoteAuthorSource;
+  status?: NoteStatus;
+  signedBy?: string;
+  signedAt?: string;
+  cosignRequired?: boolean;
+  /** Roles eligible to cosign. Empty/undefined = any eligible clinical role. */
+  cosignRole?: string[];
+  cosignedBy?: string;
+  cosignedAt?: string;
+  cosignComment?: string;
+  declineReason?: string;
+  declinedBy?: string;
+  declinedAt?: string;
+}
+
+export type NoteAuthorSource = "human" | "ai_draft";
+export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "declined";
+
+/** Roles that may sign a note at all, and that may sign without a cosigner. */
+export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "therapist"] as const;
+
+/** A note is masked exactly like a SUD problem entry — one gate, one rule. */
+export function isNoteSudSensitive(note: ProgressNote): boolean {
+  return note.category === "sud";
+}
+
+/** Effective status for legacy rows written before the lifecycle existed. */
+export function noteStatus(note: ProgressNote): NoteStatus {
+  return note.status ?? "draft";
 }
 
 export type ConsentPurpose = "part2Sud" | "ecmShare" | "sms" | "hipaa";
