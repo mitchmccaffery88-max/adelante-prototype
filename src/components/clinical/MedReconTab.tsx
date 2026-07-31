@@ -24,6 +24,16 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -34,6 +44,10 @@ import { ClientDate } from "@/components/ClientDate";
 import { AlertTriangle, ChevronDown, ChevronRight, Pill, Trash2 } from "lucide-react";
 
 const DECISIONS: MedReconItem["decision"][] = ["continue", "modify", "stop"];
+
+function fallbackReason(decision: "stop" | "modify") {
+  return `${decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
+}
 
 export function MedReconTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const active = useEhr(() => AdelanteEHR.activeMedReconciliation(patientId));
@@ -56,9 +70,8 @@ function StartSession({ patientId, readOnly }: { patientId: string; readOnly?: b
   const { staffName } = useActingStaff();
   const activeOrders = useEhr(
     () =>
-      AdelanteEHR.listOrders(patientId).filter(
-        (o) => o.status === "signed" || o.status === "held",
-      ).length,
+      AdelanteEHR.listOrders(patientId).filter((o) => o.status === "signed" || o.status === "held")
+        .length,
   );
   const [type, setType] = useState<MedReconciliation["type"]>("intake");
   const [notes, setNotes] = useState("");
@@ -129,16 +142,37 @@ function ActiveSession({
 }) {
   const { staffName } = useActingStaff();
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
-  const unreviewed = items.filter((i) => i.source === "active_order" && i.decision === "not_reviewed");
+  const unreviewed = items.filter(
+    (i) => i.source === "active_order" && i.decision === "not_reviewed",
+  );
   const [notes, setNotes] = useState(recon.notes ?? "");
   const [home, setHome] = useState({ drugName: "", dose: "", frequency: "", route: "" });
+  const [pendingDecision, setPendingDecision] = useState<{
+    item: MedReconItem;
+    decision: MedReconItem["decision"];
+  } | null>(null);
 
-  const decide = (item: MedReconItem, decision: MedReconItem["decision"]) => {
+  const applyDecision = (item: MedReconItem, decision: MedReconItem["decision"]) => {
     try {
       AdelanteEHR.updateReconItem(patientId, recon.id, item.id, { decision }, staffName);
+      toast.success(`${item.drugName} marked ${MED_RECON_DECISION_LABEL[decision]}.`);
     } catch (e) {
       toast.error((e as Error).message);
+    } finally {
+      setPendingDecision(null);
     }
+  };
+
+  const decide = (item: MedReconItem, decision: MedReconItem["decision"]) => {
+    if (
+      item.source === "active_order" &&
+      (decision === "stop" || decision === "modify") &&
+      !item.decisionNote?.trim()
+    ) {
+      setPendingDecision({ item, decision });
+      return;
+    }
+    applyDecision(item, decision);
   };
 
   const patch = (item: MedReconItem, p: Partial<MedReconItem>) => {
@@ -229,9 +263,7 @@ function ActiveSession({
                     {item.source === "active_order" ? "Active order" : "Home / prior"}
                   </Badge>
                   {item.decision !== "not_reviewed" && (
-                    <Badge className="text-[10px]">
-                      {MED_RECON_DECISION_LABEL[item.decision]}
-                    </Badge>
+                    <Badge className="text-[10px]">{MED_RECON_DECISION_LABEL[item.decision]}</Badge>
                   )}
                 </div>
                 <div className="text-xs text-muted-foreground">
@@ -376,17 +408,45 @@ function ActiveSession({
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!pendingDecision} onOpenChange={() => setPendingDecision(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Continue without a reason note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You selected{" "}
+              <strong>
+                {pendingDecision && MED_RECON_DECISION_LABEL[pendingDecision.decision]}
+              </strong>{" "}
+              for <strong>{pendingDecision?.item.drugName}</strong> but did not enter a note. If you
+              complete this reconciliation, the linked order will be discontinued with the fallback
+              reason:
+              <em>
+                {" "}
+                {pendingDecision && fallbackReason(pendingDecision.decision as "stop" | "modify")}
+              </em>
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDecision(null)}>
+              Go back and add a note
+            </AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDecision) applyDecision(pendingDecision.item, pendingDecision.decision);
+              }}
+            >
+              Continue with fallback reason
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
   );
 }
 
-function HistorySection({
-  patientId,
-  rows,
-}: {
-  patientId: string;
-  rows: MedReconciliation[];
-}) {
+function HistorySection({ patientId, rows }: { patientId: string; rows: MedReconciliation[] }) {
   const [openId, setOpenId] = useState<string | null>(null);
   if (rows.length === 0)
     return <p className="text-sm text-muted-foreground">No past reconciliations.</p>;
