@@ -1473,6 +1473,11 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
     plan: "",
     category: "none" as "none" | "sud" | "mental_health" | "pregnancy" | "medical",
   });
+  // Template layer: "none" keeps the existing free-text SOAP editor untouched.
+  const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  const [templateId, setTemplateId] = useState<string>("none");
+  const [answers, setAnswers] = useState<TemplateAnswers>({});
+  const activeTemplate = templates.find((t) => t.id === templateId);
   useDraftDirty(
     `notes:${patientId}`,
     Boolean(
@@ -1504,6 +1509,30 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
           <div className="mt-3 space-y-3">
             <div className="space-y-1.5">
               <Label className="text-xs">Session type</Label>
+            </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Template</Label>
+              <Select
+                value={templateId}
+                onValueChange={(v) => {
+                  setTemplateId(v);
+                  setAnswers({});
+                }}
+              >
+                <SelectTrigger aria-label="Note template">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">SOAP (no template)</SelectItem>
+                  {templates.map((t) => (
+                    <SelectItem key={t.id} value={t.id}>
+                      {t.title}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
               <Select
                 value={note.sessionType}
                 onValueChange={(v) => setNote({ ...note, sessionType: v as never })}
@@ -1540,6 +1569,15 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                 A SUD note is masked by the same consent gate as SUD problem entries.
               </p>
             </div>
+            {activeTemplate && (
+              <div className="rounded-md border border-border p-3">
+                <TemplateForm
+                  schema={activeTemplate.schema}
+                  answers={answers}
+                  onChange={setAnswers}
+                />
+              </div>
+            )}
             {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
               <div key={k} className="space-y-1.5">
                 <Label className="text-xs capitalize">{k}</Label>
@@ -1570,8 +1608,14 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   category: note.category === "none" ? undefined : note.category,
                   authorSource: "human",
                   status: "draft",
+                  templateId: activeTemplate?.id,
+                  // Snapshot the schema so a later template edit never rewrites
+                  // the questions a clinician actually answered.
+                  templateSchema: activeTemplate?.schema,
+                  templateAnswers: activeTemplate ? answers : undefined,
                 });
                 toast.success("Progress note saved as draft");
+                setAnswers({});
                 setNote({
                   sessionType: "individual",
                   subjective: "",
