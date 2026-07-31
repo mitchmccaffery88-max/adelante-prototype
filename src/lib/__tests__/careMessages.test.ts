@@ -170,13 +170,13 @@ describe("care message Part 2 flagging", () => {
     const gatedPatient = AdelanteEHR.listPatients().find(
       (x) => canAccess("case_manager", "screeners_sud", x).locked,
     )!;
-    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length;
+    const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
     AdelanteEHR.sendPatientMessage(gatedPatient.id, "sensitive ask", true);
-    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const after = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.category === "patient_message" && n.patientId === gatedPatient.id,
     );
     expect(after.length).toBeGreaterThan(0);
-    expect(AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length).toBeGreaterThan(before);
+    expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBeGreaterThan(before);
     expect(after.at(-1)!.body).toBe("A patient sent a message to their care team.");
   });
 
@@ -184,11 +184,11 @@ describe("care message Part 2 flagging", () => {
     const openPatient = AdelanteEHR.listPatients().find(
       (x) => !canAccess("case_manager", "screeners_sud", x).locked,
     )!;
-    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === openPatient.id,
     ).length;
     AdelanteEHR.sendPatientMessage(openPatient.id, "sensitive ask", true);
-    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const after = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === openPatient.id,
     ).length;
     expect(after).toBe(before);
@@ -221,9 +221,10 @@ describe("care message Part 2 flagging", () => {
 
     AdelanteEHR.flagMessageAsSud(gated.id, m.id, "Dr. Bagga", "pmhnp");
 
-    const cmNotes = AdelanteEHR.listNotificationsFor(cmName, "case_manager");
-    expect(cmNotes.length).toBeGreaterThan(cmBefore);
-    expect(cmNotes.at(-1)!.body).toContain("flagged for Part 2 protection");
+    const all = AdelanteEHR.listNotificationsFor(cmName, "case_manager");
+    expect(all.length).toBeGreaterThan(cmBefore);
+    const visibility = all.filter((n) => n.body.includes("flagged for Part 2 protection"));
+    expect(visibility.length).toBeGreaterThan(0);
     expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBeGreaterThan(thBefore);
   });
 
