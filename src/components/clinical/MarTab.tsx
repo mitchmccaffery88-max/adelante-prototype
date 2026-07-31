@@ -788,6 +788,30 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const pendingForms = (patient.refusalForms ?? []).filter(
     (f) => f.status === "pending_signature",
   );
+  const finalizedForms = (patient.refusalForms ?? []).filter(
+    (f) => f.status === "finalized",
+  );
+
+  const exportForm = async (f: RefusalForm) => {
+    const admin = (patient.administrations ?? []).find(
+      (a) => a.id === f.administrationId,
+    );
+    const order = (patient.orders ?? []).find((o) => o.id === admin?.orderId);
+    const { downloadRefusalFormPdf } = await import("@/lib/refusalPdf");
+    const filename = downloadRefusalFormPdf({
+      form: f,
+      patient,
+      order,
+      administration: admin,
+      medicationLabel: order ? marRowLabel(order) : undefined,
+    });
+    AdelanteEHR.recordRefusalFormExport({
+      patientId,
+      formId: f.id,
+      filename,
+      staffName,
+    });
+  };
   const activeFormId = escalation ? null : (refusalQueue[0] ?? openFormId);
   const activeForm = activeFormId
     ? ((patient.refusalForms ?? []).find((f) => f.id === activeFormId) ?? null)
