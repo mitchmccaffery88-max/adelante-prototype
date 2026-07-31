@@ -68,6 +68,16 @@ export interface CareMessage {
   createdAt: string;
   readByPatientAt?: string;
   readByStaffAt?: string;
+  /**
+   * §Part 2 gate — set by a HUMAN reviewer who read the message and judged it
+   * to contain SUD/42 CFR Part 2 content. There is no automatic detection.
+   * When true, staff viewers who fail `canAccess(role, "screeners_sud",
+   * patient)` see a masked placeholder instead of the body. The patient always
+   * sees their own thread in full.
+   */
+  sudFlagged?: boolean;
+  sudFlaggedBy?: string;
+  sudFlaggedAt?: string;
 }
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
@@ -2180,6 +2190,39 @@ const notifications: AppNotification[] = [];
 function patientLabel(patientId?: string): string {
   const p = patients.find((x) => x.id === patientId);
   return p ? `${p.firstName} ${p.lastName}` : "a patient";
+}
+
+/**
+ * Write-level `patient_messaging` roles, mirrored from the RBAC matrix in
+ * `roles.ts`. Duplicated as a value here only because `ehr.ts` may import
+ * `roles.ts` for TYPES only (roles.ts imports ehr.ts at runtime).
+ */
+export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["case_manager", "therapist", "pmhnp"];
+
+function setCareMessageSudFlag(
+  patientId: string,
+  messageId: string,
+  staffName: string,
+  role: StaffRole | undefined,
+  flagged: boolean,
+): boolean {
+  if (role && !MESSAGE_SUD_FLAG_ROLES.includes(role)) return false;
+  const p = patients.find((x) => x.id === patientId);
+  const msg = p?.careMessages?.find((m) => m.id === messageId);
+  if (!msg) return false;
+  if (Boolean(msg.sudFlagged) === flagged) return true;
+  msg.sudFlagged = flagged;
+  msg.sudFlaggedBy = staffName;
+  msg.sudFlaggedAt = new Date().toISOString();
+  appendAudit({
+    category: "access",
+    action: flagged ? "care_message_sud_flagged" : "care_message_sud_unflagged",
+    patientId,
+    actorId: staffName,
+    detail: { messageId, authorType: msg.authorType, role },
+  });
+  emit();
+  return true;
 }
 
 // ---------------------------------------------------------------------------
@@ -4590,6 +4633,31 @@ export const AdelanteEHR = {
   },
   /** Clears the PATIENT's unread side only. Staff unread is untouched. */
   markMessagesReadByPatient(patientId: string): void {
+    return AdelanteEHR._markMessagesReadByPatient(patientId);
+  },
+  /**
+   * §Part 2 gate on a specific message. Protective action — no reason
+   * required — but always audited. Gated to write-level `patient_messaging`
+   * roles (the same roles that can reply); when `role` is omitted the caller
+   * is treated as an already-gated UI path.
+   */
+  flagMessageAsSud(
+    patientId: string,
+    messageId: string,
+    staffName: string,
+    role?: StaffRole,
+  ): boolean {
+    return setCareMessageSudFlag(patientId, messageId, staffName, role, true);
+  },
+  unflagMessageAsSud(
+    patientId: string,
+    messageId: string,
+    staffName: string,
+    role?: StaffRole,
+  ): boolean {
+    return setCareMessageSudFlag(patientId, messageId, staffName, role, false);
+  },
+  _markMessagesReadByPatient(patientId: string): void {
     const p = patients.find((x) => x.id === patientId);
     if (!p?.careMessages?.length) return;
     const now = new Date().toISOString();

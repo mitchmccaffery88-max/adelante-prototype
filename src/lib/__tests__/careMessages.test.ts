@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { canAccess } from "@/lib/roles";
+import { isMessageBodyMasked, MASKED_MESSAGE_BODY, visibleMessageBody } from "@/lib/careMessageMasking";
 
 const patientId = () => AdelanteEHR.listPatients()[0].id;
 
@@ -75,5 +76,57 @@ describe("care messaging — Phase 2", () => {
     const pid = patientId();
     expect(AdelanteEHR.sendPatientMessage(pid, "   ")).toBeUndefined();
     expect(AdelanteEHR.sendStaffMessage(pid, "Anita Brooks", "")).toBeUndefined();
+  });
+});
+
+// ---- §Part 2 message flagging (human-applied consent gate) ----
+describe("care message Part 2 flagging", () => {
+  const pid = AdelanteEHR.listPatients()[0]!.id;
+
+  it("flags and unflags with audit, gated to write-level messaging roles", () => {
+    const m = AdelanteEHR.sendPatientMessage(pid, "flag me")!;
+    expect(AdelanteEHR.flagMessageAsSud(pid, m.id, "Nobody", "billing")).toBe(false);
+    expect(AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    const flagged = AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!;
+    expect(flagged.sudFlagged).toBe(true);
+    expect(flagged.sudFlaggedBy).toBe("Christi");
+    expect(flagged.sudFlaggedAt).toBeTruthy();
+    const actions = AdelanteEHR.listAuditEvents().map((a) => a.action);
+    expect(actions).toContain("care_message_sud_flagged");
+
+    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    expect(AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!.sudFlagged).toBe(false);
+    expect(AdelanteEHR.listAuditEvents().map((a) => a.action)).toContain("care_message_sud_unflagged");
+  });
+
+  it("masks the body for a role failing the SUD consent check, restores on unflag", () => {
+    const patient = AdelanteEHR.getPatient(pid)!;
+    const m = AdelanteEHR.sendPatientMessage(pid, "secret content")!;
+    AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "case_manager");
+    const cur = () => AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!;
+
+    const gated = canAccess("case_manager", "screeners_sud", patient).locked;
+    expect(isMessageBodyMasked(cur(), "case_manager", patient)).toBe(gated);
+    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe(
+      gated ? MASKED_MESSAGE_BODY : "secret content",
+    );
+    // pmhnp has un-gated read on screeners_sud — always sees the body.
+    expect(visibleMessageBody(cur(), "pmhnp", patient)).toBe("secret content");
+
+    AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager");
+    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe("secret content");
+  });
+
+  it("keeps the patient_message notification body generic", () => {
+    const cmPid = AdelanteEHR.listPatients().find((x) => x.caseManagerId === "cm1")!.id;
+    AdelanteEHR.sendPatientMessage(cmPid, "do not echo this text");
+    const notes = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "case_manager").filter(
+      (n) => n.category === "patient_message",
+    );
+    expect(notes.length).toBeGreaterThan(0);
+    for (const n of notes) {
+      expect(n.body).toBe("A patient sent a message to their care team.");
+      expect(n.body).not.toContain("do not echo");
+    }
   });
 });

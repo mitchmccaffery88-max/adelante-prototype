@@ -3,6 +3,8 @@
 import { AdelanteEHR, type CareMessage } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
 import { cn } from "@/lib/utils";
+import { Lock, ShieldAlert } from "lucide-react";
+import { Button } from "@/components/ui/button";
 
 export function CareMessageThread({
   messages,
@@ -10,6 +12,9 @@ export function CareMessageThread({
   emptyLabel,
   youLabel,
   themLabel,
+  maskBody,
+  canFlag,
+  onToggleFlag,
 }: {
   messages: CareMessage[];
   /** Whose perspective is reading — their own messages align right. */
@@ -17,6 +22,11 @@ export function CareMessageThread({
   emptyLabel: string;
   youLabel: string;
   themLabel: string;
+  /** Staff-side Part 2 gate. Omitted on the patient side — patients always
+   *  see their own thread in full. */
+  maskBody?: (m: CareMessage) => boolean;
+  canFlag?: boolean;
+  onToggleFlag?: (m: CareMessage) => void;
 }) {
   if (messages.length === 0) {
     return <p className="py-4 text-center text-xs text-muted-foreground">{emptyLabel}</p>;
@@ -25,6 +35,7 @@ export function CareMessageThread({
     <ul className="space-y-2">
       {messages.map((m) => {
         const mine = m.authorType === side;
+        const masked = maskBody?.(m) ?? false;
         return (
           <li key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
             <div
@@ -36,8 +47,33 @@ export function CareMessageThread({
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
                 {mine ? youLabel : themLabel} · {m.authorName} · <ClientDate value={m.createdAt} />
               </div>
-              {/* Verbatim — whitespace preserved, content untouched. */}
-              <p className="mt-0.5 whitespace-pre-wrap text-foreground">{m.body}</p>
+              {/* The flag itself is always visible, even when the body is not:
+                  a clinician without consent access should know something was
+                  flagged here, not find a silently missing message. */}
+              {m.sudFlagged && (
+                <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-destructive">
+                  <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
+                </div>
+              )}
+              {masked ? (
+                <p className="mt-0.5 flex items-center gap-1.5 text-muted-foreground">
+                  <Lock className="h-3.5 w-3.5" />
+                  Sensitive message — 42 CFR Part 2 consent required
+                </p>
+              ) : (
+                /* Verbatim — whitespace preserved, content untouched. */
+                <p className="mt-0.5 whitespace-pre-wrap text-foreground">{m.body}</p>
+              )}
+              {canFlag && onToggleFlag && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  className="mt-1 h-6 px-1.5 text-[10px]"
+                  onClick={() => onToggleFlag(m)}
+                >
+                  {m.sudFlagged ? "Remove Part 2/SUD flag" : "Flag as Part 2/SUD"}
+                </Button>
+              )}
             </div>
           </li>
         );

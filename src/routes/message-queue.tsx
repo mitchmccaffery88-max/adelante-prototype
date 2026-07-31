@@ -12,7 +12,8 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
-import { ArrowLeft, Lock, MessageSquare } from "lucide-react";
+import { isMessageBodyMasked, MASKED_MESSAGE_BODY } from "@/lib/careMessageMasking";
+import { ArrowLeft, Lock, MessageSquare, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/message-queue")({
   head: () => ({
@@ -81,7 +82,19 @@ function MessageQueuePage() {
                   {unread} unread
                 </Badge>
               </div>
-              <p className="line-clamp-2 whitespace-pre-wrap text-navy">{latest.body}</p>
+              {latest.sudFlagged && (
+                <p className="flex items-center gap-1 text-[10px] font-medium text-destructive">
+                  <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
+                </p>
+              )}
+              {/* Preview snippet respects the same Part 2 gate as the thread view. */}
+              {isMessageBodyMasked(latest, role, patient) ? (
+                <p className="flex items-center gap-1.5 text-muted-foreground">
+                  <Lock className="h-3 w-3" /> {MASKED_MESSAGE_BODY}
+                </p>
+              ) : (
+                <p className="line-clamp-2 whitespace-pre-wrap text-navy">{latest.body}</p>
+              )}
               <p className="text-muted-foreground">
                 Waiting since <ClientDate value={oldestUnreadAt} /> · last message from{" "}
                 {latest.authorName}
