@@ -1601,6 +1601,29 @@ export interface ApptNotification {
 // ---------- Case Manager task queue ----------
 
 export type CaseTaskStatus = "open" | "done" | "snoozed";
+
+/**
+ * §Worklist Phase A — operational priority. Distinct from `CaseTaskStatus`
+ * (the CM queue's open/done/snoozed lifecycle) on purpose: see
+ * `WorklistStatus` below for how the two are kept consistent.
+ */
+export type TaskPriority = "stat" | "urgent" | "routine";
+
+/**
+ * §Worklist Phase A — the richer cross-facility status the worklist shows.
+ *
+ * MIGRATION: this field is OPTIONAL and every read goes through
+ * `worklistStatusFor(task)`, which derives a value from the pre-existing
+ * `status` / `completedAt` state when it is unset:
+ *   status "done" (or a completedAt timestamp) -> "completed"
+ *   claimedBy set                              -> "in_progress"
+ *   otherwise                                  -> "pending"
+ * Nothing back-fills stored rows, so existing CaseTask consumers keep reading
+ * `status` exactly as before. "cancelled" and "missed" have no legacy
+ * equivalent and are only ever set explicitly.
+ */
+export type WorklistStatus = "pending" | "in_progress" | "completed" | "cancelled" | "missed";
+
 export type CaseTaskOrigin =
   | "manual"
   | "missed_appt"
@@ -1633,7 +1656,42 @@ export interface CaseTask {
   sourceAutomationId?: string;
   /** Template title of the source note, for "Auto-created from …". */
   sourceTemplateTitle?: string;
-  priority?: "routine" | "urgent" | "stat";
+  /** Defaults to "routine" everywhere it is read (see `taskPriority`). */
+  priority?: TaskPriority;
+  // ----- §Worklist Phase A (all optional; legacy rows read fine without them) -----
+  worklistStatus?: WorklistStatus;
+  /** Freeform kind, e.g. "med_pass", "intake_packet". Facets derive from use. */
+  taskType?: string;
+  /**
+   * Which Adelante roles this task is relevant to. Undefined/empty means
+   * "no discipline restriction" — deliberately NOT a separate discipline
+   * taxonomy; this is the real `StaffRole` set.
+   */
+  allowedRoles?: StaffRole[];
+  /** Real Facility entity id (see `listFacilities`). */
+  facilityId?: string;
+  housingUnit?: string;
+  /**
+   * Pool claim. Independent of `assignedTo` (direct assignment): a task can be
+   * directly assigned OR left open to a role pool and claimed.
+   */
+  claimedBy?: string;
+  claimedAt?: string;
+  /** Provenance, e.g. "manual" or "note_automation". */
+  source?: string;
+}
+
+/** Priority with the documented "routine" default applied. */
+export function taskPriority(t: CaseTask): TaskPriority {
+  return t.priority ?? "routine";
+}
+
+/** Worklist status, derived from legacy state when unset. See `WorklistStatus`. */
+export function worklistStatusFor(t: CaseTask): WorklistStatus {
+  if (t.worklistStatus) return t.worklistStatus;
+  if (t.status === "done" || t.completedAt) return "completed";
+  if (t.claimedBy) return "in_progress";
+  return "pending";
 }
 
 /**
