@@ -1,6 +1,7 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import type { Patient, ProgressNote } from "../ehr";
 import {
+  buildNoteDocumentModel,
   buildProgressNotePdf,
   noteExportGate,
   notePdfFilename,
@@ -27,22 +28,6 @@ const base: ProgressNote = {
   signedBy: "Dr. Marisol Reyes",
   signedAt: "2026-07-20T16:00:00.000Z",
 };
-
-/** Capture every string jsPDF is asked to draw. */
-function renderedText(note: ProgressNote, role: Parameters<typeof noteExportGate>[1]) {
-  const captured: string[] = [];
-  const doc = buildProgressNotePdf({ note, patient, role, authorLabel: "Dr. Marisol Reyes" });
-  const orig = doc.text.bind(doc);
-  void orig;
-  // Re-render with an instrumented text() to read the drawn strings.
-  const spy = vi.fn();
-  const doc2 = buildProgressNotePdf({ note, patient, role, authorLabel: "Dr. Marisol Reyes" });
-  const realText = doc2.text.bind(doc2);
-  void realText;
-  void spy;
-  void captured;
-  return doc;
-}
 
 describe("note PDF export gate", () => {
   it("blocks draft notes", () => {
@@ -113,11 +98,18 @@ describe("note PDF builder", () => {
           fields: [
             { key: "phq1", type: "number", label: "PHQ item 1" },
             { key: "phq2", type: "number", label: "PHQ item 2" },
-            { key: "hidden", type: "text", label: "Only if risk", show_if: 'phq1 >= 99' },
+            { key: "hidden", type: "text", label: "Only if risk", show_if: "phq1 >= 99" },
           ],
         },
       ],
-      scoring: [{ id: "phq", label: "PHQ total", sum_of: ["phq1", "phq2"], bands: [{ min: 0, max: 5, label: "Minimal" }] }],
+      scoring: [
+        {
+          id: "phq",
+          label: "PHQ total",
+          sum_of: ["phq1", "phq2"],
+          bands: [{ min: 0, max: 5, label: "Minimal" }],
+        },
+      ],
     };
     const note: ProgressNote = {
       ...base,
@@ -130,14 +122,43 @@ describe("note PDF builder", () => {
       templateSchema: schema,
       templateAnswers: { phq1: 2, phq2: 1 },
     };
-    const drawn: string[] = [];
-    const doc = buildProgressNotePdf({ note, patient, role: "pmhnp" });
-    void doc;
-    // Instrument jsPDF's text() to capture drawn strings on a second pass.
-    const captureDoc = buildProgressNotePdf({ note, patient, role: "pmhnp" });
-    void captureDoc;
-    void drawn;
-    expect(doc.getNumberOfPages()).toBeGreaterThanOrEqual(1);
+    const blocks = buildNoteDocumentModel({ note, patient, role: "pmhnp" });
+    const headings = blocks.filter((b) => b.kind === "heading").map((b) => b.text);
+    expect(headings).toContain("Template — Behavioral health intake v2");
+    expect(headings).toContain("Scoring");
+    const fields = blocks.filter((b) => b.kind === "field");
+    const value = (label: string) => fields.find((f) => f.label === label)?.value;
+    expect(value("PHQ item 1")).toBe("2");
+    expect(value("PHQ item 2")).toBe("1");
+    // Hidden-by-show_if fields must not leak into the legal record.
+    expect(value("Only if risk")).toBeUndefined();
+    expect(value("PHQ total")).toBe("3 — Minimal");
+    expect(value("Signed by")).toBe("Dr. Marisol Reyes");
+    expect(value("Cosigned by")).toBe("Dr. R. Bagga");
+    expect(value("Status")).toBe("cosigned");
+    expect(buildProgressNotePdf({ note, patient, role: "pmhnp" }).getNumberOfPages()).toBe(1);
+  });
+
+  it("renders SOAP content and signer provenance in the model", () => {
+    const blocks = buildNoteDocumentModel({
+      note: base,
+      patient,
+      role: "therapist",
+      authorLabel: "Dr. Marisol Reyes",
+      exportedBy: "Dr. Marisol Reyes",
+    });
+    const paragraphs = blocks.filter((b) => b.kind === "paragraph").map((b) => b.text);
+    expect(paragraphs).toContain("Reports improved sleep.");
+    expect(paragraphs).toContain("Continue weekly therapy.");
+    const fields = blocks.filter((b) => b.kind === "field");
+    expect(fields.find((f) => f.label === "Author")?.value).toBe("Dr. Marisol Reyes");
+    expect(fields.find((f) => f.label === "Status")?.value).toBe("signed");
+  });
+
+  it("throws from the content model too — no bypass around the PDF renderer", () => {
+    expect(() =>
+      buildNoteDocumentModel({ note: { ...base, category: "sud" }, patient, role: "therapist" }),
+    ).toThrow(/42 CFR Part 2/i);
   });
 
   it("names the file by patient and signed date", () => {
