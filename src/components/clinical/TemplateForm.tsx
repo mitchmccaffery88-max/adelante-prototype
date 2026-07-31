@@ -136,17 +136,21 @@ function FieldRenderer({
   onChange,
   readOnly,
   missing,
+  language,
 }: {
   field: TemplateField;
   value: AnswerValue;
   onChange: (v: AnswerValue) => void;
   readOnly?: boolean;
   missing?: boolean;
+  language: TemplateLanguage;
 }) {
   const id = `tf-${field.key}`;
+  const labelText = fieldLabel(field, language);
+  const helpText = fieldHelp(field, language);
   const label = (
     <Label htmlFor={id} className="text-xs">
-      {field.label}
+      {labelText}
       {field.required && <span className="ml-0.5 text-destructive">*</span>}
     </Label>
   );
@@ -200,9 +204,9 @@ function FieldRenderer({
             disabled={readOnly}
             checked={value === true}
             onCheckedChange={(v) => onChange(Boolean(v))}
-            aria-label={field.label}
+            aria-label={labelText}
           />
-          <span>{field.help ?? "Yes"}</span>
+          <span>{helpText ?? (language === "es" ? "Sí" : "Yes")}</span>
         </label>
       )}
       {field.type === "select" && (
@@ -211,13 +215,13 @@ function FieldRenderer({
           value={typeof value === "string" ? value : ""}
           onValueChange={(v) => onChange(v)}
         >
-          <SelectTrigger id={id} aria-label={field.label}>
-            <SelectValue placeholder="Choose…" />
+          <SelectTrigger id={id} aria-label={labelText}>
+            <SelectValue placeholder={language === "es" ? "Elegir…" : "Choose…"} />
           </SelectTrigger>
           <SelectContent>
             {(field.options ?? []).map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {optionLabel(o, language)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -233,7 +237,7 @@ function FieldRenderer({
           {(field.options ?? []).map((o) => (
             <label key={o.value} className="flex items-center gap-2 text-xs">
               <RadioGroupItem value={o.value} id={`${id}-${o.value}`} />
-              <span>{o.label}</span>
+              <span>{optionLabel(o, language)}</span>
             </label>
           ))}
         </RadioGroup>
@@ -245,20 +249,20 @@ function FieldRenderer({
               <Checkbox
                 disabled={readOnly}
                 checked={selected.includes(o.value)}
-                aria-label={`${field.label}: ${o.label}`}
+                aria-label={`${labelText}: ${optionLabel(o, language)}`}
                 onCheckedChange={(v) =>
                   onChange(
                     v ? [...selected, o.value] : selected.filter((s) => s !== o.value),
                   )
                 }
               />
-              <span>{o.label}</span>
+              <span>{optionLabel(o, language)}</span>
             </label>
           ))}
         </div>
       )}
-      {field.help && field.type !== "checkbox" && (
-        <p className="text-[10px] text-muted-foreground">{field.help}</p>
+      {helpText && field.type !== "checkbox" && (
+        <p className="text-[10px] text-muted-foreground">{helpText}</p>
       )}
     </div>
   );
