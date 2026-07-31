@@ -1938,6 +1938,53 @@ const auditEvents: AuditEvent[] = [];
  */
 const shiftCounts: ShiftCount[] = [];
 
+/**
+ * §Facility registry — top-level, not patient-scoped: a facility is shared by
+ * every patient booked there, which is the whole point of having ids.
+ */
+const facilities: Facility[] = [
+  {
+    id: "fac-fresno-main",
+    name: "Fresno County Jail — Main",
+    kind: "jail",
+    city: "Fresno",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-fresno-north",
+    name: "Fresno County Jail — North Annex",
+    kind: "jail",
+    city: "Fresno",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-tulare-adult",
+    name: "Tulare County Adult Detention",
+    kind: "jail",
+    city: "Visalia",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-adelante-res",
+    name: "Adelante Residential Treatment",
+    kind: "treatment",
+    city: "Visalia",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+];
+
 // How a catalog selection's strength was resolved, recorded at pick time.
 export type CatalogResolutionPath =
   | "rxnav"
