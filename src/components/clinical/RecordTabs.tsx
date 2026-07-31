@@ -1635,7 +1635,7 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   templateAnswers: activeTemplate ? answers : undefined,
                 });
                 // Traceability only — the orders keep their own lifecycle.
-                AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
+                if (saved) AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
                 toast.success("Progress note saved as draft");
                 setStagedOrderIds([]);
                 setAnswers({});
