@@ -2192,6 +2192,39 @@ function patientLabel(patientId?: string): string {
   return p ? `${p.firstName} ${p.lastName}` : "a patient";
 }
 
+/**
+ * Write-level `patient_messaging` roles, mirrored from the RBAC matrix in
+ * `roles.ts`. Duplicated as a value here only because `ehr.ts` may import
+ * `roles.ts` for TYPES only (roles.ts imports ehr.ts at runtime).
+ */
+export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["case_manager", "therapist", "pmhnp"];
+
+function setCareMessageSudFlag(
+  patientId: string,
+  messageId: string,
+  staffName: string,
+  role: StaffRole | undefined,
+  flagged: boolean,
+): boolean {
+  if (role && !MESSAGE_SUD_FLAG_ROLES.includes(role)) return false;
+  const p = patients.find((x) => x.id === patientId);
+  const msg = p?.careMessages?.find((m) => m.id === messageId);
+  if (!msg) return false;
+  if (Boolean(msg.sudFlagged) === flagged) return true;
+  msg.sudFlagged = flagged;
+  msg.sudFlaggedBy = staffName;
+  msg.sudFlaggedAt = new Date().toISOString();
+  appendAudit({
+    category: "access",
+    action: flagged ? "care_message_sud_flagged" : "care_message_sud_unflagged",
+    patientId,
+    actorId: staffName,
+    detail: { messageId, authorType: msg.authorType, role },
+  });
+  emit();
+  return true;
+}
+
 // ---------------------------------------------------------------------------
 // §Risk-text translation governance.
 //
