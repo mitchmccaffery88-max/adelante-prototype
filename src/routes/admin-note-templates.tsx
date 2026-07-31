@@ -14,6 +14,7 @@ import {
   type TemplateField,
   type TemplateSchema,
   type TemplateSection,
+  type TemplateAnswers,
 } from "@/lib/templateSchema";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -267,7 +268,7 @@ function TemplateBuilderDialog({
   const [scoring, setScoring] = useState<ScoringRule[]>(
     template?.schema.scoring?.map((r) => ({ ...r, sum_of: [...r.sum_of] })) ?? [],
   );
-  const [preview, setPreview] = useState<Record<string, never> | Record<string, unknown>>({});
+  const [preview, setPreview] = useState<TemplateAnswers>({});
 
   const schema: TemplateSchema = { sections, scoring: scoring.length ? scoring : undefined };
 
@@ -545,11 +546,7 @@ function TemplateBuilderDialog({
 
         <div className="space-y-2 rounded-md border border-border p-3">
           <h4 className="font-display text-sm text-navy">Live preview</h4>
-          <TemplateForm
-            schema={schema}
-            answers={preview as Record<string, never>}
-            onChange={(a) => setPreview(a)}
-          />
+          <TemplateForm schema={schema} answers={preview} onChange={setPreview} />
         </div>
 
         <DialogFooter>
