@@ -1,4 +1,5 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
+import { schemaContentEquals } from "./templateSchema";
 import type { TemplateAnswers, TemplateSchema } from "./templateSchema";
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
