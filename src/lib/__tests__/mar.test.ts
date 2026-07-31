@@ -235,3 +235,78 @@ describe("Suboxone detection", () => {
     expect(plain).toBeTruthy();
   });
 });
+
+// ---------------------------------------------------------------------------
+// startDate as a first-class field + interval-cadence projection
+// ---------------------------------------------------------------------------
+const dayKey = (offsetDays: number, from: string) => {
+  const d = new Date(`${from}T12:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + offsetDays);
+  return d.toISOString().slice(0, 10);
+};
+
+describe("order start date", () => {
+  it("is defaulted on draft creation and survives signing", () => {
+    const { pid, orderId } = signedOrder();
+    const order = AdelanteEHR.listOrders(pid).find((o) => o.id === orderId)!;
+    expect(order.startDate).toBe(today());
+  });
+
+  it("honours a future start date — no doses project before therapy begins", () => {
+    const start = dayKey(3, today());
+    const { pid, orderId } = signedOrder({ startDate: start });
+    const before = deriveMarDay(AdelanteEHR.getPatient(pid)!, today());
+    expect(before.slots.some((s) => s.order.id === orderId)).toBe(false);
+    const on = deriveMarDay(AdelanteEHR.getPatient(pid)!, start);
+    expect(on.slots.filter((s) => s.order.id === orderId).length).toBe(2); // BID
+  });
+
+  it("honours a backdated start date for therapy already underway", () => {
+    const start = dayKey(-10, today());
+    const { pid, orderId } = signedOrder({ startDate: start });
+    const day = deriveMarDay(AdelanteEHR.getPatient(pid)!, today());
+    expect(day.slots.filter((s) => s.order.id === orderId).length).toBe(2);
+  });
+});
+
+describe("interval cadences (intervalDays > 1)", () => {
+  // QWK is the catalog's only intervalDays > 1 entry (7).
+  it("projects a weekly order only on multiples of 7 days from the real start date", () => {
+    const start = dayKey(-10, today());
+    const { pid, orderId } = signedOrder({ frequencyCode: "QWK", startDate: start });
+    const patient = AdelanteEHR.getPatient(pid)!;
+    const dueOn = (offset: number) =>
+      deriveMarDay(patient, dayKey(offset, start)).slots.some((s) => s.order.id === orderId);
+    expect(dueOn(0)).toBe(true);
+    expect(dueOn(7)).toBe(true);
+    expect(dueOn(14)).toBe(true);
+    for (const off of [1, 3, 6, 8, 13]) expect(dueOn(off)).toBe(false);
+  });
+
+  it("keeps daily cadences due every day regardless of offset", () => {
+    const start = dayKey(-5, today());
+    const { pid, orderId } = signedOrder({ frequencyCode: "QD", startDate: start });
+    const patient = AdelanteEHR.getPatient(pid)!;
+    for (const off of [0, 1, 2, 3, 4, 5]) {
+      const day = deriveMarDay(patient, dayKey(off, start));
+      expect(day.slots.filter((s) => s.order.id === orderId).length).toBe(1);
+    }
+  });
+
+  it("stops projecting once a day-bounded course is over", () => {
+    const start = dayKey(-5, today());
+    const { pid, orderId } = signedOrder({
+      frequencyCode: "QD",
+      startDate: start,
+      durationValue: 3,
+      durationUnit: "days",
+    });
+    const patient = AdelanteEHR.getPatient(pid)!;
+    expect(deriveMarDay(patient, dayKey(2, start)).slots.some((s) => s.order.id === orderId)).toBe(
+      true,
+    );
+    expect(deriveMarDay(patient, dayKey(3, start)).slots.some((s) => s.order.id === orderId)).toBe(
+      false,
+    );
+  });
+});
