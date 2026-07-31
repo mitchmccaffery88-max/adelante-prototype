@@ -55,7 +55,8 @@ export type RecordClass =
   | "patient_messaging"
   | "provider_requests"
   | "worklist"
-  | "note_templates";
+  | "note_templates"
+  | "catalog_governance";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -203,6 +204,20 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     case_manager: "read",
     peer_specialist: "read",
+  },
+  // §Admin governance — frequency catalog + local RxNav suppressions. Same
+  // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
+  // the config, prescribing/administering roles read it (they see WHY a
+  // product is missing from search), billing gets nothing.
+  catalog_governance: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
   },
   // §Crisis escalation queue. Cross-patient, NOT patient-scoped, and more
   // clinically sensitive than population_health with no revenue angle:

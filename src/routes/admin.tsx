@@ -162,6 +162,17 @@ function AdminPage() {
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Note templates</div>
           <div className="mt-1 text-sm text-foreground">Sections, conditional fields & scoring</div>
         </Link>
+        <Link
+          to="/admin-catalog-governance"
+          className="rounded-lg border bg-card p-3 hover:bg-secondary/50"
+        >
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">
+            Catalog governance
+          </div>
+          <div className="mt-1 text-sm text-foreground">
+            Frequency catalog & local RxNav suppressions
+          </div>
+        </Link>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">

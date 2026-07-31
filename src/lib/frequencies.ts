@@ -28,9 +28,28 @@ export interface MedFrequency {
   adminTimes: number[];
   /** PRN only: worst-case administrations per 24h, for dispense quantity. */
   maxPerDay?: number;
+  /** Admin-authored free text shown next to the code in pickers/admin. */
+  description?: string;
+  /** PRN only: minimum minutes between administrations (MAR advisory). */
+  minGapMinutes?: number;
+  /** Non-daily cadences (e.g. QWK = 7). Defaults to 1. */
+  intervalDays?: number;
+  /** Inactive rows drop out of pickers but still resolve for history. */
+  active?: boolean;
+  /** Ascending picker order; seeded rows are spaced by 10. */
+  sortOrder?: number;
+  /** Set when an admin deactivates the row. */
+  deactivatedReason?: string;
+  updatedBy?: string;
+  updatedAt?: string;
 }
 
-export const FREQUENCY_CATALOG: MedFrequency[] = [
+/**
+ * Seeded rows. §Admin governance: the live catalog is a mutable registry
+ * layered on this seed (see `listFrequencies` / AdelanteEHR.saveFrequency).
+ * Import `listFrequencies()` in UI code — never this array.
+ */
+export const SEED_FREQUENCIES: MedFrequency[] = [
   { code: "QD", label: "QD — once daily", sigLabel: "once daily", isPrn: false, adminTimes: [8] },
   {
     code: "QAM",
@@ -102,7 +121,7 @@ export const FREQUENCY_CATALOG: MedFrequency[] = [
     isPrn: false,
     adminTimes: [8],
     intervalDays: 7,
-  } as MedFrequency & { intervalDays: number },
+  },
   {
     code: "PRN",
     label: "PRN — as needed",
@@ -139,12 +158,53 @@ export const FREQUENCY_CATALOG: MedFrequency[] = [
 
 /** Weekly / non-daily cadences carry an interval; daily ones default to 1. */
 export function frequencyIntervalDays(f?: MedFrequency): number {
-  return (f as (MedFrequency & { intervalDays?: number }) | undefined)?.intervalDays ?? 1;
+  return f?.intervalDays ?? 1;
 }
 
+// ----- §Admin governance: mutable frequency registry -----------------------
+//
+// Mutators here are raw. Audit logging, in-use protection and reactive emit
+// live in `AdelanteEHR` (src/lib/ehr.ts) — admin UI must go through those.
+
+function seedCatalog(): MedFrequency[] {
+  return SEED_FREQUENCIES.map((f, i) => ({ ...f, active: true, sortOrder: (i + 1) * 10 }));
+}
+
+let catalog: MedFrequency[] = seedCatalog();
+
+/** Active rows (picker order), or everything when `includeInactive`. */
+export function listFrequencies(includeInactive = false): MedFrequency[] {
+  return catalog
+    .filter((f) => includeInactive || f.active !== false)
+    .map((f) => ({ ...f }))
+    .sort((a, b) => (a.sortOrder ?? 0) - (b.sortOrder ?? 0) || a.code.localeCompare(b.code));
+}
+
+/** Resolves INACTIVE rows too, so historical orders never lose their label. */
 export function frequencyByCode(code?: string): MedFrequency | undefined {
   if (!code) return undefined;
-  return FREQUENCY_CATALOG.find((f) => f.code === code);
+  return catalog.find((f) => f.code === code);
+}
+
+/** Insert or replace by code. Returns the stored row. */
+export function putFrequency(row: MedFrequency): MedFrequency {
+  const i = catalog.findIndex((f) => f.code === row.code);
+  if (i >= 0) catalog[i] = { ...catalog[i], ...row };
+  else catalog.push({ ...row });
+  return { ...(catalog.find((f) => f.code === row.code) as MedFrequency) };
+}
+
+/** Hard delete. Only ever called after the in-use check in `AdelanteEHR`. */
+export function dropFrequency(code: string): boolean {
+  const i = catalog.findIndex((f) => f.code === code);
+  if (i < 0) return false;
+  catalog.splice(i, 1);
+  return true;
+}
+
+/** Test helper — restores the seeded catalog. */
+export function resetFrequencyCatalog(): void {
+  catalog = seedCatalog();
 }
 
 /** Administrations per 24h. PRN uses its worst-case ceiling. */
