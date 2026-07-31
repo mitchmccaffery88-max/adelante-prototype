@@ -1764,7 +1764,7 @@ function ProgressNoteCard({
                 answers={note.templateAnswers ?? {}}
                 onChange={() => {}}
                 readOnly
-                missingKeys={missing}
+                missingKeys={missing.map((m) => m.key)}
               />
             </div>
           )}
