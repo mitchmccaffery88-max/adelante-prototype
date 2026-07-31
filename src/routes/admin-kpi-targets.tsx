@@ -46,6 +46,7 @@ import {
 import { ArrowLeft, Lock, Pencil, Plus, Target } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
+import { CalaimCodesSection } from "@/components/admin/CalaimCodesSection";
 
 export const Route = createFileRoute("/admin-kpi-targets")({
   head: () => ({
@@ -248,10 +249,11 @@ function AdminKpiTargetsPage() {
       </Link>
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
-          <h1 className="font-display text-2xl text-navy">KPI targets</h1>
+          <h1 className="font-display text-2xl text-navy">Population health configuration</h1>
           <p className="text-sm text-muted-foreground">
-            Targets the population health dashboard measures live metrics against. A target may be
-            set for a measure that has no live metric yet — the dashboard says so explicitly.
+            KPI targets the dashboard measures live metrics against, plus the CalAIM qualifying
+            code registry. A target may be set for a measure that has no live metric yet — the
+            dashboard says so explicitly.
           </p>
         </div>
         {canWrite && (
