@@ -4637,6 +4637,28 @@ export const AdelanteEHR = {
       linkParams: { patientId, section: "messages" },
       patientId,
     });
+    // §Self-flag blind-spot safety net — a self-flagged message is masked from
+    // any role that fails the SUD consent check for THIS patient, which can
+    // include the very case manager the notification above targets. When that
+    // happens, also broadcast to a role that is genuinely un-gated for this
+    // content class, so a real authorized reader is alerted. Same generic body
+    // and link — no new information is disclosed.
+    if (selfFlagged && canAccess("case_manager", "screeners_sud", p).locked) {
+      const backstop = (["therapist", "pmhnp"] as StaffRole[]).find(
+        (r) => !canAccess(r, "screeners_sud", p).locked,
+      );
+      if (backstop) {
+        AdelanteEHR.notify({
+          recipientRole: backstop,
+          category: "patient_message",
+          subject: `New message — ${patientLabel(patientId)}`,
+          body: "A patient sent a message to their care team.",
+          linkRoute: "/record/$patientId",
+          linkParams: { patientId, section: "messages" },
+          patientId,
+        });
+      }
+    }
     emit();
     return msg;
   },
