@@ -181,7 +181,9 @@ export function RefusalFormDialog({
               <p className="text-xs text-muted-foreground">
                 {form.riskTextReviewed === false
                   ? "The risk text below is shown in the patient's language as a DRAFT translation pending clinical review. Read it with an interpreter and confirm understanding; the reviewed English wording is kept on the record."
-                  : "No reviewed translation exists for this language — the risk text below is presented in English and must be interpreted for the patient."}
+                  : form.riskTextSnapshotEn && form.riskTextSnapshotEn !== form.riskTextSnapshot
+                    ? `The risk text below is the clinically approved ${form.riskTextVersion} translation. Read it with an interpreter and confirm understanding; the English wording is locked on the record for reference.`
+                    : "No reviewed translation exists for this language — the risk text below is presented in English and must be interpreted for the patient."}
               </p>
             </div>
           )}
@@ -201,9 +203,13 @@ export function RefusalFormDialog({
               </div>
             )}
             <p className="mt-2 whitespace-pre-line">{form.riskTextSnapshot}</p>
-            {form.riskTextReviewed === false && form.riskTextSnapshotEn && (
+            {form.riskTextSnapshotEn && form.riskTextSnapshotEn !== form.riskTextSnapshot && (
               <details className="mt-2 text-xs text-muted-foreground">
-                <summary className="cursor-pointer">Reviewed English wording</summary>
+                <summary className="cursor-pointer">
+                  {form.riskTextReviewed === false
+                    ? "Reviewed English wording"
+                    : "English wording (locked reference copy)"}
+                </summary>
                 <p className="mt-1 whitespace-pre-line">{form.riskTextSnapshotEn}</p>
               </details>
             )}
