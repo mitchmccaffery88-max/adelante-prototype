@@ -31,7 +31,7 @@ import {
   type MarSlot,
 } from "@/lib/mar";
 import { ORDER_STATUS_LABEL } from "@/lib/orders";
-import { facilityDateKey } from "@/lib/facilityTime";
+import { facilityDateKey, waitLabel } from "@/lib/facilityTime";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
