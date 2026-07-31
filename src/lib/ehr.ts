@@ -483,7 +483,46 @@ export interface Facility {
   createdAt: string;
 }
 
-export type FacilityKind = "jail" | "prison" | "treatment" | "shelter" | "hospital" | "other";
+export type FacilityKind =
+  | "clinic"
+  | "community_health_center"
+  | "county_jail"
+  | "state_prison"
+  | "juvenile_hall"
+  | "hospital"
+  | "treatment"
+  | "shelter"
+  | "other"
+  // Legacy kinds kept so historical rows keep resolving; new records should
+  // use the more specific county_jail / state_prison labels above.
+  | "jail"
+  | "prison";
+
+/** Selectable facility types, in the order admins should see them. */
+export const FACILITY_KINDS: { key: FacilityKind; label: string }[] = [
+  { key: "clinic", label: "Clinic" },
+  { key: "community_health_center", label: "Community health center" },
+  { key: "county_jail", label: "County jail" },
+  { key: "state_prison", label: "State prison" },
+  { key: "juvenile_hall", label: "Juvenile hall" },
+  { key: "hospital", label: "Hospital" },
+  { key: "treatment", label: "Treatment / residential" },
+  { key: "shelter", label: "Shelter" },
+  { key: "other", label: "Other" },
+];
+
+const LEGACY_FACILITY_KIND_LABELS: Partial<Record<FacilityKind, string>> = {
+  jail: "Jail (legacy)",
+  prison: "Prison (legacy)",
+};
+
+export function facilityKindLabel(kind: FacilityKind): string {
+  return (
+    FACILITY_KINDS.find((k) => k.key === kind)?.label ??
+    LEGACY_FACILITY_KIND_LABELS[kind] ??
+    "Other"
+  );
+}
 
 /**
  * Fold a facility name to its matching key: case, accents, punctuation, dash
