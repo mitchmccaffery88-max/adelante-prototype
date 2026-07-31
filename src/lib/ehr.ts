@@ -4735,6 +4735,7 @@ export const AdelanteEHR = {
         medClass,
         riskTextVersion: row.riskTextVersion,
         languageCode: row.languageCode,
+        riskTextReviewed: row.riskTextReviewed,
         capacityFlagsAtSigning,
         guardianRequired: row.guardianRequired,
       },
