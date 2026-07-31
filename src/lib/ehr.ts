@@ -1596,7 +1596,7 @@ const caseTasks: CaseTask[] = [];
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
 import { frequencyByCode } from "./frequencies";
-import { facilityDateKey } from "./facilityTime";
+import { facilityDateKey, fromFacilityWallClock } from "./facilityTime";
 import {
   RISK_TEXT_CATALOG,
   capacityFlagsFrom,
