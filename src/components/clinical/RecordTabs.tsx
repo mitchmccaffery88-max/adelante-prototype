@@ -1658,6 +1658,57 @@ const NOTE_STATUS_LABEL: Record<NoteStatus, string> = {
   declined: "Declined",
 };
 
+/**
+ * Export action for finalized notes. Rendered ONLY when `noteExportGate`
+ * allows it — the same gate the PDF builder re-runs — so draft, unsigned and
+ * SUD-masked notes have no export affordance at all.
+ */
+function NoteExportButton({
+  patientId,
+  note,
+  authorLabel,
+}: {
+  patientId: string;
+  note: ProgressNote;
+  authorLabel: string;
+}) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { role, staffName } = useActingStaff();
+  if (!patient) return null;
+  if (!noteExportGate(note, role, patient).allowed) return null;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="mt-2 h-7 text-[11px]"
+      onClick={() => {
+        try {
+          const filename = downloadProgressNotePdf({
+            note,
+            patient,
+            role,
+            authorLabel,
+            exportedBy: staffName,
+          });
+          toast.success(`Exported ${filename}`);
+        } catch (e) {
+          toast.error((e as Error).message);
+        }
+      }}
+    >
+      <Download className="mr-1 h-3.5 w-3.5" /> Export PDF
+    </Button>
+  );
+}
+
+const NOTE_STATUS_LABEL_UNUSED: Record<NoteStatus, string> = {
+  draft: "Draft",
+  signed: "Signed",
+  cosign_pending: "Awaiting cosign",
+  cosigned: "Cosigned",
+  declined: "Declined",
+};
+
 export function NoteStatusBadge({ note }: { note: ProgressNote }) {
   const s = noteStatus(note);
   const tone =
