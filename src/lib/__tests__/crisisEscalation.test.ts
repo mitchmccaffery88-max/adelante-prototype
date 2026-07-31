@@ -77,7 +77,7 @@ describe("crisis escalation model", () => {
       disposition: "Safety plan in place; follow-up in 24h",
     });
     expect(resolved.status).toBe("resolved");
-    const alert = AdelanteEHR.listAlerts(pid).find((a) => a.id === row.alertId);
+    const alert = AdelanteEHR.getPatient(pid)?.alerts?.find((a) => a.id === row.alertId);
     expect(alert?.active).toBe(false);
     expect(alert?.removedReason).toMatch(/Safety plan/);
     expect(AdelanteEHR.listOpenCrisisEscalations().some((r) => r.escalation.id === row.id)).toBe(
