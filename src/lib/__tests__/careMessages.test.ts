@@ -1,6 +1,7 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { canAccess } from "@/lib/roles";
+import { isMessageBodyMasked, MASKED_MESSAGE_BODY, visibleMessageBody } from "@/lib/careMessageMasking";
 
 const patientId = () => AdelanteEHR.listPatients()[0].id;
 
