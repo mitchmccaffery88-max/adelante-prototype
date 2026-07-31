@@ -12,6 +12,7 @@
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { frequencyByCode } from "@/lib/frequencies";
+import type { QuickPickMed } from "@/lib/templateSchema";
 import {
   didFallbackToPositionalNames,
   extractIngredientNames,
