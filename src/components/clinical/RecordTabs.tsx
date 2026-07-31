@@ -1512,25 +1512,14 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
-              <Select
+              <NoteTemplatePicker
+                templates={templates}
                 value={templateId}
-                onValueChange={(v) => {
+                onChange={(v) => {
                   setTemplateId(v);
                   setAnswers({});
                 }}
-              >
-                <SelectTrigger aria-label="Note template">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">SOAP (no template)</SelectItem>
-                  {templates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-1.5">
               <Select
