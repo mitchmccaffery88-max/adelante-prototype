@@ -26,6 +26,10 @@ import {
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
 import {
+  AutoCreatedFromNote,
+  AutoStartedNoteTrace,
+} from "@/components/clinical/AutomationTrace";
+import {
   AdelanteEHR,
   useEhr,
   isNoteSudSensitive,
@@ -49,7 +53,11 @@ import {
   useNoteAutofillSnapshots,
 } from "@/components/clinical/NoteAutofillCard";
 import { NoteOrdersSection } from "@/components/clinical/NoteOrdersSection";
-import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
+import {
+  findMissingRequired,
+  summarizeAutomation,
+  type TemplateAnswers,
+} from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
   useActingRole,
@@ -1288,6 +1296,7 @@ export function TaskList({
     referral_stale: "Stale referral",
     notification_failed: "Delivery failed",
     provider_switch: "Provider switch",
+    note_automation: "Note automation",
   };
   return (
     <div className="space-y-1.5">
@@ -1302,6 +1311,7 @@ export function TaskList({
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   Due {t.dueDate.slice(0, 10)} · {originLabels[t.origin]}
                 </div>
+                <AutoCreatedFromNote task={t} />
               </div>
               {showActions && (
                 <div className="flex gap-1">
@@ -1799,6 +1809,12 @@ function ProgressNoteCard({
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
+  // §Phase 3c — what signing will ALSO do. Same selection the runner uses, so
+  // the preview can never disagree with the behaviour.
+  const plannedAuto = useEhr(() =>
+    AdelanteEHR.plannedNoteAutomations(patientId, note.templateSchema, note.templateAnswers),
+  );
+  const automationRuns = useEhr(() => AdelanteEHR.listNoteAutomationRuns(note.id));
   // Structured templates gate signing: a required question left blank is the
   // same class of defect as an unattested signature.
   const missing = note.templateSchema
@@ -1851,6 +1867,7 @@ function ProgressNoteCard({
         </span>
       </div>
       <div className="mt-1 text-[10px] text-muted-foreground">By {authorLabel}</div>
+      <AutoStartedNoteTrace note={note} />
       {sudLocked ? (
         <div className="mt-2 flex items-center gap-2 text-muted-foreground">
           <Lock className="h-3.5 w-3.5" />
@@ -1926,9 +1943,40 @@ function ProgressNoteCard({
           Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
         </p>
       )}
+      {automationRuns.length > 0 && (
+        <div className="mt-2 rounded border border-border bg-secondary/20 p-2 text-[10px] text-muted-foreground">
+          <span className="font-medium text-navy">Automations run on signing</span>
+          <ul className="mt-1 space-y-0.5">
+            {automationRuns.map((r) => (
+              <li key={`${r.noteId}-${r.automationId}`}>
+                {r.resultKind === "case_task" && "Task scheduled"}
+                {r.resultKind === "draft_note" && "Draft note started"}
+                {r.resultKind === "skipped" && `Skipped (${r.skipReason ?? "no result"})`} ·{" "}
+                <ClientDate value={r.ranAt} />
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
       <NoteExportButton patientId={patientId} note={note} authorLabel={authorLabel} />
       {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {plannedAuto.length > 0 && (
+            <div
+              data-testid="pre-sign-automation-summary"
+              className="rounded border border-teal/40 bg-teal/10 p-2 text-[11px] text-navy"
+            >
+              <span className="font-medium">
+                Signing this note will also
+                {mustCosign ? " (once cosigned)" : ""}:
+              </span>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                {plannedAuto.map((a) => (
+                  <li key={a.id}>{summarizeAutomation(a)}</li>
+                ))}
+              </ul>
+            </div>
+          )}
           {mustCosign && (
             <div className="space-y-1.5">
               <Label className="text-[11px]">Cosigner (required for your role)</Label>

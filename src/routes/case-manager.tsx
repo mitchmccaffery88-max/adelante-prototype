@@ -8,6 +8,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
+import { AutoCreatedFromNote } from "@/components/clinical/AutomationTrace";
 import {
   Select,
   SelectContent,
@@ -1034,6 +1035,7 @@ function TaskQueueCard({
                       <Clock className="h-3 w-3" /> Due {t.dueDate.slice(0, 10)}
                     </span>
                   </div>
+                  <AutoCreatedFromNote task={t} />
                 </div>
                 {t.status === "open" && (
                   <div className="shrink-0 flex gap-2 w-full sm:w-auto">
@@ -1118,6 +1120,7 @@ function PatientTasksCard({ patientId, cmId }: { patientId: string; cmId: string
                 <div className="text-[10px] text-muted-foreground mt-0.5">
                   Due {t.dueDate.slice(0, 10)} · {t.origin.replace("_", " ")}
                 </div>
+                <AutoCreatedFromNote task={t} />
               </div>
               <Button
                 size="sm"

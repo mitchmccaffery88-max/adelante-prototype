@@ -1,6 +1,11 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-import { schemaContentEquals } from "./templateSchema";
-import type { AutofillSnapshot, TemplateAnswers, TemplateSchema } from "./templateSchema";
+import { plannedAutomations, schemaContentEquals, summarizeAutomation } from "./templateSchema";
+import type {
+  Automation,
+  AutofillSnapshot,
+  TemplateAnswers,
+  TemplateSchema,
+} from "./templateSchema";
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
@@ -1347,6 +1352,19 @@ export interface ProgressNote {
    * answers. Never recomputed on read.
    */
   autofillSnapshots?: AutofillSnapshot[];
+  /**
+   * §Phase 3c — set when a `start_template` automation created this draft.
+   * Automation output is never auto-signed: this note is a draft like any
+   * other and a human must author and sign it.
+   */
+  automationOrigin?: {
+    sourceNoteId: string;
+    automationId: string;
+    /** The automation's author-facing label. */
+    label: string;
+    /** Template title of the note that triggered it. */
+    sourceTemplateTitle?: string;
+  };
 }
 
 /**
@@ -1450,7 +1468,9 @@ export type CaseTaskOrigin =
   | "screener_flag"
   | "referral_stale"
   | "notification_failed"
-  | "provider_switch";
+  | "provider_switch"
+  /** §Phase 3c — created by a note template automation at sign time. */
+  | "note_automation";
 
 export interface CaseTask {
   id: string;
@@ -1466,6 +1486,32 @@ export interface CaseTask {
   snoozedUntil?: string;
   /** Idempotency key so auto-generation doesn't duplicate. */
   dedupeKey?: string;
+  /**
+   * §Phase 3c provenance. Present only on automation-created tasks so the UI
+   * can always say WHICH note produced this work and link back to it.
+   */
+  sourceNoteId?: string;
+  sourceAutomationId?: string;
+  /** Template title of the source note, for "Auto-created from …". */
+  sourceTemplateTitle?: string;
+  priority?: "routine" | "urgent" | "stat";
+}
+
+/**
+ * §Phase 3c run log. One row per (noteId, automationId) that has ever fired.
+ * Checked BEFORE firing, so an automation can never run twice for the same
+ * note even if the note is somehow re-signed.
+ */
+export interface NoteAutomationRun {
+  noteId: string;
+  automationId: string;
+  patientId: string;
+  ranAt: string;
+  /** What the run produced, for the audit trail. */
+  resultKind: "case_task" | "draft_note" | "skipped";
+  resultId?: string;
+  /** Populated when resultKind is "skipped". */
+  skipReason?: string;
 }
 
 export interface AvailabilitySlot {
@@ -2032,6 +2078,10 @@ let currentPatientId = "p2";
 // (which is a legacy per-patient action list) so CM views can index by
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
+
+// §Phase 3c automation run log. Append-only; the ONLY thing that decides
+// whether an automation may fire. Keyed by (noteId, automationId).
+const noteAutomationRuns: NoteAutomationRun[] = [];
 
 // ---------------------------------------------------------------------------
 // §Risk-text translation governance.
@@ -3592,6 +3642,14 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    // §Phase 3c — automations fire on the transition to a FINAL signature.
+    // A note routed for cosignature is not final yet, so nothing runs until
+    // the cosigner attests (see cosignProgressNote).
+    if (n.status === "signed")
+      AdelanteEHR.runNoteAutomations(patientId, noteId, {
+        actorId: input.signedBy,
+        actorRole: input.role,
+      });
     emit();
     return n;
   },
@@ -3624,8 +3682,168 @@ export const AdelanteEHR = {
       actorRole: input.role,
       detail: { noteId, comment: n.cosignComment ?? null, signedBy: n.signedBy ?? null },
     });
+    AdelanteEHR.runNoteAutomations(patientId, noteId, {
+      actorId: input.cosignedBy,
+      actorRole: input.role,
+    });
     emit();
     return n;
+  },
+
+  // ----- §Phase 3c: post-sign automations ---------------------------------
+  //
+  // Conservative by construction:
+  //   visible   — every artifact carries sourceNoteId + sourceAutomationId and
+  //               renders an "Auto-created from …" trace in the UI.
+  //   reversible— a task can be completed/snoozed and a draft note deleted or
+  //               simply left unsigned. Nothing here touches the signed record.
+  //   idempotent— the run log below is checked before firing and appended to
+  //               after, so a (noteId, automationId) pair fires at most once
+  //               for the life of the note.
+  //
+  // NOT SUPPORTED, deliberately: order / order_set actions. See the scope note
+  // in templateSchema.ts — nothing here can place a medication order.
+
+  listNoteAutomationRuns(noteId?: string): NoteAutomationRun[] {
+    return noteAutomationRuns
+      .filter((r) => !noteId || r.noteId === noteId)
+      .map((r) => ({ ...r }));
+  },
+
+  hasAutomationRun(noteId: string, automationId: string): boolean {
+    return noteAutomationRuns.some((r) => r.noteId === noteId && r.automationId === automationId);
+  },
+
+  /**
+   * The automations that WOULD fire for a note right now, given its answers
+   * and the patient's active problems. Backs the pre-sign summary the
+   * clinician sees, and is the same selection the runner uses — one source of
+   * truth, so the preview cannot disagree with the behaviour.
+   */
+  plannedNoteAutomations(
+    patientId: string,
+    schema: TemplateSchema | undefined,
+    answers: TemplateAnswers | undefined,
+  ): Automation[] {
+    const active = AdelanteEHR.listProblems(patientId)
+      .filter(isProblemClinicallyActive)
+      .map((p) => ({ category: p.category, icd10Code: p.icd10Code }));
+    return plannedAutomations(schema, answers ?? {}, active);
+  },
+
+  /**
+   * Execute a signed note's automations exactly once each. Safe to call again:
+   * already-logged pairs are skipped.
+   */
+  runNoteAutomations(
+    patientId: string,
+    noteId: string,
+    actor: { actorId: string; actorRole?: string },
+  ): NoteAutomationRun[] {
+    const { p, n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!p || !n) return [];
+    const planned = AdelanteEHR.plannedNoteAutomations(patientId, n.templateSchema, n.templateAnswers);
+    const fired: NoteAutomationRun[] = [];
+
+    for (const automation of planned) {
+      // Idempotency gate. Non-negotiable — checked before ANY side effect.
+      if (AdelanteEHR.hasAutomationRun(noteId, automation.id)) continue;
+
+      const run: NoteAutomationRun = {
+        noteId,
+        automationId: automation.id,
+        patientId,
+        ranAt: new Date().toISOString(),
+        resultKind: "skipped",
+      };
+
+      if (automation.action.kind === "schedule_task") {
+        const { taskType, dueInDays, priority } = automation.action;
+        const due = new Date();
+        due.setDate(due.getDate() + (Number.isFinite(dueInDays) ? dueInDays : 0));
+        // Reuses the ONE task creation path — no parallel task system.
+        const task = AdelanteEHR.createCaseTask({
+          patientId,
+          // Automations create work for the patient's case manager when there
+          // is one; otherwise it lands with the signer so it is never orphaned.
+          assignedTo: p.caseManagerId ?? actor.actorId,
+          title: taskType,
+          detail: `${automation.label} — auto-created when "${n.templateTitle ?? "a progress note"}" was signed.`,
+          dueDate: due.toISOString().slice(0, 10),
+          origin: "note_automation",
+          sourceNoteId: noteId,
+          sourceAutomationId: automation.id,
+          sourceTemplateTitle: n.templateTitle,
+          priority: priority ?? "routine",
+        });
+        run.resultKind = task ? "case_task" : "skipped";
+        run.resultId = task?.id;
+        if (!task) run.skipReason = "task_creation_failed";
+      } else {
+        const key = automation.action.templateKey?.trim() || n.templateKey;
+        // Latest active version of the target key — never a superseded row.
+        const target = key
+          ? AdelanteEHR.listNoteTemplates().find((t) => t.key.toLowerCase() === key.toLowerCase())
+          : undefined;
+        if (!target) {
+          run.skipReason = key
+            ? `no_active_template_for_key:${key}`
+            : "no_template_key_on_source_note";
+        } else {
+          const draft = AdelanteEHR.addProgressNote(patientId, {
+            clinicianId: n.clinicianId,
+            date: new Date().toISOString(),
+            sessionType: n.sessionType,
+            subjective: "",
+            objective: "",
+            assessment: "",
+            plan: "",
+            category: n.category,
+            // Authored by a human later; the automation only opened the draft.
+            authorSource: "human",
+            status: "draft",
+            templateId: target.id,
+            templateKey: target.key,
+            templateTitle: target.title,
+            templateVersion: target.version,
+            templateSchema: target.schema,
+            templateAnswers: {},
+            automationOrigin: {
+              sourceNoteId: noteId,
+              automationId: automation.id,
+              label: automation.label,
+              sourceTemplateTitle: n.templateTitle,
+            },
+          });
+          run.resultKind = draft ? "draft_note" : "skipped";
+          run.resultId = draft?.id;
+          if (!draft) run.skipReason = "draft_creation_failed";
+        }
+      }
+
+      noteAutomationRuns.push(run);
+      fired.push(run);
+      appendAudit({
+        category: "clinical",
+        action: "note_automation_ran",
+        patientId,
+        actorId: actor.actorId,
+        actorRole: actor.actorRole,
+        detail: {
+          noteId,
+          automationId: automation.id,
+          label: automation.label,
+          summary: summarizeAutomation(automation),
+          actionKind: automation.action.kind,
+          resultKind: run.resultKind,
+          resultId: run.resultId ?? null,
+          skipReason: run.skipReason ?? null,
+        },
+      });
+    }
+
+    if (fired.length) emit();
+    return fired;
   },
 
   /**
@@ -4067,6 +4285,11 @@ export const AdelanteEHR = {
     dueDate: string;
     origin?: CaseTaskOrigin;
     dedupeKey?: string;
+    /** §Phase 3c provenance — set only by the automation runner. */
+    sourceNoteId?: string;
+    sourceAutomationId?: string;
+    sourceTemplateTitle?: string;
+    priority?: CaseTask["priority"];
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -4085,6 +4308,10 @@ export const AdelanteEHR = {
       origin: input.origin ?? "manual",
       createdAt: new Date().toISOString(),
       dedupeKey: input.dedupeKey,
+      sourceNoteId: input.sourceNoteId,
+      sourceAutomationId: input.sourceAutomationId,
+      sourceTemplateTitle: input.sourceTemplateTitle,
+      priority: input.priority,
     };
     caseTasks.unshift(task);
     emit();
