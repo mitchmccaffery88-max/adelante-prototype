@@ -1028,7 +1028,6 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       <RefusalFormDialog
         patientId={patientId}
         form={activeForm}
-        onExport={exportForm}
         staffName={staffName}
         onClose={closeActiveForm}
         onFinalized={handleFinalized}
