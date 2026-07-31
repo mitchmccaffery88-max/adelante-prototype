@@ -107,7 +107,7 @@ describe("post-sign automations", () => {
     ]);
     const run = AdelanteEHR.listNoteAutomationRuns(n.id)[0]!;
     expect(run.resultKind).toBe("draft_note");
-    const draft = AdelanteEHR.listProgressNotes(PATIENT).find((x) => x.id === run.resultId);
+    const draft = AdelanteEHR.listPatients().find((x) => x.id === PATIENT)?.progressNotes?.find((x) => x.id === run.resultId);
     expect(draft?.status).toBe("draft");
     expect(draft?.signedBy).toBeFalsy();
     expect(draft?.automationOrigin?.sourceNoteId).toBe(n.id);
