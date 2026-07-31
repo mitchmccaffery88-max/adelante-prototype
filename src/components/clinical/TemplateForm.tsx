@@ -23,11 +23,19 @@ import {
 import { AlertTriangle } from "lucide-react";
 import {
   computeScore,
+  ES_DRAFT_NOTICE_EN,
+  ES_DRAFT_NOTICE_ES,
+  fieldHelp,
+  fieldLabel,
   isFieldVisible,
   isSectionVisible,
+  optionLabel,
+  sectionTitle,
+  spanishReviewPending,
   type AnswerValue,
   type TemplateAnswers,
   type TemplateField,
+  type TemplateLanguage,
   type TemplateSchema,
 } from "@/lib/templateSchema";
 
@@ -38,19 +46,46 @@ interface Props {
   readOnly?: boolean;
   /** Field keys to highlight as missing (from findMissingRequired). */
   missingKeys?: string[];
+  /**
+   * Display language. Resolved by the caller from `Patient.preferredLanguage`
+   * — the same source of truth the Refusal risk text uses. Defaults to English,
+   * so existing English-only rendering is unchanged.
+   */
+  language?: TemplateLanguage;
 }
 
-export function TemplateForm({ schema, answers, onChange, readOnly, missingKeys = [] }: Props) {
+export function TemplateForm({
+  schema,
+  answers,
+  onChange,
+  readOnly,
+  missingKeys = [],
+  language = "en",
+}: Props) {
   const set = (key: string, value: AnswerValue) => onChange({ ...answers, [key]: value });
   const scores = computeScore(schema, answers);
+  // Draft-translation visibility flag, mirroring the Refusal risk text. Not a
+  // gate — the form stays fully usable.
+  const esDraft = language === "es" && spanishReviewPending(schema);
 
   return (
     <div className="space-y-5">
+      {esDraft && (
+        <p
+          data-testid="template-es-draft-banner"
+          className="flex items-start gap-1.5 rounded-md border border-gold/50 bg-gold/15 p-2 text-[11px] text-navy"
+        >
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+          <span>
+            {ES_DRAFT_NOTICE_ES} · {ES_DRAFT_NOTICE_EN}
+          </span>
+        </p>
+      )}
       {(schema.sections ?? [])
         .filter((s) => isSectionVisible(s, answers))
         .map((section) => (
           <section key={section.id} className="space-y-3">
-            <h5 className="font-display text-sm text-navy">{section.title}</h5>
+            <h5 className="font-display text-sm text-navy">{sectionTitle(section, language)}</h5>
             {(section.fields ?? [])
               .filter((f) => isFieldVisible(f, answers))
               .map((field) => (
@@ -61,6 +96,7 @@ export function TemplateForm({ schema, answers, onChange, readOnly, missingKeys 
                   onChange={(v) => set(field.key, v)}
                   readOnly={readOnly}
                   missing={missingKeys.includes(field.key)}
+                  language={language}
                 />
               ))}
           </section>
