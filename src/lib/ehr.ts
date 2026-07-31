@@ -1652,6 +1652,7 @@ import {
     scheduledAt: facilityDayAt(8, 0),
     action: "refused",
     reason: "Patient declined — reports nausea after morning dose.",
+    batchId: "batch-demo-refusal-0",
     chartedBy: "Rosa T., LVN",
     chartedAt: facilityDayAt(8, 0),
   };
@@ -1662,6 +1663,7 @@ import {
     scheduledAt: facilityDayAt(8, daysAgo),
     action: "refused" as const,
     reason: "Patient declined.",
+    batchId: `batch-demo-refusal-${daysAgo}`,
     chartedBy: "Rosa T., LVN",
     chartedAt: facilityDayAt(8, daysAgo),
   }));
