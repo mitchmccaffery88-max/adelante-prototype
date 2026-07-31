@@ -397,6 +397,41 @@ export function computeScore(
   });
 }
 
+export interface RequiredFieldSummary {
+  /**
+   * Required fields that are visible against an EMPTY answer set — exactly the
+   * set `findMissingRequired(schema, {})` reports. This is the number a
+   * clinician sees before answering anything.
+   */
+  baseline: number;
+  /**
+   * Required fields gated behind a `show_if` (on the field or its section).
+   * These may or may not appear depending on answers, so the baseline count is
+   * a floor, not a total. Surfaced separately rather than folded in.
+   */
+  conditional: number;
+}
+
+/**
+ * Count required fields for a template picker. Keeps the same semantics as
+ * `findMissingRequired` against `{}` so the displayed number can never disagree
+ * with the gate that actually blocks signing.
+ */
+export function requiredFieldSummary(schema: TemplateSchema | undefined): RequiredFieldSummary {
+  if (!schema) return { baseline: 0, conditional: 0 };
+  const baseline = findMissingRequired(schema, {}).length;
+  let conditional = 0;
+  for (const section of schema.sections ?? []) {
+    for (const field of section.fields ?? []) {
+      if (!field.required) continue;
+      const gated = Boolean(section.show_if?.trim()) || Boolean(field.show_if?.trim());
+      if (!gated) continue;
+      conditional++;
+    }
+  }
+  return { baseline, conditional };
+}
+
 /** The fixed SOAP structure used when no template is selected/exists. */
 export const DEFAULT_SOAP_SCHEMA: TemplateSchema = {
   sections: [
