@@ -12,6 +12,37 @@ import type {
   TemplateAnswers,
   TemplateSchema,
 } from "./templateSchema";
+// Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
+// import here would create a cycle.
+import type { StaffRole } from "./roles";
+
+// ---------------------------------------------------------------------------
+// §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
+// Patient<->clinician messaging is explicitly out of scope (Phase 2).
+// In-app only: there is no email/SMS/push transport anywhere in this build.
+// ---------------------------------------------------------------------------
+export type NotificationCategory =
+  | "cosign_request"
+  | "crisis_flagged"
+  | "mar_witness_needed"
+  | "task_assigned";
+
+export interface AppNotification {
+  id: string;
+  /** Specific staff identity (STAFF_ROSTER id or staff name). */
+  recipientStaffId?: string;
+  /** OR broadcast to everyone holding this role. Exactly one of the two is set. */
+  recipientRole?: StaffRole;
+  category: NotificationCategory;
+  subject: string;
+  body: string;
+  linkRoute?: string;
+  linkParams?: Record<string, string>;
+  /** Context/traceability only — never used for access control. */
+  patientId?: string;
+  createdAt: string;
+  readAt?: string;
+}
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
