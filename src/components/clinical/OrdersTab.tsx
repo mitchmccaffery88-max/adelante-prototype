@@ -324,6 +324,7 @@ function DraftOrderCard({
           {prn && <Badge variant="secondary">PRN</Badge>}
           {order.isKop && <Badge variant="outline">KOP</Badge>}
           {order.isControlled && <Badge variant="outline">Controlled</Badge>}
+          {order.deaSchedule && <Badge variant="outline">{order.deaSchedule}</Badge>}
           {order.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
           {order.manualDose && <Badge variant="destructive">Manual dose</Badge>}
           {order.strengthSource === "dailymed" && <Badge variant="outline">Strength: DailyMed</Badge>}
@@ -594,6 +595,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {isPrnOrder(o) && <Badge variant="secondary">PRN</Badge>}
                 {o.isKop && <Badge variant="outline">KOP</Badge>}
                 {o.isControlled && <Badge variant="outline">Controlled</Badge>}
+                {o.deaSchedule && <Badge variant="outline">{o.deaSchedule}</Badge>}
                 {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
                 {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
                 {o.strengthSource === "dailymed" && (
