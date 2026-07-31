@@ -734,6 +734,7 @@ function TemplateBuilderDialog({
             answers={preview}
             onChange={setPreview}
             language={previewLang}
+            renderSection={(section) => <PreviewSection section={section} schema={schema} />}
           />
         </div>
 
