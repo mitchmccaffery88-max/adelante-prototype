@@ -4236,6 +4236,142 @@ export const AdelanteEHR = {
     return out.sort((a, b) => (a.note.signedAt ?? "").localeCompare(b.note.signedAt ?? ""));
   },
 
+  // ----- §Inbox: unsigned notes + provider requests -----
+  /**
+   * Cross-patient drafts authored BY this staff identity. `authorId` is the
+   * same token the Notes tab writes to `clinicianId` (`clinicianId ?? staffId`),
+   * so a queue never shows another clinician's unfinished work. Oldest first.
+   */
+  listDraftNotesBy(authorId: string): { patient: Patient; note: ProgressNote }[] {
+    const me = (authorId ?? "").trim();
+    if (!me) return [];
+    const out: { patient: Patient; note: ProgressNote }[] = [];
+    for (const p of patients) {
+      for (const n of p.progressNotes ?? []) {
+        if (n.clinicianId === me && noteStatus(n) === "draft" && !n.signedBy) {
+          out.push({ patient: p, note: n });
+        }
+      }
+    }
+    return out.sort((a, b) => a.note.date.localeCompare(b.note.date));
+  },
+
+  listProviderRequests(): ProviderRequest[] {
+    return [...providerRequests].sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  },
+
+  createProviderRequest(input: {
+    patientId: string;
+    requestType: ProviderRequest["requestType"];
+    context: string;
+    requestedBy: string;
+    requestedByRole: StaffRole;
+  }): ProviderRequest | undefined {
+    const context = input.context.trim();
+    if (!context) return undefined;
+    const row: ProviderRequest = {
+      id: uid(),
+      patientId: input.patientId,
+      requestType: input.requestType,
+      context,
+      requestedBy: input.requestedBy,
+      requestedByRole: input.requestedByRole,
+      status: "open",
+      createdAt: new Date().toISOString(),
+    };
+    providerRequests.unshift(row);
+    appendAudit({
+      category: "clinical",
+      action: "provider_request_created",
+      patientId: row.patientId,
+      actorId: row.requestedBy,
+      actorRole: row.requestedByRole,
+      detail: { requestId: row.id, requestType: row.requestType },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Claim = "I'm taking this". No reason required and no takeover path: a
+   * claimed request is simply not claimable again. Releasing is the escape
+   * hatch if someone claims the wrong row.
+   */
+  claimProviderRequest(id: string, staffName: string, role: StaffRole): boolean {
+    const r = providerRequests.find((x) => x.id === id);
+    if (!r || r.status !== "open") return false;
+    r.status = "claimed";
+    r.claimedBy = staffName;
+    r.assignedTo = staffName;
+    r.claimedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "provider_request_claimed",
+      patientId: r.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { requestId: r.id },
+    });
+    emit();
+    return true;
+  },
+
+  /** Undo a claim (wrong row, handing off). Returns it to the unclaimed pool. */
+  releaseProviderRequest(id: string, staffName: string, role: StaffRole): boolean {
+    const r = providerRequests.find((x) => x.id === id);
+    if (!r || r.status !== "claimed") return false;
+    r.status = "open";
+    r.claimedBy = undefined;
+    r.assignedTo = undefined;
+    r.claimedAt = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "provider_request_released",
+      patientId: r.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { requestId: r.id },
+    });
+    emit();
+    return true;
+  },
+
+  /** Complete + report back to the original requester through the feed. */
+  completeProviderRequest(
+    id: string,
+    staffName: string,
+    role: StaffRole,
+    outcome?: string,
+  ): boolean {
+    const r = providerRequests.find((x) => x.id === id);
+    if (!r || r.status === "done") return false;
+    r.status = "done";
+    r.outcome = outcome?.trim() || undefined;
+    r.completedBy = staffName;
+    r.completedAt = new Date().toISOString();
+    if (!r.assignedTo) r.assignedTo = staffName;
+    AdelanteEHR.notify({
+      recipientStaffId: r.requestedBy,
+      category: "provider_request_completed",
+      subject: `Request completed — ${patientLabel(r.patientId)}`,
+      body: r.outcome
+        ? `${staffName} completed your ${r.requestType === "order_entry" ? "order-entry" : "question"} request: ${r.outcome}`
+        : `${staffName} completed your ${r.requestType === "order_entry" ? "order-entry" : "question"} request.`,
+      linkRoute: "/inbox",
+      patientId: r.patientId,
+    });
+    appendAudit({
+      category: "clinical",
+      action: "provider_request_completed",
+      patientId: r.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { requestId: r.id, hasOutcome: Boolean(r.outcome) },
+    });
+    emit();
+    return true;
+  },
+
   // ----- Consent state + audit log -----
   getConsentState(patientId: string) {
     const p = patients.find((x) => x.id === patientId);
