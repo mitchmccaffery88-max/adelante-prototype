@@ -29,19 +29,20 @@ describe("MAR due-dose derivation", () => {
     expect(slots.every((s) => s.facilityDate === today())).toBe(true);
   });
 
-  it("routes PRN / KOP / controlled orders to the deferred section, not the queue", () => {
+  // §MAR Phase 2 — PRN / KOP / controlled are now actionable, each in its own
+  // lane. Nothing remains in the read-only "deferred" section.
+  it("routes PRN to the PRN lane, KOP to the supply lane, and controlled to the scheduled queue", () => {
     const prn = signedOrder({ frequencyCode: "Q6H_PRN" });
     const kop = signedOrder({ isKop: true });
-    const ctrl = signedOrder({ isControlled: true });
+    const ctrl = signedOrder({ isControlled: true, deaSchedule: "CII" });
     const day = marFor(prn.pid);
-    const deferredIds = day.deferred.map((d) => d.order.id);
-    for (const id of [prn.orderId, kop.orderId, ctrl.orderId]) {
-      expect(deferredIds).toContain(id);
-      expect(day.slots.some((s) => s.order.id === id)).toBe(false);
-    }
-    expect(deferralReasonFor(AdelanteEHR.listOrders(prn.pid).find((o) => o.id === prn.orderId)!)).toBe(
-      "prn",
-    );
+    expect(day.prn.map((s) => s.order.id)).toContain(prn.orderId);
+    expect(day.kop.map((s) => s.order.id)).toContain(kop.orderId);
+    expect(day.slots.some((s) => s.order.id === ctrl.orderId)).toBe(true);
+    expect(day.deferred).toHaveLength(0);
+    expect(
+      deferralReasonFor(AdelanteEHR.listOrders(prn.pid).find((o) => o.id === prn.orderId)!),
+    ).toBeUndefined();
   });
 
   it("drops doses once the order is discontinued", () => {
