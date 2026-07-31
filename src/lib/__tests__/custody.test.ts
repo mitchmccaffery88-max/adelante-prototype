@@ -334,3 +334,64 @@ describe("facility entity", () => {
     expect(() => AdelanteEHR.renameFacility(bk.facilityId, "Selma Annex", CM)).toThrow(/already exists/i);
   });
 });
+
+describe("facility administration", () => {
+  it("creates typed facilities and rejects normalized-name duplicates", () => {
+    const f = AdelanteEHR.createFacility(
+      { name: "Kings County   Jail", kind: "county_jail", city: "Hanford" },
+      CM,
+    );
+    expect(f.active).toBe(true);
+    expect(f.kind).toBe("county_jail");
+    expect(f.name).toBe("Kings County Jail");
+    expect(() =>
+      AdelanteEHR.createFacility({ name: "kings-county jail", kind: "clinic" }, CM),
+    ).toThrow(/already exists/i);
+  });
+
+  it("edits type and city, and requires a reason to deactivate", () => {
+    const f = AdelanteEHR.createFacility({ name: "Westside Annex", kind: "other" }, CM);
+    AdelanteEHR.updateFacility(f.id, { kind: "state_prison", city: "Coalinga" }, CM);
+    expect(AdelanteEHR.getFacility(f.id)?.kind).toBe("state_prison");
+    expect(AdelanteEHR.getFacility(f.id)?.city).toBe("Coalinga");
+
+    expect(() => AdelanteEHR.setFacilityActive(f.id, false, "  ", CM)).toThrow(/reason/i);
+    AdelanteEHR.setFacilityActive(f.id, false, "Site closed", CM);
+    expect(AdelanteEHR.getFacility(f.id)?.active).toBe(false);
+    expect(AdelanteEHR.listFacilities().some((x) => x.id === f.id)).toBe(false);
+    expect(AdelanteEHR.listFacilities(true).some((x) => x.id === f.id)).toBe(true);
+  });
+
+  it("merges a duplicate facility, repointing bookings and housing moves", () => {
+    const pid = newPatient("FacMerge");
+    const dupe = AdelanteEHR.addBooking(
+      pid,
+      {
+        bookingNumber: "BK-M1",
+        facilityName: "Tulare Co Jail Annex",
+        bookedAt: "2026-07-01T08:00:00.000Z",
+      },
+      CM,
+    );
+    AdelanteEHR.addHousingMove(
+      pid,
+      { bookingId: dupe.id, housingUnit: "B-2", movedAt: "2026-07-02T08:00:00.000Z" },
+      CM,
+    );
+    const survivor = AdelanteEHR.createFacility(
+      { name: "Tulare County Jail", kind: "county_jail" },
+      CM,
+    );
+
+    expect(() => AdelanteEHR.mergeFacilities(dupe.facilityId, survivor.id, "", CM)).toThrow(
+      /reason/i,
+    );
+    const res = AdelanteEHR.mergeFacilities(dupe.facilityId, survivor.id, "Typo duplicate", CM);
+    expect(res.bookings).toBe(1);
+    expect(res.housingMoves).toBe(1);
+    expect(AdelanteEHR.listBookings(pid)[0].facilityId).toBe(survivor.id);
+    expect(AdelanteEHR.listBookings(pid)[0].facilityName).toBe("Tulare County Jail");
+    expect(AdelanteEHR.listHousingMoves(pid)[0].facilityId).toBe(survivor.id);
+    expect(AdelanteEHR.getFacility(dupe.facilityId)?.active).toBe(false);
+  });
+});
