@@ -4385,6 +4385,85 @@ export const AdelanteEHR = {
   caseTasksForPatient(patientId: string): CaseTask[] {
     return caseTasks.filter((t) => t.patientId === patientId);
   },
+
+  // ----- §Notification feed (Phase 1) -----
+  /**
+   * Internal helper. UI never calls this directly — every notification is
+   * raised from inside the method that already performs the action.
+   */
+  notify(input: {
+    recipientStaffId?: string;
+    recipientRole?: StaffRole;
+    category: NotificationCategory;
+    subject: string;
+    body: string;
+    linkRoute?: string;
+    linkParams?: Record<string, string>;
+    patientId?: string;
+  }): AppNotification | undefined {
+    if (!input.recipientStaffId && !input.recipientRole) return undefined;
+    const row: AppNotification = {
+      id: uid(),
+      recipientStaffId: input.recipientStaffId || undefined,
+      // Exactly one addressing mode — a specific person wins over a broadcast.
+      recipientRole: input.recipientStaffId ? undefined : input.recipientRole,
+      category: input.category,
+      subject: input.subject,
+      body: input.body,
+      linkRoute: input.linkRoute,
+      linkParams: input.linkParams,
+      patientId: input.patientId,
+      createdAt: new Date().toISOString(),
+    };
+    notifications.unshift(row);
+    emit();
+    return row;
+  },
+  listNotifications(): AppNotification[] {
+    return [...notifications];
+  },
+  /**
+   * Everything addressed to this staff identity: direct (by roster id OR
+   * display name — both are used as identity tokens across this build) or
+   * broadcast to their role. Newest first.
+   */
+  listNotificationsFor(staffName: string, role?: StaffRole): AppNotification[] {
+    const me = (staffName ?? "").trim();
+    return notifications
+      .filter(
+        (n) =>
+          (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
+          (!!n.recipientRole && !!role && n.recipientRole === role),
+      )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  markNotificationRead(id: string, staffName: string): void {
+    const row = notifications.find((n) => n.id === id);
+    if (!row || row.readAt) return;
+    row.readAt = new Date().toISOString();
+    appendAudit({
+      category: "system",
+      action: "notification_read",
+      actorId: staffName,
+      patientId: row.patientId,
+      detail: { notificationId: row.id, notificationCategory: row.category },
+    });
+    emit();
+  },
+  markAllNotificationsRead(staffName: string, role?: StaffRole): void {
+    const rows = AdelanteEHR.listNotificationsFor(staffName, role).filter((n) => !n.readAt);
+    if (!rows.length) return;
+    const now = new Date().toISOString();
+    for (const r of rows) r.readAt = now;
+    appendAudit({
+      category: "system",
+      action: "notifications_all_read",
+      actorId: staffName,
+      detail: { count: rows.length },
+    });
+    emit();
+  },
+
   createCaseTask(input: {
     patientId: string;
     assignedTo: string;
