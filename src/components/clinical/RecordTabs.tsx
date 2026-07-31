@@ -28,6 +28,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   AdelanteEHR,
   useEhr,
+  isNoteSudSensitive,
+  noteStatus,
   type CoordinationChannel,
   type CoordinationDirection,
   type ExternalPartyRole,
@@ -35,7 +37,10 @@ import {
   type SdohStatus,
   type PeerNote,
   type CaseTask,
+  type ProgressNote,
+  type NoteStatus,
 } from "@/lib/ehr";
+import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import {
   useActingRole,
   useActingStaff,
