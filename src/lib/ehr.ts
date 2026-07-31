@@ -616,6 +616,43 @@ export interface ShiftCountLine {
 }
 
 /**
+ * §Population health — an admin-configured KPI target. Targets are reporting
+ * configuration, not clinical data, so they live top-level (not on a Patient)
+ * and are gated on the `population_health` record class.
+ */
+export interface KpiTarget {
+  id: string;
+  /** Matches a MetricKey in dashboardMetrics.ts. Free string so a target can
+   *  be set for a measure before the live metric exists. */
+  metricKey: string;
+  label: string;
+  targetValue: number;
+  unit: "percent" | "count";
+  /** YYYY-MM the target takes effect. */
+  effectiveMonth?: string;
+  /** Where the target came from (contract, NCCHC standard, internal goal). */
+  source?: string;
+  notes?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}
+
+interface UnusedShiftCountLineShim {
+  key: string;
+  drugName: string;
+  doseLabel: string;
+  deaSchedule: string;
+  given: number;
+  refusedOrHeld: number;
+  patients: number;
+  firstAt?: string;
+  lastAt?: string;
+}
+
+/**
  * Immutable, locked controlled-substance shift count. Top-level (NOT on a
  * Patient) — it is a facility/shift artifact that spans the population.
  */
