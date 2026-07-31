@@ -262,6 +262,54 @@ export interface MedOrder {
   createdAt?: string;
 }
 
+/**
+ * §MAR Phase 1 — a charted administration of one scheduled dose.
+ *
+ * DEV HANDOFF: Phase 1 covers SCHEDULED, non-PRN, non-KOP, non-controlled
+ * doses only. Deferred (coming, not dropped): PRN eligibility + reason chips,
+ * controlled-substance witness, KOP issuance, Suboxone mouth-check
+ * attestation, cart/keyboard mode, voice pass, and the Refusal legal document.
+ * Entries are NEVER deleted — voiding sets `voided` with a reason, matching the
+ * reference EMR's retention rationale (HIPAA / 42 CFR Part 2).
+ */
+export interface DoseAdministration {
+  id: string;
+  patientId: string;
+  /** References `MedOrder.id`. */
+  orderId: string;
+  /** ISO instant the dose was due (from the derived MAR grid). */
+  scheduledAt: string;
+  action: "given" | "refused" | "held";
+  /** Required for refused/held. Free text in Phase 1; chips come in Phase 2. */
+  reason?: string;
+  chartedBy: string;
+  chartedAt: string;
+  /** Required when chartedAt is more than 4h after scheduledAt. */
+  lateEntryReason?: string;
+  /** Groups everything committed in one attested pass, so it can be voided together. */
+  batchId: string;
+  voided?: boolean;
+  voidReason?: string;
+  voidedBy?: string;
+  voidedAt?: string;
+}
+
+/**
+ * Soft lock on an un-charted dose so two nurses don't chart the same slot.
+ * Single-session demos can't exercise real concurrency, but the state machine
+ * (claim / release / takeover-with-reason) is built faithfully so it is
+ * structurally correct once multi-user sessions exist.
+ */
+export interface DoseClaim {
+  orderId: string;
+  scheduledAt: string;
+  claimedBy: string;
+  claimedAt: string;
+}
+
+/** Hours after which charting a dose counts as a late entry. */
+export const LATE_ENTRY_THRESHOLD_HOURS = 4;
+
 export interface Patient {
   id: string;
   firstName: string;
@@ -377,6 +425,13 @@ export interface Patient {
   alerts?: PatientAlert[];
   /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
   orders?: MedOrder[];
+  /** Charted dose administrations (§MAR). Append-only; voids never delete. */
+  administrations?: DoseAdministration[];
+  /**
+   * Live claims on un-charted dose slots. Kept on the patient rather than in a
+   * separate store because every other MAR read is already patient-scoped.
+   */
+  doseClaims?: DoseClaim[];
 }
 
 
@@ -4000,6 +4055,208 @@ export const AdelanteEHR = {
       requireReason: false,
       action: "order_completed",
     });
+  },
+
+  // ----- MAR (§MAR Phase 1 — scheduled doses only) --------------------------
+  listAdministrations(patientId: string, opts?: { orderId?: string }): DoseAdministration[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const rows = p.administrations ?? [];
+    return opts?.orderId ? rows.filter((r) => r.orderId === opts.orderId) : [...rows];
+  },
+  listDoseClaims(patientId: string): DoseClaim[] {
+    return [...(patients.find((x) => x.id === patientId)?.doseClaims ?? [])];
+  },
+  /**
+   * Chart one scheduled dose. Validation is action-specific: refused/held need
+   * a reason, and anything charted more than 4h after the scheduled time needs
+   * a late-entry reason. Voided prior entries do not block re-charting.
+   */
+  chartDose(
+    patientId: string,
+    orderId: string,
+    scheduledAt: string,
+    action: DoseAdministration["action"],
+    reason: string | undefined,
+    staffName: string,
+    batchId: string,
+    lateEntryReason?: string,
+  ): DoseAdministration {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const order = p.orders?.find((o) => o.id === orderId);
+    if (!order) throw new Error("Order not found");
+    const trimmed = reason?.trim();
+    if ((action === "refused" || action === "held") && !trimmed)
+      throw new Error("A reason is required to chart a refused or held dose.");
+    const chartedAt = new Date();
+    const lateBy = chartedAt.getTime() - new Date(scheduledAt).getTime();
+    const late = lateBy > LATE_ENTRY_THRESHOLD_HOURS * 3600_000;
+    const lateTrimmed = lateEntryReason?.trim();
+    if (late && !lateTrimmed)
+      throw new Error(
+        `This dose is more than ${LATE_ENTRY_THRESHOLD_HOURS} hours late — a late-entry reason is required.`,
+      );
+    const already = (p.administrations ?? []).find(
+      (a) => a.orderId === orderId && a.scheduledAt === scheduledAt && !a.voided,
+    );
+    if (already) throw new Error("This dose is already charted.");
+    const row: DoseAdministration = {
+      id: uid(),
+      patientId,
+      orderId,
+      scheduledAt,
+      action,
+      reason: trimmed || undefined,
+      chartedBy: staffName,
+      chartedAt: chartedAt.toISOString(),
+      lateEntryReason: late ? lateTrimmed : undefined,
+      batchId,
+    };
+    p.administrations = [row, ...(p.administrations ?? [])];
+    // Charting consumes any claim on the slot.
+    p.doseClaims = (p.doseClaims ?? []).filter(
+      (c) => !(c.orderId === orderId && c.scheduledAt === scheduledAt),
+    );
+    appendAudit({
+      category: "clinical",
+      action: "dose_charted",
+      patientId,
+      actorId: staffName,
+      detail: {
+        administrationId: row.id,
+        orderId,
+        drugName: order.drugName,
+        scheduledAt,
+        doseAction: action,
+        reason: trimmed ?? null,
+        lateEntryReason: row.lateEntryReason ?? null,
+        batchId,
+        attestationMethod: "checkbox_only",
+      },
+    });
+    emit();
+    return row;
+  },
+  /** Take the slot. Fails if someone else already holds it — use takeoverDose. */
+  claimDose(patientId: string, orderId: string, scheduledAt: string, staffName: string): DoseClaim {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const existing = (p.doseClaims ?? []).find(
+      (c) => c.orderId === orderId && c.scheduledAt === scheduledAt,
+    );
+    if (existing && existing.claimedBy !== staffName)
+      throw new Error(`This dose is already claimed by ${existing.claimedBy}.`);
+    if (existing) return existing;
+    const claim: DoseClaim = {
+      orderId,
+      scheduledAt,
+      claimedBy: staffName,
+      claimedAt: new Date().toISOString(),
+    };
+    p.doseClaims = [claim, ...(p.doseClaims ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "dose_claimed",
+      patientId,
+      actorId: staffName,
+      detail: { orderId, scheduledAt },
+    });
+    emit();
+    return claim;
+  },
+  /** Give up your own claim. Releasing someone else's requires takeoverDose. */
+  releaseDose(patientId: string, orderId: string, scheduledAt: string, staffName: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const existing = (p.doseClaims ?? []).find(
+      (c) => c.orderId === orderId && c.scheduledAt === scheduledAt,
+    );
+    if (!existing) return;
+    if (existing.claimedBy !== staffName)
+      throw new Error(`Only ${existing.claimedBy} can release this claim — use takeover instead.`);
+    p.doseClaims = (p.doseClaims ?? []).filter((c) => c !== existing);
+    appendAudit({
+      category: "clinical",
+      action: "dose_claim_released",
+      patientId,
+      actorId: staffName,
+      detail: { orderId, scheduledAt },
+    });
+    emit();
+  },
+  /** Seize another nurse's claim. Reason required and always audit-logged. */
+  takeoverDose(
+    patientId: string,
+    orderId: string,
+    scheduledAt: string,
+    staffName: string,
+    reason: string,
+  ): DoseClaim {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const trimmed = reason?.trim();
+    if (!trimmed) throw new Error("A reason is required to take over a claimed dose.");
+    const existing = (p.doseClaims ?? []).find(
+      (c) => c.orderId === orderId && c.scheduledAt === scheduledAt,
+    );
+    if (!existing) throw new Error("This dose is not claimed — claim it instead.");
+    if (existing.claimedBy === staffName) return existing;
+    const previous = existing.claimedBy;
+    const claim: DoseClaim = {
+      orderId,
+      scheduledAt,
+      claimedBy: staffName,
+      claimedAt: new Date().toISOString(),
+    };
+    p.doseClaims = [claim, ...(p.doseClaims ?? []).filter((c) => c !== existing)];
+    appendAudit({
+      category: "clinical",
+      action: "dose_claim_takeover",
+      patientId,
+      actorId: staffName,
+      detail: { orderId, scheduledAt, previousClaimant: previous, reason: trimmed },
+    });
+    emit();
+    return claim;
+  },
+  /**
+   * Void every administration charted in one batch. Reason required (min 3
+   * chars). Entries are retained with void metadata — never deleted.
+   */
+  voidBatch(
+    patientId: string,
+    batchId: string,
+    staffName: string,
+    reason: string,
+  ): DoseAdministration[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const trimmed = reason?.trim() ?? "";
+    if (trimmed.length < 3) throw new Error("A void reason of at least 3 characters is required.");
+    const rows = (p.administrations ?? []).filter((a) => a.batchId === batchId && !a.voided);
+    if (!rows.length) throw new Error("Nothing to void in this batch.");
+    const at = new Date().toISOString();
+    for (const r of rows) {
+      r.voided = true;
+      r.voidReason = trimmed;
+      r.voidedBy = staffName;
+      r.voidedAt = at;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "dose_batch_voided",
+      patientId,
+      actorId: staffName,
+      detail: {
+        batchId,
+        administrationIds: rows.map((r) => r.id),
+        count: rows.length,
+        reason: trimmed,
+      },
+    });
+    emit();
+    return rows;
   },
 };
 
