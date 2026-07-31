@@ -3,6 +3,7 @@ import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallAppButton } from "@/components/InstallAppButton";
+import { NotificationBell } from "@/components/NotificationBell";
 import {
   Heart,
   ShieldCheck,
@@ -168,6 +169,9 @@ export function AppShell() {
             </div>
 
             {isPatientSurface && <PatientHelpLink className="hidden sm:inline-flex" />}
+
+            {/* §Notification feed — operational alerts for the acting staff identity. */}
+            <NotificationBell />
 
             {/* Staff portal */}
             <DropdownMenu>
