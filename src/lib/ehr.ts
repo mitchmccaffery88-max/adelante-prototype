@@ -422,6 +422,72 @@ export interface RefusalForm {
 export const LATE_ENTRY_THRESHOLD_HOURS = 4;
 
 /**
+ * §Custody tracking — a jail/facility booking episode.
+ *
+ * NOTE(facility): `facilityName` is free text. Adelante has no first-class
+ * Facility entity, so multi-facility reporting (rollups, per-site counts,
+ * per-site timezones) is NOT possible without one. Flag this the moment
+ * cross-facility reporting is asked for.
+ */
+export interface Booking {
+  id: string;
+  patientId: string;
+  bookingNumber: string;
+  facilityName: string;
+  bookedAt: string;
+  releasedAt?: string;
+  bookingReason?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** A housing/unit move inside one booking episode. */
+export interface HousingMove {
+  id: string;
+  patientId: string;
+  /** References `Booking.id`. */
+  bookingId: string;
+  movedAt: string;
+  facilityName: string;
+  housingUnit: string;
+  reason?: string;
+  createdBy: string;
+  createdAt: string;
+}
+
+/** One aggregated controlled-substance line in a shift count. */
+export interface ShiftCountLine {
+  key: string;
+  drugName: string;
+  doseLabel: string;
+  deaSchedule: string;
+  given: number;
+  refusedOrHeld: number;
+  patients: number;
+  firstAt?: string;
+  lastAt?: string;
+}
+
+/**
+ * Immutable, locked controlled-substance shift count. Top-level (NOT on a
+ * Patient) — it is a facility/shift artifact that spans the population.
+ */
+export interface ShiftCount {
+  id: string;
+  windowStart: string;
+  windowEnd: string;
+  housingUnit?: string;
+  scheduleFilter: string;
+  lines: ShiftCountLine[];
+  totalGiven: number;
+  totalRefusedOrHeld: number;
+  counterName: string;
+  witnessName: string;
+  notes?: string;
+  signedAt: string;
+}
+
+/**
  * Witness requirement at administration. CII always; an order flagged
  * controlled with no schedule recorded is treated as CII (conservative).
  * CIII–CV do NOT require a witness.
@@ -557,6 +623,10 @@ export interface Patient {
   kopIssuances?: KopIssuance[];
   /** Refusal legal documents (§MAR Phase 3). Never deleted. */
   refusalForms?: RefusalForm[];
+  /** §Custody tracking — booking episodes (append-only; closing sets releasedAt). */
+  bookings?: Booking[];
+  /** §Custody tracking — housing moves within bookings. */
+  housingMoves?: HousingMove[];
 }
 
 export interface ScreenerResult {
