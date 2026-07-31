@@ -1005,6 +1005,39 @@ function NonFieldSectionEditor({
   );
 }
 
+/**
+ * Live preview of a non-field section, rendered against the first seeded demo
+ * patient so authors can see real shapes rather than lorem ipsum.
+ */
+function PreviewSection({
+  section,
+  schema,
+}: {
+  section: TemplateSection;
+  schema: TemplateSchema;
+}) {
+  const demo = useEhr(() => AdelanteEHR.listPatients())[0];
+  const snapshots = useNoteAutofillSnapshots(demo?.id ?? "", schema);
+  if (section.type === "autofill_section") {
+    const snap = snapshots.find((s) => s.sectionId === section.id);
+    return snap ? <NoteAutofillCard snapshot={snap} /> : null;
+  }
+  return (
+    <div className="rounded-md border border-dashed border-border p-3">
+      <h5 className="font-display text-sm text-navy">{section.title}</h5>
+      <p className="mt-1 text-[11px] text-muted-foreground">
+        Orders section — {section.allow?.meds !== false ? "medications" : ""}
+        {section.allow?.referrals ? " · referrals" : ""}. Quick picks:{" "}
+        {(section.quick_picks?.meds ?? []).map((q) => q.label || q.drugName).join(", ") || "none"}.
+      </p>
+      <p className="mt-1 text-[10px] text-muted-foreground">
+        Rendered in the note editor with the live Orders catalog picker, dose validation and
+        signing attestation.
+      </p>
+    </div>
+  );
+}
+
 function ScoringEditor({
   rules,
   onChange,
