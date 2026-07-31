@@ -43,6 +43,7 @@ import {
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
+import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
   useActingRole,
   useActingStaff,
