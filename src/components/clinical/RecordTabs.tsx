@@ -1800,6 +1800,10 @@ function ProgressNoteCard({
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
   const [attested, setAttested] = useState(false);
   const [cosignerId, setCosignerId] = useState<string>("");
+  // §Crisis escalation — a crisis-band score cannot pass silently. The signer
+  // makes an ACTIVE choice, mirroring the Suboxone mouth-check gate.
+  const [crisisChoice, setCrisisChoice] = useState<"" | "escalate" | "not_escalating">("");
+  const [crisisReason, setCrisisReason] = useState("");
   // §Phase 3b — a finalized note shows its FROZEN autofill snapshot; a draft
   // shows the live resolution, which is what gets frozen at sign time.
   const liveAutofill = useNoteAutofillSnapshots(patientId, note.templateSchema, {
@@ -1822,11 +1826,20 @@ function ProgressNoteCard({
   const missing = note.templateSchema
     ? findMissingRequired(note.templateSchema, note.templateAnswers ?? {})
     : [];
+  const crisisScores = crisisTriggeringScores(note.templateSchema, note.templateAnswers ?? {});
+  const crisisBlocked =
+    crisisScores.length > 0 &&
+    (crisisChoice === "" ||
+      (crisisChoice === "not_escalating" && crisisReason.trim().length < 3));
 
   const sign = () => {
     try {
       if (missing.length > 0) {
         toast.error(`Answer ${missing.length} required template field(s) before signing.`);
+        return;
+      }
+      if (crisisBlocked) {
+        toast.error("Resolve the crisis-band prompt before signing.");
         return;
       }
       AdelanteEHR.signProgressNote(patientId, note.id, {
@@ -1835,11 +1848,19 @@ function ProgressNoteCard({
         attested,
         cosignRequired: mustCosign,
         cosignRole: cosigner ? [cosigner.role] : undefined,
+        crisisDecision:
+          crisisScores.length === 0
+            ? undefined
+            : crisisChoice === "escalate"
+              ? { kind: "escalate" }
+              : { kind: "not_escalating", reason: crisisReason },
         // Freeze what the autofill cards showed at attestation time.
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       setAttested(false);
+      setCrisisChoice("");
+      setCrisisReason("");
     } catch (e) {
       toast.error((e as Error).message);
     }
