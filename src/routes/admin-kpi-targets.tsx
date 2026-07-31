@@ -345,6 +345,8 @@ function AdminKpiTargetsPage() {
         </Card>
       )}
 
+      <CalaimCodesSection canWrite={canWrite} staffName={staffName} />
+
       <Dialog
         open={creating || editing !== null}
         onOpenChange={(o) => {
