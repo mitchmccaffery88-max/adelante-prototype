@@ -547,6 +547,31 @@ function TemplateBuilderDialog({
                       </div>
                     </div>
 
+                    {showEs && (
+                      <div className="grid gap-2 rounded-md bg-secondary/20 p-2 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-[11px]">Label (ES)</Label>
+                          <Input
+                            value={field.labelEs ?? ""}
+                            placeholder={field.label}
+                            onChange={(e) =>
+                              updateField(si, fi, { labelEs: e.target.value || undefined })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[11px]">Help text (ES)</Label>
+                          <Input
+                            value={field.helpEs ?? ""}
+                            placeholder={field.help ?? ""}
+                            onChange={(e) =>
+                              updateField(si, fi, { helpEs: e.target.value || undefined })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* ADEL SEAM: authors may annotate a field's intent for the
                         future AI-drafting layer (see Agentic AI Adel Scaffolding
                         in ClickUp). This is authoring metadata only — no
