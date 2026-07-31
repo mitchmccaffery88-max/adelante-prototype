@@ -53,6 +53,7 @@ export type RecordClass =
   | "population_health"
   | "crisis_queue"
   | "patient_messaging"
+  | "provider_requests"
   | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
@@ -230,6 +231,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+  // §Inbox — provider request queue. Its own class because the traffic runs
+  // BOTH directions: a case manager asks a prescriber to enter an order, a
+  // prescriber asks a therapist a question. So every role that can be on
+  // either end gets write (create + claim + complete); peer_specialist and
+  // clinical_coordinator read for coordination/oversight; billing is out —
+  // these are clinical asks, not claim data.
+  provider_requests: {
+    case_manager: "write",
+    therapist: "write",
+    pmhnp: "write",
+    clinical_coordinator: "read",
+    peer_specialist: "read",
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
