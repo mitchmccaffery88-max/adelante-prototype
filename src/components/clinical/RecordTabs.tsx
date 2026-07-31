@@ -43,6 +43,7 @@ import {
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
+import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
   useActingRole,
   useActingStaff,
@@ -1512,25 +1513,14 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
-              <Select
+              <NoteTemplatePicker
+                templates={templates}
                 value={templateId}
-                onValueChange={(v) => {
+                onChange={(v) => {
                   setTemplateId(v);
                   setAnswers({});
                 }}
-              >
-                <SelectTrigger aria-label="Note template">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="none">SOAP (no template)</SelectItem>
-                  {templates.map((t) => (
-                    <SelectItem key={t.id} value={t.id}>
-                      {t.title}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
+              />
             </div>
             <div className="space-y-1.5">
               <Select
@@ -1769,14 +1759,14 @@ function ProgressNoteCard({
             </div>
           )}
           <dl className="mt-2 space-y-1.5">
-          {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
-            note[k] ? (
-              <div key={k}>
-                <dt className="font-medium text-navy capitalize">{k}</dt>
-                <dd className="text-foreground/80">{note[k]}</dd>
-              </div>
-            ) : null,
-          )}
+            {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
+              note[k] ? (
+                <div key={k}>
+                  <dt className="font-medium text-navy capitalize">{k}</dt>
+                  <dd className="text-foreground/80">{note[k]}</dd>
+                </div>
+              ) : null,
+            )}
           </dl>
         </>
       )}
