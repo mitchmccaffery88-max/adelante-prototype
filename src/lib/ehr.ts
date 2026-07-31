@@ -233,6 +233,16 @@ export interface MedOrder {
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
   /**
+   * Facility-local calendar date (YYYY-MM-DD) therapy actually begins — a
+   * FIRST-CLASS field, not inferred. Defaults to today when the draft is
+   * created and again at sign time if still unset, but the prescriber may edit
+   * it: an order signed today can start tomorrow, and an order can be backdated
+   * to reflect therapy already underway. MAR schedule projection derives
+   * due/not-due from this date, so interval cadences (e.g. weekly) land on the
+   * right days.
+   */
+  startDate?: string;
+  /**
    * KOP (Keep-On-Person): prescriber approves the patient to keep this
    * medication on their person and self-administer. Read by the future MAR
    * pass to pick the administration workflow.

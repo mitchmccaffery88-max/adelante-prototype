@@ -17,7 +17,7 @@ import {
   type Patient,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
-import { dosesPerDay, frequencyByCode, frequencyIntervalDays } from "@/lib/frequencies";
+import { frequencyByCode, frequencyIntervalDays } from "@/lib/frequencies";
 import { STAFF_ROSTER, type StaffMember } from "@/lib/roles";
 import {
   facilityDateKey,
@@ -152,8 +152,6 @@ function slotsForOrder(order: MedOrder, dateKey: string, tz?: string): string[] 
     if (remaining <= 0) return [];
     hours = grid.slice(0, remaining);
   }
-  void dosesPerDay;
-
   // On the start day, a dose cannot be due before the order itself existed.
   if (offset === 0) {
     const raw = order.attestedAt ?? order.createdAt;
