@@ -1614,7 +1614,7 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   toast.error("Add at least a subjective entry");
                   return;
                 }
-                AdelanteEHR.addProgressNote(patient.id, {
+                const saved = AdelanteEHR.addProgressNote(patient.id, {
                   clinicianId: authorId,
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
