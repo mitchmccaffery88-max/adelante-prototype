@@ -518,7 +518,12 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
                 <ClientDate value={elig.lastGivenAt} />
               </>
             )}
-            {givenBlocked && (
+            {elig.blockedBy === "gap" && (
+              <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">
+                {elig.minGapMinutes}m minimum interval — eligible in {waitLabel(elig.waitMs)}.
+              </span>
+            )}
+            {elig.blockedBy === "max" && (
               <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">
                 PRN limit reached — cannot chart as given.
               </span>
