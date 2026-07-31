@@ -16,6 +16,7 @@ import {
   ListChecks,
   MapPin,
   Pill,
+  Repeat2,
   Route as RouteIcon,
   ShieldAlert,
   Syringe,
@@ -30,6 +31,7 @@ import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
+import { MedReconTab } from "@/components/clinical/MedReconTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import {
   OverviewTab,
@@ -113,6 +115,10 @@ export function useRecordSections(patient: Patient): RecordSection[] {
       bookings: (fresh.bookings ?? []).length,
       currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),
       housingMoves: (fresh.housingMoves ?? []).length,
+      unreviewedRecon: (() => {
+        const open = AdelanteEHR.activeMedReconciliation(fresh.id);
+        return open ? AdelanteEHR.unreviewedReconItems(fresh.id, open.id).length : 0;
+      })(),
     };
   });
 
@@ -208,6 +214,16 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     icon: Syringe,
     group: "chart",
     render: (a) => <MarTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  // Reconciliation sits next to Orders because it reads and closes orders.
+  add("meds_erx", {
+    id: "med-recon",
+    label: "Med reconciliation",
+    icon: Repeat2,
+    group: "chart",
+    count: counts.unreviewedRecon || undefined,
+    urgent: counts.unreviewedRecon > 0,
+    render: (a) => <MedReconTab patientId={pid} readOnly={a.level !== "write"} />,
   });
 
   // ----- Case management -----

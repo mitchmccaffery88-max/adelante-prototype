@@ -774,7 +774,74 @@ export interface Patient {
   bookings?: Booking[];
   /** §Custody tracking — housing moves within bookings. */
   housingMoves?: HousingMove[];
+  /** §Med reconciliation — session headers, newest first. */
+  medReconciliations?: MedReconciliation[];
+  /** §Med reconciliation — flat item rows joined on `reconciliationId`. */
+  medReconItems?: MedReconItem[];
 }
+
+/**
+ * §Medication reconciliation (BaggaEMR MedReconciliationDialog port).
+ *
+ * Storage note: reconciliations and their items live in TWO parallel arrays on
+ * the patient (`medReconciliations` + `medReconItems`, joined on
+ * `reconciliationId`). Nesting items inside the header would have forced a
+ * shape change to the agreed interfaces, and the flat array makes per-item
+ * patches (the dominant write) a single find instead of a nested walk.
+ */
+export interface MedReconItem {
+  id: string;
+  reconciliationId: string;
+  source: "active_order" | "home";
+  /** Set when source is "active_order" — the link used by the stop cascade. */
+  orderId?: string;
+  drugName: string;
+  dose?: string;
+  frequency?: string;
+  route?: string;
+  decision: "continue" | "modify" | "stop" | "add" | "not_reviewed";
+  newDose?: string;
+  newFrequency?: string;
+  newRoute?: string;
+  decisionNote?: string;
+  decidedBy?: string;
+  decidedAt?: string;
+}
+
+export interface MedReconciliation {
+  id: string;
+  patientId: string;
+  type: "intake" | "transfer" | "release";
+  status: "in_progress" | "completed" | "canceled";
+  performedBy: string;
+  performedAt: string;
+  completedAt?: string;
+  notes?: string;
+}
+
+/**
+ * Local mirror of `isOrderActive` / `isTherapyActive` from src/lib/orders.ts.
+ * Duplicated (not imported) only because ehr -> orders -> roles -> ehr would
+ * be a module cycle; src/lib/__tests__/medRecon.test.ts asserts the two stay
+ * in agreement, so a change on either side fails loudly.
+ */
+function orderIsActive(order: MedOrder): boolean {
+  return order.status === "signed" || order.status === "held";
+}
+
+export const MED_RECON_TYPE_LABEL: Record<MedReconciliation["type"], string> = {
+  intake: "Intake",
+  transfer: "Transfer",
+  release: "Release",
+};
+
+export const MED_RECON_DECISION_LABEL: Record<MedReconItem["decision"], string> = {
+  continue: "Continue",
+  modify: "Modify",
+  stop: "Stop",
+  add: "Add",
+  not_reviewed: "Not reviewed",
+};
 
 export interface ScreenerResult {
   key: string;
@@ -6247,6 +6314,283 @@ export const AdelanteEHR = {
   /** Locked counts, newest first. Copies out so callers cannot mutate history. */
   listShiftCounts(limit = 20): ShiftCount[] {
     return shiftCounts.slice(0, limit).map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
+  },
+
+  // ----- §Medication reconciliation ---------------------------------------
+  // Reuses the Orders layer rather than duplicating it: seeding reads
+  // `isOrderActive`, and the stop/modify cascade on completion goes through
+  // the existing `discontinueOrder` transition (audit + statusReason included).
+
+  listMedReconciliations(patientId: string): MedReconciliation[] {
+    return [...(patients.find((p) => p.id === patientId)?.medReconciliations ?? [])];
+  },
+
+  /** The single open session for this patient, if any. */
+  activeMedReconciliation(patientId: string): MedReconciliation | undefined {
+    return (patients.find((p) => p.id === patientId)?.medReconciliations ?? []).find(
+      (r) => r.status === "in_progress",
+    );
+  },
+
+  listReconItems(patientId: string, reconId: string): MedReconItem[] {
+    return (patients.find((p) => p.id === patientId)?.medReconItems ?? []).filter(
+      (i) => i.reconciliationId === reconId,
+    );
+  },
+
+  /**
+   * Open a session and seed one item per currently-active order. Active means
+   * signed or held (`isOrderActive`) — drafts and terminal orders are not
+   * reconcilable.
+   */
+  startMedReconciliation(
+    patientId: string,
+    type: MedReconciliation["type"],
+    notes: string | undefined,
+    staffName: string,
+  ): MedReconciliation {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    if (AdelanteEHR.activeMedReconciliation(patientId))
+      throw new Error("A reconciliation is already in progress for this patient.");
+    const row: MedReconciliation = {
+      id: uid(),
+      patientId,
+      type,
+      status: "in_progress",
+      performedBy: staffName,
+      performedAt: new Date().toISOString(),
+      notes: notes?.trim() || undefined,
+    };
+    const seeded = (p.orders ?? []).filter(orderIsActive).map<MedReconItem>((o) => ({
+      id: uid(),
+      reconciliationId: row.id,
+      source: "active_order",
+      orderId: o.id,
+      drugName: o.drugName,
+      dose: o.dose,
+      frequency: o.frequency,
+      route: o.route,
+      decision: "not_reviewed",
+    }));
+    p.medReconciliations = [row, ...(p.medReconciliations ?? [])];
+    p.medReconItems = [...(p.medReconItems ?? []), ...seeded];
+    appendAudit({
+      category: "clinical",
+      action: "med_recon_started",
+      patientId,
+      actorId: staffName,
+      detail: { reconciliationId: row.id, type, seededActiveOrders: seeded.length },
+    });
+    emit();
+    return row;
+  },
+
+  updateReconItem(
+    patientId: string,
+    reconId: string,
+    itemId: string,
+    patch: Partial<
+      Pick<
+        MedReconItem,
+        "decision" | "newDose" | "newFrequency" | "newRoute" | "decisionNote" | "drugName" | "dose" | "frequency" | "route"
+      >
+    >,
+    staffName?: string,
+  ): MedReconItem {
+    const p = patients.find((x) => x.id === patientId);
+    const recon = p?.medReconciliations?.find((r) => r.id === reconId);
+    if (!recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress")
+      throw new Error("This reconciliation is closed and can no longer be edited.");
+    const row = p?.medReconItems?.find((i) => i.id === itemId && i.reconciliationId === reconId);
+    if (!row) throw new Error("Reconciliation item not found.");
+    Object.assign(row, patch);
+    for (const key of ["newDose", "newFrequency", "newRoute", "decisionNote"] as const) {
+      if (row[key] !== undefined) row[key] = String(row[key]).trim() || undefined;
+    }
+    if (patch.decision) {
+      row.decidedBy = staffName ?? recon.performedBy;
+      row.decidedAt = new Date().toISOString();
+      appendAudit({
+        category: "clinical",
+        action: "med_recon_item_decided",
+        patientId,
+        actorId: row.decidedBy,
+        detail: {
+          reconciliationId: reconId,
+          itemId,
+          drugName: row.drugName,
+          source: row.source,
+          orderId: row.orderId ?? null,
+          decision: row.decision,
+          note: row.decisionNote ?? null,
+        },
+      });
+    }
+    emit();
+    return row;
+  },
+
+  /**
+   * Home / prior-to-arrival medication. Informational only: it never creates
+   * or touches a real order. Placing an order is an explicit Orders-tab action.
+   */
+  addHomeReconItem(
+    patientId: string,
+    reconId: string,
+    input: { drugName: string; dose?: string; frequency?: string; route?: string },
+    staffName?: string,
+  ): MedReconItem {
+    const p = patients.find((x) => x.id === patientId);
+    const recon = p?.medReconciliations?.find((r) => r.id === reconId);
+    if (!p || !recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress")
+      throw new Error("This reconciliation is closed and can no longer be edited.");
+    const drugName = input.drugName?.trim();
+    if (!drugName) throw new Error("A medication name is required.");
+    const row: MedReconItem = {
+      id: uid(),
+      reconciliationId: reconId,
+      source: "home",
+      drugName,
+      dose: input.dose?.trim() || undefined,
+      frequency: input.frequency?.trim() || undefined,
+      route: input.route?.trim() || undefined,
+      decision: "not_reviewed",
+    };
+    p.medReconItems = [...(p.medReconItems ?? []), row];
+    appendAudit({
+      category: "clinical",
+      action: "med_recon_home_med_added",
+      patientId,
+      actorId: staffName ?? recon.performedBy,
+      detail: { reconciliationId: reconId, itemId: row.id, drugName },
+    });
+    emit();
+    return row;
+  },
+
+  /** Home rows only — an active-order row must be decided, never deleted. */
+  removeReconItem(patientId: string, reconId: string, itemId: string, staffName?: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    const recon = p?.medReconciliations?.find((r) => r.id === reconId);
+    if (!p || !recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress")
+      throw new Error("This reconciliation is closed and can no longer be edited.");
+    const row = p.medReconItems?.find((i) => i.id === itemId && i.reconciliationId === reconId);
+    if (!row) throw new Error("Reconciliation item not found.");
+    if (row.source !== "home")
+      throw new Error("An active medication must be decided (continue / modify / stop), not removed.");
+    p.medReconItems = (p.medReconItems ?? []).filter((i) => i.id !== itemId);
+    appendAudit({
+      category: "clinical",
+      action: "med_recon_item_removed",
+      patientId,
+      actorId: staffName ?? recon.performedBy,
+      detail: { reconciliationId: reconId, itemId, drugName: row.drugName },
+    });
+    emit();
+  },
+
+  /** Persist header notes without closing the session ("Save draft"). */
+  saveMedReconciliationNotes(patientId: string, reconId: string, notes: string): MedReconciliation {
+    const recon = patients
+      .find((x) => x.id === patientId)
+      ?.medReconciliations?.find((r) => r.id === reconId);
+    if (!recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress")
+      throw new Error("This reconciliation is closed and can no longer be edited.");
+    recon.notes = notes.trim() || undefined;
+    emit();
+    return recon;
+  },
+
+  /** Active-order rows still sitting at "not_reviewed" — the completion gate. */
+  unreviewedReconItems(patientId: string, reconId: string): MedReconItem[] {
+    return AdelanteEHR.listReconItems(patientId, reconId).filter(
+      (i) => i.source === "active_order" && i.decision === "not_reviewed",
+    );
+  },
+
+  /**
+   * Close the session. Hard-blocks while any seeded active order is
+   * undecided; on success every stop/modify row with an orderId is
+   * discontinued through the normal order lifecycle path.
+   */
+  completeMedReconciliation(
+    patientId: string,
+    reconId: string,
+    staffName: string,
+  ): { reconciliation: MedReconciliation; discontinuedOrderIds: string[] } {
+    const p = patients.find((x) => x.id === patientId);
+    const recon = p?.medReconciliations?.find((r) => r.id === reconId);
+    if (!p || !recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress") throw new Error("This reconciliation is already closed.");
+    const pending = AdelanteEHR.unreviewedReconItems(patientId, reconId);
+    if (pending.length > 0)
+      throw new Error(
+        `${pending.length} active medication${pending.length === 1 ? "" : "s"} still need a decision before this reconciliation can be completed.`,
+      );
+    const items = AdelanteEHR.listReconItems(patientId, reconId);
+    const discontinuedOrderIds: string[] = [];
+    for (const item of items) {
+      if (!item.orderId) continue;
+      if (item.decision !== "stop" && item.decision !== "modify") continue;
+      const order = p.orders?.find((o) => o.id === item.orderId);
+      if (!order || !orderIsActive(order)) continue;
+      const reason =
+        item.decisionNote?.trim() ||
+        `${item.decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
+      AdelanteEHR.discontinueOrder(patientId, item.orderId, staffName, reason);
+      discontinuedOrderIds.push(item.orderId);
+    }
+    recon.status = "completed";
+    recon.completedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "med_recon_completed",
+      patientId,
+      actorId: staffName,
+      detail: {
+        reconciliationId: reconId,
+        type: recon.type,
+        items: items.length,
+        decisions: {
+          continue: items.filter((i) => i.decision === "continue").length,
+          modify: items.filter((i) => i.decision === "modify").length,
+          stop: items.filter((i) => i.decision === "stop").length,
+          add: items.filter((i) => i.decision === "add").length,
+        },
+        discontinuedOrderIds,
+      },
+    });
+    emit();
+    return { reconciliation: recon, discontinuedOrderIds };
+  },
+
+  /** Discard. No order is touched; the session and its items stay as history. */
+  cancelMedReconciliation(
+    patientId: string,
+    reconId: string,
+    staffName: string,
+  ): MedReconciliation {
+    const recon = patients
+      .find((x) => x.id === patientId)
+      ?.medReconciliations?.find((r) => r.id === reconId);
+    if (!recon) throw new Error("Reconciliation not found.");
+    if (recon.status !== "in_progress") throw new Error("This reconciliation is already closed.");
+    recon.status = "canceled";
+    recon.completedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "med_recon_canceled",
+      patientId,
+      actorId: staffName,
+      detail: { reconciliationId: reconId, type: recon.type },
+    });
+    emit();
+    return recon;
   },
 };
 
