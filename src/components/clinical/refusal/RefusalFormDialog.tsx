@@ -36,6 +36,7 @@ import {
 import {
   Dialog,
   DialogContent,
+  DialogDescription,
   DialogFooter,
   DialogHeader,
   DialogTitle,
@@ -101,6 +102,10 @@ export function RefusalFormDialog({
       <DialogContent className="max-h-[90vh] max-w-2xl overflow-y-auto">
         <DialogHeader>
           <DialogTitle>Medication refusal — legal document</DialogTitle>
+          <DialogDescription>
+            Completing this form documents the refusal for the legal record. The dose is already
+            charted as refused; closing without signing leaves the form pending signature.
+          </DialogDescription>
         </DialogHeader>
 
         <div className="space-y-4 text-sm">
