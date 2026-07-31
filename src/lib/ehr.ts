@@ -1,5 +1,11 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-import { plannedAutomations, schemaContentEquals, summarizeAutomation } from "./templateSchema";
+import {
+  crisisTriggeringScores,
+  describeCrisisScore,
+  plannedAutomations,
+  schemaContentEquals,
+  summarizeAutomation,
+} from "./templateSchema";
 import type {
   Automation,
   AutofillSnapshot,
@@ -3629,6 +3635,14 @@ export const AdelanteEHR = {
        * was attested.
        */
       autofillSnapshots?: AutofillSnapshot[];
+      /**
+       * §Crisis escalation — required when the note's scoring lands in a band
+       * with `triggersCrisis`. There is no third option: the signer either
+       * escalates or records why not. Silence is not a valid outcome.
+       */
+      crisisDecision?:
+        | { kind: "escalate" }
+        | { kind: "not_escalating"; reason: string };
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -3641,6 +3655,19 @@ export const AdelanteEHR = {
     const cosignRequired = input.cosignRequired ?? !selfSign;
     if (!selfSign && !cosignRequired)
       throw new Error("Your role cannot sign this note without a cosigner.");
+
+    // Crisis-band gate — evaluated BEFORE any mutation so a blocked note stays
+    // an untouched draft.
+    const crisisScores = crisisTriggeringScores(n.templateSchema, n.templateAnswers ?? {});
+    if (crisisScores.length > 0) {
+      const decision = input.crisisDecision;
+      if (!decision)
+        throw new Error(
+          "This score is in a crisis band — escalate now or record why you are not escalating.",
+        );
+      if (decision.kind === "not_escalating" && (decision.reason?.trim().length ?? 0) < 3)
+        throw new Error("A reason of at least 3 characters is required when not escalating.");
+    }
 
     n.signedBy = input.signedBy;
     n.signedAt = new Date().toISOString();
@@ -3666,6 +3693,28 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    if (crisisScores.length > 0 && input.crisisDecision) {
+      const detail = crisisScores.map(describeCrisisScore).join("; ");
+      if (input.crisisDecision.kind === "escalate") {
+        AdelanteEHR.flagCrisis(patientId, input.signedBy, detail, {
+          triggerSource: "screener_score",
+          sourceNoteId: noteId,
+        });
+      } else {
+        appendAudit({
+          category: "clinical",
+          action: "crisis_escalation_declined",
+          patientId,
+          actorId: input.signedBy,
+          actorRole: input.role,
+          detail: {
+            noteId,
+            triggerDetail: detail,
+            reason: input.crisisDecision.reason.trim(),
+          },
+        });
+      }
+    }
     // §Phase 3c — automations fire on the transition to a FINAL signature.
     // A note routed for cosignature is not final yet, so nothing runs until
     // the cosigner attests (see cosignProgressNote).
