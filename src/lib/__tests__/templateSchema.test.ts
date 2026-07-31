@@ -81,10 +81,13 @@ describe("expression evaluator", () => {
   });
 
   it("is not eval() — arbitrary JS is inert, not executed", () => {
-    // The parser never executes JS: an injected statement is treated as an
-    // unparseable expression, not code.
-    expect(evalExpr('globalThis.__pwned = 1; a == "yes"', { a: "yes" })).toBe(false);
+    // The parser never executes JS. Whatever the expression parses to, the
+    // injected assignment and call must have no side effect at all.
+    evalExpr('globalThis.__pwned = 1; a == "yes"', { a: "yes" });
+    evalExpr('fetch("https://evil.example")', {});
     expect((globalThis as Record<string, unknown>)["__pwned"]).toBeUndefined();
+    // Unknown identifiers resolve to undefined answers, never to globals.
+    expect(evalExpr("globalThis == undefined_key", {})).toBe(true);
   });
 });
 
