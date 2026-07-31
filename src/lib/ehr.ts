@@ -425,6 +425,13 @@ export interface Patient {
   alerts?: PatientAlert[];
   /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
   orders?: MedOrder[];
+  /** Charted dose administrations (§MAR). Append-only; voids never delete. */
+  administrations?: DoseAdministration[];
+  /**
+   * Live claims on un-charted dose slots. Kept on the patient rather than in a
+   * separate store because every other MAR read is already patient-scoped.
+   */
+  doseClaims?: DoseClaim[];
 }
 
 
