@@ -480,6 +480,10 @@ export function findMissingRequired(
   if (!schema) return [];
   const out: MissingField[] = [];
   for (const section of schema.sections ?? []) {
+    // Orders/autofill sections carry no answerable fields and are exempt from
+    // the note's own required-field enforcement — order validation is its own
+    // separate gate (validateOrder), and autofill is read-only.
+    if (!isFieldsSection(section)) continue;
     if (!isSectionVisible(section, answers)) continue;
     for (const field of section.fields ?? []) {
       if (!field.required) continue;
@@ -590,6 +594,7 @@ export function requiredFieldSummary(schema: TemplateSchema | undefined): Requir
   const baseline = findMissingRequired(schema, {}).length;
   let conditional = 0;
   for (const section of schema.sections ?? []) {
+    if (!isFieldsSection(section)) continue;
     for (const field of section.fields ?? []) {
       if (!field.required) continue;
       const gated = Boolean(section.show_if?.trim()) || Boolean(field.show_if?.trim());
