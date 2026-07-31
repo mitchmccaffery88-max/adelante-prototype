@@ -264,6 +264,30 @@ describe("finalizeRefusalForm", () => {
       AdelanteEHR.finalizeRefusalForm(pid, shell.id, { nurseAttested: true }, NURSE),
     ).toThrow(/already finalized/i);
   });
+
+  // The audit row must be self-contained: both frozen wordings plus the review
+  // flags, so a later catalog promotion can never re-color what was signed.
+  it("records both risk-text snapshots and the review flags on the audit entry", () => {
+    const { pid, orderId } = signedOrder();
+    const shell = refuse(pid, orderId);
+    const done = AdelanteEHR.finalizeRefusalForm(
+      pid,
+      shell.id,
+      { nurseAttested: true, patientMode: "signed", patientSignatureDataUrl: goodSig, nurseSignatureDataUrl: goodSig },
+      NURSE,
+    );
+    const entry = AdelanteEHR.listAuditEvents({ patientId: pid }).find(
+      (e) => e.action === "refusal_form_finalized" && (e.detail as { formId?: string }).formId === done.id,
+    );
+    expect(entry).toBeTruthy();
+    const d = entry!.detail as Record<string, unknown>;
+    expect(d.languageCode).toBe(done.languageCode);
+    expect(d.riskTextVersion).toBe(done.riskTextVersion);
+    expect(d.riskTextSnapshot).toBe(done.riskTextSnapshot);
+    expect(d.riskTextSnapshotEn).toBe(done.riskTextSnapshotEn ?? done.riskTextSnapshot);
+    expect(d.riskTextReviewed).toBe(true);
+    expect(typeof d.riskTextSnapshotEnLocked).toBe("boolean");
+  });
 });
 
 describe("3-in-7-days escalation", () => {
