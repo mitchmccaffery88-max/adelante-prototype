@@ -4112,6 +4112,11 @@ export const AdelanteEHR = {
     dueDate: string;
     origin?: CaseTaskOrigin;
     dedupeKey?: string;
+    /** §Phase 3c provenance — set only by the automation runner. */
+    sourceNoteId?: string;
+    sourceAutomationId?: string;
+    sourceTemplateTitle?: string;
+    priority?: CaseTask["priority"];
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -4130,6 +4135,10 @@ export const AdelanteEHR = {
       origin: input.origin ?? "manual",
       createdAt: new Date().toISOString(),
       dedupeKey: input.dedupeKey,
+      sourceNoteId: input.sourceNoteId,
+      sourceAutomationId: input.sourceAutomationId,
+      sourceTemplateTitle: input.sourceTemplateTitle,
+      priority: input.priority,
     };
     caseTasks.unshift(task);
     emit();
