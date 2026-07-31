@@ -5461,7 +5461,9 @@ export const AdelanteEHR = {
     input: {
       bookingId: string;
       movedAt: string;
-      facilityName: string;
+      /** Defaults to the booking's facility when omitted. */
+      facilityId?: string;
+      facilityName?: string;
       housingUnit: string;
       reason?: string;
     },
@@ -5474,12 +5476,25 @@ export const AdelanteEHR = {
     const housingUnit = input.housingUnit?.trim();
     if (!housingUnit) throw new Error("A housing unit is required.");
     if (!input.movedAt) throw new Error("A move date is required.");
+    // A move usually stays inside the booking's facility; an explicit id/name
+    // covers an inter-facility transfer inside the same booking episode.
+    const facility =
+      input.facilityId || input.facilityName?.trim()
+        ? AdelanteEHR.ensureFacility(
+            { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+            staffName,
+          )
+        : (AdelanteEHR.getFacility(booking.facilityId) ?? {
+            id: booking.facilityId,
+            name: booking.facilityName,
+          });
     const row: HousingMove = {
       id: uid(),
       patientId,
       bookingId: booking.id,
       movedAt: input.movedAt,
-      facilityName: input.facilityName?.trim() || booking.facilityName,
+      facilityId: facility.id,
+      facilityName: facility.name,
       housingUnit,
       reason: input.reason?.trim() || undefined,
       createdBy: staffName,
@@ -5496,6 +5511,7 @@ export const AdelanteEHR = {
         bookingId: row.bookingId,
         bookingNumber: booking.bookingNumber,
         housingUnit: row.housingUnit,
+        facilityId: row.facilityId,
         facilityName: row.facilityName,
         movedAt: row.movedAt,
       },
