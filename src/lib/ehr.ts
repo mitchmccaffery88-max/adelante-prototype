@@ -424,15 +424,19 @@ export const LATE_ENTRY_THRESHOLD_HOURS = 4;
 /**
  * §Custody tracking — a jail/facility booking episode.
  *
- * NOTE(facility): `facilityName` is free text. Adelante has no first-class
- * Facility entity, so multi-facility reporting (rollups, per-site counts,
- * per-site timezones) is NOT possible without one. Flag this the moment
- * cross-facility reporting is asked for.
+ * `facilityId` references a first-class `Facility`; `facilityName` is a
+ * DENORMALIZED DISPLAY SNAPSHOT frozen at write time. Reporting must always
+ * group on `facilityId` — the snapshot exists so a historical row keeps the
+ * name it was recorded under even after the facility is renamed, exactly the
+ * way risk-text snapshots work on refusal forms.
  */
 export interface Booking {
   id: string;
   patientId: string;
   bookingNumber: string;
+  /** References `Facility.id` — the reporting key. */
+  facilityId: string;
+  /** Display snapshot at write time. Never group on this. */
   facilityName: string;
   bookedAt: string;
   releasedAt?: string;
@@ -448,11 +452,51 @@ export interface HousingMove {
   /** References `Booking.id`. */
   bookingId: string;
   movedAt: string;
+  /** References `Facility.id` — the reporting key. */
+  facilityId: string;
+  /** Display snapshot at write time. Never group on this. */
   facilityName: string;
   housingUnit: string;
   reason?: string;
   createdBy: string;
   createdAt: string;
+}
+
+/**
+ * §Facility — a first-class custody/partner site.
+ *
+ * Introduced so per-site reporting stops fragmenting on typos ("Fresno County
+ * Jail - Main" vs "fresno county jail — main" were previously two distinct
+ * buckets). Lookup is by NORMALIZED name (case, punctuation, dash style and
+ * whitespace folded away), so the same site typed three ways resolves to one
+ * id.
+ */
+export interface Facility {
+  id: string;
+  name: string;
+  kind: FacilityKind;
+  city?: string;
+  /** IANA zone for future per-site scheduling. Unused today, recorded now. */
+  timezone?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type FacilityKind = "jail" | "prison" | "treatment" | "shelter" | "hospital" | "other";
+
+/**
+ * Fold a facility name to its matching key: case, accents, punctuation, dash
+ * style and repeated whitespace all collapse. "Fresno County Jail — Main",
+ * "fresno county jail - main" and "Fresno County Jail  Main" share a key.
+ */
+export function normalizeFacilityName(name: string): string {
+  return (name ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 /** One aggregated controlled-substance line in a shift count. */
