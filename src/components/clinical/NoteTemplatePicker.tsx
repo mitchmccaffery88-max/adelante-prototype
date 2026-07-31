@@ -80,7 +80,10 @@ export function NoteTemplatePicker({
                 onClick={() => onChange(t.id)}
               >
                 <span className="flex items-start justify-between gap-2">
-                  <span className="text-navy text-sm font-medium">{t.title}</span>
+                  <span className="text-navy text-sm font-medium">
+                    {t.title}{" "}
+                    <span className="text-muted-foreground font-normal">v{t.version}</span>
+                  </span>
                   <Badge variant="secondary" className="shrink-0 text-[10px]">
                     {baseline} required
                   </Badge>
