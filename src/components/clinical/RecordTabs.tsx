@@ -1566,6 +1566,7 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   schema={activeTemplate.schema}
                   answers={answers}
                   onChange={setAnswers}
+                  language={patient.preferredLanguage === "es" ? "es" : "en"}
                 />
               </div>
             )}
