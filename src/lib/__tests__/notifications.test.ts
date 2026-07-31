@@ -7,12 +7,14 @@ describe("notification feed — Phase 1", () => {
   it("routes a cosign request to the eligible cosign role, not to a person", () => {
     const pid = patientId();
     const note = AdelanteEHR.addProgressNote(pid, {
+      clinicianId: "c1",
+      date: new Date().toISOString(),
+      sessionType: "individual",
       subjective: "s",
       objective: "o",
       assessment: "a",
       plan: "p",
-      author: "Luz Herrera",
-    });
+    })!;
     AdelanteEHR.signProgressNote(pid, note.id, {
       signedBy: "Luz Herrera",
       role: "case_manager",
