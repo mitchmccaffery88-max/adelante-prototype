@@ -15,6 +15,7 @@ import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
 import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
+import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -62,6 +63,11 @@ const AdminCoordinationRoute = AdminCoordinationRouteImport.update({
 const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
   id: '/admin-credentialing',
   path: '/admin-credentialing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminFacilitiesRoute = AdminFacilitiesRouteImport.update({
+  id: '/admin-facilities',
+  path: '/admin-facilities',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
@@ -162,6 +168,7 @@ export interface FileRoutesByFullPath {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -188,6 +195,7 @@ export interface FileRoutesByTo {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -215,6 +223,7 @@ export interface FileRoutesById {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -243,6 +252,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-facilities'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-facilities'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -295,6 +306,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-facilities'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -322,6 +334,7 @@ export interface RootRouteChildren {
   AdminClaimsRoute: typeof AdminClaimsRoute
   AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
+  AdminFacilitiesRoute: typeof AdminFacilitiesRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -384,6 +397,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-credentialing'
       fullPath: '/admin-credentialing'
       preLoaderRoute: typeof AdminCredentialingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-facilities': {
+      id: '/admin-facilities'
+      path: '/admin-facilities'
+      fullPath: '/admin-facilities'
+      preLoaderRoute: typeof AdminFacilitiesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-vendors': {
@@ -522,6 +542,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminClaimsRoute: AdminClaimsRoute,
   AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
+  AdminFacilitiesRoute: AdminFacilitiesRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,

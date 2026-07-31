@@ -130,7 +130,7 @@ function AdminPage() {
         </p>
       </header>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-3">
+      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <Link to="/admin-credentialing" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Credentialing</div>
           <div className="mt-1 text-sm text-foreground">License, DEA & payer enrollments</div>
@@ -142,6 +142,10 @@ function AdminPage() {
         <Link to="/admin-claims" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Claims</div>
           <div className="mt-1 text-sm text-foreground">Encounter → submitted → paid</div>
+        </Link>
+        <Link to="/admin-facilities" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">Facilities</div>
+          <div className="mt-1 text-sm text-foreground">Types, deactivation & duplicate merges</div>
         </Link>
       </div>
 
