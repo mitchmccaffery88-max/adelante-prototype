@@ -62,7 +62,15 @@ import {
 } from "@/components/clinical/refusal/RefusalEscalationDialog";
 import { medClassGuess } from "@/lib/refusal";
 import { toast } from "sonner";
-import { CalendarClock, FileSignature, Info, PackageCheck, ShieldCheck, Syringe } from "lucide-react";
+import {
+  CalendarClock,
+  Download,
+  FileSignature,
+  Info,
+  PackageCheck,
+  ShieldCheck,
+  Syringe,
+} from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MAR_ATTESTATION_TEXT =
@@ -788,6 +796,30 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const pendingForms = (patient.refusalForms ?? []).filter(
     (f) => f.status === "pending_signature",
   );
+  const finalizedForms = (patient.refusalForms ?? []).filter(
+    (f) => f.status === "finalized",
+  );
+
+  const exportForm = async (f: RefusalForm) => {
+    const admin = (patient.administrations ?? []).find(
+      (a) => a.id === f.administrationId,
+    );
+    const order = (patient.orders ?? []).find((o) => o.id === admin?.orderId);
+    const { downloadRefusalFormPdf } = await import("@/lib/refusalPdf");
+    const filename = downloadRefusalFormPdf({
+      form: f,
+      patient,
+      order,
+      administration: admin,
+      medicationLabel: order ? marRowLabel(order) : undefined,
+    });
+    AdelanteEHR.recordRefusalFormExport({
+      patientId,
+      formId: f.id,
+      filename,
+      staffName,
+    });
+  };
   const activeFormId = escalation ? null : (refusalQueue[0] ?? openFormId);
   const activeForm = activeFormId
     ? ((patient.refusalForms ?? []).find((f) => f.id === activeFormId) ?? null)
@@ -994,6 +1026,44 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
                   onClick={() => setOpenFormId(f.id)}
                 >
                   Open document
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      {finalizedForms.length > 0 && (
+        <div className="space-y-2 rounded-md border p-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <FileSignature className="h-4 w-4 text-muted-foreground" />
+            Finalized refusal documents ({finalizedForms.length})
+          </div>
+          <p className="text-xs text-muted-foreground">
+            Export produces the signed legal record — nurse, witness (when one was
+            required) and patient signature blocks included. Each export is audited.
+          </p>
+          {finalizedForms.map((f) => {
+            const admin = (patient.administrations ?? []).find(
+              (a) => a.id === f.administrationId,
+            );
+            const order = (patient.orders ?? []).find((o) => o.id === admin?.orderId);
+            return (
+              <div key={f.id} className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-medium">
+                  {order ? marRowLabel(order) : "Refused medication"}
+                </span>
+                <span className="text-muted-foreground">
+                  finalized <ClientDate value={f.finalizedAt ?? f.createdAt} /> by{" "}
+                  {f.finalizedBy ?? f.createdBy}
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => void exportForm(f)}
+                >
+                  <Download className="mr-1 h-3.5 w-3.5" />
+                  Export PDF
                 </Button>
               </div>
             );
