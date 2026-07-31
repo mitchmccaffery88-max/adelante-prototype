@@ -26,7 +26,7 @@ import {
   REQ_LABEL,
   type OrderFieldKey,
 } from "@/lib/orders";
-import { FREQUENCY_CATALOG, frequencyByCode } from "@/lib/frequencies";
+import { listFrequencies, frequencyByCode } from "@/lib/frequencies";
 import { computeDispenseQuantity } from "@/lib/medSchedule";
 import { buildSigLine } from "@/lib/sigLine";
 import { Input } from "@/components/ui/input";
@@ -399,7 +399,7 @@ export function MedicationDoseSection({
               <SelectValue placeholder="Select frequency" />
             </SelectTrigger>
             <SelectContent>
-              {FREQUENCY_CATALOG.map((f) => (
+              {listFrequencies().map((f) => (
                 <SelectItem key={f.code} value={f.code}>
                   {f.label}
                 </SelectItem>
