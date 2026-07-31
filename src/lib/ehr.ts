@@ -5401,6 +5401,146 @@ export const AdelanteEHR = {
     return row;
   },
 
+  /**
+   * Admin-created facility. Unlike `ensureFacility` this refuses to silently
+   * reuse a normalized-name match — the admin should merge instead.
+   */
+  createFacility(
+    input: { name: string; kind: FacilityKind; city?: string; timezone?: string },
+    staffName: string,
+  ): Facility {
+    const name = (input.name ?? "").trim().replace(/\s+/g, " ");
+    if (!name) throw new Error("A facility name is required.");
+    const clash = AdelanteEHR.findFacilityByName(name);
+    if (clash) throw new Error(`"${clash.name}" already exists.`);
+    const row: Facility = {
+      id: uid(),
+      name,
+      kind: input.kind,
+      city: input.city?.trim() || undefined,
+      timezone: input.timezone?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    facilities.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "facility_created",
+      actorId: staffName,
+      detail: { facilityId: row.id, name: row.name, kind: row.kind, city: row.city ?? null },
+    });
+    emit();
+    return row;
+  },
+
+  /** Edit name/type/city/timezone. Name changes route through renameFacility rules. */
+  updateFacility(
+    facilityId: string,
+    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string },
+    staffName: string,
+  ): Facility {
+    const row = facilities.find((f) => f.id === facilityId);
+    if (!row) throw new Error("Facility not found.");
+    if (patch.name !== undefined) AdelanteEHR.renameFacility(facilityId, patch.name, staffName);
+    const before = { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null };
+    if (patch.kind !== undefined) row.kind = patch.kind;
+    if (patch.city !== undefined) row.city = patch.city.trim() || undefined;
+    if (patch.timezone !== undefined) row.timezone = patch.timezone.trim() || undefined;
+    appendAudit({
+      category: "clinical",
+      action: "facility_updated",
+      actorId: staffName,
+      detail: {
+        facilityId,
+        before,
+        after: { kind: row.kind, city: row.city ?? null, timezone: row.timezone ?? null },
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Deactivate/reactivate. History is never deleted — an inactive facility
+   * simply drops out of pickers while its historical rows keep resolving.
+   */
+  setFacilityActive(
+    facilityId: string,
+    active: boolean,
+    reason: string,
+    staffName: string,
+  ): Facility {
+    const row = facilities.find((f) => f.id === facilityId);
+    if (!row) throw new Error("Facility not found.");
+    const why = (reason ?? "").trim();
+    if (!why) throw new Error("A reason is required.");
+    row.active = active;
+    appendAudit({
+      category: "clinical",
+      action: active ? "facility_reactivated" : "facility_deactivated",
+      actorId: staffName,
+      detail: { facilityId, name: row.name, reason: why },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Merge a duplicate into a surviving facility: every booking and housing
+   * move is repointed to the target id, the source is deactivated (kept for
+   * audit), and the count of repointed rows is recorded.
+   */
+  mergeFacilities(
+    sourceId: string,
+    targetId: string,
+    reason: string,
+    staffName: string,
+  ): { bookings: number; housingMoves: number; target: Facility } {
+    if (sourceId === targetId) throw new Error("Pick two different facilities.");
+    const source = facilities.find((f) => f.id === sourceId);
+    const target = facilities.find((f) => f.id === targetId);
+    if (!source || !target) throw new Error("Facility not found.");
+    const why = (reason ?? "").trim();
+    if (!why) throw new Error("A merge reason is required.");
+
+    let bookings = 0;
+    let housingMoves = 0;
+    for (const p of patients) {
+      for (const b of p.bookings ?? []) {
+        if (b.facilityId === sourceId) {
+          b.facilityId = targetId;
+          b.facilityName = target.name;
+          bookings += 1;
+        }
+      }
+      for (const m of p.housingMoves ?? []) {
+        if (m.facilityId === sourceId) {
+          m.facilityId = targetId;
+          m.facilityName = target.name;
+          housingMoves += 1;
+        }
+      }
+    }
+    source.active = false;
+    appendAudit({
+      category: "clinical",
+      action: "facility_merged",
+      actorId: staffName,
+      detail: {
+        sourceId,
+        sourceName: source.name,
+        targetId,
+        targetName: target.name,
+        bookings,
+        housingMoves,
+        reason: why,
+      },
+    });
+    emit();
+    return { bookings, housingMoves, target };
+  },
+
   /** Per-facility rollup — the reporting this entity exists to make possible. */
   facilityBookingStats(): {
     facility: Facility;
