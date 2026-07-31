@@ -1603,6 +1603,7 @@ import {
   isMinorPatient,
   medClassGuess,
   refusalFinalizeProblems,
+  riskTextFor,
   validateEscalationTime,
   witnessRequiredFor,
   ESCALATION_REFUSAL_THRESHOLD,
