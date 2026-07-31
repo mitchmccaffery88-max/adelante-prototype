@@ -5,12 +5,7 @@
 // credentialing-to-signing integration (licenses live in
 // /admin-credentialing but are not consulted here), so a license expiry does
 // not currently block signing.
-import {
-  NOTE_SELF_SIGN_ROLES,
-  noteStatus,
-  type ProgressNote,
-  type StaffRole as _Unused,
-} from "@/lib/ehr";
+import { NOTE_SELF_SIGN_ROLES, noteStatus, type ProgressNote } from "@/lib/ehr";
 import { witnessCandidates } from "@/lib/mar";
 import type { StaffMember, StaffRole } from "@/lib/roles";
 
