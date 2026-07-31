@@ -819,6 +819,16 @@ export interface MedReconciliation {
   notes?: string;
 }
 
+/**
+ * Local mirror of `isOrderActive` / `isTherapyActive` from src/lib/orders.ts.
+ * Duplicated (not imported) only because ehr -> orders -> roles -> ehr would
+ * be a module cycle; src/lib/__tests__/medRecon.test.ts asserts the two stay
+ * in agreement, so a change on either side fails loudly.
+ */
+function orderIsActive(order: MedOrder): boolean {
+  return order.status === "signed" || order.status === "held";
+}
+
 export const MED_RECON_TYPE_LABEL: Record<MedReconciliation["type"], string> = {
   intake: "Intake",
   transfer: "Transfer",
@@ -6352,7 +6362,7 @@ export const AdelanteEHR = {
       performedAt: new Date().toISOString(),
       notes: notes?.trim() || undefined,
     };
-    const seeded = (p.orders ?? []).filter(isOrderActive).map<MedReconItem>((o) => ({
+    const seeded = (p.orders ?? []).filter(orderIsActive).map<MedReconItem>((o) => ({
       id: uid(),
       reconciliationId: row.id,
       source: "active_order",
@@ -6528,7 +6538,7 @@ export const AdelanteEHR = {
       if (!item.orderId) continue;
       if (item.decision !== "stop" && item.decision !== "modify") continue;
       const order = p.orders?.find((o) => o.id === item.orderId);
-      if (!order || !isOrderActive(order)) continue;
+      if (!order || !orderIsActive(order)) continue;
       const reason =
         item.decisionNote?.trim() ||
         `${item.decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
