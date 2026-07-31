@@ -28,6 +28,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import {
   AdelanteEHR,
   useEhr,
+  isNoteSudSensitive,
+  noteStatus,
   type CoordinationChannel,
   type CoordinationDirection,
   type ExternalPartyRole,
@@ -35,7 +37,10 @@ import {
   type SdohStatus,
   type PeerNote,
   type CaseTask,
+  type ProgressNote,
+  type NoteStatus,
 } from "@/lib/ehr";
+import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import {
   useActingRole,
   useActingStaff,
@@ -1451,16 +1456,20 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   );
 }
 
-// ---------- Notes tab (progress SOAP notes) ----------
+// ---------- Notes tab (progress SOAP notes + sign/cosign) ----------
+// Attestation is checkbox-only, matching Orders / MAR / Refusal. Signer
+// eligibility is role-based (see src/lib/notes.ts for the known simplification
+// vs. credential-checked signing).
 export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { staffName, staffId, clinicianId } = useActingStaff();
+  const { staffName, staffId, clinicianId, role } = useActingStaff();
   const [note, setNote] = useState({
     sessionType: "individual" as "individual" | "group" | "phone" | "check_in",
     subjective: "",
     objective: "",
     assessment: "",
     plan: "",
+    category: "none" as "none" | "sud" | "mental_health" | "pregnancy" | "medical",
   });
   useDraftDirty(
     `notes:${patientId}`,
@@ -1475,6 +1484,8 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
   const authorId = clinicianId ?? staffId;
   const canWrite = !readOnly;
   const clinicians = AdelanteEHR.listClinicians();
+  // Same 42 CFR Part 2 gate that hides SUD problem entries — one mechanism.
+  const sudGate = canAccess(role, "screeners_sud", patient);
   return (
     <div className="space-y-4">
       {canWrite && (
@@ -1506,6 +1517,27 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                 </SelectContent>
               </Select>
             </div>
+            <div className="space-y-1.5">
+              <Label className="text-xs">Sensitivity context</Label>
+              <Select
+                value={note.category}
+                onValueChange={(v) => setNote({ ...note, category: v as never })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">General</SelectItem>
+                  <SelectItem value="mental_health">Mental health</SelectItem>
+                  <SelectItem value="sud">SUD — 42 CFR Part 2</SelectItem>
+                  <SelectItem value="pregnancy">Pregnancy</SelectItem>
+                  <SelectItem value="medical">Medical</SelectItem>
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                A SUD note is masked by the same consent gate as SUD problem entries.
+              </p>
+            </div>
             {(["subjective", "objective", "assessment", "plan"] as const).map((k) => (
               <div key={k} className="space-y-1.5">
                 <Label className="text-xs capitalize">{k}</Label>
@@ -1533,18 +1565,22 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   objective: note.objective,
                   assessment: note.assessment,
                   plan: note.plan,
+                  category: note.category === "none" ? undefined : note.category,
+                  authorSource: "human",
+                  status: "draft",
                 });
-                toast.success("Progress note saved");
+                toast.success("Progress note saved as draft");
                 setNote({
                   sessionType: "individual",
                   subjective: "",
                   objective: "",
                   assessment: "",
                   plan: "",
+                  category: "none",
                 });
               }}
             >
-              Save note
+              Save draft
             </Button>
           </div>
         </Card>
@@ -1555,35 +1591,185 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
           <Card className="p-3 text-xs text-muted-foreground">No progress notes yet.</Card>
         )}
         {(patient.progressNotes ?? []).map((n) => (
-          <Card key={n.id} className="p-3 text-xs">
-            <div className="flex items-center justify-between">
-              <Badge variant="outline" className="capitalize">
-                {n.sessionType.replace("_", " ")}
-              </Badge>
-              <span className="text-[10px] text-muted-foreground">
-                <ClientDate value={n.date} />
-              </span>
-            </div>
-            <div className="mt-1 text-[10px] text-muted-foreground">
-              By{" "}
-              {clinicians.find((c) => c.id === n.clinicianId)?.name ??
-                getStaffMember(n.clinicianId)?.name ??
-                n.clinicianId}
-            </div>
-            <dl className="mt-2 space-y-1.5">
-              {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
-                n[k] ? (
-                  <div key={k}>
-                    <dt className="font-medium text-navy capitalize">{k}</dt>
-                    <dd className="text-foreground/80">{n[k]}</dd>
-                  </div>
-                ) : null,
-              )}
-            </dl>
-          </Card>
+          <ProgressNoteCard
+            key={n.id}
+            patientId={patient.id}
+            note={n}
+            canWrite={canWrite}
+            sudLocked={isNoteSudSensitive(n) && sudGate.locked}
+            sudReason={sudGate.reason}
+            authorLabel={
+              clinicians.find((c) => c.id === n.clinicianId)?.name ??
+              getStaffMember(n.clinicianId)?.name ??
+              n.clinicianId
+            }
+          />
         ))}
       </div>
     </div>
+  );
+}
+
+const NOTE_STATUS_LABEL: Record<NoteStatus, string> = {
+  draft: "Draft",
+  signed: "Signed",
+  cosign_pending: "Awaiting cosign",
+  cosigned: "Cosigned",
+  declined: "Declined",
+};
+
+export function NoteStatusBadge({ note }: { note: ProgressNote }) {
+  const s = noteStatus(note);
+  const tone =
+    s === "cosigned" || s === "signed"
+      ? "bg-teal/20 text-teal"
+      : s === "cosign_pending"
+        ? "bg-gold/30 text-navy"
+        : "bg-muted text-muted-foreground";
+  return <Badge className={`${tone} border-0 text-[10px]`}>{NOTE_STATUS_LABEL[s]}</Badge>;
+}
+
+const SIGN_ATTESTATION =
+  "I attest that this note is accurate, complete, and reflects care I personally provided or supervised.";
+
+function ProgressNoteCard({
+  patientId,
+  note,
+  canWrite,
+  sudLocked,
+  sudReason,
+  authorLabel,
+}: {
+  patientId: string;
+  note: ProgressNote;
+  canWrite: boolean;
+  sudLocked: boolean;
+  sudReason?: string;
+  authorLabel: string;
+}) {
+  const { staffName, role } = useActingStaff();
+  const status = noteStatus(note);
+  const [attested, setAttested] = useState(false);
+  const [cosignerId, setCosignerId] = useState<string>("");
+  const mustCosign = requiresCosign(role);
+  const candidates = cosignerCandidates(staffName);
+  const cosigner = candidates.find((c) => c.id === cosignerId);
+
+  const sign = () => {
+    try {
+      AdelanteEHR.signProgressNote(patientId, note.id, {
+        signedBy: staffName,
+        role,
+        attested,
+        cosignRequired: mustCosign,
+        cosignRole: cosigner ? [cosigner.role] : undefined,
+      });
+      toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
+      setAttested(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
+  return (
+    <Card className="p-3 text-xs">
+      <div className="flex items-center justify-between gap-2">
+        <div className="flex items-center gap-1.5">
+          <Badge variant="outline" className="capitalize">
+            {note.sessionType.replace("_", " ")}
+          </Badge>
+          <NoteStatusBadge note={note} />
+          {note.category === "sud" && (
+            <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+              42 CFR 2
+            </Badge>
+          )}
+          {note.authorSource === "ai_draft" && (
+            <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
+              Machine draft
+            </Badge>
+          )}
+        </div>
+        <span className="text-[10px] text-muted-foreground">
+          <ClientDate value={note.date} />
+        </span>
+      </div>
+      <div className="mt-1 text-[10px] text-muted-foreground">By {authorLabel}</div>
+      {sudLocked ? (
+        <div className="mt-2 flex items-center gap-2 text-muted-foreground">
+          <Lock className="h-3.5 w-3.5" />
+          <span>{sudReason ?? "SUD note — 42 CFR Part 2 consent required"}</span>
+        </div>
+      ) : (
+        <dl className="mt-2 space-y-1.5">
+          {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
+            note[k] ? (
+              <div key={k}>
+                <dt className="font-medium text-navy capitalize">{k}</dt>
+                <dd className="text-foreground/80">{note[k]}</dd>
+              </div>
+            ) : null,
+          )}
+        </dl>
+      )}
+      {note.signedAt && (
+        <p className="mt-2 text-[10px] text-muted-foreground">
+          Signed by {note.signedBy} · <ClientDate value={note.signedAt} />
+        </p>
+      )}
+      {note.cosignedAt && (
+        <p className="text-[10px] text-muted-foreground">
+          Cosigned by {note.cosignedBy} · <ClientDate value={note.cosignedAt} />
+          {note.cosignComment ? ` — “${note.cosignComment}”` : ""}
+        </p>
+      )}
+      {note.declineReason && status === "draft" && (
+        <p className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+          Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
+        </p>
+      )}
+      {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
+        <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {mustCosign && (
+            <div className="space-y-1.5">
+              <Label className="text-[11px]">Cosigner (required for your role)</Label>
+              <Select value={cosignerId} onValueChange={setCosignerId}>
+                <SelectTrigger className="h-8 text-xs" aria-label="Cosigner">
+                  <SelectValue placeholder="Choose a cosigner…" />
+                </SelectTrigger>
+                <SelectContent>
+                  {candidates.map((c) => (
+                    <SelectItem key={c.id} value={c.id}>
+                      {c.name}
+                      {c.credential ? `, ${c.credential}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">
+                {role.replace("_", " ")} cannot self-sign a clinical note.
+              </p>
+            </div>
+          )}
+          <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
+            <Checkbox
+              checked={attested}
+              onCheckedChange={(v) => setAttested(Boolean(v))}
+              aria-label="Note attestation"
+            />
+            <span>{SIGN_ATTESTATION}</span>
+          </label>
+          <Button
+            size="sm"
+            className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+            disabled={!attested || (mustCosign && !cosignerId)}
+            onClick={sign}
+          >
+            Sign note
+          </Button>
+        </div>
+      )}
+    </Card>
   );
 }
 

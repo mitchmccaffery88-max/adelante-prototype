@@ -209,6 +209,13 @@ function ClinicianPage() {
         >
           Controlled shift count
         </Link>
+        {/* §Cosign inbox — cross-patient queue of notes awaiting cosignature. */}
+        <Link
+          to="/cosign-inbox"
+          className="text-xs text-teal underline-offset-2 hover:underline self-center"
+        >
+          Cosign inbox
+        </Link>
       </header>
 
       {clinician?.licenseExpiresOn &&

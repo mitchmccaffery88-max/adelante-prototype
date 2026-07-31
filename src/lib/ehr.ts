@@ -1115,6 +1115,48 @@ export interface ProgressNote {
   objective: string;
   assessment: string;
   plan: string;
+  /**
+   * Sensitivity context, deliberately the SAME shape used by `Problem.category`
+   * so a SUD-tied note masks through the existing 42 CFR Part 2 consent gate
+   * rather than a second masking mechanism. Absent = not sensitive.
+   */
+  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  /**
+   * Provenance seam for a future AI-drafting layer ("Adel", separate project).
+   * Schema only: nothing in this app writes "ai_draft" today. The point is that
+   * authorship and signature are already distinct states — content may in
+   * principle be machine-drafted, but only a human signature makes it a signed
+   * legal record, and masking is unaffected by this field.
+   */
+  authorSource?: NoteAuthorSource;
+  status?: NoteStatus;
+  signedBy?: string;
+  signedAt?: string;
+  cosignRequired?: boolean;
+  /** Roles eligible to cosign. Empty/undefined = any eligible clinical role. */
+  cosignRole?: string[];
+  cosignedBy?: string;
+  cosignedAt?: string;
+  cosignComment?: string;
+  declineReason?: string;
+  declinedBy?: string;
+  declinedAt?: string;
+}
+
+export type NoteAuthorSource = "human" | "ai_draft";
+export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "declined";
+
+/** Roles that may sign a note at all, and that may sign without a cosigner. */
+export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "therapist"] as const;
+
+/** A note is masked exactly like a SUD problem entry — one gate, one rule. */
+export function isNoteSudSensitive(note: ProgressNote): boolean {
+  return note.category === "sud";
+}
+
+/** Effective status for legacy rows written before the lifecycle existed. */
+export function noteStatus(note: ProgressNote): NoteStatus {
+  return note.status ?? "draft";
 }
 
 export type ConsentPurpose = "part2Sud" | "ecmShare" | "sms" | "hipaa";
@@ -3024,9 +3066,182 @@ export const AdelanteEHR = {
   addProgressNote(patientId: string, note: Omit<ProgressNote, "id">) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.progressNotes = [{ ...note, id: uid() }, ...(p.progressNotes ?? [])];
+    const row: ProgressNote = {
+      ...note,
+      id: uid(),
+      // Everything written today is human-authored; the seam exists so a
+      // machine-drafted note is representable without changing signing.
+      authorSource: note.authorSource ?? "human",
+      status: note.status ?? "draft",
+    };
+    p.progressNotes = [row, ...(p.progressNotes ?? [])];
     _recomputeCarePlan(p.id, "progress_note");
+    appendAudit({
+      category: "clinical",
+      action: "note_drafted",
+      patientId,
+      actorId: note.clinicianId,
+      detail: {
+        noteId: row.id,
+        sessionType: row.sessionType,
+        authorSource: row.authorSource,
+        category: row.category ?? null,
+      },
+    });
     emit();
+    return row;
+  },
+
+  // ----- Note sign / cosign lifecycle -------------------------------------
+  // TODO(auth): attestation is checkbox-only, exactly like Orders / MAR /
+  // Refusal. Signer eligibility is ROLE-based; Adelante has no credentialing
+  // -> signing RPC, so unlike the reference EMR there is no license/NPI check.
+  _findNote(patientId: string, noteId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.progressNotes?.find((x) => x.id === noteId);
+    return { p, n };
+  },
+
+  signProgressNote(
+    patientId: string,
+    noteId: string,
+    input: {
+      signedBy: string;
+      role: string;
+      attested: boolean;
+      cosignRequired?: boolean;
+      cosignRole?: string[];
+    },
+  ): ProgressNote {
+    const { n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!n) throw new Error("Note not found.");
+    const status = noteStatus(n);
+    if (status !== "draft" && status !== "declined")
+      throw new Error("Only a draft note can be signed.");
+    if (!input.attested) throw new Error("Attestation is required to sign a note.");
+    const selfSign = (NOTE_SELF_SIGN_ROLES as readonly string[]).includes(input.role);
+    const cosignRequired = input.cosignRequired ?? !selfSign;
+    if (!selfSign && !cosignRequired)
+      throw new Error("Your role cannot sign this note without a cosigner.");
+
+    n.signedBy = input.signedBy;
+    n.signedAt = new Date().toISOString();
+    n.cosignRequired = cosignRequired;
+    n.cosignRole = input.cosignRole?.length ? input.cosignRole : undefined;
+    n.status = cosignRequired ? "cosign_pending" : "signed";
+    // A new signature clears any prior decline trail from the record's face.
+    n.declineReason = undefined;
+    n.declinedBy = undefined;
+    n.declinedAt = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "note_signed",
+      patientId,
+      actorId: input.signedBy,
+      actorRole: input.role,
+      detail: {
+        noteId,
+        status: n.status,
+        cosignRequired,
+        cosignRole: n.cosignRole ?? null,
+        authorSource: n.authorSource ?? "human",
+      },
+    });
+    emit();
+    return n;
+  },
+
+  cosignProgressNote(
+    patientId: string,
+    noteId: string,
+    input: { cosignedBy: string; role: string; attested: boolean; comment?: string },
+  ): ProgressNote {
+    const { n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!n) throw new Error("Note not found.");
+    if (noteStatus(n) !== "cosign_pending") throw new Error("This note is not awaiting cosign.");
+    if (!input.attested) throw new Error("Attestation is required to cosign a note.");
+    if (!(NOTE_SELF_SIGN_ROLES as readonly string[]).includes(input.role))
+      throw new Error("Your role cannot cosign clinical notes.");
+    if (n.cosignRole?.length && !n.cosignRole.includes(input.role))
+      throw new Error("This note requires a different cosigning role.");
+    if (n.signedBy === input.cosignedBy) throw new Error("A note cannot be cosigned by its signer.");
+
+    n.cosignedBy = input.cosignedBy;
+    n.cosignedAt = new Date().toISOString();
+    n.cosignComment = input.comment?.trim() || undefined;
+    n.status = "cosigned";
+    appendAudit({
+      category: "clinical",
+      action: "note_cosigned",
+      patientId,
+      actorId: input.cosignedBy,
+      actorRole: input.role,
+      detail: { noteId, comment: n.cosignComment ?? null, signedBy: n.signedBy ?? null },
+    });
+    emit();
+    return n;
+  },
+
+  /**
+   * Decline a cosign request. The note returns to `draft` so the author can
+   * revise and re-sign.
+   *
+   * KNOWN GAP vs. the reference EMR: the reference also voids orders signed in
+   * the same encounter. Adelante has no note<->order link (orders are not
+   * encounter-scoped and carry no noteId), so no orders are touched here. The
+   * decline is recorded with `ordersVoided: 0` and `orderCascade:
+   * "unavailable_no_note_order_link"` so the omission is visible in the audit
+   * log rather than silently absent.
+   */
+  declineProgressNoteCosign(
+    patientId: string,
+    noteId: string,
+    input: { declinedBy: string; role: string; reason: string },
+  ): ProgressNote {
+    const { n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!n) throw new Error("Note not found.");
+    if (noteStatus(n) !== "cosign_pending") throw new Error("This note is not awaiting cosign.");
+    const reason = (input.reason ?? "").trim();
+    if (reason.length < 3) throw new Error("A decline reason of at least 3 characters is required.");
+
+    n.declineReason = reason;
+    n.declinedBy = input.declinedBy;
+    n.declinedAt = new Date().toISOString();
+    n.status = "draft";
+    n.signedBy = undefined;
+    n.signedAt = undefined;
+    n.cosignedBy = undefined;
+    n.cosignedAt = undefined;
+    n.cosignComment = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "note_cosign_declined",
+      patientId,
+      actorId: input.declinedBy,
+      actorRole: input.role,
+      detail: {
+        noteId,
+        reason,
+        returnedTo: "draft",
+        ordersVoided: 0,
+        orderCascade: "unavailable_no_note_order_link",
+      },
+    });
+    emit();
+    return n;
+  },
+
+  /** Cross-patient cosign queue: signed notes still awaiting a cosignature. */
+  listNotesAwaitingCosign(): { patient: Patient; note: ProgressNote }[] {
+    const out: { patient: Patient; note: ProgressNote }[] = [];
+    for (const p of patients) {
+      for (const n of p.progressNotes ?? []) {
+        if (n.cosignRequired && !n.cosignedAt && noteStatus(n) === "cosign_pending") {
+          out.push({ patient: p, note: n });
+        }
+      }
+    }
+    return out.sort((a, b) => (a.note.signedAt ?? "").localeCompare(b.note.signedAt ?? ""));
   },
 
   // ----- Consent state + audit log -----
