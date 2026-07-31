@@ -819,6 +819,8 @@ export interface Patient {
   allergies?: Allergy[];
   /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
   alerts?: PatientAlert[];
+  /** §Crisis escalation — open/resolved escalations, each linked to a PatientAlert. */
+  crisisEscalations?: CrisisEscalation[];
   /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
   orders?: MedOrder[];
   /** Charted dose administrations (§MAR). Append-only; voids never delete. */
