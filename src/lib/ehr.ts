@@ -4887,12 +4887,6 @@ export const AdelanteEHR = {
       .sort((a, b) => a.form.createdAt.localeCompare(b.form.createdAt));
   },
 
-  _refusalEscalationDueUnused(patientId: string, orderId: string, now?: Date): boolean {
-    return (
-      AdelanteEHR.refusalsInWindow(patientId, orderId, ESCALATION_WINDOW_DAYS, now).length >=
-      ESCALATION_REFUSAL_THRESHOLD
-    );
-  },
   /**
    * Record the escalation decision — scheduled provider follow-up or a
    * documented deferral. Either way it lands on the audit trail; there is no
