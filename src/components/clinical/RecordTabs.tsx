@@ -65,7 +65,7 @@ import {
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
-import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
+import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList, Download } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
@@ -1796,6 +1796,7 @@ function ProgressNoteCard({
           Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
         </p>
       )}
+      <NoteExportButton patientId={patientId} note={note} authorLabel={authorLabel} />
       {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           {mustCosign && (
