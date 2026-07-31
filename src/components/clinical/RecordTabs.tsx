@@ -1744,6 +1744,27 @@ export function NoteStatusBadge({ note }: { note: ProgressNote }) {
 const SIGN_ATTESTATION =
   "I attest that this note is accurate, complete, and reflects care I personally provided or supervised.";
 
+/** Read-only trace of the orders that originated from a finalized note. */
+function NoteOrderTrace({ orders, title }: { orders: MedOrder[]; title: string }) {
+  return (
+    <div className="rounded-md border border-border bg-secondary/20 p-3">
+      <h5 className="font-display text-sm text-navy">{title}</h5>
+      {orders.length === 0 ? (
+        <p className="mt-1 text-[11px] text-muted-foreground">No orders placed from this note.</p>
+      ) : (
+        <ul className="mt-1 space-y-1">
+          {orders.map((o) => (
+            <li key={o.id} className="text-[11px] text-navy">
+              {o.drugName}
+              <span className="text-muted-foreground"> · {o.status}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ProgressNoteCard({
   patientId,
   note,
