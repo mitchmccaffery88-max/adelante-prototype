@@ -2148,6 +2148,12 @@ const noteAutomationRuns: NoteAutomationRun[] = [];
 // record), because a notification belongs to a person's worklist.
 const notifications: AppNotification[] = [];
 
+/** Display name for notification copy. Never used for access control. */
+function patientLabel(patientId?: string): string {
+  const p = patients.find((x) => x.id === patientId);
+  return p ? `${p.firstName} ${p.lastName}` : "a patient";
+}
+
 // ---------------------------------------------------------------------------
 // §Risk-text translation governance.
 //
