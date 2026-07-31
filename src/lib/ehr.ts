@@ -6009,7 +6009,7 @@ export const AdelanteEHR = {
           recipientRole: r,
           category: "mar_witness_needed",
           subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
-          body: `${staffName} staged ${claimedOrder.displayName ?? "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          body: `${staffName} staged ${claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
           linkRoute: "/record/$patientId",
           linkParams: { patientId, section: "mar" },
           patientId,
