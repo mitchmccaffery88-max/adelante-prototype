@@ -1984,6 +1984,53 @@ function ProgressNoteCard({
       <NoteExportButton patientId={patientId} note={note} authorLabel={authorLabel} />
       {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {crisisScores.length > 0 && (
+            <div
+              data-testid="crisis-band-prompt"
+              className="rounded border border-destructive/50 bg-destructive/5 p-2 text-[11px] text-navy"
+            >
+              <p className="font-medium text-destructive">
+                Crisis band reached — a decision is required before signing.
+              </p>
+              <ul className="mt-1 list-disc space-y-0.5 pl-4">
+                {crisisScores.map((s) => (
+                  <li key={s.id}>{describeCrisisScore(s)}</li>
+                ))}
+              </ul>
+              <div className="mt-2 flex flex-wrap gap-1.5">
+                <Button
+                  size="sm"
+                  variant={crisisChoice === "escalate" ? "destructive" : "outline"}
+                  onClick={() => setCrisisChoice("escalate")}
+                >
+                  Escalate now
+                </Button>
+                <Button
+                  size="sm"
+                  variant={crisisChoice === "not_escalating" ? "secondary" : "outline"}
+                  onClick={() => setCrisisChoice("not_escalating")}
+                >
+                  Not escalating
+                </Button>
+              </div>
+              {crisisChoice === "escalate" && (
+                <p className="mt-1.5 text-muted-foreground">
+                  Signing will create a critical alert and an open entry in the crisis queue.
+                </p>
+              )}
+              {crisisChoice === "not_escalating" && (
+                <div className="mt-1.5 space-y-1">
+                  <Label className="text-[11px]">Reason for not escalating (required)</Label>
+                  <Textarea
+                    value={crisisReason}
+                    onChange={(e) => setCrisisReason(e.target.value)}
+                    rows={2}
+                    aria-label="Reason for not escalating"
+                  />
+                </div>
+              )}
+            </div>
+          )}
           {plannedAuto.length > 0 && (
             <div
               data-testid="pre-sign-automation-summary"
