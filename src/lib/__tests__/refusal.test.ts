@@ -11,6 +11,9 @@ import {
   isValidSignature,
   validateEscalationTime,
   witnessRequiredFor,
+  riskTextFor,
+  RISK_TEXT_CATALOG,
+  RISK_TEXT_CATALOG_ES,
 } from "@/lib/refusal";
 import { deriveMarDay } from "@/lib/mar";
 import { facilityDateKey } from "@/lib/facilityTime";
@@ -314,5 +317,29 @@ describe("3-in-7-days escalation", () => {
     const audit = AdelanteEHR.listAuditEvents({ patientId: pid });
     expect(audit.some((e) => e.action === "refusal_escalation_scheduled")).toBe(true);
     expect(audit.some((e) => e.action === "refusal_form_created")).toBe(true);
+  });
+});
+
+describe("risk text language routing", () => {
+  it("returns reviewed English for en and unknown languages", () => {
+    for (const lang of ["en", undefined, "fr"]) {
+      const r = riskTextFor("psychiatric", lang);
+      expect(r.text).toBe(RISK_TEXT_CATALOG.psychiatric.text);
+      expect(r.reviewed).toBe(true);
+    }
+  });
+
+  it("returns the draft Spanish text for es and keeps the English wording", () => {
+    const r = riskTextFor("anticoagulant", "es-MX");
+    expect(r.text).toBe(RISK_TEXT_CATALOG_ES.anticoagulant.text);
+    expect(r.version).toBe("es-v1-draft");
+    expect(r.reviewed).toBe(false);
+    expect(r.englishText).toBe(RISK_TEXT_CATALOG.anticoagulant.text);
+  });
+
+  it("has a Spanish entry for every med class", () => {
+    for (const k of Object.keys(RISK_TEXT_CATALOG) as (keyof typeof RISK_TEXT_CATALOG)[]) {
+      expect(RISK_TEXT_CATALOG_ES[k]?.text?.length ?? 0).toBeGreaterThan(80);
+    }
   });
 });

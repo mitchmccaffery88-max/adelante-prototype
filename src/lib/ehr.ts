@@ -376,6 +376,16 @@ export interface RefusalForm {
   riskTextVersion: string;
   /** Frozen copy of the risk text the patient was actually read. */
   riskTextSnapshot: string;
+  /**
+   * English wording for the same class, retained whenever the snapshot above is
+   * a translation, so the clinically reviewed text stays part of the record.
+   */
+  riskTextSnapshotEn?: string;
+  /**
+   * False when the snapshot is a translation still awaiting clinical sign-off.
+   * Undefined on forms created before translations existed (treat as reviewed).
+   */
+  riskTextReviewed?: boolean;
   languageCode: string;
   /** Active alert labels matching the capacity heuristic at signing time. */
   capacityFlagsAtSigning: string[];
@@ -1593,6 +1603,7 @@ import {
   isMinorPatient,
   medClassGuess,
   refusalFinalizeProblems,
+  riskTextFor,
   validateEscalationTime,
   witnessRequiredFor,
   ESCALATION_REFUSAL_THRESHOLD,
@@ -4685,8 +4696,11 @@ export const AdelanteEHR = {
         .filter(Boolean)
         .join(" "),
     );
-    const risk = RISK_TEXT_CATALOG[medClass] ?? RISK_TEXT_CATALOG["*"];
     const capacityFlagsAtSigning = capacityFlagsFrom(p.alerts);
+    const languageCode = p.preferredLanguage ?? "en";
+    // Presented in the patient's language when a catalog exists; Spanish is a
+    // DRAFT translation pending clinical sign-off (see refusal.ts).
+    const risk = riskTextFor(medClass, languageCode);
     const row: RefusalForm = {
       id: uid(),
       patientId,
@@ -4695,9 +4709,9 @@ export const AdelanteEHR = {
       medClass,
       riskTextVersion: risk.version,
       riskTextSnapshot: risk.text,
-      // Risk text is English-only this pass — see refusal.ts for why a legal
-      // document is not machine-translated.
-      languageCode: p.preferredLanguage ?? "en",
+      riskTextSnapshotEn: risk.englishText,
+      riskTextReviewed: risk.reviewed,
+      languageCode,
       capacityFlagsAtSigning,
       guardianRequired: isMinorPatient(p),
       nurseAttested: false,
@@ -4721,6 +4735,7 @@ export const AdelanteEHR = {
         medClass,
         riskTextVersion: row.riskTextVersion,
         languageCode: row.languageCode,
+        riskTextReviewed: row.riskTextReviewed,
         capacityFlagsAtSigning,
         guardianRequired: row.guardianRequired,
       },

@@ -62,6 +62,70 @@ export const RISK_TEXT_CATALOG: Record<MedClass, RiskTextEntry> = {
 };
 
 /**
+ * SPANISH RISK TEXT — UNREVIEWED DRAFT.
+ *
+ * TODO(clinical): these translations have NOT been reviewed or signed off by
+ * Christi or Dr. Bagga. Until they are, every Spanish disclosure is versioned
+ * `es-v1-draft` and the form carries `riskTextReviewed: false`, which drives a
+ * visible "pending clinical review" banner in the dialog and preserves the
+ * English snapshot alongside it (`riskTextSnapshotEn`) so the legally reviewed
+ * wording stays part of the record. Promote to `es-v1` — and flip the reviewed
+ * flag — only after clinical sign-off.
+ */
+export const RISK_TEXT_CATALOG_ES: Record<MedClass, RiskTextEntry> = {
+  psychiatric: {
+    version: "es-v1-draft",
+    label: "Medicamento psiquiátrico",
+    text: "Este medicamento se receta para ayudar a estabilizar su estado de ánimo, su pensamiento o su ansiedad. Dejar de tomarlo u omitir dosis puede hacer que los síntomas regresen o empeoren, a veces rápidamente, y puede provocar una crisis, una hospitalización o la pérdida del progreso que ya ha logrado. Algunos medicamentos psiquiátricos también causan síntomas de abstinencia o de rebote si se suspenden de forma brusca en lugar de reducirlos gradualmente. Usted tiene derecho a rechazarlo, y rechazarlo no afectará su acceso a otros servicios de atención, pero su proveedor debe saberlo para poder hacer un plan más seguro.",
+  },
+  controlled: {
+    version: "es-v1-draft",
+    label: "Sustancia controlada",
+    text: "Este es un medicamento controlado, lo que significa que se vigila de cerca por su seguridad y por el riesgo de dependencia o uso indebido. Omitir dosis puede causar síntomas de abstinencia, dolor sin control o antojos, y los rechazos repetidos pueden significar que este medicamento ya no es el tratamiento adecuado para usted. Rechazarlo es su derecho y no se tratará como una falta de conducta, pero se documentará y se notificará a su proveedor para revisar su plan.",
+  },
+  anticoagulant: {
+    version: "es-v1-draft",
+    label: "Anticoagulante (adelgazante de la sangre)",
+    text: "Este medicamento adelgaza la sangre para prevenir coágulos peligrosos. Incluso una o dos dosis omitidas pueden aumentar su riesgo de un derrame cerebral, un coágulo en los pulmones o un coágulo en las piernas, y esos eventos pueden poner en peligro su vida o causar una discapacidad permanente. Si lo rechaza por moretones, sangrado o efectos secundarios, dígaselo ahora a su enfermera: puede haber una opción más segura. Su rechazo se documentará y se notificará de inmediato a su proveedor.",
+  },
+  antibiotic: {
+    version: "es-v1-draft",
+    label: "Antibiótico",
+    text: "Este antibiótico trata una infección activa. Omitir dosis o suspenderlo antes de tiempo puede hacer que la infección regrese, se propague o se vuelva resistente al tratamiento, lo que la hace mucho más difícil de curar después. Terminar el tratamiento completo es importante aunque ya se sienta mejor. Usted puede rechazarlo; su rechazo se documentará y se informará a su proveedor para que la infección se pueda manejar de forma segura.",
+  },
+  "*": {
+    version: "es-v1-draft",
+    label: "Medicamento general",
+    text: "Su proveedor recetó este medicamento como parte de su plan de tratamiento. Rechazarlo puede permitir que empeore la condición que trata, puede retrasar su recuperación y puede cambiar qué otros tratamientos son seguros o están disponibles para usted. Usted tiene derecho a rechazar cualquier medicamento. Su rechazo se documentará en su expediente y se notificará a su proveedor para revisar su plan con usted.",
+  },
+};
+
+/** Language codes with a (draft) translated catalog. Everything else gets English. */
+const TRANSLATED_CATALOGS: Record<string, Record<MedClass, RiskTextEntry>> = {
+  es: RISK_TEXT_CATALOG_ES,
+};
+
+export interface ResolvedRiskText extends RiskTextEntry {
+  /** False for any translation still awaiting clinical sign-off. */
+  reviewed: boolean;
+  /** English wording for the same class — always retained on the record. */
+  englishText: string;
+}
+
+/**
+ * Resolve the disclosure to present for a class + patient language. Falls back
+ * to the reviewed English text whenever no catalog exists for the language.
+ */
+export function riskTextFor(medClass: MedClass, languageCode?: string): ResolvedRiskText {
+  const cls = RISK_TEXT_CATALOG[medClass] ? medClass : "*";
+  const en = RISK_TEXT_CATALOG[cls];
+  const lang = (languageCode ?? "en").toLowerCase().split("-")[0];
+  const translated = lang === "en" ? undefined : TRANSLATED_CATALOGS[lang]?.[cls];
+  if (!translated) return { ...en, reviewed: true, englishText: en.text };
+  return { ...translated, reviewed: false, englishText: en.text };
+}
+
+/**
  * Keyword classifier ported from the reference. Order matters: anticoagulant
  * and controlled are checked before psychiatric because a few agents (e.g.
  * benzodiazepines) read as both and the higher-risk disclosure should win.
