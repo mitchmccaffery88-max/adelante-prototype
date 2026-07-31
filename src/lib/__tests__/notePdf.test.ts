@@ -159,7 +159,7 @@ describe("note PDF builder", () => {
 
   it("throws from the content model too — no bypass around the PDF renderer", () => {
     expect(() =>
-      buildNoteDocumentModel({ note: { ...base, category: "sud" }, patient, role: "therapist" }),
+      buildNoteDocumentModel({ note: { ...base, category: "sud" }, patient, role: "case_manager" }),
     ).toThrow(/42 CFR Part 2/i);
   });
 
