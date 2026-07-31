@@ -806,6 +806,18 @@ function RefillReviewCard() {
 }
 
 /**
+ * Nurse worklist for refusal legal documents, RBAC-gated the same way the rest
+ * of the clinical surfaces are — the MAR tab list stays, this is a second,
+ * cross-patient way in.
+ */
+function NurseRefusalWorklistSection() {
+  const { staffName } = useActingStaff();
+  const role = useActingRole();
+  if (!canAccess(role, "mar")) return null;
+  return <NurseRefusalWorklist staffName={staffName} />;
+}
+
+/**
  * Passive notification banner. Acknowledge/dismiss actions live in the
  * patient record drawer's Providers tab (single source of truth); this only
  * surfaces that something needs attention and links there.
