@@ -483,6 +483,70 @@ export interface Facility {
   createdAt: string;
 }
 
+/**
+ * Optional profile detail on a facility. Every field is nullable on purpose:
+ * facilities are frequently created inline from a booking (`ensureFacility`),
+ * where only a name is known. Admins fill the rest in on the facility page.
+ */
+export interface FacilityProfile {
+  addressLine1?: string;
+  addressLine2?: string;
+  /** Two-letter USPS state code, upper-cased on write. */
+  state?: string;
+  postalCode?: string;
+  county?: string;
+  /** Main switchboard / front-desk line. */
+  phone?: string;
+  fax?: string;
+  website?: string;
+  /** Primary point of contact for care coordination at this site. */
+  contactName?: string;
+  contactTitle?: string;
+  contactPhone?: string;
+  contactEmail?: string;
+  /** Free-text operational notes: intake hours, gate procedure, badge rules. */
+  notes?: string;
+}
+
+export interface Facility extends FacilityProfile {}
+
+/** Profile keys, used for uniform trim/normalize/audit handling. */
+export const FACILITY_PROFILE_FIELDS = [
+  "addressLine1",
+  "addressLine2",
+  "state",
+  "postalCode",
+  "county",
+  "phone",
+  "fax",
+  "website",
+  "contactName",
+  "contactTitle",
+  "contactPhone",
+  "contactEmail",
+  "notes",
+] as const satisfies readonly (keyof FacilityProfile)[];
+
+/** Trim, drop empties, and upper-case the state code. */
+export function normalizeFacilityProfile(input: Partial<FacilityProfile>): FacilityProfile {
+  const out: FacilityProfile = {};
+  for (const key of FACILITY_PROFILE_FIELDS) {
+    const raw = input[key];
+    if (raw === undefined) continue;
+    const value = String(raw).trim();
+    out[key] = value ? (key === "state" ? value.toUpperCase() : value) : undefined;
+  }
+  return out;
+}
+
+/** One-line postal address, or undefined when nothing is recorded. */
+export function facilityAddressLine(f: Facility): string | undefined {
+  const street = [f.addressLine1, f.addressLine2].filter(Boolean).join(", ");
+  const region = [f.city, f.state].filter(Boolean).join(", ");
+  const line = [street, region, f.postalCode].filter(Boolean).join(" · ");
+  return line || undefined;
+}
+
 export type FacilityKind =
   | "clinic"
   | "community_health_center"
