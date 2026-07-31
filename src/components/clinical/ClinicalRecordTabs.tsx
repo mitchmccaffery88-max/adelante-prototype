@@ -487,6 +487,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
 
   return (
     <div className="space-y-3">
+      <PatientCrisisPanel patientId={patientId} />
       {canWrite && (
         <Card className="p-3 space-y-2">
           <div className="text-xs font-medium text-navy">Add alert</div>
