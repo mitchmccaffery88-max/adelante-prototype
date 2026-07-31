@@ -125,7 +125,10 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
   const claims = patient.doseClaims ?? [];
 
   const slots: MarSlot[] = [];
+  const prn: MarSlot[] = [];
+  const kop: MarSlot[] = [];
   const deferred: MarDay["deferred"] = [];
+  const nowIso = new Date().toISOString();
 
   for (const order of orders) {
     const reason = deferralReasonFor(order);
@@ -133,10 +136,36 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
       deferred.push({ order, reason });
       continue;
     }
+    // KOP is a supply event, not a bedside administration — it never gets a
+    // scheduled slot or a dose claim, matching the reference EMR.
+    if (order.isKop) {
+      kop.push({
+        key: `${order.id}@kop`,
+        kind: "kop",
+        order,
+        scheduledAt: nowIso,
+        facilityDate: key,
+        timeLabel: "As issued",
+      });
+      continue;
+    }
+    // PRN has no fixed schedule — one on-demand row per active PRN order.
+    if (isPrnOrder(order)) {
+      prn.push({
+        key: `${order.id}@prn`,
+        kind: "prn",
+        order,
+        scheduledAt: nowIso,
+        facilityDate: key,
+        timeLabel: frequencyByCode(order.frequencyCode)?.sigLabel ?? "as needed",
+      });
+      continue;
+    }
     if (!order.frequencyCode && !order.isStat) continue;
     for (const scheduledAt of slotsForOrder(order, key, tz)) {
       slots.push({
         key: `${order.id}@${scheduledAt}`,
+        kind: "scheduled",
         order,
         scheduledAt,
         facilityDate: key,
@@ -150,7 +179,7 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
   }
 
   slots.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-  return { dateKey: key, slots, deferred };
+  return { dateKey: key, slots, prn, kop, deferred };
 }
 
 /** True when charting this slot now counts as a late entry (>4h past due). */
