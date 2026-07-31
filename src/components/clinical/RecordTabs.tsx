@@ -41,6 +41,7 @@ import {
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
+import { downloadProgressNotePdf, noteExportGate } from "@/lib/notePdf";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
@@ -64,7 +65,7 @@ import {
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
-import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList } from "lucide-react";
+import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList, Download } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
@@ -1657,6 +1658,49 @@ const NOTE_STATUS_LABEL: Record<NoteStatus, string> = {
   declined: "Declined",
 };
 
+/**
+ * Export action for finalized notes. Rendered ONLY when `noteExportGate`
+ * allows it — the same gate the PDF builder re-runs — so draft, unsigned and
+ * SUD-masked notes have no export affordance at all.
+ */
+function NoteExportButton({
+  patientId,
+  note,
+  authorLabel,
+}: {
+  patientId: string;
+  note: ProgressNote;
+  authorLabel: string;
+}) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { role, staffName } = useActingStaff();
+  if (!patient) return null;
+  if (!noteExportGate(note, role, patient).allowed) return null;
+  return (
+    <Button
+      size="sm"
+      variant="outline"
+      className="mt-2 h-7 text-[11px]"
+      onClick={() => {
+        try {
+          const filename = downloadProgressNotePdf({
+            note,
+            patient,
+            role,
+            authorLabel,
+            exportedBy: staffName,
+          });
+          toast.success(`Exported ${filename}`);
+        } catch (e) {
+          toast.error((e as Error).message);
+        }
+      }}
+    >
+      <Download className="mr-1 h-3.5 w-3.5" /> Export PDF
+    </Button>
+  );
+}
+
 export function NoteStatusBadge({ note }: { note: ProgressNote }) {
   const s = noteStatus(note);
   const tone =
@@ -1795,6 +1839,7 @@ function ProgressNoteCard({
           Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
         </p>
       )}
+      <NoteExportButton patientId={patientId} note={note} authorLabel={authorLabel} />
       {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           {mustCosign && (
