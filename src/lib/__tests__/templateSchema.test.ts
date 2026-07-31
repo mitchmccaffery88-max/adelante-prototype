@@ -131,3 +131,29 @@ describe("computeScore", () => {
     expect(full[0]!.incomplete).toBe(false);
   });
 });
+describe("requiredFieldSummary", () => {
+  it("baseline matches findMissingRequired against an empty answer set", () => {
+    const s = requiredFieldSummary(SCHEMA);
+    expect(s.baseline).toBe(findMissingRequired(SCHEMA, {}).length);
+    expect(s.baseline).toBe(1); // substance_use only; `substances` is hidden
+  });
+
+  it("reports conditionally-gated required fields separately", () => {
+    expect(requiredFieldSummary(SCHEMA).conditional).toBe(1); // `substances`
+  });
+
+  it("counts section-level gating too, and handles an empty schema", () => {
+    const schema: TemplateSchema = {
+      sections: [
+        {
+          id: "a",
+          title: "A",
+          show_if: 'flag == "yes"',
+          fields: [{ key: "x", type: "text", label: "X", required: true }],
+        },
+      ],
+    };
+    expect(requiredFieldSummary(schema)).toEqual({ baseline: 0, conditional: 1 });
+    expect(requiredFieldSummary(undefined)).toEqual({ baseline: 0, conditional: 0 });
+  });
+});
