@@ -37,6 +37,7 @@ import {
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { Switch } from "@/components/ui/switch";
+import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { CrisisNotice } from "@/components/CrisisNotice";
