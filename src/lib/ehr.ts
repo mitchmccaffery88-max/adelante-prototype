@@ -7963,6 +7963,271 @@ export const AdelanteEHR = {
       .sort((a, b) => a.label.localeCompare(b.label));
   },
 
+  // ----- §Admin governance: frequency catalog -----------------------------
+  //
+  // The seeded catalog lives in src/lib/frequencies.ts; these wrappers add the
+  // audit trail, the in-use protection and the reactive emit. Deactivate,
+  // never delete, whenever a frequency is referenced by a live order.
+
+  listFrequencies(includeInactive = false): MedFrequency[] {
+    return listFrequencies(includeInactive);
+  },
+
+  /** Signed or held orders referencing this code — the delete blocker. */
+  frequencyUsage(code: string): { count: number; patientIds: string[] } {
+    const patientIds: string[] = [];
+    let count = 0;
+    for (const p of patients) {
+      let hit = false;
+      for (const o of p.orders ?? []) {
+        if (o.frequencyCode !== code) continue;
+        if (o.status !== "signed" && o.status !== "held") continue;
+        count += 1;
+        hit = true;
+      }
+      if (hit) patientIds.push(p.id);
+    }
+    return { count, patientIds };
+  },
+
+  /** Create or edit a frequency. Code is the identity and is immutable. */
+  saveFrequency(
+    input: {
+      code: string;
+      label: string;
+      sigLabel: string;
+      description?: string;
+      isPrn: boolean;
+      adminTimes: number[];
+      maxPerDay?: number;
+      minGapMinutes?: number;
+      intervalDays?: number;
+      sortOrder?: number;
+    },
+    staffName: string,
+  ): MedFrequency {
+    const code = (input.code ?? "").trim().toUpperCase().replace(/\s+/g, "_");
+    if (!code) throw new Error("A frequency code is required.");
+    const label = (input.label ?? "").trim();
+    if (!label) throw new Error("A frequency label is required.");
+    const sigLabel = (input.sigLabel ?? "").trim();
+    if (!sigLabel) throw new Error("A sig fragment is required — it prints on the label.");
+    const adminTimes = [...new Set(input.adminTimes ?? [])].sort((a, b) => a - b);
+    if (adminTimes.some((h) => !Number.isInteger(h) || h < 0 || h > 23))
+      throw new Error("Administration times must be whole hours between 0 and 23.");
+    if (!input.isPrn && adminTimes.length === 0)
+      throw new Error("A scheduled frequency needs at least one administration time.");
+    if (input.isPrn && adminTimes.length > 0)
+      throw new Error("A PRN frequency has no fixed administration times.");
+    if (input.isPrn && input.maxPerDay !== undefined && input.maxPerDay < 1)
+      throw new Error("Max per day must be at least 1.");
+
+    const existing = frequencyByCode(code);
+    const row = putFrequency({
+      ...(existing ?? {}),
+      code,
+      label,
+      sigLabel,
+      description: input.description?.trim() || undefined,
+      isPrn: input.isPrn,
+      adminTimes,
+      maxPerDay: input.isPrn ? input.maxPerDay : undefined,
+      minGapMinutes: input.isPrn ? input.minGapMinutes : undefined,
+      intervalDays: input.intervalDays && input.intervalDays > 1 ? input.intervalDays : undefined,
+      sortOrder: input.sortOrder ?? existing?.sortOrder ?? (listFrequencies(true).length + 1) * 10,
+      active: existing?.active ?? true,
+      updatedBy: staffName,
+      updatedAt: new Date().toISOString(),
+    });
+    appendAudit({
+      category: "clinical",
+      action: existing ? "frequency_updated" : "frequency_created",
+      actorId: staffName,
+      detail: {
+        code: row.code,
+        label: row.label,
+        isPrn: row.isPrn,
+        adminTimes: row.adminTimes,
+        maxPerDay: row.maxPerDay ?? null,
+        minGapMinutes: row.minGapMinutes ?? null,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Delete a frequency. BLOCKED when any signed/held order references it —
+   * the caller is told to deactivate instead, which keeps history resolvable.
+   */
+  deleteFrequency(code: string, staffName: string): void {
+    const row = frequencyByCode(code);
+    if (!row) throw new Error("Frequency not found.");
+    const usage = AdelanteEHR.frequencyUsage(code);
+    if (usage.count > 0)
+      throw new Error(
+        `${code} is in use by ${usage.count} signed or held order${
+          usage.count === 1 ? "" : "s"
+        } and cannot be deleted. Deactivate it with a reason instead — it will drop out of the picker while existing orders keep resolving.`,
+      );
+    dropFrequency(code);
+    appendAudit({
+      category: "clinical",
+      action: "frequency_deleted",
+      actorId: staffName,
+      detail: { code, label: row.label },
+    });
+    emit();
+  },
+
+  /** Deactivate (reason required) / reactivate. */
+  setFrequencyActive(
+    code: string,
+    active: boolean,
+    staffName: string,
+    reason?: string,
+  ): MedFrequency {
+    const row = frequencyByCode(code);
+    if (!row) throw new Error("Frequency not found.");
+    const why = (reason ?? "").trim();
+    if (!active && !why) throw new Error("A reason is required to deactivate a frequency.");
+    const usage = AdelanteEHR.frequencyUsage(code);
+    const next = putFrequency({
+      ...row,
+      active,
+      deactivatedReason: active ? undefined : why,
+      updatedBy: staffName,
+      updatedAt: new Date().toISOString(),
+    });
+    appendAudit({
+      category: "clinical",
+      action: active ? "frequency_reactivated" : "frequency_deactivated",
+      actorId: staffName,
+      detail: { code, reason: active ? null : why, ordersInUse: usage.count },
+    });
+    emit();
+    return next;
+  },
+
+  // ----- §Admin governance: local RxNav suppressions ----------------------
+
+  listCatalogSuppressions(includeInactive = false): CatalogSuppression[] {
+    return catalogSuppressions
+      .filter((s) => includeInactive || s.active)
+      .map((s) => ({ ...s }))
+      .sort((a, b) => (a.drugName ?? a.rxcui ?? "").localeCompare(b.drugName ?? b.rxcui ?? ""));
+  },
+
+  addCatalogSuppression(
+    input: { rxcui?: string; drugName?: string; reason: string },
+    staffName: string,
+  ): CatalogSuppression {
+    const rxcui = input.rxcui?.trim() || undefined;
+    const drugName = input.drugName?.trim().replace(/\s+/g, " ") || undefined;
+    const reason = (input.reason ?? "").trim();
+    if (!rxcui && !drugName) throw new Error("A drug name or RxCUI is required.");
+    if (!reason) throw new Error("A reason is required to suppress a product.");
+    const dup = catalogSuppressions.find(
+      (s) =>
+        s.active &&
+        ((rxcui && s.rxcui === rxcui) ||
+          (drugName && (s.drugName ?? "").toLowerCase() === drugName.toLowerCase())),
+    );
+    if (dup) throw new Error("An active suppression already covers that product.");
+    const row: CatalogSuppression = {
+      id: uid(),
+      rxcui,
+      drugName,
+      reason,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    catalogSuppressions.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "catalog_suppression_added",
+      actorId: staffName,
+      detail: { id: row.id, rxcui: rxcui ?? null, drugName: drugName ?? null, reason },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Lift (reason required) / re-apply a suppression. Rows are never deleted. */
+  setCatalogSuppressionActive(
+    id: string,
+    active: boolean,
+    staffName: string,
+    reason?: string,
+  ): CatalogSuppression {
+    const row = catalogSuppressions.find((s) => s.id === id);
+    if (!row) throw new Error("Suppression not found.");
+    const why = (reason ?? "").trim();
+    if (!active && !why) throw new Error("A reason is required to lift a suppression.");
+    row.active = active;
+    row.deactivatedReason = active ? undefined : why;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: active ? "catalog_suppression_reapplied" : "catalog_suppression_lifted",
+      actorId: staffName,
+      detail: { id, drugName: row.drugName ?? null, rxcui: row.rxcui ?? null, reason: why || null },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /**
+   * §Local additions (minimal fix): distinct off-catalog product names already
+   * used on real orders, newest first. This makes a house-brand entry REUSABLE
+   * by the next clinician instead of re-typed — without standing up a second
+   * catalog registry. Justification is still required on every new order.
+   */
+  listOffCatalogProducts(): {
+    name: string;
+    uses: number;
+    lastUsedAt: string;
+    lastJustification?: string;
+  }[] {
+    const byName = new Map<
+      string,
+      { name: string; uses: number; lastUsedAt: string; lastJustification?: string }
+    >();
+    for (const p of patients) {
+      for (const o of p.orders ?? []) {
+        if (!o.offCatalog || !o.drugName) continue;
+        const key = o.drugName.trim().toLowerCase();
+        if (!key) continue;
+        const at = o.signedAt ?? o.createdAt ?? "";
+        const prev = byName.get(key);
+        if (!prev) {
+          byName.set(key, {
+            name: o.drugName.trim(),
+            uses: 1,
+            lastUsedAt: at,
+            lastJustification: o.offCatalogJustification,
+          });
+        } else {
+          prev.uses += 1;
+          if (at > prev.lastUsedAt) {
+            prev.lastUsedAt = at;
+            prev.lastJustification = o.offCatalogJustification;
+          }
+        }
+      }
+    }
+    return [...byName.values()].sort((a, b) => b.lastUsedAt.localeCompare(a.lastUsedAt));
+  },
+
+  _listKpiTargetsUnused(includeInactive = false): KpiTarget[] {
+    return kpiTargets
+      .filter((t) => includeInactive || t.active)
+      .map((t) => ({ ...t }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  },
+
   createKpiTarget(
     input: {
       metricKey: string;
