@@ -10,10 +10,11 @@
 // credentials once staff authentication exists. Deliberately not a fake
 // password field — a fake credential prompt is worse than an honest checkbox.
 //
-// LANGUAGE: risk text is ENGLISH ONLY in this pass. Adelante has an EN/ES
-// toggle elsewhere, but clinical risk-disclosure language in a legal document
-// must not be machine-translated. TODO(clinical): Spanish risk text requires
-// review/sign-off by Christi and Dr. Bagga before it ships.
+// LANGUAGE: Spanish risk text ships as `es-v1-draft` and is only presented as
+// reviewed wording after BOTH clinical sign-offs (Christi, Dr. Bagga) are
+// recorded through the admin review panel, which promotes it to `es-v1` and
+// locks the English snapshot as an archival reference. Clinical risk-disclosure
+// language in a legal document is never machine-translated into production.
 
 import type { MedOrder, Patient, PatientAlert, RefusalForm } from "@/lib/ehr";
 
