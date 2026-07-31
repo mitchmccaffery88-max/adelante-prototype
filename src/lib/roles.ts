@@ -51,6 +51,7 @@ export type RecordClass =
   | "care_coordination"
   | "custody_tracking"
   | "population_health"
+  | "crisis_queue"
   | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
@@ -195,6 +196,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     case_manager: "read",
     peer_specialist: "read",
+  },
+  // §Crisis escalation queue. Cross-patient, NOT patient-scoped, and more
+  // clinically sensitive than population_health with no revenue angle:
+  // clinical_coordinator + sys_admin write (they own disposition), the
+  // treating clinical roles read. Billing, billing_coordinator, and
+  // peer_specialist are deliberately excluded — peers can still FLAG a crisis
+  // from a patient record, they just don't get population-wide visibility.
+  crisis_queue: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
   },
 };
 
