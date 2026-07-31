@@ -6394,6 +6394,118 @@ export const AdelanteEHR = {
     return shiftCounts.slice(0, limit).map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
   },
 
+  // ----- §Population health: KPI targets ----------------------------------
+
+  listKpiTargets(includeInactive = false): KpiTarget[] {
+    return kpiTargets
+      .filter((t) => includeInactive || t.active)
+      .map((t) => ({ ...t }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  },
+
+  createKpiTarget(
+    input: {
+      metricKey: string;
+      label: string;
+      targetValue: number;
+      unit: "percent" | "count";
+      effectiveMonth?: string;
+      source?: string;
+      notes?: string;
+    },
+    staffName: string,
+  ): KpiTarget {
+    const label = (input.label ?? "").trim();
+    if (!input.metricKey) throw new Error("A metric is required.");
+    if (!label) throw new Error("A target label is required.");
+    if (!Number.isFinite(input.targetValue)) throw new Error("A numeric target value is required.");
+    const row: KpiTarget = {
+      id: uid(),
+      metricKey: input.metricKey,
+      label,
+      targetValue: input.targetValue,
+      unit: input.unit,
+      effectiveMonth: input.effectiveMonth?.trim() || undefined,
+      source: input.source?.trim() || undefined,
+      notes: input.notes?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    kpiTargets.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "kpi_target_created",
+      actorId: staffName,
+      detail: {
+        targetId: row.id,
+        metricKey: row.metricKey,
+        targetValue: row.targetValue,
+        unit: row.unit,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  updateKpiTarget(
+    targetId: string,
+    patch: Partial<Pick<KpiTarget, "label" | "targetValue" | "unit" | "effectiveMonth" | "source" | "notes" | "metricKey">>,
+    staffName: string,
+  ): KpiTarget {
+    const row = kpiTargets.find((t) => t.id === targetId);
+    if (!row) throw new Error("KPI target not found.");
+    const before = { ...row };
+    if (patch.metricKey) row.metricKey = patch.metricKey;
+    if (patch.label !== undefined) {
+      const label = patch.label.trim();
+      if (!label) throw new Error("A target label is required.");
+      row.label = label;
+    }
+    if (patch.targetValue !== undefined) {
+      if (!Number.isFinite(patch.targetValue)) throw new Error("A numeric target value is required.");
+      row.targetValue = patch.targetValue;
+    }
+    if (patch.unit) row.unit = patch.unit;
+    if (patch.effectiveMonth !== undefined)
+      row.effectiveMonth = patch.effectiveMonth.trim() || undefined;
+    if (patch.source !== undefined) row.source = patch.source.trim() || undefined;
+    if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "kpi_target_updated",
+      actorId: staffName,
+      detail: {
+        targetId,
+        from: { metricKey: before.metricKey, targetValue: before.targetValue, unit: before.unit },
+        to: { metricKey: row.metricKey, targetValue: row.targetValue, unit: row.unit },
+      },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate/reactivate. Targets are never deleted — history stays auditable. */
+  setKpiTargetActive(targetId: string, active: boolean, staffName: string, reason?: string) {
+    const row = kpiTargets.find((t) => t.id === targetId);
+    if (!row) throw new Error("KPI target not found.");
+    if (!active && !(reason ?? "").trim())
+      throw new Error("A reason is required to deactivate a target.");
+    row.active = active;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: active ? "kpi_target_reactivated" : "kpi_target_deactivated",
+      actorId: staffName,
+      detail: { targetId, metricKey: row.metricKey, reason: reason?.trim() ?? null },
+    });
+    emit();
+    return { ...row };
+  },
+
   // ----- §Medication reconciliation ---------------------------------------
   // Reuses the Orders layer rather than duplicating it: seeding reads
   // `isOrderActive`, and the stop/modify cascade on completion goes through
