@@ -43,6 +43,11 @@ import {
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import { downloadProgressNotePdf, noteExportGate } from "@/lib/notePdf";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
+import {
+  NoteAutofillCard,
+  useNoteAutofillSnapshots,
+} from "@/components/clinical/NoteAutofillCard";
+import { NoteOrdersSection } from "@/components/clinical/NoteOrdersSection";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
