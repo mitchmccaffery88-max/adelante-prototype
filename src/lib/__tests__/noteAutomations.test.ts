@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
-import { plannedAutomations, summarizeAutomation, type Automation, type TemplateSchema } from "@/lib/templateSchema";
+import { plannedAutomations, summarizeAutomation, type Automation, type TemplateAnswers, type TemplateSchema } from "@/lib/templateSchema";
 
 const PATIENT = AdelanteEHR.listPatients()[0]!.id;
 
@@ -16,7 +16,7 @@ function schema(automations: Automation[]): TemplateSchema {
   return { sections: [], automations };
 }
 
-function signedNote(automations: Automation[], answers: Record<string, unknown> = {}) {
+function signedNote(automations: Automation[], answers: TemplateAnswers = {}) {
   const n = AdelanteEHR.addProgressNote(PATIENT, {
     clinicianId: "c1",
     date: new Date().toISOString(),
