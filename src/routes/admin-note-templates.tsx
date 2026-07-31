@@ -1340,7 +1340,8 @@ function ScoringEditor({
     <div className="space-y-2 rounded-md border border-border p-3">
       <h4 className="font-display text-sm text-navy">Scoring rules</h4>
       {rules.map((r, i) => (
-        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
+        <div key={i} className="space-y-2 rounded-md border border-border/70 p-2">
+        <div className="grid gap-2 sm:grid-cols-[1fr_1fr_1fr_auto]">
           <Input
             value={r.label}
             placeholder="Label"
@@ -1387,6 +1388,13 @@ function ScoringEditor({
             <Trash2 className="h-4 w-4" />
           </Button>
         </div>
+        <BandsEditor
+          bands={r.bands ?? []}
+          onChange={(bands) =>
+            onChange(rules.map((x, j) => (j === i ? { ...x, bands: bands.length ? bands : undefined } : x)))
+          }
+        />
+        </div>
       ))}
       <Button
         size="sm"
@@ -1394,6 +1402,79 @@ function ScoringEditor({
         onClick={() => onChange([...rules, { id: "", label: "", sum_of: [] }])}
       >
         <Plus className="mr-1 h-3.5 w-3.5" /> Add scoring rule
+      </Button>
+    </div>
+  );
+}
+
+function BandsEditor({
+  bands,
+  onChange,
+}: {
+  bands: ScoringBand[];
+  onChange: (bands: ScoringBand[]) => void;
+}) {
+  return (
+    <div className="space-y-2">
+      <p className="text-[11px] text-muted-foreground">Score bands</p>
+      {bands.map((b, i) => (
+        <div key={i} className="space-y-1 rounded border border-border/60 p-2">
+          <div className="grid gap-2 sm:grid-cols-[6rem_6rem_1fr_auto]">
+            <Input
+              type="number"
+              value={b.min}
+              aria-label="Band minimum"
+              placeholder="Min"
+              onChange={(e) =>
+                onChange(bands.map((x, j) => (j === i ? { ...x, min: Number(e.target.value) } : x)))
+              }
+            />
+            <Input
+              type="number"
+              value={b.max}
+              aria-label="Band maximum"
+              placeholder="Max"
+              onChange={(e) =>
+                onChange(bands.map((x, j) => (j === i ? { ...x, max: Number(e.target.value) } : x)))
+              }
+            />
+            <Input
+              value={b.label}
+              placeholder="Band label, e.g. Severe"
+              aria-label="Band label"
+              onChange={(e) =>
+                onChange(bands.map((x, j) => (j === i ? { ...x, label: e.target.value } : x)))
+              }
+            />
+            <Button
+              variant="ghost"
+              size="icon"
+              aria-label="Remove band"
+              onClick={() => onChange(bands.filter((_, j) => j !== i))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
+            <Checkbox
+              checked={Boolean(b.triggersCrisis)}
+              aria-label="This band triggers a crisis-escalation prompt"
+              onCheckedChange={(v) =>
+                onChange(
+                  bands.map((x, j) => (j === i ? { ...x, triggersCrisis: Boolean(v) || undefined } : x)),
+                )
+              }
+            />
+            <span>This band triggers a required crisis-escalation prompt at signing.</span>
+          </label>
+        </div>
+      ))}
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => onChange([...bands, { min: 0, max: 0, label: "" }])}
+      >
+        <Plus className="mr-1 h-3.5 w-3.5" /> Add band
       </Button>
     </div>
   );
