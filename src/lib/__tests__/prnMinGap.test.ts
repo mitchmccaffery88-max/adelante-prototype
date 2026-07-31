@@ -147,7 +147,7 @@ describe("PRN minimum-interval enforcement", () => {
 
     const row = AdelanteEHR.chartDose(pid, orderId, at(), "given", "Pain", NURSE, "v2");
     expect(AdelanteEHR.prnEligibility(pid, orderId).blockedBy).toBe("gap");
-    AdelanteEHR.voidDoseBatch(pid, row.batchId, NURSE, "charted on the wrong patient");
+    AdelanteEHR.voidBatch(pid, row.batchId, NURSE, "charted on the wrong patient");
     expect(AdelanteEHR.prnEligibility(pid, orderId).blocked).toBe(false);
   });
 
