@@ -12,6 +12,7 @@
 import type { MedOrder } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { frequencyByCode } from "@/lib/frequencies";
+import type { QuickPickMed } from "@/lib/templateSchema";
 import {
   didFallbackToPositionalNames,
   extractIngredientNames,
@@ -416,3 +417,36 @@ export function reconcileForOrder(order: MedOrder): DoseResult | undefined {
 
 /** Alias: an order is "active" when it is still on the books (signed or held). */
 export const isOrderActive = isTherapyActive;
+
+/**
+ * §Clinical documentation Phase 3b — convert a template-authored quick pick
+ * into the payload for `AdelanteEHR.addDraftOrder`.
+ *
+ * A quick pick is a STARTING POINT, never a bypass: the resulting row is a
+ * plain draft `MedOrder`, so `validateOrder` still has to pass before it can be
+ * signed. Quick picks routinely omit required fields (quantity, duration,
+ * indication), which is exactly why the gate still runs.
+ */
+export function draftOrderFromQuickPick(
+  qp: QuickPickMed,
+  opts: { createdBy?: string; sourceNoteId?: string } = {},
+): Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy"> {
+  const freq = frequencyByCode(qp.frequencyCode);
+  return {
+    drugName: qp.drugName.trim(),
+    dose: qp.dose,
+    route: qp.route,
+    frequencyCode: freq?.code,
+    frequency: freq?.label,
+    isStat: qp.isStat || undefined,
+    isKop: qp.isKop || undefined,
+    isControlled: qp.isControlled || undefined,
+    deaSchedule: qp.isControlled ? qp.deaSchedule : undefined,
+    indicationText: qp.indicationText,
+    // Quick picks are author-typed product names, not catalog concepts. The
+    // clinician can replace the product via the catalog picker on the draft.
+    offCatalog: true,
+    createdBy: opts.createdBy,
+    sourceNoteId: opts.sourceNoteId,
+  };
+}

@@ -27,6 +27,7 @@ import {
   ES_DRAFT_NOTICE_ES,
   fieldHelp,
   fieldLabel,
+  isFieldsSection,
   isFieldVisible,
   isSectionVisible,
   optionLabel,
@@ -37,7 +38,9 @@ import {
   type TemplateField,
   type TemplateLanguage,
   type TemplateSchema,
+  type TemplateSection,
 } from "@/lib/templateSchema";
+import type { ReactNode } from "react";
 
 interface Props {
   schema: TemplateSchema;
@@ -52,6 +55,12 @@ interface Props {
    * so existing English-only rendering is unchanged.
    */
   language?: TemplateLanguage;
+  /**
+   * §Phase 3b — renderers for non-field section types. Injected by the caller
+   * so this component keeps no dependency on the EHR store (the admin preview
+   * and tests pass their own, or none).
+   */
+  renderSection?: (section: TemplateSection) => ReactNode;
 }
 
 export function TemplateForm({
@@ -61,6 +70,7 @@ export function TemplateForm({
   readOnly,
   missingKeys = [],
   language = "en",
+  renderSection,
 }: Props) {
   const set = (key: string, value: AnswerValue) => onChange({ ...answers, [key]: value });
   const scores = computeScore(schema, answers);
@@ -83,7 +93,12 @@ export function TemplateForm({
       )}
       {(schema.sections ?? [])
         .filter((s) => isSectionVisible(s, answers))
-        .map((section) => (
+        .map((section) =>
+          !isFieldsSection(section) ? (
+            // Orders/autofill sections carry no answerable fields, so they are
+            // exempt from the note's own required-field enforcement.
+            <div key={section.id}>{renderSection?.(section) ?? null}</div>
+          ) : (
           <section key={section.id} className="space-y-3">
             <h5 className="font-display text-sm text-navy">{sectionTitle(section, language)}</h5>
             {(section.fields ?? [])
@@ -100,7 +115,8 @@ export function TemplateForm({
                 />
               ))}
           </section>
-        ))}
+          ),
+        )}
 
       {scores.length > 0 && (
         <div className="space-y-2 rounded-md border border-border bg-secondary/20 p-3">

@@ -38,11 +38,17 @@ import {
   type PeerNote,
   type CaseTask,
   type ProgressNote,
+  type MedOrder,
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
 import { downloadProgressNotePdf, noteExportGate } from "@/lib/notePdf";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
+import {
+  NoteAutofillCard,
+  useNoteAutofillSnapshots,
+} from "@/components/clinical/NoteAutofillCard";
+import { NoteOrdersSection } from "@/components/clinical/NoteOrdersSection";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
@@ -1480,6 +1486,11 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
   const [templateId, setTemplateId] = useState<string>("none");
   const [answers, setAnswers] = useState<TemplateAnswers>({});
   const activeTemplate = templates.find((t) => t.id === templateId);
+  // §Phase 3b — draft orders staged from this note's orders_section. They are
+  // real draft MedOrders from the moment they are created; this only tracks
+  // which ones came from the note so they can be stamped with its id.
+  const [stagedOrderIds, setStagedOrderIds] = useState<string[]>([]);
+  const composeAutofill = useNoteAutofillSnapshots(patientId, activeTemplate?.schema);
   useDraftDirty(
     `notes:${patientId}`,
     Boolean(
@@ -1567,6 +1578,21 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   answers={answers}
                   onChange={setAnswers}
                   language={patient.preferredLanguage === "es" ? "es" : "en"}
+                  renderSection={(section) =>
+                    section.type === "orders_section" ? (
+                      <NoteOrdersSection
+                        patientId={patient.id}
+                        section={section}
+                        stagedIds={stagedOrderIds}
+                        onStage={(id) => setStagedOrderIds((prev) => [...prev, id])}
+                      />
+                    ) : (
+                      (() => {
+                        const snap = composeAutofill.find((s) => s.sectionId === section.id);
+                        return snap ? <NoteAutofillCard snapshot={snap} /> : null;
+                      })()
+                    )
+                  }
                 />
               </div>
             )}
@@ -1589,7 +1615,7 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   toast.error("Add at least a subjective entry");
                   return;
                 }
-                AdelanteEHR.addProgressNote(patient.id, {
+                const saved = AdelanteEHR.addProgressNote(patient.id, {
                   clinicianId: authorId,
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
@@ -1609,7 +1635,10 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   templateSchema: activeTemplate?.schema,
                   templateAnswers: activeTemplate ? answers : undefined,
                 });
+                // Traceability only — the orders keep their own lifecycle.
+                if (saved) AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
                 toast.success("Progress note saved as draft");
+                setStagedOrderIds([]);
                 setAnswers({});
                 setNote({
                   sessionType: "individual",
@@ -1716,6 +1745,27 @@ export function NoteStatusBadge({ note }: { note: ProgressNote }) {
 const SIGN_ATTESTATION =
   "I attest that this note is accurate, complete, and reflects care I personally provided or supervised.";
 
+/** Read-only trace of the orders that originated from a finalized note. */
+function NoteOrderTrace({ orders, title }: { orders: MedOrder[]; title: string }) {
+  return (
+    <div className="rounded-md border border-border bg-secondary/20 p-3">
+      <h5 className="font-display text-sm text-navy">{title}</h5>
+      {orders.length === 0 ? (
+        <p className="mt-1 text-[11px] text-muted-foreground">No orders placed from this note.</p>
+      ) : (
+        <ul className="mt-1 space-y-1">
+          {orders.map((o) => (
+            <li key={o.id} className="text-[11px] text-navy">
+              {o.drugName}
+              <span className="text-muted-foreground"> · {o.status}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </div>
+  );
+}
+
 function ProgressNoteCard({
   patientId,
   note,
@@ -1738,6 +1788,14 @@ function ProgressNoteCard({
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
   const [attested, setAttested] = useState(false);
   const [cosignerId, setCosignerId] = useState<string>("");
+  // §Phase 3b — a finalized note shows its FROZEN autofill snapshot; a draft
+  // shows the live resolution, which is what gets frozen at sign time.
+  const liveAutofill = useNoteAutofillSnapshots(patientId, note.templateSchema, {
+    excludeNoteId: note.id,
+  });
+  const autofill = note.autofillSnapshots ?? liveAutofill;
+  const cardOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const noteOrders = cardOrders.filter((o) => o.sourceNoteId === note.id);
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
@@ -1759,6 +1817,8 @@ function ProgressNoteCard({
         attested,
         cosignRequired: mustCosign,
         cosignRole: cosigner ? [cosigner.role] : undefined,
+        // Freeze what the autofill cards showed at attestation time.
+        autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       setAttested(false);
@@ -1813,6 +1873,28 @@ function ProgressNoteCard({
                 readOnly
                 missingKeys={missing.map((m) => m.key)}
                 language={noteLanguage}
+                renderSection={(section) =>
+                  section.type === "orders_section" ? (
+                    canWrite && status === "draft" ? (
+                      <NoteOrdersSection
+                        patientId={patientId}
+                        section={section}
+                        sourceNoteId={note.id}
+                        stagedIds={noteOrders
+                          .filter((o) => o.status === "draft")
+                          .map((o) => o.id)}
+                        onStage={() => {}}
+                      />
+                    ) : (
+                      <NoteOrderTrace orders={noteOrders} title={section.title} />
+                    )
+                  ) : (
+                    (() => {
+                      const snap = autofill.find((s) => s.sectionId === section.id);
+                      return snap ? <NoteAutofillCard snapshot={snap} /> : null;
+                    })()
+                  )
+                }
               />
             </div>
           )}

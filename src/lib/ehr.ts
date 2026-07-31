@@ -1,6 +1,6 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { schemaContentEquals } from "./templateSchema";
-import type { TemplateAnswers, TemplateSchema } from "./templateSchema";
+import type { AutofillSnapshot, TemplateAnswers, TemplateSchema } from "./templateSchema";
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
@@ -260,6 +260,12 @@ export interface MedOrder {
   indicationProblemId?: string;
   /** Free-text indication; fallback when no coded problem is linked. */
   indicationText?: string;
+  /**
+   * §Phase 3b — the progress note whose orders_section staged this order.
+   * Traceability only: an order started from a note follows the exact same
+   * lifecycle, validation and attestation as one staged from the Orders tab.
+   */
+  sourceNoteId?: string;
   // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
   orderingProviderId?: string;
   orderSource?: "verbal" | "telephone" | "protocol" | "standing";
@@ -1336,6 +1342,11 @@ export interface ProgressNote {
   /** Schema snapshot at authoring time — history survives template edits. */
   templateSchema?: TemplateSchema;
   templateAnswers?: TemplateAnswers;
+  /**
+   * §Phase 3b — resolved autofill_section content, frozen alongside the
+   * answers. Never recomputed on read.
+   */
+  autofillSnapshots?: AutofillSnapshot[];
 }
 
 /**
@@ -3538,6 +3549,12 @@ export const AdelanteEHR = {
       attested: boolean;
       cosignRequired?: boolean;
       cosignRole?: string[];
+      /**
+       * §Phase 3b — autofill content resolved at SIGN time. Once written it is
+       * never recomputed, so the signed record reflects what was true when it
+       * was attested.
+       */
+      autofillSnapshots?: AutofillSnapshot[];
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -3553,6 +3570,7 @@ export const AdelanteEHR = {
 
     n.signedBy = input.signedBy;
     n.signedAt = new Date().toISOString();
+    if (input.autofillSnapshots) n.autofillSnapshots = input.autofillSnapshots;
     n.cosignRequired = cosignRequired;
     n.cosignRole = input.cosignRole?.length ? input.cosignRole : undefined;
     n.status = cosignRequired ? "cosign_pending" : "signed";
@@ -5085,6 +5103,29 @@ export const AdelanteEHR = {
       patientId,
       actorId: actor,
       detail: { orderId, drugName: row.drugName },
+    });
+    emit();
+  },
+  /**
+   * §Phase 3b — stamp draft orders staged inside a note's orders_section with
+   * the note they came from, once the note row exists. Traceability only: it
+   * does not change validation, lifecycle or attestation.
+   */
+  linkOrdersToNote(patientId: string, noteId: string, orderIds: string[]): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || orderIds.length === 0) return;
+    let touched = 0;
+    for (const o of p.orders ?? []) {
+      if (!orderIds.includes(o.id) || o.sourceNoteId) continue;
+      o.sourceNoteId = noteId;
+      touched++;
+    }
+    if (!touched) return;
+    appendAudit({
+      category: "clinical",
+      action: "order_linked_to_note",
+      patientId,
+      detail: { noteId, orderIds },
     });
     emit();
   },

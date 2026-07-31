@@ -248,7 +248,7 @@ function AttributionSection({
 // be upgraded to re-verify credentials before this component can be
 // considered a genuine clinical attestation control. Do not treat the
 // current checkbox as equivalent — it is a placeholder.
-function SignAttestation({
+export function SignAttestation({
   checked,
   onChange,
   staffName,
@@ -284,7 +284,7 @@ function SignAttestation({
 // ---------------------------------------------------------------------------
 // Draft order editor
 // ---------------------------------------------------------------------------
-function DraftOrderCard({
+export function DraftOrderCard({
   order,
   patientId,
   needsAttribution,
