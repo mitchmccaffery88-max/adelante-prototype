@@ -3549,6 +3549,12 @@ export const AdelanteEHR = {
       attested: boolean;
       cosignRequired?: boolean;
       cosignRole?: string[];
+      /**
+       * §Phase 3b — autofill content resolved at SIGN time. Once written it is
+       * never recomputed, so the signed record reflects what was true when it
+       * was attested.
+       */
+      autofillSnapshots?: AutofillSnapshot[];
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -3564,6 +3570,7 @@ export const AdelanteEHR = {
 
     n.signedBy = input.signedBy;
     n.signedAt = new Date().toISOString();
+    if (input.autofillSnapshots) n.autofillSnapshots = input.autofillSnapshots;
     n.cosignRequired = cosignRequired;
     n.cosignRole = input.cosignRole?.length ? input.cosignRole : undefined;
     n.status = cosignRequired ? "cosign_pending" : "signed";
