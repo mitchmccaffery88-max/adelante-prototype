@@ -1,17 +1,27 @@
-// §MAR Phase 1 — patient-scoped administration grid (scheduled doses only).
+// §MAR Phase 1–2 — patient-scoped administration grid.
 //
 // PATIENT-SCOPED BY DESIGN: this is a tab inside one patient's record, not the
 // reference EMR's facility-wide MedPass roster. See src/lib/mar.ts for why.
 //
-// Deferred to later phases (present in the deferred section, NOT dropped): PRN
-// eligibility/reason chips, controlled-substance witness, KOP issuance,
-// Suboxone mouth-check attestation, cart/keyboard mode, voice pass, and the
-// full Refusal legal document.
+// Phase 2 landed here: PRN eligibility + reason chips (+ "Not indicated"),
+// Schedule II witness (with session-witness back-fill), KOP issuance, and the
+// Suboxone mouth-check attestation. Still deferred (not dropped): cart/keyboard
+// mode, voice pass, and the full Refusal legal document.
 
-import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, type DoseAdministration } from "@/lib/ehr";
+import { useEffect, useMemo, useState } from "react";
+import { AdelanteEHR, useEhr, requiresDoseWitness, type DoseAdministration } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
-import { deriveMarDay, isLateEntry, marRowLabel, MAR_DEFERRAL_LABEL, type MarSlot } from "@/lib/mar";
+import {
+  deriveMarDay,
+  isLateEntry,
+  isSuboxoneOrder,
+  marRowLabel,
+  witnessCandidates,
+  MOUTH_CHECK_ATTESTATION_TEXT,
+  NOT_INDICATED_REASON,
+  PRN_REASONS,
+  type MarSlot,
+} from "@/lib/mar";
 import { ORDER_STATUS_LABEL } from "@/lib/orders";
 import { facilityDateKey } from "@/lib/facilityTime";
 import { Card } from "@/components/ui/card";
@@ -22,6 +32,13 @@ import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Textarea } from "@/components/ui/textarea";
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
   Dialog,
   DialogContent,
   DialogFooter,
@@ -31,7 +48,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
-import { CalendarClock, Info, Lock, Syringe } from "lucide-react";
+import { CalendarClock, Info, PackageCheck, ShieldCheck, Syringe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MAR_ATTESTATION_TEXT =
@@ -43,7 +60,15 @@ interface PendingEntry {
   action: Action;
   reason: string;
   lateEntryReason: string;
+  witnessedBy: string;
 }
+
+const emptyEntry = (): PendingEntry => ({
+  action: "given",
+  reason: "",
+  lateEntryReason: "",
+  witnessedBy: "",
+});
 
 // ---------------------------------------------------------------------------
 // Reason dialog — same mandatory-reason gate as the Orders lifecycle dialogs.
@@ -121,8 +146,125 @@ function ReasonDialog({
 }
 
 // ---------------------------------------------------------------------------
-// Claim control — mirrors the reference's DoseClaimControl: shows whose claim
-// this is, lets the owner release, and requires a reason to take over.
+// KOP issuance dialog (port of the reference's KopIssueDialog).
+// Every field resets when the dialog opens or the target order changes, so a
+// signature captured for one drug can never bleed onto another.
+// ---------------------------------------------------------------------------
+function KopIssueDialog({
+  slot,
+  patientId,
+  staffName,
+  onOpenChange,
+}: {
+  slot: MarSlot | null;
+  patientId: string;
+  staffName: string;
+  onOpenChange: (v: boolean) => void;
+}) {
+  const [daysSupply, setDaysSupply] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [signature, setSignature] = useState("");
+  const [notes, setNotes] = useState("");
+
+  const orderId = slot?.order.id;
+  useEffect(() => {
+    setDaysSupply("");
+    setQuantity("");
+    setSignature("");
+    setNotes("");
+  }, [orderId]);
+
+  return (
+    <Dialog open={!!slot} onOpenChange={onOpenChange}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Issue keep-on-person supply</DialogTitle>
+        </DialogHeader>
+        {slot && (
+          <div className="space-y-3 text-sm">
+            <div className="font-medium">{marRowLabel(slot.order)}</div>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <Label className="text-xs">Days supply *</Label>
+                <Input
+                  className="mt-1"
+                  inputMode="numeric"
+                  aria-label="Days supply"
+                  value={daysSupply}
+                  onChange={(e) => setDaysSupply(e.target.value)}
+                />
+              </div>
+              <div>
+                <Label className="text-xs">Quantity *</Label>
+                <Input
+                  className="mt-1"
+                  inputMode="numeric"
+                  aria-label="Quantity"
+                  value={quantity}
+                  onChange={(e) => setQuantity(e.target.value)}
+                />
+              </div>
+            </div>
+            <div>
+              <Label className="text-xs">Patient signature name (typed) *</Label>
+              <Input
+                className="mt-1"
+                aria-label="Patient signature name"
+                value={signature}
+                onChange={(e) => setSignature(e.target.value)}
+                placeholder="Patient types their full name"
+              />
+              <p className="mt-1 text-xs text-muted-foreground">
+                Typed acknowledgment of receipt — not the drawn legal signature used by the
+                Refusal document.
+              </p>
+            </div>
+            <div>
+              <Label className="text-xs">Notes</Label>
+              <Textarea
+                className="mt-1"
+                rows={2}
+                aria-label="KOP notes"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+              />
+            </div>
+          </div>
+        )}
+        <DialogFooter>
+          <Button variant="outline" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button
+            onClick={() => {
+              if (!slot) return;
+              try {
+                AdelanteEHR.issueKop({
+                  patientId,
+                  orderId: slot.order.id,
+                  daysSupply: Number(daysSupply),
+                  quantity: Number(quantity),
+                  patientSignatureName: signature,
+                  issuedBy: staffName,
+                  notes,
+                });
+                toast.success("KOP supply issued.");
+                onOpenChange(false);
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Could not issue supply.");
+              }
+            }}
+          >
+            Issue supply
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+// ---------------------------------------------------------------------------
+// Claim control — mirrors the reference's DoseClaimControl.
 // ---------------------------------------------------------------------------
 function DoseClaimControl({
   slot,
@@ -191,13 +333,7 @@ function DoseClaimControl({
         confirmLabel="Take over"
         onConfirm={(reason) =>
           run(() =>
-            AdelanteEHR.takeoverDose(
-              patientId,
-              slot.order.id,
-              slot.scheduledAt,
-              staffName,
-              reason,
-            ),
+            AdelanteEHR.takeoverDose(patientId, slot.order.id, slot.scheduledAt, staffName, reason),
           )
         }
       />
@@ -211,26 +347,34 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const [dateKey, setDateKey] = useState(() => facilityDateKey(new Date(), undefined));
   const [entries, setEntries] = useState<Record<string, PendingEntry>>({});
   const [attested, setAttested] = useState(false);
+  const [mouthChecked, setMouthChecked] = useState(false);
+  const [sessionWitness, setSessionWitness] = useState("");
   const [voidBatchId, setVoidBatchId] = useState<string | null>(null);
+  const [kopSlot, setKopSlot] = useState<MarSlot | null>(null);
 
   const day = useMemo(
-    () => (patient ? deriveMarDay(patient, dateKey) : { dateKey, slots: [], deferred: [] }),
+    () =>
+      patient
+        ? deriveMarDay(patient, dateKey)
+        : { dateKey, slots: [], prn: [], kop: [], deferred: [] },
     [patient, dateKey],
   );
+
+  const witnesses = useMemo(() => witnessCandidates(staffName), [staffName]);
 
   if (!patient) return null;
 
   const chartedForDay = (patient.administrations ?? []).filter((a) =>
-    day.slots.some((s) => s.order.id === a.orderId && s.scheduledAt === a.scheduledAt),
+    [...day.slots, ...day.prn].some((s) => s.order.id === a.orderId),
   );
 
-  const pendingCount = Object.keys(entries).length;
+  const pendingKeys = Object.keys(entries);
+  const pendingCount = pendingKeys.length;
+  const allRows = [...day.slots, ...day.prn];
+  const rowFor = (key: string) => allRows.find((s) => s.key === key);
 
   const setEntry = (key: string, patch: Partial<PendingEntry>) =>
-    setEntries((prev) => {
-      const base: PendingEntry = prev[key] ?? { action: "given", reason: "", lateEntryReason: "" };
-      return { ...prev, [key]: { ...base, ...patch } };
-    });
+    setEntries((prev) => ({ ...prev, [key]: { ...(prev[key] ?? emptyEntry()), ...patch } }));
 
   const clearEntry = (key: string) =>
     setEntries((prev) => {
@@ -239,22 +383,52 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       return next;
     });
 
+  // ----- Session witness: pick once, back-fill every pending CII row --------
+  const pendingCiiKeys = pendingKeys.filter((k) => {
+    const slot = rowFor(k);
+    return !!slot && requiresDoseWitness(slot.order) && entries[k].action === "given";
+  });
+  const applyWitnessToAll = () => {
+    if (!sessionWitness) {
+      toast.error("Pick a witness first.");
+      return;
+    }
+    if (!pendingCiiKeys.length) {
+      toast.error("No pending Schedule II doses to witness.");
+      return;
+    }
+    setEntries((prev) => {
+      const next = { ...prev };
+      for (const k of pendingCiiKeys) next[k] = { ...next[k], witnessedBy: sessionWitness };
+      return next;
+    });
+    toast.success(`Witness applied to ${pendingCiiKeys.length} dose(s).`);
+  };
+
+  const suboxonePending = pendingKeys.some((k) => {
+    const slot = rowFor(k);
+    return !!slot && entries[k].action === "given" && isSuboxoneOrder(slot.order);
+  });
+
   const commit = () => {
     const batchId = `batch_${Date.now().toString(36)}`;
     let ok = 0;
     for (const [key, entry] of Object.entries(entries)) {
-      const slot = day.slots.find((s) => s.key === key);
+      const slot = rowFor(key);
       if (!slot) continue;
+      // PRN rows have no fixed schedule — stamp the actual administration time.
+      const scheduledAt = slot.kind === "prn" ? new Date().toISOString() : slot.scheduledAt;
       try {
         AdelanteEHR.chartDose(
           patientId,
           slot.order.id,
-          slot.scheduledAt,
+          scheduledAt,
           entry.action,
           entry.reason,
           staffName,
           batchId,
           entry.lateEntryReason,
+          { witnessedBy: entry.witnessedBy, mouthCheckAttested: mouthChecked || undefined },
         );
         ok += 1;
       } catch (e) {
@@ -267,12 +441,204 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       toast.success(`${ok} dose${ok === 1 ? "" : "s"} charted.`);
       setEntries({});
       setAttested(false);
+      setMouthChecked(false);
     }
   };
 
-  const renderSlot = (slot: MarSlot) => {
+  // ----- Row renderers ------------------------------------------------------
+  const renderChartControls = (slot: MarSlot) => {
     const entry = entries[slot.key];
-    const late = isLateEntry(slot.scheduledAt);
+    const isPrn = slot.kind === "prn";
+    const late = !isPrn && isLateEntry(slot.scheduledAt);
+    const needsWitness = requiresDoseWitness(slot.order);
+    const elig = isPrn ? AdelanteEHR.prnEligibility(patientId, slot.order.id) : undefined;
+    const givenBlocked = !!elig?.blocked;
+
+    const pick = (a: Action, reason?: string) => {
+      if (entry?.action === a && (reason === undefined || entry.reason === reason)) {
+        clearEntry(slot.key);
+        return;
+      }
+      setEntry(slot.key, { action: a, ...(reason !== undefined ? { reason } : {}) });
+    };
+
+    return (
+      <div className="mt-2 space-y-2">
+        {elig && (
+          <div className="text-xs text-muted-foreground">
+            {elig.given}/{elig.max ?? "—"} given in last 24h
+            {elig.lastGivenAt && (
+              <>
+                {" · last "}
+                <ClientDate value={elig.lastGivenAt} />
+              </>
+            )}
+            {givenBlocked && (
+              <span className="ml-2 font-medium text-amber-700 dark:text-amber-400">
+                PRN limit reached — cannot chart as given.
+              </span>
+            )}
+          </div>
+        )}
+        <div className="flex flex-wrap items-center gap-2">
+          <Button
+            size="sm"
+            aria-label={`given ${slot.order.drugName}`}
+            variant={entry?.action === "given" ? "default" : "outline"}
+            disabled={readOnly || givenBlocked}
+            onClick={() => pick("given")}
+          >
+            Given
+          </Button>
+          <Button
+            size="sm"
+            aria-label={`refused ${slot.order.drugName}`}
+            variant={entry?.action === "refused" ? "default" : "outline"}
+            disabled={readOnly}
+            onClick={() => pick("refused")}
+          >
+            Refused
+          </Button>
+          <Button
+            size="sm"
+            aria-label={`held ${slot.order.drugName}`}
+            variant={
+              entry?.action === "held" && entry.reason !== NOT_INDICATED_REASON
+                ? "default"
+                : "outline"
+            }
+            disabled={readOnly}
+            onClick={() => pick("held", "")}
+          >
+            Held
+          </Button>
+          {isPrn && (
+            <Button
+              size="sm"
+              aria-label={`not indicated ${slot.order.drugName}`}
+              variant={
+                entry?.action === "held" && entry.reason === NOT_INDICATED_REASON
+                  ? "default"
+                  : "outline"
+              }
+              disabled={readOnly}
+              onClick={() => pick("held", NOT_INDICATED_REASON)}
+            >
+              Not indicated
+            </Button>
+          )}
+          {!isPrn && (
+            <div className="ml-auto">
+              <DoseClaimControl
+                slot={slot}
+                patientId={patientId}
+                staffName={staffName}
+                readOnly={readOnly}
+              />
+            </div>
+          )}
+        </div>
+
+        {/* PRN indication — chips from the reference set, free text as fallback. */}
+        {entry && isPrn && entry.action === "given" && (
+          <div>
+            <Label className="text-xs text-amber-700 dark:text-amber-400">
+              PRN indication (required) *
+            </Label>
+            <div className="mt-1 flex flex-wrap gap-1.5">
+              {PRN_REASONS.map((r) => (
+                <Button
+                  key={r}
+                  size="sm"
+                  variant={entry.reason === r ? "default" : "outline"}
+                  aria-label={`PRN reason ${r}`}
+                  onClick={() => setEntry(slot.key, { reason: entry.reason === r ? "" : r })}
+                >
+                  {r}
+                </Button>
+              ))}
+            </div>
+            <Input
+              className={cn("mt-2", !entry.reason.trim() && "border-amber-500")}
+              aria-label="PRN indication"
+              value={entry.reason}
+              onChange={(e) => setEntry(slot.key, { reason: e.target.value })}
+              placeholder="Or type an indication"
+            />
+          </div>
+        )}
+
+        {entry &&
+          (entry.action === "refused" ||
+            (entry.action === "held" && entry.reason !== NOT_INDICATED_REASON)) && (
+            <div>
+              <Label className="text-xs text-amber-700 dark:text-amber-400">
+                Reason (required) *
+              </Label>
+              <Input
+                className={cn("mt-1", !entry.reason.trim() && "border-amber-500")}
+                aria-label={`Reason for ${entry.action} dose`}
+                value={entry.reason}
+                onChange={(e) => setEntry(slot.key, { reason: e.target.value })}
+                placeholder="e.g. Patient declined — nausea"
+              />
+            </div>
+          )}
+
+        {/* Schedule II witness. CIII–CV deliberately do NOT require one. */}
+        {entry && entry.action === "given" && needsWitness && (
+          <div>
+            <Label className="text-xs text-amber-700 dark:text-amber-400">
+              Witness (required — Schedule II) *
+            </Label>
+            <Select
+              value={entry.witnessedBy}
+              onValueChange={(v) => setEntry(slot.key, { witnessedBy: v })}
+            >
+              <SelectTrigger
+                className={cn("mt-1 w-64", !entry.witnessedBy && "border-amber-500")}
+                aria-label={`Witness for ${slot.order.drugName}`}
+              >
+                <SelectValue placeholder="Select witnessing clinician" />
+              </SelectTrigger>
+              <SelectContent>
+                {witnesses.map((w) => (
+                  <SelectItem key={w.id} value={w.name}>
+                    {w.name}
+                    {w.credential ? ` · ${w.credential}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            {!slot.order.deaSchedule && (
+              <p className="mt-1 text-xs text-muted-foreground">
+                No DEA schedule recorded on this order — a witness is required by default.
+                Specify the schedule on the order to relax this for CIII–CV.
+              </p>
+            )}
+          </div>
+        )}
+
+        {entry && late && (
+          <div>
+            <Label className="text-xs text-amber-700 dark:text-amber-400">
+              Late-entry reason (required — more than 4 hours past due) *
+            </Label>
+            <Input
+              className={cn("mt-1", !entry.lateEntryReason.trim() && "border-amber-500")}
+              aria-label="Late entry reason"
+              value={entry.lateEntryReason}
+              onChange={(e) => setEntry(slot.key, { lateEntryReason: e.target.value })}
+              placeholder="e.g. Charted after end of shift — cart offline"
+            />
+          </div>
+        )}
+      </div>
+    );
+  };
+
+  const renderSlot = (slot: MarSlot) => {
+    const late = slot.kind === "scheduled" && isLateEntry(slot.scheduledAt);
     const done = slot.administration;
     return (
       <Card key={slot.key} className="p-3 text-sm">
@@ -282,6 +648,11 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
           {slot.order.frequency && (
             <span className="text-muted-foreground">{slot.order.frequency}</span>
           )}
+          {slot.kind === "prn" && <Badge variant="secondary">PRN</Badge>}
+          {slot.order.isControlled && (
+            <Badge variant="outline">{slot.order.deaSchedule ?? "Controlled"}</Badge>
+          )}
+          {isSuboxoneOrder(slot.order) && <Badge variant="secondary">Mouth check</Badge>}
           {slot.order.status !== "signed" && (
             <Badge variant="secondary">{ORDER_STATUS_LABEL[slot.order.status]}</Badge>
           )}
@@ -299,6 +670,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
               <span className="font-medium capitalize text-foreground">{done.action}</span> by{" "}
               {done.chartedBy} · <ClientDate value={done.chartedAt} />
               {done.reason ? ` · ${done.reason}` : ""}
+              {done.witnessedBy ? ` · witnessed by ${done.witnessedBy}` : ""}
             </div>
             {done.lateEntryReason && (
               <div className="text-xs text-amber-700 dark:text-amber-400">
@@ -312,65 +684,69 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
             )}
           </div>
         ) : (
-          <div className="mt-2 space-y-2">
-            <div className="flex flex-wrap items-center gap-2">
-              {(["given", "refused", "held"] as Action[]).map((a) => (
-                <Button
-                  key={a}
-                  size="sm"
-                  aria-label={`${a} ${slot.order.drugName}`}
-                  variant={entry?.action === a ? "default" : "outline"}
-                  disabled={readOnly}
-                  onClick={() =>
-                    entry?.action === a ? clearEntry(slot.key) : setEntry(slot.key, { action: a })
+          renderChartControls(slot)
+        )}
+      </Card>
+    );
+  };
+
+  const renderKop = (slot: MarSlot) => {
+    const open = AdelanteEHR.activeKopIssuance(patientId, slot.order.id);
+    const history = AdelanteEHR.listKopIssuances(patientId, { orderId: slot.order.id });
+    return (
+      <Card key={slot.key} className="p-3 text-sm">
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant="outline">KOP</Badge>
+          <span className="font-medium">{marRowLabel(slot.order)}</span>
+          {slot.order.frequency && (
+            <span className="text-muted-foreground">{slot.order.frequency}</span>
+          )}
+          <div className="ml-auto flex items-center gap-2">
+            {open ? (
+              <Button
+                size="sm"
+                variant="outline"
+                disabled={readOnly}
+                onClick={() => {
+                  try {
+                    AdelanteEHR.returnKop(patientId, open.id, staffName);
+                    toast.success("Supply return recorded.");
+                  } catch (e) {
+                    toast.error(e instanceof Error ? e.message : "Could not record return.");
                   }
-                  className="capitalize"
-                >
-                  {a}
-                </Button>
-              ))}
-              <div className="ml-auto">
-                <DoseClaimControl
-                  slot={slot}
-                  patientId={patientId}
-                  staffName={staffName}
-                  readOnly={readOnly}
-                />
+                }}
+              >
+                Record return
+              </Button>
+            ) : null}
+            <Button size="sm" disabled={readOnly} onClick={() => setKopSlot(slot)}>
+              Issue supply
+            </Button>
+          </div>
+        </div>
+        {open && (
+          <p className="mt-2 text-xs text-amber-700 dark:text-amber-400">
+            Active supply: {open.daysSupply} day(s), qty {open.quantity}, issued{" "}
+            <ClientDate value={open.issuedAt} /> by {open.issuedBy}. A second issuance is blocked
+            until this one is returned.
+          </p>
+        )}
+        {history.length > 0 && (
+          <div className="mt-2 space-y-0.5 text-xs text-muted-foreground">
+            {history.map((h) => (
+              <div key={h.id}>
+                {h.daysSupply}d · qty {h.quantity} · signed “{h.patientSignatureName}” ·{" "}
+                <ClientDate value={h.issuedAt} />
+                {h.returnedAt ? " · returned" : ""}
               </div>
-            </div>
-            {entry && (entry.action === "refused" || entry.action === "held") && (
-              <div>
-                <Label className="text-xs text-amber-700 dark:text-amber-400">
-                  Reason (required) *
-                </Label>
-                <Input
-                  className={cn("mt-1", !entry.reason.trim() && "border-amber-500")}
-                  aria-label={`Reason for ${entry.action} dose`}
-                  value={entry.reason}
-                  onChange={(e) => setEntry(slot.key, { reason: e.target.value })}
-                  placeholder="e.g. Patient declined — nausea"
-                />
-              </div>
-            )}
-            {entry && late && (
-              <div>
-                <Label className="text-xs text-amber-700 dark:text-amber-400">
-                  Late-entry reason (required — more than 4 hours past due) *
-                </Label>
-                <Input
-                  className={cn("mt-1", !entry.lateEntryReason.trim() && "border-amber-500")}
-                  aria-label="Late entry reason"
-                  value={entry.lateEntryReason}
-                  onChange={(e) => setEntry(slot.key, { lateEntryReason: e.target.value })}
-                  placeholder="e.g. Charted after end of shift — cart offline"
-                />
-              </div>
-            )}
+            ))}
           </div>
         )}
       </Card>
     );
   };
+
+  const commitBlocked = !attested || (suboxonePending && !mouthChecked);
 
   return (
     <div className="space-y-4">
@@ -387,14 +763,39 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
             onChange={(e) => {
               setEntries({});
               setAttested(false);
+              setMouthChecked(false);
               setDateKey(e.target.value);
             }}
           />
         </div>
-        <p className="text-xs text-muted-foreground">
-          Scheduled doses for this patient, in facility local time. Phase 1 covers scheduled doses
-          only.
-        </p>
+        <div>
+          <Label className="text-xs">Session witness (Schedule II)</Label>
+          <div className="mt-1 flex items-center gap-2">
+            <Select value={sessionWitness} onValueChange={setSessionWitness}>
+              <SelectTrigger className="w-60" aria-label="Session witness">
+                <SelectValue placeholder="Select witness" />
+              </SelectTrigger>
+              <SelectContent>
+                {witnesses.map((w) => (
+                  <SelectItem key={w.id} value={w.name}>
+                    {w.name}
+                    {w.credential ? ` · ${w.credential}` : ""}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <Button
+              variant="outline"
+              size="sm"
+              disabled={readOnly}
+              onClick={applyWitnessToAll}
+              aria-label="Apply witness to all CII"
+            >
+              <ShieldCheck className="mr-1 h-3.5 w-3.5" />
+              Apply to all CII
+            </Button>
+          </div>
+        </div>
       </div>
 
       {day.slots.length === 0 ? (
@@ -407,8 +808,44 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         <div className="space-y-2">{day.slots.map(renderSlot)}</div>
       )}
 
+      {day.prn.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <Syringe className="h-4 w-4 text-muted-foreground" />
+            As-needed (PRN)
+          </div>
+          {day.prn.map(renderSlot)}
+        </div>
+      )}
+
+      {day.kop.length > 0 && (
+        <div className="space-y-2">
+          <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <PackageCheck className="h-4 w-4 text-muted-foreground" />
+            Keep-on-person supplies
+          </div>
+          <p className="text-xs text-muted-foreground">
+            KOP is a supply event, not a bedside administration — these rows are issued and
+            returned, never charted as given/refused/held.
+          </p>
+          {day.kop.map(renderKop)}
+        </div>
+      )}
+
       {!readOnly && pendingCount > 0 && (
         <div className="space-y-3">
+          {suboxonePending && (
+            <div className="rounded-lg border border-amber-500/60 bg-amber-50/40 p-3 dark:bg-amber-950/10">
+              <label className="flex items-start gap-2 text-sm">
+                <Checkbox
+                  checked={mouthChecked}
+                  onCheckedChange={(v) => setMouthChecked(v === true)}
+                  aria-label="Mouth check attestation"
+                />
+                <span>{MOUTH_CHECK_ATTESTATION_TEXT}</span>
+              </label>
+            </div>
+          )}
           <div className="rounded-lg border border-border p-3">
             <label className="flex items-start gap-2 text-sm">
               <Checkbox
@@ -428,7 +865,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
               Password re-verification pending real staff authentication.
             </p>
           </div>
-          <Button className="w-full" disabled={!attested} onClick={commit}>
+          <Button className="w-full" disabled={commitBlocked} onClick={commit}>
             Chart {pendingCount} dose{pendingCount === 1 ? "" : "s"}
           </Button>
         </div>
@@ -444,6 +881,8 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
               <div key={a.id} className={cn(a.voided && "line-through")}>
                 <span className="capitalize">{a.action}</span> · {a.chartedBy} ·{" "}
                 <ClientDate value={a.chartedAt} />
+                {a.reason ? ` · ${a.reason}` : ""}
+                {a.witnessedBy ? ` · witnessed by ${a.witnessedBy}` : ""}
                 {a.voided ? ` · voided by ${a.voidedBy}: ${a.voidReason}` : ""}
               </div>
             ))}
@@ -451,27 +890,12 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         </details>
       )}
 
-      {day.deferred.length > 0 && (
-        <div className="rounded-lg border border-dashed border-amber-500/60 bg-amber-50/40 p-3 dark:bg-amber-950/10">
-          <div className="flex items-center gap-2 text-sm font-medium text-navy">
-            <Lock className="h-4 w-4 text-amber-600" />
-            Not yet available in this view (Phase 2)
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            These active orders exist on the chart but cannot be charted here until their
-            workflows land. Nothing is hidden.
-          </p>
-          <div className="mt-2 space-y-1">
-            {day.deferred.map(({ order, reason }) => (
-              <div key={order.id} className="flex flex-wrap items-center gap-2 text-sm">
-                <Syringe className="h-3.5 w-3.5 text-muted-foreground" />
-                <span className="font-medium">{marRowLabel(order)}</span>
-                <Badge variant="outline">{MAR_DEFERRAL_LABEL[reason]}</Badge>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+      <KopIssueDialog
+        slot={kopSlot}
+        patientId={patientId}
+        staffName={staffName}
+        onOpenChange={(v) => !v && setKopSlot(null)}
+      />
 
       <ReasonDialog
         open={!!voidBatchId}

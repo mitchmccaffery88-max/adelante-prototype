@@ -1,7 +1,12 @@
 // §MAR Phase 1 — due-dose derivation + charting/claim/void state machines.
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
-import { deriveMarDay, deferralReasonFor } from "@/lib/mar";
+import {
+  deriveMarDay,
+  deferralReasonFor,
+  isSuboxoneOrder,
+  NOT_INDICATED_REASON,
+} from "@/lib/mar";
 import { facilityDateKey } from "@/lib/facilityTime";
 
 const patientId = () => AdelanteEHR.listPatients()[0].id;
@@ -29,19 +34,20 @@ describe("MAR due-dose derivation", () => {
     expect(slots.every((s) => s.facilityDate === today())).toBe(true);
   });
 
-  it("routes PRN / KOP / controlled orders to the deferred section, not the queue", () => {
+  // §MAR Phase 2 — PRN / KOP / controlled are now actionable, each in its own
+  // lane. Nothing remains in the read-only "deferred" section.
+  it("routes PRN to the PRN lane, KOP to the supply lane, and controlled to the scheduled queue", () => {
     const prn = signedOrder({ frequencyCode: "Q6H_PRN" });
     const kop = signedOrder({ isKop: true });
-    const ctrl = signedOrder({ isControlled: true });
+    const ctrl = signedOrder({ isControlled: true, deaSchedule: "CII" });
     const day = marFor(prn.pid);
-    const deferredIds = day.deferred.map((d) => d.order.id);
-    for (const id of [prn.orderId, kop.orderId, ctrl.orderId]) {
-      expect(deferredIds).toContain(id);
-      expect(day.slots.some((s) => s.order.id === id)).toBe(false);
-    }
-    expect(deferralReasonFor(AdelanteEHR.listOrders(prn.pid).find((o) => o.id === prn.orderId)!)).toBe(
-      "prn",
-    );
+    expect(day.prn.map((s) => s.order.id)).toContain(prn.orderId);
+    expect(day.kop.map((s) => s.order.id)).toContain(kop.orderId);
+    expect(day.slots.some((s) => s.order.id === ctrl.orderId)).toBe(true);
+    expect(day.deferred).toHaveLength(0);
+    expect(
+      deferralReasonFor(AdelanteEHR.listOrders(prn.pid).find((o) => o.id === prn.orderId)!),
+    ).toBeUndefined();
   });
 
   it("drops doses once the order is discontinued", () => {
@@ -125,5 +131,107 @@ describe("void batch", () => {
     expect(voided.voided).toBe(true);
     expect(voided.voidReason).toBe("wrong patient row");
     expect(voided.voidedBy).toBe("N. Ramirez");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §MAR Phase 2
+// ---------------------------------------------------------------------------
+describe("PRN handling", () => {
+  it("requires an indication and enforces the 24h max", () => {
+    const { pid, orderId } = signedOrder({ frequencyCode: "QHS_PRN" }); // maxPerDay 1
+    const at = () => new Date().toISOString();
+    expect(() =>
+      AdelanteEHR.chartDose(pid, orderId, at(), "given", "  ", "N. Ramirez", "p1"),
+    ).toThrow(/indication/i);
+    AdelanteEHR.chartDose(pid, orderId, at(), "given", "Pain", "N. Ramirez", "p1");
+    const elig = AdelanteEHR.prnEligibility(pid, orderId);
+    expect(elig.given).toBe(1);
+    expect(elig.blocked).toBe(true);
+    expect(() =>
+      AdelanteEHR.chartDose(pid, orderId, at(), "given", "Pain", "N. Ramirez", "p2"),
+    ).toThrow(/limit reached/i);
+  });
+
+  it("charts 'Not indicated' as a held entry without hitting the given limit", () => {
+    const { pid, orderId } = signedOrder({ frequencyCode: "QHS_PRN" });
+    const row = AdelanteEHR.chartDose(
+      pid,
+      orderId,
+      new Date().toISOString(),
+      "held",
+      NOT_INDICATED_REASON,
+      "N. Ramirez",
+      "p3",
+    );
+    expect(row.action).toBe("held");
+    expect(AdelanteEHR.prnEligibility(pid, orderId).given).toBe(0);
+  });
+});
+
+describe("controlled-substance witness", () => {
+  it("requires a witness for CII and for unspecified-schedule controlled orders", () => {
+    const cii = signedOrder({ isControlled: true, deaSchedule: "CII" });
+    const unset = signedOrder({ isControlled: true });
+    for (const { pid, orderId } of [cii, unset]) {
+      const at = marFor(pid).slots.find((s) => s.order.id === orderId)!.scheduledAt;
+      expect(() =>
+        AdelanteEHR.chartDose(pid, orderId, at, "given", undefined, "N. Ramirez", "w1"),
+      ).toThrow(/witness/i);
+      const ok = AdelanteEHR.chartDose(pid, orderId, at, "given", undefined, "N. Ramirez", "w1", undefined, {
+        witnessedBy: "Dr. Patel",
+      });
+      expect(ok.witnessedBy).toBe("Dr. Patel");
+    }
+  });
+
+  it("does not require a witness for CIII-CV", () => {
+    const { pid, orderId } = signedOrder({ isControlled: true, deaSchedule: "CIV" });
+    const at = marFor(pid).slots.find((s) => s.order.id === orderId)!.scheduledAt;
+    const ok = AdelanteEHR.chartDose(pid, orderId, at, "given", undefined, "N. Ramirez", "w2");
+    expect(ok.action).toBe("given");
+  });
+});
+
+describe("KOP issuance", () => {
+  it("is a supply event, blocks a second active issuance, and reopens after return", () => {
+    const { pid, orderId } = signedOrder({ isKop: true });
+    expect(() =>
+      AdelanteEHR.chartDose(pid, orderId, new Date().toISOString(), "given", undefined, "N. Ramirez", "k1"),
+    ).toThrow(/KOP/i);
+    const issued = AdelanteEHR.issueKop({
+      patientId: pid,
+      orderId,
+      daysSupply: 7,
+      quantity: 14,
+      patientSignatureName: "Jane Doe",
+      issuedBy: "N. Ramirez",
+    });
+    expect(AdelanteEHR.activeKopIssuance(pid, orderId)?.id).toBe(issued.id);
+    expect(() =>
+      AdelanteEHR.issueKop({
+        patientId: pid,
+        orderId,
+        daysSupply: 7,
+        quantity: 14,
+        patientSignatureName: "Jane Doe",
+        issuedBy: "N. Ramirez",
+      }),
+    ).toThrow(/active/i);
+    AdelanteEHR.returnKop(pid, issued.id, "N. Ramirez");
+    expect(AdelanteEHR.activeKopIssuance(pid, orderId)).toBeUndefined();
+  });
+});
+
+describe("Suboxone detection", () => {
+  it("flags buprenorphine sublingual orders for the mouth-check attestation", () => {
+    const { pid, orderId } = signedOrder({
+      drugName: "buprenorphine / naloxone 8-2 MG Sublingual Film",
+      route: "sublingual",
+    });
+    const order = AdelanteEHR.listOrders(pid).find((o) => o.id === orderId)!;
+    expect(isSuboxoneOrder(order)).toBe(true);
+    const plain = AdelanteEHR.listOrders(pid).find((o) => o.id !== orderId && !isSuboxoneOrder(o));
+    expect(plain).toBeTruthy();
   });
 });

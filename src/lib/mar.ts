@@ -1,4 +1,4 @@
-// §MAR Phase 1 — due-dose derivation for a single patient.
+// §MAR Phase 1–2 — due-dose derivation for a single patient.
 //
 // ARCHITECTURE NOTE: the reference EMR's MedPass is a FACILITY-WIDE roster grid
 // (one nurse charts across every patient on a unit in one pass). Adelante's
@@ -17,6 +17,8 @@ import {
   type Patient,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
+import { frequencyByCode } from "@/lib/frequencies";
+import { STAFF_ROSTER, type StaffMember } from "@/lib/roles";
 import { deriveMedicationSchedule } from "@/lib/medSchedule";
 import {
   addFacilityDays,
@@ -25,29 +27,32 @@ import {
   facilityTimeLabel,
 } from "@/lib/facilityTime";
 
-/** Why an order's doses are visible but not chartable in Phase 1. */
+/**
+ * Phase 1 kept PRN / KOP / controlled orders read-only in a deferred section.
+ * Phase 2 moved all three into the actionable queue, so nothing defers today —
+ * the type and labels are retained for any future staged rollout.
+ */
 export type MarDeferralReason = "prn" | "kop" | "controlled";
 
 export const MAR_DEFERRAL_LABEL: Record<MarDeferralReason, string> = {
-  prn: "PRN — eligibility & reason capture arrive in Phase 2",
-  kop: "KOP — patient self-administration issuance arrives in Phase 2",
-  controlled: "Controlled — witness workflow arrives in Phase 2",
+  prn: "PRN — eligibility & reason capture",
+  kop: "KOP — patient self-administration issuance",
+  controlled: "Controlled — witness workflow",
 };
 
-/**
- * Orders that must NOT be chartable yet. They are still surfaced (read-only) so
- * nothing silently disappears from the record.
- */
+/** Phase 2: no order class is deferred any more. */
 export function deferralReasonFor(order: MedOrder): MarDeferralReason | undefined {
-  if (order.isControlled) return "controlled";
-  if (order.isKop) return "kop";
-  if (isPrnOrder(order)) return "prn";
+  void order;
   return undefined;
 }
+
+/** What kind of MAR row this is — drives which actions the row offers. */
+export type MarSlotKind = "scheduled" | "prn" | "kop";
 
 export interface MarSlot {
   /** Stable key for the slot: order + scheduled instant. */
   key: string;
+  kind: MarSlotKind;
   order: MedOrder;
   /** ISO instant the dose is due. */
   scheduledAt: string;
@@ -66,6 +71,10 @@ export interface MarDay {
   dateKey: string;
   /** Chartable scheduled doses. */
   slots: MarSlot[];
+  /** As-needed orders — chartable on demand, one row per active PRN order. */
+  prn: MarSlot[];
+  /** Keep-on-person orders — issued as a supply, never charted here. */
+  kop: MarSlot[];
   /** Active orders shown read-only until their Phase 2 workflow exists. */
   deferred: { order: MedOrder; reason: MarDeferralReason }[];
 }
@@ -117,7 +126,10 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
   const claims = patient.doseClaims ?? [];
 
   const slots: MarSlot[] = [];
+  const prn: MarSlot[] = [];
+  const kop: MarSlot[] = [];
   const deferred: MarDay["deferred"] = [];
+  const nowIso = new Date().toISOString();
 
   for (const order of orders) {
     const reason = deferralReasonFor(order);
@@ -125,10 +137,36 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
       deferred.push({ order, reason });
       continue;
     }
+    // KOP is a supply event, not a bedside administration — it never gets a
+    // scheduled slot or a dose claim, matching the reference EMR.
+    if (order.isKop) {
+      kop.push({
+        key: `${order.id}@kop`,
+        kind: "kop",
+        order,
+        scheduledAt: nowIso,
+        facilityDate: key,
+        timeLabel: "As issued",
+      });
+      continue;
+    }
+    // PRN has no fixed schedule — one on-demand row per active PRN order.
+    if (isPrnOrder(order)) {
+      prn.push({
+        key: `${order.id}@prn`,
+        kind: "prn",
+        order,
+        scheduledAt: nowIso,
+        facilityDate: key,
+        timeLabel: frequencyByCode(order.frequencyCode)?.sigLabel ?? "as needed",
+      });
+      continue;
+    }
     if (!order.frequencyCode && !order.isStat) continue;
     for (const scheduledAt of slotsForOrder(order, key, tz)) {
       slots.push({
         key: `${order.id}@${scheduledAt}`,
+        kind: "scheduled",
         order,
         scheduledAt,
         facilityDate: key,
@@ -142,7 +180,7 @@ export function deriveMarDay(patient: Patient, dateKey?: string): MarDay {
   }
 
   slots.sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt));
-  return { dateKey: key, slots, deferred };
+  return { dateKey: key, slots, prn, kop, deferred };
 }
 
 /** True when charting this slot now counts as a late entry (>4h past due). */
@@ -156,3 +194,50 @@ export function marRowLabel(order: MedOrder): string {
     .filter(Boolean)
     .join(" · ");
 }
+
+// ---------------------------------------------------------------------------
+// §MAR Phase 2 — PRN reasons, witness scoping, Suboxone detection.
+// ---------------------------------------------------------------------------
+
+/** Reference EMR's PRN indication chip set, ported verbatim. Free text still allowed. */
+export const PRN_REASONS = [
+  "Pain",
+  "Anxiety",
+  "Nausea",
+  "Insomnia",
+  "Withdrawal",
+  "Headache",
+  "Allergy",
+  "Other",
+] as const;
+
+/**
+ * "Not indicated" is charted as a HELD dose with this exact reason, matching
+ * the reference — it is a distinct clinical outcome, not a generic hold.
+ */
+export const NOT_INDICATED_REASON = "Not indicated";
+
+/** Staff who may witness a Schedule II administration: clinical/prescriber roles only. */
+export function witnessCandidates(exclude?: string): StaffMember[] {
+  return STAFF_ROSTER.filter(
+    (s) => (s.role === "pmhnp" || s.role === "therapist") && s.name !== exclude,
+  );
+}
+
+/**
+ * Buprenorphine (Suboxone) sublingual detection — drives the extra mouth-check
+ * attestation on batch commit. Matches on ingredient/drug name plus a
+ * sublingual dose form or route.
+ */
+export function isSuboxoneOrder(order: MedOrder): boolean {
+  const name = [order.drugName, order.productName, ...(order.ingredientNames ?? [])]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+  if (!/buprenorphine|suboxone|zubsolv/.test(name)) return false;
+  const form = `${order.doseForm ?? ""} ${order.route ?? ""} ${name}`.toLowerCase();
+  return /sublingual|\bsl\b|film|buccal/.test(form);
+}
+
+export const MOUTH_CHECK_ATTESTATION_TEXT =
+  "I confirm mouth checks were completed for all Suboxone/buprenorphine sublingual doses in this pass.";

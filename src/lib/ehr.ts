@@ -222,6 +222,14 @@ export interface MedOrder {
   daysSupplyManual?: boolean;
   /** DEA-schedule-adjacent flag. Drives the days-supply requirement and, later, cosigner scoping. */
   isControlled?: boolean;
+  /**
+   * §MAR Phase 2 — DEA schedule, set by hand whenever `isControlled` is checked
+   * (RxNav does not reliably expose it). Witness at administration is required
+   * for CII only; CIII–CV are covered by the attestation paths instead. When
+   * `isControlled` is true and this is unset we conservatively require a
+   * witness anyway.
+   */
+  deaSchedule?: "CII" | "CIII" | "CIV" | "CV";
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
   /**
@@ -286,6 +294,15 @@ export interface DoseAdministration {
   chartedAt: string;
   /** Required when chartedAt is more than 4h after scheduledAt. */
   lateEntryReason?: string;
+  /**
+   * §MAR Phase 2 — second clinician who witnessed a Schedule II administration.
+   * Required before a CII dose can be charted as given.
+   */
+  witnessedBy?: string;
+  /** True when this row is a PRN administration (reason carries the indication). */
+  isPrn?: boolean;
+  /** True when the batch carried the Suboxone/buprenorphine mouth-check attestation. */
+  mouthCheckAttested?: boolean;
   /** Groups everything committed in one attested pass, so it can be voided together. */
   batchId: string;
   voided?: boolean;
@@ -307,8 +324,38 @@ export interface DoseClaim {
   claimedAt: string;
 }
 
+/**
+ * §MAR Phase 2 — KOP (Keep-On-Person) supply issuance. This is a SUPPLY event,
+ * not a bedside administration: no dose claim, no MAR slot. The patient's
+ * signature is a TYPED acknowledgment, deliberately weaker than the Refusal
+ * document's drawn legal signature.
+ */
+export interface KopIssuance {
+  id: string;
+  patientId: string;
+  orderId: string;
+  daysSupply: number;
+  quantity: number;
+  patientSignatureName: string;
+  issuedBy: string;
+  issuedAt: string;
+  notes?: string;
+  returnedAt?: string;
+  returnedBy?: string;
+}
+
 /** Hours after which charting a dose counts as a late entry. */
 export const LATE_ENTRY_THRESHOLD_HOURS = 4;
+
+/**
+ * Witness requirement at administration. CII always; an order flagged
+ * controlled with no schedule recorded is treated as CII (conservative).
+ * CIII–CV do NOT require a witness.
+ */
+export function requiresDoseWitness(order: Pick<MedOrder, "isControlled" | "deaSchedule">): boolean {
+  if (!order.isControlled) return false;
+  return !order.deaSchedule || order.deaSchedule === "CII";
+}
 
 export interface Patient {
   id: string;
@@ -432,8 +479,9 @@ export interface Patient {
    * separate store because every other MAR read is already patient-scoped.
    */
   doseClaims?: DoseClaim[];
+  /** KOP supply issuances (§MAR Phase 2). Never deleted; returns are recorded. */
+  kopIssuances?: KopIssuance[];
 }
-
 
 export interface ScreenerResult {
   key: string;
@@ -1477,6 +1525,7 @@ const caseTasks: CaseTask[] = [];
 // Vendor adapters (telehealth video + eRx medication management). Kept
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
+import { frequencyByCode } from "./frequencies";
 interface RxEventRow {
   id: string;
   patientId: string;
@@ -4068,6 +4117,36 @@ export const AdelanteEHR = {
     return [...(patients.find((x) => x.id === patientId)?.doseClaims ?? [])];
   },
   /**
+   * §MAR Phase 2 — PRN eligibility. Counts live (non-voided) GIVEN
+   * administrations for this order in the trailing 24h against the frequency
+   * catalog's `maxPerDay` ceiling.
+   */
+  prnEligibility(
+    patientId: string,
+    orderId: string,
+    now: Date = new Date(),
+  ): { given: number; max?: number; lastGivenAt?: string; blocked: boolean } {
+    const p = patients.find((x) => x.id === patientId);
+    const order = p?.orders?.find((o) => o.id === orderId);
+    const max = frequencyByCode(order?.frequencyCode)?.maxPerDay;
+    const since = now.getTime() - 24 * 3600_000;
+    const rows = (p?.administrations ?? [])
+      .filter(
+        (a) =>
+          a.orderId === orderId &&
+          !a.voided &&
+          a.action === "given" &&
+          new Date(a.chartedAt).getTime() >= since,
+      )
+      .sort((a, b) => b.chartedAt.localeCompare(a.chartedAt));
+    return {
+      given: rows.length,
+      max,
+      lastGivenAt: rows[0]?.chartedAt,
+      blocked: max !== undefined && rows.length >= max,
+    };
+  },
+  /**
    * Chart one scheduled dose. Validation is action-specific: refused/held need
    * a reason, and anything charted more than 4h after the scheduled time needs
    * a late-entry reason. Voided prior entries do not block re-charting.
@@ -4081,6 +4160,7 @@ export const AdelanteEHR = {
     staffName: string,
     batchId: string,
     lateEntryReason?: string,
+    opts?: { witnessedBy?: string; mouthCheckAttested?: boolean },
   ): DoseAdministration {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found");
@@ -4089,6 +4169,28 @@ export const AdelanteEHR = {
     const trimmed = reason?.trim();
     if ((action === "refused" || action === "held") && !trimmed)
       throw new Error("A reason is required to chart a refused or held dose.");
+    // ----- §MAR Phase 2 gates -------------------------------------------------
+    if (order.isKop)
+      throw new Error(
+        "KOP orders are issued as a patient supply, not charted as a bedside administration.",
+      );
+    const prn = !!frequencyByCode(order.frequencyCode)?.isPrn;
+    if (prn && action === "given" && !trimmed)
+      throw new Error("A PRN dose requires an indication reason.");
+    const witness = opts?.witnessedBy?.trim();
+    if (action === "given") {
+      if (prn) {
+        const elig = AdelanteEHR.prnEligibility(patientId, orderId);
+        if (elig.blocked)
+          throw new Error(
+            `PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`,
+          );
+      }
+      if (requiresDoseWitness(order) && !witness)
+        throw new Error(
+          "A second clinician must witness this Schedule II administration before it can be charted as given.",
+        );
+    }
     const chartedAt = new Date();
     const lateBy = chartedAt.getTime() - new Date(scheduledAt).getTime();
     const late = lateBy > LATE_ENTRY_THRESHOLD_HOURS * 3600_000;
@@ -4111,6 +4213,9 @@ export const AdelanteEHR = {
       chartedBy: staffName,
       chartedAt: chartedAt.toISOString(),
       lateEntryReason: late ? lateTrimmed : undefined,
+      witnessedBy: action === "given" ? witness || undefined : undefined,
+      isPrn: prn || undefined,
+      mouthCheckAttested: opts?.mouthCheckAttested || undefined,
       batchId,
     };
     p.administrations = [row, ...(p.administrations ?? [])];
@@ -4131,6 +4236,10 @@ export const AdelanteEHR = {
         doseAction: action,
         reason: trimmed ?? null,
         lateEntryReason: row.lateEntryReason ?? null,
+        isPrn: prn,
+        deaSchedule: order.deaSchedule ?? null,
+        witnessedBy: row.witnessedBy ?? null,
+        mouthCheckAttested: !!row.mouthCheckAttested,
         batchId,
         attestationMethod: "checkbox_only",
       },
@@ -4257,6 +4366,93 @@ export const AdelanteEHR = {
     });
     emit();
     return rows;
+  },
+
+  // ----- KOP issuance (§MAR Phase 2) ----------------------------------------
+  listKopIssuances(patientId: string, opts?: { orderId?: string }): KopIssuance[] {
+    const rows = patients.find((x) => x.id === patientId)?.kopIssuances ?? [];
+    return opts?.orderId ? rows.filter((r) => r.orderId === opts.orderId) : [...rows];
+  },
+  /** The open (not-yet-returned) issuance for an order, if any. */
+  activeKopIssuance(patientId: string, orderId: string): KopIssuance | undefined {
+    return (patients.find((x) => x.id === patientId)?.kopIssuances ?? []).find(
+      (r) => r.orderId === orderId && !r.returnedAt,
+    );
+  },
+  /**
+   * Issue a KOP supply. Refuses a second ACTIVE issuance for the same order —
+   * the existing one must be returned first.
+   */
+  issueKop(input: {
+    patientId: string;
+    orderId: string;
+    daysSupply: number;
+    quantity: number;
+    patientSignatureName: string;
+    issuedBy: string;
+    notes?: string;
+  }): KopIssuance {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) throw new Error("Patient not found");
+    const order = p.orders?.find((o) => o.id === input.orderId);
+    if (!order) throw new Error("Order not found");
+    if (!order.isKop) throw new Error("This order is not marked keep-on-person.");
+    const open = AdelanteEHR.activeKopIssuance(input.patientId, input.orderId);
+    if (open)
+      throw new Error(
+        `An active KOP supply already exists for this order — ${open.daysSupply} day(s) issued ${new Date(open.issuedAt).toLocaleDateString()}. Record its return first.`,
+      );
+    const signature = input.patientSignatureName?.trim();
+    if (!signature) throw new Error("The patient's typed signature name is required.");
+    if (!(input.daysSupply > 0)) throw new Error("Days supply must be greater than zero.");
+    if (!(input.quantity > 0)) throw new Error("Quantity must be greater than zero.");
+    const row: KopIssuance = {
+      id: uid(),
+      patientId: input.patientId,
+      orderId: input.orderId,
+      daysSupply: input.daysSupply,
+      quantity: input.quantity,
+      patientSignatureName: signature,
+      issuedBy: input.issuedBy,
+      issuedAt: new Date().toISOString(),
+      notes: input.notes?.trim() || undefined,
+    };
+    p.kopIssuances = [row, ...(p.kopIssuances ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "kop_issued",
+      patientId: input.patientId,
+      actorId: input.issuedBy,
+      detail: {
+        issuanceId: row.id,
+        orderId: row.orderId,
+        drugName: order.drugName,
+        daysSupply: row.daysSupply,
+        quantity: row.quantity,
+        patientSignatureName: row.patientSignatureName,
+      },
+    });
+    emit();
+    return row;
+  },
+  /** Record the return of an issued KOP supply. */
+  returnKop(patientId: string, issuanceId: string, staffName: string): KopIssuance {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const row = (p.kopIssuances ?? []).find((r) => r.id === issuanceId);
+    if (!row) throw new Error("KOP issuance not found");
+    if (row.returnedAt) throw new Error("This supply has already been returned.");
+    row.returnedAt = new Date().toISOString();
+    row.returnedBy = staffName;
+    appendAudit({
+      category: "clinical",
+      action: "kop_returned",
+      patientId,
+      actorId: staffName,
+      detail: { issuanceId: row.id, orderId: row.orderId },
+    });
+    emit();
+    return row;
   },
 };
 
