@@ -504,7 +504,7 @@ function TemplateBuilderDialog({
               {!isFieldsSection(section) && (
                 <NonFieldSectionEditor
                   section={section}
-                  onChange={(patch) => updateSection(si, patch)}
+                  onChange={(patch: Partial<TemplateSection>) => updateSection(si, patch)}
                 />
               )}
 
