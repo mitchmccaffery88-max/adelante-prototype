@@ -4940,6 +4940,92 @@ export const AdelanteEHR = {
 // Re-export vendor types so consumers only import from "@/lib/ehr".
 export type { Medication } from "./vendors";
 
+// ---------------------------------------------------------------------------
+// DEMO SEED — end-to-end refusal walkthrough, built through the real store API.
+// Unlike the hand-written Alicia R. fixture above, this patient's order is
+// drafted → signed → charted-refused through AdelanteEHR itself, so the audit
+// trail, validation gates and refusal shell are all produced the same way a
+// live clinician would produce them. Remove with the rest of the mock store.
+// ---------------------------------------------------------------------------
+{
+  const PATIENT_ID = "p-demo-mar-seed";
+  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const NURSE = "Rosa T., LVN";
+  const tz = "America/Los_Angeles";
+  const seedPatient: Patient = {
+    id: PATIENT_ID,
+    programId: "ADL-2026-901",
+    firstName: "Marcus",
+    lastName: "Whitfield",
+    dob: "1988-11-04",
+    phone: "+15595550191",
+    releaseDate: "2026-07-10",
+    enrolledAt: "2026-07-12",
+    episodeDay: 19,
+    smsFallback: true,
+    facilityTimezone: tz,
+    consents: { hipaa: true, part2Sud: true, signedAt: "2026-07-12" },
+    screeners: {},
+    needs: { housing: false, food: false, employment: false, transport: false },
+    carePlanSummary: "Demo record seeded through the store API for the MAR refusal walkthrough.",
+    caseManagerId: "cm1",
+    alerts: [],
+    allergies: [],
+    problems: [],
+    orders: [],
+    administrations: [],
+    refusalForms: [],
+  };
+  patients.push(seedPatient);
+
+  const draft = AdelanteEHR.addDraftOrder(PATIENT_ID, {
+    drugName: "Sertraline",
+    productName: "Sertraline 50 MG Oral Tablet",
+    rxcui: "312940",
+    strengthText: "50 MG",
+    strengthSource: "rxnav",
+    doseForm: "Oral Tablet",
+    ingredientNames: ["Sertraline"],
+    doseAxis: "mg",
+    doseTargetMg: 50,
+    unitsPerAdmin: 1,
+    route: "PO",
+    frequency: "twice daily",
+    frequencyCode: "BID",
+    durationValue: 30,
+    durationUnit: "days",
+    quantity: 60,
+    daysSupply: 30,
+    sig: "Take 1 tablet (50 mg) by mouth twice daily",
+    dispenseRoute: "pharmacy",
+    indicationText: "Major depressive disorder",
+    startDate: facilityDateKey(new Date(), tz),
+    createdBy: PMHNP,
+  } as Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">);
+  AdelanteEHR.signOrders(PATIENT_ID, [draft.id], PMHNP);
+
+  // Chart the earliest BID slot for today as refused so the pending refusal
+  // document exists the moment the MAR tab is opened.
+  const dateKey = facilityDateKey(new Date(), tz);
+  const [y, m, d] = dateKey.split("-").map(Number);
+  const firstHour = frequencyByCode("BID")?.adminTimes[0] ?? 8;
+  const scheduledAt = fromFacilityWallClock(
+    { year: y, month: m, day: d, hour: firstHour },
+    tz,
+  ).toISOString();
+  const refused = AdelanteEHR.chartDose(
+    PATIENT_ID,
+    draft.id,
+    scheduledAt,
+    "refused",
+    "Patient declined morning dose — states medication makes him feel flat.",
+    NURSE,
+    `batch-${PATIENT_ID}-seed`,
+    "Seeded demo entry charted after the scheduled window.",
+  );
+  AdelanteEHR.createRefusalFormShell(PATIENT_ID, refused.id, NURSE);
+}
+
 import { useSyncExternalStore } from "react";
 export function useEhr<T>(selector: () => T): T {
   // Subscribe to a stable version number so we don't loop on new-array snapshots.
