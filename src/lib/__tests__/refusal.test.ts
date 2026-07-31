@@ -292,7 +292,12 @@ describe("finalizeRefusalForm", () => {
 
 describe("3-in-7-days escalation", () => {
   it("triggers only at the third live refusal in the window", () => {
-    const { pid, orderId } = signedOrder({ frequencyCode: "TID" });
+    // Start the course yesterday: on the START day, slotsForOrder suppresses
+    // times earlier than the hour the order was written, so a TID order created
+    // late in the day would project fewer than 3 slots and make this test
+    // clock-dependent.
+    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
+    const { pid, orderId } = signedOrder({ frequencyCode: "TID", startDate: yesterday });
     const slots = deriveMarDay(AdelanteEHR.getPatient(pid)!, today()).slots.filter(
       (s) => s.order.id === orderId,
     );
