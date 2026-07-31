@@ -5,11 +5,19 @@
 //
 // Phase 2 landed here: PRN eligibility + reason chips (+ "Not indicated"),
 // Schedule II witness (with session-witness back-fill), KOP issuance, and the
-// Suboxone mouth-check attestation. Still deferred (not dropped): cart/keyboard
-// mode, voice pass, and the full Refusal legal document.
+// Suboxone mouth-check attestation.
+// Phase 3 landed here: the Refusal legal document (queued one at a time after
+// a batch commit) and the 3-in-7-days provider escalation. Still deferred (not
+// dropped): cart/keyboard mode and voice pass.
 
 import { useEffect, useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, requiresDoseWitness, type DoseAdministration } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  useEhr,
+  requiresDoseWitness,
+  type DoseAdministration,
+  type RefusalForm,
+} from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import {
   deriveMarDay,
@@ -47,8 +55,14 @@ import {
 } from "@/components/ui/dialog";
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
+import { RefusalFormDialog } from "@/components/clinical/refusal/RefusalFormDialog";
+import {
+  RefusalEscalationDialog,
+  type EscalationTarget,
+} from "@/components/clinical/refusal/RefusalEscalationDialog";
+import { medClassGuess } from "@/lib/refusal";
 import { toast } from "sonner";
-import { CalendarClock, Info, PackageCheck, ShieldCheck, Syringe } from "lucide-react";
+import { CalendarClock, FileSignature, Info, PackageCheck, ShieldCheck, Syringe } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 const MAR_ATTESTATION_TEXT =
@@ -351,6 +365,14 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const [sessionWitness, setSessionWitness] = useState("");
   const [voidBatchId, setVoidBatchId] = useState<string | null>(null);
   const [kopSlot, setKopSlot] = useState<MarSlot | null>(null);
+  /**
+   * Refusal documents awaiting signature from THIS commit, in order. The
+   * reference's MedPass signs one, then opens the next automatically.
+   */
+  const [refusalQueue, setRefusalQueue] = useState<string[]>([]);
+  /** A pending document reopened by hand from the to-do list. */
+  const [openFormId, setOpenFormId] = useState<string | null>(null);
+  const [escalation, setEscalation] = useState<EscalationTarget | null>(null);
 
   const day = useMemo(
     () =>
@@ -413,13 +435,14 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const commit = () => {
     const batchId = `batch_${Date.now().toString(36)}`;
     let ok = 0;
+    const queued: string[] = [];
     for (const [key, entry] of Object.entries(entries)) {
       const slot = rowFor(key);
       if (!slot) continue;
       // PRN rows have no fixed schedule — stamp the actual administration time.
       const scheduledAt = slot.kind === "prn" ? new Date().toISOString() : slot.scheduledAt;
       try {
-        AdelanteEHR.chartDose(
+        const row = AdelanteEHR.chartDose(
           patientId,
           slot.order.id,
           scheduledAt,
@@ -431,6 +454,18 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
           { witnessedBy: entry.witnessedBy, mouthCheckAttested: mouthChecked || undefined },
         );
         ok += 1;
+        // The refusal is charted above regardless of what happens to the legal
+        // document — the shell is created immediately so an abandoned form
+        // shows up as outstanding work rather than vanishing.
+        if (row.action === "refused") {
+          try {
+            queued.push(
+              AdelanteEHR.createRefusalFormShell(patientId, row.id, staffName).id,
+            );
+          } catch {
+            /* the charted refusal stands even if the document shell fails */
+          }
+        }
       } catch (e) {
         toast.error(
           `${marRowLabel(slot.order)}: ${e instanceof Error ? e.message : "Could not chart dose."}`,
@@ -443,6 +478,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       setAttested(false);
       setMouthChecked(false);
     }
+    if (queued.length) setRefusalQueue(queued);
   };
 
   // ----- Row renderers ------------------------------------------------------
@@ -748,6 +784,37 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
 
   const commitBlocked = !attested || (suboxonePending && !mouthChecked);
 
+  // ----- Refusal documents ---------------------------------------------------
+  const pendingForms = (patient.refusalForms ?? []).filter(
+    (f) => f.status === "pending_signature",
+  );
+  const activeFormId = escalation ? null : (refusalQueue[0] ?? openFormId);
+  const activeForm = activeFormId
+    ? ((patient.refusalForms ?? []).find((f) => f.id === activeFormId) ?? null)
+    : null;
+
+  const closeActiveForm = () => {
+    // "Sign later" / dismiss — the refusal stays charted, the document stays
+    // pending, and the next queued document opens.
+    setRefusalQueue((q) => q.slice(1));
+    setOpenFormId(null);
+  };
+
+  const handleFinalized = (form: RefusalForm, orderId: string) => {
+    setRefusalQueue((q) => q.slice(1));
+    setOpenFormId(null);
+    if (orderId && AdelanteEHR.refusalEscalationDue(patientId, orderId)) {
+      const order = (patient.orders ?? []).find((o) => o.id === orderId);
+      setEscalation({
+        formId: form.id,
+        orderId,
+        drugName: order?.productName ?? order?.drugName ?? "This medication",
+        medClass: form.medClass,
+        refusalCount: AdelanteEHR.refusalsInWindow(patientId, orderId).length,
+      });
+    }
+  };
+
   return (
     <div className="space-y-4">
       <div className="flex flex-wrap items-end gap-3">
@@ -895,6 +962,58 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         patientId={patientId}
         staffName={staffName}
         onOpenChange={(v) => !v && setKopSlot(null)}
+      />
+
+      {pendingForms.length > 0 && (
+        <div className="space-y-2 rounded-md border border-amber-500/60 bg-amber-50/40 p-3 dark:bg-amber-950/10">
+          <div className="flex items-center gap-2 text-sm font-medium text-navy">
+            <FileSignature className="h-4 w-4 text-muted-foreground" />
+            Refusal documents awaiting signature ({pendingForms.length})
+          </div>
+          <p className="text-xs text-muted-foreground">
+            The refusals themselves are charted. These are the separate legal documents — they
+            stay here until finalized.
+          </p>
+          {pendingForms.map((f) => {
+            const admin = (patient.administrations ?? []).find(
+              (a) => a.id === f.administrationId,
+            );
+            const order = (patient.orders ?? []).find((o) => o.id === admin?.orderId);
+            return (
+              <div key={f.id} className="flex flex-wrap items-center gap-2 text-xs">
+                <span className="font-medium">
+                  {order ? marRowLabel(order) : "Refused medication"}
+                </span>
+                <span className="text-muted-foreground">
+                  refused <ClientDate value={admin?.chartedAt ?? f.createdAt} />
+                </span>
+                <Button
+                  size="sm"
+                  variant="outline"
+                  disabled={readOnly}
+                  onClick={() => setOpenFormId(f.id)}
+                >
+                  Open document
+                </Button>
+              </div>
+            );
+          })}
+        </div>
+      )}
+
+      <RefusalFormDialog
+        patientId={patientId}
+        form={activeForm}
+        staffName={staffName}
+        onClose={closeActiveForm}
+        onFinalized={handleFinalized}
+      />
+
+      <RefusalEscalationDialog
+        patientId={patientId}
+        target={escalation}
+        staffName={staffName}
+        onClose={() => setEscalation(null)}
       />
 
       <ReasonDialog
