@@ -480,7 +480,7 @@ export interface Patient {
    */
   doseClaims?: DoseClaim[];
 }
-
+/** KOP supply issuances (§MAR Phase 2). */
 
 
 export interface ScreenerResult {
