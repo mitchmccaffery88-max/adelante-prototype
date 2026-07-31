@@ -48,7 +48,8 @@ export type RecordClass =
   | "allergies"
   | "alerts"
   | "eligibility"
-  | "care_coordination";
+  | "care_coordination"
+  | "custody_tracking";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -149,6 +150,18 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+  },
+  // §Custody tracking (bookings, housing moves, released search). Custody
+  // status is coordination data, so case management owns the write path;
+  // clinicians read it for context. Billing gets nothing — custody history is
+  // not claim-relevant and would be an unnecessary exposure.
+  custody_tracking: {
+    case_manager: "write",
+    clinical_coordinator: "write",
+    therapist: "read",
+    pmhnp: "read",
+    peer_specialist: "read",
+    sys_admin: "read",
   },
 };
 
