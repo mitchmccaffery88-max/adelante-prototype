@@ -13,11 +13,6 @@ const { buildNoteDocumentModel } = await import("@/lib/notePdf");
 
 afterEach(cleanup);
 
-function seed(patientId: string) {
-  const p = AdelanteEHR.listPatients()[0]!;
-  return p;
-}
-
 const patient = AdelanteEHR.listPatients()[0]!;
 
 function addNote(over: Partial<Parameters<typeof AdelanteEHR.addProgressNote>[1]>) {
