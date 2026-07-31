@@ -18,6 +18,7 @@ import {
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
 import { frequencyByCode } from "@/lib/frequencies";
+import { STAFF_ROSTER, type StaffMember } from "@/lib/roles";
 import { deriveMedicationSchedule } from "@/lib/medSchedule";
 import {
   addFacilityDays,
