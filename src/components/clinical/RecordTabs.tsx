@@ -53,7 +53,11 @@ import {
   useNoteAutofillSnapshots,
 } from "@/components/clinical/NoteAutofillCard";
 import { NoteOrdersSection } from "@/components/clinical/NoteOrdersSection";
-import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
+import {
+  findMissingRequired,
+  summarizeAutomation,
+  type TemplateAnswers,
+} from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import {
   useActingRole,
