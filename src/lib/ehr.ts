@@ -641,6 +641,27 @@ export interface KpiTarget {
 }
 
 /**
+ * §Population health / CalAIM — an admin-curated ICD-10 code that makes a
+ * patient CalAIM-eligible. Shared registry (top-level, not patient-scoped),
+ * same pattern as Facility and KpiTarget, gated on `population_health` write.
+ *
+ * `code` may be a full code ("F11.20") or a category prefix ("F10", meaning
+ * every F10.x). Matching supports both — see `src/lib/calaim.ts`.
+ */
+export interface CalaimQualifyingCode {
+  id: string;
+  codeSystem: "icd10";
+  code: string;
+  description?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  deactivatedBy?: string;
+  deactivatedAt?: string;
+  deactivationReason?: string;
+}
+
+/**
  * Immutable, locked controlled-substance shift count. Top-level (NOT on a
  * Patient) — it is a facility/shift artifact that spans the population.
  */
