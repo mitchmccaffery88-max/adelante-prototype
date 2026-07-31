@@ -36,7 +36,8 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
-import { useActingRole, canAccess } from "@/lib/roles";
+import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
+import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 
@@ -317,6 +318,7 @@ function ClinicianPage() {
                 }}
               />
               <RefillReviewCard />
+              <NurseRefusalWorklistSection />
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
                 <div className="mt-4 space-y-3">
