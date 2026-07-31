@@ -8076,6 +8076,8 @@ export const AdelanteEHR = {
       throw new Error("A PRN frequency has no fixed administration times.");
     if (input.isPrn && input.maxPerDay !== undefined && input.maxPerDay < 1)
       throw new Error("Max per day must be at least 1.");
+    if (input.isPrn && input.minGapMinutes !== undefined && input.minGapMinutes < 1)
+      throw new Error("Minimum interval must be at least 1 minute.");
 
     const existing = frequencyByCode(code);
     const row = putFrequency({
