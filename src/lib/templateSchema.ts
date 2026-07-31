@@ -147,6 +147,28 @@ export function isFieldsSection(section: TemplateSection): boolean {
   return (section.type ?? "fields") === "fields";
 }
 
+/** One rendered row of an autofill card. */
+export interface AutofillLine {
+  primary: string;
+  secondary?: string;
+}
+
+/**
+ * Resolved autofill content, SNAPSHOTTED into the note the same way template
+ * answers are. A historical note shows what was true at signing time, never a
+ * live re-computation.
+ */
+export interface AutofillSnapshot {
+  sectionId: string;
+  title: string;
+  source: AutofillSource;
+  /** ISO instant the content was resolved. */
+  resolvedAt: string;
+  lines: AutofillLine[];
+  /** Consent/empty-state notice, e.g. the 42 CFR Part 2 mask. */
+  notice?: string;
+}
+
 export interface ScoringBand {
   min: number;
   max: number;
