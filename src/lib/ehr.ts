@@ -386,6 +386,12 @@ export interface RefusalForm {
    * Undefined on forms created before translations existed (treat as reviewed).
    */
   riskTextReviewed?: boolean;
+  /**
+   * True once the presented wording is clinically approved: the English
+   * snapshot is then a LOCKED archival reference on the record, not a live
+   * fallback the dialog presents as the authoritative text.
+   */
+  riskTextSnapshotEnLocked?: boolean;
   languageCode: string;
   /** Active alert labels matching the capacity heuristic at signing time. */
   capacityFlagsAtSigning: string[];
