@@ -375,6 +375,8 @@ function DraftOrderCard({
           <Label className={cn("text-xs", blocked.has("duration") && REQ_LABEL)}>
             Duration {order.isStat || prn ? "" : "*"}
           </Label>
+        </div>
+        <div className="hidden" aria-hidden />
           <Input
             className={cn("mt-1", blocked.has("duration") && REQ_FIELD)}
             inputMode="numeric"
