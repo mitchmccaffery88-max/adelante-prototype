@@ -154,7 +154,7 @@ describe("note lifecycle", () => {
       role: "therapist",
       reason: "Needs revision",
     });
-    const entry = AdelanteEHR.getAuditLog()
+    const entry = AdelanteEHR.listAuditEvents({ patientId: PATIENT })
       .filter((e) => e.action === "note_cosign_declined")
       .at(-1);
     expect(entry?.detail).toMatchObject({
