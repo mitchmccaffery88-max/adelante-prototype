@@ -216,6 +216,13 @@ function ClinicianPage() {
         >
           Cosign inbox
         </Link>
+        {/* §Crisis escalation — cross-patient queue of open escalations. */}
+        <Link
+          to="/crisis-queue"
+          className="text-xs text-destructive underline-offset-2 hover:underline self-center"
+        >
+          Crisis queue
+        </Link>
       </header>
 
       {clinician?.licenseExpiresOn &&

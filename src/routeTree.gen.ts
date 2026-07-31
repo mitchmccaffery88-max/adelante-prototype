@@ -28,6 +28,7 @@ import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-cre
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntakeRouteImport } from './routes/intake'
@@ -134,6 +135,11 @@ const CosignInboxRoute = CosignInboxRouteImport.update({
   path: '/cosign-inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrisisQueueRoute = CrisisQueueRouteImport.update({
+  id: '/crisis-queue',
+  path: '/crisis-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DashboardsRoute = DashboardsRouteImport.update({
   id: '/dashboards',
   path: '/dashboards',
@@ -205,6 +211,7 @@ export interface FileRoutesByFullPath {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -236,6 +243,7 @@ export interface FileRoutesByTo {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -268,6 +276,7 @@ export interface FileRoutesById {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
@@ -301,6 +310,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/crisis-queue'
     | '/dashboards'
     | '/home'
     | '/intake'
@@ -332,6 +342,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/crisis-queue'
     | '/dashboards'
     | '/home'
     | '/intake'
@@ -363,6 +374,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/crisis-queue'
     | '/dashboards'
     | '/home'
     | '/intake'
@@ -395,6 +407,7 @@ export interface RootRouteChildren {
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CosignInboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crisis-queue': {
+      id: '/crisis-queue'
+      path: '/crisis-queue'
+      fullPath: '/crisis-queue'
+      preLoaderRoute: typeof CrisisQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/dashboards': {
       id: '/dashboards'
       path: '/dashboards'
@@ -635,6 +655,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   CosignInboxRoute: CosignInboxRoute,
+  CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,

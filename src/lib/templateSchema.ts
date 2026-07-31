@@ -173,6 +173,12 @@ export interface ScoringBand {
   min: number;
   max: number;
   label: string;
+  /**
+   * §Crisis escalation — landing in this band forces a required crisis
+   * decision at signing. The signer must escalate or log a reason; the note
+   * cannot reach a signed status silently.
+   */
+  triggersCrisis?: boolean;
 }
 
 export interface ScoringRule {
@@ -678,6 +684,8 @@ export interface ScoreResult {
   incomplete: boolean;
   missingKeys: string[];
   band?: string;
+  /** True when the resolved band carries `triggersCrisis`. */
+  triggersCrisis?: boolean;
 }
 
 function numericValueFor(
@@ -728,11 +736,33 @@ export function computeScore(
       total += n;
     }
     const incomplete = missingKeys.length > 0;
-    const band = incomplete
-      ? undefined
-      : rule.bands?.find((b) => total >= b.min && total <= b.max)?.label;
-    return { id: rule.id, label: rule.label, total, incomplete, missingKeys, band };
+    const hit = incomplete ? undefined : rule.bands?.find((b) => total >= b.min && total <= b.max);
+    return {
+      id: rule.id,
+      label: rule.label,
+      total,
+      incomplete,
+      missingKeys,
+      band: hit?.label,
+      triggersCrisis: hit?.triggersCrisis ? true : undefined,
+    };
   });
+}
+
+/**
+ * Scores whose resolved band demands a crisis decision at signing. An
+ * incomplete score never triggers — a partial total is not a clinical finding.
+ */
+export function crisisTriggeringScores(
+  schema: TemplateSchema | undefined,
+  answers: TemplateAnswers,
+): ScoreResult[] {
+  return computeScore(schema, answers).filter((s) => s.triggersCrisis);
+}
+
+/** Human-readable trigger detail, e.g. `PHQ-9 total 22 (Severe band)`. */
+export function describeCrisisScore(s: ScoreResult): string {
+  return `${s.label} total ${s.total}${s.band ? ` (${s.band} band)` : ""}`;
 }
 
 export interface RequiredFieldSummary {

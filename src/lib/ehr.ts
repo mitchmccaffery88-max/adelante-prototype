@@ -1,5 +1,11 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
-import { plannedAutomations, schemaContentEquals, summarizeAutomation } from "./templateSchema";
+import {
+  crisisTriggeringScores,
+  describeCrisisScore,
+  plannedAutomations,
+  schemaContentEquals,
+  summarizeAutomation,
+} from "./templateSchema";
 import type {
   Automation,
   AutofillSnapshot,
@@ -819,6 +825,8 @@ export interface Patient {
   allergies?: Allergy[];
   /** Staff-visible patient safety alerts (free-text label). Mirror of BaggaEMR `patient_alerts`. */
   alerts?: PatientAlert[];
+  /** §Crisis escalation — open/resolved escalations, each linked to a PatientAlert. */
+  crisisEscalations?: CrisisEscalation[];
   /** Medication orders — drafts staged in the cart plus signed orders. §Orders. */
   orders?: MedOrder[];
   /** Charted dose administrations (§MAR). Append-only; voids never delete. */
@@ -1276,6 +1284,28 @@ export interface Allergy {
   removedBy?: string;
   removedAt?: string;
   removedReason?: string;
+}
+
+// §Crisis escalation — Adelante-native (no BaggaEMR equivalent).
+// The visible flag IS a PatientAlert; this record is the workflow wrapper that
+// makes the escalation trackable across the population until it is dispositioned.
+export interface CrisisEscalation {
+  id: string;
+  patientId: string;
+  /** The underlying PatientAlert record — that alert is the visible flag. */
+  alertId: string;
+  triggerSource: "manual" | "screener_score";
+  /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
+  triggerDetail?: string;
+  triggeredBy: string;
+  triggeredAt: string;
+  status: "open" | "resolved";
+  contactedWhom?: string;
+  actionsTaken?: string;
+  disposition?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionReason?: string;
 }
 
 export interface PatientAlert {
@@ -3605,6 +3635,14 @@ export const AdelanteEHR = {
        * was attested.
        */
       autofillSnapshots?: AutofillSnapshot[];
+      /**
+       * §Crisis escalation — required when the note's scoring lands in a band
+       * with `triggersCrisis`. There is no third option: the signer either
+       * escalates or records why not. Silence is not a valid outcome.
+       */
+      crisisDecision?:
+        | { kind: "escalate" }
+        | { kind: "not_escalating"; reason: string };
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -3617,6 +3655,19 @@ export const AdelanteEHR = {
     const cosignRequired = input.cosignRequired ?? !selfSign;
     if (!selfSign && !cosignRequired)
       throw new Error("Your role cannot sign this note without a cosigner.");
+
+    // Crisis-band gate — evaluated BEFORE any mutation so a blocked note stays
+    // an untouched draft.
+    const crisisScores = crisisTriggeringScores(n.templateSchema, n.templateAnswers ?? {});
+    if (crisisScores.length > 0) {
+      const decision = input.crisisDecision;
+      if (!decision)
+        throw new Error(
+          "This score is in a crisis band — escalate now or record why you are not escalating.",
+        );
+      if (decision.kind === "not_escalating" && (decision.reason?.trim().length ?? 0) < 3)
+        throw new Error("A reason of at least 3 characters is required when not escalating.");
+    }
 
     n.signedBy = input.signedBy;
     n.signedAt = new Date().toISOString();
@@ -3642,6 +3693,28 @@ export const AdelanteEHR = {
         authorSource: n.authorSource ?? "human",
       },
     });
+    if (crisisScores.length > 0 && input.crisisDecision) {
+      const detail = crisisScores.map(describeCrisisScore).join("; ");
+      if (input.crisisDecision.kind === "escalate") {
+        AdelanteEHR.flagCrisis(patientId, input.signedBy, detail, {
+          triggerSource: "screener_score",
+          sourceNoteId: noteId,
+        });
+      } else {
+        appendAudit({
+          category: "clinical",
+          action: "crisis_escalation_declined",
+          patientId,
+          actorId: input.signedBy,
+          actorRole: input.role,
+          detail: {
+            noteId,
+            triggerDetail: detail,
+            reason: input.crisisDecision.reason.trim(),
+          },
+        });
+      }
+    }
     // §Phase 3c — automations fire on the transition to a FINAL signature.
     // A note routed for cosignature is not final yet, so nothing runs until
     // the cosigner attests (see cosignProgressNote).
@@ -5270,6 +5343,118 @@ export const AdelanteEHR = {
       detail: { alertId, reason: trimmed },
     });
     emit();
+  },
+
+  // ----- §Crisis escalation ------------------------------------------------
+  // Two records, one act: the PatientAlert (the visible flag, created through
+  // the SAME addAlert path as every other alert) and the CrisisEscalation
+  // (the workflow wrapper the cross-patient queue reads). Resolution closes
+  // the alert through softDeleteAlert — there is no second alert-closing path.
+  CRISIS_ALERT_LABEL: "Crisis escalation — active",
+
+  listCrisisEscalations(patientId: string, opts?: { status?: CrisisEscalation["status"] }) {
+    const p = patients.find((x) => x.id === patientId);
+    const rows = p?.crisisEscalations ?? [];
+    return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
+  },
+
+  /** Cross-patient open queue, oldest-open first (longest open = most urgent). */
+  listOpenCrisisEscalations(): { patient: Patient; escalation: CrisisEscalation }[] {
+    const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
+    for (const p of patients) {
+      for (const e of p.crisisEscalations ?? []) {
+        if (e.status === "open") out.push({ patient: p, escalation: e });
+      }
+    }
+    return out.sort((a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt));
+  },
+
+  flagCrisis(
+    patientId: string,
+    staffName: string,
+    reason: string,
+    opts?: { triggerSource?: CrisisEscalation["triggerSource"]; sourceNoteId?: string },
+  ): CrisisEscalation {
+    const detail = reason?.trim();
+    if (!detail || detail.length < 3)
+      throw new Error("A reason of at least 3 characters is required to flag a crisis.");
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found");
+    const alert = AdelanteEHR.addAlert(patientId, {
+      label: AdelanteEHR.CRISIS_ALERT_LABEL,
+      severity: "critical",
+      notes: detail,
+      enteredBy: staffName,
+    });
+    const row: CrisisEscalation = {
+      id: uid(),
+      patientId,
+      alertId: alert.id,
+      triggerSource: opts?.triggerSource ?? "manual",
+      triggerDetail: detail,
+      triggeredBy: staffName,
+      triggeredAt: new Date().toISOString(),
+      status: "open",
+    };
+    p.crisisEscalations = [row, ...(p.crisisEscalations ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_flagged",
+      patientId,
+      actorId: staffName,
+      detail: {
+        escalationId: row.id,
+        alertId: alert.id,
+        triggerSource: row.triggerSource,
+        triggerDetail: detail,
+        sourceNoteId: opts?.sourceNoteId ?? null,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  resolveCrisisEscalation(
+    patientId: string,
+    id: string,
+    staffName: string,
+    input: { contactedWhom?: string; actionsTaken?: string; disposition: string },
+  ): CrisisEscalation {
+    const disposition = input.disposition?.trim();
+    if (!disposition) throw new Error("A disposition is required to resolve a crisis escalation.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    if (row.status === "resolved") throw new Error("This escalation is already resolved.");
+    row.status = "resolved";
+    row.contactedWhom = input.contactedWhom?.trim() || undefined;
+    row.actionsTaken = input.actionsTaken?.trim() || undefined;
+    row.disposition = disposition;
+    row.resolutionReason = disposition;
+    row.resolvedBy = staffName;
+    row.resolvedAt = new Date().toISOString();
+    // Close the visible flag through the existing remove-alert-with-reason path.
+    AdelanteEHR.softDeleteAlert(
+      patientId,
+      row.alertId,
+      `Crisis escalation resolved — ${disposition}`,
+      staffName,
+    );
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_resolved",
+      patientId,
+      actorId: staffName,
+      detail: {
+        escalationId: row.id,
+        alertId: row.alertId,
+        disposition,
+        contactedWhom: row.contactedWhom ?? null,
+        actionsTaken: row.actionsTaken ?? null,
+      },
+    });
+    emit();
+    return row;
   },
 
   // ----- Orders (§Orders — BaggaEMR OrderCart port, core only) -------------

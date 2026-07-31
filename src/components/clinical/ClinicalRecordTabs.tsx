@@ -8,6 +8,7 @@ import {
   type PatientAlert,
 } from "@/lib/ehr";
 import { useActingStaff, canAccess } from "@/lib/roles";
+import { PatientCrisisPanel } from "@/components/clinical/CrisisPanel";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -487,6 +488,7 @@ export function AlertsTab({ patientId }: { patientId: string }) {
 
   return (
     <div className="space-y-3">
+      <PatientCrisisPanel patientId={patientId} />
       {canWrite && (
         <Card className="p-3 space-y-2">
           <div className="text-xs font-medium text-navy">Add alert</div>

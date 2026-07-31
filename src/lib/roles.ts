@@ -51,6 +51,7 @@ export type RecordClass =
   | "care_coordination"
   | "custody_tracking"
   | "population_health"
+  | "crisis_queue"
   | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
@@ -196,6 +197,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     case_manager: "read",
     peer_specialist: "read",
   },
+  // §Crisis escalation queue. Cross-patient, NOT patient-scoped, and more
+  // clinically sensitive than population_health with no revenue angle:
+  // clinical_coordinator + sys_admin write (they own disposition), the
+  // treating clinical roles read. Billing, billing_coordinator, and
+  // peer_specialist are deliberately excluded — peers can still FLAG a crisis
+  // from a patient record, they just don't get population-wide visibility.
+  crisis_queue: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
+  },
 };
 
 export function canAccess(
@@ -212,6 +229,24 @@ export function canAccess(
       : { level: "none", locked: true, reason: "42 CFR Part 2 — consent required" };
   }
   return { level, locked: level === "none" };
+}
+
+/**
+ * §Crisis escalation — flagging is deliberately broader than the crisis QUEUE.
+ * Anyone clinical-facing can observe a crisis and raise the flag; cross-patient
+ * visibility and disposition remain gated by the `crisis_queue` record class.
+ */
+export const CRISIS_FLAG_ROLES: StaffRole[] = [
+  "pmhnp",
+  "therapist",
+  "case_manager",
+  "peer_specialist",
+  "clinical_coordinator",
+  "sys_admin",
+];
+
+export function canFlagCrisis(role: StaffRole): boolean {
+  return CRISIS_FLAG_ROLES.includes(role);
 }
 
 // ----- Acting-role store (localStorage-backed, subscribable) -----
