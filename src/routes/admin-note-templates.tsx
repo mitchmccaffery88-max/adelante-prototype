@@ -433,6 +433,34 @@ function TemplateBuilderDialog({
         <div className="space-y-3">
           {sections.map((section, si) => (
             <Card key={section.id} className="space-y-3 p-3">
+              <div className="space-y-1.5">
+                <Label className="text-xs">Section type</Label>
+                <Select
+                  value={section.type ?? "fields"}
+                  onValueChange={(v) =>
+                    updateSection(si, {
+                      type: v as SectionType,
+                      // Non-field sections carry no answerable fields.
+                      fields: v === "fields" ? section.fields : [],
+                      autofill:
+                        v === "autofill_section"
+                          ? (section.autofill ?? { source: "medications_active" })
+                          : undefined,
+                      allow: v === "orders_section" ? (section.allow ?? { meds: true }) : undefined,
+                      quick_picks: v === "orders_section" ? section.quick_picks : undefined,
+                    })
+                  }
+                >
+                  <SelectTrigger aria-label="Section type">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="fields">Fields — questions and answers</SelectItem>
+                    <SelectItem value="orders_section">Orders — meds / referrals</SelectItem>
+                    <SelectItem value="autofill_section">Autofill — read-only chart data</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
               <div className="grid gap-2 sm:grid-cols-[1fr_1fr_auto]">
                 <div className="space-y-1.5">
                   <Label className="text-xs">Section title</Label>
@@ -469,6 +497,14 @@ function TemplateBuilderDialog({
                 </Button>
               </div>
 
+              {!isFieldsSection(section) && (
+                <NonFieldSectionEditor
+                  section={section}
+                  onChange={(patch) => updateSection(si, patch)}
+                />
+              )}
+
+              {isFieldsSection(section) && (
               <div className="space-y-3">
                 {section.fields.map((field, fi) => (
                   <div key={fi} className="space-y-2 rounded-md border border-border p-2">
@@ -659,6 +695,7 @@ function TemplateBuilderDialog({
                   <Plus className="mr-1 h-3.5 w-3.5" /> Add field
                 </Button>
               </div>
+              )}
             </Card>
           ))}
           <Button
