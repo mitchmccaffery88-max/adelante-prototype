@@ -282,8 +282,7 @@ function TemplateBuilderDialog({
   const schema: TemplateSchema = { sections, scoring: scoring.length ? scoring : undefined };
   // A schema edit changes answer semantics, so it publishes a new version
   // instead of rewriting the one existing notes were answered against.
-  const schemaChanged =
-    !!template && JSON.stringify(schema) !== JSON.stringify(template.schema);
+  const schemaChanged = !!template && JSON.stringify(schema) !== JSON.stringify(template.schema);
   const nextVersion = (template?.version ?? 0) + 1;
 
   const updateSection = (i: number, patch: Partial<TemplateSection>) =>

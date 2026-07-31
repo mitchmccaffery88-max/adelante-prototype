@@ -687,7 +687,9 @@ export interface ShiftCount {
  * controlled with no schedule recorded is treated as CII (conservative).
  * CIII–CV do NOT require a witness.
  */
-export function requiresDoseWitness(order: Pick<MedOrder, "isControlled" | "deaSchedule">): boolean {
+export function requiresDoseWitness(
+  order: Pick<MedOrder, "isControlled" | "deaSchedule">,
+): boolean {
   if (!order.isControlled) return false;
   return !order.deaSchedule || order.deaSchedule === "CII";
 }
@@ -2691,12 +2693,15 @@ function _flagProviderSwitch(input: {
 const SUD_SCREENER_KEYS = new Set(["audit", "dast-10"]);
 const SUD_MED_RE = /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol/i;
 
-function _composeSummary(p: Patient, parts: {
-  goalsOpen: number;
-  sdohOpen: number;
-  medsActive: number;
-  nextApptStart?: string;
-}): string {
+function _composeSummary(
+  p: Patient,
+  parts: {
+    goalsOpen: number;
+    sdohOpen: number;
+    medsActive: number;
+    nextApptStart?: string;
+  },
+): string {
   if (!p.intakeCompletedAt) return "Care plan will appear here after intake.";
   const out: string[] = [];
   const phq = p.screeners["phq-9"];
@@ -2704,11 +2709,17 @@ function _composeSummary(p: Patient, parts: {
   if (phq) out.push(`Your mood check (PHQ-9) shows ${phq.severity.toLowerCase()} symptoms.`);
   if (gad) out.push(`Your worry check (GAD-7) shows ${gad.severity.toLowerCase()} anxiety.`);
   if (parts.goalsOpen)
-    out.push(`You're working on ${parts.goalsOpen} goal${parts.goalsOpen === 1 ? "" : "s"} with your care team.`);
+    out.push(
+      `You're working on ${parts.goalsOpen} goal${parts.goalsOpen === 1 ? "" : "s"} with your care team.`,
+    );
   if (parts.sdohOpen)
-    out.push(`${parts.sdohOpen} life need${parts.sdohOpen === 1 ? "" : "s"} (like housing or food) are in progress.`);
+    out.push(
+      `${parts.sdohOpen} life need${parts.sdohOpen === 1 ? "" : "s"} (like housing or food) are in progress.`,
+    );
   if (parts.medsActive)
-    out.push(`Your care team is managing ${parts.medsActive} medication${parts.medsActive === 1 ? "" : "s"} with you.`);
+    out.push(
+      `Your care team is managing ${parts.medsActive} medication${parts.medsActive === 1 ? "" : "s"} with you.`,
+    );
   if (parts.nextApptStart) out.push("Your next session is scheduled — we'll see you soon.");
   if (out.length === 0) out.push("Your care team will add next steps here as you start visits.");
   return out.join(" ");
@@ -2767,11 +2778,12 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const focusAreas: CarePlanFocusArea[] = [];
   const phq = p.screeners["phq-9"];
   const gad = p.screeners["gad-7"];
-  if (phq) focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `PHQ-9 ${phq.severity}` });
-  else if (gad) focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `GAD-7 ${gad.severity}` });
+  if (phq)
+    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `PHQ-9 ${phq.severity}` });
+  else if (gad)
+    focusAreas.push({ key: "mh", label: "Mood & anxiety", severity: `GAD-7 ${gad.severity}` });
   const hasSud = p.needs?.substanceUse || p.screeners["audit"] || p.screeners["dast-10"];
-  if (hasSud)
-    focusAreas.push({ key: "sud", label: "Substance use support", sensitive: true });
+  if (hasSud) focusAreas.push({ key: "sud", label: "Substance use support", sensitive: true });
   if (sdohOpen.length)
     focusAreas.push({ key: "sdoh", label: "Life needs", severity: `${sdohOpen.length} open` });
   if (medications.length)
@@ -3578,7 +3590,8 @@ export const AdelanteEHR = {
       throw new Error("Your role cannot cosign clinical notes.");
     if (n.cosignRole?.length && !n.cosignRole.includes(input.role))
       throw new Error("This note requires a different cosigning role.");
-    if (n.signedBy === input.cosignedBy) throw new Error("A note cannot be cosigned by its signer.");
+    if (n.signedBy === input.cosignedBy)
+      throw new Error("A note cannot be cosigned by its signer.");
 
     n.cosignedBy = input.cosignedBy;
     n.cosignedAt = new Date().toISOString();
@@ -3616,7 +3629,8 @@ export const AdelanteEHR = {
     if (!n) throw new Error("Note not found.");
     if (noteStatus(n) !== "cosign_pending") throw new Error("This note is not awaiting cosign.");
     const reason = (input.reason ?? "").trim();
-    if (reason.length < 3) throw new Error("A decline reason of at least 3 characters is required.");
+    if (reason.length < 3)
+      throw new Error("A decline reason of at least 3 characters is required.");
 
     n.declineReason = reason;
     n.declinedBy = input.declinedBy;
@@ -5295,9 +5309,7 @@ export const AdelanteEHR = {
       if (prn) {
         const elig = AdelanteEHR.prnEligibility(patientId, orderId);
         if (elig.blocked)
-          throw new Error(
-            `PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`,
-          );
+          throw new Error(`PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`);
       }
       if (requiresDoseWitness(order) && !witness)
         throw new Error(
@@ -5569,10 +5581,7 @@ export const AdelanteEHR = {
   },
 
   // ----- Refusal legal document (§MAR Phase 3) ------------------------------
-  listRefusalForms(
-    patientId: string,
-    opts?: { status?: RefusalForm["status"] },
-  ): RefusalForm[] {
+  listRefusalForms(patientId: string, opts?: { status?: RefusalForm["status"] }): RefusalForm[] {
     const rows = patients.find((x) => x.id === patientId)?.refusalForms ?? [];
     return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
   },
@@ -5686,7 +5695,12 @@ export const AdelanteEHR = {
       category: "clinical",
       action: "risk_text_review_revoked",
       actorId: actorName,
-      detail: { language: lang, fromVersion: previous, toVersion: review.draftVersion, reason: why },
+      detail: {
+        language: lang,
+        fromVersion: previous,
+        toVersion: review.draftVersion,
+        reason: why,
+      },
     });
     emit();
     return { ...review, signoffs: [] };
@@ -6035,9 +6049,12 @@ export const AdelanteEHR = {
    * reuse a normalized-name match — the admin should merge instead.
    */
   createFacility(
-    input: { name: string; kind: FacilityKind; city?: string; timezone?: string } & Partial<
-      FacilityProfile
-    >,
+    input: {
+      name: string;
+      kind: FacilityKind;
+      city?: string;
+      timezone?: string;
+    } & Partial<FacilityProfile>,
     staffName: string,
   ): Facility {
     const name = (input.name ?? "").trim().replace(/\s+/g, " ");
@@ -6069,9 +6086,12 @@ export const AdelanteEHR = {
   /** Edit name/type/city/timezone. Name changes route through renameFacility rules. */
   updateFacility(
     facilityId: string,
-    patch: { name?: string; kind?: FacilityKind; city?: string; timezone?: string } & Partial<
-      FacilityProfile
-    >,
+    patch: {
+      name?: string;
+      kind?: FacilityKind;
+      city?: string;
+      timezone?: string;
+    } & Partial<FacilityProfile>,
     staffName: string,
   ): Facility {
     const row = facilities.find((f) => f.id === facilityId);
@@ -6487,7 +6507,9 @@ export const AdelanteEHR = {
         rows.push({ patient: p, order, administration: a });
       }
     }
-    return rows.sort((a, b) => a.administration.chartedAt.localeCompare(b.administration.chartedAt));
+    return rows.sort((a, b) =>
+      a.administration.chartedAt.localeCompare(b.administration.chartedAt),
+    );
   },
 
   /** Aggregate controlled administrations in a window into count lines. */
@@ -6510,7 +6532,8 @@ export const AdelanteEHR = {
     });
     const map = new Map<string, ShiftCountLine & { patientIds: Set<string> }>();
     for (const { order, patient, administration } of rows) {
-      const doseLabel = order.strengthText || (order.doseTargetMg ? `${order.doseTargetMg} mg` : "—");
+      const doseLabel =
+        order.strengthText || (order.doseTargetMg ? `${order.doseTargetMg} mg` : "—");
       const key = `${order.drugName}|${doseLabel}|${order.deaSchedule}`;
       let line = map.get(key);
       if (!line) {
@@ -6596,7 +6619,9 @@ export const AdelanteEHR = {
 
   /** Locked counts, newest first. Copies out so callers cannot mutate history. */
   listShiftCounts(limit = 20): ShiftCount[] {
-    return shiftCounts.slice(0, limit).map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
+    return shiftCounts
+      .slice(0, limit)
+      .map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
   },
 
   // ----- §Population health: KPI targets ----------------------------------
@@ -6655,7 +6680,12 @@ export const AdelanteEHR = {
 
   updateKpiTarget(
     targetId: string,
-    patch: Partial<Pick<KpiTarget, "label" | "targetValue" | "unit" | "effectiveMonth" | "source" | "notes" | "metricKey">>,
+    patch: Partial<
+      Pick<
+        KpiTarget,
+        "label" | "targetValue" | "unit" | "effectiveMonth" | "source" | "notes" | "metricKey"
+      >
+    >,
     staffName: string,
   ): KpiTarget {
     const row = kpiTargets.find((t) => t.id === targetId);
@@ -6668,7 +6698,8 @@ export const AdelanteEHR = {
       row.label = label;
     }
     if (patch.targetValue !== undefined) {
-      if (!Number.isFinite(patch.targetValue)) throw new Error("A numeric target value is required.");
+      if (!Number.isFinite(patch.targetValue))
+        throw new Error("A numeric target value is required.");
       row.targetValue = patch.targetValue;
     }
     if (patch.unit) row.unit = patch.unit;
@@ -6901,9 +6932,7 @@ export const AdelanteEHR = {
         version: row.version + 1,
         title: nextTitle,
         description:
-          patch.description !== undefined
-            ? patch.description.trim() || undefined
-            : row.description,
+          patch.description !== undefined ? patch.description.trim() || undefined : row.description,
         encounterType:
           patch.encounterType !== undefined
             ? patch.encounterType.trim() || "general"
@@ -7060,7 +7089,15 @@ export const AdelanteEHR = {
     patch: Partial<
       Pick<
         MedReconItem,
-        "decision" | "newDose" | "newFrequency" | "newRoute" | "decisionNote" | "drugName" | "dose" | "frequency" | "route"
+        | "decision"
+        | "newDose"
+        | "newFrequency"
+        | "newRoute"
+        | "decisionNote"
+        | "drugName"
+        | "dose"
+        | "frequency"
+        | "route"
       >
     >,
     staffName?: string,
@@ -7148,7 +7185,9 @@ export const AdelanteEHR = {
     const row = p.medReconItems?.find((i) => i.id === itemId && i.reconciliationId === reconId);
     if (!row) throw new Error("Reconciliation item not found.");
     if (row.source !== "home")
-      throw new Error("An active medication must be decided (continue / modify / stop), not removed.");
+      throw new Error(
+        "An active medication must be decided (continue / modify / stop), not removed.",
+      );
     p.medReconItems = (p.medReconItems ?? []).filter((i) => i.id !== itemId);
     appendAudit({
       category: "clinical",
