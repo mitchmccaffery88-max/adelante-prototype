@@ -3400,6 +3400,23 @@ export const AdelanteEHR = {
   },
 
   // ---------- Catalog strength-resolution telemetry ----------
+  /** Audit trail for exported refusal documents (who took a copy, and when). */
+  recordRefusalFormExport(input: {
+    patientId: string;
+    formId: string;
+    filename: string;
+    staffName: string;
+  }) {
+    appendAudit({
+      category: "clinical",
+      action: "refusal_form_exported",
+      patientId: input.patientId,
+      actor: input.staffName,
+      detail: { formId: input.formId, filename: input.filename, format: "pdf" },
+    });
+    emit();
+  },
+
   // Recorded at catalog-selection time so admins can see how often RxNav data
   // was insufficient, not just which orders ended up manually dosed.
   recordCatalogResolution(input: {
