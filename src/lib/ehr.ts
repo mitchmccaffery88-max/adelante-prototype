@@ -6801,7 +6801,13 @@ export const AdelanteEHR = {
   },
 
   createNoteTemplate(
-    input: { key: string; title: string; encounterType: string; schema: TemplateSchema },
+    input: {
+      key: string;
+      title: string;
+      description?: string;
+      encounterType: string;
+      schema: TemplateSchema;
+    },
     staffName: string,
   ): NoteTemplate {
     const key = (input.key ?? "").trim();
@@ -6814,6 +6820,7 @@ export const AdelanteEHR = {
       id: uid(),
       key,
       title,
+      description: (input.description ?? "").trim() || undefined,
       encounterType: (input.encounterType ?? "").trim() || "general",
       schema: input.schema ?? { sections: [] },
       active: true,
@@ -6833,7 +6840,7 @@ export const AdelanteEHR = {
 
   updateNoteTemplate(
     templateId: string,
-    patch: Partial<Pick<NoteTemplate, "title" | "encounterType" | "schema">>,
+    patch: Partial<Pick<NoteTemplate, "title" | "description" | "encounterType" | "schema">>,
     staffName: string,
   ): NoteTemplate {
     const row = noteTemplates.find((t) => t.id === templateId);
@@ -6843,6 +6850,7 @@ export const AdelanteEHR = {
       if (!title) throw new Error("A template title is required.");
       row.title = title;
     }
+    if (patch.description !== undefined) row.description = patch.description.trim() || undefined;
     if (patch.encounterType !== undefined)
       row.encounterType = patch.encounterType.trim() || "general";
     if (patch.schema) row.schema = patch.schema;
