@@ -388,6 +388,7 @@ function DraftOrderCard({
           <Input
             className={cn("mt-1", blocked.has("duration") && REQ_FIELD)}
             inputMode="numeric"
+            aria-label="Duration"
             value={order.durationValue ?? ""}
             onChange={(e) => patch({ durationValue: num(e.target.value) })}
           />
