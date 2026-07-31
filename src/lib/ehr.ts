@@ -2208,6 +2208,27 @@ function patientLabel(patientId?: string): string {
  */
 export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["case_manager", "therapist", "pmhnp"];
 
+/**
+ * §Part 2 backstop selection — DERIVED from the RBAC matrix, never hardcoded.
+ *
+ * A backstop must satisfy two conditions at once:
+ *  1. it can actually work the message thread (write-level `patient_messaging`,
+ *     i.e. it is in MESSAGE_SUD_FLAG_ROLES), and
+ *  2. `canAccess(role, "screeners_sud", patient)` is NOT locked for THIS
+ *     patient — the same single check that does the masking.
+ *
+ * Reading condition 2 from `canAccess` (rather than naming therapist/pmhnp
+ * inline) means the confirmed policy — therapist and pmhnp un-gated as direct
+ * treating clinicians, case_manager/peer_specialist consent-gated because
+ * coordination is not treatment — stays the single source of truth. Flip a
+ * cell in the matrix and backstop selection follows automatically.
+ */
+function pickSudBackstopRole(patient: Patient, excludeRole?: StaffRole): StaffRole | undefined {
+  return MESSAGE_SUD_FLAG_ROLES.find(
+    (r) => r !== excludeRole && !canAccess(r, "screeners_sud", patient).locked,
+  );
+}
+
 function setCareMessageSudFlag(
   patientId: string,
   messageId: string,
@@ -2253,9 +2274,7 @@ function setCareMessageSudFlag(
         patientId,
       });
     }
-    const backstop = (["therapist", "pmhnp"] as StaffRole[]).find(
-      (r) => r !== role && !canAccess(r, "screeners_sud", p!).locked,
-    );
+    const backstop = pickSudBackstopRole(p!, role);
     if (backstop) {
       AdelanteEHR.notify({
         recipientRole: backstop,
