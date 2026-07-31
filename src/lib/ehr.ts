@@ -5107,6 +5107,44 @@ export const AdelanteEHR = {
     emit();
   },
   /**
+   * §Phase 3b — stamp draft orders staged inside a note's orders_section with
+   * the note they came from, once the note row exists. Traceability only: it
+   * does not change validation, lifecycle or attestation.
+   */
+  linkOrdersToNote(patientId: string, noteId: string, orderIds: string[]): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || orderIds.length === 0) return;
+    let touched = 0;
+    for (const o of p.orders ?? []) {
+      if (!orderIds.includes(o.id) || o.sourceNoteId) continue;
+      o.sourceNoteId = noteId;
+      touched++;
+    }
+    if (!touched) return;
+    appendAudit({
+      category: "clinical",
+      action: "order_linked_to_note",
+      patientId,
+      detail: { noteId, orderIds },
+    });
+    emit();
+  },
+  _removeDraftOrderLegacy(patientId: string, orderId: string, actor?: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const row = p.orders?.find((o) => o.id === orderId);
+    if (!row || row.status !== "draft") return;
+    p.orders = (p.orders ?? []).filter((o) => o.id !== orderId);
+    appendAudit({
+      category: "clinical",
+      action: "order_draft_removed",
+      patientId,
+      actorId: actor,
+      detail: { orderId, drugName: row.drugName },
+    });
+    emit();
+  },
+  /**
    * Release draft orders to the chart. Callers MUST have run the validation
    * gate (`validateOrder`) and captured attestation first — this method trusts
    * the caller, matching the reference EMR where the cart owns the gate.
