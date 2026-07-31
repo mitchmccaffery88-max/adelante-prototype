@@ -2175,6 +2175,59 @@ const auditEvents: AuditEvent[] = [];
  */
 const shiftCounts: ShiftCount[] = [];
 
+// §Population health — admin-configured KPI targets (top-level reporting
+// config). Seeded with a couple of realistic targets so the dashboard has
+// something to compare against on first load, including one target whose
+// metric has no live source yet — that row is the honest "target set, no live
+// metric yet" case the dashboard must render gracefully.
+const kpiTargets: KpiTarget[] = [
+  {
+    id: "kpi-mar",
+    metricKey: "mar_compliance_pct",
+    label: "MAR compliance (30 days)",
+    targetValue: 95,
+    unit: "percent",
+    source: "Internal clinical goal",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-notes",
+    metricKey: "unsigned_notes_count",
+    label: "Unsigned notes",
+    targetValue: 5,
+    unit: "count",
+    source: "Documentation policy",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-tasks",
+    metricKey: "overdue_task_count",
+    label: "Overdue tasks",
+    targetValue: 10,
+    unit: "count",
+    source: "Care coordination goal",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-controlled",
+    metricKey: "controlled_count_discrepancies",
+    label: "Controlled count discrepancies",
+    targetValue: 0,
+    unit: "count",
+    source: "Custody partner requirement",
+    notes: "No live metric — shift count has no discrepancy field yet.",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+];
+
 /**
  * §Facility registry — top-level, not patient-scoped: a facility is shared by
  * every patient booked there, which is the whole point of having ids.
