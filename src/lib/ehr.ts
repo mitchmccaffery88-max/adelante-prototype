@@ -1280,6 +1280,28 @@ export interface Allergy {
   removedReason?: string;
 }
 
+// §Crisis escalation — Adelante-native (no BaggaEMR equivalent).
+// The visible flag IS a PatientAlert; this record is the workflow wrapper that
+// makes the escalation trackable across the population until it is dispositioned.
+export interface CrisisEscalation {
+  id: string;
+  patientId: string;
+  /** The underlying PatientAlert record — that alert is the visible flag. */
+  alertId: string;
+  triggerSource: "manual" | "screener_score";
+  /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
+  triggerDetail?: string;
+  triggeredBy: string;
+  triggeredAt: string;
+  status: "open" | "resolved";
+  contactedWhom?: string;
+  actionsTaken?: string;
+  disposition?: string;
+  resolvedBy?: string;
+  resolvedAt?: string;
+  resolutionReason?: string;
+}
+
 export interface PatientAlert {
   id: string;
   patientId: string;
