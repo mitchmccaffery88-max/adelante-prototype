@@ -5551,6 +5551,12 @@ export const AdelanteEHR = {
     return AdelanteEHR.listHousingMoves(patientId, latest.id)[0]?.housingUnit;
   },
 
+  /** Facility of the patient's newest booking episode, resolved by id. */
+  currentFacility(patientId: string): Facility | undefined {
+    const latest = AdelanteEHR.listBookings(patientId)[0];
+    return latest ? AdelanteEHR.getFacility(latest.facilityId) : undefined;
+  },
+
   /**
    * §Released patient search — cross-patient roster query.
    *
