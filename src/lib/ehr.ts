@@ -4442,7 +4442,7 @@ export const AdelanteEHR = {
     if (!row || row.readAt) return;
     row.readAt = new Date().toISOString();
     appendAudit({
-      category: "system",
+      category: "access",
       action: "notification_read",
       actorId: staffName,
       patientId: row.patientId,
@@ -4456,7 +4456,7 @@ export const AdelanteEHR = {
     const now = new Date().toISOString();
     for (const r of rows) r.readAt = now;
     appendAudit({
-      category: "system",
+      category: "access",
       action: "notifications_all_read",
       actorId: staffName,
       detail: { count: rows.length },
