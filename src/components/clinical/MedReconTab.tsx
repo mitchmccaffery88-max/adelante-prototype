@@ -411,7 +411,36 @@ function ActiveSession({
           </div>
         </div>
       )}
+
+      <AlertDialog open={!!pendingDecision} onOpenChange={() => setPendingDecision(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Continue without a reason note?</AlertDialogTitle>
+            <AlertDialogDescription>
+              You selected <strong>{pendingDecision && MED_RECON_DECISION_LABEL[pendingDecision.decision]}</strong>{" "}
+              for <strong>{pendingDecision?.item.drugName}</strong> but did not enter a note. If you complete this
+              reconciliation, the linked order will be discontinued with the fallback reason:
+              <em>
+                {" "}
+                {pendingDecision && fallbackReason(pendingDecision.decision as "stop" | "modify")}
+              </em>
+              .
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel onClick={() => setPendingDecision(null)}>Go back and add a note</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (pendingDecision) applyDecision(pendingDecision.item, pendingDecision.decision);
+              }}
+            >
+              Continue with fallback reason
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </Card>
+
   );
 }
 
