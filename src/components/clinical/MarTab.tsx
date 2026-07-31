@@ -511,7 +511,9 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
     const isPrn = slot.kind === "prn";
     const late = !isPrn && isLateEntry(slot.scheduledAt);
     const needsWitness = requiresDoseWitness(slot.order);
-    const elig = isPrn ? AdelanteEHR.prnEligibility(patientId, slot.order.id) : undefined;
+    const elig = isPrn
+      ? AdelanteEHR.prnEligibility(patientId, slot.order.id, new Date(now))
+      : undefined;
     const givenBlocked = !!elig?.blocked;
 
     const pick = (a: Action, reason?: string) => {
