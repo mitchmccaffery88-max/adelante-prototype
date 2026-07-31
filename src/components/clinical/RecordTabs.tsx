@@ -1805,6 +1805,12 @@ function ProgressNoteCard({
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
+  // §Phase 3c — what signing will ALSO do. Same selection the runner uses, so
+  // the preview can never disagree with the behaviour.
+  const plannedAuto = useEhr(() =>
+    AdelanteEHR.plannedNoteAutomations(patientId, note.templateSchema, note.templateAnswers),
+  );
+  const automationRuns = useEhr(() => AdelanteEHR.listNoteAutomationRuns(note.id));
   // Structured templates gate signing: a required question left blank is the
   // same class of defect as an unattested signature.
   const missing = note.templateSchema
