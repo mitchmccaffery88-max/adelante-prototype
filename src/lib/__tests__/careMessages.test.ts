@@ -91,12 +91,12 @@ describe("care message Part 2 flagging", () => {
     expect(flagged.sudFlagged).toBe(true);
     expect(flagged.sudFlaggedBy).toBe("Christi");
     expect(flagged.sudFlaggedAt).toBeTruthy();
-    const actions = AdelanteEHR.listAudit().map((a) => a.action);
+    const actions = AdelanteEHR.listAuditEvents().map((a) => a.action);
     expect(actions).toContain("care_message_sud_flagged");
 
     expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
     expect(AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!.sudFlagged).toBe(false);
-    expect(AdelanteEHR.listAudit().map((a) => a.action)).toContain("care_message_sud_unflagged");
+    expect(AdelanteEHR.listAuditEvents().map((a) => a.action)).toContain("care_message_sud_unflagged");
   });
 
   it("masks the body for a role failing the SUD consent check, restores on unflag", () => {
@@ -118,8 +118,9 @@ describe("care message Part 2 flagging", () => {
   });
 
   it("keeps the patient_message notification body generic", () => {
-    AdelanteEHR.sendPatientMessage(pid, "do not echo this text");
-    const notes = AdelanteEHR.listNotificationsFor("Christi", "case_manager").filter(
+    const cmPid = AdelanteEHR.listPatients().find((x) => x.caseManagerId === "cm1")!.id;
+    AdelanteEHR.sendPatientMessage(cmPid, "do not echo this text");
+    const notes = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "case_manager").filter(
       (n) => n.category === "patient_message",
     );
     expect(notes.length).toBeGreaterThan(0);
