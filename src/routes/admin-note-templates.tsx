@@ -23,6 +23,10 @@ import {
   type AutofillSource,
   isFieldsSection,
   type TemplateAnswers,
+  summarizeAutomation,
+  type Automation,
+  type AutomationAction,
+  type AutomationPriority,
 } from "@/lib/templateSchema";
 import {
   NoteAutofillCard,
