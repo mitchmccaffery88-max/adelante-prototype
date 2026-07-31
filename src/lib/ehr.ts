@@ -5549,6 +5549,16 @@ export const AdelanteEHR = {
         sourceNoteId: opts?.sourceNoteId ?? null,
       },
     });
+    // §Notification feed — clinical_coordinator owns crisis disposition. This
+    // is the single call site for both manual and screener-triggered flags.
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "crisis_flagged",
+      subject: `Crisis flagged — ${patientLabel(patientId)}`,
+      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : "manual"}): ${detail}`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
     emit();
     return row;
   },
