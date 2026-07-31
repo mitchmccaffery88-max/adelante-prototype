@@ -14,7 +14,7 @@ function order(over: Partial<MedOrder> = {}): MedOrder {
     drugName: "Sertraline",
     dose: "50 mg",
     route: "PO",
-    frequencyCode: "qd",
+    frequencyCode: "QAM",
     frequency: "Once daily",
     status: "signed",
     ...over,
@@ -43,7 +43,7 @@ describe("autofill — medications_active", () => {
     const c = ctx({
       orders: [
         order({ id: "o1" }),
-        order({ id: "o2", drugName: "Ibuprofen", frequencyCode: "q6h_prn" }),
+        order({ id: "o2", drugName: "Ibuprofen", frequencyCode: "Q6H_PRN" }),
         order({ id: "o3", drugName: "Old med", status: "discontinued" }),
       ],
     });
@@ -151,7 +151,7 @@ describe("quick picks are a starting point, not a bypass", () => {
         id: "qp2",
         drugName: "Buprenorphine/naloxone",
         dose: "8-2 mg",
-        frequencyCode: "qd",
+        frequencyCode: "QAM",
         isControlled: true,
         deaSchedule: "CIII",
         isKop: true,
