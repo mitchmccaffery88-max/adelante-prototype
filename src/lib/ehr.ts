@@ -68,6 +68,16 @@ export interface CareMessage {
   createdAt: string;
   readByPatientAt?: string;
   readByStaffAt?: string;
+  /**
+   * §Part 2 gate — set by a HUMAN reviewer who read the message and judged it
+   * to contain SUD/42 CFR Part 2 content. There is no automatic detection.
+   * When true, staff viewers who fail `canAccess(role, "screeners_sud",
+   * patient)` see a masked placeholder instead of the body. The patient always
+   * sees their own thread in full.
+   */
+  sudFlagged?: boolean;
+  sudFlaggedBy?: string;
+  sudFlaggedAt?: string;
 }
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
