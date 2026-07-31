@@ -424,15 +424,19 @@ export const LATE_ENTRY_THRESHOLD_HOURS = 4;
 /**
  * §Custody tracking — a jail/facility booking episode.
  *
- * NOTE(facility): `facilityName` is free text. Adelante has no first-class
- * Facility entity, so multi-facility reporting (rollups, per-site counts,
- * per-site timezones) is NOT possible without one. Flag this the moment
- * cross-facility reporting is asked for.
+ * `facilityId` references a first-class `Facility`; `facilityName` is a
+ * DENORMALIZED DISPLAY SNAPSHOT frozen at write time. Reporting must always
+ * group on `facilityId` — the snapshot exists so a historical row keeps the
+ * name it was recorded under even after the facility is renamed, exactly the
+ * way risk-text snapshots work on refusal forms.
  */
 export interface Booking {
   id: string;
   patientId: string;
   bookingNumber: string;
+  /** References `Facility.id` — the reporting key. */
+  facilityId: string;
+  /** Display snapshot at write time. Never group on this. */
   facilityName: string;
   bookedAt: string;
   releasedAt?: string;
@@ -448,11 +452,51 @@ export interface HousingMove {
   /** References `Booking.id`. */
   bookingId: string;
   movedAt: string;
+  /** References `Facility.id` — the reporting key. */
+  facilityId: string;
+  /** Display snapshot at write time. Never group on this. */
   facilityName: string;
   housingUnit: string;
   reason?: string;
   createdBy: string;
   createdAt: string;
+}
+
+/**
+ * §Facility — a first-class custody/partner site.
+ *
+ * Introduced so per-site reporting stops fragmenting on typos ("Fresno County
+ * Jail - Main" vs "fresno county jail — main" were previously two distinct
+ * buckets). Lookup is by NORMALIZED name (case, punctuation, dash style and
+ * whitespace folded away), so the same site typed three ways resolves to one
+ * id.
+ */
+export interface Facility {
+  id: string;
+  name: string;
+  kind: FacilityKind;
+  city?: string;
+  /** IANA zone for future per-site scheduling. Unused today, recorded now. */
+  timezone?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+}
+
+export type FacilityKind = "jail" | "prison" | "treatment" | "shelter" | "hospital" | "other";
+
+/**
+ * Fold a facility name to its matching key: case, accents, punctuation, dash
+ * style and repeated whitespace all collapse. "Fresno County Jail — Main",
+ * "fresno county jail - main" and "Fresno County Jail  Main" share a key.
+ */
+export function normalizeFacilityName(name: string): string {
+  return (name ?? "")
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim();
 }
 
 /** One aggregated controlled-substance line in a shift count. */
@@ -1893,6 +1937,53 @@ const auditEvents: AuditEvent[] = [];
  * a shift count spans every patient on the unit, so it has no owning Patient.
  */
 const shiftCounts: ShiftCount[] = [];
+
+/**
+ * §Facility registry — top-level, not patient-scoped: a facility is shared by
+ * every patient booked there, which is the whole point of having ids.
+ */
+const facilities: Facility[] = [
+  {
+    id: "fac-fresno-main",
+    name: "Fresno County Jail — Main",
+    kind: "jail",
+    city: "Fresno",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-fresno-north",
+    name: "Fresno County Jail — North Annex",
+    kind: "jail",
+    city: "Fresno",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-tulare-adult",
+    name: "Tulare County Adult Detention",
+    kind: "jail",
+    city: "Visalia",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+  {
+    id: "fac-adelante-res",
+    name: "Adelante Residential Treatment",
+    kind: "treatment",
+    city: "Visalia",
+    timezone: "America/Los_Angeles",
+    active: true,
+    createdBy: "system",
+    createdAt: "2026-01-01T00:00:00.000Z",
+  },
+];
 
 // How a catalog selection's strength was resolved, recorded at pick time.
 export type CatalogResolutionPath =
@@ -5189,11 +5280,114 @@ export const AdelanteEHR = {
 
   // ----- §Custody tracking: bookings + housing moves ----------------------
 
+  /** Active facilities first, then alphabetical. */
+  listFacilities(includeInactive = false): Facility[] {
+    return facilities
+      .filter((f) => includeInactive || f.active)
+      .slice()
+      .sort((a, b) => a.name.localeCompare(b.name));
+  },
+
+  getFacility(facilityId: string | undefined): Facility | undefined {
+    return facilities.find((f) => f.id === facilityId);
+  },
+
+  /** Match on the normalized name, so typo/dash/case variants collapse. */
+  findFacilityByName(name: string): Facility | undefined {
+    const key = normalizeFacilityName(name);
+    if (!key) return undefined;
+    return facilities.find((f) => normalizeFacilityName(f.name) === key);
+  },
+
+  /**
+   * Resolve a facility for a write. Prefers an explicit id, then a normalized
+   * name match, and only then creates a new facility — so a clinician typing
+   * an existing site slightly differently reuses that site's id instead of
+   * spawning a duplicate bucket.
+   */
+  ensureFacility(
+    input: { facilityId?: string; facilityName?: string; kind?: FacilityKind; city?: string },
+    staffName: string,
+  ): Facility {
+    if (input.facilityId) {
+      const byId = AdelanteEHR.getFacility(input.facilityId);
+      if (!byId) throw new Error("Facility not found.");
+      return byId;
+    }
+    const name = (input.facilityName ?? "").trim().replace(/\s+/g, " ");
+    if (!name) throw new Error("A facility is required.");
+    const existing = AdelanteEHR.findFacilityByName(name);
+    if (existing) return existing;
+    const row: Facility = {
+      id: uid(),
+      name,
+      kind: input.kind ?? "other",
+      city: input.city?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    facilities.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "facility_created",
+      actorId: staffName,
+      detail: { facilityId: row.id, name: row.name, kind: row.kind, city: row.city ?? null },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Rename a facility. Existing bookings/moves keep their display snapshot;
+   * only future writes and id-based rollups pick up the new name.
+   */
+  renameFacility(facilityId: string, name: string, staffName: string): Facility {
+    const row = facilities.find((f) => f.id === facilityId);
+    if (!row) throw new Error("Facility not found.");
+    const next = (name ?? "").trim().replace(/\s+/g, " ");
+    if (!next) throw new Error("A facility name is required.");
+    const clash = AdelanteEHR.findFacilityByName(next);
+    if (clash && clash.id !== facilityId)
+      throw new Error(`"${clash.name}" already exists — merge instead of renaming.`);
+    const from = row.name;
+    row.name = next;
+    appendAudit({
+      category: "clinical",
+      action: "facility_renamed",
+      actorId: staffName,
+      detail: { facilityId, from, to: next },
+    });
+    emit();
+    return row;
+  },
+
+  /** Per-facility rollup — the reporting this entity exists to make possible. */
+  facilityBookingStats(): {
+    facility: Facility;
+    bookings: number;
+    currentlyBooked: number;
+    housingMoves: number;
+  }[] {
+    const all = AdelanteEHR.listBookings();
+    const moves = AdelanteEHR.listHousingMoves();
+    return AdelanteEHR.listFacilities(true)
+      .map((facility) => ({
+        facility,
+        bookings: all.filter((b) => b.facilityId === facility.id).length,
+        currentlyBooked: all.filter((b) => b.facilityId === facility.id && !b.releasedAt).length,
+        housingMoves: moves.filter((m) => m.facilityId === facility.id).length,
+      }))
+      .filter((r) => r.bookings > 0 || r.facility.active);
+  },
+
   addBooking(
     patientId: string,
     input: {
       bookingNumber: string;
-      facilityName: string;
+      /** Either an id (autocomplete pick) or a name (free-typed, resolved). */
+      facilityId?: string;
+      facilityName?: string;
       bookedAt: string;
       bookingReason?: string;
       releasedAt?: string;
@@ -5204,8 +5398,10 @@ export const AdelanteEHR = {
     if (!p) throw new Error("Patient not found");
     const bookingNumber = input.bookingNumber?.trim();
     if (!bookingNumber) throw new Error("A booking number is required.");
-    const facilityName = input.facilityName?.trim();
-    if (!facilityName) throw new Error("A facility name is required.");
+    const facility = AdelanteEHR.ensureFacility(
+      { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+      staffName,
+    );
     if (!input.bookedAt) throw new Error("A booked date is required.");
     if (input.releasedAt && input.releasedAt < input.bookedAt)
       throw new Error("Release cannot precede booking.");
@@ -5213,7 +5409,8 @@ export const AdelanteEHR = {
       id: uid(),
       patientId,
       bookingNumber,
-      facilityName,
+      facilityId: facility.id,
+      facilityName: facility.name,
       bookedAt: input.bookedAt,
       releasedAt: input.releasedAt || undefined,
       bookingReason: input.bookingReason?.trim() || undefined,
@@ -5229,6 +5426,7 @@ export const AdelanteEHR = {
       detail: {
         bookingId: row.id,
         bookingNumber: row.bookingNumber,
+        facilityId: row.facilityId,
         facilityName: row.facilityName,
         bookedAt: row.bookedAt,
         releasedAt: row.releasedAt ?? null,
@@ -5263,7 +5461,9 @@ export const AdelanteEHR = {
     input: {
       bookingId: string;
       movedAt: string;
-      facilityName: string;
+      /** Defaults to the booking's facility when omitted. */
+      facilityId?: string;
+      facilityName?: string;
       housingUnit: string;
       reason?: string;
     },
@@ -5276,12 +5476,25 @@ export const AdelanteEHR = {
     const housingUnit = input.housingUnit?.trim();
     if (!housingUnit) throw new Error("A housing unit is required.");
     if (!input.movedAt) throw new Error("A move date is required.");
+    // A move usually stays inside the booking's facility; an explicit id/name
+    // covers an inter-facility transfer inside the same booking episode.
+    const facility =
+      input.facilityId || input.facilityName?.trim()
+        ? AdelanteEHR.ensureFacility(
+            { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+            staffName,
+          )
+        : (AdelanteEHR.getFacility(booking.facilityId) ?? {
+            id: booking.facilityId,
+            name: booking.facilityName,
+          });
     const row: HousingMove = {
       id: uid(),
       patientId,
       bookingId: booking.id,
       movedAt: input.movedAt,
-      facilityName: input.facilityName?.trim() || booking.facilityName,
+      facilityId: facility.id,
+      facilityName: facility.name,
       housingUnit,
       reason: input.reason?.trim() || undefined,
       createdBy: staffName,
@@ -5298,6 +5511,7 @@ export const AdelanteEHR = {
         bookingId: row.bookingId,
         bookingNumber: booking.bookingNumber,
         housingUnit: row.housingUnit,
+        facilityId: row.facilityId,
         facilityName: row.facilityName,
         movedAt: row.movedAt,
       },
@@ -5337,6 +5551,12 @@ export const AdelanteEHR = {
     return AdelanteEHR.listHousingMoves(patientId, latest.id)[0]?.housingUnit;
   },
 
+  /** Facility of the patient's newest booking episode, resolved by id. */
+  currentFacility(patientId: string): Facility | undefined {
+    const latest = AdelanteEHR.listBookings(patientId)[0];
+    return latest ? AdelanteEHR.getFacility(latest.facilityId) : undefined;
+  },
+
   /**
    * §Released patient search — cross-patient roster query.
    *
@@ -5351,9 +5571,11 @@ export const AdelanteEHR = {
     dob?: string;
     releasedFrom?: string;
     releasedTo?: string;
+    facilityId?: string;
   }): {
     patient: Patient;
     lastReleasedAt: string;
+    facilityId: string;
     facilityName: string;
     bookingCount: number;
   }[] {
@@ -5362,6 +5584,7 @@ export const AdelanteEHR = {
     const out: {
       patient: Patient;
       lastReleasedAt: string;
+      facilityId: string;
       facilityName: string;
       bookingCount: number;
     }[] = [];
@@ -5374,6 +5597,8 @@ export const AdelanteEHR = {
       if (criteria.dob && p.dob !== criteria.dob) continue;
       const released = bookings
         .filter((b) => b.releasedAt)
+        // Facility filter groups on the ID, never the display snapshot.
+        .filter((b) => !criteria.facilityId || b.facilityId === criteria.facilityId)
         .filter((b) => {
           const day = dayOf(b.releasedAt!);
           if (criteria.releasedFrom && day < dayOf(criteria.releasedFrom)) return false;
@@ -5386,6 +5611,7 @@ export const AdelanteEHR = {
       out.push({
         patient: p,
         lastReleasedAt: latest.releasedAt!,
+        facilityId: latest.facilityId,
         facilityName: latest.facilityName,
         bookingCount: bookings.length,
       });
@@ -5399,6 +5625,7 @@ export const AdelanteEHR = {
     lastName?: string;
     firstName?: string;
     dob?: string;
+    facilityId?: string;
   }): { patient: Patient; booking: Booking; housingUnit?: string }[] {
     const norm = (v?: string) => (v ?? "").trim().toLowerCase();
     return patients
@@ -5414,7 +5641,8 @@ export const AdelanteEHR = {
         patient: p,
         booking: AdelanteEHR.listBookings(p.id)[0],
         housingUnit: AdelanteEHR.currentHousingUnit(p.id),
-      }));
+      }))
+      .filter((r) => !criteria.facilityId || r.booking.facilityId === criteria.facilityId);
   },
 
   /**
@@ -5756,7 +5984,7 @@ export function useEhr<T>(selector: () => T): T {
       "p1",
       {
         bookingNumber: "BK-2026-1041",
-        facilityName: "Fresno County Jail — Main",
+        facilityId: "fac-fresno-main",
         bookedAt: daysAgo(46),
         bookingReason: "Probation violation",
       },
@@ -5767,7 +5995,7 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b1.id,
         movedAt: daysAgo(45),
-        facilityName: "Fresno County Jail — Main",
+        // No facility given: the move inherits the booking's facility id.
         housingUnit: "Unit 3B",
         reason: "Initial classification",
       },
@@ -5778,7 +6006,6 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b1.id,
         movedAt: daysAgo(12),
-        facilityName: "Fresno County Jail — Main",
         housingUnit: "Med Obs 1",
         reason: "Medical observation",
       },
@@ -5791,7 +6018,9 @@ export function useEhr<T>(selector: () => T): T {
       "p2",
       {
         bookingNumber: "BK-2026-1177",
-        facilityName: "Fresno County Jail — North Annex",
+        // Deliberately typed with a hyphen and lowercase: normalization folds
+        // this onto fac-fresno-north instead of minting a duplicate site.
+        facilityName: "fresno county jail - north annex",
         bookedAt: daysAgo(9),
         bookingReason: "Pending arraignment",
       },
@@ -5802,7 +6031,6 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b2.id,
         movedAt: daysAgo(9),
-        facilityName: "Fresno County Jail — North Annex",
         housingUnit: "Unit 1A",
         reason: "Intake housing",
       },

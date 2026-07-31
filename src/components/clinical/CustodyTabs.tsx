@@ -29,6 +29,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientDate } from "@/components/ClientDate";
+import { FacilityCombobox } from "@/components/clinical/FacilityCombobox";
 
 const DAY_MS = 86400_000;
 
@@ -47,6 +48,7 @@ export function BookingsTab({ patientId, readOnly }: { patientId: string; readOn
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState({
     bookingNumber: "",
+    facilityId: undefined as string | undefined,
     facilityName: "",
     bookedAt: "",
     bookingReason: "",
@@ -56,7 +58,13 @@ export function BookingsTab({ patientId, readOnly }: { patientId: string; readOn
     try {
       AdelanteEHR.addBooking(patientId, form, staffName);
       toast.success("Booking recorded.");
-      setForm({ bookingNumber: "", facilityName: "", bookedAt: "", bookingReason: "" });
+      setForm({
+        bookingNumber: "",
+        facilityId: undefined,
+        facilityName: "",
+        bookedAt: "",
+        bookingReason: "",
+      });
       setOpen(false);
     } catch (e) {
       toast.error((e as Error).message);
@@ -76,8 +84,8 @@ export function BookingsTab({ patientId, readOnly }: { patientId: string; readOn
     <div className="space-y-3">
       <div className="flex items-center justify-between gap-2">
         <p className="text-xs text-muted-foreground">
-          Booking episodes at partner custody facilities. Facility is free text — Adelante has no
-          Facility entity yet, so cross-facility rollups are not available.
+          Booking episodes at partner custody facilities. Each booking links to a registered
+          facility by ID, so per-site reporting doesn&apos;t fragment on spelling variants.
         </p>
         {!readOnly && (
           <Button size="sm" variant="outline" onClick={() => setOpen((v) => !v)}>
@@ -96,10 +104,13 @@ export function BookingsTab({ patientId, readOnly }: { patientId: string; readOn
             />
           </div>
           <div>
-            <Label className="text-xs">Facility</Label>
-            <Input
-              value={form.facilityName}
-              onChange={(e) => setForm({ ...form, facilityName: e.target.value })}
+            <Label className="text-xs" htmlFor="booking-facility">
+              Facility
+            </Label>
+            <FacilityCombobox
+              id="booking-facility"
+              value={{ facilityId: form.facilityId, facilityName: form.facilityName }}
+              onChange={(next) => setForm({ ...form, ...next })}
             />
           </div>
           <div>
@@ -190,6 +201,7 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
   const [form, setForm] = useState({
     bookingId: "",
     movedAt: "",
+    facilityId: undefined as string | undefined,
     facilityName: "",
     housingUnit: "",
     reason: "",
@@ -199,7 +211,14 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
     try {
       AdelanteEHR.addHousingMove(patientId, form, staffName);
       toast.success("Housing move recorded.");
-      setForm({ bookingId: "", movedAt: "", facilityName: "", housingUnit: "", reason: "" });
+      setForm({
+        bookingId: "",
+        movedAt: "",
+        facilityId: undefined,
+        facilityName: "",
+        housingUnit: "",
+        reason: "",
+      });
       setOpen(false);
     } catch (e) {
       toast.error((e as Error).message);
@@ -257,6 +276,17 @@ export function HousingMovesTab({ patientId, readOnly }: { patientId: string; re
             <Input
               value={form.housingUnit}
               onChange={(e) => setForm({ ...form, housingUnit: e.target.value })}
+            />
+          </div>
+          <div>
+            <Label className="text-xs" htmlFor="move-facility">
+              Facility (only if transferred)
+            </Label>
+            <FacilityCombobox
+              id="move-facility"
+              placeholder="Defaults to the booking's facility"
+              value={{ facilityId: form.facilityId, facilityName: form.facilityName }}
+              onChange={(next) => setForm({ ...form, ...next })}
             />
           </div>
           <div>

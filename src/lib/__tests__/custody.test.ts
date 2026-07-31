@@ -205,3 +205,132 @@ describe("shift count", () => {
     expect(AdelanteEHR.listShiftCounts(20)[0].totalGiven).toBe(locked.totalGiven);
   });
 });
+
+describe("facility entity", () => {
+  it("collapses spelling/case/punctuation variants onto one facility id", () => {
+    const a = newPatient("FacA");
+    const b = newPatient("FacB");
+    const b1 = AdelanteEHR.addBooking(
+      a,
+      {
+        bookingNumber: "BK-F1",
+        facilityName: "Kings County Detention",
+        bookedAt: "2026-02-01T08:00:00.000Z",
+      },
+      CM,
+    );
+    const b2 = AdelanteEHR.addBooking(
+      b,
+      {
+        // Different case, extra spaces, trailing punctuation.
+        bookingNumber: "BK-F2",
+        facilityName: "  kings  county   detention. ",
+        bookedAt: "2026-02-02T08:00:00.000Z",
+      },
+      CM,
+    );
+    expect(b2.facilityId).toBe(b1.facilityId);
+    // Display snapshot keeps the canonical registry name, not the typo.
+    expect(b2.facilityName).toBe("Kings County Detention");
+    const created = AdelanteEHR.listFacilities().filter(
+      (f) => f.name === "Kings County Detention",
+    );
+    expect(created).toHaveLength(1);
+  });
+
+  it("resolves an explicit facilityId and rejects an unknown one", () => {
+    const pid = newPatient("FacC");
+    const seeded = AdelanteEHR.listFacilities()[0];
+    const bk = AdelanteEHR.addBooking(
+      pid,
+      { bookingNumber: "BK-F3", facilityId: seeded.id, bookedAt: "2026-03-01T08:00:00.000Z" },
+      CM,
+    );
+    expect(bk.facilityName).toBe(seeded.name);
+    expect(() =>
+      AdelanteEHR.addBooking(
+        pid,
+        { bookingNumber: "BK-F4", facilityId: "nope", bookedAt: "2026-03-02T08:00:00.000Z" },
+        CM,
+      ),
+    ).toThrow(/not found/i);
+    expect(() =>
+      AdelanteEHR.addBooking(pid, { bookingNumber: "BK-F5", bookedAt: "2026-03-02T08:00:00.000Z" }, CM),
+    ).toThrow(/facility is required/i);
+  });
+
+  it("inherits the booking facility on a move, and records a transfer when given", () => {
+    const pid = newPatient("FacD");
+    const bk = AdelanteEHR.addBooking(
+      pid,
+      {
+        bookingNumber: "BK-F6",
+        facilityName: "Madera Holding",
+        bookedAt: "2026-04-01T08:00:00.000Z",
+      },
+      CM,
+    );
+    const inherit = AdelanteEHR.addHousingMove(
+      pid,
+      { bookingId: bk.id, movedAt: "2026-04-02T08:00:00.000Z", housingUnit: "A1" },
+      CM,
+    );
+    expect(inherit.facilityId).toBe(bk.facilityId);
+
+    const transfer = AdelanteEHR.addHousingMove(
+      pid,
+      {
+        bookingId: bk.id,
+        movedAt: "2026-04-05T08:00:00.000Z",
+        facilityName: "madera holding annex",
+        housingUnit: "B2",
+      },
+      CM,
+    );
+    expect(transfer.facilityId).not.toBe(bk.facilityId);
+    expect(AdelanteEHR.currentFacility(pid)?.id).toBe(bk.facilityId);
+  });
+
+  it("filters released and active search by facility id, not display text", () => {
+    const pid = newPatient("FacE");
+    const bk = AdelanteEHR.addBooking(
+      pid,
+      {
+        bookingNumber: "BK-F7",
+        facilityName: "Selma Annex",
+        bookedAt: "2026-05-01T08:00:00.000Z",
+      },
+      CM,
+    );
+    expect(
+      AdelanteEHR.searchBookedPatients({ lastName: "FacE", facilityId: bk.facilityId }),
+    ).toHaveLength(1);
+    expect(
+      AdelanteEHR.searchBookedPatients({ lastName: "FacE", facilityId: "other" }),
+    ).toHaveLength(0);
+
+    AdelanteEHR.closeBooking(bk.id, "2026-05-09T14:00:00.000Z", CM);
+    const hits = AdelanteEHR.searchReleasedPatients({
+      lastName: "FacE",
+      facilityId: bk.facilityId,
+    });
+    expect(hits).toHaveLength(1);
+    expect(hits[0].facilityId).toBe(bk.facilityId);
+    expect(
+      AdelanteEHR.searchReleasedPatients({ lastName: "FacE", facilityId: "other" }),
+    ).toHaveLength(0);
+  });
+
+  it("renames a facility without touching historical snapshots, and blocks merge-by-rename", () => {
+    const pid = newPatient("FacF");
+    const bk = AdelanteEHR.addBooking(
+      pid,
+      { bookingNumber: "BK-F8", facilityName: "Old Name Jail", bookedAt: "2026-06-01T08:00:00.000Z" },
+      CM,
+    );
+    AdelanteEHR.renameFacility(bk.facilityId, "New Name Jail", CM);
+    expect(AdelanteEHR.listBookings(pid)[0].facilityName).toBe("Old Name Jail");
+    expect(AdelanteEHR.getFacility(bk.facilityId)?.name).toBe("New Name Jail");
+    expect(() => AdelanteEHR.renameFacility(bk.facilityId, "Selma Annex", CM)).toThrow(/already exists/i);
+  });
+});
