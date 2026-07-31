@@ -4982,6 +4982,15 @@ export const AdelanteEHR = {
         administrationId: form.administrationId,
         medClass: form.medClass,
         riskTextVersion: form.riskTextVersion,
+        // Both frozen wordings are recorded on the audit entry: the disclosure
+        // the patient was actually read, and the clinically reviewed English
+        // text retained alongside it, plus the review flags that say which is
+        // authoritative. A later catalog promotion cannot rewrite this row.
+        languageCode: form.languageCode,
+        riskTextReviewed: form.riskTextReviewed ?? true,
+        riskTextSnapshotEnLocked: form.riskTextSnapshotEnLocked ?? false,
+        riskTextSnapshot: form.riskTextSnapshot,
+        riskTextSnapshotEn: form.riskTextSnapshotEn ?? form.riskTextSnapshot,
         patientSigned: form.patientSigned,
         patientDeclineReason: form.patientDeclineReason ?? null,
         witnessRequired: form.witnessRequired,

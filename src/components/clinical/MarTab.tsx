@@ -56,6 +56,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { RefusalFormDialog } from "@/components/clinical/refusal/RefusalFormDialog";
+import { RefusalRiskTextRecord } from "@/components/clinical/refusal/RefusalRiskTextRecord";
 import {
   RefusalEscalationDialog,
   type EscalationTarget,
@@ -1049,22 +1050,35 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
             );
             const order = (patient.orders ?? []).find((o) => o.id === admin?.orderId);
             return (
-              <div key={f.id} className="flex flex-wrap items-center gap-2 text-xs">
-                <span className="font-medium">
-                  {order ? marRowLabel(order) : "Refused medication"}
-                </span>
-                <span className="text-muted-foreground">
-                  finalized <ClientDate value={f.finalizedAt ?? f.createdAt} /> by{" "}
-                  {f.finalizedBy ?? f.createdBy}
-                </span>
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => void exportForm(f)}
-                >
-                  <Download className="mr-1 h-3.5 w-3.5" />
-                  Export PDF
-                </Button>
+              <div key={f.id} className="space-y-2 text-xs">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium">
+                    {order ? marRowLabel(order) : "Refused medication"}
+                  </span>
+                  <span className="text-muted-foreground">
+                    finalized <ClientDate value={f.finalizedAt ?? f.createdAt} /> by{" "}
+                    {f.finalizedBy ?? f.createdBy}
+                  </span>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => void exportForm(f)}
+                  >
+                    <Download className="mr-1 h-3.5 w-3.5" />
+                    Export PDF
+                  </Button>
+                </div>
+                {/* Both frozen wordings stay inspectable on the signed record. */}
+                <details>
+                  <summary className="cursor-pointer text-muted-foreground">
+                    Risk text signed ({(f.languageCode || "en").toUpperCase()} ·{" "}
+                    {f.riskTextVersion}
+                    {f.riskTextReviewed === false ? " · draft" : " · reviewed"})
+                  </summary>
+                  <div className="mt-2">
+                    <RefusalRiskTextRecord form={f} />
+                  </div>
+                </details>
               </div>
             );
           })}
