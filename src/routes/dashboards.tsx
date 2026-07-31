@@ -10,7 +10,6 @@ import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   computeLiveMetrics,
   marExceptions,
-  METRIC_KEY_LABELS,
   overdueTasks,
   unsignedNotes,
   type MetricKey,
@@ -191,7 +190,6 @@ function DashboardsPage() {
           emptyMessage={drillConfig.emptyMessage}
         />
       )}
-      <span className="sr-only">{METRIC_KEY_LABELS.mar_compliance_pct}</span>
     </div>
   );
 }
