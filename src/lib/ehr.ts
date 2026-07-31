@@ -1985,7 +1985,7 @@ const facilities: Facility[] = [
   {
     id: "fac-fresno-main",
     name: "Fresno County Jail — Main",
-    kind: "jail",
+    kind: "county_jail",
     city: "Fresno",
     timezone: "America/Los_Angeles",
     active: true,
@@ -1995,7 +1995,7 @@ const facilities: Facility[] = [
   {
     id: "fac-fresno-north",
     name: "Fresno County Jail — North Annex",
-    kind: "jail",
+    kind: "county_jail",
     city: "Fresno",
     timezone: "America/Los_Angeles",
     active: true,
@@ -2005,7 +2005,7 @@ const facilities: Facility[] = [
   {
     id: "fac-tulare-adult",
     name: "Tulare County Adult Detention",
-    kind: "jail",
+    kind: "county_jail",
     city: "Visalia",
     timezone: "America/Los_Angeles",
     active: true,
@@ -5438,7 +5438,7 @@ export const AdelanteEHR = {
     const bookingNumber = input.bookingNumber?.trim();
     if (!bookingNumber) throw new Error("A booking number is required.");
     const facility = AdelanteEHR.ensureFacility(
-      { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+      { facilityId: input.facilityId, facilityName: input.facilityName, kind: "county_jail" },
       staffName,
     );
     if (!input.bookedAt) throw new Error("A booked date is required.");
@@ -5520,7 +5520,7 @@ export const AdelanteEHR = {
     const facility =
       input.facilityId || input.facilityName?.trim()
         ? AdelanteEHR.ensureFacility(
-            { facilityId: input.facilityId, facilityName: input.facilityName, kind: "jail" },
+            { facilityId: input.facilityId, facilityName: input.facilityName, kind: "county_jail" },
             staffName,
           )
         : (AdelanteEHR.getFacility(booking.facilityId) ?? {
