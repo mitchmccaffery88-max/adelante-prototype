@@ -482,6 +482,7 @@ export interface Patient {
 }
 
 
+
 export interface ScreenerResult {
   key: string;
   score: number;
