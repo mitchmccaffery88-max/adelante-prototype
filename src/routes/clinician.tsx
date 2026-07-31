@@ -811,8 +811,7 @@ function RefillReviewCard() {
  * cross-patient way in.
  */
 function NurseRefusalWorklistSection() {
-  const { staffName } = useActingStaff();
-  const { role } = useActingStaff();
+  const { staffName, role } = useActingStaff();
   const access = canAccess(role, "meds_erx");
   if (access.level === "none") return null;
   return <NurseRefusalWorklist staffName={staffName} readOnly={access.level === "read"} />;
