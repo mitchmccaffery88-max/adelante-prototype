@@ -4881,7 +4881,7 @@ export const AdelanteEHR = {
     const languageCode = p.preferredLanguage ?? "en";
     // Presented in the patient's language when a catalog exists; Spanish is a
     // DRAFT translation pending clinical sign-off (see refusal.ts).
-    const risk = riskTextFor(medClass, languageCode);
+    const risk = riskTextFor(medClass, languageCode, riskTextApprovalLookup());
     const row: RefusalForm = {
       id: uid(),
       patientId,
@@ -4892,6 +4892,7 @@ export const AdelanteEHR = {
       riskTextSnapshot: risk.text,
       riskTextSnapshotEn: risk.englishText,
       riskTextReviewed: risk.reviewed,
+      riskTextSnapshotEnLocked: risk.englishSnapshotLocked,
       languageCode,
       capacityFlagsAtSigning,
       guardianRequired: isMinorPatient(p),
@@ -4917,6 +4918,7 @@ export const AdelanteEHR = {
         riskTextVersion: row.riskTextVersion,
         languageCode: row.languageCode,
         riskTextReviewed: row.riskTextReviewed,
+        riskTextSnapshotEnLocked: row.riskTextSnapshotEnLocked ?? false,
         capacityFlagsAtSigning,
         guardianRequired: row.guardianRequired,
       },
