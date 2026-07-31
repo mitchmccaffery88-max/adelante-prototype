@@ -8,6 +8,7 @@
 // STANDING GAP: vitals and labs are NOT autofill sources because they do not
 // exist as entities in Adelante at all. They are absent from `AutofillSource`
 // rather than stubbed, so nothing can be wired against an empty source.
+// Target schema when that gap is closed: `src/lib/labsVitalsScaffold.ts`.
 
 import {
   isProblemClinicallyActive,

@@ -8,7 +8,8 @@
 //
 // There is deliberately NO Results tab: lab/imaging results do not exist in
 // this build, and a dead tab is worse than an absent one. See the RESERVED
-// `LabResult` schema anchor in ehr.ts for the handoff starting point.
+// target schema in `src/lib/labsVitalsScaffold.ts` for the handoff starting
+// point (NOT IMPLEMENTED — no runtime consumers).
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { canAccess, useActingStaff } from "@/lib/roles";
