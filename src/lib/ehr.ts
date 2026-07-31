@@ -4855,6 +4855,38 @@ export const AdelanteEHR = {
       ESCALATION_REFUSAL_THRESHOLD
     );
   },
+
+  /**
+   * Cross-patient nurse worklist feed: every refusal document still awaiting a
+   * signature, oldest first (these are legal follow-ons — the queue should not
+   * be sorted newest-first or they age out of view).
+   */
+  listPendingRefusalForms(opts: { patientId?: string } = {}): {
+    form: RefusalForm;
+    patient: Patient;
+    administration?: DoseAdministration;
+    order?: MedOrder;
+  }[] {
+    return patients
+      .filter((p) => !opts.patientId || p.id === opts.patientId)
+      .flatMap((p) =>
+        (p.refusalForms ?? [])
+          .filter((f) => f.status === "pending_signature")
+          .map((form) => {
+            const administration = (p.administrations ?? []).find(
+              (a) => a.id === form.administrationId,
+            );
+            return {
+              form,
+              patient: p,
+              administration,
+              order: (p.orders ?? []).find((o) => o.id === administration?.orderId),
+            };
+          }),
+      )
+      .sort((a, b) => a.form.createdAt.localeCompare(b.form.createdAt));
+  },
+
   /**
    * Record the escalation decision — scheduled provider follow-up or a
    * documented deferral. Either way it lands on the audit trail; there is no
