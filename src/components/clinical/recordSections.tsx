@@ -16,6 +16,7 @@ import {
   Pill,
   Route as RouteIcon,
   ShieldAlert,
+  Syringe,
   Stethoscope,
   TrendingUp,
   UserRound,
@@ -26,6 +27,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
+import { MarTab } from "@/components/clinical/MarTab";
 import {
   OverviewTab,
   ContactTab,
@@ -191,6 +193,15 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     icon: Pill,
     group: "chart",
     render: (a) => <OrdersTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  // MAR is patient-scoped by design (a tab in this record), NOT the reference
+  // EMR's facility-wide MedPass roster — see src/lib/mar.ts.
+  add("meds_erx", {
+    id: "mar",
+    label: "MAR",
+    icon: Syringe,
+    group: "chart",
+    render: (a) => <MarTab patientId={pid} readOnly={a.level !== "write"} />,
   });
 
   // ----- Case management -----
