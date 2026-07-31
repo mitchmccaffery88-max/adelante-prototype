@@ -31,7 +31,7 @@ describe("bookings", () => {
     expect(closed.releasedAt).toBe("2026-01-20T14:00:00.000Z");
     expect(AdelanteEHR.isCurrentlyBooked(pid)).toBe(false);
     expect(() => AdelanteEHR.closeBooking(b.id, "2026-01-21T00:00:00.000Z", CM)).toThrow(
-      /already released/i,
+      /already been released/i,
     );
   });
 
