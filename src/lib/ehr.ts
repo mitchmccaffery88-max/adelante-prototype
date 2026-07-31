@@ -376,6 +376,16 @@ export interface RefusalForm {
   riskTextVersion: string;
   /** Frozen copy of the risk text the patient was actually read. */
   riskTextSnapshot: string;
+  /**
+   * English wording for the same class, retained whenever the snapshot above is
+   * a translation, so the clinically reviewed text stays part of the record.
+   */
+  riskTextSnapshotEn?: string;
+  /**
+   * False when the snapshot is a translation still awaiting clinical sign-off.
+   * Undefined on forms created before translations existed (treat as reviewed).
+   */
+  riskTextReviewed?: boolean;
   languageCode: string;
   /** Active alert labels matching the capacity heuristic at signing time. */
   capacityFlagsAtSigning: string[];
