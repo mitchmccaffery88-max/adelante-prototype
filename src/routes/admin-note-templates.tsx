@@ -278,12 +278,23 @@ function TemplateBuilderDialog({
     template?.schema.scoring?.map((r) => ({ ...r, sum_of: [...r.sum_of] })) ?? [],
   );
   const [preview, setPreview] = useState<TemplateAnswers>({});
+  // Spanish authoring is optional and collapsed by default so English-only
+  // authors are not forced through translation fields.
+  const [showEs, setShowEs] = useState(false);
+  const [esReviewed, setEsReviewed] = useState(Boolean(template?.schema.esReviewed));
+  const [previewLang, setPreviewLang] = useState<TemplateLanguage>("en");
 
-  const schema: TemplateSchema = { sections, scoring: scoring.length ? scoring : undefined };
+  const schema: TemplateSchema = {
+    sections,
+    scoring: scoring.length ? scoring : undefined,
+    esReviewed: esReviewed || undefined,
+  };
   // A schema edit changes answer semantics, so it publishes a new version
   // instead of rewriting the one existing notes were answered against.
-  const schemaChanged = !!template && JSON.stringify(schema) !== JSON.stringify(template.schema);
+  // The review flag is excluded — see schemaContentEquals.
+  const schemaChanged = !!template && !schemaContentEquals(schema, template.schema);
   const nextVersion = (template?.version ?? 0) + 1;
+  const esPending = spanishReviewPending(schema);
 
   const updateSection = (i: number, patch: Partial<TemplateSection>) =>
     setSections((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
