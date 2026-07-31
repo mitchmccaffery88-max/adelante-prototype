@@ -22,7 +22,14 @@ import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
 import { timeOpenLabel } from "@/components/clinical/CrisisPanel";
 import { queueAgeTone } from "./UnsignedNotesQueue";
-import { ClipboardList } from "lucide-react";
+import { ClipboardList, Plus } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 
 const TYPE_LABEL: Record<ProviderRequest["requestType"], string> = {
   question: "Question",
@@ -36,6 +43,12 @@ export function ProviderRequestQueue() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const [completing, setCompleting] = useState<ProviderRequest | null>(null);
   const [outcome, setOutcome] = useState("");
+  const [creating, setCreating] = useState(false);
+  const [draft, setDraft] = useState<{
+    patientId: string;
+    requestType: ProviderRequest["requestType"];
+    context: string;
+  }>({ patientId: "", requestType: "question", context: "" });
 
   const { mine, unclaimed, done } = useMemo(() => {
     const mine: ProviderRequest[] = [];
@@ -101,6 +114,13 @@ export function ProviderRequestQueue() {
 
   return (
     <div className="space-y-5">
+      {canWrite && (
+        <div className="flex justify-end">
+          <Button size="sm" onClick={() => setCreating(true)}>
+            <Plus className="h-3.5 w-3.5" /> New request
+          </Button>
+        </div>
+      )}
       <section className="space-y-2">
         <h2 className="font-display text-sm text-navy">Assigned to me ({mine.length})</h2>
         {mine.length === 0 ? (
@@ -179,6 +199,82 @@ export function ProviderRequestQueue() {
               Cancel
             </Button>
             <Button onClick={submitDone}>Mark done</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={creating} onOpenChange={setCreating}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>New provider request</DialogTitle>
+          </DialogHeader>
+          <div className="space-y-3">
+            <div className="space-y-1.5">
+              <Label>Patient</Label>
+              <Select
+                value={draft.patientId}
+                onValueChange={(v) => setDraft((d) => ({ ...d, patientId: v }))}
+              >
+                <SelectTrigger>
+                  <SelectValue placeholder="Select a patient" />
+                </SelectTrigger>
+                <SelectContent>
+                  {patients.map((p) => (
+                    <SelectItem key={p.id} value={p.id}>
+                      {p.firstName} {p.lastName}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label>Type</Label>
+              <Select
+                value={draft.requestType}
+                onValueChange={(v) =>
+                  setDraft((d) => ({ ...d, requestType: v as ProviderRequest["requestType"] }))
+                }
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="question">Question</SelectItem>
+                  <SelectItem value="order_entry">Order entry</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1.5">
+              <Label htmlFor="pr-context">The ask</Label>
+              <Textarea
+                id="pr-context"
+                value={draft.context}
+                onChange={(e) => setDraft((d) => ({ ...d, context: e.target.value }))}
+                placeholder="What do you need, and by when?"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setCreating(false)}>
+              Cancel
+            </Button>
+            <Button
+              disabled={!draft.patientId || !draft.context.trim()}
+              onClick={() => {
+                AdelanteEHR.createProviderRequest({
+                  patientId: draft.patientId,
+                  requestType: draft.requestType,
+                  context: draft.context,
+                  requestedBy: staffName,
+                  requestedByRole: role,
+                });
+                setCreating(false);
+                setDraft({ patientId: "", requestType: "question", context: "" });
+                toast.success("Request posted to the queue.");
+              }}
+            >
+              Post request
+            </Button>
           </DialogFooter>
         </DialogContent>
       </Dialog>
