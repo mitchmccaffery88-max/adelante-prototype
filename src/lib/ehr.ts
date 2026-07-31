@@ -5999,6 +5999,23 @@ export const AdelanteEHR = {
       actorId: staffName,
       detail: { orderId, scheduledAt },
     });
+    // §Notification feed — a staged CII dose cannot be charted without a
+    // second clinician. The witness pool is the same pmhnp/therapist pool
+    // `witnessCandidates` offers in the MAR UI, so broadcast to both roles.
+    const claimedOrder = p.orders?.find((o) => o.id === orderId);
+    if (claimedOrder && requiresDoseWitness(claimedOrder)) {
+      for (const r of ["pmhnp", "therapist"] as StaffRole[]) {
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "mar_witness_needed",
+          subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
+          body: `${staffName} staged ${claimedOrder.displayName ?? "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          linkRoute: "/record/$patientId",
+          linkParams: { patientId, section: "mar" },
+          patientId,
+        });
+      }
+    }
     emit();
     return claim;
   },
