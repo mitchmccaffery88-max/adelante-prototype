@@ -6804,11 +6804,25 @@ export const AdelanteEHR = {
   // deactivation requires a reason, and notes keep their own schema snapshot
   // so retiring a template cannot rewrite documentation history.
 
-  listNoteTemplates(includeInactive = false): NoteTemplate[] {
+  /**
+   * Latest version of each template key. Superseded rows are never returned
+   * here — they stay queryable via `getNoteTemplate` / `listNoteTemplateVersions`
+   * for historical lookups, but must never be selectable for a new note.
+   */
+  listNoteTemplates(includeInactive = false, includeSuperseded = false): NoteTemplate[] {
     return noteTemplates
+      .filter((t) => includeSuperseded || !t.supersededBy)
       .filter((t) => includeInactive || t.active)
       .map((t) => ({ ...t }))
-      .sort((a, b) => a.title.localeCompare(b.title));
+      .sort((a, b) => a.title.localeCompare(b.title) || a.version - b.version);
+  },
+
+  /** Full version history for one template key, oldest first. */
+  listNoteTemplateVersions(key: string): NoteTemplate[] {
+    return noteTemplates
+      .filter((t) => t.key.toLowerCase() === key.toLowerCase())
+      .map((t) => ({ ...t }))
+      .sort((a, b) => a.version - b.version);
   },
 
   getNoteTemplate(templateId: string): NoteTemplate | undefined {
@@ -6835,6 +6849,7 @@ export const AdelanteEHR = {
     const row: NoteTemplate = {
       id: uid(),
       key,
+      version: 1,
       title,
       description: (input.description ?? "").trim() || undefined,
       encounterType: (input.encounterType ?? "").trim() || "general",
@@ -6848,12 +6863,23 @@ export const AdelanteEHR = {
       category: "clinical",
       action: "note_template_created",
       actorId: staffName,
-      detail: { templateId: row.id, key: row.key, encounterType: row.encounterType },
+      detail: {
+        templateId: row.id,
+        key: row.key,
+        version: row.version,
+        encounterType: row.encounterType,
+      },
     });
     emit();
     return { ...row };
   },
 
+  /**
+   * Presentation-only edits (title/description/encounterType) patch the row in
+   * place. A schema edit changes answer semantics, so it appends a new version
+   * instead: existing notes keep pointing at — and validating against — the
+   * exact version they were answered on.
+   */
   updateNoteTemplate(
     templateId: string,
     patch: Partial<Pick<NoteTemplate, "title" | "description" | "encounterType" | "schema">>,
@@ -6861,15 +6887,60 @@ export const AdelanteEHR = {
   ): NoteTemplate {
     const row = noteTemplates.find((t) => t.id === templateId);
     if (!row) throw new Error("Template not found.");
+    if (row.supersededBy)
+      throw new Error("This template version has been superseded. Edit the latest version.");
+    const nextTitle = patch.title !== undefined ? patch.title.trim() : row.title;
+    if (!nextTitle) throw new Error("A template title is required.");
+    const schemaChanged =
+      !!patch.schema && JSON.stringify(patch.schema) !== JSON.stringify(row.schema);
+
+    if (schemaChanged) {
+      const next: NoteTemplate = {
+        id: uid(),
+        key: row.key,
+        version: row.version + 1,
+        title: nextTitle,
+        description:
+          patch.description !== undefined
+            ? patch.description.trim() || undefined
+            : row.description,
+        encounterType:
+          patch.encounterType !== undefined
+            ? patch.encounterType.trim() || "general"
+            : row.encounterType,
+        schema: patch.schema!,
+        active: row.active,
+        deactivationReason: row.deactivationReason,
+        createdBy: staffName,
+        createdAt: new Date().toISOString(),
+      };
+      row.supersededBy = next.id;
+      row.updatedBy = staffName;
+      row.updatedAt = next.createdAt;
+      noteTemplates.push(next);
+      appendAudit({
+        category: "clinical",
+        action: "note_template_version_created",
+        actorId: staffName,
+        detail: {
+          templateId: next.id,
+          supersedes: row.id,
+          key: next.key,
+          version: next.version,
+          sections: next.schema.sections?.length ?? 0,
+          fields: (next.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0),
+        },
+      });
+      emit();
+      return { ...next };
+    }
+
     if (patch.title !== undefined) {
-      const title = patch.title.trim();
-      if (!title) throw new Error("A template title is required.");
-      row.title = title;
+      row.title = nextTitle;
     }
     if (patch.description !== undefined) row.description = patch.description.trim() || undefined;
     if (patch.encounterType !== undefined)
       row.encounterType = patch.encounterType.trim() || "general";
-    if (patch.schema) row.schema = patch.schema;
     row.updatedBy = staffName;
     row.updatedAt = new Date().toISOString();
     appendAudit({
@@ -6879,8 +6950,8 @@ export const AdelanteEHR = {
       detail: {
         templateId,
         key: row.key,
-        sections: row.schema.sections?.length ?? 0,
-        fields: (row.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0),
+        version: row.version,
+        schemaChanged: false,
       },
     });
     emit();
