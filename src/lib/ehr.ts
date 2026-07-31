@@ -1,6 +1,6 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
 import { schemaContentEquals } from "./templateSchema";
-import type { TemplateAnswers, TemplateSchema } from "./templateSchema";
+import type { AutofillSnapshot, TemplateAnswers, TemplateSchema } from "./templateSchema";
 
 // Adelante is the EHR of record. Do NOT import vendor SDKs outside
 // `src/lib/vendors/*`; route vendor traffic through the helpers below
@@ -260,6 +260,12 @@ export interface MedOrder {
   indicationProblemId?: string;
   /** Free-text indication; fallback when no coded problem is linked. */
   indicationText?: string;
+  /**
+   * §Phase 3b — the progress note whose orders_section staged this order.
+   * Traceability only: an order started from a note follows the exact same
+   * lifecycle, validation and attestation as one staged from the Orders tab.
+   */
+  sourceNoteId?: string;
   // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
   orderingProviderId?: string;
   orderSource?: "verbal" | "telephone" | "protocol" | "standing";
