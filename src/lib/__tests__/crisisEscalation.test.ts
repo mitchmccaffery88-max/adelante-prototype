@@ -130,20 +130,20 @@ describe("screener-band crisis gate at signing", () => {
       content: "",
       templateSchema: SCHEMA,
       templateAnswers: { q1: "22" },
-    } as never);
+    } as never)!;
     expect(() =>
-      AdelanteEHR.signProgressNote(pid, note.id, {
+      AdelanteEHR.signProgressNote(pid, note!.id, {
         signedBy: "Dr. B",
         role: "pmhnp",
         attested: true,
       }),
     ).toThrow(/crisis band/i);
     // Still a draft — the blocked attempt mutated nothing.
-    expect(AdelanteEHR.getPatient(pid)?.progressNotes?.find((n) => n.id === note.id)?.signedAt)
+    expect(AdelanteEHR.getPatient(pid)?.progressNotes?.find((n) => n.id === note!.id)?.signedAt)
       .toBeUndefined();
 
     expect(() =>
-      AdelanteEHR.signProgressNote(pid, note.id, {
+      AdelanteEHR.signProgressNote(pid, note!.id, {
         signedBy: "Dr. B",
         role: "pmhnp",
         attested: true,
@@ -151,7 +151,7 @@ describe("screener-band crisis gate at signing", () => {
       }),
     ).toThrow(/reason/i);
 
-    AdelanteEHR.signProgressNote(pid, note.id, {
+    AdelanteEHR.signProgressNote(pid, note!.id, {
       signedBy: "Dr. B",
       role: "pmhnp",
       attested: true,
