@@ -1700,9 +1700,18 @@ function ProgressNoteCard({
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
+  // Structured templates gate signing: a required question left blank is the
+  // same class of defect as an unattested signature.
+  const missing = note.templateSchema
+    ? findMissingRequired(note.templateSchema, note.templateAnswers ?? {})
+    : [];
 
   const sign = () => {
     try {
+      if (missing.length > 0) {
+        toast.error(`Answer ${missing.length} required template field(s) before signing.`);
+        return;
+      }
       AdelanteEHR.signProgressNote(patientId, note.id, {
         signedBy: staffName,
         role,
@@ -1747,7 +1756,19 @@ function ProgressNoteCard({
           <span>{sudReason ?? "SUD note — 42 CFR Part 2 consent required"}</span>
         </div>
       ) : (
-        <dl className="mt-2 space-y-1.5">
+        <>
+          {note.templateSchema && (
+            <div className="mt-2 rounded-md border border-border p-2">
+              <TemplateForm
+                schema={note.templateSchema}
+                answers={note.templateAnswers ?? {}}
+                onChange={() => {}}
+                readOnly
+                missingKeys={missing}
+              />
+            </div>
+          )}
+          <dl className="mt-2 space-y-1.5">
           {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
             note[k] ? (
               <div key={k}>
@@ -1756,7 +1777,8 @@ function ProgressNoteCard({
               </div>
             ) : null,
           )}
-        </dl>
+          </dl>
+        </>
       )}
       {note.signedAt && (
         <p className="mt-2 text-[10px] text-muted-foreground">
@@ -1797,6 +1819,11 @@ function ProgressNoteCard({
               </p>
             </div>
           )}
+          {missing.length > 0 && (
+            <p className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
+              {missing.length} required template field(s) still unanswered — signing is blocked.
+            </p>
+          )}
           <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
             <Checkbox
               checked={attested}
@@ -1808,7 +1835,7 @@ function ProgressNoteCard({
           <Button
             size="sm"
             className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-            disabled={!attested || (mustCosign && !cosignerId)}
+            disabled={!attested || (mustCosign && !cosignerId) || missing.length > 0}
             onClick={sign}
           >
             Sign note
