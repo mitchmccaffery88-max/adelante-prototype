@@ -6672,8 +6672,12 @@ export const AdelanteEHR = {
     if (action === "given") {
       if (prn) {
         const elig = AdelanteEHR.prnEligibility(patientId, orderId);
-        if (elig.blocked)
+        if (elig.blockedBy === "max")
           throw new Error(`PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`);
+        if (elig.blockedBy === "gap")
+          throw new Error(
+            `Minimum interval not met — this order requires ${elig.minGapMinutes} minutes between doses. Eligible in ${waitLabel(elig.waitMs)}.`,
+          );
       }
       if (requiresDoseWitness(order) && !witness)
         throw new Error(
