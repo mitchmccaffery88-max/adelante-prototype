@@ -5,7 +5,7 @@ import { canSignNotes, cosignerCandidates, isMyCosign, requiresCosign } from "@/
 const PATIENT = AdelanteEHR.listPatients()[0]!.id;
 
 function draft(category?: "sud") {
-  return AdelanteEHR.addProgressNote(PATIENT, {
+  const created = AdelanteEHR.addProgressNote(PATIENT, {
     clinicianId: "c1",
     date: new Date().toISOString(),
     sessionType: "individual",
@@ -17,6 +17,8 @@ function draft(category?: "sud") {
     authorSource: "human",
     status: "draft",
   });
+  if (!created) throw new Error("addProgressNote did not return a note");
+  return created;
 }
 
 describe("note signer eligibility", () => {
