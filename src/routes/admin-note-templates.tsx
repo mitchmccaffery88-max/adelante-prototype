@@ -18,6 +18,10 @@ import {
   type TemplateLanguage,
   type TemplateSchema,
   type TemplateSection,
+  type SectionType,
+  type QuickPickMed,
+  type AutofillSource,
+  isFieldsSection,
   type TemplateAnswers,
 } from "@/lib/templateSchema";
 import { Card } from "@/components/ui/card";
