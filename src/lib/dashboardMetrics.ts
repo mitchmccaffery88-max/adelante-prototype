@@ -4,6 +4,9 @@
 // rule here is honesty: a metric with no real data source returns
 // `{ value: null }` so the UI renders "no live metric yet" instead of a 0 that
 // looks like a measured result. Nothing in this file invents a number.
+//
+// Labs/vitals-derived metrics are absent because those entities do not exist.
+// Target schema when that gap is closed: `src/lib/labsVitalsScaffold.ts`.
 import {
   AdelanteEHR,
   noteStatus,
