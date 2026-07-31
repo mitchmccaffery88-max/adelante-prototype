@@ -56,6 +56,8 @@ import { NoteOrdersSection } from "@/components/clinical/NoteOrdersSection";
 import {
   findMissingRequired,
   summarizeAutomation,
+  crisisTriggeringScores,
+  describeCrisisScore,
   type TemplateAnswers,
 } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
