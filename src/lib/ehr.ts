@@ -2220,6 +2220,8 @@ function setCareMessageSudFlag(
   msg.sudFlagged = flagged;
   msg.sudFlaggedBy = staffName;
   msg.sudFlaggedAt = new Date().toISOString();
+  // A staff override replaces the provenance: it is now a reviewer decision.
+  msg.sudFlaggedByPatient = undefined;
   appendAudit({
     category: "access",
     action: flagged ? "care_message_sud_flagged" : "care_message_sud_unflagged",

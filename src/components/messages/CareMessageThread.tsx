@@ -52,7 +52,12 @@ export function CareMessageThread({
                   flagged here, not find a silently missing message. */}
               {m.sudFlagged && (
                 <div className="mt-0.5 flex items-center gap-1 text-[10px] font-medium text-destructive">
-                  <ShieldAlert className="h-3 w-3" /> Sensitive content flagged
+                  <ShieldAlert className="h-3 w-3" />
+                  {showFlagProvenance
+                    ? m.sudFlaggedByPatient
+                      ? "Sensitive content flagged — patient requested"
+                      : `Sensitive content flagged — flagged by ${m.sudFlaggedBy ?? "staff"}`
+                    : "Sensitive content flagged"}
                 </div>
               )}
               {masked ? (
