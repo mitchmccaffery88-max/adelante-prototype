@@ -147,6 +147,14 @@ function AdminPage() {
           <div className="text-xs font-medium uppercase tracking-wider text-teal">Facilities</div>
           <div className="mt-1 text-sm text-foreground">Types, deactivation & duplicate merges</div>
         </Link>
+        <Link to="/dashboards" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">Population health</div>
+          <div className="mt-1 text-sm text-foreground">KPI vs target with record drill-down</div>
+        </Link>
+        <Link to="/admin-kpi-targets" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">KPI targets</div>
+          <div className="mt-1 text-sm text-foreground">Set, edit & retire performance targets</div>
+        </Link>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">

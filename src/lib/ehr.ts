@@ -616,6 +616,31 @@ export interface ShiftCountLine {
 }
 
 /**
+ * §Population health — an admin-configured KPI target. Targets are reporting
+ * configuration, not clinical data, so they live top-level (not on a Patient)
+ * and are gated on the `population_health` record class.
+ */
+export interface KpiTarget {
+  id: string;
+  /** Matches a MetricKey in dashboardMetrics.ts. Free string so a target can
+   *  be set for a measure before the live metric exists. */
+  metricKey: string;
+  label: string;
+  targetValue: number;
+  unit: "percent" | "count";
+  /** YYYY-MM the target takes effect. */
+  effectiveMonth?: string;
+  /** Where the target came from (contract, NCCHC standard, internal goal). */
+  source?: string;
+  notes?: string;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}
+
+/**
  * Immutable, locked controlled-substance shift count. Top-level (NOT on a
  * Patient) — it is a facility/shift artifact that spans the population.
  */
@@ -2149,6 +2174,59 @@ const auditEvents: AuditEvent[] = [];
  * a shift count spans every patient on the unit, so it has no owning Patient.
  */
 const shiftCounts: ShiftCount[] = [];
+
+// §Population health — admin-configured KPI targets (top-level reporting
+// config). Seeded with a couple of realistic targets so the dashboard has
+// something to compare against on first load, including one target whose
+// metric has no live source yet — that row is the honest "target set, no live
+// metric yet" case the dashboard must render gracefully.
+const kpiTargets: KpiTarget[] = [
+  {
+    id: "kpi-mar",
+    metricKey: "mar_compliance_pct",
+    label: "MAR compliance (30 days)",
+    targetValue: 95,
+    unit: "percent",
+    source: "Internal clinical goal",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-notes",
+    metricKey: "unsigned_notes_count",
+    label: "Unsigned notes",
+    targetValue: 5,
+    unit: "count",
+    source: "Documentation policy",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-tasks",
+    metricKey: "overdue_task_count",
+    label: "Overdue tasks",
+    targetValue: 10,
+    unit: "count",
+    source: "Care coordination goal",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+  {
+    id: "kpi-controlled",
+    metricKey: "controlled_count_discrepancies",
+    label: "Controlled count discrepancies",
+    targetValue: 0,
+    unit: "count",
+    source: "Custody partner requirement",
+    notes: "No live metric — shift count has no discrepancy field yet.",
+    active: true,
+    createdBy: "Adelante System Admin",
+    createdAt: new Date().toISOString(),
+  },
+];
 
 /**
  * §Facility registry — top-level, not patient-scoped: a facility is shared by
@@ -6314,6 +6392,118 @@ export const AdelanteEHR = {
   /** Locked counts, newest first. Copies out so callers cannot mutate history. */
   listShiftCounts(limit = 20): ShiftCount[] {
     return shiftCounts.slice(0, limit).map((c) => ({ ...c, lines: c.lines.map((l) => ({ ...l })) }));
+  },
+
+  // ----- §Population health: KPI targets ----------------------------------
+
+  listKpiTargets(includeInactive = false): KpiTarget[] {
+    return kpiTargets
+      .filter((t) => includeInactive || t.active)
+      .map((t) => ({ ...t }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  },
+
+  createKpiTarget(
+    input: {
+      metricKey: string;
+      label: string;
+      targetValue: number;
+      unit: "percent" | "count";
+      effectiveMonth?: string;
+      source?: string;
+      notes?: string;
+    },
+    staffName: string,
+  ): KpiTarget {
+    const label = (input.label ?? "").trim();
+    if (!input.metricKey) throw new Error("A metric is required.");
+    if (!label) throw new Error("A target label is required.");
+    if (!Number.isFinite(input.targetValue)) throw new Error("A numeric target value is required.");
+    const row: KpiTarget = {
+      id: uid(),
+      metricKey: input.metricKey,
+      label,
+      targetValue: input.targetValue,
+      unit: input.unit,
+      effectiveMonth: input.effectiveMonth?.trim() || undefined,
+      source: input.source?.trim() || undefined,
+      notes: input.notes?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    kpiTargets.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "kpi_target_created",
+      actorId: staffName,
+      detail: {
+        targetId: row.id,
+        metricKey: row.metricKey,
+        targetValue: row.targetValue,
+        unit: row.unit,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  updateKpiTarget(
+    targetId: string,
+    patch: Partial<Pick<KpiTarget, "label" | "targetValue" | "unit" | "effectiveMonth" | "source" | "notes" | "metricKey">>,
+    staffName: string,
+  ): KpiTarget {
+    const row = kpiTargets.find((t) => t.id === targetId);
+    if (!row) throw new Error("KPI target not found.");
+    const before = { ...row };
+    if (patch.metricKey) row.metricKey = patch.metricKey;
+    if (patch.label !== undefined) {
+      const label = patch.label.trim();
+      if (!label) throw new Error("A target label is required.");
+      row.label = label;
+    }
+    if (patch.targetValue !== undefined) {
+      if (!Number.isFinite(patch.targetValue)) throw new Error("A numeric target value is required.");
+      row.targetValue = patch.targetValue;
+    }
+    if (patch.unit) row.unit = patch.unit;
+    if (patch.effectiveMonth !== undefined)
+      row.effectiveMonth = patch.effectiveMonth.trim() || undefined;
+    if (patch.source !== undefined) row.source = patch.source.trim() || undefined;
+    if (patch.notes !== undefined) row.notes = patch.notes.trim() || undefined;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "kpi_target_updated",
+      actorId: staffName,
+      detail: {
+        targetId,
+        from: { metricKey: before.metricKey, targetValue: before.targetValue, unit: before.unit },
+        to: { metricKey: row.metricKey, targetValue: row.targetValue, unit: row.unit },
+      },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate/reactivate. Targets are never deleted — history stays auditable. */
+  setKpiTargetActive(targetId: string, active: boolean, staffName: string, reason?: string) {
+    const row = kpiTargets.find((t) => t.id === targetId);
+    if (!row) throw new Error("KPI target not found.");
+    if (!active && !(reason ?? "").trim())
+      throw new Error("A reason is required to deactivate a target.");
+    row.active = active;
+    row.updatedBy = staffName;
+    row.updatedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: active ? "kpi_target_reactivated" : "kpi_target_deactivated",
+      actorId: staffName,
+      detail: { targetId, metricKey: row.metricKey, reason: reason?.trim() ?? null },
+    });
+    emit();
+    return { ...row };
   },
 
   // ----- §Medication reconciliation ---------------------------------------

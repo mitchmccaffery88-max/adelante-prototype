@@ -16,6 +16,7 @@ import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
 import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
+import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -26,6 +27,7 @@ import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-cre
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
@@ -69,6 +71,11 @@ const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
 const AdminFacilitiesRoute = AdminFacilitiesRouteImport.update({
   id: '/admin-facilities',
   path: '/admin-facilities',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
+  id: '/admin-kpi-targets',
+  path: '/admin-kpi-targets',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
@@ -119,6 +126,11 @@ const ConsentRoute = ConsentRouteImport.update({
 const CosignInboxRoute = CosignInboxRouteImport.update({
   id: '/cosign-inbox',
   path: '/cosign-inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DashboardsRoute = DashboardsRouteImport.update({
+  id: '/dashboards',
+  path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
 const HomeRoute = HomeRouteImport.update({
@@ -175,6 +187,7 @@ export interface FileRoutesByFullPath {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -185,6 +198,7 @@ export interface FileRoutesByFullPath {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -203,6 +217,7 @@ export interface FileRoutesByTo {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -213,6 +228,7 @@ export interface FileRoutesByTo {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -232,6 +248,7 @@ export interface FileRoutesById {
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
+  '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -242,6 +259,7 @@ export interface FileRoutesById {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/dashboards': typeof DashboardsRoute
   '/home': typeof HomeRoute
   '/intake': typeof IntakeRoute
   '/notes-queue': typeof NotesQueueRoute
@@ -262,6 +280,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -272,6 +291,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/dashboards'
     | '/home'
     | '/intake'
     | '/notes-queue'
@@ -290,6 +310,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -300,6 +321,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/dashboards'
     | '/home'
     | '/intake'
     | '/notes-queue'
@@ -318,6 +340,7 @@ export interface FileRouteTypes {
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-facilities'
+    | '/admin-kpi-targets'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -328,6 +351,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/cosign-inbox'
+    | '/dashboards'
     | '/home'
     | '/intake'
     | '/notes-queue'
@@ -347,6 +371,7 @@ export interface RootRouteChildren {
   AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
+  AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -357,6 +382,7 @@ export interface RootRouteChildren {
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  DashboardsRoute: typeof DashboardsRoute
   HomeRoute: typeof HomeRoute
   IntakeRoute: typeof IntakeRoute
   NotesQueueRoute: typeof NotesQueueRoute
@@ -417,6 +443,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-facilities'
       fullPath: '/admin-facilities'
       preLoaderRoute: typeof AdminFacilitiesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-kpi-targets': {
+      id: '/admin-kpi-targets'
+      path: '/admin-kpi-targets'
+      fullPath: '/admin-kpi-targets'
+      preLoaderRoute: typeof AdminKpiTargetsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-vendors': {
@@ -487,6 +520,13 @@ declare module '@tanstack/react-router' {
       path: '/cosign-inbox'
       fullPath: '/cosign-inbox'
       preLoaderRoute: typeof CosignInboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/dashboards': {
+      id: '/dashboards'
+      path: '/dashboards'
+      fullPath: '/dashboards'
+      preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/home': {
@@ -563,6 +603,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
   AdminFacilitiesRoute: AdminFacilitiesRoute,
+  AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
@@ -573,6 +614,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   CosignInboxRoute: CosignInboxRoute,
+  DashboardsRoute: DashboardsRoute,
   HomeRoute: HomeRoute,
   IntakeRoute: IntakeRoute,
   NotesQueueRoute: NotesQueueRoute,
