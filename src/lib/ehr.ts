@@ -15,6 +15,9 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+// Value import of the shared consent gate. Only ever called inside methods,
+// so the roles<->ehr module cycle resolves before any call happens.
+import { canAccess } from "./roles";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
