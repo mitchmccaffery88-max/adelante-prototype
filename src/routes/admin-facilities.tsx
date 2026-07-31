@@ -9,6 +9,7 @@ import { useMemo, useState } from "react";
 import {
   AdelanteEHR,
   FACILITY_KINDS,
+  facilityAddressLine,
   facilityKindLabel,
   useEhr,
   type Facility,
@@ -20,6 +21,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import {
   Select,
   SelectContent,
@@ -43,7 +45,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { ArrowLeft, Building2, GitMerge, Lock, Pencil, Plus } from "lucide-react";
+import { ArrowLeft, Building2, GitMerge, Lock, Pencil, Phone, Plus } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 
