@@ -5129,21 +5129,6 @@ export const AdelanteEHR = {
     });
     emit();
   },
-  _removeDraftOrderLegacy(patientId: string, orderId: string, actor?: string): void {
-    const p = patients.find((x) => x.id === patientId);
-    if (!p) return;
-    const row = p.orders?.find((o) => o.id === orderId);
-    if (!row || row.status !== "draft") return;
-    p.orders = (p.orders ?? []).filter((o) => o.id !== orderId);
-    appendAudit({
-      category: "clinical",
-      action: "order_draft_removed",
-      patientId,
-      actorId: actor,
-      detail: { orderId, drugName: row.drugName },
-    });
-    emit();
-  },
   /**
    * Release draft orders to the chart. Callers MUST have run the validation
    * gate (`validateOrder`) and captured attestation first — this method trusts
