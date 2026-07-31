@@ -9,9 +9,13 @@ import { useState } from "react";
 import { AdelanteEHR, useEhr, type NoteTemplate } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
+  ES_DRAFT_NOTICE_EN,
+  schemaContentEquals,
+  spanishReviewPending,
   type FieldType,
   type ScoringRule,
   type TemplateField,
+  type TemplateLanguage,
   type TemplateSchema,
   type TemplateSection,
   type TemplateAnswers,
