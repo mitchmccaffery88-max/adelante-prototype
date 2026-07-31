@@ -57,15 +57,94 @@ export interface TemplateField {
   ai_hint?: string;
 }
 
+/**
+ * §Clinical documentation Phase 3b — a template-authored medication quick pick.
+ *
+ * This converts into a DRAFT `MedOrder` using Adelante's real order model, not
+ * a generic cart item. Everything here is a STARTING POINT: the resulting draft
+ * still goes through `validateOrder` before it can be signed, exactly like an
+ * order staged from the Orders tab.
+ */
+export interface QuickPickMed {
+  id: string;
+  /** Chip label. Defaults to `drugName` when blank. */
+  label?: string;
+  drugName: string;
+  dose?: string;
+  route?: string;
+  /** Frequency catalog code, e.g. "BID". Same field the Orders tab writes. */
+  frequencyCode?: string;
+  isStat?: boolean;
+  isKop?: boolean;
+  isControlled?: boolean;
+  deaSchedule?: "CII" | "CIII" | "CIV" | "CV";
+  indicationText?: string;
+}
+
+/** Template-authored referral quick pick → draft `Referral`. */
+export interface QuickPickReferral {
+  id: string;
+  label?: string;
+  referringAgency: string;
+  referrerName?: string;
+  referrerEmail?: string;
+  referrerPhone?: string;
+  /** Matches `Referral.referralSource`; free string here to avoid a type cycle. */
+  referralSource?: string;
+  countyOfRelease?: string;
+}
+
+/**
+ * Autofill sources Adelante can ACTUALLY resolve today.
+ *
+ * STANDING GAP — deliberately absent: `vitals_last`, `vitals_recent` and
+ * `labs_recent`. Vitals and labs do not exist as entities in this EHR at all,
+ * so there is no data source behind them. They are left out of the type rather
+ * than added as no-ops, so no UI can ever be wired against a source that can
+ * never return data.
+ */
+export type AutofillSource =
+  | "medications_active"
+  | "allergies"
+  | "problems_active"
+  | "mar_last_24h"
+  | "last_note_summary";
+
+export interface AutofillConfig {
+  source: AutofillSource;
+  /** Trailing window for `mar_last_24h`. Defaults to 24. */
+  hours?: number;
+  /** Max rows rendered. Unset = all. */
+  limit?: number;
+  /** `medications_active` only: include PRN orders. Defaults to true. */
+  includePrn?: boolean;
+}
+
+export type SectionType = "fields" | "orders_section" | "autofill_section";
+
 export interface TemplateSection {
   id: string;
   title: string;
   /** Optional Spanish section title. Falls back to `title` when absent. */
   titleEs?: string;
   show_if?: string;
-  /** Only "fields" in this pass — orders_section / autofill_section are 3b/3c. */
-  type?: "fields";
+  /** Defaults to "fields" when absent (every 3a template). */
+  type?: SectionType;
   fields: TemplateField[];
+  /**
+   * orders_section only. Deliberately NOT labs/nursing — those are not
+   * fulfillable entities in Adelante, so no allow flag exists for them.
+   */
+  allow?: { meds?: boolean; referrals?: boolean };
+  /** orders_section only. */
+  quick_picks?: { meds?: QuickPickMed[]; referrals?: QuickPickReferral[] };
+  /** autofill_section only. */
+  autofill?: AutofillConfig;
+}
+
+/** A section that carries answerable fields. Only these gate note-signing. */
+export function isFieldsSection(section: TemplateSection): boolean {
+  return (section.type ?? "fields") === "fields";
 }
 
 export interface ScoringBand {
