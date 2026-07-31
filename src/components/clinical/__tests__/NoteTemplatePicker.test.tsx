@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
-import { describe, expect, it, vi } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { afterEach, describe, expect, it, vi } from "vitest";
+import { cleanup, render, screen, fireEvent } from "@testing-library/react";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
 import { AdelanteEHR } from "@/lib/ehr";
 import { findMissingRequired } from "@/lib/templateSchema";
 
 describe("NoteTemplatePicker", () => {
+  afterEach(cleanup);
+
   const templates = AdelanteEHR.listNoteTemplates();
 
   it("shows title, description and the empty-answers required count", () => {
