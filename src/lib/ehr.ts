@@ -6560,6 +6560,94 @@ export const AdelanteEHR = {
     return { ...row };
   },
 
+  // ----- §Population health: CalAIM qualifying codes -----------------------
+
+  listQualifyingCodes(includeInactive = false): CalaimQualifyingCode[] {
+    return calaimQualifyingCodes
+      .filter((c) => includeInactive || c.active)
+      .map((c) => ({ ...c }))
+      .sort((a, b) => a.code.localeCompare(b.code));
+  },
+
+  /** Add a qualifying code. Rejects an exact duplicate on codeSystem+code. */
+  addQualifyingCode(
+    input: { codeSystem?: "icd10"; code: string; description?: string },
+    staffName: string,
+  ): CalaimQualifyingCode {
+    const codeSystem = input.codeSystem ?? "icd10";
+    const code = (input.code ?? "").trim().toUpperCase();
+    if (!code) throw new Error("An ICD-10 code is required.");
+    const dupe = calaimQualifyingCodes.find(
+      (c) => c.codeSystem === codeSystem && c.code.toUpperCase() === code,
+    );
+    if (dupe)
+      throw new Error(
+        dupe.active
+          ? `${code} is already a qualifying code.`
+          : `${code} already exists as an inactive qualifying code — reactivate it instead.`,
+      );
+    const row: CalaimQualifyingCode = {
+      id: uid(),
+      codeSystem,
+      code,
+      description: input.description?.trim() || undefined,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    calaimQualifyingCodes.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_added",
+      actorId: staffName,
+      detail: { codeId: row.id, codeSystem, code: row.code, description: row.description ?? null },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate with a required reason. Never deleted — history stays auditable. */
+  deactivateQualifyingCode(
+    codeId: string,
+    staffName: string,
+    reason: string,
+  ): CalaimQualifyingCode {
+    const row = calaimQualifyingCodes.find((c) => c.id === codeId);
+    if (!row) throw new Error("Qualifying code not found.");
+    if (!(reason ?? "").trim())
+      throw new Error("A reason is required to deactivate a qualifying code.");
+    row.active = false;
+    row.deactivatedBy = staffName;
+    row.deactivatedAt = new Date().toISOString();
+    row.deactivationReason = reason.trim();
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_deactivated",
+      actorId: staffName,
+      detail: { codeId, code: row.code, reason: row.deactivationReason },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Reactivate a previously retired code. */
+  reactivateQualifyingCode(codeId: string, staffName: string): CalaimQualifyingCode {
+    const row = calaimQualifyingCodes.find((c) => c.id === codeId);
+    if (!row) throw new Error("Qualifying code not found.");
+    row.active = true;
+    row.deactivatedBy = undefined;
+    row.deactivatedAt = undefined;
+    row.deactivationReason = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "calaim_qualifying_code_reactivated",
+      actorId: staffName,
+      detail: { codeId, code: row.code },
+    });
+    emit();
+    return { ...row };
+  },
+
   // ----- §Medication reconciliation ---------------------------------------
   // Reuses the Orders layer rather than duplicating it: seeding reads
   // `isOrderActive`, and the stop/modify cascade on completion goes through
