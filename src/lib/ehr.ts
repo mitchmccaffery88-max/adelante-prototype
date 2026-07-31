@@ -5984,7 +5984,7 @@ export function useEhr<T>(selector: () => T): T {
       "p1",
       {
         bookingNumber: "BK-2026-1041",
-        facilityName: "Fresno County Jail — Main",
+        facilityId: "fac-fresno-main",
         bookedAt: daysAgo(46),
         bookingReason: "Probation violation",
       },
@@ -5995,7 +5995,7 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b1.id,
         movedAt: daysAgo(45),
-        facilityName: "Fresno County Jail — Main",
+        // No facility given: the move inherits the booking's facility id.
         housingUnit: "Unit 3B",
         reason: "Initial classification",
       },
@@ -6006,7 +6006,6 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b1.id,
         movedAt: daysAgo(12),
-        facilityName: "Fresno County Jail — Main",
         housingUnit: "Med Obs 1",
         reason: "Medical observation",
       },
@@ -6019,7 +6018,9 @@ export function useEhr<T>(selector: () => T): T {
       "p2",
       {
         bookingNumber: "BK-2026-1177",
-        facilityName: "Fresno County Jail — North Annex",
+        // Deliberately typed with a hyphen and lowercase: normalization folds
+        // this onto fac-fresno-north instead of minting a duplicate site.
+        facilityName: "fresno county jail - north annex",
         bookedAt: daysAgo(9),
         bookingReason: "Pending arraignment",
       },
@@ -6030,7 +6031,6 @@ export function useEhr<T>(selector: () => T): T {
       {
         bookingId: b2.id,
         movedAt: daysAgo(9),
-        facilityName: "Fresno County Jail — North Annex",
         housingUnit: "Unit 1A",
         reason: "Intake housing",
       },
