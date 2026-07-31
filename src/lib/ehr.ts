@@ -233,6 +233,16 @@ export interface MedOrder {
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
   /**
+   * Facility-local calendar date (YYYY-MM-DD) therapy actually begins — a
+   * FIRST-CLASS field, not inferred. Defaults to today when the draft is
+   * created and again at sign time if still unset, but the prescriber may edit
+   * it: an order signed today can start tomorrow, and an order can be backdated
+   * to reflect therapy already underway. MAR schedule projection derives
+   * due/not-due from this date, so interval cadences (e.g. weekly) land on the
+   * right days.
+   */
+  startDate?: string;
+  /**
    * KOP (Keep-On-Person): prescriber approves the patient to keep this
    * medication on their person and self-administer. Read by the future MAR
    * pass to pick the administration workflow.
@@ -1526,6 +1536,7 @@ const caseTasks: CaseTask[] = [];
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
 import { frequencyByCode } from "./frequencies";
+import { facilityDateKey } from "./facilityTime";
 interface RxEventRow {
   id: string;
   patientId: string;
@@ -3927,6 +3938,9 @@ export const AdelanteEHR = {
       patientId,
       drugName: input.drugName.trim(),
       status: "draft",
+      // First-class start date, defaulted to the facility's today. Editable in
+      // the Orders tab before signing.
+      startDate: input.startDate ?? facilityDateKey(new Date(), p.facilityTimezone),
       createdAt: new Date().toISOString(),
     };
     p.orders = [row, ...(p.orders ?? [])];
@@ -3991,6 +4005,9 @@ export const AdelanteEHR = {
       row.status = "signed";
       row.attestedBy = attestedBy;
       row.attestedAt = at;
+      // Safety net for drafts created before startDate existed, or cleared in
+      // the UI: a signed order always carries a real start date.
+      row.startDate ??= facilityDateKey(new Date(), p.facilityTimezone);
       signed.push(row);
     }
     if (signed.length) {

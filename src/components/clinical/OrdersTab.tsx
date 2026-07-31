@@ -372,6 +372,16 @@ function DraftOrderCard({
           />
         </div>
         <div>
+          <Label className="text-xs">Start date</Label>
+          <Input
+            className="mt-1"
+            type="date"
+            aria-label="Therapy start date"
+            value={order.startDate ?? ""}
+            onChange={(e) => patch({ startDate: e.target.value || undefined })}
+          />
+        </div>
+        <div>
           <Label className={cn("text-xs", blocked.has("duration") && REQ_LABEL)}>
             Duration {order.isStat || prn ? "" : "*"}
           </Label>
