@@ -29,6 +29,9 @@ export type NotificationCategory =
   | "crisis_flagged"
   | "mar_witness_needed"
   | "task_assigned"
+  // §Inbox — a provider request the recipient finished, reported back to
+  // whoever asked for it.
+  | "provider_request_completed"
   // §Notification feed Phase 2 — patient<->clinician messaging.
   | "patient_message";
 
@@ -59,6 +62,57 @@ export interface AppNotification {
 // classification does not exist here and faking it would be unsafe, so a
 // patient can disclose Part 2 content in a message and it will be shown to
 // anyone with messaging access. Same standing-gap treatment as vitals/labs.
+
+// ═══════════════════════════════════════════════════════════════
+// RESERVED — NOT IMPLEMENTED. Lab/imaging results do not exist
+// anywhere in this EHR build. This type exists ONLY as a schema
+// anchor for the dev team building real lab integration — no UI,
+// no methods, no seeded data reference this type anywhere.
+// See ClickUp: [link to be added] for the full requirement.
+// ═══════════════════════════════════════════════════════════════
+export interface LabResult {
+  id: string;
+  patientId: string;
+  testCode?: string;
+  testName: string;
+  category?: string;
+  valueNumeric?: number;
+  valueText?: string;
+  units?: string;
+  referenceLow?: number;
+  referenceHigh?: number;
+  abnormalFlag?: string;
+  collectedAt?: string;
+  resultedAt?: string;
+  reviewStatus: "unreviewed" | "acknowledged";
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  acknowledgmentNote?: string;
+}
+
+// §Inbox — Provider Request queue. A cross-patient, lightweight ask between
+// staff ("can you clarify this?", "please enter this order"). Deliberately
+// NOT a CaseTask: tasks are patient-plan work assigned TO a named person,
+// requests are unassigned until someone claims them.
+export interface ProviderRequest {
+  id: string;
+  patientId: string;
+  requestType: "question" | "order_entry";
+  /** Free text — the actual ask. */
+  context: string;
+  requestedBy: string;
+  requestedByRole: StaffRole;
+  /** Claimed by (staff identity token). */
+  assignedTo?: string;
+  status: "open" | "claimed" | "done";
+  createdAt: string;
+  claimedAt?: string;
+  claimedBy?: string;
+  /** Completion note. */
+  outcome?: string;
+  completedAt?: string;
+  completedBy?: string;
+}
 export interface CareMessage {
   id: string;
   /** The thread. One thread per patient. */
