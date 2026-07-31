@@ -56,6 +56,7 @@ import {
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { RefusalFormDialog } from "@/components/clinical/refusal/RefusalFormDialog";
+import { RefusalRiskTextRecord } from "@/components/clinical/refusal/RefusalRiskTextRecord";
 import {
   RefusalEscalationDialog,
   type EscalationTarget,
