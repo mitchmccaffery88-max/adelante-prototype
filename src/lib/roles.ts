@@ -54,6 +54,7 @@ export type RecordClass =
   | "crisis_queue"
   | "patient_messaging"
   | "provider_requests"
+  | "worklist"
   | "note_templates";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
@@ -242,6 +243,24 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // clinical_coordinator read for coordination/oversight; billing is out —
   // these are clinical asks, not claim data.
   provider_requests: {
+    case_manager: "write",
+    therapist: "write",
+    pmhnp: "write",
+    clinical_coordinator: "read",
+    peer_specialist: "read",
+    sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+  // §Worklist Phase A — cross-facility operational task table. NOT
+  // patient-scoped, so it follows the crisis_queue / population_health
+  // reasoning: the roles that actually do and claim the work write;
+  // oversight roles read; revenue roles get nothing because operational task
+  // assignment is not claim data. peer_specialist reads (they coordinate on
+  // shared work) but does not claim — one difference from crisis_queue, where
+  // peers get "none": a worklist row is routine operational work, not
+  // population-wide clinical risk exposure.
+  worklist: {
     case_manager: "write",
     therapist: "write",
     pmhnp: "write",
