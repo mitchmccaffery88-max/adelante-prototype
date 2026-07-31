@@ -27,7 +27,7 @@ const SUGGESTED_REVIEWER: Record<string, string> = {
 
 export function RiskTextReviewPanel() {
   const [role] = useActingRole();
-  const { staff } = useActingStaff();
+  const { staffName } = useActingStaff();
   const reviews = useEhr(() => AdelanteEHR.listRiskTextReviews());
   const slots = useMemo(() => AdelanteEHR.riskTextReviewerRoles(), []);
 
@@ -62,7 +62,7 @@ export function RiskTextReviewPanel() {
           review={review}
           slots={slots}
           canReview={canReview}
-          actorName={staff?.name ?? "Unknown staff"}
+          actorName={staffName}
         />
       ))}
     </Card>
