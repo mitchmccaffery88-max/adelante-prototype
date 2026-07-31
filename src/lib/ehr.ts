@@ -1450,7 +1450,9 @@ export type CaseTaskOrigin =
   | "screener_flag"
   | "referral_stale"
   | "notification_failed"
-  | "provider_switch";
+  | "provider_switch"
+  /** §Phase 3c — created by a note template automation at sign time. */
+  | "note_automation";
 
 export interface CaseTask {
   id: string;
@@ -1466,6 +1468,32 @@ export interface CaseTask {
   snoozedUntil?: string;
   /** Idempotency key so auto-generation doesn't duplicate. */
   dedupeKey?: string;
+  /**
+   * §Phase 3c provenance. Present only on automation-created tasks so the UI
+   * can always say WHICH note produced this work and link back to it.
+   */
+  sourceNoteId?: string;
+  sourceAutomationId?: string;
+  /** Template title of the source note, for "Auto-created from …". */
+  sourceTemplateTitle?: string;
+  priority?: "routine" | "urgent" | "stat";
+}
+
+/**
+ * §Phase 3c run log. One row per (noteId, automationId) that has ever fired.
+ * Checked BEFORE firing, so an automation can never run twice for the same
+ * note even if the note is somehow re-signed.
+ */
+export interface NoteAutomationRun {
+  noteId: string;
+  automationId: string;
+  patientId: string;
+  ranAt: string;
+  /** What the run produced, for the audit trail. */
+  resultKind: "case_task" | "draft_note" | "skipped";
+  resultId?: string;
+  /** Populated when resultKind is "skipped". */
+  skipReason?: string;
 }
 
 export interface AvailabilitySlot {
