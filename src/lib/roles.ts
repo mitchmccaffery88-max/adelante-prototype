@@ -76,7 +76,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   screeners_sud: {
     case_manager: "consent_gated",
     peer_specialist: "consent_gated",
-    therapist: "consent_gated",
+    // Policy: therapist and pmhnp are both direct treating clinicians with a
+    // legitimate clinical need to know SUD status without a separate consent
+    // gate. case_manager/peer_specialist stay gated because care coordination
+    // is not clinical treatment — that distinction is the actual line.
+    therapist: "read",
     pmhnp: "read",
   },
   psych_eval: { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },

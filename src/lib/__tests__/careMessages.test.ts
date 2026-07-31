@@ -170,13 +170,13 @@ describe("care message Part 2 flagging", () => {
     const gatedPatient = AdelanteEHR.listPatients().find(
       (x) => canAccess("case_manager", "screeners_sud", x).locked,
     )!;
-    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length;
+    const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
     AdelanteEHR.sendPatientMessage(gatedPatient.id, "sensitive ask", true);
-    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const after = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.category === "patient_message" && n.patientId === gatedPatient.id,
     );
     expect(after.length).toBeGreaterThan(0);
-    expect(AdelanteEHR.listNotificationsFor("nobody", "pmhnp").length).toBeGreaterThan(before);
+    expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBeGreaterThan(before);
     expect(after.at(-1)!.body).toBe("A patient sent a message to their care team.");
   });
 
@@ -184,13 +184,77 @@ describe("care message Part 2 flagging", () => {
     const openPatient = AdelanteEHR.listPatients().find(
       (x) => !canAccess("case_manager", "screeners_sud", x).locked,
     )!;
-    const before = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === openPatient.id,
     ).length;
     AdelanteEHR.sendPatientMessage(openPatient.id, "sensitive ask", true);
-    const after = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
+    const after = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === openPatient.id,
     ).length;
     expect(after).toBe(before);
+  });
+
+  // ---- Thread 1: therapist is un-gated for screeners_sud everywhere ----
+  it("therapist has unconditional screeners_sud access, mirroring pmhnp", () => {
+    for (const p of AdelanteEHR.listPatients()) {
+      expect(canAccess("therapist", "screeners_sud", p).locked).toBe(false);
+      expect(canAccess("pmhnp", "screeners_sud", p).locked).toBe(false);
+    }
+    expect(canAccess("therapist", "screeners_sud", undefined).locked).toBe(false);
+    // Reads through the shared check used by message masking too.
+    const gp = AdelanteEHR.listPatients()[0]!;
+    const m = AdelanteEHR.sendPatientMessage(gp.id, "therapist can read this", true)!;
+    const cur = AdelanteEHR.listCareMessages(gp.id).find((x) => x.id === m.id)!;
+    expect(isMessageBodyMasked(cur, "therapist", gp)).toBe(false);
+    expect(visibleMessageBody(cur, "therapist", gp)).toBe("therapist can read this");
+  });
+
+  // ---- Thread 2: staff-initiated (retroactive) flag backstop ----
+  it("staff flag on a gated patient notifies the case manager (distinct copy) plus a backstop", () => {
+    const gated = AdelanteEHR.listPatients().find(
+      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+    )!;
+    const cmName = AdelanteEHR.listCaseManagers().find((c) => c.id === gated.caseManagerId)!.name;
+    const m = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Bagga", "clinical note to patient")!;
+    const cmBefore = AdelanteEHR.listNotificationsFor(cmName, "case_manager").length;
+    const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
+
+    AdelanteEHR.flagMessageAsSud(gated.id, m.id, "Dr. Bagga", "pmhnp");
+
+    const all = AdelanteEHR.listNotificationsFor(cmName, "case_manager");
+    expect(all.length).toBeGreaterThan(cmBefore);
+    const visibility = all.filter((n) => n.body.includes("flagged for Part 2 protection"));
+    expect(visibility.length).toBeGreaterThan(0);
+    expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBeGreaterThan(thBefore);
+  });
+
+  it("does not self-notify the case manager who did the flagging, and never notifies on unflag", () => {
+    const gated = AdelanteEHR.listPatients().find(
+      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+    )!;
+    const cmName = AdelanteEHR.listCaseManagers().find((c) => c.id === gated.caseManagerId)!.name;
+    const m = AdelanteEHR.sendStaffMessage(gated.id, cmName, "note")!;
+    const before = AdelanteEHR.listNotificationsFor(cmName, "case_manager").length;
+    AdelanteEHR.flagMessageAsSud(gated.id, m.id, cmName, "case_manager");
+    expect(AdelanteEHR.listNotificationsFor(cmName, "case_manager").length).toBe(before);
+
+    const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
+    AdelanteEHR.unflagMessageAsSud(gated.id, m.id, cmName, "case_manager");
+    expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBe(thBefore);
+    expect(AdelanteEHR.listNotificationsFor(cmName, "case_manager").length).toBe(before);
+  });
+
+  it("produces no flag notifications when the case manager is not gated", () => {
+    const open = AdelanteEHR.listPatients().find(
+      (x) => !canAccess("case_manager", "screeners_sud", x).locked,
+    )!;
+    const m = AdelanteEHR.sendStaffMessage(open.id, "Dr. Bagga", "note")!;
+    const count = () =>
+      AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
+        (n) => n.patientId === open.id,
+      ).length;
+    const before = count();
+    AdelanteEHR.flagMessageAsSud(open.id, m.id, "Dr. Bagga", "pmhnp");
+    expect(count()).toBe(before);
   });
 });

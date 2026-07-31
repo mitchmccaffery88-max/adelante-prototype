@@ -2232,6 +2232,42 @@ function setCareMessageSudFlag(
     actorId: staffName,
     detail: { messageId, authorType: msg.authorType, role },
   });
+  // §Retroactive-flag blind-spot safety net (mirror of the self-flag backstop
+  // in `sendPatientMessage`). Flagging is the only direction that can REMOVE
+  // visibility, so nothing fires on unflag. When the case manager is gated for
+  // this patient's SUD content, tell them their view changed (distinct copy —
+  // this is a visibility change, not new content) and alert an un-gated role
+  // so a genuinely authorized reader knows.
+  if (flagged && canAccess("case_manager", "screeners_sud", p).locked) {
+    const cmName = caseManagers.find((c) => c.id === p!.caseManagerId)?.name;
+    // Don't tell the flagger they can no longer see what they just flagged.
+    if (cmName !== staffName) {
+      AdelanteEHR.notify({
+        recipientStaffId: cmName || undefined,
+        recipientRole: cmName ? undefined : "case_manager",
+        category: "patient_message",
+        subject: `Message visibility changed — ${patientLabel(patientId)}`,
+        body: `A message for ${patientLabel(patientId)} was flagged for Part 2 protection and may no longer be visible to you.`,
+        linkRoute: "/record/$patientId",
+        linkParams: { patientId, section: "messages" },
+        patientId,
+      });
+    }
+    const backstop = (["therapist", "pmhnp"] as StaffRole[]).find(
+      (r) => r !== role && !canAccess(r, "screeners_sud", p!).locked,
+    );
+    if (backstop) {
+      AdelanteEHR.notify({
+        recipientRole: backstop,
+        category: "patient_message",
+        subject: `New message — ${patientLabel(patientId)}`,
+        body: "A patient sent a message to their care team.",
+        linkRoute: "/record/$patientId",
+        linkParams: { patientId, section: "messages" },
+        patientId,
+      });
+    }
+  }
   emit();
   return true;
 }
