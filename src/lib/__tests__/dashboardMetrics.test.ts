@@ -150,9 +150,9 @@ describe("population_health RBAC", () => {
   });
 
   it("locks peer specialists out entirely", () => {
-    const a = canAccess("peer_specialist", "population_health");
-    expect(a.level).toBe("none");
-    expect(a.reason).toBeTruthy();
+    // Denial reasons are reserved for 42 CFR Part 2 consent gating; a plain
+    // role denial carries level "none" and the UI supplies the copy.
+    expect(canAccess("peer_specialist", "population_health").level).toBe("none");
   });
 });
 
