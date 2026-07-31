@@ -1566,6 +1566,7 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
                   schema={activeTemplate.schema}
                   answers={answers}
                   onChange={setAnswers}
+                  language={patient.preferredLanguage === "es" ? "es" : "en"}
                 />
               </div>
             )}
@@ -1732,6 +1733,9 @@ function ProgressNoteCard({
 }) {
   const { staffName, role } = useActingStaff();
   const status = noteStatus(note);
+  // Same language source of truth as the Refusal risk text: the patient record.
+  const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
   const [attested, setAttested] = useState(false);
   const [cosignerId, setCosignerId] = useState<string>("");
   const mustCosign = requiresCosign(role);
@@ -1808,6 +1812,7 @@ function ProgressNoteCard({
                 onChange={() => {}}
                 readOnly
                 missingKeys={missing.map((m) => m.key)}
+                language={noteLanguage}
               />
             </div>
           )}

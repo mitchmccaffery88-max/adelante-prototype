@@ -23,11 +23,19 @@ import {
 import { AlertTriangle } from "lucide-react";
 import {
   computeScore,
+  ES_DRAFT_NOTICE_EN,
+  ES_DRAFT_NOTICE_ES,
+  fieldHelp,
+  fieldLabel,
   isFieldVisible,
   isSectionVisible,
+  optionLabel,
+  sectionTitle,
+  spanishReviewPending,
   type AnswerValue,
   type TemplateAnswers,
   type TemplateField,
+  type TemplateLanguage,
   type TemplateSchema,
 } from "@/lib/templateSchema";
 
@@ -38,19 +46,46 @@ interface Props {
   readOnly?: boolean;
   /** Field keys to highlight as missing (from findMissingRequired). */
   missingKeys?: string[];
+  /**
+   * Display language. Resolved by the caller from `Patient.preferredLanguage`
+   * — the same source of truth the Refusal risk text uses. Defaults to English,
+   * so existing English-only rendering is unchanged.
+   */
+  language?: TemplateLanguage;
 }
 
-export function TemplateForm({ schema, answers, onChange, readOnly, missingKeys = [] }: Props) {
+export function TemplateForm({
+  schema,
+  answers,
+  onChange,
+  readOnly,
+  missingKeys = [],
+  language = "en",
+}: Props) {
   const set = (key: string, value: AnswerValue) => onChange({ ...answers, [key]: value });
   const scores = computeScore(schema, answers);
+  // Draft-translation visibility flag, mirroring the Refusal risk text. Not a
+  // gate — the form stays fully usable.
+  const esDraft = language === "es" && spanishReviewPending(schema);
 
   return (
     <div className="space-y-5">
+      {esDraft && (
+        <p
+          data-testid="template-es-draft-banner"
+          className="flex items-start gap-1.5 rounded-md border border-gold/50 bg-gold/15 p-2 text-[11px] text-navy"
+        >
+          <AlertTriangle className="mt-0.5 h-3 w-3 shrink-0" />
+          <span>
+            {ES_DRAFT_NOTICE_ES} · {ES_DRAFT_NOTICE_EN}
+          </span>
+        </p>
+      )}
       {(schema.sections ?? [])
         .filter((s) => isSectionVisible(s, answers))
         .map((section) => (
           <section key={section.id} className="space-y-3">
-            <h5 className="font-display text-sm text-navy">{section.title}</h5>
+            <h5 className="font-display text-sm text-navy">{sectionTitle(section, language)}</h5>
             {(section.fields ?? [])
               .filter((f) => isFieldVisible(f, answers))
               .map((field) => (
@@ -61,6 +96,7 @@ export function TemplateForm({ schema, answers, onChange, readOnly, missingKeys 
                   onChange={(v) => set(field.key, v)}
                   readOnly={readOnly}
                   missing={missingKeys.includes(field.key)}
+                  language={language}
                 />
               ))}
           </section>
@@ -100,17 +136,21 @@ function FieldRenderer({
   onChange,
   readOnly,
   missing,
+  language,
 }: {
   field: TemplateField;
   value: AnswerValue;
   onChange: (v: AnswerValue) => void;
   readOnly?: boolean;
   missing?: boolean;
+  language: TemplateLanguage;
 }) {
   const id = `tf-${field.key}`;
+  const labelText = fieldLabel(field, language);
+  const helpText = fieldHelp(field, language);
   const label = (
     <Label htmlFor={id} className="text-xs">
-      {field.label}
+      {labelText}
       {field.required && <span className="ml-0.5 text-destructive">*</span>}
     </Label>
   );
@@ -164,9 +204,9 @@ function FieldRenderer({
             disabled={readOnly}
             checked={value === true}
             onCheckedChange={(v) => onChange(Boolean(v))}
-            aria-label={field.label}
+            aria-label={labelText}
           />
-          <span>{field.help ?? "Yes"}</span>
+          <span>{helpText ?? (language === "es" ? "Sí" : "Yes")}</span>
         </label>
       )}
       {field.type === "select" && (
@@ -175,13 +215,13 @@ function FieldRenderer({
           value={typeof value === "string" ? value : ""}
           onValueChange={(v) => onChange(v)}
         >
-          <SelectTrigger id={id} aria-label={field.label}>
-            <SelectValue placeholder="Choose…" />
+          <SelectTrigger id={id} aria-label={labelText}>
+            <SelectValue placeholder={language === "es" ? "Elegir…" : "Choose…"} />
           </SelectTrigger>
           <SelectContent>
             {(field.options ?? []).map((o) => (
               <SelectItem key={o.value} value={o.value}>
-                {o.label}
+                {optionLabel(o, language)}
               </SelectItem>
             ))}
           </SelectContent>
@@ -197,7 +237,7 @@ function FieldRenderer({
           {(field.options ?? []).map((o) => (
             <label key={o.value} className="flex items-center gap-2 text-xs">
               <RadioGroupItem value={o.value} id={`${id}-${o.value}`} />
-              <span>{o.label}</span>
+              <span>{optionLabel(o, language)}</span>
             </label>
           ))}
         </RadioGroup>
@@ -209,20 +249,20 @@ function FieldRenderer({
               <Checkbox
                 disabled={readOnly}
                 checked={selected.includes(o.value)}
-                aria-label={`${field.label}: ${o.label}`}
+                aria-label={`${labelText}: ${optionLabel(o, language)}`}
                 onCheckedChange={(v) =>
                   onChange(
                     v ? [...selected, o.value] : selected.filter((s) => s !== o.value),
                   )
                 }
               />
-              <span>{o.label}</span>
+              <span>{optionLabel(o, language)}</span>
             </label>
           ))}
         </div>
       )}
-      {field.help && field.type !== "checkbox" && (
-        <p className="text-[10px] text-muted-foreground">{field.help}</p>
+      {helpText && field.type !== "checkbox" && (
+        <p className="text-[10px] text-muted-foreground">{helpText}</p>
       )}
     </div>
   );

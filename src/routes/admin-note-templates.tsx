@@ -9,9 +9,13 @@ import { useState } from "react";
 import { AdelanteEHR, useEhr, type NoteTemplate } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
+  ES_DRAFT_NOTICE_EN,
+  schemaContentEquals,
+  spanishReviewPending,
   type FieldType,
   type ScoringRule,
   type TemplateField,
+  type TemplateLanguage,
   type TemplateSchema,
   type TemplateSection,
   type TemplateAnswers,
@@ -278,12 +282,23 @@ function TemplateBuilderDialog({
     template?.schema.scoring?.map((r) => ({ ...r, sum_of: [...r.sum_of] })) ?? [],
   );
   const [preview, setPreview] = useState<TemplateAnswers>({});
+  // Spanish authoring is optional and collapsed by default so English-only
+  // authors are not forced through translation fields.
+  const [showEs, setShowEs] = useState(false);
+  const [esReviewed, setEsReviewed] = useState(Boolean(template?.schema.esReviewed));
+  const [previewLang, setPreviewLang] = useState<TemplateLanguage>("en");
 
-  const schema: TemplateSchema = { sections, scoring: scoring.length ? scoring : undefined };
+  const schema: TemplateSchema = {
+    sections,
+    scoring: scoring.length ? scoring : undefined,
+    esReviewed: esReviewed || undefined,
+  };
   // A schema edit changes answer semantics, so it publishes a new version
   // instead of rewriting the one existing notes were answered against.
-  const schemaChanged = !!template && JSON.stringify(schema) !== JSON.stringify(template.schema);
+  // The review flag is excluded — see schemaContentEquals.
+  const schemaChanged = !!template && !schemaContentEquals(schema, template.schema);
   const nextVersion = (template?.version ?? 0) + 1;
+  const esPending = spanishReviewPending(schema);
 
   const updateSection = (i: number, patch: Partial<TemplateSection>) =>
     setSections((prev) => prev.map((s, idx) => (idx === i ? { ...s, ...patch } : s)));
@@ -385,6 +400,36 @@ function TemplateBuilderDialog({
           />
         </div>
 
+        {/* Spanish authoring. Optional and collapsed: template authors are not
+            forced to translate, and an untranslated field simply renders its
+            English label to the clinician. */}
+        <div className="space-y-2 rounded-md border border-border p-3">
+          <div className="flex flex-wrap items-center justify-between gap-2">
+            <label className="flex items-center gap-2 text-xs text-navy">
+              <Checkbox
+                checked={showEs}
+                aria-label="Show Spanish translation fields"
+                onCheckedChange={(v) => setShowEs(Boolean(v))}
+              />
+              <span>Spanish translations (optional)</span>
+            </label>
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={esReviewed}
+                aria-label="Spanish translation clinically reviewed"
+                onCheckedChange={(v) => setEsReviewed(Boolean(v))}
+              />
+              <span>Spanish translation clinically reviewed</span>
+            </label>
+          </div>
+          {esPending && (
+            <p className="text-[11px] text-navy">
+              {ES_DRAFT_NOTICE_EN} — clinicians in Spanish see a draft indicator until this is
+              marked reviewed.
+            </p>
+          )}
+        </div>
+
         <div className="space-y-3">
           {sections.map((section, si) => (
             <Card key={section.id} className="space-y-3 p-3">
@@ -396,6 +441,16 @@ function TemplateBuilderDialog({
                     onChange={(e) => updateSection(si, { title: e.target.value })}
                   />
                 </div>
+                {showEs && (
+                  <div className="space-y-1.5">
+                    <Label className="text-xs">Section title (ES)</Label>
+                    <Input
+                      value={section.titleEs ?? ""}
+                      placeholder={section.title}
+                      onChange={(e) => updateSection(si, { titleEs: e.target.value || undefined })}
+                    />
+                  </div>
+                )}
                 <div className="space-y-1.5">
                   <Label className="text-xs">Show if (optional)</Label>
                   <Input
@@ -492,6 +547,31 @@ function TemplateBuilderDialog({
                       </div>
                     </div>
 
+                    {showEs && (
+                      <div className="grid gap-2 rounded-md bg-secondary/20 p-2 sm:grid-cols-2">
+                        <div className="space-y-1.5">
+                          <Label className="text-[11px]">Label (ES)</Label>
+                          <Input
+                            value={field.labelEs ?? ""}
+                            placeholder={field.label}
+                            onChange={(e) =>
+                              updateField(si, fi, { labelEs: e.target.value || undefined })
+                            }
+                          />
+                        </div>
+                        <div className="space-y-1.5">
+                          <Label className="text-[11px]">Help text (ES)</Label>
+                          <Input
+                            value={field.helpEs ?? ""}
+                            placeholder={field.help ?? ""}
+                            onChange={(e) =>
+                              updateField(si, fi, { helpEs: e.target.value || undefined })
+                            }
+                          />
+                        </div>
+                      </div>
+                    )}
+
                     {/* ADEL SEAM: authors may annotate a field's intent for the
                         future AI-drafting layer (see Agentic AI Adel Scaffolding
                         in ClickUp). This is authoring metadata only — no
@@ -549,6 +629,7 @@ function TemplateBuilderDialog({
                     {HAS_OPTIONS.includes(field.type) && (
                       <OptionsEditor
                         field={field}
+                        showEs={showEs}
                         onChange={(options) => updateField(si, fi, { options })}
                       />
                     )}
@@ -596,8 +677,23 @@ function TemplateBuilderDialog({
         <ScoringEditor rules={scoring} onChange={setScoring} />
 
         <div className="space-y-2 rounded-md border border-border p-3">
-          <h4 className="font-display text-sm text-navy">Live preview</h4>
-          <TemplateForm schema={schema} answers={preview} onChange={setPreview} />
+          <div className="flex items-center justify-between gap-2">
+            <h4 className="font-display text-sm text-navy">Live preview</h4>
+            <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+              <Checkbox
+                checked={previewLang === "es"}
+                aria-label="Preview in Spanish"
+                onCheckedChange={(v) => setPreviewLang(v ? "es" : ("en" as TemplateLanguage))}
+              />
+              <span>Preview in Spanish</span>
+            </label>
+          </div>
+          <TemplateForm
+            schema={schema}
+            answers={preview}
+            onChange={setPreview}
+            language={previewLang}
+          />
         </div>
 
         <DialogFooter>
@@ -615,9 +711,11 @@ function TemplateBuilderDialog({
 
 function OptionsEditor({
   field,
+  showEs,
   onChange,
 }: {
   field: TemplateField;
+  showEs: boolean;
   onChange: (options: TemplateField["options"]) => void;
 }) {
   const options = field.options ?? [];
@@ -625,7 +723,10 @@ function OptionsEditor({
     <div className="space-y-2">
       <Label className="text-[11px]">Options</Label>
       {options.map((o, i) => (
-        <div key={i} className="grid gap-2 sm:grid-cols-[1fr_1fr_6rem_auto]">
+        <div
+          key={i}
+          className={`grid gap-2 ${showEs ? "sm:grid-cols-[1fr_1fr_1fr_6rem_auto]" : "sm:grid-cols-[1fr_1fr_6rem_auto]"}`}
+        >
           <Input
             value={o.label}
             placeholder="Label"
@@ -639,6 +740,20 @@ function OptionsEditor({
               )
             }
           />
+          {showEs && (
+            <Input
+              value={o.labelEs ?? ""}
+              placeholder="Label (ES)"
+              aria-label="Option label (ES)"
+              onChange={(e) =>
+                onChange(
+                  options.map((x, j) =>
+                    j === i ? { ...x, labelEs: e.target.value || undefined } : x,
+                  ),
+                )
+              }
+            />
+          )}
           <Input
             value={o.value}
             placeholder="Value"

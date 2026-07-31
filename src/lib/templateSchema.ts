@@ -23,6 +23,12 @@ export type FieldType =
 export interface TemplateFieldOption {
   value: string;
   label: string;
+  /**
+   * Optional Spanish display label. `value` is the STORED answer and never
+   * localizes — only the display text does — so adding this is structurally
+   * safe for scoring, `show_if` and existing answers.
+   */
+  labelEs?: string;
   /** Optional numeric weight used by scoring rules. */
   score?: number;
 }
@@ -31,11 +37,15 @@ export interface TemplateField {
   key: string;
   type: FieldType;
   label: string;
+  /** Optional Spanish label. Falls back to `label` when absent — never blank. */
+  labelEs?: string;
   required?: boolean;
   options?: TemplateFieldOption[];
   /** Conditional visibility expression, e.g. `risk == "yes" && phq9 >= 10`. */
   show_if?: string;
   help?: string;
+  /** Optional Spanish help text. Falls back to `help` when absent. */
+  helpEs?: string;
   min?: number;
   max?: number;
   rows?: number;
@@ -50,6 +60,8 @@ export interface TemplateField {
 export interface TemplateSection {
   id: string;
   title: string;
+  /** Optional Spanish section title. Falls back to `title` when absent. */
+  titleEs?: string;
   show_if?: string;
   /** Only "fields" in this pass — orders_section / autofill_section are 3b/3c. */
   type?: "fields";
@@ -73,6 +85,83 @@ export interface ScoringRule {
 export interface TemplateSchema {
   sections: TemplateSection[];
   scoring?: ScoringRule[];
+  /**
+   * Spanish translations in this schema have passed clinical review.
+   * Undefined / false = draft. This mirrors the Refusal form's risk-text
+   * treatment: it is a VISIBILITY flag, not a hard gate — clinicians may still
+   * use a draft translation, they just must not mistake it for approved
+   * clinical language.
+   */
+  esReviewed?: boolean;
+}
+
+// ---------------------------------------------------------------------------
+// Localization
+//
+// There is no global app-language toggle in this codebase. The single source
+// of truth for a person's language is `Patient.preferredLanguage`, which is
+// exactly what the Refusal risk text reads (see ehr.ts → riskTextFor). These
+// helpers take that resolved language and apply English fallback, so a missing
+// translation degrades to English and NEVER renders blank.
+// ---------------------------------------------------------------------------
+
+export type TemplateLanguage = "en" | "es";
+
+/** English always wins over nothing. */
+function pick(es: string | undefined, en: string, lang: TemplateLanguage): string {
+  if (lang !== "es") return en;
+  const t = (es ?? "").trim();
+  return t || en;
+}
+
+export function fieldLabel(field: TemplateField, lang: TemplateLanguage): string {
+  return pick(field.labelEs, field.label, lang);
+}
+
+export function fieldHelp(field: TemplateField, lang: TemplateLanguage): string | undefined {
+  if (lang !== "es") return field.help;
+  const t = (field.helpEs ?? "").trim();
+  return t || field.help;
+}
+
+export function sectionTitle(section: TemplateSection, lang: TemplateLanguage): string {
+  return pick(section.titleEs, section.title, lang);
+}
+
+export function optionLabel(option: TemplateFieldOption, lang: TemplateLanguage): string {
+  return pick(option.labelEs, option.label, lang);
+}
+
+/** True when the schema carries ANY Spanish label/help/title text. */
+export function schemaHasSpanish(schema: TemplateSchema | undefined): boolean {
+  for (const s of schema?.sections ?? []) {
+    if ((s.titleEs ?? "").trim()) return true;
+    for (const f of s.fields ?? []) {
+      if ((f.labelEs ?? "").trim()) return true;
+      if ((f.helpEs ?? "").trim()) return true;
+      for (const o of f.options ?? []) if ((o.labelEs ?? "").trim()) return true;
+    }
+  }
+  return false;
+}
+
+/** Spanish content exists but has not been clinically reviewed. */
+export function spanishReviewPending(schema: TemplateSchema | undefined): boolean {
+  return schemaHasSpanish(schema) && !schema?.esReviewed;
+}
+
+/** Draft-translation notice, mirroring the Refusal form's wording. */
+export const ES_DRAFT_NOTICE_ES = "Borrador — pendiente de revisión clínica";
+export const ES_DRAFT_NOTICE_EN = "Spanish translation pending clinical review";
+
+/**
+ * Schema equality for VERSIONING purposes. `esReviewed` is a review-status
+ * flag, not answer semantics, so flipping it must not publish a new version
+ * (translated text changes still do).
+ */
+export function schemaContentEquals(a: TemplateSchema, b: TemplateSchema): boolean {
+  const strip = ({ esReviewed: _ignored, ...rest }: TemplateSchema) => rest;
+  return JSON.stringify(strip(a)) === JSON.stringify(strip(b));
 }
 
 export type AnswerValue = string | number | boolean | string[] | null | undefined;
