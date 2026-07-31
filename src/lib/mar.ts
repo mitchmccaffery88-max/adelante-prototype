@@ -17,14 +17,13 @@ import {
   type Patient,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
-import { frequencyByCode } from "@/lib/frequencies";
+import { dosesPerDay, frequencyByCode, frequencyIntervalDays } from "@/lib/frequencies";
 import { STAFF_ROSTER, type StaffMember } from "@/lib/roles";
-import { deriveMedicationSchedule } from "@/lib/medSchedule";
 import {
-  addFacilityDays,
   facilityDateKey,
-  startOfFacilityDay,
+  fromFacilityWallClock,
   facilityTimeLabel,
+  toFacilityParts,
 } from "@/lib/facilityTime";
 
 /**
@@ -79,39 +78,96 @@ export interface MarDay {
   deferred: { order: MedOrder; reason: MarDeferralReason }[];
 }
 
-/** The start instant the schedule should be anchored to for this order. */
-function orderStart(order: MedOrder): Date {
+/**
+ * Facility-local calendar day therapy begins.
+ *
+ * `startDate` is a first-class field on MedOrder as of this pass. The
+ * attestedAt/createdAt chain below is a LEGACY read path only, for orders
+ * written before the field existed — new orders always carry a real start date
+ * (defaulted at draft/sign time, editable by the prescriber).
+ */
+export function orderStartDateKey(order: MedOrder, tz?: string): string {
+  if (order.startDate) return order.startDate;
   const raw = order.attestedAt ?? order.createdAt;
   const d = raw ? new Date(raw) : new Date();
-  return Number.isNaN(d.getTime()) ? new Date() : d;
+  return facilityDateKey(Number.isNaN(d.getTime()) ? new Date() : d, tz);
+}
+
+/** Whole calendar days from `from` to `to`, both YYYY-MM-DD. */
+function dayOffset(from: string, to: string): number {
+  const a = Date.parse(`${from}T12:00:00Z`);
+  const b = Date.parse(`${to}T12:00:00Z`);
+  if (Number.isNaN(a) || Number.isNaN(b)) return Number.NaN;
+  return Math.round((b - a) / 86_400_000);
 }
 
 /**
- * Scheduled due times for one order that fall on `dateKey`.
+ * Scheduled due times for one order on `dateKey`.
  *
- * The order may have started weeks ago, and deriveMedicationSchedule caps
- * open-ended courses at 14 days of grid, so the projection is re-anchored to
- * the start of the requested day whenever therapy began before it. The daily
- * admin grid is identical either way for daily cadences; weekly cadences are
- * re-checked against the true start so their interval is preserved.
+ * Due/not-due is computed DIRECTLY from (selected day − order start date)
+ * against the frequency's `intervalDays`. The previous implementation
+ * re-anchored deriveMedicationSchedule to the start of the selected day, which
+ * silently treated every selected day as day 0 of the course — correct for
+ * daily cadences (offset is irrelevant when every day is due) but wrong for any
+ * cadence with intervalDays > 1, which would then appear due on every day it
+ * was viewed.
  */
 function slotsForOrder(order: MedOrder, dateKey: string, tz?: string): string[] {
-  const start = orderStart(order);
-  const dayStart = startOfFacilityDay(new Date(`${dateKey}T12:00:00Z`), tz);
-  const dayEnd = addFacilityDays(dayStart, 1, tz);
-  const anchor = start.getTime() > dayStart.getTime() ? start : dayStart;
-  const { isPrn, slots } = deriveMedicationSchedule({
-    frequencyCode: order.frequencyCode,
-    timezone: tz,
-    startAt: anchor,
-    durationValue: order.durationValue,
-    durationUnit: order.durationUnit,
-    isStat: order.isStat,
-  });
-  if (isPrn) return [];
-  return slots
-    .filter((s) => s.dueAt.getTime() >= dayStart.getTime() && s.dueAt.getTime() < dayEnd.getTime())
-    .map((s) => s.dueAt.toISOString());
+  const startKey = orderStartDateKey(order, tz);
+  const offset = dayOffset(startKey, dateKey);
+  if (!Number.isFinite(offset) || offset < 0) return []; // therapy has not begun
+
+  const parts = dateKey.split("-").map(Number);
+  const at = (hour: number) =>
+    fromFacilityWallClock(
+      { year: parts[0], month: parts[1], day: parts[2], hour },
+      tz,
+    ).toISOString();
+
+  // STAT is a single immediate administration on the start day only.
+  if (order.isStat) {
+    if (offset !== 0) return [];
+    const raw = order.attestedAt ?? order.createdAt;
+    const inst = raw ? new Date(raw) : new Date();
+    return [(Number.isNaN(inst.getTime()) ? new Date() : inst).toISOString()];
+  }
+
+  const freq = frequencyByCode(order.frequencyCode);
+  if (!freq || freq.isPrn || freq.adminTimes.length === 0) return [];
+
+  // Interval cadence: only days that are an exact multiple of intervalDays from
+  // the REAL start date are due.
+  const interval = frequencyIntervalDays(freq);
+  if (offset % interval !== 0) return [];
+
+  const grid = [...freq.adminTimes].sort((a, b) => a - b);
+
+  // Course end.
+  if (order.durationUnit === "days" && order.durationValue && offset >= order.durationValue)
+    return [];
+  let hours = grid;
+  if (order.durationUnit === "doses" && order.durationValue) {
+    const priorDueDays = offset / interval;
+    const remaining = order.durationValue - priorDueDays * grid.length;
+    if (remaining <= 0) return [];
+    hours = grid.slice(0, remaining);
+  }
+  void dosesPerDay;
+
+  // On the start day, a dose cannot be due before the order itself existed.
+  if (offset === 0) {
+    const raw = order.attestedAt ?? order.createdAt;
+    const created = raw ? new Date(raw) : undefined;
+    if (created && !Number.isNaN(created.getTime())) {
+      const createdKey = facilityDateKey(created, tz);
+      if (createdKey === dateKey) {
+        const createdHour = toFacilityParts(created, tz).hour;
+        hours = hours.filter((h) => h >= createdHour);
+      }
+    }
+  }
+
+  return hours.map(at);
 }
 
 /**
