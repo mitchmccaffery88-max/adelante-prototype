@@ -4526,6 +4526,19 @@ export const AdelanteEHR = {
       priority: input.priority,
     };
     caseTasks.unshift(task);
+    // §Notification feed — direct-address the assignee only (never their whole
+    // role). `assignedTo` is a caseManagerId; the roster identity token is the
+    // person's display name, so resolve it when we can.
+    const assigneeName = caseManagers.find((c) => c.id === task.assignedTo)?.name;
+    AdelanteEHR.notify({
+      recipientStaffId: assigneeName || task.assignedTo,
+      category: "task_assigned",
+      subject: `Task assigned — ${task.title}`,
+      body: `${task.detail ?? `New task for ${patientLabel(task.patientId)}`} (due ${task.dueDate})`,
+      linkRoute: "/record/$patientId",
+      linkParams: { patientId: task.patientId, section: "tasks" },
+      patientId: task.patientId,
+    });
     emit();
     return task;
   },
