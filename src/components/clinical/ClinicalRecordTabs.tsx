@@ -8,6 +8,7 @@ import {
   type PatientAlert,
 } from "@/lib/ehr";
 import { useActingStaff, canAccess } from "@/lib/roles";
+import { PatientCrisisPanel } from "@/components/clinical/CrisisPanel";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
