@@ -131,21 +131,15 @@ describe("RefusalFormDialog", () => {
   // A non-English language with no translated catalog resolves to the reviewed
   // English wording: interpreter section still appears, but nothing may present
   // the text as an unapproved draft.
-  it("falls back to reviewed English with no draft banner when no catalog exists", async () => {
+  it("falls back to reviewed English with no draft banner when no catalog exists", () => {
     const { pid, form } = refusedForm();
-    const { AdelanteEHR: EHR } = await import("@/lib/ehr");
-    const patient = EHR.getPatient(pid)!;
-    const enForm = EHR.listRefusalForms
-      ? form
-      : form; /* shell already carries the English snapshot */
     renderForm(pid, {
-      ...enForm,
+      ...form,
       languageCode: "vi", // no Vietnamese catalog
-      riskTextSnapshotEn: enForm.riskTextSnapshot,
+      riskTextSnapshotEn: form.riskTextSnapshot,
       riskTextReviewed: true,
       riskTextSnapshotEnLocked: true,
     });
-    expect(patient).toBeTruthy();
 
     expect(screen.getByLabelText("Interpreter method")).toBeTruthy();
     expect(screen.getByText(/No reviewed translation exists for this language/i)).toBeTruthy();
