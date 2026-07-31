@@ -41,6 +41,7 @@ import {
   type NoteStatus,
 } from "@/lib/ehr";
 import { cosignerCandidates, requiresCosign } from "@/lib/notes";
+import { downloadProgressNotePdf, noteExportGate } from "@/lib/notePdf";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
 import { findMissingRequired, type TemplateAnswers } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
