@@ -386,6 +386,12 @@ export interface RefusalForm {
    * Undefined on forms created before translations existed (treat as reviewed).
    */
   riskTextReviewed?: boolean;
+  /**
+   * True once the presented wording is clinically approved: the English
+   * snapshot is then a LOCKED archival reference on the record, not a live
+   * fallback the dialog presents as the authoritative text.
+   */
+  riskTextSnapshotEnLocked?: boolean;
   languageCode: string;
   /** Active alert labels matching the capacity heuristic at signing time. */
   capacityFlagsAtSigning: string[];
@@ -1592,6 +1598,54 @@ let currentPatientId = "p2";
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
 
+// ---------------------------------------------------------------------------
+// §Risk-text translation governance.
+//
+// A draft translation (es-v1-draft) is only promoted to a reviewed version
+// (es-v1) after BOTH required clinical sign-offs are recorded. Sign-offs are
+// per-language, append-only in the audit trail, and revocable (which demotes
+// the language back to draft). Already-created RefusalForms are NEVER
+// retro-edited: their snapshot, version, and English snapshot are frozen at
+// creation, which is the whole point of snapshotting a legal disclosure.
+// ---------------------------------------------------------------------------
+
+export interface RiskTextSignoff {
+  role: RiskTextReviewerRole;
+  reviewerName: string;
+  signedAt: string;
+  note?: string;
+}
+
+export interface RiskTextReview {
+  language: string;
+  languageLabel: string;
+  draftVersion: string;
+  /** Version presented on new forms — the draft until both sign-offs land. */
+  effectiveVersion: string;
+  status: "draft" | "approved";
+  signoffs: RiskTextSignoff[];
+  approvedAt?: string;
+  /** Free-text reason recorded when an approval is revoked. */
+  revokedReason?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+}
+
+const riskTextReviews: RiskTextReview[] = [
+  {
+    language: "es",
+    languageLabel: "Spanish",
+    draftVersion: RISK_TEXT_CATALOG_ES["*"].version,
+    effectiveVersion: RISK_TEXT_CATALOG_ES["*"].version,
+    status: "draft",
+    signoffs: [],
+  },
+];
+
+const riskTextApprovalLookup = () => ({
+  approvedLanguages: riskTextReviews.filter((r) => r.status === "approved").map((r) => r.language),
+});
+
 // Vendor adapters (telehealth video + eRx medication management). Kept
 // behind AdelanteEHR helpers so UI code never talks to vendors directly.
 import { vendors as _vendors } from "./vendors";
@@ -1608,7 +1662,11 @@ import {
   witnessRequiredFor,
   ESCALATION_REFUSAL_THRESHOLD,
   ESCALATION_WINDOW_DAYS,
+  REQUIRED_RISK_TEXT_REVIEWER_ROLES,
+  RISK_TEXT_CATALOG_ES,
+  PROMOTED_RISK_TEXT_VERSION,
   type RefusalFinalizePayload,
+  type RiskTextReviewerRole,
 } from "./refusal";
 
 // ---------------------------------------------------------------------------
@@ -4692,6 +4750,112 @@ export const AdelanteEHR = {
       (r) => r.id === formId,
     );
   },
+  /** Required sign-off slots for promoting a draft translation. */
+  riskTextReviewerRoles() {
+    return REQUIRED_RISK_TEXT_REVIEWER_ROLES.map((r) => ({ ...r }));
+  },
+  /** Governance state for every translated risk-text catalog. */
+  listRiskTextReviews(): RiskTextReview[] {
+    return riskTextReviews.map((r) => ({ ...r, signoffs: r.signoffs.map((s) => ({ ...s })) }));
+  },
+  getRiskTextReview(language: string): RiskTextReview | undefined {
+    const r = riskTextReviews.find((x) => x.language === language.toLowerCase().split("-")[0]);
+    return r ? { ...r, signoffs: r.signoffs.map((s) => ({ ...s })) } : undefined;
+  },
+  /**
+   * Record one clinical sign-off. When both required roles are present the
+   * language is promoted (es-v1-draft → es-v1) and new forms are created with
+   * `riskTextReviewed: true` and a LOCKED English snapshot.
+   */
+  signRiskTextReview(input: {
+    language: string;
+    role: RiskTextReviewerRole;
+    reviewerName: string;
+    note?: string;
+  }): RiskTextReview {
+    const lang = input.language.toLowerCase().split("-")[0];
+    const review = riskTextReviews.find((x) => x.language === lang);
+    if (!review) throw new Error("No translated risk-text catalog for this language.");
+    if (!REQUIRED_RISK_TEXT_REVIEWER_ROLES.some((r) => r.role === input.role))
+      throw new Error("Unknown reviewer role.");
+    const reviewerName = input.reviewerName.trim();
+    if (!reviewerName) throw new Error("Reviewer name is required to record a sign-off.");
+    if (review.signoffs.some((s) => s.role === input.role))
+      throw new Error("This role has already signed off. Revoke the approval to re-sign.");
+
+    const signoff: RiskTextSignoff = {
+      role: input.role,
+      reviewerName,
+      signedAt: new Date().toISOString(),
+      note: input.note?.trim() || undefined,
+    };
+    review.signoffs = [...review.signoffs, signoff];
+    review.revokedReason = undefined;
+    review.revokedAt = undefined;
+    review.revokedBy = undefined;
+
+    appendAudit({
+      category: "clinical",
+      action: "risk_text_review_signed",
+      actorId: reviewerName,
+      detail: {
+        language: lang,
+        role: input.role,
+        draftVersion: review.draftVersion,
+        note: signoff.note ?? null,
+        signoffCount: review.signoffs.length,
+        requiredSignoffs: REQUIRED_RISK_TEXT_REVIEWER_ROLES.length,
+      },
+    });
+
+    const complete = REQUIRED_RISK_TEXT_REVIEWER_ROLES.every((r) =>
+      review.signoffs.some((s) => s.role === r.role),
+    );
+    if (complete && review.status !== "approved") {
+      review.status = "approved";
+      review.effectiveVersion =
+        PROMOTED_RISK_TEXT_VERSION[review.draftVersion] ?? review.draftVersion;
+      review.approvedAt = signoff.signedAt;
+      appendAudit({
+        category: "clinical",
+        action: "risk_text_version_promoted",
+        actorId: reviewerName,
+        detail: {
+          language: lang,
+          fromVersion: review.draftVersion,
+          toVersion: review.effectiveVersion,
+          signedOffBy: review.signoffs.map((s) => `${s.reviewerName} (${s.role})`),
+          englishSnapshotLocked: true,
+        },
+      });
+    }
+    emit();
+    return { ...review, signoffs: review.signoffs.map((s) => ({ ...s })) };
+  },
+  /** Demote an approved translation back to draft. Reason required. */
+  revokeRiskTextReview(language: string, reason: string, actorName: string): RiskTextReview {
+    const lang = language.toLowerCase().split("-")[0];
+    const review = riskTextReviews.find((x) => x.language === lang);
+    if (!review) throw new Error("No translated risk-text catalog for this language.");
+    const why = reason.trim();
+    if (!why) throw new Error("A reason is required to revoke clinical sign-off.");
+    const previous = review.effectiveVersion;
+    review.signoffs = [];
+    review.status = "draft";
+    review.effectiveVersion = review.draftVersion;
+    review.approvedAt = undefined;
+    review.revokedReason = why;
+    review.revokedAt = new Date().toISOString();
+    review.revokedBy = actorName;
+    appendAudit({
+      category: "clinical",
+      action: "risk_text_review_revoked",
+      actorId: actorName,
+      detail: { language: lang, fromVersion: previous, toVersion: review.draftVersion, reason: why },
+    });
+    emit();
+    return { ...review, signoffs: [] };
+  },
   /**
    * Create the pending shell for a refused dose. Called automatically right
    * after the refusal is charted — the shell exists whether or not the nurse
@@ -4717,7 +4881,7 @@ export const AdelanteEHR = {
     const languageCode = p.preferredLanguage ?? "en";
     // Presented in the patient's language when a catalog exists; Spanish is a
     // DRAFT translation pending clinical sign-off (see refusal.ts).
-    const risk = riskTextFor(medClass, languageCode);
+    const risk = riskTextFor(medClass, languageCode, riskTextApprovalLookup());
     const row: RefusalForm = {
       id: uid(),
       patientId,
@@ -4728,6 +4892,7 @@ export const AdelanteEHR = {
       riskTextSnapshot: risk.text,
       riskTextSnapshotEn: risk.englishText,
       riskTextReviewed: risk.reviewed,
+      riskTextSnapshotEnLocked: risk.englishSnapshotLocked,
       languageCode,
       capacityFlagsAtSigning,
       guardianRequired: isMinorPatient(p),
@@ -4753,6 +4918,7 @@ export const AdelanteEHR = {
         riskTextVersion: row.riskTextVersion,
         languageCode: row.languageCode,
         riskTextReviewed: row.riskTextReviewed,
+        riskTextSnapshotEnLocked: row.riskTextSnapshotEnLocked ?? false,
         capacityFlagsAtSigning,
         guardianRequired: row.guardianRequired,
       },

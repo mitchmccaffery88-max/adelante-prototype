@@ -343,3 +343,48 @@ describe("risk text language routing", () => {
     }
   });
 });
+
+// §Risk-text translation review → promotion (es-v1-draft → es-v1).
+describe("risk-text translation review", () => {
+  it("keeps Spanish as an unreviewed draft with no sign-offs", () => {
+    const r = riskTextFor("psychiatric", "es", { approvedLanguages: [] });
+    expect(r.version).toBe("es-v1-draft");
+    expect(r.reviewed).toBe(false);
+    expect(r.englishSnapshotLocked).toBe(false);
+  });
+
+  it("promotes to es-v1 and locks the English snapshot once approved", () => {
+    const r = riskTextFor("psychiatric", "es", { approvedLanguages: ["es"] });
+    expect(r.version).toBe("es-v1");
+    expect(r.reviewed).toBe(true);
+    expect(r.englishSnapshotLocked).toBe(true);
+    // Wording itself is unchanged by promotion — governance metadata only.
+    expect(r.text).toBe(RISK_TEXT_CATALOG_ES.psychiatric.text);
+    expect(r.englishText).toBe(RISK_TEXT_CATALOG.psychiatric.text);
+  });
+
+  it("requires both clinical sign-offs before promoting, and revocation demotes", () => {
+    expect(AdelanteEHR.getRiskTextReview("es")?.status).toBe("draft");
+    AdelanteEHR.signRiskTextReview({
+      language: "es",
+      role: "clinical_director",
+      reviewerName: "Christi",
+    });
+    expect(AdelanteEHR.getRiskTextReview("es")?.status).toBe("draft");
+    AdelanteEHR.signRiskTextReview({
+      language: "es",
+      role: "medical_director",
+      reviewerName: "Dr. Bagga",
+    });
+    const approved = AdelanteEHR.getRiskTextReview("es");
+    expect(approved?.status).toBe("approved");
+    expect(approved?.effectiveVersion).toBe("es-v1");
+
+    expect(() => AdelanteEHR.revokeRiskTextReview("es", "  ", "QA")).toThrow();
+    AdelanteEHR.revokeRiskTextReview("es", "Wording correction pending", "QA");
+    const after = AdelanteEHR.getRiskTextReview("es");
+    expect(after?.status).toBe("draft");
+    expect(after?.effectiveVersion).toBe("es-v1-draft");
+    expect(after?.signoffs).toHaveLength(0);
+  });
+});

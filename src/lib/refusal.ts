@@ -10,10 +10,11 @@
 // credentials once staff authentication exists. Deliberately not a fake
 // password field — a fake credential prompt is worse than an honest checkbox.
 //
-// LANGUAGE: risk text is ENGLISH ONLY in this pass. Adelante has an EN/ES
-// toggle elsewhere, but clinical risk-disclosure language in a legal document
-// must not be machine-translated. TODO(clinical): Spanish risk text requires
-// review/sign-off by Christi and Dr. Bagga before it ships.
+// LANGUAGE: Spanish risk text ships as `es-v1-draft` and is only presented as
+// reviewed wording after BOTH clinical sign-offs (Christi, Dr. Bagga) are
+// recorded through the admin review panel, which promotes it to `es-v1` and
+// locks the English snapshot as an archival reference. Clinical risk-disclosure
+// language in a legal document is never machine-translated into production.
 
 import type { MedOrder, Patient, PatientAlert, RefusalForm } from "@/lib/ehr";
 
@@ -105,24 +106,72 @@ const TRANSLATED_CATALOGS: Record<string, Record<MedClass, RiskTextEntry>> = {
   es: RISK_TEXT_CATALOG_ES,
 };
 
+/**
+ * Draft → approved version map. Promotion never rewrites the catalog strings —
+ * only the version label and the `reviewed` flag change, so the wording a
+ * patient was read is identical before and after sign-off and the diff in the
+ * record is purely governance metadata.
+ */
+export const PROMOTED_RISK_TEXT_VERSION: Record<string, string> = {
+  "es-v1-draft": "es-v1",
+};
+
+/** The two clinical sign-offs required before a draft translation is promoted. */
+export const REQUIRED_RISK_TEXT_REVIEWER_ROLES = [
+  { role: "clinical_director", label: "Clinical Director (Christi)" },
+  { role: "medical_director", label: "Medical Director (Dr. Bagga)" },
+] as const;
+
+export type RiskTextReviewerRole = (typeof REQUIRED_RISK_TEXT_REVIEWER_ROLES)[number]["role"];
+
+/**
+ * Approval state for one language, supplied by the EHR store. `riskTextFor`
+ * stays pure — callers pass what has been signed off rather than the resolver
+ * reaching into application state.
+ */
+export interface RiskTextApprovalLookup {
+  /** Languages whose draft catalog has both required sign-offs. */
+  approvedLanguages: string[];
+}
+
 export interface ResolvedRiskText extends RiskTextEntry {
   /** False for any translation still awaiting clinical sign-off. */
   reviewed: boolean;
   /** English wording for the same class — always retained on the record. */
   englishText: string;
+  /**
+   * True once the translation is approved: the English snapshot recorded on the
+   * form is a locked archival reference, not a live fallback the dialog should
+   * present as the authoritative wording.
+   */
+  englishSnapshotLocked: boolean;
 }
 
 /**
  * Resolve the disclosure to present for a class + patient language. Falls back
  * to the reviewed English text whenever no catalog exists for the language.
  */
-export function riskTextFor(medClass: MedClass, languageCode?: string): ResolvedRiskText {
+export function riskTextFor(
+  medClass: MedClass,
+  languageCode?: string,
+  approvals?: RiskTextApprovalLookup,
+): ResolvedRiskText {
   const cls = RISK_TEXT_CATALOG[medClass] ? medClass : "*";
   const en = RISK_TEXT_CATALOG[cls];
   const lang = (languageCode ?? "en").toLowerCase().split("-")[0];
   const translated = lang === "en" ? undefined : TRANSLATED_CATALOGS[lang]?.[cls];
-  if (!translated) return { ...en, reviewed: true, englishText: en.text };
-  return { ...translated, reviewed: false, englishText: en.text };
+  if (!translated)
+    return { ...en, reviewed: true, englishText: en.text, englishSnapshotLocked: true };
+  const approved = (approvals?.approvedLanguages ?? []).includes(lang);
+  if (!approved)
+    return { ...translated, reviewed: false, englishText: en.text, englishSnapshotLocked: false };
+  return {
+    ...translated,
+    version: PROMOTED_RISK_TEXT_VERSION[translated.version] ?? translated.version,
+    reviewed: true,
+    englishText: en.text,
+    englishSnapshotLocked: true,
+  };
 }
 
 /**

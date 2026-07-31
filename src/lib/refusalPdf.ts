@@ -131,6 +131,15 @@ export function buildRefusalFormPdf(args: {
       "NOTE: the wording above is a draft translation awaiting clinical sign-off. The clinically reviewed English wording is reproduced below.",
     );
     if (form.riskTextSnapshotEn) paragraph(form.riskTextSnapshotEn);
+  } else if (
+    form.riskTextSnapshotEnLocked &&
+    form.riskTextSnapshotEn &&
+    form.riskTextSnapshotEn !== form.riskTextSnapshot
+  ) {
+    paragraph(
+      `NOTE: the wording above is the clinically approved ${form.riskTextVersion} translation. The English wording below is a locked reference copy retained on the record.`,
+    );
+    paragraph(form.riskTextSnapshotEn);
   }
 
   if (form.capacityFlagsAtSigning.length > 0) {
