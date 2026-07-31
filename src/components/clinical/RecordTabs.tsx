@@ -1288,6 +1288,7 @@ export function TaskList({
     referral_stale: "Stale referral",
     notification_failed: "Delivery failed",
     provider_switch: "Provider switch",
+    note_automation: "Note automation",
   };
   return (
     <div className="space-y-1.5">
@@ -1302,6 +1303,7 @@ export function TaskList({
                 <div className="mt-1 text-[10px] text-muted-foreground">
                   Due {t.dueDate.slice(0, 10)} · {originLabels[t.origin]}
                 </div>
+                <AutoCreatedFromNote task={t} />
               </div>
               {showActions && (
                 <div className="flex gap-1">
