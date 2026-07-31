@@ -4160,6 +4160,7 @@ export const AdelanteEHR = {
     staffName: string,
     batchId: string,
     lateEntryReason?: string,
+    opts?: { witnessedBy?: string; mouthCheckAttested?: boolean },
   ): DoseAdministration {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found");
@@ -4168,6 +4169,28 @@ export const AdelanteEHR = {
     const trimmed = reason?.trim();
     if ((action === "refused" || action === "held") && !trimmed)
       throw new Error("A reason is required to chart a refused or held dose.");
+    // ----- §MAR Phase 2 gates -------------------------------------------------
+    if (order.isKop)
+      throw new Error(
+        "KOP orders are issued as a patient supply, not charted as a bedside administration.",
+      );
+    const prn = !!frequencyByCode(order.frequencyCode)?.isPrn;
+    if (prn && action === "given" && !trimmed)
+      throw new Error("A PRN dose requires an indication reason.");
+    const witness = opts?.witnessedBy?.trim();
+    if (action === "given") {
+      if (prn) {
+        const elig = AdelanteEHR.prnEligibility(patientId, orderId);
+        if (elig.blocked)
+          throw new Error(
+            `PRN limit reached — ${elig.given}/${elig.max} given in the last 24h.`,
+          );
+      }
+      if (requiresDoseWitness(order) && !witness)
+        throw new Error(
+          "A second clinician must witness this Schedule II administration before it can be charted as given.",
+        );
+    }
     const chartedAt = new Date();
     const lateBy = chartedAt.getTime() - new Date(scheduledAt).getTime();
     const late = lateBy > LATE_ENTRY_THRESHOLD_HOURS * 3600_000;
@@ -4190,6 +4213,9 @@ export const AdelanteEHR = {
       chartedBy: staffName,
       chartedAt: chartedAt.toISOString(),
       lateEntryReason: late ? lateTrimmed : undefined,
+      witnessedBy: action === "given" ? witness || undefined : undefined,
+      isPrn: prn || undefined,
+      mouthCheckAttested: opts?.mouthCheckAttested || undefined,
       batchId,
     };
     p.administrations = [row, ...(p.administrations ?? [])];
@@ -4210,6 +4236,10 @@ export const AdelanteEHR = {
         doseAction: action,
         reason: trimmed ?? null,
         lateEntryReason: row.lateEntryReason ?? null,
+        isPrn: prn,
+        deaSchedule: order.deaSchedule ?? null,
+        witnessedBy: row.witnessedBy ?? null,
+        mouthCheckAttested: !!row.mouthCheckAttested,
         batchId,
         attestationMethod: "checkbox_only",
       },
