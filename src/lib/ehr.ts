@@ -479,9 +479,9 @@ export interface Patient {
    * separate store because every other MAR read is already patient-scoped.
    */
   doseClaims?: DoseClaim[];
+  /** KOP supply issuances (§MAR Phase 2). Never deleted; returns are recorded. */
+  kopIssuances?: KopIssuance[];
 }
-/** KOP supply issuances (§MAR Phase 2). */
-
 
 export interface ScreenerResult {
   key: string;
