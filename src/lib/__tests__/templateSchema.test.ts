@@ -4,6 +4,7 @@ import {
   evalExpr,
   findMissingRequired,
   isFieldVisible,
+  requiredFieldSummary,
   type TemplateSchema,
 } from "@/lib/templateSchema";
 
