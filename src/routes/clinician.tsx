@@ -812,9 +812,10 @@ function RefillReviewCard() {
  */
 function NurseRefusalWorklistSection() {
   const { staffName } = useActingStaff();
-  const role = useActingRole();
-  if (!canAccess(role, "mar")) return null;
-  return <NurseRefusalWorklist staffName={staffName} />;
+  const { role } = useActingStaff();
+  const access = canAccess(role, "meds_erx");
+  if (access.level === "none") return null;
+  return <NurseRefusalWorklist staffName={staffName} readOnly={access.level === "read"} />;
 }
 
 /**
