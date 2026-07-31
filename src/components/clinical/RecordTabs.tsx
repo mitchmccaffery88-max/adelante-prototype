@@ -1759,14 +1759,14 @@ function ProgressNoteCard({
             </div>
           )}
           <dl className="mt-2 space-y-1.5">
-          {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
-            note[k] ? (
-              <div key={k}>
-                <dt className="font-medium text-navy capitalize">{k}</dt>
-                <dd className="text-foreground/80">{note[k]}</dd>
-              </div>
-            ) : null,
-          )}
+            {(["subjective", "objective", "assessment", "plan"] as const).map((k) =>
+              note[k] ? (
+                <div key={k}>
+                  <dt className="font-medium text-navy capitalize">{k}</dt>
+                  <dd className="text-foreground/80">{note[k]}</dd>
+                </div>
+              ) : null,
+            )}
           </dl>
         </>
       )}

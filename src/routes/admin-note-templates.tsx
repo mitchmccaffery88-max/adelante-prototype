@@ -112,7 +112,10 @@ function AdminNoteTemplatesPage() {
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
-          <Link to="/admin" className="inline-flex items-center gap-1 text-xs text-muted-foreground">
+          <Link
+            to="/admin"
+            className="inline-flex items-center gap-1 text-xs text-muted-foreground"
+          >
             <ArrowLeft className="h-3 w-3" /> Admin
           </Link>
           <h1 className="font-display text-2xl text-navy">Note templates</h1>
@@ -154,7 +157,8 @@ function AdminNoteTemplatesPage() {
                 </div>
                 <p className="text-[11px] text-muted-foreground">
                   key {t.key} · {t.schema.sections?.length ?? 0} sections ·{" "}
-                  {(t.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0)} fields
+                  {(t.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0)}{" "}
+                  fields
                   {t.schema.scoring?.length ? ` · ${t.schema.scoring.length} scoring rule(s)` : ""}
                 </p>
                 {!t.active && t.deactivationReason && (
@@ -264,7 +268,8 @@ function TemplateBuilderDialog({
   const [key, setKey] = useState(template?.key ?? "");
   const [encounterType, setEncounterType] = useState(template?.encounterType ?? "general");
   const [sections, setSections] = useState<TemplateSection[]>(
-    template?.schema.sections?.map((s) => ({ ...s, fields: s.fields.map((f) => ({ ...f })) })) ?? [],
+    template?.schema.sections?.map((s) => ({ ...s, fields: s.fields.map((f) => ({ ...f })) })) ??
+      [],
   );
   const [scoring, setScoring] = useState<ScoringRule[]>(
     template?.schema.scoring?.map((r) => ({ ...r, sum_of: [...r.sum_of] })) ?? [],
@@ -450,7 +455,9 @@ function TemplateBuilderDialog({
                         <Label className="text-[11px]">Help text (optional)</Label>
                         <Input
                           value={field.help ?? ""}
-                          onChange={(e) => updateField(si, fi, { help: e.target.value || undefined })}
+                          onChange={(e) =>
+                            updateField(si, fi, { help: e.target.value || undefined })
+                          }
                         />
                       </div>
                     </div>
@@ -595,7 +602,9 @@ function OptionsEditor({
             onChange={(e) =>
               onChange(
                 options.map((x, j) =>
-                  j === i ? { ...x, label: e.target.value, value: x.value || slug(e.target.value) } : x,
+                  j === i
+                    ? { ...x, label: e.target.value, value: x.value || slug(e.target.value) }
+                    : x,
                 ),
               )
             }
@@ -668,7 +677,9 @@ function ScoringEditor({
           <Input
             value={r.id}
             placeholder="Rule id"
-            onChange={(e) => onChange(rules.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)))}
+            onChange={(e) =>
+              onChange(rules.map((x, j) => (j === i ? { ...x, id: e.target.value } : x)))
+            }
           />
           <Input
             value={r.sum_of.join(", ")}
