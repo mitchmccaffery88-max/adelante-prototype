@@ -5,7 +5,7 @@
 // the entry, exactly like the record drawer omits chart sections.
 import { useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
+import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useStaffNavGroups } from "@/lib/navSections";
 import { useActingStaff } from "@/lib/roles";
@@ -56,6 +56,17 @@ export function StaffNavSidebar() {
       .filter((g) => g.entries.length > 0);
   }, [groups, q]);
   const firstMatch = visibleGroups[0]?.entries[0];
+
+  // A route is active for its own path and any nested child path (e.g.
+  // /record/$patientId keeps the Charts group lit).
+  const isActive = (to: string) =>
+    pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
+
+  // Explicit user toggles win; otherwise a group opens when it owns the active
+  // route or when a quick-jump query is narrowing results.
+  const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
+  const toggleGroup = (key: string, defaultOpen: boolean) =>
+    setGroupOverrides((prev) => ({ ...prev, [key]: !(prev[key] ?? defaultOpen) }));
 
   const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
     if (ev.key === "Escape") {
@@ -133,16 +144,29 @@ export function StaffNavSidebar() {
         {q && visibleGroups.length === 0 && (
           <p className="px-2 py-1 text-xs text-muted-foreground">No matching surfaces.</p>
         )}
-        {visibleGroups.map((g) => (
-          <div key={g.group} className="mb-4 last:mb-0">
+        {visibleGroups.map((g) => {
+          const hasActive = g.entries.some((e) => isActive(e.to));
+          const defaultOpen = hasActive || Boolean(q);
+          const open = collapsed ? true : (groupOverrides[g.group] ?? defaultOpen);
+          return (
+          <div key={g.group} className="mb-4 last:mb-0" data-group={g.group} data-open={open ? "true" : "false"}>
             {!collapsed && (
-              <div className="px-2 pb-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-                {g.label}
-              </div>
+              <button
+                type="button"
+                onClick={() => toggleGroup(g.group, defaultOpen)}
+                aria-expanded={open}
+                className="flex w-full items-center justify-between gap-2 rounded px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
+              >
+                <span className="truncate">{g.label}</span>
+                <ChevronDown
+                  className={cn("h-3 w-3 shrink-0 transition-transform", !open && "-rotate-90")}
+                />
+              </button>
             )}
+            {open && (
             <ul className="space-y-0.5">
               {g.entries.map((e) => {
-                const active = pathname === e.to;
+                const active = isActive(e.to);
                 const Icon = e.icon;
                 return (
                   <li key={e.id}>
@@ -166,8 +190,10 @@ export function StaffNavSidebar() {
                 );
               })}
             </ul>
+            )}
           </div>
-        ))}
+          );
+        })}
       </nav>
     </aside>
   );
