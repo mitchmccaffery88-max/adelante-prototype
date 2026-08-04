@@ -28,6 +28,8 @@ export function useNoteAutofillSnapshots(
   const problems = useEhr(() => AdelanteEHR.listProblems(patientId));
   const allergies = useEhr(() => AdelanteEHR.listAllergies(patientId));
   const administrations = useEhr(() => AdelanteEHR.listAdministrations(patientId));
+  const bookings = useEhr(() => AdelanteEHR.listBookings(patientId));
+  const housingMoves = useEhr(() => AdelanteEHR.listHousingMoves(patientId));
   const sudLocked = patient ? canAccess(role, "screeners_sud", patient).locked : true;
   const excludeNoteId = opts.excludeNoteId;
   return useMemo(() => {
@@ -38,13 +40,27 @@ export function useNoteAutofillSnapshots(
       allergies,
       administrations,
       notes: patient?.progressNotes ?? [],
+      bookings,
+      housingMoves,
+      referrals: patient?.resourceReferrals ?? [],
       sudLocked,
       excludeNoteId,
       orderName: (id) => orders.find((o) => o.id === id)?.drugName ?? id,
       language: patient?.preferredLanguage === "es" ? "es" : "en",
     };
     return resolveAutofillSections(schema, ctx);
-  }, [schema, orders, problems, allergies, administrations, patient, sudLocked, excludeNoteId]);
+  }, [
+    schema,
+    orders,
+    problems,
+    allergies,
+    administrations,
+    bookings,
+    housingMoves,
+    patient,
+    sudLocked,
+    excludeNoteId,
+  ]);
 }
 
 export function NoteAutofillCard({ snapshot }: { snapshot: AutofillSnapshot }) {
