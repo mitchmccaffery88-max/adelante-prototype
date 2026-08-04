@@ -1681,6 +1681,34 @@ export interface CaseTask {
   source?: string;
 }
 
+/**
+ * §Worklist Phase B — protocol scheduling (CIWA/COWS/safety-cell rounds).
+ *
+ * A protocol is a SCHEDULING mechanism only: no clinical content lives here.
+ * The round's actual content is a scored `NoteTemplate` authored in the
+ * template builder, referenced by `templateId`. Rounds are pre-scheduled up
+ * front (there is no backend scheduler in this app), and alerting is NOT
+ * re-implemented: a round is completed by signing its scored note, so the
+ * existing Phase 3c crisis-band gate in `signProgressNote` is the one and
+ * only escalation path.
+ */
+export interface ProtocolInstance {
+  id: string;
+  patientId: string;
+  /** Free-text label, e.g. "CIWA-Ar". A name, not clinical content. */
+  protocolKey: string;
+  /** Must reference an active, scored NoteTemplate. */
+  templateId: string;
+  startedBy: string;
+  startedAt: string;
+  cadenceMinutes: number;
+  totalRounds: number;
+  status: "active" | "completed" | "stopped";
+  stoppedBy?: string;
+  stoppedAt?: string;
+  stopReason?: string;
+}
+
 /** Priority with the documented "routine" default applied. */
 export function taskPriority(t: CaseTask): TaskPriority {
   return t.priority ?? "routine";
