@@ -124,6 +124,9 @@ export function useRecordSections(patient: Patient): RecordSection[] {
         const open = AdelanteEHR.activeMedReconciliation(fresh.id);
         return open ? AdelanteEHR.unreviewedReconItems(fresh.id, open.id).length : 0;
       })(),
+      activeProtocols: AdelanteEHR.listProtocolInstances(fresh.id).filter(
+        (p) => p.status === "active",
+      ).length,
     };
   });
 
