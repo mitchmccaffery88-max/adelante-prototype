@@ -680,8 +680,8 @@ function invalidReasonFor(field: TemplateField, v: AnswerValue): string | null {
     case "datetime": {
       const ms = +new Date(String(v));
       if (Number.isNaN(ms)) return "Not a valid date";
-      const lo = dateBound(field.min);
-      const hi = dateBound(field.max);
+      const lo = dateBound(field.min, "lower");
+      const hi = dateBound(field.max, "upper");
       if (lo !== null && ms < lo) return `Must be on or after ${boundLabel(field.min)}`;
       if (hi !== null && ms > hi) return `Must be on or before ${boundLabel(field.max)}`;
       return null;
@@ -709,12 +709,13 @@ function invalidReasonFor(field: TemplateField, v: AnswerValue): string | null {
  * an ISO date string is read as that exact instant. No bounds → no date-range
  * check at all.
  */
-function dateBound(b: number | string | undefined): number | null {
+function dateBound(b: number | string | undefined, edge: "lower" | "upper"): number | null {
   if (b === undefined || b === null) return null;
   if (typeof b === "number") {
-    // Year bound: min → Jan 1, max → Dec 31 23:59:59.999 handled by caller
-    // semantics via the same instant math below.
-    return +new Date(Date.UTC(b, 0, 1));
+    // Year bound: lower → Jan 1 00:00, upper → Dec 31 23:59:59.999.
+    return edge === "lower"
+      ? +new Date(Date.UTC(b, 0, 1))
+      : +new Date(Date.UTC(b, 11, 31, 23, 59, 59, 999));
   }
   const ms = +new Date(b);
   return Number.isNaN(ms) ? null : ms;
