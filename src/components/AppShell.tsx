@@ -19,6 +19,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { useStaffNavGroups, STAFF_ROUTES } from "@/lib/navSections";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
+import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -70,6 +71,7 @@ export function AppShell() {
 
   return (
     <div className="min-h-dvh flex flex-col">
+      <RouteAccessGuard />
       <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 group">
