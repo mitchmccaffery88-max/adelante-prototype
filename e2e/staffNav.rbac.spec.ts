@@ -38,22 +38,20 @@ async function actAs(page: Page, role: StaffRole) {
 async function expandAllGroups(page: Page) {
   const sidebar = page.getByRole("complementary", { name: "Staff navigation" });
   await expect(sidebar).toBeVisible();
-  // Wait for hydration — before it, clicks on the group headers are no-ops.
-  await expect(sidebar.locator('button[aria-expanded]').first()).toBeVisible();
-  const headers = sidebar.locator('button[aria-label]:not([aria-label*="navigation"])');
-
-  const groupButtons = sidebar.locator("nav button[aria-expanded]");
-  const count = await groupButtons.count();
-  void headers;
-  for (let i = 0; i < count; i++) {
-    const btn = groupButtons.nth(i);
-    for (let attempt = 0; attempt < 10; attempt++) {
-      if ((await btn.getAttribute("aria-expanded")) === "true") break;
-      await btn.click();
-      await page.waitForTimeout(100);
+  // The shell server-renders with the default role, so re-query every pass:
+  // both the group list and the click handlers settle only after hydration.
+  const deadline = Date.now() + 20_000;
+  const closed = sidebar.locator('nav button[aria-expanded="false"]');
+  while (Date.now() < deadline) {
+    if ((await closed.count()) === 0) {
+      await page.waitForTimeout(150);
+      if ((await closed.count()) === 0) return;
+      continue;
     }
-    await expect(btn).toHaveAttribute("aria-expanded", "true");
+    await closed.first().click({ timeout: 2_000 }).catch(() => {});
+    await page.waitForTimeout(100);
   }
+  throw new Error("staff nav groups never finished expanding");
 }
 
 async function visibleNavIds(page: Page): Promise<string[]> {
