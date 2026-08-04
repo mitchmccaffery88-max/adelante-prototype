@@ -12,6 +12,9 @@ import {
 } from "@/components/ui/select";
 import { ArrowLeft, Download, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
+import { useActingRole } from "@/lib/roles";
+import { redactAuditEvents } from "@/lib/auditRedaction";
+import { EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
@@ -50,6 +53,7 @@ const CATEGORIES: { value: AuditCategory | "all"; label: string }[] = [
 ];
 
 function AdminAuditPage() {
+  const [role] = useActingRole();
   const [cat, setCat] = useState<AuditCategory | "all">("all");
   const [patientId, setPatientId] = useState<string>("all");
   const [actorRole, setActorRole] = useState<string>("all");
@@ -68,24 +72,30 @@ function AdminAuditPage() {
   );
 
   const events = useEhr(() =>
-    AdelanteEHR.listAuditEvents({
-      category: cat === "all" ? undefined : cat,
-      patientId: patientId === "all" ? undefined : patientId,
-      actorRole: actorRole === "all" ? undefined : actorRole,
-      since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
-      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
-      limit: 200,
-    }),
+    redactAuditEvents(
+      AdelanteEHR.listAuditEvents({
+        category: cat === "all" ? undefined : cat,
+        patientId: patientId === "all" ? undefined : patientId,
+        actorRole: actorRole === "all" ? undefined : actorRole,
+        since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+        until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
+        limit: 200,
+      }),
+      role,
+    ),
   );
 
   function exportGoalChanges() {
-    const rows = AdelanteEHR.listAuditEvents({
-      category: "care_plan",
-      patientId: patientId === "all" ? undefined : patientId,
-      actorRole: actorRole === "all" ? undefined : actorRole,
-      since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
-      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
-    }).filter((e) => e.action === "goal_status_changed");
+    const rows = redactAuditEvents(
+      AdelanteEHR.listAuditEvents({
+        category: "care_plan",
+        patientId: patientId === "all" ? undefined : patientId,
+        actorRole: actorRole === "all" ? undefined : actorRole,
+        since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+        until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
+      }).filter((e) => e.action === "goal_status_changed"),
+      role,
+    );
 
     if (rows.length === 0) {
       toast.error("No goal status changes match the current filters.");
@@ -102,19 +112,22 @@ function AdminAuditPage() {
       "to_status",
       "actor_role",
       "actor_id",
+      "redacted",
     ];
-    const body = rows.map((e) => {
-      const d = (e.detail ?? {}) as Record<string, unknown>;
+    const body = rows.map((r) => {
+      const e = r.event;
+      const d = r.detail;
       return [
         e.id,
         e.at,
-        e.patientId ?? "",
+        r.subjectLabel === "—" ? "" : r.subjectLabel,
         d.goalId,
-        d.goalText,
+        d.goalText ?? (r.redacted ? "[redacted]" : ""),
         d.from,
         d.to,
         e.actorRole ?? "",
         e.actorId ?? "",
+        r.redacted ? "yes" : "no",
       ].map(csvCell);
     });
     const csv = [header.join(","), ...body.map((r) => r.join(","))].join("\r\n");
@@ -252,7 +265,9 @@ function AdminAuditPage() {
               </tr>
             </thead>
             <tbody>
-              {events.map((e) => (
+              {events.map((r) => {
+                const e = r.event;
+                return (
                 <tr key={e.id} className="border-t align-top">
                   <td className="p-2 whitespace-nowrap text-xs">
                     <ClientDate value={e.at} />
@@ -263,16 +278,27 @@ function AdminAuditPage() {
                     </Badge>
                   </td>
                   <td className="p-2 font-mono text-[11px]">{e.action}</td>
-                  <td className="p-2 font-mono text-[11px]">{e.programId ?? e.patientId ?? "—"}</td>
+                  <td className="p-2 font-mono text-[11px]">
+                    {r.subjectLabel}
+                    {r.subjectMasked ? (
+                      <EyeOff className="inline h-3 w-3 ml-1 text-muted-foreground" />
+                    ) : null}
+                  </td>
                   <td className="p-2 text-[11px]">
                     {e.actorRole ?? "—"}
                     {e.actorId ? <span className="text-muted-foreground"> · {e.actorId}</span> : null}
                   </td>
                   <td className="p-2 text-[11px] text-muted-foreground">
-                    {e.detail ? summarize(e.detail) : ""}
+                    {summarize(r.detail)}
+                    {r.redacted ? (
+                      <span className="ml-1 italic text-[10px]">
+                        [restricted — {r.redactionReason}]
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
