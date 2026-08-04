@@ -6058,6 +6058,32 @@ export const AdelanteEHR = {
   },
 
   // ---------- Unified audit log ----------
+  /**
+   * §Platform nav — records a blocked attempt to open a gated route.
+   * Deliberately carries no patientId and no free text: the denial is about a
+   * route + role, so there is nothing clinical to leak here.
+   */
+  recordNavAccessDenied(input: {
+    role: string;
+    actorId?: string;
+    path: string;
+    redirectTo: string;
+    entryId?: string;
+    label?: string;
+  }) {
+    appendAudit({
+      category: "access",
+      action: "nav_access_denied",
+      actorRole: input.role,
+      actorId: input.actorId,
+      detail: {
+        path: input.path,
+        redirectTo: input.redirectTo,
+        entryId: input.entryId,
+        label: input.label,
+      },
+    });
+  },
   listAuditEvents(
     filter: {
       patientId?: string;

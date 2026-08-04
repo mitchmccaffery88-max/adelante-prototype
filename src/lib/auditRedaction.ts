@@ -47,6 +47,11 @@ const SAFE_DETAIL_KEYS = new Set([
   "until",
   "outcome",
   "result",
+  // Route/navigation bookkeeping (§Platform nav denials): a URL path, its
+  // registry label and the redirect target are app structure, never PHI.
+  "path",
+  "redirectTo",
+  "label",
 ]);
 
 function isSafeDetailKey(key: string, value: unknown): boolean {
