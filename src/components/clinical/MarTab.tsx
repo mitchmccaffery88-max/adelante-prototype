@@ -16,7 +16,7 @@
 // controls (renderChartControls), and commits through the same `commit()`.
 // No gate, reason requirement, or clinical rule is re-implemented here.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AdelanteEHR,
   useEhr,
@@ -415,6 +415,35 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const [openFormId, setOpenFormId] = useState<string | null>(null);
   const [escalation, setEscalation] = useState<EscalationTarget | null>(null);
 
+  // ----- Cart / keyboard mode (view-only state) -----------------------------
+  const [view, setView] = useState<MarView>("grid");
+  const [cartIndex, setCartIndex] = useState(0);
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+
+  // Read the saved view after hydration — a sessionStorage read in the state
+  // initializer would mismatch the server render.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(VIEW_STORAGE_KEY);
+      if (saved === "cart" || saved === "grid") setView(saved);
+    } catch {
+      /* storage unavailable — stay on the grid */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+      /* non-fatal */
+    }
+  }, [view]);
+  useEffect(() => {
+    if (view !== "cart") return;
+    const on = (e: KeyboardEvent) => keyHandlerRef.current(e);
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [view]);
+
   /**
    * Ticks while PRN rows are on screen so the "eligible in Nm" countdown and
    * the Given button unblock on their own when a minimum-interval gap
@@ -450,6 +479,15 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const pendingCount = pendingKeys.length;
   const allRows = [...day.slots, ...day.prn];
   const rowFor = (key: string) => allRows.find((s) => s.key === key);
+
+  /** Cart mode walks the same rows the grid renders, KOP supplies included. */
+  const cartRows = [...day.slots, ...day.prn, ...day.kop];
+  const cartIdx = cartRows.length ? Math.min(cartIndex, cartRows.length - 1) : 0;
+  const cartSlot: MarSlot | undefined = cartRows[cartIdx];
+  const moveCart = (delta: number) =>
+    setCartIndex((i) =>
+      Math.min(Math.max(Math.min(i, cartRows.length - 1) + delta, 0), Math.max(cartRows.length - 1, 0)),
+    );
 
   const setEntry = (key: string, patch: Partial<PendingEntry>) =>
     setEntries((prev) => ({ ...prev, [key]: { ...(prev[key] ?? emptyEntry()), ...patch } }));
