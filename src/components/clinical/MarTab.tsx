@@ -575,6 +575,19 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
     if (queued.length) setRefusalQueue(queued);
   };
 
+  /**
+   * Toggle a pending action on a row. Shared by the grid buttons and the cart's
+   * keyboard shortcuts so both produce byte-identical pending entries.
+   */
+  const pickFor = (slot: MarSlot, a: Action, reason?: string) => {
+    const entry = entries[slot.key];
+    if (entry?.action === a && (reason === undefined || entry.reason === reason)) {
+      clearEntry(slot.key);
+      return;
+    }
+    setEntry(slot.key, { action: a, ...(reason !== undefined ? { reason } : {}) });
+  };
+
   // ----- Row renderers ------------------------------------------------------
   const renderChartControls = (slot: MarSlot) => {
     const entry = entries[slot.key];
@@ -586,13 +599,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       : undefined;
     const givenBlocked = !!elig?.blocked;
 
-    const pick = (a: Action, reason?: string) => {
-      if (entry?.action === a && (reason === undefined || entry.reason === reason)) {
-        clearEntry(slot.key);
-        return;
-      }
-      setEntry(slot.key, { action: a, ...(reason !== undefined ? { reason } : {}) });
-    };
+    const pick = (a: Action, reason?: string) => pickFor(slot, a, reason);
 
     return (
       <div className="mt-2 space-y-2">
