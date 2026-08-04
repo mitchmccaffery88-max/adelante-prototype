@@ -14,10 +14,13 @@ import {
   isProblemClinicallyActive,
   noteStatus,
   type Allergy,
+  type Booking,
   type DoseAdministration,
+  type HousingMove,
   type MedOrder,
   type ProgressNote,
   type Problem,
+  type ResourceReferral,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
 import {
@@ -33,6 +36,21 @@ import {
 export const PART2_AUTOFILL_NOTICE =
   "Some entries are hidden by the 42 CFR Part 2 consent gate.";
 
+/**
+ * §Discharge summary — a resource referral is treated as Part 2 sensitive when
+ * it carries the SUD-disclosure consent flag, since that flag is only ever set
+ * on referrals whose detail is SUD-identifying. Same discipline as
+ * `problems_active`: masked rows are omitted entirely, never counted.
+ */
+export function isReferralSudSensitive(r: ResourceReferral): boolean {
+  return r.sudDisclosureConsent === true;
+}
+
+/** Open = anything not yet completed — the same rule the Referrals tab uses. */
+export function isReferralOpen(r: ResourceReferral): boolean {
+  return r.status !== "completed";
+}
+
 export interface AutofillContext {
   now?: Date;
   orders: MedOrder[];
@@ -40,6 +58,12 @@ export interface AutofillContext {
   problems: Problem[];
   administrations: DoseAdministration[];
   notes: ProgressNote[];
+  /** Newest booking first (matches `AdelanteEHR.listBookings`). */
+  bookings?: Booking[];
+  /** Newest move first (matches `AdelanteEHR.listHousingMoves`). */
+  housingMoves?: HousingMove[];
+  /** Patient-scoped resource referrals. */
+  referrals?: ResourceReferral[];
   /**
    * True when the acting context may NOT see SUD-sensitive content. Same gate
    * (`canAccess(role, "screeners_sud", patient)`) the Notes tab and problem
@@ -156,6 +180,43 @@ export function resolveAutofill(
         },
         { primary: excerpt(prior.assessment || prior.subjective || "") || "(no narrative)" },
       ];
+      break;
+    }
+    case "booking_release_info": {
+      const booking = (ctx.bookings ?? [])[0];
+      if (!booking) {
+        notice = "No booking episode on file.";
+        break;
+      }
+      const unit = (ctx.housingMoves ?? []).find((m) => m.bookingId === booking.id)?.housingUnit;
+      lines = [
+        {
+          primary: booking.releasedAt
+            ? `Released ${new Date(booking.releasedAt).toISOString()}`
+            : "Still booked — no release recorded",
+          secondary: `Booking ${booking.bookingNumber} · booked ${new Date(booking.bookedAt).toISOString()}`,
+        },
+        { primary: booking.facilityName, secondary: unit ? `Housing unit ${unit}` : undefined },
+      ];
+      // The booking REASON is the only free text here and can name SUD
+      // treatment placement, so it follows the same mask as a SUD problem.
+      if (booking.bookingReason) {
+        if (ctx.sudLocked) notice = PART2_AUTOFILL_NOTICE;
+        else lines.push({ primary: booking.bookingReason, secondary: "Booking reason" });
+      }
+      break;
+    }
+    case "referrals_open": {
+      const open = (ctx.referrals ?? []).filter(isReferralOpen);
+      const visible = ctx.sudLocked ? open.filter((r) => !isReferralSudSensitive(r)) : open;
+      if (ctx.sudLocked && visible.length !== open.length) notice = PART2_AUTOFILL_NOTICE;
+      lines = visible.map((r) => ({
+        primary: `${r.category} — ${r.provider}`,
+        secondary:
+          [r.status, r.followUpDate ? `follow-up ${r.followUpDate}` : null, r.note]
+            .filter(Boolean)
+            .join(" · ") || undefined,
+      }));
       break;
     }
   }

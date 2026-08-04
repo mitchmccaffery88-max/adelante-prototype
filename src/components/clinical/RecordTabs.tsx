@@ -1482,7 +1482,16 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
 // Attestation is checkbox-only, matching Orders / MAR / Refusal. Signer
 // eligibility is role-based (see src/lib/notes.ts for the known simplification
 // vs. credential-checked signing).
-export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+export function NotesTab({
+  patientId,
+  readOnly,
+  initialTemplateKey,
+}: {
+  patientId: string;
+  readOnly?: boolean;
+  /** Pre-selects a seeded template by key (e.g. the release → discharge flow). */
+  initialTemplateKey?: string;
+}) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName, staffId, clinicianId, role } = useActingStaff();
   const [note, setNote] = useState({
@@ -1495,7 +1504,12 @@ export function NotesTab({ patientId, readOnly }: { patientId: string; readOnly?
   });
   // Template layer: "none" keeps the existing free-text SOAP editor untouched.
   const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
-  const [templateId, setTemplateId] = useState<string>("none");
+  const [templateId, setTemplateId] = useState<string>(
+    () =>
+      (initialTemplateKey
+        ? AdelanteEHR.listNoteTemplates().find((t) => t.key === initialTemplateKey)?.id
+        : undefined) ?? "none",
+  );
   const [answers, setAnswers] = useState<TemplateAnswers>({});
   const activeTemplate = templates.find((t) => t.id === templateId);
   // §Phase 3b — draft orders staged from this note's orders_section. They are

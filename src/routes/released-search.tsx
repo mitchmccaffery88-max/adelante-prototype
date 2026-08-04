@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientDate } from "@/components/ClientDate";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, FileText, Search } from "lucide-react";
 
 export const Route = createFileRoute("/released-search")({
   head: () => ({
@@ -193,6 +193,7 @@ function ReleasedSearchPage() {
                   <TableHead>Last release</TableHead>
                   <TableHead>Facility</TableHead>
                   <TableHead>Bookings</TableHead>
+                  <TableHead className="text-right">Discharge</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -214,6 +215,20 @@ function ReleasedSearchPage() {
                     </TableCell>
                     <TableCell>{r.facilityName}</TableCell>
                     <TableCell>{r.bookingCount}</TableCell>
+                    <TableCell className="text-right">
+                      {/* §Discharge summary — the natural moment of release.
+                          Opens the chart's Notes section with the seeded
+                          discharge template already selected. */}
+                      <Button size="sm" variant="outline" asChild>
+                        <Link
+                          to="/record/$patientId"
+                          params={{ patientId: r.patient.id }}
+                          search={{ section: "notes", template: "discharge_summary" }}
+                        >
+                          <FileText className="mr-1.5 h-3.5 w-3.5" /> Start discharge summary
+                        </Link>
+                      </Button>
+                    </TableCell>
                   </TableRow>
                 ))}
               </TableBody>

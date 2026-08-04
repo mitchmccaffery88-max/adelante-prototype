@@ -184,6 +184,100 @@ describe("non-field sections are exempt from note required-field enforcement", (
 });
 
 describe("signed autofill snapshots are frozen", () => {
+  it("discharge sources: booking release info and open referrals", () => {
+    const bookings = [
+      {
+        id: "b1",
+        patientId: "p1",
+        bookingNumber: "BK-1",
+        facilityId: "fac-1",
+        facilityName: "Fresno County Jail — Main",
+        bookedAt: "2026-02-01T00:00:00.000Z",
+        releasedAt: "2026-03-01T00:00:00.000Z",
+        bookingReason: "SUD treatment placement",
+        createdBy: "x",
+        createdAt: "2026-02-01T00:00:00.000Z",
+      },
+    ] as never[];
+    const housingMoves = [
+      { id: "h1", bookingId: "b1", housingUnit: "C-Pod 12", movedAt: "2026-02-10T00:00:00.000Z" },
+    ] as never[];
+    const open = resolveAutofill(
+      section({ source: "booking_release_info" }),
+      ctx({ bookings, housingMoves }),
+    );
+    expect(open.lines[0]!.primary).toContain("Released");
+    expect(open.lines[1]!.secondary).toContain("C-Pod 12");
+    expect(JSON.stringify(open)).toContain("SUD treatment placement");
+
+    const masked = resolveAutofill(
+      section({ source: "booking_release_info" }),
+      ctx({ bookings, housingMoves, sudLocked: true }),
+    );
+    expect(JSON.stringify(masked)).not.toContain("SUD treatment placement");
+    expect(masked.notice).toBe(PART2_AUTOFILL_NOTICE);
+
+    const referrals = [
+      { id: "r1", category: "housing", provider: "Turning Point", status: "pending" },
+      { id: "r2", category: "food", provider: "Done Co", status: "completed" },
+      {
+        id: "r3",
+        category: "benefits",
+        provider: "SUD outpatient clinic",
+        status: "accepted",
+        sudDisclosureConsent: true,
+      },
+    ] as never[];
+    const all = resolveAutofill(section({ source: "referrals_open" }), ctx({ referrals }));
+    expect(all.lines).toHaveLength(2);
+    expect(JSON.stringify(all)).not.toContain("Done Co");
+
+    const gated = resolveAutofill(
+      section({ source: "referrals_open" }),
+      ctx({ referrals, sudLocked: true }),
+    );
+    expect(gated.lines.map((l) => l.primary)).toEqual(["housing — Turning Point"]);
+    expect(JSON.stringify(gated)).not.toContain("SUD outpatient clinic");
+    expect(gated.notice).toBe(PART2_AUTOFILL_NOTICE);
+  });
+
+  it("freezes a discharge referral snapshot at signing", () => {
+    const patientId = AdelanteEHR.listPatients()[0]!.id;
+    const note = AdelanteEHR.addProgressNote(patientId, {
+      clinicianId: "c1",
+      date: new Date().toISOString(),
+      sessionType: "individual",
+      subjective: "s",
+      objective: "",
+      assessment: "",
+      plan: "",
+      authorSource: "human",
+      status: "draft",
+    })!;
+    const referrals = [
+      { id: "r1", category: "housing", provider: "Turning Point", status: "pending" },
+    ] as never[];
+    const snapshot = resolveAutofill(section({ source: "referrals_open" }), ctx({ referrals }));
+    AdelanteEHR.signProgressNote(patientId, note.id, {
+      signedBy: "Dr. Bagga",
+      role: "pmhnp",
+      attested: true,
+      autofillSnapshots: [snapshot],
+    });
+    const later = resolveAutofill(
+      section({ source: "referrals_open" }),
+      ctx({
+        referrals: [
+          ...referrals,
+          { id: "r2", category: "legal", provider: "New Co", status: "pending" },
+        ] as never[],
+      }),
+    );
+    expect(later.lines).toHaveLength(2);
+    const stored = AdelanteEHR.getPatient(patientId)?.progressNotes?.find((n) => n.id === note.id);
+    expect(stored?.autofillSnapshots?.[0]?.lines).toHaveLength(1);
+  });
+
   it("does not change when the patient's data changes afterward", () => {
     const patientId = AdelanteEHR.listPatients()[0]!.id;
     const note = AdelanteEHR.addProgressNote(patientId, {

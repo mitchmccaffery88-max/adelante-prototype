@@ -23,11 +23,14 @@ import { ArrowLeft, PanelLeft } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
+  /** Pre-selects a note template by key when landing on the Notes section. */
+  template?: string;
 }
 
 export const Route = createFileRoute("/record/$patientId")({
   validateSearch: (s: Record<string, unknown>): ChartSearch => ({
     section: typeof s.section === "string" ? s.section : undefined,
+    template: typeof s.template === "string" ? s.template : undefined,
   }),
   head: () => ({
     meta: [
@@ -53,7 +56,7 @@ const GROUP_ORDER: RecordSectionGroup[] = ["chart", "case", "coordination"];
 
 function RecordChartPage() {
   const { patientId } = Route.useParams();
-  const { section } = Route.useSearch();
+  const { section, template } = Route.useSearch();
   const navigate = useNavigate();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [navOpen, setNavOpen] = useState(false);
@@ -69,6 +72,7 @@ function RecordChartPage() {
     <ChartBody
       patientId={patient.id}
       section={section}
+      templateKey={template}
       navOpen={navOpen}
       setNavOpen={setNavOpen}
       onSelect={(id) =>
@@ -81,19 +85,21 @@ function RecordChartPage() {
 function ChartBody({
   patientId,
   section,
+  templateKey,
   navOpen,
   setNavOpen,
   onSelect,
 }: {
   patientId: string;
   section?: string;
+  templateKey?: string;
   navOpen: boolean;
   setNavOpen: (v: boolean) => void;
   onSelect: (id: string) => void;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { role, staffName } = useActingStaff();
-  const sections = useRecordSections(patient!);
+  const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   if (!patient) return null;
   const active = sections.find((s) => s.id === section) ?? sections[0];
 
