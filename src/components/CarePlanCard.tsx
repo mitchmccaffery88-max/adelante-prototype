@@ -101,7 +101,13 @@ export function CarePlanCard({
   const cycleGoal = (goalId: string, current: "open" | "in_progress" | "done") => {
     const nextStatus =
       current === "open" ? "in_progress" : current === "in_progress" ? "done" : "open";
-    AdelanteEHR.setGoalStatus(patientId, goalId, nextStatus);
+    AdelanteEHR.setGoalStatus(
+      patientId,
+      goalId,
+      nextStatus,
+      audience === "patient" ? `${patient.firstName} ${patient.lastName}` : undefined,
+      audience === "patient" ? "patient" : (staffRole ?? undefined),
+    );
     toast.success(
       nextStatus === "done"
         ? "Goal marked done — nice work."
