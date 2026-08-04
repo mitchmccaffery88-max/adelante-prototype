@@ -2930,6 +2930,107 @@ const noteTemplates: NoteTemplate[] = [
 ];
 
 /**
+ * §Discharge summary — seeded template.
+ *
+ * AUTHORSHIP CAUTION (same as the crisis instrument and CIWA/COWS scaffolds):
+ * the STRUCTURE here is product/engineering-authored, not clinical content.
+ * The required-field list, the section ordering and the exact wording MUST get
+ * a real clinical review before this is treated as a production discharge
+ * document. No AI-generated narrative: every prose field is clinician-written.
+ */
+noteTemplates.push({
+  id: "tpl-discharge-summary",
+  key: "discharge_summary",
+  version: 1,
+  title: "Discharge summary",
+  description:
+    "Release/discharge summary. Known facts auto-populate; the clinician writes the narrative.",
+  encounterType: "discharge",
+  active: true,
+  createdBy: "Adelante System Admin",
+  createdAt: new Date().toISOString(),
+  schema: {
+    sections: [
+      {
+        id: "ds_release",
+        title: "Release / booking episode",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "booking_release_info" },
+      },
+      {
+        id: "ds_problems",
+        title: "Active problems",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "problems_active" },
+      },
+      {
+        id: "ds_meds",
+        title: "Active medications",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "medications_active" },
+      },
+      {
+        id: "ds_allergies",
+        title: "Allergies",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "allergies" },
+      },
+      {
+        id: "ds_referrals",
+        title: "Open referrals / follow-up in motion",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "referrals_open" },
+      },
+      {
+        id: "ds_narrative",
+        title: "Clinician narrative",
+        fields: [
+          {
+            key: "discharge_reason",
+            type: "textarea",
+            label: "Reason for discharge / release",
+            required: true,
+            rows: 3,
+          },
+          {
+            key: "condition_at_discharge",
+            type: "textarea",
+            label: "Condition at discharge",
+            required: true,
+            rows: 3,
+          },
+          {
+            key: "med_recon_note",
+            type: "textarea",
+            label:
+              "Medication reconciliation note — complete the release reconciliation in the Med reconciliation tab, then summarise the outcome here (do not re-list meds).",
+            rows: 3,
+          },
+          {
+            key: "followup_instructions",
+            type: "textarea",
+            label: "Follow-up instructions given to the patient",
+            required: true,
+            rows: 3,
+          },
+          {
+            key: "additional_summary",
+            type: "textarea",
+            label: "Additional narrative summary",
+            rows: 3,
+          },
+        ],
+      },
+    ],
+  },
+});
+
+/**
  * §Facility registry — top-level, not patient-scoped: a facility is shared by
  * every patient booked there, which is the whole point of having ids.
  */
