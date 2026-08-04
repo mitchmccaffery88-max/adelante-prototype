@@ -149,17 +149,26 @@ export function AppShell() {
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   {t("navStaffPortal")}
                 </DropdownMenuLabel>
-                {staffNav.map((s) => (
-                  <DropdownMenuItem key={s.to} asChild>
-                    <Link to={s.to} className="flex items-start gap-2">
-                      <s.icon className="h-4 w-4 text-teal mt-0.5" />
-                      <span>
-                        <span className="block text-sm font-medium">{s.label}</span>
-                        <span className="block text-xs text-muted-foreground">{s.desc}</span>
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {staffNavGroups.map((g) => (
+                    <div key={g.group}>
+                      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {g.label}
+                      </DropdownMenuLabel>
+                      {g.entries.map((s) => (
+                        <DropdownMenuItem key={s.id} asChild>
+                          <Link to={s.to} className="flex items-start gap-2">
+                            <s.icon className="h-4 w-4 text-teal mt-0.5" />
+                            <span>
+                              <span className="block text-sm font-medium">{s.label}</span>
+                              <span className="block text-xs text-muted-foreground">{s.desc}</span>
+                            </span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  ))}
+                </div>
                 <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
                   Acting as
                 </DropdownMenuLabel>
@@ -225,7 +234,7 @@ export function AppShell() {
                 const active = pathname === n.to;
                 return (
                   <Link
-                    key={n.to}
+                    key={n.id}
                     to={n.to}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px]",
@@ -245,7 +254,16 @@ export function AppShell() {
       </header>
 
       <main className={cn("flex-1", isPatientSurface && "pb-24 md:pb-0")}>
-        <Outlet />
+        {showStaffShell ? (
+          <div className="flex min-h-full">
+            <StaffNavSidebar />
+            <div className="min-w-0 flex-1">
+              <Outlet />
+            </div>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
