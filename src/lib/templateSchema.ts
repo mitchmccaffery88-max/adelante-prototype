@@ -46,8 +46,13 @@ export interface TemplateField {
   help?: string;
   /** Optional Spanish help text. Falls back to `help` when absent. */
   helpEs?: string;
-  min?: number;
-  max?: number;
+  /**
+   * Numeric bounds for `number` fields. For `date`/`datetime` fields the same
+   * properties act as calendar bounds: a number is a YEAR (e.g. `max: 2026`),
+   * an ISO date string is that exact instant. Absent → no range check.
+   */
+  min?: number | string;
+  max?: number | string;
   rows?: number;
   /**
    * ADEL SEAM: this field is read by the future AI-drafting layer (see Agentic
