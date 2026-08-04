@@ -1679,6 +1679,40 @@ export interface CaseTask {
   claimedAt?: string;
   /** Provenance, e.g. "manual" or "note_automation". */
   source?: string;
+  // ----- §Worklist Phase B (protocol rounds; absent on every other task) -----
+  protocolInstanceId?: string;
+  /** 1-based round index within the instance. */
+  roundNumber?: number;
+  /** The scored NoteTemplate this round is documented on. */
+  templateId?: string;
+}
+
+/**
+ * §Worklist Phase B — protocol scheduling (CIWA/COWS/safety-cell rounds).
+ *
+ * A protocol is a SCHEDULING mechanism only: no clinical content lives here.
+ * The round's actual content is a scored `NoteTemplate` authored in the
+ * template builder, referenced by `templateId`. Rounds are pre-scheduled up
+ * front (there is no backend scheduler in this app), and alerting is NOT
+ * re-implemented: a round is completed by signing its scored note, so the
+ * existing Phase 3c crisis-band gate in `signProgressNote` is the one and
+ * only escalation path.
+ */
+export interface ProtocolInstance {
+  id: string;
+  patientId: string;
+  /** Free-text label, e.g. "CIWA-Ar". A name, not clinical content. */
+  protocolKey: string;
+  /** Must reference an active, scored NoteTemplate. */
+  templateId: string;
+  startedBy: string;
+  startedAt: string;
+  cadenceMinutes: number;
+  totalRounds: number;
+  status: "active" | "completed" | "stopped";
+  stoppedBy?: string;
+  stoppedAt?: string;
+  stopReason?: string;
 }
 
 /** Priority with the documented "routine" default applied. */
@@ -2275,6 +2309,9 @@ let currentPatientId = "p2";
 // (which is a legacy per-patient action list) so CM views can index by
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
+
+// §Worklist Phase B — protocol instances (rounds live in `caseTasks`).
+const protocolInstances: ProtocolInstance[] = [];
 
 // §Phase 3c automation run log. Append-only; the ONLY thing that decides
 // whether an automation may fire. Keyed by (noteId, automationId).
@@ -5122,6 +5159,10 @@ export const AdelanteEHR = {
     facilityId?: string;
     housingUnit?: string;
     source?: string;
+    /** §Phase B — set only by the protocol scheduler. */
+    protocolInstanceId?: string;
+    roundNumber?: number;
+    templateId?: string;
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -5150,6 +5191,9 @@ export const AdelanteEHR = {
       facilityId: input.facilityId,
       housingUnit: input.housingUnit,
       source: input.source ?? input.origin ?? "manual",
+      protocolInstanceId: input.protocolInstanceId,
+      roundNumber: input.roundNumber,
+      templateId: input.templateId,
     };
     caseTasks.unshift(task);
     // §Notification feed — direct-address the assignee only (never their whole
@@ -5273,6 +5317,176 @@ export const AdelanteEHR = {
   /** Distinct task types actually in use, for the filter facet. */
   worklistTaskTypes(): string[] {
     return [...new Set(caseTasks.map((t) => t.taskType).filter(Boolean) as string[])].sort();
+  },
+
+  // ---------- §Worklist Phase B: protocol scheduling ----------
+  /**
+   * Templates a protocol may be started against: latest active version, with
+   * scoring configured. A protocol with no scored template is a bare
+   * reminder, not a protocol — so the picker never offers one.
+   */
+  listProtocolTemplates(): NoteTemplate[] {
+    return AdelanteEHR.listNoteTemplates().filter((t) => (t.schema?.scoring?.length ?? 0) > 0);
+  },
+
+  listProtocolInstances(patientId?: string): ProtocolInstance[] {
+    return protocolInstances
+      .filter((p) => !patientId || p.patientId === patientId)
+      .map((p) => ({ ...p }))
+      .sort((a, b) => b.startedAt.localeCompare(a.startedAt));
+  },
+
+  /** Round tasks for one instance, ascending by round number. */
+  protocolRounds(instanceId: string): CaseTask[] {
+    return caseTasks
+      .filter((t) => t.protocolInstanceId === instanceId)
+      .sort((a, b) => (a.roundNumber ?? 0) - (b.roundNumber ?? 0));
+  },
+
+  /**
+   * Pre-schedules `totalRounds` worklist rows at `startedAt + n*cadence`.
+   * Throws with a clear message when the template is missing / inactive /
+   * superseded / unscored — there is deliberately no generic-form fallback.
+   */
+  startProtocol(
+    patientId: string,
+    protocolKey: string,
+    templateId: string,
+    cadenceMinutes: number,
+    totalRounds: number,
+    staffName: string,
+    role?: StaffRole,
+  ): ProtocolInstance {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    if (!protocolKey.trim()) throw new Error("A protocol name is required.");
+    if (!Number.isFinite(cadenceMinutes) || cadenceMinutes < 1)
+      throw new Error("Cadence must be at least 1 minute.");
+    if (!Number.isFinite(totalRounds) || totalRounds < 1)
+      throw new Error("A protocol needs at least 1 round.");
+    const tpl = noteTemplates.find((t) => t.id === templateId);
+    if (!tpl) throw new Error("That note template no longer exists.");
+    if (tpl.supersededBy)
+      throw new Error("That template version has been superseded — pick the current version.");
+    if (!tpl.active)
+      throw new Error(`"${tpl.title}" is inactive — a protocol needs an active template.`);
+    if (!(tpl.schema?.scoring?.length ?? 0))
+      throw new Error(
+        `"${tpl.title}" has no scoring configured. A protocol must run against a scored template — author scoring in the template builder first.`,
+      );
+
+    const startedAt = new Date();
+    const instance: ProtocolInstance = {
+      id: uid(),
+      patientId,
+      protocolKey: protocolKey.trim(),
+      templateId,
+      startedBy: staffName,
+      startedAt: startedAt.toISOString(),
+      cadenceMinutes,
+      totalRounds,
+      status: "active",
+    };
+    protocolInstances.unshift(instance);
+
+    for (let n = 1; n <= totalRounds; n++) {
+      const due = new Date(startedAt.getTime() + n * cadenceMinutes * 60_000);
+      AdelanteEHR.createCaseTask({
+        patientId,
+        // Rounds are pool work, not a personal assignment: they route to the
+        // patient's case manager only so the existing CM queue stays coherent.
+        assignedTo: p.caseManagerId ?? staffName,
+        title: `${instance.protocolKey} round ${n}/${totalRounds}`,
+        detail: `Document on "${tpl.title}" (scored).`,
+        dueDate: due.toISOString(),
+        origin: "manual",
+        taskType: "protocol_round",
+        source: `protocol:${instance.protocolKey}`,
+        priority: "urgent",
+        protocolInstanceId: instance.id,
+        roundNumber: n,
+        templateId,
+      });
+    }
+
+    appendAudit({
+      category: "clinical",
+      action: "protocol_started",
+      patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: {
+        instanceId: instance.id,
+        protocolKey: instance.protocolKey,
+        templateId,
+        templateTitle: tpl.title,
+        cadenceMinutes,
+        totalRounds,
+      },
+    });
+    emit();
+    return instance;
+  },
+
+  /**
+   * Stops an active protocol and cancels every round that has not already
+   * been completed. Completed rounds are never touched — they are signed
+   * documentation.
+   */
+  stopProtocol(id: string, staffName: string, reason: string, role?: StaffRole): boolean {
+    const inst = protocolInstances.find((x) => x.id === id);
+    if (!inst || inst.status !== "active") return false;
+    if ((reason ?? "").trim().length < 3)
+      throw new Error("A reason of at least 3 characters is required to stop a protocol.");
+    let cancelled = 0;
+    for (const t of caseTasks.filter((x) => x.protocolInstanceId === id)) {
+      const s = worklistStatusFor(t);
+      if (s === "completed" || s === "cancelled") continue;
+      t.worklistStatus = "cancelled";
+      t.status = "done";
+      t.completedAt = t.completedAt ?? new Date().toISOString();
+      cancelled++;
+    }
+    inst.status = "stopped";
+    inst.stoppedBy = staffName;
+    inst.stoppedAt = new Date().toISOString();
+    inst.stopReason = reason.trim();
+    appendAudit({
+      category: "clinical",
+      action: "protocol_stopped",
+      patientId: inst.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: {
+        instanceId: inst.id,
+        protocolKey: inst.protocolKey,
+        reason: inst.stopReason,
+        roundsCancelled: cancelled,
+      },
+    });
+    emit();
+    return true;
+  },
+
+  /**
+   * Marks a round done. Completion is derived, not a second lifecycle: when
+   * every round is closed out the instance flips to "completed".
+   */
+  completeProtocolRound(taskId: string, staffName: string, role?: StaffRole): boolean {
+    const t = caseTasks.find((x) => x.id === taskId);
+    if (!t?.protocolInstanceId) return false;
+    const ok = AdelanteEHR.setWorklistStatus(taskId, "completed", staffName, role ?? "pmhnp");
+    const inst = protocolInstances.find((x) => x.id === t.protocolInstanceId);
+    if (inst && inst.status === "active") {
+      const open = caseTasks.filter(
+        (x) =>
+          x.protocolInstanceId === inst.id &&
+          !["completed", "cancelled"].includes(worklistStatusFor(x)),
+      );
+      if (open.length === 0) inst.status = "completed";
+    }
+    emit();
+    return ok;
   },
 
   // ---------- Billing lifecycle ----------

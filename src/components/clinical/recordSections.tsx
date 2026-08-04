@@ -22,6 +22,7 @@ import {
   ShieldAlert,
   Syringe,
   Stethoscope,
+  Timer,
   TrendingUp,
   UserRound,
   Users,
@@ -33,6 +34,7 @@ import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/Clin
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
+import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import {
@@ -122,6 +124,9 @@ export function useRecordSections(patient: Patient): RecordSection[] {
         const open = AdelanteEHR.activeMedReconciliation(fresh.id);
         return open ? AdelanteEHR.unreviewedReconItems(fresh.id, open.id).length : 0;
       })(),
+      activeProtocols: AdelanteEHR.listProtocolInstances(fresh.id).filter(
+        (p) => p.status === "active",
+      ).length,
     };
   });
 
@@ -227,6 +232,20 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     count: counts.unreviewedRecon || undefined,
     urgent: counts.unreviewedRecon > 0,
     render: (a) => <MedReconTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  // §Worklist Phase B — protocol rounds sit in the Chart group next to MAR:
+  // this is repeated scored clinical monitoring, not case-management work,
+  // even though the rows it produces are worklist tasks. Gated on `worklist`
+  // (the class the rounds themselves live under) so every role that can see
+  // the tasks can see where they came from; STARTING/STOPPING is separately
+  // restricted by `canManageProtocol`.
+  add("worklist", {
+    id: "protocols",
+    label: "Protocols",
+    icon: Timer,
+    group: "chart",
+    count: counts.activeProtocols || undefined,
+    render: (a) => <ProtocolsTab patientId={pid} readOnly={a.level !== "write"} />,
   });
 
   // ----- Case management -----
