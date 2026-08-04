@@ -5534,6 +5534,209 @@ export const AdelanteEHR = {
    * Marks a round done. Completion is derived, not a second lifecycle: when
    * every round is closed out the instance flips to "completed".
    */
+  // ---------- §Scheduling rule engine (manual run) ------------------------
+
+  listSchedulingRules(includeInactive = false): SchedulingRule[] {
+    return schedulingRules
+      .filter((r) => includeInactive || r.active)
+      .map((r) => ({ ...r, match: { ...r.match }, allowedRoles: r.allowedRoles?.slice() }))
+      .sort((a, b) => a.label.localeCompare(b.label));
+  },
+
+  /** Create or update a rule. Deactivation goes through `deactivateSchedulingRule`. */
+  saveSchedulingRule(
+    input: {
+      id?: string;
+      key: string;
+      label: string;
+      description?: string;
+      taskType: string;
+      match: SchedulingRule["match"];
+      cadenceMinutes: number;
+      allowedRoles?: StaffRole[];
+      priority: TaskPriority;
+    },
+    staffName: string,
+    role?: StaffRole,
+  ): SchedulingRule {
+    const key = input.key.trim().toLowerCase().replace(/\s+/g, "_");
+    const label = input.label.trim();
+    const taskType = input.taskType.trim();
+    if (!key) throw new Error("A rule key is required.");
+    if (!label) throw new Error("A rule label is required.");
+    if (!taskType) throw new Error("A task type is required.");
+    if (!Number.isFinite(input.cadenceMinutes) || input.cadenceMinutes < 1)
+      throw new Error("Cadence must be at least 1 minute.");
+    const match = {
+      activeProblemCategory: input.match.activeProblemCategory || undefined,
+      activeOrderFrequencyCode: input.match.activeOrderFrequencyCode?.toUpperCase() || undefined,
+    };
+    if (!match.activeProblemCategory && !match.activeOrderFrequencyCode)
+      throw new Error("A rule needs at least one condition.");
+    const dup = schedulingRules.find((r) => r.key === key && r.id !== input.id);
+    if (dup) throw new Error(`Rule key "${key}" is already in use.`);
+
+    const existing = input.id ? schedulingRules.find((r) => r.id === input.id) : undefined;
+    if (input.id && !existing) throw new Error("Rule not found.");
+    const row: SchedulingRule = existing ?? {
+      id: uid(),
+      key,
+      label,
+      taskType,
+      match,
+      cadenceMinutes: input.cadenceMinutes,
+      priority: input.priority,
+      active: true,
+      createdBy: staffName,
+      createdAt: new Date().toISOString(),
+    };
+    row.key = key;
+    row.label = label;
+    row.description = input.description?.trim() || undefined;
+    row.taskType = taskType;
+    row.match = match;
+    row.cadenceMinutes = input.cadenceMinutes;
+    row.allowedRoles = input.allowedRoles?.length ? [...input.allowedRoles] : undefined;
+    row.priority = input.priority;
+    if (!existing) schedulingRules.push(row);
+
+    appendAudit({
+      category: "admin",
+      action: existing ? "scheduling_rule_updated" : "scheduling_rule_created",
+      actorId: staffName,
+      actorRole: role,
+      detail: { id: row.id, key: row.key, taskType: row.taskType, match: row.match },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Deactivate, never delete — the generated task history must stay readable. */
+  deactivateSchedulingRule(
+    id: string,
+    staffName: string,
+    reason: string,
+    role?: StaffRole,
+  ): SchedulingRule {
+    const row = schedulingRules.find((r) => r.id === id);
+    if (!row) throw new Error("Rule not found.");
+    const why = (reason ?? "").trim();
+    if (!why) throw new Error("A reason is required to deactivate a rule.");
+    row.active = false;
+    row.deactivatedBy = staffName;
+    row.deactivatedAt = new Date().toISOString();
+    row.deactivationReason = why;
+    appendAudit({
+      category: "admin",
+      action: "scheduling_rule_deactivated",
+      actorId: staffName,
+      actorRole: role,
+      detail: { id, key: row.key, reason: why },
+    });
+    emit();
+    return { ...row };
+  },
+
+  reactivateSchedulingRule(id: string, staffName: string, role?: StaffRole): SchedulingRule {
+    const row = schedulingRules.find((r) => r.id === id);
+    if (!row) throw new Error("Rule not found.");
+    row.active = true;
+    row.deactivatedBy = undefined;
+    row.deactivatedAt = undefined;
+    row.deactivationReason = undefined;
+    appendAudit({
+      category: "admin",
+      action: "scheduling_rule_reactivated",
+      actorId: staffName,
+      actorRole: role,
+      detail: { id, key: row.key },
+    });
+    emit();
+    return { ...row };
+  },
+
+  /** Patients an active rule currently matches (structured AND-matchers). */
+  patientsMatchingRule(rule: SchedulingRule): Patient[] {
+    return patients.filter((p) => {
+      if (rule.match.activeProblemCategory) {
+        const hit = (p.problems ?? []).some(
+          (pr) => isProblemClinicallyActive(pr) && pr.category === rule.match.activeProblemCategory,
+        );
+        if (!hit) return false;
+      }
+      if (rule.match.activeOrderFrequencyCode) {
+        const hit = (p.orders ?? []).some(
+          (o) =>
+            (o.status === "signed" || o.status === "held") &&
+            (o.frequencyCode ?? "").toUpperCase() === rule.match.activeOrderFrequencyCode,
+        );
+        if (!hit) return false;
+      }
+      return true;
+    });
+  },
+
+  /**
+   * Manually triggered run. For each active rule, each matching patient gets
+   * ONE task per cadence window: the run skips a patient when a task with this
+   * `sourceRuleId` was created within `cadenceMinutes` — regardless of whether
+   * that task is still open, completed, or cancelled. Checking only open tasks
+   * would re-spam the moment the first one is worked.
+   */
+  runSchedulingRulesNow(
+    staffName: string,
+    role?: StaffRole,
+  ): { total: number; results: { ruleKey: string; tasksCreated: number }[] } {
+    const now = Date.now();
+    const results: { ruleKey: string; tasksCreated: number }[] = [];
+    let total = 0;
+
+    for (const rule of schedulingRules.filter((r) => r.active)) {
+      const windowMs = rule.cadenceMinutes * 60_000;
+      let created = 0;
+      for (const p of AdelanteEHR.patientsMatchingRule(rule)) {
+        const recent = caseTasks.some(
+          (t) =>
+            t.sourceRuleId === rule.id &&
+            t.patientId === p.id &&
+            now - +new Date(t.createdAt) < windowMs,
+        );
+        if (recent) continue;
+        const made = AdelanteEHR.createCaseTask({
+          patientId: p.id,
+          assignedTo: p.caseManagerId ?? staffName,
+          title: rule.label,
+          detail: rule.description,
+          dueDate: new Date(now).toISOString(),
+          origin: "manual",
+          taskType: rule.taskType,
+          priority: rule.priority,
+          allowedRoles: rule.allowedRoles,
+          facilityId: p.facilityId,
+          source: `rule:${rule.key}`,
+          sourceRuleId: rule.id,
+        });
+        if (made) created++;
+      }
+      results.push({ ruleKey: rule.key, tasksCreated: created });
+      total += created;
+    }
+
+    appendAudit({
+      category: "admin",
+      action: "scheduling_rules_run",
+      actorId: staffName,
+      actorRole: role,
+      detail: { total, results },
+    });
+    emit();
+    return { total, results };
+  },
+
+  /**
+   * Marks a round done. Completion is derived, not a second lifecycle: when
+   * every round is closed out the instance flips to "completed".
+   */
   completeProtocolRound(taskId: string, staffName: string, role?: StaffRole): boolean {
     const t = caseTasks.find((x) => x.id === taskId);
     if (!t?.protocolInstanceId) return false;
