@@ -321,6 +321,22 @@ export function canFlagCrisis(role: StaffRole): boolean {
   return CRISIS_FLAG_ROLES.includes(role);
 }
 
+/**
+ * §Worklist Phase B — starting/stopping a withdrawal or safety protocol.
+ * Deliberately NOT a new RecordClass: the rounds it produces are ordinary
+ * `worklist` rows, and the only extra rule is WHO may initiate. Initiation is
+ * clinical judgment (a scored withdrawal protocol is a treatment decision),
+ * so it matches `NOTE_SELF_SIGN_ROLES`: pmhnp + therapist. clinical_coordinator
+ * is included for the same oversight reason it owns crisis disposition.
+ * case_manager / peer_specialist keep their `worklist` read/write on the rows
+ * themselves — they can see and claim rounds, just not start or stop one.
+ */
+export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "therapist", "clinical_coordinator"];
+
+export function canManageProtocol(role: StaffRole): boolean {
+  return PROTOCOL_MANAGE_ROLES.includes(role);
+}
+
 // ----- Acting-role store (localStorage-backed, subscribable) -----
 const KEY = "adelante.actingRole";
 const STAFF_KEY = "adelante.actingStaffId";
