@@ -19,6 +19,7 @@ import { Route as AdminCredentialingRouteImport } from './routes/admin-credentia
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
+import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
@@ -92,6 +93,11 @@ const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
 const AdminNoteTemplatesRoute = AdminNoteTemplatesRouteImport.update({
   id: '/admin-note-templates',
   path: '/admin-note-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSchedulingRulesRoute = AdminSchedulingRulesRouteImport.update({
+  id: '/admin-scheduling-rules',
+  path: '/admin-scheduling-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
@@ -226,6 +232,7 @@ export interface FileRoutesByFullPath {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -262,6 +269,7 @@ export interface FileRoutesByTo {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -299,6 +307,7 @@ export interface FileRoutesById {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -337,6 +346,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-scheduling-rules'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -373,6 +383,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-scheduling-rules'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -409,6 +420,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-scheduling-rules'
     | '/admin-vendors'
     | '/auth'
     | '/billing'
@@ -446,6 +458,7 @@ export interface RootRouteChildren {
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
+  AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -542,6 +555,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-note-templates'
       fullPath: '/admin-note-templates'
       preLoaderRoute: typeof AdminNoteTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-scheduling-rules': {
+      id: '/admin-scheduling-rules'
+      path: '/admin-scheduling-rules'
+      fullPath: '/admin-scheduling-rules'
+      preLoaderRoute: typeof AdminSchedulingRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-vendors': {
@@ -726,6 +746,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFacilitiesRoute: AdminFacilitiesRoute,
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
+  AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
