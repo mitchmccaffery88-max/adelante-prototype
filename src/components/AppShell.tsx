@@ -7,15 +7,11 @@ import { NotificationBell } from "@/components/NotificationBell";
 import {
   Heart,
   ShieldCheck,
-  Calendar,
   ClipboardList,
-  FileInput,
-  LayoutDashboard,
   UserCog,
   ChevronDown,
   User as UserIcon,
   Phone,
-  HandHeart,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
