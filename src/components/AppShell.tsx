@@ -7,20 +7,18 @@ import { NotificationBell } from "@/components/NotificationBell";
 import {
   Heart,
   ShieldCheck,
-  Calendar,
   ClipboardList,
-  FileInput,
-  LayoutDashboard,
   UserCog,
   ChevronDown,
   User as UserIcon,
   Phone,
-  HandHeart,
   LogOut,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
+import { useStaffNavGroups, STAFF_ROUTES } from "@/lib/navSections";
+import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +37,10 @@ export function AppShell() {
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const { staffId, setActingStaff } = useActingStaff();
+  // §Platform nav — every staff link comes from the RBAC nav engine, so a
+  // role that fails a gate never sees the entry (same rule as recordSections).
+  const staffNavGroups = useStaffNavGroups();
+  const staffNav = staffNavGroups.flatMap((g) => g.entries);
   const signedIn = (() => {
     try {
       return Boolean(localStorage.getItem("adelante.session"));
@@ -59,53 +61,12 @@ export function AppShell() {
     { to: "/home" as const, label: t("navMyCare"), icon: Heart },
     { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
   ];
-  const staffNav = [
-    { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
-    {
-      to: "/case-manager" as const,
-      label: t("navCaseManager"),
-      icon: HandHeart,
-      desc: "Check-ins & resources",
-    },
-    {
-      to: "/clinician" as const,
-      label: t("navClinician"),
-      icon: Calendar,
-      desc: "Caseload & sessions",
-    },
-    {
-      to: "/billing" as const,
-      label: "Billing",
-      icon: LayoutDashboard,
-      desc: "Claims, ISL & credentials",
-    },
-    { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
-    {
-      to: "/notes-queue" as const,
-      label: "Unsigned notes",
-      icon: ClipboardList,
-      desc: "Sign to release billing",
-    },
-    {
-      to: "/clinician-profile" as const,
-      label: "My profile",
-      icon: UserCog,
-      desc: "Specialty & languages",
-    },
-    {
-      to: "/clinician-availability" as const,
-      label: "My availability",
-      icon: Calendar,
-      desc: "Weekly hours & time off",
-    },
-    {
-      to: "/clinician-credentials" as const,
-      label: "My credentials",
-      icon: ShieldCheck,
-      desc: "License, DEA, malpractice",
-    },
-    { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
-  ];
+  // Staff shell = persistent sidebar on any staff-owned route (plus the
+  // full-page chart, which is staff-only too).
+  const showStaffShell =
+    !isPatientSurface &&
+    (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/")) &&
+    staffNav.length > 0;
 
   return (
     <div className="min-h-dvh flex flex-col">
@@ -184,17 +145,26 @@ export function AppShell() {
                 <DropdownMenuLabel className="text-xs text-muted-foreground">
                   {t("navStaffPortal")}
                 </DropdownMenuLabel>
-                {staffNav.map((s) => (
-                  <DropdownMenuItem key={s.to} asChild>
-                    <Link to={s.to} className="flex items-start gap-2">
-                      <s.icon className="h-4 w-4 text-teal mt-0.5" />
-                      <span>
-                        <span className="block text-sm font-medium">{s.label}</span>
-                        <span className="block text-xs text-muted-foreground">{s.desc}</span>
-                      </span>
-                    </Link>
-                  </DropdownMenuItem>
-                ))}
+                <div className="max-h-[60vh] overflow-y-auto">
+                  {staffNavGroups.map((g) => (
+                    <div key={g.group}>
+                      <DropdownMenuLabel className="text-[10px] uppercase tracking-wider text-muted-foreground">
+                        {g.label}
+                      </DropdownMenuLabel>
+                      {g.entries.map((s) => (
+                        <DropdownMenuItem key={s.id} asChild>
+                          <Link to={s.to} className="flex items-start gap-2">
+                            <s.icon className="h-4 w-4 text-teal mt-0.5" />
+                            <span>
+                              <span className="block text-sm font-medium">{s.label}</span>
+                              <span className="block text-xs text-muted-foreground">{s.desc}</span>
+                            </span>
+                          </Link>
+                        </DropdownMenuItem>
+                      ))}
+                    </div>
+                  ))}
+                </div>
                 <DropdownMenuLabel className="mt-2 text-xs text-muted-foreground">
                   Acting as
                 </DropdownMenuLabel>
@@ -260,7 +230,7 @@ export function AppShell() {
                 const active = pathname === n.to;
                 return (
                   <Link
-                    key={n.to}
+                    key={n.id}
                     to={n.to}
                     className={cn(
                       "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px]",
@@ -280,7 +250,16 @@ export function AppShell() {
       </header>
 
       <main className={cn("flex-1", isPatientSurface && "pb-24 md:pb-0")}>
-        <Outlet />
+        {showStaffShell ? (
+          <div className="flex min-h-full">
+            <StaffNavSidebar />
+            <div className="min-w-0 flex-1">
+              <Outlet />
+            </div>
+          </div>
+        ) : (
+          <Outlet />
+        )}
       </main>
 
       {/* Persistent 988 crisis banner — §4c safety net */}
