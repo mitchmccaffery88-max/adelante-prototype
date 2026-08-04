@@ -14,10 +14,12 @@ let patientId: string;
 let goalId: string;
 let baseline = 0;
 
+// listAuditEvents returns newest-first; reverse so assertions read in the
+// order the clinician actually performed the changes.
 const goalAudits = (): AuditEvent[] =>
   AdelanteEHR.listAuditEvents({ patientId, category: "care_plan" })
-    .filter((e) => e.action === "goal_status_changed")
-    .slice(baseline);
+    .filter((e) => e.action === "goal_status_changed" && e.detail.goalId === goalId)
+    .reverse();
 
 beforeEach(() => {
   const patient = AdelanteEHR.listPatients()[0]!;
@@ -25,9 +27,8 @@ beforeEach(() => {
   AdelanteEHR.addGoal(patientId, `Test goal ${Math.random()}`);
   const goals = AdelanteEHR.getPatient(patientId)!.goals!;
   goalId = goals[goals.length - 1]!.id;
-  baseline = AdelanteEHR.listAuditEvents({ patientId, category: "care_plan" }).filter(
-    (e) => e.action === "goal_status_changed",
-  ).length;
+  baseline = goalAudits().length; // fresh goal id per test => always 0
+  expect(baseline).toBe(0);
 });
 
 describe("PatientHome goal cycling — audit trail", () => {
