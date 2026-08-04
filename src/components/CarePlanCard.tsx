@@ -260,7 +260,9 @@ export function CarePlanCard({
                         </span>
                       </span>
                       <Badge variant="outline" className="capitalize text-xs">
-                        {t(goalStatusMap[g.status] ?? (g.status as Key))}
+                        {goalStatusMap[g.status]
+                          ? t(goalStatusMap[g.status])
+                          : String(g.status).replace("_", " ")}
                       </Badge>
                     </li>
                   ))}
