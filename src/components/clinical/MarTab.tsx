@@ -8,9 +8,15 @@
 // Suboxone mouth-check attestation.
 // Phase 3 landed here: the Refusal legal document (queued one at a time after
 // a batch commit) and the 3-in-7-days provider escalation. Still deferred (not
-// dropped): cart/keyboard mode and voice pass.
+// dropped): voice pass.
+//
+// §MAR cart/keyboard mode — a second VIEW over the exact same due-dose queue.
+// It is a pure UX layer: it calls the same prnEligibility / requiresDoseWitness
+// / chartDose / voidBatch / issueKop paths the grid calls, renders the same
+// controls (renderChartControls), and commits through the same `commit()`.
+// No gate, reason requirement, or clinical rule is re-implemented here.
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
   AdelanteEHR,
   useEhr,
@@ -65,9 +71,13 @@ import { medClassGuess } from "@/lib/refusal";
 import { toast } from "sonner";
 import {
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileSignature,
   Info,
+  Keyboard,
+  LayoutGrid,
   PackageCheck,
   ShieldCheck,
   Syringe,
@@ -92,6 +102,28 @@ const emptyEntry = (): PendingEntry => ({
   lateEntryReason: "",
   witnessedBy: "",
 });
+
+/**
+ * Session-local (not per-user) view preference, as specified. sessionStorage
+ * keeps a nurse's choice across chart navigation within one shift without
+ * inventing a preferences model.
+ */
+const VIEW_STORAGE_KEY = "adelante.mar.view";
+type MarView = "grid" | "cart";
+
+/** True when the keystroke landed in a field the nurse is typing into. */
+function isTypingTarget(el: EventTarget | null): boolean {
+  const node = el as HTMLElement | null;
+  if (!node || !node.tagName) return false;
+  const tag = node.tagName.toLowerCase();
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    tag === "select" ||
+    node.isContentEditable === true ||
+    node.getAttribute?.("role") === "combobox"
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Reason dialog — same mandatory-reason gate as the Orders lifecycle dialogs.
@@ -383,6 +415,35 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const [openFormId, setOpenFormId] = useState<string | null>(null);
   const [escalation, setEscalation] = useState<EscalationTarget | null>(null);
 
+  // ----- Cart / keyboard mode (view-only state) -----------------------------
+  const [view, setView] = useState<MarView>("grid");
+  const [cartIndex, setCartIndex] = useState(0);
+  const keyHandlerRef = useRef<(e: KeyboardEvent) => void>(() => {});
+
+  // Read the saved view after hydration — a sessionStorage read in the state
+  // initializer would mismatch the server render.
+  useEffect(() => {
+    try {
+      const saved = sessionStorage.getItem(VIEW_STORAGE_KEY);
+      if (saved === "cart" || saved === "grid") setView(saved);
+    } catch {
+      /* storage unavailable — stay on the grid */
+    }
+  }, []);
+  useEffect(() => {
+    try {
+      sessionStorage.setItem(VIEW_STORAGE_KEY, view);
+    } catch {
+      /* non-fatal */
+    }
+  }, [view]);
+  useEffect(() => {
+    if (view !== "cart") return;
+    const on = (e: KeyboardEvent) => keyHandlerRef.current(e);
+    window.addEventListener("keydown", on);
+    return () => window.removeEventListener("keydown", on);
+  }, [view]);
+
   /**
    * Ticks while PRN rows are on screen so the "eligible in Nm" countdown and
    * the Given button unblock on their own when a minimum-interval gap
@@ -418,6 +479,15 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
   const pendingCount = pendingKeys.length;
   const allRows = [...day.slots, ...day.prn];
   const rowFor = (key: string) => allRows.find((s) => s.key === key);
+
+  /** Cart mode walks the same rows the grid renders, KOP supplies included. */
+  const cartRows = [...day.slots, ...day.prn, ...day.kop];
+  const cartIdx = cartRows.length ? Math.min(cartIndex, cartRows.length - 1) : 0;
+  const cartSlot: MarSlot | undefined = cartRows[cartIdx];
+  const moveCart = (delta: number) =>
+    setCartIndex((i) =>
+      Math.min(Math.max(Math.min(i, cartRows.length - 1) + delta, 0), Math.max(cartRows.length - 1, 0)),
+    );
 
   const setEntry = (key: string, patch: Partial<PendingEntry>) =>
     setEntries((prev) => ({ ...prev, [key]: { ...(prev[key] ?? emptyEntry()), ...patch } }));
@@ -505,6 +575,19 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
     if (queued.length) setRefusalQueue(queued);
   };
 
+  /**
+   * Toggle a pending action on a row. Shared by the grid buttons and the cart's
+   * keyboard shortcuts so both produce byte-identical pending entries.
+   */
+  const pickFor = (slot: MarSlot, a: Action, reason?: string) => {
+    const entry = entries[slot.key];
+    if (entry?.action === a && (reason === undefined || entry.reason === reason)) {
+      clearEntry(slot.key);
+      return;
+    }
+    setEntry(slot.key, { action: a, ...(reason !== undefined ? { reason } : {}) });
+  };
+
   // ----- Row renderers ------------------------------------------------------
   const renderChartControls = (slot: MarSlot) => {
     const entry = entries[slot.key];
@@ -516,13 +599,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
       : undefined;
     const givenBlocked = !!elig?.blocked;
 
-    const pick = (a: Action, reason?: string) => {
-      if (entry?.action === a && (reason === undefined || entry.reason === reason)) {
-        clearEntry(slot.key);
-        return;
-      }
-      setEntry(slot.key, { action: a, ...(reason !== undefined ? { reason } : {}) });
-    };
+    const pick = (a: Action, reason?: string) => pickFor(slot, a, reason);
 
     return (
       <div className="mt-2 space-y-2">
@@ -815,6 +892,71 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
 
   const commitBlocked = !attested || (suboxonePending && !mouthChecked);
 
+  /**
+   * Cart keyboard map. Deliberately does NOT bypass any gate: G is ignored when
+   * the grid's Given button would be disabled, and Enter runs the same
+   * `commit()` behind the same attestation/mouth-check block.
+   */
+  keyHandlerRef.current = (e: KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+    const key = e.key.toLowerCase();
+    if (key === "arrowright" || key === "j") {
+      e.preventDefault();
+      moveCart(1);
+      return;
+    }
+    if (key === "arrowleft" || key === "k") {
+      e.preventDefault();
+      moveCart(-1);
+      return;
+    }
+    if (key === "enter") {
+      if (readOnly || !pendingCount || commitBlocked) return;
+      e.preventDefault();
+      commit();
+      moveCart(1);
+      return;
+    }
+    if (!cartSlot || readOnly || cartSlot.kind === "kop" || cartSlot.administration) return;
+    if (key === "escape") {
+      e.preventDefault();
+      clearEntry(cartSlot.key);
+      return;
+    }
+    if (key === "g") {
+      const elig =
+        cartSlot.kind === "prn"
+          ? AdelanteEHR.prnEligibility(patientId, cartSlot.order.id, new Date(now))
+          : undefined;
+      if (elig?.blocked) {
+        toast.error(
+          elig.blockedBy === "gap"
+            ? `Minimum interval not met — eligible in ${waitLabel(elig.waitMs)}.`
+            : "PRN limit reached — cannot chart as given.",
+        );
+        return;
+      }
+      e.preventDefault();
+      pickFor(cartSlot, "given");
+      return;
+    }
+    if (key === "r") {
+      e.preventDefault();
+      pickFor(cartSlot, "refused");
+      return;
+    }
+    if (key === "h") {
+      e.preventDefault();
+      pickFor(cartSlot, "held", "");
+      return;
+    }
+    if (key === "n" && cartSlot.kind === "prn") {
+      e.preventDefault();
+      pickFor(cartSlot, "held", NOT_INDICATED_REASON);
+    }
+  };
+
   // ----- Refusal documents ---------------------------------------------------
   const pendingForms = (patient.refusalForms ?? []).filter(
     (f) => f.status === "pending_signature",
@@ -918,9 +1060,74 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
             </Button>
           </div>
         </div>
+        <div className="ml-auto flex items-center gap-1 rounded-md border border-border p-1">
+          <Button
+            size="sm"
+            variant={view === "grid" ? "default" : "ghost"}
+            aria-label="Grid view"
+            aria-pressed={view === "grid"}
+            onClick={() => setView("grid")}
+          >
+            <LayoutGrid className="mr-1 h-3.5 w-3.5" />
+            Grid
+          </Button>
+          <Button
+            size="sm"
+            variant={view === "cart" ? "default" : "ghost"}
+            aria-label="Cart view"
+            aria-pressed={view === "cart"}
+            onClick={() => {
+              setCartIndex(0);
+              setView("cart");
+            }}
+          >
+            <Keyboard className="mr-1 h-3.5 w-3.5" />
+            Cart
+          </Button>
+        </div>
       </div>
 
-      {day.slots.length === 0 ? (
+      {view === "cart" ? (
+        cartRows.length === 0 ? (
+          <EmptyState
+            icon={CalendarClock}
+            title="Nothing to pass"
+            description="No scheduled, PRN, or keep-on-person rows exist for this date."
+          />
+        ) : (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Previous medication"
+                disabled={cartIdx === 0}
+                onClick={() => moveCart(-1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-medium tabular-nums" aria-live="polite">
+                {cartIdx + 1} of {cartRows.length}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Next medication"
+                disabled={cartIdx >= cartRows.length - 1}
+                onClick={() => moveCart(1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <span className="ml-auto text-xs text-muted-foreground">
+                G given · R refused · H held · N not indicated · ←/→ move · Enter chart · Esc
+                clear
+              </span>
+            </div>
+            {cartSlot &&
+              (cartSlot.kind === "kop" ? renderKop(cartSlot) : renderSlot(cartSlot))}
+          </div>
+        )
+      ) : day.slots.length === 0 ? (
         <EmptyState
           icon={CalendarClock}
           title="No scheduled doses"
@@ -930,7 +1137,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         <div className="space-y-2">{day.slots.map(renderSlot)}</div>
       )}
 
-      {day.prn.length > 0 && (
+      {view === "grid" && day.prn.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
             <Syringe className="h-4 w-4 text-muted-foreground" />
@@ -940,7 +1147,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         </div>
       )}
 
-      {day.kop.length > 0 && (
+      {view === "grid" && day.kop.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
             <PackageCheck className="h-4 w-4 text-muted-foreground" />
@@ -987,7 +1194,14 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
               Password re-verification pending real staff authentication.
             </p>
           </div>
-          <Button className="w-full" disabled={commitBlocked} onClick={commit}>
+          <Button
+            className="w-full"
+            disabled={commitBlocked}
+            onClick={() => {
+              commit();
+              if (view === "cart") moveCart(1);
+            }}
+          >
             Chart {pendingCount} dose{pendingCount === 1 ? "" : "s"}
           </Button>
         </div>
