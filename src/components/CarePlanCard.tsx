@@ -354,6 +354,8 @@ export function CarePlanCard({
               </ul>
             </div>
           )}
+
+          <GoalHistoryTimeline events={goalHistory} audience={audience} />
         </div>
       )}
     </Card>
