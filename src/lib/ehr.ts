@@ -2545,6 +2545,28 @@ export type { CatalogSuppression } from "./catalogSuppressions";
 
 /** §Admin governance — local RxNav suppression rules (seeded empty). */
 const catalogSuppressions: CatalogSuppression[] = [];
+
+/**
+ * §Scheduling rule engine — admin-owned registry. Seeded with one operational
+ * rule so the admin page and the "Run rules now" action are exercisable; it
+ * carries no clinical content, only a cadence and a task type.
+ */
+const schedulingRules: SchedulingRule[] = [
+  {
+    id: "rule-mh-checkin",
+    key: "mh_weekly_checkin",
+    label: "Weekly check-in — active mental health problem",
+    description:
+      "Generates a routine coordination check-in for every patient carrying an active mental health problem.",
+    taskType: "coordination",
+    match: { activeProblemCategory: "mental_health" },
+    cadenceMinutes: 7 * 24 * 60,
+    priority: "routine",
+    active: true,
+    createdBy: "Christi Ruiz",
+    createdAt: "2026-01-05T16:00:00.000Z",
+  },
+];
 import { facilityDateKey, fromFacilityWallClock, waitLabel } from "./facilityTime";
 import {
   RISK_TEXT_CATALOG,
