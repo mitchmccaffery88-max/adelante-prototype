@@ -286,6 +286,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing: "none",
     billing_coordinator: "none",
   },
+  // §Scheduling rule engine — admin config that MANUFACTURES worklist rows.
+  // Same tier as note_templates / KPI targets / catalog_governance:
+  // sys_admin + clinical_coordinator author the rules, the roles that work
+  // the resulting tasks read them (so a task's `source: "rule:…"` tag is
+  // explainable), revenue roles get nothing.
+  scheduling_rules: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
+  },
 };
 
 export function canAccess(
