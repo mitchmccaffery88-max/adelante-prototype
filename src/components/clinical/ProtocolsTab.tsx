@@ -223,7 +223,10 @@ function InstanceCard({
                 <tr key={r.id} className="border-b last:border-0">
                   <td className="p-1.5 text-navy">{r.roundNumber}</td>
                   <td className="p-1.5">
-                    <ClientDate value={r.dueDate} withTime />
+                    <ClientDate
+                      value={r.dueDate}
+                      options={{ dateStyle: "medium", timeStyle: "short" }}
+                    />
                   </td>
                   <td className="p-1.5">
                     <Badge className={st.tone}>{st.label}</Badge>
