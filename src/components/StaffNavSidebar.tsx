@@ -3,7 +3,7 @@
 // Renders whatever `navSections.ts` says the acting role may see. There is no
 // role logic in this file on purpose: a role with `none` on a gate never gets
 // the entry, exactly like the record drawer omits chart sections.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,26 @@ import { useActingStaff } from "@/lib/roles";
 import { STAFF_ROLES } from "@/lib/roles";
 
 const COLLAPSE_KEY = "adelante.staffNavCollapsed";
+const GROUPS_KEY = "adelante.staffNavGroups";
+const QUERY_KEY = "adelante.staffNavQuery";
+
+function readStored(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* no-op: private mode / storage disabled */
+  }
+}
 
 export function StaffNavSidebar() {
   const groups = useStaffNavGroups();
@@ -30,11 +50,7 @@ export function StaffNavSidebar() {
 
   const toggle = () => {
     setCollapsed((c) => {
-      try {
-        localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
-      } catch {
-        /* no-op */
-      }
+      writeStored(COLLAPSE_KEY, c ? "0" : "1");
       return !c;
     });
   };
@@ -66,17 +82,49 @@ export function StaffNavSidebar() {
   // route or when a quick-jump query is narrowing results.
   const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
   const toggleGroup = (key: string, defaultOpen: boolean) =>
-    setGroupOverrides((prev) => ({ ...prev, [key]: !(prev[key] ?? defaultOpen) }));
+    setGroupOverrides((prev) => {
+      const next = { ...prev, [key]: !(prev[key] ?? defaultOpen) };
+      writeStored(GROUPS_KEY, JSON.stringify(next));
+      return next;
+    });
+
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    writeStored(QUERY_KEY, value);
+  };
+
+  // Restored after mount, not in the state initializers: reading storage
+  // during render would make the server-rendered sidebar disagree with the
+  // first client render (hydration mismatch).
+  useEffect(() => {
+    const storedQuery = readStored(QUERY_KEY);
+    if (storedQuery) setQuery(storedQuery);
+    const storedGroups = readStored(GROUPS_KEY);
+    if (storedGroups) {
+      try {
+        const parsed: unknown = JSON.parse(storedGroups);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const clean: Record<string, boolean> = {};
+          for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+            if (typeof v === "boolean") clean[k] = v;
+          }
+          setGroupOverrides(clean);
+        }
+      } catch {
+        /* corrupt value — fall back to defaults */
+      }
+    }
+  }, []);
 
   const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
     if (ev.key === "Escape") {
-      setQuery("");
+      updateQuery("");
       inputRef.current?.blur();
       return;
     }
     if (ev.key === "Enter" && firstMatch) {
       ev.preventDefault();
-      setQuery("");
+      updateQuery("");
       navigate({ to: firstMatch.to });
     }
   };
@@ -119,7 +167,7 @@ export function StaffNavSidebar() {
               ref={inputRef}
               type="search"
               value={query}
-              onChange={(ev) => setQuery(ev.target.value)}
+              onChange={(ev) => updateQuery(ev.target.value)}
               onKeyDown={onSearchKeyDown}
               placeholder="Quick jump…"
               aria-label="Quick jump to a surface"
@@ -129,7 +177,7 @@ export function StaffNavSidebar() {
             {query && (
               <button
                 type="button"
-                onClick={() => setQuery("")}
+                onClick={() => updateQuery("")}
                 aria-label="Clear quick jump"
                 className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-secondary"
               >
