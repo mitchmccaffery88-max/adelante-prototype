@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ShieldAlert,
   CheckCircle2,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,11 @@ export function CarePlanCard({
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const plan = useEhr(() => AdelanteEHR.getCarePlan(patientId));
+  const goalHistory = useEhr(() =>
+    AdelanteEHR.listAuditEvents({ patientId, category: "care_plan" }).filter(
+      (e) => e.action === "goal_status_changed",
+    ),
+  );
   const [role] = useActingRole();
   const { t } = useI18n();
 
@@ -348,9 +354,53 @@ export function CarePlanCard({
               </ul>
             </div>
           )}
+
+          <GoalHistoryTimeline events={goalHistory} audience={audience} />
         </div>
       )}
     </Card>
+  );
+}
+
+const goalStatusLabel = (s: string) => String(s).replace("_", " ");
+
+/**
+ * Append-only trace of goal status changes, sourced from the unified audit
+ * log (`care_plan` / `goal_status_changed`). Read-only; no new data plumbing.
+ */
+function GoalHistoryTimeline({
+  events,
+  audience,
+}: {
+  events: { id: string; at: string; actorRole?: string; actorId?: string; detail?: Record<string, unknown> }[];
+  audience: Audience;
+}) {
+  if (events.length === 0) return null;
+  return (
+    <div className="sm:col-span-2">
+      <div className="text-xs font-medium uppercase tracking-wider text-navy inline-flex items-center gap-1.5">
+        <History className="h-3.5 w-3.5" />
+        {audience === "patient" ? "Your goal updates" : "Goal status history"}
+      </div>
+      <ol className="mt-2 space-y-2 border-l pl-3">
+        {events.slice(0, 12).map((e) => {
+          const d = e.detail ?? {};
+          return (
+            <li key={e.id} className="relative text-xs text-foreground">
+              <span className="absolute -left-[15px] top-1.5 h-1.5 w-1.5 rounded-full bg-teal" />
+              <div>{String(d.goalText ?? "Goal")}</div>
+              <div className="text-[11px] text-muted-foreground">
+                {goalStatusLabel(String(d.from ?? "—"))} → {goalStatusLabel(String(d.to ?? "—"))} ·{" "}
+                <ClientDate value={e.at} />
+                {audience !== "patient" && (e.actorId || e.actorRole) && (
+                  <> · {e.actorId ?? String(e.actorRole).replace("_", " ")}</>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ol>
+    </div>
   );
 }
 
