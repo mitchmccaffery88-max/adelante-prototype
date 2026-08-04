@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
+import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
@@ -369,6 +370,8 @@ export function PatientHome() {
 
       {/* Privacy & Consent — moved to bottom so it sits beneath upcoming/history */}
       <ConsentCard patientId={patient.id} />
+      {/* §ASCMI — read-only structured consent status, adjacent to the toggles. */}
+      <PatientConsentStatusCard patientId={patient.id} />
     </div>
   );
 }
