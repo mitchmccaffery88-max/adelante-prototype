@@ -4068,13 +4068,30 @@ export const AdelanteEHR = {
     _recomputeCarePlan(p.id, "goal_added");
     emit();
   },
-  setGoalStatus(patientId: string, goalId: string, status: Goal["status"], updatedBy?: string) {
+  setGoalStatus(
+    patientId: string,
+    goalId: string,
+    status: Goal["status"],
+    updatedBy?: string,
+    actorRole?: string,
+  ) {
     const p = patients.find((x) => x.id === patientId);
     const g = p?.goals?.find((x) => x.id === goalId);
     if (!g) return;
+    const from = g.status;
     g.status = status;
     if (updatedBy) g.updatedBy = updatedBy;
     if (p) _recomputeCarePlan(p.id, "goal_status");
+    // Append-only trace so clinicians/admins can follow how a goal moved
+    // over time, including patient-driven updates from Patient Home.
+    appendAudit({
+      category: "care_plan",
+      action: "goal_status_changed",
+      patientId,
+      actorRole: actorRole ?? (updatedBy ? "staff" : undefined),
+      actorId: updatedBy,
+      detail: { goalId, goalText: g.text, from, to: status },
+    });
     emit();
   },
   removeGoal(patientId: string, goalId: string) {
