@@ -62,8 +62,21 @@ export function monthKey(iso: string, tz?: string): string {
   return facilityDateKey(d, tz).slice(0, 7);
 }
 
+/**
+ * Header-only projection of a note. Masked entries must not carry the note's
+ * body ANYWHERE in the model — not just unrendered — so the model itself is
+ * the boundary, not the JSX.
+ */
+export interface PrintNoteHeader {
+  id: string;
+  date: string;
+  status: string;
+  category?: ProgressNote["category"];
+  signedBy?: string;
+}
+
 export interface PrintNoteEntry {
-  note: ProgressNote;
+  note: PrintNoteHeader;
   /** Rendered content, or undefined when the note is masked for this role. */
   blocks?: NoteDocBlock[];
   masked: boolean;
@@ -189,10 +202,17 @@ export function buildPrintRecordDocument(args: {
       .sort((a, b) => (b.date ?? "").localeCompare(a.date ?? ""))
       .map((note) => {
         const authorLabel = authorLabelFor(note);
+        const header: PrintNoteHeader = {
+          id: note.id,
+          date: note.date,
+          status: noteStatus(note),
+          category: note.category,
+          signedBy: note.signedBy,
+        };
         const exportGate = noteExportGate(note, role, patient);
         if (!exportGate.allowed) {
           const entry: PrintNoteEntry = {
-            note,
+            note: header,
             masked: true,
             authorLabel,
           };
@@ -202,7 +222,7 @@ export function buildPrintRecordDocument(args: {
           return entry;
         }
         return {
-          note,
+          note: header,
           masked: false,
           blocks: buildNoteDocumentModel({ note, patient, role, authorLabel }),
           authorLabel,
