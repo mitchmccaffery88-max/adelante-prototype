@@ -5159,6 +5159,10 @@ export const AdelanteEHR = {
     facilityId?: string;
     housingUnit?: string;
     source?: string;
+    /** §Phase B — set only by the protocol scheduler. */
+    protocolInstanceId?: string;
+    roundNumber?: number;
+    templateId?: string;
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -5187,6 +5191,9 @@ export const AdelanteEHR = {
       facilityId: input.facilityId,
       housingUnit: input.housingUnit,
       source: input.source ?? input.origin ?? "manual",
+      protocolInstanceId: input.protocolInstanceId,
+      roundNumber: input.roundNumber,
+      templateId: input.templateId,
     };
     caseTasks.unshift(task);
     // §Notification feed — direct-address the assignee only (never their whole
