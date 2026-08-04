@@ -75,7 +75,7 @@ function AdminAuditPage() {
       until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
       limit: 200,
     }),
-  , [cat, patientId, actorRole, from, to]);
+  );
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 space-y-5">
