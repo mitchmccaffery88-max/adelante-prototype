@@ -182,6 +182,43 @@ export function resolveAutofill(
       ];
       break;
     }
+    case "booking_release_info": {
+      const booking = (ctx.bookings ?? [])[0];
+      if (!booking) {
+        notice = "No booking episode on file.";
+        break;
+      }
+      const unit = (ctx.housingMoves ?? []).find((m) => m.bookingId === booking.id)?.housingUnit;
+      lines = [
+        {
+          primary: booking.releasedAt
+            ? `Released ${new Date(booking.releasedAt).toISOString()}`
+            : "Still booked — no release recorded",
+          secondary: `Booking ${booking.bookingNumber} · booked ${new Date(booking.bookedAt).toISOString()}`,
+        },
+        { primary: booking.facilityName, secondary: unit ? `Housing unit ${unit}` : undefined },
+      ];
+      // The booking REASON is the only free text here and can name SUD
+      // treatment placement, so it follows the same mask as a SUD problem.
+      if (booking.bookingReason) {
+        if (ctx.sudLocked) notice = PART2_AUTOFILL_NOTICE;
+        else lines.push({ primary: booking.bookingReason, secondary: "Booking reason" });
+      }
+      break;
+    }
+    case "referrals_open": {
+      const open = (ctx.referrals ?? []).filter(isReferralOpen);
+      const visible = ctx.sudLocked ? open.filter((r) => !isReferralSudSensitive(r)) : open;
+      if (ctx.sudLocked && visible.length !== open.length) notice = PART2_AUTOFILL_NOTICE;
+      lines = visible.map((r) => ({
+        primary: `${r.category} — ${r.provider}`,
+        secondary:
+          [r.status, r.followUpDate ? `follow-up ${r.followUpDate}` : null, r.note]
+            .filter(Boolean)
+            .join(" · ") || undefined,
+      }));
+      break;
+    }
   }
 
   if (cfg.limit && cfg.limit > 0 && lines.length > cfg.limit) {
