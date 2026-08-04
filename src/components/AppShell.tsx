@@ -21,6 +21,8 @@ import {
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
+import { useStaffNavGroups, STAFF_ROUTES } from "@/lib/navSections";
+import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -39,6 +41,10 @@ export function AppShell() {
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const { staffId, setActingStaff } = useActingStaff();
+  // §Platform nav — every staff link comes from the RBAC nav engine, so a
+  // role that fails a gate never sees the entry (same rule as recordSections).
+  const staffNavGroups = useStaffNavGroups();
+  const staffNav = staffNavGroups.flatMap((g) => g.entries);
   const signedIn = (() => {
     try {
       return Boolean(localStorage.getItem("adelante.session"));
@@ -59,53 +65,12 @@ export function AppShell() {
     { to: "/home" as const, label: t("navMyCare"), icon: Heart },
     { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
   ];
-  const staffNav = [
-    { to: "/referral" as const, label: t("navReferrals"), icon: FileInput, desc: "Refer a client" },
-    {
-      to: "/case-manager" as const,
-      label: t("navCaseManager"),
-      icon: HandHeart,
-      desc: "Check-ins & resources",
-    },
-    {
-      to: "/clinician" as const,
-      label: t("navClinician"),
-      icon: Calendar,
-      desc: "Caseload & sessions",
-    },
-    {
-      to: "/billing" as const,
-      label: "Billing",
-      icon: LayoutDashboard,
-      desc: "Claims, ISL & credentials",
-    },
-    { to: "/consent" as const, label: "Consent", icon: ShieldCheck, desc: "Ledger & disclosures" },
-    {
-      to: "/notes-queue" as const,
-      label: "Unsigned notes",
-      icon: ClipboardList,
-      desc: "Sign to release billing",
-    },
-    {
-      to: "/clinician-profile" as const,
-      label: "My profile",
-      icon: UserCog,
-      desc: "Specialty & languages",
-    },
-    {
-      to: "/clinician-availability" as const,
-      label: "My availability",
-      icon: Calendar,
-      desc: "Weekly hours & time off",
-    },
-    {
-      to: "/clinician-credentials" as const,
-      label: "My credentials",
-      icon: ShieldCheck,
-      desc: "License, DEA, malpractice",
-    },
-    { to: "/admin" as const, label: t("navAdmin"), icon: LayoutDashboard, desc: "Pilot dashboard" },
-  ];
+  // Staff shell = persistent sidebar on any staff-owned route (plus the
+  // full-page chart, which is staff-only too).
+  const showStaffShell =
+    !isPatientSurface &&
+    (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/")) &&
+    staffNav.length > 0;
 
   return (
     <div className="min-h-dvh flex flex-col">
