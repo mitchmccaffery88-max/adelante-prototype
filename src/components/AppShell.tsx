@@ -5,9 +5,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import {
-  Heart,
   ShieldCheck,
-  ClipboardList,
   UserCog,
   ChevronDown,
   User as UserIcon,

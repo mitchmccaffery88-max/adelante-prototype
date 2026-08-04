@@ -7,7 +7,7 @@ export function MobileNav() {
   const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  if (!PATIENT_ROUTES.includes(pathname as PATIENT_NAV[number]["to"])) {
+  if (!PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number])) {
     return null;
   }
 
