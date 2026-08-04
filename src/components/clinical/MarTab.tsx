@@ -892,6 +892,71 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
 
   const commitBlocked = !attested || (suboxonePending && !mouthChecked);
 
+  /**
+   * Cart keyboard map. Deliberately does NOT bypass any gate: G is ignored when
+   * the grid's Given button would be disabled, and Enter runs the same
+   * `commit()` behind the same attestation/mouth-check block.
+   */
+  keyHandlerRef.current = (e: KeyboardEvent) => {
+    if (e.metaKey || e.ctrlKey || e.altKey) return;
+    if (isTypingTarget(e.target)) return;
+    const key = e.key.toLowerCase();
+    if (key === "arrowright" || key === "j") {
+      e.preventDefault();
+      moveCart(1);
+      return;
+    }
+    if (key === "arrowleft" || key === "k") {
+      e.preventDefault();
+      moveCart(-1);
+      return;
+    }
+    if (key === "enter") {
+      if (readOnly || !pendingCount || commitBlocked) return;
+      e.preventDefault();
+      commit();
+      moveCart(1);
+      return;
+    }
+    if (!cartSlot || readOnly || cartSlot.kind === "kop" || cartSlot.administration) return;
+    if (key === "escape") {
+      e.preventDefault();
+      clearEntry(cartSlot.key);
+      return;
+    }
+    if (key === "g") {
+      const elig =
+        cartSlot.kind === "prn"
+          ? AdelanteEHR.prnEligibility(patientId, cartSlot.order.id, new Date(now))
+          : undefined;
+      if (elig?.blocked) {
+        toast.error(
+          elig.blockedBy === "gap"
+            ? `Minimum interval not met — eligible in ${waitLabel(elig.waitMs)}.`
+            : "PRN limit reached — cannot chart as given.",
+        );
+        return;
+      }
+      e.preventDefault();
+      pickFor(cartSlot, "given");
+      return;
+    }
+    if (key === "r") {
+      e.preventDefault();
+      pickFor(cartSlot, "refused");
+      return;
+    }
+    if (key === "h") {
+      e.preventDefault();
+      pickFor(cartSlot, "held", "");
+      return;
+    }
+    if (key === "n" && cartSlot.kind === "prn") {
+      e.preventDefault();
+      pickFor(cartSlot, "held", NOT_INDICATED_REASON);
+    }
+  };
+
   // ----- Refusal documents ---------------------------------------------------
   const pendingForms = (patient.refusalForms ?? []).filter(
     (f) => f.status === "pending_signature",
