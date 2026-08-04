@@ -14,10 +14,13 @@ import {
   isProblemClinicallyActive,
   noteStatus,
   type Allergy,
+  type Booking,
   type DoseAdministration,
+  type HousingMove,
   type MedOrder,
   type ProgressNote,
   type Problem,
+  type ResourceReferral,
 } from "@/lib/ehr";
 import { isOrderActive, isPrnOrder } from "@/lib/orders";
 import {
@@ -40,6 +43,12 @@ export interface AutofillContext {
   problems: Problem[];
   administrations: DoseAdministration[];
   notes: ProgressNote[];
+  /** Newest booking first (matches `AdelanteEHR.listBookings`). */
+  bookings?: Booking[];
+  /** Newest move first (matches `AdelanteEHR.listHousingMoves`). */
+  housingMoves?: HousingMove[];
+  /** Patient-scoped resource referrals. */
+  referrals?: ResourceReferral[];
   /**
    * True when the acting context may NOT see SUD-sensitive content. Same gate
    * (`canAccess(role, "screeners_sud", patient)`) the Notes tab and problem
