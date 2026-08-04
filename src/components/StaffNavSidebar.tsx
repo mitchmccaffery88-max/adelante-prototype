@@ -122,10 +122,85 @@ export function StaffNavSidebar() {
       inputRef.current?.blur();
       return;
     }
+    // ArrowDown hands off from the search box into the list.
+    if (ev.key === "ArrowDown") {
+      ev.preventDefault();
+      focusableItems()[0]?.focus();
+      return;
+    }
     if (ev.key === "Enter" && firstMatch) {
       ev.preventDefault();
       updateQuery("");
       navigate({ to: firstMatch.to });
+    }
+  };
+
+  // ----- Keyboard navigation -------------------------------------------
+  // Arrow keys walk every focusable row (group headers + links) in DOM order,
+  // Enter activates natively (Link navigates, header toggles), Left/Right
+  // collapse/expand a group, Escape clears the filter and returns to search.
+  const navRef = useRef<HTMLElement>(null);
+  const focusableItems = () =>
+    Array.from(
+      navRef.current?.querySelectorAll<HTMLElement>('[data-nav-focusable="true"]') ?? [],
+    );
+
+  const onNavKeyDown = (ev: React.KeyboardEvent<HTMLElement>) => {
+    const items = focusableItems();
+    if (items.length === 0) return;
+    const current = items.indexOf(document.activeElement as HTMLElement);
+
+    switch (ev.key) {
+      case "ArrowDown": {
+        ev.preventDefault();
+        items[(current + 1 + items.length) % items.length]?.focus();
+        return;
+      }
+      case "ArrowUp": {
+        ev.preventDefault();
+        if (current <= 0) {
+          // Above the first row is the search box, when it's showing.
+          if (!collapsed && inputRef.current) inputRef.current.focus();
+          else items[items.length - 1]?.focus();
+          return;
+        }
+        items[current - 1]?.focus();
+        return;
+      }
+      case "Home": {
+        ev.preventDefault();
+        items[0]?.focus();
+        return;
+      }
+      case "End": {
+        ev.preventDefault();
+        items[items.length - 1]?.focus();
+        return;
+      }
+      case "ArrowRight":
+      case "ArrowLeft": {
+        const header = (document.activeElement as HTMLElement | null)?.closest<HTMLElement>(
+          "[data-group-header]",
+        );
+        if (!header) return;
+        const key = header.dataset["groupHeader"];
+        const isOpen = header.getAttribute("aria-expanded") === "true";
+        if (!key) return;
+        const wantOpen = ev.key === "ArrowRight";
+        if (wantOpen !== isOpen) {
+          ev.preventDefault();
+          toggleGroup(key, isOpen);
+        }
+        return;
+      }
+      case "Escape": {
+        ev.preventDefault();
+        updateQuery("");
+        inputRef.current?.focus();
+        return;
+      }
+      default:
+        return;
     }
   };
 
@@ -188,7 +263,12 @@ export function StaffNavSidebar() {
         </div>
       )}
 
-      <nav className="flex-1 overflow-y-auto px-2 py-3">
+      <nav
+        ref={navRef}
+        onKeyDown={onNavKeyDown}
+        aria-label="Staff surfaces"
+        className="flex-1 overflow-y-auto px-2 py-3"
+      >
         {q && visibleGroups.length === 0 && (
           <p className="px-2 py-1 text-xs text-muted-foreground">No matching surfaces.</p>
         )}
@@ -203,6 +283,8 @@ export function StaffNavSidebar() {
                 type="button"
                 onClick={() => toggleGroup(g.group, defaultOpen)}
                 aria-expanded={open}
+                data-nav-focusable="true"
+                data-group-header={g.group}
                 className="flex w-full items-center justify-between gap-2 rounded px-2 pb-1 pt-1 text-[10px] font-medium uppercase tracking-wider text-muted-foreground hover:text-foreground"
               >
                 <span className="truncate">{g.label}</span>
@@ -222,6 +304,7 @@ export function StaffNavSidebar() {
                       to={e.to}
                       title={collapsed ? `${e.label} — ${e.desc}` : e.desc}
                       data-nav-id={e.id}
+                      data-nav-focusable="true"
                       aria-current={active ? "page" : undefined}
                       className={cn(
                         "flex items-center gap-2 rounded-md px-2 py-2 text-sm transition-colors",
