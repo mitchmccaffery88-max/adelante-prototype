@@ -24,7 +24,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { ClientDate } from "@/components/ClientDate";
-import { ArrowLeft, Search } from "lucide-react";
+import { ArrowLeft, FileText, Search } from "lucide-react";
 
 export const Route = createFileRoute("/released-search")({
   head: () => ({
