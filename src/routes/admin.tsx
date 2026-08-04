@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   BellOff,
   RotateCw,
+  Lock,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -39,6 +40,8 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
+import { canAccess, useActingStaff } from "@/lib/roles";
+import { staffNavGroupForRole } from "@/lib/navSections";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -55,6 +58,17 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { t } = useI18n();
+  const { role } = useActingStaff();
+  // Same gate the "Pilot dashboard" nav entry promises, so the sidebar never
+  // advertises a surface that then refuses to render.
+  const access = canAccess(role, "population_health");
+  // Quick links ARE the sidebar's Administration group — one computation, no
+  // second hand-maintained list to drift. `/admin` itself is dropped: this is
+  // the page you're on.
+  const adminLinks = useMemo(
+    () => staffNavGroupForRole(role, "administration").filter((e) => e.to !== "/admin"),
+    [role],
+  );
   const stats = useEhr(() => AdelanteEHR.stats());
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
