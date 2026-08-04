@@ -18,7 +18,7 @@ let baseline = 0;
 // order the clinician actually performed the changes.
 const goalAudits = (): AuditEvent[] =>
   AdelanteEHR.listAuditEvents({ patientId, category: "care_plan" })
-    .filter((e) => e.action === "goal_status_changed" && e.detail.goalId === goalId)
+    .filter((e) => e.action === "goal_status_changed" && e.detail!.goalId === goalId)
     .reverse();
 
 beforeEach(() => {
@@ -45,7 +45,7 @@ describe("PatientHome goal cycling — audit trail", () => {
     fireEvent.click(row); // done -> open
 
     const events = goalAudits();
-    expect(events.map((e) => [e.detail.from, e.detail.to])).toEqual([
+    expect(events.map((e) => [e.detail!.from, e.detail!.to])).toEqual([
       ["open", "in_progress"],
       ["in_progress", "done"],
       ["done", "open"],
@@ -64,8 +64,8 @@ describe("PatientHome goal cycling — audit trail", () => {
     expect(e.patientId).toBe(patientId);
     expect(e.actorRole).toBe("patient");
     expect(e.actorId).toBe(`${patient.firstName} ${patient.lastName}`);
-    expect(e.detail.goalId).toBe(goalId);
-    expect(e.detail.goalText).toBe(patient.goals!.find((g) => g.id === goalId)!.text);
+    expect(e.detail!.goalId).toBe(goalId);
+    expect(e.detail!.goalText).toBe(patient.goals!.find((g) => g.id === goalId)!.text);
     expect(Number.isNaN(Date.parse(e.at))).toBe(false);
   });
 
@@ -81,7 +81,7 @@ describe("staff-side goal changes", () => {
     const e = goalAudits().at(-1)!;
     expect(e.actorRole).toBe("case_manager");
     expect(e.actorId).toBe("Christi R");
-    expect(e.detail.to).toBe("done");
+    expect(e.detail!.to).toBe("done");
   });
 
   it("defaults actorRole to staff when only a name is supplied", () => {
@@ -92,8 +92,8 @@ describe("staff-side goal changes", () => {
   it("still logs a no-change transition so re-saves are traceable", () => {
     AdelanteEHR.setGoalStatus(patientId, goalId, "open", "Christi R", "case_manager");
     const e = goalAudits().at(-1)!;
-    expect(e.detail.from).toBe("open");
-    expect(e.detail.to).toBe("open");
+    expect(e.detail!.from).toBe("open");
+    expect(e.detail!.to).toBe("open");
   });
 
   it("writes nothing when the goal does not exist", () => {
