@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   BellOff,
   RotateCw,
+  Lock,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -39,6 +40,8 @@ import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { EmptyState } from "@/components/EmptyState";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
+import { canAccess, useActingStaff } from "@/lib/roles";
+import { staffNavGroupForRole } from "@/lib/navSections";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -55,6 +58,17 @@ export const Route = createFileRoute("/admin")({
 
 function AdminPage() {
   const { t } = useI18n();
+  const { role } = useActingStaff();
+  // Same gate the "Pilot dashboard" nav entry promises, so the sidebar never
+  // advertises a surface that then refuses to render.
+  const access = canAccess(role, "population_health");
+  // Quick links ARE the sidebar's Administration group — one computation, no
+  // second hand-maintained list to drift. `/admin` itself is dropped: this is
+  // the page you're on.
+  const adminLinks = useMemo(
+    () => staffNavGroupForRole(role, "administration").filter((e) => e.to !== "/admin"),
+    [role],
+  );
   const stats = useEhr(() => AdelanteEHR.stats());
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
@@ -117,6 +131,20 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
+  if (access.level === "none") {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-6">
+        <EmptyState
+          icon={Lock}
+          title="The pilot dashboard is restricted"
+          description={
+            access.reason ?? "Your role can't view cross-patient program administration."
+          }
+        />
+      </div>
+    );
+  }
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <header className="mb-6">
@@ -130,61 +158,29 @@ function AdminPage() {
         </p>
       </header>
 
-      <div className="mb-6 grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
-        <Link to="/admin-credentialing" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Credentialing</div>
-          <div className="mt-1 text-sm text-foreground">License, DEA & payer enrollments</div>
-        </Link>
-        <Link to="/admin-coordination" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Coordination</div>
-          <div className="mt-1 text-sm text-foreground">Cover frozen providers, route intakes</div>
-        </Link>
-        <Link to="/admin-claims" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Claims</div>
-          <div className="mt-1 text-sm text-foreground">Encounter → submitted → paid</div>
-        </Link>
-        <Link to="/admin-facilities" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Facilities</div>
-          <div className="mt-1 text-sm text-foreground">Types, deactivation & duplicate merges</div>
-        </Link>
-        <Link to="/dashboards" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Population health</div>
-          <div className="mt-1 text-sm text-foreground">KPI vs target with record drill-down</div>
-        </Link>
-        <Link to="/admin-kpi-targets" className="rounded-lg border bg-card p-3 hover:bg-secondary/50">
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">KPI targets</div>
-          <div className="mt-1 text-sm text-foreground">Set, edit & retire performance targets</div>
-        </Link>
-        <Link
-          to="/admin-note-templates"
-          className="rounded-lg border bg-card p-3 hover:bg-secondary/50"
-        >
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">Note templates</div>
-          <div className="mt-1 text-sm text-foreground">Sections, conditional fields & scoring</div>
-        </Link>
-        <Link
-          to="/admin-catalog-governance"
-          className="rounded-lg border bg-card p-3 hover:bg-secondary/50"
-        >
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">
-            Catalog governance
-          </div>
-          <div className="mt-1 text-sm text-foreground">
-            Frequency catalog & local RxNav suppressions
-          </div>
-        </Link>
-        <Link
-          to="/admin-scheduling-rules"
-          className="rounded-lg border bg-card p-3 hover:bg-secondary/50"
-        >
-          <div className="text-xs font-medium uppercase tracking-wider text-teal">
-            Scheduling rules
-          </div>
-          <div className="mt-1 text-sm text-foreground">
-            Rules that generate worklist tasks on demand
-          </div>
-        </Link>
-      </div>
+      <nav aria-label="Administration" className="mb-6">
+        <div className="text-xs font-medium uppercase tracking-wider text-muted-foreground mb-2">
+          Administration
+        </div>
+        <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          {adminLinks.map((entry) => (
+            <Link
+              key={entry.id}
+              to={entry.to}
+              data-admin-link-id={entry.id}
+              className="flex items-start gap-3 rounded-lg border bg-card p-3 hover:bg-secondary/50"
+            >
+              {entry.icon ? <entry.icon className="mt-0.5 h-4 w-4 shrink-0 text-teal" /> : null}
+              <span className="min-w-0">
+                <span className="block text-xs font-medium uppercase tracking-wider text-teal">
+                  {entry.label}
+                </span>
+                <span className="mt-1 block text-sm text-foreground">{entry.desc}</span>
+              </span>
+            </Link>
+          ))}
+        </div>
+      </nav>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">
         <Kpi

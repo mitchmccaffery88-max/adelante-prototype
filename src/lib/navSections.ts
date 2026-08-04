@@ -396,6 +396,15 @@ export function staffNavGroupsForRole(role: StaffRole): NavGroupView[] {
   })).filter((g) => g.entries.length > 0);
 }
 
+/**
+ * Gated entries for a single nav group. The admin landing page renders its
+ * quick links from this, so its list and the sidebar's Administration section
+ * are the same computation and cannot drift apart.
+ */
+export function staffNavGroupForRole(role: StaffRole, group: NavGroup): NavEntry[] {
+  return staffNavForRole(role).filter((e) => e.group === group);
+}
+
 /** Hook form for components — follows the acting staff identity. */
 export function useStaffNavGroups(): NavGroupView[] {
   const { role } = useActingStaff();
