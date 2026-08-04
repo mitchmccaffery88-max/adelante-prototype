@@ -288,3 +288,16 @@ function summarize(d: Record<string, unknown>): string {
     .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
     .join(" · ");
 }
+
+function csvCell(v: unknown): string {
+  const s = v === undefined || v === null ? "" : String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
+}
+
+function _unusedSummarize(d: Record<string, unknown>): string {
+  return Object.entries(d)
+    .filter(([, v]) => v !== undefined && v !== null && v !== "")
+    .slice(0, 4)
+    .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
+    .join(" · ");
+}
