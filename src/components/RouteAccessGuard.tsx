@@ -25,7 +25,13 @@ export function RouteAccessGuard() {
     const key = `${role}:${pathname}`;
     if (lastWarned.current !== key) {
       lastWarned.current = key;
-      toast.error("Access restricted", { description: access.message });
+      // Deferred a tick: on a cold deep link this effect runs before the
+      // Toaster's own mount effect subscribes, and an immediately-emitted
+      // toast would be dropped.
+      setTimeout(
+        () => toast.error("Access restricted", { description: access.message }),
+        0,
+      );
     }
     navigate({ to: access.redirectTo, replace: true });
   }, [role, pathname, navigate]);
