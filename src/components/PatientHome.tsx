@@ -156,19 +156,6 @@ export function PatientHome() {
     .sort((a, b) => +new Date(b.start) - +new Date(a.start))
     .slice(0, 5);
 
-  const cycleGoal = (goalId: string, current: "open" | "in_progress" | "done") => {
-    const nextStatus =
-      current === "open" ? "in_progress" : current === "in_progress" ? "done" : "open";
-    AdelanteEHR.setGoalStatus(patient.id, goalId, nextStatus);
-    toast.success(
-      nextStatus === "done"
-        ? "Goal marked done — nice work."
-        : nextStatus === "in_progress"
-          ? "Goal in progress."
-          : "Goal reset.",
-    );
-  };
-
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
       {/* Welcome */}
@@ -205,8 +192,7 @@ export function PatientHome() {
 
       <HomeScreenNudge />
 
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-        <Card className="p-5">
+      <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
             <CalIcon className="h-4 w-4" /> {t("homeNextSession")}
           </div>
@@ -286,10 +272,28 @@ export function PatientHome() {
               </Button>
             </div>
           )}
-        </Card>
+      </Card>
 
-        <CarePlanCard patientId={patient.id} audience="patient" />
-      </div>
+      {/* Grouped care-plan section: plan summary + goals, support needs, referrals. */}
+      <section
+        aria-labelledby="your-care-plan-heading"
+        className="rounded-xl border-2 border-teal/30 bg-secondary/30 p-4 sm:p-5"
+      >
+        <h2
+          id="your-care-plan-heading"
+          className="font-display text-lg text-navy flex items-center gap-2"
+        >
+          <HeartPulse className="h-5 w-5 text-teal" /> Your Care Plan
+        </h2>
+        <p className="text-xs text-muted-foreground mt-1">
+          {t("homeGoalsHelp")}
+        </p>
+        <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
+          <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
+          <SupportPlanCard patientId={patient.id} />
+          <ReferralsForYouCard patientId={patient.id} />
+        </div>
+      </section>
 
       {meds.length > 0 && (
         <Card className="p-5">
@@ -310,56 +314,9 @@ export function PatientHome() {
         </Card>
       )}
 
-      {goals.length > 0 && (
-        <Card className="p-5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-            <Target className="h-4 w-4" /> {t("homeYourGoals")}
-          </div>
-          <p className="text-xs text-muted-foreground mt-1">
-            {t("homeGoalsHelp")} {t("patGoalTapHint")}
-          </p>
-          <ul className="mt-3 space-y-2">
-            {goals.map((g) => (
-              <li
-                key={g.id}
-                className="flex items-center min-h-11 gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
-                onClick={() => cycleGoal(g.id, g.status)}
-                role="button"
-                aria-label={`Update goal: ${g.text}`}
-              >
-                <CheckCircle2
-                  className={
-                    "h-4 w-4 mt-0.5 shrink-0 " +
-                    (g.status === "done"
-                      ? "text-success"
-                      : g.status === "in_progress"
-                        ? "text-teal"
-                        : "text-muted-foreground")
-                  }
-                />
-                <span className="flex-1">
-                  <span
-                    className={
-                      g.status === "done" ? "line-through text-muted-foreground" : "text-foreground"
-                    }
-                  >
-                    {g.text}
-                  </span>
-                </span>
-                <Badge variant="outline" className="capitalize text-xs">
-                  {t(goalStatusMap[g.status] ?? (g.status as Key))}
-                </Badge>
-              </li>
-            ))}
-          </ul>
-        </Card>
-      )}
-
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} />
       <MyProfileCard patientId={patient.id} />
-      <SupportPlanCard patientId={patient.id} />
-      <ReferralsForYouCard patientId={patient.id} />
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>

@@ -1,5 +1,7 @@
 import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
+import { useI18n, type Key } from "@/lib/i18n";
+import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -11,10 +13,17 @@ import {
   Sparkles,
   ArrowRight,
   ShieldAlert,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
 type Audience = "patient" | "clinician" | "case_manager";
+
+const goalStatusMap: Record<string, Key> = {
+  not_started: "goalNotStarted",
+  in_progress: "goalInProgress",
+  done: "goalDone",
+};
 
 /**
  * Unified care-plan renderer. Reads the auto-derived `CarePlanSnapshot`
@@ -37,6 +46,7 @@ export function CarePlanCard({
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const plan = useEhr(() => AdelanteEHR.getCarePlan(patientId));
   const [role] = useActingRole();
+  const { t } = useI18n();
 
   if (!patient) return null;
 
@@ -84,6 +94,22 @@ export function CarePlanCard({
         (plan.metrics.goalsDone / (plan.metrics.goalsOpen + plan.metrics.goalsDone)) * 100,
       )
     : 0;
+
+  // Patient audience owns the interactive goal list (single source of truth on
+  // Patient Home). Staff audiences keep the read-only 3-item preview.
+  const patientGoals = patient.goals ?? [];
+  const cycleGoal = (goalId: string, current: "open" | "in_progress" | "done") => {
+    const nextStatus =
+      current === "open" ? "in_progress" : current === "in_progress" ? "done" : "open";
+    AdelanteEHR.setGoalStatus(patientId, goalId, nextStatus);
+    toast.success(
+      nextStatus === "done"
+        ? "Goal marked done — nice work."
+        : nextStatus === "in_progress"
+          ? "Goal in progress."
+          : "Goal reset.",
+    );
+  };
 
   return (
     <Card className={cn("p-5", className)}>
@@ -190,7 +216,7 @@ export function CarePlanCard({
 
       {!compact && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
-          <div>
+          <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
             <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-navy">
               <span className="inline-flex items-center gap-1.5">
                 <Target className="h-3.5 w-3.5" /> Goals
@@ -200,19 +226,66 @@ export function CarePlanCard({
               </span>
             </div>
             <Progress value={goalsPct} className="mt-2 h-1.5" />
-            <ul className="mt-2 space-y-1">
-              {plan.activeGoals.slice(0, 3).map((g) => (
-                <li key={g.id} className="text-xs text-foreground">
-                  • {g.text}
-                </li>
-              ))}
-              {plan.activeGoals.length === 0 && (
-                <li className="text-xs text-muted-foreground">No open goals right now.</li>
-              )}
-            </ul>
+            {audience === "patient" ? (
+              <>
+                <p className="mt-2 text-xs text-muted-foreground">{t("patGoalTapHint")}</p>
+                <ul className="mt-2 space-y-2">
+                  {patientGoals.map((g) => (
+                    <li
+                      key={g.id}
+                      className="flex items-center min-h-11 gap-2 rounded-md border p-2.5 text-sm cursor-pointer hover:border-teal transition-colors"
+                      onClick={() => cycleGoal(g.id, g.status)}
+                      role="button"
+                      aria-label={`Update goal: ${g.text}`}
+                    >
+                      <CheckCircle2
+                        className={
+                          "h-4 w-4 mt-0.5 shrink-0 " +
+                          (g.status === "done"
+                            ? "text-success"
+                            : g.status === "in_progress"
+                              ? "text-teal"
+                              : "text-muted-foreground")
+                        }
+                      />
+                      <span className="flex-1">
+                        <span
+                          className={
+                            g.status === "done"
+                              ? "line-through text-muted-foreground"
+                              : "text-foreground"
+                          }
+                        >
+                          {g.text}
+                        </span>
+                      </span>
+                      <Badge variant="outline" className="capitalize text-xs">
+                        {goalStatusMap[g.status]
+                          ? t(goalStatusMap[g.status])
+                          : String(g.status).replace("_", " ")}
+                      </Badge>
+                    </li>
+                  ))}
+                  {patientGoals.length === 0 && (
+                    <li className="text-xs text-muted-foreground">No goals yet.</li>
+                  )}
+                </ul>
+              </>
+            ) : (
+              <ul className="mt-2 space-y-1">
+                {plan.activeGoals.slice(0, 3).map((g) => (
+                  <li key={g.id} className="text-xs text-foreground">
+                    • {g.text}
+                  </li>
+                ))}
+                {plan.activeGoals.length === 0 && (
+                  <li className="text-xs text-muted-foreground">No open goals right now.</li>
+                )}
+              </ul>
+            )}
           </div>
 
-          <div>
+          <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
             <div className="text-xs font-medium uppercase tracking-wider text-navy inline-flex items-center gap-1.5">
               <ArrowRight className="h-3.5 w-3.5" /> Next steps
             </div>
