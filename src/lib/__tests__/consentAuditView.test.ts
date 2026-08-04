@@ -15,7 +15,7 @@ describe("consent audit viewer gating", () => {
   });
 
   it("is visible exactly to roles with consent_ledger read access", () => {
-    for (const role of STAFF_ROLES) {
+    for (const { key: role } of STAFF_ROLES) {
       const level = canAccess(role, "consent_ledger").level;
       const readable = level === "read" || level === "write";
       expect(canSeeNavEntry(role, entry)).toBe(readable);
@@ -23,7 +23,7 @@ describe("consent audit viewer gating", () => {
   });
 
   it("redirects roles without access away from the deep link", () => {
-    for (const role of STAFF_ROLES) {
+    for (const { key: role } of STAFF_ROLES) {
       const res = resolveNavAccess(role, "/consent-audit");
       const level = canAccess(role, "consent_ledger").level;
       const readable = level === "read" || level === "write";
