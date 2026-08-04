@@ -15,6 +15,7 @@ import {
   type MetricKey,
 } from "@/lib/dashboardMetrics";
 import { KpiVsTargetSection } from "@/components/dashboards/KpiVsTargetSection";
+import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { CalAimSection } from "@/components/dashboards/CalAimSection";
 import { calaimEligibleDischarges, calaimEligiblePatients, distinctPatients } from "@/lib/calaim";
 import {
@@ -230,6 +231,8 @@ function DashboardsPage() {
         metrics={metrics}
         onDrillDown={(key) => setDrill(key)}
       />
+
+      <PopulationCarePlanStrip />
 
       <CalAimSection
         codeCount={qualifyingCodes.length}
