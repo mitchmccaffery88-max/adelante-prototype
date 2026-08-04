@@ -240,6 +240,15 @@ export const STAFF_NAV: NavEntry[] = [
     group: "revenue",
     gate: { kind: "record_class", anyOf: ["consent_ledger"] },
   },
+  {
+    id: "consent-audit",
+    label: "Consent audit",
+    desc: "Captures, revocations & disclosures",
+    icon: FileSearch,
+    to: "/consent-audit",
+    group: "revenue",
+    gate: { kind: "record_class", anyOf: ["consent_ledger"] },
+  },
 
   // ----- Administration (gated config surfaces; dedicated admin shell is a
   // later phase — these simply appear in the staff nav for roles that clear
