@@ -14,6 +14,7 @@ import {
   ArrowRight,
   ShieldAlert,
   CheckCircle2,
+  History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -45,6 +46,11 @@ export function CarePlanCard({
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const plan = useEhr(() => AdelanteEHR.getCarePlan(patientId));
+  const goalHistory = useEhr(() =>
+    AdelanteEHR.listAuditEvents({ patientId, category: "care_plan" }).filter(
+      (e) => e.action === "goal_status_changed",
+    ),
+  );
   const [role] = useActingRole();
   const { t } = useI18n();
 
