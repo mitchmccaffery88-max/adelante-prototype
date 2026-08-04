@@ -19,6 +19,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { useStaffNavGroups, STAFF_ROUTES } from "@/lib/navSections";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
+import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import {
   DropdownMenu,
@@ -256,6 +257,7 @@ export function AppShell() {
           <div className="flex min-h-full">
             <StaffNavSidebar />
             <div className="min-w-0 flex-1">
+              <StaffBreadcrumbs />
               <Outlet />
             </div>
           </div>
