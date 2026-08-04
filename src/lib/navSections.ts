@@ -7,6 +7,8 @@
 // a role or changing a permission is a matrix edit, never a nav edit.
 import {
   Building2,
+  Calendar,
+  Heart,
   CalendarClock,
   ClipboardList,
   ClipboardSignature,
@@ -413,3 +415,27 @@ export function useStaffNavGroups(): NavGroupView[] {
 
 /** Every route the staff shell owns — used to decide when to show the shell. */
 export const STAFF_ROUTES: string[] = STAFF_NAV.map((e) => e.to);
+
+// §Platform nav Phase 4 — patient shell registry.
+//
+// Patients are not `StaffRole`s, so these entries deliberately carry no
+// `RecordClass` / access gate: the patient shell spans exactly three routes and
+// every other patient surface is a section inside `/home`. The registry exists
+// purely so the desktop top-nav strip and the mobile bottom tab bar read the
+// same list (they previously drifted: desktop was missing `/schedule`).
+export interface PatientNavEntry {
+  id: string;
+  /** i18n key resolved by the rendering shell. */
+  labelKey: string;
+  to: "/home" | "/intake" | "/schedule";
+  icon: LucideIcon;
+}
+
+export const PATIENT_NAV: readonly PatientNavEntry[] = [
+  { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart },
+  { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList },
+  { id: "schedule", labelKey: "schTitle", to: "/schedule", icon: Calendar },
+] as const;
+
+/** Every route the patient shell owns. */
+export const PATIENT_ROUTES: readonly PatientNavEntry["to"][] = PATIENT_NAV.map((e) => e.to);

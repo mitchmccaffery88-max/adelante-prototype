@@ -1,9 +1,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
-import { Heart, ClipboardList, Calendar } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
-
-const PATIENT_ROUTES = ["/home", "/intake", "/schedule"] as const;
+import { PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
 
 export function MobileNav() {
   const { t } = useI18n();
@@ -13,12 +11,6 @@ export function MobileNav() {
     return null;
   }
 
-  const items = [
-    { to: "/home" as const, label: t("navMyCare"), icon: Heart },
-    { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
-    { to: "/schedule" as const, label: t("schTitle"), icon: Calendar },
-  ];
-
   return (
     <nav
       role="navigation"
@@ -26,12 +18,12 @@ export function MobileNav() {
       className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-background/95 backdrop-blur pb-[env(safe-area-inset-bottom)]"
     >
       <div className="flex items-stretch justify-around">
-        {items.map((n) => {
+        {PATIENT_NAV.map((n) => {
           const Icon = n.icon;
           const active = pathname === n.to;
           return (
             <Link
-              key={n.to}
+              key={n.id}
               to={n.to}
               className={cn(
                 "flex flex-1 flex-col items-center justify-center gap-1 min-h-[44px] py-2 text-[11px] font-medium",
@@ -39,7 +31,7 @@ export function MobileNav() {
               )}
             >
               <Icon className={cn("h-5 w-5", active && "text-navy")} />
-              {n.label}
+              {t(n.labelKey as Parameters<typeof t>[0])}
             </Link>
           );
         })}

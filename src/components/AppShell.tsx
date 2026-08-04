@@ -5,9 +5,7 @@ import { MobileNav } from "@/components/MobileNav";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import {
-  Heart,
   ShieldCheck,
-  ClipboardList,
   UserCog,
   ChevronDown,
   User as UserIcon,
@@ -17,7 +15,7 @@ import {
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
-import { useStaffNavGroups, STAFF_ROUTES } from "@/lib/navSections";
+import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
@@ -54,15 +52,15 @@ export function AppShell() {
   // Surfaces where the patient-facing UI should feel private:
   // hide the staff link strip in the mobile nav (still reachable via the
   // Staff dropdown on desktop).
-  const isPatientSurface =
-    pathname === "/home" || pathname === "/intake" || pathname === "/schedule";
+  const isPatientSurface = PATIENT_ROUTES.includes(
+    pathname as (typeof PATIENT_ROUTES)[number],
+  );
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake";
 
-  const patientNav = [
-    { to: "/home" as const, label: t("navMyCare"), icon: Heart },
-    { to: "/intake" as const, label: t("navIntake"), icon: ClipboardList },
-  ];
+  // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
+  // it can never drift from the mobile tab bar again.
+  const patientNav = PATIENT_NAV;
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
   const showStaffShell =
@@ -87,7 +85,7 @@ export function AppShell() {
               const active = pathname === n.to;
               return (
                 <Link
-                  key={n.to}
+                  key={n.id}
                   to={n.to}
                   className={cn(
                     "px-3 py-2 rounded-md text-sm font-medium transition-colors",
@@ -96,7 +94,7 @@ export function AppShell() {
                       : "text-foreground/70 hover:text-foreground hover:bg-secondary",
                   )}
                 >
-                  {n.label}
+                  {t(n.labelKey as Parameters<typeof t>[0])}
                 </Link>
               );
             })}
