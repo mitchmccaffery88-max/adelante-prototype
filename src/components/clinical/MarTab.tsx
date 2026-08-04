@@ -1194,7 +1194,14 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
               Password re-verification pending real staff authentication.
             </p>
           </div>
-          <Button className="w-full" disabled={commitBlocked} onClick={commit}>
+          <Button
+            className="w-full"
+            disabled={commitBlocked}
+            onClick={() => {
+              commit();
+              if (view === "cart") moveCart(1);
+            }}
+          >
             Chart {pendingCount} dose{pendingCount === 1 ? "" : "s"}
           </Button>
         </div>
