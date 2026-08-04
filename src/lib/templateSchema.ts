@@ -46,8 +46,13 @@ export interface TemplateField {
   help?: string;
   /** Optional Spanish help text. Falls back to `help` when absent. */
   helpEs?: string;
-  min?: number;
-  max?: number;
+  /**
+   * Numeric bounds for `number` fields. For `date`/`datetime` fields the same
+   * properties act as calendar bounds: a number is a YEAR (e.g. `max: 2026`),
+   * an ISO date string is that exact instant. Absent → no range check.
+   */
+  min?: number | string;
+  max?: number | string;
   rows?: number;
   /**
    * ADEL SEAM: this field is read by the future AI-drafting layer (see Agentic
@@ -642,12 +647,93 @@ export interface MissingField {
   sectionTitle: string;
   key: string;
   label: string;
+  /**
+   * `missing` — required and unanswered (the original behaviour).
+   * `invalid` — answered, but the stored value violates a constraint the
+   * field itself declares (min/max, option list). Both block signing.
+   */
+  problem?: "missing" | "invalid";
+  /** Human-readable reason, only set for `invalid`. */
+  reason?: string;
+}
+
+/**
+ * Per-type value validation for a field that HAS a value. Returns a reason
+ * string when the stored value violates a constraint declared on the field,
+ * otherwise null.
+ *
+ * Deliberately conservative: a field that declares no `min`/`max` and no
+ * `options` can never fail here, so nothing becomes stricter unless the
+ * template opts in. Values can be written programmatically (autofill, future
+ * integrations), so this cannot assume the UI produced them.
+ */
+function invalidReasonFor(field: TemplateField, v: AnswerValue): string | null {
+  switch (field.type) {
+    case "number": {
+      const n = typeof v === "number" ? v : Number(String(v).trim());
+      if (Number.isNaN(n)) return "Must be a number";
+      if (typeof field.min === "number" && n < field.min) return `Must be at least ${field.min}`;
+      if (typeof field.max === "number" && n > field.max) return `Must be at most ${field.max}`;
+      return null;
+    }
+    case "date":
+    case "datetime": {
+      const ms = +new Date(String(v));
+      if (Number.isNaN(ms)) return "Not a valid date";
+      const lo = dateBound(field.min, "lower");
+      const hi = dateBound(field.max, "upper");
+      if (lo !== null && ms < lo) return `Must be on or after ${boundLabel(field.min)}`;
+      if (hi !== null && ms > hi) return `Must be on or before ${boundLabel(field.max)}`;
+      return null;
+    }
+    case "select":
+    case "radio": {
+      if (!field.options?.length) return null;
+      return field.options.some((o) => o.value === String(v))
+        ? null
+        : `"${String(v)}" is not one of the allowed choices`;
+    }
+    case "multiselect": {
+      if (!field.options?.length || !Array.isArray(v)) return null;
+      const bad = v.map(String).filter((x) => !field.options!.some((o) => o.value === x));
+      return bad.length ? `Not allowed choices: ${bad.join(", ")}` : null;
+    }
+    default:
+      return null;
+  }
+}
+
+/**
+ * Date bounds reuse the EXISTING `min`/`max` schema properties rather than
+ * inventing new ones. A number is read as a calendar year (e.g. `max: 2026`);
+ * an ISO date string is read as that exact instant. No bounds → no date-range
+ * check at all.
+ */
+function dateBound(b: number | string | undefined, edge: "lower" | "upper"): number | null {
+  if (b === undefined || b === null) return null;
+  if (typeof b === "number") {
+    // Year bound: lower → Jan 1 00:00, upper → Dec 31 23:59:59.999.
+    return edge === "lower"
+      ? +new Date(Date.UTC(b, 0, 1))
+      : +new Date(Date.UTC(b, 11, 31, 23, 59, 59, 999));
+  }
+  const ms = +new Date(b);
+  return Number.isNaN(ms) ? null : ms;
+}
+
+function boundLabel(b: number | string | undefined): string {
+  return typeof b === "number" ? String(b) : String(b ?? "");
 }
 
 /**
  * Required fields that are visible under the current answers and unanswered.
  * Hidden (show_if false) fields are never required — that is the whole point
  * of conditional sections.
+ *
+ * ALSO reports fields whose stored value violates the field's own declared
+ * constraints. This lives in the same function (not a companion validator) so
+ * the signing gate, the missing-field highlight in `TemplateForm`, and the
+ * required-count baseline can never disagree with each other.
  */
 export function findMissingRequired(
   schema: TemplateSchema | undefined,
@@ -662,17 +748,32 @@ export function findMissingRequired(
     if (!isFieldsSection(section)) continue;
     if (!isSectionVisible(section, answers)) continue;
     for (const field of section.fields ?? []) {
-      if (!field.required) continue;
       if (!isFieldVisible(field, answers)) continue;
       // A required checkbox means "must be ticked", not "must be touched".
       const v = answers[field.key];
-      const ok = field.type === "checkbox" ? v === true : isAnswered(v);
-      if (!ok) {
+      const answered = field.type === "checkbox" ? v === true : isAnswered(v);
+      if (field.required && !answered) {
         out.push({
           sectionId: section.id,
           sectionTitle: section.title,
           key: field.key,
           label: field.label,
+          problem: "missing",
+        });
+        continue;
+      }
+      // Value checks apply to any answered field, required or not: an invalid
+      // stored value is a defect regardless of who wrote it.
+      if (!answered) continue;
+      const reason = invalidReasonFor(field, v as AnswerValue);
+      if (reason) {
+        out.push({
+          sectionId: section.id,
+          sectionTitle: section.title,
+          key: field.key,
+          label: field.label,
+          problem: "invalid",
+          reason,
         });
       }
     }

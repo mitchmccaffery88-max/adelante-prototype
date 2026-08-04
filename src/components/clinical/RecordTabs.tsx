@@ -1849,7 +1849,12 @@ function ProgressNoteCard({
   const sign = () => {
     try {
       if (missing.length > 0) {
-        toast.error(`Answer ${missing.length} required template field(s) before signing.`);
+        const invalid = missing.filter((m) => m.problem === "invalid");
+        toast.error(
+          invalid.length
+            ? `Fix ${invalid.length} invalid template field(s) before signing — ${invalid[0].label}: ${invalid[0].reason}`
+            : `Answer ${missing.length} required template field(s) before signing.`,
+        );
         return;
       }
       if (crisisBlocked) {
