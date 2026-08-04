@@ -10,7 +10,13 @@
 // content a role could not read in the UI. `buildProgressNotePdf` re-runs the
 // gate itself and throws, so a caller cannot bypass it by skipping the check.
 import { jsPDF } from "jspdf";
-import { isNoteSudSensitive, noteStatus, type Patient, type ProgressNote } from "./ehr";
+import {
+  isNoteStrictlyRestricted,
+  isNoteSudSensitive,
+  noteStatus,
+  type Patient,
+  type ProgressNote,
+} from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
 import { computeScore, isAnswered, isFieldVisible, isSectionVisible } from "./templateSchema";
 import type { AnswerValue } from "./templateSchema";
@@ -47,6 +53,18 @@ export function noteExportGate(
   const rbac = canAccess(role, "therapy_notes", patient);
   if (rbac.level === "none") {
     return { allowed: false, reason: rbac.reason ?? "No access to clinical notes." };
+  }
+  // §ASCMI psychotherapy-notes tier — strictly more restrictive than the SUD
+  // gate and checked BEFORE it: SUD consent does not unlock this tier.
+  // Unreachable today (nothing sets `restrictedTier`), by design.
+  if (isNoteStrictlyRestricted(note)) {
+    const strict = canAccess(role, "psychotherapy_notes", patient);
+    if (strict.level === "none") {
+      return {
+        allowed: false,
+        reason: "Psychotherapy notes — not releasable under ASCMI consent.",
+      };
+    }
   }
   if (isNoteSudSensitive(note)) {
     const sud = canAccess(role, "screeners_sud", patient);

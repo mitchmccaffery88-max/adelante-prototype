@@ -1461,6 +1461,14 @@ export interface ProgressNote {
    * legal record, and masking is unaffected by this field.
    */
   authorSource?: NoteAuthorSource;
+  /**
+   * §ASCMI stricter tier — SCAFFOLD, currently UNUSED by design. When set,
+   * the note routes through the `psychotherapy_notes` record class, which is
+   * default-deny for every role and is NOT unlocked by SUD consent. No real
+   * template or seeded note sets this today; tagging documentation with it is
+   * a clinical-content decision that needs clinical author sign-off first.
+   */
+  restrictedTier?: "psychotherapy_notes";
   status?: NoteStatus;
   signedBy?: string;
   signedAt?: string;
@@ -1551,6 +1559,14 @@ export function isNoteSudSensitive(note: ProgressNote): boolean {
   return note.category === "sud";
 }
 
+/**
+ * §ASCMI — is this note in the stricter psychotherapy-notes tier?
+ * Always false today: nothing sets `restrictedTier` (see the field comment).
+ */
+export function isNoteStrictlyRestricted(note: ProgressNote): boolean {
+  return note.restrictedTier === "psychotherapy_notes";
+}
+
 /** Effective status for legacy rows written before the lifecycle existed. */
 export function noteStatus(note: ProgressNote): NoteStatus {
   return note.status ?? "draft";
@@ -1572,6 +1588,63 @@ export interface ConsentEvent {
   at: string;
   actor: "patient" | "staff";
   note?: string;
+}
+
+// ===========================================================================
+// §ASCMI consent infrastructure — structured, capturable, revocable consent.
+//
+// PLACEHOLDER CONTENT WARNING: the category keys below are GENERIC
+// PLACEHOLDERS chosen to exercise the mechanism. They are NOT the DHCS/ASCMI
+// category set. Before this goes anywhere near production they must be
+// replaced with Christi's actual DHCS-sourced categories, and the form-type
+// labels / attestation text must be replaced with the real legal language.
+// No regulatory text is authored here on purpose.
+// ===========================================================================
+export type ConsentCategory =
+  | "sud_treatment"
+  | "mental_health"
+  | "case_coordination"
+  | "billing";
+
+export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
+  { key: "sud_treatment", label: "SUD treatment (placeholder)" },
+  { key: "mental_health", label: "Mental health (placeholder)" },
+  { key: "case_coordination", label: "Case coordination (placeholder)" },
+  { key: "billing", label: "Billing (placeholder)" },
+];
+
+export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
+export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded";
+
+export interface ConsentRecordSection {
+  category: ConsentCategory;
+  authorized: boolean;
+}
+
+export interface ConsentRecord {
+  id: string;
+  patientId: string;
+  formType: ConsentFormType;
+  /** How/where this was captured, e.g. "in person — consent tab". */
+  source: string;
+  signedAt: string;
+  /**
+   * E-signature capture. Same typed-name + attestation pattern used for MAR,
+   * order and note signing — deliberately NOT a new signing mechanism.
+   * TODO(auth): attestation is checkbox-only here too.
+   */
+  signedBy: { name: string; relationship: "patient" | "guardian" | "proxy" };
+  capturedBy?: { staffId?: string; staffName: string; role: string };
+  attestationMethod: "checkbox_only";
+  effectiveDate: string;
+  expirationDate?: string;
+  status: ConsentRecordStatus;
+  /** Modification linkage: the record this one replaces. */
+  supersedesId?: string;
+  sections: ConsentRecordSection[];
+  revokedAt?: string;
+  revokedBy?: string;
+  revocationReason?: string;
 }
 
 export interface PatientTask {
@@ -2714,6 +2787,7 @@ const rxEvents: RxEventRow[] = [];
 // tooling can show a coherent activity feed.
 export type AuditCategory =
   | "consent"
+  | "disclosure"
   | "rx"
   | "telehealth"
   | "vendor"
@@ -2740,6 +2814,46 @@ const auditEvents: AuditEvent[] = [];
  * a shift count spans every patient on the unit, so it has no owning Patient.
  */
 const shiftCounts: ShiftCount[] = [];
+
+/**
+ * §ASCMI — structured consent records (top-level, append-only in spirit:
+ * revocation never deletes, it transitions status and keeps the original).
+ * Seeded with one record so the Consent tab has a live example; every other
+ * patient falls back to the legacy boolean until a record is captured.
+ */
+const consentRecords: ConsentRecord[] = [
+  {
+    id: "cr-seed-1",
+    patientId: "p1",
+    formType: "AB133",
+    source: "in person — intake (seed)",
+    signedAt: "2026-05-12T16:00:00.000Z",
+    signedBy: { name: "Patient p1", relationship: "patient" },
+    capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "case_manager" },
+    attestationMethod: "checkbox_only",
+    effectiveDate: "2026-05-12",
+    expirationDate: "2027-05-12",
+    status: "active",
+    sections: [
+      { category: "sud_treatment", authorized: true },
+      { category: "mental_health", authorized: true },
+      { category: "case_coordination", authorized: true },
+      { category: "billing", authorized: false },
+    ],
+  },
+];
+
+/** Live status: a stored "active" record still expires purely by the clock. */
+export function effectiveConsentStatus(rec: ConsentRecord, now = new Date()): ConsentRecordStatus {
+  if (rec.status !== "active") return rec.status;
+  const from = new Date(`${rec.effectiveDate}T00:00:00`);
+  if (Number.isFinite(+from) && now < from) return "expired"; // not yet in force
+  if (rec.expirationDate) {
+    const to = new Date(`${rec.expirationDate}T23:59:59`);
+    if (Number.isFinite(+to) && now > to) return "expired";
+  }
+  return "active";
+}
 
 // §Population health — admin-configured KPI targets (top-level reporting
 // config). Seeded with a couple of realistic targets so the dashboard has
@@ -4661,14 +4775,161 @@ export const AdelanteEHR = {
   getConsentState(patientId: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { part2Sud: false, ecmShare: false, sms: true };
-    return (
-      p.consentState ?? {
-        part2Sud: p.consents.part2Sud,
-        ecmShare: Boolean(p.coverage?.ecmEligible),
-        sms: p.smsFallback,
-      }
+    const base = p.consentState ?? {
+      part2Sud: p.consents.part2Sud,
+      ecmShare: Boolean(p.coverage?.ecmEligible),
+      sms: p.smsFallback,
+    };
+    // §ASCMI — Part 2 is now DERIVED from the structured record, evaluated
+    // live on every read. The legacy boolean is only a fallback for patients
+    // who have no ConsentRecord captured yet.
+    return { ...base, part2Sud: AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment") };
+  },
+
+  // ----- §ASCMI structured consent records -------------------------------
+  listConsentRecords(patientId?: string): ConsentRecord[] {
+    return consentRecords
+      .filter((r) => !patientId || r.patientId === patientId)
+      .map((r) => ({ ...r, status: effectiveConsentStatus(r) }))
+      .sort((a, b) => +new Date(b.signedAt) - +new Date(a.signedAt));
+  },
+  /** The single record currently in force for a patient, if any. */
+  activeConsentRecord(patientId: string, at = new Date()): ConsentRecord | undefined {
+    return consentRecords.find(
+      (r) => r.patientId === patientId && effectiveConsentStatus(r, at) === "active",
     );
   },
+  /**
+   * LIVE consent check — no caching anywhere. Every gate calls this at the
+   * moment of access, which is what makes revocation/expiry auto-stop access
+   * with no code path needing to be told to stop.
+   */
+  isConsentCategoryAuthorized(
+    patientId: string,
+    category: ConsentCategory,
+    at = new Date(),
+  ): boolean {
+    const has = consentRecords.some((r) => r.patientId === patientId);
+    if (!has) {
+      // Legacy fallback: patients with no structured record yet.
+      const p = patients.find((x) => x.id === patientId);
+      if (!p) return false;
+      if (category !== "sud_treatment") return false;
+      return p.consentState?.part2Sud ?? p.consents.part2Sud;
+    }
+    const rec = AdelanteEHR.activeConsentRecord(patientId, at);
+    if (!rec) return false;
+    return Boolean(rec.sections.find((s) => s.category === category)?.authorized);
+  },
+  createConsentRecord(input: {
+    patientId: string;
+    formType: ConsentFormType;
+    source: string;
+    signedByName: string;
+    relationship?: "patient" | "guardian" | "proxy";
+    attested: boolean;
+    effectiveDate: string;
+    expirationDate?: string;
+    sections: ConsentRecordSection[];
+    capturedBy: { staffId?: string; staffName: string; role: string };
+    supersedesId?: string;
+  }): ConsentRecord {
+    if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
+    if (!input.attested) throw new Error("Attestation is required to capture a consent record.");
+    if (input.signedByName.trim().length < 2)
+      throw new Error("A typed signature name is required.");
+    if (!input.effectiveDate) throw new Error("An effective date is required.");
+    const now = new Date().toISOString();
+    // A new record supersedes whatever was in force — history is preserved.
+    const prior = AdelanteEHR.activeConsentRecord(input.patientId);
+    if (prior) prior.status = "superseded";
+    const rec: ConsentRecord = {
+      id: uid(),
+      patientId: input.patientId,
+      formType: input.formType,
+      source: input.source,
+      signedAt: now,
+      signedBy: { name: input.signedByName.trim(), relationship: input.relationship ?? "patient" },
+      capturedBy: input.capturedBy,
+      attestationMethod: "checkbox_only",
+      effectiveDate: input.effectiveDate,
+      expirationDate: input.expirationDate,
+      status: "active",
+      supersedesId: input.supersedesId ?? prior?.id,
+      sections: input.sections,
+    };
+    consentRecords.unshift(rec);
+    appendAudit({
+      category: "consent",
+      action: "consent_record_created",
+      patientId: rec.patientId,
+      actorId: input.capturedBy.staffName,
+      actorRole: input.capturedBy.role,
+      detail: {
+        consentRecordId: rec.id,
+        formType: rec.formType,
+        source: rec.source,
+        effectiveDate: rec.effectiveDate,
+        expirationDate: rec.expirationDate,
+        supersedesId: rec.supersedesId,
+        categories: rec.sections.filter((s) => s.authorized).map((s) => s.category),
+      },
+    });
+    emit();
+    return rec;
+  },
+  revokeConsentRecord(
+    recordId: string,
+    input: { reason: string; revokedBy: string; role: string },
+  ): ConsentRecord {
+    const rec = consentRecords.find((r) => r.id === recordId);
+    if (!rec) throw new Error("Consent record not found.");
+    if (rec.status === "revoked") throw new Error("This record is already revoked.");
+    if (input.reason.trim().length < 3) throw new Error("A revocation reason is required.");
+    // Never delete: the original stays on file, status transitions only.
+    rec.status = "revoked";
+    rec.revokedAt = new Date().toISOString();
+    rec.revokedBy = input.revokedBy;
+    rec.revocationReason = input.reason.trim();
+    appendAudit({
+      category: "consent",
+      action: "consent_record_revoked",
+      patientId: rec.patientId,
+      actorId: input.revokedBy,
+      actorRole: input.role,
+      detail: { consentRecordId: rec.id, formType: rec.formType, reason: rec.revocationReason },
+    });
+    emit();
+    return rec;
+  },
+  /**
+   * §ASCMI disclosure trail — fired when consent-gated content is actually
+   * INCLUDED in an export/print. Category-level only: never the content.
+   */
+  recordConsentDisclosure(input: {
+    patientId: string;
+    categories: ConsentCategory[];
+    purpose: string;
+    role: string;
+    actorId?: string;
+    itemCount?: number;
+  }) {
+    const rec = AdelanteEHR.activeConsentRecord(input.patientId);
+    appendAudit({
+      category: "disclosure",
+      action: "consent_gated_content_disclosed",
+      patientId: input.patientId,
+      actorRole: input.role,
+      actorId: input.actorId,
+      detail: {
+        categories: input.categories,
+        purpose: input.purpose,
+        count: input.itemCount,
+        consentRecordId: rec?.id,
+      },
+    });
+  },
+
   setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
@@ -4682,6 +4943,33 @@ export const AdelanteEHR = {
     }
     if (purpose === "part2Sud") p.consents.part2Sud = granted;
     if (purpose === "sms") p.smsFallback = granted;
+    // Keep the structured record authoritative: the legacy per-purpose toggle
+    // now MIRRORS into it, so there is still exactly one source of truth.
+    if (purpose === "part2Sud" && consentRecords.some((r) => r.patientId === p.id)) {
+      const active = AdelanteEHR.activeConsentRecord(p.id);
+      if (!granted && active) {
+        active.status = "revoked";
+        active.revokedAt = new Date().toISOString();
+        active.revokedBy = "legacy consent toggle";
+        active.revocationReason = note ?? "Part 2 consent toggled off";
+      } else if (granted && !active) {
+        consentRecords.unshift({
+          id: uid(),
+          patientId: p.id,
+          formType: "NonAB133",
+          source: "legacy consent toggle",
+          signedAt: new Date().toISOString(),
+          signedBy: { name: `${p.firstName} ${p.lastName}`, relationship: "patient" },
+          attestationMethod: "checkbox_only",
+          effectiveDate: new Date().toISOString().slice(0, 10),
+          status: "active",
+          sections: CONSENT_CATEGORIES.map((c) => ({
+            category: c.key,
+            authorized: c.key === "sud_treatment",
+          })),
+        });
+      }
+    }
     p.consentEvents = [
       ...(p.consentEvents ?? []),
       {

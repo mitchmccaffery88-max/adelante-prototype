@@ -2,7 +2,7 @@
 // Additive layer on top of the existing persona routing; never replaces it.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type Patient } from "./ehr";
+import { AdelanteEHR, type ConsentCategory, type Patient } from "./ehr";
 
 export type StaffRole =
   | "case_manager"
@@ -39,6 +39,8 @@ export type RecordClass =
   | "sdoh"
   | "self_help"
   | "sud_treatment"
+  // §ASCMI stricter tier — see PSYCHOTHERAPY_NOTES_TIER note below.
+  | "psychotherapy_notes"
   | "case_notes"
   | "peer_notes"
   | "documents"
@@ -116,13 +118,28 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   documents: { case_manager: "write", therapist: "read", pmhnp: "read" },
   billing: { billing: "write" },
   consent_ledger: {
-    case_manager: "read",
+    // §ASCMI — consent capture must be writable by someone. case_manager
+    // writes because they are the role that actually sits with the patient
+    // and captures the form; sys_admin writes for correction/administration.
+    // Clinical roles stay read-only: reading the ledger is need-to-know,
+    // authoring a legal consent instrument is not part of their workflow.
+    case_manager: "write",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
     billing: "read",
-    sys_admin: "read",
+    sys_admin: "write",
   },
+  /**
+   * §ASCMI psychotherapy-notes tier — SCAFFOLD ONLY, DEFAULT DENY.
+   * Strictly more restrictive than `screeners_sud` / `sud_treatment`: no role
+   * has access, and SUD consent does NOT unlock it (ASCMI does not authorize
+   * release of psychotherapy notes). Deliberately UNAPPLIED to any real
+   * template or note today — deciding which documentation qualifies is a
+   * clinical-content call and needs clinical author sign-off (Christi /
+   * Dr. Bagga) before anything is tagged with it.
+   */
+  psychotherapy_notes: {},
   // Clinical record layer (BaggaEMR mirror). Prescribers (pmhnp) and
   // therapists write; case_manager / peer_specialist can read for
   // coordination; billing reads Problems only for claim coding.
@@ -303,6 +320,15 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   },
 };
 
+/**
+ * §ASCMI — which structured consent category unlocks each consent-gated
+ * record class. Placeholder categories (see CONSENT_CATEGORIES in ehr.ts).
+ */
+const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
+  screeners_sud: "sud_treatment",
+  sud_treatment: "sud_treatment",
+};
+
 export function canAccess(
   role: StaffRole,
   cls: RecordClass,
@@ -310,8 +336,13 @@ export function canAccess(
 ): { level: AccessLevel; locked: boolean; reason?: string } {
   const level = MATRIX[cls]?.[role] ?? "none";
   if (level === "consent_gated") {
-    const state = patient ? AdelanteEHR.getConsentState(patient.id) : null;
-    const granted = Boolean(state?.part2Sud);
+    // LIVE check against the structured ConsentRecord — never cached. Expiry
+    // and revocation therefore stop access at the next call, with no other
+    // code path needing to be notified.
+    const category = CONSENT_GATE_CATEGORY[cls] ?? "sud_treatment";
+    const granted = patient
+      ? AdelanteEHR.isConsentCategoryAuthorized(patient.id, category)
+      : false;
     return granted
       ? { level: "read", locked: false }
       : { level: "none", locked: true, reason: "42 CFR Part 2 — consent required" };
