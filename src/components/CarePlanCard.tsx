@@ -105,7 +105,7 @@ export function CarePlanCard({
       patientId,
       goalId,
       nextStatus,
-      audience === "patient" ? patient.name : undefined,
+      audience === "patient" ? `${patient.firstName} ${patient.lastName}` : undefined,
       audience === "patient" ? "patient" : (staffRole ?? undefined),
     );
     toast.success(
