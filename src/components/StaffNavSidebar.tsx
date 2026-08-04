@@ -82,7 +82,39 @@ export function StaffNavSidebar() {
   // route or when a quick-jump query is narrowing results.
   const [groupOverrides, setGroupOverrides] = useState<Record<string, boolean>>({});
   const toggleGroup = (key: string, defaultOpen: boolean) =>
-    setGroupOverrides((prev) => ({ ...prev, [key]: !(prev[key] ?? defaultOpen) }));
+    setGroupOverrides((prev) => {
+      const next = { ...prev, [key]: !(prev[key] ?? defaultOpen) };
+      writeStored(GROUPS_KEY, JSON.stringify(next));
+      return next;
+    });
+
+  const updateQuery = (value: string) => {
+    setQuery(value);
+    writeStored(QUERY_KEY, value);
+  };
+
+  // Restored after mount, not in the state initializers: reading storage
+  // during render would make the server-rendered sidebar disagree with the
+  // first client render (hydration mismatch).
+  useEffect(() => {
+    const storedQuery = readStored(QUERY_KEY);
+    if (storedQuery) setQuery(storedQuery);
+    const storedGroups = readStored(GROUPS_KEY);
+    if (storedGroups) {
+      try {
+        const parsed: unknown = JSON.parse(storedGroups);
+        if (parsed && typeof parsed === "object" && !Array.isArray(parsed)) {
+          const clean: Record<string, boolean> = {};
+          for (const [k, v] of Object.entries(parsed as Record<string, unknown>)) {
+            if (typeof v === "boolean") clean[k] = v;
+          }
+          setGroupOverrides(clean);
+        }
+      } catch {
+        /* corrupt value — fall back to defaults */
+      }
+    }
+  }, []);
 
   const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
     if (ev.key === "Escape") {
