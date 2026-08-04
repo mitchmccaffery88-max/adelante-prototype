@@ -5627,7 +5627,7 @@ export const AdelanteEHR = {
     row.deactivatedAt = new Date().toISOString();
     row.deactivationReason = why;
     appendAudit({
-      category: "admin",
+      category: "clinical",
       action: "scheduling_rule_deactivated",
       actorId: staffName,
       actorRole: role,
@@ -5645,7 +5645,7 @@ export const AdelanteEHR = {
     row.deactivatedAt = undefined;
     row.deactivationReason = undefined;
     appendAudit({
-      category: "admin",
+      category: "clinical",
       action: "scheduling_rule_reactivated",
       actorId: staffName,
       actorRole: role,
@@ -5712,7 +5712,6 @@ export const AdelanteEHR = {
           taskType: rule.taskType,
           priority: rule.priority,
           allowedRoles: rule.allowedRoles,
-          facilityId: p.facilityId,
           source: `rule:${rule.key}`,
           sourceRuleId: rule.id,
         });
@@ -5723,7 +5722,7 @@ export const AdelanteEHR = {
     }
 
     appendAudit({
-      category: "admin",
+      category: "clinical",
       action: "scheduling_rules_run",
       actorId: staffName,
       actorRole: role,
