@@ -1685,6 +1685,43 @@ export interface CaseTask {
   roundNumber?: number;
   /** The scored NoteTemplate this round is documented on. */
   templateId?: string;
+  // ----- §Scheduling rule engine (manual run; absent on every other task) ----
+  /** The `SchedulingRule` that generated this row. Also the idempotency key. */
+  sourceRuleId?: string;
+}
+
+/**
+ * §Scheduling rule engine — manually triggered ("Run rules now"), never a
+ * background job: there is no backend scheduler in this app, and the
+ * reference EMR also exposes this as a supervisor-triggered action.
+ *
+ * `match` is a small set of structured AND-matchers over patient/order/problem
+ * attributes. It is deliberately NOT the note-template scoring engine's
+ * `evalExpr`: that engine evaluates per-note field answers, a different data
+ * shape entirely, and force-fitting it here would buy a general expression
+ * language nobody asked for.
+ */
+export interface SchedulingRule {
+  id: string;
+  key: string;
+  label: string;
+  description?: string;
+  /** Matches existing Worklist task-type conventions (see `worklistTaskTypes`). */
+  taskType: string;
+  match: {
+    activeProblemCategory?: string;
+    activeOrderFrequencyCode?: string;
+  };
+  /** Task cadence AND the idempotency window — see `runSchedulingRulesNow`. */
+  cadenceMinutes: number;
+  allowedRoles?: StaffRole[];
+  priority: TaskPriority;
+  active: boolean;
+  createdBy: string;
+  createdAt: string;
+  deactivatedBy?: string;
+  deactivatedAt?: string;
+  deactivationReason?: string;
 }
 
 /**
