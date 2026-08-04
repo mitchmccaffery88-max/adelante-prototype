@@ -38,10 +38,21 @@ async function actAs(page: Page, role: StaffRole) {
 async function expandAllGroups(page: Page) {
   const sidebar = page.getByRole("complementary", { name: "Staff navigation" });
   await expect(sidebar).toBeVisible();
-  for (let i = 0; i < 12; i++) {
-    const closed = sidebar.locator('button[aria-expanded="false"]');
-    if ((await closed.count()) === 0) break;
-    await closed.first().click();
+  // Wait for hydration — before it, clicks on the group headers are no-ops.
+  await expect(sidebar.locator('button[aria-expanded]').first()).toBeVisible();
+  const headers = sidebar.locator('button[aria-label]:not([aria-label*="navigation"])');
+
+  const groupButtons = sidebar.locator("nav button[aria-expanded]");
+  const count = await groupButtons.count();
+  void headers;
+  for (let i = 0; i < count; i++) {
+    const btn = groupButtons.nth(i);
+    for (let attempt = 0; attempt < 10; attempt++) {
+      if ((await btn.getAttribute("aria-expanded")) === "true") break;
+      await btn.click();
+      await page.waitForTimeout(100);
+    }
+    await expect(btn).toHaveAttribute("aria-expanded", "true");
   }
 }
 
