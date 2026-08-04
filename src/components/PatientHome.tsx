@@ -369,6 +369,8 @@ export function PatientHome() {
 
       {/* Privacy & Consent — moved to bottom so it sits beneath upcoming/history */}
       <ConsentCard patientId={patient.id} />
+      {/* §ASCMI — read-only structured consent status, adjacent to the toggles. */}
+      <PatientConsentStatusCard patientId={patient.id} />
     </div>
   );
 }
