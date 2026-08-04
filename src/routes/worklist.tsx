@@ -110,6 +110,7 @@ function WorklistPage() {
   const [forRole, setForRole] = useState(ANY);
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
+  const [running, setRunning] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
   // Non-supervisor roles default to discipline-scoped so a case manager isn't
   // wading through pmhnp-only rows; coordinators/admins see everything.
