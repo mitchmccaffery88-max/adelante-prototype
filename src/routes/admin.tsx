@@ -173,6 +173,17 @@ function AdminPage() {
             Frequency catalog & local RxNav suppressions
           </div>
         </Link>
+        <Link
+          to="/admin-scheduling-rules"
+          className="rounded-lg border bg-card p-3 hover:bg-secondary/50"
+        >
+          <div className="text-xs font-medium uppercase tracking-wider text-teal">
+            Scheduling rules
+          </div>
+          <div className="mt-1 text-sm text-foreground">
+            Rules that generate worklist tasks on demand
+          </div>
+        </Link>
       </div>
 
       <div className="grid sm:grid-cols-2 lg:grid-cols-6 gap-4 mb-6">

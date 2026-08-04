@@ -20,7 +20,13 @@ import {
   type TaskPriority,
   type WorklistStatus,
 } from "@/lib/ehr";
-import { canAccess, useActingStaff, STAFF_ROLES, type StaffRole } from "@/lib/roles";
+import {
+  canAccess,
+  canManageProtocol,
+  useActingStaff,
+  STAFF_ROLES,
+  type StaffRole,
+} from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -35,7 +41,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ListChecks, Lock } from "lucide-react";
+import { ArrowLeft, ListChecks, Lock, Play } from "lucide-react";
 
 export const Route = createFileRoute("/worklist")({
   head: () => ({
@@ -104,6 +110,7 @@ function WorklistPage() {
   const [forRole, setForRole] = useState(ANY);
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
+  const [running, setRunning] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
   // Non-supervisor roles default to discipline-scoped so a case manager isn't
   // wading through pmhnp-only rows; coordinators/admins see everything.
@@ -183,6 +190,25 @@ function WorklistPage() {
     toast[ok ? "success" : "error"](ok ? "Task claimed." : "Already claimed by someone else.");
   };
 
+  // §Scheduling rules — manual run only, same tier as starting a protocol.
+  const runRules = () => {
+    setRunning(true);
+    try {
+      const { total, results } = AdelanteEHR.runSchedulingRulesNow(staffName, role);
+      const detail = results
+        .filter((r) => r.tasksCreated > 0)
+        .map((r) => `${r.ruleKey}: ${r.tasksCreated}`)
+        .join(", ");
+      toast.success(`${total} task${total === 1 ? "" : "s"} generated`, {
+        description: detail || "Every matching patient already has a task this cycle.",
+      });
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
       <Button asChild variant="ghost" size="sm" className="w-fit">
@@ -190,13 +216,20 @@ function WorklistPage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back to clinician
         </Link>
       </Button>
-      <header>
-        <h1 className="font-display text-2xl text-navy flex items-center gap-2">
-          <ListChecks className="h-5 w-5 text-teal" /> Worklist
-        </h1>
-        <p className="text-sm text-muted-foreground">
-          Cross-facility operational tasks. Counts below describe the filtered view.
-        </p>
+      <header className="flex flex-wrap items-end justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl text-navy flex items-center gap-2">
+            <ListChecks className="h-5 w-5 text-teal" /> Worklist
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Cross-facility operational tasks. Counts below describe the filtered view.
+          </p>
+        </div>
+        {canManageProtocol(role) && (
+          <Button variant="outline" size="sm" onClick={runRules} disabled={running}>
+            <Play className="h-3.5 w-3.5" /> {running ? "Running rules…" : "Run rules now"}
+          </Button>
+        )}
       </header>
 
       <div className="grid grid-cols-2 gap-2 sm:grid-cols-3 lg:grid-cols-6">

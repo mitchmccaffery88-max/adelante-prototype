@@ -56,7 +56,8 @@ export type RecordClass =
   | "provider_requests"
   | "worklist"
   | "note_templates"
-  | "catalog_governance";
+  | "catalog_governance"
+  | "scheduling_rules";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -282,6 +283,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "read",
     peer_specialist: "read",
     sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+  // §Scheduling rule engine — admin config that MANUFACTURES worklist rows.
+  // Same tier as note_templates / KPI targets / catalog_governance:
+  // sys_admin + clinical_coordinator author the rules, the roles that work
+  // the resulting tasks read them (so a task's `source: "rule:…"` tag is
+  // explainable), revenue roles get nothing.
+  scheduling_rules: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "read",
+    therapist: "read",
+    case_manager: "read",
+    peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
   },
