@@ -108,7 +108,11 @@ export type AutofillSource =
   | "allergies"
   | "problems_active"
   | "mar_last_24h"
-  | "last_note_summary";
+  | "last_note_summary"
+  // §Discharge summary — additive Phase 3b sources. Same contract as the five
+  // above: computed at render time, snapshotted at signing, SUD-masked.
+  | "booking_release_info"
+  | "referrals_open";
 
 export interface AutofillConfig {
   source: AutofillSource;
