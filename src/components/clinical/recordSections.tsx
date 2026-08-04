@@ -102,7 +102,10 @@ export function safetyCounts(patient: Patient) {
  * Gated section list for the acting role. A section the role cannot access is
  * omitted entirely — same rule the drawer's tab list has always used.
  */
-export function useRecordSections(patient: Patient): RecordSection[] {
+export function useRecordSections(
+  patient: Patient,
+  opts: { initialNoteTemplateKey?: string } = {},
+): RecordSection[] {
   const { role } = useActingStaff();
   const counts = useEhr(() => {
     const fresh = AdelanteEHR.getPatient(patient.id) ?? patient;
@@ -198,7 +201,13 @@ export function useRecordSections(patient: Patient): RecordSection[] {
     label: "Notes",
     icon: FileText,
     group: "chart",
-    render: (a) => <NotesTab patientId={pid} readOnly={a.level !== "write"} />,
+    render: (a) => (
+      <NotesTab
+        patientId={pid}
+        readOnly={a.level !== "write"}
+        initialTemplateKey={opts.initialNoteTemplateKey}
+      />
+    ),
   });
   add("screeners_mh", {
     id: "tracking",
