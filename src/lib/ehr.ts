@@ -5601,7 +5601,7 @@ export const AdelanteEHR = {
     if (!existing) schedulingRules.push(row);
 
     appendAudit({
-      category: "admin",
+      category: "clinical",
       action: existing ? "scheduling_rule_updated" : "scheduling_rule_created",
       actorId: staffName,
       actorRole: role,
