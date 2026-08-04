@@ -94,17 +94,22 @@ export function ProtocolsTab({ patientId, readOnly }: { patientId: string; readO
           </div>
           <div className="grid gap-3 sm:grid-cols-2">
             <div className="space-y-1.5">
-              <Label className="text-xs">Protocol name</Label>
+              <Label className="text-xs" htmlFor="protocol-name">
+                Protocol name
+              </Label>
               <Input
+                id="protocol-name"
                 value={protocolKey}
                 onChange={(e) => setProtocolKey(e.target.value)}
                 placeholder="e.g. CIWA-Ar"
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Scored template</Label>
+              <Label className="text-xs" htmlFor="protocol-template">
+                Scored template
+              </Label>
               <Select value={templateId} onValueChange={setTemplateId}>
-                <SelectTrigger>
+                <SelectTrigger id="protocol-template">
                   <SelectValue placeholder="Select a scored template" />
                 </SelectTrigger>
                 <SelectContent>
@@ -117,8 +122,11 @@ export function ProtocolsTab({ patientId, readOnly }: { patientId: string; readO
               </Select>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Cadence (minutes)</Label>
+              <Label className="text-xs" htmlFor="protocol-cadence">
+                Cadence (minutes)
+              </Label>
               <Input
+                id="protocol-cadence"
                 type="number"
                 min={1}
                 value={cadence}
@@ -126,8 +134,11 @@ export function ProtocolsTab({ patientId, readOnly }: { patientId: string; readO
               />
             </div>
             <div className="space-y-1.5">
-              <Label className="text-xs">Rounds</Label>
+              <Label className="text-xs" htmlFor="protocol-rounds">
+                Rounds
+              </Label>
               <Input
+                id="protocol-rounds"
                 type="number"
                 min={1}
                 value={rounds}
