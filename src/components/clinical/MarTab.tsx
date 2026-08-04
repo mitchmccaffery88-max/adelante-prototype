@@ -1060,9 +1060,74 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
             </Button>
           </div>
         </div>
+        <div className="ml-auto flex items-center gap-1 rounded-md border border-border p-1">
+          <Button
+            size="sm"
+            variant={view === "grid" ? "default" : "ghost"}
+            aria-label="Grid view"
+            aria-pressed={view === "grid"}
+            onClick={() => setView("grid")}
+          >
+            <LayoutGrid className="mr-1 h-3.5 w-3.5" />
+            Grid
+          </Button>
+          <Button
+            size="sm"
+            variant={view === "cart" ? "default" : "ghost"}
+            aria-label="Cart view"
+            aria-pressed={view === "cart"}
+            onClick={() => {
+              setCartIndex(0);
+              setView("cart");
+            }}
+          >
+            <Keyboard className="mr-1 h-3.5 w-3.5" />
+            Cart
+          </Button>
+        </div>
       </div>
 
-      {day.slots.length === 0 ? (
+      {view === "cart" ? (
+        cartRows.length === 0 ? (
+          <EmptyState
+            icon={CalendarClock}
+            title="Nothing to pass"
+            description="No scheduled, PRN, or keep-on-person rows exist for this date."
+          />
+        ) : (
+          <div className="space-y-2">
+            <div className="flex flex-wrap items-center gap-2 text-sm">
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Previous medication"
+                disabled={cartIdx === 0}
+                onClick={() => moveCart(-1)}
+              >
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="font-medium tabular-nums" aria-live="polite">
+                {cartIdx + 1} of {cartRows.length}
+              </span>
+              <Button
+                size="sm"
+                variant="outline"
+                aria-label="Next medication"
+                disabled={cartIdx >= cartRows.length - 1}
+                onClick={() => moveCart(1)}
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+              <span className="ml-auto text-xs text-muted-foreground">
+                G given · R refused · H held · N not indicated · ←/→ move · Enter chart · Esc
+                clear
+              </span>
+            </div>
+            {cartSlot &&
+              (cartSlot.kind === "kop" ? renderKop(cartSlot) : renderSlot(cartSlot))}
+          </div>
+        )
+      ) : day.slots.length === 0 ? (
         <EmptyState
           icon={CalendarClock}
           title="No scheduled doses"
@@ -1072,7 +1137,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         <div className="space-y-2">{day.slots.map(renderSlot)}</div>
       )}
 
-      {day.prn.length > 0 && (
+      {view === "grid" && day.prn.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
             <Syringe className="h-4 w-4 text-muted-foreground" />
@@ -1082,7 +1147,7 @@ export function MarTab({ patientId, readOnly }: { patientId: string; readOnly?: 
         </div>
       )}
 
-      {day.kop.length > 0 && (
+      {view === "grid" && day.kop.length > 0 && (
         <div className="space-y-2">
           <div className="flex items-center gap-2 text-sm font-medium text-navy">
             <PackageCheck className="h-4 w-4 text-muted-foreground" />
