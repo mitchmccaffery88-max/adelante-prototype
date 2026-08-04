@@ -118,13 +118,13 @@ export function StaffNavSidebar() {
 
   const onSearchKeyDown = (ev: React.KeyboardEvent<HTMLInputElement>) => {
     if (ev.key === "Escape") {
-      setQuery("");
+      updateQuery("");
       inputRef.current?.blur();
       return;
     }
     if (ev.key === "Enter" && firstMatch) {
       ev.preventDefault();
-      setQuery("");
+      updateQuery("");
       navigate({ to: firstMatch.to });
     }
   };
@@ -167,7 +167,7 @@ export function StaffNavSidebar() {
               ref={inputRef}
               type="search"
               value={query}
-              onChange={(ev) => setQuery(ev.target.value)}
+              onChange={(ev) => updateQuery(ev.target.value)}
               onKeyDown={onSearchKeyDown}
               placeholder="Quick jump…"
               aria-label="Quick jump to a surface"
@@ -177,7 +177,7 @@ export function StaffNavSidebar() {
             {query && (
               <button
                 type="button"
-                onClick={() => setQuery("")}
+                onClick={() => updateQuery("")}
                 aria-label="Clear quick jump"
                 className="absolute right-1.5 top-1/2 grid h-5 w-5 -translate-y-1/2 place-items-center rounded text-muted-foreground hover:bg-secondary"
               >
