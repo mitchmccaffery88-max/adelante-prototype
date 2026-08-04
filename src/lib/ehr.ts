@@ -2310,6 +2310,9 @@ let currentPatientId = "p2";
 // assignee, status, and due date without walking every patient.
 const caseTasks: CaseTask[] = [];
 
+// §Worklist Phase B — protocol instances (rounds live in `caseTasks`).
+const protocolInstances: ProtocolInstance[] = [];
+
 // §Phase 3c automation run log. Append-only; the ONLY thing that decides
 // whether an automation may fire. Keyed by (noteId, automationId).
 const noteAutomationRuns: NoteAutomationRun[] = [];
