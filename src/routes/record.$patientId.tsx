@@ -99,7 +99,7 @@ function ChartBody({
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { role, staffName } = useActingStaff();
-  const sections = useRecordSections(patient!);
+  const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   if (!patient) return null;
   const active = sections.find((s) => s.id === section) ?? sections[0];
 
