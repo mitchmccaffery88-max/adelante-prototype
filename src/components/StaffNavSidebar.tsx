@@ -3,7 +3,7 @@
 // Renders whatever `navSections.ts` says the acting role may see. There is no
 // role logic in this file on purpose: a role with `none` on a gate never gets
 // the entry, exactly like the record drawer omits chart sections.
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { ChevronDown, PanelLeftClose, PanelLeftOpen, Search, X } from "lucide-react";
 import { cn } from "@/lib/utils";
@@ -12,6 +12,26 @@ import { useActingStaff } from "@/lib/roles";
 import { STAFF_ROLES } from "@/lib/roles";
 
 const COLLAPSE_KEY = "adelante.staffNavCollapsed";
+const GROUPS_KEY = "adelante.staffNavGroups";
+const QUERY_KEY = "adelante.staffNavQuery";
+
+function readStored(key: string): string | null {
+  if (typeof window === "undefined") return null;
+  try {
+    return window.localStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStored(key: string, value: string) {
+  if (typeof window === "undefined") return;
+  try {
+    window.localStorage.setItem(key, value);
+  } catch {
+    /* no-op: private mode / storage disabled */
+  }
+}
 
 export function StaffNavSidebar() {
   const groups = useStaffNavGroups();
@@ -30,11 +50,7 @@ export function StaffNavSidebar() {
 
   const toggle = () => {
     setCollapsed((c) => {
-      try {
-        localStorage.setItem(COLLAPSE_KEY, c ? "0" : "1");
-      } catch {
-        /* no-op */
-      }
+      writeStored(COLLAPSE_KEY, c ? "0" : "1");
       return !c;
     });
   };
