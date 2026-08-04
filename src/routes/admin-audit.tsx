@@ -265,7 +265,9 @@ function AdminAuditPage() {
               </tr>
             </thead>
             <tbody>
-              {events.map((e) => (
+              {events.map((r) => {
+                const e = r.event;
+                return (
                 <tr key={e.id} className="border-t align-top">
                   <td className="p-2 whitespace-nowrap text-xs">
                     <ClientDate value={e.at} />
@@ -276,16 +278,27 @@ function AdminAuditPage() {
                     </Badge>
                   </td>
                   <td className="p-2 font-mono text-[11px]">{e.action}</td>
-                  <td className="p-2 font-mono text-[11px]">{e.programId ?? e.patientId ?? "—"}</td>
+                  <td className="p-2 font-mono text-[11px]">
+                    {r.subjectLabel}
+                    {r.subjectMasked ? (
+                      <EyeOff className="inline h-3 w-3 ml-1 text-muted-foreground" />
+                    ) : null}
+                  </td>
                   <td className="p-2 text-[11px]">
                     {e.actorRole ?? "—"}
                     {e.actorId ? <span className="text-muted-foreground"> · {e.actorId}</span> : null}
                   </td>
                   <td className="p-2 text-[11px] text-muted-foreground">
-                    {e.detail ? summarize(e.detail) : ""}
+                    {summarize(r.detail)}
+                    {r.redacted ? (
+                      <span className="ml-1 italic text-[10px]">
+                        [restricted — {r.redactionReason}]
+                      </span>
+                    ) : null}
                   </td>
                 </tr>
-              ))}
+                );
+              })}
             </tbody>
           </table>
         )}
