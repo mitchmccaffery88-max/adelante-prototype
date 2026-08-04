@@ -115,7 +115,7 @@ function AdminAuditPage() {
             <SelectItem value="all">All patients</SelectItem>
             {patients.map((p) => (
               <SelectItem key={p.id} value={p.id}>
-                {p.name} · {p.id}
+                {p.lastName}, {p.firstName} · {p.id}
               </SelectItem>
             ))}
           </SelectContent>
