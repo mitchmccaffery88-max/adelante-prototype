@@ -135,6 +135,21 @@ function ChartBody({
                 <span className="capitalize">{role.replace("_", " ")}</span>
               </span>
               <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
+              <Button size="sm" variant="outline" asChild>
+                <Link
+                  to="/print/patient-records/$patientId"
+                  params={{ patientId: patient.id }}
+                  search={{
+                    meds: true,
+                    mar: true,
+                    notes: true,
+                    notesScope: "current" as const,
+                    autoprint: true,
+                  }}
+                >
+                  Print record
+                </Link>
+              </Button>
             </div>
           </div>
 

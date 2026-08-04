@@ -44,6 +44,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
+import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -220,6 +221,12 @@ const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   path: '/record/$patientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PrintPatientRecordsPatientIdRoute =
+  PrintPatientRecordsPatientIdRouteImport.update({
+    id: '/print/patient-records/$patientId',
+    path: '/print/patient-records/$patientId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -257,6 +264,7 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -294,6 +302,7 @@ export interface FileRoutesByTo {
   '/shift-count': typeof ShiftCountRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -332,6 +341,7 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -371,6 +381,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/worklist'
     | '/record/$patientId'
+    | '/print/patient-records/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -408,6 +419,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/worklist'
     | '/record/$patientId'
+    | '/print/patient-records/$patientId'
   id:
     | '__root__'
     | '/'
@@ -445,6 +457,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/worklist'
     | '/record/$patientId'
+    | '/print/patient-records/$patientId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -483,6 +496,7 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   WorklistRoute: typeof WorklistRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
+  PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -732,6 +746,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordPatientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/print/patient-records/$patientId': {
+      id: '/print/patient-records/$patientId'
+      path: '/print/patient-records/$patientId'
+      fullPath: '/print/patient-records/$patientId'
+      preLoaderRoute: typeof PrintPatientRecordsPatientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -771,6 +792,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   WorklistRoute: WorklistRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
+  PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
