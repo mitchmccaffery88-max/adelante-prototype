@@ -6063,6 +6063,8 @@ export const AdelanteEHR = {
       patientId?: string;
       category?: AuditCategory | AuditCategory[];
       since?: string;
+      until?: string;
+      actorRole?: string;
       limit?: number;
     } = {},
   ): AuditEvent[] {
@@ -6072,10 +6074,13 @@ export const AdelanteEHR = {
         ? new Set([filter.category])
         : null;
     const sinceMs = filter.since ? +new Date(filter.since) : 0;
+    const untilMs = filter.until ? +new Date(filter.until) : 0;
     const out = auditEvents.filter((e) => {
       if (filter.patientId && e.patientId !== filter.patientId) return false;
       if (cats && !cats.has(e.category)) return false;
       if (sinceMs && +new Date(e.at) < sinceMs) return false;
+      if (untilMs && +new Date(e.at) > untilMs) return false;
+      if (filter.actorRole && (e.actorRole ?? "") !== filter.actorRole) return false;
       return true;
     });
     return filter.limit ? out.slice(0, filter.limit) : out;
