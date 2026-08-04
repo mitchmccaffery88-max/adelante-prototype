@@ -11,6 +11,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
 import { RiskTextReviewPanel } from "@/components/admin/RiskTextReviewPanel";
@@ -41,13 +43,36 @@ const CATEGORIES: { value: AuditCategory | "all"; label: string }[] = [
   { value: "vendor", label: "Vendor" },
   { value: "access", label: "Access" },
   { value: "provider_switch", label: "Provider switches" },
+  { value: "care_plan", label: "Care plan / goals" },
+  { value: "assignment", label: "Assignment" },
+  { value: "clinical", label: "Clinical" },
 ];
 
 function AdminAuditPage() {
   const [cat, setCat] = useState<AuditCategory | "all">("all");
+  const [patientId, setPatientId] = useState<string>("all");
+  const [actorRole, setActorRole] = useState<string>("all");
+  const [from, setFrom] = useState<string>("");
+  const [to, setTo] = useState<string>("");
+
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const roles = useEhr(() =>
+    Array.from(
+      new Set(
+        AdelanteEHR.listAuditEvents({})
+          .map((e) => e.actorRole)
+          .filter((r): r is string => !!r),
+      ),
+    ).sort(),
+  );
+
   const events = useEhr(() =>
     AdelanteEHR.listAuditEvents({
       category: cat === "all" ? undefined : cat,
+      patientId: patientId === "all" ? undefined : patientId,
+      actorRole: actorRole === "all" ? undefined : actorRole,
+      since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
       limit: 200,
     }),
   );
@@ -69,7 +94,7 @@ function AdminAuditPage() {
 
       <RiskTextReviewPanel />
 
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-end gap-3">
         <Select value={cat} onValueChange={(v) => setCat(v as AuditCategory | "all")}>
           <SelectTrigger className="w-56">
             <SelectValue />
@@ -82,6 +107,63 @@ function AdminAuditPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={patientId} onValueChange={setPatientId}>
+          <SelectTrigger className="w-56">
+            <SelectValue placeholder="Patient" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All patients</SelectItem>
+            {patients.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.lastName}, {p.firstName} · {p.id}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={actorRole} onValueChange={setActorRole}>
+          <SelectTrigger className="w-44">
+            <SelectValue placeholder="Actor role" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">All actor roles</SelectItem>
+            {roles.map((r) => (
+              <SelectItem key={r} value={r}>
+                {r}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <label className="text-[11px] text-muted-foreground flex flex-col gap-1">
+          From
+          <Input
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="h-9 w-36"
+          />
+        </label>
+        <label className="text-[11px] text-muted-foreground flex flex-col gap-1">
+          To
+          <Input
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="h-9 w-36"
+          />
+        </label>
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setCat("all");
+            setPatientId("all");
+            setActorRole("all");
+            setFrom("");
+            setTo("");
+          }}
+        >
+          Reset
+        </Button>
         <Badge variant="outline" className="text-[10px]">
           {events.length} events
         </Badge>
@@ -98,6 +180,7 @@ function AdminAuditPage() {
                 <th className="p-2">Category</th>
                 <th className="p-2">Action</th>
                 <th className="p-2">Patient</th>
+                <th className="p-2">Actor</th>
                 <th className="p-2">Detail</th>
               </tr>
             </thead>
@@ -114,6 +197,10 @@ function AdminAuditPage() {
                   </td>
                   <td className="p-2 font-mono text-[11px]">{e.action}</td>
                   <td className="p-2 font-mono text-[11px]">{e.programId ?? e.patientId ?? "—"}</td>
+                  <td className="p-2 text-[11px]">
+                    {e.actorRole ?? "—"}
+                    {e.actorId ? <span className="text-muted-foreground"> · {e.actorId}</span> : null}
+                  </td>
                   <td className="p-2 text-[11px] text-muted-foreground">
                     {e.detail ? summarize(e.detail) : ""}
                   </td>
