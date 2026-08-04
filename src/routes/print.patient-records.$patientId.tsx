@@ -10,7 +10,6 @@ import { useActingStaff } from "@/lib/roles";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
-import { sigFor } from "@/lib/printRecordDisplay";
 import {
   buildPrintRecordDocument,
   type NotesScope,
@@ -21,6 +20,12 @@ import {
 interface PrintSearch extends PrintFlags {
   autoprint: boolean;
 }
+
+const sigFor = (o: { sigOverride?: string; sig?: string; dose?: string; route?: string; frequency?: string }) =>
+  o.sigOverride ??
+  o.sig ??
+  [o.dose, o.route, o.frequency].filter(Boolean).join(" ") ??
+  "—";
 
 const bool = (v: unknown) => v === "1" || v === 1 || v === true || v === "true";
 const str = (v: unknown) => (typeof v === "string" && v.trim() ? v.trim() : undefined);
@@ -133,7 +138,7 @@ function PrintRecordPage() {
             {patient.lastName}, {patient.firstName} · DOB {patient.dob} · MRN {patient.id}
           </p>
           <p className="text-[11px]">
-            Printed <ClientDate iso={doc.printedAt} /> by {staffName} · acting role {role}
+            Printed <ClientDate value={doc.printedAt} /> by {staffName} · acting role {role}
           </p>
         </header>
 
@@ -200,7 +205,7 @@ function PrintRecordPage() {
                       {section.rows.map(({ administration: a, order }) => (
                         <tr key={a.id} className="print-block align-top">
                           <td className="border-b border-neutral-300 py-1">
-                            <ClientDate iso={a.scheduledAt} />
+                            <ClientDate value={a.scheduledAt} />
                           </td>
                           <td className="border-b border-neutral-300 py-1">
                             {order?.productName ?? order?.drugName ?? a.orderId}
@@ -250,7 +255,7 @@ function NoteBlock({ entry }: { entry: PrintNoteEntry }) {
     return (
       <div className="print-block mt-3 border border-neutral-400 p-2 text-xs">
         <p className="font-semibold">
-          Note withheld — <ClientDate iso={entry.note.date} />
+          Note withheld — <ClientDate value={entry.note.date} />
         </p>
         <p className="italic">{entry.maskReason ?? "Not available to the acting role."}</p>
       </div>
