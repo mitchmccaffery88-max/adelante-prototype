@@ -36,6 +36,21 @@ import {
 export const PART2_AUTOFILL_NOTICE =
   "Some entries are hidden by the 42 CFR Part 2 consent gate.";
 
+/**
+ * §Discharge summary — a resource referral is treated as Part 2 sensitive when
+ * it carries the SUD-disclosure consent flag, since that flag is only ever set
+ * on referrals whose detail is SUD-identifying. Same discipline as
+ * `problems_active`: masked rows are omitted entirely, never counted.
+ */
+export function isReferralSudSensitive(r: ResourceReferral): boolean {
+  return r.sudDisclosureConsent === true;
+}
+
+/** Open = anything not yet completed — the same rule the Referrals tab uses. */
+export function isReferralOpen(r: ResourceReferral): boolean {
+  return r.status !== "completed";
+}
+
 export interface AutofillContext {
   now?: Date;
   orders: MedOrder[];
