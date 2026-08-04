@@ -49,12 +49,16 @@ export function StaffBreadcrumbs() {
           </li>
         </ol>
       </nav>
-      <div className="mt-1 flex items-start gap-2">
-        {Icon && <Icon className="mt-1 h-4 w-4 shrink-0 text-teal" />}
-        <div className="min-w-0">
-          <h1 className="truncate font-display text-lg text-navy">{pageLabel}</h1>
-          {desc && <p className="truncate text-xs text-muted-foreground">{desc}</p>}
-        </div>
+      {/* Orientation strip, not a heading: each route owns its own <h1>, so
+          this stays a plain label to avoid a second H1 on every page. */}
+      <div className="mt-1 flex items-center gap-2">
+        {Icon && <Icon className="h-4 w-4 shrink-0 text-teal" />}
+        <span className="truncate font-display text-base text-navy">{pageLabel}</span>
+        {desc && (
+          <span className="hidden truncate text-xs text-muted-foreground sm:inline">
+            · {desc}
+          </span>
+        )}
       </div>
     </div>
   );
