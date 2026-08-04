@@ -6087,6 +6087,27 @@ export const AdelanteEHR = {
   },
 
   // ---------- Catalog strength-resolution telemetry ----------
+  /** Audit trail for exported goal-status-change logs (who took a copy, and when). */
+  recordGoalAuditExport(input: {
+    filename: string;
+    rowCount: number;
+    staffName: string;
+    filters: Record<string, string | undefined>;
+  }) {
+    appendAudit({
+      category: "care_plan",
+      action: "goal_audit_exported",
+      actorRole: "admin",
+      actorId: input.staffName,
+      detail: {
+        filename: input.filename,
+        rowCount: input.rowCount,
+        format: "csv",
+        ...input.filters,
+      },
+    });
+    emit();
+  },
   /** Audit trail for exported refusal documents (who took a copy, and when). */
   recordRefusalFormExport(input: {
     patientId: string;

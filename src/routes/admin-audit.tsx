@@ -10,7 +10,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ShieldCheck } from "lucide-react";
+import { ArrowLeft, Download, ShieldCheck } from "lucide-react";
+import { toast } from "sonner";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
@@ -76,6 +77,69 @@ function AdminAuditPage() {
       limit: 200,
     }),
   );
+
+  function exportGoalChanges() {
+    const rows = AdelanteEHR.listAuditEvents({
+      category: "care_plan",
+      patientId: patientId === "all" ? undefined : patientId,
+      actorRole: actorRole === "all" ? undefined : actorRole,
+      since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
+    }).filter((e) => e.action === "goal_status_changed");
+
+    if (rows.length === 0) {
+      toast.error("No goal status changes match the current filters.");
+      return;
+    }
+
+    const header = [
+      "event_id",
+      "at",
+      "patient_id",
+      "goal_id",
+      "goal_text",
+      "from_status",
+      "to_status",
+      "actor_role",
+      "actor_id",
+    ];
+    const body = rows.map((e) => {
+      const d = (e.detail ?? {}) as Record<string, unknown>;
+      return [
+        e.id,
+        e.at,
+        e.patientId ?? "",
+        d.goalId,
+        d.goalText,
+        d.from,
+        d.to,
+        e.actorRole ?? "",
+        e.actorId ?? "",
+      ].map(csvCell);
+    });
+    const csv = [header.join(","), ...body.map((r) => r.join(","))].join("\r\n");
+    const filename = `goal-status-changes-${new Date().toISOString().slice(0, 10)}.csv`;
+
+    const url = URL.createObjectURL(new Blob([csv], { type: "text/csv;charset=utf-8" }));
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = filename;
+    a.click();
+    URL.revokeObjectURL(url);
+
+    AdelanteEHR.recordGoalAuditExport({
+      filename,
+      rowCount: rows.length,
+      staffName: "admin",
+      filters: {
+        patientId: patientId === "all" ? undefined : patientId,
+        actorRole: actorRole === "all" ? undefined : actorRole,
+        from: from || undefined,
+        to: to || undefined,
+      },
+    });
+    toast.success(`Exported ${rows.length} goal status changes.`);
+  }
 
   return (
     <div className="mx-auto max-w-5xl px-4 py-6 space-y-5">
@@ -167,6 +231,9 @@ function AdminAuditPage() {
         <Badge variant="outline" className="text-[10px]">
           {events.length} events
         </Badge>
+        <Button variant="outline" size="sm" onClick={exportGoalChanges} className="gap-1">
+          <Download className="h-3.5 w-3.5" /> Export goal changes (CSV)
+        </Button>
       </div>
 
       <Card className="p-0 overflow-hidden">
@@ -220,4 +287,9 @@ function summarize(d: Record<string, unknown>): string {
     .slice(0, 4)
     .map(([k, v]) => `${k}: ${typeof v === "object" ? JSON.stringify(v) : String(v)}`)
     .join(" · ");
+}
+
+function csvCell(v: unknown): string {
+  const s = v === undefined || v === null ? "" : String(v);
+  return /[",\r\n]/.test(s) ? `"${s.replace(/"/g, '""')}"` : s;
 }
