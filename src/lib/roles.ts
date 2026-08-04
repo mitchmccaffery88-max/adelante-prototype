@@ -56,7 +56,8 @@ export type RecordClass =
   | "provider_requests"
   | "worklist"
   | "note_templates"
-  | "catalog_governance";
+  | "catalog_governance"
+  | "scheduling_rules";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
