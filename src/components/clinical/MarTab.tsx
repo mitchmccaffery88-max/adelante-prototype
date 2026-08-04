@@ -8,7 +8,13 @@
 // Suboxone mouth-check attestation.
 // Phase 3 landed here: the Refusal legal document (queued one at a time after
 // a batch commit) and the 3-in-7-days provider escalation. Still deferred (not
-// dropped): cart/keyboard mode and voice pass.
+// dropped): voice pass.
+//
+// §MAR cart/keyboard mode — a second VIEW over the exact same due-dose queue.
+// It is a pure UX layer: it calls the same prnEligibility / requiresDoseWitness
+// / chartDose / voidBatch / issueKop paths the grid calls, renders the same
+// controls (renderChartControls), and commits through the same `commit()`.
+// No gate, reason requirement, or clinical rule is re-implemented here.
 
 import { useEffect, useMemo, useState } from "react";
 import {
@@ -65,9 +71,13 @@ import { medClassGuess } from "@/lib/refusal";
 import { toast } from "sonner";
 import {
   CalendarClock,
+  ChevronLeft,
+  ChevronRight,
   Download,
   FileSignature,
   Info,
+  Keyboard,
+  LayoutGrid,
   PackageCheck,
   ShieldCheck,
   Syringe,
@@ -92,6 +102,28 @@ const emptyEntry = (): PendingEntry => ({
   lateEntryReason: "",
   witnessedBy: "",
 });
+
+/**
+ * Session-local (not per-user) view preference, as specified. sessionStorage
+ * keeps a nurse's choice across chart navigation within one shift without
+ * inventing a preferences model.
+ */
+const VIEW_STORAGE_KEY = "adelante.mar.view";
+type MarView = "grid" | "cart";
+
+/** True when the keystroke landed in a field the nurse is typing into. */
+function isTypingTarget(el: EventTarget | null): boolean {
+  const node = el as HTMLElement | null;
+  if (!node || !node.tagName) return false;
+  const tag = node.tagName.toLowerCase();
+  return (
+    tag === "input" ||
+    tag === "textarea" ||
+    tag === "select" ||
+    node.isContentEditable === true ||
+    node.getAttribute?.("role") === "combobox"
+  );
+}
 
 // ---------------------------------------------------------------------------
 // Reason dialog — same mandatory-reason gate as the Orders lifecycle dialogs.
