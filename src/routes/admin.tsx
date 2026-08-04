@@ -150,12 +150,12 @@ function AdminPage() {
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">Administrator</div>
         <h1 className="font-display text-3xl text-navy mt-1">{t("adminTitle")}</h1>
-        <p className="text-muted-foreground mt-1 text-sm flex items-center gap-2">
+        <div className="text-muted-foreground mt-1 text-sm flex items-center gap-2">
           {t("adminSubtitle")}
           <Badge variant="outline" className="text-[10px] inline-flex items-center gap-1">
             <ShieldCheck className="h-3 w-3 text-teal" /> De-identified · minimum-necessary
           </Badge>
-        </p>
+        </div>
       </header>
 
       <nav aria-label="Administration" className="mb-6">
