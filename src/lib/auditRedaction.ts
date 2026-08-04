@@ -15,6 +15,8 @@ import { canAccess, type RecordClass, type StaffRole } from "./roles";
 /** Which record class each audit category's PHI belongs to. */
 const CATEGORY_CLASS: Record<AuditCategory, RecordClass> = {
   consent: "consent_ledger",
+  // §ASCMI disclosure trail — category-level only, same class as the ledger.
+  disclosure: "consent_ledger",
   rx: "meds_erx",
   telehealth: "telehealth_room",
   vendor: "documents",
@@ -52,6 +54,14 @@ const SAFE_DETAIL_KEYS = new Set([
   "path",
   "redirectTo",
   "label",
+  // §ASCMI consent/disclosure bookkeeping: form type, placeholder category
+  // keys, effective dates and the export purpose are structural, not PHI.
+  "formType",
+  "categories",
+  "purpose",
+  "effectiveDate",
+  "expirationDate",
+  "relationship",
 ]);
 
 function isSafeDetailKey(key: string, value: unknown): boolean {

@@ -229,6 +229,22 @@ export function buildPrintRecordDocument(args: {
         } satisfies PrintNoteEntry;
       });
     sections.push({ key: "notes", label: PRINT_SECTION_LABEL.notes, scopeLabel, entries });
+
+    // §ASCMI disclosure trail — a consent-gated note that was actually
+    // INCLUDED (not masked) in this document is a disclosure. Logged at
+    // category level only, referencing the consent record in force.
+    const disclosedSud = entries.filter(
+      (e) => !e.masked && e.note.category === "sud",
+    ).length;
+    if (disclosedSud > 0) {
+      AdelanteEHR.recordConsentDisclosure({
+        patientId: patient.id,
+        categories: ["sud_treatment"],
+        purpose: "patient record print/export",
+        role,
+        itemCount: disclosedSud,
+      });
+    }
   }
 
   return {

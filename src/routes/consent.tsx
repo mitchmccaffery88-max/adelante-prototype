@@ -10,6 +10,7 @@ import {
 } from "@/components/ui/select";
 import { ShieldCheck, Undo2 } from "lucide-react";
 import { toast } from "sonner";
+import { ConsentRecordsPanel } from "@/components/consent/ConsentRecordsPanel";
 
 export const Route = createFileRoute("/consent")({
   head: () => ({
@@ -103,6 +104,10 @@ function ConsentPage() {
           </SelectContent>
         </Select>
       </div>
+
+      {patient && state ? (
+        <ConsentRecordsPanel patient={patient} />
+      ) : null}
 
       {patient && state ? (
         <section className="grid gap-3 grid-cols-1 sm:grid-cols-2">
