@@ -5222,6 +5222,8 @@ export const AdelanteEHR = {
     protocolInstanceId?: string;
     roundNumber?: number;
     templateId?: string;
+    /** §Scheduling rules — set only by `runSchedulingRulesNow`. */
+    sourceRuleId?: string;
   }): CaseTask | undefined {
     if (input.dedupeKey) {
       const existing = caseTasks.find(
@@ -5253,6 +5255,7 @@ export const AdelanteEHR = {
       protocolInstanceId: input.protocolInstanceId,
       roundNumber: input.roundNumber,
       templateId: input.templateId,
+      sourceRuleId: input.sourceRuleId,
     };
     caseTasks.unshift(task);
     // §Notification feed — direct-address the assignee only (never their whole
