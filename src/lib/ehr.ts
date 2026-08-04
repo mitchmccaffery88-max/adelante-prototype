@@ -1679,6 +1679,12 @@ export interface CaseTask {
   claimedAt?: string;
   /** Provenance, e.g. "manual" or "note_automation". */
   source?: string;
+  // ----- §Worklist Phase B (protocol rounds; absent on every other task) -----
+  protocolInstanceId?: string;
+  /** 1-based round index within the instance. */
+  roundNumber?: number;
+  /** The scored NoteTemplate this round is documented on. */
+  templateId?: string;
 }
 
 /**
