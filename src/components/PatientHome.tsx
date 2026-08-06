@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -132,6 +132,9 @@ function HomeScreenNudge() {
 export function PatientHome() {
   const { t } = useI18n();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  // §Group sessions — optional `?msg=` prefill for the care-team composer.
+  const search = useSearch({ strict: false }) as { msg?: string };
+  const messagePrefill = typeof search.msg === "string" ? search.msg : undefined;
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
   const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
@@ -319,7 +322,7 @@ export function PatientHome() {
       )}
 
       <TasksCard patientId={patient.id} />
-      <MessagesCard patientId={patient.id} />
+      <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <MyProfileCard patientId={patient.id} />
 
       <div>
