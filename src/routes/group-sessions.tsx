@@ -13,8 +13,10 @@ import { toast } from "sonner";
 import {
   AdelanteEHR,
   formatLocationAddress,
+  GROUP_CATEGORIES,
   useEhr,
   type GroupAttendanceStatus,
+  type GroupCategory,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
@@ -140,6 +142,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
   const [capacity, setCapacity] = useState("8");
   const [durationMin, setDurationMin] = useState("60");
   const [locationId, setLocationId] = useState("");
+  const [category, setCategory] = useState<GroupCategory>("sud_clinical_preauth");
   const [weekly, setWeekly] = useState(true);
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const locations = useEhr(() => AdelanteEHR.listLocations());
