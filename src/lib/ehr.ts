@@ -1110,6 +1110,12 @@ export interface ClinicLocation {
   inPersonServices: ServiceType[];
 }
 
+/** One place that renders a ClinicLocation's full street address. */
+export function formatLocationAddress(loc?: ClinicLocation): string {
+  if (!loc) return "";
+  return [loc.address, loc.room, loc.city, loc.postalCode].filter(Boolean).join(", ");
+}
+
 const SERVICE_TYPES: ServiceTypeInfo[] = [
   {
     id: "intake",
