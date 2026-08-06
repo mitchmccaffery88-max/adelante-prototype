@@ -208,14 +208,15 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   //  - pmhnp: write — the role that actually charts the controlled pass.
   //  - clinical_coordinator: write — owns shift oversight and is the second
   //    signature; it already carries the same oversight tier elsewhere.
-  //  - sys_admin: read — administration/traceability, never a counter.
+  //  - sys_admin: none — traceability already comes through the audit log, and
+  //    a count is an operational clinical artifact, not an admin surface.
   //  - therapist / case_manager / peer_specialist / billing: none. They have
   //    `meds_erx` read (therapist/case_manager) but no physical-stock duty, so
   //    Shift count now disappears for them — that is the intended change.
   controlled_substance_custody: {
     pmhnp: "write",
     clinical_coordinator: "write",
-    sys_admin: "read",
+    sys_admin: "none",
     therapist: "none",
     case_manager: "none",
     peer_specialist: "none",
