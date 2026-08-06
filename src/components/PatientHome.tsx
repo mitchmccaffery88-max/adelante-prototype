@@ -788,6 +788,8 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 function ConsentCard({ patientId }: { patientId: string }) {
   return <ConsentCardInner patientId={patientId} />;
 }
+  return <ConsentCardInner patientId={patientId} />;
+}
 
 function SupportPlanCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
