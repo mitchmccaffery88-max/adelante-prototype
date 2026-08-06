@@ -927,6 +927,17 @@ export interface Patient {
   carePlan?: CarePlanSnapshot;
   /** Optional free-text overlay from a clinician; merged into the summary. */
   carePlanOverride?: { text: string; setAt: string; by?: string };
+  /**
+   * §Group sessions — care-plan-level eligibility gate for ANY group
+   * enrollment path (staff, patient self-service, and the future
+   * Authorized Representative / Collateral path). Lives on the care-plan
+   * layer next to `carePlanOverride` rather than in a parallel flag store.
+   *
+   * PLACEHOLDER: `reason` is free text and `curriculumNeedTag` is a made-up
+   * label, NOT a DHCS curriculum taxonomy. Christi/SMEs must supply the real
+   * criteria and tag list.
+   */
+  groupEligibility?: GroupEligibility;
   // ----- Clinical record layer (Problems / Allergies / Alerts). §BaggaEMR mirror -----
   /** Diagnosed problems (active + resolved + soft-deleted). Mirror of BaggaEMR `patient_problems`. */
   problems?: Problem[];
