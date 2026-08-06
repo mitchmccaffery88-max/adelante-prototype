@@ -48,7 +48,7 @@ describe("group session documentation", () => {
     expect(res.attendeeNoteIds).toHaveLength(3);
     expect(res.occurrence.sharedNote).toBeTruthy();
     for (const p of three) {
-      const notes = AdelanteEHR.listProgressNotes(p.id).filter((n) => n.category === "group");
+      const notes = (AdelanteEHR.getPatient(p.id)?.progressNotes ?? []).filter((n) => n.category === "group");
       expect(notes.length).toBeGreaterThan(0);
       expect(notes.some((n) => n.groupRef?.billingEligible)).toBe(true);
     }
