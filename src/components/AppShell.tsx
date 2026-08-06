@@ -19,6 +19,7 @@ import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
+import { useReminderSweep } from "@/hooks/useReminderSweep";
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -31,6 +32,10 @@ import {
 
 export function AppShell() {
   const { lang, setLang, t } = useI18n();
+  // §Reminders — client-side approximation of a scheduler: due reminders are
+  // swept while the app is open. NOT a background service; production needs a
+  // server-side scheduled job. See src/hooks/useReminderSweep.ts.
+  useReminderSweep();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
