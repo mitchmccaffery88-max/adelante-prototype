@@ -308,14 +308,6 @@ export function openGroupEngagementRows(
     });
 }
 
-export interface GroupAbsenceRowLegacyPlaceholder {
-  patientId: string;
-  patientName: string;
-  topic: string;
-  occurrenceStart: string;
-  status: GroupAttendanceEntry["status"];
-}
-
 /** The absent entries dragging the attendance rate down — drill-down rows. */
 export function groupAbsences(now = new Date(), days = GROUP_WINDOW_DAYS): GroupAbsenceRow[] {
   const from = now.getTime() - days * 86_400_000;
