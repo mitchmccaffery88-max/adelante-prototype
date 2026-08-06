@@ -20,8 +20,8 @@ import {
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
-  occurrenceOwedAttendees,
   occurrenceStatuses,
+  owedAttendeesForRole,
 } from "@/lib/groupMetrics";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -649,11 +649,40 @@ function RecurrenceEditor({ group, actor }: { group: GroupSession; actor: string
 // gate. The attendee-level "who still owes a note" list is PHI plus group
 // membership, so it is shown ONLY to roles holding `group_notes` access —
 // managing the schedule must not reveal which patients are behind.
-function OccurrenceStatusCard({ group }: { group: GroupSession }) {
+function OccurrenceStatusCard({ group, canWrite, actor }: { group: GroupSession; canWrite: boolean; actor: string }) {
   const { role } = useActingStaff();
   const notesAccess = canAccess(role, "group_notes");
   const canSeeAttendees = !notesAccess.locked;
   const rows = useEhr(() => occurrenceStatuses(group.id, 6));
+  const [exception, setException] = useState<
+    { start: string; mode: "cancel" | "reschedule" } | null
+  >(null);
+  const [reason, setReason] = useState("");
+  const [newStart, setNewStart] = useState("");
+
+  function submitException() {
+    if (!exception) return;
+    try {
+      if (exception.mode === "cancel") {
+        AdelanteEHR.cancelGroupOccurrence(group.id, exception.start, reason, actor);
+        toast.success("Meeting cancelled. The recurring pattern is unchanged.");
+      } else {
+        AdelanteEHR.rescheduleGroupOccurrence(
+          group.id,
+          exception.start,
+          new Date(newStart).toISOString(),
+          reason,
+          actor,
+        );
+        toast.success("Meeting moved. The recurring pattern is unchanged.");
+      }
+      setException(null);
+      setReason("");
+      setNewStart("");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not change that meeting.");
+    }
+  }
 
   return (
     <Card className="p-4 space-y-3">
@@ -670,15 +699,18 @@ function OccurrenceStatusCard({ group }: { group: GroupSession }) {
       ) : (
         <ul className="space-y-2">
           {rows.map((r) => {
-            const owed = canSeeAttendees
-              ? occurrenceOwedAttendees(group.id, r.occurrenceStart)
-              : [];
+            // DATA-LAYER GATE: the helper itself refuses to return attendee
+            // identities to a role without `group_notes`, so this component
+            // never holds a patient name it is not allowed to show.
+            const owed = owedAttendeesForRole(role, group.id, r.occurrenceStart).attendees;
             return (
               <li key={r.occurrenceStart} className="rounded-md border p-2.5 text-xs space-y-1">
                 <div className="flex flex-wrap items-center gap-2">
                   <span className="font-medium text-navy">
                     <ClientDate value={r.occurrenceStart} />
                   </span>
+                  {r.cancelled && <Badge variant="outline">Cancelled</Badge>}
+                  {r.movedFromStart && <Badge variant="outline">Moved</Badge>}
                   {r.attendanceRecorded ? (
                     <Badge className="bg-teal/15 text-teal">Attendance taken</Badge>
                   ) : (
@@ -699,6 +731,82 @@ function OccurrenceStatusCard({ group }: { group: GroupSession }) {
                   <div className="text-muted-foreground">
                     Owing:{" "}
                     {owed.map((o) => o.patientName).join(", ")}
+                  </div>
+                )}
+                {r.cancelReason && (
+                  <div className="text-muted-foreground">Reason: {r.cancelReason}</div>
+                )}
+                {canWrite && r.mutable && (
+                  <div className="flex flex-wrap gap-2 pt-1">
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={() => {
+                        setException({ start: r.occurrenceStart, mode: "cancel" });
+                        setReason("");
+                      }}
+                    >
+                      Cancel this meeting
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="h-7 text-[11px]"
+                      onClick={() => {
+                        setException({ start: r.occurrenceStart, mode: "reschedule" });
+                        setReason("");
+                        setNewStart("");
+                      }}
+                    >
+                      Move this meeting
+                    </Button>
+                  </div>
+                )}
+                {canWrite && !r.mutable && !r.cancelled && (
+                  <div className="text-muted-foreground">
+                    Locked — this meeting is past or already has attendance/notes. Amend the
+                    documentation instead.
+                  </div>
+                )}
+                {exception?.start === r.occurrenceStart && (
+                  <div className="mt-2 space-y-2 rounded-md border bg-muted/30 p-2">
+                    <p className="text-[11px] text-muted-foreground">
+                      This changes only this one meeting — the recurring pattern stays as it is.
+                    </p>
+                    {exception.mode === "reschedule" && (
+                      <div className="space-y-1">
+                        <Label className="text-[11px]">New date and time</Label>
+                        <Input
+                          type="datetime-local"
+                          value={newStart}
+                          onChange={(e) => setNewStart(e.target.value)}
+                          className="h-8 text-xs"
+                        />
+                      </div>
+                    )}
+                    <div className="space-y-1">
+                      <Label className="text-[11px]">Reason</Label>
+                      <Input
+                        value={reason}
+                        onChange={(e) => setReason(e.target.value)}
+                        placeholder="e.g. facilitator out"
+                        className="h-8 text-xs"
+                      />
+                    </div>
+                    <div className="flex gap-2">
+                      <Button size="sm" className="h-7 text-[11px]" onClick={submitException}>
+                        {exception.mode === "cancel" ? "Cancel meeting" : "Move meeting"}
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        className="h-7 text-[11px]"
+                        onClick={() => setException(null)}
+                      >
+                        Keep as scheduled
+                      </Button>
+                    </div>
                   </div>
                 )}
               </li>
