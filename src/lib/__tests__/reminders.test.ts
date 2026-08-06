@@ -4,6 +4,18 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { sendDueReminders, upcomingContacts } from "../reminders";
 
+// §Group sessions — every enrollment path now requires the care-plan
+// eligibility gate, so tests must set it first.
+function makeEligible(patientId: string) {
+  AdelanteEHR.setGroupEligibility({
+    patientId,
+    reason: "placeholder criteria",
+    role: "therapist",
+    actor: "test",
+  });
+}
+
+
 function makeGroupWith(patientId: string, hoursAhead = 5) {
   const clinician = AdelanteEHR.listClinicians()[0]!;
   const start = new Date(Date.now() + hoursAhead * 3600000);
@@ -18,7 +30,7 @@ function makeGroupWith(patientId: string, hoursAhead = 5) {
     recurrence: { kind: "none" },
     createdBy: "test",
   });
-  AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
+  makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
   return g;
 }
 

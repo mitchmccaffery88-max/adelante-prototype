@@ -7,6 +7,18 @@ import { AdelanteEHR } from "../ehr";
 import { runReminderSweep, useReminderSweep } from "@/hooks/useReminderSweep";
 import { sendDueReminders, upcomingContacts } from "../reminders";
 
+// §Group sessions — every enrollment path now requires the care-plan
+// eligibility gate, so tests must set it first.
+function makeEligible(patientId: string) {
+  AdelanteEHR.setGroupEligibility({
+    patientId,
+    reason: "placeholder criteria",
+    role: "therapist",
+    actor: "test",
+  });
+}
+
+
 function seedGroup(patientId: string, hoursAhead = 5) {
   const clinician = AdelanteEHR.listClinicians()[0]!;
   const g = AdelanteEHR.createGroupSession({
@@ -20,7 +32,7 @@ function seedGroup(patientId: string, hoursAhead = 5) {
     recurrence: { kind: "none" },
     createdBy: "test",
   });
-  AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
+  makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
   return g;
 }
 

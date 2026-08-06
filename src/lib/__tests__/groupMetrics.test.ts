@@ -12,6 +12,18 @@ import {
   weeklyGroupSeats,
 } from "../groupMetrics";
 
+// §Group sessions — every enrollment path now requires the care-plan
+// eligibility gate, so tests must set it first.
+function makeEligible(patientId: string) {
+  AdelanteEHR.setGroupEligibility({
+    patientId,
+    reason: "placeholder criteria",
+    role: "therapist",
+    actor: "test",
+  });
+}
+
+
 function makeGroup(topic = "Relapse prevention (placeholder topic)") {
   const clinician = AdelanteEHR.listClinicians()[0]!;
   return AdelanteEHR.createGroupSession({
@@ -47,7 +59,7 @@ describe("group reporting", () => {
     const g = makeGroup();
     const three = AdelanteEHR.listPatients().slice(0, 3);
     for (const p of three)
-      AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
 
     expect(activeGroupSessions().some((x) => x.id === g.id)).toBe(true);
     expect(enrolledPatientCount()).toBeGreaterThanOrEqual(3);
