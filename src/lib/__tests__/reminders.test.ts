@@ -1,7 +1,7 @@
 // §Reminders — coverage for every contact type, including group occurrences,
 // and the SMS-off patient preference.
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR, SERVICE_TYPES } from "../ehr";
+import { AdelanteEHR } from "../ehr";
 import { sendDueReminders, upcomingContacts } from "../reminders";
 
 function makeGroupWith(patientId: string, hoursAhead = 5) {
@@ -34,7 +34,7 @@ describe("reminder coverage", () => {
   });
 
   it("covers every service type in the model — no new taxonomy invented", () => {
-    const ids = SERVICE_TYPES.map((s) => s.id).sort();
+    const ids = AdelanteEHR.listServiceTypes().map((s) => s.id).sort();
     expect(ids).toEqual(
       [
         "intake",
