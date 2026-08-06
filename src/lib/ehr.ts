@@ -6143,6 +6143,12 @@ export const AdelanteEHR = {
     };
     protocolInstances.unshift(instance);
 
+    // §Facility & Custody — additive tagging only: rounds started while the
+    // patient is in an open booking episode carry the facility context (and
+    // that facility's id) so the Facility protocols view can filter them.
+    const booking = AdelanteEHR.listBookings(patientId)[0];
+    const inCustody = Boolean(booking && !booking.releasedAt);
+
     for (let n = 1; n <= totalRounds; n++) {
       const due = new Date(startedAt.getTime() + n * cadenceMinutes * 60_000);
       AdelanteEHR.createCaseTask({
@@ -6160,6 +6166,11 @@ export const AdelanteEHR = {
         protocolInstanceId: instance.id,
         roundNumber: n,
         templateId,
+        facilityContext: inCustody || undefined,
+        facilityId: inCustody ? booking?.facilityId : undefined,
+        housingUnit: inCustody
+          ? AdelanteEHR.currentHousingUnit(patientId)
+          : undefined,
       });
     }
 
