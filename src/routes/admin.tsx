@@ -33,6 +33,7 @@ import {
   BellOff,
   RotateCw,
   Lock,
+  UsersRound,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -42,6 +43,12 @@ import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { staffNavGroupForRole } from "@/lib/navSections";
+import {
+  activeGroupSessions,
+  enrolledPatientCount,
+  nextGroupOccurrenceForPatient,
+  weeklyGroupSeats,
+} from "@/lib/groupMetrics";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
