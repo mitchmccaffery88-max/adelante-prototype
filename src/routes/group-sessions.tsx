@@ -4,9 +4,11 @@
 // linkage on this screen are STRUCTURE ONLY. DHCS/DMC-ODS group-size limits,
 // curriculum names and billing/CPT/H-codes are deliberately not authored here.
 //
-// Enrollment is staff-initiated by design: group placement is a clinical
-// decision, unlike the patient-driven 1:1 scheduling flow, which this page
-// does not touch.
+// Enrollment paths now split by category (PLACEHOLDER taxonomy):
+//   sud_clinical_preauth   — staff-initiated only (this page), billable.
+//   open_psychoeducational — eligible patients self-book from /schedule.
+// BOTH require the care-plan group-eligibility flag first; the store refuses
+// any enrollment without it.
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
