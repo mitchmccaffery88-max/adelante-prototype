@@ -1,3 +1,4 @@
+/** @vitest-environment jsdom */
 // §Reminders — the automatic sweep is a trigger only; it must reuse the exact
 // same idempotent send path as the manual button.
 import { describe, expect, it, vi } from "vitest";
