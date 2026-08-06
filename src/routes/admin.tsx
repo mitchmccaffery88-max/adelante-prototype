@@ -263,6 +263,17 @@ function AdminPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={contactFilter} onValueChange={setContactFilter}>
+                <SelectTrigger className="h-8 w-[160px] text-xs" aria-label="Next contact type">
+                  <SelectValue placeholder="Next contact" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any next contact</SelectItem>
+                  <SelectItem value="group">Group occurrence</SelectItem>
+                  <SelectItem value="one_to_one">1:1 appointment</SelectItem>
+                  <SelectItem value="none">No next contact</SelectItem>
+                </SelectContent>
+              </Select>
               <Button size="sm" variant="outline" onClick={downloadCsv}>
                 <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
               </Button>
