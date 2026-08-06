@@ -178,6 +178,36 @@ function SchedulePage() {
         </p>
       </header>
 
+      <div className="mb-4 flex gap-2" role="tablist" aria-label="Scheduling type">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "one_to_one"}
+          onClick={() => setTab("one_to_one")}
+          className={
+            "rounded-md border px-3 py-1.5 text-sm " +
+            (tab === "one_to_one" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
+          }
+        >
+          One-on-one visit
+        </button>
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "groups"}
+          onClick={() => setTab("groups")}
+          className={
+            "rounded-md border px-3 py-1.5 text-sm " +
+            (tab === "groups" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
+          }
+        >
+          Groups
+        </button>
+      </div>
+
+      {tab === "groups" && <PatientGroupScheduling patientId={currentId} />}
+
+      {tab === "one_to_one" && (
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5">
           <Label className="text-sm">What kind of visit?</Label>
@@ -459,6 +489,7 @@ function SchedulePage() {
           {t("schSafety")}
         </p>
       </Card>
+      )}
     </div>
   );
 }
