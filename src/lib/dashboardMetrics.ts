@@ -15,6 +15,7 @@ import {
   type Patient,
   type ProgressNote,
 } from "./ehr";
+import { groupAttendanceRate, GROUP_WINDOW_DAYS } from "./groupMetrics";
 
 export type MetricUnit = "percent" | "count";
 
@@ -292,6 +293,18 @@ export function computeLiveMetrics(now = new Date()): LiveMetricMap {
       higherIsBetter: false,
       basis: "Open case tasks past their due date",
     },
+    group_attendance_rate_pct: (() => {
+      const g = groupAttendanceRate(now);
+      return {
+        value: g.pct,
+        unit: "percent" as const,
+        higherIsBetter: true,
+        basis:
+          g.denominator === 0
+            ? `No group attendance recorded in the last ${GROUP_WINDOW_DAYS} days`
+            : `${g.present + g.late} of ${g.denominator} seats attended across ${g.occurrencesRecorded} occurrence(s)`,
+      };
+    })(),
     controlled_count_discrepancies: NO_SOURCE("count", false),
     open_kites_count: NO_SOURCE("count", false),
     ncchc_intake_screening_pct: NO_SOURCE("percent", true),
@@ -306,7 +319,8 @@ export function metricSupportsDrillDown(key: MetricKey): boolean {
   return (
     key === "unsigned_notes_count" ||
     key === "overdue_task_count" ||
-    key === "mar_compliance_pct"
+    key === "mar_compliance_pct" ||
+    key === "group_attendance_rate_pct"
   );
 }
 
