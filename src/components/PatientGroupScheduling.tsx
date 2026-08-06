@@ -17,6 +17,7 @@
 // patient will reuse this surface — the actor is passed to the store, which is
 // the single place that decides who may enroll.
 import { useMemo } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AdelanteEHR, formatLocationAddress, useEhr } from "@/lib/ehr";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
@@ -24,7 +25,11 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
-import { Users, CalendarClock, MapPin } from "lucide-react";
+import { Users, CalendarClock, MapPin, MessageSquare } from "lucide-react";
+
+/** Prefilled body for the care-team message on the missing-eligibility state. */
+export const GROUP_ELIGIBILITY_MESSAGE_DRAFT =
+  "Hi — I'd like to join a group. Could you add groups to my care plan so I can sign up?";
 
 export function PatientGroupScheduling({ patientId }: { patientId: string }) {
   const eligible = useEhr(() => AdelanteEHR.isGroupEligible(patientId));
@@ -126,6 +131,16 @@ export function PatientGroupScheduling({ patientId }: { patientId: string }) {
               You can message your care team from your home page, or bring it up at your next
               appointment.
             </p>
+            <Button asChild size="sm" variant="outline" className="min-h-11">
+              <Link
+                to="/home"
+                search={{ msg: GROUP_ELIGIBILITY_MESSAGE_DRAFT }}
+                data-testid="group-eligibility-message-care-team"
+              >
+                <MessageSquare className="mr-2 h-4 w-4" />
+                Message care team
+              </Link>
+            </Button>
           </div>
         ) : open.length === 0 ? (
           <p className="text-sm text-muted-foreground">

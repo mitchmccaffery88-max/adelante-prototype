@@ -46,7 +46,7 @@ import { CrisisNotice } from "@/components/CrisisNotice";
 import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
