@@ -1,7 +1,7 @@
 // §Group sessions — occurrence documentation, consent gating, nav discoverability.
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
-import { canAccess, noteGateClass, visibleNavItems } from "../roles";
+import { canAccess, noteGateClass } from "../roles";
 import { STAFF_NAV } from "../navSections";
 import { noteExportGate } from "../notePdf";
 
@@ -121,8 +121,6 @@ describe("nav discoverability + RBAC", () => {
   });
 
   it("is hidden for a role without group_sessions access", () => {
-    const visible = visibleNavItems ? [] : [];
-    void visible;
     expect(canAccess("front_desk", "group_sessions").level).toBe("none");
     expect(canAccess("therapist", "group_sessions").level).toBe("write");
   });
