@@ -70,10 +70,10 @@ function GroupAuditPage() {
       category: "clinical",
       patientId: patientId === "all" ? undefined : patientId,
       since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
     })
       .filter((e) => ACTION_SET.has(e.action))
-      .filter((e) => action === "all" || e.action === action)
-      .filter((e) => (to ? e.at <= new Date(`${to}T23:59:59.999`).toISOString() : true));
+      .filter((e) => action === "all" || e.action === action);
     return redactAuditEvents(events, role);
   });
 
