@@ -6,9 +6,61 @@
 // attendance in the window, it says so instead of rendering 0%.
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Users, CalendarClock, PieChart, ChevronRight } from "lucide-react";
+import { Users, CalendarClock, PieChart, ChevronRight, Download } from "lucide-react";
 import { formatMetric, type LiveMetric } from "@/lib/dashboardMetrics";
-import type { GroupAttendanceBreakdown, OpenGroupEngagement } from "@/lib/groupMetrics";
+import {
+  openGroupEngagementRows,
+  type GroupAttendanceBreakdown,
+  type OpenGroupEngagement,
+} from "@/lib/groupMetrics";
+
+/**
+ * Non-billing engagement export. Same download pattern as the caseload and
+ * claims CSVs, but the label is deliberately loud: if this file is shared with
+ * program staff it must not be mistaken for a claims/billing export.
+ */
+function downloadOpenGroupCsv() {
+  const rows = openGroupEngagementRows();
+  const banner = [
+    "NON-BILLING ENGAGEMENT DATA — open psychoeducational groups. These occurrences never create a claim. Not a billing or claims export.",
+  ];
+  const headers = [
+    "Group session ID",
+    "Topic",
+    "Enrolled",
+    "Capacity",
+    "Occurrences with attendance (30d)",
+    "Present",
+    "Late",
+    "Absent",
+    "Patients reached (30d)",
+    "Attendance %",
+    "Billing status",
+  ];
+  const body = rows.map((r) => [
+    r.sessionId,
+    r.topic,
+    r.enrolled,
+    r.capacity,
+    r.occurrencesRecorded,
+    r.present,
+    r.late,
+    r.absent,
+    r.patientsReached,
+    r.attendancePct === null ? "" : Math.round(r.attendancePct),
+    "Non-billing",
+  ]);
+  const csv = [banner, headers, ...body]
+    .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+    .join("\n");
+  const blob = new Blob([csv], { type: "text/csv" });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `adelante-open-group-engagement-NON-BILLING-${new Date().toISOString().slice(0, 10)}.csv`;
+  a.click();
+  URL.revokeObjectURL(url);
+}
 
 interface Props {
   activeGroups: number;
@@ -97,6 +149,16 @@ export function GroupUtilizationSection({
           Open psychoeducational groups are tracked for program reach only. They never create a
           claim, so this is engagement data, not clinical claims data.
         </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="mt-3"
+          disabled={openGroups.activeGroups === 0}
+          onClick={downloadOpenGroupCsv}
+          data-testid="open-group-engagement-export"
+        >
+          <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV (non-billing)
+        </Button>
         {openGroups.activeGroups === 0 ? (
           <p className="mt-2 text-sm text-muted-foreground">No open groups running yet.</p>
         ) : (
