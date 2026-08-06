@@ -32,9 +32,37 @@ describe("nav registry integrity", () => {
       "/admin-kpi-targets",
       "/admin-note-templates",
       "/admin-facilities",
+      "/facility-protocols",
     ]) {
       expect(registry.has(route)).toBe(true);
     }
+  });
+
+  it("§Facility & Custody — group exists, is ordered after population, and is gated", () => {
+    const facility = STAFF_NAV.filter((e) => e.group === "facility").map((e) => e.id);
+    expect(facility.sort()).toEqual(
+      ["admin-facilities", "facility-protocols", "released-search"].sort(),
+    );
+    for (const e of STAFF_NAV.filter((x) => x.group === "facility")) {
+      expect(e.gate).toMatchObject({ anyOf: ["custody_tracking"] });
+    }
+    const order = staffNavGroupsForRole("case_manager").map((g) => g.group);
+    expect(order.indexOf("facility")).toBe(order.indexOf("population") + 1);
+    // A role without custody_tracking gets no Facility & Custody group at all.
+    expect(staffNavGroupsForRole("billing").map((g) => g.group)).not.toContain("facility");
+  });
+
+  it("§Shift count is gated on controlled_substance_custody, not meds_erx", () => {
+    const entry = STAFF_NAV.find((e) => e.id === "shift-count")!;
+    expect(entry.gate).toMatchObject({ anyOf: ["controlled_substance_custody"] });
+    expect(entry.group).toBe("care");
+    // Real behaviour change: therapist keeps meds_erx read but loses the page.
+    expect(canAccess("therapist", "meds_erx").level).toBe("read");
+    expect(canAccess("therapist", "controlled_substance_custody").level).toBe("none");
+    expect(ids("therapist")).not.toContain("shift-count");
+    expect(ids("case_manager")).not.toContain("shift-count");
+    expect(ids("pmhnp")).toContain("shift-count");
+    expect(ids("clinical_coordinator")).toContain("shift-count");
   });
 
   it("keeps every entry from the old flat staff nav", () => {

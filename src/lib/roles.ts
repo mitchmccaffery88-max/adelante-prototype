@@ -52,6 +52,11 @@ export type RecordClass =
   | "eligibility"
   | "care_coordination"
   | "custody_tracking"
+  // §Facility & Custody reorg — physical controlled-substance stock and
+  // chain-of-custody reconciliation. Deliberately NOT `custody_tracking`
+  // (facility/incarceration) and NOT `meds_erx` (prescribing/transmission):
+  // an outpatient site counts a narcotics box without doing facility work.
+  | "controlled_substance_custody"
   | "population_health"
   | "crisis_queue"
   | "patient_messaging"
@@ -195,6 +200,28 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     peer_specialist: "read",
     sys_admin: "read",
+  },
+  // §Controlled-substance custody (shift counts, physical stock
+  // reconciliation). Narrower than `meds_erx` on purpose: reading an order is
+  // routine clinical context, signing a two-person narcotics count is a
+  // custodial responsibility.
+  //  - pmhnp: write — the role that actually charts the controlled pass.
+  //  - clinical_coordinator: write — owns shift oversight and is the second
+  //    signature; it already carries the same oversight tier elsewhere.
+  //  - sys_admin: none — traceability already comes through the audit log, and
+  //    a count is an operational clinical artifact, not an admin surface.
+  //  - therapist / case_manager / peer_specialist / billing: none. They have
+  //    `meds_erx` read (therapist/case_manager) but no physical-stock duty, so
+  //    Shift count now disappears for them — that is the intended change.
+  controlled_substance_custody: {
+    pmhnp: "write",
+    clinical_coordinator: "write",
+    sys_admin: "none",
+    therapist: "none",
+    case_manager: "none",
+    peer_specialist: "none",
+    billing: "none",
+    billing_coordinator: "none",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for

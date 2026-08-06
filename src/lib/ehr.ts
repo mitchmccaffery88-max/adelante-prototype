@@ -1796,6 +1796,14 @@ export interface CaseTask {
   protocolInstanceId?: string;
   /** 1-based round index within the instance. */
   roundNumber?: number;
+  /**
+   * §Facility & Custody reorg — additive tag ONLY. True when the task was
+   * created while the patient was in an open booking episode, so facility
+   * work (e.g. CIWA/COWS rounds on a booked patient) can be filtered out of
+   * the general worklist without a parallel task system. Nothing about how
+   * rounds are generated or scheduled depends on it.
+   */
+  facilityContext?: boolean;
   /** The scored NoteTemplate this round is documented on. */
   templateId?: string;
   // ----- §Scheduling rule engine (manual run; absent on every other task) ----
@@ -5903,6 +5911,8 @@ export const AdelanteEHR = {
     protocolInstanceId?: string;
     roundNumber?: number;
     templateId?: string;
+    /** §Facility & Custody — see `CaseTask.facilityContext`. */
+    facilityContext?: boolean;
     /** §Scheduling rules — set only by `runSchedulingRulesNow`. */
     sourceRuleId?: string;
   }): CaseTask | undefined {
@@ -5936,6 +5946,7 @@ export const AdelanteEHR = {
       protocolInstanceId: input.protocolInstanceId,
       roundNumber: input.roundNumber,
       templateId: input.templateId,
+      facilityContext: input.facilityContext,
       sourceRuleId: input.sourceRuleId,
     };
     caseTasks.unshift(task);
@@ -6132,6 +6143,12 @@ export const AdelanteEHR = {
     };
     protocolInstances.unshift(instance);
 
+    // §Facility & Custody — additive tagging only: rounds started while the
+    // patient is in an open booking episode carry the facility context (and
+    // that facility's id) so the Facility protocols view can filter them.
+    const booking = AdelanteEHR.listBookings(patientId)[0];
+    const inCustody = Boolean(booking && !booking.releasedAt);
+
     for (let n = 1; n <= totalRounds; n++) {
       const due = new Date(startedAt.getTime() + n * cadenceMinutes * 60_000);
       AdelanteEHR.createCaseTask({
@@ -6149,6 +6166,11 @@ export const AdelanteEHR = {
         protocolInstanceId: instance.id,
         roundNumber: n,
         templateId,
+        facilityContext: inCustody || undefined,
+        facilityId: inCustody ? booking?.facilityId : undefined,
+        housingUnit: inCustody
+          ? AdelanteEHR.currentHousingUnit(patientId)
+          : undefined,
       });
     }
 
