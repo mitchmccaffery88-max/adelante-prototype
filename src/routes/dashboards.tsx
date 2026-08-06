@@ -72,6 +72,9 @@ function DashboardsPage() {
   const groupActive = useEhr(() => activeGroupSessions().length);
   const groupEnrolled = useEhr(() => enrolledPatientCount());
   const groupAttendance = useEhr(() => groupAttendanceRate());
+  // Non-billing engagement rollup for open psychoeducational groups. Kept
+  // separate from claims data on purpose — these never produce a claim.
+  const openGroups = useEhr(() => openGroupEngagement());
   const [drill, setDrill] = useState<DrillKind>(null);
 
   const drillConfig = useMemo(() => {
@@ -275,6 +278,7 @@ function DashboardsPage() {
         attendance={groupAttendance}
         metric={metrics.group_attendance_rate_pct}
         onOpenAbsences={() => setDrill("group_attendance_rate_pct")}
+        openGroups={openGroups}
       />
 
       <CalAimSection
