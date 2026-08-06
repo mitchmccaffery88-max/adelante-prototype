@@ -18,6 +18,7 @@ import { KpiVsTargetSection } from "@/components/dashboards/KpiVsTargetSection";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { CalAimSection } from "@/components/dashboards/CalAimSection";
 import { GroupUtilizationSection } from "@/components/dashboards/GroupUtilizationSection";
+import { FacilityCustodySection } from "@/components/dashboards/FacilityCustodySection";
 import {
   activeGroupSessions,
   enrolledPatientCount,
@@ -75,6 +76,16 @@ function DashboardsPage() {
   // Non-billing engagement rollup for open psychoeducational groups. Kept
   // separate from claims data on purpose — these never produce a claim.
   const openGroups = useEhr(() => openGroupEngagement());
+  // §Facility & Custody split — the facility rollup is only COMPUTED for roles
+  // that clear `custody_tracking`. Without access the data never reaches the
+  // client component at all.
+  const seesFacility = canAccess(role, "custody_tracking").level !== "none";
+  const facilityStats = useEhr(() =>
+    seesFacility ? AdelanteEHR.facilityBookingStats() : [],
+  );
+  const lockedShiftCounts = useEhr(() =>
+    seesFacility ? AdelanteEHR.listShiftCounts(100).length : 0,
+  );
   const [drill, setDrill] = useState<DrillKind>(null);
 
   const drillConfig = useMemo(() => {
@@ -251,8 +262,8 @@ function DashboardsPage() {
         <div>
           <h1 className="font-display text-2xl text-navy">Population health</h1>
           <p className="text-sm text-muted-foreground">
-            Program-level performance against configured targets. Each measured row drills into the
-            actual records behind the number.
+            Outpatient program performance against configured targets. Each measured row drills
+            into the actual records behind the number.
           </p>
         </div>
         {canManage && (
@@ -264,7 +275,11 @@ function DashboardsPage() {
         )}
       </header>
 
-      <KpiVsTargetSection
+      <section aria-labelledby="outpatient-heading" className="space-y-5">
+        <h2 id="outpatient-heading" className="sr-only">
+          Outpatient program metrics
+        </h2>
+        <KpiVsTargetSection
         targets={targets}
         metrics={metrics}
         onDrillDown={(key) => setDrill(key)}
@@ -289,6 +304,11 @@ function DashboardsPage() {
         onOpenCaseload={() => setDrill("calaim_caseload")}
         onOpenDischarges={() => setDrill("calaim_discharges")}
       />
+      </section>
+
+      {seesFacility && (
+        <FacilityCustodySection stats={facilityStats} shiftCounts={lockedShiftCounts} />
+      )}
 
       <p className="text-xs text-muted-foreground">
         NCCHC measures and kite volume remain deferred — those rows have no data source and are
