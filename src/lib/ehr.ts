@@ -10391,17 +10391,48 @@ export const AdelanteEHR = {
     patientId: string,
     initiator: EnrollmentInitiator,
   ): void {
-    if (group.status === "cancelled") throw new Error("That group is cancelled.");
+    // Every refusal is audited before it throws, so the admin group-audit view
+    // can show blocked attempts from the SAME logging mechanism as everything
+    // else — no parallel log.
+    const block = (reasonCode: string, message: string): never => {
+      appendAudit({
+        category: "clinical",
+        action: "group_enrollment_blocked",
+        patientId,
+        actorId: initiator.actorId,
+        detail: {
+          groupSessionId: group.id,
+          topic: group.topic,
+          category: group.category,
+          initiatedBy: initiator.kind,
+          reasonCode,
+          reason: message,
+        },
+      });
+      throw new Error(message);
+    };
+    if (group.status === "cancelled") block("group_cancelled", "That group is cancelled.");
     if (!AdelanteEHR.isGroupEligible(patientId))
-      throw new Error(
+      block(
+        "no_eligibility",
         "Group eligibility has not been set for this patient. A therapist, PMHNP or case manager must set it before any enrollment.",
       );
     if (initiator.kind === "patient") {
       if (group.category !== "open_psychoeducational")
-        throw new Error("This group is staff-enrolled only.");
+        block("staff_enrolled_only", "This group is staff-enrolled only.");
       if (initiator.actorId !== patientId)
-        throw new Error("You can only book groups for yourself.");
+        block("not_self", "You can only book groups for yourself.");
     }
+    // Capacity is a real precondition on EVERY path (staff, self-service and
+    // later the advocate path), not just the staff write. Someone already on
+    // the roster is not "another seat", so they never trip it.
+    const active = AdelanteEHR.listGroupEnrollments(group.id);
+    const alreadyOnRoster = active.some((e) => e.patientId === patientId);
+    if (!alreadyOnRoster && active.length >= group.capacity)
+      block(
+        "at_capacity",
+        `This group is full — ${active.length} of ${group.capacity} places are taken.`,
+      );
     // FUTURE: `initiator.kind === "advocate"` (Authorized Representative /
     // Collateral, CalAIM DMC-ODS) plugs in here — it will need its own
     // relationship + consent check. Do not scatter that logic elsewhere.
@@ -10460,10 +10491,9 @@ export const AdelanteEHR = {
       (e) => e.sessionId === input.sessionId && e.patientId === input.patientId && !e.endedAt,
     );
     if (already) return already;
-    const active = AdelanteEHR.listGroupEnrollments(input.sessionId);
-    // PLACEHOLDER limit: enforces the group's OWN capacity field only. No
-    // DHCS group-size rule is encoded here.
-    if (active.length >= group.capacity) throw new Error("This group is at capacity.");
+    // Capacity is enforced (and audited) in `assertEnrollmentAllowed` above.
+    // PLACEHOLDER limit: the group's OWN capacity field only — no DHCS
+    // group-size rule is encoded anywhere.
     const row: GroupSessionEnrollment = {
       id: `gre_${uid()}`,
       sessionId: input.sessionId,
