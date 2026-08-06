@@ -23,6 +23,7 @@ import {
   enrolledPatientCount,
   groupAbsences,
   groupAttendanceRate,
+  openGroupEngagement,
 } from "@/lib/groupMetrics";
 import { calaimEligibleDischarges, calaimEligiblePatients, distinctPatients } from "@/lib/calaim";
 import {
