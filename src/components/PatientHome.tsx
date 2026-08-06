@@ -795,7 +795,6 @@ function ConsentCard({ patientId }: { patientId: string }) {
 // groupsForPatient / nextGroupOccurrenceForPatient rather than recomputing.
 function YourGroupsSection({ patientId }: { patientId: string }) {
   const groups = useEhr(() => AdelanteEHR.groupsForPatient(patientId));
-  if (groups.length === 0) return null;
   return (
     <section
       aria-labelledby="your-groups-heading"
@@ -811,6 +810,15 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
       <p className="text-xs text-muted-foreground mt-1">
         Groups you take part in, and when they next meet.
       </p>
+      {groups.length === 0 && (
+        <p
+          className="mt-4 rounded-lg border bg-card p-3 text-sm text-muted-foreground"
+          data-testid="patient-your-groups-empty"
+        >
+          No groups scheduled right now. If a group would be a good fit, your care team will
+          talk it through with you first.
+        </p>
+      )}
       <ul className="mt-4 space-y-3">
         {groups.map((g) => {
           const nextForThis = nextOccurrenceForGroup(g.id);

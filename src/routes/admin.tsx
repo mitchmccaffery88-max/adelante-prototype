@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
+import { sendDueReminders, upcomingContacts } from "@/lib/reminders";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -660,6 +661,7 @@ function CredentialingCard() {
 
 function NotificationHealthCard() {
   const failed = useEhr(() => AdelanteEHR.recentFailedNotifications(24));
+  const due = useEhr(() => upcomingContacts());
   return (
     <Card className="p-5">
       <div className="flex items-center justify-between mb-3">
@@ -675,6 +677,30 @@ function NotificationHealthCard() {
         >
           {failed.length} failed
         </Badge>
+      </div>
+      {/* §Reminders — manually triggered (there is no scheduler in this
+          build). Reuses the same notification path as booking/reschedule, so
+          a patient with SMS off never receives a text. */}
+      <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-2.5">
+        <p className="text-[11px] text-muted-foreground">
+          {due.length} upcoming contact(s) in the next 48h — 1:1 visits and group meetings.
+        </p>
+        <Button
+          size="sm"
+          variant="outline"
+          className="h-7 text-[11px]"
+          onClick={() => {
+            const run = sendDueReminders();
+            toast.success(
+              `Reminders sent for ${run.sent.length} contact(s)` +
+                (run.smsSuppressed.length
+                  ? ` · ${run.smsSuppressed.length} without SMS (patient preference)`
+                  : ""),
+            );
+          }}
+        >
+          Send due reminders
+        </Button>
       </div>
       {failed.length === 0 ? (
         <EmptyState
