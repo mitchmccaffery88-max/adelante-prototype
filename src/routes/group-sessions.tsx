@@ -332,6 +332,16 @@ function GroupDetail({
     <div className="space-y-4">
       <Card className="p-4 space-y-2">
         <h2 className="font-display text-navy">{group.topic}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={group.category === "open_psychoeducational" ? "secondary" : "outline"}>
+            {GROUP_CATEGORIES.find((c) => c.key === group.category)?.label}
+          </Badge>
+          <span className="text-[11px] text-muted-foreground">
+            {group.category === "open_psychoeducational"
+              ? "Eligible patients can self-book. Attendance is engagement data — never billed."
+              : "Staff enrollment only. Attendee notes flow to the Claims Worklist."}
+          </span>
+        </div>
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}
@@ -380,6 +390,11 @@ function GroupDetail({
           ))}
         </ul>
         {canWrite && (
+          <>
+          <p className="text-[11px] text-muted-foreground">
+            Enrollment is blocked until a therapist, PMHNP or case manager sets group eligibility
+            on the patient's care plan (placeholder criteria).
+          </p>
           <div className="flex gap-2">
             <Select value={addId} onValueChange={setAddId}>
               <SelectTrigger className="w-64">
@@ -391,6 +406,7 @@ function GroupDetail({
                   .map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.firstName} {p.lastName}
+                      {AdelanteEHR.isGroupEligible(p.id) ? "" : " — not yet eligible"}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -415,6 +431,8 @@ function GroupDetail({
               Enroll
             </Button>
           </div>
+          {addId && <GroupEligibilityEditor patientId={addId} actor={actor} />}
+          </>
         )}
       </Card>
 
