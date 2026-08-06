@@ -17,6 +17,13 @@ import {
 import { KpiVsTargetSection } from "@/components/dashboards/KpiVsTargetSection";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { CalAimSection } from "@/components/dashboards/CalAimSection";
+import { GroupUtilizationSection } from "@/components/dashboards/GroupUtilizationSection";
+import {
+  activeGroupSessions,
+  enrolledPatientCount,
+  groupAbsences,
+  groupAttendanceRate,
+} from "@/lib/groupMetrics";
 import { calaimEligibleDischarges, calaimEligiblePatients, distinctPatients } from "@/lib/calaim";
 import {
   DrillDownDialog,
@@ -61,6 +68,9 @@ function DashboardsPage() {
   const qualifyingCodes = useEhr(() => AdelanteEHR.listQualifyingCodes());
   const calaimCaseload = useEhr(() => calaimEligiblePatients());
   const calaimDischarges = useEhr(() => calaimEligibleDischarges());
+  const groupActive = useEhr(() => activeGroupSessions().length);
+  const groupEnrolled = useEhr(() => enrolledPatientCount());
+  const groupAttendance = useEhr(() => groupAttendanceRate());
   const [drill, setDrill] = useState<DrillKind>(null);
 
   const drillConfig = useMemo(() => {
@@ -132,6 +142,33 @@ function DashboardsPage() {
         columns,
         loader: () => marExceptions(AdelanteEHR.listPatients()),
         emptyMessage: "No refused or held doses in the window.",
+      };
+    }
+    if (drill === "calaim_caseload") {
+      // fallthrough below
+    }
+    if (drill === "group_attendance_rate_pct") {
+      const columns: DrillDownColumn<ReturnType<typeof groupAbsences>[number]>[] = [
+        {
+          key: "patient",
+          header: "Patient",
+          render: (r) => <PatientLink patientId={r.patientId} name={r.patientName} />,
+        },
+        { key: "topic", header: "Group", render: (r) => r.topic },
+        {
+          key: "when",
+          header: "Occurrence",
+          render: (r) => r.occurrenceStart.slice(0, 16).replace("T", " "),
+        },
+        { key: "status", header: "Status", render: (r) => r.status },
+      ];
+      return {
+        title: "Group attendance exceptions (30 days)",
+        description:
+          "Absent and late seats in occurrences where the facilitator recorded attendance.",
+        columns,
+        loader: () => groupAbsences(),
+        emptyMessage: "Every recorded seat was present.",
       };
     }
     if (drill === "calaim_caseload") {
@@ -233,6 +270,14 @@ function DashboardsPage() {
       />
 
       <PopulationCarePlanStrip />
+
+      <GroupUtilizationSection
+        activeGroups={groupActive}
+        enrolledPatients={groupEnrolled}
+        attendance={groupAttendance}
+        metric={metrics.group_attendance_rate_pct}
+        onOpenAbsences={() => setDrill("group_attendance_rate_pct")}
+      />
 
       <CalAimSection
         codeCount={qualifyingCodes.length}
