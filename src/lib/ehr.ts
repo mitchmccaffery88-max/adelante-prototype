@@ -10065,6 +10065,7 @@ export const AdelanteEHR = {
     const row: GroupSession = {
       ...input,
       topic: input.topic.trim(),
+      description: input.description?.trim() || undefined,
       id: `grp_${uid()}`,
       status: "scheduled",
       createdAt: new Date().toISOString(),
