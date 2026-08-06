@@ -324,7 +324,7 @@ function GroupDetail({
 
       {canWrite && <RecurrenceEditor group={group} actor={actor} />}
 
-      <OccurrenceStatusCard group={group} />
+      <OccurrenceStatusCard group={group} canWrite={canWrite} actor={actor} />
 
       <Card className="p-4 space-y-3">
         <h3 className="font-display text-sm text-navy">Standing roster</h3>
