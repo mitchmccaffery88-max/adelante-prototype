@@ -280,6 +280,7 @@ function GroupDetail({
   actor: string;
 }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const location = useEhr(() => AdelanteEHR.getLocation(group.locationId));
   const enrollments = useEhr(() => AdelanteEHR.listGroupEnrollments(group.id));
   const starts = useEhr(() => AdelanteEHR.groupOccurrenceStarts(group.id, 6));
   const [occurrence, setOccurrence] = useState<string>("");
@@ -313,7 +314,17 @@ function GroupDetail({
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}
         </p>
+        {group.description && <p className="text-sm text-foreground">{group.description}</p>}
+        {location && (
+          <p className="text-xs text-muted-foreground">
+            {location.name} — {formatLocationAddress(location)}
+          </p>
+        )}
       </Card>
+
+      {canWrite && <RecurrenceEditor group={group} actor={actor} />}
+
+      <OccurrenceStatusCard group={group} />
 
       <Card className="p-4 space-y-3">
         <h3 className="font-display text-sm text-navy">Standing roster</h3>
