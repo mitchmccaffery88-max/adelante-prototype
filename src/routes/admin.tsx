@@ -92,6 +92,9 @@ function AdminPage() {
   // Cohort filters
   const [coverageFilter, setCoverageFilter] = useState<string>("all");
   const [bucketFilter, setBucketFilter] = useState<string>("all");
+  // §Group sessions — "Next contact" can be a group occurrence or a 1:1
+  // appointment; this filter uses the SAME resolver the cell renders with.
+  const [contactFilter, setContactFilter] = useState<string>("all");
   const filteredPatients = useMemo(
     () =>
       patients.filter((p) => {
@@ -102,9 +105,10 @@ function AdminPage() {
           if (bucketFilter === "31-60" && !(d > 30 && d <= 60)) return false;
           if (bucketFilter === "61-90" && !(d > 60)) return false;
         }
+        if (contactFilter !== "all" && nextContactKind(p.id) !== contactFilter) return false;
         return true;
       }),
-    [patients, coverageFilter, bucketFilter],
+    [patients, coverageFilter, bucketFilter, contactFilter],
   );
 
   const downloadCsv = () => {
