@@ -249,6 +249,73 @@ export interface GroupAbsenceRow {
   status: GroupAttendanceEntry["status"];
 }
 
+/**
+ * Per-group breakdown behind `openGroupEngagement()` — the export shape for
+ * the non-billing engagement CSV. NON-BILLING: these groups never produce a
+ * Claim, so nothing here is claims data.
+ */
+export interface OpenGroupEngagementRow {
+  sessionId: string;
+  topic: string;
+  enrolled: number;
+  capacity: number;
+  occurrencesRecorded: number;
+  present: number;
+  late: number;
+  absent: number;
+  patientsReached: number;
+  attendancePct: number | null;
+}
+
+export function openGroupEngagementRows(
+  now = new Date(),
+  days = GROUP_WINDOW_DAYS,
+): OpenGroupEngagementRow[] {
+  const from = now.getTime() - days * 86_400_000;
+  return AdelanteEHR.listGroupSessions()
+    .filter((g) => g.category === "open_psychoeducational" && g.status !== "cancelled")
+    .map((g) => {
+      let present = 0;
+      let late = 0;
+      let absent = 0;
+      let occurrencesRecorded = 0;
+      const reached = new Set<string>();
+      for (const occ of AdelanteEHR.listGroupOccurrenceRecords(g.id)) {
+        const t = Date.parse(occ.occurrenceStart);
+        if (!occ.attendanceRecordedAt) continue;
+        if (!Number.isFinite(t) || t < from || t > now.getTime()) continue;
+        occurrencesRecorded += 1;
+        for (const a of occ.attendance) {
+          if (a.status === "present") present += 1;
+          else if (a.status === "late") late += 1;
+          else if (a.status === "absent") absent += 1;
+          if (a.status === "present" || a.status === "late") reached.add(a.patientId);
+        }
+      }
+      const denominator = present + late + absent;
+      return {
+        sessionId: g.id,
+        topic: g.topic,
+        enrolled: AdelanteEHR.listGroupEnrollments(g.id).length,
+        capacity: g.capacity,
+        occurrencesRecorded,
+        present,
+        late,
+        absent,
+        patientsReached: reached.size,
+        attendancePct: denominator === 0 ? null : ((present + late) / denominator) * 100,
+      };
+    });
+}
+
+export interface GroupAbsenceRowLegacyPlaceholder {
+  patientId: string;
+  patientName: string;
+  topic: string;
+  occurrenceStart: string;
+  status: GroupAttendanceEntry["status"];
+}
+
 /** The absent entries dragging the attendance rate down — drill-down rows. */
 export function groupAbsences(now = new Date(), days = GROUP_WINDOW_DAYS): GroupAbsenceRow[] {
   const from = now.getTime() - days * 86_400_000;
