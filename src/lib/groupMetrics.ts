@@ -7,6 +7,7 @@
 // return `null` so the UI can say "no live metric yet" instead of a 0 that
 // reads as a measured result.
 import { AdelanteEHR, type GroupAttendanceEntry, type GroupSession } from "./ehr";
+import { canAccess, type StaffRole } from "./roles";
 
 // ---------------------------------------------------------------------------
 // Claims Worklist — group-sourced encounter identification.
@@ -256,6 +257,12 @@ export interface OccurrenceStatus {
   /** Present/late attendees still owing an individualized note. */
   notesOwed: number;
   sharedNoteSigned: boolean;
+  /** Single-occurrence exception state (see `cancelGroupOccurrence`). */
+  cancelled: boolean;
+  cancelReason?: string;
+  movedFromStart?: string;
+  /** True while this occurrence is still safe to cancel or move. */
+  mutable: boolean;
 }
 
 function attendeesOwing(sessionId: string, occurrenceStart: string): string[] {
@@ -274,6 +281,12 @@ export function occurrenceStatus(sessionId: string, occurrenceStart: string): Oc
   const absent = attendance.filter((a) => a.status === "absent").length;
   const owed = attendeesOwing(sessionId, occurrenceStart).length;
   const expected = present + late;
+  let mutable = true;
+  try {
+    AdelanteEHR.assertGroupOccurrenceMutable(sessionId, occurrenceStart);
+  } catch {
+    mutable = false;
+  }
   return {
     sessionId,
     occurrenceStart,
@@ -284,13 +297,21 @@ export function occurrenceStatus(sessionId: string, occurrenceStart: string): Oc
     notesComplete: expected - owed,
     notesOwed: owed,
     sharedNoteSigned: !!occ?.sharedNote?.signedAt || !!occ?.sharedNote,
+    cancelled: occ?.status === "cancelled",
+    cancelReason: occ?.cancelReason,
+    movedFromStart: occ?.movedFromStart,
+    mutable,
   };
 }
 
 /** Upcoming + already-materialized occurrences, newest scheduled first. */
 export function occurrenceStatuses(sessionId: string, count = 6): OccurrenceStatus[] {
   const starts = new Set(AdelanteEHR.groupOccurrenceStarts(sessionId, count));
-  for (const occ of AdelanteEHR.listGroupOccurrenceRecords(sessionId)) starts.add(occ.occurrenceStart);
+  for (const occ of AdelanteEHR.listGroupOccurrenceRecords(sessionId)) {
+    // A moved-away placeholder is not a meeting; its destination is listed.
+    if (occ.movedToStart) continue;
+    starts.add(occ.occurrenceStart);
+  }
   return [...starts]
     .sort((a, b) => b.localeCompare(a))
     .map((s) => occurrenceStatus(sessionId, s));
@@ -314,4 +335,46 @@ export function occurrenceOwedAttendees(
     const p = patients.find((x) => x.id === id);
     return { patientId: id, patientName: p ? `${p.firstName} ${p.lastName}` : id };
   });
+}
+
+/**
+ * DATA-LAYER GATE. The safe pattern is the data function itself refusing to
+ * hand back attendee identities, not the caller choosing not to render them:
+ * a role without `group_notes` access gets `{ allowed: false, attendees: [] }`
+ * and therefore never holds a patient name or id in memory at all.
+ *
+ * `group_notes` is consent-gated for several roles, so the per-patient consent
+ * check runs per attendee — an owed attendee whose consent does not authorize
+ * group disclosure is dropped rather than named.
+ */
+export function owedAttendeesForRole(
+  role: StaffRole,
+  sessionId: string,
+  occurrenceStart: string,
+): { allowed: boolean; attendees: OwedAttendee[]; reason?: string } {
+  const patients = AdelanteEHR.listPatients();
+  const ids = attendeesOwing(sessionId, occurrenceStart);
+  // Role-level check first, with no patient: a role that can never hold
+  // group_notes (level "none") is refused outright.
+  const roleGate = canAccess(role, "group_notes");
+  if (roleGate.level === "none" && roleGate.locked && !ids.length)
+    return { allowed: false, attendees: [], reason: roleGate.reason };
+  const attendees: OwedAttendee[] = [];
+  let anyAllowed = false;
+  let reason: string | undefined;
+  for (const id of ids) {
+    const p = patients.find((x) => x.id === id);
+    const gate = canAccess(role, "group_notes", p);
+    if (gate.locked) {
+      reason = gate.reason ?? reason;
+      continue;
+    }
+    anyAllowed = true;
+    attendees.push({ patientId: id, patientName: p ? `${p.firstName} ${p.lastName}` : id });
+  }
+  if (ids.length === 0) {
+    const base = canAccess(role, "group_notes", patients[0]);
+    return { allowed: !base.locked, attendees: [], reason: base.reason };
+  }
+  return { allowed: anyAllowed, attendees, reason: anyAllowed ? undefined : reason };
 }
