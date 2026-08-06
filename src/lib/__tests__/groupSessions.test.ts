@@ -125,3 +125,68 @@ describe("nav discoverability + RBAC", () => {
     expect(canAccess("therapist", "group_sessions").level).toBe("write");
   });
 });
+
+describe("recurrence editing regenerates future occurrences without rewriting history", () => {
+  it("keeps attended occurrences and drops unused future ones", () => {
+    const g = makeGroup();
+    const p = patients()[0]!;
+    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    const starts = AdelanteEHR.groupOccurrenceStarts(g.id, 3);
+    // Attendance taken on the first upcoming occurrence.
+    AdelanteEHR.recordGroupAttendance(
+      g.id,
+      starts[0]!,
+      [{ patientId: p.id, status: "present" as const }],
+      "test",
+    );
+    // A future occurrence materialized but never used.
+    AdelanteEHR.recordGroupAttendance(g.id, starts[2]!, [], "test");
+    const unused = AdelanteEHR.getGroupOccurrence(g.id, starts[2]!);
+    if (unused) {
+      unused.attendance = [];
+      unused.attendanceRecordedAt = undefined;
+    }
+
+    const other = (new Date(g.start).getDay() + 3) % 7;
+    AdelanteEHR.updateGroupRecurrence(g.id, { kind: "weekly", daysOfWeek: [other] }, "test");
+
+    expect(AdelanteEHR.getGroupOccurrence(g.id, starts[0]!)?.attendance).toHaveLength(1);
+    expect(AdelanteEHR.getGroupOccurrence(g.id, starts[2]!)).toBeUndefined();
+    expect(AdelanteEHR.getGroupSession(g.id)?.recurrence.daysOfWeek).toEqual([other]);
+  });
+});
+
+describe("occurrence status reporting", () => {
+  it("counts notes owed using the documentation rule", async () => {
+    const { occurrenceOwedAttendees, occurrenceStatus } = await import("../groupMetrics");
+    const g = makeGroup();
+    const two = patients().slice(0, 2);
+    for (const p of two)
+      AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
+    AdelanteEHR.recordGroupAttendance(
+      g.id,
+      start,
+      two.map((p) => ({ patientId: p.id, status: "present" as const })),
+      "test",
+    );
+    let s = occurrenceStatus(g.id, start);
+    expect(s.attendanceRecorded).toBe(true);
+    expect(s.present).toBe(2);
+    expect(s.notesOwed).toBe(2);
+    expect(occurrenceOwedAttendees(g.id, start)).toHaveLength(2);
+
+    AdelanteEHR.documentGroupOccurrence({
+      sessionId: g.id,
+      occurrenceStart: start,
+      facilitatorId: g.facilitatorId,
+      topicCovered: "t",
+      groupProcess: "p",
+      perAttendee: Object.fromEntries(two.map((p) => [p.id, "participated"])),
+      actor: "test",
+    });
+    s = occurrenceStatus(g.id, start);
+    expect(s.notesOwed).toBe(0);
+    expect(s.notesComplete).toBe(2);
+  });
+});
