@@ -120,3 +120,19 @@ describe("scoped stat counts", () => {
     expect(isOverdue(AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!)).toBe(false);
   });
 });
+
+// §Facility & Custody — the "Facility protocols" nav entry is the Worklist
+// narrowed by a data predicate, so assert it genuinely excludes rows.
+describe("facility protocol round filter", () => {
+  it("keeps only facility-context protocol rounds", () => {
+    const base = { patientId: "p1", dueDate: "2026-01-01", title: "t" } as unknown as CaseTask;
+    const rows: CaseTask[] = [
+      { ...base, id: "a", taskType: "protocol_round", protocolInstanceId: "pi1", facilityContext: true },
+      { ...base, id: "b", taskType: "protocol_round", protocolInstanceId: "pi2" },
+      { ...base, id: "c", taskType: "followup", facilityContext: true },
+      { ...base, id: "d", taskType: "followup" },
+    ];
+    expect(rows.filter(isFacilityProtocolRound).map((t) => t.id)).toEqual(["a"]);
+    expect(rows.filter(isFacilityProtocolRound).length).toBeLessThan(rows.length);
+  });
+});
