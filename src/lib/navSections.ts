@@ -144,6 +144,15 @@ export const STAFF_NAV: NavEntry[] = [
     group: "care",
     gate: { kind: "record_class", anyOf: ["group_sessions"] },
   },
+  {
+    id: "group-audit",
+    label: "Group eligibility audit",
+    desc: "Eligibility changes & blocked enrollments",
+    icon: FileSearch,
+    to: "/group-audit",
+    group: "care",
+    gate: { kind: "record_class", anyOf: ["group_sessions"] },
+  },
 
   // ----- Queues (cross-patient work) -----
   {
