@@ -274,7 +274,7 @@ function AdminPage() {
                 <TableHead>CIN</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
-                <TableHead>Next appt</TableHead>
+                <TableHead>Next contact</TableHead>
                 <TableHead>Engagement</TableHead>
                 <TableHead>SMS reminders</TableHead>
               </TableRow>
