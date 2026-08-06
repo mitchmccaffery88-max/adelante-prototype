@@ -201,27 +201,27 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     peer_specialist: "read",
     sys_admin: "read",
   },
-  // §Controlled-substance custody (shift counts, physical stock
-  // reconciliation). Narrower than `meds_erx` on purpose: reading an order is
-  // routine clinical context, signing a two-person narcotics count is a
-  // custodial responsibility.
-  //  - pmhnp: write — the role that actually charts the controlled pass.
-  //  - clinical_coordinator: write — owns shift oversight and is the second
-  //    signature; it already carries the same oversight tier elsewhere.
-  //  - sys_admin: none — traceability already comes through the audit log, and
-  //    a count is an operational clinical artifact, not an admin surface.
-  //  - therapist / case_manager / peer_specialist / billing: none. They have
-  //    `meds_erx` read (therapist/case_manager) but no physical-stock duty, so
-  //    Shift count now disappears for them — that is the intended change.
+  // §Facility & Custody reorg — controlled-substance custody: physical stock
+  // on hand and chain-of-custody reconciliation (Shift count).
+  //
+  // Why this is its own class and not one of the two it sits between:
+  //  - NOT `meds_erx`: that class is e-prescribing / pharmacy routing — an
+  //    order leaving the building. A shift count is about the tangible stock
+  //    in the cabinet; the two can be granted to different people.
+  //  - NOT `custody_tracking`: in this codebase "custody" there means
+  //    facility/incarceration (Released Patient Search, Facilities, booking
+  //    episodes). Gating Shift count on it would force facility permissions
+  //    onto an outpatient site that merely reconciles sample/emergency stock,
+  //    breaking the exact use case this separation exists to serve.
+  //
+  // Starting grant deliberately MIRRORS `meds_erx` exactly, so this reorg is
+  // access-neutral: nobody who can reach Shift count today loses it. Tightening
+  // it (e.g. dropping the two read roles, or adding clinical_coordinator as a
+  // second signer) is a follow-on policy decision, not a refactor side effect.
   controlled_substance_custody: {
     pmhnp: "write",
-    clinical_coordinator: "write",
-    sys_admin: "none",
-    therapist: "none",
-    case_manager: "none",
-    peer_specialist: "none",
-    billing: "none",
-    billing_coordinator: "none",
+    therapist: "read",
+    case_manager: "read",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for
