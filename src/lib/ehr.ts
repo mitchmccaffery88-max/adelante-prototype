@@ -10165,8 +10165,10 @@ export const AdelanteEHR = {
   getGroupSession: (id: string) => groupSessions.find((g) => g.id === id),
 
   createGroupSession(
-    input: Omit<GroupSession, "id" | "status" | "createdAt" | "createdBy"> & {
+    input: Omit<GroupSession, "id" | "status" | "createdAt" | "createdBy" | "category"> & {
       createdBy: string;
+      /** Defaults to the stricter staff-only billable category. */
+      category?: GroupCategory;
     },
   ): GroupSession {
     if (!input.topic.trim()) throw new Error("Give the group a topic.");
