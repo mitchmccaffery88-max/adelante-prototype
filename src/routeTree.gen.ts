@@ -33,6 +33,7 @@ import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
+import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
@@ -167,6 +168,11 @@ const DashboardsRoute = DashboardsRouteImport.update({
   path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupSessionsRoute = GroupSessionsRouteImport.update({
+  id: '/group-sessions',
+  path: '/group-sessions',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const HomeRoute = HomeRouteImport.update({
   id: '/home',
   path: '/home',
@@ -259,6 +265,7 @@ export interface FileRoutesByFullPath {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
@@ -298,6 +305,7 @@ export interface FileRoutesByTo {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
@@ -338,6 +346,7 @@ export interface FileRoutesById {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
@@ -379,6 +388,7 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
+    | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
@@ -418,6 +428,7 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
+    | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
@@ -457,6 +468,7 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
+    | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
@@ -497,6 +509,7 @@ export interface RootRouteChildren {
   CosignInboxRoute: typeof CosignInboxRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
+  GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
@@ -682,6 +695,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/group-sessions': {
+      id: '/group-sessions'
+      path: '/group-sessions'
+      fullPath: '/group-sessions'
+      preLoaderRoute: typeof GroupSessionsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/home': {
       id: '/home'
       path: '/home'
@@ -801,6 +821,7 @@ const rootRouteChildren: RootRouteChildren = {
   CosignInboxRoute: CosignInboxRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
+  GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,

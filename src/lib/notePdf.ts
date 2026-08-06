@@ -17,7 +17,7 @@ import {
   type Patient,
   type ProgressNote,
 } from "./ehr";
-import { canAccess, type StaffRole } from "./roles";
+import { canAccess, noteGateClass, type StaffRole } from "./roles";
 import { computeScore, isAnswered, isFieldVisible, isSectionVisible } from "./templateSchema";
 import type { AnswerValue } from "./templateSchema";
 
@@ -73,6 +73,16 @@ export function noteExportGate(
         allowed: false,
         reason: sud.reason ?? "SUD note — 42 CFR Part 2 consent required",
       };
+    }
+  }
+  // §Group sessions — group notes route through the SAME canAccess() gate,
+  // just against the `group_notes` class / `group_participation` consent
+  // category. No parallel consent mechanism.
+  const gateCls = noteGateClass(note);
+  if (gateCls === "group_notes") {
+    const grp = canAccess(role, "group_notes", patient);
+    if (grp.locked) {
+      return { allowed: false, reason: grp.reason ?? "Group note — consent required" };
     }
   }
   return { allowed: true };

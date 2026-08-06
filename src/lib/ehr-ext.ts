@@ -511,6 +511,45 @@ export const AdelanteEHRExt = {
     ehrBus.publish({ type: "claim.updated", claimId: c.id, state: to });
   },
 
+  /**
+   * §Group sessions — per-attendee billing hook.
+   *
+   * The Claims Worklist already reads from THIS list, keyed by `encounterId`,
+   * so a group attendee claim reuses that exact pipeline instead of adding a
+   * second data source. The encounter id is the group occurrence + patient,
+   * which is precisely the DMC-ODS billable unit: one individualized note per
+   * attendee, never a blanket group charge.
+   *
+   * PLACEHOLDER: `chargeCents` falls back to the existing per-service charge.
+   * No group CPT/H-code or group rate is invented here — billing supplies it.
+   */
+  upsertClaimFromGroupAttendee(input: {
+    sessionId: string;
+    occurrenceStart: string;
+    patientId: string;
+    facilitatorId: string;
+    noteId: string;
+    chargeCents?: number;
+  }): Claim {
+    const encounterId = `group:${input.sessionId}:${input.occurrenceStart}:${input.patientId}`;
+    let claim = claims.find((c) => c.encounterId === encounterId);
+    if (claim) return claim;
+    claim = {
+      id: uid(),
+      encounterId,
+      patientId: input.patientId,
+      clinicianId: input.facilitatorId,
+      state: "documented",
+      chargeCents:
+        input.chargeCents ?? AdelanteEHR.chargeForService?.("therapy_group") ?? 12000,
+      updatedAt: iso(),
+      history: [{ at: iso(), state: "documented", actor: "system", note: `note:${input.noteId}` }],
+    };
+    claims.push(claim);
+    ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+    return claim;
+  },
+
   subscribe,
 };
 

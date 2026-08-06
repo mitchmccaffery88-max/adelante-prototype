@@ -54,6 +54,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
     mental_health: false,
     case_coordination: false,
     billing: false,
+    group_participation: false,
   });
 
   const reset = () => {
@@ -65,6 +66,7 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
       mental_health: false,
       case_coordination: false,
       billing: false,
+      group_participation: false,
     });
   };
 
