@@ -1,7 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
-import { sendDueReminders, upcomingContacts } from "@/lib/reminders";
+import { upcomingContacts } from "@/lib/reminders";
+import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -678,19 +679,24 @@ function NotificationHealthCard() {
           {failed.length} failed
         </Badge>
       </div>
-      {/* §Reminders — manually triggered (there is no scheduler in this
-          build). Reuses the same notification path as booking/reschedule, so
-          a patient with SMS off never receives a text. */}
+      {/* §Reminders — this button is the on-demand path; the app shell also
+          sweeps automatically while the app is open (client-side only — there
+          is no server-side scheduler in this build). Both call the same
+          `runReminderSweep`, and the underlying send is idempotent per
+          contact, so the two paths can never double-send or diverge. */}
       <div className="mb-3 flex flex-wrap items-center justify-between gap-2 rounded-md border bg-muted/30 p-2.5">
         <p className="text-[11px] text-muted-foreground">
           {due.length} upcoming contact(s) in the next 48h — 1:1 visits and group meetings.
+          <br />
+          Reminders check automatically while the app is open; send now to run a check
+          immediately.
         </p>
         <Button
           size="sm"
           variant="outline"
           className="h-7 text-[11px]"
           onClick={() => {
-            const run = sendDueReminders();
+            const run = runReminderSweep();
             toast.success(
               `Reminders sent for ${run.sent.length} contact(s)` +
                 (run.smsSuppressed.length
