@@ -296,6 +296,8 @@ export function PatientHome() {
         </div>
       </section>
 
+      <YourGroupsSection patientId={patient.id} />
+
       {meds.length > 0 && (
         <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
