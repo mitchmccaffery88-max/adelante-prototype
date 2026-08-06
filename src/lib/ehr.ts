@@ -1104,8 +1104,16 @@ export interface ClinicLocation {
   name: string;
   address: string;
   city: string;
+  /** Postal code — part of the single canonical address, not a parallel blob. */
+  postalCode?: string;
   room?: string;
   inPersonServices: ServiceType[];
+}
+
+/** One place that renders a ClinicLocation's full street address. */
+export function formatLocationAddress(loc?: ClinicLocation): string {
+  if (!loc) return "";
+  return [loc.address, loc.room, loc.city, loc.postalCode].filter(Boolean).join(", ");
 }
 
 const SERVICE_TYPES: ServiceTypeInfo[] = [
@@ -1166,6 +1174,7 @@ const LOCATIONS: ClinicLocation[] = [
     name: "Adelante Visalia Hub",
     address: "1201 S Mooney Blvd",
     city: "Visalia, CA",
+    postalCode: "93277",
     room: "Suite 200",
     inPersonServices: [
       "intake",
@@ -1181,6 +1190,7 @@ const LOCATIONS: ClinicLocation[] = [
     name: "Porterville Community Office",
     address: "379 N Main St",
     city: "Porterville, CA",
+    postalCode: "93257",
     inPersonServices: ["therapy_individual", "peer_support", "case_management"],
   },
 ];
@@ -3643,6 +3653,12 @@ export interface GroupSession {
   id: string;
   /** Free text placeholder topic — NOT a real curriculum name. */
   topic: string;
+  /**
+   * Longer patient-safe "what to expect" text. Deliberately separate from
+   * `topic` (short label) because this string may surface to patients on
+   * /home. No curriculum content is authored here.
+   */
+  description?: string;
   facilitatorId: string;
   coFacilitatorId?: string;
   /**
@@ -10055,6 +10071,7 @@ export const AdelanteEHR = {
     const row: GroupSession = {
       ...input,
       topic: input.topic.trim(),
+      description: input.description?.trim() || undefined,
       id: `grp_${uid()}`,
       status: "scheduled",
       createdAt: new Date().toISOString(),
@@ -10107,6 +10124,69 @@ export const AdelanteEHR = {
     });
     emit();
     return row;
+  },
+
+  /**
+   * §Group sessions — edit the recurrence pattern and regenerate the FUTURE
+   * occurrence list only.
+   *
+   * History is never rewritten: an occurrence record is preserved when it is
+   * in the past, or when attendance was taken, or when it carries a shared
+   * note / attendee notes. Only unused future placeholders that no longer
+   * line up with the new pattern are dropped.
+   */
+  updateGroupRecurrence(
+    sessionId: string,
+    recurrence: GroupRecurrence,
+    actor: string,
+    opts?: { start?: string },
+  ): { session: GroupSession; removedFutureOccurrences: number; upcoming: string[] } {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    if (recurrence.kind === "weekly" && recurrence.daysOfWeek?.length === 0)
+      throw new Error("Pick at least one weekday for a weekly group.");
+    const previous = g.recurrence;
+    g.recurrence = recurrence;
+    if (opts?.start) g.start = opts.start;
+
+    const now = Date.now();
+    const nextStarts = new Set(AdelanteEHR.groupOccurrenceStarts(sessionId, 26));
+    let removed = 0;
+    for (let i = groupOccurrences.length - 1; i >= 0; i--) {
+      const occ = groupOccurrences[i]!;
+      if (occ.sessionId !== sessionId) continue;
+      const t = Date.parse(occ.occurrenceStart);
+      const isPast = !Number.isFinite(t) || t <= now;
+      const hasHistory =
+        !!occ.attendanceRecordedAt ||
+        occ.attendance.length > 0 ||
+        !!occ.sharedNote ||
+        Object.keys(occ.attendeeNoteIds).length > 0;
+      if (isPast || hasHistory) continue;
+      if (nextStarts.has(occ.occurrenceStart)) continue;
+      groupOccurrences.splice(i, 1);
+      removed++;
+    }
+
+    appendAudit({
+      category: "clinical",
+      action: "group_recurrence_updated",
+      actorId: actor,
+      detail: {
+        groupSessionId: sessionId,
+        from: previous.kind,
+        to: recurrence.kind,
+        daysOfWeek: recurrence.daysOfWeek,
+        until: recurrence.until,
+        removedFutureOccurrences: removed,
+      },
+    });
+    emit();
+    return {
+      session: g,
+      removedFutureOccurrences: removed,
+      upcoming: AdelanteEHR.groupOccurrenceStarts(sessionId, 6),
+    };
   },
 
   /** Standing roster for a group (active enrollments unless asked otherwise). */

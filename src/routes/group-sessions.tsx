@@ -12,12 +12,17 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
+  formatLocationAddress,
   useEhr,
   type GroupAttendanceStatus,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import {
+  occurrenceOwedAttendees,
+  occurrenceStatuses,
+} from "@/lib/groupMetrics";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,11 +134,15 @@ function GroupSessionsPage() {
 function CreateGroupCard({ actor }: { actor: string }) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
   const [facilitatorId, setFacilitatorId] = useState("");
   const [start, setStart] = useState("");
   const [capacity, setCapacity] = useState("8");
+  const [durationMin, setDurationMin] = useState("60");
+  const [locationId, setLocationId] = useState("");
   const [weekly, setWeekly] = useState(true);
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const locations = useEhr(() => AdelanteEHR.listLocations());
 
   if (!open)
     return (
@@ -178,6 +187,42 @@ function CreateGroupCard({ actor }: { actor: string }) {
             onChange={(e) => setCapacity(e.target.value)}
           />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Session length (minutes)</Label>
+          <Input
+            type="number"
+            min={5}
+            step={5}
+            value={durationMin}
+            onChange={(e) => setDurationMin(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Location</Label>
+          <Select value={locationId} onValueChange={setLocationId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a location (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name} — {formatLocationAddress(l)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label className="text-xs">
+            Description — patient-safe "what to expect" text (placeholder, not curriculum)
+          </Label>
+          <Textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="A weekly conversation group. Come as you are."
+          />
+        </div>
       </div>
       <label className="flex items-center gap-2 text-xs text-muted-foreground">
         <input type="checkbox" checked={weekly} onChange={(e) => setWeekly(e.target.checked)} />
@@ -193,11 +238,13 @@ function CreateGroupCard({ actor }: { actor: string }) {
               if (!facilitatorId) throw new Error("Pick a facilitator.");
               AdelanteEHR.createGroupSession({
                 topic,
+                description,
                 facilitatorId,
                 serviceType: "therapy_group",
                 modality: "in_person",
+                locationId: locationId || undefined,
                 start: startIso,
-                durationMin: 60,
+                durationMin: Number(durationMin) || 60,
                 capacity: Number(capacity) || 1,
                 recurrence: weekly
                   ? { kind: "weekly", daysOfWeek: [new Date(startIso).getDay()] }
@@ -207,6 +254,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
               toast.success("Group created");
               setOpen(false);
               setTopic("");
+              setDescription("");
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "Could not create the group.");
             }
@@ -232,6 +280,7 @@ function GroupDetail({
   actor: string;
 }) {
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const location = useEhr(() => AdelanteEHR.getLocation(group.locationId));
   const enrollments = useEhr(() => AdelanteEHR.listGroupEnrollments(group.id));
   const starts = useEhr(() => AdelanteEHR.groupOccurrenceStarts(group.id, 6));
   const [occurrence, setOccurrence] = useState<string>("");
@@ -265,7 +314,17 @@ function GroupDetail({
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}
         </p>
+        {group.description && <p className="text-sm text-foreground">{group.description}</p>}
+        {location && (
+          <p className="text-xs text-muted-foreground">
+            {location.name} — {formatLocationAddress(location)}
+          </p>
+        )}
       </Card>
+
+      {canWrite && <RecurrenceEditor group={group} actor={actor} />}
+
+      <OccurrenceStatusCard group={group} />
 
       <Card className="p-4 space-y-3">
         <h3 className="font-display text-sm text-navy">Standing roster</h3>
@@ -500,5 +559,157 @@ function GroupDetail({
         )}
       </Card>
     </div>
+  );
+}
+
+// §Group sessions — recurrence editor.
+//
+// Editing the pattern regenerates FUTURE occurrences only; `updateGroupRecurrence`
+// preserves anything in the past or already attended/documented, so a change
+// today can never rewrite attendance history.
+function RecurrenceEditor({ group, actor }: { group: GroupSession; actor: string }) {
+  const [weekly, setWeekly] = useState(group.recurrence.kind === "weekly");
+  const [days, setDays] = useState<number[]>(
+    group.recurrence.daysOfWeek?.length
+      ? group.recurrence.daysOfWeek
+      : [new Date(group.start).getDay()],
+  );
+  const [until, setUntil] = useState(group.recurrence.until ?? "");
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="font-display text-sm text-navy">Recurrence</h3>
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input type="checkbox" checked={weekly} onChange={(e) => setWeekly(e.target.checked)} />
+        Repeats weekly
+      </label>
+      {weekly && (
+        <div className="flex flex-wrap gap-1">
+          {dayLabels.map((label, idx) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={days.includes(idx)}
+              onClick={() =>
+                setDays((prev) =>
+                  prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx].sort(),
+                )
+              }
+              className={
+                "rounded-md border px-2 py-1 text-xs " +
+                (days.includes(idx) ? "border-teal bg-teal/10 text-navy" : "bg-card")
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {weekly && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">Repeat until (optional)</Label>
+          <Input type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        Past and already-attended occurrences are never changed — only unused future
+        occurrences are regenerated.
+      </p>
+      <Button
+        size="sm"
+        onClick={() => {
+          try {
+            const res = AdelanteEHR.updateGroupRecurrence(
+              group.id,
+              weekly
+                ? { kind: "weekly", daysOfWeek: days, until: until || undefined }
+                : { kind: "none" },
+              actor,
+            );
+            toast.success(
+              res.removedFutureOccurrences > 0
+                ? `Recurrence updated — ${res.removedFutureOccurrences} unused future occurrence(s) regenerated`
+                : "Recurrence updated",
+            );
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not update recurrence.");
+          }
+        }}
+      >
+        Save recurrence
+      </Button>
+    </Card>
+  );
+}
+
+// §Group sessions — attendance + note-completion status per occurrence.
+//
+// GATING: aggregate counts sit at the `group_sessions` (schedule management)
+// gate. The attendee-level "who still owes a note" list is PHI plus group
+// membership, so it is shown ONLY to roles holding `group_notes` access —
+// managing the schedule must not reveal which patients are behind.
+function OccurrenceStatusCard({ group }: { group: GroupSession }) {
+  const { role } = useActingStaff();
+  const notesAccess = canAccess(role, "group_notes");
+  const canSeeAttendees = !notesAccess.locked;
+  const rows = useEhr(() => occurrenceStatuses(group.id, 6));
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-sm text-navy">Attendance &amp; documentation status</h3>
+        {!canSeeAttendees && (
+          <Badge variant="outline" className="text-[10px] inline-flex items-center gap-1">
+            <Lock className="h-3 w-3" /> Counts only
+          </Badge>
+        )}
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No occurrences scheduled.</p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((r) => {
+            const owed = canSeeAttendees
+              ? occurrenceOwedAttendees(group.id, r.occurrenceStart)
+              : [];
+            return (
+              <li key={r.occurrenceStart} className="rounded-md border p-2.5 text-xs space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-navy">
+                    <ClientDate value={r.occurrenceStart} />
+                  </span>
+                  {r.attendanceRecorded ? (
+                    <Badge className="bg-teal/15 text-teal">Attendance taken</Badge>
+                  ) : (
+                    <Badge variant="outline">Attendance not taken</Badge>
+                  )}
+                  {r.attendanceRecorded &&
+                    (r.notesOwed === 0 ? (
+                      <Badge className="bg-success/20 text-success">Notes complete</Badge>
+                    ) : (
+                      <Badge className="bg-gold/30 text-navy">{r.notesOwed} note(s) owed</Badge>
+                    ))}
+                </div>
+                <div className="text-muted-foreground">
+                  Present {r.present} · Late {r.late} · Absent {r.absent} · Individualized notes{" "}
+                  {r.notesComplete}/{r.notesComplete + r.notesOwed}
+                </div>
+                {canSeeAttendees && owed.length > 0 && (
+                  <div className="text-muted-foreground">
+                    Owing:{" "}
+                    {owed.map((o) => o.patientName).join(", ")}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        "Complete" uses the same rule documentation enforces: every present or late attendee
+        needs their own individualized note.
+      </p>
+    </Card>
   );
 }

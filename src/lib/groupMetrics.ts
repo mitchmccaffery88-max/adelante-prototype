@@ -110,6 +110,15 @@ export interface NextGroupOccurrence {
   start: string;
 }
 
+/** Soonest future occurrence of one group. Single source of "next meeting". */
+export function nextOccurrenceForGroup(sessionId: string, now = new Date()): string | null {
+  for (const start of AdelanteEHR.groupOccurrenceStarts(sessionId, 14)) {
+    const t = Date.parse(start);
+    if (Number.isFinite(t) && t > now.getTime()) return start;
+  }
+  return null;
+}
+
 /** Soonest future occurrence across every group the patient is enrolled in. */
 export function nextGroupOccurrenceForPatient(
   patientId: string,
@@ -117,12 +126,9 @@ export function nextGroupOccurrenceForPatient(
 ): NextGroupOccurrence | null {
   let best: NextGroupOccurrence | null = null;
   for (const g of AdelanteEHR.groupsForPatient(patientId)) {
-    for (const start of AdelanteEHR.groupOccurrenceStarts(g.id, 14)) {
-      const t = Date.parse(start);
-      if (!Number.isFinite(t) || t <= now.getTime()) continue;
-      if (!best || start < best.start) best = { sessionId: g.id, topic: g.topic, start };
-      break;
-    }
+    const start = nextOccurrenceForGroup(g.id, now);
+    if (!start) continue;
+    if (!best || start < best.start) best = { sessionId: g.id, topic: g.topic, start };
   }
   return best;
 }
@@ -223,4 +229,89 @@ export function enrolledPatientCount(): number {
     for (const e of AdelanteEHR.listGroupEnrollments(g.id)) ids.add(e.patientId);
   }
   return ids.size;
+}
+
+// ---------------------------------------------------------------------------
+// Staff dashboard — attendance + note-completion per occurrence.
+//
+// Two shapes on purpose:
+//   • `occurrenceStatus`  — AGGREGATE COUNTS ONLY, no patient identifiers.
+//     Safe at the lower `group_sessions` (schedule-management) gate.
+//   • `occurrenceOwedAttendees` — names WHICH patients still owe an
+//     individualized note. That is PHI + group membership, so callers MUST
+//     hold `group_notes` access (same tier as the notes themselves).
+//
+// "Complete" is defined by the same rule `documentGroupOccurrence` enforces:
+// every PRESENT (or late) attendee has their own individualized note.
+// ---------------------------------------------------------------------------
+export interface OccurrenceStatus {
+  sessionId: string;
+  occurrenceStart: string;
+  attendanceRecorded: boolean;
+  present: number;
+  late: number;
+  absent: number;
+  /** Present/late attendees with an individualized note on file. */
+  notesComplete: number;
+  /** Present/late attendees still owing an individualized note. */
+  notesOwed: number;
+  sharedNoteSigned: boolean;
+}
+
+function attendeesOwing(sessionId: string, occurrenceStart: string): string[] {
+  const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+  if (!occ) return [];
+  return occ.attendance
+    .filter((a) => a.status !== "absent" && !occ.attendeeNoteIds[a.patientId])
+    .map((a) => a.patientId);
+}
+
+export function occurrenceStatus(sessionId: string, occurrenceStart: string): OccurrenceStatus {
+  const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+  const attendance = occ?.attendance ?? [];
+  const present = attendance.filter((a) => a.status === "present").length;
+  const late = attendance.filter((a) => a.status === "late").length;
+  const absent = attendance.filter((a) => a.status === "absent").length;
+  const owed = attendeesOwing(sessionId, occurrenceStart).length;
+  const expected = present + late;
+  return {
+    sessionId,
+    occurrenceStart,
+    attendanceRecorded: !!occ?.attendanceRecordedAt,
+    present,
+    late,
+    absent,
+    notesComplete: expected - owed,
+    notesOwed: owed,
+    sharedNoteSigned: !!occ?.sharedNote?.signedAt || !!occ?.sharedNote,
+  };
+}
+
+/** Upcoming + already-materialized occurrences, newest scheduled first. */
+export function occurrenceStatuses(sessionId: string, count = 6): OccurrenceStatus[] {
+  const starts = new Set(AdelanteEHR.groupOccurrenceStarts(sessionId, count));
+  for (const occ of AdelanteEHR.listGroupOccurrenceRecords(sessionId)) starts.add(occ.occurrenceStart);
+  return [...starts]
+    .sort((a, b) => b.localeCompare(a))
+    .map((s) => occurrenceStatus(sessionId, s));
+}
+
+export interface OwedAttendee {
+  patientId: string;
+  patientName: string;
+}
+
+/**
+ * PHI — caller must already hold `group_notes` access. Returns the specific
+ * patients whose individualized note is still missing for this occurrence.
+ */
+export function occurrenceOwedAttendees(
+  sessionId: string,
+  occurrenceStart: string,
+): OwedAttendee[] {
+  const patients = AdelanteEHR.listPatients();
+  return attendeesOwing(sessionId, occurrenceStart).map((id) => {
+    const p = patients.find((x) => x.id === id);
+    return { patientId: id, patientName: p ? `${p.firstName} ${p.lastName}` : id };
+  });
 }

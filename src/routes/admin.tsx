@@ -92,6 +92,9 @@ function AdminPage() {
   // Cohort filters
   const [coverageFilter, setCoverageFilter] = useState<string>("all");
   const [bucketFilter, setBucketFilter] = useState<string>("all");
+  // §Group sessions — "Next contact" can be a group occurrence or a 1:1
+  // appointment; this filter uses the SAME resolver the cell renders with.
+  const [contactFilter, setContactFilter] = useState<string>("all");
   const filteredPatients = useMemo(
     () =>
       patients.filter((p) => {
@@ -102,9 +105,10 @@ function AdminPage() {
           if (bucketFilter === "31-60" && !(d > 30 && d <= 60)) return false;
           if (bucketFilter === "61-90" && !(d > 60)) return false;
         }
+        if (contactFilter !== "all" && nextContactKind(p.id) !== contactFilter) return false;
         return true;
       }),
-    [patients, coverageFilter, bucketFilter],
+    [patients, coverageFilter, bucketFilter, contactFilter],
   );
 
   const downloadCsv = () => {
@@ -259,6 +263,17 @@ function AdminPage() {
                   <SelectItem value="other">Other</SelectItem>
                 </SelectContent>
               </Select>
+              <Select value={contactFilter} onValueChange={setContactFilter}>
+                <SelectTrigger className="h-8 w-[160px] text-xs" aria-label="Next contact type">
+                  <SelectValue placeholder="Next contact" />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="all">Any next contact</SelectItem>
+                  <SelectItem value="group">Group occurrence</SelectItem>
+                  <SelectItem value="one_to_one">1:1 appointment</SelectItem>
+                  <SelectItem value="none">No next contact</SelectItem>
+                </SelectContent>
+              </Select>
               <Button size="sm" variant="outline" onClick={downloadCsv}>
                 <Download className="h-3.5 w-3.5 mr-1.5" /> {t("adminExportCsv")}
               </Button>
@@ -306,25 +321,19 @@ function AdminPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {(() => {
-                      // "Next contact" spans both 1:1 appointments and group
-                      // occurrences — the Appointment model can't see groups.
-                      const upcoming = AdelanteEHR.appointmentsForPatient(p.id)
-                        .filter((a) => new Date(a.start).getTime() > Date.now())
-                        .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
-                      const group = nextGroupOccurrenceForPatient(p.id);
-                      const useGroup =
-                        group && (!upcoming || group.start < upcoming.start) ? group : null;
-                      if (useGroup) {
+                      const contact = nextContact(p.id);
+                      if (contact.kind === "none") return "—";
+                      if (contact.kind === "group") {
                         return (
                           <span className="inline-flex items-center gap-1.5">
-                            <ClientDate value={useGroup.start} />
+                            <ClientDate value={contact.start} />
                             <Badge variant="outline" className="text-[10px]">
                               Group
                             </Badge>
                           </span>
                         );
                       }
-                      return upcoming ? <ClientDate value={upcoming.start} /> : "—";
+                      return <ClientDate value={contact.start} />;
                     })()}
                   </TableCell>
                   <TableCell>
@@ -771,6 +780,23 @@ function VendorStatusCard() {
 }
 
 // §Group sessions — pilot dashboard activity strip.
+
+// Single resolver for the "Next contact" column so the filter and the cell
+// can never disagree. Group occurrences are invisible to the Appointment model.
+function nextContact(patientId: string) {
+  const upcoming = AdelanteEHR.appointmentsForPatient(patientId)
+    .filter((a) => new Date(a.start).getTime() > Date.now())
+    .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
+  const group = nextGroupOccurrenceForPatient(patientId);
+  if (group && (!upcoming || group.start < upcoming.start))
+    return { kind: "group" as const, start: group.start };
+  if (upcoming) return { kind: "one_to_one" as const, start: upcoming.start };
+  return { kind: "none" as const, start: undefined };
+}
+
+function nextContactKind(patientId: string) {
+  return nextContact(patientId).kind;
+}
 //
 // Group care is invisible to every Appointment-derived KPI above, so it gets
 // its own row. Counts only; no billing or curriculum content is inferred here.

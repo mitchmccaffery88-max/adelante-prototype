@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
+import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -295,6 +296,8 @@ export function PatientHome() {
           <ReferralsForYouCard patientId={patient.id} />
         </div>
       </section>
+
+      <YourGroupsSection patientId={patient.id} />
 
       {meds.length > 0 && (
         <Card className="p-5">
@@ -785,6 +788,54 @@ function Row({ label, children }: { label: string; children: React.ReactNode }) 
 
 function ConsentCard({ patientId }: { patientId: string }) {
   return <ConsentCardInner patientId={patientId} />;
+}
+
+// §Group sessions — patient-facing, read-only. Topic + next date ONLY: no
+// attendance history, no roster of other members, no note content. Reuses
+// groupsForPatient / nextGroupOccurrenceForPatient rather than recomputing.
+function YourGroupsSection({ patientId }: { patientId: string }) {
+  const groups = useEhr(() => AdelanteEHR.groupsForPatient(patientId));
+  if (groups.length === 0) return null;
+  return (
+    <section
+      aria-labelledby="your-groups-heading"
+      className="rounded-xl border-2 border-teal/30 bg-secondary/30 p-4 sm:p-5"
+      data-testid="patient-your-groups"
+    >
+      <h2
+        id="your-groups-heading"
+        className="font-display text-lg text-navy flex items-center gap-2"
+      >
+        <Users className="h-5 w-5 text-teal" /> Your groups
+      </h2>
+      <p className="text-xs text-muted-foreground mt-1">
+        Groups you take part in, and when they next meet.
+      </p>
+      <ul className="mt-4 space-y-3">
+        {groups.map((g) => {
+          const nextForThis = nextOccurrenceForGroup(g.id);
+          return (
+            <li key={g.id} className="rounded-lg border bg-card p-3">
+              <div className="text-sm font-medium text-navy">{g.topic}</div>
+              {g.description && (
+                <p className="mt-1 text-xs text-muted-foreground">{g.description}</p>
+              )}
+              <div className="mt-1.5 text-xs text-muted-foreground flex items-center gap-1.5">
+                <CalIcon className="h-3.5 w-3.5 text-teal" />
+                {nextForThis ? (
+                  <>
+                    Next: <ClientDate value={nextForThis} />
+                  </>
+                ) : (
+                  <>Next meeting time to be confirmed.</>
+                )}
+              </div>
+            </li>
+          );
+        })}
+      </ul>
+    </section>
+  );
 }
 
 function SupportPlanCard({ patientId }: { patientId: string }) {
