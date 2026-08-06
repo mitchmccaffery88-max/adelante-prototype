@@ -23,6 +23,7 @@ import {
   CalendarClock,
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
+import { PatientGroupScheduling } from "@/components/PatientGroupScheduling";
 
 type ScheduleSearch = { reschedule?: string };
 
@@ -78,6 +79,9 @@ function SchedulePage() {
   const clinicianStillValid = clinicians.some((c) => c.id === clinicianId);
   const effectiveClinicianId = clinicianStillValid ? clinicianId : (clinicians[0]?.id ?? "");
   const [selectedStart, setSelectedStart] = useState<string>("");
+  // Two booking paths on one page: the untouched 1:1 flow, and group
+  // scheduling (view enrolled groups + self-join OPEN groups only).
+  const [tab, setTab] = useState<"one_to_one" | "groups">("one_to_one");
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
