@@ -87,6 +87,13 @@ export interface NavEntry {
   icon: LucideIcon;
   /** Route path exactly as registered in src/routes. */
   to: string;
+  /**
+   * Optional search params applied when the entry is a *pre-filtered view* of
+   * an existing page rather than a page of its own (§Facility & Custody:
+   * "Facility protocols" is the Worklist filtered to facility-context
+   * protocol rounds — we filter into the Worklist, we don't clone its UI).
+   */
+  search?: Record<string, string>;
   group: NavGroup;
   gate: NavGate;
 }
@@ -242,8 +249,12 @@ export const STAFF_NAV: NavEntry[] = [
     label: "Facility protocols",
     desc: "CIWA/COWS rounds for booked patients",
     icon: ClipboardList,
-    to: "/facility-protocols",
+    // Deep link into the real Worklist, pre-filtered — see NavEntry.search.
+    to: "/worklist",
+    search: { view: "facility-protocols" },
     group: "facility",
+    // Both gates matter: it is facility work (custody_tracking) shown through
+    // the Worklist, so a role must be able to open the Worklist too.
     gate: { kind: "record_class", anyOf: ["custody_tracking"] },
   },
   {
