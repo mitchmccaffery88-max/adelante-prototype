@@ -155,7 +155,7 @@ function GroupAuditPage() {
                           variant={r.event.action === "group_enrollment_blocked" ? "destructive" : "outline"}
                           className="text-[10px]"
                         >
-                          {ACTION_LABEL.get(r.event.action) ?? r.event.action.replace(/_/g, " ")}
+                          {ACTION_LABEL.get(r.event.action as never) ?? r.event.action.replace(/_/g, " ")}
                         </Badge>
                       </td>
                       <td className="p-3 text-xs">
