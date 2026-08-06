@@ -135,6 +135,15 @@ export const STAFF_NAV: NavEntry[] = [
     group: "care",
     gate: { kind: "record_class", anyOf: ["meds_erx"] },
   },
+  {
+    id: "group-sessions",
+    label: "Group sessions",
+    desc: "Group schedule, roster & attendance",
+    icon: Users,
+    to: "/group-sessions",
+    group: "care",
+    gate: { kind: "record_class", anyOf: ["group_sessions"] },
+  },
 
   // ----- Queues (cross-patient work) -----
   {

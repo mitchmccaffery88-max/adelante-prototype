@@ -32,7 +32,6 @@ import {
 import {
   AdelanteEHR,
   useEhr,
-  isNoteSudSensitive,
   noteStatus,
   type CoordinationChannel,
   type CoordinationDirection,
@@ -67,6 +66,7 @@ import {
   getStaffMember,
   canAccess,
   type RecordClass,
+  noteGateClass,
 } from "@/lib/roles";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
@@ -1531,7 +1531,10 @@ export function NotesTab({
   const canWrite = !readOnly;
   const clinicians = AdelanteEHR.listClinicians();
   // Same 42 CFR Part 2 gate that hides SUD problem entries — one mechanism.
-  const sudGate = canAccess(role, "screeners_sud", patient);
+  const noteGate = (n: ProgressNote) => {
+    const cls = noteGateClass(n);
+    return cls ? canAccess(role, cls, patient) : { locked: false, reason: undefined };
+  };
   return (
     <div className="space-y-4">
       {canWrite && (
@@ -1692,8 +1695,10 @@ export function NotesTab({
             patientId={patient.id}
             note={n}
             canWrite={canWrite}
-            sudLocked={isNoteSudSensitive(n) && sudGate.locked}
-            sudReason={sudGate.reason}
+            // §Group sessions — one gate helper decides which record class
+            // masks a note (SUD, group, or psychotherapy tier).
+            sudLocked={noteGate(n).locked}
+            sudReason={noteGate(n).reason}
             authorLabel={
               clinicians.find((c) => c.id === n.clinicianId)?.name ??
               getStaffMember(n.clinicianId)?.name ??

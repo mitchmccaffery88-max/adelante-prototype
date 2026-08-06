@@ -1452,7 +1452,13 @@ export interface ProgressNote {
    * so a SUD-tied note masks through the existing 42 CFR Part 2 consent gate
    * rather than a second masking mechanism. Absent = not sensitive.
    */
-  category?: "sud" | "mental_health" | "pregnancy" | "medical";
+  category?: "sud" | "mental_health" | "pregnancy" | "medical" | "group";
+  /**
+   * §Group sessions — set on the individualized per-attendee note produced by
+   * a group occurrence. Its presence is what makes the note identifiable as a
+   * per-attendee billable unit (see `GroupAttendeeNoteRef`).
+   */
+  groupRef?: GroupAttendeeNoteRef;
   /**
    * Provenance seam for a future AI-drafting layer ("Adel", separate project).
    * Schema only: nothing in this app writes "ai_draft" today. The point is that
@@ -1604,13 +1610,20 @@ export type ConsentCategory =
   | "sud_treatment"
   | "mental_health"
   | "case_coordination"
-  | "billing";
+  | "billing"
+  // §Group sessions — PLACEHOLDER category. OPEN QUESTION FOR CHRISTI:
+  // whether group participation genuinely requires its own ASCMI consent
+  // category, or whether it falls under general treatment consent, is a
+  // regulatory/clinical determination that is explicitly NOT decided here.
+  // The mechanism is wired so either answer is a one-line change.
+  | "group_participation";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
   { key: "mental_health", label: "Mental health (placeholder)" },
   { key: "case_coordination", label: "Case coordination (placeholder)" },
   { key: "billing", label: "Billing (placeholder)" },
+  { key: "group_participation", label: "Group participation (placeholder)" },
 ];
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
@@ -3598,6 +3611,149 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     patientId: p.id,
     detail: { triggeredBy, updatedBy },
   });
+}
+
+// ===========================================================================
+// §Group sessions — group counseling as a first-class care-delivery type.
+//
+// PLACEHOLDER CONTENT WARNING (same discipline as the ASCMI consent work):
+// group topics, capacity numbers, recurrence patterns and the billing code
+// field below are STRUCTURE ONLY. DHCS/DMC-ODS group-size limits, curriculum
+// names and billing/CPT/H-codes are deliberately NOT authored here — they are
+// Christi's / the billing team's content to supply before production.
+//
+// A GroupSession is intentionally NOT an Appointment: the 1:1
+// `bookAppointment` flow is patient-driven and single-patient, while group
+// placement is a staff clinical decision with a standing roster. Nothing in
+// this block touches the existing Appointment path.
+// ===========================================================================
+
+export type GroupSessionStatus = "scheduled" | "cancelled" | "completed";
+
+/** Simple recurring pattern — weekly on given weekdays, or a one-off. */
+export interface GroupRecurrence {
+  kind: "none" | "weekly";
+  /** 0=Sun … 6=Sat. Ignored when kind === "none". */
+  daysOfWeek?: number[];
+  /** ISO date (yyyy-mm-dd) after which no occurrences are generated. */
+  until?: string;
+}
+
+export interface GroupSession {
+  id: string;
+  /** Free text placeholder topic — NOT a real curriculum name. */
+  topic: string;
+  facilitatorId: string;
+  coFacilitatorId?: string;
+  /**
+   * Reuses the existing `ServiceType` union: `therapy_group` already exists,
+   * so no new service taxonomy is invented here.
+   */
+  serviceType: ServiceType;
+  modality: "video" | "phone" | "in_person";
+  locationId?: string;
+  /** ISO datetime of the first occurrence. */
+  start: string;
+  durationMin: number;
+  /** PLACEHOLDER: not a DHCS-sanctioned group-size limit. */
+  capacity: number;
+  recurrence: GroupRecurrence;
+  status: GroupSessionStatus;
+  createdAt: string;
+  createdBy: string;
+  cancelledAt?: string;
+  cancellationReason?: string;
+}
+
+/** Standing enrollment in a recurring group — not a per-occurrence booking. */
+export interface GroupSessionEnrollment {
+  id: string;
+  sessionId: string;
+  patientId: string;
+  enrolledAt: string;
+  enrolledBy: string;
+  endedAt?: string;
+  endReason?: string;
+}
+
+export type GroupAttendanceStatus = "present" | "absent" | "late";
+
+export interface GroupAttendanceEntry {
+  patientId: string;
+  status: GroupAttendanceStatus;
+  note?: string;
+}
+
+/**
+ * The shared group note for one occurrence. Signed ONCE by the facilitator.
+ * It is deliberately not a per-patient ProgressNote: it documents the group,
+ * not an individual, and carries a roster snapshot instead.
+ */
+export interface GroupSharedNote {
+  topicCovered: string;
+  groupProcess: string;
+  facilitatorId: string;
+  rosterSnapshot: GroupAttendanceEntry[];
+  createdAt: string;
+  signedBy?: string;
+  signedAt?: string;
+}
+
+/** Per-occurrence record: attendance + documentation linkage. */
+export interface GroupOccurrenceRecord {
+  id: string;
+  sessionId: string;
+  /** ISO datetime identifying which occurrence of the recurring group. */
+  occurrenceStart: string;
+  attendance: GroupAttendanceEntry[];
+  attendanceRecordedAt?: string;
+  attendanceRecordedBy?: string;
+  sharedNote?: GroupSharedNote;
+  /** patientId -> individualized ProgressNote id. */
+  attendeeNoteIds: Record<string, string>;
+}
+
+/**
+ * Back-reference stamped onto each individualized attendee note.
+ *
+ * BILLING PLACEHOLDER: `billingCodePlaceholder` is intentionally empty. No
+ * CPT/H-code is invented anywhere in this codebase; the Claims Worklist reads
+ * charges from `ehr-ext` claims, and a group attendee claim is created from
+ * this reference (see `upsertClaimFromGroupAttendee` in ehr-ext.ts).
+ */
+export interface GroupAttendeeNoteRef {
+  sessionId: string;
+  occurrenceStart: string;
+  facilitatorId: string;
+  /** Individualized attendee notes are the billable unit in DMC-ODS. */
+  billingEligible: boolean;
+  billingCodePlaceholder?: string;
+}
+
+const groupSessions: GroupSession[] = [];
+const groupEnrollments: GroupSessionEnrollment[] = [];
+const groupOccurrences: GroupOccurrenceRecord[] = [];
+
+function _groupOccurrenceKey(sessionId: string, start: string) {
+  return `${sessionId}::${start}`;
+}
+
+/** Materialize (or fetch) the per-occurrence record. */
+function _ensureGroupOccurrence(sessionId: string, occurrenceStart: string) {
+  let row = groupOccurrences.find(
+    (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
+  );
+  if (!row) {
+    row = {
+      id: _groupOccurrenceKey(sessionId, occurrenceStart),
+      sessionId,
+      occurrenceStart,
+      attendance: [],
+      attendeeNoteIds: {},
+    };
+    groupOccurrences.push(row);
+  }
+  return row;
 }
 
 export const AdelanteEHR = {
@@ -9882,6 +10038,287 @@ export const AdelanteEHR = {
     });
     emit();
     return recon;
+  },
+
+  // ---------- §Group sessions ----------
+  listGroupSessions: () =>
+    [...groupSessions].sort((a, b) => +new Date(a.start) - +new Date(b.start)),
+  getGroupSession: (id: string) => groupSessions.find((g) => g.id === id),
+
+  createGroupSession(
+    input: Omit<GroupSession, "id" | "status" | "createdAt" | "createdBy"> & {
+      createdBy: string;
+    },
+  ): GroupSession {
+    if (!input.topic.trim()) throw new Error("Give the group a topic.");
+    if (input.capacity < 1) throw new Error("Capacity must be at least 1.");
+    const row: GroupSession = {
+      ...input,
+      topic: input.topic.trim(),
+      id: `grp_${uid()}`,
+      status: "scheduled",
+      createdAt: new Date().toISOString(),
+      createdBy: input.createdBy,
+    };
+    groupSessions.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "group_session_created",
+      actorId: input.createdBy,
+      detail: {
+        groupSessionId: row.id,
+        topic: row.topic,
+        serviceType: row.serviceType,
+        recurrence: row.recurrence.kind,
+        capacity: row.capacity,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  updateGroupSession(id: string, patch: Partial<Omit<GroupSession, "id">>, actor: string) {
+    const row = groupSessions.find((g) => g.id === id);
+    if (!row) throw new Error("Group not found.");
+    Object.assign(row, patch);
+    appendAudit({
+      category: "clinical",
+      action: "group_session_updated",
+      actorId: actor,
+      detail: { groupSessionId: id, fields: Object.keys(patch) },
+    });
+    emit();
+    return row;
+  },
+
+  cancelGroupSession(id: string, reason: string, actor: string) {
+    const row = groupSessions.find((g) => g.id === id);
+    if (!row) throw new Error("Group not found.");
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A cancellation reason is required.");
+    row.status = "cancelled";
+    row.cancelledAt = new Date().toISOString();
+    row.cancellationReason = trimmed;
+    appendAudit({
+      category: "clinical",
+      action: "group_session_cancelled",
+      actorId: actor,
+      detail: { groupSessionId: id, reason: trimmed },
+    });
+    emit();
+    return row;
+  },
+
+  /** Standing roster for a group (active enrollments unless asked otherwise). */
+  listGroupEnrollments(sessionId: string, opts?: { includeEnded?: boolean }) {
+    return groupEnrollments.filter(
+      (e) => e.sessionId === sessionId && (opts?.includeEnded || !e.endedAt),
+    );
+  },
+
+  /** Every active group a patient is enrolled in. */
+  groupsForPatient(patientId: string): GroupSession[] {
+    const ids = groupEnrollments
+      .filter((e) => e.patientId === patientId && !e.endedAt)
+      .map((e) => e.sessionId);
+    return groupSessions.filter((g) => ids.includes(g.id) && g.status !== "cancelled");
+  },
+
+  /**
+   * Staff-initiated enrollment. There is deliberately no patient self-service
+   * path: group placement is a clinical decision, unlike 1:1 scheduling.
+   */
+  enrollInGroup(input: {
+    sessionId: string;
+    patientId: string;
+    enrolledBy: string;
+  }): GroupSessionEnrollment {
+    const group = groupSessions.find((g) => g.id === input.sessionId);
+    if (!group) throw new Error("Group not found.");
+    if (group.status === "cancelled") throw new Error("That group is cancelled.");
+    const already = groupEnrollments.find(
+      (e) => e.sessionId === input.sessionId && e.patientId === input.patientId && !e.endedAt,
+    );
+    if (already) return already;
+    const active = AdelanteEHR.listGroupEnrollments(input.sessionId);
+    // PLACEHOLDER limit: enforces the group's OWN capacity field only. No
+    // DHCS group-size rule is encoded here.
+    if (active.length >= group.capacity) throw new Error("This group is at capacity.");
+    const row: GroupSessionEnrollment = {
+      id: `gre_${uid()}`,
+      sessionId: input.sessionId,
+      patientId: input.patientId,
+      enrolledAt: new Date().toISOString(),
+      enrolledBy: input.enrolledBy,
+    };
+    groupEnrollments.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "group_enrollment_added",
+      patientId: input.patientId,
+      actorId: input.enrolledBy,
+      detail: { groupSessionId: input.sessionId, enrollmentId: row.id },
+    });
+    emit();
+    return row;
+  },
+
+  endGroupEnrollment(enrollmentId: string, reason: string, actor: string) {
+    const row = groupEnrollments.find((e) => e.id === enrollmentId);
+    if (!row) throw new Error("Enrollment not found.");
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A reason is required to end an enrollment.");
+    row.endedAt = new Date().toISOString();
+    row.endReason = trimmed;
+    appendAudit({
+      category: "clinical",
+      action: "group_enrollment_ended",
+      patientId: row.patientId,
+      actorId: actor,
+      detail: { groupSessionId: row.sessionId, enrollmentId, reason: trimmed },
+    });
+    emit();
+    return row;
+  },
+
+  /** Projected occurrence start times for a group. Pure date math. */
+  groupOccurrenceStarts(sessionId: string, count = 8): string[] {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) return [];
+    const first = new Date(g.start);
+    if (g.recurrence.kind === "none") return [first.toISOString()];
+    const days = g.recurrence.daysOfWeek?.length
+      ? g.recurrence.daysOfWeek
+      : [first.getDay()];
+    const until = g.recurrence.until ? new Date(`${g.recurrence.until}T23:59:59`) : undefined;
+    const out: string[] = [];
+    const cursor = new Date(first);
+    for (let i = 0; i < count * 7 + 7 && out.length < count; i++) {
+      if (days.includes(cursor.getDay()) && +cursor >= +first) {
+        if (until && +cursor > +until) break;
+        out.push(new Date(cursor).toISOString());
+      }
+      cursor.setDate(cursor.getDate() + 1);
+      cursor.setHours(first.getHours(), first.getMinutes(), 0, 0);
+    }
+    return out;
+  },
+
+  listGroupOccurrenceRecords: (sessionId: string) =>
+    groupOccurrences.filter((o) => o.sessionId === sessionId),
+
+  getGroupOccurrence(sessionId: string, occurrenceStart: string) {
+    return groupOccurrences.find(
+      (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
+    );
+  },
+
+  /** Facilitator-recorded per-occurrence attendance. */
+  recordGroupAttendance(
+    sessionId: string,
+    occurrenceStart: string,
+    entries: GroupAttendanceEntry[],
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.attendance = entries;
+    row.attendanceRecordedAt = new Date().toISOString();
+    row.attendanceRecordedBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_attendance_recorded",
+      actorId: actor,
+      detail: {
+        groupSessionId: sessionId,
+        occurrenceStart,
+        present: entries.filter((e) => e.status !== "absent").length,
+        absent: entries.filter((e) => e.status === "absent").length,
+      },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Document one occurrence: ONE shared group note + ONE individualized
+   * ProgressNote per present/late attendee. The per-attendee note is the
+   * billing-critical artifact — a blanket group note for everyone is a real
+   * DMC-ODS audit/denial risk, so the two are always produced together.
+   *
+   * The attendee notes are ordinary ProgressNotes (`category: "group"`), so
+   * they inherit the existing signing, masking and consent gates untouched.
+   */
+  documentGroupOccurrence(input: {
+    sessionId: string;
+    occurrenceStart: string;
+    facilitatorId: string;
+    topicCovered: string;
+    groupProcess: string;
+    /** patientId -> that patient's individualized participation narrative. */
+    perAttendee: Record<string, string>;
+    actor: string;
+  }): { occurrence: GroupOccurrenceRecord; attendeeNoteIds: string[] } {
+    const g = groupSessions.find((x) => x.id === input.sessionId);
+    if (!g) throw new Error("Group not found.");
+    const row = _ensureGroupOccurrence(input.sessionId, input.occurrenceStart);
+    const present = row.attendance.filter((a) => a.status !== "absent");
+    if (present.length === 0) throw new Error("Record attendance before documenting.");
+    const missing = present.filter((a) => !(input.perAttendee[a.patientId] ?? "").trim());
+    if (missing.length > 0)
+      throw new Error("Every present attendee needs their own individualized note.");
+
+    row.sharedNote = {
+      topicCovered: input.topicCovered.trim(),
+      groupProcess: input.groupProcess.trim(),
+      facilitatorId: input.facilitatorId,
+      rosterSnapshot: row.attendance.map((a) => ({ ...a })),
+      createdAt: new Date().toISOString(),
+      signedBy: input.actor,
+      signedAt: new Date().toISOString(),
+    };
+
+    const noteIds: string[] = [];
+    for (const a of present) {
+      const saved = AdelanteEHR.addProgressNote(a.patientId, {
+        clinicianId: input.facilitatorId,
+        date: input.occurrenceStart,
+        sessionType: "group",
+        subjective: input.perAttendee[a.patientId]!.trim(),
+        objective: `Attendance: ${a.status}. Group topic: ${g.topic}.`,
+        assessment: "",
+        plan: "",
+        category: "group",
+        status: "draft",
+        groupRef: {
+          sessionId: g.id,
+          occurrenceStart: input.occurrenceStart,
+          facilitatorId: input.facilitatorId,
+          billingEligible: true,
+          // PLACEHOLDER: no CPT/H-code invented. Billing supplies this.
+          billingCodePlaceholder: undefined,
+        },
+      });
+      if (saved) {
+        row.attendeeNoteIds[a.patientId] = saved.id;
+        noteIds.push(saved.id);
+      }
+    }
+
+    appendAudit({
+      category: "clinical",
+      action: "group_occurrence_documented",
+      actorId: input.actor,
+      detail: {
+        groupSessionId: g.id,
+        occurrenceStart: input.occurrenceStart,
+        attendeeNotes: noteIds.length,
+        sharedNote: true,
+      },
+    });
+    emit();
+    return { occurrence: row, attendeeNoteIds: noteIds };
   },
 };
 

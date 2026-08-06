@@ -2,7 +2,7 @@
 // Additive layer on top of the existing persona routing; never replaces it.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type ConsentCategory, type Patient } from "./ehr";
+import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } from "./ehr";
 
 export type StaffRole =
   | "case_manager"
@@ -59,7 +59,11 @@ export type RecordClass =
   | "worklist"
   | "note_templates"
   | "catalog_governance"
-  | "scheduling_rules";
+  | "scheduling_rules"
+  // §Group sessions — managing the group itself (schedule, roster, attendance).
+  | "group_sessions"
+  // §Group sessions — the clinical documentation produced by a group.
+  | "group_notes";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -318,6 +322,33 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing: "none",
     billing_coordinator: "none",
   },
+  // §Group sessions — scheduling/roster management. Group placement is a
+  // clinical decision, so the roles that make it (therapist, pmhnp,
+  // case_manager) write; clinical_coordinator writes for the same oversight
+  // reason it owns protocols and crisis disposition; peer_specialist reads
+  // (they co-facilitate and need the schedule) but does not place patients;
+  // billing reads because group attendance drives per-attendee claims.
+  group_sessions: {
+    therapist: "write",
+    pmhnp: "write",
+    case_manager: "write",
+    clinical_coordinator: "write",
+    sys_admin: "write",
+    peer_specialist: "read",
+    billing: "read",
+    billing_coordinator: "read",
+  },
+  // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
+  // pointed at the `group_participation` consent category. No parallel check:
+  // every group note flows through canAccess() like any other note.
+  group_notes: {
+    therapist: "write",
+    pmhnp: "write",
+    case_manager: "consent_gated",
+    peer_specialist: "consent_gated",
+    clinical_coordinator: "consent_gated",
+    billing: "consent_gated",
+  },
 };
 
 /**
@@ -327,7 +358,23 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
 const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
   screeners_sud: "sud_treatment",
   sud_treatment: "sud_treatment",
+  // OPEN QUESTION (Christi): is group participation legally its own ASCMI
+  // category, or covered by general treatment consent? Placeholder mapping.
+  group_notes: "group_participation",
 };
+
+/**
+ * Which record class gates a given note. One place, so masking can never
+ * diverge between the chart, print/export and autofill.
+ */
+export function noteGateClass(
+  note: Pick<ProgressNote, "category" | "restrictedTier">,
+): RecordClass | undefined {
+  if (note.restrictedTier === "psychotherapy_notes") return "psychotherapy_notes";
+  if (note.category === "sud") return "screeners_sud";
+  if (note.category === "group") return "group_notes";
+  return undefined;
+}
 
 export function canAccess(
   role: StaffRole,
