@@ -775,6 +775,23 @@ function VendorStatusCard() {
 }
 
 // §Group sessions — pilot dashboard activity strip.
+
+// Single resolver for the "Next contact" column so the filter and the cell
+// can never disagree. Group occurrences are invisible to the Appointment model.
+function nextContact(patientId: string) {
+  const upcoming = AdelanteEHR.appointmentsForPatient(patientId)
+    .filter((a) => new Date(a.start).getTime() > Date.now())
+    .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
+  const group = nextGroupOccurrenceForPatient(patientId);
+  if (group && (!upcoming || group.start < upcoming.start))
+    return { kind: "group" as const, start: group.start };
+  if (upcoming) return { kind: "one_to_one" as const, start: upcoming.start };
+  return { kind: "none" as const, start: undefined };
+}
+
+function nextContactKind(patientId: string) {
+  return nextContact(patientId).kind;
+}
 //
 // Group care is invisible to every Appointment-derived KPI above, so it gets
 // its own row. Counts only; no billing or curriculum content is inferred here.
