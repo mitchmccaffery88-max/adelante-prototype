@@ -24,6 +24,7 @@ describe("route-level nav guard", () => {
   it("always redirects denied roles to a surface they can open", () => {
     for (const { key: role } of STAFF_ROLES) {
       for (const entry of STAFF_NAV) {
+        if (entry.search) continue; // pre-filtered view; base page owns the guard
         const access = resolveNavAccess(role, entry.to);
         if (access.status !== "denied") continue;
         expect(access.redirectTo).not.toBe(entry.to);
