@@ -361,3 +361,36 @@ describe("capacity under interleaved enrollment attempts", () => {
     expect(blocked.length).toBe(1);
   });
 });
+
+// §Group sessions — /group-audit date-range filter uses listAuditEvents
+// since/until (same params the admin audit log uses); this pins that the
+// range genuinely narrows the group-eligibility slice.
+describe("group audit date-range narrowing", () => {
+  it("since/until include and exclude eligibility events by timestamp", () => {
+    const p = AdelanteEHR.listPatients()[0]!;
+    AdelanteEHR.setGroupEligibility({
+      patientId: p.id,
+      reason: "date filter probe",
+      role: "therapist",
+      actor: "test",
+    });
+    const mine = () =>
+      AdelanteEHR.listAuditEvents({ category: "clinical", patientId: p.id }).filter(
+        (e) => e.action === "group_eligibility_set" && e.detail?.["reason"] === "date filter probe",
+      );
+    expect(mine().length).toBe(1);
+    const inRange = AdelanteEHR.listAuditEvents({
+      category: "clinical",
+      patientId: p.id,
+      since: new Date(Date.now() - 86400000).toISOString(),
+      until: new Date(Date.now() + 86400000).toISOString(),
+    }).filter((e) => e.detail?.["reason"] === "date filter probe");
+    expect(inRange.length).toBe(1);
+    const outOfRange = AdelanteEHR.listAuditEvents({
+      category: "clinical",
+      patientId: p.id,
+      since: new Date(Date.now() + 86400000).toISOString(),
+    }).filter((e) => e.detail?.["reason"] === "date filter probe");
+    expect(outOfRange.length).toBe(0);
+  });
+});
