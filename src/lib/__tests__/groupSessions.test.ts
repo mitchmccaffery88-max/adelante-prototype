@@ -5,6 +5,12 @@ import { canAccess, noteGateClass } from "../roles";
 import { STAFF_NAV } from "../navSections";
 import { noteExportGate } from "../notePdf";
 
+
+function enrollEligible(sessionId: string, patientId: string) {
+  makeEligible(patientId);
+  return AdelanteEHR.enrollInGroup({ sessionId, patientId, enrolledBy: "test" });
+}
+
 // §Group sessions — every enrollment path now requires the care-plan
 // eligibility gate, so tests must set it first.
 function makeEligible(patientId: string) {
@@ -40,7 +46,7 @@ describe("group session documentation", () => {
     const g = makeGroup();
     const three = patients().slice(0, 3);
     for (const p of three)
-      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -70,7 +76,7 @@ describe("group session documentation", () => {
     const g = makeGroup();
     const two = patients().slice(0, 2);
     for (const p of two)
-      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -142,7 +148,7 @@ describe("recurrence editing regenerates future occurrences without rewriting hi
   it("keeps attended occurrences and drops unused future ones", () => {
     const g = makeGroup();
     const p = patients()[0]!;
-    makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    enrollEligible(g.id, p.id);
     const starts = AdelanteEHR.groupOccurrenceStarts(g.id, 3);
     // Attendance taken on the first upcoming occurrence.
     AdelanteEHR.recordGroupAttendance(
@@ -174,7 +180,7 @@ describe("occurrence status reporting", () => {
     const g = makeGroup();
     const two = patients().slice(0, 2);
     for (const p of two)
-      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
