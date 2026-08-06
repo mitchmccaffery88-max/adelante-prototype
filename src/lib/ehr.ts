@@ -3647,6 +3647,12 @@ export interface GroupSession {
   id: string;
   /** Free text placeholder topic — NOT a real curriculum name. */
   topic: string;
+  /**
+   * Longer patient-safe "what to expect" text. Deliberately separate from
+   * `topic` (short label) because this string may surface to patients on
+   * /home. No curriculum content is authored here.
+   */
+  description?: string;
   facilitatorId: string;
   coFacilitatorId?: string;
   /**
