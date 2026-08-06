@@ -40,10 +40,9 @@ export function StaffNavSidebar() {
   // §Facility & Custody — two entries can share a path when one is a
   // pre-filtered view (Worklist vs. Worklist?view=facility-protocols), so
   // active state has to consider the search param too.
-  const searchParams = useRouterState({ select: (s) => s.location.search }) as Record<
-    string,
-    unknown
-  >;
+  const activeView = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown>)?.["view"],
+  });
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -85,7 +84,7 @@ export function StaffNavSidebar() {
   const isActive = (to: string, search?: Record<string, string>) => {
     const pathMatch = pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
     if (!pathMatch) return false;
-    const view = typeof searchParams?.["view"] === "string" ? searchParams["view"] : undefined;
+    const view = typeof activeView === "string" ? activeView : undefined;
     return search ? search["view"] === view : !view;
   };
 
