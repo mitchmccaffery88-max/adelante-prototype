@@ -813,8 +813,7 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
       </p>
       <ul className="mt-4 space-y-3">
         {groups.map((g) => {
-          const next = nextGroupOccurrenceForPatient(patientId);
-          const nextForThis = next && next.sessionId === g.id ? next.start : undefined;
+          const nextForThis = nextOccurrenceForGroup(g.id);
           return (
             <li key={g.id} className="rounded-lg border bg-card p-3">
               <div className="text-sm font-medium text-navy">{g.topic}</div>
