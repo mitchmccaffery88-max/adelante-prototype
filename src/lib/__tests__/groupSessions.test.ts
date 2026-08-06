@@ -88,7 +88,7 @@ describe("group notes reuse the same masking/consent gate as other notes", () =>
 
   it("locks group notes for a role without group access", () => {
     const p = patients()[0]!;
-    const blocked = canAccess("front_desk", "group_notes", p);
+    const blocked = canAccess("credentialing_coordinator", "group_notes", p);
     expect(blocked.locked).toBe(true);
     const gate = noteExportGate(
       {
@@ -106,7 +106,7 @@ describe("group notes reuse the same masking/consent gate as other notes", () =>
         signedAt: new Date().toISOString(),
         signedBy: "Facilitator",
       } as never,
-      "front_desk",
+      "credentialing_coordinator",
       p,
     );
     expect(gate.allowed).toBe(false);
@@ -121,7 +121,7 @@ describe("nav discoverability + RBAC", () => {
   });
 
   it("is hidden for a role without group_sessions access", () => {
-    expect(canAccess("front_desk", "group_sessions").level).toBe("none");
+    expect(canAccess("credentialing_coordinator", "group_sessions").level).toBe("none");
     expect(canAccess("therapist", "group_sessions").level).toBe("write");
   });
 });
