@@ -11,7 +11,7 @@ import {
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { UsersRound } from "lucide-react";
+import { Download, UsersRound } from "lucide-react";
 
 export const Route = createFileRoute("/admin-claims")({
   head: () => ({
@@ -50,6 +50,46 @@ function ClaimsPage() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
 
+  // De-identified export, same shape/discipline as the caseload CSV on /admin:
+  // program ID only, plus the group provenance the worklist shows on screen.
+  const downloadCsv = () => {
+    const headers = [
+      "Program ID",
+      "Clinician",
+      "State",
+      "Charge (USD)",
+      "Denial reason",
+      "Group-sourced",
+      "Group session ID",
+      "Occurrence start",
+    ];
+    const rows = claims.map((c) => {
+      const pt = patients.find((p) => p.id === c.patientId);
+      const cl = clinicians.find((x) => x.id === c.clinicianId);
+      const g = parseGroupEncounterId(c.encounterId);
+      return [
+        pt?.programId ?? "",
+        cl?.name ?? "",
+        c.state,
+        (c.chargeCents / 100).toFixed(2),
+        c.denialReason ?? "",
+        g ? "Yes" : "No",
+        g?.sessionId ?? "",
+        g?.occurrenceStart ?? "",
+      ];
+    });
+    const csv = [headers, ...rows]
+      .map((r) => r.map((v) => `"${String(v).replace(/"/g, '""')}"`).join(","))
+      .join("\n");
+    const blob = new Blob([csv], { type: "text/csv" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `adelante-claims-${new Date().toISOString().slice(0, 10)}.csv`;
+    a.click();
+    URL.revokeObjectURL(url);
+  };
+
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <header className="flex items-center justify-between">
@@ -57,7 +97,18 @@ function ClaimsPage() {
           <h1 className="font-display text-2xl text-navy">Claims worklist</h1>
           <p className="text-sm text-muted-foreground">Every encounter's billing lifecycle.</p>
         </div>
-        <Link to="/billing" className="text-sm underline">← Billing</Link>
+        <div className="flex items-center gap-3">
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={claims.length === 0}
+            onClick={downloadCsv}
+            data-testid="claims-export-csv"
+          >
+            <Download className="h-3.5 w-3.5 mr-1.5" /> Export CSV
+          </Button>
+          <Link to="/billing" className="text-sm underline">← Billing</Link>
+        </div>
       </header>
 
       <Card className="p-4">
