@@ -5,7 +5,7 @@
 // worklist, and cross-surface event bus. Never mutates ehr.ts internals.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type ServiceType } from "./ehr";
+import { AdelanteEHR, isBillableGroupCategory, type ServiceType } from "./ehr";
 
 // ---------- Types ----------
 export interface Organization { id: string; name: string; }
