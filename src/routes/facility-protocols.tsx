@@ -210,12 +210,3 @@ function FacilityProtocolsPage() {
     </div>
   );
 }
-import { createFileRoute } from '@tanstack/react-router'
-
-export const Route = createFileRoute('/facility-protocols')({
-  component: RouteComponent,
-})
-
-function RouteComponent() {
-  return <div>Hello "/facility-protocols"!</div>
-}
