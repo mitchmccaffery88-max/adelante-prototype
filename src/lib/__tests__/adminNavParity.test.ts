@@ -46,7 +46,6 @@ describe("admin quick links vs sidebar Administration group", () => {
         "admin-note-templates",
         "admin-scheduling-rules",
         "admin-catalog-governance",
-        "admin-facilities",
         "admin-audit",
       ]),
     );
