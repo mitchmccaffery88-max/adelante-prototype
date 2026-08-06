@@ -310,25 +310,19 @@ function AdminPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {(() => {
-                      // "Next contact" spans both 1:1 appointments and group
-                      // occurrences — the Appointment model can't see groups.
-                      const upcoming = AdelanteEHR.appointmentsForPatient(p.id)
-                        .filter((a) => new Date(a.start).getTime() > Date.now())
-                        .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
-                      const group = nextGroupOccurrenceForPatient(p.id);
-                      const useGroup =
-                        group && (!upcoming || group.start < upcoming.start) ? group : null;
-                      if (useGroup) {
+                      const contact = nextContact(p.id);
+                      if (contact.kind === "none") return "—";
+                      if (contact.kind === "group") {
                         return (
                           <span className="inline-flex items-center gap-1.5">
-                            <ClientDate value={useGroup.start} />
+                            <ClientDate value={contact.start} />
                             <Badge variant="outline" className="text-[10px]">
                               Group
                             </Badge>
                           </span>
                         );
                       }
-                      return upcoming ? <ClientDate value={upcoming.start} /> : "—";
+                      return <ClientDate value={contact.start} />;
                     })()}
                   </TableCell>
                   <TableCell>
