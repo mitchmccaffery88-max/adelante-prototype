@@ -110,10 +110,23 @@ export function PatientGroupScheduling({ patientId }: { patientId: string }) {
           </p>
         </div>
         {!eligible ? (
-          <p className="text-sm text-muted-foreground">
-            Group sign-up opens once your care team adds groups to your care plan. Ask your case
-            manager or therapist if you'd like to join one.
-          </p>
+          // Not an error state: the patient has done nothing wrong, they just
+          // haven't been marked eligible for groups yet. Same guidance tone as
+          // every other empty state, and it names the concrete next step.
+          <div className="space-y-2" data-testid="group-eligibility-guidance">
+            <p className="text-sm text-navy">
+              You're not marked as eligible for groups yet.
+            </p>
+            <p className="text-sm text-muted-foreground">
+              Groups are added to your care plan by your care team. Ask your case manager or
+              therapist to add groups to your care plan, and open group sign-up will show up here
+              straight away.
+            </p>
+            <p className="text-xs text-muted-foreground">
+              You can message your care team from your home page, or bring it up at your next
+              appointment.
+            </p>
+          </div>
         ) : open.length === 0 ? (
           <p className="text-sm text-muted-foreground">
             No open groups available right now. Check back soon.
