@@ -8,7 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Users, CalendarClock, PieChart, ChevronRight } from "lucide-react";
 import { formatMetric, type LiveMetric } from "@/lib/dashboardMetrics";
-import type { GroupAttendanceBreakdown } from "@/lib/groupMetrics";
+import type { GroupAttendanceBreakdown, OpenGroupEngagement } from "@/lib/groupMetrics";
 
 interface Props {
   activeGroups: number;
@@ -16,6 +16,8 @@ interface Props {
   attendance: GroupAttendanceBreakdown;
   metric: LiveMetric | undefined;
   onOpenAbsences: () => void;
+  /** Non-billing open-group engagement rollup. */
+  openGroups: OpenGroupEngagement;
 }
 
 export function GroupUtilizationSection({
@@ -24,6 +26,7 @@ export function GroupUtilizationSection({
   attendance,
   metric,
   onOpenAbsences,
+  openGroups,
 }: Props) {
   const measured = attendance.pct !== null;
   return (
@@ -85,6 +88,42 @@ export function GroupUtilizationSection({
           )}
         </Card>
       </div>
+
+      <Card className="p-4" data-tile="open-group-engagement">
+        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+          <Users className="h-4 w-4" /> Open group engagement (non-billing)
+        </div>
+        <p className="text-[11px] text-muted-foreground mt-1">
+          Open psychoeducational groups are tracked for program reach only. They never create a
+          claim, so this is engagement data, not clinical claims data.
+        </p>
+        {openGroups.activeGroups === 0 ? (
+          <p className="mt-2 text-sm text-muted-foreground">No open groups running yet.</p>
+        ) : (
+          <dl className="mt-3 grid grid-cols-2 gap-3 sm:grid-cols-4 text-sm">
+            <div>
+              <dt className="text-[11px] text-muted-foreground">Open groups</dt>
+              <dd className="font-display text-2xl text-navy">{openGroups.activeGroups}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-muted-foreground">Enrolled</dt>
+              <dd className="font-display text-2xl text-navy">{openGroups.enrolledPatients}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-muted-foreground">Reached (30d)</dt>
+              <dd className="font-display text-2xl text-navy">{openGroups.patientsReached}</dd>
+            </div>
+            <div>
+              <dt className="text-[11px] text-muted-foreground">Attendance (30d)</dt>
+              <dd className="font-display text-2xl text-navy">
+                {openGroups.attendance.pct === null
+                  ? "—"
+                  : `${Math.round(openGroups.attendance.pct)}%`}
+              </dd>
+            </div>
+          </dl>
+        )}
+      </Card>
     </section>
   );
 }

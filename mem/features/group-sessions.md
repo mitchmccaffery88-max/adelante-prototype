@@ -3,10 +3,28 @@ name: Group sessions (care delivery)
 description: GroupSession/enrollment/attendance model, per-attendee note requirement, group_notes consent gate, and what is placeholder pending DHCS content
 type: feature
 ---
+**Eligibility gate (NEW, non-negotiable).** `Patient.groupEligibility` lives on the
+care-plan layer. NO enrollment path — staff, patient self-service, or the future
+advocate role — is possible without it; `assertEnrollmentAllowed` in `src/lib/ehr.ts`
+is the SINGLE place that decides who may enroll (the DHCS Authorized Representative /
+Collateral role plugs in there, nowhere else). Only therapist/pmhnp/case_manager may
+set it (`GROUP_ELIGIBILITY_ROLES`). Criteria text + curriculum tag are PLACEHOLDER.
+
+**Category split (PLACEHOLDER taxonomy — confirm the real list with Christi).**
+`GroupSession.category`: `sud_clinical_preauth` (staff-only enrollment, BILLABLE) vs
+`open_psychoeducational` (eligible patients self-book from `/schedule`, NEVER billed).
+"Pre-authorization" here is read as INTERNAL clinical eligibility/placement approval,
+NOT a payer-facing prior-auth process — confirm.
+
+**Billing hard split.** `upsertClaimFromGroupAttendee` returns `null` for open groups,
+enforced at the write point (not by caller filtering); attendee notes get
+`billingEligible: false`. Open-group reporting goes through
+`openGroupEngagement()` in groupMetrics — engagement/reach data, never claims.
+
 **Model.** `GroupSession` + `GroupSessionEnrollment` (standing, not per-occurrence)
 + `GroupOccurrenceRecord` in `src/lib/ehr.ts`. Recurrence is weekly or one-off.
-Enrollment is STAFF-initiated (clinical decision); the patient-driven 1:1
-`bookAppointment` flow is untouched and must stay that way.
+The 1:1 `bookAppointment` flow is untouched; group self-booking is a separate
+tab on `/schedule` (`PatientGroupScheduling`) alongside it.
 
 **Documentation.** One occurrence = 1 shared group note (`GroupOccurrenceRecord.sharedNote`)
 + one individualized `ProgressNote` per PRESENT attendee (`category: "group"`,

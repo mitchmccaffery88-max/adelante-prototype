@@ -4,17 +4,21 @@
 // linkage on this screen are STRUCTURE ONLY. DHCS/DMC-ODS group-size limits,
 // curriculum names and billing/CPT/H-codes are deliberately not authored here.
 //
-// Enrollment is staff-initiated by design: group placement is a clinical
-// decision, unlike the patient-driven 1:1 scheduling flow, which this page
-// does not touch.
+// Enrollment paths now split by category (PLACEHOLDER taxonomy):
+//   sud_clinical_preauth   — staff-initiated only (this page), billable.
+//   open_psychoeducational — eligible patients self-book from /schedule.
+// BOTH require the care-plan group-eligibility flag first; the store refuses
+// any enrollment without it.
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
   formatLocationAddress,
+  GROUP_CATEGORIES,
   useEhr,
   type GroupAttendanceStatus,
+  type GroupCategory,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
@@ -37,6 +41,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { GroupEligibilityEditor } from "@/components/clinical/GroupEligibilityEditor";
 import { ClientDate } from "@/components/ClientDate";
 import { Lock, Users, CalendarPlus } from "lucide-react";
 
@@ -140,6 +145,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
   const [capacity, setCapacity] = useState("8");
   const [durationMin, setDurationMin] = useState("60");
   const [locationId, setLocationId] = useState("");
+  const [category, setCategory] = useState<GroupCategory>("sud_clinical_preauth");
   const [weekly, setWeekly] = useState(true);
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const locations = useEhr(() => AdelanteEHR.listLocations());
@@ -177,6 +183,24 @@ function CreateGroupCard({ actor }: { actor: string }) {
         <div className="space-y-1.5">
           <Label className="text-xs">First occurrence</Label>
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Category (PLACEHOLDER — confirm the real list with Christi)</Label>
+          <Select value={category} onValueChange={(v) => setCategory(v as GroupCategory)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {GROUP_CATEGORIES.map((c) => (
+                <SelectItem key={c.key} value={c.key}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {GROUP_CATEGORIES.find((c) => c.key === category)?.helper}
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Capacity (placeholder — no DHCS limit encoded)</Label>
@@ -239,6 +263,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
               AdelanteEHR.createGroupSession({
                 topic,
                 description,
+                category,
                 facilitatorId,
                 serviceType: "therapy_group",
                 modality: "in_person",
@@ -310,6 +335,16 @@ function GroupDetail({
     <div className="space-y-4">
       <Card className="p-4 space-y-2">
         <h2 className="font-display text-navy">{group.topic}</h2>
+        <div className="flex flex-wrap items-center gap-2">
+          <Badge variant={group.category === "open_psychoeducational" ? "secondary" : "outline"}>
+            {GROUP_CATEGORIES.find((c) => c.key === group.category)?.label}
+          </Badge>
+          <span className="text-[11px] text-muted-foreground">
+            {group.category === "open_psychoeducational"
+              ? "Eligible patients can self-book. Attendance is engagement data — never billed."
+              : "Staff enrollment only. Attendee notes flow to the Claims Worklist."}
+          </span>
+        </div>
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}
@@ -358,6 +393,11 @@ function GroupDetail({
           ))}
         </ul>
         {canWrite && (
+          <>
+          <p className="text-[11px] text-muted-foreground">
+            Enrollment is blocked until a therapist, PMHNP or case manager sets group eligibility
+            on the patient's care plan (placeholder criteria).
+          </p>
           <div className="flex gap-2">
             <Select value={addId} onValueChange={setAddId}>
               <SelectTrigger className="w-64">
@@ -369,6 +409,7 @@ function GroupDetail({
                   .map((p) => (
                     <SelectItem key={p.id} value={p.id}>
                       {p.firstName} {p.lastName}
+                      {AdelanteEHR.isGroupEligible(p.id) ? "" : " — not yet eligible"}
                     </SelectItem>
                   ))}
               </SelectContent>
@@ -393,6 +434,8 @@ function GroupDetail({
               Enroll
             </Button>
           </div>
+          {addId && <GroupEligibilityEditor patientId={addId} actor={actor} />}
+          </>
         )}
       </Card>
 

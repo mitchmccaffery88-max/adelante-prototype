@@ -3,6 +3,24 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { occurrenceStatuses, owedAttendeesForRole } from "../groupMetrics";
 
+
+function enrollEligible(sessionId: string, patientId: string) {
+  makeEligible(patientId);
+  return AdelanteEHR.enrollInGroup({ sessionId, patientId, enrolledBy: "test" });
+}
+
+// §Group sessions — every enrollment path now requires the care-plan
+// eligibility gate, so tests must set it first.
+function makeEligible(patientId: string) {
+  AdelanteEHR.setGroupEligibility({
+    patientId,
+    reason: "placeholder criteria",
+    role: "therapist",
+    actor: "test",
+  });
+}
+
+
 function makeGroup() {
   const clinician = AdelanteEHR.listClinicians()[0]!;
   return AdelanteEHR.createGroupSession({
@@ -40,7 +58,7 @@ describe("cancelling one future occurrence", () => {
   it("BLOCKS cancelling an occurrence that already has attendance", () => {
     const g = makeGroup();
     const p = AdelanteEHR.listPatients()[0]!;
-    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -78,7 +96,7 @@ describe("rescheduling one future occurrence", () => {
   it("BLOCKS rescheduling an occurrence with notes already documented", () => {
     const g = makeGroup();
     const p = AdelanteEHR.listPatients()[1]!;
-    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -122,7 +140,7 @@ describe("PHI gate on occurrence status — enforced in the DATA layer", () => {
     const g = makeGroup();
     const two = AdelanteEHR.listPatients().slice(0, 2);
     for (const p of two)
-      AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      enrollEligible(g.id, p.id);
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,

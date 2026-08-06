@@ -5,7 +5,7 @@
 // worklist, and cross-surface event bus. Never mutates ehr.ts internals.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type ServiceType } from "./ehr";
+import { AdelanteEHR, isBillableGroupCategory, type ServiceType } from "./ehr";
 
 // ---------- Types ----------
 export interface Organization { id: string; name: string; }
@@ -530,7 +530,13 @@ export const AdelanteEHRExt = {
     facilitatorId: string;
     noteId: string;
     chargeCents?: number;
-  }): Claim {
+  }): Claim | null {
+    // HARD SPLIT: `open_psychoeducational` occurrences never create a claim.
+    // Enforced here, at the single write point, so no caller can bypass it by
+    // forgetting to filter. Their attendance is engagement/utilization data
+    // only (see `openGroupEngagement` in groupMetrics).
+    const session = AdelanteEHR.getGroupSession(input.sessionId);
+    if (session && !isBillableGroupCategory(session.category)) return null;
     const encounterId = `group:${input.sessionId}:${input.occurrenceStart}:${input.patientId}`;
     let claim = claims.find((c) => c.encounterId === encounterId);
     if (claim) return claim;

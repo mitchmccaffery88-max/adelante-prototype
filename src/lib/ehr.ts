@@ -927,6 +927,17 @@ export interface Patient {
   carePlan?: CarePlanSnapshot;
   /** Optional free-text overlay from a clinician; merged into the summary. */
   carePlanOverride?: { text: string; setAt: string; by?: string };
+  /**
+   * §Group sessions — care-plan-level eligibility gate for ANY group
+   * enrollment path (staff, patient self-service, and the future
+   * Authorized Representative / Collateral path). Lives on the care-plan
+   * layer next to `carePlanOverride` rather than in a parallel flag store.
+   *
+   * PLACEHOLDER: `reason` is free text and `curriculumNeedTag` is a made-up
+   * label, NOT a DHCS curriculum taxonomy. Christi/SMEs must supply the real
+   * criteria and tag list.
+   */
+  groupEligibility?: GroupEligibility;
   // ----- Clinical record layer (Problems / Allergies / Alerts). §BaggaEMR mirror -----
   /** Diagnosed problems (active + resolved + soft-deleted). Mirror of BaggaEMR `patient_problems`. */
   problems?: Problem[];
@@ -3655,6 +3666,68 @@ export interface GroupRecurrence {
   until?: string;
 }
 
+/**
+ * §Group sessions — PLACEHOLDER CATEGORY TAXONOMY (confirm with Christi/SMEs).
+ * Only two values exist in this pass; there may well be more in reality.
+ */
+export type GroupCategory = "sud_clinical_preauth" | "open_psychoeducational";
+
+export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: string }[] = [
+  {
+    key: "sud_clinical_preauth",
+    label: "SUD / clinically pre-authorized (placeholder)",
+    helper:
+      "Staff enroll patients. Individualized attendee notes are billable and flow to the Claims Worklist.",
+  },
+  {
+    key: "open_psychoeducational",
+    label: "Open psychoeducational (placeholder)",
+    helper:
+      "Eligible patients can self-enroll from their scheduling page. Attendance is tracked for engagement reporting only — never billed.",
+  },
+];
+
+/** True when this category's attendee notes may create claims. */
+export function isBillableGroupCategory(category: GroupCategory): boolean {
+  return category === "sud_clinical_preauth";
+}
+
+/**
+ * §Group sessions — care-plan group eligibility.
+ *
+ * PLACEHOLDER: neither `reason` nor `curriculumNeedTag` encodes real clinical
+ * criteria. Roles allowed to set it are the clinical/care-management roles
+ * listed in `GROUP_ELIGIBILITY_ROLES`.
+ */
+export interface GroupEligibility {
+  eligible: true;
+  /** Free-text clinical rationale. Placeholder — no criteria list exists yet. */
+  reason: string;
+  /** PLACEHOLDER curriculum-need tag. Not a DHCS curriculum taxonomy. */
+  curriculumNeedTag?: string;
+  setAt: string;
+  setBy: string;
+  setByRole: string;
+}
+
+/** Only these roles may set the group-eligibility gate. */
+export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "case_manager"] as const;
+
+/**
+ * Who initiated an enrollment. Deliberately an open shape rather than a
+ * boolean "isPatient": the DHCS Authorized Representative / Collateral role
+ * (Advocate) is a separate swim-lane and will add a third kind here. Every
+ * "is this actor allowed" decision funnels through `_assertEnrollmentAllowed`
+ * below — that is the ONE place the advocate role plugs in later.
+ */
+export type EnrollmentInitiatorKind = "staff" | "patient";
+
+export interface EnrollmentInitiator {
+  kind: EnrollmentInitiatorKind;
+  /** Staff display name, or the patient id for a self-service enrollment. */
+  actorId: string;
+}
+
 export interface GroupSession {
   id: string;
   /** Free text placeholder topic — NOT a real curriculum name. */
@@ -3674,6 +3747,17 @@ export interface GroupSession {
   serviceType: ServiceType;
   modality: "video" | "phone" | "in_person";
   locationId?: string;
+  /**
+   * PLACEHOLDER TAXONOMY — exactly two categories, both provisional. Christi /
+   * SMEs must confirm whether more categories exist and whether
+   * "pre-authorization" here (internal clinical eligibility + placement
+   * approval) is the right reading, or whether a payer-facing prior-auth
+   * process is meant. This pass assumes the INTERNAL reading only.
+   *
+   *   sud_clinical_preauth   — staff-only enrollment, billable, claims flow.
+   *   open_psychoeducational — patient self-service, NON-billing engagement.
+   */
+  category: GroupCategory;
   /** ISO datetime of the first occurrence. */
   start: string;
   durationMin: number;
@@ -10081,8 +10165,10 @@ export const AdelanteEHR = {
   getGroupSession: (id: string) => groupSessions.find((g) => g.id === id),
 
   createGroupSession(
-    input: Omit<GroupSession, "id" | "status" | "createdAt" | "createdBy"> & {
+    input: Omit<GroupSession, "id" | "status" | "createdAt" | "createdBy" | "category"> & {
       createdBy: string;
+      /** Defaults to the stricter staff-only billable category. */
+      category?: GroupCategory;
     },
   ): GroupSession {
     if (!input.topic.trim()) throw new Error("Give the group a topic.");
@@ -10091,6 +10177,8 @@ export const AdelanteEHR = {
       ...input,
       topic: input.topic.trim(),
       description: input.description?.trim() || undefined,
+      // PLACEHOLDER default: the stricter, staff-only, billable category.
+      category: input.category ?? "sud_clinical_preauth",
       id: `grp_${uid()}`,
       status: "scheduled",
       createdAt: new Date().toISOString(),
@@ -10105,6 +10193,7 @@ export const AdelanteEHR = {
         groupSessionId: row.id,
         topic: row.topic,
         serviceType: row.serviceType,
+        category: row.category,
         recurrence: row.recurrence.kind,
         capacity: row.capacity,
       },
@@ -10223,18 +10312,150 @@ export const AdelanteEHR = {
     return groupSessions.filter((g) => ids.includes(g.id) && g.status !== "cancelled");
   },
 
+  // -------------------------------------------------------------------------
+  // §Group sessions — care-plan eligibility gate.
+  //
+  // PLACEHOLDER CRITERIA. This gate is a real, enforced precondition for every
+  // enrollment path (staff, patient self-service, and the future Authorized
+  // Representative / Collateral path), but WHAT makes a patient eligible is
+  // not decided here — `reason` is free text and `curriculumNeedTag` is an
+  // invented label pending Christi/SME content.
+  // -------------------------------------------------------------------------
+  getGroupEligibility(patientId: string): GroupEligibility | undefined {
+    return patients.find((p) => p.id === patientId)?.groupEligibility;
+  },
+
+  isGroupEligible(patientId: string): boolean {
+    return !!patients.find((p) => p.id === patientId)?.groupEligibility;
+  },
+
+  setGroupEligibility(input: {
+    patientId: string;
+    reason: string;
+    curriculumNeedTag?: string;
+    /** StaffRole string — must be in GROUP_ELIGIBILITY_ROLES. */
+    role: string;
+    actor: string;
+  }): GroupEligibility {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) throw new Error("Patient not found.");
+    if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(input.role))
+      throw new Error("Only a therapist, PMHNP or case manager can set group eligibility.");
+    const reason = input.reason.trim();
+    if (!reason) throw new Error("A clinical reason is required.");
+    p.groupEligibility = {
+      eligible: true,
+      reason,
+      curriculumNeedTag: input.curriculumNeedTag?.trim() || undefined,
+      setAt: new Date().toISOString(),
+      setBy: input.actor,
+      setByRole: input.role,
+    };
+    _recomputeCarePlan(p.id, "group_eligibility");
+    appendAudit({
+      category: "clinical",
+      action: "group_eligibility_set",
+      patientId: p.id,
+      actorId: input.actor,
+      detail: { role: input.role, curriculumNeedTag: p.groupEligibility.curriculumNeedTag },
+    });
+    emit();
+    return p.groupEligibility;
+  },
+
+  clearGroupEligibility(patientId: string, reason: string, actor: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A reason is required to remove group eligibility.");
+    p.groupEligibility = undefined;
+    _recomputeCarePlan(p.id, "group_eligibility_cleared");
+    appendAudit({
+      category: "clinical",
+      action: "group_eligibility_cleared",
+      patientId: p.id,
+      actorId: actor,
+      detail: { reason: trimmed },
+    });
+    emit();
+  },
+
   /**
-   * Staff-initiated enrollment. There is deliberately no patient self-service
-   * path: group placement is a clinical decision, unlike 1:1 scheduling.
+   * THE single place that decides whether an actor may enroll this patient in
+   * this group. Staff, patient self-service and (later) the DHCS Authorized
+   * Representative / Collateral role all funnel through here — adding the
+   * advocate means adding one branch below, not touching enrollment logic.
+   */
+  assertEnrollmentAllowed(
+    group: GroupSession,
+    patientId: string,
+    initiator: EnrollmentInitiator,
+  ): void {
+    if (group.status === "cancelled") throw new Error("That group is cancelled.");
+    if (!AdelanteEHR.isGroupEligible(patientId))
+      throw new Error(
+        "Group eligibility has not been set for this patient. A therapist, PMHNP or case manager must set it before any enrollment.",
+      );
+    if (initiator.kind === "patient") {
+      if (group.category !== "open_psychoeducational")
+        throw new Error("This group is staff-enrolled only.");
+      if (initiator.actorId !== patientId)
+        throw new Error("You can only book groups for yourself.");
+    }
+    // FUTURE: `initiator.kind === "advocate"` (Authorized Representative /
+    // Collateral, CalAIM DMC-ODS) plugs in here — it will need its own
+    // relationship + consent check. Do not scatter that logic elsewhere.
+  },
+
+  /**
+   * Open groups this patient may self-book: open category only, eligibility
+   * set, not cancelled, not already enrolled, not at capacity. Used by the
+   * patient scheduling page — `sud_clinical_preauth` can never appear here.
+   */
+  openGroupsForPatient(patientId: string): GroupSession[] {
+    if (!AdelanteEHR.isGroupEligible(patientId)) return [];
+    const enrolled = new Set(AdelanteEHR.groupsForPatient(patientId).map((g) => g.id));
+    return groupSessions.filter(
+      (g) =>
+        g.category === "open_psychoeducational" &&
+        g.status !== "cancelled" &&
+        !enrolled.has(g.id) &&
+        AdelanteEHR.listGroupEnrollments(g.id).length < g.capacity,
+    );
+  },
+
+  /**
+   * Patient self-service enrollment. Open psychoeducational groups only —
+   * routed through the same `enrollInGroup` write so there is one enrollment
+   * implementation, not a parallel patient path.
+   */
+  selfEnrollInGroup(input: { sessionId: string; patientId: string }): GroupSessionEnrollment {
+    return AdelanteEHR.enrollInGroup({
+      sessionId: input.sessionId,
+      patientId: input.patientId,
+      enrolledBy: input.patientId,
+      initiator: { kind: "patient", actorId: input.patientId },
+    });
+  },
+
+  /**
+   * Enrollment write. Defaults to a staff initiator; patient self-service
+   * comes through `selfEnrollInGroup`. Every path is gated by
+   * `assertEnrollmentAllowed` — including the care-plan eligibility flag.
    */
   enrollInGroup(input: {
     sessionId: string;
     patientId: string;
     enrolledBy: string;
+    initiator?: EnrollmentInitiator;
   }): GroupSessionEnrollment {
     const group = groupSessions.find((g) => g.id === input.sessionId);
     if (!group) throw new Error("Group not found.");
-    if (group.status === "cancelled") throw new Error("That group is cancelled.");
+    const initiator: EnrollmentInitiator = input.initiator ?? {
+      kind: "staff",
+      actorId: input.enrolledBy,
+    };
+    AdelanteEHR.assertEnrollmentAllowed(group, input.patientId, initiator);
     const already = groupEnrollments.find(
       (e) => e.sessionId === input.sessionId && e.patientId === input.patientId && !e.endedAt,
     );
@@ -10256,7 +10477,12 @@ export const AdelanteEHR = {
       action: "group_enrollment_added",
       patientId: input.patientId,
       actorId: input.enrolledBy,
-      detail: { groupSessionId: input.sessionId, enrollmentId: row.id },
+      detail: {
+        groupSessionId: input.sessionId,
+        enrollmentId: row.id,
+        category: group.category,
+        initiatedBy: initiator.kind,
+      },
     });
     emit();
     return row;
@@ -10500,7 +10726,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
-          billingEligible: true,
+          // Open psychoeducational groups are engagement, not claims.
+          billingEligible: isBillableGroupCategory(g.category),
           // PLACEHOLDER: no CPT/H-code invented. Billing supplies this.
           billingCodePlaceholder: undefined,
         },

@@ -1,0 +1,182 @@
+// §Group sessions — patient-facing group scheduling.
+//
+// Two distinct things live here, and the difference matters:
+//   1. "Your group calendar" — read-only upcoming occurrences for groups the
+//      patient is ALREADY enrolled in (both categories; seeing what you are
+//      enrolled in is not the same as enrolling yourself).
+//   2. "Open groups you can join" — self-service enrollment, restricted to
+//      `open_psychoeducational` ONLY. `sud_clinical_preauth` groups must never
+//      surface here; the store enforces this too (`openGroupsForPatient` +
+//      `assertEnrollmentAllowed`), this is not a UI-only filter.
+//
+// Both paths require the care-plan group-eligibility flag, which staff set.
+// PLACEHOLDER: category names, curriculum tags and eligibility criteria are
+// all provisional pending Christi/SME content.
+//
+// FUTURE: an Authorized Representative / Collateral (advocate) acting for the
+// patient will reuse this surface — the actor is passed to the store, which is
+// the single place that decides who may enroll.
+import { useMemo } from "react";
+import { toast } from "sonner";
+import { AdelanteEHR, formatLocationAddress, useEhr } from "@/lib/ehr";
+import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ClientDate } from "@/components/ClientDate";
+import { Users, CalendarClock, MapPin } from "lucide-react";
+
+export function PatientGroupScheduling({ patientId }: { patientId: string }) {
+  const eligible = useEhr(() => AdelanteEHR.isGroupEligible(patientId));
+  const enrolled = useEhr(() => AdelanteEHR.groupsForPatient(patientId));
+  const open = useEhr(() => AdelanteEHR.openGroupsForPatient(patientId));
+
+  const enrolledRows = useMemo(
+    () =>
+      enrolled.map((g) => ({
+        group: g,
+        starts: AdelanteEHR.groupOccurrenceStarts(g.id, 4),
+      })),
+    [enrolled],
+  );
+
+  return (
+    <div className="space-y-4">
+      <Card className="p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg text-navy">Your group calendar</h2>
+          <p className="text-xs text-muted-foreground">
+            The next meetings for groups you're already part of.
+          </p>
+        </div>
+        {enrolledRows.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            You're not in any groups right now. Your care team will let you know if a group would
+            help.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {enrolledRows.map(({ group, starts }) => {
+              const loc = AdelanteEHR.getLocation(group.locationId);
+              return (
+                <li key={group.id} className="rounded-lg border p-3 space-y-1.5">
+                  <div className="flex items-center gap-2">
+                    <Users className="h-4 w-4 text-teal" />
+                    <span className="font-medium text-navy">{group.topic}</span>
+                  </div>
+                  {group.description && (
+                    <p className="text-sm text-muted-foreground">{group.description}</p>
+                  )}
+                  {loc && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" /> {loc.name} — {formatLocationAddress(loc)}
+                    </p>
+                  )}
+                  {starts.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No meetings scheduled yet.</p>
+                  ) : (
+                    <ul className="text-xs text-muted-foreground space-y-0.5">
+                      {starts.map((s) => (
+                        <li key={s} className="flex items-center gap-1.5">
+                          <CalendarClock className="h-3.5 w-3.5 text-teal" />
+                          <ClientDate
+                            value={s}
+                            options={{
+                              weekday: "short",
+                              month: "short",
+                              day: "numeric",
+                              hour: "numeric",
+                              minute: "2-digit",
+                            }}
+                          />
+                          <span>· {group.durationMin} min</span>
+                        </li>
+                      ))}
+                    </ul>
+                  )}
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="p-6 space-y-4">
+        <div>
+          <h2 className="font-display text-lg text-navy">Open groups you can join</h2>
+          <p className="text-xs text-muted-foreground">
+            Open groups you can sign up for yourself. Other groups are arranged with your care
+            team.
+          </p>
+        </div>
+        {!eligible ? (
+          <p className="text-sm text-muted-foreground">
+            Group sign-up opens once your care team adds groups to your care plan. Ask your case
+            manager or therapist if you'd like to join one.
+          </p>
+        ) : open.length === 0 ? (
+          <p className="text-sm text-muted-foreground">
+            No open groups available right now. Check back soon.
+          </p>
+        ) : (
+          <ul className="space-y-3">
+            {open.map((g) => {
+              const loc = AdelanteEHR.getLocation(g.locationId);
+              const next = nextOccurrenceForGroup(g.id);
+              return (
+                <li key={g.id} className="rounded-lg border p-3 space-y-2">
+                  <div className="flex items-center justify-between gap-2">
+                    <span className="font-medium text-navy">{g.topic}</span>
+                    <Badge variant="secondary">Open group</Badge>
+                  </div>
+                  {g.description && (
+                    <p className="text-sm text-muted-foreground">{g.description}</p>
+                  )}
+                  <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                    <CalendarClock className="h-3.5 w-3.5 text-teal" />
+                    {next ? (
+                      <ClientDate
+                        value={next}
+                        options={{
+                          weekday: "short",
+                          month: "short",
+                          day: "numeric",
+                          hour: "numeric",
+                          minute: "2-digit",
+                        }}
+                      />
+                    ) : (
+                      "Next meeting to be scheduled"
+                    )}
+                    <span>· {g.durationMin} min</span>
+                  </p>
+                  {loc && (
+                    <p className="text-xs text-muted-foreground flex items-center gap-1.5">
+                      <MapPin className="h-3.5 w-3.5" /> {loc.name} — {formatLocationAddress(loc)}
+                    </p>
+                  )}
+                  <Button
+                    size="sm"
+                    className="bg-navy text-navy-foreground hover:bg-navy/90"
+                    onClick={() => {
+                      try {
+                        AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId });
+                        toast.success("You're signed up for this group.");
+                      } catch (err) {
+                        toast.error(
+                          err instanceof Error ? err.message : "Could not join that group.",
+                        );
+                      }
+                    }}
+                  >
+                    Join this group
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+    </div>
+  );
+}
