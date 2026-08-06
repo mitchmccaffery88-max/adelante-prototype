@@ -179,6 +179,24 @@ function CreateGroupCard({ actor }: { actor: string }) {
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
         </div>
         <div className="space-y-1.5">
+          <Label className="text-xs">Category (PLACEHOLDER — confirm the real list with Christi)</Label>
+          <Select value={category} onValueChange={(v) => setCategory(v as GroupCategory)}>
+            <SelectTrigger>
+              <SelectValue />
+            </SelectTrigger>
+            <SelectContent>
+              {GROUP_CATEGORIES.map((c) => (
+                <SelectItem key={c.key} value={c.key}>
+                  {c.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            {GROUP_CATEGORIES.find((c) => c.key === category)?.helper}
+          </p>
+        </div>
+        <div className="space-y-1.5">
           <Label className="text-xs">Capacity (placeholder — no DHCS limit encoded)</Label>
           <Input
             type="number"
@@ -239,6 +257,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
               AdelanteEHR.createGroupSession({
                 topic,
                 description,
+                category,
                 facilitatorId,
                 serviceType: "therapy_group",
                 modality: "in_person",
