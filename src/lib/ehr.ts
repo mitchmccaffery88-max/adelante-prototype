@@ -1104,6 +1104,8 @@ export interface ClinicLocation {
   name: string;
   address: string;
   city: string;
+  /** Postal code — part of the single canonical address, not a parallel blob. */
+  postalCode?: string;
   room?: string;
   inPersonServices: ServiceType[];
 }
@@ -1166,6 +1168,7 @@ const LOCATIONS: ClinicLocation[] = [
     name: "Adelante Visalia Hub",
     address: "1201 S Mooney Blvd",
     city: "Visalia, CA",
+    postalCode: "93277",
     room: "Suite 200",
     inPersonServices: [
       "intake",
@@ -1181,6 +1184,7 @@ const LOCATIONS: ClinicLocation[] = [
     name: "Porterville Community Office",
     address: "379 N Main St",
     city: "Porterville, CA",
+    postalCode: "93257",
     inPersonServices: ["therapy_individual", "peer_support", "case_management"],
   },
 ];
