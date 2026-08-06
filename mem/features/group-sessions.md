@@ -30,6 +30,21 @@ current values are placeholders.
 **Not built (flagged, needs confirmation):** patient-visible "your groups" on
 `/home`.
 
+**Built since:** patient-facing read-only "Your groups" section on `/home`
+(topic + description + next date ONLY — no attendance history, no roster, no
+note content), staff recurrence editor (`AdelanteEHR.updateGroupRecurrence`
+preserves past/attended occurrences and only regenerates unused future ones),
+per-occurrence attendance + note-completion dashboard on `/group-sessions`,
+`/admin` "Next contact" filter (group vs 1:1 vs none, via one shared
+`nextContact` resolver), Claims Worklist CSV export with a group-sourced
+column, and `GroupSession.description` + surfaced `durationMin`/`locationId`
+(address lives on `ClinicLocation`, formatted by `formatLocationAddress`).
+
+**Gating decision (do not loosen):** aggregate occurrence counts sit at the
+`group_sessions` gate; the attendee-level "who still owes a note" list is
+`group_notes` only. Managing the schedule must not reveal which patients are
+behind on documentation.
+
 **Reporting.** `src/lib/groupMetrics.ts` is the single source for group
 reporting: `parseGroupEncounterId`/`occurrencePeers` (Claims Worklist group
 badge + peer popover, program IDs only), `activeGroupSessions`/
