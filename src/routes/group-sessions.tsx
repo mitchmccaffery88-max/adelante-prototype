@@ -561,3 +561,155 @@ function GroupDetail({
     </div>
   );
 }
+
+// §Group sessions — recurrence editor.
+//
+// Editing the pattern regenerates FUTURE occurrences only; `updateGroupRecurrence`
+// preserves anything in the past or already attended/documented, so a change
+// today can never rewrite attendance history.
+function RecurrenceEditor({ group, actor }: { group: GroupSession; actor: string }) {
+  const [weekly, setWeekly] = useState(group.recurrence.kind === "weekly");
+  const [days, setDays] = useState<number[]>(
+    group.recurrence.daysOfWeek?.length
+      ? group.recurrence.daysOfWeek
+      : [new Date(group.start).getDay()],
+  );
+  const [until, setUntil] = useState(group.recurrence.until ?? "");
+  const dayLabels = ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"];
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="font-display text-sm text-navy">Recurrence</h3>
+      <label className="flex items-center gap-2 text-xs text-muted-foreground">
+        <input type="checkbox" checked={weekly} onChange={(e) => setWeekly(e.target.checked)} />
+        Repeats weekly
+      </label>
+      {weekly && (
+        <div className="flex flex-wrap gap-1">
+          {dayLabels.map((label, idx) => (
+            <button
+              key={label}
+              type="button"
+              aria-pressed={days.includes(idx)}
+              onClick={() =>
+                setDays((prev) =>
+                  prev.includes(idx) ? prev.filter((d) => d !== idx) : [...prev, idx].sort(),
+                )
+              }
+              className={
+                "rounded-md border px-2 py-1 text-xs " +
+                (days.includes(idx) ? "border-teal bg-teal/10 text-navy" : "bg-card")
+              }
+            >
+              {label}
+            </button>
+          ))}
+        </div>
+      )}
+      {weekly && (
+        <div className="space-y-1.5">
+          <Label className="text-xs">Repeat until (optional)</Label>
+          <Input type="date" value={until} onChange={(e) => setUntil(e.target.value)} />
+        </div>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        Past and already-attended occurrences are never changed — only unused future
+        occurrences are regenerated.
+      </p>
+      <Button
+        size="sm"
+        onClick={() => {
+          try {
+            const res = AdelanteEHR.updateGroupRecurrence(
+              group.id,
+              weekly
+                ? { kind: "weekly", daysOfWeek: days, until: until || undefined }
+                : { kind: "none" },
+              actor,
+            );
+            toast.success(
+              res.removedFutureOccurrences > 0
+                ? `Recurrence updated — ${res.removedFutureOccurrences} unused future occurrence(s) regenerated`
+                : "Recurrence updated",
+            );
+          } catch (err) {
+            toast.error(err instanceof Error ? err.message : "Could not update recurrence.");
+          }
+        }}
+      >
+        Save recurrence
+      </Button>
+    </Card>
+  );
+}
+
+// §Group sessions — attendance + note-completion status per occurrence.
+//
+// GATING: aggregate counts sit at the `group_sessions` (schedule management)
+// gate. The attendee-level "who still owes a note" list is PHI plus group
+// membership, so it is shown ONLY to roles holding `group_notes` access —
+// managing the schedule must not reveal which patients are behind.
+function OccurrenceStatusCard({ group }: { group: GroupSession }) {
+  const { role } = useActingStaff();
+  const notesAccess = canAccess(role, "group_notes");
+  const canSeeAttendees = !notesAccess.locked;
+  const rows = useEhr(() => occurrenceStatuses(group.id, 6));
+
+  return (
+    <Card className="p-4 space-y-3">
+      <div className="flex items-center justify-between gap-2">
+        <h3 className="font-display text-sm text-navy">Attendance &amp; documentation status</h3>
+        {!canSeeAttendees && (
+          <Badge variant="outline" className="text-[10px] inline-flex items-center gap-1">
+            <Lock className="h-3 w-3" /> Counts only
+          </Badge>
+        )}
+      </div>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No occurrences scheduled.</p>
+      ) : (
+        <ul className="space-y-2">
+          {rows.map((r) => {
+            const owed = canSeeAttendees
+              ? occurrenceOwedAttendees(group.id, r.occurrenceStart)
+              : [];
+            return (
+              <li key={r.occurrenceStart} className="rounded-md border p-2.5 text-xs space-y-1">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-navy">
+                    <ClientDate value={r.occurrenceStart} />
+                  </span>
+                  {r.attendanceRecorded ? (
+                    <Badge className="bg-teal/15 text-teal">Attendance taken</Badge>
+                  ) : (
+                    <Badge variant="outline">Attendance not taken</Badge>
+                  )}
+                  {r.attendanceRecorded &&
+                    (r.notesOwed === 0 ? (
+                      <Badge className="bg-success/20 text-success">Notes complete</Badge>
+                    ) : (
+                      <Badge className="bg-gold/30 text-navy">{r.notesOwed} note(s) owed</Badge>
+                    ))}
+                </div>
+                <div className="text-muted-foreground">
+                  Present {r.present} · Late {r.late} · Absent {r.absent} · Individualized notes{" "}
+                  {r.notesComplete}/{r.notesComplete + r.notesOwed}
+                </div>
+                {canSeeAttendees && owed.length > 0 && (
+                  <div className="text-muted-foreground">
+                    Owing:{" "}
+                    {owed.map((o) => o.patientName).join(", ")}
+                  </div>
+                )}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+      <p className="text-[11px] text-muted-foreground">
+        "Complete" uses the same rule documentation enforces: every present or late attendee
+        needs their own individualized note.
+      </p>
+    </Card>
+  );
+}
