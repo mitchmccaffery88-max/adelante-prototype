@@ -57,7 +57,7 @@ export const Route = createFileRoute("/group-sessions")({
 });
 
 function GroupSessionsPage() {
-  const { role, staff } = useActingStaff();
+  const { role, staffName } = useActingStaff();
   const access = canAccess(role, "group_sessions");
   const groups = useEhr(() => AdelanteEHR.listGroupSessions());
   const [selectedId, setSelectedId] = useState<string>("");
@@ -86,7 +86,7 @@ function GroupSessionsPage() {
         </p>
       </header>
 
-      {access.level === "write" && <CreateGroupCard actor={staff?.name ?? role} />}
+      {access.level === "write" && <CreateGroupCard actor={staffName || role} />}
 
       {groups.length === 0 ? (
         <EmptyState title="No groups yet" description="Create a group to start a roster." />
@@ -117,7 +117,7 @@ function GroupSessionsPage() {
             <GroupDetail
               group={selected}
               canWrite={access.level === "write"}
-              actor={staff?.name ?? role}
+              actor={staffName || role}
             />
           )}
         </div>
@@ -350,7 +350,7 @@ function GroupDetail({
                 (activeStart === s ? "border-teal bg-teal/10 text-navy" : "bg-card")
               }
             >
-              <ClientDate iso={s} />
+              <ClientDate value={s} />
             </button>
           ))}
         </div>
