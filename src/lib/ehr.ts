@@ -10300,7 +10300,113 @@ export const AdelanteEHR = {
       cursor.setDate(cursor.getDate() + 1);
       cursor.setHours(first.getHours(), first.getMinutes(), 0, 0);
     }
-    return out;
+    // Apply single-occurrence exceptions: cancelled meetings disappear, moved
+    // meetings surface at their new time. The recurrence pattern is untouched.
+    const records = groupOccurrences.filter((o) => o.sessionId === sessionId);
+    const projected: string[] = [];
+    for (const start of out) {
+      const rec = records.find((r) => r.occurrenceStart === start);
+      if (rec?.status === "cancelled") continue;
+      projected.push(rec?.movedToStart ?? start);
+    }
+    for (const rec of records) {
+      if (rec.movedFromStart && !projected.includes(rec.occurrenceStart))
+        projected.push(rec.occurrenceStart);
+    }
+    return [...new Set(projected)].sort();
+  },
+
+  /**
+   * §Group sessions — occurrence-level exceptions (NOT the recurrence editor).
+   *
+   * Hard rule shared with every other correction path in this feature: an
+   * occurrence that is in the past, or that already carries attendance, a
+   * shared note or attendee notes, can never be silently rewritten. Those
+   * cases throw; the correction path is documentation amendment, not
+   * cancelling the meeting out from under the record.
+   */
+  assertGroupOccurrenceMutable(sessionId: string, occurrenceStart: string, now = new Date()) {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const t = Date.parse(occurrenceStart);
+    if (!Number.isFinite(t)) throw new Error("That occurrence time is not valid.");
+    if (t <= now.getTime())
+      throw new Error("That occurrence is in the past — past meetings can't be changed.");
+    const occ = groupOccurrences.find(
+      (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
+    );
+    if (occ) {
+      if (occ.status === "cancelled") throw new Error("That occurrence is already cancelled.");
+      if (occ.movedToStart) throw new Error("That occurrence has already been moved.");
+      const hasHistory =
+        !!occ.attendanceRecordedAt ||
+        occ.attendance.length > 0 ||
+        !!occ.sharedNote ||
+        Object.keys(occ.attendeeNoteIds).length > 0;
+      if (hasHistory)
+        throw new Error(
+          "Attendance or notes already exist for that occurrence — amend the documentation instead.",
+        );
+    }
+    return occ;
+  },
+
+  cancelGroupOccurrence(
+    sessionId: string,
+    occurrenceStart: string,
+    reason: string,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A reason is required to cancel a meeting.");
+    AdelanteEHR.assertGroupOccurrenceMutable(sessionId, occurrenceStart);
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.status = "cancelled";
+    row.cancelReason = trimmed;
+    row.cancelledAt = new Date().toISOString();
+    row.cancelledBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_occurrence_cancelled",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart, reason: trimmed },
+    });
+    emit();
+    return row;
+  },
+
+  rescheduleGroupOccurrence(
+    sessionId: string,
+    occurrenceStart: string,
+    newStart: string,
+    reason: string,
+    actor: string,
+  ): { from: GroupOccurrenceRecord; to: GroupOccurrenceRecord } {
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A reason is required to move a meeting.");
+    const t = Date.parse(newStart);
+    if (!Number.isFinite(t)) throw new Error("Pick a valid new date and time.");
+    if (t <= Date.now()) throw new Error("The new time has to be in the future.");
+    AdelanteEHR.assertGroupOccurrenceMutable(sessionId, occurrenceStart);
+    if (newStart === occurrenceStart) throw new Error("That is the same time.");
+    const existing = groupOccurrences.find(
+      (o) => o.sessionId === sessionId && o.occurrenceStart === newStart,
+    );
+    if (existing) throw new Error("A meeting already exists at that time.");
+    const from = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    from.movedToStart = newStart;
+    from.rescheduleReason = trimmed;
+    const to = _ensureGroupOccurrence(sessionId, newStart);
+    to.movedFromStart = occurrenceStart;
+    to.rescheduleReason = trimmed;
+    appendAudit({
+      category: "clinical",
+      action: "group_occurrence_rescheduled",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, from: occurrenceStart, to: newStart, reason: trimmed },
+    });
+    emit();
+    return { from, to };
   },
 
   listGroupOccurrenceRecords: (sessionId: string) =>
