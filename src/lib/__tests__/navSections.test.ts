@@ -16,7 +16,11 @@ const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
 describe("nav registry integrity", () => {
   it("has unique ids and routes", () => {
     expect(new Set(STAFF_NAV.map((e) => e.id)).size).toBe(STAFF_NAV.length);
-    expect(new Set(STAFF_NAV.map((e) => e.to)).size).toBe(STAFF_NAV.length);
+    // Destination = path + search: "Facility protocols" is the Worklist
+    // pre-filtered, so the path alone is legitimately shared.
+    expect(
+      new Set(STAFF_NAV.map((e) => `${e.to}?${new URLSearchParams(e.search ?? {})}`)).size,
+    ).toBe(STAFF_NAV.length);
   });
 
   it("surfaces every previously-missing cross-patient page", () => {
