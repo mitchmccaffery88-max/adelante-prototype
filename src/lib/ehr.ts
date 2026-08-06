@@ -3685,6 +3685,17 @@ export interface GroupSession {
   serviceType: ServiceType;
   modality: "video" | "phone" | "in_person";
   locationId?: string;
+  /**
+   * PLACEHOLDER TAXONOMY — exactly two categories, both provisional. Christi /
+   * SMEs must confirm whether more categories exist and whether
+   * "pre-authorization" here (internal clinical eligibility + placement
+   * approval) is the right reading, or whether a payer-facing prior-auth
+   * process is meant. This pass assumes the INTERNAL reading only.
+   *
+   *   sud_clinical_preauth   — staff-only enrollment, billable, claims flow.
+   *   open_psychoeducational — patient self-service, NON-billing engagement.
+   */
+  category: GroupCategory;
   /** ISO datetime of the first occurrence. */
   start: string;
   durationMin: number;
