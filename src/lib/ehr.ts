@@ -10726,7 +10726,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
-          billingEligible: true,
+          // Open psychoeducational groups are engagement, not claims.
+          billingEligible: isBillableGroupCategory(g.category),
           // PLACEHOLDER: no CPT/H-code invented. Billing supplies this.
           billingCodePlaceholder: undefined,
         },
