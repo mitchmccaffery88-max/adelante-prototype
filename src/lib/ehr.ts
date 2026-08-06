@@ -10175,6 +10175,8 @@ export const AdelanteEHR = {
       ...input,
       topic: input.topic.trim(),
       description: input.description?.trim() || undefined,
+      // PLACEHOLDER default: the stricter, staff-only, billable category.
+      category: input.category ?? "sud_clinical_preauth",
       id: `grp_${uid()}`,
       status: "scheduled",
       createdAt: new Date().toISOString(),
@@ -10189,6 +10191,7 @@ export const AdelanteEHR = {
         groupSessionId: row.id,
         topic: row.topic,
         serviceType: row.serviceType,
+        category: row.category,
         recurrence: row.recurrence.kind,
         capacity: row.capacity,
       },
