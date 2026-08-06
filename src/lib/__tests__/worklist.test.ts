@@ -7,7 +7,7 @@ import {
   worklistStatusFor,
   type CaseTask,
 } from "@/lib/ehr";
-import { isOverdue, matchesDiscipline } from "@/routes/worklist";
+import { isFacilityProtocolRound, isOverdue, matchesDiscipline } from "@/routes/worklist";
 
 const pid = () => AdelanteEHR.listPatients()[0].id;
 const make = (over: Partial<Parameters<typeof AdelanteEHR.createCaseTask>[0]> = {}) =>
