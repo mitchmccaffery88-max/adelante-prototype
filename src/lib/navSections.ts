@@ -40,6 +40,7 @@ export type NavGroup =
   | "care"
   | "queues"
   | "population"
+  | "facility"
   | "revenue"
   | "administration"
   | "account";
@@ -47,7 +48,8 @@ export type NavGroup =
 export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   care: "Care",
   queues: "Queues",
-  population: "Population & custody",
+  population: "Population health",
+  facility: "Facility & Custody",
   revenue: "Revenue & consent",
   administration: "Administration",
   account: "My account",
@@ -57,6 +59,7 @@ export const NAV_GROUP_ORDER: NavGroup[] = [
   "care",
   "queues",
   "population",
+  "facility",
   "revenue",
   "administration",
   "account",
@@ -133,7 +136,10 @@ export const STAFF_NAV: NavEntry[] = [
     icon: Pill,
     to: "/shift-count",
     group: "care",
-    gate: { kind: "record_class", anyOf: ["meds_erx"] },
+    // §Facility & Custody reorg — physical stock custody, not e-prescribing.
+    // Stays in Care because outpatient sites count stock too; the CLASS, not
+    // the group, decides access.
+    gate: { kind: "record_class", anyOf: ["controlled_substance_custody"] },
   },
   {
     id: "group-sessions",
@@ -210,7 +216,7 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["patient_messaging"] },
   },
 
-  // ----- Population & custody -----
+  // ----- Population health (outpatient program metrics) -----
   {
     id: "dashboards",
     label: "Population health",
@@ -220,13 +226,33 @@ export const STAFF_NAV: NavEntry[] = [
     group: "population",
     gate: { kind: "record_class", anyOf: ["population_health"] },
   },
+
+  // ----- Facility & Custody -----
   {
     id: "released-search",
     label: "Released patient search",
     desc: "Post-release follow-up",
     icon: UserSearch,
     to: "/released-search",
-    group: "population",
+    group: "facility",
+    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
+  },
+  {
+    id: "facility-protocols",
+    label: "Facility protocols",
+    desc: "CIWA/COWS rounds for booked patients",
+    icon: ClipboardList,
+    to: "/facility-protocols",
+    group: "facility",
+    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
+  },
+  {
+    id: "admin-facilities",
+    label: "Facilities",
+    desc: "Facility registry & merges",
+    icon: Building2,
+    to: "/admin-facilities",
+    group: "facility",
     gate: { kind: "record_class", anyOf: ["custody_tracking"] },
   },
 
@@ -324,15 +350,6 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/admin-catalog-governance",
     group: "administration",
     gate: { kind: "record_class", anyOf: ["catalog_governance"] },
-  },
-  {
-    id: "admin-facilities",
-    label: "Facilities",
-    desc: "Facility registry & merges",
-    icon: Building2,
-    to: "/admin-facilities",
-    group: "administration",
-    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
   },
   {
     id: "admin-audit",
