@@ -2,6 +2,10 @@ import { createFileRoute } from "@tanstack/react-router";
 import { PatientHome } from "@/components/PatientHome";
 
 export const Route = createFileRoute("/home")({
+  // §Group sessions — `msg` prefills the existing care-team message composer
+  // (see MessagesCard in PatientHome). No second composition flow.
+  validateSearch: (search: Record<string, unknown>): { msg?: string } =>
+    typeof search["msg"] === "string" ? { msg: search["msg"] as string } : {},
   head: () => ({
     meta: [
       { title: "My care — Adelante" },

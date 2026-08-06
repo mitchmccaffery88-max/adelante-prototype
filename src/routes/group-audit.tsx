@@ -11,6 +11,8 @@ import { useState } from "react";
 import { AdelanteEHR, GROUP_CATEGORIES, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
@@ -57,6 +59,9 @@ function GroupAuditPage() {
   const [role] = useActingRole();
   const [patientId, setPatientId] = useState("all");
   const [action, setAction] = useState("all");
+  // Same `type="date"` + since/until pattern as the admin audit log.
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
 
   const patients = useEhr(() => AdelanteEHR.listPatients());
 
@@ -64,6 +69,8 @@ function GroupAuditPage() {
     const events = AdelanteEHR.listAuditEvents({
       category: "clinical",
       patientId: patientId === "all" ? undefined : patientId,
+      since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
+      until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
     })
       .filter((e) => ACTION_SET.has(e.action))
       .filter((e) => action === "all" || e.action === action);
@@ -83,7 +90,7 @@ function GroupAuditPage() {
         </div>
       </header>
 
-      <div className="grid gap-3 sm:grid-cols-2">
+      <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
         <div>
           <label className="text-xs text-muted-foreground" id="ga-patient">
             Patient
@@ -120,7 +127,43 @@ function GroupAuditPage() {
             </SelectContent>
           </Select>
         </div>
+        <div>
+          <label className="text-xs text-muted-foreground" htmlFor="ga-from">
+            From
+          </label>
+          <Input
+            id="ga-from"
+            type="date"
+            value={from}
+            onChange={(e) => setFrom(e.target.value)}
+            className="min-h-11"
+          />
+        </div>
+        <div>
+          <label className="text-xs text-muted-foreground" htmlFor="ga-to">
+            To
+          </label>
+          <Input
+            id="ga-to"
+            type="date"
+            value={to}
+            onChange={(e) => setTo(e.target.value)}
+            className="min-h-11"
+          />
+        </div>
       </div>
+      {(from || to) && (
+        <Button
+          variant="ghost"
+          size="sm"
+          onClick={() => {
+            setFrom("");
+            setTo("");
+          }}
+        >
+          Clear dates
+        </Button>
+      )}
 
       <Card className="overflow-hidden p-0">
         {rows.length === 0 ? (

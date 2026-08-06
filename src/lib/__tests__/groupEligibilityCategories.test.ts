@@ -295,3 +295,104 @@ function eligible(patientId: string) {
     actor: "test",
   });
 }
+
+// §Group sessions — "concurrency" and capacity.
+//
+// HONEST SCOPE: this store is a synchronous in-memory JS module on a single
+// thread. `enrollInGroup` runs check-then-write with NO await inside, so the
+// JS event loop cannot interleave two calls mid-transaction — two callers can
+// never both read "1 seat left" before either writes. That property is what
+// this test pins: it is a re-entrancy/atomicity test, NOT proof of protection
+// against real concurrent writers.
+//
+// REAL GAP (documented, not fixable here): there is no optimistic locking,
+// version column or transaction anywhere in the data layer. On a real backend
+// with two processes, or if `assertEnrollmentAllowed`/`enrollInGroup` ever
+// gained an `await` between the capacity read and the roster write, this group
+// COULD be overbooked. Any future persistence backend must enforce capacity in
+// a transaction (or a unique/partial index), not in application code.
+describe("capacity under interleaved enrollment attempts", () => {
+  it("only one of two simultaneous attempts takes the last seat", async () => {
+    const clinician = AdelanteEHR.listClinicians()[0]!;
+    const g = AdelanteEHR.createGroupSession({
+      topic: "Last seat (placeholder)",
+      facilitatorId: clinician.id,
+      serviceType: "therapy_group",
+      modality: "in_person",
+      category: "open_psychoeducational",
+      start: new Date(Date.now() + 86400000).toISOString(),
+      durationMin: 60,
+      capacity: 2,
+      recurrence: { kind: "weekly", daysOfWeek: [new Date().getDay()] },
+      createdBy: "test",
+    });
+    const [a, b, c] = AdelanteEHR.listPatients();
+    for (const p of [a!, b!, c!])
+      AdelanteEHR.setGroupEligibility({
+        patientId: p.id,
+        reason: "placeholder criteria",
+        role: "therapist",
+        actor: "test",
+      });
+    // Fill to exactly one remaining seat.
+    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: a!.id, enrolledBy: "test" });
+    expect(AdelanteEHR.listGroupEnrollments(g.id)).toHaveLength(1);
+
+    // Two attempts dispatched together, each yielding to the event loop before
+    // it calls the store — the only interleaving this runtime can produce.
+    const attempt = async (patientId: string) => {
+      await Promise.resolve();
+      return AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId });
+    };
+    const results = await Promise.allSettled([attempt(b!.id), attempt(c!.id)]);
+    const ok = results.filter((r) => r.status === "fulfilled");
+    const failed = results.filter(
+      (r): r is PromiseRejectedResult => r.status === "rejected",
+    );
+
+    expect(ok).toHaveLength(1);
+    expect(failed).toHaveLength(1);
+    expect(String(failed[0]!.reason)).toContain("full");
+    expect(AdelanteEHR.listGroupEnrollments(g.id)).toHaveLength(2);
+    // The loser is audited as a blocked attempt, not a silent drop.
+    const blocked = AdelanteEHR.listAuditEvents({ category: "clinical" }).filter(
+      (e) => e.action === "group_enrollment_blocked" && e.detail?.["groupSessionId"] === g.id,
+    );
+    expect(blocked.length).toBe(1);
+  });
+});
+
+// §Group sessions — /group-audit date-range filter uses listAuditEvents
+// since/until (same params the admin audit log uses); this pins that the
+// range genuinely narrows the group-eligibility slice.
+describe("group audit date-range narrowing", () => {
+  it("since/until include and exclude eligibility events by timestamp", () => {
+    const p = AdelanteEHR.listPatients()[0]!;
+    AdelanteEHR.setGroupEligibility({
+      patientId: p.id,
+      reason: "probe",
+      role: "therapist",
+      curriculumNeedTag: "date-filter-probe",
+      actor: "test",
+    });
+    const mine = () =>
+      AdelanteEHR.listAuditEvents({ category: "clinical", patientId: p.id }).filter(
+        (e) => e.action === "group_eligibility_set" &&
+          e.detail?.["curriculumNeedTag"] === "date-filter-probe",
+      );
+    expect(mine().length).toBe(1);
+    const inRange = AdelanteEHR.listAuditEvents({
+      category: "clinical",
+      patientId: p.id,
+      since: new Date(Date.now() - 86400000).toISOString(),
+      until: new Date(Date.now() + 86400000).toISOString(),
+    }).filter((e) => e.detail?.["curriculumNeedTag"] === "date-filter-probe");
+    expect(inRange.length).toBe(1);
+    const outOfRange = AdelanteEHR.listAuditEvents({
+      category: "clinical",
+      patientId: p.id,
+      since: new Date(Date.now() + 86400000).toISOString(),
+    }).filter((e) => e.detail?.["curriculumNeedTag"] === "date-filter-probe");
+    expect(outOfRange.length).toBe(0);
+  });
+});

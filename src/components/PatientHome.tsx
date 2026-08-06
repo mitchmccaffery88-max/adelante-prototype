@@ -1,4 +1,4 @@
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -46,7 +46,7 @@ import { CrisisNotice } from "@/components/CrisisNotice";
 import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
@@ -132,6 +132,9 @@ function HomeScreenNudge() {
 export function PatientHome() {
   const { t } = useI18n();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  // §Group sessions — optional `?msg=` prefill for the care-team composer.
+  const search = useSearch({ strict: false }) as { msg?: string };
+  const messagePrefill = typeof search.msg === "string" ? search.msg : undefined;
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
   const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
@@ -319,7 +322,7 @@ export function PatientHome() {
       )}
 
       <TasksCard patientId={patient.id} />
-      <MessagesCard patientId={patient.id} />
+      <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <MyProfileCard patientId={patient.id} />
 
       <div>
@@ -573,13 +576,14 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
 }
 
 // §Messaging Phase 2 — "message your care team". One ongoing thread.
-function MessagesCard({ patientId }: { patientId: string }) {
+function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: string }) {
   const { t } = useI18n();
   const messages = useEhr(() => AdelanteEHR.listCareMessages(patientId));
   const unread = useEhr(() => AdelanteEHR.unreadCountForPatient(patientId));
   // Same consent field the Privacy & Consent card reads/writes.
   const part2Consent = useEhr(() => AdelanteEHR.getConsentState(patientId).part2Sud);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(prefill ?? "");
+  const cardRef = useRef<HTMLDivElement>(null);
   // Opt-in, unchecked by default — never an assumption about every message.
   const [sensitive, setSensitive] = useState(false);
 
@@ -587,6 +591,12 @@ function MessagesCard({ patientId }: { patientId: string }) {
   useEffect(() => {
     if (unread > 0) AdelanteEHR.markMessagesReadByPatient(patientId);
   }, [patientId, unread]);
+
+  // Arriving with a prefilled draft (e.g. from the Groups tab): put the
+  // composer in view so the patient can see what is about to be sent.
+  useEffect(() => {
+    if (prefill) cardRef.current?.scrollIntoView({ behavior: "smooth", block: "center" });
+  }, [prefill]);
 
   const send = () => {
     // Sent verbatim: no trimming of content, no translation, no rewriting.
@@ -599,7 +609,7 @@ function MessagesCard({ patientId }: { patientId: string }) {
   };
 
   return (
-    <Card className="p-5">
+    <Card className="p-5" ref={cardRef} id="care-messages">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
           <MessageSquare className="h-4 w-4" /> {t("msgTitle")}
