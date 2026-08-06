@@ -29,7 +29,10 @@ export type NavAccess =
   | { status: "denied"; entry: NavEntry; redirectTo: string; message: string };
 
 export function entryForPath(pathname: string): NavEntry | undefined {
-  return STAFF_NAV.find((e) => e.to === pathname);
+  // Entries carrying `search` are pre-filtered views of a page that has its own
+  // registry entry (§Facility & Custody: "Facility protocols" → /worklist).
+  // Path-level gating belongs to the underlying page, so skip the views here.
+  return STAFF_NAV.find((e) => e.to === pathname && !e.search);
 }
 
 /** First surface this role may actually open. */

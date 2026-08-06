@@ -37,6 +37,12 @@ export function StaffNavSidebar() {
   const groups = useStaffNavGroups();
   const { role } = useActingStaff();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  // §Facility & Custody — two entries can share a path when one is a
+  // pre-filtered view (Worklist vs. Worklist?view=facility-protocols), so
+  // active state has to consider the search param too.
+  const activeView = useRouterState({
+    select: (s) => (s.location.search as Record<string, unknown>)?.["view"],
+  });
   const navigate = useNavigate();
   const [query, setQuery] = useState("");
   const inputRef = useRef<HTMLInputElement>(null);
@@ -75,8 +81,12 @@ export function StaffNavSidebar() {
 
   // A route is active for its own path and any nested child path (e.g.
   // /record/$patientId keeps the Charts group lit).
-  const isActive = (to: string) =>
-    pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
+  const isActive = (to: string, search?: Record<string, string>) => {
+    const pathMatch = pathname === to || (to !== "/" && pathname.startsWith(`${to}/`));
+    if (!pathMatch) return false;
+    const view = typeof activeView === "string" ? activeView : undefined;
+    return search ? search["view"] === view : !view;
+  };
 
   // Explicit user toggles win; otherwise a group opens when it owns the active
   // route or when a quick-jump query is narrowing results.
@@ -273,7 +283,7 @@ export function StaffNavSidebar() {
           <p className="px-2 py-1 text-xs text-muted-foreground">No matching surfaces.</p>
         )}
         {visibleGroups.map((g) => {
-          const hasActive = g.entries.some((e) => isActive(e.to));
+          const hasActive = g.entries.some((e) => isActive(e.to, e.search));
           const defaultOpen = hasActive || Boolean(q);
           const open = collapsed ? true : (groupOverrides[g.group] ?? defaultOpen);
           return (
@@ -296,12 +306,13 @@ export function StaffNavSidebar() {
             {open && (
             <ul className="space-y-0.5">
               {g.entries.map((e) => {
-                const active = isActive(e.to);
+                const active = isActive(e.to, e.search);
                 const Icon = e.icon;
                 return (
                   <li key={e.id}>
                     <Link
                       to={e.to}
+                      search={(e.search ?? {}) as never}
                       title={collapsed ? `${e.label} — ${e.desc}` : e.desc}
                       data-nav-id={e.id}
                       data-nav-focusable="true"

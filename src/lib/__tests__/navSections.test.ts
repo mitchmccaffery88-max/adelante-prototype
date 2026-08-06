@@ -16,7 +16,11 @@ const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
 describe("nav registry integrity", () => {
   it("has unique ids and routes", () => {
     expect(new Set(STAFF_NAV.map((e) => e.id)).size).toBe(STAFF_NAV.length);
-    expect(new Set(STAFF_NAV.map((e) => e.to)).size).toBe(STAFF_NAV.length);
+    // Destination = path + search: "Facility protocols" is the Worklist
+    // pre-filtered, so the path alone is legitimately shared.
+    expect(
+      new Set(STAFF_NAV.map((e) => `${e.to}?${new URLSearchParams(e.search ?? {})}`)).size,
+    ).toBe(STAFF_NAV.length);
   });
 
   it("surfaces every previously-missing cross-patient page", () => {
@@ -32,7 +36,7 @@ describe("nav registry integrity", () => {
       "/admin-kpi-targets",
       "/admin-note-templates",
       "/admin-facilities",
-      "/facility-protocols",
+      "/worklist",
     ]) {
       expect(registry.has(route)).toBe(true);
     }
@@ -52,17 +56,29 @@ describe("nav registry integrity", () => {
     expect(staffNavGroupsForRole("billing").map((g) => g.group)).not.toContain("facility");
   });
 
-  it("§Shift count is gated on controlled_substance_custody, not meds_erx", () => {
+  it("§Shift count — re-gated on controlled_substance_custody with NO loss of access", () => {
     const entry = STAFF_NAV.find((e) => e.id === "shift-count")!;
     expect(entry.gate).toMatchObject({ anyOf: ["controlled_substance_custody"] });
+    // Stays in Care: outpatient sites reconcile physical stock too.
     expect(entry.group).toBe("care");
-    // Real behaviour change: therapist keeps meds_erx read but loses the page.
-    expect(canAccess("therapist", "meds_erx").level).toBe("read");
-    expect(canAccess("therapist", "controlled_substance_custody").level).toBe("none");
-    expect(ids("therapist")).not.toContain("shift-count");
-    expect(ids("case_manager")).not.toContain("shift-count");
-    expect(ids("pmhnp")).toContain("shift-count");
-    expect(ids("clinical_coordinator")).toContain("shift-count");
+    // Regression: every role's Shift-count level under the new class is
+    // identical to its old `meds_erx` level, so nobody gains or loses it.
+    for (const r of STAFF_ROLES.map((x) => x.key)) {
+      expect([r, canAccess(r, "controlled_substance_custody").level]).toEqual([
+        r,
+        canAccess(r, "meds_erx").level,
+      ]);
+      expect([r, ids(r).includes("shift-count")]).toEqual([
+        r,
+        canAccess(r, "meds_erx").level !== "none",
+      ]);
+    }
+  });
+
+  it("§Facility protocols is a pre-filtered Worklist view, not a second page", () => {
+    const entry = STAFF_NAV.find((e) => e.id === "facility-protocols")!;
+    expect(entry.to).toBe("/worklist");
+    expect(entry.search).toEqual({ view: "facility-protocols" });
   });
 
   it("keeps every entry from the old flat staff nav", () => {

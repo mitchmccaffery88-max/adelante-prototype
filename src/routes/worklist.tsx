@@ -8,7 +8,7 @@
 // Non-goals in this phase: scheduling rule engine, protocol starting
 // (CIWA/COWS), order-task creation, real-time cross-user sync (same
 // single-session limitation already flagged for MAR).
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
@@ -44,6 +44,12 @@ import {
 import { ArrowLeft, ListChecks, Lock, Play } from "lucide-react";
 
 export const Route = createFileRoute("/worklist")({
+  // §Facility & Custody — `?view=facility-protocols` is the nav group's
+  // "Facility protocols" entry: the same Worklist, narrowed to protocol rounds
+  // generated for patients in an open booking episode. Filtering into the real
+  // table beats cloning it, so claim/complete behaviour can never drift.
+  validateSearch: (raw: Record<string, unknown>): { view?: "facility-protocols" } =>
+    raw?.["view"] === "facility-protocols" ? { view: "facility-protocols" } : {},
   head: () => ({
     meta: [
       { title: "Worklist — Adelante" },
@@ -80,6 +86,15 @@ const STATUS_LABEL: Record<WorklistStatus, string> = {
 
 const ANY = "__any";
 
+/**
+ * A protocol-generated round (CIWA/COWS/safety-cell) that was created while the
+ * patient was in an open booking episode — tagged at generation time, so this
+ * is a real data predicate, not a label.
+ */
+export function isFacilityProtocolRound(t: CaseTask): boolean {
+  return Boolean(t.protocolInstanceId && t.facilityContext);
+}
+
 /** Overdue = a due date strictly before today and not yet closed out. */
 export function isOverdue(t: CaseTask, today = new Date().toISOString().slice(0, 10)): boolean {
   const s = worklistStatusFor(t);
@@ -94,6 +109,8 @@ export function matchesDiscipline(t: CaseTask, role: StaffRole): boolean {
 
 function WorklistPage() {
   const { role, staffName } = useActingStaff();
+  const { view } = Route.useSearch();
+  const navigate = useNavigate();
   const access = canAccess(role, "worklist");
   const canWrite = access.level === "write";
 
@@ -112,6 +129,10 @@ function WorklistPage() {
   const [dueTo, setDueTo] = useState("");
   const [running, setRunning] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
+  // Driven by the URL so the nav entry, deep links, and the toggle stay in sync.
+  const facilityRoundsOnly = view === "facility-protocols";
+  const setFacilityRoundsOnly = (on: boolean) =>
+    navigate({ to: "/worklist", search: on ? { view: "facility-protocols" as const } : {} });
   // Non-supervisor roles default to discipline-scoped so a case manager isn't
   // wading through pmhnp-only rows; coordinators/admins see everything.
   const supervisory = role === "clinical_coordinator" || role === "sys_admin";
@@ -126,6 +147,7 @@ function WorklistPage() {
   const scoped = useMemo(() => {
     const needle = q.trim().toLowerCase();
     return tasks.filter((t) => {
+      if (facilityRoundsOnly && !isFacilityProtocolRound(t)) return false;
       if (facilityId !== ANY && t.facilityId !== facilityId) return false;
       if (status !== ANY && worklistStatusFor(t) !== status) return false;
       if (priority !== ANY && taskPriority(t) !== priority) return false;
@@ -155,6 +177,7 @@ function WorklistPage() {
     dueTo,
     mineOnly,
     myDiscipline,
+    facilityRoundsOnly,
     role,
     staffName,
   ]);
@@ -219,10 +242,13 @@ function WorklistPage() {
       <header className="flex flex-wrap items-end justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl text-navy flex items-center gap-2">
-            <ListChecks className="h-5 w-5 text-teal" /> Worklist
+            <ListChecks className="h-5 w-5 text-teal" />{" "}
+            {facilityRoundsOnly ? "Facility protocols" : "Worklist"}
           </h1>
           <p className="text-sm text-muted-foreground">
-            Cross-facility operational tasks. Counts below describe the filtered view.
+            {facilityRoundsOnly
+              ? "CIWA/COWS and safety-cell rounds for patients in an open booking episode. Counts below describe the filtered view."
+              : "Cross-facility operational tasks. Counts below describe the filtered view."}
           </p>
         </div>
         {canManageProtocol(role) && (
@@ -319,6 +345,16 @@ function WorklistPage() {
           <label className="flex items-center gap-2 text-xs text-navy">
             <Switch checked={myDiscipline} onCheckedChange={setMyDiscipline} /> My discipline
           </label>
+          {(facilityRoundsOnly || canAccess(role, "custody_tracking").level !== "none") && (
+            <label className="flex items-center gap-2 text-xs text-navy">
+              <Switch
+                checked={facilityRoundsOnly}
+                onCheckedChange={setFacilityRoundsOnly}
+                aria-label="Facility protocol rounds only"
+              />{" "}
+              Facility protocol rounds only
+            </label>
+          )}
         </div>
       </Card>
 

@@ -33,7 +33,6 @@ import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
-import { Route as FacilityProtocolsRouteImport } from './routes/facility-protocols'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
 import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
@@ -170,11 +169,6 @@ const DashboardsRoute = DashboardsRouteImport.update({
   path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
-const FacilityProtocolsRoute = FacilityProtocolsRouteImport.update({
-  id: '/facility-protocols',
-  path: '/facility-protocols',
-  getParentRoute: () => rootRouteImport,
-} as any)
 const GroupAuditRoute = GroupAuditRouteImport.update({
   id: '/group-audit',
   path: '/group-audit',
@@ -277,7 +271,6 @@ export interface FileRoutesByFullPath {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
-  '/facility-protocols': typeof FacilityProtocolsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -319,7 +312,6 @@ export interface FileRoutesByTo {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
-  '/facility-protocols': typeof FacilityProtocolsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -362,7 +354,6 @@ export interface FileRoutesById {
   '/cosign-inbox': typeof CosignInboxRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
-  '/facility-protocols': typeof FacilityProtocolsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -406,7 +397,6 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
-    | '/facility-protocols'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -448,7 +438,6 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
-    | '/facility-protocols'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -490,7 +479,6 @@ export interface FileRouteTypes {
     | '/cosign-inbox'
     | '/crisis-queue'
     | '/dashboards'
-    | '/facility-protocols'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -533,7 +521,6 @@ export interface RootRouteChildren {
   CosignInboxRoute: typeof CosignInboxRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
-  FacilityProtocolsRoute: typeof FacilityProtocolsRoute
   GroupAuditRoute: typeof GroupAuditRoute
   GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
@@ -721,13 +708,6 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
-    '/facility-protocols': {
-      id: '/facility-protocols'
-      path: '/facility-protocols'
-      fullPath: '/facility-protocols'
-      preLoaderRoute: typeof FacilityProtocolsRouteImport
-      parentRoute: typeof rootRouteImport
-    }
     '/group-audit': {
       id: '/group-audit'
       path: '/group-audit'
@@ -861,7 +841,6 @@ const rootRouteChildren: RootRouteChildren = {
   CosignInboxRoute: CosignInboxRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
-  FacilityProtocolsRoute: FacilityProtocolsRoute,
   GroupAuditRoute: GroupAuditRoute,
   GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
