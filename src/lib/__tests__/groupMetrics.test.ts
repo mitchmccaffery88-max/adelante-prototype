@@ -59,7 +59,7 @@ describe("group reporting", () => {
     const g = makeGroup();
     const three = AdelanteEHR.listPatients().slice(0, 3);
     for (const p of three)
-      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
 
     expect(activeGroupSessions().some((x) => x.id === g.id)).toBe(true);
     expect(enrolledPatientCount()).toBeGreaterThanOrEqual(3);

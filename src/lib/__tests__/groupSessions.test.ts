@@ -40,7 +40,7 @@ describe("group session documentation", () => {
     const g = makeGroup();
     const three = patients().slice(0, 3);
     for (const p of three)
-      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -70,7 +70,7 @@ describe("group session documentation", () => {
     const g = makeGroup();
     const two = patients().slice(0, 2);
     for (const p of two)
-      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -142,7 +142,7 @@ describe("recurrence editing regenerates future occurrences without rewriting hi
   it("keeps attended occurrences and drops unused future ones", () => {
     const g = makeGroup();
     const p = patients()[0]!;
-    makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const starts = AdelanteEHR.groupOccurrenceStarts(g.id, 3);
     // Attendance taken on the first upcoming occurrence.
     AdelanteEHR.recordGroupAttendance(
@@ -174,7 +174,7 @@ describe("occurrence status reporting", () => {
     const g = makeGroup();
     const two = patients().slice(0, 2);
     for (const p of two)
-      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,

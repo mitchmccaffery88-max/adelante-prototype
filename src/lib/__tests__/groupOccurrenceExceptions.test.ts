@@ -52,7 +52,7 @@ describe("cancelling one future occurrence", () => {
   it("BLOCKS cancelling an occurrence that already has attendance", () => {
     const g = makeGroup();
     const p = AdelanteEHR.listPatients()[0]!;
-    makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -90,7 +90,7 @@ describe("rescheduling one future occurrence", () => {
   it("BLOCKS rescheduling an occurrence with notes already documented", () => {
     const g = makeGroup();
     const p = AdelanteEHR.listPatients()[1]!;
-    makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+    makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,
@@ -134,7 +134,7 @@ describe("PHI gate on occurrence status — enforced in the DATA layer", () => {
     const g = makeGroup();
     const two = AdelanteEHR.listPatients().slice(0, 2);
     for (const p of two)
-      makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
+      makeEligible(p.id);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
     const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
     AdelanteEHR.recordGroupAttendance(
       g.id,

@@ -32,7 +32,7 @@ function seedGroup(patientId: string, hoursAhead = 5) {
     recurrence: { kind: "none" },
     createdBy: "test",
   });
-  makeEligible(__ELIG__);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
+  makeEligible(patientId);AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId, enrolledBy: "test" });
   return g;
 }
 
