@@ -370,13 +370,15 @@ describe("group audit date-range narrowing", () => {
     const p = AdelanteEHR.listPatients()[0]!;
     AdelanteEHR.setGroupEligibility({
       patientId: p.id,
-      reason: "date filter probe",
+      reason: "probe",
       role: "therapist",
+      curriculumNeedTag: "date-filter-probe",
       actor: "test",
     });
     const mine = () =>
       AdelanteEHR.listAuditEvents({ category: "clinical", patientId: p.id }).filter(
-        (e) => e.action === "group_eligibility_set" && e.detail?.["reason"] === "date filter probe",
+        (e) => e.action === "group_eligibility_set" &&
+          e.detail?.["curriculumNeedTag"] === "date-filter-probe",
       );
     expect(mine().length).toBe(1);
     const inRange = AdelanteEHR.listAuditEvents({
@@ -384,13 +386,13 @@ describe("group audit date-range narrowing", () => {
       patientId: p.id,
       since: new Date(Date.now() - 86400000).toISOString(),
       until: new Date(Date.now() + 86400000).toISOString(),
-    }).filter((e) => e.detail?.["reason"] === "date filter probe");
+    }).filter((e) => e.detail?.["curriculumNeedTag"] === "date-filter-probe");
     expect(inRange.length).toBe(1);
     const outOfRange = AdelanteEHR.listAuditEvents({
       category: "clinical",
       patientId: p.id,
       since: new Date(Date.now() + 86400000).toISOString(),
-    }).filter((e) => e.detail?.["reason"] === "date filter probe");
+    }).filter((e) => e.detail?.["curriculumNeedTag"] === "date-filter-probe");
     expect(outOfRange.length).toBe(0);
   });
 });
