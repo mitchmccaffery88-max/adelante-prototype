@@ -12,6 +12,9 @@ describe("route-level nav guard", () => {
   it("mirrors the sidebar gate for every role and surface", () => {
     for (const { key: role } of STAFF_ROLES) {
       for (const entry of STAFF_NAV) {
+        // Pre-filtered views share a path with their base page; the base entry
+        // owns the guard decision (see entryForPath).
+        if (entry.search) continue;
         const access = resolveNavAccess(role, entry.to);
         expect(access.status).toBe(canSeeNavEntry(role, entry) ? "allowed" : "denied");
       }
