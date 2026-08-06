@@ -6,7 +6,12 @@
 // codes, no curriculum. Where there is no data to measure, these helpers
 // return `null` so the UI can say "no live metric yet" instead of a 0 that
 // reads as a measured result.
-import { AdelanteEHR, type GroupAttendanceEntry, type GroupSession } from "./ehr";
+import {
+  AdelanteEHR,
+  type GroupAttendanceEntry,
+  type GroupCategory,
+  type GroupSession,
+} from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
 
 // ---------------------------------------------------------------------------
