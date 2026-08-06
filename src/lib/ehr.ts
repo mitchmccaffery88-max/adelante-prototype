@@ -1679,7 +1679,13 @@ export interface PatientTask {
   completedAt?: string;
 }
 
-export type ApptNotificationKind = "booked" | "rescheduled" | "cancelled" | "confirmed";
+export type ApptNotificationKind =
+  | "booked"
+  | "rescheduled"
+  | "cancelled"
+  | "confirmed"
+  /** Pre-visit reminder for any upcoming contact (1:1 appointment or group occurrence). */
+  | "reminder";
 export type CommsChannel = "profile" | "sms" | "email";
 export type NotificationState = "queued" | "sent" | "delivered" | "failed";
 export interface ApptNotification {
@@ -3727,6 +3733,19 @@ export interface GroupOccurrenceRecord {
   sharedNote?: GroupSharedNote;
   /** patientId -> individualized ProgressNote id. */
   attendeeNoteIds: Record<string, string>;
+  /**
+   * Single-occurrence exceptions. These change ONE meeting only — the
+   * recurring pattern on the GroupSession is untouched.
+   */
+  status?: "scheduled" | "cancelled";
+  cancelReason?: string;
+  cancelledAt?: string;
+  cancelledBy?: string;
+  /** When this occurrence was moved, the ISO start it moved to. */
+  movedToStart?: string;
+  /** On the destination record, the ISO start it came from. */
+  movedFromStart?: string;
+  rescheduleReason?: string;
 }
 
 /**
