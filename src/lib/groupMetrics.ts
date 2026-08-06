@@ -110,6 +110,15 @@ export interface NextGroupOccurrence {
   start: string;
 }
 
+/** Soonest future occurrence of one group. Single source of "next meeting". */
+export function nextOccurrenceForGroup(sessionId: string, now = new Date()): string | null {
+  for (const start of AdelanteEHR.groupOccurrenceStarts(sessionId, 14)) {
+    const t = Date.parse(start);
+    if (Number.isFinite(t) && t > now.getTime()) return start;
+  }
+  return null;
+}
+
 /** Soonest future occurrence across every group the patient is enrolled in. */
 export function nextGroupOccurrenceForPatient(
   patientId: string,
@@ -117,12 +126,9 @@ export function nextGroupOccurrenceForPatient(
 ): NextGroupOccurrence | null {
   let best: NextGroupOccurrence | null = null;
   for (const g of AdelanteEHR.groupsForPatient(patientId)) {
-    for (const start of AdelanteEHR.groupOccurrenceStarts(g.id, 14)) {
-      const t = Date.parse(start);
-      if (!Number.isFinite(t) || t <= now.getTime()) continue;
-      if (!best || start < best.start) best = { sessionId: g.id, topic: g.topic, start };
-      break;
-    }
+    const start = nextOccurrenceForGroup(g.id, now);
+    if (!start) continue;
+    if (!best || start < best.start) best = { sessionId: g.id, topic: g.topic, start };
   }
   return best;
 }
