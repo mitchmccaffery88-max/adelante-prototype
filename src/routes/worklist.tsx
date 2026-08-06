@@ -8,7 +8,7 @@
 // Non-goals in this phase: scheduling rule engine, protocol starting
 // (CIWA/COWS), order-task creation, real-time cross-user sync (same
 // single-session limitation already flagged for MAR).
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
