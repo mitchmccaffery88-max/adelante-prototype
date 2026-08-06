@@ -769,3 +769,46 @@ function VendorStatusCard() {
     </Card>
   );
 }
+
+// §Group sessions — pilot dashboard activity strip.
+//
+// Group care is invisible to every Appointment-derived KPI above, so it gets
+// its own row. Counts only; no billing or curriculum content is inferred here.
+function GroupActivityKpi() {
+  const active = useEhr(() => activeGroupSessions().length);
+  const enrolled = useEhr(() => enrolledPatientCount());
+  const seats = useEhr(() => weeklyGroupSeats().length);
+  return (
+    <Card className="p-4" data-testid="admin-group-activity">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <UsersRound className="h-4 w-4 text-teal" />
+          <h2 className="font-display text-lg text-navy">Group activity</h2>
+        </div>
+        <Link to="/group-sessions" className="text-xs text-teal underline-offset-2 hover:underline">
+          Manage groups →
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-4 sm:grid-cols-3">
+        <div>
+          <div className="text-xs text-muted-foreground">Active groups</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-active">
+            {active}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Patients enrolled</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-enrolled">
+            {enrolled}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Scheduled seats (next 7 days)</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-seats">
+            {seats}
+          </div>
+        </div>
+      </div>
+    </Card>
+  );
+}
