@@ -39,6 +39,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { EmptyState } from "@/components/EmptyState";
+import { GroupEligibilityEditor } from "@/components/clinical/GroupEligibilityEditor";
 import { ClientDate } from "@/components/ClientDate";
 import { Lock, Users, CalendarPlus } from "lucide-react";
 

@@ -46,7 +46,7 @@ export function GroupEligibilityEditor({
           )}
           <p>
             Set by {eligibility.setBy} ({eligibility.setByRole}) on{" "}
-            <ClientDate iso={eligibility.setAt} />
+            <ClientDate value={eligibility.setAt} />
           </p>
           {canSet && (
             <Button
