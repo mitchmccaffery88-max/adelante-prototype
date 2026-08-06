@@ -36,6 +36,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
+import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
