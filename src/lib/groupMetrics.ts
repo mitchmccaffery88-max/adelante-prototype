@@ -158,6 +158,12 @@ export const GROUP_WINDOW_DAYS = 30;
 export function groupAttendanceRate(
   now = new Date(),
   days = GROUP_WINDOW_DAYS,
+  /**
+   * Optional category filter. Left undefined the rate spans every group, as
+   * before. Callers that must separate billable clinical groups from
+   * non-billing open engagement pass the category explicitly.
+   */
+  category?: GroupCategory,
 ): GroupAttendanceBreakdown {
   const from = now.getTime() - days * 86_400_000;
   let present = 0;
@@ -165,6 +171,7 @@ export function groupAttendanceRate(
   let absent = 0;
   let occurrencesRecorded = 0;
   for (const g of AdelanteEHR.listGroupSessions()) {
+    if (category && g.category !== category) continue;
     for (const occ of AdelanteEHR.listGroupOccurrenceRecords(g.id)) {
       if (!occ.attendanceRecordedAt || occ.attendance.length === 0) continue;
       const t = Date.parse(occ.occurrenceStart);
@@ -185,6 +192,47 @@ export function groupAttendanceRate(
     denominator,
     occurrencesRecorded,
     pct: denominator === 0 ? null : ((present + late) / denominator) * 100,
+  };
+}
+
+/**
+ * §Group sessions — NON-BILLING engagement rollup for open psychoeducational
+ * groups. Deliberately separate from the claims path: these occurrences never
+ * produce a Claim (enforced in `upsertClaimFromGroupAttendee`), so their only
+ * downstream use is program-reach / utilization reporting.
+ */
+export interface OpenGroupEngagement {
+  activeGroups: number;
+  enrolledPatients: number;
+  /** Distinct patients who attended (present or late) inside the window. */
+  patientsReached: number;
+  attendance: GroupAttendanceBreakdown;
+}
+
+export function openGroupEngagement(
+  now = new Date(),
+  days = GROUP_WINDOW_DAYS,
+): OpenGroupEngagement {
+  const open = AdelanteEHR.listGroupSessions().filter(
+    (g) => g.category === "open_psychoeducational" && g.status !== "cancelled",
+  );
+  const enrolled = new Set<string>();
+  const reached = new Set<string>();
+  const from = now.getTime() - days * 86_400_000;
+  for (const g of open) {
+    for (const e of AdelanteEHR.listGroupEnrollments(g.id)) enrolled.add(e.patientId);
+    for (const occ of AdelanteEHR.listGroupOccurrenceRecords(g.id)) {
+      const t = Date.parse(occ.occurrenceStart);
+      if (!Number.isFinite(t) || t < from || t > now.getTime()) continue;
+      for (const a of occ.attendance)
+        if (a.status === "present" || a.status === "late") reached.add(a.patientId);
+    }
+  }
+  return {
+    activeGroups: open.length,
+    enrolledPatients: enrolled.size,
+    patientsReached: reached.size,
+    attendance: groupAttendanceRate(now, days, "open_psychoeducational"),
   };
 }
 
