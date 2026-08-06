@@ -10106,6 +10106,9 @@ export const AdelanteEHR = {
     const row = groupSessions.find((g) => g.id === id);
     if (!row) throw new Error("Group not found.");
     const trimmed = reason.trim();
+    const row = groupSessions.find((g) => g.id === id);
+    if (!row) throw new Error("Group not found.");
+    const trimmed = reason.trim();
     if (!trimmed) throw new Error("A cancellation reason is required.");
     row.status = "cancelled";
     row.cancelledAt = new Date().toISOString();
