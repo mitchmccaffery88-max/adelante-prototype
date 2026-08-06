@@ -6,6 +6,12 @@ import { AdelanteEHR, type GroupCategory } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
 import { openGroupEngagement } from "../groupMetrics";
 
+/** Seed roster is small; wrap the index so the suite is roster-size independent. */
+function patientAt(i: number) {
+  const list = AdelanteEHR.listPatients();
+  return list[i % list.length]!;
+}
+
 function makeGroup(category: GroupCategory) {
   const clinician = AdelanteEHR.listClinicians()[0]!;
   return AdelanteEHR.createGroupSession({
@@ -34,7 +40,7 @@ function eligible(patientId: string) {
 
 describe("group eligibility is a real precondition for every enrollment path", () => {
   it("blocks staff enrollment in BOTH categories until eligibility is set", () => {
-    const p = AdelanteEHR.listPatients()[0]!;
+    const p = patientAt(0);
     AdelanteEHR.clearGroupEligibility?.(p.id, "reset for test", "test");
     for (const cat of ["sud_clinical_preauth", "open_psychoeducational"] as GroupCategory[]) {
       const g = makeGroup(cat);
@@ -50,7 +56,7 @@ describe("group eligibility is a real precondition for every enrollment path", (
   });
 
   it("blocks patient self-enrollment without eligibility", () => {
-    const p = AdelanteEHR.listPatients()[1]!;
+    const p = patientAt(1);
     const g = makeGroup("open_psychoeducational");
     expect(() => AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId: p.id })).toThrow(
       /eligibility/i,
@@ -58,7 +64,7 @@ describe("group eligibility is a real precondition for every enrollment path", (
   });
 
   it("only a clinical / care-management role may set the flag", () => {
-    const p = AdelanteEHR.listPatients()[2]!;
+    const p = patientAt(2);
     expect(() =>
       AdelanteEHR.setGroupEligibility({
         patientId: p.id,
@@ -72,7 +78,7 @@ describe("group eligibility is a real precondition for every enrollment path", (
 
 describe("self-service is categorically scoped to open groups", () => {
   it("never lists a sud_clinical_preauth group for a patient", () => {
-    const p = AdelanteEHR.listPatients()[3]!;
+    const p = patientAt(3);
     eligible(p.id);
     const sud = makeGroup("sud_clinical_preauth");
     const open = makeGroup("open_psychoeducational");
@@ -82,7 +88,7 @@ describe("self-service is categorically scoped to open groups", () => {
   });
 
   it("refuses a direct self-enroll attempt against a staff-only group", () => {
-    const p = AdelanteEHR.listPatients()[4]!;
+    const p = patientAt(4);
     eligible(p.id);
     const sud = makeGroup("sud_clinical_preauth");
     expect(() => AdelanteEHR.selfEnrollInGroup({ sessionId: sud.id, patientId: p.id })).toThrow(
@@ -91,7 +97,7 @@ describe("self-service is categorically scoped to open groups", () => {
   });
 
   it("lets an eligible patient self-enroll in an open group", () => {
-    const p = AdelanteEHR.listPatients()[5]!;
+    const p = patientAt(5);
     eligible(p.id);
     const open = makeGroup("open_psychoeducational");
     const row = AdelanteEHR.selfEnrollInGroup({ sessionId: open.id, patientId: p.id });
@@ -106,7 +112,7 @@ describe("self-service is categorically scoped to open groups", () => {
 
 describe("open-group attendance never creates a claim", () => {
   it("returns null from the billing hook and leaves attendee notes non-billable", () => {
-    const p = AdelanteEHR.listPatients()[6]!;
+    const p = patientAt(6);
     eligible(p.id);
     const g = makeGroup("open_psychoeducational");
     AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
@@ -147,7 +153,7 @@ describe("open-group attendance never creates a claim", () => {
   });
 
   it("still bills a clinical pre-authorized group", () => {
-    const p = AdelanteEHR.listPatients()[7]!;
+    const p = patientAt(7);
     eligible(p.id);
     const g = makeGroup("sud_clinical_preauth");
     AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
