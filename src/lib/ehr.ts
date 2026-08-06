@@ -3666,6 +3666,68 @@ export interface GroupRecurrence {
   until?: string;
 }
 
+/**
+ * §Group sessions — PLACEHOLDER CATEGORY TAXONOMY (confirm with Christi/SMEs).
+ * Only two values exist in this pass; there may well be more in reality.
+ */
+export type GroupCategory = "sud_clinical_preauth" | "open_psychoeducational";
+
+export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: string }[] = [
+  {
+    key: "sud_clinical_preauth",
+    label: "SUD / clinically pre-authorized (placeholder)",
+    helper:
+      "Staff enroll patients. Individualized attendee notes are billable and flow to the Claims Worklist.",
+  },
+  {
+    key: "open_psychoeducational",
+    label: "Open psychoeducational (placeholder)",
+    helper:
+      "Eligible patients can self-enroll from their scheduling page. Attendance is tracked for engagement reporting only — never billed.",
+  },
+];
+
+/** True when this category's attendee notes may create claims. */
+export function isBillableGroupCategory(category: GroupCategory): boolean {
+  return category === "sud_clinical_preauth";
+}
+
+/**
+ * §Group sessions — care-plan group eligibility.
+ *
+ * PLACEHOLDER: neither `reason` nor `curriculumNeedTag` encodes real clinical
+ * criteria. Roles allowed to set it are the clinical/care-management roles
+ * listed in `GROUP_ELIGIBILITY_ROLES`.
+ */
+export interface GroupEligibility {
+  eligible: true;
+  /** Free-text clinical rationale. Placeholder — no criteria list exists yet. */
+  reason: string;
+  /** PLACEHOLDER curriculum-need tag. Not a DHCS curriculum taxonomy. */
+  curriculumNeedTag?: string;
+  setAt: string;
+  setBy: string;
+  setByRole: string;
+}
+
+/** Only these roles may set the group-eligibility gate. */
+export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "case_manager"] as const;
+
+/**
+ * Who initiated an enrollment. Deliberately an open shape rather than a
+ * boolean "isPatient": the DHCS Authorized Representative / Collateral role
+ * (Advocate) is a separate swim-lane and will add a third kind here. Every
+ * "is this actor allowed" decision funnels through `_assertEnrollmentAllowed`
+ * below — that is the ONE place the advocate role plugs in later.
+ */
+export type EnrollmentInitiatorKind = "staff" | "patient";
+
+export interface EnrollmentInitiator {
+  kind: EnrollmentInitiatorKind;
+  /** Staff display name, or the patient id for a self-service enrollment. */
+  actorId: string;
+}
+
 export interface GroupSession {
   id: string;
   /** Free text placeholder topic — NOT a real curriculum name. */
