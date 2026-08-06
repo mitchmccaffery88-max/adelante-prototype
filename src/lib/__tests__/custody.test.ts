@@ -396,3 +396,26 @@ describe("facility administration", () => {
     expect(AdelanteEHR.getFacility(dupeFacilityId)?.active).toBe(false);
   });
 });
+
+// §Facility & Custody reorg — additive protocol-round tagging.
+describe("facility protocol tagging", () => {
+  it("tags CIWA/COWS rounds started during an open booking episode", () => {
+    const p = AdelanteEHR.listPatients()[0];
+    const tpl = AdelanteEHR.listNoteTemplates().find(
+      (t) => t.active && !t.supersededBy && (t.schema?.scoring?.length ?? 0) > 0,
+    );
+    if (!tpl) return; // no scored template seeded — nothing to assert
+    AdelanteEHR.addBooking(
+      p.id,
+      { bookingNumber: `FP-${Date.now()}`, facilityName: "Tag Test Facility", bookedAt: new Date().toISOString() },
+      "Tester",
+    );
+    const inst = AdelanteEHR.startProtocol(p.id, "CIWA-Ar", tpl.id, 60, 2, "Tester");
+    const rounds = AdelanteEHR.protocolRounds(inst.id);
+    expect(rounds).toHaveLength(2);
+    for (const r of rounds) {
+      expect(r.facilityContext).toBe(true);
+      expect(r.facilityId).toBeTruthy();
+    }
+  });
+});
