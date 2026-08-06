@@ -32,7 +32,7 @@ describe("nav registry integrity", () => {
       "/admin-kpi-targets",
       "/admin-note-templates",
       "/admin-facilities",
-      "/facility-protocols",
+      "/worklist",
     ]) {
       expect(registry.has(route)).toBe(true);
     }
