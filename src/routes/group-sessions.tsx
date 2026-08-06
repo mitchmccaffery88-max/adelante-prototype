@@ -12,12 +12,17 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
+  formatLocationAddress,
   useEhr,
   type GroupAttendanceStatus,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import {
+  occurrenceOwedAttendees,
+  occurrenceStatuses,
+} from "@/lib/groupMetrics";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -129,11 +134,15 @@ function GroupSessionsPage() {
 function CreateGroupCard({ actor }: { actor: string }) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
+  const [description, setDescription] = useState("");
   const [facilitatorId, setFacilitatorId] = useState("");
   const [start, setStart] = useState("");
   const [capacity, setCapacity] = useState("8");
+  const [durationMin, setDurationMin] = useState("60");
+  const [locationId, setLocationId] = useState("");
   const [weekly, setWeekly] = useState(true);
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const locations = useEhr(() => AdelanteEHR.listLocations());
 
   if (!open)
     return (
@@ -178,6 +187,42 @@ function CreateGroupCard({ actor }: { actor: string }) {
             onChange={(e) => setCapacity(e.target.value)}
           />
         </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Session length (minutes)</Label>
+          <Input
+            type="number"
+            min={5}
+            step={5}
+            value={durationMin}
+            onChange={(e) => setDurationMin(e.target.value)}
+          />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Location</Label>
+          <Select value={locationId} onValueChange={setLocationId}>
+            <SelectTrigger>
+              <SelectValue placeholder="Pick a location (optional)" />
+            </SelectTrigger>
+            <SelectContent>
+              {locations.map((l) => (
+                <SelectItem key={l.id} value={l.id}>
+                  {l.name} — {formatLocationAddress(l)}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
+        <div className="space-y-1.5 sm:col-span-2">
+          <Label className="text-xs">
+            Description — patient-safe "what to expect" text (placeholder, not curriculum)
+          </Label>
+          <Textarea
+            rows={2}
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            placeholder="A weekly conversation group. Come as you are."
+          />
+        </div>
       </div>
       <label className="flex items-center gap-2 text-xs text-muted-foreground">
         <input type="checkbox" checked={weekly} onChange={(e) => setWeekly(e.target.checked)} />
@@ -193,11 +238,13 @@ function CreateGroupCard({ actor }: { actor: string }) {
               if (!facilitatorId) throw new Error("Pick a facilitator.");
               AdelanteEHR.createGroupSession({
                 topic,
+                description,
                 facilitatorId,
                 serviceType: "therapy_group",
                 modality: "in_person",
+                locationId: locationId || undefined,
                 start: startIso,
-                durationMin: 60,
+                durationMin: Number(durationMin) || 60,
                 capacity: Number(capacity) || 1,
                 recurrence: weekly
                   ? { kind: "weekly", daysOfWeek: [new Date(startIso).getDay()] }
@@ -207,6 +254,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
               toast.success("Group created");
               setOpen(false);
               setTopic("");
+              setDescription("");
             } catch (err) {
               toast.error(err instanceof Error ? err.message : "Could not create the group.");
             }
