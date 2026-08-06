@@ -33,6 +33,7 @@ import {
   BellOff,
   RotateCw,
   Lock,
+  UsersRound,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -42,6 +43,12 @@ import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { staffNavGroupForRole } from "@/lib/navSections";
+import {
+  activeGroupSessions,
+  enrolledPatientCount,
+  nextGroupOccurrenceForPatient,
+  weeklyGroupSeats,
+} from "@/lib/groupMetrics";
 
 export const Route = createFileRoute("/admin")({
   head: () => ({
@@ -218,6 +225,10 @@ function AdminPage() {
         />
       </div>
 
+      <div className="mb-6">
+        <GroupActivityKpi />
+      </div>
+
       <PopulationCarePlanStrip className="mb-6" />
 
       <div className="grid lg:grid-cols-3 gap-6">
@@ -263,7 +274,7 @@ function AdminPage() {
                 <TableHead>CIN</TableHead>
                 <TableHead>Episode day</TableHead>
                 <TableHead>Coverage</TableHead>
-                <TableHead>Next appt</TableHead>
+                <TableHead>Next contact</TableHead>
                 <TableHead>Engagement</TableHead>
                 <TableHead>SMS reminders</TableHead>
               </TableRow>
@@ -295,9 +306,24 @@ function AdminPage() {
                   </TableCell>
                   <TableCell className="text-xs text-muted-foreground">
                     {(() => {
+                      // "Next contact" spans both 1:1 appointments and group
+                      // occurrences — the Appointment model can't see groups.
                       const upcoming = AdelanteEHR.appointmentsForPatient(p.id)
                         .filter((a) => new Date(a.start).getTime() > Date.now())
                         .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
+                      const group = nextGroupOccurrenceForPatient(p.id);
+                      const useGroup =
+                        group && (!upcoming || group.start < upcoming.start) ? group : null;
+                      if (useGroup) {
+                        return (
+                          <span className="inline-flex items-center gap-1.5">
+                            <ClientDate value={useGroup.start} />
+                            <Badge variant="outline" className="text-[10px]">
+                              Group
+                            </Badge>
+                          </span>
+                        );
+                      }
                       return upcoming ? <ClientDate value={upcoming.start} /> : "—";
                     })()}
                   </TableCell>
@@ -739,6 +765,49 @@ function VendorStatusCard() {
         >
           Test connections
         </Button>
+      </div>
+    </Card>
+  );
+}
+
+// §Group sessions — pilot dashboard activity strip.
+//
+// Group care is invisible to every Appointment-derived KPI above, so it gets
+// its own row. Counts only; no billing or curriculum content is inferred here.
+function GroupActivityKpi() {
+  const active = useEhr(() => activeGroupSessions().length);
+  const enrolled = useEhr(() => enrolledPatientCount());
+  const seats = useEhr(() => weeklyGroupSeats().length);
+  return (
+    <Card className="p-4" data-testid="admin-group-activity">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-2">
+          <UsersRound className="h-4 w-4 text-teal" />
+          <h2 className="font-display text-lg text-navy">Group activity</h2>
+        </div>
+        <Link to="/group-sessions" className="text-xs text-teal underline-offset-2 hover:underline">
+          Manage groups →
+        </Link>
+      </div>
+      <div className="mt-3 grid gap-4 sm:grid-cols-3">
+        <div>
+          <div className="text-xs text-muted-foreground">Active groups</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-active">
+            {active}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Patients enrolled</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-enrolled">
+            {enrolled}
+          </div>
+        </div>
+        <div>
+          <div className="text-xs text-muted-foreground">Scheduled seats (next 7 days)</div>
+          <div className="font-display text-2xl text-navy" data-testid="admin-group-seats">
+            {seats}
+          </div>
+        </div>
       </div>
     </Card>
   );

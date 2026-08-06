@@ -15,6 +15,7 @@ import {
   type Patient,
   type ProgressNote,
 } from "./ehr";
+import { groupAttendanceRate, GROUP_WINDOW_DAYS } from "./groupMetrics";
 
 export type MetricUnit = "percent" | "count";
 
@@ -31,6 +32,7 @@ export type MetricKey =
   | "mar_compliance_pct"
   | "unsigned_notes_count"
   | "overdue_task_count"
+  | "group_attendance_rate_pct"
   | "controlled_count_discrepancies"
   | "open_kites_count"
   | "ncchc_intake_screening_pct"
@@ -44,6 +46,7 @@ export const METRIC_KEY_LABELS: Record<MetricKey, string> = {
   mar_compliance_pct: "MAR compliance (30 days)",
   unsigned_notes_count: "Unsigned notes",
   overdue_task_count: "Overdue tasks",
+  group_attendance_rate_pct: "Group attendance rate (30 days)",
   controlled_count_discrepancies: "Controlled count discrepancies",
   open_kites_count: "Open kites",
   ncchc_intake_screening_pct: "NCCHC — intake screening within 24h",
@@ -59,6 +62,8 @@ export const METRICS_WITHOUT_SOURCE: Record<MetricKey, string | undefined> = {
   mar_compliance_pct: undefined,
   unsigned_notes_count: undefined,
   overdue_task_count: undefined,
+  group_attendance_rate_pct:
+    "Computed only from occurrences where a facilitator actually took attendance; groups with no roster taken are excluded rather than counted as absences.",
   controlled_count_discrepancies:
     "ShiftCount records totals and a 2-person reconciliation signature, but has no discrepancy field — there is nothing to count.",
   open_kites_count: "Kites are out of scope; no kite record exists.",
@@ -288,6 +293,18 @@ export function computeLiveMetrics(now = new Date()): LiveMetricMap {
       higherIsBetter: false,
       basis: "Open case tasks past their due date",
     },
+    group_attendance_rate_pct: (() => {
+      const g = groupAttendanceRate(now);
+      return {
+        value: g.pct,
+        unit: "percent" as const,
+        higherIsBetter: true,
+        basis:
+          g.denominator === 0
+            ? `No group attendance recorded in the last ${GROUP_WINDOW_DAYS} days`
+            : `${g.present + g.late} of ${g.denominator} seats attended across ${g.occurrencesRecorded} occurrence(s)`,
+      };
+    })(),
     controlled_count_discrepancies: NO_SOURCE("count", false),
     open_kites_count: NO_SOURCE("count", false),
     ncchc_intake_screening_pct: NO_SOURCE("percent", true),
@@ -302,7 +319,8 @@ export function metricSupportsDrillDown(key: MetricKey): boolean {
   return (
     key === "unsigned_notes_count" ||
     key === "overdue_task_count" ||
-    key === "mar_compliance_pct"
+    key === "mar_compliance_pct" ||
+    key === "group_attendance_rate_pct"
   );
 }
 
