@@ -144,9 +144,6 @@ function DashboardsPage() {
         emptyMessage: "No refused or held doses in the window.",
       };
     }
-    if (drill === "calaim_caseload") {
-      // fallthrough below
-    }
     if (drill === "group_attendance_rate_pct") {
       const columns: DrillDownColumn<ReturnType<typeof groupAbsences>[number]>[] = [
         {
