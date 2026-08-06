@@ -2,9 +2,10 @@
 //
 // This page does NOT re-chart anything: it aggregates the MAR data that
 // already exists (DoseAdministration joined to MedOrder.deaSchedule). Gated on
-// `meds_erx` write — a controlled count is a medication-pass artifact, so the
-// people who chart the pass are the people who count it (pmhnp today; the same
-// class MAR itself uses). Clinical coordinators read it through the audit log.
+// `controlled_substance_custody` write — physical stock reconciliation is its
+// own custodial responsibility, distinct from `meds_erx` (prescribing) and
+// from `custody_tracking` (facility/incarceration). Outpatient sites that
+// count a narcotics box qualify without doing any facility work.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -75,7 +76,7 @@ function csvEscape(v: string | number | undefined) {
 
 export function ShiftCountPage() {
   const { role, staffName } = useActingStaff();
-  const canCount = canAccess(role, "meds_erx").level === "write";
+  const canCount = canAccess(role, "controlled_substance_custody").level === "write";
   const initial = useMemo(defaultWindow, []);
   const [start, setStart] = useState(initial.start);
   const [end, setEnd] = useState(initial.end);
