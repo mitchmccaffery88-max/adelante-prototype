@@ -1669,7 +1669,13 @@ export type ConsentCategory =
   // category here: the real DHCS DMC-ODS Collateral ROI form language is
   // Christi's to supply. The GATE is real even though the content is not —
   // a Collateral-type advocate has zero access until this is active.
-  | "roi_collateral";
+  | "roi_collateral"
+  // §v3.0 Phase 4 expansion — the ONE consent-conditional exception to
+  // ADVOCATE_PART2_ALWAYS_MASKED. PLACEHOLDER key and label; the real
+  // 42 CFR Part 2 disclosure-authorization language is Christi's to supply.
+  // Active + a valid advocate link => that advocate may see SUD group topics
+  // and appointment service types for THAT patient. Nothing else changes.
+  | "advocate_sud_disclosure";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
@@ -1686,6 +1692,10 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   {
     key: "roi_collateral",
     label: "Release of Information — Collateral participation (placeholder)",
+  },
+  {
+    key: "advocate_sud_disclosure",
+    label: "Part 2 disclosure to advocate — SUD service details (placeholder)",
   },
 ];
 
