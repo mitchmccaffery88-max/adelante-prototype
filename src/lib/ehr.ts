@@ -1267,6 +1267,12 @@ export interface PeerNote {
   author: string;
   text: string;
   mode?: "in_person" | "phone" | "text" | "warmline" | "group";
+  /** §Phase 3 billing hook — authoring staff member (roles.ts roster id). */
+  staffId?: string;
+  /** Documented service time; drives H0038 15-minute unit math. */
+  minutes?: number;
+  /** Claim generated from this note, when one was created. */
+  claimId?: string;
 }
 
 export type EligibilityFlagKey = "ecm" | "jiReentry" | "cs_housing" | "cs_food" | "cs_transport";
@@ -3474,6 +3480,74 @@ noteTemplates.push({
             label: "Additional narrative summary",
             rows: 3,
           },
+        ],
+      },
+    ],
+  },
+});
+
+/**
+ * §v3.0 Phase 3 — Community Health Worker service note.
+ *
+ * Reuses the existing template engine (no parallel documentation system).
+ * `service_minutes` is what the G0019/G0022 unit math reads; the CHW/ECM
+ * exclusivity and daily cap are enforced at the claim hook, not here.
+ *
+ * AUTHORSHIP CAUTION: structure is product/engineering-authored placeholder,
+ * pending clinical/DHCS review — same discipline as the other scaffolds.
+ */
+noteTemplates.push({
+  id: "tpl-chw-service",
+  key: "chw_service",
+  version: 1,
+  title: "CHW service note",
+  description: "Community Health Worker service contact — documents time, activity and follow-up.",
+  encounterType: "chw_service",
+  active: true,
+  createdBy: "Adelante System Admin",
+  createdAt: new Date().toISOString(),
+  schema: {
+    sections: [
+      {
+        id: "chw_contact",
+        title: "Contact",
+        fields: [
+          {
+            key: "contact_mode",
+            type: "radio",
+            label: "Contact type",
+            required: true,
+            options: [
+              { value: "in_person", label: "In person" },
+              { value: "phone", label: "Phone" },
+              { value: "home_visit", label: "Home / community visit" },
+            ],
+          },
+          {
+            key: "service_minutes",
+            type: "number",
+            label: "Service time (minutes) — billed in 30-minute units, max 2 hrs/day",
+            required: true,
+          },
+        ],
+      },
+      {
+        id: "chw_activity",
+        title: "Activity",
+        fields: [
+          {
+            key: "activities",
+            type: "multiselect",
+            label: "Activities performed",
+            options: [
+              { value: "health_education", label: "Health education" },
+              { value: "navigation", label: "System navigation / appointment support" },
+              { value: "resource_linkage", label: "Resource linkage" },
+              { value: "self_management", label: "Self-management coaching" },
+            ],
+          },
+          { key: "narrative", type: "textarea", label: "Narrative", required: true, rows: 4 },
+          { key: "follow_up", type: "textarea", label: "Follow-up plan", rows: 3 },
         ],
       },
     ],
@@ -7357,6 +7431,34 @@ export const AdelanteEHR = {
         redirectTo: input.redirectTo,
         entryId: input.entryId,
         label: input.label,
+      },
+    });
+  },
+  /**
+   * §Phase 3 community billing — a refused claim attempt (Peer / CHW).
+   * Recorded at the point of the attempt so the block is visible in the same
+   * audit stream as everything else, not discovered later at claims review.
+   */
+  recordCommunityBillingBlocked(input: {
+    patientId: string;
+    actorId?: string;
+    actorRole?: string;
+    service: "peer_support" | "chw_services";
+    reasonCode: string;
+    reason: string;
+    detail?: Record<string, unknown>;
+  }) {
+    appendAudit({
+      category: "clinical",
+      action: "community_billing_blocked",
+      patientId: input.patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: {
+        service: input.service,
+        reasonCode: input.reasonCode,
+        reason: input.reason,
+        ...input.detail,
       },
     });
   },

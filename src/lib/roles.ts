@@ -16,6 +16,10 @@ export type StaffRole =
   | "clinical_trainee"
   | "medical_assistant"
   | "peer_specialist"
+  // §v3.0 Phase 3 — Community Health Worker. Non-licensed community-based
+  // role that documents CHW services (G0019/G0022) billed through an
+  // enrolled supervising provider; see SUPERVISION_REQUIRED_ROLES below.
+  | "community_health_worker"
   | "therapist"
   | "pmhnp"
   | "billing"
@@ -31,6 +35,7 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "clinical_trainee", label: "Clinical Trainee" },
   { key: "medical_assistant", label: "Medical Assistant" },
   { key: "peer_specialist", label: "Peer specialist" },
+  { key: "community_health_worker", label: "Community Health Worker" },
   { key: "therapist", label: "Therapist" },
   { key: "pmhnp", label: "PMHNP" },
   { key: "billing", label: "Billing coordinator" },
@@ -56,6 +61,10 @@ export type RecordClass =
   | "psychotherapy_notes"
   | "case_notes"
   | "peer_notes"
+  // §v3.0 Phase 3 — CHW service documentation. Its own class (not `peer_notes`)
+  // because the two roles bill under different HCPCS families and neither
+  // should be able to author the other's record.
+  | "chw_notes"
   | "documents"
   | "billing"
   | "consent_ledger"
@@ -98,6 +107,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_trainee: "read",
     medical_assistant: "read",
     peer_specialist: "read",
+    community_health_worker: "read",
     therapist: "read",
     pmhnp: "read",
     billing: "read",
@@ -175,6 +185,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   sdoh: {
     ecm_provider: "write",
     peer_specialist: "write",
+    community_health_worker: "write",
     therapist: "write",
     pmhnp: "write",
     sud_counselor: "write",
@@ -199,6 +210,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   case_notes: {
     ecm_provider: "write",
     peer_specialist: "read",
+    community_health_worker: "read",
     therapist: "read",
     pmhnp: "read",
     sud_counselor: "write",
@@ -206,6 +218,13 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     cf_care_manager: "read",
   },
   peer_notes: { peer_specialist: "write", ecm_provider: "read", therapist: "read", pmhnp: "read" },
+  chw_notes: {
+    community_health_worker: "write",
+    ecm_provider: "read",
+    therapist: "read",
+    pmhnp: "read",
+    clinical_coordinator: "read",
+  },
   documents: {
     ecm_provider: "write",
     therapist: "read",
@@ -290,6 +309,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "write",
     pmhnp: "write",
     peer_specialist: "read",
+    community_health_worker: "write",
     clinical_coordinator: "read",
     sud_counselor: "write",
     // Reentry coordination is the CF Care Manager's entire job.
@@ -451,6 +471,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     clinical_coordinator: "read",
     peer_specialist: "read",
+    community_health_worker: "write",
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
@@ -658,6 +679,16 @@ export const STAFF_ROSTER: StaffMember[] = [
   },
   { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
   {
+    // §Phase 3 — CHW services are billed through an ENROLLED supervising
+    // provider, so the supervision link is not optional paperwork: without it
+    // `isBillableStaff` is false and no CHW claim can be created.
+    id: "s-chw1",
+    name: "Maribel Ortiz",
+    role: "community_health_worker",
+    credential: "CHW",
+    supervisedBy: "s-np1",
+  },
+  {
     id: "s-th1",
     name: "Dr. Marisol Reyes",
     role: "therapist",
@@ -700,8 +731,20 @@ export function getStaffMember(id: string | null | undefined): StaffMember | und
 /** Roles that may hold a supervision link (LPHA tier). */
 export const LPHA_SUPERVISOR_ROLES: StaffRole[] = ["therapist", "pmhnp"];
 
-/** Roles whose scope of practice REQUIRES documented supervision. */
-export const SUPERVISION_REQUIRED_ROLES: StaffRole[] = ["clinical_trainee", "medical_assistant"];
+/**
+ * Roles whose scope of practice REQUIRES documented supervision.
+ *
+ * §Phase 3 — `community_health_worker` joins the existing two rather than
+ * getting a parallel "supervising provider" link: DHCS requires CHW services
+ * to be billed through an enrolled supervising provider, which is exactly the
+ * relationship `supervisedBy` already models (LPHA tier = enrolled provider
+ * here). The billing gate reads `isBillableStaff` like everything else.
+ */
+export const SUPERVISION_REQUIRED_ROLES: StaffRole[] = [
+  "clinical_trainee",
+  "medical_assistant",
+  "community_health_worker",
+];
 
 export function requiresSupervision(role: StaffRole): boolean {
   return SUPERVISION_REQUIRED_ROLES.includes(role);
