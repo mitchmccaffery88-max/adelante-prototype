@@ -1681,6 +1681,276 @@ export interface ConsentRecord {
   revocationReason?: string;
 }
 
+// ===========================================================================
+// §v3.0 Phase 2 — CF Care Manager pre-release episode, form capture, and the
+// Person-Centered Reentry Care Plan.
+//
+// PLACEHOLDER CONTENT WARNING: every form key, label and field set below is a
+// PLACEHOLDER chosen to exercise the mechanism. DHCS's literal SSApp /
+// Pre-Release Screening / Health Risk Assessment / Level-of-Care layouts are
+// NOT reproduced here and are NOT invented. They must be replaced wholesale
+// with Christi's real DHCS-sourced field sets before production.
+// ===========================================================================
+export type PreReleaseFormCategory =
+  | "medi_cal_enrollment"
+  | "clinical_assessment"
+  | "release_consent"
+  | "transition_planning";
+
+export const PRE_RELEASE_FORM_CATEGORIES: {
+  key: PreReleaseFormCategory;
+  label: string;
+  helper: string;
+}[] = [
+  {
+    key: "medi_cal_enrollment",
+    label: "Medi-Cal enrollment & eligibility",
+    helper: "Structured intake capture — not a consent instrument.",
+  },
+  {
+    key: "clinical_assessment",
+    label: "Clinical & assessment",
+    helper: "Structured screening flags only — never narrative clinical documentation.",
+  },
+  {
+    key: "release_consent",
+    label: "Release & consent",
+    helper: "Captured through the ASCMI ConsentRecord ledger, not stored as form fields.",
+  },
+  {
+    key: "transition_planning",
+    label: "Transition planning",
+    helper: "The Person-Centered Reentry Care Plan hand-off artifact.",
+  },
+];
+
+export type PreReleaseFieldType = "text" | "longtext" | "date" | "bool" | "select";
+
+export interface PreReleaseFieldDef {
+  key: string;
+  label: string;
+  type: PreReleaseFieldType;
+  options?: string[];
+  required?: boolean;
+}
+
+export interface PreReleaseFormDef {
+  key: string;
+  category: PreReleaseFormCategory;
+  label: string;
+  /** PLACEHOLDER field set — see the warning above. */
+  fields: PreReleaseFieldDef[];
+  /**
+   * Release/consent forms have NO field set: they are captured as a real
+   * ConsentRecord section. This is the category that must be authorized for
+   * the task to count as complete.
+   */
+  consentCategory?: ConsentCategory;
+  /** Transition planning is satisfied by the Reentry Care Plan record. */
+  satisfiedByCarePlan?: boolean;
+}
+
+export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
+  {
+    key: "ssapp",
+    category: "medi_cal_enrollment",
+    label: "SSApp (placeholder)",
+    fields: [
+      { key: "applicantName", label: "Applicant name", type: "text", required: true },
+      { key: "ssnOnFile", label: "SSN on file", type: "bool" },
+      { key: "countyOfResponsibility", label: "County of responsibility", type: "text" },
+      { key: "submittedOn", label: "Submitted on", type: "date" },
+    ],
+  },
+  {
+    key: "pre_release_screening",
+    category: "medi_cal_enrollment",
+    label: "Pre-Release Screening Form (placeholder)",
+    fields: [
+      { key: "currentlyEnrolled", label: "Currently Medi-Cal enrolled", type: "bool" },
+      { key: "cin", label: "CIN / member id", type: "text" },
+      { key: "suspensionStatus", label: "Suspension status", type: "select", options: ["Unknown", "Suspended", "Active", "Terminated"] },
+      { key: "anticipatedReleaseDate", label: "Anticipated release date", type: "date", required: true },
+    ],
+  },
+  {
+    key: "dhcs_hra",
+    category: "clinical_assessment",
+    label: "DHCS Health Risk Assessment (placeholder)",
+    fields: [
+      { key: "chronicConditions", label: "Chronic conditions (comma separated)", type: "text" },
+      { key: "pregnancyFlag", label: "Pregnancy flag", type: "bool" },
+      { key: "mobilityNeeds", label: "Mobility / DME needs noted", type: "bool" },
+      { key: "riskTier", label: "Risk tier", type: "select", options: ["Low", "Moderate", "High"] },
+    ],
+  },
+  {
+    key: "bh_sud_loc",
+    category: "clinical_assessment",
+    label: "Behavioral Health / SUD Level of Care Screening (placeholder)",
+    fields: [
+      { key: "mhScreenPositive", label: "MH screen positive", type: "bool" },
+      { key: "sudScreenPositive", label: "SUD screen positive", type: "bool" },
+      { key: "matInPlace", label: "MAT in place at facility", type: "bool" },
+      { key: "recommendedLoc", label: "Recommended level of care", type: "select", options: ["Outpatient", "Intensive outpatient", "Residential", "Withdrawal management"] },
+    ],
+  },
+  {
+    key: "informed_consent_prerelease",
+    category: "release_consent",
+    label: "Informed Consent for Pre-Release Services (placeholder)",
+    fields: [],
+    consentCategory: "pre_release_services",
+  },
+  {
+    key: "telehealth_consent",
+    category: "release_consent",
+    label: "Telehealth Informed Consent (placeholder)",
+    fields: [],
+    consentCategory: "telehealth_services",
+  },
+  {
+    key: "information_sharing_authorization",
+    category: "release_consent",
+    label: "Information Sharing / Disclosure Authorization (placeholder)",
+    fields: [],
+    consentCategory: "information_sharing_disclosure",
+  },
+  {
+    key: "reentry_care_plan",
+    category: "transition_planning",
+    label: "Person-Centered Reentry Care Plan",
+    fields: [],
+    satisfiedByCarePlan: true,
+  },
+];
+
+/** Who physically entered a row, and who the work is attributed to. */
+export interface CfAttribution {
+  /** The logged-in person keying the entry. */
+  enteredBy: { staffId?: string; staffName: string; role: string };
+  /**
+   * The proxy-mode CF Care Manager the work belongs to, when `enteredBy` is
+   * an ECM Provider entering on their behalf. Absent for direct-login CF
+   * Care Managers, who are always their own author.
+   */
+  attributedTo?: { staffId: string; staffName: string };
+}
+
+export type PreReleaseEpisodeStatus = "open" | "released" | "closed";
+
+export interface PreReleaseEpisode {
+  id: string;
+  patientId: string;
+  /** Real `Facility.id` when known. */
+  facilityId?: string;
+  facilityName?: string;
+  /** Real `Booking.id` when the episode is tied to a custody booking. */
+  bookingId?: string;
+  anticipatedReleaseDate: string;
+  /** The CF Care Manager (direct or proxy) who owns the list. */
+  cfCareManagerStaffId: string;
+  cfCareManagerName: string;
+  /** The receiving ECM Provider, if already assigned. */
+  receivingEcmStaffId?: string;
+  status: PreReleaseEpisodeStatus;
+  openedAt: string;
+  openedBy: string;
+  closedAt?: string;
+}
+
+export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
+
+export interface PreReleaseFormRecord {
+  id: string;
+  episodeId: string;
+  patientId: string;
+  category: PreReleaseFormCategory;
+  formKey: string;
+  /** Structured field capture only. Never narrative clinical documentation. */
+  values: Record<string, string | boolean>;
+  status: PreReleaseFormStatus;
+  updatedAt: string;
+  completedAt?: string;
+  attribution: CfAttribution;
+  /** The CaseTask row that tracks this form on the worklist. */
+  taskId?: string;
+}
+
+export type ReentryAppointmentKind = "mental_health" | "med_management" | "sud";
+
+/**
+ * A real scheduled first appointment, not a referral placeholder. `apptId`
+ * links to a live `Appointment` when one exists in this system; when the
+ * appointment lives at an external partner the concrete date/time/contact is
+ * still required.
+ */
+export interface ReentryAppointment {
+  id: string;
+  kind: ReentryAppointmentKind;
+  apptId?: string;
+  start: string;
+  providerName: string;
+  location: string;
+  phone?: string;
+  modality: "in_person" | "video" | "phone";
+}
+
+export interface ReentryCarePlan {
+  id: string;
+  episodeId: string;
+  patientId: string;
+  housing: {
+    arrangement: string;
+    address?: string;
+    contactName?: string;
+    contactPhone?: string;
+    moveInDate?: string;
+  };
+  appointments: ReentryAppointment[];
+  pharmacy?: { name: string; phone?: string; address?: string; deliveryArranged?: boolean };
+  dmeNeeds: string[];
+  notesToEcm?: string;
+  status: "draft" | "completed";
+  /**
+   * Member attestation. Same typed-name + checkbox pattern used by
+   * ConsentRecord, MAR and order signing — deliberately not a new mechanism.
+   */
+  memberSignature?: {
+    name: string;
+    relationship: "patient" | "guardian" | "proxy";
+    attestationMethod: "checkbox_only";
+    signedAt: string;
+  };
+  completedAt?: string;
+  attribution: CfAttribution;
+  /** Set at completion — see `EnrollmentCode`. */
+  enrollmentCode?: string;
+  updatedAt: string;
+}
+
+/**
+ * §Enrollment / claim code — the identity-verification token a released
+ * member presents to the receiving ECM Provider.
+ *
+ * Format: `RE-XXXX-XXXX` over a Crockford-style alphabet with I/L/O/U removed
+ * so it survives being read aloud or handwritten on a discharge sheet.
+ * SINGLE-USE **and** time-bounded (90 days from issue): single-use because it
+ * proves one enrollment hand-off, time-bounded because an unclaimed code from
+ * a release a year ago should not still verify identity. Consumption is a
+ * later phase; `consumedAt` exists now so that phase has nothing to migrate.
+ */
+export interface EnrollmentCode {
+  code: string;
+  patientId: string;
+  episodeId: string;
+  carePlanId: string;
+  issuedAt: string;
+  expiresAt: string;
+  consumedAt?: string;
+  consumedBy?: string;
+}
+
 export interface PatientTask {
   id: string;
   kind: "rescreen" | "enrollment_assist" | "reactivation";
