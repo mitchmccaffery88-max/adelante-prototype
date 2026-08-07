@@ -90,6 +90,13 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   demographics: {
     ecm_provider: "write",
+    // §v3.0 — new roles. Each grant below was decided per-class, not copied
+    // from ecm_provider: cf_care_manager only needs identity to work the
+    // pre-release list; clinical_trainee / medical_assistant read only.
+    cf_care_manager: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
@@ -97,6 +104,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   },
   screeners_mh: {
     ecm_provider: "write",
+    sud_counselor: "read",
+    clinical_trainee: "read",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
@@ -104,6 +113,13 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   screeners_sud: {
     ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
+    // DMC-ODS: the SUD counselor IS the treating provider for this material,
+    // so they sit with therapist/pmhnp, not with coordination roles.
+    sud_counselor: "read",
+    // A trainee treats under supervision but is not the consent holder.
+    clinical_trainee: "consent_gated",
+    medical_assistant: "none",
+    cf_care_manager: "none",
     // Policy: therapist and pmhnp are both direct treating clinicians with a
     // legitimate clinical need to know SUD status without a separate consent
     // gate. ecm_provider/peer_specialist stay gated because care coordination
@@ -111,33 +127,93 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     pmhnp: "read",
   },
-  psych_eval: { ecm_provider: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
-  care_plan: { ecm_provider: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
-  therapy_notes: { therapist: "write", pmhnp: "read", ecm_provider: "read" },
-  meds_erx: { pmhnp: "write", therapist: "read", ecm_provider: "read" },
+  psych_eval: {
+    ecm_provider: "read",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "write",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+  },
+  care_plan: {
+    ecm_provider: "write",
+    peer_specialist: "read",
+    therapist: "write",
+    pmhnp: "write",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    cf_care_manager: "read",
+  },
+  // A trainee may AUTHOR a note; they can never self-sign it —
+  // NOTE_SELF_SIGN_ROLES (ehr.ts) is pmhnp/therapist only, so every trainee
+  // note routes for cosignature by construction.
+  therapy_notes: {
+    therapist: "write",
+    pmhnp: "read",
+    ecm_provider: "read",
+    sud_counselor: "read",
+    clinical_trainee: "write",
+  },
+  // Medical assistant reads the med list to support MAT administration; the
+  // write path is NOT here — see canRecordMatAdministration(), which also
+  // requires an active supervision link.
+  meds_erx: {
+    pmhnp: "write",
+    therapist: "read",
+    ecm_provider: "read",
+    medical_assistant: "read",
+    clinical_trainee: "read",
+  },
   telehealth_room: {
     pmhnp: "write",
     therapist: "write",
+    sud_counselor: "write",
+    clinical_trainee: "read",
     ecm_provider: "read",
     peer_specialist: "none" as AccessLevel,
   },
-  sdoh: { ecm_provider: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
+  sdoh: {
+    ecm_provider: "write",
+    peer_specialist: "write",
+    therapist: "write",
+    pmhnp: "write",
+    sud_counselor: "write",
+    cf_care_manager: "write",
+  },
   self_help: {
     ecm_provider: "write",
     peer_specialist: "write",
     therapist: "write",
     pmhnp: "write",
+    sud_counselor: "write",
   },
   sud_treatment: {
     pmhnp: "write",
     therapist: "consent_gated",
+    sud_counselor: "write",
+    clinical_trainee: "consent_gated",
     ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     billing: "consent_gated",
   },
-  case_notes: { ecm_provider: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
+  case_notes: {
+    ecm_provider: "write",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "read",
+    sud_counselor: "write",
+    clinical_trainee: "write",
+    cf_care_manager: "read",
+  },
   peer_notes: { peer_specialist: "write", ecm_provider: "read", therapist: "read", pmhnp: "read" },
-  documents: { ecm_provider: "write", therapist: "read", pmhnp: "read" },
+  documents: {
+    ecm_provider: "write",
+    therapist: "read",
+    pmhnp: "read",
+    sud_counselor: "read",
+    cf_care_manager: "read",
+    medical_assistant: "read",
+  },
   billing: { billing: "write" },
   consent_ledger: {
     // §ASCMI — consent capture must be writable by someone. ecm_provider
@@ -151,6 +227,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     billing: "read",
     sys_admin: "write",
+    // DMC-ODS consent is captured at intake by the counselor too.
+    sud_counselor: "write",
+    cf_care_manager: "read",
   },
   /**
    * §ASCMI psychotherapy-notes tier — SCAFFOLD ONLY, DEFAULT DENY.
