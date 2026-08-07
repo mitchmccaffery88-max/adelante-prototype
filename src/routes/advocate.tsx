@@ -20,6 +20,14 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { ClientDate } from "@/components/ClientDate";
+import {
+  AdvocateTierBadge,
+  AdvocateCoordinationPanel,
+  AdvocateCarePlanParticipationPanel,
+  AdvocateEligibilityPanel,
+  AdvocateClinicalPanel,
+  AdvocateSelfCareCard,
+} from "@/components/advocate/AdvocateWorkspace";
 import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
 
 export const Route = createFileRoute("/advocate")({
@@ -71,8 +79,9 @@ function AdvocatePage() {
           <ShieldCheck className="h-6 w-6 text-teal" /> Advocate access
         </h1>
         <p className="mt-1 text-sm text-muted-foreground">
-          You can see the upcoming appointments and groups of the person who invited you — nothing
-          else. Every time you open this page it is recorded in their record.
+          You can see the upcoming schedule of the person who invited you, and help with
+          coordination — what else you can see depends on the authorization you hold. Every time you
+          open this page it is recorded in their record.
         </p>
       </header>
       {linkId ? (
@@ -188,7 +197,9 @@ function AdvocateScheduleView({
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
         <div>
           <p className="font-medium text-navy">{link.advocateName}</p>
-          <p className="text-xs text-muted-foreground">{authLabel}</p>
+          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+            {authLabel} <AdvocateTierBadge linkId={linkId} />
+          </p>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={view.allowed ? "default" : "secondary"}>
@@ -248,11 +259,23 @@ function AdvocateScheduleView({
             </ul>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
-            This is the only information shared with you. Care plans, clinical notes, medications
-            and messages are not visible to advocates.
+            Clinical notes, medications and messages are never visible to advocates, and
+            substance-use treatment information is protected under 42 CFR Part 2 whatever your
+            authorization.
           </p>
         </Card>
       )}
+
+      {view.allowed && (
+        <>
+          <AdvocateCoordinationPanel linkId={linkId} />
+          <AdvocateCarePlanParticipationPanel linkId={linkId} />
+          <AdvocateEligibilityPanel linkId={linkId} />
+          <AdvocateClinicalPanel linkId={linkId} />
+        </>
+      )}
+
+      <AdvocateSelfCareCard linkId={linkId} />
     </div>
   );
 }
