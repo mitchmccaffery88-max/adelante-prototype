@@ -3287,6 +3287,72 @@ const advocateContributions: AdvocateContribution[] = [];
 
 const advocateLinks: AdvocateLink[] = [];
 
+// ----- §v3.0 Phase 5 — patient documents ----------------------------------
+//
+// STORAGE HONESTY FLAG: this stores METADATA ONLY. No file bytes are kept,
+// nothing is encrypted, and no compliant object store exists behind it. See
+// the header of `src/lib/documents.ts` for the full dev-team follow-up list.
+export interface DocumentUploader {
+  kind: DocumentUploaderKind;
+  /** Human-readable: patient name, named advocate, or staff member. */
+  name: string;
+  /** Set for staff uploads (and only then) — the uploader's StaffRole. */
+  role?: StaffRole;
+  staffId?: string;
+  advocateLinkId?: string;
+  /** True when staff uploaded during an interaction on the patient's behalf. */
+  onBehalfOfPatient?: boolean;
+}
+
+export interface PatientDocument {
+  id: string;
+  patientId: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  /** Placeholder taxonomy — see DOCUMENT_TYPES. */
+  docType?: string;
+  note?: string;
+  uploadedAt: string;
+  uploader: DocumentUploader;
+  /**
+   * Captured AT UPLOAD by whoever uploaded, never inferred afterwards. A true
+   * value makes the document redisclosure-protected and routes it through the
+   * same masking gate every other SUD-flagged surface in this build uses.
+   */
+  isPart2: boolean;
+  part2ClassifiedBy: string;
+  part2ClassifiedAt: string;
+  /** Unverified by DEFAULT. Never enters the clinical chart automatically. */
+  verification: DocumentVerificationStatus;
+  promotedBy?: string;
+  promotedByRole?: StaffRole;
+  promotedAt?: string;
+  rejectedReason?: string;
+  /** Result of the ingest scan gate. Only clean files are ever stored. */
+  scan: { engine: "prototype_stub"; scannedAt: string; result: "clean" };
+  /** Deliberately explicit: there is no file. */
+  storage: "metadata_only_no_object_store";
+}
+
+const patientDocuments: PatientDocument[] = [];
+
+function _documentUploaderLabel(u: DocumentUploader): string {
+  if (u.kind === "patient") return `${u.name} (patient)`;
+  if (u.kind === "advocate") return `${u.name} (advocate)`;
+  return `${u.name}${u.role ? ` (${ROLE_LABEL[u.role] ?? u.role})` : ""}${
+    u.onBehalfOfPatient ? " — on the patient's behalf" : ""
+  }`;
+}
+
+/** Episode-derived queue ownership. One rule, no manual assignment. */
+function _documentOwnerRole(patientId: string): "cf_care_manager" | "ecm_provider" {
+  const ep = AdelanteEHR.activePreReleaseEpisode(patientId);
+  return verifyQueueOwnerRole(ep?.status);
+}
+
+
+
 /** Crockford-ish, unambiguous, high-entropy. Same family as the reentry code. */
 function _advocateInviteCode(): string {
   const alphabet = "ABCDEFGHJKMNPQRSTVWXYZ0123456789";
@@ -8260,6 +8326,295 @@ export const AdelanteEHR = {
       activeGoals: (cp?.activeGoals ?? []).map((g) => ({ id: g.id, text: g.text })),
       activeProblems: problems.map((pr) => ({ label: pr.label })),
       hiddenSensitiveCount: hidden,
+    };
+  },
+
+
+  // ----- §v3.0 Phase 5 — documents -----------------------------------------
+  //
+  // STORAGE HONESTY FLAG: metadata only, no bytes, no encryption, no object
+  // store. See `src/lib/documents.ts`.
+
+  listPatientDocuments(patientId: string): PatientDocument[] {
+    return patientDocuments
+      .filter((d) => d.patientId === patientId)
+      .sort((a, b) => +new Date(b.uploadedAt) - +new Date(a.uploadedAt))
+      .map((d) => ({ ...d }));
+  },
+
+  getPatientDocument(id: string): PatientDocument | undefined {
+    const d = patientDocuments.find((x) => x.id === id);
+    return d ? { ...d } : undefined;
+  },
+
+  /**
+   * Documents that have actually entered the clinical chart: VERIFIED only.
+   * An unverified upload is visible in review surfaces (with a pending badge)
+   * but is never chart content.
+   */
+  chartDocuments(patientId: string): PatientDocument[] {
+    return AdelanteEHR.listPatientDocuments(patientId).filter(
+      (d) => d.verification === "verified",
+    );
+  },
+
+  documentUploaderLabel(doc: PatientDocument): string {
+    return _documentUploaderLabel(doc.uploader);
+  },
+
+  documentOwnerRole(patientId: string): "cf_care_manager" | "ecm_provider" {
+    return _documentOwnerRole(patientId);
+  },
+
+  /**
+   * THE single ingest path. Every upload — patient, staff-assisted, advocate —
+   * funnels through here, so the scan gate and the unverified default cannot
+   * be bypassed by adding a caller.
+   */
+  uploadPatientDocument(input: {
+    patientId: string;
+    file: UploadCandidate;
+    uploader: DocumentUploader;
+    /** REQUIRED at upload time. There is no "classify later" path. */
+    isPart2: boolean;
+    docType?: string;
+    note?: string;
+  }): { ok: true; document: PatientDocument } | { ok: false; reason: string; threat?: string } {
+    if (!_patient(input.patientId)) return { ok: false, reason: "Unknown patient." };
+
+    // Gate #1 — malware scan BEFORE anything is stored. A flagged file leaves
+    // no document record at all; only the rejection is recorded.
+    const scan = scanUpload(input.file);
+    if (!scan.clean) {
+      appendAudit({
+        category: "clinical",
+        action: "document_upload_rejected",
+        patientId: input.patientId,
+        actorRole: input.uploader.role ?? input.uploader.kind,
+        actorId: input.uploader.staffId ?? input.uploader.advocateLinkId,
+        detail: {
+          fileName: input.file.fileName,
+          threat: scan.threat,
+          uploader: _documentUploaderLabel(input.uploader),
+        },
+      });
+      emit();
+      return { ok: false, reason: scan.reason, threat: scan.threat };
+    }
+
+    const now = new Date().toISOString();
+    const doc: PatientDocument = {
+      id: `doc_${uid()}`,
+      patientId: input.patientId,
+      fileName: input.file.fileName.trim(),
+      mimeType: input.file.mimeType,
+      sizeBytes: input.file.sizeBytes,
+      ...(input.docType ? { docType: input.docType } : {}),
+      ...(input.note ? { note: input.note } : {}),
+      uploadedAt: now,
+      uploader: { ...input.uploader },
+      isPart2: input.isPart2,
+      part2ClassifiedBy: input.uploader.name,
+      part2ClassifiedAt: now,
+      verification: "unverified",
+      scan: { engine: "prototype_stub", scannedAt: now, result: "clean" },
+      storage: "metadata_only_no_object_store",
+    };
+    patientDocuments.unshift(doc);
+    appendAudit({
+      category: "clinical",
+      action: "document_uploaded",
+      patientId: doc.patientId,
+      actorRole: input.uploader.role ?? input.uploader.kind,
+      actorId: input.uploader.staffId ?? input.uploader.advocateLinkId,
+      detail: {
+        documentId: doc.id,
+        fileName: doc.fileName,
+        uploader: _documentUploaderLabel(doc.uploader),
+        uploaderKind: doc.uploader.kind,
+        isPart2: doc.isPart2,
+        verification: doc.verification,
+        routedTo: _documentOwnerRole(doc.patientId),
+      },
+    });
+    emit();
+    return { ok: true, document: { ...doc } };
+  },
+
+  /**
+   * The verify queue. Ownership is DERIVED from the patient's Phase 2 episode
+   * status, never assigned by hand. Passing a role filters to that role's own
+   * queue; omitting it returns everything pending.
+   */
+  documentVerifyQueue(role?: StaffRole): {
+    document: PatientDocument;
+    patientName: string;
+    ownerRole: "cf_care_manager" | "ecm_provider";
+    uploaderLabel: string;
+  }[] {
+    return patientDocuments
+      .filter((d) => d.verification === "unverified")
+      .map((d) => {
+        const p = _patient(d.patientId);
+        return {
+          document: { ...d },
+          patientName: p ? `${p.firstName} ${p.lastName}` : d.patientId,
+          ownerRole: _documentOwnerRole(d.patientId),
+          uploaderLabel: _documentUploaderLabel(d.uploader),
+        };
+      })
+      .filter((row) => !role || row.ownerRole === role)
+      .sort((a, b) => +new Date(a.document.uploadedAt) - +new Date(b.document.uploadedAt));
+  },
+
+  /** Promotion: unverified → verified. Real, audited, attributable action. */
+  verifyPatientDocument(
+    documentId: string,
+    by: { staffId?: string; staffName: string; role: StaffRole },
+  ): { ok: boolean; reason: string } {
+    const doc = patientDocuments.find((d) => d.id === documentId);
+    if (!doc) return { ok: false, reason: "That document no longer exists." };
+    if (doc.verification === "verified") return { ok: false, reason: "Already verified." };
+    doc.verification = "verified";
+    doc.promotedBy = by.staffName;
+    doc.promotedByRole = by.role;
+    doc.promotedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "document_verified",
+      patientId: doc.patientId,
+      actorRole: by.role,
+      ...(by.staffId ? { actorId: by.staffId } : {}),
+      detail: {
+        documentId: doc.id,
+        fileName: doc.fileName,
+        uploader: _documentUploaderLabel(doc.uploader),
+        isPart2: doc.isPart2,
+        promotedBy: by.staffName,
+        promotedAt: doc.promotedAt,
+      },
+    });
+    emit();
+    return { ok: true, reason: "Added to the chart." };
+  },
+
+  rejectPatientDocument(
+    documentId: string,
+    by: { staffId?: string; staffName: string; role: StaffRole; reason: string },
+  ): { ok: boolean; reason: string } {
+    const doc = patientDocuments.find((d) => d.id === documentId);
+    if (!doc) return { ok: false, reason: "That document no longer exists." };
+    const why = by.reason.trim();
+    if (!why) return { ok: false, reason: "A reason is required." };
+    doc.verification = "rejected";
+    doc.rejectedReason = why;
+    doc.promotedBy = by.staffName;
+    doc.promotedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "document_rejected",
+      patientId: doc.patientId,
+      actorRole: by.role,
+      ...(by.staffId ? { actorId: by.staffId } : {}),
+      detail: { documentId: doc.id, fileName: doc.fileName, reason: why },
+    });
+    emit();
+    return { ok: true, reason: "Marked as not accepted." };
+  },
+
+  // ----- advocate document surface (extends Phase 4) ------------------------
+
+  /**
+   * Advocate upload. Supportive, non-decision-making: it rides the advocate's
+   * EXISTING valid claimed link (`document_upload`, held by both tiers) — a
+   * revoked or unclaimed link uploads nothing. The advocate classifies Part 2
+   * at upload like every other uploader.
+   */
+  advocateUploadDocument(
+    linkId: string,
+    input: { file: UploadCandidate; isPart2: boolean; docType?: string; note?: string },
+  ): { ok: boolean; reason: string; documentId?: string } {
+    const gate = _advocateGate(linkId, "document_upload", "documents");
+    if (!gate.ok) return { ok: false, reason: gate.reason };
+    const res = AdelanteEHR.uploadPatientDocument({
+      patientId: gate.link.patientId,
+      file: input.file,
+      isPart2: input.isPart2,
+      ...(input.docType ? { docType: input.docType } : {}),
+      ...(input.note ? { note: input.note } : {}),
+      uploader: {
+        kind: "advocate",
+        name: gate.link.advocateName,
+        advocateLinkId: gate.link.id,
+      },
+    });
+    if (!res.ok) {
+      _advocateAudit(gate.link, "advocate_document_upload_rejected", "documents", {
+        fileName: input.file.fileName,
+        threat: res.threat,
+      });
+      return { ok: false, reason: res.reason };
+    }
+    _advocateAudit(gate.link, "advocate_document_uploaded", "documents", {
+      documentId: res.document.id,
+      fileName: res.document.fileName,
+      isPart2: res.document.isPart2,
+    });
+    return { ok: true, reason: "Sent for review.", documentId: res.document.id };
+  },
+
+  /**
+   * Advocate document review. Part 2 documents are RESTRICTED, not hidden:
+   * the row still appears with a specific explanation, exactly as a masked SUD
+   * group still appears as "Group session". The gate is Phase 4's
+   * `_advocatePart2Unmasked` called directly — one consent check, not a second
+   * implementation of it.
+   */
+  advocateDocuments(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    canUpload: boolean;
+    items: {
+      id: string;
+      fileName: string;
+      uploadedAt: string;
+      uploaderLabel: string;
+      verification: DocumentVerificationStatus;
+      isPart2: boolean;
+      restricted: boolean;
+      restrictionMessage?: string;
+      docType?: string;
+    }[];
+  } {
+    const gate = _advocateGate(linkId, "document_view", "documents");
+    if (!gate.ok) return { allowed: false, reason: gate.reason, canUpload: false, items: [] };
+    const part2Ok = _advocatePart2Unmasked(gate.link);
+    const items = AdelanteEHR.listPatientDocuments(gate.link.patientId).map((d) => {
+      const vis = advocateDocumentVisibility({ isPart2: d.isPart2, part2Unmasked: part2Ok });
+      return {
+        id: d.id,
+        // A restricted document's own FILE NAME can be Part 2 content, so it
+        // is replaced rather than shown — the row's existence is the signal.
+        fileName: vis.restricted ? "Protected document" : d.fileName,
+        uploadedAt: d.uploadedAt,
+        uploaderLabel: _documentUploaderLabel(d.uploader),
+        verification: d.verification,
+        isPart2: d.isPart2,
+        restricted: vis.restricted,
+        ...(vis.restrictionMessage ? { restrictionMessage: vis.restrictionMessage } : {}),
+        ...(d.docType && !vis.restricted ? { docType: d.docType } : {}),
+      };
+    });
+    _advocateAudit(gate.link, "advocate_documents_viewed", "documents", {
+      itemCount: items.length,
+      restrictedCount: items.filter((i) => i.restricted).length,
+      part2Disclosed: part2Ok,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      canUpload: AdelanteEHR.advocateCan(linkId, "document_upload"),
+      items,
     };
   },
 
