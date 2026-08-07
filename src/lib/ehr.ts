@@ -3289,6 +3289,20 @@ function _effectiveAdvocateStatus(link: AdvocateLink, at = new Date()): Advocate
   return link.status;
 }
 
+
+/**
+ * §Phase 4 expansion — SUD / 42 CFR Part 2 text screen for advocate surfaces.
+ * Conservative and deliberately crude: it is a BACKSTOP on free text, not the
+ * primary control. The primary controls are the `sensitive` flags the clinical
+ * model already carries, which the advocate reads honour directly.
+ */
+const ADVOCATE_SUD_TEXT_RE =
+  /\b(sud|substance|opioid|opiate|alcohol|detox|withdraw\w*|methadone|suboxone|buprenorphine|naltrexone|vivitrol|narcan|naloxone|recovery house|sober living|relapse|ciwa|cows|mat\b)/i;
+
+function _advocateSudText(text: string): boolean {
+  return ADVOCATE_SUD_TEXT_RE.test(text);
+}
+
 /**
  * §Shift count — locked controlled-substance reconciliations. Top-level store:
  * a shift count spans every patient on the unit, so it has no owning Patient.
@@ -7874,6 +7888,344 @@ export const AdelanteEHR = {
     });
     return { allowed: true, reason: decision.reason, items };
   },
+  // ----- §Phase 4 expansion — coordination / participation / eligibility ----
+  //
+  // Every method below funnels through `_advocateGate`, so there is exactly
+  // ONE place that decides whether an advocate may touch anything, and exactly
+  // one place that audits the attempt. 42 CFR Part 2 masking is applied INSIDE
+  // each read, on top of the gate — no permission and no tier lifts it.
+
+  /**
+   * Housing / food / transport coordination activity, read side. This is the
+   * patient's existing SDOH plan (`care_coordination` infrastructure), not a
+   * parallel advocate log.
+   *
+   * PART 2: any item whose need or note text is SUD-identifying is dropped
+   * entirely, and only a COUNT is returned — never a description.
+   */
+  advocateCoordination(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    canWrite: boolean;
+    items: { id: string; need: string; status: SdohStatus; note?: string; updatedAt: string }[];
+    maskedCount: number;
+  } {
+    const gate = _advocateGate(linkId, "coordination_view", "care_coordination");
+    if (!gate.ok)
+      return { allowed: false, reason: gate.reason, canWrite: false, items: [], maskedCount: 0 };
+    const all = _patient(gate.link.patientId)?.sdohPlan?.items ?? [];
+    const visible = all.filter((i) => !_advocateSudText(`${i.need} ${i.note ?? ""}`));
+    _advocateAudit(gate.link, "advocate_coordination_viewed", "care_coordination", {
+      itemCount: visible.length,
+      maskedCount: all.length - visible.length,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      canWrite: AdelanteEHR.advocateCan(linkId, "coordination_write"),
+      items: visible.map((i) => ({
+        id: i.id,
+        need: i.need,
+        status: i.status,
+        ...(i.note ? { note: i.note } : {}),
+        updatedAt: i.updatedAt,
+      })),
+      maskedCount: all.length - visible.length,
+    };
+  },
+
+  /**
+   * Coordination write. Reuses `addSdohItem` so the item lands in the same
+   * closed-loop workflow the care team already works, attributed to the
+   * advocate in the note text (there is no separate authorship field on
+   * `SdohPlanItem`, and inventing one would fork the model).
+   */
+  advocateAddCoordinationNeed(
+    linkId: string,
+    input: { need: string; note?: string },
+  ): { ok: boolean; reason: string } {
+    const gate = _advocateGate(linkId, "coordination_write", "care_coordination");
+    if (!gate.ok) return { ok: false, reason: gate.reason };
+    const need = input.need.trim();
+    if (!need) return { ok: false, reason: "Describe the need." };
+    // Advocates may not introduce Part 2 content either — the mask is
+    // bidirectional, so an advocate cannot write SUD detail into a surface
+    // they are not permitted to read back.
+    if (_advocateSudText(`${need} ${input.note ?? ""}`))
+      return {
+        ok: false,
+        reason:
+          "Substance-use treatment details can't be entered here. Please contact the care team directly.",
+      };
+    AdelanteEHR.addSdohItem(gate.link.patientId, {
+      need,
+      note: `${input.note ? `${input.note} ` : ""}(Raised by ${gate.link.advocateName}, advocate)`,
+    });
+    _advocateAudit(gate.link, "advocate_coordination_added", "care_coordination", { need });
+    return { ok: true, reason: "Added." };
+  },
+
+  /**
+   * Reentry care plan PARTICIPATION — read the coordination-relevant plan
+   * sections plus the advocate contribution stream. Clinical fields are not
+   * included; authorship stays with the ECM Provider / CF Care Manager.
+   */
+  advocateCarePlanParticipation(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    canWrite: boolean;
+    plan?: {
+      status: ReentryCarePlan["status"];
+      housing: ReentryCarePlan["housing"];
+      appointmentCount: number;
+      pharmacyName?: string;
+      dmeNeeds: string[];
+    };
+    contributions: AdvocateContribution[];
+  } {
+    const gate = _advocateGate(linkId, "care_plan_participation_view", "reentry_care_plan");
+    if (!gate.ok)
+      return { allowed: false, reason: gate.reason, canWrite: false, contributions: [] };
+    const plan = AdelanteEHR.reentryCarePlanForPatient(gate.link.patientId);
+    _advocateAudit(gate.link, "advocate_care_plan_participation_viewed", "reentry_care_plan", {
+      hasPlan: Boolean(plan),
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      canWrite: AdelanteEHR.advocateCan(linkId, "care_plan_participation_write"),
+      ...(plan
+        ? {
+            plan: {
+              status: plan.status,
+              housing: plan.housing,
+              appointmentCount: plan.appointments.length,
+              ...(plan.pharmacy?.name ? { pharmacyName: plan.pharmacy.name } : {}),
+              dmeNeeds: plan.dmeNeeds,
+            },
+          }
+        : {}),
+      contributions: advocateContributions
+        .filter((c) => c.advocateLinkId === gate.link.id)
+        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+        .map((c) => ({ ...c })),
+    };
+  },
+
+  advocateAddCarePlanComment(
+    linkId: string,
+    input: { section: AdvocateContributionSection; text: string },
+  ): { ok: boolean; reason: string } {
+    const gate = _advocateGate(linkId, "care_plan_participation_write", "reentry_care_plan");
+    if (!gate.ok) return { ok: false, reason: gate.reason };
+    const text = input.text.trim();
+    if (!text) return { ok: false, reason: "Write something first." };
+    if (_advocateSudText(text))
+      return {
+        ok: false,
+        reason:
+          "Substance-use treatment details can't be entered here. Please contact the care team directly.",
+      };
+    advocateContributions.unshift({
+      id: uid(),
+      advocateLinkId: gate.link.id,
+      patientId: gate.link.patientId,
+      section: input.section,
+      text,
+      authorName: gate.link.advocateName,
+      createdAt: new Date().toISOString(),
+    });
+    _advocateAudit(gate.link, "advocate_care_plan_comment_added", "reentry_care_plan", {
+      section: input.section,
+    });
+    emit();
+    return { ok: true, reason: "Sent to the care team." };
+  },
+
+  /** Care-team side: contributions an advocate has attached to this patient. */
+  advocateContributionsForPatient(patientId: string): AdvocateContribution[] {
+    return advocateContributions
+      .filter((c) => c.patientId === patientId)
+      .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+      .map((c) => ({ ...c }));
+  },
+
+  /**
+   * Medi-Cal application assistance visibility — the read side of the existing
+   * `eligibility` RecordClass workflow. Status and verification only; no
+   * clinical eligibility criteria, no SUD-based qualification detail.
+   */
+  advocateEligibilityAssist(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    canAct: boolean;
+    coverage?: { status: CoverageStatus; verified: string; countyOfRelease?: string };
+  } {
+    const gate = _advocateGate(linkId, "eligibility_assist_view", "eligibility");
+    if (!gate.ok) return { allowed: false, reason: gate.reason, canAct: false };
+    const cov = _patient(gate.link.patientId)?.coverage;
+    _advocateAudit(gate.link, "advocate_eligibility_viewed", "eligibility", {
+      status: cov?.status,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      canAct: AdelanteEHR.advocateCan(linkId, "eligibility_assist_write"),
+      ...(cov
+        ? {
+            coverage: {
+              status: cov.status,
+              verified: cov.verified,
+              ...(cov.countyOfRelease ? { countyOfRelease: cov.countyOfRelease } : {}),
+            },
+          }
+        : {}),
+    };
+  },
+
+  /**
+   * Acting on the member's behalf on an application. PLACEHOLDER: this records
+   * the attestation and audits it; it does not submit anything, because the
+   * real DHCS submission path and form content are not defined here.
+   */
+  advocateAttestEligibilityAssist(
+    linkId: string,
+    input: { attestedName: string; note?: string },
+  ): { ok: boolean; reason: string } {
+    const gate = _advocateGate(linkId, "eligibility_assist_write", "eligibility");
+    if (!gate.ok) return { ok: false, reason: gate.reason };
+    const name = input.attestedName.trim();
+    if (!name) return { ok: false, reason: "Type your name to attest." };
+    _advocateAudit(gate.link, "advocate_eligibility_assist_attested", "eligibility", {
+      attestedName: name,
+      note: input.note,
+      placeholder: "no_submission_path_defined",
+    });
+    return { ok: true, reason: "Attestation recorded." };
+  },
+
+  /**
+   * Decision-making tier ONLY: the clinical care-plan snapshot. Part 2 content
+   * is stripped here as well — SUD focus areas, sensitive medications,
+   * sensitive screeners and SUD problems never cross this boundary, and the
+   * hidden-problem count is reported without any description.
+   */
+  advocateCarePlanClinical(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    summary?: string;
+    focusAreas: { key: string; label: string; severity?: string }[];
+    activeGoals: { id: string; text: string }[];
+    activeProblems: { label: string }[];
+    hiddenSensitiveCount: number;
+  } {
+    const gate = _advocateGate(linkId, "care_plan_clinical_view", "care_plan");
+    if (!gate.ok)
+      return {
+        allowed: false,
+        reason: gate.reason,
+        focusAreas: [],
+        activeGoals: [],
+        activeProblems: [],
+        hiddenSensitiveCount: 0,
+      };
+    const cp = AdelanteEHR.getCarePlan(gate.link.patientId);
+    const focusAll = cp?.focusAreas ?? [];
+    const focus = focusAll.filter((f) => !f.sensitive);
+    const problemsAll = cp?.activeProblems ?? [];
+    const problems = problemsAll.filter((pr) => !pr.sensitive);
+    const hidden =
+      focusAll.length -
+      focus.length +
+      (problemsAll.length - problems.length) +
+      (cp?.hiddenSudProblems ?? 0) +
+      (cp?.medications ?? []).filter((m) => m.sensitive).length +
+      (cp?.screenerHighlights ?? []).filter((h) => h.sensitive).length;
+    _advocateAudit(gate.link, "advocate_care_plan_clinical_viewed", "care_plan", {
+      hiddenSensitiveCount: hidden,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      ...(cp?.summary ? { summary: cp.summary } : {}),
+      focusAreas: focus.map((f) => ({
+        key: f.key,
+        label: f.label,
+        ...(f.severity ? { severity: f.severity } : {}),
+      })),
+      activeGoals: (cp?.activeGoals ?? []).map((g) => ({ id: g.id, text: g.text })),
+      activeProblems: problems.map((pr) => ({ label: pr.label })),
+      hiddenSensitiveCount: hidden,
+    };
+  },
+
+  // ----- §Phase 4 expansion — advocate as their own patient ----------------
+  //
+  // ONE identity, TWO records. The advocate keeps a single sign-in; opening
+  // their own care creates a NORMAL `Patient` via the NORMAL `createPatient`
+  // path and routes them into the standard intake flow. There is no advocate
+  // flavour of patient, and no field on either record that lets one side read
+  // the other: `selfPatientId` is only ever resolved by
+  // `advocateSelfPatient`, which never returns anything about
+  // `link.patientId`, and every advocate-side read above resolves
+  // `link.patientId` and never consults `selfPatientId`.
+
+  /** The advocate's OWN patient record, if they have opened one. */
+  advocateSelfPatient(linkId: string): Patient | undefined {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link?.selfPatientId) return undefined;
+    // Belt and braces: a self record can never be the advocated-for record.
+    if (link.selfPatientId === link.patientId) return undefined;
+    const p = _patient(link.selfPatientId);
+    return p ? { ...p } : undefined;
+  },
+
+  /**
+   * "Would you like support for yourself too?" — accepted. Creates the
+   * advocate's own Patient record and returns it so the caller can hand off to
+   * the standard intake route. Idempotent.
+   */
+  startAdvocateSelfCare(
+    linkId: string,
+    input: { firstName: string; lastName: string; dob?: string; phone?: string },
+  ): Patient {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    const existing = AdelanteEHR.advocateSelfPatient(linkId);
+    if (existing) return existing;
+    if (!input.firstName.trim() || !input.lastName.trim())
+      throw new Error("Your first and last name are required.");
+    const p = AdelanteEHR.createPatient({
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      ...(input.dob ? { dob: input.dob } : {}),
+      ...(input.phone ? { phone: input.phone } : {}),
+    });
+    if (p.id === link.patientId)
+      throw new Error("A self record cannot be the person you are advocating for.");
+    link.selfPatientId = p.id;
+    link.selfPatientStartedAt = new Date().toISOString();
+    // Audited against the ADVOCATE'S OWN record, not the advocated-for
+    // patient's: this event is not part of the other person's chart.
+    appendAudit({
+      category: "advocate",
+      action: "advocate_self_care_started",
+      patientId: p.id,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: { advocateLinkId: link.id, advocateName: link.advocateName },
+    });
+    emit();
+    return p;
+  },
+
+  declineAdvocateSelfCare(linkId: string) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return;
+    link.selfCareOfferDeclinedAt = new Date().toISOString();
+    emit();
+  },
+
   /**
    * §Phase 3 community billing — a refused claim attempt (Peer / CHW).
    * Recorded at the point of the attempt so the block is visible in the same
