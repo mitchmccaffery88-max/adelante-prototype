@@ -111,14 +111,15 @@ describe("advocate — authorization-type gates", () => {
     expect(blocked.denyReason).toBe("roi_missing");
     expect(AdelanteEHR.advocateSchedule(link.id).allowed).toBe(false);
 
-    AdelanteEHR.captureConsentRecord({
+    AdelanteEHR.createConsentRecord({
       patientId: pid,
-      formType: "ascmi_standard",
-      signedBy: "patient",
-      signedAt: new Date().toISOString(),
-      capturedByRole: "ecm_provider",
-      capturedByName: "Tester",
+      formType: "AB133",
+      source: "test",
+      signedByName: "Test Patient",
+      attested: true,
+      effectiveDate: "2020-01-01",
       sections: [{ category: COLLATERAL_ROI_CATEGORY, authorized: true }],
+      capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "ecm_provider" },
     });
 
     expect(AdelanteEHR.advocateAccess(link.id).allowed).toBe(true);
