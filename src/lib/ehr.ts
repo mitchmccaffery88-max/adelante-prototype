@@ -3176,6 +3176,74 @@ export interface AuditEvent {
 }
 const auditEvents: AuditEvent[] = [];
 
+// ---------------------------------------------------------------------------
+// §v3.0 Phase 4 — Advocate / Family Member.
+//
+// A SEPARATE ENTITY, deliberately not a StaffRole. See src/lib/advocate.ts for
+// the architecture reasoning and the pure access policy. This store holds the
+// link itself; the policy module decides what a link may do.
+//
+// HARD INVARIANT (tested): there is NO function anywhere that locates a
+// patient from advocate-supplied identifying information. The ONLY entry point
+// is `advocateLinkByCode`, keyed on a high-entropy invitation code that is
+// delivered directly to the advocate's own contact — never relayed through the
+// patient, and never derived from a name, DOB, or any other patient
+// identifier. Do not add a lookup by name/DOB/phone here.
+// ---------------------------------------------------------------------------
+export type AdvocateLinkStatus = "invited" | "active" | "revoked" | "expired";
+
+export interface AdvocateLink {
+  id: string;
+  patientId: string;
+  /** Who the patient designated. Free text supplied by the DESIGNATOR only. */
+  advocateName: string;
+  relationship?: string;
+  /** Where the invitation was sent — the advocate's own contact, direct. */
+  invitationSentTo: string;
+  invitationChannel: "email" | "sms";
+  /**
+   * Single-use, high-entropy. Consumed by `claimAdvocateInvitation`; retained
+   * afterwards only so the claim cannot be replayed (status guards that too).
+   */
+  invitationCode: string;
+  invitationExpiresAt: string;
+  designatedBy: { actor: "patient" | "cf_care_manager" | "ecm_provider"; name: string };
+  designatedAt: string;
+  status: AdvocateLinkStatus;
+  /** Set ONLY at claim time, by the advocate. An invite alone grants nothing. */
+  authorizationType?: AdvocateAuthorizationType;
+  authorizationConfirmedAt?: string;
+  /** Typed-name attestation, same pattern as consent/MAR e-signature. */
+  authorizationAttestedName?: string;
+  claimedAt?: string;
+  /**
+   * AHCD only — a physician's determination that the patient cannot
+   * communicate or decide. Until this exists the directive is dormant.
+   */
+  ahcdActivatedAt?: string;
+  ahcdActivatedBy?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokeReason?: string;
+}
+
+const advocateLinks: AdvocateLink[] = [];
+
+/** Crockford-ish, unambiguous, high-entropy. Same family as the reentry code. */
+function _advocateInviteCode(): string {
+  const alphabet = "ABCDEFGHJKMNPQRSTVWXYZ0123456789";
+  const pick = (n: number) =>
+    Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return `ADV-${pick(4)}-${pick(4)}-${pick(4)}`;
+}
+
+/** Expiry is evaluated live — an unclaimed invite lapses on its own. */
+function _effectiveAdvocateStatus(link: AdvocateLink, at = new Date()): AdvocateLinkStatus {
+  if (link.status === "revoked") return "revoked";
+  if (link.status === "invited" && +new Date(link.invitationExpiresAt) <= +at) return "expired";
+  return link.status;
+}
+
 /**
  * §Shift count — locked controlled-substance reconciliations. Top-level store:
  * a shift count spans every patient on the unit, so it has no owning Patient.
