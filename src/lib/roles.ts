@@ -604,10 +604,55 @@ export interface StaffMember {
   credential?: string;
   /** Links this staff member to a clinical provider record in AdelanteEHR. */
   clinicianId?: string;
+  /**
+   * §v3.0 supervision — id of the LPHA-tier StaffMember who supervises this
+   * person. A real, queryable field (not a comment): roles in
+   * SUPERVISION_REQUIRED_ROLES are not billable without it, and the
+   * MAT-administration capability check reads it directly.
+   */
+  supervisedBy?: string;
+  /**
+   * §v3.0 CF Care Manager dual access mode.
+   *  - "direct": facility/contract staff who log in themselves.
+   *  - "proxy": a CF Care Manager who is NOT a platform user; their task-list
+   *    activity is entered on their behalf by the receiving ECM Provider.
+   * Only meaningful for `cf_care_manager`.
+   */
+  accessMode?: "direct" | "proxy";
 }
 
 export const STAFF_ROSTER: StaffMember[] = [
   { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider", credential: "CCM" },
+  {
+    id: "s-cf1",
+    name: "Rosa Delgado",
+    role: "cf_care_manager",
+    credential: "CF Care Manager",
+    accessMode: "direct",
+  },
+  {
+    // Not a platform user — exists so ECM Providers have a real identity to
+    // attribute proxy-entered CF task-list activity to.
+    id: "s-cf2",
+    name: "Darnell Pope (facility contract)",
+    role: "cf_care_manager",
+    accessMode: "proxy",
+  },
+  { id: "s-sudc1", name: "Elena Vargas", role: "sud_counselor", credential: "SUDCC-II" },
+  {
+    id: "s-tr1",
+    name: "Kayla Nguyen",
+    role: "clinical_trainee",
+    credential: "ASW",
+    supervisedBy: "s-th1",
+  },
+  {
+    id: "s-ma1",
+    name: "Jorge Peña",
+    role: "medical_assistant",
+    credential: "CMA",
+    supervisedBy: "s-np1",
+  },
   { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
   {
     id: "s-th1",
