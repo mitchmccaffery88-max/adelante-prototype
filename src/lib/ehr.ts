@@ -5948,8 +5948,11 @@ export const AdelanteEHR = {
   addPeerNote(patientId: string, input: Omit<PeerNote, "id">) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.text.trim()) return;
-    p.peerNotes = [{ ...input, id: uid() }, ...(p.peerNotes ?? [])];
+    const note: PeerNote = { ...input, id: uid() };
+    p.peerNotes = [note, ...(p.peerNotes ?? [])];
     emit();
+    // Returned so the billing hook in ehr-ext can key a claim off this note.
+    return note;
   },
 
   // ----- Contact preferences -----
