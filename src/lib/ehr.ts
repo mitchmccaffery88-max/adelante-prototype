@@ -29,6 +29,16 @@ import {
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
 } from "./advocate";
+// §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
+// ownership, Part 2 restriction messaging); imports nothing back from here.
+import {
+  scanUpload,
+  verifyQueueOwnerRole,
+  advocateDocumentVisibility,
+  type UploadCandidate,
+  type DocumentUploaderKind,
+  type DocumentVerificationStatus,
+} from "./documents";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
