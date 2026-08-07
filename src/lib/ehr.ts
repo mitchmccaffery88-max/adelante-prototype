@@ -5979,6 +5979,35 @@ export const AdelanteEHR = {
   preReleaseTaskFor(episodeId: string, formKey: string): CaseTask | undefined {
     return caseTasks.find((t) => t.dedupeKey === `prerelease:${episodeId}:${formKey}`);
   },
+  /**
+   * Closes an episode (member released, transferred, or opened in error). The
+   * episode and its captured forms are retained — they are the hand-off
+   * record the ECM Provider reads at D0 — but the patient becomes eligible
+   * for a new episode on a subsequent booking.
+   */
+  closePreReleaseEpisode(input: {
+    episodeId: string;
+    reason: string;
+    closedBy: string;
+    actorRole: string;
+  }): PreReleaseEpisode {
+    const ep = preReleaseEpisodes.find((e) => e.id === input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (!input.reason.trim()) throw new Error("A reason is required to close a pre-release episode.");
+    ep.status = "closed";
+    ep.closedAt = new Date().toISOString();
+    ep.closedReason = input.reason.trim();
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_episode_closed",
+      patientId: ep.patientId,
+      actorId: input.closedBy,
+      actorRole: input.actorRole,
+      detail: { episodeId: ep.id, reason: ep.closedReason },
+    });
+    emit();
+    return ep;
+  },
   listPreReleaseForms(episodeId: string): PreReleaseFormRecord[] {
     return preReleaseForms.filter((f) => f.episodeId === episodeId);
   },
