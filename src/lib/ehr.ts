@@ -194,24 +194,6 @@ export interface ReleaseDateMeta {
   history: { date: string; changedAt: string; source: ReleaseSource }[];
 }
 
-export type DocumentClass =
-  | "id"
-  | "release_paperwork"
-  | "benefits"
-  | "prior_clinical"
-  | "part2_program_record";
-
-export interface PatientDocument {
-  id: string;
-  fileName: string;
-  uploadedBy: "patient" | "staff";
-  uploadedAt: string;
-  state: "unverified" | "verified" | "rejected";
-  classification?: DocumentClass;
-  promotedBy?: string;
-  scan: "clean" | "pending";
-}
-
 export type SdohStatus =
   | "identified"
   | "sent"
@@ -929,8 +911,6 @@ export interface Patient {
   episodes?: Episode[];
   /** Release date provenance. §3c — coexists with the flat `releaseDate` string. */
   releaseDateMeta?: ReleaseDateMeta;
-  /** Patient-uploaded / staff-uploaded documents. §3d */
-  documents?: PatientDocument[];
   /** SDOH need → referral → closed-loop status. §3e */
   sdohPlan?: { items: SdohPlanItem[] };
   /** Assigned self-help modules with completion. §3f */
@@ -6126,46 +6106,6 @@ export const AdelanteEHR = {
     if (!p?.releaseDate) return null;
     const ms = +new Date(p.releaseDate) - Date.now();
     return Math.round(ms / (1000 * 60 * 60 * 24));
-  },
-
-  // ----- §3d — Documents (mock upload/verify queue) -----
-  uploadDocument(
-    patientId: string,
-    input: { fileName: string; uploadedBy: "patient" | "staff"; classification?: DocumentClass },
-  ) {
-    const p = patients.find((x) => x.id === patientId);
-    if (!p) return;
-    const doc: PatientDocument = {
-      id: uid(),
-      fileName: input.fileName,
-      uploadedBy: input.uploadedBy,
-      uploadedAt: new Date().toISOString(),
-      state: "unverified",
-      classification: input.classification,
-      scan: "clean", // real impl: kick off virus scan; §11 out-of-scope
-    };
-    p.documents = [doc, ...(p.documents ?? [])];
-    emit();
-    return doc;
-  },
-  classifyDocument(patientId: string, documentId: string, classification: DocumentClass) {
-    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
-    if (!d) return;
-    d.classification = classification;
-    emit();
-  },
-  verifyDocument(patientId: string, documentId: string, staffLabel: string) {
-    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
-    if (!d) return;
-    d.state = "verified";
-    d.promotedBy = staffLabel;
-    emit();
-  },
-  rejectDocument(patientId: string, documentId: string) {
-    const d = patients.find((x) => x.id === patientId)?.documents?.find((x) => x.id === documentId);
-    if (!d) return;
-    d.state = "rejected";
-    emit();
   },
 
   // ----- SDOH plan items -----
