@@ -21,7 +21,7 @@ function capture(over: { effectiveDate?: string; expirationDate?: string } = {})
       { category: "case_coordination", authorized: false },
       { category: "billing", authorized: false },
     ],
-    capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "case_manager" },
+    capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "ecm_provider" },
   });
 }
 
@@ -48,7 +48,7 @@ describe("structured consent records", () => {
         attested: false,
         effectiveDate: "2020-01-01",
         sections: [],
-        capturedBy: { staffName: "Luz Herrera", role: "case_manager" },
+        capturedBy: { staffName: "Luz Herrera", role: "ecm_provider" },
       }),
     ).toThrow(/Attestation/);
   });
@@ -74,7 +74,7 @@ describe("structured consent records", () => {
     AdelanteEHR.revokeConsentRecord(rec.id, {
       reason: "patient withdrew",
       revokedBy: "Luz Herrera",
-      role: "case_manager",
+      role: "ecm_provider",
     });
     const stored = AdelanteEHR.listConsentRecords(patient().id).find((r) => r.id === rec.id)!;
     expect(stored.status).toBe("revoked");
@@ -85,19 +85,19 @@ describe("structured consent records", () => {
   // §6 — auto-stop, proved rather than assumed.
   it("auto-stops the SAME canAccess call on revocation, with nothing else notified", () => {
     const rec = capture();
-    const check = () => canAccess("case_manager", "screeners_sud", patient());
+    const check = () => canAccess("ecm_provider", "screeners_sud", patient());
     expect(check().locked).toBe(false);
     AdelanteEHR.revokeConsentRecord(rec.id, {
       reason: "revoked",
       revokedBy: "Luz Herrera",
-      role: "case_manager",
+      role: "ecm_provider",
     });
     expect(check().locked).toBe(true);
   });
 
   it("auto-stops on expiry with no revocation and no write of any kind", () => {
     capture({ effectiveDate: "2020-01-01", expirationDate: "2020-01-02" });
-    expect(canAccess("case_manager", "screeners_sud", patient()).locked).toBe(true);
+    expect(canAccess("ecm_provider", "screeners_sud", patient()).locked).toBe(true);
   });
 
   it("does not unlock a category the record did not authorize", () => {
@@ -140,12 +140,12 @@ describe("structured consent records", () => {
   });
 
   it("does not log a disclosure when the gated note is masked for the role", () => {
-    // No active consent → case_manager sees the SUD note masked.
+    // No active consent → ecm_provider sees the SUD note masked.
     const p = patient();
     const before = AdelanteEHR.listAuditEvents({ patientId: p.id, category: "disclosure" }).length;
     buildPrintRecordDocument({
       patient: p,
-      role: "case_manager",
+      role: "ecm_provider",
       flags: { meds: false, mar: false, notes: true, notesScope: "all" },
     });
     expect(

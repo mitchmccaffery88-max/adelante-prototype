@@ -198,7 +198,7 @@ describe("protocol RBAC", () => {
     expect(canManageProtocol("pmhnp")).toBe(true);
     expect(canManageProtocol("therapist")).toBe(true);
     expect(canManageProtocol("clinical_coordinator")).toBe(true);
-    expect(canManageProtocol("case_manager")).toBe(false);
+    expect(canManageProtocol("ecm_provider")).toBe(false);
     expect(canManageProtocol("peer_specialist")).toBe(false);
   });
 });

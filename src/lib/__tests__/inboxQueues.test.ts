@@ -69,7 +69,7 @@ describe("provider requests", () => {
       requestType: "order_entry",
       context: "Enter the refill.",
       requestedBy: "Luz Herrera",
-      requestedByRole: "case_manager",
+      requestedByRole: "ecm_provider",
     })!;
 
   it("requires non-empty context", () => {
@@ -79,7 +79,7 @@ describe("provider requests", () => {
         requestType: "question",
         context: "   ",
         requestedBy: "Luz Herrera",
-        requestedByRole: "case_manager",
+        requestedByRole: "ecm_provider",
       }),
     ).toBeUndefined();
   });

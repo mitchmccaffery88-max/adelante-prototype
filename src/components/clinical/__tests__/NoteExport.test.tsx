@@ -54,9 +54,9 @@ describe("note PDF export affordance", () => {
   });
 
   it("hides export for a SUD-masked note and refuses to render its content", () => {
-    // case_manager is still consent_gated for SUD content; therapist is not.
+    // ecm_provider is still consent_gated for SUD content; therapist is not.
     setActingStaff("s-cm1");
-    setActingRole("case_manager");
+    setActingRole("ecm_provider");
     const sudPatient = AdelanteEHR.listPatients().find(
       (p) => !AdelanteEHR.getConsentState(p.id).part2Sud,
     )!;
@@ -80,7 +80,7 @@ describe("note PDF export affordance", () => {
       (n) => n.category === "sud",
     )!;
     expect(() =>
-      buildNoteDocumentModel({ note: stored, patient: sudPatient, role: "case_manager" }),
+      buildNoteDocumentModel({ note: stored, patient: sudPatient, role: "ecm_provider" }),
     ).toThrow(/42 CFR Part 2/i);
   });
 });

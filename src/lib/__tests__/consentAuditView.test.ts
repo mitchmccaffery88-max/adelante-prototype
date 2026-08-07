@@ -48,7 +48,7 @@ describe("consent audit filtering", () => {
         { category: "sud_treatment", authorized: true },
         { category: "billing", authorized: false },
       ],
-      capturedBy: { staffName: "Luz Herrera", role: "case_manager" },
+      capturedBy: { staffName: "Luz Herrera", role: "ecm_provider" },
     });
     const mine = AdelanteEHR.listAuditEvents({
       category: ["consent", "disclosure"],

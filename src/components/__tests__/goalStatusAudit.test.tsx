@@ -77,9 +77,9 @@ describe("PatientHome goal cycling — audit trail", () => {
 
 describe("staff-side goal changes", () => {
   it("records the acting staff role and name", () => {
-    AdelanteEHR.setGoalStatus(patientId, goalId, "done", "Christi R", "case_manager");
+    AdelanteEHR.setGoalStatus(patientId, goalId, "done", "Christi R", "ecm_provider");
     const e = goalAudits().at(-1)!;
-    expect(e.actorRole).toBe("case_manager");
+    expect(e.actorRole).toBe("ecm_provider");
     expect(e.actorId).toBe("Christi R");
     expect(e.detail!.to).toBe("done");
   });
@@ -90,14 +90,14 @@ describe("staff-side goal changes", () => {
   });
 
   it("still logs a no-change transition so re-saves are traceable", () => {
-    AdelanteEHR.setGoalStatus(patientId, goalId, "open", "Christi R", "case_manager");
+    AdelanteEHR.setGoalStatus(patientId, goalId, "open", "Christi R", "ecm_provider");
     const e = goalAudits().at(-1)!;
     expect(e.detail!.from).toBe("open");
     expect(e.detail!.to).toBe("open");
   });
 
   it("writes nothing when the goal does not exist", () => {
-    AdelanteEHR.setGoalStatus(patientId, "missing-goal", "done", "Christi R", "case_manager");
+    AdelanteEHR.setGoalStatus(patientId, "missing-goal", "done", "Christi R", "ecm_provider");
     expect(goalAudits().length).toBe(0);
   });
 });

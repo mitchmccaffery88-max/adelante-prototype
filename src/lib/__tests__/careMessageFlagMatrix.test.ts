@@ -42,12 +42,12 @@ describe("Part 2 flag notification matrix", () => {
   it("baseline: consent on/off flips exactly the case-manager lock, therapist/pmhnp never", () => {
     const p = patient();
     setConsentOn(p.id, true);
-    expect(canAccess("case_manager", "screeners_sud", AdelanteEHR.getPatient(p.id)!).locked).toBe(
+    expect(canAccess("ecm_provider", "screeners_sud", AdelanteEHR.getPatient(p.id)!).locked).toBe(
       false,
     );
     setConsentOn(p.id, false);
     const gated = AdelanteEHR.getPatient(p.id)!;
-    expect(canAccess("case_manager", "screeners_sud", gated).locked).toBe(true);
+    expect(canAccess("ecm_provider", "screeners_sud", gated).locked).toBe(true);
     expect(canAccess("peer_specialist", "screeners_sud", gated).locked).toBe(true);
     expect(canAccess("therapist", "screeners_sud", gated).locked).toBe(false);
     expect(canAccess("pmhnp", "screeners_sud", gated).locked).toBe(false);
@@ -122,7 +122,7 @@ describe("Part 2 flag notification matrix", () => {
     setConsentOn(pid, false);
     const m = AdelanteEHR.sendStaffMessage(pid, cmName(), "note")!;
     const rows = diff(pid, () =>
-      AdelanteEHR.flagMessageAsSud(pid, m.id, cmName(), "case_manager"),
+      AdelanteEHR.flagMessageAsSud(pid, m.id, cmName(), "ecm_provider"),
     );
     expect(rows.length).toBe(1);
     expect(rows[0].recipientStaffId).toBeUndefined();

@@ -65,7 +65,7 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
       note: patient.programId,
     },
     {
-      key: "case_manager",
+      key: "ecm_provider",
       label: "Case manager assigned",
       reachedAt: cmAssignedAt,
       note: patient.caseManagerId

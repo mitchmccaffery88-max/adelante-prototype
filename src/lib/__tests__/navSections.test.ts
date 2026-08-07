@@ -50,7 +50,7 @@ describe("nav registry integrity", () => {
     for (const e of STAFF_NAV.filter((x) => x.group === "facility")) {
       expect(e.gate).toMatchObject({ anyOf: ["custody_tracking"] });
     }
-    const order = staffNavGroupsForRole("case_manager").map((g) => g.group);
+    const order = staffNavGroupsForRole("ecm_provider").map((g) => g.group);
     expect(order.indexOf("facility")).toBe(order.indexOf("population") + 1);
     // A role without custody_tracking gets no Facility & Custody group at all.
     expect(staffNavGroupsForRole("billing").map((g) => g.group)).not.toContain("facility");

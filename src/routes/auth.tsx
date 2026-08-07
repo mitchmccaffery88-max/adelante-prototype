@@ -101,7 +101,7 @@ function AuthPage() {
       case "therapist":
       case "pmhnp":
         return "/clinician" as const;
-      case "case_manager":
+      case "ecm_provider":
       case "peer_specialist":
         return "/case-manager" as const;
       case "clinical_coordinator":

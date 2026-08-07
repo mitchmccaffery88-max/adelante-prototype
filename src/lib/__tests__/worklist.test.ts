@@ -51,7 +51,7 @@ describe("CaseTask extension defaults", () => {
 describe("claim mechanics", () => {
   it("claiming is one-shot — a second claim fails cleanly", () => {
     const t = make();
-    expect(AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "case_manager")).toBe(true);
+    expect(AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider")).toBe(true);
     expect(AdelanteEHR.claimWorklistTask(t.id, "Dr. R. Bagga", "pmhnp")).toBe(false);
     const after = AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!;
     expect(after.claimedBy).toBe("Luz Herrera");
@@ -60,9 +60,9 @@ describe("claim mechanics", () => {
 
   it("only the claimer can release; release returns it to the pool", () => {
     const t = make();
-    AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "case_manager");
+    AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider");
     expect(AdelanteEHR.releaseWorklistTask(t.id, "Dr. R. Bagga", "pmhnp")).toBe(false);
-    expect(AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "case_manager")).toBe(true);
+    expect(AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "ecm_provider")).toBe(true);
     const after = AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!;
     expect(after.claimedBy).toBeUndefined();
     expect(worklistStatusFor(after)).toBe("pending");
@@ -72,13 +72,13 @@ describe("claim mechanics", () => {
   it("a completed task cannot be claimed", () => {
     const t = make();
     AdelanteEHR.completeCaseTask(t.id);
-    expect(AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "case_manager")).toBe(false);
+    expect(AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider")).toBe(false);
   });
 
   it("claim and release are audited", () => {
     const t = make();
-    AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "case_manager");
-    AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "case_manager");
+    AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider");
+    AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "ecm_provider");
     const actions = AdelanteEHR.listAuditEvents()
       .filter((a) => (a.detail as { taskId?: string } | undefined)?.taskId === t.id)
       .map((a) => a.action);
@@ -96,7 +96,7 @@ describe("discipline scoping", () => {
   it("hides tasks whose allowedRoles do not overlap the acting role", () => {
     const t = make({ allowedRoles: ["pmhnp"] });
     expect(matchesDiscipline(t, "pmhnp")).toBe(true);
-    expect(matchesDiscipline(t, "case_manager")).toBe(false);
+    expect(matchesDiscipline(t, "ecm_provider")).toBe(false);
   });
 });
 
@@ -116,7 +116,7 @@ describe("scoped stat counts", () => {
   it("overdue excludes completed and cancelled rows", () => {
     const t = make({ dueDate: "2020-01-01" });
     expect(isOverdue(t)).toBe(true);
-    AdelanteEHR.setWorklistStatus(t.id, "cancelled", "Luz Herrera", "case_manager");
+    AdelanteEHR.setWorklistStatus(t.id, "cancelled", "Luz Herrera", "ecm_provider");
     expect(isOverdue(AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!)).toBe(false);
   });
 });

@@ -5,7 +5,7 @@ import { useSyncExternalStore } from "react";
 import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } from "./ehr";
 
 export type StaffRole =
-  | "case_manager"
+  | "ecm_provider"
   | "peer_specialist"
   | "therapist"
   | "pmhnp"
@@ -16,7 +16,7 @@ export type StaffRole =
   | "sys_admin";
 
 export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
-  { key: "case_manager", label: "Case manager" },
+  { key: "ecm_provider", label: "Case manager" },
   { key: "peer_specialist", label: "Peer specialist" },
   { key: "therapist", label: "Therapist" },
   { key: "pmhnp", label: "PMHNP" },
@@ -76,41 +76,41 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 // matching Part-2 consent is currently granted.
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   demographics: {
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
     billing: "read",
   },
   screeners_mh: {
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
   },
   screeners_sud: {
-    case_manager: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     // Policy: therapist and pmhnp are both direct treating clinicians with a
     // legitimate clinical need to know SUD status without a separate consent
-    // gate. case_manager/peer_specialist stay gated because care coordination
+    // gate. ecm_provider/peer_specialist stay gated because care coordination
     // is not clinical treatment — that distinction is the actual line.
     therapist: "read",
     pmhnp: "read",
   },
-  psych_eval: { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
-  care_plan: { case_manager: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
-  therapy_notes: { therapist: "write", pmhnp: "read", case_manager: "read" },
-  meds_erx: { pmhnp: "write", therapist: "read", case_manager: "read" },
+  psych_eval: { ecm_provider: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
+  care_plan: { ecm_provider: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
+  therapy_notes: { therapist: "write", pmhnp: "read", ecm_provider: "read" },
+  meds_erx: { pmhnp: "write", therapist: "read", ecm_provider: "read" },
   telehealth_room: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none" as AccessLevel,
   },
-  sdoh: { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
+  sdoh: { ecm_provider: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
   self_help: {
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "write",
     therapist: "write",
     pmhnp: "write",
@@ -118,21 +118,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   sud_treatment: {
     pmhnp: "write",
     therapist: "consent_gated",
-    case_manager: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     billing: "consent_gated",
   },
-  case_notes: { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
-  peer_notes: { peer_specialist: "write", case_manager: "read", therapist: "read", pmhnp: "read" },
-  documents: { case_manager: "write", therapist: "read", pmhnp: "read" },
+  case_notes: { ecm_provider: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
+  peer_notes: { peer_specialist: "write", ecm_provider: "read", therapist: "read", pmhnp: "read" },
+  documents: { ecm_provider: "write", therapist: "read", pmhnp: "read" },
   billing: { billing: "write" },
   consent_ledger: {
-    // §ASCMI — consent capture must be writable by someone. case_manager
+    // §ASCMI — consent capture must be writable by someone. ecm_provider
     // writes because they are the role that actually sits with the patient
     // and captures the form; sys_admin writes for correction/administration.
     // Clinical roles stay read-only: reading the ledger is need-to-know,
     // authoring a legal consent instrument is not part of their workflow.
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
@@ -150,12 +150,12 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
    */
   psychotherapy_notes: {},
   // Clinical record layer (BaggaEMR mirror). Prescribers (pmhnp) and
-  // therapists write; case_manager / peer_specialist can read for
+  // therapists write; ecm_provider / peer_specialist can read for
   // coordination; billing reads Problems only for claim coding.
   problems: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
     billing: "read",
     clinical_coordinator: "read",
@@ -163,19 +163,19 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   allergies: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
     clinical_coordinator: "read",
   },
   alerts: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
   },
   eligibility: {
-    case_manager: "write",
+    ecm_provider: "write",
     billing: "write",
     billing_coordinator: "write",
     therapist: "read",
@@ -183,7 +183,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "read",
   },
   care_coordination: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     peer_specialist: "read",
@@ -194,7 +194,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // clinicians read it for context. Billing gets nothing — custody history is
   // not claim-relevant and would be an unnecessary exposure.
   custody_tracking: {
-    case_manager: "write",
+    ecm_provider: "write",
     clinical_coordinator: "write",
     therapist: "read",
     pmhnp: "read",
@@ -221,7 +221,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   controlled_substance_custody: {
     pmhnp: "write",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for
@@ -239,7 +239,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing_coordinator: "read",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
   },
   // §Clinical documentation templates. Authoring a template is clinical
@@ -251,7 +251,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
   },
   // §Admin governance — frequency catalog + local RxNav suppressions. Same
@@ -263,7 +263,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
@@ -279,7 +279,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
@@ -291,7 +291,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // own the reply), clinical_coordinator reads for oversight, billing gets
   // nothing — message content is not claim data.
   patient_messaging: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     peer_specialist: "read",
@@ -307,7 +307,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // clinical_coordinator read for coordination/oversight; billing is out —
   // these are clinical asks, not claim data.
   provider_requests: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     clinical_coordinator: "read",
@@ -325,7 +325,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // peers get "none": a worklist row is routine operational work, not
   // population-wide clinical risk exposure.
   worklist: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     clinical_coordinator: "read",
@@ -344,21 +344,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
   },
   // §Group sessions — scheduling/roster management. Group placement is a
   // clinical decision, so the roles that make it (therapist, pmhnp,
-  // case_manager) write; clinical_coordinator writes for the same oversight
+  // ecm_provider) write; clinical_coordinator writes for the same oversight
   // reason it owns protocols and crisis disposition; peer_specialist reads
   // (they co-facilitate and need the schedule) but does not place patients;
   // billing reads because group attendance drives per-attendee claims.
   group_sessions: {
     therapist: "write",
     pmhnp: "write",
-    case_manager: "write",
+    ecm_provider: "write",
     clinical_coordinator: "write",
     sys_admin: "write",
     peer_specialist: "read",
@@ -371,7 +371,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   group_notes: {
     therapist: "write",
     pmhnp: "write",
-    case_manager: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     clinical_coordinator: "consent_gated",
     billing: "consent_gated",
@@ -432,7 +432,7 @@ export function canAccess(
 export const CRISIS_FLAG_ROLES: StaffRole[] = [
   "pmhnp",
   "therapist",
-  "case_manager",
+  "ecm_provider",
   "peer_specialist",
   "clinical_coordinator",
   "sys_admin",
@@ -449,7 +449,7 @@ export function canFlagCrisis(role: StaffRole): boolean {
  * clinical judgment (a scored withdrawal protocol is a treatment decision),
  * so it matches `NOTE_SELF_SIGN_ROLES`: pmhnp + therapist. clinical_coordinator
  * is included for the same oversight reason it owns crisis disposition.
- * case_manager / peer_specialist keep their `worklist` read/write on the rows
+ * ecm_provider / peer_specialist keep their `worklist` read/write on the rows
  * themselves — they can see and claim rounds, just not start or stop one.
  */
 export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "therapist", "clinical_coordinator"];
@@ -476,7 +476,7 @@ export interface StaffMember {
 }
 
 export const STAFF_ROSTER: StaffMember[] = [
-  { id: "s-cm1", name: "Luz Herrera", role: "case_manager", credential: "CCM" },
+  { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider", credential: "CCM" },
   { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
   {
     id: "s-th1",
@@ -511,9 +511,9 @@ export function getStaffMember(id: string | null | undefined): StaffMember | und
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
-    return (v as StaffRole) || "case_manager";
+    return (v as StaffRole) || "ecm_provider";
   } catch {
-    return "case_manager";
+    return "ecm_provider";
   }
 })();
 
