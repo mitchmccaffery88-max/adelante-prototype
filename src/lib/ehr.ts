@@ -18,6 +18,14 @@ import type { StaffRole } from "./roles";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
 import { canAccess } from "./roles";
+// §v3.0 Phase 4 — advocate access policy. Pure module, imports nothing back
+// from here, so there is no cycle.
+import {
+  advocateAccessDecision,
+  type AdvocateAccessDecision,
+  type AdvocateAuthorizationType,
+  type AdvocatePermission,
+} from "./advocate";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
