@@ -1576,6 +1576,9 @@ export function NotesTab({
     const cls = noteGateClass(n);
     return cls ? canAccess(role, cls, patient) : { locked: false, reason: undefined };
   };
+  const visibleNotes = (patient.progressNotes ?? []).filter(
+    (n) => !restrictToTemplateKey || n.templateKey === restrictToTemplateKey,
+  );
   return (
     <div className="space-y-4">
       {canWrite && (
