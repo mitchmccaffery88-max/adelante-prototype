@@ -327,7 +327,7 @@ export function PatientHome() {
       <MyProfileCard patientId={patient.id} />
       <AdvocateDesignationPanel
         patientId={patient.id}
-        designatedBy={{ actor: "patient", name: patient.name }}
+        designatedBy={{ actor: "patient", name: `${patient.firstName} ${patient.lastName}` }}
       />
 
       <div>
