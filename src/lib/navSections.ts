@@ -236,6 +236,18 @@ export const STAFF_NAV: NavEntry[] = [
 
   // ----- Facility & Custody -----
   {
+    id: "pre-release",
+    label: "Pre-release list",
+    desc: "D90→0 forms & reentry care plan",
+    icon: ClipboardSignature,
+    to: "/pre-release",
+    group: "facility",
+    // Reentry coordination, not custody record-keeping: `care_coordination` is
+    // the class CF Care Manager and ECM Provider both hold write on, and it is
+    // what the page's own read gate (`canReadPreRelease`) checks.
+    gate: { kind: "record_class", anyOf: ["care_coordination"] },
+  },
+  {
     id: "released-search",
     label: "Released patient search",
     desc: "Post-release follow-up",
