@@ -1844,7 +1844,8 @@ function ProgressNoteCard({
   sudReason?: string;
   authorLabel: string;
 }) {
-  const { staffName, role } = useActingStaff();
+  const { staffName, role, staffId: actingStaffId, clinicianId: actingClinicianId } =
+    useActingStaff();
   const status = noteStatus(note);
   // Same language source of truth as the Refusal risk text: the patient record.
   const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
@@ -1917,13 +1918,13 @@ function ProgressNoteCard({
       // §Phase 3 — a signed CHW service note bills through the same claims
       // pipeline. The hook itself enforces ECM exclusivity, the supervising
       // provider link and the 2 hr/day unit cap, and audits any refusal.
-      if (note.templateKey === "chw_service" && actingStaff.role === "community_health_worker") {
+      if (note.templateKey === "chw_service" && role === "community_health_worker") {
         const mins = Number(note.templateAnswers?.["service_minutes"] ?? 0) || 0;
         const claim = AdelanteEHRExt.upsertClaimFromChwNote({
           patientId,
           noteId: note.id,
-          staffId: actingStaff.staffId,
-          clinicianId: actingStaff.clinicianId ?? note.clinicianId,
+          staffId: actingStaffId,
+          clinicianId: actingClinicianId ?? note.clinicianId,
           dateISO: note.date,
           minutes: mins,
         });
