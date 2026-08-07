@@ -146,6 +146,14 @@ export type AdvocatePermission =
   | "eligibility_assist_view"
   | "eligibility_assist_write"
   | "care_plan_clinical_view"
+  // §v3.0 Phase 5 — documents. Uploading and reviewing a patient's own
+  // paperwork is the SAME category of supportive access Phase 4 already
+  // granted for coordination and care-plan participation, so both tiers hold
+  // it and no new authorization tier was introduced. Part 2 documents are
+  // gated separately by the `advocate_sud_disclosure` consent, exactly as SUD
+  // group topics are — a permission never lifts Part 2 masking.
+  | "document_view"
+  | "document_upload"
   | "clinical_notes_view"
   | "messaging";
 
@@ -249,6 +257,8 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "care_plan_participation_view",
     "care_plan_participation_write",
     "eligibility_assist_view",
+    "document_view",
+    "document_upload",
   ],
   decision_making: [
     "schedule_view",
@@ -259,6 +269,8 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "eligibility_assist_view",
     "eligibility_assist_write",
     "care_plan_clinical_view",
+    "document_view",
+    "document_upload",
   ],
 };
 
