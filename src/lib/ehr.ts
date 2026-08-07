@@ -1637,7 +1637,18 @@ export type ConsentCategory =
   // category, or whether it falls under general treatment consent, is a
   // regulatory/clinical determination that is explicitly NOT decided here.
   // The mechanism is wired so either answer is a one-line change.
-  | "group_participation";
+  | "group_participation"
+  // §v3.0 Phase 2 — the three Release & Consent pre-release forms. PLACEHOLDER
+  // keys and labels, same discipline as every other category here: the real
+  // DHCS/ASCMI form language is Christi's to supply, and nothing legal is
+  // authored in this file.
+  | "pre_release_services"
+  | "telehealth_services"
+  // Explicit written authorization for THIRD-PARTY disclosure. This is the
+  // category the AB 133 split turns on: coordination between the CF Care
+  // Manager and the receiving ECM Provider is exempt and never checks it;
+  // anything third-party or 42 CFR Part 2 does. See src/lib/ab133.ts.
+  | "information_sharing_disclosure";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
@@ -1645,6 +1656,12 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "case_coordination", label: "Case coordination (placeholder)" },
   { key: "billing", label: "Billing (placeholder)" },
   { key: "group_participation", label: "Group participation (placeholder)" },
+  { key: "pre_release_services", label: "Pre-release services (placeholder)" },
+  { key: "telehealth_services", label: "Telehealth (placeholder)" },
+  {
+    key: "information_sharing_disclosure",
+    label: "Information sharing / disclosure authorization (placeholder)",
+  },
 ];
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
