@@ -94,7 +94,8 @@ const APPT_KINDS: { key: ReentryAppointmentKind; label: string }[] = [
   { key: "sud", label: "SUD" },
 ];
 
-const NONE = "__none";
+const fullName = (p?: { firstName: string; lastName: string }) =>
+  p ? `${p.firstName} ${p.lastName}` : undefined;
 
 function PreReleasePage() {
   const { role, staffId, staffName } = useActingStaff();
@@ -144,7 +145,7 @@ function PreReleasePage() {
                   episode?.id === e.id ? "bg-muted font-medium" : "hover:bg-muted/60"
                 }`}
               >
-                {patients.find((p) => p.id === e.patientId)?.name ?? e.patientId}
+                {fullName(patients.find((p) => p.id === e.patientId)) ?? e.patientId}
                 <span className="block text-xs text-muted-foreground">
                   Release {e.anticipatedReleaseDate}
                 </span>
@@ -215,7 +216,7 @@ function OpenEpisodeForm() {
         <SelectContent>
           {patients.map((p) => (
             <SelectItem key={p.id} value={p.id}>
-              {p.name}
+              {p.firstName} {p.lastName}
             </SelectItem>
           ))}
         </SelectContent>
@@ -267,7 +268,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
-            <h2 className="font-semibold">{patient?.name ?? episode.patientId}</h2>
+            <h2 className="font-semibold">{fullName(patient) ?? episode.patientId}</h2>
             <p className="text-sm text-muted-foreground">
               Anticipated release {episode.anticipatedReleaseDate} · CF Care Manager{" "}
               {episode.cfCareManagerName}
