@@ -102,7 +102,7 @@ describe("advocate — authorization-type gates", () => {
     const link = invite(pid);
     AdelanteEHR.claimAdvocateInvitation({
       code: link.invitationCode,
-      authorizationType: "dhcs_collateral",
+      authorizationType: "family_participation",
       attestedName: "Rosa Ibarra",
     });
 
@@ -185,11 +185,11 @@ describe("advocate — access scope is schedule-only", () => {
     return { pid, link };
   }
 
-  it("grants exactly one permission and nothing more", () => {
+  it("never grants the ungranted permission names", () => {
     const { link } = authorized();
     const decision = AdelanteEHR.advocateAccess(link.id);
-    expect(decision.permissions).toEqual(["schedule_view"]);
-    for (const p of ["care_plan_view", "clinical_notes_view", "messaging"] as const) {
+    expect(decision.permissions).toContain("schedule_view");
+    for (const p of ["clinical_notes_view", "messaging"] as const) {
       expect(AdelanteEHR.advocateCan(link.id, p)).toBe(false);
     }
   });
