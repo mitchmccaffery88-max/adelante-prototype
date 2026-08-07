@@ -45,7 +45,7 @@ describe("note PDF export gate", () => {
 
   it("allows signed and cosigned notes for roles with therapy_notes read", () => {
     expect(noteExportGate(base, "therapist", patient).allowed).toBe(true);
-    expect(noteExportGate({ ...base, status: "cosigned" }, "case_manager", patient).allowed).toBe(
+    expect(noteExportGate({ ...base, status: "cosigned" }, "ecm_provider", patient).allowed).toBe(
       true,
     );
   });
@@ -57,8 +57,8 @@ describe("note PDF export gate", () => {
 
   it("blocks a SUD note for a consent-gated role without Part 2 consent", () => {
     const sudNote = { ...base, category: "sud" as const };
-    // case_manager stays consent_gated for screeners_sud; therapist is not.
-    const gate = noteExportGate(sudNote, "case_manager", patient);
+    // ecm_provider stays consent_gated for screeners_sud; therapist is not.
+    const gate = noteExportGate(sudNote, "ecm_provider", patient);
     expect(gate.allowed).toBe(false);
     expect(gate.reason).toMatch(/42 CFR Part 2/i);
   });
@@ -72,7 +72,7 @@ describe("note PDF export gate", () => {
 describe("note PDF builder", () => {
   it("refuses to render content a role could not see on screen", () => {
     expect(() =>
-      buildProgressNotePdf({ note: { ...base, category: "sud" }, patient, role: "case_manager" }),
+      buildProgressNotePdf({ note: { ...base, category: "sud" }, patient, role: "ecm_provider" }),
     ).toThrow(/42 CFR Part 2/i);
     expect(() =>
       buildProgressNotePdf({ note: { ...base, status: "draft" }, patient, role: "therapist" }),
@@ -159,7 +159,7 @@ describe("note PDF builder", () => {
 
   it("throws from the content model too — no bypass around the PDF renderer", () => {
     expect(() =>
-      buildNoteDocumentModel({ note: { ...base, category: "sud" }, patient, role: "case_manager" }),
+      buildNoteDocumentModel({ note: { ...base, category: "sud" }, patient, role: "ecm_provider" }),
     ).toThrow(/42 CFR Part 2/i);
   });
 

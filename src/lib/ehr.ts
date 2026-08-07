@@ -1279,7 +1279,7 @@ export interface EligibilityNote {
 export interface CaseManager {
   id: string;
   name: string;
-  role: "case_manager" | "peer_support";
+  role: "ecm_provider" | "peer_support";
 }
 
 export interface Goal {
@@ -1306,7 +1306,7 @@ export interface CarePlanFocusArea {
 export interface CarePlanNextStep {
   label: string;
   dueBy?: string;
-  source: "screener" | "clinician" | "case_manager" | "self_help";
+  source: "screener" | "clinician" | "ecm_provider" | "self_help";
   sensitive?: boolean;
 }
 export interface CarePlanScreenerHighlight {
@@ -1341,7 +1341,7 @@ export interface CarePlanMetrics {
 }
 export interface CarePlanSnapshot {
   updatedAt: string;
-  updatedBy: "system" | "clinician" | "case_manager";
+  updatedBy: "system" | "clinician" | "ecm_provider";
   summary: string;
   focusAreas: CarePlanFocusArea[];
   activeGoals: { id: string; text: string; status: Goal["status"] }[];
@@ -2103,7 +2103,7 @@ const patients: Patient[] = [
         severity: "warning",
         notes: "At risk of losing transitional housing placement.",
         active: true,
-        enteredBy: "case_manager",
+        enteredBy: "ecm_provider",
         enteredAt: "2026-06-01T10:00:00.000Z",
       },
     ],
@@ -2447,7 +2447,7 @@ const referrals: Referral[] = [
 ];
 
 const caseManagers: CaseManager[] = [
-  { id: "cm1", name: "Lupita Sanchez, MSW", role: "case_manager" },
+  { id: "cm1", name: "Lupita Sanchez, MSW", role: "ecm_provider" },
   { id: "cm2", name: "Trey Wilson", role: "peer_support" },
 ];
 
@@ -2489,7 +2489,7 @@ if (patients[0]) {
     requestType: "order_entry",
     context: "Please enter the sertraline 50 mg refill we discussed at today's check-in.",
     requestedBy: "Luz Herrera",
-    requestedByRole: "case_manager",
+    requestedByRole: "ecm_provider",
     status: "open",
     createdAt: ago(30),
   });
@@ -2518,7 +2518,7 @@ function patientLabel(patientId?: string): string {
  * `roles.ts`. Duplicated as a value here only because `ehr.ts` may import
  * `roles.ts` for TYPES only (roles.ts imports ehr.ts at runtime).
  */
-export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["case_manager", "therapist", "pmhnp"];
+export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp"];
 
 /**
  * §Part 2 backstop selection — DERIVED from the RBAC matrix, never hardcoded.
@@ -2531,7 +2531,7 @@ export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["case_manager", "therapist",
  *
  * Reading condition 2 from `canAccess` (rather than naming therapist/pmhnp
  * inline) means the confirmed policy — therapist and pmhnp un-gated as direct
- * treating clinicians, case_manager/peer_specialist consent-gated because
+ * treating clinicians, ecm_provider/peer_specialist consent-gated because
  * coordination is not treatment — stays the single source of truth. Flip a
  * cell in the matrix and backstop selection follows automatically.
  */
@@ -2571,13 +2571,13 @@ function setCareMessageSudFlag(
   // this patient's SUD content, tell them their view changed (distinct copy —
   // this is a visibility change, not new content) and alert an un-gated role
   // so a genuinely authorized reader knows.
-  if (flagged && canAccess("case_manager", "screeners_sud", p).locked) {
+  if (flagged && canAccess("ecm_provider", "screeners_sud", p).locked) {
     const cmName = caseManagers.find((c) => c.id === p!.caseManagerId)?.name;
     // Don't tell the flagger they can no longer see what they just flagged.
     if (cmName !== staffName) {
       AdelanteEHR.notify({
         recipientStaffId: cmName || undefined,
-        recipientRole: cmName ? undefined : "case_manager",
+        recipientRole: cmName ? undefined : "ecm_provider",
         category: "patient_message",
         subject: `Message visibility changed — ${patientLabel(patientId)}`,
         body: `A message for ${patientLabel(patientId)} was flagged for Part 2 protection and may no longer be visible to you.`,
@@ -2877,7 +2877,7 @@ const consentRecords: ConsentRecord[] = [
     source: "in person — intake (seed)",
     signedAt: "2026-05-12T16:00:00.000Z",
     signedBy: { name: "Patient p1", relationship: "patient" },
-    capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "case_manager" },
+    capturedBy: { staffId: "s-cm1", staffName: "Luz Herrera", role: "ecm_provider" },
     attestationMethod: "checkbox_only",
     effectiveDate: "2026-05-12",
     expirationDate: "2027-05-12",
@@ -3336,7 +3336,7 @@ export interface ProviderSwitch {
   reason: ProviderSwitchReason;
   serviceType?: ServiceType;
   context?: string;
-  initiatedBy: "patient" | "clinician" | "case_manager" | "admin" | "system";
+  initiatedBy: "patient" | "clinician" | "ecm_provider" | "admin" | "system";
   createdAt: string;
   status: ProviderSwitchStatus;
   resolvedAt?: string;
@@ -3569,7 +3569,7 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     if (t.completedAt) continue;
     nextSteps.push({
       label: t.label,
-      source: t.kind === "rescreen" ? "screener" : "case_manager",
+      source: t.kind === "rescreen" ? "screener" : "ecm_provider",
     });
   }
   for (const m of p.selfHelpPlan?.modules ?? []) {
@@ -3719,7 +3719,7 @@ export interface GroupEligibility {
 }
 
 /** Only these roles may set the group-eligibility gate. */
-export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "case_manager"] as const;
+export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "ecm_provider"] as const;
 
 /**
  * Who initiated an enrollment. Deliberately an open shape rather than a
@@ -5736,7 +5736,7 @@ export const AdelanteEHR = {
     const cmName = caseManagers.find((c) => c.id === p.caseManagerId)?.name;
     AdelanteEHR.notify({
       recipientStaffId: cmName || undefined,
-      recipientRole: cmName ? undefined : "case_manager",
+      recipientRole: cmName ? undefined : "ecm_provider",
       category: "patient_message",
       subject: `New message — ${patientLabel(patientId)}`,
       body: "A patient sent a message to their care team.",
@@ -5750,7 +5750,7 @@ export const AdelanteEHR = {
     // happens, also broadcast to a role that is genuinely un-gated for this
     // content class, so a real authorized reader is alerted. Same generic body
     // and link — no new information is disclosed.
-    if (selfFlagged && canAccess("case_manager", "screeners_sud", p).locked) {
+    if (selfFlagged && canAccess("ecm_provider", "screeners_sud", p).locked) {
       // Same matrix-derived selection as the staff-flag path. No flagger to
       // exclude here — the patient authored the flag, not a staff member.
       const backstop = pickSudBackstopRole(p);
@@ -11142,7 +11142,7 @@ export function useEhr<T>(selector: () => T): T {
       dueDate: day(0),
       taskType: "intake_packet",
       priority: "stat",
-      allowedRoles: ["case_manager"],
+      allowedRoles: ["ecm_provider"],
       facilityId: "fac-tulare-adult",
       housingUnit: "Unit 1A",
       source: "manual",

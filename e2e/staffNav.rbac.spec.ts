@@ -9,7 +9,7 @@ import { STAFF_ROSTER, type StaffRole } from "../src/lib/roles";
 import { safeLandingFor } from "../src/lib/navGuard";
 
 const ROLES: StaffRole[] = [
-  "case_manager",
+  "ecm_provider",
   "peer_specialist",
   "therapist",
   "pmhnp",

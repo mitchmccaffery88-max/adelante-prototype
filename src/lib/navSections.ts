@@ -120,7 +120,7 @@ export const STAFF_NAV: NavEntry[] = [
   },
   {
     id: "case-manager",
-    label: "Case manager",
+    label: "ECM Provider",
     desc: "Check-ins & resources",
     icon: HandHeart,
     to: "/case-manager",

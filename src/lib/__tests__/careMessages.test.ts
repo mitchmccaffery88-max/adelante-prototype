@@ -65,7 +65,7 @@ describe("care messaging — Phase 2", () => {
   });
 
   it("gates messaging: treating roles write, billing none", () => {
-    expect(canAccess("case_manager", "patient_messaging").level).toBe("write");
+    expect(canAccess("ecm_provider", "patient_messaging").level).toBe("write");
     expect(canAccess("therapist", "patient_messaging").level).toBe("write");
     expect(canAccess("pmhnp", "patient_messaging").level).toBe("write");
     expect(canAccess("peer_specialist", "patient_messaging").level).toBe("read");
@@ -86,7 +86,7 @@ describe("care message Part 2 flagging", () => {
   it("flags and unflags with audit, gated to write-level messaging roles", () => {
     const m = AdelanteEHR.sendPatientMessage(pid, "flag me")!;
     expect(AdelanteEHR.flagMessageAsSud(pid, m.id, "Nobody", "billing")).toBe(false);
-    expect(AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    expect(AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "ecm_provider")).toBe(true);
     const flagged = AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!;
     expect(flagged.sudFlagged).toBe(true);
     expect(flagged.sudFlaggedBy).toBe("Christi");
@@ -94,7 +94,7 @@ describe("care message Part 2 flagging", () => {
     const actions = AdelanteEHR.listAuditEvents().map((a) => a.action);
     expect(actions).toContain("care_message_sud_flagged");
 
-    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "ecm_provider")).toBe(true);
     expect(AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!.sudFlagged).toBe(false);
     expect(AdelanteEHR.listAuditEvents().map((a) => a.action)).toContain("care_message_sud_unflagged");
   });
@@ -102,19 +102,19 @@ describe("care message Part 2 flagging", () => {
   it("masks the body for a role failing the SUD consent check, restores on unflag", () => {
     const patient = AdelanteEHR.getPatient(pid)!;
     const m = AdelanteEHR.sendPatientMessage(pid, "secret content")!;
-    AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "case_manager");
+    AdelanteEHR.flagMessageAsSud(pid, m.id, "Christi", "ecm_provider");
     const cur = () => AdelanteEHR.listCareMessages(pid).find((x) => x.id === m.id)!;
 
-    const gated = canAccess("case_manager", "screeners_sud", patient).locked;
-    expect(isMessageBodyMasked(cur(), "case_manager", patient)).toBe(gated);
-    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe(
+    const gated = canAccess("ecm_provider", "screeners_sud", patient).locked;
+    expect(isMessageBodyMasked(cur(), "ecm_provider", patient)).toBe(gated);
+    expect(visibleMessageBody(cur(), "ecm_provider", patient)).toBe(
       gated ? MASKED_MESSAGE_BODY : "secret content",
     );
     // pmhnp has un-gated read on screeners_sud — always sees the body.
     expect(visibleMessageBody(cur(), "pmhnp", patient)).toBe("secret content");
 
-    AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager");
-    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe("secret content");
+    AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "ecm_provider");
+    expect(visibleMessageBody(cur(), "ecm_provider", patient)).toBe("secret content");
   });
 
   it("patient self-flag at send time masks identically to a staff flag", () => {
@@ -128,9 +128,9 @@ describe("care message Part 2 flagging", () => {
     expect(cur().sudFlaggedAt).toBeTruthy();
 
     // Exact same masking check as the staff-flagged path.
-    const gated = canAccess("case_manager", "screeners_sud", patient).locked;
-    expect(isMessageBodyMasked(cur(), "case_manager", patient)).toBe(gated);
-    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe(
+    const gated = canAccess("ecm_provider", "screeners_sud", patient).locked;
+    expect(isMessageBodyMasked(cur(), "ecm_provider", patient)).toBe(gated);
+    expect(visibleMessageBody(cur(), "ecm_provider", patient)).toBe(
       gated ? MASKED_MESSAGE_BODY : "self flagged content",
     );
 
@@ -141,10 +141,10 @@ describe("care message Part 2 flagging", () => {
     expect((selfFlagAudit[0].detail as any).selfFlagged).toBe(true);
 
     // Staff can still override a patient self-flag; provenance becomes theirs.
-    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "case_manager")).toBe(true);
+    expect(AdelanteEHR.unflagMessageAsSud(pid, m.id, "Christi", "ecm_provider")).toBe(true);
     expect(cur().sudFlagged).toBe(false);
     expect(cur().sudFlaggedByPatient).toBeUndefined();
-    expect(visibleMessageBody(cur(), "case_manager", patient)).toBe("self flagged content");
+    expect(visibleMessageBody(cur(), "ecm_provider", patient)).toBe("self flagged content");
   });
 
   it("does not flag when the patient opts out (default)", () => {
@@ -156,7 +156,7 @@ describe("care message Part 2 flagging", () => {
   it("keeps the patient_message notification body generic", () => {
     const cmPid = AdelanteEHR.listPatients().find((x) => x.caseManagerId === "cm1")!.id;
     AdelanteEHR.sendPatientMessage(cmPid, "do not echo this text");
-    const notes = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "case_manager").filter(
+    const notes = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "ecm_provider").filter(
       (n) => n.category === "patient_message",
     );
     expect(notes.length).toBeGreaterThan(0);
@@ -168,7 +168,7 @@ describe("care message Part 2 flagging", () => {
 
   it("adds an un-gated backstop notification when a self-flag would blind the case manager", () => {
     const gatedPatient = AdelanteEHR.listPatients().find(
-      (x) => canAccess("case_manager", "screeners_sud", x).locked,
+      (x) => canAccess("ecm_provider", "screeners_sud", x).locked,
     )!;
     const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
     AdelanteEHR.sendPatientMessage(gatedPatient.id, "sensitive ask", true);
@@ -182,7 +182,7 @@ describe("care message Part 2 flagging", () => {
 
   it("does not add the backstop when the case manager is not gated for that patient", () => {
     const openPatient = AdelanteEHR.listPatients().find(
-      (x) => !canAccess("case_manager", "screeners_sud", x).locked,
+      (x) => !canAccess("ecm_provider", "screeners_sud", x).locked,
     )!;
     const before = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === openPatient.id,
@@ -212,16 +212,16 @@ describe("care message Part 2 flagging", () => {
   // ---- Thread 2: staff-initiated (retroactive) flag backstop ----
   it("staff flag on a gated patient notifies the case manager (distinct copy) plus a backstop", () => {
     const gated = AdelanteEHR.listPatients().find(
-      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+      (x) => canAccess("ecm_provider", "screeners_sud", x).locked && x.caseManagerId,
     )!;
     const cmName = AdelanteEHR.listCaseManagers().find((c) => c.id === gated.caseManagerId)!.name;
     const m = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Bagga", "clinical note to patient")!;
-    const cmBefore = AdelanteEHR.listNotificationsFor(cmName, "case_manager").length;
+    const cmBefore = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider").length;
     const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
 
     AdelanteEHR.flagMessageAsSud(gated.id, m.id, "Dr. Bagga", "pmhnp");
 
-    const all = AdelanteEHR.listNotificationsFor(cmName, "case_manager");
+    const all = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider");
     expect(all.length).toBeGreaterThan(cmBefore);
     const visibility = all.filter((n) => n.body.includes("flagged for Part 2 protection"));
     expect(visibility.length).toBeGreaterThan(0);
@@ -230,23 +230,23 @@ describe("care message Part 2 flagging", () => {
 
   it("does not self-notify the case manager who did the flagging, and never notifies on unflag", () => {
     const gated = AdelanteEHR.listPatients().find(
-      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+      (x) => canAccess("ecm_provider", "screeners_sud", x).locked && x.caseManagerId,
     )!;
     const cmName = AdelanteEHR.listCaseManagers().find((c) => c.id === gated.caseManagerId)!.name;
     const m = AdelanteEHR.sendStaffMessage(gated.id, cmName, "note")!;
-    const before = AdelanteEHR.listNotificationsFor(cmName, "case_manager").length;
-    AdelanteEHR.flagMessageAsSud(gated.id, m.id, cmName, "case_manager");
-    expect(AdelanteEHR.listNotificationsFor(cmName, "case_manager").length).toBe(before);
+    const before = AdelanteEHR.listNotificationsFor(cmName, "ecm_provider").length;
+    AdelanteEHR.flagMessageAsSud(gated.id, m.id, cmName, "ecm_provider");
+    expect(AdelanteEHR.listNotificationsFor(cmName, "ecm_provider").length).toBe(before);
 
     const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").length;
-    AdelanteEHR.unflagMessageAsSud(gated.id, m.id, cmName, "case_manager");
+    AdelanteEHR.unflagMessageAsSud(gated.id, m.id, cmName, "ecm_provider");
     expect(AdelanteEHR.listNotificationsFor("nobody", "therapist").length).toBe(thBefore);
-    expect(AdelanteEHR.listNotificationsFor(cmName, "case_manager").length).toBe(before);
+    expect(AdelanteEHR.listNotificationsFor(cmName, "ecm_provider").length).toBe(before);
   });
 
   it("produces no flag notifications when the case manager is not gated", () => {
     const open = AdelanteEHR.listPatients().find(
-      (x) => !canAccess("case_manager", "screeners_sud", x).locked,
+      (x) => !canAccess("ecm_provider", "screeners_sud", x).locked,
     )!;
     const m = AdelanteEHR.sendStaffMessage(open.id, "Dr. Bagga", "note")!;
     const count = () =>
@@ -261,10 +261,10 @@ describe("care message Part 2 flagging", () => {
   // ---- Backstop selection is derived from the RBAC matrix ----
   it("selects a backstop that is genuinely un-gated and is never the flagger's own role", () => {
     const gated = AdelanteEHR.listPatients().find(
-      (x) => canAccess("case_manager", "screeners_sud", x).locked && x.caseManagerId,
+      (x) => canAccess("ecm_provider", "screeners_sud", x).locked && x.caseManagerId,
     )!;
     // Only roles that pass the SAME screeners_sud check may be a backstop.
-    expect(canAccess("case_manager", "screeners_sud", gated).locked).toBe(true);
+    expect(canAccess("ecm_provider", "screeners_sud", gated).locked).toBe(true);
     expect(canAccess("peer_specialist", "screeners_sud", gated).locked).toBe(true);
     expect(canAccess("therapist", "screeners_sud", gated).locked).toBe(false);
     expect(canAccess("pmhnp", "screeners_sud", gated).locked).toBe(false);

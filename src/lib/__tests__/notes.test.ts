@@ -27,9 +27,9 @@ describe("note signer eligibility", () => {
     expect(canSignNotes("therapist")).toBe(true);
     expect(requiresCosign("pmhnp")).toBe(false);
   });
-  it("blocks case_manager and peer_specialist from self-signing", () => {
-    expect(canSignNotes("case_manager")).toBe(false);
-    expect(requiresCosign("case_manager")).toBe(true);
+  it("blocks ecm_provider and peer_specialist from self-signing", () => {
+    expect(canSignNotes("ecm_provider")).toBe(false);
+    expect(requiresCosign("ecm_provider")).toBe(true);
     expect(requiresCosign("peer_specialist")).toBe(true);
   });
   it("offers a non-empty cosigner pool", () => {
@@ -66,11 +66,11 @@ describe("note lifecycle", () => {
     ).toThrow(/[Aa]ttestation/);
   });
 
-  it("case_manager sign routes to cosign_pending", () => {
+  it("ecm_provider sign routes to cosign_pending", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
       cosignRole: ["therapist"],
@@ -79,12 +79,12 @@ describe("note lifecycle", () => {
     expect(AdelanteEHR.listNotesAwaitingCosign().some((r) => r.note.id === n.id)).toBe(true);
   });
 
-  it("case_manager cannot sign without a cosigner", () => {
+  it("ecm_provider cannot sign without a cosigner", () => {
     const n = draft();
     expect(() =>
       AdelanteEHR.signProgressNote(PATIENT, n.id, {
         signedBy: "Maria CM",
-        role: "case_manager",
+        role: "ecm_provider",
         attested: true,
         cosignRequired: false,
       }),
@@ -95,7 +95,7 @@ describe("note lifecycle", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
       cosignRole: ["therapist"],
@@ -121,7 +121,7 @@ describe("note lifecycle", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
     });
@@ -147,7 +147,7 @@ describe("note lifecycle", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
     });
@@ -171,21 +171,21 @@ describe("cosign inbox split + SUD masking shape", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
       cosignRole: ["therapist"],
     });
     expect(isMyCosign(n, { role: "therapist", staffName: "Christi" })).toBe(true);
     expect(isMyCosign(n, { role: "pmhnp", staffName: "Dr. Bagga" })).toBe(false);
-    expect(isMyCosign(n, { role: "case_manager", staffName: "Maria CM" })).toBe(false);
+    expect(isMyCosign(n, { role: "ecm_provider", staffName: "Maria CM" })).toBe(false);
   });
 
   it("empty cosignRole means any eligible clinical role", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
     });

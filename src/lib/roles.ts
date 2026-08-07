@@ -5,7 +5,16 @@ import { useSyncExternalStore } from "react";
 import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } from "./ehr";
 
 export type StaffRole =
-  | "case_manager"
+  | "ecm_provider"
+  // §v3.0 role architecture — Correctional Facility Care Manager. Works the
+  // pre-release D90→0 countdown inside/with the facility; distinct from the
+  // ECM Provider, whose D0–90 program clock starts AT release. Deliberately
+  // given a thin record-class grant list: their surface is the CF task list /
+  // Reentry Care Plan (Phase 2), not the full chart.
+  | "cf_care_manager"
+  | "sud_counselor"
+  | "clinical_trainee"
+  | "medical_assistant"
   | "peer_specialist"
   | "therapist"
   | "pmhnp"
@@ -16,7 +25,11 @@ export type StaffRole =
   | "sys_admin";
 
 export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
-  { key: "case_manager", label: "Case manager" },
+  { key: "ecm_provider", label: "ECM Provider" },
+  { key: "cf_care_manager", label: "CF Care Manager" },
+  { key: "sud_counselor", label: "SUD Counselor" },
+  { key: "clinical_trainee", label: "Clinical Trainee" },
+  { key: "medical_assistant", label: "Medical Assistant" },
   { key: "peer_specialist", label: "Peer specialist" },
   { key: "therapist", label: "Therapist" },
   { key: "pmhnp", label: "PMHNP" },
@@ -76,68 +89,147 @@ export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated
 // matching Part-2 consent is currently granted.
 const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   demographics: {
-    case_manager: "write",
+    ecm_provider: "write",
+    // §v3.0 — new roles. Each grant below was decided per-class, not copied
+    // from ecm_provider: cf_care_manager only needs identity to work the
+    // pre-release list; clinical_trainee / medical_assistant read only.
+    cf_care_manager: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
     billing: "read",
   },
   screeners_mh: {
-    case_manager: "write",
+    ecm_provider: "write",
+    sud_counselor: "read",
+    clinical_trainee: "read",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
   },
   screeners_sud: {
-    case_manager: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
+    // DMC-ODS: the SUD counselor IS the treating provider for this material,
+    // so they sit with therapist/pmhnp, not with coordination roles.
+    sud_counselor: "read",
+    // A trainee treats under supervision but is not the consent holder.
+    clinical_trainee: "consent_gated",
+    medical_assistant: "none",
+    cf_care_manager: "none",
     // Policy: therapist and pmhnp are both direct treating clinicians with a
     // legitimate clinical need to know SUD status without a separate consent
-    // gate. case_manager/peer_specialist stay gated because care coordination
+    // gate. ecm_provider/peer_specialist stay gated because care coordination
     // is not clinical treatment — that distinction is the actual line.
     therapist: "read",
     pmhnp: "read",
   },
-  psych_eval: { case_manager: "read", peer_specialist: "read", therapist: "read", pmhnp: "write" },
-  care_plan: { case_manager: "write", peer_specialist: "read", therapist: "write", pmhnp: "write" },
-  therapy_notes: { therapist: "write", pmhnp: "read", case_manager: "read" },
-  meds_erx: { pmhnp: "write", therapist: "read", case_manager: "read" },
+  psych_eval: {
+    ecm_provider: "read",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "write",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+  },
+  care_plan: {
+    ecm_provider: "write",
+    peer_specialist: "read",
+    therapist: "write",
+    pmhnp: "write",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    cf_care_manager: "read",
+  },
+  // A trainee may AUTHOR a note; they can never self-sign it —
+  // NOTE_SELF_SIGN_ROLES (ehr.ts) is pmhnp/therapist only, so every trainee
+  // note routes for cosignature by construction.
+  therapy_notes: {
+    therapist: "write",
+    pmhnp: "read",
+    ecm_provider: "read",
+    sud_counselor: "read",
+    clinical_trainee: "write",
+  },
+  // Medical assistant reads the med list to support MAT administration; the
+  // write path is NOT here — see canRecordMatAdministration(), which also
+  // requires an active supervision link.
+  meds_erx: {
+    pmhnp: "write",
+    therapist: "read",
+    ecm_provider: "read",
+    medical_assistant: "read",
+    clinical_trainee: "read",
+  },
   telehealth_room: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    ecm_provider: "read",
     peer_specialist: "none" as AccessLevel,
   },
-  sdoh: { case_manager: "write", peer_specialist: "write", therapist: "write", pmhnp: "write" },
-  self_help: {
-    case_manager: "write",
+  sdoh: {
+    ecm_provider: "write",
     peer_specialist: "write",
     therapist: "write",
     pmhnp: "write",
+    sud_counselor: "write",
+    cf_care_manager: "write",
+  },
+  self_help: {
+    ecm_provider: "write",
+    peer_specialist: "write",
+    therapist: "write",
+    pmhnp: "write",
+    sud_counselor: "write",
   },
   sud_treatment: {
     pmhnp: "write",
     therapist: "consent_gated",
-    case_manager: "consent_gated",
+    sud_counselor: "write",
+    clinical_trainee: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     billing: "consent_gated",
   },
-  case_notes: { case_manager: "write", peer_specialist: "read", therapist: "read", pmhnp: "read" },
-  peer_notes: { peer_specialist: "write", case_manager: "read", therapist: "read", pmhnp: "read" },
-  documents: { case_manager: "write", therapist: "read", pmhnp: "read" },
+  case_notes: {
+    ecm_provider: "write",
+    peer_specialist: "read",
+    therapist: "read",
+    pmhnp: "read",
+    sud_counselor: "write",
+    clinical_trainee: "write",
+    cf_care_manager: "read",
+  },
+  peer_notes: { peer_specialist: "write", ecm_provider: "read", therapist: "read", pmhnp: "read" },
+  documents: {
+    ecm_provider: "write",
+    therapist: "read",
+    pmhnp: "read",
+    sud_counselor: "read",
+    cf_care_manager: "read",
+    medical_assistant: "read",
+  },
   billing: { billing: "write" },
   consent_ledger: {
-    // §ASCMI — consent capture must be writable by someone. case_manager
+    // §ASCMI — consent capture must be writable by someone. ecm_provider
     // writes because they are the role that actually sits with the patient
     // and captures the form; sys_admin writes for correction/administration.
     // Clinical roles stay read-only: reading the ledger is need-to-know,
     // authoring a legal consent instrument is not part of their workflow.
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     therapist: "read",
     pmhnp: "read",
     billing: "read",
     sys_admin: "write",
+    // DMC-ODS consent is captured at intake by the counselor too.
+    sud_counselor: "write",
+    cf_care_manager: "read",
   },
   /**
    * §ASCMI psychotherapy-notes tier — SCAFFOLD ONLY, DEFAULT DENY.
@@ -150,56 +242,73 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
    */
   psychotherapy_notes: {},
   // Clinical record layer (BaggaEMR mirror). Prescribers (pmhnp) and
-  // therapists write; case_manager / peer_specialist can read for
+  // therapists write; ecm_provider / peer_specialist can read for
   // coordination; billing reads Problems only for claim coding.
   problems: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
     billing: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   allergies: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   alerts: {
     pmhnp: "write",
     therapist: "write",
-    case_manager: "write",
+    ecm_provider: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   eligibility: {
-    case_manager: "write",
+    ecm_provider: "write",
     billing: "write",
     billing_coordinator: "write",
     therapist: "read",
     pmhnp: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    cf_care_manager: "read",
   },
   care_coordination: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "write",
+    // Reentry coordination is the CF Care Manager's entire job.
+    cf_care_manager: "write",
+    clinical_trainee: "read",
   },
   // §Custody tracking (bookings, housing moves, released search). Custody
   // status is coordination data, so case management owns the write path;
   // clinicians read it for context. Billing gets nothing — custody history is
   // not claim-relevant and would be an unnecessary exposure.
   custody_tracking: {
-    case_manager: "write",
+    ecm_provider: "write",
     clinical_coordinator: "write",
     therapist: "read",
     pmhnp: "read",
     peer_specialist: "read",
     sys_admin: "read",
+    // Pre-release work happens inside the facility record.
+    cf_care_manager: "write",
   },
   // §Facility & Custody reorg — controlled-substance custody: physical stock
   // on hand and chain-of-custody reconciliation (Shift count).
@@ -221,7 +330,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   controlled_substance_custody: {
     pmhnp: "write",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
+    // §v3.0 — kept exactly mirrored to `meds_erx` for the new roles too, so
+    // the access-neutrality invariant in navSections.test.ts still holds.
+    medical_assistant: "read",
+    clinical_trainee: "read",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for
@@ -239,7 +352,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing_coordinator: "read",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
   },
   // §Clinical documentation templates. Authoring a template is clinical
@@ -251,7 +364,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "read",
   },
   // §Admin governance — frequency catalog + local RxNav suppressions. Same
@@ -263,7 +376,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
@@ -279,7 +392,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
@@ -291,7 +404,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // own the reply), clinical_coordinator reads for oversight, billing gets
   // nothing — message content is not claim data.
   patient_messaging: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     peer_specialist: "read",
@@ -299,6 +412,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    cf_care_manager: "read",
+    clinical_trainee: "read",
+    medical_assistant: "none",
   },
   // §Inbox — provider request queue. Its own class because the traffic runs
   // BOTH directions: a case manager asks a prescriber to enter an order, a
@@ -307,7 +424,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // clinical_coordinator read for coordination/oversight; billing is out —
   // these are clinical asks, not claim data.
   provider_requests: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     clinical_coordinator: "read",
@@ -315,6 +432,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    cf_care_manager: "none",
   },
   // §Worklist Phase A — cross-facility operational task table. NOT
   // patient-scoped, so it follows the crisis_queue / population_health
@@ -325,7 +446,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // peers get "none": a worklist row is routine operational work, not
   // population-wide clinical risk exposure.
   worklist: {
-    case_manager: "write",
+    ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
     clinical_coordinator: "read",
@@ -333,6 +454,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    // CF task list lands here in Phase 2; write so they can claim their rows.
+    cf_care_manager: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   // §Scheduling rule engine — admin config that MANUFACTURES worklist rows.
   // Same tier as note_templates / KPI targets / catalog_governance:
@@ -344,26 +470,28 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_coordinator: "write",
     pmhnp: "read",
     therapist: "read",
-    case_manager: "read",
+    ecm_provider: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
   },
   // §Group sessions — scheduling/roster management. Group placement is a
   // clinical decision, so the roles that make it (therapist, pmhnp,
-  // case_manager) write; clinical_coordinator writes for the same oversight
+  // ecm_provider) write; clinical_coordinator writes for the same oversight
   // reason it owns protocols and crisis disposition; peer_specialist reads
   // (they co-facilitate and need the schedule) but does not place patients;
   // billing reads because group attendance drives per-attendee claims.
   group_sessions: {
     therapist: "write",
     pmhnp: "write",
-    case_manager: "write",
+    ecm_provider: "write",
     clinical_coordinator: "write",
     sys_admin: "write",
     peer_specialist: "read",
     billing: "read",
     billing_coordinator: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
   },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
@@ -371,10 +499,12 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   group_notes: {
     therapist: "write",
     pmhnp: "write",
-    case_manager: "consent_gated",
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     clinical_coordinator: "consent_gated",
     billing: "consent_gated",
+    sud_counselor: "write",
+    clinical_trainee: "consent_gated",
   },
 };
 
@@ -432,10 +562,14 @@ export function canAccess(
 export const CRISIS_FLAG_ROLES: StaffRole[] = [
   "pmhnp",
   "therapist",
-  "case_manager",
+  "ecm_provider",
   "peer_specialist",
   "clinical_coordinator",
   "sys_admin",
+  // §v3.0 — clinical-facing roles can raise a flag; cross-patient queue
+  // visibility still comes from the `crisis_queue` class, which they lack.
+  "sud_counselor",
+  "clinical_trainee",
 ];
 
 export function canFlagCrisis(role: StaffRole): boolean {
@@ -449,7 +583,7 @@ export function canFlagCrisis(role: StaffRole): boolean {
  * clinical judgment (a scored withdrawal protocol is a treatment decision),
  * so it matches `NOTE_SELF_SIGN_ROLES`: pmhnp + therapist. clinical_coordinator
  * is included for the same oversight reason it owns crisis disposition.
- * case_manager / peer_specialist keep their `worklist` read/write on the rows
+ * ecm_provider / peer_specialist keep their `worklist` read/write on the rows
  * themselves — they can see and claim rounds, just not start or stop one.
  */
 export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "therapist", "clinical_coordinator"];
@@ -473,10 +607,55 @@ export interface StaffMember {
   credential?: string;
   /** Links this staff member to a clinical provider record in AdelanteEHR. */
   clinicianId?: string;
+  /**
+   * §v3.0 supervision — id of the LPHA-tier StaffMember who supervises this
+   * person. A real, queryable field (not a comment): roles in
+   * SUPERVISION_REQUIRED_ROLES are not billable without it, and the
+   * MAT-administration capability check reads it directly.
+   */
+  supervisedBy?: string;
+  /**
+   * §v3.0 CF Care Manager dual access mode.
+   *  - "direct": facility/contract staff who log in themselves.
+   *  - "proxy": a CF Care Manager who is NOT a platform user; their task-list
+   *    activity is entered on their behalf by the receiving ECM Provider.
+   * Only meaningful for `cf_care_manager`.
+   */
+  accessMode?: "direct" | "proxy";
 }
 
 export const STAFF_ROSTER: StaffMember[] = [
-  { id: "s-cm1", name: "Luz Herrera", role: "case_manager", credential: "CCM" },
+  { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider", credential: "CCM" },
+  {
+    id: "s-cf1",
+    name: "Rosa Delgado",
+    role: "cf_care_manager",
+    credential: "CF Care Manager",
+    accessMode: "direct",
+  },
+  {
+    // Not a platform user — exists so ECM Providers have a real identity to
+    // attribute proxy-entered CF task-list activity to.
+    id: "s-cf2",
+    name: "Darnell Pope (facility contract)",
+    role: "cf_care_manager",
+    accessMode: "proxy",
+  },
+  { id: "s-sudc1", name: "Elena Vargas", role: "sud_counselor", credential: "SUDCC-II" },
+  {
+    id: "s-tr1",
+    name: "Kayla Nguyen",
+    role: "clinical_trainee",
+    credential: "ASW",
+    supervisedBy: "s-th1",
+  },
+  {
+    id: "s-ma1",
+    name: "Jorge Peña",
+    role: "medical_assistant",
+    credential: "CMA",
+    supervisedBy: "s-np1",
+  },
   { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
   {
     id: "s-th1",
@@ -508,12 +687,129 @@ export function getStaffMember(id: string | null | undefined): StaffMember | und
   return STAFF_ROSTER.find((s) => s.id === id);
 }
 
+// ----- §v3.0 supervision relationship -------------------------------------
+//
+// Nothing in the codebase modelled supervision before this: notes have a
+// cosign lifecycle (`cosignRequired` / `cosignedBy` in ehr.ts), but that is
+// per-DOCUMENT attestation after the fact, not a standing person-to-person
+// relationship — there is no "attending" concept anywhere. So this is new
+// architecture, deliberately kept as a single link (`StaffMember.supervisedBy`)
+// that both new supervised roles reuse rather than two parallel mechanisms.
+// Note cosign continues to work exactly as before and is unaffected.
+
+/** Roles that may hold a supervision link (LPHA tier). */
+export const LPHA_SUPERVISOR_ROLES: StaffRole[] = ["therapist", "pmhnp"];
+
+/** Roles whose scope of practice REQUIRES documented supervision. */
+export const SUPERVISION_REQUIRED_ROLES: StaffRole[] = ["clinical_trainee", "medical_assistant"];
+
+export function requiresSupervision(role: StaffRole): boolean {
+  return SUPERVISION_REQUIRED_ROLES.includes(role);
+}
+
+/** The supervising staff member, if the link exists AND points at an LPHA. */
+export function getSupervisor(staffId: string | null | undefined): StaffMember | undefined {
+  const sup = getStaffMember(getStaffMember(staffId)?.supervisedBy);
+  return sup && LPHA_SUPERVISOR_ROLES.includes(sup.role) ? sup : undefined;
+}
+
+export interface SupervisionStatus {
+  required: boolean;
+  supervisor?: StaffMember;
+  /** True when the role's supervision requirement is met (or not required). */
+  satisfied: boolean;
+  /** Why it is not satisfied — surfaced as an "incomplete setup" flag. */
+  reason?: string;
+}
+
+export function supervisionStatus(staffId: string | null | undefined): SupervisionStatus {
+  const member = getStaffMember(staffId);
+  if (!member) return { required: false, satisfied: false, reason: "Unknown staff member." };
+  const required = requiresSupervision(member.role);
+  if (!required) return { required: false, satisfied: true };
+  const raw = getStaffMember(member.supervisedBy);
+  if (!raw)
+    return {
+      required: true,
+      satisfied: false,
+      reason: "No supervising LPHA is assigned — supervision setup is incomplete.",
+    };
+  if (!LPHA_SUPERVISOR_ROLES.includes(raw.role))
+    return {
+      required: true,
+      supervisor: raw,
+      satisfied: false,
+      reason: `${raw.name} is not an LPHA-tier supervisor (Therapist or PMHNP).`,
+    };
+  return { required: true, supervisor: raw, satisfied: true };
+}
+
+/**
+ * Billable status for supervision-dependent roles. Phase 3 owns the actual
+ * billing hooks; this is the gate they will call, so the rule ("no documented
+ * supervision, not billable") exists as enforced code now rather than a note.
+ */
+export function isBillableStaff(staffId: string | null | undefined): boolean {
+  return supervisionStatus(staffId).satisfied;
+}
+
+/**
+ * Medical Assistant write scope: MAT medication-administration support only,
+ * and only while a supervision link is in place. Reuses the trainee mechanism
+ * above instead of inventing a second one, per the MA role definition.
+ */
+export function canRecordMatAdministration(staffId: string | null | undefined): boolean {
+  const member = getStaffMember(staffId);
+  if (!member) return false;
+  if (member.role === "pmhnp" || member.role === "therapist") return true;
+  if (member.role !== "medical_assistant") return false;
+  return supervisionStatus(member.id).satisfied;
+}
+
+// ----- §v3.0 CF Care Manager proxy entry ----------------------------------
+
+/**
+ * Roles allowed to record CF Care Manager task-list activity on behalf of a
+ * CF Care Manager who is not a direct platform user. The receiving ECM
+ * Provider owns the hand-off, so they are the proxy; sys_admin for correction.
+ */
+export const CF_PROXY_ROLES: StaffRole[] = ["ecm_provider", "sys_admin"];
+
+export interface CfProxyCheck {
+  allowed: boolean;
+  reason?: string;
+}
+
+/**
+ * May `actorStaffId` enter CF work attributed to `onBehalfOfStaffId`?
+ * A direct-login CF Care Manager is NOT proxyable — if they can log in, their
+ * own entries must be their own.
+ */
+export function canProxyForCfCareManager(
+  actorStaffId: string | null | undefined,
+  onBehalfOfStaffId: string | null | undefined,
+): CfProxyCheck {
+  const actor = getStaffMember(actorStaffId);
+  const subject = getStaffMember(onBehalfOfStaffId);
+  if (!actor) return { allowed: false, reason: "Unknown acting staff member." };
+  if (!subject || subject.role !== "cf_care_manager")
+    return { allowed: false, reason: "Proxy entry only applies to CF Care Managers." };
+  if (subject.accessMode !== "proxy")
+    return {
+      allowed: false,
+      reason: `${subject.name} logs in directly — their activity cannot be proxy-entered.`,
+    };
+  if (!CF_PROXY_ROLES.includes(actor.role))
+    return { allowed: false, reason: "Only an ECM Provider may enter CF activity on behalf." };
+  return { allowed: true };
+}
+
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
-    return (v as StaffRole) || "case_manager";
+    return (v as StaffRole) || "ecm_provider";
   } catch {
-    return "case_manager";
+    return "ecm_provider";
   }
 })();
 

@@ -18,7 +18,7 @@ import {
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
-type Audience = "patient" | "clinician" | "case_manager";
+type Audience = "patient" | "clinician" | "ecm_provider";
 
 const goalStatusMap: Record<string, Key> = {
   not_started: "goalNotStarted",

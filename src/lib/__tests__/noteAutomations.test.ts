@@ -130,7 +130,7 @@ describe("post-sign automations", () => {
     })!;
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRequired: true,
       cosignRole: ["therapist"],

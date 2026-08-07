@@ -27,7 +27,7 @@ interface Props {
 }
 
 const ALLOWED_ROLES = new Set([
-  "case_manager",
+  "ecm_provider",
   "clinical_coordinator",
   "sys_admin",
   "therapist",
@@ -145,7 +145,7 @@ export function AssignClinicianButton({
               AdelanteEHR.reassignPrimaryClinician({
                 patientId,
                 clinicianId: pick,
-                initiatedBy: role === "sys_admin" ? "admin" : "case_manager",
+                initiatedBy: role === "sys_admin" ? "admin" : "ecm_provider",
               });
               toast.success(
                 current

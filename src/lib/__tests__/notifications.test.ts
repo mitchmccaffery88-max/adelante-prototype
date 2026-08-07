@@ -17,7 +17,7 @@ describe("notification feed — Phase 1", () => {
     })!;
     AdelanteEHR.signProgressNote(pid, note.id, {
       signedBy: "Luz Herrera",
-      role: "case_manager",
+      role: "ecm_provider",
       attested: true,
       cosignRole: ["pmhnp"],
     });
@@ -43,11 +43,11 @@ describe("notification feed — Phase 1", () => {
       title: "Call patient",
       dueDate: "2026-08-01",
     });
-    const mine = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "case_manager");
+    const mine = AdelanteEHR.listNotificationsFor("Lupita Sanchez, MSW", "ecm_provider");
     const task = mine.find((n) => n.category === "task_assigned");
     expect(task).toBeTruthy();
     expect(task!.recipientRole).toBeUndefined();
-    const other = AdelanteEHR.listNotificationsFor("Luz Herrera", "case_manager");
+    const other = AdelanteEHR.listNotificationsFor("Luz Herrera", "ecm_provider");
     expect(other.some((n) => n.category === "task_assigned")).toBe(false);
   });
 

@@ -127,7 +127,7 @@ export function OverviewTab({ patientId }: { patientId: string }) {
           value={lastCheckIn ? new Date(lastCheckIn.date).toLocaleDateString() : "—"}
         />
       </div>
-      <CarePlanCard patientId={p.id} audience="case_manager" />
+      <CarePlanCard patientId={p.id} audience="ecm_provider" />
     </div>
   );
 }

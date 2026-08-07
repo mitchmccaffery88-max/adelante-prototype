@@ -106,7 +106,7 @@ describe("crisis queue RBAC", () => {
   it("gives coordinators write and treating clinicians read", () => {
     expect(canAccess("clinical_coordinator", "crisis_queue").level).toBe("write");
     expect(canAccess("sys_admin", "crisis_queue").level).toBe("write");
-    for (const role of ["pmhnp", "therapist", "case_manager"] as const) {
+    for (const role of ["pmhnp", "therapist", "ecm_provider"] as const) {
       expect(canAccess(role, "crisis_queue").level).toBe("read");
     }
   });
