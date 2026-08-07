@@ -49,25 +49,13 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
   const [attested, setAttested] = useState(false);
   const [effectiveDate, setEffectiveDate] = useState(todayIso());
   const [expirationDate, setExpirationDate] = useState("");
-  const [sections, setSections] = useState<Record<ConsentCategory, boolean>>({
-    sud_treatment: false,
-    mental_health: false,
-    case_coordination: false,
-    billing: false,
-    group_participation: false,
-  });
+  const [sections, setSections] = useState<Record<ConsentCategory, boolean>>(emptySections);
 
   const reset = () => {
     setSignedByName("");
     setAttested(false);
     setExpirationDate("");
-    setSections({
-      sud_treatment: false,
-      mental_health: false,
-      case_coordination: false,
-      billing: false,
-      group_participation: false,
-    });
+    setSections(emptySections());
   };
 
   const submit = () => {
