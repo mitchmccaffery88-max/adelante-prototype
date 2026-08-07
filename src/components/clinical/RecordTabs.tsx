@@ -1128,6 +1128,8 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const notes = p?.peerNotes ?? [];
   const [text, setText] = useState("");
+  const [minutes, setMinutes] = useState("15");
+  const { staffId, staffName, role: actingRole, clinicianId } = useActingStaff();
   const [mode, setMode] = useState<NonNullable<PeerNote["mode"]>>("in_person");
   return (
     <div className="space-y-3">
@@ -1157,16 +1159,45 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
             onChange={(e) => setText(e.target.value)}
             placeholder="Peer-support note (non-clinical)."
           />
+          <div>
+            <Label className="text-[10px] text-muted-foreground">
+              Service time (minutes) — billed as {mode === "group" ? "H0025 (group)" : "H0038, per 15 min"}
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              className="h-8 text-xs"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+          </div>
           <Button
             size="sm"
             onClick={() => {
               if (!text.trim()) return toast.error("Add a note");
-              AdelanteEHR.addPeerNote(patientId, {
+              const mins = Number(minutes) || 0;
+              const saved = AdelanteEHR.addPeerNote(patientId, {
                 date: new Date().toISOString(),
-                author: "Peer specialist",
+                author: staffName,
                 text,
                 mode,
+                staffId,
+                minutes: mins,
               });
+              // §Phase 3 billing hook — same claims list as every other
+              // encounter; blocked attempts are audited, not silent.
+              if (saved && actingRole === "peer_specialist") {
+                const claim = AdelanteEHRExt.upsertClaimFromPeerNote({
+                  patientId,
+                  peerNoteId: saved.id,
+                  staffId,
+                  clinicianId: clinicianId ?? "c3",
+                  minutes: mins,
+                  mode,
+                });
+                if (claim)
+                  toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
+              }
               setText("");
               toast.success("Peer note added");
             }}
