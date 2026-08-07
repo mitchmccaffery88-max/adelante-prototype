@@ -45,7 +45,7 @@ describe("nav registry integrity", () => {
   it("§Facility & Custody — group exists, is ordered after population, and is gated", () => {
     const facility = STAFF_NAV.filter((e) => e.group === "facility").map((e) => e.id);
     expect(facility.sort()).toEqual(
-      ["admin-facilities", "facility-protocols", "released-search"].sort(),
+      ["admin-facilities", "facility-protocols", "pre-release", "released-search"].sort(),
     );
     for (const e of STAFF_NAV.filter((x) => x.group === "facility")) {
       expect(e.gate).toMatchObject({ anyOf: ["custody_tracking"] });
