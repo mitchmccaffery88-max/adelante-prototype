@@ -88,7 +88,7 @@ function combineDateTime(date: string, time: string): string | null {
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
     meta: [
-      { title: "Case Manager — Adelante" },
+      { title: "ECM Provider — Adelante" },
       {
         name: "description",
         content:

@@ -66,7 +66,7 @@ const dict = {
     navMyCare: "My care",
     navIntake: "Intake",
     navReferrals: "Referrals",
-    navCaseManager: "Case Manager",
+    navCaseManager: "ECM Provider",
     navClinician: "Clinician",
     navAdmin: "Admin",
     navStaff: "Staff",
