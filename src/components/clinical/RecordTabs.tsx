@@ -1599,7 +1599,11 @@ export function NotesTab({
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
               <NoteTemplatePicker
-                templates={templates}
+                templates={
+                  restrictToTemplateKey
+                    ? templates.filter((t) => t.key === restrictToTemplateKey)
+                    : templates
+                }
                 value={templateId}
                 onChange={(v) => {
                   setTemplateId(v);
