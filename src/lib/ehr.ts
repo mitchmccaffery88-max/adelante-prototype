@@ -25,6 +25,7 @@ import {
   type AdvocateAccessDecision,
   type AdvocateAuthorizationType,
   type AdvocatePermission,
+  advocateTier,
 } from "./advocate";
 
 // ---------------------------------------------------------------------------
@@ -3301,6 +3302,62 @@ const ADVOCATE_SUD_TEXT_RE =
 
 function _advocateSudText(text: string): boolean {
   return ADVOCATE_SUD_TEXT_RE.test(text);
+}
+
+function _patient(id: string): Patient | undefined {
+  return patients.find((x) => x.id === id);
+}
+
+/** Uniform advocate audit row — every advocate touch lands in one shape. */
+function _advocateAudit(
+  link: AdvocateLink,
+  action: string,
+  resource: string,
+  detail: Record<string, unknown> = {},
+) {
+  appendAudit({
+    category: "advocate",
+    action,
+    patientId: link.patientId,
+    actorRole: "advocate",
+    actorId: link.id,
+    detail: {
+      advocateLinkId: link.id,
+      advocateName: link.advocateName,
+      authorizationType: link.authorizationType,
+      tier: link.authorizationType ? advocateTier(link.authorizationType) : undefined,
+      resource,
+      ...detail,
+    },
+  });
+}
+
+/**
+ * THE single advocate authorization choke point. Returns the link only when
+ * the live decision grants the permission; every denial is audited here so no
+ * caller can forget to.
+ */
+function _advocateGate(
+  linkId: string,
+  permission: AdvocatePermission,
+  resource: string,
+): { ok: true; link: AdvocateLink; reason: string } | { ok: false; reason: string } {
+  const link = advocateLinks.find((l) => l.id === linkId);
+  if (!link) return { ok: false, reason: "No advocate connection." };
+  const decision = AdelanteEHR.advocateAccess(linkId);
+  if (!decision.allowed || !decision.permissions.includes(permission)) {
+    _advocateAudit(link, "advocate_access_denied", resource, {
+      permission,
+      denyReason: decision.allowed ? "permission_not_granted" : decision.denyReason,
+    });
+    return {
+      ok: false,
+      reason: decision.allowed
+        ? "Your authorization doesn't include this."
+        : decision.reason,
+    };
+  }
+  return { ok: true, link, reason: decision.reason };
 }
 
 /**
