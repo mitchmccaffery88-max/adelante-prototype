@@ -344,7 +344,11 @@ describe("AB 133 exemption vs consent-required disclosure — different code pat
 
   it("third-party disclosure requires the Information Sharing authorization category", () => {
     const pid = "p3";
-    const denied = disclosureAccess({ pid: undefined, patientId: pid, kind: "third_party", actorRole: "ecm_provider" } as never);
+    const denied = disclosureAccess({
+      patientId: pid,
+      kind: "third_party",
+      actorRole: "ecm_provider",
+    });
     expect(denied.allowed).toBe(false);
     AdelanteEHR.createConsentRecord({
       patientId: pid,
