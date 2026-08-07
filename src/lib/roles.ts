@@ -251,6 +251,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     peer_specialist: "read",
     billing: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   allergies: {
     pmhnp: "write",
@@ -258,6 +261,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "read",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   alerts: {
     pmhnp: "write",
@@ -265,6 +271,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   eligibility: {
     ecm_provider: "write",
@@ -273,6 +282,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     pmhnp: "read",
     clinical_coordinator: "read",
+    sud_counselor: "read",
+    cf_care_manager: "read",
   },
   care_coordination: {
     ecm_provider: "write",
@@ -280,6 +291,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     peer_specialist: "read",
     clinical_coordinator: "read",
+    sud_counselor: "write",
+    // Reentry coordination is the CF Care Manager's entire job.
+    cf_care_manager: "write",
+    clinical_trainee: "read",
   },
   // §Custody tracking (bookings, housing moves, released search). Custody
   // status is coordination data, so case management owns the write path;
@@ -292,6 +307,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     peer_specialist: "read",
     sys_admin: "read",
+    // Pre-release work happens inside the facility record.
+    cf_care_manager: "write",
   },
   // §Facility & Custody reorg — controlled-substance custody: physical stock
   // on hand and chain-of-custody reconciliation (Shift count).
@@ -314,6 +331,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     therapist: "read",
     ecm_provider: "read",
+    medical_assistant: "read",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for
