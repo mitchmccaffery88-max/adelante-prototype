@@ -36,6 +36,7 @@ import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
 import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
+import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import {
   OverviewTab,
@@ -369,6 +370,17 @@ export function useRecordSections(
     group: "coordination",
     count: counts.housingMoves,
     render: (a) => <HousingMovesTab patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  // §v3.0 Phase 2 — the D0 intake read of the pre-release hand-off. Gated on
+  // `care_coordination` (both the CF Care Manager and the receiving ECM
+  // Provider hold it) rather than custody_tracking: the plan is coordination
+  // data that outlives the custody episode.
+  add("care_coordination", {
+    id: "reentry-handoff",
+    label: "Reentry hand-off",
+    icon: Stethoscope,
+    group: "coordination",
+    render: () => <ReentryHandoffTab patientId={pid} />,
   });
 
   return sections;
