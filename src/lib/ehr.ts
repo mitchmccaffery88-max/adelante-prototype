@@ -3225,7 +3225,52 @@ export interface AdvocateLink {
   revokedAt?: string;
   revokedBy?: string;
   revokeReason?: string;
+  /**
+   * §Phase 4 expansion — "one identity, two hats".
+   *
+   * If this advocate has ALSO opened their own care with us, this is the id of
+   * THEIR OWN Patient record. It is a pointer between two records held by one
+   * human being; it is emphatically NOT a data-sharing relationship. Nothing
+   * in this file ever reads `selfPatientId` while serving advocate-side data,
+   * and nothing ever reads `patientId` while serving self-side data. The two
+   * sides are enforced separate by construction — see `advocateSelfPatient`
+   * and the negative tests in `advocatePhase4.test.ts`.
+   */
+  selfPatientId?: string;
+  selfPatientStartedAt?: string;
+  /** Set when the advocate declines the "support for yourself too?" prompt. */
+  selfCareOfferDeclinedAt?: string;
 }
+
+/**
+ * §Phase 4 expansion — an advocate's INPUT on the reentry care plan.
+ *
+ * Deliberately a separate append-only stream rather than fields on
+ * `ReentryCarePlan`: the ECM Provider / CF Care Manager remains the sole
+ * author of the plan itself. "Participation" concretely means the advocate can
+ * (a) read the coordination-relevant parts of the plan and (b) attach comments
+ * and requests to a named section, which the owner then accepts or ignores.
+ * PLACEHOLDER: whether a contribution should ever be formally "accepted" into
+ * the plan (and by whom) needs real definition — none is invented here.
+ */
+export type AdvocateContributionSection =
+  | "housing"
+  | "appointments"
+  | "pharmacy"
+  | "dme"
+  | "general";
+
+export interface AdvocateContribution {
+  id: string;
+  advocateLinkId: string;
+  patientId: string;
+  section: AdvocateContributionSection;
+  text: string;
+  authorName: string;
+  createdAt: string;
+}
+
+const advocateContributions: AdvocateContribution[] = [];
 
 const advocateLinks: AdvocateLink[] = [];
 
