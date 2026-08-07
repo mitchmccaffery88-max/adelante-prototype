@@ -4148,6 +4148,29 @@ const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
 
+// §v3.0 Phase 2 — pre-release episode stores.
+const preReleaseEpisodes: PreReleaseEpisode[] = [];
+const preReleaseForms: PreReleaseFormRecord[] = [];
+const reentryCarePlans: ReentryCarePlan[] = [];
+const enrollmentCodes: EnrollmentCode[] = [];
+
+/** Crockford-style alphabet minus I/L/O/U — safe to read aloud or handwrite. */
+const CODE_ALPHABET = "0123456789ABCDEFGHJKMNPQRSTVWXYZ";
+const ENROLLMENT_CODE_TTL_DAYS = 90;
+
+function generateEnrollmentCode(): string {
+  const block = () =>
+    Array.from(
+      { length: 4 },
+      () => CODE_ALPHABET[Math.floor(Math.random() * CODE_ALPHABET.length)],
+    ).join("");
+  for (let attempt = 0; attempt < 50; attempt++) {
+    const code = `RE-${block()}-${block()}`;
+    if (!enrollmentCodes.some((c) => c.code === code)) return code;
+  }
+  throw new Error("Could not allocate a unique enrollment code.");
+}
+
 function _groupOccurrenceKey(sessionId: string, start: string) {
   return `${sessionId}::${start}`;
 }
