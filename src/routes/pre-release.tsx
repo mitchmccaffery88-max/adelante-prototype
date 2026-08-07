@@ -10,7 +10,7 @@
 // system. Release & consent forms deliberately have no fields here: they route
 // to the ASCMI consent ledger.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
