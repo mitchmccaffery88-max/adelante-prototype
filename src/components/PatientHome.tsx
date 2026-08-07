@@ -52,6 +52,7 @@ import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
+import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -197,6 +198,8 @@ export function PatientHome() {
       </Card>
 
       <HomeScreenNudge />
+
+      <PatientDocumentsCard patientId={patient.id} />
 
       <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">

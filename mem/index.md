@@ -11,3 +11,4 @@ Compliance content (DHCS/ASCMI form text, categories, attestations) is PLACEHOLD
 - [ASCMI consent](mem://features/ascmi-consent) — ConsentRecord model, live gate, disclosure audit, psychotherapy-notes tier
 - [Group sessions](mem://features/group-sessions) — eligibility gate, category/billing split, occurrence exceptions
 - [Advocate access](mem://features/advocate-access) — v3.0 Phase 4 third-party PHI access: AdvocateLink entity, authorization types, invitation-only invariant, schedule-only ceiling
+- [Patient documents](mem://features/patient-documents) — Phase 5 upload paths, derived verify-queue ownership, Part 2 at upload, malware gate, metadata-only storage flag
