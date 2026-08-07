@@ -177,7 +177,7 @@ describe("advocate schedule — consent-conditional Part 2 visibility", () => {
     // Revoking a previously-valid link re-masks immediately.
     const link = connected(p.id);
     expect(labels(link.id).join("|")).toContain(SUD_TOPIC);
-    AdelanteEHR.revokeAdvocateLink(link.id, "test revocation");
+    AdelanteEHR.revokeAdvocateLink(link.id, "test", "test revocation");
     expect(AdelanteEHR.advocateSchedule(link.id).allowed).toBe(false);
   });
 
@@ -187,8 +187,9 @@ describe("advocate schedule — consent-conditional Part 2 visibility", () => {
     const link = connected(p.id);
     const rec = signSudDisclosure(p.id);
     expect(labels(link.id).join("|")).toContain(SUD_TOPIC);
-    AdelanteEHR.revokeConsentRecord(rec.id, "patient revoked", {
-      staffName: "Test",
+    AdelanteEHR.revokeConsentRecord(rec.id, {
+      reason: "patient revoked",
+      revokedBy: "Test",
       role: "therapist",
     });
     expect(labels(link.id).join("|")).not.toContain(SUD_TOPIC);
