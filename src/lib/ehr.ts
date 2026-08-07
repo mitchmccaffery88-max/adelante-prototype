@@ -5897,6 +5897,8 @@ export const AdelanteEHR = {
   },
 
   // ---------- Case task queue ----------
+  // (§v3.0 Phase 2 pre-release API is defined just above the task queue it
+  // reuses — every pre-release form is tracked as an ordinary CaseTask row.)
   listCaseTasks(): CaseTask[] {
     return [...caseTasks];
   },
