@@ -1,6 +1,6 @@
 // §v3.0 Phase 2 — pre-release episode, form capture, reentry care plan,
 // enrollment code, and the AB 133 / consent path split.
-import { describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import {
   AdelanteEHR,
   CONSENT_CATEGORIES,
@@ -14,6 +14,21 @@ import { ab133CoordinationAccess, disclosureAccess } from "@/lib/ab133";
 const DIRECT_CF = "s-cf1";
 const PROXY_CF = "s-cf2";
 const ECM = "s-cm1";
+
+// Only three patients are seeded, and one active episode is allowed per
+// patient — close between cases so each test gets a fresh episode.
+afterEach(() => {
+  for (const pid of ["p1", "p2", "p3"]) {
+    const ep = AdelanteEHR.activePreReleaseEpisode(pid);
+    if (ep)
+      AdelanteEHR.closePreReleaseEpisode({
+        episodeId: ep.id,
+        reason: "test teardown",
+        closedBy: "test",
+        actorRole: "cf_care_manager",
+      });
+  }
+});
 
 function openEpisode(patientId: string, cfStaffId = DIRECT_CF) {
   const cf = getStaffMember(cfStaffId)!;
@@ -87,7 +102,7 @@ describe("pre-release episode + four form categories", () => {
   });
 
   it("refuses to shadow-capture consent forms as loose fields", () => {
-    const ep = openEpisode("p4");
+    const ep = openEpisode("p1");
     expect(() =>
       AdelanteEHR.savePreReleaseForm({
         episodeId: ep.id,
@@ -100,7 +115,7 @@ describe("pre-release episode + four form categories", () => {
   });
 
   it("derives release & consent status from the ConsentRecord ledger", () => {
-    const ep = openEpisode("p5");
+    const ep = openEpisode("p2");
     const before = AdelanteEHR.preReleaseChecklist(ep.id).find(
       (r) => r.def.key === "informed_consent_prerelease",
     )!;
@@ -218,7 +233,7 @@ describe("Person-Centered Reentry Care Plan", () => {
     });
 
   it("is a queryable structured record the ECM Provider reads at D0", () => {
-    const ep = openEpisode("p6");
+    const ep = openEpisode("p3");
     goodPlan(ep.id);
     const read = AdelanteEHR.reentryCarePlanForPatient(ep.patientId)!;
     expect(read.appointments).toHaveLength(2);
@@ -227,7 +242,7 @@ describe("Person-Centered Reentry Care Plan", () => {
   });
 
   it("rejects referral-style appointments with no real date or provider", () => {
-    const ep = openEpisode("p7");
+    const ep = openEpisode("p1");
     AdelanteEHR.saveReentryCarePlan({
       episodeId: ep.id,
       housing: { arrangement: "Family" },
@@ -247,7 +262,7 @@ describe("Person-Centered Reentry Care Plan", () => {
   });
 
   it("requires member attestation and signature", () => {
-    const ep = openEpisode("p8");
+    const ep = openEpisode("p2");
     goodPlan(ep.id);
     expect(() =>
       AdelanteEHR.completeReentryCarePlan({
@@ -260,7 +275,7 @@ describe("Person-Centered Reentry Care Plan", () => {
   });
 
   it("issues a retrievable, unique, time-bounded enrollment code on completion", () => {
-    const ep = openEpisode("p9");
+    const ep = openEpisode("p3");
     goodPlan(ep.id);
     const { plan, enrollmentCode } = AdelanteEHR.completeReentryCarePlan({
       episodeId: ep.id,
@@ -281,7 +296,7 @@ describe("Person-Centered Reentry Care Plan", () => {
   });
 
   it("locks the plan once member-signed", () => {
-    const ep = openEpisode("p10");
+    const ep = openEpisode("p1");
     goodPlan(ep.id);
     AdelanteEHR.completeReentryCarePlan({
       episodeId: ep.id,
