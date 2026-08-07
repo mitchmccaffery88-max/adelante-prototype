@@ -364,7 +364,7 @@ const dict = {
     navMyCare: "Mi cuidado",
     navIntake: "Preguntas iniciales",
     navReferrals: "Referidos",
-    navCaseManager: "Coordinador",
+    navCaseManager: "Proveedor ECM",
     navClinician: "Profesional clínico",
     navAdmin: "Administración",
     navStaff: "Equipo",
