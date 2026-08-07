@@ -1662,7 +1662,13 @@ export type ConsentCategory =
   // category the AB 133 split turns on: coordination between the CF Care
   // Manager and the receiving ECM Provider is exempt and never checks it;
   // anything third-party or 42 CFR Part 2 does. See src/lib/ab133.ts.
-  | "information_sharing_disclosure";
+  | "information_sharing_disclosure"
+  // §v3.0 Phase 4 — Release of Information for Collateral (advocate)
+  // participation. PLACEHOLDER key and label, same discipline as every other
+  // category here: the real DHCS DMC-ODS Collateral ROI form language is
+  // Christi's to supply. The GATE is real even though the content is not —
+  // a Collateral-type advocate has zero access until this is active.
+  | "roi_collateral";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
@@ -1677,6 +1683,9 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     label: "Information sharing / disclosure authorization (placeholder)",
   },
 ];
+
+/** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
+export const COLLATERAL_ROI_CATEGORY: ConsentCategory = "roi_collateral";
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
 export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded";
