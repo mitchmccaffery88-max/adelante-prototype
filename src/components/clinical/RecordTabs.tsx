@@ -1518,11 +1518,18 @@ export function NotesTab({
   patientId,
   readOnly,
   initialTemplateKey,
+  restrictToTemplateKey,
 }: {
   patientId: string;
   readOnly?: boolean;
   /** Pre-selects a seeded template by key (e.g. the release → discharge flow). */
   initialTemplateKey?: string;
+  /**
+   * §Phase 3 — scopes the tab to ONE template's notes (CHW service notes).
+   * A role that only holds `chw_notes` must not see the rest of the chart's
+   * documentation, so the list is filtered here, not just the picker.
+   */
+  restrictToTemplateKey?: string;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName, staffId, clinicianId, role } = useActingStaff();
@@ -1538,8 +1545,10 @@ export function NotesTab({
   const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
   const [templateId, setTemplateId] = useState<string>(
     () =>
-      (initialTemplateKey
-        ? AdelanteEHR.listNoteTemplates().find((t) => t.key === initialTemplateKey)?.id
+      ((initialTemplateKey ?? restrictToTemplateKey)
+        ? AdelanteEHR.listNoteTemplates().find(
+            (t) => t.key === (initialTemplateKey ?? restrictToTemplateKey),
+          )?.id
         : undefined) ?? "none",
   );
   const [answers, setAnswers] = useState<TemplateAnswers>({});
@@ -1718,10 +1727,10 @@ export function NotesTab({
       )}
       <div className="space-y-2">
         <h4 className="font-display text-sm text-navy">Recent notes</h4>
-        {(patient.progressNotes ?? []).length === 0 && (
+        {visibleNotes.length === 0 && (
           <Card className="p-3 text-xs text-muted-foreground">No progress notes yet.</Card>
         )}
-        {(patient.progressNotes ?? []).map((n) => (
+        {visibleNotes.map((n) => (
           <ProgressNoteCard
             key={n.id}
             patientId={patient.id}
