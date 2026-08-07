@@ -7887,6 +7887,11 @@ export const AdelanteEHR = {
    * JUDGMENT CALL (flagged): group TOPICS are withheld for
    * `sud_clinical_preauth` groups, because a topic string on a SUD-track group
    * is itself Part 2 content. Open psychoeducational topics are shown.
+   *
+   * EXCEPTION (consent-conditional): when an active `advocate_sud_disclosure`
+   * ConsentRecord is on file for this patient AND this advocate's link is
+   * valid, SUD group topics and appointment service-type labels are shown.
+   * Both checks, every read — see `_advocatePart2Unmasked`.
    */
   advocateSchedule(
     linkId: string,
@@ -7927,6 +7932,9 @@ export const AdelanteEHR = {
 
     const from = +now;
     const items: ReturnType<typeof AdelanteEHR.advocateSchedule>["items"] = [];
+    // Consent-conditional Part 2 exception. Default is masked; this is the
+    // only thing that lifts it, and it is re-evaluated on every read.
+    const part2Ok = _advocatePart2Unmasked(link);
 
     for (const a of AdelanteEHR.appointmentsForPatient(link.patientId)) {
       if (+new Date(a.start) < from) continue;
@@ -7938,7 +7946,11 @@ export const AdelanteEHR = {
         start: a.start,
         durationMin: a.durationMin,
         // Deliberately generic: the service type can imply SUD treatment.
-        label: "Appointment",
+        // Only a patient-signed Part 2 disclosure authorization reveals it.
+        label:
+          part2Ok && a.serviceType
+            ? (AdelanteEHR.getServiceType(a.serviceType)?.label ?? "Appointment")
+            : "Appointment",
         ...(a.modality ? { modality: a.modality } : {}),
         ...(loc ? { locationName: loc.name } : {}),
       });
@@ -7953,7 +7965,8 @@ export const AdelanteEHR = {
           id: `${g.id}_${start}`,
           start,
           durationMin: g.durationMin,
-          label: g.category === "open_psychoeducational" ? g.topic : "Group session",
+          label:
+            g.category === "open_psychoeducational" || part2Ok ? g.topic : "Group session",
           modality: g.modality,
           ...(loc ? { locationName: loc.name } : {}),
         });
@@ -7973,6 +7986,8 @@ export const AdelanteEHR = {
         authorizationType: link.authorizationType,
         resource: "upcoming_schedule",
         itemCount: items.length,
+        // Auditable: whether the Part 2 disclosure exception was in force.
+        part2Disclosed: part2Ok,
       },
     });
     return { allowed: true, reason: decision.reason, items };
