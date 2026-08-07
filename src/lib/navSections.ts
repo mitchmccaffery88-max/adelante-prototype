@@ -242,10 +242,10 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ClipboardSignature,
     to: "/pre-release",
     group: "facility",
-    // Reentry coordination, not custody record-keeping: `care_coordination` is
-    // the class CF Care Manager and ECM Provider both hold write on, and it is
-    // what the page's own read gate (`canReadPreRelease`) checks.
-    gate: { kind: "record_class", anyOf: ["care_coordination"] },
+    // Keeps the group invariant: every Facility & Custody entry gates on
+    // `custody_tracking`, which both CF Care Manager and the receiving ECM
+    // Provider hold write on. The page applies its own finer read gate.
+    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
   },
   {
     id: "released-search",
