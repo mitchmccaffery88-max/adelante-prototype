@@ -684,6 +684,123 @@ export function getStaffMember(id: string | null | undefined): StaffMember | und
   return STAFF_ROSTER.find((s) => s.id === id);
 }
 
+// ----- §v3.0 supervision relationship -------------------------------------
+//
+// Nothing in the codebase modelled supervision before this: notes have a
+// cosign lifecycle (`cosignRequired` / `cosignedBy` in ehr.ts), but that is
+// per-DOCUMENT attestation after the fact, not a standing person-to-person
+// relationship — there is no "attending" concept anywhere. So this is new
+// architecture, deliberately kept as a single link (`StaffMember.supervisedBy`)
+// that both new supervised roles reuse rather than two parallel mechanisms.
+// Note cosign continues to work exactly as before and is unaffected.
+
+/** Roles that may hold a supervision link (LPHA tier). */
+export const LPHA_SUPERVISOR_ROLES: StaffRole[] = ["therapist", "pmhnp"];
+
+/** Roles whose scope of practice REQUIRES documented supervision. */
+export const SUPERVISION_REQUIRED_ROLES: StaffRole[] = ["clinical_trainee", "medical_assistant"];
+
+export function requiresSupervision(role: StaffRole): boolean {
+  return SUPERVISION_REQUIRED_ROLES.includes(role);
+}
+
+/** The supervising staff member, if the link exists AND points at an LPHA. */
+export function getSupervisor(staffId: string | null | undefined): StaffMember | undefined {
+  const sup = getStaffMember(getStaffMember(staffId)?.supervisedBy);
+  return sup && LPHA_SUPERVISOR_ROLES.includes(sup.role) ? sup : undefined;
+}
+
+export interface SupervisionStatus {
+  required: boolean;
+  supervisor?: StaffMember;
+  /** True when the role's supervision requirement is met (or not required). */
+  satisfied: boolean;
+  /** Why it is not satisfied — surfaced as an "incomplete setup" flag. */
+  reason?: string;
+}
+
+export function supervisionStatus(staffId: string | null | undefined): SupervisionStatus {
+  const member = getStaffMember(staffId);
+  if (!member) return { required: false, satisfied: false, reason: "Unknown staff member." };
+  const required = requiresSupervision(member.role);
+  if (!required) return { required: false, satisfied: true };
+  const raw = getStaffMember(member.supervisedBy);
+  if (!raw)
+    return {
+      required: true,
+      satisfied: false,
+      reason: "No supervising LPHA is assigned — supervision setup is incomplete.",
+    };
+  if (!LPHA_SUPERVISOR_ROLES.includes(raw.role))
+    return {
+      required: true,
+      supervisor: raw,
+      satisfied: false,
+      reason: `${raw.name} is not an LPHA-tier supervisor (Therapist or PMHNP).`,
+    };
+  return { required: true, supervisor: raw, satisfied: true };
+}
+
+/**
+ * Billable status for supervision-dependent roles. Phase 3 owns the actual
+ * billing hooks; this is the gate they will call, so the rule ("no documented
+ * supervision, not billable") exists as enforced code now rather than a note.
+ */
+export function isBillableStaff(staffId: string | null | undefined): boolean {
+  return supervisionStatus(staffId).satisfied;
+}
+
+/**
+ * Medical Assistant write scope: MAT medication-administration support only,
+ * and only while a supervision link is in place. Reuses the trainee mechanism
+ * above instead of inventing a second one, per the MA role definition.
+ */
+export function canRecordMatAdministration(staffId: string | null | undefined): boolean {
+  const member = getStaffMember(staffId);
+  if (!member) return false;
+  if (member.role === "pmhnp" || member.role === "therapist") return true;
+  if (member.role !== "medical_assistant") return false;
+  return supervisionStatus(member.id).satisfied;
+}
+
+// ----- §v3.0 CF Care Manager proxy entry ----------------------------------
+
+/**
+ * Roles allowed to record CF Care Manager task-list activity on behalf of a
+ * CF Care Manager who is not a direct platform user. The receiving ECM
+ * Provider owns the hand-off, so they are the proxy; sys_admin for correction.
+ */
+export const CF_PROXY_ROLES: StaffRole[] = ["ecm_provider", "sys_admin"];
+
+export interface CfProxyCheck {
+  allowed: boolean;
+  reason?: string;
+}
+
+/**
+ * May `actorStaffId` enter CF work attributed to `onBehalfOfStaffId`?
+ * A direct-login CF Care Manager is NOT proxyable — if they can log in, their
+ * own entries must be their own.
+ */
+export function canProxyForCfCareManager(
+  actorStaffId: string | null | undefined,
+  onBehalfOfStaffId: string | null | undefined,
+): CfProxyCheck {
+  const actor = getStaffMember(actorStaffId);
+  const subject = getStaffMember(onBehalfOfStaffId);
+  if (!actor) return { allowed: false, reason: "Unknown acting staff member." };
+  if (!subject || subject.role !== "cf_care_manager")
+    return { allowed: false, reason: "Proxy entry only applies to CF Care Managers." };
+  if (subject.accessMode !== "proxy")
+    return {
+      allowed: false,
+      reason: `${subject.name} logs in directly — their activity cannot be proxy-entered.`,
+    };
+  if (!CF_PROXY_ROLES.includes(actor.role))
+    return { allowed: false, reason: "Only an ECM Provider may enter CF activity on behalf." };
+  return { allowed: true };
+}
+
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
