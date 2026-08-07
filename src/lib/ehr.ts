@@ -18,6 +18,14 @@ import type { StaffRole } from "./roles";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
 import { canAccess } from "./roles";
+// §v3.0 Phase 4 — advocate access policy. Pure module, imports nothing back
+// from here, so there is no cycle.
+import {
+  advocateAccessDecision,
+  type AdvocateAccessDecision,
+  type AdvocateAuthorizationType,
+  type AdvocatePermission,
+} from "./advocate";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
@@ -1654,7 +1662,13 @@ export type ConsentCategory =
   // category the AB 133 split turns on: coordination between the CF Care
   // Manager and the receiving ECM Provider is exempt and never checks it;
   // anything third-party or 42 CFR Part 2 does. See src/lib/ab133.ts.
-  | "information_sharing_disclosure";
+  | "information_sharing_disclosure"
+  // §v3.0 Phase 4 — Release of Information for Collateral (advocate)
+  // participation. PLACEHOLDER key and label, same discipline as every other
+  // category here: the real DHCS DMC-ODS Collateral ROI form language is
+  // Christi's to supply. The GATE is real even though the content is not —
+  // a Collateral-type advocate has zero access until this is active.
+  | "roi_collateral";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
@@ -1668,7 +1682,14 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     key: "information_sharing_disclosure",
     label: "Information sharing / disclosure authorization (placeholder)",
   },
+  {
+    key: "roi_collateral",
+    label: "Release of Information — Collateral participation (placeholder)",
+  },
 ];
+
+/** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
+export const COLLATERAL_ROI_CATEGORY: ConsentCategory = "roi_collateral";
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
 export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded";
@@ -3137,7 +3158,11 @@ export type AuditCategory =
   | "provider_switch"
   | "care_plan"
   | "assignment"
-  | "clinical";
+  | "clinical"
+  // §v3.0 Phase 4 — third-party (advocate/family) access. Its own category so
+  // every advocate event is separable in the existing audit stream; this is
+  // NOT a parallel log.
+  | "advocate";
 export interface AuditEvent {
   id: string;
   at: string;
@@ -3150,6 +3175,74 @@ export interface AuditEvent {
   detail?: Record<string, unknown>;
 }
 const auditEvents: AuditEvent[] = [];
+
+// ---------------------------------------------------------------------------
+// §v3.0 Phase 4 — Advocate / Family Member.
+//
+// A SEPARATE ENTITY, deliberately not a StaffRole. See src/lib/advocate.ts for
+// the architecture reasoning and the pure access policy. This store holds the
+// link itself; the policy module decides what a link may do.
+//
+// HARD INVARIANT (tested): there is NO function anywhere that locates a
+// patient from advocate-supplied identifying information. The ONLY entry point
+// is `advocateLinkByCode`, keyed on a high-entropy invitation code that is
+// delivered directly to the advocate's own contact — never relayed through the
+// patient, and never derived from a name, DOB, or any other patient
+// identifier. Do not add a lookup by name/DOB/phone here.
+// ---------------------------------------------------------------------------
+export type AdvocateLinkStatus = "invited" | "active" | "revoked" | "expired";
+
+export interface AdvocateLink {
+  id: string;
+  patientId: string;
+  /** Who the patient designated. Free text supplied by the DESIGNATOR only. */
+  advocateName: string;
+  relationship?: string;
+  /** Where the invitation was sent — the advocate's own contact, direct. */
+  invitationSentTo: string;
+  invitationChannel: "email" | "sms";
+  /**
+   * Single-use, high-entropy. Consumed by `claimAdvocateInvitation`; retained
+   * afterwards only so the claim cannot be replayed (status guards that too).
+   */
+  invitationCode: string;
+  invitationExpiresAt: string;
+  designatedBy: { actor: "patient" | "cf_care_manager" | "ecm_provider"; name: string };
+  designatedAt: string;
+  status: AdvocateLinkStatus;
+  /** Set ONLY at claim time, by the advocate. An invite alone grants nothing. */
+  authorizationType?: AdvocateAuthorizationType;
+  authorizationConfirmedAt?: string;
+  /** Typed-name attestation, same pattern as consent/MAR e-signature. */
+  authorizationAttestedName?: string;
+  claimedAt?: string;
+  /**
+   * AHCD only — a physician's determination that the patient cannot
+   * communicate or decide. Until this exists the directive is dormant.
+   */
+  ahcdActivatedAt?: string;
+  ahcdActivatedBy?: string;
+  revokedAt?: string;
+  revokedBy?: string;
+  revokeReason?: string;
+}
+
+const advocateLinks: AdvocateLink[] = [];
+
+/** Crockford-ish, unambiguous, high-entropy. Same family as the reentry code. */
+function _advocateInviteCode(): string {
+  const alphabet = "ABCDEFGHJKMNPQRSTVWXYZ0123456789";
+  const pick = (n: number) =>
+    Array.from({ length: n }, () => alphabet[Math.floor(Math.random() * alphabet.length)]).join("");
+  return `ADV-${pick(4)}-${pick(4)}-${pick(4)}`;
+}
+
+/** Expiry is evaluated live — an unclaimed invite lapses on its own. */
+function _effectiveAdvocateStatus(link: AdvocateLink, at = new Date()): AdvocateLinkStatus {
+  if (link.status === "revoked") return "revoked";
+  if (link.status === "invited" && +new Date(link.invitationExpiresAt) <= +at) return "expired";
+  return link.status;
+}
 
 /**
  * §Shift count — locked controlled-substance reconciliations. Top-level store:
@@ -7436,6 +7529,305 @@ export const AdelanteEHR = {
         label: input.label,
       },
     });
+  },
+
+  // ----- §v3.0 Phase 4 — Advocate / Family Member -------------------------
+  //
+  // Every read below is live-evaluated and every advocate-facing read is
+  // audited. There is intentionally no "find my patient" function.
+
+  listAdvocateLinks(patientId?: string): AdvocateLink[] {
+    return advocateLinks
+      .filter((l) => !patientId || l.patientId === patientId)
+      .map((l) => ({ ...l, status: _effectiveAdvocateStatus(l) }))
+      .sort((a, b) => +new Date(b.designatedAt) - +new Date(a.designatedAt));
+  },
+
+  getAdvocateLink(id: string): AdvocateLink | undefined {
+    const l = advocateLinks.find((x) => x.id === id);
+    return l ? { ...l, status: _effectiveAdvocateStatus(l) } : undefined;
+  },
+
+  /**
+   * The ONLY lookup path into an advocate link. Keyed on the invitation code
+   * the advocate received directly. Never accepts patient-identifying input.
+   */
+  advocateLinkByCode(code: string): AdvocateLink | undefined {
+    const trimmed = code.trim().toUpperCase();
+    if (!trimmed) return undefined;
+    const l = advocateLinks.find((x) => x.invitationCode === trimmed);
+    return l ? { ...l, status: _effectiveAdvocateStatus(l) } : undefined;
+  },
+
+  /**
+   * Designation — by the patient, or by the CF Care Manager / ECM Provider on
+   * the patient's behalf during pre-release intake. The code is returned to
+   * the DESIGNATION transaction (which sends it to `invitationSentTo`), not to
+   * the patient surface: relaying it through the patient is the tampering /
+   * impersonation vector this whole mechanism exists to close.
+   */
+  createAdvocateInvitation(input: {
+    patientId: string;
+    advocateName: string;
+    relationship?: string;
+    invitationSentTo: string;
+    invitationChannel: "email" | "sms";
+    designatedBy: AdvocateLink["designatedBy"];
+    /** Days until an unclaimed invitation lapses. */
+    expiresInDays?: number;
+  }): AdvocateLink {
+    const name = input.advocateName.trim();
+    const contact = input.invitationSentTo.trim();
+    if (!name) throw new Error("An advocate name is required.");
+    if (!contact) throw new Error("A direct contact for the advocate is required.");
+    if (!patients.some((p) => p.id === input.patientId)) throw new Error("Unknown patient.");
+    const days = input.expiresInDays ?? 14;
+    const link: AdvocateLink = {
+      id: `adv_${uid()}`,
+      patientId: input.patientId,
+      advocateName: name,
+      ...(input.relationship?.trim() ? { relationship: input.relationship.trim() } : {}),
+      invitationSentTo: contact,
+      invitationChannel: input.invitationChannel,
+      invitationCode: _advocateInviteCode(),
+      invitationExpiresAt: new Date(Date.now() + days * 86400_000).toISOString(),
+      designatedBy: input.designatedBy,
+      designatedAt: new Date().toISOString(),
+      status: "invited",
+    };
+    advocateLinks.unshift(link);
+    appendAudit({
+      category: "advocate",
+      action: "advocate_invited",
+      patientId: link.patientId,
+      actorRole: link.designatedBy.actor,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        invitationChannel: link.invitationChannel,
+        // Contact is recorded so a mis-delivered invitation is traceable; the
+        // CODE itself is never written to the audit log.
+        invitationSentTo: link.invitationSentTo,
+        expiresAt: link.invitationExpiresAt,
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /**
+   * Claim requires BOTH halves: the invitation code AND an explicitly
+   * confirmed authorization type. Neither alone grants anything.
+   */
+  claimAdvocateInvitation(input: {
+    code: string;
+    authorizationType: AdvocateAuthorizationType;
+    attestedName: string;
+  }): AdvocateLink {
+    const found = advocateLinks.find(
+      (x) => x.invitationCode === input.code.trim().toUpperCase(),
+    );
+    if (!found) throw new Error("That invitation code isn't valid.");
+    const status = _effectiveAdvocateStatus(found);
+    if (status === "expired") throw new Error("That invitation has expired.");
+    if (status === "revoked") throw new Error("That invitation was revoked.");
+    if (status === "active") throw new Error("That invitation has already been claimed.");
+    const attested = input.attestedName.trim();
+    if (!attested) throw new Error("Type your full name to attest to your authorization.");
+
+    found.status = "active";
+    found.authorizationType = input.authorizationType;
+    found.authorizationConfirmedAt = new Date().toISOString();
+    found.authorizationAttestedName = attested;
+    found.claimedAt = found.authorizationConfirmedAt;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_connection_claimed",
+      patientId: found.patientId,
+      actorRole: "advocate",
+      actorId: found.id,
+      detail: {
+        advocateLinkId: found.id,
+        advocateName: found.advocateName,
+        authorizationType: found.authorizationType,
+        attestedName: attested,
+      },
+    });
+    emit();
+    return { ...found };
+  },
+
+  /**
+   * AHCD activation — a physician's capacity determination. Separate call
+   * because it is a clinical act, not an advocate self-assertion.
+   */
+  activateAdvocateAhcd(linkId: string, physicianName: string): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (link.authorizationType !== "ahcd")
+      throw new Error("Only an AHCD connection can be activated this way.");
+    const who = physicianName.trim();
+    if (!who) throw new Error("The determining physician must be named.");
+    link.ahcdActivatedAt = new Date().toISOString();
+    link.ahcdActivatedBy = who;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_ahcd_activated",
+      patientId: link.patientId,
+      actorId: who,
+      detail: { advocateLinkId: link.id, advocateName: link.advocateName },
+    });
+    emit();
+    return { ...link };
+  },
+
+  revokeAdvocateLink(linkId: string, revokedBy: string, reason: string): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    const why = reason.trim();
+    if (!why) throw new Error("A reason is required to revoke advocate access.");
+    link.status = "revoked";
+    link.revokedAt = new Date().toISOString();
+    link.revokedBy = revokedBy;
+    link.revokeReason = why;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_access_revoked",
+      patientId: link.patientId,
+      actorId: revokedBy,
+      detail: { advocateLinkId: link.id, advocateName: link.advocateName, reason: why },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /**
+   * The live gate. Facts are read fresh every call — a revocation or an ROI
+   * expiry stops access everywhere with nothing needing to be told to stop.
+   */
+  advocateAccess(linkId: string): AdvocateAccessDecision {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link)
+      return {
+        allowed: false,
+        permissions: [],
+        reason: "No advocate connection.",
+        denyReason: "no_link",
+      };
+    return advocateAccessDecision({
+      status: _effectiveAdvocateStatus(link),
+      ...(link.authorizationType ? { authorizationType: link.authorizationType } : {}),
+      roiCollateralActive: AdelanteEHR.isConsentCategoryAuthorized(
+        link.patientId,
+        COLLATERAL_ROI_CATEGORY,
+      ),
+      ahcdActivated: Boolean(link.ahcdActivatedAt),
+    });
+  },
+
+  advocateCan(linkId: string, permission: AdvocatePermission): boolean {
+    const d = AdelanteEHR.advocateAccess(linkId);
+    return d.allowed && d.permissions.includes(permission);
+  },
+
+  /**
+   * The ONLY data surface an advocate has in this pass: the patient's upcoming
+   * schedule, as a minimal DTO. Nothing clinical crosses this boundary — no
+   * note, diagnosis, medication, care-plan or message field is read here, so
+   * widening scope requires a deliberate edit, not an accident.
+   *
+   * JUDGMENT CALL (flagged): group TOPICS are withheld for
+   * `sud_clinical_preauth` groups, because a topic string on a SUD-track group
+   * is itself Part 2 content. Open psychoeducational topics are shown.
+   */
+  advocateSchedule(
+    linkId: string,
+    now = new Date(),
+  ): {
+    allowed: boolean;
+    reason: string;
+    items: {
+      kind: "appointment" | "group";
+      id: string;
+      start: string;
+      durationMin: number;
+      label: string;
+      modality?: string;
+      locationName?: string;
+    }[];
+  } {
+    const decision = AdelanteEHR.advocateAccess(linkId);
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!decision.allowed || !decision.permissions.includes("schedule_view") || !link) {
+      if (link)
+        appendAudit({
+          category: "advocate",
+          action: "advocate_access_denied",
+          patientId: link.patientId,
+          actorRole: "advocate",
+          actorId: link.id,
+          detail: {
+            advocateLinkId: link.id,
+            advocateName: link.advocateName,
+            authorizationType: link.authorizationType,
+            resource: "upcoming_schedule",
+            denyReason: decision.denyReason,
+          },
+        });
+      return { allowed: false, reason: decision.reason, items: [] };
+    }
+
+    const from = +now;
+    const items: ReturnType<typeof AdelanteEHR.advocateSchedule>["items"] = [];
+
+    for (const a of AdelanteEHR.appointmentsForPatient(link.patientId)) {
+      if (+new Date(a.start) < from) continue;
+      if (a.status === "cancelled") continue;
+      const loc = a.locationId ? AdelanteEHR.getLocation(a.locationId) : undefined;
+      items.push({
+        kind: "appointment",
+        id: a.id,
+        start: a.start,
+        durationMin: a.durationMin,
+        // Deliberately generic: the service type can imply SUD treatment.
+        label: "Appointment",
+        ...(a.modality ? { modality: a.modality } : {}),
+        ...(loc ? { locationName: loc.name } : {}),
+      });
+    }
+
+    for (const g of AdelanteEHR.groupsForPatient(link.patientId)) {
+      const loc = g.locationId ? AdelanteEHR.getLocation(g.locationId) : undefined;
+      for (const start of AdelanteEHR.groupOccurrenceStarts(g.id, 6)) {
+        if (+new Date(start) < from) continue;
+        items.push({
+          kind: "group",
+          id: `${g.id}_${start}`,
+          start,
+          durationMin: g.durationMin,
+          label: g.category === "open_psychoeducational" ? g.topic : "Group session",
+          modality: g.modality,
+          ...(loc ? { locationName: loc.name } : {}),
+        });
+      }
+    }
+
+    items.sort((a, b) => +new Date(a.start) - +new Date(b.start));
+    appendAudit({
+      category: "advocate",
+      action: "advocate_schedule_viewed",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        authorizationType: link.authorizationType,
+        resource: "upcoming_schedule",
+        itemCount: items.length,
+      },
+    });
+    return { allowed: true, reason: decision.reason, items };
   },
   /**
    * §Phase 3 community billing — a refused claim attempt (Peer / CHW).

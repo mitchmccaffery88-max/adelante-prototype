@@ -21,6 +21,7 @@ import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
 import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
+import { Route as AdvocateRouteImport } from './routes/advocate'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
@@ -108,6 +109,11 @@ const AdminSchedulingRulesRoute = AdminSchedulingRulesRouteImport.update({
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
   id: '/admin-vendors',
   path: '/admin-vendors',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdvocateRoute = AdvocateRouteImport.update({
+  id: '/advocate',
+  path: '/advocate',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -265,6 +271,7 @@ export interface FileRoutesByFullPath {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
+  '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -307,6 +314,7 @@ export interface FileRoutesByTo {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
+  '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -350,6 +358,7 @@ export interface FileRoutesById {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-vendors': typeof AdminVendorsRoute
+  '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -394,6 +403,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
     | '/admin-vendors'
+    | '/advocate'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -436,6 +446,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
     | '/admin-vendors'
+    | '/advocate'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -478,6 +489,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
     | '/admin-vendors'
+    | '/advocate'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -521,6 +533,7 @@ export interface RootRouteChildren {
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
+  AdvocateRoute: typeof AdvocateRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   CaseManagerRoute: typeof CaseManagerRoute
@@ -635,6 +648,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-vendors'
       fullPath: '/admin-vendors'
       preLoaderRoute: typeof AdminVendorsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/advocate': {
+      id: '/advocate'
+      path: '/advocate'
+      fullPath: '/advocate'
+      preLoaderRoute: typeof AdvocateRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -849,6 +869,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
   AdminVendorsRoute: AdminVendorsRoute,
+  AdvocateRoute: AdvocateRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   CaseManagerRoute: CaseManagerRoute,
@@ -881,13 +902,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

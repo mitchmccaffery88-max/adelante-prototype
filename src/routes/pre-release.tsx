@@ -53,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
 
@@ -336,6 +337,17 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
             Provider at D0 intake.
           </p>
         </Card>
+      )}
+
+      {/* §v3.0 Phase 4 — the CF Care Manager may designate an advocate on the
+          member's behalf during pre-release intake. Same one-way designation
+          rule as the patient surface: the invitation goes to the advocate's
+          own contact, never through the member. */}
+      {ok && (
+        <AdvocateDesignationPanel
+          patientId={episode.patientId}
+          designatedBy={{ actor: "cf_care_manager", name: episode.cfCareManagerName }}
+        />
       )}
 
       {openForm && attribution && (

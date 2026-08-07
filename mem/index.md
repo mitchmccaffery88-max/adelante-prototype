@@ -1,11 +1,13 @@
 # Project Memory
 
 ## Core
-All SUD/Part 2 masking flows through one check: `canAccess(role, "screeners_sud", patient)` — never re-implement or hardcode roles.
-Consent answers come from the live `ConsentRecord` (ASCMI); categories/form text are placeholders pending Christi's DHCS content.
-No group enrollment of any kind without `Patient.groupEligibility`; all paths go through `assertEnrollmentAllowed`. Open psychoeducational groups never bill.
+Adelante EHR prototype (Tulare County pilot). In-memory `AdelanteEHR` store in `src/lib/ehr.ts` is the single source of truth.
+RBAC lives ONLY in the `src/lib/roles.ts` matrix — never hardcode role names as a proxy for `canAccess()`.
+Nav is generated from `src/lib/navSections.ts`; inaccessible entries are omitted, never disabled.
+Compliance content (DHCS/ASCMI form text, categories, attestations) is PLACEHOLDER pending Christi — flag it, never invent statutory wording.
 
 ## Memories
-- [SUD consent policy](mem://features/sud-consent-policy) — therapist/pmhnp un-gated, case_manager/peer_specialist consent-gated; Part 2 messaging backstop selection
-- [ASCMI consent records](mem://features/ascmi-consent) — ConsentRecord model, placeholder categories, write roles, live gate, disclosure audit, psychotherapy tier
-- [Group sessions](mem://features/group-sessions) — GroupSession model, 1 shared + N individualized notes rule, group_notes gate via noteGateClass, placeholder billing
+- [SUD consent policy](mem://features/sud-consent-policy) — which roles read `screeners_sud` unconditionally vs consent-gated; Part 2 messaging backstop
+- [ASCMI consent](mem://features/ascmi-consent) — ConsentRecord model, live gate, disclosure audit, psychotherapy-notes tier
+- [Group sessions](mem://features/group-sessions) — eligibility gate, category/billing split, occurrence exceptions
+- [Advocate access](mem://features/advocate-access) — v3.0 Phase 4 third-party PHI access: AdvocateLink entity, authorization types, invitation-only invariant, schedule-only ceiling
