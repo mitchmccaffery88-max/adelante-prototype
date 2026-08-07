@@ -804,6 +804,47 @@ export function canProxyForCfCareManager(
   return { allowed: true };
 }
 
+// ----- §v3.0 Phase 2 — pre-release form write scope ------------------------
+//
+// THE `eligibility` WRITE QUESTION. Phase 1 gave cf_care_manager
+// `eligibility: "read"`. Phase 2 needs them to key SSApp / Pre-Release
+// Screening data. Re-granting the whole class to "write" was rejected:
+// `eligibility` also covers live coverage status, ECM/CalAIM lane assignment
+// and the eligibility notes billing works from — a facility contractor
+// keying a pre-release packet has no business editing any of that, and the
+// grant would silently follow them everywhere the class is checked.
+//
+// So the write path is NARROW and workflow-scoped: the class stays "read",
+// and writing happens only through `savePreReleaseForm`, which is reachable
+// only for a form attached to a pre-release episode, and only for the two
+// non-consent categories. Clinical & assessment is granted the same way and
+// pointedly does NOT imply `therapy_notes` — structured screening flags are
+// not narrative documentation.
+export const PRE_RELEASE_FORM_WRITE_ROLES: StaffRole[] = [
+  "cf_care_manager",
+  "ecm_provider",
+  "sys_admin",
+];
+
+export function canWritePreReleaseForm(
+  role: StaffRole,
+  category: "medi_cal_enrollment" | "clinical_assessment" | "release_consent" | "transition_planning",
+): { allowed: boolean; reason?: string } {
+  if (category === "release_consent")
+    return {
+      allowed: false,
+      reason: "Release & consent forms are captured in the consent ledger, not here.",
+    };
+  if (!PRE_RELEASE_FORM_WRITE_ROLES.includes(role))
+    return { allowed: false, reason: "Only CF Care Managers and ECM Providers work this list." };
+  return { allowed: true };
+}
+
+/** Reading the pre-release surface at all (episode, checklist, care plan). */
+export function canReadPreRelease(role: StaffRole): boolean {
+  return canAccess(role, "care_coordination").level !== "none";
+}
+
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;

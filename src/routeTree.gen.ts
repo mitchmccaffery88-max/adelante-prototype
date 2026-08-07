@@ -41,6 +41,7 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
+import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ScheduleRouteImport } from './routes/schedule'
@@ -209,6 +210,11 @@ const PatientRoute = PatientRouteImport.update({
   path: '/patient',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreReleaseRoute = PreReleaseRouteImport.update({
+  id: '/pre-release',
+  path: '/pre-release',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReferralRoute = ReferralRouteImport.update({
   id: '/referral',
   path: '/referral',
@@ -279,6 +285,7 @@ export interface FileRoutesByFullPath {
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
@@ -320,6 +327,7 @@ export interface FileRoutesByTo {
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
@@ -362,6 +370,7 @@ export interface FileRoutesById {
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
@@ -405,6 +414,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
+    | '/pre-release'
     | '/referral'
     | '/released-search'
     | '/schedule'
@@ -446,6 +456,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
+    | '/pre-release'
     | '/referral'
     | '/released-search'
     | '/schedule'
@@ -487,6 +498,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
+    | '/pre-release'
     | '/referral'
     | '/released-search'
     | '/schedule'
@@ -529,6 +541,7 @@ export interface RootRouteChildren {
   MessageQueueRoute: typeof MessageQueueRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
+  PreReleaseRoute: typeof PreReleaseRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ScheduleRoute: typeof ScheduleRoute
@@ -764,6 +777,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/pre-release': {
+      id: '/pre-release'
+      path: '/pre-release'
+      fullPath: '/pre-release'
+      preLoaderRoute: typeof PreReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/referral': {
       id: '/referral'
       path: '/referral'
@@ -849,6 +869,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessageQueueRoute: MessageQueueRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
+  PreReleaseRoute: PreReleaseRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
   ScheduleRoute: ScheduleRoute,

@@ -236,6 +236,18 @@ export const STAFF_NAV: NavEntry[] = [
 
   // ----- Facility & Custody -----
   {
+    id: "pre-release",
+    label: "Pre-release list",
+    desc: "D90→0 forms & reentry care plan",
+    icon: ClipboardSignature,
+    to: "/pre-release",
+    group: "facility",
+    // Keeps the group invariant: every Facility & Custody entry gates on
+    // `custody_tracking`, which both CF Care Manager and the receiving ECM
+    // Provider hold write on. The page applies its own finer read gate.
+    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
+  },
+  {
     id: "released-search",
     label: "Released patient search",
     desc: "Post-release follow-up",
