@@ -3314,6 +3314,26 @@ function _advocateSudText(text: string): boolean {
   return ADVOCATE_SUD_TEXT_RE.test(text);
 }
 
+/**
+ * The consent-conditional exception to advocate Part 2 masking. TWO
+ * independent checks, both required, evaluated live at read time:
+ *   1. an ACTIVE `advocate_sud_disclosure` ConsentRecord for this patient, and
+ *   2. this advocate's own authorization link currently allowed.
+ * The second is the existing gate, unchanged — this helper layers on top of
+ * it rather than replacing it. Everything stays masked by default.
+ */
+function _advocatePart2Unmasked(link: AdvocateLink): boolean {
+  const linkValid = AdelanteEHR.advocateAccess(link.id).allowed;
+  const consentActive = AdelanteEHR.isConsentCategoryAuthorized(
+    link.patientId,
+    ADVOCATE_SUD_DISCLOSURE_CATEGORY,
+  );
+  return !advocatePart2Masked(link.authorizationType, {
+    linkValid,
+    sudDisclosureConsentActive: consentActive,
+  });
+}
+
 function _patient(id: string): Patient | undefined {
   return patients.find((x) => x.id === id);
 }
