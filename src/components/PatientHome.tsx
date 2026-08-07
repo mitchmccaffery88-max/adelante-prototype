@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
+import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
@@ -324,6 +325,10 @@ export function PatientHome() {
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <MyProfileCard patientId={patient.id} />
+      <AdvocateDesignationPanel
+        patientId={patient.id}
+        designatedBy={{ actor: "patient", name: patient.name }}
+      />
 
       <div>
         <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
