@@ -1914,6 +1914,22 @@ function ProgressNoteCard({
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
+      // §Phase 3 — a signed CHW service note bills through the same claims
+      // pipeline. The hook itself enforces ECM exclusivity, the supervising
+      // provider link and the 2 hr/day unit cap, and audits any refusal.
+      if (note.templateKey === "chw_service" && actingStaff.role === "community_health_worker") {
+        const mins = Number(note.templateAnswers?.["service_minutes"] ?? 0) || 0;
+        const claim = AdelanteEHRExt.upsertClaimFromChwNote({
+          patientId,
+          noteId: note.id,
+          staffId: actingStaff.staffId,
+          clinicianId: actingStaff.clinicianId ?? note.clinicianId,
+          dateISO: note.date,
+          minutes: mins,
+        });
+        if (claim) toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
+        else toast.error("No CHW claim created — see the audit log for the reason.");
+      }
       setAttested(false);
       setCrisisChoice("");
       setCrisisReason("");
