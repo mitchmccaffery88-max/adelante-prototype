@@ -6,6 +6,15 @@ import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } fr
 
 export type StaffRole =
   | "ecm_provider"
+  // §v3.0 role architecture — Correctional Facility Care Manager. Works the
+  // pre-release D90→0 countdown inside/with the facility; distinct from the
+  // ECM Provider, whose D0–90 program clock starts AT release. Deliberately
+  // given a thin record-class grant list: their surface is the CF task list /
+  // Reentry Care Plan (Phase 2), not the full chart.
+  | "cf_care_manager"
+  | "sud_counselor"
+  | "clinical_trainee"
+  | "medical_assistant"
   | "peer_specialist"
   | "therapist"
   | "pmhnp"
@@ -16,7 +25,11 @@ export type StaffRole =
   | "sys_admin";
 
 export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
-  { key: "ecm_provider", label: "Case manager" },
+  { key: "ecm_provider", label: "ECM Provider" },
+  { key: "cf_care_manager", label: "CF Care Manager" },
+  { key: "sud_counselor", label: "SUD Counselor" },
+  { key: "clinical_trainee", label: "Clinical Trainee" },
+  { key: "medical_assistant", label: "Medical Assistant" },
   { key: "peer_specialist", label: "Peer specialist" },
   { key: "therapist", label: "Therapist" },
   { key: "pmhnp", label: "PMHNP" },
