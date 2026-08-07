@@ -198,6 +198,8 @@ export function PatientHome() {
 
       <HomeScreenNudge />
 
+      <PatientDocumentsCard patientId={patient.id} />
+
       <Card className="p-5">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
             <CalIcon className="h-4 w-4" /> {t("homeNextSession")}

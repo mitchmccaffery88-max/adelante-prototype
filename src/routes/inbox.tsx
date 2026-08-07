@@ -17,6 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnsignedNotesQueue } from "@/components/inbox/UnsignedNotesQueue";
 import { ProviderRequestQueue } from "@/components/inbox/ProviderRequestQueue";
+import { DocumentVerifyQueue } from "@/components/documents/DocumentVerifyQueue";
 import { ArrowLeft, ClipboardList, FileSignature, Inbox as InboxIcon, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -78,6 +79,7 @@ function InboxPage() {
         <TabsList>
           <TabsTrigger value="unsigned">Unsigned</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
+          <TabsTrigger value="documents">Documents</TabsTrigger>
         </TabsList>
         <TabsContent value="unsigned" className="pt-3">
           {notes.level === "none" ? (
@@ -99,6 +101,11 @@ function InboxPage() {
           ) : (
             <ProviderRequestQueue />
           )}
+        </TabsContent>
+        {/* §v3.0 Phase 5 — document verify queue. Ownership is derived from
+            the patient's pre-release episode, not assigned here. */}
+        <TabsContent value="documents" className="pt-3">
+          <DocumentVerifyQueue />
         </TabsContent>
       </Tabs>
     </div>

@@ -16,7 +16,8 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
-import { HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock } from "lucide-react";
+import { HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock, FileText, Info } from "lucide-react";
+import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
 
 export function AdvocateTierBadge({ linkId }: { linkId: string }) {
   const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
@@ -335,6 +336,90 @@ export function AdvocateSelfCareCard({ linkId }: { linkId: string }) {
             Not now
           </Button>
         </div>
+      )}
+    </Card>
+  );
+}
+
+
+/**
+ * §v3.0 Phase 5 — advocate documents. Upload and review for the linked
+ * patient, both tiers, on the advocate's EXISTING claimed link.
+ *
+ * A Part 2-classified document is RESTRICTED, not hidden: the row stays, and
+ * the missing piece is named explicitly. The gate itself lives in the data
+ * layer and is Phase 4's `advocate_sud_disclosure` consent check reused
+ * verbatim — this component cannot un-restrict anything.
+ */
+export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
+  const view = useEhr(() => AdelanteEHR.advocateDocuments(linkId));
+  if (!view.allowed) return null;
+
+  return (
+    <Card className="space-y-4 p-5">
+      <div>
+        <h2 className="flex items-center gap-2 font-display text-lg text-navy">
+          <FileText className="h-5 w-5 text-teal" /> Documents
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          Send paperwork on their behalf, and see what has been sent. A care team member reviews
+          everything before it enters the medical record.
+        </p>
+      </div>
+
+      {view.canUpload && (
+        <DocumentUploadForm
+          part2Prompt="This document comes from a substance-use treatment program"
+          onSubmit={(input) => {
+            const res = AdelanteEHR.advocateUploadDocument(linkId, {
+              file: input.file,
+              isPart2: input.isPart2,
+              ...(input.docType ? { docType: input.docType } : {}),
+              ...(input.note ? { note: input.note } : {}),
+            });
+            if (!res.ok) return toast.error(res.reason);
+            toast.success(res.reason);
+          }}
+        />
+      )}
+
+      {view.items.length === 0 ? (
+        <p className="text-sm text-muted-foreground">Nothing has been sent yet.</p>
+      ) : (
+        <ul className="space-y-2">
+          {view.items.map((d) => (
+            <li key={d.id} className="rounded-lg border p-3 text-sm">
+              <div className="flex flex-wrap items-start justify-between gap-2">
+                <span>
+                  <span className="font-medium text-navy">{d.fileName}</span>
+                  <span className="block text-xs text-muted-foreground">
+                    <ClientDate value={d.uploadedAt} /> · {d.uploaderLabel}
+                  </span>
+                </span>
+                <span className="flex shrink-0 items-center gap-2">
+                  {d.restricted && (
+                    <Badge variant="outline" className="gap-1">
+                      <Lock className="h-3 w-3" /> Restricted
+                    </Badge>
+                  )}
+                  <Badge variant={d.verification === "verified" ? "default" : "secondary"}>
+                    {d.verification === "verified"
+                      ? "In the record"
+                      : d.verification === "rejected"
+                        ? "Not accepted"
+                        : "Pending review"}
+                  </Badge>
+                </span>
+              </div>
+              {d.restricted && (
+                <p className="mt-2 flex gap-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground">
+                  <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                  {d.restrictionMessage}
+                </p>
+              )}
+            </li>
+          ))}
+        </ul>
       )}
     </Card>
   );
