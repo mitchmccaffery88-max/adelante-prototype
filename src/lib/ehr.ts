@@ -1682,6 +1682,10 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     key: "information_sharing_disclosure",
     label: "Information sharing / disclosure authorization (placeholder)",
   },
+  {
+    key: "roi_collateral",
+    label: "Release of Information — Collateral participation (placeholder)",
+  },
 ];
 
 /** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
