@@ -52,6 +52,7 @@ import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
 import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
+import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
