@@ -5899,6 +5899,355 @@ export const AdelanteEHR = {
   // ---------- Case task queue ----------
   // (§v3.0 Phase 2 pre-release API is defined just above the task queue it
   // reuses — every pre-release form is tracked as an ordinary CaseTask row.)
+
+  // ---------- §v3.0 Phase 2 — pre-release episodes -----------------------
+  listPreReleaseEpisodes(patientId?: string): PreReleaseEpisode[] {
+    return preReleaseEpisodes
+      .filter((e) => !patientId || e.patientId === patientId)
+      .sort((a, b) => +new Date(b.openedAt) - +new Date(a.openedAt));
+  },
+  getPreReleaseEpisode(id: string): PreReleaseEpisode | undefined {
+    return preReleaseEpisodes.find((e) => e.id === id);
+  },
+  /** The episode an ECM Provider's D0 intake should read for this patient. */
+  activePreReleaseEpisode(patientId: string): PreReleaseEpisode | undefined {
+    return preReleaseEpisodes.find((e) => e.patientId === patientId && e.status !== "closed");
+  },
+  openPreReleaseEpisode(input: {
+    patientId: string;
+    anticipatedReleaseDate: string;
+    cfCareManagerStaffId: string;
+    cfCareManagerName: string;
+    facilityId?: string;
+    bookingId?: string;
+    receivingEcmStaffId?: string;
+    openedBy: string;
+    actorRole: string;
+  }): PreReleaseEpisode {
+    if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
+    if (!input.anticipatedReleaseDate)
+      throw new Error("An anticipated release date is required to open a pre-release episode.");
+    const existing = AdelanteEHR.activePreReleaseEpisode(input.patientId);
+    if (existing) return existing;
+    const facility = facilities.find((f) => f.id === input.facilityId);
+    const ep: PreReleaseEpisode = {
+      id: uid(),
+      patientId: input.patientId,
+      facilityId: input.facilityId,
+      facilityName: facility?.name,
+      bookingId: input.bookingId,
+      anticipatedReleaseDate: input.anticipatedReleaseDate,
+      cfCareManagerStaffId: input.cfCareManagerStaffId,
+      cfCareManagerName: input.cfCareManagerName,
+      receivingEcmStaffId: input.receivingEcmStaffId,
+      status: "open",
+      openedAt: new Date().toISOString(),
+      openedBy: input.openedBy,
+    };
+    preReleaseEpisodes.unshift(ep);
+    // Every form becomes a real worklist row — no parallel task mechanism.
+    for (const def of PRE_RELEASE_FORMS) {
+      AdelanteEHR.createCaseTask({
+        patientId: ep.patientId,
+        assignedTo: "",
+        title: `Pre-release — ${def.label}`,
+        detail: `${PRE_RELEASE_FORM_CATEGORIES.find((c) => c.key === def.category)?.label ?? def.category} · release ${ep.anticipatedReleaseDate}`,
+        dueDate: ep.anticipatedReleaseDate,
+        taskType: "pre_release_form",
+        allowedRoles: ["cf_care_manager", "ecm_provider"],
+        facilityId: ep.facilityId,
+        facilityContext: true,
+        source: "pre_release_episode",
+        dedupeKey: `prerelease:${ep.id}:${def.key}`,
+      });
+    }
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_episode_opened",
+      patientId: ep.patientId,
+      actorId: input.openedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        cfCareManagerStaffId: ep.cfCareManagerStaffId,
+        anticipatedReleaseDate: ep.anticipatedReleaseDate,
+      },
+    });
+    emit();
+    return ep;
+  },
+  preReleaseTaskFor(episodeId: string, formKey: string): CaseTask | undefined {
+    return caseTasks.find((t) => t.dedupeKey === `prerelease:${episodeId}:${formKey}`);
+  },
+  listPreReleaseForms(episodeId: string): PreReleaseFormRecord[] {
+    return preReleaseForms.filter((f) => f.episodeId === episodeId);
+  },
+  getPreReleaseForm(episodeId: string, formKey: string): PreReleaseFormRecord | undefined {
+    return preReleaseForms.find((f) => f.episodeId === episodeId && f.formKey === formKey);
+  },
+  /**
+   * The whole checklist for an episode: every category, its definition, the
+   * captured record (if any) and a live status. Consent forms derive their
+   * status from the ConsentRecord ledger, and transition planning from the
+   * Reentry Care Plan — neither duplicates state into a form record.
+   */
+  preReleaseChecklist(episodeId: string): {
+    def: PreReleaseFormDef;
+    record?: PreReleaseFormRecord;
+    task?: CaseTask;
+    status: PreReleaseFormStatus;
+  }[] {
+    const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
+    const plan = reentryCarePlans.find((p) => p.episodeId === episodeId);
+    let changed = false;
+    const rows = PRE_RELEASE_FORMS.map((def) => {
+      const record = AdelanteEHR.getPreReleaseForm(episodeId, def.key);
+      const task = AdelanteEHR.preReleaseTaskFor(episodeId, def.key);
+      let status: PreReleaseFormStatus = record?.status ?? "not_started";
+      if (def.consentCategory && ep) {
+        status = AdelanteEHR.isConsentCategoryAuthorized(ep.patientId, def.consentCategory)
+          ? "complete"
+          : "not_started";
+      }
+      if (def.satisfiedByCarePlan) {
+        status = plan?.status === "completed" ? "complete" : plan ? "in_progress" : "not_started";
+      }
+      // Keep the worklist row honest for the derived rows.
+      if (task && status === "complete" && task.status !== "done") {
+        AdelanteEHR.completeCaseTask(task.id);
+        changed = true;
+      }
+      return { def, record, task, status };
+    });
+    if (changed) emit();
+    return rows;
+  },
+  /**
+   * Structured field capture for the two non-consent categories. Deliberately
+   * refuses the consent and transition-planning categories: those have their
+   * own instruments and must not be shadow-captured as loose fields.
+   */
+  savePreReleaseForm(input: {
+    episodeId: string;
+    formKey: string;
+    values: Record<string, string | boolean>;
+    complete: boolean;
+    attribution: CfAttribution;
+  }): PreReleaseFormRecord {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const def = PRE_RELEASE_FORMS.find((d) => d.key === input.formKey);
+    if (!def) throw new Error("Unknown pre-release form.");
+    if (def.consentCategory)
+      throw new Error(
+        "Release & consent forms are captured in the consent ledger, not as form fields.",
+      );
+    if (def.satisfiedByCarePlan)
+      throw new Error("Transition planning is captured on the Reentry Care Plan.");
+    if (input.complete) {
+      const missing = def.fields
+        .filter((f) => f.required)
+        .filter((f) => {
+          const v = input.values[f.key];
+          return v === undefined || v === "" || v === null;
+        });
+      if (missing.length)
+        throw new Error(`Required before completion: ${missing.map((f) => f.label).join(", ")}`);
+    }
+    const now = new Date().toISOString();
+    let rec = AdelanteEHR.getPreReleaseForm(input.episodeId, input.formKey);
+    if (!rec) {
+      rec = {
+        id: uid(),
+        episodeId: ep.id,
+        patientId: ep.patientId,
+        category: def.category,
+        formKey: def.key,
+        values: {},
+        status: "in_progress",
+        updatedAt: now,
+        attribution: input.attribution,
+        taskId: AdelanteEHR.preReleaseTaskFor(ep.id, def.key)?.id,
+      };
+      preReleaseForms.unshift(rec);
+    }
+    rec.values = { ...rec.values, ...input.values };
+    rec.attribution = input.attribution;
+    rec.updatedAt = now;
+    rec.status = input.complete ? "complete" : "in_progress";
+    rec.completedAt = input.complete ? now : undefined;
+    if (rec.taskId) {
+      if (input.complete) AdelanteEHR.completeCaseTask(rec.taskId);
+      else AdelanteEHR.reopenCaseTask(rec.taskId);
+    }
+    appendAudit({
+      category: "clinical",
+      action: input.complete ? "pre_release_form_completed" : "pre_release_form_saved",
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        formKey: def.key,
+        category: def.category,
+        // Field VALUES are never audited — only which fields were touched.
+        fields: Object.keys(input.values),
+        attributedTo: input.attribution.attributedTo?.staffName,
+        proxyEntry: Boolean(input.attribution.attributedTo),
+      },
+    });
+    emit();
+    return rec;
+  },
+
+  // ---------- §v3.0 Phase 2 — Person-Centered Reentry Care Plan ----------
+  getReentryCarePlan(episodeId: string): ReentryCarePlan | undefined {
+    return reentryCarePlans.find((p) => p.episodeId === episodeId);
+  },
+  /**
+   * The ECM Provider's D0 intake read: a queryable structured record, not a
+   * PDF or a note.
+   */
+  reentryCarePlanForPatient(patientId: string): ReentryCarePlan | undefined {
+    return reentryCarePlans
+      .filter((p) => p.patientId === patientId)
+      .sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt))[0];
+  },
+  saveReentryCarePlan(input: {
+    episodeId: string;
+    housing: ReentryCarePlan["housing"];
+    appointments: Omit<ReentryAppointment, "id">[];
+    pharmacy?: ReentryCarePlan["pharmacy"];
+    dmeNeeds?: string[];
+    notesToEcm?: string;
+    attribution: CfAttribution;
+  }): ReentryCarePlan {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    let plan = AdelanteEHR.getReentryCarePlan(ep.id);
+    if (plan?.status === "completed")
+      throw new Error("This care plan is completed and member-signed; it can no longer be edited.");
+    const now = new Date().toISOString();
+    const appointments: ReentryAppointment[] = input.appointments.map((a) => ({ ...a, id: uid() }));
+    if (!plan) {
+      plan = {
+        id: uid(),
+        episodeId: ep.id,
+        patientId: ep.patientId,
+        housing: input.housing,
+        appointments,
+        pharmacy: input.pharmacy,
+        dmeNeeds: input.dmeNeeds ?? [],
+        notesToEcm: input.notesToEcm,
+        status: "draft",
+        attribution: input.attribution,
+        updatedAt: now,
+      };
+      reentryCarePlans.unshift(plan);
+    } else {
+      plan.housing = input.housing;
+      plan.appointments = appointments;
+      plan.pharmacy = input.pharmacy;
+      plan.dmeNeeds = input.dmeNeeds ?? [];
+      plan.notesToEcm = input.notesToEcm;
+      plan.attribution = input.attribution;
+      plan.updatedAt = now;
+    }
+    emit();
+    return plan;
+  },
+  /**
+   * Completion + member signature + enrollment-code issue, in ONE transaction:
+   * the code is the identity token for the later General Population match, so
+   * a signed plan without a code must never be reachable.
+   */
+  completeReentryCarePlan(input: {
+    episodeId: string;
+    memberSignatureName: string;
+    relationship?: "patient" | "guardian" | "proxy";
+    attested: boolean;
+    attribution: CfAttribution;
+  }): { plan: ReentryCarePlan; enrollmentCode: EnrollmentCode } {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const plan = AdelanteEHR.getReentryCarePlan(ep.id);
+    if (!plan) throw new Error("Save the care plan before completing it.");
+    if (plan.status === "completed") throw new Error("This care plan is already completed.");
+    if (!input.attested) throw new Error("Member attestation is required.");
+    if (input.memberSignatureName.trim().length < 2)
+      throw new Error("A typed member signature name is required.");
+    if (!plan.housing.arrangement.trim())
+      throw new Error("A post-release housing plan is required.");
+    const kinds = new Set(plan.appointments.map((a) => a.kind));
+    const missingKinds = (["mental_health", "med_management", "sud"] as ReentryAppointmentKind[])
+      .filter((k) => !kinds.has(k));
+    if (missingKinds.length === 3)
+      throw new Error("At least one scheduled first appointment is required.");
+    const undated = plan.appointments.filter((a) => !a.start || !a.providerName.trim());
+    if (undated.length)
+      throw new Error(
+        "Every appointment needs a real date/time and provider — referrals without an appointment do not count.",
+      );
+    const now = new Date();
+    const nowIso = now.toISOString();
+    const expires = new Date(now.getTime() + ENROLLMENT_CODE_TTL_DAYS * 86400000).toISOString();
+    const code: EnrollmentCode = {
+      code: generateEnrollmentCode(),
+      patientId: ep.patientId,
+      episodeId: ep.id,
+      carePlanId: plan.id,
+      issuedAt: nowIso,
+      expiresAt: expires,
+    };
+    enrollmentCodes.unshift(code);
+    plan.status = "completed";
+    plan.completedAt = nowIso;
+    plan.updatedAt = nowIso;
+    plan.enrollmentCode = code.code;
+    plan.memberSignature = {
+      name: input.memberSignatureName.trim(),
+      relationship: input.relationship ?? "patient",
+      attestationMethod: "checkbox_only",
+      signedAt: nowIso,
+    };
+    const task = AdelanteEHR.preReleaseTaskFor(ep.id, "reentry_care_plan");
+    if (task) AdelanteEHR.completeCaseTask(task.id);
+    appendAudit({
+      category: "clinical",
+      action: "reentry_care_plan_completed",
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        carePlanId: plan.id,
+        // The code itself is an identity token — audit its existence, not its value.
+        enrollmentCodeIssued: true,
+        enrollmentCodeExpiresAt: code.expiresAt,
+        appointments: plan.appointments.length,
+        attributedTo: input.attribution.attributedTo?.staffName,
+        proxyEntry: Boolean(input.attribution.attributedTo),
+      },
+    });
+    emit();
+    return { plan, enrollmentCode: code };
+  },
+  listEnrollmentCodes(patientId?: string): EnrollmentCode[] {
+    return enrollmentCodes.filter((c) => !patientId || c.patientId === patientId);
+  },
+  getEnrollmentCode(code: string): EnrollmentCode | undefined {
+    return enrollmentCodes.find((c) => c.code === code.trim().toUpperCase());
+  },
+  /** Validity read only — the consumption flow itself is a later phase. */
+  enrollmentCodeStatus(
+    code: string,
+    at = new Date(),
+  ): "valid" | "expired" | "consumed" | "unknown" {
+    const rec = AdelanteEHR.getEnrollmentCode(code);
+    if (!rec) return "unknown";
+    if (rec.consumedAt) return "consumed";
+    return +new Date(rec.expiresAt) < +at ? "expired" : "valid";
+  },
   listCaseTasks(): CaseTask[] {
     return [...caseTasks];
   },
