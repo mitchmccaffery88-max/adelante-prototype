@@ -25,6 +25,8 @@ import {
   type AdvocateAccessDecision,
   type AdvocateAuthorizationType,
   type AdvocatePermission,
+  advocatePart2Masked,
+  ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
 } from "./advocate";
 
