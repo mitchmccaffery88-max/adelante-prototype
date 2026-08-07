@@ -38,6 +38,8 @@ const FORM_TYPES: { key: ConsentFormType; label: string }[] = [
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
 export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
+  // Derived from the registry so a new ASCMI category never needs a matching
+  // literal here (Phase 2 added three).
   const { role, staffId, staffName } = useActingStaff();
   const records = useEhr(() => AdelanteEHR.listConsentRecords(patient.id));
   const canWrite = canAccess(role, "consent_ledger", patient).level === "write";
