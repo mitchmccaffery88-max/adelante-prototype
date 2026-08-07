@@ -68,6 +68,7 @@ import {
   type RecordClass,
   noteGateClass,
 } from "@/lib/roles";
+import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
   LineChart,
