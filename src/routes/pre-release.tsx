@@ -53,6 +53,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
 
