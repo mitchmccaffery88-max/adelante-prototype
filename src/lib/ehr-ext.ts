@@ -6,6 +6,7 @@
 
 import { useSyncExternalStore } from "react";
 import { AdelanteEHR, isBillableGroupCategory, type ServiceType } from "./ehr";
+import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
 
 // ---------- Types ----------
 export interface Organization { id: string; name: string; }
@@ -144,6 +145,12 @@ export interface Claim {
   denialReason?: string;
   updatedAt: string;
   history: { at: string; state: ClaimState; actor?: string; note?: string }[];
+  /** §Phase 3 — HCPCS/CPT when the generating hook knows it (Peer, CHW). */
+  serviceCode?: string;
+  units?: number;
+  taxonomy?: string;
+  /** Enrolled provider the claim is billed through (CHW services). */
+  supervisingStaffId?: string;
 }
 
 // ---------- Seed data ----------
@@ -550,6 +557,136 @@ export const AdelanteEHRExt = {
         input.chargeCents ?? AdelanteEHR.chargeForService?.("therapy_group") ?? 12000,
       updatedAt: iso(),
       history: [{ at: iso(), state: "documented", actor: "system", note: `note:${input.noteId}` }],
+    };
+    claims.push(claim);
+    ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+    return claim;
+  },
+
+  /**
+   * §Phase 3 — Peer Specialist billing hook.
+   *
+   * Same shape and same `claims` list as `upsertClaimFromGroupAttendee`: the
+   * Claims Worklist picks it up with no changes. Policy (code selection, unit
+   * math) lives in communityBilling.ts; this is only the write.
+   */
+  upsertClaimFromPeerNote(input: {
+    patientId: string;
+    peerNoteId: string;
+    staffId: string;
+    clinicianId: string;
+    minutes: number;
+    mode?: string;
+    chargeCents?: number;
+  }): Claim | null {
+    const decision = peerBillingDecision({
+      staffId: input.staffId,
+      mode: input.mode,
+      minutes: input.minutes,
+    });
+    if (!decision.allowed) {
+      AdelanteEHR.recordCommunityBillingBlocked({
+        patientId: input.patientId,
+        actorId: input.staffId,
+        actorRole: "peer_specialist",
+        service: "peer_support",
+        reasonCode: decision.reasonCode ?? "blocked",
+        reason: decision.reason ?? "Peer support claim blocked.",
+        detail: { peerNoteId: input.peerNoteId },
+      });
+      return null;
+    }
+    const encounterId = `peer:${input.peerNoteId}`;
+    const existing = claims.find((c) => c.encounterId === encounterId);
+    if (existing) return existing;
+    const claim: Claim = {
+      id: uid(),
+      encounterId,
+      patientId: input.patientId,
+      clinicianId: input.clinicianId,
+      state: "documented",
+      chargeCents:
+        input.chargeCents ?? AdelanteEHR.chargeForService?.("peer_support") ?? 6000,
+      serviceCode: decision.serviceCode,
+      units: decision.units,
+      taxonomy: decision.taxonomy,
+      updatedAt: iso(),
+      history: [
+        { at: iso(), state: "documented", actor: "system", note: `peer_note:${input.peerNoteId}` },
+      ],
+    };
+    claims.push(claim);
+    ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+    return claim;
+  },
+
+  /**
+   * §Phase 3 — Community Health Worker billing hook.
+   *
+   * Blocks (with an audit row) when the member is ECM-enrolled that day, when
+   * the CHW has no enrolled supervising provider, or when the 2 hr/day unit
+   * cap is exhausted. Same single-write-point discipline as the open-group
+   * billing split: no caller can bypass the rule by forgetting to check.
+   */
+  upsertClaimFromChwNote(input: {
+    patientId: string;
+    noteId: string;
+    staffId: string;
+    clinicianId: string;
+    dateISO: string;
+    minutes: number;
+    chargeCents?: number;
+  }): Claim | null {
+    const patient = AdelanteEHR.getPatient(input.patientId);
+    if (!patient) return null;
+    const dayKey = input.dateISO.slice(0, 10);
+    const monthKey = input.dateISO.slice(0, 7);
+    const chwClaims = claims.filter(
+      (c) => c.patientId === input.patientId && c.encounterId.startsWith("chw:"),
+    );
+    const unitsAlreadyBilledToday = chwClaims
+      .filter((c) => c.encounterId.includes(`:${dayKey}`))
+      .reduce((n, c) => n + (c.units ?? 0), 0);
+    const hasPriorClaimThisMonth = chwClaims.some((c) => c.encounterId.includes(`:${monthKey}`));
+
+    const decision = chwBillingDecision({
+      patient,
+      staffId: input.staffId,
+      dateISO: input.dateISO,
+      minutes: input.minutes,
+      unitsAlreadyBilledToday,
+      hasPriorClaimThisMonth,
+    });
+    if (!decision.allowed) {
+      AdelanteEHR.recordCommunityBillingBlocked({
+        patientId: input.patientId,
+        actorId: input.staffId,
+        actorRole: "community_health_worker",
+        service: "chw_services",
+        reasonCode: decision.reasonCode ?? "blocked",
+        reason: decision.reason ?? "CHW claim blocked.",
+        detail: { noteId: input.noteId, dateISO: input.dateISO },
+      });
+      return null;
+    }
+    const encounterId = `chw:${dayKey}:${input.noteId}`;
+    const existing = claims.find((c) => c.encounterId === encounterId);
+    if (existing) return existing;
+    const claim: Claim = {
+      id: uid(),
+      encounterId,
+      patientId: input.patientId,
+      clinicianId: input.clinicianId,
+      state: "documented",
+      chargeCents:
+        input.chargeCents ?? AdelanteEHR.chargeForService?.("case_management") ?? 5000,
+      serviceCode: decision.serviceCode,
+      units: decision.units,
+      supervisingStaffId: decision.supervisingStaffId,
+      updatedAt: iso(),
+      history: [
+        { at: iso(), state: "documented", actor: "system", note: `chw_note:${input.noteId}` },
+      ],
     };
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });

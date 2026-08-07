@@ -323,6 +323,21 @@ export function useRecordSections(
     group: "case",
     render: (a) => <PeerNotesTab patientId={pid} canWrite={a.level === "write"} />,
   });
+  // §Phase 3 — CHW service notes. Reuses the note/template engine, scoped to
+  // the CHW template so a CHW-only role never sees other documentation.
+  add("chw_notes", {
+    id: "chw",
+    label: "CHW notes",
+    icon: Users,
+    group: "case",
+    render: (a) => (
+      <NotesTab
+        patientId={pid}
+        readOnly={a.level !== "write"}
+        restrictToTemplateKey="chw_service"
+      />
+    ),
+  });
 
   // ----- Coordination -----
   add("case_notes", {

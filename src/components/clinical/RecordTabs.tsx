@@ -68,6 +68,7 @@ import {
   type RecordClass,
   noteGateClass,
 } from "@/lib/roles";
+import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
   LineChart,
@@ -1128,6 +1129,8 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const notes = p?.peerNotes ?? [];
   const [text, setText] = useState("");
+  const [minutes, setMinutes] = useState("15");
+  const { staffId, staffName, role: actingRole, clinicianId } = useActingStaff();
   const [mode, setMode] = useState<NonNullable<PeerNote["mode"]>>("in_person");
   return (
     <div className="space-y-3">
@@ -1157,16 +1160,45 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
             onChange={(e) => setText(e.target.value)}
             placeholder="Peer-support note (non-clinical)."
           />
+          <div>
+            <Label className="text-[10px] text-muted-foreground">
+              Service time (minutes) — billed as {mode === "group" ? "H0025 (group)" : "H0038, per 15 min"}
+            </Label>
+            <Input
+              type="number"
+              min={0}
+              className="h-8 text-xs"
+              value={minutes}
+              onChange={(e) => setMinutes(e.target.value)}
+            />
+          </div>
           <Button
             size="sm"
             onClick={() => {
               if (!text.trim()) return toast.error("Add a note");
-              AdelanteEHR.addPeerNote(patientId, {
+              const mins = Number(minutes) || 0;
+              const saved = AdelanteEHR.addPeerNote(patientId, {
                 date: new Date().toISOString(),
-                author: "Peer specialist",
+                author: staffName,
                 text,
                 mode,
+                staffId,
+                minutes: mins,
               });
+              // §Phase 3 billing hook — same claims list as every other
+              // encounter; blocked attempts are audited, not silent.
+              if (saved && actingRole === "peer_specialist") {
+                const claim = AdelanteEHRExt.upsertClaimFromPeerNote({
+                  patientId,
+                  peerNoteId: saved.id,
+                  staffId,
+                  clinicianId: clinicianId ?? "c3",
+                  minutes: mins,
+                  mode,
+                });
+                if (claim)
+                  toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
+              }
               setText("");
               toast.success("Peer note added");
             }}
@@ -1486,11 +1518,18 @@ export function NotesTab({
   patientId,
   readOnly,
   initialTemplateKey,
+  restrictToTemplateKey,
 }: {
   patientId: string;
   readOnly?: boolean;
   /** Pre-selects a seeded template by key (e.g. the release → discharge flow). */
   initialTemplateKey?: string;
+  /**
+   * §Phase 3 — scopes the tab to ONE template's notes (CHW service notes).
+   * A role that only holds `chw_notes` must not see the rest of the chart's
+   * documentation, so the list is filtered here, not just the picker.
+   */
+  restrictToTemplateKey?: string;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName, staffId, clinicianId, role } = useActingStaff();
@@ -1506,8 +1545,10 @@ export function NotesTab({
   const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
   const [templateId, setTemplateId] = useState<string>(
     () =>
-      (initialTemplateKey
-        ? AdelanteEHR.listNoteTemplates().find((t) => t.key === initialTemplateKey)?.id
+      ((initialTemplateKey ?? restrictToTemplateKey)
+        ? AdelanteEHR.listNoteTemplates().find(
+            (t) => t.key === (initialTemplateKey ?? restrictToTemplateKey),
+          )?.id
         : undefined) ?? "none",
   );
   const [answers, setAnswers] = useState<TemplateAnswers>({});
@@ -1535,6 +1576,9 @@ export function NotesTab({
     const cls = noteGateClass(n);
     return cls ? canAccess(role, cls, patient) : { locked: false, reason: undefined };
   };
+  const visibleNotes = (patient.progressNotes ?? []).filter(
+    (n) => !restrictToTemplateKey || n.templateKey === restrictToTemplateKey,
+  );
   return (
     <div className="space-y-4">
       {canWrite && (
@@ -1555,7 +1599,11 @@ export function NotesTab({
             <div className="space-y-1.5">
               <Label className="text-xs">Template</Label>
               <NoteTemplatePicker
-                templates={templates}
+                templates={
+                  restrictToTemplateKey
+                    ? templates.filter((t) => t.key === restrictToTemplateKey)
+                    : templates
+                }
                 value={templateId}
                 onChange={(v) => {
                   setTemplateId(v);
@@ -1686,10 +1734,10 @@ export function NotesTab({
       )}
       <div className="space-y-2">
         <h4 className="font-display text-sm text-navy">Recent notes</h4>
-        {(patient.progressNotes ?? []).length === 0 && (
+        {visibleNotes.length === 0 && (
           <Card className="p-3 text-xs text-muted-foreground">No progress notes yet.</Card>
         )}
-        {(patient.progressNotes ?? []).map((n) => (
+        {visibleNotes.map((n) => (
           <ProgressNoteCard
             key={n.id}
             patientId={patient.id}
@@ -1812,7 +1860,8 @@ function ProgressNoteCard({
   sudReason?: string;
   authorLabel: string;
 }) {
-  const { staffName, role } = useActingStaff();
+  const { staffName, role, staffId: actingStaffId, clinicianId: actingClinicianId } =
+    useActingStaff();
   const status = noteStatus(note);
   // Same language source of truth as the Refusal risk text: the patient record.
   const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
@@ -1882,6 +1931,22 @@ function ProgressNoteCard({
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
+      // §Phase 3 — a signed CHW service note bills through the same claims
+      // pipeline. The hook itself enforces ECM exclusivity, the supervising
+      // provider link and the 2 hr/day unit cap, and audits any refusal.
+      if (note.templateKey === "chw_service" && role === "community_health_worker") {
+        const mins = Number(note.templateAnswers?.["service_minutes"] ?? 0) || 0;
+        const claim = AdelanteEHRExt.upsertClaimFromChwNote({
+          patientId,
+          noteId: note.id,
+          staffId: actingStaffId,
+          clinicianId: actingClinicianId ?? note.clinicianId,
+          dateISO: note.date,
+          minutes: mins,
+        });
+        if (claim) toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
+        else toast.error("No CHW claim created — see the audit log for the reason.");
+      }
       setAttested(false);
       setCrisisChoice("");
       setCrisisReason("");
