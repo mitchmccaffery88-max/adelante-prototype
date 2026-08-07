@@ -1874,6 +1874,7 @@ export interface PreReleaseEpisode {
   openedAt: string;
   openedBy: string;
   closedAt?: string;
+  closedReason?: string;
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
