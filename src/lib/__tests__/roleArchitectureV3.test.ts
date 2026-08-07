@@ -39,7 +39,6 @@ describe("new roles are narrower than PMHNP/Therapist", () => {
     ["cf_care_manager", "screeners_sud"],
     ["sud_counselor", "meds_erx"],
     ["sud_counselor", "psychotherapy_notes"],
-    ["clinical_trainee", "meds_erx"],
     ["medical_assistant", "therapy_notes"],
     ["medical_assistant", "case_notes"],
     ["medical_assistant", "sud_treatment"],
@@ -49,6 +48,11 @@ describe("new roles are narrower than PMHNP/Therapist", () => {
       expect(canAccess(role, cls).level).toBe("none");
     });
   }
+
+  it("keeps clinical_trainee read-only on medication surfaces", () => {
+    expect(canAccess("clinical_trainee", "meds_erx").level).toBe("read");
+    expect(canAccess("pmhnp", "meds_erx").level).toBe("write");
+  });
 
   it("gives SUD counselor real DMC-ODS write access", () => {
     expect(canAccess("sud_counselor", "sud_treatment").level).toBe("write");

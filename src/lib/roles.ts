@@ -331,7 +331,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     therapist: "read",
     ecm_provider: "read",
+    // §v3.0 — kept exactly mirrored to `meds_erx` for the new roles too, so
+    // the access-neutrality invariant in navSections.test.ts still holds.
     medical_assistant: "read",
+    clinical_trainee: "read",
   },
   // §Population health dashboards. Cross-patient aggregate + drill-down to
   // PHI, and revenue-adjacent, so this is read-by-default and write only for
