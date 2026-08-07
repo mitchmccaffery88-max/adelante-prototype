@@ -37,6 +37,12 @@ const FORM_TYPES: { key: ConsentFormType; label: string }[] = [
 
 const todayIso = () => new Date().toISOString().slice(0, 10);
 
+const emptySections = (): Record<ConsentCategory, boolean> =>
+  Object.fromEntries(CONSENT_CATEGORIES.map((c) => [c.key, false])) as Record<
+    ConsentCategory,
+    boolean
+  >;
+
 export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
   // Derived from the registry so a new ASCMI category never needs a matching
   // literal here (Phase 2 added three).
