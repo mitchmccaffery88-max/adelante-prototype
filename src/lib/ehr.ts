@@ -25,6 +25,8 @@ import {
   type AdvocateAccessDecision,
   type AdvocateAuthorizationType,
   type AdvocatePermission,
+  advocatePart2Masked,
+  ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
 } from "./advocate";
 
@@ -1669,7 +1671,13 @@ export type ConsentCategory =
   // category here: the real DHCS DMC-ODS Collateral ROI form language is
   // Christi's to supply. The GATE is real even though the content is not —
   // a Collateral-type advocate has zero access until this is active.
-  | "roi_collateral";
+  | "roi_collateral"
+  // §v3.0 Phase 4 expansion — the ONE consent-conditional exception to
+  // ADVOCATE_PART2_ALWAYS_MASKED. PLACEHOLDER key and label; the real
+  // 42 CFR Part 2 disclosure-authorization language is Christi's to supply.
+  // Active + a valid advocate link => that advocate may see SUD group topics
+  // and appointment service types for THAT patient. Nothing else changes.
+  | "advocate_sud_disclosure";
 
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
@@ -1686,6 +1694,10 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   {
     key: "roi_collateral",
     label: "Release of Information — Collateral participation (placeholder)",
+  },
+  {
+    key: "advocate_sud_disclosure",
+    label: "Part 2 disclosure to advocate — SUD service details (placeholder)",
   },
 ];
 
@@ -3302,6 +3314,26 @@ const ADVOCATE_SUD_TEXT_RE =
 
 function _advocateSudText(text: string): boolean {
   return ADVOCATE_SUD_TEXT_RE.test(text);
+}
+
+/**
+ * The consent-conditional exception to advocate Part 2 masking. TWO
+ * independent checks, both required, evaluated live at read time:
+ *   1. an ACTIVE `advocate_sud_disclosure` ConsentRecord for this patient, and
+ *   2. this advocate's own authorization link currently allowed.
+ * The second is the existing gate, unchanged — this helper layers on top of
+ * it rather than replacing it. Everything stays masked by default.
+ */
+function _advocatePart2Unmasked(link: AdvocateLink): boolean {
+  const linkValid = AdelanteEHR.advocateAccess(link.id).allowed;
+  const consentActive = AdelanteEHR.isConsentCategoryAuthorized(
+    link.patientId,
+    ADVOCATE_SUD_DISCLOSURE_CATEGORY,
+  );
+  return !advocatePart2Masked(link.authorizationType, {
+    linkValid,
+    sudDisclosureConsentActive: consentActive,
+  });
 }
 
 function _patient(id: string): Patient | undefined {
@@ -7855,6 +7887,11 @@ export const AdelanteEHR = {
    * JUDGMENT CALL (flagged): group TOPICS are withheld for
    * `sud_clinical_preauth` groups, because a topic string on a SUD-track group
    * is itself Part 2 content. Open psychoeducational topics are shown.
+   *
+   * EXCEPTION (consent-conditional): when an active `advocate_sud_disclosure`
+   * ConsentRecord is on file for this patient AND this advocate's link is
+   * valid, SUD group topics and appointment service-type labels are shown.
+   * Both checks, every read — see `_advocatePart2Unmasked`.
    */
   advocateSchedule(
     linkId: string,
@@ -7895,6 +7932,9 @@ export const AdelanteEHR = {
 
     const from = +now;
     const items: ReturnType<typeof AdelanteEHR.advocateSchedule>["items"] = [];
+    // Consent-conditional Part 2 exception. Default is masked; this is the
+    // only thing that lifts it, and it is re-evaluated on every read.
+    const part2Ok = _advocatePart2Unmasked(link);
 
     for (const a of AdelanteEHR.appointmentsForPatient(link.patientId)) {
       if (+new Date(a.start) < from) continue;
@@ -7906,7 +7946,11 @@ export const AdelanteEHR = {
         start: a.start,
         durationMin: a.durationMin,
         // Deliberately generic: the service type can imply SUD treatment.
-        label: "Appointment",
+        // Only a patient-signed Part 2 disclosure authorization reveals it.
+        label:
+          part2Ok && a.serviceType
+            ? (AdelanteEHR.getServiceType(a.serviceType)?.label ?? "Appointment")
+            : "Appointment",
         ...(a.modality ? { modality: a.modality } : {}),
         ...(loc ? { locationName: loc.name } : {}),
       });
@@ -7921,7 +7965,8 @@ export const AdelanteEHR = {
           id: `${g.id}_${start}`,
           start,
           durationMin: g.durationMin,
-          label: g.category === "open_psychoeducational" ? g.topic : "Group session",
+          label:
+            g.category === "open_psychoeducational" || part2Ok ? g.topic : "Group session",
           modality: g.modality,
           ...(loc ? { locationName: loc.name } : {}),
         });
@@ -7941,6 +7986,8 @@ export const AdelanteEHR = {
         authorizationType: link.authorizationType,
         resource: "upcoming_schedule",
         itemCount: items.length,
+        // Auditable: whether the Part 2 disclosure exception was in force.
+        part2Disclosed: part2Ok,
       },
     });
     return { allowed: true, reason: decision.reason, items };

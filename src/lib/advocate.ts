@@ -155,12 +155,36 @@ export type AdvocatePermission =
  * that content needs its own explicit gate, exactly as it does for every
  * clinical staff role in this build. No advocate permission exists that lifts
  * it, and this constant exists so a future edit has to argue with it.
+ *
+ * The ONE exception, added deliberately and narrowly: a patient-signed Part 2
+ * disclosure authorization naming advocate disclosure
+ * (`advocate_sud_disclosure`). That is a consent artifact, not a permission —
+ * it is checked per-patient at read time, IN ADDITION TO the advocate's own
+ * authorization gate, and it never becomes a property of a tier or a link.
+ * Absent that active consent, this default stands.
  */
 export const ADVOCATE_PART2_ALWAYS_MASKED = true as const;
 
-/** True for every advocate, every tier, every authorization type. Always. */
-export function advocatePart2Masked(_type?: AdvocateAuthorizationType): boolean {
-  return ADVOCATE_PART2_ALWAYS_MASKED;
+/**
+ * PLACEHOLDER ASCMI category, same discipline as every other one in this
+ * build: the real DHCS / 42 CFR Part 2 disclosure-authorization language is
+ * Christi's to supply. The GATE is real even though the content is not.
+ */
+export const ADVOCATE_SUD_DISCLOSURE_CATEGORY = "advocate_sud_disclosure" as const;
+
+/**
+ * Masked unless BOTH are true: the advocate's own link is currently valid,
+ * AND an active `advocate_sud_disclosure` ConsentRecord exists for THAT
+ * patient. Neither alone is sufficient. Called with no options (or with only
+ * an authorization type) it returns the unconditional default — so every
+ * caller that has not been taught about the exception stays masked.
+ */
+export function advocatePart2Masked(
+  _type?: AdvocateAuthorizationType,
+  facts?: { linkValid: boolean; sudDisclosureConsentActive: boolean },
+): boolean {
+  if (!facts) return ADVOCATE_PART2_ALWAYS_MASKED;
+  return !(facts.linkValid && facts.sudDisclosureConsentActive);
 }
 
 /** Facts the caller must supply. All live-evaluated by the store, never cached. */
