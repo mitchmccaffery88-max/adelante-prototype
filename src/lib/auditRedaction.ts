@@ -25,6 +25,11 @@ const CATEGORY_CLASS: Record<AuditCategory, RecordClass> = {
   care_plan: "care_plan",
   assignment: "care_coordination",
   clinical: "case_notes",
+  // §v3.0 Phase 4 — advocate (third-party) access events. Mapped to the
+  // consent ledger class: who was authorized to see a patient's record, and
+  // under what legal instrument, is consent-ledger material, and it keeps
+  // advocate PHI out of reach of roles that cannot read the ledger.
+  advocate: "consent_ledger",
 };
 
 /**
