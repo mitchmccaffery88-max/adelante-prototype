@@ -563,6 +563,10 @@ export const CRISIS_FLAG_ROLES: StaffRole[] = [
   "peer_specialist",
   "clinical_coordinator",
   "sys_admin",
+  // §v3.0 — clinical-facing roles can raise a flag; cross-patient queue
+  // visibility still comes from the `crisis_queue` class, which they lack.
+  "sud_counselor",
+  "clinical_trainee",
 ];
 
 export function canFlagCrisis(role: StaffRole): boolean {
