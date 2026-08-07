@@ -17,7 +17,7 @@ import type {
 import type { StaffRole } from "./roles";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess } from "./roles";
+import { canAccess, STAFF_ROLES } from "./roles";
 // §v3.0 Phase 4 — advocate access policy. Pure module, imports nothing back
 // from here, so there is no cycle.
 import {
@@ -3350,7 +3350,8 @@ const patientDocuments: PatientDocument[] = [];
 function _documentUploaderLabel(u: DocumentUploader): string {
   if (u.kind === "patient") return `${u.name} (patient)`;
   if (u.kind === "advocate") return `${u.name} (advocate)`;
-  return `${u.name}${u.role ? ` (${ROLE_LABEL[u.role] ?? u.role})` : ""}${
+  const roleLabel = u.role ? (STAFF_ROLES.find((r) => r.key === u.role)?.label ?? u.role) : "";
+  return `${u.name}${roleLabel ? ` (${roleLabel})` : ""}${
     u.onBehalfOfPatient ? " — on the patient's behalf" : ""
   }`;
 }
