@@ -1,5 +1,5 @@
 // §v3.0 Phase 3 — Peer / CHW billing hooks + CHW-ECM mutual exclusivity.
-import { describe, it, expect, beforeEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { AdelanteEHRExt } from "../ehr-ext";
 import { STAFF_ROSTER, isBillableStaff, supervisionStatus } from "../roles";
