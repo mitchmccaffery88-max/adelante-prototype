@@ -409,6 +409,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    cf_care_manager: "read",
+    clinical_trainee: "read",
+    medical_assistant: "none",
   },
   // §Inbox — provider request queue. Its own class because the traffic runs
   // BOTH directions: a case manager asks a prescriber to enter an order, a
@@ -425,6 +429,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    cf_care_manager: "none",
   },
   // §Worklist Phase A — cross-facility operational task table. NOT
   // patient-scoped, so it follows the crisis_queue / population_health
@@ -443,6 +451,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",
+    sud_counselor: "write",
+    // CF task list lands here in Phase 2; write so they can claim their rows.
+    cf_care_manager: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
   },
   // §Scheduling rule engine — admin config that MANUFACTURES worklist rows.
   // Same tier as note_templates / KPI targets / catalog_governance:
@@ -474,6 +487,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     peer_specialist: "read",
     billing: "read",
     billing_coordinator: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
   },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
@@ -485,6 +500,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     peer_specialist: "consent_gated",
     clinical_coordinator: "consent_gated",
     billing: "consent_gated",
+    sud_counselor: "write",
+    clinical_trainee: "consent_gated",
   },
 };
 
