@@ -3158,7 +3158,11 @@ export type AuditCategory =
   | "provider_switch"
   | "care_plan"
   | "assignment"
-  | "clinical";
+  | "clinical"
+  // §v3.0 Phase 4 — third-party (advocate/family) access. Its own category so
+  // every advocate event is separable in the existing audit stream; this is
+  // NOT a parallel log.
+  | "advocate";
 export interface AuditEvent {
   id: string;
   at: string;
