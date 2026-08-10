@@ -5381,6 +5381,52 @@ export const AdelanteEHR = {
     p.coverage = coverage;
     emit();
   },
+
+  // ---------- Front-door entry sequence (Phase 1) ----------
+
+  /** Merge-write the front-door answers. Safe to call once per question. */
+  recordFrontDoorEntry(patientId: string, patch: Partial<Omit<FrontDoorEntry, "recordedAt">>) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return undefined;
+    const base: FrontDoorEntry = p.frontDoor ?? {
+      existingCare: "unsure",
+      recordedAt: new Date().toISOString(),
+    };
+    const next: FrontDoorEntry = { ...base, ...patch, recordedAt: new Date().toISOString() };
+    // Phase 2 safety-net lookup hook: "not sure" about an existing record is
+    // the thing a later lookup has to resolve. Nothing reads this yet.
+    if (patch.existingCare !== undefined) {
+      next.recordLookupPending = patch.existingCare === "unsure";
+    }
+    p.frontDoor = next;
+    appendAudit({
+      category: "clinical",
+      action: "front_door_entry_recorded",
+      patientId,
+      actorId: "patient",
+      summary: `Front-door answers updated (${Object.keys(patch).join(", ")})`,
+    });
+    emit();
+    return next;
+  },
+
+  getFrontDoorEntry(patientId: string): FrontDoorEntry | undefined {
+    return patients.find((x) => x.id === patientId)?.frontDoor;
+  },
+
+  /**
+   * True when the person's referral source is already known to the system, so
+   * "how did you hear about us" must not be asked. Two known-source paths
+   * exist in the model: a formal `Referral` submission (which materializes the
+   * Patient with `referralId` set via advanceReferral), and Track A pre-release
+   * (an open `PreReleaseEpisode`).
+   */
+  hasKnownReferralSource(patientId: string): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    if (p.referralId) return true;
+    return preReleaseEpisodes.some((e) => e.patientId === patientId && e.status !== "closed");
+  },
   addCheckIn(patientId: string, checkIn: Omit<CheckIn, "id">) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
