@@ -260,12 +260,13 @@ function IntakePage() {
       { key: "welcome", label: "Welcome" },
       { key: "about", label: "About you" },
       { key: "consent", label: "Consent" },
-      { key: "coverage", label: "Medi-Cal" },
+      { key: "coverage", label: "Coverage" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
+      ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
-    [activeScreeners],
+    [activeScreeners, askHeardAbout],
   );
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
