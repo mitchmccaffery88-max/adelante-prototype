@@ -397,6 +397,12 @@ function IntakePage() {
             </button>
           </div>
         </div>
+        {/* §Crisis-flag stopgap — always visible in the sticky intake header,
+            at every step, so a helper never has to navigate away. Renders only
+            for staff roles allowed to flag. */}
+        <div className="flex justify-end mb-2">
+          <AssistedSignupCrisisButton patientId={currentId} />
+        </div>
         <Progress value={pct} className="h-2" />
         <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
           <span>
