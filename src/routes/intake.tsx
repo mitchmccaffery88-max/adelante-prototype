@@ -19,6 +19,16 @@ import {
 } from "@/lib/ehr";
 import { Input } from "@/components/ui/input";
 import {
+  COVERAGE_TYPES,
+  HEARD_ABOUT_SOURCES,
+  coverageMessage,
+  ecmQuestionApplies,
+  shouldAskHeardAbout,
+  type CoverageType,
+  type HeardAboutSource,
+  type TriState,
+} from "@/lib/frontDoor";
+import {
   Select,
   SelectContent,
   SelectItem,
