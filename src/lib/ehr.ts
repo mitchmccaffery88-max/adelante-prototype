@@ -16,6 +16,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
+import type { SignupCredentialMeta } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
