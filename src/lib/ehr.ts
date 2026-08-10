@@ -6466,6 +6466,7 @@ export const AdelanteEHR = {
     if (!ep) throw new Error("Pre-release episode not found.");
     const def = PRE_RELEASE_FORMS.find((d) => d.key === input.formKey);
     if (!def) throw new Error("Unknown pre-release form.");
+    assertCfEntryScope(ep, input.attribution, `pre_release_form:${input.formKey}`);
     if (def.consentCategory)
       throw new Error(
         "Release & consent forms are captured in the consent ledger, not as form fields.",
@@ -6510,7 +6511,10 @@ export const AdelanteEHR = {
     }
     appendAudit({
       category: "clinical",
-      action: input.complete ? "pre_release_form_completed" : "pre_release_form_saved",
+      action: cfAuditAction(
+        input.complete ? "pre_release_form_completed" : "pre_release_form_saved",
+        input.attribution,
+      ),
       patientId: ep.patientId,
       actorId: input.attribution.enteredBy.staffName,
       actorRole: input.attribution.enteredBy.role,
@@ -6520,8 +6524,7 @@ export const AdelanteEHR = {
         category: def.category,
         // Field VALUES are never audited — only which fields were touched.
         fields: Object.keys(input.values),
-        attributedTo: input.attribution.attributedTo?.staffName,
-        proxyEntry: Boolean(input.attribution.attributedTo),
+        ...cfAuditIdentities(input.attribution),
       },
     });
     emit();
