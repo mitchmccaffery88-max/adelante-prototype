@@ -392,6 +392,22 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
         />
       )}
 
+      {notices.length > 0 && (
+        <div className="rounded-lg border p-3 text-sm" data-testid="advocate-doc-notices">
+          <p className="flex items-center gap-2 font-medium text-navy">
+            <Bell className="h-4 w-4 text-teal" /> {t("docNotificationsTitle")}
+          </p>
+          <ul className="mt-2 space-y-1">
+            {notices.map((n) => (
+              <li key={n.id} className="text-xs text-muted-foreground">
+                <ClientDate value={n.at} /> · {t("docVerifiedNotice")}
+                {n.channel === "sms" ? ` · ${t("docNotificationSimulated")}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       {view.items.length === 0 ? (
         <p className="text-sm text-muted-foreground">{t("docNoneYet")}</p>
       ) : (
