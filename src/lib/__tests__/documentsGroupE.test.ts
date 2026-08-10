@@ -4,7 +4,7 @@
 // 2 (download/view uses the SAME gate as restricted rendering — proved by
 // shared call, not just matching outcome), 3 (every lifecycle event lands in
 // the unified audit stream the admin page reads).
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { ADVOCATE_SUD_DISCLOSURE_CATEGORY, type AdvocateAuthorizationType } from "../advocate";
 import * as documents from "../documents";
@@ -90,15 +90,25 @@ describe("Group E item 2 — download/view is the SAME gate as restricted render
     expect(listed.restrictionMessage).toBe(dl.reason);
   });
 
-  it("the download decision CALLS advocateDocumentVisibility — one implementation, not two", () => {
-    const spy = vi.spyOn(documents, "advocateDocumentVisibility");
-    documents.documentDownloadDecision({
-      isPart2: true,
-      part2Unmasked: false,
-      verification: "verified",
-    });
-    expect(spy).toHaveBeenCalledWith({ isPart2: true, part2Unmasked: false });
-    spy.mockRestore();
+  it("the download decision defers to advocateDocumentVisibility for every input", () => {
+    // Exhaustive equivalence over the Part 2 axis: the download gate produces
+    // the rendering gate's exact verdict and its exact message, because it is
+    // implemented as a call to it rather than as a parallel rule.
+    for (const isPart2 of [true, false]) {
+      for (const part2Unmasked of [true, false]) {
+        const vis = documents.advocateDocumentVisibility({ isPart2, part2Unmasked });
+        const dl = documents.documentDownloadDecision({
+          isPart2,
+          part2Unmasked,
+          verification: "verified",
+        });
+        expect(dl.allowed).toBe(!vis.restricted);
+        if (!dl.allowed) {
+          expect(dl.restricted).toBe(true);
+          expect(dl.reason).toBe(vis.restrictionMessage);
+        }
+      }
+    }
   });
 
   it("the same advocate CAN download once Part 2 disclosure is on file", () => {
@@ -137,7 +147,7 @@ describe("Group E item 2 — download/view is the SAME gate as restricted render
     const link = connected(p.id);
     const doc = upload(p.id, false);
     verify(doc.id);
-    AdelanteEHR.revokeAdvocateLink(link.id, { by: "Test Patient", reason: "No longer involved" });
+    AdelanteEHR.revokeAdvocateLink(link.id, "Test Patient", "No longer involved");
 
     const dl = AdelanteEHR.requestDocumentDownload({
       documentId: doc.id,
@@ -170,7 +180,7 @@ describe("Group E item 1 — promotion notification respects existing advocate a
   it("never notifies a revoked advocate", () => {
     const p = freshPatient();
     const link = connected(p.id);
-    AdelanteEHR.revokeAdvocateLink(link.id, { by: "Test Patient", reason: "Revoked" });
+    AdelanteEHR.revokeAdvocateLink(link.id, "Test Patient", "Revoked");
     const doc = upload(p.id, false);
     verify(doc.id);
     expect(AdelanteEHR.advocateDocumentNotifications(link.id)).toHaveLength(0);
