@@ -292,6 +292,11 @@ export interface EmergencyContact {
   name: string;
   relationship: string;
   phone: string;
+  /** §Emergency-contact expansion — reachability beyond a single phone. */
+  email?: string;
+  address?: string;
+  /** Free text: "call after 6pm", "does not know about treatment", etc. */
+  notes?: string;
 }
 
 export interface Referral {
