@@ -2045,6 +2045,12 @@ export interface PreReleaseEpisode {
   openedBy: string;
   closedAt?: string;
   closedReason?: string;
+  /**
+   * §Front-door Phase 2 — this episode was opened AFTER release, at intake,
+   * because pre-release coordination never happened. Same forms, same tasks,
+   * compressed into day one.
+   */
+  missedHandoff?: boolean;
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
