@@ -12,6 +12,9 @@ export interface AttributionResult {
   reason?: string;
 }
 
+/** How an entry reached the record: keyed by its own author, or proxied. */
+export type CfEntryMode = "direct" | "proxy";
+
 /**
  * Phase 1's dual access model, applied to Phase 2 writes:
  *  - a direct-login CF Care Manager authors their own rows;
@@ -36,5 +39,39 @@ export function resolveCfAttribution(input: {
   return {
     ok: true,
     attribution: { enteredBy, attributedTo: { staffId: subject.id, staffName: subject.name } },
+  };
+}
+
+/**
+ * §Quality pass Group B — the SINGLE entry decision for a pre-release episode.
+ *
+ * `resolveCfAttribution` answers "may I proxy for this person?" only when the
+ * caller already decided to proxy. That left a hole: for a DIRECT-mode CF Care
+ * Manager the old UI simply did not ask, and an ECM Provider's entry fell
+ * through to self-attribution — the direct-mode rule was never actually
+ * enforced on the episode, only on the proxy call nobody made. This function
+ * decides from the EPISODE's owner, so there is no path that skips the check.
+ */
+export function resolveEpisodeEntry(input: {
+  actorStaffId: string | null | undefined;
+  actorName: string;
+  actorRole: StaffRole;
+  episodeCfStaffId: string;
+}): AttributionResult & { mode?: CfEntryMode } {
+  const owner = getStaffMember(input.episodeCfStaffId);
+  const enteredBy = {
+    staffId: input.actorStaffId ?? undefined,
+    staffName: input.actorName,
+    role: input.actorRole,
+  };
+  // The owner keying their own list is always a direct entry.
+  if (owner && input.actorStaffId === owner.id)
+    return { ok: true, mode: "direct", attribution: { enteredBy } };
+  const check = canProxyForCfCareManager(input.actorStaffId, input.episodeCfStaffId);
+  if (!check.allowed) return { ok: false, reason: check.reason };
+  return {
+    ok: true,
+    mode: "proxy",
+    attribution: { enteredBy, attributedTo: { staffId: owner!.id, staffName: owner!.name } },
   };
 }

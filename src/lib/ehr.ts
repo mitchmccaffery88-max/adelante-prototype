@@ -1884,6 +1884,69 @@ export interface CfAttribution {
   attributedTo?: { staffId: string; staffName: string };
 }
 
+/**
+ * §Quality pass Group B — proxy vs direct is an AUDITED distinction.
+ *
+ * Before this pass, proxy entries were *attributed* (the record carried both
+ * identities) and two of the three write paths logged an audit row, but the
+ * row used the same `action` as a direct entry and carried only the CF Care
+ * Manager's NAME. `saveReentryCarePlan` logged nothing at all. These helpers
+ * make every CF write emit a distinctly-actioned event carrying both staff
+ * IDs, through the same `appendAudit` stream everything else uses.
+ */
+export const cfEntryMode = (a: CfAttribution): "direct" | "proxy" =>
+  a.attributedTo ? "proxy" : "direct";
+
+/** `pre_release_form_saved` → `pre_release_form_saved_proxy`. */
+export const cfAuditAction = (base: string, a: CfAttribution): string =>
+  cfEntryMode(a) === "proxy" ? `${base}_proxy` : base;
+
+/** Both identities, always — the acting person AND who the work belongs to. */
+export function cfAuditIdentities(a: CfAttribution) {
+  return {
+    entryMode: cfEntryMode(a),
+    proxyEntry: cfEntryMode(a) === "proxy",
+    enteredByStaffId: a.enteredBy.staffId,
+    enteredByStaffName: a.enteredBy.staffName,
+    enteredByRole: a.enteredBy.role,
+    onBehalfOfStaffId: a.attributedTo?.staffId,
+    onBehalfOfStaffName: a.attributedTo?.staffName,
+    // Kept for existing audit consumers that read the old key.
+    attributedTo: a.attributedTo?.staffName,
+  };
+}
+
+/**
+ * Data-layer backstop for the direct-mode rule. Episode-local, so it needs no
+ * roster import (roles.ts already imports this module): an entry is in scope
+ * only when the acting person IS the episode's CF Care Manager, or is keying
+ * it explicitly on that CF Care Manager's behalf. A self-attributed entry on
+ * someone else's episode is refused and audited.
+ */
+function assertCfEntryScope(ep: PreReleaseEpisode, a: CfAttribution, what: string) {
+  const owner = ep.cfCareManagerStaffId;
+  const isOwner = Boolean(a.enteredBy.staffId) && a.enteredBy.staffId === owner;
+  if (isOwner || a.attributedTo?.staffId === owner) return;
+  appendAudit({
+    category: "clinical",
+    action: "cf_proxy_entry_denied",
+    patientId: ep.patientId,
+    actorId: a.enteredBy.staffName,
+    actorRole: a.enteredBy.role,
+    detail: {
+      episodeId: ep.id,
+      target: what,
+      ...cfAuditIdentities(a),
+      episodeCfStaffId: owner,
+      episodeCfStaffName: ep.cfCareManagerName,
+      reason: "not_owner_and_not_proxied",
+    },
+  });
+  throw new Error(
+    `${ep.cfCareManagerName} owns this pre-release episode. Their activity can only be entered by them, or proxy-entered when they are not a platform user.`,
+  );
+}
+
 export type PreReleaseEpisodeStatus = "open" | "released" | "closed";
 
 export interface PreReleaseEpisode {
@@ -6403,6 +6466,7 @@ export const AdelanteEHR = {
     if (!ep) throw new Error("Pre-release episode not found.");
     const def = PRE_RELEASE_FORMS.find((d) => d.key === input.formKey);
     if (!def) throw new Error("Unknown pre-release form.");
+    assertCfEntryScope(ep, input.attribution, `pre_release_form:${input.formKey}`);
     if (def.consentCategory)
       throw new Error(
         "Release & consent forms are captured in the consent ledger, not as form fields.",
@@ -6447,7 +6511,10 @@ export const AdelanteEHR = {
     }
     appendAudit({
       category: "clinical",
-      action: input.complete ? "pre_release_form_completed" : "pre_release_form_saved",
+      action: cfAuditAction(
+        input.complete ? "pre_release_form_completed" : "pre_release_form_saved",
+        input.attribution,
+      ),
       patientId: ep.patientId,
       actorId: input.attribution.enteredBy.staffName,
       actorRole: input.attribution.enteredBy.role,
@@ -6457,8 +6524,7 @@ export const AdelanteEHR = {
         category: def.category,
         // Field VALUES are never audited — only which fields were touched.
         fields: Object.keys(input.values),
-        attributedTo: input.attribution.attributedTo?.staffName,
-        proxyEntry: Boolean(input.attribution.attributedTo),
+        ...cfAuditIdentities(input.attribution),
       },
     });
     emit();
@@ -6492,6 +6558,7 @@ export const AdelanteEHR = {
     let plan = AdelanteEHR.getReentryCarePlan(ep.id);
     if (plan?.status === "completed")
       throw new Error("This care plan is completed and member-signed; it can no longer be edited.");
+    assertCfEntryScope(ep, input.attribution, "reentry_care_plan");
     const now = new Date().toISOString();
     const appointments: ReentryAppointment[] = input.appointments.map((a) => ({ ...a, id: uid() }));
     if (!plan) {
@@ -6518,6 +6585,29 @@ export const AdelanteEHR = {
       plan.attribution = input.attribution;
       plan.updatedAt = now;
     }
+    // Care-plan section edits were previously attributed but NOT audited at
+    // all — closed here, with the same proxy/direct action split.
+    appendAudit({
+      category: "clinical",
+      action: cfAuditAction("reentry_care_plan_saved", input.attribution),
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        carePlanId: plan.id,
+        status: plan.status,
+        // Section shape only — never the member's housing/pharmacy values.
+        sections: {
+          housing: Boolean(plan.housing.arrangement),
+          appointments: plan.appointments.length,
+          pharmacy: Boolean(plan.pharmacy),
+          dmeNeeds: plan.dmeNeeds.length,
+          notesToEcm: Boolean(plan.notesToEcm),
+        },
+        ...cfAuditIdentities(input.attribution),
+      },
+    });
     emit();
     return plan;
   },
@@ -6538,6 +6628,7 @@ export const AdelanteEHR = {
     const plan = AdelanteEHR.getReentryCarePlan(ep.id);
     if (!plan) throw new Error("Save the care plan before completing it.");
     if (plan.status === "completed") throw new Error("This care plan is already completed.");
+    assertCfEntryScope(ep, input.attribution, "reentry_care_plan_completion");
     if (!input.attested) throw new Error("Member attestation is required.");
     if (input.memberSignatureName.trim().length < 2)
       throw new Error("A typed member signature name is required.");
@@ -6579,7 +6670,7 @@ export const AdelanteEHR = {
     if (task) AdelanteEHR.completeCaseTask(task.id);
     appendAudit({
       category: "clinical",
-      action: "reentry_care_plan_completed",
+      action: cfAuditAction("reentry_care_plan_completed", input.attribution),
       patientId: ep.patientId,
       actorId: input.attribution.enteredBy.staffName,
       actorRole: input.attribution.enteredBy.role,
@@ -6590,8 +6681,7 @@ export const AdelanteEHR = {
         enrollmentCodeIssued: true,
         enrollmentCodeExpiresAt: code.expiresAt,
         appointments: plan.appointments.length,
-        attributedTo: input.attribution.attributedTo?.staffName,
-        proxyEntry: Boolean(input.attribution.attributedTo),
+        ...cfAuditIdentities(input.attribution),
       },
     });
     emit();
