@@ -870,6 +870,34 @@ function IntakePage() {
         )}
 
         {current.key === "review" && (
+          <></>
+        )}
+        {current.key === "source" && (
+          <div className="space-y-3" data-testid="heard-about-step">
+            <p className="text-sm text-muted-foreground">
+              Optional — how did you hear about Adelante? It helps us know what's working. You can
+              skip this.
+            </p>
+            <RadioGroup
+              className="grid gap-2"
+              value={heardAbout}
+              onValueChange={(v) => setHeardAbout(v as HeardAboutSource)}
+            >
+              {HEARD_ABOUT_SOURCES.map((s) => (
+                <label
+                  key={s.key}
+                  htmlFor={`heard-${s.key}`}
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm hover:border-teal"
+                >
+                  <RadioGroupItem id={`heard-${s.key}`} value={s.key} />
+                  <span>{s.label}</span>
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
+        )}
+
+        {current.key === "review" && (
           <div className="space-y-4">
             <p className="text-sm text-muted-foreground">
               Review and submit. Your care team will use this to plan your first session.
