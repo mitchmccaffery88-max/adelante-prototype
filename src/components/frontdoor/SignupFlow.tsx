@@ -198,9 +198,6 @@ function RedeemCodePanel({
     });
     onComplete(patient, "claimed");
   }
-    });
-    navigate({ to: "/start" });
-  }
 
   const err = (k: keyof SignupErrors) =>
     errors[k] ? (
