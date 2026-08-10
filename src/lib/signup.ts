@@ -125,3 +125,78 @@ export function validateSignup(draft: SignupInput): SignupErrors {
 export function credentialMeta(kind: CredentialKind, now = new Date()): SignupCredentialMeta {
   return { kind, verificationAvailable: false, setAt: now.toISOString() };
 }
+
+/* ===================== §Code redemption (Phase 3 groundwork) ==============
+ * The OTHER branch of the front door: someone whose record already exists
+ * because a CF Care Manager completed their Reentry Care Plan and handed them
+ * an `RE-XXXX-XXXX` enrollment code. Redemption CLAIMS that record — it must
+ * never create a second one.
+ *
+ * Everything here is pure so the branch can be unit-tested without React; the
+ * actual claim transaction lives in `AdelanteEHR.redeemEnrollmentCode`.
+ * ======================================================================== */
+
+/** Same alphabet the generator uses — I/L/O/U are not valid characters. */
+const CODE_BODY = /^[0-9ABCDEFGHJKMNPQRSTVWXYZ]{4}-[0-9ABCDEFGHJKMNPQRSTVWXYZ]{4}$/;
+
+/**
+ * Accept what people actually type: lowercase, missing dashes, a missing
+ * `RE-` prefix, stray spaces. Returns the canonical `RE-XXXX-XXXX` form, or
+ * null when it cannot possibly be a code (so we can say "check the code"
+ * before touching the store).
+ */
+export function normalizeEnrollmentCode(raw: string): string | null {
+  const stripped = raw.toUpperCase().replace(/[^0-9A-Z]/g, "");
+  const body = stripped.startsWith("RE") ? stripped.slice(2) : stripped;
+  if (body.length !== 8) return null;
+  const candidate = `${body.slice(0, 4)}-${body.slice(4)}`;
+  if (!CODE_BODY.test(candidate)) return null;
+  return `RE-${candidate}`;
+}
+
+export type CodeRedemptionStatus = "valid" | "expired" | "consumed" | "unknown" | "malformed";
+
+export interface RedemptionMessage {
+  title: string;
+  body: string;
+  /** Whether to offer the "connect with our team" fallback below the message. */
+  offerStaffFallback: boolean;
+}
+
+/**
+ * Distinct, honest copy per failure — deliberately NOT one generic error.
+ *
+ * "Already claimed" is genuinely ambiguous: it can mean the person already
+ * finished this step on another device, or that someone else used a code that
+ * was theirs. We say both out loud rather than guessing, because the second
+ * reading is a real safeguarding concern for this population and silently
+ * assuming the first would bury it.
+ */
+export function redemptionMessage(status: Exclude<CodeRedemptionStatus, "valid">): RedemptionMessage {
+  switch (status) {
+    case "malformed":
+      return {
+        title: "That doesn't look like a code yet",
+        body: "Codes look like RE-4K7P-92XB — eight characters after RE. Check the paper or message it came on and try again.",
+        offerStaffFallback: false,
+      };
+    case "unknown":
+      return {
+        title: "We couldn't find that code",
+        body: "It may have been typed slightly differently — the letters I, L, O and U are never used, so a 1, 0 or J is more likely. This doesn't tell us anything about whether you have a record with us.",
+        offerStaffFallback: true,
+      };
+    case "expired":
+      return {
+        title: "This code has expired",
+        body: "Enrollment codes stop working 90 days after they're issued, so an old one can't be used to confirm who you are. Your record is still here — a person can re-issue a code or get you in directly.",
+        offerStaffFallback: true,
+      };
+    case "consumed":
+      return {
+        title: "This code has already been used",
+        body: "That usually means the account was already set up — try signing in first. If that wasn't you, someone else may have used your code, and we need to know: tell the team when you contact them.",
+        offerStaffFallback: true,
+      };
+  }
+}
