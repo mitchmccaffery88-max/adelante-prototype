@@ -519,6 +519,33 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sud_counselor: "write",
     clinical_trainee: "read",
   },
+  // §Quality pass Group A — supervision assignment. Write is the workforce
+  // oversight tier: sys_admin (system of record) + clinical_coordinator (owns
+  // clinical staffing, exactly as it owns protocols, crisis disposition and
+  // scheduling rules). LPHA supervisors read so they can see who is attached
+  // to them; the supervised roles read their OWN status through the banner.
+  // Nobody else — this is not patient data and not billing data.
+  staff_supervision: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    therapist: "read",
+    pmhnp: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    community_health_worker: "read",
+  },
+  _unused_group_sessions_placeholder: {
+    therapist: "write",
+    pmhnp: "write",
+    ecm_provider: "write",
+    clinical_coordinator: "write",
+    sys_admin: "write",
+    peer_specialist: "read",
+    billing: "read",
+    billing_coordinator: "read",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+  },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
   // every group note flows through canAccess() like any other note.
