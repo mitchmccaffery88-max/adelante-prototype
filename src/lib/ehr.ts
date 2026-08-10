@@ -6558,6 +6558,7 @@ export const AdelanteEHR = {
     let plan = AdelanteEHR.getReentryCarePlan(ep.id);
     if (plan?.status === "completed")
       throw new Error("This care plan is completed and member-signed; it can no longer be edited.");
+    assertCfEntryScope(ep, input.attribution, "reentry_care_plan");
     const now = new Date().toISOString();
     const appointments: ReentryAppointment[] = input.appointments.map((a) => ({ ...a, id: uid() }));
     if (!plan) {
@@ -6584,6 +6585,29 @@ export const AdelanteEHR = {
       plan.attribution = input.attribution;
       plan.updatedAt = now;
     }
+    // Care-plan section edits were previously attributed but NOT audited at
+    // all — closed here, with the same proxy/direct action split.
+    appendAudit({
+      category: "clinical",
+      action: cfAuditAction("reentry_care_plan_saved", input.attribution),
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        carePlanId: plan.id,
+        status: plan.status,
+        // Section shape only — never the member's housing/pharmacy values.
+        sections: {
+          housing: Boolean(plan.housing.arrangement),
+          appointments: plan.appointments.length,
+          pharmacy: Boolean(plan.pharmacy),
+          dmeNeeds: plan.dmeNeeds.length,
+          notesToEcm: Boolean(plan.notesToEcm),
+        },
+        ...cfAuditIdentities(input.attribution),
+      },
+    });
     emit();
     return plan;
   },
