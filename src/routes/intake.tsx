@@ -322,7 +322,19 @@ function IntakePage() {
       part2Sud: sudConsent === true,
     });
     if (crisisFlagged) {
+      // Legacy soft flag — still read by case-manager / caseload / referral filters.
       AdelanteEHR.raiseCrisisFlag(currentId, "phq-9-item-9");
+      // Real escalation — PatientAlert + open CrisisEscalation + coordinator notification.
+      try {
+        AdelanteEHR.flagCrisis(
+          currentId,
+          "Intake screener (automated)",
+          "Automated flag: PHQ-9 item 9 indicated risk of self-harm",
+          { triggerSource: "screener_score" },
+        );
+      } catch {
+        /* no-op */
+      }
     }
     toast.success("Intake complete", {
       description: "Your care team will see this before your first session.",
