@@ -426,8 +426,9 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
           <Button asChild size="lg" className="bg-navy text-navy-foreground hover:bg-navy/90">
             {/* First-time entry goes through the front-door sequence, which
                 routes to /intake (or an alternate flow) after three questions.
-                The rescreen task below still deep-links to /intake directly. */}
-            <Link to="/start">
+                Sign-up (`/start/signup`) now comes first for self-service
+                entrants. The rescreen task below still deep-links to /intake. */}
+            <Link to="/start/signup">
               <ClipboardList className="mr-2 h-4 w-4" />
               {t("homeStartIntake")}
               <ArrowRight className="ml-1.5 h-4 w-4" />

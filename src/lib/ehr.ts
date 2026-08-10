@@ -16,6 +16,7 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
+import type { SignupCredentialMeta } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
@@ -292,6 +293,11 @@ export interface EmergencyContact {
   name: string;
   relationship: string;
   phone: string;
+  /** §Emergency-contact expansion — reachability beyond a single phone. */
+  email?: string;
+  address?: string;
+  /** Free text: "call after 6pm", "does not know about treatment", etc. */
+  notes?: string;
 }
 
 export interface Referral {
@@ -968,6 +974,17 @@ export interface Patient {
   preferredLanguage?: PreferredLanguage;
   contactPrefs?: ContactPrefs;
   emergencyContact?: EmergencyContact;
+  /**
+   * §Emergency-contact expansion — the real list. `emergencyContact` above is
+   * kept in sync with the first entry so pre-existing read sites still work.
+   */
+  emergencyContacts?: EmergencyContact[];
+  /**
+   * §Self-service sign-up — PROTOTYPE ONLY. Records that the person chose a
+   * password/PIN at sign-up. The secret itself is never stored and nothing
+   * verifies it; see the honesty note in `src/lib/signup.ts`.
+   */
+  signupCredential?: SignupCredentialMeta;
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
@@ -4960,9 +4977,16 @@ export const AdelanteEHR = {
     lastName: string;
     dob?: string;
     phone?: string;
+    email?: string;
     preferredLanguage?: PreferredLanguage;
     referralId?: string;
     cin?: string;
+    /**
+     * §Self-service sign-up — prototype credential metadata only (no secret).
+     * Absent for every staff-provisioned path (Track A caseload upload,
+     * referral conversion), which is unchanged.
+     */
+    signupCredential?: SignupCredentialMeta;
   }): Patient {
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
@@ -4974,6 +4998,7 @@ export const AdelanteEHR = {
       lastName: input.lastName,
       dob: input.dob ?? "",
       phone: input.phone ?? "",
+      ...(input.email ? { email: input.email } : {}),
       releaseDate: "",
       enrolledAt: now,
       episodeDay: 1,
@@ -4985,6 +5010,7 @@ export const AdelanteEHR = {
       preferredLanguage: input.preferredLanguage,
       referralId: input.referralId,
       cin: input.cin,
+      ...(input.signupCredential ? { signupCredential: input.signupCredential } : {}),
     };
     patients.push(p);
     emit();
@@ -5007,6 +5033,7 @@ export const AdelanteEHR = {
         | "releaseDate"
         | "contactPrefs"
         | "emergencyContact"
+        | "emergencyContacts"
         | "address"
         | "cin"
       >
@@ -5015,6 +5042,17 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     Object.assign(p, patch);
+    // Keep the legacy single field pointing at the primary contact so older
+    // read sites (profile dialog, patient home, chart tab) stay correct.
+    if (patch.emergencyContacts) {
+      const [primary] = patch.emergencyContacts;
+      if (primary) p.emergencyContact = primary;
+      else delete p.emergencyContact;
+    } else if (patch.emergencyContact) {
+      // Legacy single-field writers become the primary of the list.
+      const rest = (p.emergencyContacts ?? []).slice(1);
+      p.emergencyContacts = [patch.emergencyContact, ...rest];
+    }
     emit();
   },
   completeIntake(

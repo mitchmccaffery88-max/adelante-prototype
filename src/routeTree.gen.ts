@@ -56,6 +56,7 @@ import { Route as StartIndexRouteImport } from './routes/start.index'
 import { Route as StartHelpingRouteImport } from './routes/start.helping'
 import { Route as StartOtherHelpRouteImport } from './routes/start.other-help'
 import { Route as StartReconnectRouteImport } from './routes/start.reconnect'
+import { Route as StartSignupRouteImport } from './routes/start.signup'
 import { Route as StartSupportRouteImport } from './routes/start.support'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 
@@ -294,6 +295,11 @@ const StartReconnectRoute = StartReconnectRouteImport.update({
   path: '/reconnect',
   getParentRoute: () => StartRoute,
 } as any)
+const StartSignupRoute = StartSignupRouteImport.update({
+  id: '/signup',
+  path: '/signup',
+  getParentRoute: () => StartRoute,
+} as any)
 const StartSupportRoute = StartSupportRouteImport.update({
   id: '/support',
   path: '/support',
@@ -353,6 +359,7 @@ export interface FileRoutesByFullPath {
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
+  '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -403,6 +410,7 @@ export interface FileRoutesByTo {
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
+  '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -455,6 +463,7 @@ export interface FileRoutesById {
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
+  '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -508,6 +517,7 @@ export interface FileRouteTypes {
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
+    | '/start/signup'
     | '/start/support'
     | '/start/'
     | '/print/patient-records/$patientId'
@@ -558,6 +568,7 @@ export interface FileRouteTypes {
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
+    | '/start/signup'
     | '/start/support'
     | '/start'
     | '/print/patient-records/$patientId'
@@ -609,6 +620,7 @@ export interface FileRouteTypes {
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
+    | '/start/signup'
     | '/start/support'
     | '/start/'
     | '/print/patient-records/$patientId'
@@ -992,6 +1004,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StartReconnectRouteImport
       parentRoute: typeof StartRoute
     }
+    '/start/signup': {
+      id: '/start/signup'
+      path: '/signup'
+      fullPath: '/start/signup'
+      preLoaderRoute: typeof StartSignupRouteImport
+      parentRoute: typeof StartRoute
+    }
     '/start/support': {
       id: '/start/support'
       path: '/support'
@@ -1013,6 +1032,7 @@ interface StartRouteChildren {
   StartHelpingRoute: typeof StartHelpingRoute
   StartOtherHelpRoute: typeof StartOtherHelpRoute
   StartReconnectRoute: typeof StartReconnectRoute
+  StartSignupRoute: typeof StartSignupRoute
   StartSupportRoute: typeof StartSupportRoute
   StartIndexRoute: typeof StartIndexRoute
 }
@@ -1021,6 +1041,7 @@ const StartRouteChildren: StartRouteChildren = {
   StartHelpingRoute: StartHelpingRoute,
   StartOtherHelpRoute: StartOtherHelpRoute,
   StartReconnectRoute: StartReconnectRoute,
+  StartSignupRoute: StartSignupRoute,
   StartSupportRoute: StartSupportRoute,
   StartIndexRoute: StartIndexRoute,
 }

@@ -16,7 +16,13 @@ import {
   type ContactChannel,
   type BestTime,
   type PreferredLanguage,
+  type EmergencyContact,
 } from "@/lib/ehr";
+import {
+  cleanEmergencyContacts,
+  emptyEmergencyContact,
+  readEmergencyContacts,
+} from "@/lib/emergencyContacts";
 import { Input } from "@/components/ui/input";
 import {
   COVERAGE_TYPES,
@@ -56,6 +62,8 @@ import {
   CalendarCheck,
   HelpingHand,
   Building2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
@@ -193,9 +201,8 @@ function IntakePage() {
     phone: "",
     contactChannel: "text" as ContactChannel,
     bestTime: "morning" as BestTime,
-    emergencyName: "",
-    emergencyRelationship: "",
-    emergencyPhone: "",
+    // §Emergency-contact expansion — a list, not one person. First = primary.
+    emergencyContacts: [emptyEmergencyContact()] as EmergencyContact[],
     address: "",
     releaseDate: "",
   });
@@ -212,9 +219,9 @@ function IntakePage() {
       phone: patient.phone || prev.phone,
       contactChannel: patient.contactPrefs?.channel ?? prev.contactChannel,
       bestTime: patient.contactPrefs?.bestTime ?? prev.bestTime,
-      emergencyName: patient.emergencyContact?.name ?? prev.emergencyName,
-      emergencyRelationship: patient.emergencyContact?.relationship ?? prev.emergencyRelationship,
-      emergencyPhone: patient.emergencyContact?.phone ?? prev.emergencyPhone,
+      emergencyContacts: readEmergencyContacts(patient).length
+        ? readEmergencyContacts(patient)
+        : prev.emergencyContacts,
       address: patient.address ?? prev.address,
       releaseDate: patient.releaseDate || prev.releaseDate,
     }));
@@ -338,13 +345,8 @@ function IntakePage() {
       phone: profile.phone || undefined,
       releaseDate: profile.releaseDate || undefined,
       contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
-      emergencyContact: profile.emergencyName
-        ? {
-            name: profile.emergencyName,
-            relationship: profile.emergencyRelationship,
-            phone: profile.emergencyPhone,
-          }
-        : undefined,
+      // Writing the list keeps `emergencyContact` (legacy primary) in sync.
+      emergencyContacts: cleanEmergencyContacts(profile.emergencyContacts),
       address: profile.address || undefined,
     });
     activeScreeners.forEach((s) => {
@@ -633,27 +635,107 @@ function IntakePage() {
               </div>
             </div>
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
-              <div className="text-sm font-medium text-navy">Emergency contact</div>
-              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
-                <Input
-                  placeholder="Name"
-                  value={profile.emergencyName}
-                  onChange={(e) => setProfile({ ...profile, emergencyName: e.target.value })}
-                />
-                <Input
-                  placeholder="Relationship"
-                  value={profile.emergencyRelationship}
-                  onChange={(e) =>
-                    setProfile({ ...profile, emergencyRelationship: e.target.value })
-                  }
-                />
-                <Input
-                  type="tel"
-                  placeholder="Phone"
-                  value={profile.emergencyPhone}
-                  onChange={(e) => setProfile({ ...profile, emergencyPhone: e.target.value })}
-                />
+              <div>
+                <div className="text-sm font-medium text-navy">Emergency contacts</div>
+                <p className="text-xs text-muted-foreground">
+                  List as many people as you want us to be able to reach. The first one is who we
+                  try first.
+                </p>
               </div>
+              {profile.emergencyContacts.map((c, i) => (
+                <div key={i} className="space-y-3 rounded-md border bg-card p-3" data-testid="emergency-contact-row">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                      {i === 0 ? "Primary contact" : `Contact ${i + 1}`}
+                    </span>
+                    {profile.emergencyContacts.length > 1 && (
+                      <Button
+                        type="button"
+                        variant="ghost"
+                        size="sm"
+                        aria-label={`Remove contact ${i + 1}`}
+                        onClick={() =>
+                          setProfile({
+                            ...profile,
+                            emergencyContacts: profile.emergencyContacts.filter(
+                              (_, idx) => idx !== i,
+                            ),
+                          })
+                        }
+                      >
+                        <Trash2 className="h-4 w-4" />
+                      </Button>
+                    )}
+                  </div>
+                  <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                    {(
+                      [
+                        { key: "name", placeholder: "Name", type: "text" },
+                        { key: "relationship", placeholder: "Relationship", type: "text" },
+                        { key: "phone", placeholder: "Phone", type: "tel" },
+                        { key: "email", placeholder: "Email", type: "email" },
+                      ] as const
+                    ).map((f) => (
+                      <Input
+                        key={f.key}
+                        type={f.type}
+                        placeholder={f.placeholder}
+                        aria-label={`${f.placeholder} — contact ${i + 1}`}
+                        value={c[f.key] ?? ""}
+                        onChange={(e) =>
+                          setProfile({
+                            ...profile,
+                            emergencyContacts: profile.emergencyContacts.map((row, idx) =>
+                              idx === i ? { ...row, [f.key]: e.target.value } : row,
+                            ),
+                          })
+                        }
+                      />
+                    ))}
+                    <Input
+                      className="sm:col-span-2"
+                      placeholder="Address"
+                      aria-label={`Address — contact ${i + 1}`}
+                      value={c.address ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          emergencyContacts: profile.emergencyContacts.map((row, idx) =>
+                            idx === i ? { ...row, address: e.target.value } : row,
+                          ),
+                        })
+                      }
+                    />
+                    <Input
+                      className="sm:col-span-3"
+                      placeholder="Notes — best times, what they know, anything we should be careful about"
+                      aria-label={`Notes — contact ${i + 1}`}
+                      value={c.notes ?? ""}
+                      onChange={(e) =>
+                        setProfile({
+                          ...profile,
+                          emergencyContacts: profile.emergencyContacts.map((row, idx) =>
+                            idx === i ? { ...row, notes: e.target.value } : row,
+                          ),
+                        })
+                      }
+                    />
+                  </div>
+                </div>
+              ))}
+              <Button
+                type="button"
+                variant="outline"
+                size="sm"
+                onClick={() =>
+                  setProfile({
+                    ...profile,
+                    emergencyContacts: [...profile.emergencyContacts, emptyEmergencyContact()],
+                  })
+                }
+              >
+                <Plus className="mr-1.5 h-4 w-4" /> Add another contact
+              </Button>
             </div>
           </div>
         )}
