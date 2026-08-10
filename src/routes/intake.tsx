@@ -335,8 +335,14 @@ function IntakePage() {
             : "not_found",
       countyOfRelease: coverage.countyOfRelease,
       jiReentryFlag: coverage.jiReentryFlag,
+      coverageType: coverage.coverageType,
+      justiceInvolvement: coverage.justiceInvolvement,
+      ecmEligible: ecmQuestionApplies(coverage.coverageType) ? coverage.ecmEligible : false,
       otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
+    if (askHeardAbout && heardAbout) {
+      AdelanteEHR.recordFrontDoorEntry(currentId, { heardAbout });
+    }
     AdelanteEHR.completeIntake(currentId, {
       needs,
       hipaa: hipaaConsent,
