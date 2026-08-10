@@ -52,88 +52,64 @@ export const Route = createFileRoute("/intake")({
   component: IntakePage,
 });
 
+/**
+ * Coverage messaging. All wording now comes from `coverageMessage`, which keys
+ * the reentry safety-net promise off justice involvement rather than coverage
+ * type — the old "other coverage" branch told private-pay patients with no
+ * justice history that their sessions were free, which was not true.
+ */
 function CoverageCallout({
-  status,
+  coverageType,
+  justiceInvolvement,
   county,
   otherPlanName,
   onOtherPlanChange,
 }: {
-  status: CoverageStatus;
+  coverageType: CoverageType;
+  justiceInvolvement: TriState;
   county: string;
   otherPlanName: string;
   onOtherPlanChange: (v: string) => void;
 }) {
-  if (status === "active") {
-    return (
-      <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">You're all set.</div>
-            <p className="text-muted-foreground mt-1">
-              Your visits are free. We'll verify your Medi-Cal ID with
-              {county ? ` ${county} County` : " the county"} — no action needed from you.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (status === "suspended") {
-    return (
-      <div className="rounded-lg border-2 border-gold/50 bg-gold/10 p-4">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-navy mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">Your Medi-Cal turns back on automatically.</div>
-            <p className="text-foreground/80 mt-1">
-              Under CalAIM, your benefits reactivate when you come home — you don't need to reapply.
-              A case manager will confirm with
-              {county ? ` ${county} County` : " your county"} within 5 business days.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (status === "none_unsure") {
-    return (
-      <div className="rounded-lg border-2 border-navy/30 bg-navy/5 p-4">
-        <div className="flex items-start gap-3">
-          <HelpingHand className="h-5 w-5 text-navy mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">We'll help you apply.</div>
-            <p className="text-muted-foreground mt-1">
-              A case manager will start a BenefitsCal application with you. Most reentry adults
-              qualify, and coverage is usually active within 10 days. Your visits stay free in the
-              meantime.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // "other"
+  const msg = coverageMessage({ coverageType, justiceInvolvement, county });
+  const Icon = msg.tone === "good" ? CheckCircle2 : msg.tone === "info" ? Building2 : HelpingHand;
+  const shell =
+    msg.tone === "good"
+      ? "border-2 border-teal/40 bg-teal/5"
+      : msg.tone === "action"
+        ? "border-2 border-navy/30 bg-navy/5"
+        : "border bg-secondary/40";
+
   return (
-    <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
+    <div className={`rounded-lg p-4 space-y-3 ${shell}`} data-testid="coverage-callout">
       <div className="flex items-start gap-3">
-        <Building2 className="h-5 w-5 text-navy mt-0.5 shrink-0" />
+        <Icon className="h-5 w-5 text-navy mt-0.5 shrink-0" />
         <div className="text-sm">
-          <div className="font-medium text-navy">We'll bill your plan.</div>
-          <p className="text-muted-foreground mt-1">
-            If your plan doesn't cover the visit, your sessions stay free through our reentry
-            program — you will not get a bill.
-          </p>
+          <div className="font-medium text-navy">{msg.title}</div>
+          <p className="text-muted-foreground mt-1">{msg.body}</p>
+          {msg.billingNote && (
+            <p className="mt-2 text-foreground/80" data-testid="billing-note">
+              {msg.billingNote}
+            </p>
+          )}
+          {msg.reentrySafetyNet && (
+            <p className="mt-2 flex items-start gap-2 text-foreground/80" data-testid="reentry-note">
+              <Sparkles className="h-4 w-4 shrink-0 text-navy mt-0.5" />
+              <span>{msg.reentrySafetyNet}</span>
+            </p>
+          )}
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
-        <Input
-          value={otherPlanName}
-          onChange={(e) => onOtherPlanChange(e.target.value)}
-          placeholder="e.g. Kaiser, Anthem Blue Cross"
-        />
-      </div>
+      {(coverageType === "private" || coverageType === "medicare") && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
+          <Input
+            value={otherPlanName}
+            onChange={(e) => onOtherPlanChange(e.target.value)}
+            placeholder="e.g. Kaiser, Anthem Blue Cross"
+          />
+        </div>
+      )}
     </div>
   );
 }
