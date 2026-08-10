@@ -534,18 +534,6 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     medical_assistant: "read",
     community_health_worker: "read",
   },
-  _unused_group_sessions_placeholder: {
-    therapist: "write",
-    pmhnp: "write",
-    ecm_provider: "write",
-    clinical_coordinator: "write",
-    sys_admin: "write",
-    peer_specialist: "read",
-    billing: "read",
-    billing_coordinator: "read",
-    sud_counselor: "write",
-    clinical_trainee: "read",
-  },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
   // every group note flows through canAccess() like any other note.
