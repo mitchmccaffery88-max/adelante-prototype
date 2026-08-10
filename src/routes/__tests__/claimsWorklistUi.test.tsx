@@ -2,8 +2,8 @@
 // §Claims Worklist follow-up — real interaction coverage for the two things
 // Group C left unproven: the Radix segmented filter actually toggling on click,
 // and column sorting cycling asc -> desc.
-import { describe, it, expect } from "vitest";
-import { render, screen, fireEvent } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, fireEvent, cleanup } from "@testing-library/react";
 import { useState } from "react";
 import { SegmentedFilter, sortClaimRows, nextSort } from "@/routes/admin-claims";
 
@@ -28,6 +28,8 @@ function Harness() {
     </div>
   );
 }
+
+afterEach(cleanup);
 
 describe("Radix segmented filter", () => {
   it("changes selection on click and reflects pressed state", () => {
