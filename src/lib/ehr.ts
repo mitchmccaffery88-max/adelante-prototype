@@ -7215,6 +7215,13 @@ export const AdelanteEHR = {
   redeemEnrollmentCode(input: {
     code: string;
     credential: SignupCredentialMeta;
+    /**
+     * §Front-door Phase 3. Tier 1: unverified helper name, recorded only.
+     * Tier 2: the authenticated staff operator doing the claim on the
+     * person's behalf — THEIR id is what lands in `consumedBy`, because they
+     * are who actually consumed the single-use code.
+     */
+    assistedBy?: HelperAttribution;
     at?: Date;
   }): { patient: Patient; enrollmentCode: EnrollmentCode } {
     const at = input.at ?? new Date();
@@ -7224,19 +7231,26 @@ export const AdelanteEHR = {
     const patient = patients.find((p) => p.id === rec.patientId);
     if (!patient) throw new Error("The record this code belongs to is no longer available.");
     rec.consumedAt = at.toISOString();
-    rec.consumedBy = patient.id;
+    const operatorId =
+      input.assistedBy?.tier === 2 ? input.assistedBy.operatorStaffId : undefined;
+    rec.consumedBy = operatorId ?? patient.id;
     patient.signupCredential = input.credential;
+    if (input.assistedBy) patient.signupAssistedBy = input.assistedBy;
     appendAudit({
       category: "clinical",
-      action: "enrollment_code_redeemed",
+      action: operatorId ? "enrollment_code_redeemed_assisted" : "enrollment_code_redeemed",
       patientId: patient.id,
-      actorId: patient.id,
-      actorRole: "patient",
+      actorId: operatorId ?? patient.id,
+      actorRole: operatorId ? (input.assistedBy?.operatorRole ?? "staff") : "patient",
       detail: {
         episodeId: rec.episodeId,
         carePlanId: rec.carePlanId,
         // The code is an identity token — audit the event, never the value.
         credentialKind: input.credential.kind,
+        // Always present: the person the claim was FOR, even when a staff
+        // operator is the one recorded in `consumedBy`.
+        claimedForPatientId: patient.id,
+        ...helperAuditDetail(input.assistedBy),
       },
     });
     emit();
