@@ -1,24 +1,24 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 
-function newPatient(name: string) {
-  const p = AdelanteEHR.createPatient({ name });
+function newPatient(lastName: string) {
+  const p = AdelanteEHR.createPatient({ firstName: "Test", lastName });
   return p.id;
 }
 
 describe("front-door entry storage", () => {
   it("flags 'not sure' about an existing record for the Phase 2 lookup", () => {
-    const id = newPatient("Unsure Person");
+    const id = newPatient("Unsure");
     AdelanteEHR.recordFrontDoorEntry(id, { existingCare: "unsure" });
     expect(AdelanteEHR.getFrontDoorEntry(id)?.recordLookupPending).toBe(true);
 
-    const id2 = newPatient("Definite Person");
+    const id2 = newPatient("Definite");
     AdelanteEHR.recordFrontDoorEntry(id2, { existingCare: "no" });
     expect(AdelanteEHR.getFrontDoorEntry(id2)?.recordLookupPending).toBe(false);
   });
 
   it("stores coverage type and justice involvement as independent fields", () => {
-    const id = newPatient("Medicare Justice Person");
+    const id = newPatient("MedicareJustice");
     AdelanteEHR.setCoverage(id, {
       status: "none_unsure",
       verified: "not_found",
@@ -32,7 +32,7 @@ describe("front-door entry storage", () => {
   });
 
   it("keeps a private-pay, never-justice-involved combination intact", () => {
-    const id = newPatient("Private Pay Person");
+    const id = newPatient("PrivatePay");
     AdelanteEHR.setCoverage(id, {
       status: "other",
       verified: "not_found",
