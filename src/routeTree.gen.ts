@@ -24,6 +24,7 @@ import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-schedul
 import { Route as AdminSupervisionRouteImport } from './routes/admin-supervision'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AdvocateRouteImport } from './routes/advocate'
+import { Route as AssistedSignupRouteImport } from './routes/assisted-signup'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
@@ -133,6 +134,11 @@ const AdminVendorsRoute = AdminVendorsRouteImport.update({
 const AdvocateRoute = AdvocateRouteImport.update({
   id: '/advocate',
   path: '/advocate',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AssistedSignupRoute = AssistedSignupRouteImport.update({
+  id: '/assisted-signup',
+  path: '/assisted-signup',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -328,6 +334,7 @@ export interface FileRoutesByFullPath {
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
+  '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -380,6 +387,7 @@ export interface FileRoutesByTo {
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
+  '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -432,6 +440,7 @@ export interface FileRoutesById {
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
+  '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
@@ -486,6 +495,7 @@ export interface FileRouteTypes {
     | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
+    | '/assisted-signup'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -538,6 +548,7 @@ export interface FileRouteTypes {
     | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
+    | '/assisted-signup'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -589,6 +600,7 @@ export interface FileRouteTypes {
     | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
+    | '/assisted-signup'
     | '/auth'
     | '/billing'
     | '/case-manager'
@@ -642,6 +654,7 @@ export interface RootRouteChildren {
   AdminSupervisionRoute: typeof AdminSupervisionRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdvocateRoute: typeof AdvocateRoute
+  AssistedSignupRoute: typeof AssistedSignupRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   CaseManagerRoute: typeof CaseManagerRoute
@@ -778,6 +791,13 @@ declare module '@tanstack/react-router' {
       path: '/advocate'
       fullPath: '/advocate'
       preLoaderRoute: typeof AdvocateRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/assisted-signup': {
+      id: '/assisted-signup'
+      path: '/assisted-signup'
+      fullPath: '/assisted-signup'
+      preLoaderRoute: typeof AssistedSignupRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -1064,6 +1084,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSupervisionRoute: AdminSupervisionRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdvocateRoute: AdvocateRoute,
+  AssistedSignupRoute: AssistedSignupRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   CaseManagerRoute: CaseManagerRoute,

@@ -129,6 +129,17 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["case_notes", "peer_notes"] },
   },
   {
+    // §Front-door Phase 3 — Tier 2. Nav-registered like every other staff
+    // tool so it's discoverable rather than a hidden URL.
+    id: "assisted-signup",
+    label: "Assisted sign-up",
+    desc: "Enroll or claim a code for someone",
+    icon: UserPlus,
+    to: "/assisted-signup",
+    group: "care",
+    gate: { kind: "record_class", anyOf: ["assisted_signup"], minLevel: "write" },
+  },
+  {
     id: "clinician",
     label: "Clinician",
     desc: "Caseload & sessions",
