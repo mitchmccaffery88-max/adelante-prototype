@@ -532,6 +532,15 @@ function NewPatientForm({
           One of the two is enough — whichever is easier for us to reach you on.
         </p>
 
+        {!operator && (
+          <HelperField
+            value={draft.helperName ?? ""}
+            onChange={(v) => set("helperName", v)}
+            idPrefix="su"
+          />
+        )}
+        {operator && <OperatorBanner operator={operator} />}
+
         <div className="space-y-1.5">
           <Label>Language</Label>
           <Select
