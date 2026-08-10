@@ -973,6 +973,17 @@ export interface Patient {
   preferredLanguage?: PreferredLanguage;
   contactPrefs?: ContactPrefs;
   emergencyContact?: EmergencyContact;
+  /**
+   * §Emergency-contact expansion — the real list. `emergencyContact` above is
+   * kept in sync with the first entry so pre-existing read sites still work.
+   */
+  emergencyContacts?: EmergencyContact[];
+  /**
+   * §Self-service sign-up — PROTOTYPE ONLY. Records that the person chose a
+   * password/PIN at sign-up. The secret itself is never stored and nothing
+   * verifies it; see the honesty note in `src/lib/signup.ts`.
+   */
+  signupCredential?: SignupCredentialMeta;
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
