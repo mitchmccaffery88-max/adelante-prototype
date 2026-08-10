@@ -253,34 +253,28 @@ function ClaimsPage() {
       </header>
 
       <Card className="flex flex-wrap items-center gap-6 p-3">
-        <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Service line</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={service === "all"} onClick={() => setService("all")} testId="filter-service-all">
-              All
-            </FilterChip>
-            <FilterChip active={service === "peer"} onClick={() => setService("peer")} testId="filter-service-peer">
-              Peer · H0038 / H0025
-            </FilterChip>
-            <FilterChip active={service === "chw"} onClick={() => setService("chw")} testId="filter-service-chw">
-              CHW · G0019 / G0022
-            </FilterChip>
-          </div>
-        </div>
-        <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Outcome</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={outcome === "all"} onClick={() => setOutcome("all")} testId="filter-outcome-all">
-              All claims
-            </FilterChip>
-            <FilterChip active={outcome === "submitted"} onClick={() => setOutcome("submitted")} testId="filter-outcome-submitted">
-              Submitted
-            </FilterChip>
-            <FilterChip active={outcome === "blocked"} onClick={() => setOutcome("blocked")} testId="filter-outcome-blocked">
-              Blocked attempts ({visibleBlocked.length})
-            </FilterChip>
-          </div>
-        </div>
+        <SegmentedFilter<ServiceFilter>
+          label="Service line"
+          idPrefix="filter-service"
+          value={service}
+          onChange={setService}
+          options={[
+            { value: "all", label: "All" },
+            { value: "peer", label: "Peer · H0038 / H0025" },
+            { value: "chw", label: "CHW · G0019 / G0022" },
+          ]}
+        />
+        <SegmentedFilter<OutcomeFilter>
+          label="Outcome"
+          idPrefix="filter-outcome"
+          value={outcome}
+          onChange={setOutcome}
+          options={[
+            { value: "all", label: "All claims" },
+            { value: "submitted", label: "Submitted" },
+            { value: "blocked", label: `Blocked attempts (${visibleBlocked.length})` },
+          ]}
+        />
       </Card>
 
       {showBlocked ? (
