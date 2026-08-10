@@ -904,6 +904,11 @@ export interface Patient {
   cin?: string;
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
+  /**
+   * Front-door entry sequence (Phase 1) — how this person arrived, captured
+   * before intake begins. See `src/lib/frontDoor.ts`.
+   */
+  frontDoor?: FrontDoorEntry;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
   // §Messaging Phase 2 — one ongoing care-team thread per patient.
