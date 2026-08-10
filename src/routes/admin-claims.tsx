@@ -68,25 +68,100 @@ type OutcomeFilter = "all" | "submitted" | "blocked";
 /** Claim states that mean the charge actually went out the door. */
 const SUBMITTED_STATES: ClaimState[] = ["submitted", "paid", "denied", "partial"];
 
-/** Small segmented-control button; plain <button> so it stays trivially clickable. */
-function FilterChip({
-  active, onClick, testId, children,
-}: { active: boolean; onClick: () => void; testId: string; children: React.ReactNode }) {
+/**
+ * Segmented control on a real Radix `ToggleGroup`.
+ *
+ * §Group C follow-up — Group C had substituted plain buttons after clicks
+ * appeared to do nothing. Root cause was the harness, not Radix: the toggle
+ * group is `type="single"`, which emits `""` when you click the ALREADY
+ * selected item (deselect), and Playwright's default `.click()` lands on the
+ * item that is already on. Guarding the empty value here (a required part of
+ * a single-select segmented control) makes the control behave; the earlier
+ * "unclickable" reading was a mis-diagnosis.
+ */
+function SegmentedFilter<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  idPrefix,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: React.ReactNode }[];
+  idPrefix: string;
+}) {
   return (
-    <button
-      type="button"
-      data-testid={testId}
-      data-active={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-xs transition-colors",
-        active
-          ? "border-transparent bg-primary text-primary-foreground"
-          : "border-border bg-background text-muted-foreground hover:text-foreground",
-      )}
+    <div className="space-y-1">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <ToggleGroup
+        type="single"
+        value={value}
+        // Single-select semantics: ignore the deselect event so one option is
+        // always active. Without this the control looks "dead" on re-click.
+        onValueChange={(v) => {
+          if (v) onChange(v as T);
+        }}
+        className="flex-wrap justify-start gap-1.5"
+      >
+        {options.map((o) => (
+          <ToggleGroupItem
+            key={o.value}
+            value={o.value}
+            size="sm"
+            data-testid={`${idPrefix}-${o.value}`}
+            data-active={value === o.value}
+            className={cn(
+              "h-auto rounded-full border border-border px-3 py-1 text-xs text-muted-foreground",
+              "data-[state=on]:border-transparent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+            )}
+          >
+            {o.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </div>
+  );
+}
+
+// §Group C follow-up — column sorting. Sort keys map to the columns the
+// worklist already renders; comparators pull the same display value the cell
+// shows so what you sort is what you see.
+type SortKey = "patient" | "code" | "clinician" | "state" | "charge";
+type SortDir = "asc" | "desc";
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: SortDir } | null;
+  onSort: (k: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort?.key === sortKey;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      className={cn("h-8 px-2 text-xs", className)}
+      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
     >
-      {children}
-    </button>
+      <button
+        type="button"
+        data-testid={`sort-${sortKey}`}
+        data-sort={active ? sort.dir : "none"}
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        <Icon className="h-3 w-3" aria-hidden />
+      </button>
+    </TableHead>
   );
 }
 
