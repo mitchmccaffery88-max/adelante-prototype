@@ -1,4 +1,4 @@
-import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -18,11 +18,14 @@ import { useI18n } from "@/lib/i18n";
 import {
   CREDENTIAL_PROTOTYPE_NOTICE,
   credentialMeta,
+  normalizeEnrollmentCode,
+  redemptionMessage,
   validateSignup,
+  type RedemptionMessage,
   type SignupErrors,
   type SignupInput,
 } from "@/lib/signup";
-import { ArrowRight, Info, ShieldCheck } from "lucide-react";
+import { ArrowRight, Info, Phone, ShieldCheck, Ticket } from "lucide-react";
 
 export const Route = createFileRoute("/start/signup")({
   head: () => ({
