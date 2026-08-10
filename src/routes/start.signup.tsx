@@ -21,6 +21,7 @@ import {
   normalizeEnrollmentCode,
   redemptionMessage,
   validateSignup,
+  validateCredentialOnly,
   type RedemptionMessage,
   type SignupErrors,
   type SignupInput,
