@@ -147,7 +147,23 @@ function IntakePage() {
     countyOfRelease: string;
     jiReentryFlag: boolean;
     otherPlanName?: string;
-  }>({ status: "active", countyOfRelease: "Tulare", jiReentryFlag: false, otherPlanName: "" });
+    /** Payer bucket — independent of justice involvement. */
+    coverageType: CoverageType;
+    /** Justice-involvement history — independent of the payer. */
+    justiceInvolvement: TriState;
+    /** CalAIM ECM follow-up; only asked under Medi-Cal / dual. */
+    ecmEligible: boolean;
+  }>({
+    status: "active",
+    countyOfRelease: "Tulare",
+    jiReentryFlag: false,
+    otherPlanName: "",
+    coverageType: "medi_cal",
+    justiceInvolvement: "no",
+    ecmEligible: false,
+  });
+  // Phase 1c — optional, general-population path only.
+  const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // P1 — About you
   const [profile, setProfile] = useState({
     preferredName: "",
