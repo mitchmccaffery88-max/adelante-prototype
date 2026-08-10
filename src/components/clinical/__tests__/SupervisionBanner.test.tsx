@@ -1,3 +1,5 @@
+// @vitest-environment jsdom
+//
 // §Quality pass Group A — the banner is a LIVE read, not a login snapshot.
 import { describe, it, expect, afterEach } from "vitest";
 import { render, screen, cleanup, act } from "@testing-library/react";
