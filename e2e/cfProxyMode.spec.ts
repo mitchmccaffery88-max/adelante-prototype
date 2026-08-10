@@ -15,8 +15,13 @@ const PROXY_CF = "Darnell Pope"; // accessMode: "proxy"
  * trip their pointer-capture path in headless Chromium.
  */
 async function pickOption(page: Page, comboIndex: number, label: RegExp) {
-  await page.getByRole("combobox").nth(comboIndex).press("Enter");
-  await page.getByRole("option", { name: label }).first().click();
+  const combo = page.getByRole("combobox").nth(comboIndex);
+  const option = page.getByRole("option", { name: label }).first();
+  await expect(async () => {
+    await combo.press("Enter");
+    await expect(option).toBeVisible({ timeout: 2000 });
+  }).toPass({ timeout: 15000 });
+  await option.click();
 }
 
 
