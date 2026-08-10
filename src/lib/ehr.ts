@@ -35,6 +35,8 @@ import {
   scanUpload,
   verifyQueueOwnerRole,
   advocateDocumentVisibility,
+  documentDownloadDecision,
+  documentDownloadPayload,
   type UploadCandidate,
   type DocumentUploaderKind,
   type DocumentVerificationStatus,
@@ -2077,7 +2079,15 @@ export type ApptNotificationKind =
   | "cancelled"
   | "confirmed"
   /** Pre-visit reminder for any upcoming contact (1:1 appointment or group occurrence). */
-  | "reminder";
+  | "reminder"
+  /**
+   * §Group E item 1 — a document the patient sent was reviewed and added to
+   * their record. Rides the SAME notification path as every scheduled-contact
+   * notice (profile in-app real; sms/email simulated), with the synthetic ref
+   * `document:<id>` in place of an appointment id — the same trick the group
+   * reminder sweep already uses.
+   */
+  | "document_verified";
 export type CommsChannel = "profile" | "sms" | "email";
 export type NotificationState = "queued" | "sent" | "delivered" | "failed";
 export interface ApptNotification {
@@ -3304,6 +3314,14 @@ export interface AdvocateLink {
    */
   selfPatientId?: string;
   selfPatientStartedAt?: string;
+  /**
+   * §Group E item 1 — in-app notices addressed to THIS advocate. Same
+   * `ApptNotification` shape and same channel/state vocabulary as the
+   * patient's own feed, deliberately: there is one notification model in this
+   * build, not an advocate-flavoured second one. `profile` is a real in-app
+   * delivery; `sms` is the same SIMULATED transport used everywhere else.
+   */
+  notifications?: ApptNotification[];
   /** Set when the advocate declines the "support for yourself too?" prompt. */
   selfCareOfferDeclinedAt?: string;
 }
@@ -3535,6 +3553,74 @@ function _advocatePart2Gates(link: AdvocateLink): {
 
 function _patient(id: string): Patient | undefined {
   return patients.find((x) => x.id === id);
+}
+
+/**
+ * §Group E item 1 — who gets told a document was promoted into the record.
+ *
+ * The patient always. An advocate ONLY if they would be allowed to see that
+ * document RIGHT NOW, decided by the Phase 4 / Group D gates and nothing else:
+ *   • `_advocateGate(..., "document_view")` — link claimed, live, permission
+ *     held; and
+ *   • for a Part 2 document, `advocateDocumentVisibility` fed by
+ *     `_advocatePart2Gates` — the same call the list and the download make.
+ * A notification is a disclosure ("this person has a new document"), so it
+ * cannot be looser than the read it announces.
+ */
+function _advocatesNotifiableForDocument(doc: PatientDocument): AdvocateLink[] {
+  return advocateLinks.filter((link) => {
+    if (link.patientId !== doc.patientId) return false;
+    const decision = AdelanteEHR.advocateAccess(link.id);
+    if (!decision.allowed || !decision.permissions.includes("document_view")) return false;
+    const vis = advocateDocumentVisibility({
+      isPart2: doc.isPart2,
+      part2Unmasked: _advocatePart2Gates(link).unmasked,
+    });
+    return !vis.restricted;
+  });
+}
+
+/** One notice, both audiences, over the existing transport. */
+function _notifyDocumentVerified(doc: PatientDocument): void {
+  const ref = `document:${doc.id}`;
+  // Patient — the existing fan-out (profile real, sms/email simulated,
+  // `isSmsOn` respected inside it). No second SMS path is created here.
+  AdelanteEHR.notifyAppointmentChange({
+    patientId: doc.patientId,
+    apptId: ref,
+    kind: "document_verified",
+  });
+  const now = new Date().toISOString();
+  for (const link of _advocatesNotifiableForDocument(doc)) {
+    const entries: ApptNotification[] = [
+      {
+        id: uid(),
+        apptId: ref,
+        kind: "document_verified",
+        at: now,
+        channel: "profile",
+        state: "delivered",
+        sentAt: now,
+        deliveredAt: now,
+      },
+    ];
+    if (link.invitationChannel === "sms")
+      // Simulated exactly like the patient's SMS: queued, never actually sent.
+      entries.push({
+        id: uid(),
+        apptId: ref,
+        kind: "document_verified",
+        at: now,
+        channel: "sms",
+        state: "queued",
+      });
+    link.notifications = [...entries, ...(link.notifications ?? [])].slice(0, 40);
+    _advocateAudit(link, "advocate_document_verified_notified", "documents", {
+      documentId: doc.id,
+      isPart2: doc.isPart2,
+      channels: entries.map((e) => e.channel),
+    });
+  }
 }
 
 /** Uniform advocate audit row — every advocate touch lands in one shape. */
@@ -8673,6 +8759,100 @@ export const AdelanteEHR = {
     return _documentUploaderLabel(doc.uploader);
   },
 
+  /**
+   * §Group E item 2 — THE download/view action. There is exactly one of these:
+   * patient, staff and advocate viewers all come through here, and the Part 2
+   * decision is `documentDownloadDecision`, which is a thin wrapper over
+   * `advocateDocumentVisibility` — the same function the restricted RENDERING
+   * case calls. No second authorization path exists for downloads, so the two
+   * cannot drift: an advocate who sees "Protected document" in the list gets
+   * refused here for the same reason, from the same call.
+   */
+  requestDocumentDownload(input: {
+    documentId: string;
+    viewer:
+      | { kind: "patient" | "staff"; name: string; role?: StaffRole }
+      | { kind: "advocate"; linkId: string };
+  }):
+    | { ok: true; fileName: string; mimeType: string; text: string }
+    | { ok: false; reason: string; restricted: boolean } {
+    const doc = patientDocuments.find((d) => d.id === input.documentId);
+    if (!doc)
+      return { ok: false, reason: "That document no longer exists.", restricted: false };
+
+    let part2Unmasked = true;
+    let link: AdvocateLink | undefined;
+    if (input.viewer.kind === "advocate") {
+      const gate = _advocateGate(input.viewer.linkId, "document_view", "documents");
+      if (!gate.ok) return { ok: false, reason: gate.reason, restricted: true };
+      link = gate.link;
+      if (link.patientId !== doc.patientId)
+        return { ok: false, reason: "No advocate connection.", restricted: true };
+      part2Unmasked = _advocatePart2Gates(link).unmasked;
+    }
+
+    const decision = documentDownloadDecision({
+      isPart2: doc.isPart2,
+      part2Unmasked,
+      verification: doc.verification,
+    });
+    if (!decision.allowed) {
+      if (link)
+        _advocateAudit(link, "advocate_document_download_denied", "documents", {
+          documentId: doc.id,
+          restricted: decision.restricted,
+        });
+      else
+        appendAudit({
+          category: "clinical",
+          action: "document_download_denied",
+          patientId: doc.patientId,
+          actorRole: input.viewer.kind === "staff" ? input.viewer.role : "patient",
+          actorId: input.viewer.kind === "advocate" ? undefined : input.viewer.name,
+          detail: { documentId: doc.id, reason: decision.reason },
+        });
+      emit();
+      return { ok: false, reason: decision.reason, restricted: decision.restricted };
+    }
+
+    const payload = documentDownloadPayload({
+      id: doc.id,
+      fileName: doc.fileName,
+      mimeType: doc.mimeType,
+      sizeBytes: doc.sizeBytes,
+      ...(doc.docType ? { docType: doc.docType } : {}),
+      uploadedAt: doc.uploadedAt,
+      uploaderLabel: _documentUploaderLabel(doc.uploader),
+      isPart2: doc.isPart2,
+      ...(doc.promotedBy ? { promotedBy: doc.promotedBy } : {}),
+      ...(doc.promotedAt ? { promotedAt: doc.promotedAt } : {}),
+    });
+    if (link)
+      _advocateAudit(link, "advocate_document_downloaded", "documents", {
+        documentId: doc.id,
+        isPart2: doc.isPart2,
+      });
+    else
+      appendAudit({
+        category: "clinical",
+        action: "document_downloaded",
+        patientId: doc.patientId,
+        actorRole: input.viewer.kind === "staff" ? input.viewer.role : "patient",
+        actorId: input.viewer.kind === "advocate" ? undefined : input.viewer.name,
+        detail: { documentId: doc.id, fileName: doc.fileName, isPart2: doc.isPart2 },
+      });
+    emit();
+    return { ok: true, ...payload };
+  },
+
+  /** §Group E item 1 — this advocate's own in-app notices, newest first. */
+  advocateDocumentNotifications(linkId: string): ApptNotification[] {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return [];
+    if (!AdelanteEHR.advocateAccess(linkId).allowed) return [];
+    return [...(link.notifications ?? [])];
+  },
+
   documentOwnerRole(patientId: string): "cf_care_manager" | "ecm_provider" {
     return _documentOwnerRole(patientId);
   },
@@ -8805,6 +8985,10 @@ export const AdelanteEHR = {
         promotedAt: doc.promotedAt,
       },
     });
+    // §Group E item 1 — tell the patient, and any advocate whose EXISTING
+    // access already covers this document. Raised inside the promotion method
+    // so no future caller can promote silently.
+    _notifyDocumentVerified(doc);
     emit();
     return { ok: true, reason: "Added to the chart." };
   },

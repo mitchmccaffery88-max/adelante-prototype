@@ -385,6 +385,17 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["consent_ledger"] },
   },
   {
+    // §Quality pass Group E — document lifecycle trail. Gated on the
+    // `documents` class the pages themselves use, so RBAC stays a matrix edit.
+    id: "admin-documents-audit",
+    label: "Documents audit",
+    desc: "Uploads, Part 2 calls, blocks & promotions",
+    icon: FileSearch,
+    to: "/admin-documents-audit",
+    group: "administration",
+    gate: { kind: "record_class", anyOf: ["documents"] },
+  },
+  {
     id: "admin-credentialing",
     label: "Credentialing",
     desc: "Licenses, DEA & enrollments",
