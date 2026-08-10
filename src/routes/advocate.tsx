@@ -226,7 +226,7 @@ function AdvocateScheduleView({
           </div>
         </Card>
       ) : (
-        <Card className="p-5">
+        <Card className="p-5" data-testid="advocate-upcoming">
           <h2 className="flex items-center gap-2 font-display text-lg text-navy">
             <CalendarClock className="h-5 w-5 text-teal" /> Upcoming
           </h2>

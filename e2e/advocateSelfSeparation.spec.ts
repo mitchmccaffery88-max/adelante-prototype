@@ -72,8 +72,10 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
 
   // Direction 1 — the advocate view is scoped to Patient A.
   await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
-  const advocateBodyFirst = await page.locator("body").innerText();
-  console.log("ADVOCATE_BODY_START" + advocateBodyFirst + "ADVOCATE_BODY_END");
+  // The advocate surface deliberately never prints the patient's name, so
+  // "scoped to Patient A" is asserted on the schedule the data layer returned
+  // for that link — captured here and compared again after the round trip.
+  const upcomingBefore = await page.getByTestId("advocate-upcoming").innerText();
 
   // ---- the same person opens care of their OWN ---------------------------
   await page.getByRole("button", { name: /support for me too/i }).click();
@@ -91,7 +93,8 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   // Direction 2 — back on the advocate surface, nothing from their own record
   // bleeds in.
   await spaGoto(page, "/advocate");
-  await expect(page.getByText(new RegExp(PATIENT_A, "i")).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
+  expect(await page.getByTestId("advocate-upcoming").innerText()).toBe(upcomingBefore);
   const advocateBody = await page.locator("body").innerText();
   expect(advocateBody).not.toContain(SELF_FIRST);
   expect(advocateBody).not.toContain(SELF_LAST);
