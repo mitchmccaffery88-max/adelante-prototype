@@ -79,7 +79,7 @@ const SUBMITTED_STATES: ClaimState[] = ["submitted", "paid", "denied", "partial"
  * a single-select segmented control) makes the control behave; the earlier
  * "unclickable" reading was a mis-diagnosis.
  */
-function SegmentedFilter<T extends string>({
+export function SegmentedFilter<T extends string>({
   label,
   value,
   onChange,
