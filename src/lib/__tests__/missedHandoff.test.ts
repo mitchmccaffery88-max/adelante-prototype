@@ -82,7 +82,7 @@ describe("catch-up task list reuses the CF Care Manager pre-release functions", 
     expect(ep.missedHandoff).toBe(true);
     expect(AdelanteEHR.preReleaseChecklist(ep.id).length).toBeGreaterThan(3);
 
-    const tasks = AdelanteEHR.listCaseTasks?.(id) ?? [];
+    const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === id);
     expect(tasks.some((t) => t.taskType === "missed_handoff_catch_up")).toBe(true);
     expect(tasks.some((t) => /Medi-Cal reactivation check/i.test(t.title))).toBe(true);
 
