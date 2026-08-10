@@ -424,7 +424,10 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
 
         <div className="mt-7 flex flex-wrap gap-3">
           <Button asChild size="lg" className="bg-navy text-navy-foreground hover:bg-navy/90">
-            <Link to="/intake">
+            {/* First-time entry goes through the front-door sequence, which
+                routes to /intake (or an alternate flow) after three questions.
+                The rescreen task below still deep-links to /intake directly. */}
+            <Link to="/start">
               <ClipboardList className="mr-2 h-4 w-4" />
               {t("homeStartIntake")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
