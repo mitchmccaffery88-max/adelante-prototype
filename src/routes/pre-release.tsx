@@ -397,7 +397,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
   );
 }
 
-type Attribution = NonNullable<ReturnType<typeof resolveCfAttribution>["attribution"]>;
+type Attribution = NonNullable<ReturnType<typeof resolveEpisodeEntry>["attribution"]>;
 
 function FormDialog({
   episode,
