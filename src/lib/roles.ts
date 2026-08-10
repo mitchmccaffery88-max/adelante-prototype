@@ -97,6 +97,9 @@ export type RecordClass =
   // getting a parallel permission system of its own.
   | "staff_supervision";
 
+// §Front-door Phase 3 (Tier 2) — see ASSISTED_SIGNUP note below the matrix.
+export type AssistedSignupClass = "assisted_signup";
+
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
 // Matrix mirrors §4b. `consent_gated` = read/write allowed only when the
