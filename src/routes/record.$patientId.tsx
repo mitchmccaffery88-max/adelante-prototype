@@ -12,6 +12,7 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
+import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import {
   GROUP_LABELS,
   useRecordSections,
@@ -184,6 +185,8 @@ function ChartBody({
           <div className="sticky top-6">{nav}</div>
         </aside>
         <main className="min-w-0 flex-1">
+          {/* §Quality pass Group A — live supervision status for supervised roles. */}
+          <SupervisionBanner />
           <div className="mb-3 flex items-center gap-2">
             {active?.icon && <active.icon className="h-4 w-4 text-teal" />}
             <h2 className="font-display text-lg text-navy">{active?.label}</h2>
