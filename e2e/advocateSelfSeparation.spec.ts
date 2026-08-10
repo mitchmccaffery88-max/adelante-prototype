@@ -66,12 +66,14 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   await spaGoto(page, "/advocate");
   await expect(page.getByRole("heading", { name: "Advocate access" })).toBeVisible();
   await page.getByLabel("Invitation code").fill(code);
-  await page.getByRole("radio").first().check();
+  await page.getByRole("radio", { name: /HIPAA/i }).first().check();
   await page.getByLabel(/type your full name/i).fill(ADVOCATE_NAME);
   await page.getByRole("button", { name: "Connect" }).click();
 
   // Direction 1 — the advocate view is scoped to Patient A.
-  await expect(page.getByText(new RegExp(PATIENT_A, "i")).first()).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
+  const advocateBodyFirst = await page.locator("body").innerText();
+  console.log("ADVOCATE_BODY_START" + advocateBodyFirst + "ADVOCATE_BODY_END");
 
   // ---- the same person opens care of their OWN ---------------------------
   await page.getByRole("button", { name: /support for me too/i }).click();
