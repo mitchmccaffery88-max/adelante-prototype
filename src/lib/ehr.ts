@@ -6628,6 +6628,7 @@ export const AdelanteEHR = {
     const plan = AdelanteEHR.getReentryCarePlan(ep.id);
     if (!plan) throw new Error("Save the care plan before completing it.");
     if (plan.status === "completed") throw new Error("This care plan is already completed.");
+    assertCfEntryScope(ep, input.attribution, "reentry_care_plan_completion");
     if (!input.attested) throw new Error("Member attestation is required.");
     if (input.memberSignatureName.trim().length < 2)
       throw new Error("A typed member signature name is required.");
@@ -6669,7 +6670,7 @@ export const AdelanteEHR = {
     if (task) AdelanteEHR.completeCaseTask(task.id);
     appendAudit({
       category: "clinical",
-      action: "reentry_care_plan_completed",
+      action: cfAuditAction("reentry_care_plan_completed", input.attribution),
       patientId: ep.patientId,
       actorId: input.attribution.enteredBy.staffName,
       actorRole: input.attribution.enteredBy.role,
@@ -6680,8 +6681,7 @@ export const AdelanteEHR = {
         enrollmentCodeIssued: true,
         enrollmentCodeExpiresAt: code.expiresAt,
         appointments: plan.appointments.length,
-        attributedTo: input.attribution.attributedTo?.staffName,
-        proxyEntry: Boolean(input.attribution.attributedTo),
+        ...cfAuditIdentities(input.attribution),
       },
     });
     emit();
