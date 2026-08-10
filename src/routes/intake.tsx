@@ -219,9 +219,9 @@ function IntakePage() {
       phone: patient.phone || prev.phone,
       contactChannel: patient.contactPrefs?.channel ?? prev.contactChannel,
       bestTime: patient.contactPrefs?.bestTime ?? prev.bestTime,
-      emergencyName: patient.emergencyContact?.name ?? prev.emergencyName,
-      emergencyRelationship: patient.emergencyContact?.relationship ?? prev.emergencyRelationship,
-      emergencyPhone: patient.emergencyContact?.phone ?? prev.emergencyPhone,
+      emergencyContacts: readEmergencyContacts(patient).length
+        ? readEmergencyContacts(patient)
+        : prev.emergencyContacts,
       address: patient.address ?? prev.address,
       releaseDate: patient.releaseDate || prev.releaseDate,
     }));
@@ -345,13 +345,8 @@ function IntakePage() {
       phone: profile.phone || undefined,
       releaseDate: profile.releaseDate || undefined,
       contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
-      emergencyContact: profile.emergencyName
-        ? {
-            name: profile.emergencyName,
-            relationship: profile.emergencyRelationship,
-            phone: profile.emergencyPhone,
-          }
-        : undefined,
+      // Writing the list keeps `emergencyContact` (legacy primary) in sync.
+      emergencyContacts: cleanEmergencyContacts(profile.emergencyContacts),
       address: profile.address || undefined,
     });
     activeScreeners.forEach((s) => {
