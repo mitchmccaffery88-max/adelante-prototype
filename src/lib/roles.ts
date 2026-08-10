@@ -90,7 +90,12 @@ export type RecordClass =
   // §Group sessions — managing the group itself (schedule, roster, attendance).
   | "group_sessions"
   // §Group sessions — the clinical documentation produced by a group.
-  | "group_notes";
+  | "group_notes"
+  // §Quality pass Group A — who supervises whom. Workforce configuration, not
+  // patient data: it decides billability of supervised roles, so it sits in
+  // the same config tier as note_templates / scheduling_rules rather than
+  // getting a parallel permission system of its own.
+  | "staff_supervision";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -514,6 +519,21 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sud_counselor: "write",
     clinical_trainee: "read",
   },
+  // §Quality pass Group A — supervision assignment. Write is the workforce
+  // oversight tier: sys_admin (system of record) + clinical_coordinator (owns
+  // clinical staffing, exactly as it owns protocols, crisis disposition and
+  // scheduling rules). LPHA supervisors read so they can see who is attached
+  // to them; the supervised roles read their OWN status through the banner.
+  // Nobody else — this is not patient data and not billing data.
+  staff_supervision: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    therapist: "read",
+    pmhnp: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    community_health_worker: "read",
+  },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
   // every group note flows through canAccess() like any other note.
@@ -809,6 +829,80 @@ export function canRecordMatAdministration(staffId: string | null | undefined): 
   return supervisionStatus(member.id).satisfied;
 }
 
+// ----- §Quality pass Group A — supervision administration ------------------
+//
+// One mutation path. It applies the SAME LPHA rule `supervisionStatus()`
+// already enforces (LPHA_SUPERVISOR_ROLES) instead of re-deriving eligibility,
+// so the admin screen can never write a link the status function would then
+// reject. Every accepted change is audited and notifies subscribers, which is
+// what makes the clinician banner a live read rather than a login snapshot.
+
+/** Staff whose role requires supervision — the admin screen's working set. */
+export function supervisedStaff(): StaffMember[] {
+  return STAFF_ROSTER.filter((s) => requiresSupervision(s.role));
+}
+
+/** Everyone eligible to BE a supervisor (LPHA tier). */
+export function supervisorCandidates(): StaffMember[] {
+  return STAFF_ROSTER.filter((s) => LPHA_SUPERVISOR_ROLES.includes(s.role));
+}
+
+export interface SupervisionAssignResult {
+  ok: boolean;
+  reason?: string;
+  status?: SupervisionStatus;
+}
+
+/**
+ * Assign / change / clear (`supervisorId = null`) a supervision link.
+ * Rejects a non-LPHA supervisor with the same wording `supervisionStatus()`
+ * uses, so the negative case reads identically wherever it surfaces.
+ */
+export function assignSupervisor(
+  staffId: string,
+  supervisorId: string | null,
+  actor?: { role?: StaffRole; staffId?: string; staffName?: string },
+): SupervisionAssignResult {
+  const member = getStaffMember(staffId);
+  if (!member) return { ok: false, reason: "Unknown staff member." };
+  if (!requiresSupervision(member.role))
+    return { ok: false, reason: `${member.name}'s role does not carry a supervision link.` };
+
+  const previous = member.supervisedBy;
+  if (supervisorId) {
+    const sup = getStaffMember(supervisorId);
+    if (!sup) return { ok: false, reason: "Unknown supervisor." };
+    if (sup.id === member.id)
+      return { ok: false, reason: "A staff member cannot supervise themselves." };
+    if (!LPHA_SUPERVISOR_ROLES.includes(sup.role))
+      return {
+        ok: false,
+        reason: `${sup.name} is not an LPHA-tier supervisor (Therapist or PMHNP).`,
+      };
+    member.supervisedBy = sup.id;
+  } else {
+    delete member.supervisedBy;
+  }
+
+  supervisionRevision += 1;
+  const status = supervisionStatus(member.id);
+  AdelanteEHR.recordSupervisionChange({
+    staffId: member.id,
+    staffName: member.name,
+    staffRole: member.role,
+    previousSupervisorId: previous,
+    supervisorId: member.supervisedBy,
+    satisfied: status.satisfied,
+    actorRole: actor?.role,
+    actorId: actor?.staffId,
+    actorName: actor?.staffName,
+  });
+  notify();
+  return { ok: true, status };
+}
+
+let supervisionRevision = 0;
+
 // ----- §v3.0 CF Care Manager proxy entry ----------------------------------
 
 /**
@@ -995,4 +1089,19 @@ export function useActingStaff(): {
     clinicianId: member.clinicianId,
     setActingStaff,
   };
+}
+
+/**
+ * §Quality pass Group A — LIVE supervision status.
+ * Subscribes to the same store `setActingStaff` notifies and re-reads
+ * `supervisionStatus()` on every render, so a reassignment or revocation is
+ * reflected immediately without a second status computation or a cache.
+ */
+export function useSupervisionStatus(staffId: string | null | undefined): SupervisionStatus {
+  useSyncExternalStore(
+    subscribe,
+    () => supervisionRevision,
+    () => supervisionRevision,
+  );
+  return supervisionStatus(staffId);
 }

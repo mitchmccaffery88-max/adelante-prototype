@@ -20,6 +20,7 @@ import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
 import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
+import { Route as AdminSupervisionRouteImport } from './routes/admin-supervision'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AdvocateRouteImport } from './routes/advocate'
 import { Route as AuthRouteImport } from './routes/auth'
@@ -104,6 +105,11 @@ const AdminNoteTemplatesRoute = AdminNoteTemplatesRouteImport.update({
 const AdminSchedulingRulesRoute = AdminSchedulingRulesRouteImport.update({
   id: '/admin-scheduling-rules',
   path: '/admin-scheduling-rules',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminSupervisionRoute = AdminSupervisionRouteImport.update({
+  id: '/admin-supervision',
+  path: '/admin-supervision',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminVendorsRoute = AdminVendorsRouteImport.update({
@@ -270,6 +276,7 @@ export interface FileRoutesByFullPath {
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
@@ -313,6 +320,7 @@ export interface FileRoutesByTo {
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
@@ -357,6 +365,7 @@ export interface FileRoutesById {
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRoute
   '/auth': typeof AuthRoute
@@ -402,6 +411,7 @@ export interface FileRouteTypes {
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
+    | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
     | '/auth'
@@ -445,6 +455,7 @@ export interface FileRouteTypes {
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
+    | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
     | '/auth'
@@ -488,6 +499,7 @@ export interface FileRouteTypes {
     | '/admin-kpi-targets'
     | '/admin-note-templates'
     | '/admin-scheduling-rules'
+    | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
     | '/auth'
@@ -532,6 +544,7 @@ export interface RootRouteChildren {
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
+  AdminSupervisionRoute: typeof AdminSupervisionRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdvocateRoute: typeof AdvocateRoute
   AuthRoute: typeof AuthRoute
@@ -641,6 +654,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-scheduling-rules'
       fullPath: '/admin-scheduling-rules'
       preLoaderRoute: typeof AdminSchedulingRulesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-supervision': {
+      id: '/admin-supervision'
+      path: '/admin-supervision'
+      fullPath: '/admin-supervision'
+      preLoaderRoute: typeof AdminSupervisionRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-vendors': {
@@ -868,6 +888,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
+  AdminSupervisionRoute: AdminSupervisionRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdvocateRoute: AdvocateRoute,
   AuthRoute: AuthRoute,

@@ -7697,6 +7697,39 @@ export const AdelanteEHR = {
   },
 
   // ----- §v3.0 Phase 4 — Advocate / Family Member -------------------------
+  /**
+   * §Quality pass Group A — supervision link created / changed / cleared.
+   * Workforce config, no patient context: who was reassigned, by whom, and
+   * whether the change leaves them billable.
+   */
+  recordSupervisionChange(input: {
+    staffId: string;
+    staffName: string;
+    staffRole: string;
+    previousSupervisorId?: string;
+    supervisorId?: string;
+    satisfied: boolean;
+    actorRole?: string;
+    actorId?: string;
+    actorName?: string;
+  }) {
+    appendAudit({
+      category: "access",
+      action: input.supervisorId ? "supervision_assigned" : "supervision_cleared",
+      actorRole: input.actorRole,
+      actorId: input.actorId,
+      detail: {
+        staffId: input.staffId,
+        staffName: input.staffName,
+        staffRole: input.staffRole,
+        previousSupervisorId: input.previousSupervisorId,
+        supervisorId: input.supervisorId,
+        satisfied: input.satisfied,
+        actorName: input.actorName,
+      },
+    });
+  },
+
   //
   // Every read below is live-evaluated and every advocate-facing read is
   // audited. There is intentionally no "find my patient" function.

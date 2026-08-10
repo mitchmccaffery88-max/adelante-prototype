@@ -30,6 +30,7 @@ import {
   Stethoscope,
   Target,
   UserCog,
+  UserCheck,
   UserSearch,
   Users,
 } from "lucide-react";
@@ -391,6 +392,17 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/admin-credentialing",
     group: "administration",
     gate: { kind: "open" },
+  },
+  {
+    // §Quality pass Group A — supervision links for supervised roles. Gated on
+    // the `staff_supervision` class, so RBAC stays a matrix edit, not a nav edit.
+    id: "admin-supervision",
+    label: "Supervision",
+    desc: "Trainee & MA supervisor links",
+    icon: UserCheck,
+    to: "/admin-supervision",
+    group: "administration",
+    gate: { kind: "record_class", anyOf: ["staff_supervision"] },
   },
   {
     id: "admin-vendors",
