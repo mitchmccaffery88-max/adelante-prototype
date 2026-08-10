@@ -511,6 +511,10 @@ function NewPatientForm({ onBack }: { onBack: () => void }) {
           Create account <ArrowRight className="ml-1.5 h-4 w-4" />
         </Button>
       </form>
+
+      <Button variant="ghost" className="px-0" onClick={onBack}>
+        Back
+      </Button>
     </Card>
   );
 }
