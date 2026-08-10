@@ -37,6 +37,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
+import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
