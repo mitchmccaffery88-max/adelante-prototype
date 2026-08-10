@@ -102,7 +102,7 @@ function SupervisionAdminPage() {
     setError(null);
     toast.success(
       res.status?.satisfied
-        ? `Supervisor updated — ${roleLabel("")}work is billable.`.replace("work", "work")
+        ? `Supervisor set to ${res.status.supervisor?.name} — work is billable.`
         : "Supervisor cleared — this staff member's work is not billable.",
     );
   }
