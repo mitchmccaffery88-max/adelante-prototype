@@ -16,7 +16,8 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
-import type { SignupCredentialMeta } from "./signup";
+import type { HelperAttribution, SignupCredentialMeta } from "./signup";
+import { helperAuditDetail } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
@@ -985,6 +986,13 @@ export interface Patient {
    * verifies it; see the honesty note in `src/lib/signup.ts`.
    */
   signupCredential?: SignupCredentialMeta;
+  /**
+   * §Front-door Phase 3 — who, if anyone, helped this person sign up.
+   * Tier 1 is unverified free text; Tier 2 is a real authenticated staff
+   * operator. Absent for unassisted self-service AND for staff-provisioned
+   * Track A records, which are unchanged.
+   */
+  signupAssistedBy?: HelperAttribution;
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
