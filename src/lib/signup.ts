@@ -31,6 +31,73 @@ export const CREDENTIAL_PROTOTYPE_NOTICE =
 
 export type CredentialKind = "password" | "pin";
 
+/* ===================== §Front-door Phase 3 — helper attribution ===========
+ * TWO tiers, one flow.
+ *
+ * Tier 1 — informal helper. A cousin, a shelter worker, an outreach volunteer
+ *   sitting next to the person on the public `/start/signup` form. One
+ *   optional free-text name. NOTHING is verified and NOTHING is gated on it:
+ *   an empty value is a first-class outcome, and the field must never be able
+ *   to block a submission. It is recorded as metadata on the sign-up /
+ *   redemption audit event so staff can later see a human was involved.
+ *
+ * Tier 2 — authenticated staff operator running the SAME flow from the
+ *   staff-only assisted sign-up tool, logged in under their real identity.
+ *   Here the identity IS verified (it comes from the acting-staff store, not
+ *   from a text box) and it is what gets stamped into `consumedBy` on a
+ *   redemption.
+ *
+ * Both tiers ride the same `HelperAttribution` value so the two entry points
+ * can never drift into separate mechanisms.
+ * ======================================================================== */
+
+export interface HelperAttribution {
+  tier: 1 | 2;
+  /** Tier 1 only: free text, unverified, optional. */
+  helperName?: string;
+  /** Tier 2 only: real, authenticated staff identity. */
+  operatorStaffId?: string;
+  operatorStaffName?: string;
+  operatorRole?: string;
+}
+
+export const HELPER_QUESTION = "Did someone help you sign up today?";
+export const HELPER_HINT =
+  "Optional. A name or organization is enough — it just tells your care team who was with you. You can leave it blank.";
+
+/** Trim Tier 1 free text; blank/whitespace collapses to undefined. */
+export function cleanHelperName(raw: string | undefined): string | undefined {
+  const v = (raw ?? "").trim().slice(0, 120);
+  return v.length > 0 ? v : undefined;
+}
+
+/** Tier 1 value from a raw input — always valid, never an error state. */
+export function informalHelper(raw: string | undefined): HelperAttribution | undefined {
+  const helperName = cleanHelperName(raw);
+  return helperName ? { tier: 1, helperName } : undefined;
+}
+
+/** Flat audit detail for either tier. Returns {} when nobody helped. */
+export function helperAuditDetail(h?: HelperAttribution): Record<string, unknown> {
+  if (!h) return { assistedBy: "none" };
+  if (h.tier === 1) {
+    return {
+      assistedBy: "informal_helper",
+      helperTier: 1,
+      // Self-reported and UNVERIFIED — labelled so no reader mistakes it for
+      // an authenticated identity.
+      helperNameUnverified: h.helperName,
+    };
+  }
+  return {
+    assistedBy: "staff_operator",
+    helperTier: 2,
+    operatorStaffId: h.operatorStaffId,
+    operatorStaffName: h.operatorStaffName,
+    operatorRole: h.operatorRole,
+  };
+}
+
 /** What we are willing to persist about the credential step. Never the secret. */
 export interface SignupCredentialMeta {
   kind: CredentialKind;
@@ -64,6 +131,11 @@ export const signupSchema = z
         message: "Enter a valid email address",
       }),
     preferredLanguage: z.enum(["en", "es"]),
+    /**
+     * Tier 1 helper name. Optional by construction: any string passes, and a
+     * missing key passes. There is deliberately no `.min()` here.
+     */
+    helperName: z.string().trim().max(120).optional(),
     credentialKind: z.enum(["password", "pin"]),
     credential: z.string(),
     credentialConfirm: z.string(),
