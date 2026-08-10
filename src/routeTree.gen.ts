@@ -52,6 +52,8 @@ import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
+import { Route as StartIndexRouteImport } from './routes/start.index'
+import { Route as StartHelpingRouteImport } from './routes/start.helping'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -269,6 +271,16 @@ const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   path: '/record/$patientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StartIndexRoute = StartIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StartRoute,
+} as any)
+const StartHelpingRoute = StartHelpingRouteImport.update({
+  id: '/helping',
+  path: '/helping',
+  getParentRoute: () => StartRoute,
+} as any)
 const PrintPatientRecordsPatientIdRoute =
   PrintPatientRecordsPatientIdRouteImport.update({
     id: '/print/patient-records/$patientId',
@@ -317,9 +329,11 @@ export interface FileRoutesByFullPath {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
-  '/start': typeof StartRoute
+  '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesByTo {
@@ -363,9 +377,10 @@ export interface FileRoutesByTo {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
-  '/start': typeof StartRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesById {
@@ -410,9 +425,11 @@ export interface FileRoutesById {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
-  '/start': typeof StartRoute
+  '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRouteTypes {
@@ -461,6 +478,8 @@ export interface FileRouteTypes {
     | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -504,9 +523,10 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
-    | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start'
     | '/print/patient-records/$patientId'
   id:
     | '__root__'
@@ -553,6 +573,8 @@ export interface FileRouteTypes {
     | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesById: FileRoutesById
 }
@@ -597,7 +619,7 @@ export interface RootRouteChildren {
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
-  StartRoute: typeof StartRoute
+  StartRoute: typeof StartRouteWithChildren
   WorklistRoute: typeof WorklistRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
@@ -906,6 +928,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordPatientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/start/': {
+      id: '/start/'
+      path: '/'
+      fullPath: '/start/'
+      preLoaderRoute: typeof StartIndexRouteImport
+      parentRoute: typeof StartRoute
+    }
+    '/start/helping': {
+      id: '/start/helping'
+      path: '/helping'
+      fullPath: '/start/helping'
+      preLoaderRoute: typeof StartHelpingRouteImport
+      parentRoute: typeof StartRoute
+    }
     '/print/patient-records/$patientId': {
       id: '/print/patient-records/$patientId'
       path: '/print/patient-records/$patientId'
@@ -915,6 +951,18 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface StartRouteChildren {
+  StartHelpingRoute: typeof StartHelpingRoute
+  StartIndexRoute: typeof StartIndexRoute
+}
+
+const StartRouteChildren: StartRouteChildren = {
+  StartHelpingRoute: StartHelpingRoute,
+  StartIndexRoute: StartIndexRoute,
+}
+
+const StartRouteWithChildren = StartRoute._addFileChildren(StartRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -957,7 +1005,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReleasedSearchRoute: ReleasedSearchRoute,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,
-  StartRoute: StartRoute,
+  StartRoute: StartRouteWithChildren,
   WorklistRoute: WorklistRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
