@@ -1,6 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
+import { AssistedSignupCrisisButton } from "@/components/clinical/AssistedSignupCrisisButton";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -396,6 +397,12 @@ function IntakePage() {
               <Phone className="h-3 w-3" /> Phone-assisted
             </button>
           </div>
+        </div>
+        {/* §Crisis-flag stopgap — always visible in the sticky intake header,
+            at every step, so a helper never has to navigate away. Renders only
+            for staff roles allowed to flag. */}
+        <div className="flex justify-end mb-2">
+          <AssistedSignupCrisisButton patientId={currentId} />
         </div>
         <Progress value={pct} className="h-2" />
         <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
