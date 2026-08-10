@@ -585,23 +585,98 @@ function IntakePage() {
           <div className="space-y-5">
             <div>
               <Badge variant="outline" className="border-teal/40 text-teal">
-                Medi-Cal
+                Coverage
               </Badge>
               <p className="mt-2 text-sm text-muted-foreground">
-                Adelante visits are free with Medi-Cal. If your Medi-Cal was paused while you were
-                away, it turns back on when you come home — you don't have to reapply. We can help.
+                Two separate things: how your care gets paid for, and whether you've been involved
+                with the justice system. Neither one decides the other, and neither one changes the
+                care you get.
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">County of release</Label>
+              <Label className="text-sm">County</Label>
               <input
                 value={coverage.countyOfRelease}
                 onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
             </div>
+
             <div className="space-y-1.5">
-              <Label className="text-sm">Do you have Medi-Cal?</Label>
+              <Label className="text-sm">What kind of coverage do you have?</Label>
+              <Select
+                value={coverage.coverageType}
+                onValueChange={(v) =>
+                  setCoverage({
+                    ...coverage,
+                    coverageType: v as CoverageType,
+                    // ECM only exists under Medi-Cal / dual — clear it otherwise.
+                    ecmEligible: ecmQuestionApplies(v as CoverageType) ? coverage.ecmEligible : false,
+                  })
+                }
+              >
+                <SelectTrigger aria-label="Coverage type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {COVERAGE_TYPES.map((c) => (
+                    <SelectItem key={c.key} value={c.key}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {ecmQuestionApplies(coverage.coverageType) && (
+              <label
+                className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3"
+                data-testid="ecm-followup"
+              >
+                <Checkbox
+                  checked={coverage.ecmEligible}
+                  onCheckedChange={(v) => setCoverage({ ...coverage, ecmEligible: Boolean(v) })}
+                />
+                <span>
+                  Do you have ongoing health, housing, or other complex needs? (This may qualify you
+                  for Enhanced Care Management — extra coordination at no cost.)
+                </span>
+              </label>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">
+                Have you ever been involved with the justice system — jail, prison, probation, or
+                parole?
+              </Label>
+              <RadioGroup
+                className="grid gap-2"
+                value={coverage.justiceInvolvement}
+                onValueChange={(v) =>
+                  setCoverage({ ...coverage, justiceInvolvement: v as TriState })
+                }
+              >
+                {(
+                  [
+                    { key: "yes", label: "Yes" },
+                    { key: "no", label: "No" },
+                    { key: "unsure", label: "I'm not sure" },
+                  ] as { key: TriState; label: string }[]
+                ).map((o) => (
+                  <label
+                    key={o.key}
+                    htmlFor={`ji-${o.key}`}
+                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm"
+                  >
+                    <RadioGroupItem id={`ji-${o.key}`} value={o.key} />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">Medi-Cal record status (if you have one)</Label>
               <Select
                 value={coverage.status}
                 onValueChange={(v) => setCoverage({ ...coverage, status: v as CoverageStatus })}
@@ -617,22 +692,27 @@ function IntakePage() {
                 </SelectContent>
               </Select>
             </div>
+
             <CoverageCallout
-              status={coverage.status}
+              coverageType={coverage.coverageType}
+              justiceInvolvement={coverage.justiceInvolvement}
               county={coverage.countyOfRelease}
               otherPlanName={coverage.otherPlanName ?? ""}
               onOtherPlanChange={(v) => setCoverage({ ...coverage, otherPlanName: v })}
             />
-            <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
-              <Checkbox
-                checked={coverage.jiReentryFlag}
-                onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
-              />
-              <span>
-                I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
-                unlocks pre-release coordination).
-              </span>
-            </label>
+
+            {coverage.justiceInvolvement !== "no" && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
+                <Checkbox
+                  checked={coverage.jiReentryFlag}
+                  onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
+                />
+                <span>
+                  I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
+                  unlocks pre-release coordination).
+                </span>
+              </label>
+            )}
           </div>
         )}
 
