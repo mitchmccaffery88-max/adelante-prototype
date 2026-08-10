@@ -16,7 +16,8 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
-import type { SignupCredentialMeta } from "./signup";
+import type { HelperAttribution, SignupCredentialMeta } from "./signup";
+import { helperAuditDetail } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
@@ -985,6 +986,13 @@ export interface Patient {
    * verifies it; see the honesty note in `src/lib/signup.ts`.
    */
   signupCredential?: SignupCredentialMeta;
+  /**
+   * §Front-door Phase 3 — who, if anyone, helped this person sign up.
+   * Tier 1 is unverified free text; Tier 2 is a real authenticated staff
+   * operator. Absent for unassisted self-service AND for staff-provisioned
+   * Track A records, which are unchanged.
+   */
+  signupAssistedBy?: HelperAttribution;
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
@@ -4987,7 +4995,13 @@ export const AdelanteEHR = {
      * referral conversion), which is unchanged.
      */
     signupCredential?: SignupCredentialMeta;
+    /**
+     * §Front-door Phase 3 — Tier 1 informal helper or Tier 2 staff operator.
+     * Attribution only; it grants nothing and gates nothing.
+     */
+    signupAssistedBy?: HelperAttribution;
   }): Patient {
+    const assisted = input.signupAssistedBy;
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
     const now = new Date().toISOString();
@@ -5011,8 +5025,24 @@ export const AdelanteEHR = {
       referralId: input.referralId,
       cin: input.cin,
       ...(input.signupCredential ? { signupCredential: input.signupCredential } : {}),
+      ...(assisted ? { signupAssistedBy: assisted } : {}),
     };
     patients.push(p);
+    // Only the front door audits itself: Track A / referral conversion calls
+    // pass no credential and no helper, and stay silent exactly as before.
+    if (input.signupCredential) {
+      appendAudit({
+        category: "clinical",
+        action: assisted?.tier === 2 ? "patient_signup_created_assisted" : "patient_signup_created",
+        patientId: p.id,
+        actorId: assisted?.tier === 2 ? (assisted.operatorStaffId ?? p.id) : p.id,
+        actorRole: assisted?.tier === 2 ? (assisted.operatorRole ?? "staff") : "patient",
+        detail: {
+          credentialKind: input.signupCredential.kind,
+          ...helperAuditDetail(assisted),
+        },
+      });
+    }
     emit();
     return p;
   },
@@ -7185,6 +7215,13 @@ export const AdelanteEHR = {
   redeemEnrollmentCode(input: {
     code: string;
     credential: SignupCredentialMeta;
+    /**
+     * §Front-door Phase 3. Tier 1: unverified helper name, recorded only.
+     * Tier 2: the authenticated staff operator doing the claim on the
+     * person's behalf — THEIR id is what lands in `consumedBy`, because they
+     * are who actually consumed the single-use code.
+     */
+    assistedBy?: HelperAttribution;
     at?: Date;
   }): { patient: Patient; enrollmentCode: EnrollmentCode } {
     const at = input.at ?? new Date();
@@ -7194,19 +7231,26 @@ export const AdelanteEHR = {
     const patient = patients.find((p) => p.id === rec.patientId);
     if (!patient) throw new Error("The record this code belongs to is no longer available.");
     rec.consumedAt = at.toISOString();
-    rec.consumedBy = patient.id;
+    const operatorId =
+      input.assistedBy?.tier === 2 ? input.assistedBy.operatorStaffId : undefined;
+    rec.consumedBy = operatorId ?? patient.id;
     patient.signupCredential = input.credential;
+    if (input.assistedBy) patient.signupAssistedBy = input.assistedBy;
     appendAudit({
       category: "clinical",
-      action: "enrollment_code_redeemed",
+      action: operatorId ? "enrollment_code_redeemed_assisted" : "enrollment_code_redeemed",
       patientId: patient.id,
-      actorId: patient.id,
-      actorRole: "patient",
+      actorId: operatorId ?? patient.id,
+      actorRole: operatorId ? (input.assistedBy?.operatorRole ?? "staff") : "patient",
       detail: {
         episodeId: rec.episodeId,
         carePlanId: rec.carePlanId,
         // The code is an identity token — audit the event, never the value.
         credentialKind: input.credential.kind,
+        // Always present: the person the claim was FOR, even when a staff
+        // operator is the one recorded in `consumedBy`.
+        claimedForPatientId: patient.id,
+        ...helperAuditDetail(input.assistedBy),
       },
     });
     emit();

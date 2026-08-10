@@ -95,7 +95,12 @@ export type RecordClass =
   // patient data: it decides billability of supervised roles, so it sits in
   // the same config tier as note_templates / scheduling_rules rather than
   // getting a parallel permission system of its own.
-  | "staff_supervision";
+  | "staff_supervision"
+  // §Front-door Phase 3 (Tier 2) — operating the sign-up / code-redemption
+  // front door ON SOMEONE'S BEHALF. A record class, not a new permission
+  // concept: it slots into the same matrix, the same canAccess() call and the
+  // same nav gate as every other surface.
+  | "assisted_signup";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -534,6 +539,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     medical_assistant: "read",
     community_health_worker: "read",
   },
+  // §Front-door Phase 3 — Tier 2 assisted sign-up. Write for exactly the
+  // roles that sit with a person at the moment of enrollment:
+  //  - ecm_provider: owns D0–90 enrollment and already writes demographics;
+  //  - cf_care_manager: issues the RE- code, so is the natural person to help
+  //    claim it when the release-day hand-off happens in the room;
+  //  - peer_specialist: the whole point of the role is walking alongside
+  //    someone through exactly this step.
+  // sys_admin writes for correction/support. Everyone else is omitted: this
+  // creates identity records and consumes single-use enrollment codes, and
+  // no other role does enrollment work.
+  assisted_signup: {
+    ecm_provider: "write",
+    cf_care_manager: "write",
+    peer_specialist: "write",
+    sys_admin: "write",
+  },
   // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
   // pointed at the `group_participation` consent category. No parallel check:
   // every group note flows through canAccess() like any other note.
@@ -616,6 +637,18 @@ export const CRISIS_FLAG_ROLES: StaffRole[] = [
 export function canFlagCrisis(role: StaffRole): boolean {
   return CRISIS_FLAG_ROLES.includes(role);
 }
+
+/**
+ * §Front-door Phase 3 — Tier 2 gate. Derived FROM the matrix, never a second
+ * list: change `assisted_signup` above and this follows automatically.
+ */
+export function canRunAssistedSignup(role: StaffRole): boolean {
+  return canAccess(role, "assisted_signup").level === "write";
+}
+
+export const ASSISTED_SIGNUP_ROLES: StaffRole[] = STAFF_ROLES.map((r) => r.key).filter(
+  canRunAssistedSignup,
+);
 
 /**
  * §Worklist Phase B — starting/stopping a withdrawal or safety protocol.
