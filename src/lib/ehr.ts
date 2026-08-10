@@ -193,6 +193,25 @@ export interface FrontDoorEntry {
   recordedAt: string;
 }
 
+/**
+ * §Front-door Phase 2 — the "missed pre-release coordination" flag. Written
+ * only by `generateMissedHandoffCatchUp`, after a safety-net lookup came back
+ * with no existing record.
+ */
+export interface MissedPreReleaseFlag {
+  flaggedAt: string;
+  /** Why the lookup ran: "record_lookup_pending" or "justice_involvement". */
+  trigger: "record_lookup_pending" | "justice_involvement";
+  /** The person running the intake session, who owns the catch-up list. */
+  ownerStaffId?: string;
+  ownerName: string;
+  ownerRole: string;
+  /** The day-one catch-up episode carrying the task list. */
+  episodeId: string;
+  /** Medi-Cal is flagged for active troubleshooting, never assumed automatic. */
+  mediCalFollowUpRequired: boolean;
+}
+
 // Funding lane classifies a billable event independently of its billingStatus.
 // A clinical event is authored first, then classified into a lane.
 export type FundingLane =
