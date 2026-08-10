@@ -7,14 +7,23 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
 import { groupTopicFor, occurrencePeers, parseGroupEncounterId } from "@/lib/groupMetrics";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Download, UsersRound } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, UsersRound } from "lucide-react";
 
 export const Route = createFileRoute("/admin-claims")({
   head: () => ({
