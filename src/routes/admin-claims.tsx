@@ -7,14 +7,23 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
 import { groupTopicFor, occurrencePeers, parseGroupEncounterId } from "@/lib/groupMetrics";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { cn } from "@/lib/utils";
 import {
   Popover,
   PopoverContent,
   PopoverTrigger,
 } from "@/components/ui/popover";
-import { Download, UsersRound } from "lucide-react";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
+import { ArrowDown, ArrowUp, ArrowUpDown, Download, UsersRound } from "lucide-react";
 
 export const Route = createFileRoute("/admin-claims")({
   head: () => ({
@@ -59,25 +68,133 @@ type OutcomeFilter = "all" | "submitted" | "blocked";
 /** Claim states that mean the charge actually went out the door. */
 const SUBMITTED_STATES: ClaimState[] = ["submitted", "paid", "denied", "partial"];
 
-/** Small segmented-control button; plain <button> so it stays trivially clickable. */
-function FilterChip({
-  active, onClick, testId, children,
-}: { active: boolean; onClick: () => void; testId: string; children: React.ReactNode }) {
+/**
+ * Segmented control on a real Radix `ToggleGroup`.
+ *
+ * §Group C follow-up — Group C swapped in plain buttons after clicks here
+ * "did nothing". Radix was never the problem: /admin-claims is gated on the
+ * `billing` record class, and with the default acting role (ecm_provider) the
+ * RouteAccessGuard redirects away right after hydration. The probe was
+ * clicking a page that was already being replaced, so nothing ever had React
+ * handlers on it. With an authorised acting role the real ToggleGroup toggles
+ * fine — verified in-browser, not just jsdom.
+ *
+ * The one genuine requirement for a single-select segmented control is
+ * ignoring the empty `onValueChange` Radix emits when you re-click the active
+ * item; otherwise the control can end up with nothing selected.
+ */
+export function SegmentedFilter<T extends string>({
+  label,
+  value,
+  onChange,
+  options,
+  idPrefix,
+}: {
+  label: string;
+  value: T;
+  onChange: (v: T) => void;
+  options: { value: T; label: React.ReactNode }[];
+  idPrefix: string;
+}) {
   return (
-    <button
-      type="button"
-      data-testid={testId}
-      data-active={active}
-      onClick={onClick}
-      className={cn(
-        "rounded-full border px-3 py-1 text-xs transition-colors",
-        active
-          ? "border-transparent bg-primary text-primary-foreground"
-          : "border-border bg-background text-muted-foreground hover:text-foreground",
-      )}
+    <div className="space-y-1">
+      <p className="text-[10px] uppercase tracking-wider text-muted-foreground">{label}</p>
+      <ToggleGroup
+        type="single"
+        value={value}
+        // Single-select semantics: ignore the deselect event so one option is
+        // always active. Without this the control looks "dead" on re-click.
+        onValueChange={(v) => {
+          if (v) onChange(v as T);
+        }}
+        className="flex-wrap justify-start gap-1.5"
+      >
+        {options.map((o) => (
+          <ToggleGroupItem
+            key={o.value}
+            value={o.value}
+            size="sm"
+            data-testid={`${idPrefix}-${o.value}`}
+            data-active={value === o.value}
+            className={cn(
+              "h-auto rounded-full border border-border px-3 py-1 text-xs text-muted-foreground",
+              "data-[state=on]:border-transparent data-[state=on]:bg-primary data-[state=on]:text-primary-foreground",
+            )}
+          >
+            {o.label}
+          </ToggleGroupItem>
+        ))}
+      </ToggleGroup>
+    </div>
+  );
+}
+
+// §Group C follow-up — column sorting. Sort keys map to the columns the
+// worklist already renders; comparators pull the same display value the cell
+// shows so what you sort is what you see.
+type SortKey = "patient" | "code" | "clinician" | "state" | "charge";
+type SortDir = "asc" | "desc";
+
+/**
+ * Pure comparator layer so sorting is unit-testable without rendering.
+ * `label` resolves the display string for the name columns; sorting on the
+ * value the cell shows avoids the classic "sorted by hidden id" surprise.
+ */
+export function sortClaimRows<T>(
+  rows: T[],
+  sort: { key: SortKey; dir: SortDir } | null,
+  value: (row: T, key: SortKey) => string | number,
+): T[] {
+  if (!sort) return rows;
+  const factor = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const av = value(a, sort.key);
+    const bv = value(b, sort.key);
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * factor;
+    return String(av).localeCompare(String(bv), undefined, { numeric: true }) * factor;
+  });
+}
+
+/** Click cycles asc -> desc -> asc on the same column; a new column starts asc. */
+export function nextSort(
+  current: { key: SortKey; dir: SortDir } | null,
+  key: SortKey,
+): { key: SortKey; dir: SortDir } {
+  if (current?.key === key) return { key, dir: current.dir === "asc" ? "desc" : "asc" };
+  return { key, dir: "asc" };
+}
+
+function SortHeader({
+  label,
+  sortKey,
+  sort,
+  onSort,
+  className,
+}: {
+  label: string;
+  sortKey: SortKey;
+  sort: { key: SortKey; dir: SortDir } | null;
+  onSort: (k: SortKey) => void;
+  className?: string;
+}) {
+  const active = sort?.key === sortKey;
+  const Icon = !active ? ArrowUpDown : sort.dir === "asc" ? ArrowUp : ArrowDown;
+  return (
+    <TableHead
+      className={cn("h-8 px-2 text-xs", className)}
+      aria-sort={active ? (sort.dir === "asc" ? "ascending" : "descending") : "none"}
     >
-      {children}
-    </button>
+      <button
+        type="button"
+        data-testid={`sort-${sortKey}`}
+        data-sort={active ? sort.dir : "none"}
+        onClick={() => onSort(sortKey)}
+        className="inline-flex items-center gap-1 hover:text-foreground"
+      >
+        {label}
+        <Icon className="h-3 w-3" aria-hidden />
+      </button>
+    </TableHead>
   );
 }
 
@@ -87,6 +204,7 @@ function ClaimsPage() {
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const [service, setService] = useState<ServiceFilter>("all");
   const [outcome, setOutcome] = useState<OutcomeFilter>("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
   const blockedAttempts = useEhr(() =>
     AdelanteEHR.listAuditEvents({ category: "clinical" }).filter(
       (e) => e.action === "community_billing_blocked",
@@ -106,6 +224,30 @@ function ClaimsPage() {
     return true;
   });
   const showBlocked = outcome === "blocked";
+
+  const patientLabel = (id: string) => {
+    const p = patients.find((x) => x.id === id);
+    return p ? `${p.firstName} ${p.lastName}` : "";
+  };
+  const sortedClaims = useMemo(
+    () =>
+      sortClaimRows(visibleClaims, sort, (c, key) => {
+        switch (key) {
+          case "patient":
+            return patientLabel(c.patientId);
+          case "code":
+            return c.serviceCode ?? "";
+          case "clinician":
+            return clinicians.find((x) => x.id === c.clinicianId)?.name ?? "";
+          case "state":
+            return c.state;
+          case "charge":
+            return c.chargeCents;
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleClaims, sort, patients, clinicians],
+  );
 
   // De-identified export, same shape/discipline as the caseload CSV on /admin:
   // program ID only, plus the group provenance the worklist shows on screen.
@@ -169,34 +311,28 @@ function ClaimsPage() {
       </header>
 
       <Card className="flex flex-wrap items-center gap-6 p-3">
-        <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Service line</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={service === "all"} onClick={() => setService("all")} testId="filter-service-all">
-              All
-            </FilterChip>
-            <FilterChip active={service === "peer"} onClick={() => setService("peer")} testId="filter-service-peer">
-              Peer · H0038 / H0025
-            </FilterChip>
-            <FilterChip active={service === "chw"} onClick={() => setService("chw")} testId="filter-service-chw">
-              CHW · G0019 / G0022
-            </FilterChip>
-          </div>
-        </div>
-        <div className="space-y-1">
-          <p className="text-[10px] uppercase tracking-wider text-muted-foreground">Outcome</p>
-          <div className="flex flex-wrap items-center gap-1.5">
-            <FilterChip active={outcome === "all"} onClick={() => setOutcome("all")} testId="filter-outcome-all">
-              All claims
-            </FilterChip>
-            <FilterChip active={outcome === "submitted"} onClick={() => setOutcome("submitted")} testId="filter-outcome-submitted">
-              Submitted
-            </FilterChip>
-            <FilterChip active={outcome === "blocked"} onClick={() => setOutcome("blocked")} testId="filter-outcome-blocked">
-              Blocked attempts ({visibleBlocked.length})
-            </FilterChip>
-          </div>
-        </div>
+        <SegmentedFilter<ServiceFilter>
+          label="Service line"
+          idPrefix="filter-service"
+          value={service}
+          onChange={setService}
+          options={[
+            { value: "all", label: "All" },
+            { value: "peer", label: "Peer · H0038 / H0025" },
+            { value: "chw", label: "CHW · G0019 / G0022" },
+          ]}
+        />
+        <SegmentedFilter<OutcomeFilter>
+          label="Outcome"
+          idPrefix="filter-outcome"
+          value={outcome}
+          onChange={setOutcome}
+          options={[
+            { value: "all", label: "All claims" },
+            { value: "submitted", label: "Submitted" },
+            { value: "blocked", label: `Blocked attempts (${visibleBlocked.length})` },
+          ]}
+        />
       </Card>
 
       {showBlocked ? (
@@ -243,21 +379,29 @@ function ClaimsPage() {
               : "No claims match the current filters."}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground">
-                <tr><th className="py-1">Patient</th><th>Source</th><th>Code</th><th>Clinician</th><th>State</th><th>Charge</th><th>Denial</th><th></th></tr>
-              </thead>
-              <tbody className="divide-y">
-                {visibleClaims.map((c) => {
+          <Table>
+              <TableHeader className="text-left text-xs text-muted-foreground">
+                <TableRow>
+                  <SortHeader label="Patient" sortKey="patient" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <TableHead className="h-8 px-2 text-xs">Source</TableHead>
+                  <SortHeader label="Code" sortKey="code" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="Clinician" sortKey="clinician" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="State" sortKey="state" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="Charge" sortKey="charge" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <TableHead className="h-8 px-2 text-xs">Denial</TableHead>
+                  <TableHead className="h-8 px-2" />
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y">
+                {sortedClaims.map((c) => {
                   const pt = patients.find((p) => p.id === c.patientId);
                   const cl = clinicians.find((x) => x.id === c.clinicianId);
                   const next = flow[c.state];
                   const groupRef = parseGroupEncounterId(c.encounterId);
                   return (
-                    <tr key={c.id} data-testid="claim-row">
-                      <td className="py-2">{pt?.firstName} {pt?.lastName}</td>
-                      <td>
+                    <TableRow key={c.id} data-testid="claim-row">
+                      <TableCell className="px-2 py-2" data-cell="patient">{pt?.firstName} {pt?.lastName}</TableCell>
+                      <TableCell className="px-2 py-2">
                         {groupRef ? (
                           <Popover>
                             <PopoverTrigger asChild>
@@ -299,15 +443,15 @@ function ClaimsPage() {
                         ) : (
                           <span className="text-xs text-muted-foreground">1:1</span>
                         )}
-                      </td>
-                      <td className="font-mono text-xs">
+                      </TableCell>
+                      <TableCell className="px-2 py-2 font-mono text-xs" data-cell="code">
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
-                      </td>
-                      <td>{cl?.name}</td>
-                      <td><Badge className={stateStyle[c.state]}>{c.state}</Badge></td>
-                      <td>${(c.chargeCents / 100).toFixed(2)}</td>
-                      <td>{c.denialReason ?? "—"}</td>
-                      <td className="text-right space-x-2">
+                      </TableCell>
+                      <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
+                      <TableCell className="px-2 py-2" data-cell="state"><Badge className={stateStyle[c.state]}>{c.state}</Badge></TableCell>
+                      <TableCell className="px-2 py-2" data-cell="charge">${(c.chargeCents / 100).toFixed(2)}</TableCell>
+                      <TableCell className="px-2 py-2">{c.denialReason ?? "—"}</TableCell>
+                      <TableCell className="px-2 py-2 text-right space-x-2">
                         {next && (
                           <Button size="sm" variant="outline" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, next, "billing_coordinator"); toast.success(`→ ${next}`); }}>
                             → {next}
@@ -318,13 +462,12 @@ function ClaimsPage() {
                             Deny
                           </Button>
                         )}
-                      </td>
-                    </tr>
+                      </TableCell>
+                    </TableRow>
                   );
                 })}
-              </tbody>
-            </table>
-          </div>
+              </TableBody>
+            </Table>
         )}
       </Card>
       )}
