@@ -30,6 +30,7 @@ import {
   Stethoscope,
   Target,
   UserCog,
+  UserCheck,
   UserSearch,
   Users,
 } from "lucide-react";
