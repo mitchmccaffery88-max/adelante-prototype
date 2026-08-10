@@ -193,9 +193,8 @@ function IntakePage() {
     phone: "",
     contactChannel: "text" as ContactChannel,
     bestTime: "morning" as BestTime,
-    emergencyName: "",
-    emergencyRelationship: "",
-    emergencyPhone: "",
+    // §Emergency-contact expansion — a list, not one person. First = primary.
+    emergencyContacts: [emptyEmergencyContact()] as EmergencyContact[],
     address: "",
     releaseDate: "",
   });
