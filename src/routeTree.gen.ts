@@ -49,6 +49,7 @@ import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
@@ -253,6 +254,11 @@ const ShiftCountRoute = ShiftCountRouteImport.update({
   path: '/shift-count',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorklistRoute = WorklistRouteImport.update({
   id: '/worklist',
   path: '/worklist',
@@ -311,6 +317,7 @@ export interface FileRoutesByFullPath {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/start': typeof StartRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -356,6 +363,7 @@ export interface FileRoutesByTo {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/start': typeof StartRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -402,6 +410,7 @@ export interface FileRoutesById {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/start': typeof StartRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -449,6 +458,7 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
+    | '/start'
     | '/worklist'
     | '/record/$patientId'
     | '/print/patient-records/$patientId'
@@ -494,6 +504,7 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
+    | '/start'
     | '/worklist'
     | '/record/$patientId'
     | '/print/patient-records/$patientId'
@@ -539,6 +550,7 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
+    | '/start'
     | '/worklist'
     | '/record/$patientId'
     | '/print/patient-records/$patientId'
@@ -585,6 +597,7 @@ export interface RootRouteChildren {
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
+  StartRoute: typeof StartRoute
   WorklistRoute: typeof WorklistRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
@@ -872,6 +885,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftCountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/worklist': {
       id: '/worklist'
       path: '/worklist'
@@ -937,6 +957,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReleasedSearchRoute: ReleasedSearchRoute,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,
+  StartRoute: StartRoute,
   WorklistRoute: WorklistRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
