@@ -636,6 +636,8 @@ export const AdelanteEHRExt = {
     dateISO: string;
     minutes: number;
     chargeCents?: number;
+    /** Provider picked in the note UI; `null` means "asked, none picked". */
+    supervisingStaffId?: string | null;
   }): Claim | null {
     const patient = AdelanteEHR.getPatient(input.patientId);
     if (!patient) return null;
@@ -656,6 +658,7 @@ export const AdelanteEHRExt = {
       minutes: input.minutes,
       unitsAlreadyBilledToday,
       hasPriorClaimThisMonth,
+      supervisingStaffId: input.supervisingStaffId,
     });
     if (!decision.allowed) {
       AdelanteEHR.recordCommunityBillingBlocked({

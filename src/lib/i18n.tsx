@@ -300,6 +300,18 @@ const dict = {
     msgSensitive: "This is private — please handle it with care",
     msgSensitiveConsentOff:
       "Your care team may not be able to see this unless you also turn on sharing substance-use info in Privacy & Consent.",
+    // §Group C — community-role documentation surfaces (Peer / CHW).
+    // Stub-quality Spanish, same flat-key + `t()` pattern as everything above.
+    recPeerNotes: "Peer notes",
+    recChwNotes: "CHW notes",
+    peerNoteHeading: "Peer specialist note",
+    chwNoteHeading: "CHW service note",
+    chwSupervisingProvider: "Supervising provider (billed through)",
+    chwSupervisingNone: "No supervising provider selected",
+    chwSupervisingHelp:
+      "CHW services bill through an enrolled LPHA-tier provider. No selection means no claim.",
+    chwBlockTitle: "Claim blocked",
+    chwBlockReasonCode: "Reason code",
   },
   es: {
     appName: "Adelante",
@@ -603,6 +615,17 @@ const dict = {
     msgSensitive: "Esto es privado — por favor trátenlo con cuidado",
     msgSensitiveConsentOff:
       "Es posible que tu equipo de atención no pueda ver esto a menos que también actives compartir información sobre el uso de sustancias en Privacidad y Consentimiento.",
+    // §Group C — superficies de documentación comunitaria (Peer / CHW).
+    recPeerNotes: "Notas de par",
+    recChwNotes: "Notas de CHW",
+    peerNoteHeading: "Nota de especialista de apoyo entre pares",
+    chwNoteHeading: "Nota de servicio de CHW",
+    chwSupervisingProvider: "Proveedor supervisor (facturación a través de)",
+    chwSupervisingNone: "Ningún proveedor supervisor seleccionado",
+    chwSupervisingHelp:
+      "Los servicios de CHW se facturan a través de un proveedor inscrito de nivel LPHA. Sin selección no hay reclamación.",
+    chwBlockTitle: "Reclamación bloqueada",
+    chwBlockReasonCode: "Código de motivo",
   },
 } as const;
 

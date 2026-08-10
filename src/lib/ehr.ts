@@ -8787,6 +8787,39 @@ export const AdelanteEHR = {
       },
     });
   },
+
+  /**
+   * The most recent refused claim attempt, so a note surface can explain WHY
+   * without restating the rule. The banner reads the SAME audit row the block
+   * wrote — there is no second copy of the reason text to drift from.
+   */
+  lastCommunityBillingBlock(filter: {
+    patientId: string;
+    service?: "peer_support" | "chw_services";
+    actorId?: string;
+    /** Narrows to one note/encounter via the detail payload. */
+    noteId?: string;
+  }): { at: string; reasonCode: string; reason: string; service: string } | undefined {
+    const hit = auditEvents
+      .filter(
+        (e) =>
+          e.action === "community_billing_blocked" &&
+          e.patientId === filter.patientId &&
+          (!filter.service || e.detail?.["service"] === filter.service) &&
+          (!filter.actorId || e.actorId === filter.actorId) &&
+          (!filter.noteId ||
+            e.detail?.["noteId"] === filter.noteId ||
+            e.detail?.["peerNoteId"] === filter.noteId),
+      )
+      .sort((a, b) => (a.at < b.at ? 1 : -1))[0];
+    if (!hit) return undefined;
+    return {
+      at: hit.at,
+      reasonCode: String(hit.detail?.["reasonCode"] ?? "blocked"),
+      reason: String(hit.detail?.["reason"] ?? ""),
+      service: String(hit.detail?.["service"] ?? ""),
+    };
+  },
   listAuditEvents(
     filter: {
       patientId?: string;

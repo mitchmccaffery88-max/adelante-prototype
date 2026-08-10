@@ -30,6 +30,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
+import { useI18n } from "@/lib/i18n";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
@@ -108,6 +109,7 @@ export function useRecordSections(
   opts: { initialNoteTemplateKey?: string } = {},
 ): RecordSection[] {
   const { role } = useActingStaff();
+  const { t } = useI18n();
   const counts = useEhr(() => {
     const fresh = AdelanteEHR.getPatient(patient.id) ?? patient;
     const s = safetyCounts(fresh);
@@ -318,7 +320,7 @@ export function useRecordSections(
   });
   add("peer_notes", {
     id: "peer",
-    label: "Peer notes",
+    label: t("recPeerNotes"),
     icon: Users,
     group: "case",
     render: (a) => <PeerNotesTab patientId={pid} canWrite={a.level === "write"} />,
@@ -327,7 +329,7 @@ export function useRecordSections(
   // the CHW template so a CHW-only role never sees other documentation.
   add("chw_notes", {
     id: "chw",
-    label: "CHW notes",
+    label: t("recChwNotes"),
     icon: Users,
     group: "case",
     render: (a) => (
