@@ -137,6 +137,16 @@ export const PART2_RESTRICTED_MESSAGE =
   "This document requires a Part 2 disclosure authorization to view — not currently on file. Ask the person you're supporting, or their care team, about signing one.";
 
 /**
+ * §Group D item 4 — the deliberate MIRROR of `PART2_RESTRICTED_MESSAGE`, for
+ * the unmasked case. Same "here is exactly what is going on" discipline: an
+ * advocate should never assume Part 2 detail is theirs by default, so when it
+ * IS visible the reason is named on screen.
+ */
+export const PART2_DISCLOSED_MESSAGE =
+  "Substance-use service details are visible because an active Part 2 disclosure authorization naming advocate disclosure is on file. This is not default access — it stops the moment that authorization is revoked.";
+export const PART2_DISCLOSED_BADGE_LABEL = "Part 2 disclosure on file";
+
+/**
  * Advocate-side visibility for ONE document. Restricted ≠ hidden: the row
  * still appears (consistent with masked group topics still showing as "Group
  * session"), with a specific explanation of what is missing.

@@ -30,6 +30,8 @@ import {
   AdvocateDocumentsPanel,
 } from "@/components/advocate/AdvocateWorkspace";
 import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
+import { Info, Unlock } from "lucide-react";
+import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
 
 export const Route = createFileRoute("/advocate")({
   head: () => ({
@@ -228,6 +230,21 @@ function AdvocateScheduleView({
           <h2 className="flex items-center gap-2 font-display text-lg text-navy">
             <CalendarClock className="h-5 w-5 text-teal" /> Upcoming
           </h2>
+          {/* §Group D item 4 — the unmasked-and-here's-why counterpart to the
+              "restricted, here's what's missing" pattern. `part2Disclosed`
+              comes from the data layer with the labels it applies to; this
+              component cannot compute or override it. */}
+          {view.part2Disclosed && (
+            <div className="mt-3 space-y-2" data-testid="advocate-part2-disclosed">
+              <Badge variant="outline" className="gap-1">
+                <Unlock className="h-3 w-3" /> {PART2_DISCLOSED_BADGE_LABEL}
+              </Badge>
+              <p className="flex gap-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground">
+                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
+                {PART2_DISCLOSED_MESSAGE}
+              </p>
+            </div>
+          )}
           {view.items.length === 0 ? (
             <p className="mt-3 text-sm text-muted-foreground">Nothing scheduled right now.</p>
           ) : (
@@ -260,9 +277,10 @@ function AdvocateScheduleView({
             </ul>
           )}
           <p className="mt-4 text-xs text-muted-foreground">
-            Clinical notes, medications and messages are never visible to advocates, and
-            substance-use treatment information is protected under 42 CFR Part 2 whatever your
-            authorization.
+            Clinical notes, medications and messages are never visible to advocates.{" "}
+            {view.part2Disclosed
+              ? "Substance-use treatment information is protected under 42 CFR Part 2 and is shown here only because of the disclosure authorization noted above."
+              : "Substance-use treatment information is protected under 42 CFR Part 2 whatever your authorization."}
           </p>
         </Card>
       )}
