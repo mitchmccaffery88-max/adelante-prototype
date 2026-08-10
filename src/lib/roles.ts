@@ -90,7 +90,12 @@ export type RecordClass =
   // §Group sessions — managing the group itself (schedule, roster, attendance).
   | "group_sessions"
   // §Group sessions — the clinical documentation produced by a group.
-  | "group_notes";
+  | "group_notes"
+  // §Quality pass Group A — who supervises whom. Workforce configuration, not
+  // patient data: it decides billability of supervised roles, so it sits in
+  // the same config tier as note_templates / scheduling_rules rather than
+  // getting a parallel permission system of its own.
+  | "staff_supervision";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
