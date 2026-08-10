@@ -4,6 +4,7 @@
 // permission is held; nothing is hidden with CSS and nothing is fetched
 // "just in case". 42 CFR Part 2 content is masked in the data layer
 // (`AdelanteEHR.advocate*`), not here — this file cannot un-mask it.
+import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -262,6 +263,10 @@ export function AdvocateClinicalPanel({ linkId }: { linkId: string }) {
  * about the person they support is carried across.
  */
 export function AdvocateSelfCareCard({ linkId }: { linkId: string }) {
+  // Router navigation, not `window.location`: a hard reload drops the
+  // in-memory store, which made switching between the advocated-for view and
+  // the advocate's own care impossible to exercise (or test) end to end.
+  const navigate = useNavigate();
   const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
   const self = useEhr(() => AdelanteEHR.advocateSelfPatient(linkId));
   const [open, setOpen] = useState(false);
@@ -279,7 +284,7 @@ export function AdvocateSelfCareCard({ linkId }: { linkId: string }) {
         <Button
           onClick={() => {
             AdelanteEHR.setCurrentPatientId(self.id);
-            window.location.href = "/intake";
+            void navigate({ to: "/intake" });
           }}
         >
           Go to my care
@@ -320,7 +325,7 @@ export function AdvocateSelfCareCard({ linkId }: { linkId: string }) {
                 });
                 AdelanteEHR.setCurrentPatientId(p.id);
                 toast.success("Your own record is ready.");
-                window.location.href = "/intake";
+                void navigate({ to: "/intake" });
               } catch (e) {
                 toast.error(e instanceof Error ? e.message : "Could not start.");
               }

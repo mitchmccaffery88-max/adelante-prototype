@@ -3316,8 +3316,13 @@ export interface AdvocateLink {
  * author of the plan itself. "Participation" concretely means the advocate can
  * (a) read the coordination-relevant parts of the plan and (b) attach comments
  * and requests to a named section, which the owner then accepts or ignores.
- * PLACEHOLDER: whether a contribution should ever be formally "accepted" into
- * the plan (and by whom) needs real definition — none is invented here.
+ * §Group D item 1 — RESOLVED (was a placeholder): a contribution is now
+ * formally REVIEWED by the plan owner. "Accepted" is a STATUS on the
+ * contribution, not a copy of the text into the plan: the ECM Provider /
+ * CF Care Manager remains the sole author of every authoritative
+ * `ReentryCarePlan` field, so acceptance means "read, and taken into the
+ * plan by the owner in their own words". Nothing is auto-merged, and the
+ * plan stays byte-identical unless the owner edits it themselves.
  */
 export type AdvocateContributionSection =
   | "housing"
@@ -3334,9 +3339,63 @@ export interface AdvocateContribution {
   text: string;
   authorName: string;
   createdAt: string;
+  /**
+   * Review state. `pending` until the plan owner acts. `accepted` =
+   * incorporated by the owner; `declined` = considered and not taken up.
+   * Both terminal states require the reviewer's identity and role.
+   */
+  review: {
+    status: AdvocateContributionReviewStatus;
+    reviewedBy?: string;
+    reviewedByRole?: AdvocatePlanOwnerRole;
+    reviewedAt?: string;
+    note?: string;
+  };
+}
+
+export type AdvocateContributionReviewStatus = "pending" | "accepted" | "declined";
+
+/**
+ * Who may formally accept advocate input into the plan. Deliberately the SAME
+ * two roles that own the plan, and the SAME episode-derived ownership rule the
+ * Phase 5 document verify queue already uses (`verifyQueueOwnerRole`): the CF
+ * Care Manager owns it while a pre-release episode is open, the ECM Provider
+ * owns it after handoff. Both may act at any time (a plan can be in flight),
+ * but the queue names the owner so work is not silently dropped at handoff.
+ */
+export type AdvocatePlanOwnerRole = "cf_care_manager" | "ecm_provider";
+export const ADVOCATE_REVIEW_ROLES: AdvocatePlanOwnerRole[] = [
+  "cf_care_manager",
+  "ecm_provider",
+];
+
+/**
+ * §Group D item 2 — an advocate eligibility-assist attestation, as a REVIEWABLE
+ * record rather than an audit row alone. Phase 4's behaviour is unchanged: this
+ * still submits nothing to DHCS. What is new is that the attestation is now
+ * visible to the plan-owning roles with a review status and its own trail.
+ */
+export interface AdvocateEligibilityAttestation {
+  id: string;
+  advocateLinkId: string;
+  patientId: string;
+  advocateName: string;
+  attestedName: string;
+  note?: string;
+  createdAt: string;
+  /** Honest flag, carried on the record itself. */
+  submission: "no_submission_path_defined";
+  review: {
+    status: "pending" | "reviewed";
+    reviewedBy?: string;
+    reviewedByRole?: AdvocatePlanOwnerRole;
+    reviewedAt?: string;
+    note?: string;
+  };
 }
 
 const advocateContributions: AdvocateContribution[] = [];
+const advocateEligibilityAttestations: AdvocateEligibilityAttestation[] = [];
 
 const advocateLinks: AdvocateLink[] = [];
 
@@ -3445,15 +3504,33 @@ function _advocateSudText(text: string): boolean {
  * it rather than replacing it. Everything stays masked by default.
  */
 function _advocatePart2Unmasked(link: AdvocateLink): boolean {
+  return _advocatePart2Gates(link).unmasked;
+}
+
+/**
+ * The same two gates, reported individually so the audit row (and the consent
+ * audit viewer, §Group D item 7) can show WHICH of the two passed. There is
+ * still exactly one evaluation of the rule — `advocatePart2Masked` — and this
+ * is the only place either fact is gathered.
+ */
+function _advocatePart2Gates(link: AdvocateLink): {
+  linkValid: boolean;
+  sudDisclosureConsentActive: boolean;
+  unmasked: boolean;
+} {
   const linkValid = AdelanteEHR.advocateAccess(link.id).allowed;
-  const consentActive = AdelanteEHR.isConsentCategoryAuthorized(
+  const sudDisclosureConsentActive = AdelanteEHR.isConsentCategoryAuthorized(
     link.patientId,
     ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   );
-  return !advocatePart2Masked(link.authorizationType, {
+  return {
     linkValid,
-    sudDisclosureConsentActive: consentActive,
-  });
+    sudDisclosureConsentActive,
+    unmasked: !advocatePart2Masked(link.authorizationType, {
+      linkValid,
+      sudDisclosureConsentActive,
+    }),
+  };
 }
 
 function _patient(id: string): Patient | undefined {
@@ -8039,6 +8116,13 @@ export const AdelanteEHR = {
   ): {
     allowed: boolean;
     reason: string;
+    /**
+     * §Group D item 4 — TRUE when the consent-conditional Part 2 exception is
+     * in force for this read, so the UI can say WHY SUD detail is visible.
+     * Computed in the data layer with the labels it applies to; the UI cannot
+     * derive or override it.
+     */
+    part2Disclosed: boolean;
     items: {
       kind: "appointment" | "group";
       id: string;
@@ -8067,14 +8151,15 @@ export const AdelanteEHR = {
             denyReason: decision.denyReason,
           },
         });
-      return { allowed: false, reason: decision.reason, items: [] };
+      return { allowed: false, reason: decision.reason, part2Disclosed: false, items: [] };
     }
 
     const from = +now;
     const items: ReturnType<typeof AdelanteEHR.advocateSchedule>["items"] = [];
     // Consent-conditional Part 2 exception. Default is masked; this is the
     // only thing that lifts it, and it is re-evaluated on every read.
-    const part2Ok = _advocatePart2Unmasked(link);
+    const gates = _advocatePart2Gates(link);
+    const part2Ok = gates.unmasked;
 
     for (const a of AdelanteEHR.appointmentsForPatient(link.patientId)) {
       if (+new Date(a.start) < from) continue;
@@ -8128,9 +8213,12 @@ export const AdelanteEHR = {
         itemCount: items.length,
         // Auditable: whether the Part 2 disclosure exception was in force.
         part2Disclosed: part2Ok,
+        // §Group D item 7 — WHICH of the two required gates passed.
+        advocateLinkValid: gates.linkValid,
+        sudDisclosureConsentActive: gates.sudDisclosureConsentActive,
       },
     });
-    return { allowed: true, reason: decision.reason, items };
+    return { allowed: true, reason: decision.reason, part2Disclosed: part2Ok, items };
   },
   // ----- §Phase 4 expansion — coordination / participation / eligibility ----
   //
@@ -8278,6 +8366,7 @@ export const AdelanteEHR = {
       text,
       authorName: gate.link.advocateName,
       createdAt: new Date().toISOString(),
+      review: { status: "pending" },
     });
     _advocateAudit(gate.link, "advocate_care_plan_comment_added", "reentry_care_plan", {
       section: input.section,
@@ -8291,7 +8380,79 @@ export const AdelanteEHR = {
     return advocateContributions
       .filter((c) => c.patientId === patientId)
       .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
-      .map((c) => ({ ...c }));
+      .map((c) => ({ ...c, review: { ...c.review } }));
+  },
+
+  /**
+   * §Group D item 1 — the plan owner's review queue. Ownership is DERIVED from
+   * the patient's pre-release episode with the same rule the document verify
+   * queue uses, so nothing has to be assigned by hand.
+   */
+  advocateContributionQueue(
+    filter: { status?: AdvocateContributionReviewStatus } = {},
+  ): (AdvocateContribution & { ownerRole: AdvocatePlanOwnerRole; patientName: string })[] {
+    return advocateContributions
+      .filter((c) => !filter.status || c.review.status === filter.status)
+      .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+      .map((c) => {
+        const p = _patient(c.patientId);
+        return {
+          ...c,
+          review: { ...c.review },
+          ownerRole: _documentOwnerRole(c.patientId),
+          patientName: p ? `${p.firstName} ${p.lastName}` : c.patientId,
+        };
+      });
+  },
+
+  /**
+   * Accept or decline an advocate contribution. ACCEPTING DOES NOT COPY TEXT
+   * INTO THE PLAN — the authoritative `ReentryCarePlan` is only ever edited by
+   * its owner through the normal plan path. This records that the owner read
+   * it and took it up (or did not), with a full audit row.
+   */
+  reviewAdvocateContribution(input: {
+    contributionId: string;
+    status: Exclude<AdvocateContributionReviewStatus, "pending">;
+    reviewerName: string;
+    reviewerRole: string;
+    note?: string;
+  }): { ok: boolean; reason: string } {
+    const c = advocateContributions.find((x) => x.id === input.contributionId);
+    if (!c) return { ok: false, reason: "That contribution no longer exists." };
+    if (!ADVOCATE_REVIEW_ROLES.includes(input.reviewerRole as AdvocatePlanOwnerRole))
+      return {
+        ok: false,
+        reason:
+          "Only the ECM Provider or CF Care Manager who owns the plan can accept advocate input.",
+      };
+    if (!input.reviewerName.trim()) return { ok: false, reason: "Reviewer name is required." };
+    c.review = {
+      status: input.status,
+      reviewedBy: input.reviewerName.trim(),
+      reviewedByRole: input.reviewerRole as AdvocatePlanOwnerRole,
+      reviewedAt: new Date().toISOString(),
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
+    appendAudit({
+      category: "advocate",
+      action: "advocate_contribution_reviewed",
+      patientId: c.patientId,
+      actorId: input.reviewerName.trim(),
+      actorRole: input.reviewerRole,
+      detail: {
+        advocateLinkId: c.advocateLinkId,
+        advocateName: c.authorName,
+        contributionId: c.id,
+        section: c.section,
+        status: input.status,
+        note: c.review.note,
+        // Explicit: acceptance is a status, not a plan mutation.
+        planMutated: false,
+      },
+    });
+    emit();
+    return { ok: true, reason: input.status === "accepted" ? "Accepted." : "Declined." };
   },
 
   /**
@@ -8340,12 +8501,88 @@ export const AdelanteEHR = {
     if (!gate.ok) return { ok: false, reason: gate.reason };
     const name = input.attestedName.trim();
     if (!name) return { ok: false, reason: "Type your name to attest." };
+    // §Group D item 2 — the attestation is now a REVIEWABLE record as well as
+    // an audit row. Still no submission: see `submission` on the record.
+    const record: AdvocateEligibilityAttestation = {
+      id: uid(),
+      advocateLinkId: gate.link.id,
+      patientId: gate.link.patientId,
+      advocateName: gate.link.advocateName,
+      attestedName: name,
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      createdAt: new Date().toISOString(),
+      submission: "no_submission_path_defined",
+      review: { status: "pending" },
+    };
+    advocateEligibilityAttestations.unshift(record);
     _advocateAudit(gate.link, "advocate_eligibility_assist_attested", "eligibility", {
       attestedName: name,
       note: input.note,
+      attestationId: record.id,
       placeholder: "no_submission_path_defined",
     });
+    emit();
     return { ok: true, reason: "Attestation recorded." };
+  },
+
+  /** §Group D item 2 — the clinician/ECM-side review queue for attestations. */
+  advocateEligibilityAttestationQueue(
+    filter: { status?: "pending" | "reviewed" } = {},
+  ): (AdvocateEligibilityAttestation & {
+    ownerRole: AdvocatePlanOwnerRole;
+    patientName: string;
+  })[] {
+    return advocateEligibilityAttestations
+      .filter((a) => !filter.status || a.review.status === filter.status)
+      .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))
+      .map((a) => {
+        const p = _patient(a.patientId);
+        return {
+          ...a,
+          review: { ...a.review },
+          ownerRole: _documentOwnerRole(a.patientId),
+          patientName: p ? `${p.firstName} ${p.lastName}` : a.patientId,
+        };
+      });
+  },
+
+  reviewAdvocateEligibilityAttestation(input: {
+    attestationId: string;
+    reviewerName: string;
+    reviewerRole: string;
+    note?: string;
+  }): { ok: boolean; reason: string } {
+    const a = advocateEligibilityAttestations.find((x) => x.id === input.attestationId);
+    if (!a) return { ok: false, reason: "That attestation no longer exists." };
+    if (!ADVOCATE_REVIEW_ROLES.includes(input.reviewerRole as AdvocatePlanOwnerRole))
+      return {
+        ok: false,
+        reason: "Only the ECM Provider or CF Care Manager can review an advocate attestation.",
+      };
+    if (!input.reviewerName.trim()) return { ok: false, reason: "Reviewer name is required." };
+    a.review = {
+      status: "reviewed",
+      reviewedBy: input.reviewerName.trim(),
+      reviewedByRole: input.reviewerRole as AdvocatePlanOwnerRole,
+      reviewedAt: new Date().toISOString(),
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
+    appendAudit({
+      category: "advocate",
+      action: "advocate_eligibility_attestation_reviewed",
+      patientId: a.patientId,
+      actorId: input.reviewerName.trim(),
+      actorRole: input.reviewerRole,
+      detail: {
+        advocateLinkId: a.advocateLinkId,
+        advocateName: a.advocateName,
+        attestationId: a.id,
+        note: a.review.note,
+        submission: a.submission,
+      },
+    });
+    emit();
+    return { ok: true, reason: "Marked as reviewed." };
   },
 
   /**
@@ -8662,7 +8899,8 @@ export const AdelanteEHR = {
   } {
     const gate = _advocateGate(linkId, "document_view", "documents");
     if (!gate.ok) return { allowed: false, reason: gate.reason, canUpload: false, items: [] };
-    const part2Ok = _advocatePart2Unmasked(gate.link);
+    const docGates = _advocatePart2Gates(gate.link);
+    const part2Ok = docGates.unmasked;
     const items = AdelanteEHR.listPatientDocuments(gate.link.patientId).map((d) => {
       const vis = advocateDocumentVisibility({ isPart2: d.isPart2, part2Unmasked: part2Ok });
       return {
@@ -8683,6 +8921,8 @@ export const AdelanteEHR = {
       itemCount: items.length,
       restrictedCount: items.filter((i) => i.restricted).length,
       part2Disclosed: part2Ok,
+      advocateLinkValid: docGates.linkValid,
+      sudDisclosureConsentActive: docGates.sudDisclosureConsentActive,
     });
     return {
       allowed: true,

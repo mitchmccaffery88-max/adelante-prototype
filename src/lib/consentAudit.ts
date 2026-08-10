@@ -28,4 +28,34 @@ export const CONSENT_AUDIT_EVENT_TYPES = [
   { value: "consent_gated_content_disclosed", label: "Disclosure" },
   { value: "granted", label: "Legacy toggle — granted" },
   { value: "revoked", label: "Legacy toggle — revoked" },
+  { value: "advocate_schedule_viewed", label: "Advocate — schedule viewed" },
+  { value: "advocate_documents_viewed", label: "Advocate — documents viewed" },
+  { value: "advocate_access_denied", label: "Advocate — access denied" },
 ] as const;
+
+/**
+ * §Group D item 7 — advocate Part 2 visibility rests on TWO independent gates,
+ * and an auditor needs to see WHICH one decided the outcome. Both facts are
+ * already recorded on the advocate audit row (`advocateLinkValid`,
+ * `sudDisclosureConsentActive`); this only reads them back. Returns undefined
+ * for events that are not advocate Part 2 evaluations, so no other row grows a
+ * meaningless column.
+ */
+export interface AdvocateGateOutcome {
+  linkValid: boolean;
+  consentActive: boolean;
+  part2Disclosed: boolean;
+}
+
+export function advocateGateOutcome(event: AuditEvent): AdvocateGateOutcome | undefined {
+  if (event.category !== "advocate") return undefined;
+  const d = event.detail ?? {};
+  const linkValid = d["advocateLinkValid"];
+  const consentActive = d["sudDisclosureConsentActive"];
+  if (typeof linkValid !== "boolean" || typeof consentActive !== "boolean") return undefined;
+  return {
+    linkValid,
+    consentActive,
+    part2Disclosed: d["part2Disclosed"] === true,
+  };
+}

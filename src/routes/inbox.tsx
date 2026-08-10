@@ -18,6 +18,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { UnsignedNotesQueue } from "@/components/inbox/UnsignedNotesQueue";
 import { ProviderRequestQueue } from "@/components/inbox/ProviderRequestQueue";
 import { DocumentVerifyQueue } from "@/components/documents/DocumentVerifyQueue";
+import { AdvocateReviewQueue } from "@/components/inbox/AdvocateReviewQueue";
 import { ArrowLeft, ClipboardList, FileSignature, Inbox as InboxIcon, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -80,6 +81,7 @@ function InboxPage() {
           <TabsTrigger value="unsigned">Unsigned</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
+          <TabsTrigger value="advocate">Advocate</TabsTrigger>
         </TabsList>
         <TabsContent value="unsigned" className="pt-3">
           {notes.level === "none" ? (
@@ -106,6 +108,11 @@ function InboxPage() {
             the patient's pre-release episode, not assigned here. */}
         <TabsContent value="documents" className="pt-3">
           <DocumentVerifyQueue />
+        </TabsContent>
+        {/* §Group D items 1 + 2 — advocate care-plan input and eligibility
+            attestations, reviewed by the episode-derived plan owner. */}
+        <TabsContent value="advocate" className="pt-3">
+          <AdvocateReviewQueue />
         </TabsContent>
       </Tabs>
     </div>

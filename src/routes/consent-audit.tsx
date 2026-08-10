@@ -19,7 +19,12 @@ import { EyeOff, ShieldCheck } from "lucide-react";
 import { useActingRole } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { ClientDate } from "@/components/ClientDate";
-import { categoriesForAuditEvent, CONSENT_AUDIT_EVENT_TYPES } from "@/lib/consentAudit";
+import {
+  advocateGateOutcome,
+  categoriesForAuditEvent,
+  CONSENT_AUDIT_EVENT_TYPES,
+} from "@/lib/consentAudit";
+import { Check, X } from "lucide-react";
 
 export const Route = createFileRoute("/consent-audit")({
   head: () => ({
@@ -41,6 +46,23 @@ export const Route = createFileRoute("/consent-audit")({
 
 const CATEGORY_LABEL = new Map(CONSENT_CATEGORIES.map((c) => [c.key, c.label]));
 
+/** One of the two advocate gates, pass/fail, named explicitly. */
+function GateChip({ ok, label }: { ok: boolean; label: string }) {
+  return (
+    <div
+      className="flex items-center gap-1 text-[11px]"
+      data-testid={`gate-${ok ? "pass" : "fail"}`}
+    >
+      {ok ? (
+        <Check className="h-3 w-3 text-teal" />
+      ) : (
+        <X className="h-3 w-3 text-muted-foreground" />
+      )}
+      <span className={ok ? "text-navy" : "text-muted-foreground"}>{label}</span>
+    </div>
+  );
+}
+
 function ConsentAuditPage() {
   const [role] = useActingRole();
   const [patientId, setPatientId] = useState("all");
@@ -51,7 +73,10 @@ function ConsentAuditPage() {
 
   const rows = useEhr(() => {
     const events = AdelanteEHR.listAuditEvents({
-      category: ["consent", "disclosure"],
+      // §Group D item 7 — advocate reads are consent-conditional disclosures,
+      // so they belong in the same trail. They are redacted by the SAME rules
+      // (the `advocate` category already maps to `consent_ledger`).
+      category: ["consent", "disclosure", "advocate"],
       patientId: patientId === "all" ? undefined : patientId,
     })
       .filter((e) => action === "all" || e.action === action)
@@ -59,6 +84,7 @@ function ConsentAuditPage() {
     return redactAuditEvents(events, role).map((r) => ({
       ...r,
       categories: categoriesForAuditEvent(r.event),
+      gates: advocateGateOutcome(r.event),
     }));
   });
 
@@ -145,6 +171,7 @@ function ConsentAuditPage() {
                   <th className="p-3">Event</th>
                   <th className="p-3">Actor</th>
                   <th className="p-3">Categories</th>
+                  <th className="p-3">Advocate gates</th>
                   <th className="p-3">Detail</th>
                 </tr>
               </thead>
@@ -169,6 +196,24 @@ function ConsentAuditPage() {
                       {r.categories.length === 0
                         ? "—"
                         : r.categories.map((c) => CATEGORY_LABEL.get(c) ?? c).join(", ")}
+                    </td>
+                    <td className="p-3 text-xs" data-testid="advocate-gates-cell">
+                      {r.gates ? (
+                        <div className="space-y-1">
+                          <GateChip ok={r.gates.linkValid} label="Advocate link valid" />
+                          <GateChip
+                            ok={r.gates.consentActive}
+                            label="Part 2 disclosure consent"
+                          />
+                          <div className="text-[11px] text-muted-foreground">
+                            {r.gates.part2Disclosed
+                              ? "SUD detail disclosed"
+                              : "SUD detail masked"}
+                          </div>
+                        </div>
+                      ) : (
+                        "—"
+                      )}
                     </td>
                     <td className="p-3 text-xs text-muted-foreground">
                       {Object.entries(r.detail)
