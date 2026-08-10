@@ -5446,6 +5446,128 @@ export const AdelanteEHR = {
     return patients.find((x) => x.id === patientId)?.frontDoor;
   },
 
+  // ---------- §Front-door Phase 2 — missed pre-release hand-off ----------
+
+  /**
+   * Safety-net background lookup. Runs for the Phase 1 "not sure" population
+   * (`frontDoor.recordLookupPending`) and for anyone answering yes / not sure
+   * to justice-involvement history with no plan already found.
+   *
+   * A match routes toward the Phase 1 reconnection path (`/start/reconnect`);
+   * no match means a genuine missed hand-off and the caller generates the
+   * catch-up list. The lookup is DISCLOSED to the person — see
+   * `LOOKUP_DISCLOSURE` in src/lib/missedHandoff.ts.
+   */
+  runSafetyNetRecordLookup(
+    patientId: string,
+    input: { justiceInvolvement?: TriState } = {},
+  ): LookupResult & { ran: boolean } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ran: false, status: "none", candidateIds: [] };
+    const ran = shouldRunSafetyNetLookup({
+      recordLookupPending: p.frontDoor?.recordLookupPending,
+      justiceInvolvement: input.justiceInvolvement ?? p.coverage?.justiceInvolvement,
+      existingPlanFound: Boolean(AdelanteEHR.activePreReleaseEpisode(patientId)),
+    });
+    if (!ran) return { ran: false, status: "none", candidateIds: [] };
+    const subject: LookupSubject = {
+      id: p.id,
+      dob: p.dob,
+      cin: p.cin,
+      phone: p.phone,
+      lastName: p.lastName,
+    };
+    const result = matchExistingRecord(
+      subject,
+      patients.map((c) => ({
+        id: c.id,
+        dob: c.dob,
+        cin: c.cin,
+        phone: c.phone,
+        lastName: c.lastName,
+      })),
+    );
+    appendAudit({
+      category: "clinical",
+      action: "front_door_safety_net_lookup",
+      patientId,
+      actorId: "system",
+      detail: {
+        status: result.status,
+        basis: result.basis,
+        candidateCount: result.candidateIds.length,
+        disclosedToPatient: true,
+      },
+    });
+    emit();
+    return { ran: true, ...result };
+  },
+
+  /**
+   * No match → genuine missed hand-off. Reuses the CF Care Manager's own
+   * pre-release task generation (`openPreReleaseEpisode` over
+   * `PRE_RELEASE_FORMS`) rather than duplicating a second task list, but
+   * compressed to day one of intake, plus a Medi-Cal reactivation task
+   * because reactivation must NOT be assumed automatic for this population.
+   */
+  generateMissedHandoffCatchUp(input: {
+    patientId: string;
+    ownerStaffId?: string;
+    ownerName: string;
+    ownerRole: string;
+    trigger: MissedPreReleaseFlag["trigger"];
+    facilityId?: string;
+  }): MissedPreReleaseFlag | undefined {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return undefined;
+    if (p.missedPreReleaseCoordination) return p.missedPreReleaseCoordination;
+    const today = new Date().toISOString().slice(0, 10);
+    const ep = AdelanteEHR.openPreReleaseEpisode({
+      patientId: p.id,
+      anticipatedReleaseDate: today,
+      cfCareManagerStaffId: input.ownerStaffId ?? "",
+      cfCareManagerName: input.ownerName,
+      facilityId: input.facilityId,
+      openedBy: input.ownerName,
+      actorRole: input.ownerRole,
+      missedHandoff: true,
+    });
+    AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: "",
+      title: MEDI_CAL_FOLLOW_UP_TASK_TITLE,
+      detail:
+        "Missed pre-release coordination: verify Medi-Cal status with the county and troubleshoot a suspended or terminated record. Do not tell the member it reactivates automatically.",
+      dueDate: today,
+      taskType: "missed_handoff_catch_up",
+      priority: "urgent",
+      allowedRoles: ["cf_care_manager", "ecm_provider", "case_manager"],
+      source: "missed_pre_release_handoff",
+      dedupeKey: `missedhandoff:${ep.id}:medi_cal_reactivation`,
+    });
+    if (p.coverage) p.coverage.mediCalReactivationFollowUp = true;
+    const flag: MissedPreReleaseFlag = {
+      flaggedAt: new Date().toISOString(),
+      trigger: input.trigger,
+      ownerStaffId: input.ownerStaffId,
+      ownerName: input.ownerName,
+      ownerRole: input.ownerRole,
+      episodeId: ep.id,
+      mediCalFollowUpRequired: true,
+    };
+    p.missedPreReleaseCoordination = flag;
+    appendAudit({
+      category: "clinical",
+      action: "missed_pre_release_coordination_flagged",
+      patientId: p.id,
+      actorId: input.ownerStaffId ?? input.ownerName,
+      actorRole: input.ownerRole,
+      detail: { episodeId: ep.id, trigger: input.trigger },
+    });
+    emit();
+    return flag;
+  },
+
   /**
    * True when the person's referral source is already known to the system, so
    * "how did you hear about us" must not be asked. Two known-source paths
