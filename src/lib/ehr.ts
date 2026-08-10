@@ -167,6 +167,30 @@ export type ReferralSource =
   | "self"
   | "other";
 
+/**
+ * Front-door entry sequence (Phase 1). Recorded before intake begins so the
+ * downstream flow knows how the person arrived. Types live in
+ * `src/lib/frontDoor.ts` so the pure routing logic stays testable.
+ */
+export interface FrontDoorEntry {
+  /** Q1 — "Do you already have a care plan or case manager with Adelante?" */
+  existingCare: TriState;
+  /**
+   * Phase 2 hook. Set when Q1 === "unsure": a later safety-net record lookup
+   * picks these up. Phase 1 only writes the flag; nothing consumes it yet.
+   */
+  recordLookupPending?: boolean;
+  /** Q2 — arriving as a family member / advocate. */
+  helpingSomeoneElse?: TriState;
+  /** Q3 — seeking care for themselves. */
+  seekingCareForSelf?: TriState;
+  /** Phase 1c — only collected on the general-population path. */
+  heardAbout?: HeardAboutSource;
+  /** Free text captured on the Q3 = no escape screen (placeholder path). */
+  otherHelpNote?: string;
+  recordedAt: string;
+}
+
 // Funding lane classifies a billable event independently of its billingStatus.
 // A clinical event is authored first, then classified into a lane.
 export type FundingLane =
