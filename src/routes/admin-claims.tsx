@@ -71,13 +71,17 @@ const SUBMITTED_STATES: ClaimState[] = ["submitted", "paid", "denied", "partial"
 /**
  * Segmented control on a real Radix `ToggleGroup`.
  *
- * §Group C follow-up — Group C had substituted plain buttons after clicks
- * appeared to do nothing. Root cause was the harness, not Radix: the toggle
- * group is `type="single"`, which emits `""` when you click the ALREADY
- * selected item (deselect), and Playwright's default `.click()` lands on the
- * item that is already on. Guarding the empty value here (a required part of
- * a single-select segmented control) makes the control behave; the earlier
- * "unclickable" reading was a mis-diagnosis.
+ * §Group C follow-up — Group C swapped in plain buttons after clicks here
+ * "did nothing". Radix was never the problem: /admin-claims is gated on the
+ * `billing` record class, and with the default acting role (ecm_provider) the
+ * RouteAccessGuard redirects away right after hydration. The probe was
+ * clicking a page that was already being replaced, so nothing ever had React
+ * handlers on it. With an authorised acting role the real ToggleGroup toggles
+ * fine — verified in-browser, not just jsdom.
+ *
+ * The one genuine requirement for a single-select segmented control is
+ * ignoring the empty `onValueChange` Radix emits when you re-click the active
+ * item; otherwise the control can end up with nothing selected.
  */
 export function SegmentedFilter<T extends string>({
   label,
