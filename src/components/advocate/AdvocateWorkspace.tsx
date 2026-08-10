@@ -17,8 +17,10 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
-import { HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock, FileText, Info } from "lucide-react";
+import { HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock, FileText, Info, Download, Bell } from "lucide-react";
 import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
+import { downloadDocumentPayload } from "@/components/documents/PatientDocumentsCard";
+import { useI18n } from "@/lib/i18n";
 
 export function AdvocateTierBadge({ linkId }: { linkId: string }) {
   const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
@@ -357,7 +359,9 @@ export function AdvocateSelfCareCard({ linkId }: { linkId: string }) {
  * verbatim — this component cannot un-restrict anything.
  */
 export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
+  const { t } = useI18n();
   const view = useEhr(() => AdelanteEHR.advocateDocuments(linkId));
+  const notices = useEhr(() => AdelanteEHR.advocateDocumentNotifications(linkId));
   if (!view.allowed) return null;
 
   return (
@@ -389,7 +393,7 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
       )}
 
       {view.items.length === 0 ? (
-        <p className="text-sm text-muted-foreground">Nothing has been sent yet.</p>
+        <p className="text-sm text-muted-foreground">{t("docNoneYet")}</p>
       ) : (
         <ul className="space-y-2">
           {view.items.map((d) => (
@@ -404,16 +408,33 @@ export function AdvocateDocumentsPanel({ linkId }: { linkId: string }) {
                 <span className="flex shrink-0 items-center gap-2">
                   {d.restricted && (
                     <Badge variant="outline" className="gap-1">
-                      <Lock className="h-3 w-3" /> Restricted
+                      <Lock className="h-3 w-3" /> {t("docRestricted")}
                     </Badge>
                   )}
                   <Badge variant={d.verification === "verified" ? "default" : "secondary"}>
                     {d.verification === "verified"
-                      ? "In the record"
+                      ? t("docStatusVerified")
                       : d.verification === "rejected"
-                        ? "Not accepted"
-                        : "Pending review"}
+                        ? t("docStatusRejected")
+                        : t("docStatusPending")}
                   </Badge>
+                  {/* The button is offered even for a restricted row: refusing
+                      at the SHARED gate (and saying why) is the honest
+                      behaviour, and hiding it would be a second, silent rule. */}
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const res = AdelanteEHR.requestDocumentDownload({
+                        documentId: d.id,
+                        viewer: { kind: "advocate", linkId },
+                      });
+                      if (!res.ok) return toast.error(res.reason);
+                      downloadDocumentPayload(res);
+                    }}
+                  >
+                    <Download className="mr-1 h-3.5 w-3.5" /> {t("docDownload")}
+                  </Button>
                 </span>
               </div>
               {d.restricted && (
