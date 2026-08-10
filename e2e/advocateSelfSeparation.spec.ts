@@ -56,7 +56,7 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
 
   await page.getByLabel("Their name").fill(ADVOCATE_NAME);
   await page.getByLabel("Relationship (optional)").fill("Sister");
-  await page.getByLabel(/how should we reach them/i).fill("marisol@example.org");
+  await page.getByLabel("Their email or mobile number").fill("marisol@example.org");
   await page.getByRole("button", { name: /send invitation/i }).click();
 
   const code = (await page.getByText(/ADV-[A-Z0-9-]+/).first().innerText()).trim();
