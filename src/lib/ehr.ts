@@ -4996,6 +4996,7 @@ export const AdelanteEHR = {
      */
     signupCredential?: SignupCredentialMeta;
   }): Patient {
+    const assisted = input.signupAssistedBy;
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
     const now = new Date().toISOString();
@@ -5019,8 +5020,24 @@ export const AdelanteEHR = {
       referralId: input.referralId,
       cin: input.cin,
       ...(input.signupCredential ? { signupCredential: input.signupCredential } : {}),
+      ...(assisted ? { signupAssistedBy: assisted } : {}),
     };
     patients.push(p);
+    // Only the front door audits itself: Track A / referral conversion calls
+    // pass no credential and no helper, and stay silent exactly as before.
+    if (input.signupCredential) {
+      appendAudit({
+        category: "clinical",
+        action: assisted?.tier === 2 ? "patient_signup_created_assisted" : "patient_signup_created",
+        patientId: p.id,
+        actorId: assisted?.tier === 2 ? (assisted.operatorStaffId ?? p.id) : p.id,
+        actorRole: assisted?.tier === 2 ? (assisted.operatorRole ?? "staff") : "patient",
+        detail: {
+          credentialKind: input.signupCredential.kind,
+          ...helperAuditDetail(assisted),
+        },
+      });
+    }
     emit();
     return p;
   },
