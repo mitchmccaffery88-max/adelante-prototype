@@ -250,6 +250,24 @@ function IntakePage() {
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
   const crisisFlagged = phqItem9 > 0;
 
+  /**
+   * Phase 1c gate. Only the general-population path is asked how they found
+   * us; anyone with a known source is skipped. "Known source" is two things in
+   * the data model: `patient.referralId` (set when a formal `Referral`
+   * submission is advanced to enrolled) and an open `PreReleaseEpisode`
+   * (Track A pre-release) — both surfaced by `hasKnownReferralSource`.
+   */
+  const knownSource = useEhr(() => AdelanteEHR.hasKnownReferralSource(currentId));
+  const frontDoor = useEhr(() => AdelanteEHR.getFrontDoorEntry(currentId));
+  const askHeardAbout = shouldAskHeardAbout({
+    // No front-door record (e.g. deep-linked straight into intake) is treated
+    // as the general-population path, which is what /start Q3 = yes produces.
+    seekingCareForSelf: (frontDoor?.seekingCareForSelf ?? "yes") === "yes",
+    existingCare: frontDoor?.existingCare ?? "no",
+    hasReferralRecord: Boolean(patient?.referralId),
+    hasPreReleaseEpisode: knownSource && !patient?.referralId,
+  });
+
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
     () => SCREENERS.filter((s) => !s.isSud || sudConsent === true),
