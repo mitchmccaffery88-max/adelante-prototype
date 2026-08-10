@@ -6612,6 +6612,8 @@ export const AdelanteEHR = {
     receivingEcmStaffId?: string;
     openedBy: string;
     actorRole: string;
+    /** §Front-door Phase 2 — day-one catch-up rather than pre-release timing. */
+    missedHandoff?: boolean;
   }): PreReleaseEpisode {
     if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
     if (!input.anticipatedReleaseDate)
@@ -6632,6 +6634,7 @@ export const AdelanteEHR = {
       status: "open",
       openedAt: new Date().toISOString(),
       openedBy: input.openedBy,
+      missedHandoff: input.missedHandoff || undefined,
     };
     preReleaseEpisodes.unshift(ep);
     // Every form becomes a real worklist row — no parallel task mechanism.
@@ -6639,10 +6642,11 @@ export const AdelanteEHR = {
       AdelanteEHR.createCaseTask({
         patientId: ep.patientId,
         assignedTo: "",
-        title: `Pre-release — ${def.label}`,
-        detail: `${PRE_RELEASE_FORM_CATEGORIES.find((c) => c.key === def.category)?.label ?? def.category} · release ${ep.anticipatedReleaseDate}`,
+        title: `${ep.missedHandoff ? "Catch-up (missed pre-release)" : "Pre-release"} — ${def.label}`,
+        detail: `${PRE_RELEASE_FORM_CATEGORIES.find((c) => c.key === def.category)?.label ?? def.category} · ${ep.missedHandoff ? `due day one of intake (${ep.anticipatedReleaseDate})` : `release ${ep.anticipatedReleaseDate}`}`,
         dueDate: ep.anticipatedReleaseDate,
-        taskType: "pre_release_form",
+        taskType: ep.missedHandoff ? "missed_handoff_catch_up" : "pre_release_form",
+        priority: ep.missedHandoff ? "urgent" : undefined,
         allowedRoles: ["cf_care_manager", "ecm_provider"],
         facilityId: ep.facilityId,
         facilityContext: true,
