@@ -1433,7 +1433,13 @@ export interface CrisisEscalation {
   patientId: string;
   /** The underlying PatientAlert record — that alert is the visible flag. */
   alertId: string;
-  triggerSource: "manual" | "screener_score";
+  /**
+   * `assisted_signup` is the manual stopgap flag raised by a helper during an
+   * assisted intake/sign-up. It is a SIGNAL SOURCE into the same escalation
+   * record — kept distinct from `manual` (clinician-initiated from the chart)
+   * and `screener_score` so the automated-vs-manual catch rate is measurable.
+   */
+  triggerSource: "manual" | "screener_score" | "assisted_signup";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
   triggeredBy: string;
@@ -10084,7 +10090,7 @@ export const AdelanteEHR = {
       recipientRole: "clinical_coordinator",
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
-      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : "manual"}): ${detail}`,
+      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : "manual"}): ${detail}`,
       linkRoute: "/crisis-queue",
       patientId,
     });
