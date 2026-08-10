@@ -4995,6 +4995,11 @@ export const AdelanteEHR = {
      * referral conversion), which is unchanged.
      */
     signupCredential?: SignupCredentialMeta;
+    /**
+     * §Front-door Phase 3 — Tier 1 informal helper or Tier 2 staff operator.
+     * Attribution only; it grants nothing and gates nothing.
+     */
+    signupAssistedBy?: HelperAttribution;
   }): Patient {
     const assisted = input.signupAssistedBy;
     const id = uid();
