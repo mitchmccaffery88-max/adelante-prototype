@@ -116,6 +116,20 @@ function HelperField({
   );
 }
 
+/** Tier 2 — say out loud whose identity is being attached to this record. */
+function OperatorBanner({ operator }: { operator: SignupOperator }) {
+  return (
+    <div className="flex items-start gap-2 rounded-lg border border-teal/40 bg-teal/5 p-3 text-xs">
+      <UserCheck className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+      <span className="text-muted-foreground">
+        You're completing this on someone's behalf. It will be recorded under{" "}
+        <span className="font-medium text-navy">{operator.staffName}</span> — including as the
+        person who used the enrollment code.
+      </span>
+    </div>
+  );
+}
+
 /**
  * §Front-door Phase 3 (groundwork) — one entry form, two real branches:
  * a brand-new self-service patient, or a Track A member claiming the record a
