@@ -160,11 +160,11 @@ function RedeemCodePanel({
   onComplete,
   onBack,
 }: SignupFlowProps & { onBack: () => void }) {
-  const navigate = useNavigate();
   const [code, setCode] = useState("");
   const [kind, setKind] = useState<"password" | "pin">("password");
   const [credential, setCredential] = useState("");
   const [credentialConfirm, setCredentialConfirm] = useState("");
+  const [helperName, setHelperName] = useState("");
   const [errors, setErrors] = useState<SignupErrors>({});
   const [failure, setFailure] = useState<RedemptionMessage | null>(null);
 
@@ -194,10 +194,10 @@ function RedeemCodePanel({
     const { patient } = AdelanteEHR.redeemEnrollmentCode({
       code: normalized,
       credential: credentialMeta(kind),
+      assistedBy: attributionFor(operator, helperName),
     });
-    AdelanteEHR.setCurrentPatientId(patient.id);
-    toast.success(`Welcome back, ${patient.firstName}`, {
-      description: "We found the plan your care team set up for you.",
+    onComplete(patient, "claimed");
+  }
     });
     navigate({ to: "/start" });
   }
