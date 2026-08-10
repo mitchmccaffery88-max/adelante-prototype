@@ -131,6 +131,35 @@ function SegmentedFilter<T extends string>({
 type SortKey = "patient" | "code" | "clinician" | "state" | "charge";
 type SortDir = "asc" | "desc";
 
+/**
+ * Pure comparator layer so sorting is unit-testable without rendering.
+ * `label` resolves the display string for the name columns; sorting on the
+ * value the cell shows avoids the classic "sorted by hidden id" surprise.
+ */
+export function sortClaimRows<T>(
+  rows: T[],
+  sort: { key: SortKey; dir: SortDir } | null,
+  value: (row: T, key: SortKey) => string | number,
+): T[] {
+  if (!sort) return rows;
+  const factor = sort.dir === "asc" ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const av = value(a, sort.key);
+    const bv = value(b, sort.key);
+    if (typeof av === "number" && typeof bv === "number") return (av - bv) * factor;
+    return String(av).localeCompare(String(bv), undefined, { numeric: true }) * factor;
+  });
+}
+
+/** Click cycles asc -> desc -> asc on the same column; a new column starts asc. */
+export function nextSort(
+  current: { key: SortKey; dir: SortDir } | null,
+  key: SortKey,
+): { key: SortKey; dir: SortDir } {
+  if (current?.key === key) return { key, dir: current.dir === "asc" ? "desc" : "asc" };
+  return { key, dir: "asc" };
+}
+
 function SortHeader({
   label,
   sortKey,
