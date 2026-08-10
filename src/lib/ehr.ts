@@ -4977,9 +4977,16 @@ export const AdelanteEHR = {
     lastName: string;
     dob?: string;
     phone?: string;
+    email?: string;
     preferredLanguage?: PreferredLanguage;
     referralId?: string;
     cin?: string;
+    /**
+     * §Self-service sign-up — prototype credential metadata only (no secret).
+     * Absent for every staff-provisioned path (Track A caseload upload,
+     * referral conversion), which is unchanged.
+     */
+    signupCredential?: SignupCredentialMeta;
   }): Patient {
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
@@ -4991,6 +4998,7 @@ export const AdelanteEHR = {
       lastName: input.lastName,
       dob: input.dob ?? "",
       phone: input.phone ?? "",
+      ...(input.email ? { email: input.email } : {}),
       releaseDate: "",
       enrolledAt: now,
       episodeDay: 1,
@@ -5002,6 +5010,7 @@ export const AdelanteEHR = {
       preferredLanguage: input.preferredLanguage,
       referralId: input.referralId,
       cin: input.cin,
+      ...(input.signupCredential ? { signupCredential: input.signupCredential } : {}),
     };
     patients.push(p);
     emit();
@@ -5024,6 +5033,7 @@ export const AdelanteEHR = {
         | "releaseDate"
         | "contactPrefs"
         | "emergencyContact"
+        | "emergencyContacts"
         | "address"
         | "cin"
       >
@@ -5032,6 +5042,13 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     Object.assign(p, patch);
+    // Keep the legacy single field pointing at the primary contact so older
+    // read sites (profile dialog, patient home, chart tab) stay correct.
+    if (patch.emergencyContacts) {
+      const [primary] = patch.emergencyContacts;
+      if (primary) p.emergencyContact = primary;
+      else delete p.emergencyContact;
+    }
     emit();
   },
   completeIntake(
