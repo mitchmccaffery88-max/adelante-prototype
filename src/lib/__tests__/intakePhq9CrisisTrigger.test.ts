@@ -17,7 +17,7 @@ describe("intake PHQ-9 item 9 crisis trigger", () => {
     );
     expect(row.status).toBe("open");
     expect(row.triggerSource).toBe("screener_score");
-    const queued = AdelanteEHR.openCrisisQueue().find((q) => q.patient.id === pid);
+    const queued = AdelanteEHR.listOpenCrisisEscalations().find((q) => q.patient.id === pid);
     expect(queued).toBeTruthy();
     const p = AdelanteEHR.getPatient(pid)!;
     expect(p.crisisFlag?.source).toBe("phq-9-item-9");
