@@ -9,7 +9,7 @@ import {
   supervisorCandidates,
   type StaffRole,
 } from "../roles";
-import { STAFF_NAV, visibleNav } from "../navSections";
+import { STAFF_NAV, staffNavForRole } from "../navSections";
 
 const TRAINEE = "s-tr1";
 
@@ -66,7 +66,7 @@ describe("RBAC + nav discoverability", () => {
   it("is registered in the nav and gated there too", () => {
     const entry = STAFF_NAV.find((e) => e.id === "admin-supervision")!;
     expect(entry.to).toBe("/admin-supervision");
-    const ids = (role: StaffRole) => visibleNav(role).map((e) => e.id);
+    const ids = (role: StaffRole) => staffNavForRole(role).map((e) => e.id);
     expect(ids("sys_admin")).toContain("admin-supervision");
     expect(ids("billing")).not.toContain("admin-supervision");
   });
