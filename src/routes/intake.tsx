@@ -16,7 +16,13 @@ import {
   type ContactChannel,
   type BestTime,
   type PreferredLanguage,
+  type EmergencyContact,
 } from "@/lib/ehr";
+import {
+  cleanEmergencyContacts,
+  emptyEmergencyContact,
+  readEmergencyContacts,
+} from "@/lib/emergencyContacts";
 import { Input } from "@/components/ui/input";
 import {
   COVERAGE_TYPES,
@@ -56,6 +62,8 @@ import {
   CalendarCheck,
   HelpingHand,
   Building2,
+  Plus,
+  Trash2,
 } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
