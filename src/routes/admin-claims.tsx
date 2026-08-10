@@ -200,6 +200,7 @@ function ClaimsPage() {
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const [service, setService] = useState<ServiceFilter>("all");
   const [outcome, setOutcome] = useState<OutcomeFilter>("all");
+  const [sort, setSort] = useState<{ key: SortKey; dir: SortDir } | null>(null);
   const blockedAttempts = useEhr(() =>
     AdelanteEHR.listAuditEvents({ category: "clinical" }).filter(
       (e) => e.action === "community_billing_blocked",
@@ -219,6 +220,30 @@ function ClaimsPage() {
     return true;
   });
   const showBlocked = outcome === "blocked";
+
+  const patientLabel = (id: string) => {
+    const p = patients.find((x) => x.id === id);
+    return p ? `${p.firstName} ${p.lastName}` : "";
+  };
+  const sortedClaims = useMemo(
+    () =>
+      sortClaimRows(visibleClaims, sort, (c, key) => {
+        switch (key) {
+          case "patient":
+            return patientLabel(c.patientId);
+          case "code":
+            return c.serviceCode ?? "";
+          case "clinician":
+            return clinicians.find((x) => x.id === c.clinicianId)?.name ?? "";
+          case "state":
+            return c.state;
+          case "charge":
+            return c.chargeCents;
+        }
+      }),
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [visibleClaims, sort, patients, clinicians],
+  );
 
   // De-identified export, same shape/discipline as the caseload CSV on /admin:
   // program ID only, plus the group provenance the worklist shows on screen.
