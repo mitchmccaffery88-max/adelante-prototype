@@ -287,6 +287,11 @@ function RedeemCodePanel({
           />
         </div>
 
+        {!operator && (
+          <HelperField value={helperName} onChange={setHelperName} idPrefix="rc" />
+        )}
+        {operator && <OperatorBanner operator={operator} />}
+
         {failure && (
           <div
             className="space-y-3 rounded-lg border-2 border-destructive/40 bg-destructive/5 p-4 text-sm"
