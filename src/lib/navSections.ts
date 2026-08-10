@@ -31,6 +31,7 @@ import {
   Target,
   UserCog,
   UserCheck,
+  UserPlus,
   UserSearch,
   Users,
 } from "lucide-react";
