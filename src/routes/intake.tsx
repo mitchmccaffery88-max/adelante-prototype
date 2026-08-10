@@ -19,6 +19,16 @@ import {
 } from "@/lib/ehr";
 import { Input } from "@/components/ui/input";
 import {
+  COVERAGE_TYPES,
+  HEARD_ABOUT_SOURCES,
+  coverageMessage,
+  ecmQuestionApplies,
+  shouldAskHeardAbout,
+  type CoverageType,
+  type HeardAboutSource,
+  type TriState,
+} from "@/lib/frontDoor";
+import {
   Select,
   SelectContent,
   SelectItem,
@@ -52,88 +62,64 @@ export const Route = createFileRoute("/intake")({
   component: IntakePage,
 });
 
+/**
+ * Coverage messaging. All wording now comes from `coverageMessage`, which keys
+ * the reentry safety-net promise off justice involvement rather than coverage
+ * type — the old "other coverage" branch told private-pay patients with no
+ * justice history that their sessions were free, which was not true.
+ */
 function CoverageCallout({
-  status,
+  coverageType,
+  justiceInvolvement,
   county,
   otherPlanName,
   onOtherPlanChange,
 }: {
-  status: CoverageStatus;
+  coverageType: CoverageType;
+  justiceInvolvement: TriState;
   county: string;
   otherPlanName: string;
   onOtherPlanChange: (v: string) => void;
 }) {
-  if (status === "active") {
-    return (
-      <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4">
-        <div className="flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">You're all set.</div>
-            <p className="text-muted-foreground mt-1">
-              Your visits are free. We'll verify your Medi-Cal ID with
-              {county ? ` ${county} County` : " the county"} — no action needed from you.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (status === "suspended") {
-    return (
-      <div className="rounded-lg border-2 border-gold/50 bg-gold/10 p-4">
-        <div className="flex items-start gap-3">
-          <Sparkles className="h-5 w-5 text-navy mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">Your Medi-Cal turns back on automatically.</div>
-            <p className="text-foreground/80 mt-1">
-              Under CalAIM, your benefits reactivate when you come home — you don't need to reapply.
-              A case manager will confirm with
-              {county ? ` ${county} County` : " your county"} within 5 business days.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  if (status === "none_unsure") {
-    return (
-      <div className="rounded-lg border-2 border-navy/30 bg-navy/5 p-4">
-        <div className="flex items-start gap-3">
-          <HelpingHand className="h-5 w-5 text-navy mt-0.5 shrink-0" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">We'll help you apply.</div>
-            <p className="text-muted-foreground mt-1">
-              A case manager will start a BenefitsCal application with you. Most reentry adults
-              qualify, and coverage is usually active within 10 days. Your visits stay free in the
-              meantime.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-  // "other"
+  const msg = coverageMessage({ coverageType, justiceInvolvement, county });
+  const Icon = msg.tone === "good" ? CheckCircle2 : msg.tone === "info" ? Building2 : HelpingHand;
+  const shell =
+    msg.tone === "good"
+      ? "border-2 border-teal/40 bg-teal/5"
+      : msg.tone === "action"
+        ? "border-2 border-navy/30 bg-navy/5"
+        : "border bg-secondary/40";
+
   return (
-    <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
+    <div className={`rounded-lg p-4 space-y-3 ${shell}`} data-testid="coverage-callout">
       <div className="flex items-start gap-3">
-        <Building2 className="h-5 w-5 text-navy mt-0.5 shrink-0" />
+        <Icon className="h-5 w-5 text-navy mt-0.5 shrink-0" />
         <div className="text-sm">
-          <div className="font-medium text-navy">We'll bill your plan.</div>
-          <p className="text-muted-foreground mt-1">
-            If your plan doesn't cover the visit, your sessions stay free through our reentry
-            program — you will not get a bill.
-          </p>
+          <div className="font-medium text-navy">{msg.title}</div>
+          <p className="text-muted-foreground mt-1">{msg.body}</p>
+          {msg.billingNote && (
+            <p className="mt-2 text-foreground/80" data-testid="billing-note">
+              {msg.billingNote}
+            </p>
+          )}
+          {msg.reentrySafetyNet && (
+            <p className="mt-2 flex items-start gap-2 text-foreground/80" data-testid="reentry-note">
+              <Sparkles className="h-4 w-4 shrink-0 text-navy mt-0.5" />
+              <span>{msg.reentrySafetyNet}</span>
+            </p>
+          )}
         </div>
       </div>
-      <div className="space-y-1.5">
-        <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
-        <Input
-          value={otherPlanName}
-          onChange={(e) => onOtherPlanChange(e.target.value)}
-          placeholder="e.g. Kaiser, Anthem Blue Cross"
-        />
-      </div>
+      {(coverageType === "private" || coverageType === "medicare") && (
+        <div className="space-y-1.5">
+          <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
+          <Input
+            value={otherPlanName}
+            onChange={(e) => onOtherPlanChange(e.target.value)}
+            placeholder="e.g. Kaiser, Anthem Blue Cross"
+          />
+        </div>
+      )}
     </div>
   );
 }
@@ -161,7 +147,23 @@ function IntakePage() {
     countyOfRelease: string;
     jiReentryFlag: boolean;
     otherPlanName?: string;
-  }>({ status: "active", countyOfRelease: "Tulare", jiReentryFlag: false, otherPlanName: "" });
+    /** Payer bucket — independent of justice involvement. */
+    coverageType: CoverageType;
+    /** Justice-involvement history — independent of the payer. */
+    justiceInvolvement: TriState;
+    /** CalAIM ECM follow-up; only asked under Medi-Cal / dual. */
+    ecmEligible: boolean;
+  }>({
+    status: "active",
+    countyOfRelease: "Tulare",
+    jiReentryFlag: false,
+    otherPlanName: "",
+    coverageType: "medi_cal",
+    justiceInvolvement: "no",
+    ecmEligible: false,
+  });
+  // Phase 1c — optional, general-population path only.
+  const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // P1 — About you
   const [profile, setProfile] = useState({
     preferredName: "",
@@ -248,6 +250,24 @@ function IntakePage() {
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
   const crisisFlagged = phqItem9 > 0;
 
+  /**
+   * Phase 1c gate. Only the general-population path is asked how they found
+   * us; anyone with a known source is skipped. "Known source" is two things in
+   * the data model: `patient.referralId` (set when a formal `Referral`
+   * submission is advanced to enrolled) and an open `PreReleaseEpisode`
+   * (Track A pre-release) — both surfaced by `hasKnownReferralSource`.
+   */
+  const knownSource = useEhr(() => AdelanteEHR.hasKnownReferralSource(currentId));
+  const frontDoor = useEhr(() => AdelanteEHR.getFrontDoorEntry(currentId));
+  const askHeardAbout = shouldAskHeardAbout({
+    // No front-door record (e.g. deep-linked straight into intake) is treated
+    // as the general-population path, which is what /start Q3 = yes produces.
+    seekingCareForSelf: (frontDoor?.seekingCareForSelf ?? "yes") === "yes",
+    existingCare: frontDoor?.existingCare ?? "no",
+    hasReferralRecord: Boolean(patient?.referralId),
+    hasPreReleaseEpisode: knownSource && !patient?.referralId,
+  });
+
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
     () => SCREENERS.filter((s) => !s.isSud || sudConsent === true),
@@ -258,12 +278,13 @@ function IntakePage() {
       { key: "welcome", label: "Welcome" },
       { key: "about", label: "About you" },
       { key: "consent", label: "Consent" },
-      { key: "coverage", label: "Medi-Cal" },
+      { key: "coverage", label: "Coverage" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
+      ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
-    [activeScreeners],
+    [activeScreeners, askHeardAbout],
   );
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
@@ -314,8 +335,14 @@ function IntakePage() {
             : "not_found",
       countyOfRelease: coverage.countyOfRelease,
       jiReentryFlag: coverage.jiReentryFlag,
+      coverageType: coverage.coverageType,
+      justiceInvolvement: coverage.justiceInvolvement,
+      ecmEligible: ecmQuestionApplies(coverage.coverageType) ? coverage.ecmEligible : false,
       otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
+    if (askHeardAbout && heardAbout) {
+      AdelanteEHR.recordFrontDoorEntry(currentId, { heardAbout });
+    }
     AdelanteEHR.completeIntake(currentId, {
       needs,
       hipaa: hipaaConsent,
@@ -583,23 +610,98 @@ function IntakePage() {
           <div className="space-y-5">
             <div>
               <Badge variant="outline" className="border-teal/40 text-teal">
-                Medi-Cal
+                Coverage
               </Badge>
               <p className="mt-2 text-sm text-muted-foreground">
-                Adelante visits are free with Medi-Cal. If your Medi-Cal was paused while you were
-                away, it turns back on when you come home — you don't have to reapply. We can help.
+                Two separate things: how your care gets paid for, and whether you've been involved
+                with the justice system. Neither one decides the other, and neither one changes the
+                care you get.
               </p>
             </div>
             <div className="space-y-1.5">
-              <Label className="text-sm">County of release</Label>
+              <Label className="text-sm">County</Label>
               <input
                 value={coverage.countyOfRelease}
                 onChange={(e) => setCoverage({ ...coverage, countyOfRelease: e.target.value })}
                 className="w-full rounded-md border bg-background px-3 py-2 text-sm"
               />
             </div>
+
             <div className="space-y-1.5">
-              <Label className="text-sm">Do you have Medi-Cal?</Label>
+              <Label className="text-sm">What kind of coverage do you have?</Label>
+              <Select
+                value={coverage.coverageType}
+                onValueChange={(v) =>
+                  setCoverage({
+                    ...coverage,
+                    coverageType: v as CoverageType,
+                    // ECM only exists under Medi-Cal / dual — clear it otherwise.
+                    ecmEligible: ecmQuestionApplies(v as CoverageType) ? coverage.ecmEligible : false,
+                  })
+                }
+              >
+                <SelectTrigger aria-label="Coverage type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {COVERAGE_TYPES.map((c) => (
+                    <SelectItem key={c.key} value={c.key}>
+                      {c.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+
+            {ecmQuestionApplies(coverage.coverageType) && (
+              <label
+                className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3"
+                data-testid="ecm-followup"
+              >
+                <Checkbox
+                  checked={coverage.ecmEligible}
+                  onCheckedChange={(v) => setCoverage({ ...coverage, ecmEligible: Boolean(v) })}
+                />
+                <span>
+                  Do you have ongoing health, housing, or other complex needs? (This may qualify you
+                  for Enhanced Care Management — extra coordination at no cost.)
+                </span>
+              </label>
+            )}
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">
+                Have you ever been involved with the justice system — jail, prison, probation, or
+                parole?
+              </Label>
+              <RadioGroup
+                className="grid gap-2"
+                value={coverage.justiceInvolvement}
+                onValueChange={(v) =>
+                  setCoverage({ ...coverage, justiceInvolvement: v as TriState })
+                }
+              >
+                {(
+                  [
+                    { key: "yes", label: "Yes" },
+                    { key: "no", label: "No" },
+                    { key: "unsure", label: "I'm not sure" },
+                  ] as { key: TriState; label: string }[]
+                ).map((o) => (
+                  <label
+                    key={o.key}
+                    htmlFor={`ji-${o.key}`}
+                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm"
+                  >
+                    <RadioGroupItem id={`ji-${o.key}`} value={o.key} />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+
+            <div className="space-y-1.5">
+              <Label className="text-sm">Medi-Cal record status (if you have one)</Label>
               <Select
                 value={coverage.status}
                 onValueChange={(v) => setCoverage({ ...coverage, status: v as CoverageStatus })}
@@ -615,22 +717,27 @@ function IntakePage() {
                 </SelectContent>
               </Select>
             </div>
+
             <CoverageCallout
-              status={coverage.status}
+              coverageType={coverage.coverageType}
+              justiceInvolvement={coverage.justiceInvolvement}
               county={coverage.countyOfRelease}
               otherPlanName={coverage.otherPlanName ?? ""}
               onOtherPlanChange={(v) => setCoverage({ ...coverage, otherPlanName: v })}
             />
-            <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
-              <Checkbox
-                checked={coverage.jiReentryFlag}
-                onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
-              />
-              <span>
-                I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
-                unlocks pre-release coordination).
-              </span>
-            </label>
+
+            {coverage.justiceInvolvement !== "no" && (
+              <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
+                <Checkbox
+                  checked={coverage.jiReentryFlag}
+                  onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
+                />
+                <span>
+                  I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
+                  unlocks pre-release coordination).
+                </span>
+              </label>
+            )}
           </div>
         )}
 
@@ -759,6 +866,31 @@ function IntakePage() {
                 <span className="text-sm">{l}</span>
               </label>
             ))}
+          </div>
+        )}
+
+        {current.key === "source" && (
+          <div className="space-y-3" data-testid="heard-about-step">
+            <p className="text-sm text-muted-foreground">
+              Optional — how did you hear about Adelante? It helps us know what's working. You can
+              skip this.
+            </p>
+            <RadioGroup
+              className="grid gap-2"
+              value={heardAbout}
+              onValueChange={(v) => setHeardAbout(v as HeardAboutSource)}
+            >
+              {HEARD_ABOUT_SOURCES.map((s) => (
+                <label
+                  key={s.key}
+                  htmlFor={`heard-${s.key}`}
+                  className="flex min-h-11 cursor-pointer items-center gap-3 rounded-lg border px-3 py-3 text-sm hover:border-teal"
+                >
+                  <RadioGroupItem id={`heard-${s.key}`} value={s.key} />
+                  <span>{s.label}</span>
+                </label>
+              ))}
+            </RadioGroup>
           </div>
         )}
 

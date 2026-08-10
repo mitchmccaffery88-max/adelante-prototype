@@ -15,6 +15,8 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
+export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
 import { canAccess, STAFF_ROLES } from "./roles";
@@ -166,6 +168,30 @@ export type ReferralSource =
   | "correctional"
   | "self"
   | "other";
+
+/**
+ * Front-door entry sequence (Phase 1). Recorded before intake begins so the
+ * downstream flow knows how the person arrived. Types live in
+ * `src/lib/frontDoor.ts` so the pure routing logic stays testable.
+ */
+export interface FrontDoorEntry {
+  /** Q1 — "Do you already have a care plan or case manager with Adelante?" */
+  existingCare: TriState;
+  /**
+   * Phase 2 hook. Set when Q1 === "unsure": a later safety-net record lookup
+   * picks these up. Phase 1 only writes the flag; nothing consumes it yet.
+   */
+  recordLookupPending?: boolean;
+  /** Q2 — arriving as a family member / advocate. */
+  helpingSomeoneElse?: TriState;
+  /** Q3 — seeking care for themselves. */
+  seekingCareForSelf?: TriState;
+  /** Phase 1c — only collected on the general-population path. */
+  heardAbout?: HeardAboutSource;
+  /** Free text captured on the Q3 = no escape screen (placeholder path). */
+  otherHelpNote?: string;
+  recordedAt: string;
+}
 
 // Funding lane classifies a billable event independently of its billingStatus.
 // A clinical event is authored first, then classified into a lane.
@@ -863,6 +889,18 @@ export interface Patient {
     verified: "verified" | "pending" | "not_found";
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
+    /**
+     * Payer bucket — independent of `status` and of justice involvement.
+     * A Medicare patient with justice-involvement history is representable:
+     * coverageType "medicare" + justiceInvolvement "yes".
+     */
+    coverageType?: CoverageType;
+    /**
+     * Justice-involvement history, fully independent of the payer. Drives the
+     * reentry safety-net messaging (never the coverage type — see
+     * `coverageMessage` in src/lib/frontDoor.ts).
+     */
+    justiceInvolvement?: TriState;
     ecmEligible?: boolean;
     otherPlanName?: string;
     communitySupports?: {
@@ -904,6 +942,11 @@ export interface Patient {
   cin?: string;
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
+  /**
+   * Front-door entry sequence (Phase 1) — how this person arrived, captured
+   * before intake begins. See `src/lib/frontDoor.ts`.
+   */
+  frontDoor?: FrontDoorEntry;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
   // §Messaging Phase 2 — one ongoing care-team thread per patient.
@@ -5337,6 +5380,52 @@ export const AdelanteEHR = {
     if (!p) return;
     p.coverage = coverage;
     emit();
+  },
+
+  // ---------- Front-door entry sequence (Phase 1) ----------
+
+  /** Merge-write the front-door answers. Safe to call once per question. */
+  recordFrontDoorEntry(patientId: string, patch: Partial<Omit<FrontDoorEntry, "recordedAt">>) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return undefined;
+    const base: FrontDoorEntry = p.frontDoor ?? {
+      existingCare: "unsure",
+      recordedAt: new Date().toISOString(),
+    };
+    const next: FrontDoorEntry = { ...base, ...patch, recordedAt: new Date().toISOString() };
+    // Phase 2 safety-net lookup hook: "not sure" about an existing record is
+    // the thing a later lookup has to resolve. Nothing reads this yet.
+    if (patch.existingCare !== undefined) {
+      next.recordLookupPending = patch.existingCare === "unsure";
+    }
+    p.frontDoor = next;
+    appendAudit({
+      category: "clinical",
+      action: "front_door_entry_recorded",
+      patientId,
+      actorId: "patient",
+      detail: { fields: Object.keys(patch) },
+    });
+    emit();
+    return next;
+  },
+
+  getFrontDoorEntry(patientId: string): FrontDoorEntry | undefined {
+    return patients.find((x) => x.id === patientId)?.frontDoor;
+  },
+
+  /**
+   * True when the person's referral source is already known to the system, so
+   * "how did you hear about us" must not be asked. Two known-source paths
+   * exist in the model: a formal `Referral` submission (which materializes the
+   * Patient with `referralId` set via advanceReferral), and Track A pre-release
+   * (an open `PreReleaseEpisode`).
+   */
+  hasKnownReferralSource(patientId: string): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    if (p.referralId) return true;
+    return preReleaseEpisodes.some((e) => e.patientId === patientId && e.status !== "closed");
   },
   addCheckIn(patientId: string, checkIn: Omit<CheckIn, "id">) {
     const p = patients.find((x) => x.id === patientId);

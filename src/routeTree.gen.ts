@@ -49,8 +49,14 @@ import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
+import { Route as StartRouteImport } from './routes/start'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
+import { Route as StartIndexRouteImport } from './routes/start.index'
+import { Route as StartHelpingRouteImport } from './routes/start.helping'
+import { Route as StartOtherHelpRouteImport } from './routes/start.other-help'
+import { Route as StartReconnectRouteImport } from './routes/start.reconnect'
+import { Route as StartSupportRouteImport } from './routes/start.support'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 
 const IndexRoute = IndexRouteImport.update({
@@ -253,6 +259,11 @@ const ShiftCountRoute = ShiftCountRouteImport.update({
   path: '/shift-count',
   getParentRoute: () => rootRouteImport,
 } as any)
+const StartRoute = StartRouteImport.update({
+  id: '/start',
+  path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorklistRoute = WorklistRouteImport.update({
   id: '/worklist',
   path: '/worklist',
@@ -262,6 +273,31 @@ const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   id: '/record/$patientId',
   path: '/record/$patientId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const StartIndexRoute = StartIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => StartRoute,
+} as any)
+const StartHelpingRoute = StartHelpingRouteImport.update({
+  id: '/helping',
+  path: '/helping',
+  getParentRoute: () => StartRoute,
+} as any)
+const StartOtherHelpRoute = StartOtherHelpRouteImport.update({
+  id: '/other-help',
+  path: '/other-help',
+  getParentRoute: () => StartRoute,
+} as any)
+const StartReconnectRoute = StartReconnectRouteImport.update({
+  id: '/reconnect',
+  path: '/reconnect',
+  getParentRoute: () => StartRoute,
+} as any)
+const StartSupportRoute = StartSupportRouteImport.update({
+  id: '/support',
+  path: '/support',
+  getParentRoute: () => StartRoute,
 } as any)
 const PrintPatientRecordsPatientIdRoute =
   PrintPatientRecordsPatientIdRouteImport.update({
@@ -311,8 +347,14 @@ export interface FileRoutesByFullPath {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start/other-help': typeof StartOtherHelpRoute
+  '/start/reconnect': typeof StartReconnectRoute
+  '/start/support': typeof StartSupportRoute
+  '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesByTo {
@@ -358,6 +400,11 @@ export interface FileRoutesByTo {
   '/shift-count': typeof ShiftCountRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start/other-help': typeof StartOtherHelpRoute
+  '/start/reconnect': typeof StartReconnectRoute
+  '/start/support': typeof StartSupportRoute
+  '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRoutesById {
@@ -402,8 +449,14 @@ export interface FileRoutesById {
   '/released-search': typeof ReleasedSearchRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/start/helping': typeof StartHelpingRoute
+  '/start/other-help': typeof StartOtherHelpRoute
+  '/start/reconnect': typeof StartReconnectRoute
+  '/start/support': typeof StartSupportRoute
+  '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
 export interface FileRouteTypes {
@@ -449,8 +502,14 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
+    | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start/other-help'
+    | '/start/reconnect'
+    | '/start/support'
+    | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -496,6 +555,11 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start/other-help'
+    | '/start/reconnect'
+    | '/start/support'
+    | '/start'
     | '/print/patient-records/$patientId'
   id:
     | '__root__'
@@ -539,8 +603,14 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/schedule'
     | '/shift-count'
+    | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/start/helping'
+    | '/start/other-help'
+    | '/start/reconnect'
+    | '/start/support'
+    | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesById: FileRoutesById
 }
@@ -585,6 +655,7 @@ export interface RootRouteChildren {
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
+  StartRoute: typeof StartRouteWithChildren
   WorklistRoute: typeof WorklistRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
@@ -872,6 +943,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftCountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/start': {
+      id: '/start'
+      path: '/start'
+      fullPath: '/start'
+      preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/worklist': {
       id: '/worklist'
       path: '/worklist'
@@ -886,6 +964,41 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordPatientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/start/': {
+      id: '/start/'
+      path: '/'
+      fullPath: '/start/'
+      preLoaderRoute: typeof StartIndexRouteImport
+      parentRoute: typeof StartRoute
+    }
+    '/start/helping': {
+      id: '/start/helping'
+      path: '/helping'
+      fullPath: '/start/helping'
+      preLoaderRoute: typeof StartHelpingRouteImport
+      parentRoute: typeof StartRoute
+    }
+    '/start/other-help': {
+      id: '/start/other-help'
+      path: '/other-help'
+      fullPath: '/start/other-help'
+      preLoaderRoute: typeof StartOtherHelpRouteImport
+      parentRoute: typeof StartRoute
+    }
+    '/start/reconnect': {
+      id: '/start/reconnect'
+      path: '/reconnect'
+      fullPath: '/start/reconnect'
+      preLoaderRoute: typeof StartReconnectRouteImport
+      parentRoute: typeof StartRoute
+    }
+    '/start/support': {
+      id: '/start/support'
+      path: '/support'
+      fullPath: '/start/support'
+      preLoaderRoute: typeof StartSupportRouteImport
+      parentRoute: typeof StartRoute
+    }
     '/print/patient-records/$patientId': {
       id: '/print/patient-records/$patientId'
       path: '/print/patient-records/$patientId'
@@ -895,6 +1008,24 @@ declare module '@tanstack/react-router' {
     }
   }
 }
+
+interface StartRouteChildren {
+  StartHelpingRoute: typeof StartHelpingRoute
+  StartOtherHelpRoute: typeof StartOtherHelpRoute
+  StartReconnectRoute: typeof StartReconnectRoute
+  StartSupportRoute: typeof StartSupportRoute
+  StartIndexRoute: typeof StartIndexRoute
+}
+
+const StartRouteChildren: StartRouteChildren = {
+  StartHelpingRoute: StartHelpingRoute,
+  StartOtherHelpRoute: StartOtherHelpRoute,
+  StartReconnectRoute: StartReconnectRoute,
+  StartSupportRoute: StartSupportRoute,
+  StartIndexRoute: StartIndexRoute,
+}
+
+const StartRouteWithChildren = StartRoute._addFileChildren(StartRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
@@ -937,6 +1068,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReleasedSearchRoute: ReleasedSearchRoute,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,
+  StartRoute: StartRouteWithChildren,
   WorklistRoute: WorklistRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
