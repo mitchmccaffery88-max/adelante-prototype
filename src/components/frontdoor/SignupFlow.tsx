@@ -402,7 +402,6 @@ function NewPatientForm({
   onComplete,
   onBack,
 }: SignupFlowProps & { onBack: () => void }) {
-  const navigate = useNavigate();
   const { setLang } = useI18n();
   const [draft, setDraft] = useState<SignupInput>({
     firstName: "",
@@ -439,10 +438,8 @@ function NewPatientForm({
       preferredLanguage: draft.preferredLanguage,
       // Metadata only — the password/PIN itself is intentionally discarded.
       signupCredential: credentialMeta(draft.credentialKind),
+      signupAttributionUnused: undefined,
     });
-    AdelanteEHR.setCurrentPatientId(created.id);
-    setLang(draft.preferredLanguage);
-    toast.success("Account created", { description: "Next: a few quick questions." });
     navigate({ to: "/start" });
   }
 
