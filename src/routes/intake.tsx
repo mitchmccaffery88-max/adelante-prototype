@@ -36,6 +36,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
+import { useActingStaff } from "@/lib/roles";
+import {
+  LOOKUP_DISCLOSURE,
+  MEDI_CAL_FOLLOW_UP_MESSAGE,
+  shouldRunSafetyNetLookup,
+  type LookupResult,
+} from "@/lib/missedHandoff";
 import {
   ShieldCheck,
   Lock,
@@ -162,6 +170,18 @@ function IntakePage() {
     justiceInvolvement: "no",
     ecmEligible: false,
   });
+  /**
+   * §Front-door Phase 2 — safety-net record lookup.
+   *
+   * DECISION (made, not assumed): the lookup is DISCLOSED, not silent. A
+   * silent background search on a justice-involved population reads as
+   * surveillance the moment anyone discovers it, and this flow's whole premise
+   * is that the person may already be in a system they weren't told about.
+   * Disclosure also has a practical payoff: the person can say "yes, that was
+   * at Kern" and resolve an ambiguous match a deterministic rule can't.
+   */
+  const [lookup, setLookup] = useState<(LookupResult & { ran: boolean }) | null>(null);
+  const acting = useActingStaff();
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // P1 — About you
@@ -267,6 +287,21 @@ function IntakePage() {
     hasReferralRecord: Boolean(patient?.referralId),
     hasPreReleaseEpisode: knownSource && !patient?.referralId,
   });
+
+  const lookupApplies = shouldRunSafetyNetLookup({
+    recordLookupPending: frontDoor?.recordLookupPending,
+    justiceInvolvement: coverage.justiceInvolvement,
+    existingPlanFound: knownSource,
+  });
+  useEffect(() => {
+    if (!lookupApplies || !currentId) return;
+    setLookup(
+      AdelanteEHR.runSafetyNetRecordLookup(currentId, {
+        justiceInvolvement: coverage.justiceInvolvement,
+      }),
+    );
+  }, [lookupApplies, currentId, coverage.justiceInvolvement]);
+  const missedHandoff = Boolean(lookup?.ran && lookup.status === "none");
 
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
