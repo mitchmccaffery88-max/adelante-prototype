@@ -312,6 +312,26 @@ const dict = {
       "CHW services bill through an enrolled LPHA-tier provider. No selection means no claim.",
     chwBlockTitle: "Claim blocked",
     chwBlockReasonCode: "Reason code",
+    // §Group E item 4 — document UI. Same flat-key + `t()` pattern.
+    docTitle: "Your documents",
+    docSubtitle:
+      "Send paperwork to your care team. A team member reviews everything before it goes into your medical record.",
+    docStatusPending: "Pending review",
+    docStatusVerified: "In your record",
+    docStatusRejected: "Not accepted",
+    docPart2Flag: "Part 2 protected",
+    docNoneYet: "Nothing has been sent yet.",
+    docDownload: "Download record",
+    docDownloadUnavailable: "Available once it has been reviewed",
+    docRestricted: "Restricted",
+    docPart2DisclosedBadge: "Part 2 disclosure on file",
+    docPart2DisclosedMessage:
+      "Substance-use service details are visible because an active Part 2 disclosure authorization naming advocate disclosure is on file. This is not default access — it stops the moment that authorization is revoked.",
+    docPart2RestrictedMessage:
+      "This document requires a Part 2 disclosure authorization to view — not currently on file. Ask the person you're supporting, or their care team, about signing one.",
+    docNotificationsTitle: "Document notices",
+    docNotificationSimulated: "Text message simulated — no real message is sent",
+    docVerifiedNotice: "A document was added to the medical record.",
   },
   es: {
     appName: "Adelante",
@@ -626,6 +646,26 @@ const dict = {
       "Los servicios de CHW se facturan a través de un proveedor inscrito de nivel LPHA. Sin selección no hay reclamación.",
     chwBlockTitle: "Reclamación bloqueada",
     chwBlockReasonCode: "Código de motivo",
+    // §Group E item 4 — interfaz de documentos (español de calidad borrador).
+    docTitle: "Tus documentos",
+    docSubtitle:
+      "Envía tus papeles a tu equipo de cuidado. Alguien del equipo los revisa antes de que entren en tu expediente médico.",
+    docStatusPending: "Pendiente de revisión",
+    docStatusVerified: "En tu expediente",
+    docStatusRejected: "No aceptado",
+    docPart2Flag: "Protegido por la Parte 2",
+    docNoneYet: "Todavía no se ha enviado nada.",
+    docDownload: "Descargar registro",
+    docDownloadUnavailable: "Disponible cuando se haya revisado",
+    docRestricted: "Restringido",
+    docPart2DisclosedBadge: "Autorización de divulgación de la Parte 2 en el expediente",
+    docPart2DisclosedMessage:
+      "Los detalles de servicios por uso de sustancias se ven porque hay una autorización activa de divulgación de la Parte 2 que nombra a la persona defensora. Esto no es acceso automático: termina en cuanto se revoque esa autorización.",
+    docPart2RestrictedMessage:
+      "Para ver este documento se necesita una autorización de divulgación de la Parte 2, y ahora no hay ninguna en el expediente. Pregunta a la persona que apoyas, o a su equipo de cuidado, sobre firmar una.",
+    docNotificationsTitle: "Avisos de documentos",
+    docNotificationSimulated: "Mensaje de texto simulado — no se envía ningún mensaje real",
+    docVerifiedNotice: "Se agregó un documento al expediente médico.",
   },
 } as const;
 

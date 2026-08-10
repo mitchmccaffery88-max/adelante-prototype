@@ -162,3 +162,86 @@ export function advocateDocumentVisibility(facts: {
   if (facts.part2Unmasked) return { restricted: false };
   return { restricted: true, restrictionMessage: PART2_RESTRICTED_MESSAGE };
 }
+
+// ----- §Group E item 2 — download / view: ONE gate, not two -----------------
+//
+// The download action deliberately has NO authorization logic of its own. It
+// calls `advocateDocumentVisibility` — the exact function the restricted
+// RENDERING case uses — and refuses whenever that says "restricted". The only
+// thing this adds on top is the chart-membership rule (an unverified document
+// is not chart content, so there is nothing to hand over yet). If the Part 2
+// rule ever changes, both surfaces change together because there is only one
+// implementation. A test asserts the shared call, not just the shared outcome.
+
+export const DOWNLOAD_UNVERIFIED_MESSAGE =
+  "This document hasn't been reviewed yet, so it isn't part of the medical record and can't be opened.";
+
+export type DocumentDownloadDecision =
+  | { allowed: true }
+  | { allowed: false; reason: string; restricted: boolean };
+
+export function documentDownloadDecision(facts: {
+  isPart2: boolean;
+  part2Unmasked: boolean;
+  verification: DocumentVerificationStatus;
+}): DocumentDownloadDecision {
+  // Part 2 FIRST, and via the rendering gate itself: a document an advocate
+  // cannot see must not leak its existence-shaped detail through a different
+  // refusal message.
+  const vis = advocateDocumentVisibility({
+    isPart2: facts.isPart2,
+    part2Unmasked: facts.part2Unmasked,
+  });
+  if (vis.restricted)
+    return {
+      allowed: false,
+      reason: vis.restrictionMessage ?? PART2_RESTRICTED_MESSAGE,
+      restricted: true,
+    };
+  if (facts.verification !== "verified")
+    return { allowed: false, reason: DOWNLOAD_UNVERIFIED_MESSAGE, restricted: false };
+  return { allowed: true };
+}
+
+/**
+ * What actually comes back from a download. STORAGE HONESTY: there are no file
+ * bytes anywhere in this prototype, so the "file" handed to the browser is the
+ * document's own metadata record, plainly labelled as such. It is a real,
+ * functional download of a real record — it is not a copy of the original file,
+ * and nothing here should be read as evidence that one exists.
+ */
+export function documentDownloadPayload(doc: {
+  id: string;
+  fileName: string;
+  mimeType: string;
+  sizeBytes: number;
+  docType?: string;
+  uploadedAt: string;
+  uploaderLabel: string;
+  isPart2: boolean;
+  promotedBy?: string;
+  promotedAt?: string;
+}): { fileName: string; mimeType: string; text: string } {
+  const lines = [
+    "ADELANTE — DOCUMENT RECORD (metadata only)",
+    "",
+    "This prototype does not store file contents. No copy of the original",
+    "file exists. What follows is the record kept about it.",
+    "",
+    `Document id:      ${doc.id}`,
+    `Original name:    ${doc.fileName}`,
+    `Type:             ${doc.mimeType}`,
+    `Size as sent:     ${doc.sizeBytes} bytes`,
+    `Category:         ${doc.docType ?? "—"}`,
+    `Uploaded:         ${doc.uploadedAt}`,
+    `Uploaded by:      ${doc.uploaderLabel}`,
+    `42 CFR Part 2:    ${doc.isPart2 ? "yes — redisclosure protected" : "no"}`,
+    `Verified by:      ${doc.promotedBy ?? "—"}`,
+    `Verified at:      ${doc.promotedAt ?? "—"}`,
+  ];
+  return {
+    fileName: `${doc.fileName.replace(/\.[^.]+$/, "")}-record.txt`,
+    mimeType: "text/plain",
+    text: lines.join("\n"),
+  };
+}

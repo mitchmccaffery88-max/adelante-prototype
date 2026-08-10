@@ -16,6 +16,7 @@ import { Route as AdminCatalogGovernanceRouteImport } from './routes/admin-catal
 import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
 import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
+import { Route as AdminDocumentsAuditRouteImport } from './routes/admin-documents-audit'
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
@@ -85,6 +86,11 @@ const AdminCoordinationRoute = AdminCoordinationRouteImport.update({
 const AdminCredentialingRoute = AdminCredentialingRouteImport.update({
   id: '/admin-credentialing',
   path: '/admin-credentialing',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminDocumentsAuditRoute = AdminDocumentsAuditRouteImport.update({
+  id: '/admin-documents-audit',
+  path: '/admin-documents-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminFacilitiesRoute = AdminFacilitiesRouteImport.update({
@@ -272,6 +278,7 @@ export interface FileRoutesByFullPath {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
@@ -316,6 +323,7 @@ export interface FileRoutesByTo {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
@@ -361,6 +369,7 @@ export interface FileRoutesById {
   '/admin-claims': typeof AdminClaimsRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
+  '/admin-documents-audit': typeof AdminDocumentsAuditRoute
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
@@ -407,6 +416,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-documents-audit'
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
@@ -451,6 +461,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-documents-audit'
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
@@ -495,6 +506,7 @@ export interface FileRouteTypes {
     | '/admin-claims'
     | '/admin-coordination'
     | '/admin-credentialing'
+    | '/admin-documents-audit'
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
@@ -540,6 +552,7 @@ export interface RootRouteChildren {
   AdminClaimsRoute: typeof AdminClaimsRoute
   AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
+  AdminDocumentsAuditRoute: typeof AdminDocumentsAuditRoute
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
@@ -626,6 +639,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-credentialing'
       fullPath: '/admin-credentialing'
       preLoaderRoute: typeof AdminCredentialingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-documents-audit': {
+      id: '/admin-documents-audit'
+      path: '/admin-documents-audit'
+      fullPath: '/admin-documents-audit'
+      preLoaderRoute: typeof AdminDocumentsAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-facilities': {
@@ -884,6 +904,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminClaimsRoute: AdminClaimsRoute,
   AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
+  AdminDocumentsAuditRoute: AdminDocumentsAuditRoute,
   AdminFacilitiesRoute: AdminFacilitiesRoute,
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
