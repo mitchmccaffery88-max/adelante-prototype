@@ -1090,3 +1090,18 @@ export function useActingStaff(): {
     setActingStaff,
   };
 }
+
+/**
+ * §Quality pass Group A — LIVE supervision status.
+ * Subscribes to the same store `setActingStaff` notifies and re-reads
+ * `supervisionStatus()` on every render, so a reassignment or revocation is
+ * reflected immediately without a second status computation or a cache.
+ */
+export function useSupervisionStatus(staffId: string | null | undefined): SupervisionStatus {
+  useSyncExternalStore(
+    subscribe,
+    () => supervisionRevision,
+    () => supervisionRevision,
+  );
+  return supervisionStatus(staffId);
+}
