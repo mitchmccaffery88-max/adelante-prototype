@@ -383,8 +383,8 @@ function IntakePage() {
       try {
         AdelanteEHR.generateMissedHandoffCatchUp({
           patientId: currentId,
-          ownerStaffId: acting.staff?.id,
-          ownerName: acting.staff?.name ?? "Intake staff",
+          ownerStaffId: acting.staffId,
+          ownerName: acting.staffName || "Intake staff",
           ownerRole: acting.role,
           trigger: frontDoor?.recordLookupPending ? "record_lookup_pending" : "justice_involvement",
         });
