@@ -947,6 +947,13 @@ export interface Patient {
    * before intake begins. See `src/lib/frontDoor.ts`.
    */
   frontDoor?: FrontDoorEntry;
+  /**
+   * §Front-door Phase 2 — set when the safety-net lookup found no existing
+   * record for someone who should have had pre-release coordination. Staff
+   * see this so a day-one catch-up task list makes sense outside the normal
+   * 90-day pre-release window.
+   */
+  missedPreReleaseCoordination?: MissedPreReleaseFlag;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
   // §Messaging Phase 2 — one ongoing care-team thread per patient.
