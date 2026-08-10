@@ -64,6 +64,59 @@ export interface SignupFlowProps {
 }
 
 /**
+ * The single place the tier is decided. Tier 2 wins whenever a real operator
+ * is present; otherwise the optional free-text name becomes a Tier 1 record,
+ * or nothing at all when it's blank.
+ */
+function attributionFor(
+  operator: SignupOperator | undefined,
+  helperName: string,
+): HelperAttribution | undefined {
+  if (operator) {
+    return {
+      tier: 2,
+      operatorStaffId: operator.staffId,
+      operatorStaffName: operator.staffName,
+      operatorRole: operator.role,
+    };
+  }
+  return informalHelper(helperName);
+}
+
+/**
+ * Tier 1 field — one optional box, on BOTH branches of the public flow.
+ * Never validated, never required, never blocks submit. Hidden in Tier 2,
+ * where the operator's real identity is already attached.
+ */
+function HelperField({
+  value,
+  onChange,
+  idPrefix,
+}: {
+  value: string;
+  onChange: (v: string) => void;
+  idPrefix: string;
+}) {
+  return (
+    <div className="space-y-1.5 rounded-lg border bg-secondary/30 p-4">
+      <Label htmlFor={`${idPrefix}-helper`} className="flex items-center gap-2">
+        <UserCheck className="h-4 w-4 text-teal" /> {HELPER_QUESTION}
+        <span className="text-xs font-normal text-muted-foreground">(optional)</span>
+      </Label>
+      <Textarea
+        id={`${idPrefix}-helper`}
+        rows={2}
+        maxLength={120}
+        placeholder="Name or organization — optional"
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      <p className="text-xs text-muted-foreground">{HELPER_HINT}</p>
+    </div>
+  );
+}
+
+/**
  * §Front-door Phase 3 (groundwork) — one entry form, two real branches:
  * a brand-new self-service patient, or a Track A member claiming the record a
  * CF Care Manager already built for them with an `RE-XXXX-XXXX` code.
