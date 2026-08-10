@@ -5404,7 +5404,7 @@ export const AdelanteEHR = {
       action: "front_door_entry_recorded",
       patientId,
       actorId: "patient",
-      summary: `Front-door answers updated (${Object.keys(patch).join(", ")})`,
+      detail: { fields: Object.keys(patch) },
     });
     emit();
     return next;
