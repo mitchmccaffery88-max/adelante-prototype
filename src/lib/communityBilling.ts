@@ -11,7 +11,13 @@
 // roles.ts imports ehr.ts; keeping the policy here avoids an import cycle.
 
 import type { Patient } from "./ehr";
-import { getStaffMember, supervisionStatus } from "./roles";
+import {
+  LPHA_SUPERVISOR_ROLES,
+  getStaffMember,
+  supervisorCandidates,
+  supervisionStatus,
+  type StaffMember,
+} from "./roles";
 
 /** Peer support services taxonomy (informational, carried on the claim). */
 export const PEER_SUPPORT_TAXONOMY = "175T00000X";
@@ -38,6 +44,54 @@ export interface BillingDecision {
   units?: number;
   /** Enrolled provider the claim is billed through (CHW). */
   supervisingStaffId?: string;
+}
+
+// ----- Supervising-provider selection (Group C, item 2) ---------------------
+//
+// A CHW may pick the enrolled provider a specific service is billed through at
+// note/claim time. This does NOT introduce a second notion of "enrolled
+// provider": eligibility is the SAME `LPHA_SUPERVISOR_ROLES` tier that
+// `supervisionStatus`/`getSupervisor` already enforce for the standing
+// `supervisedBy` link. Selecting nobody is a refusal, not a fallback — an
+// unstamped CHW claim must never reach the worklist.
+
+export interface SupervisorSelection {
+  ok: boolean;
+  supervisor?: StaffMember;
+  reasonCode?: string;
+  reason?: string;
+}
+
+/**
+ * Staff who may be picked as a CHW's billing-through provider — the same
+ * roster `/admin-supervision` assigns from, not a parallel list.
+ */
+export const eligibleSupervisingProviders = supervisorCandidates;
+
+export function validateSupervisingProvider(
+  staffId: string | null | undefined,
+): SupervisorSelection {
+  if (!staffId)
+    return {
+      ok: false,
+      reasonCode: "no_supervising_provider",
+      reason:
+        "No supervising provider selected — CHW services must be billed through an enrolled LPHA-tier provider (Therapist or PMHNP).",
+    };
+  const member = getStaffMember(staffId);
+  if (!member)
+    return {
+      ok: false,
+      reasonCode: "no_supervising_provider",
+      reason: "The selected supervising provider is not on the staff roster.",
+    };
+  if (!LPHA_SUPERVISOR_ROLES.includes(member.role))
+    return {
+      ok: false,
+      reasonCode: "supervisor_not_lpha",
+      reason: `${member.name} is not an LPHA-tier supervisor (Therapist or PMHNP), so CHW services cannot be billed through them.`,
+    };
+  return { ok: true, supervisor: member };
 }
 
 // ----- ECM enrollment window ----------------------------------------------
@@ -115,6 +169,13 @@ export function chwBillingDecision(input: {
   unitsAlreadyBilledToday: number;
   /** True when a CHW claim already exists for this member this month. */
   hasPriorClaimThisMonth: boolean;
+  /**
+   * Provider picked at note/claim time. `undefined` = the caller did not ask
+   * the question, so the standing `supervisedBy` link decides (unchanged
+   * behaviour). `null` / "" = the CHW was asked and picked nobody, which is a
+   * refusal — no stamp, no claim.
+   */
+  supervisingStaffId?: string | null;
 }): BillingDecision {
   const staff = getStaffMember(input.staffId);
   if (!staff || staff.role !== "community_health_worker")
@@ -124,16 +185,27 @@ export function chwBillingDecision(input: {
       reason: "Only a Community Health Worker can generate a CHW services claim.",
     };
 
-  // Supervision is a billing prerequisite, not a formality.
-  const sup = supervisionStatus(staff.id);
-  if (!sup.satisfied)
-    return {
-      allowed: false,
-      reasonCode: "no_supervising_provider",
-      reason:
-        sup.reason ??
-        "CHW services must be billed through an enrolled supervising provider.",
-    };
+  // Supervision is a billing prerequisite, not a formality. When the surface
+  // offers the selector, the selection is authoritative; otherwise fall back
+  // to the standing supervision link.
+  let billThroughStaffId: string | undefined;
+  if (input.supervisingStaffId !== undefined) {
+    const picked = validateSupervisingProvider(input.supervisingStaffId);
+    if (!picked.ok)
+      return { allowed: false, reasonCode: picked.reasonCode, reason: picked.reason };
+    billThroughStaffId = picked.supervisor?.id;
+  } else {
+    const sup = supervisionStatus(staff.id);
+    if (!sup.satisfied)
+      return {
+        allowed: false,
+        reasonCode: "no_supervising_provider",
+        reason:
+          sup.reason ??
+          "CHW services must be billed through an enrolled supervising provider.",
+      };
+    billThroughStaffId = sup.supervisor?.id;
+  }
 
   // MUTUAL EXCLUSIVITY: DHCS prohibits billing standalone CHW services while
   // the member is enrolled in ECM. Enforced HERE, at the claim attempt, with
@@ -168,6 +240,6 @@ export function chwBillingDecision(input: {
     allowed: true,
     serviceCode: input.hasPriorClaimThisMonth ? CHW_CODES.additional : CHW_CODES.initiating,
     units: Math.min(requested, remaining),
-    supervisingStaffId: sup.supervisor?.id,
+    supervisingStaffId: billThroughStaffId,
   };
 }

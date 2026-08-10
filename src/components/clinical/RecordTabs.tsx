@@ -25,6 +25,8 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { Checkbox } from "@/components/ui/checkbox";
+import { useI18n } from "@/lib/i18n";
+import { eligibleSupervisingProviders } from "@/lib/communityBilling";
 import {
   AutoCreatedFromNote,
   AutoStartedNoteTrace,
@@ -1132,12 +1134,16 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
   const [minutes, setMinutes] = useState("15");
   const { staffId, staffName, role: actingRole, clinicianId } = useActingStaff();
   const [mode, setMode] = useState<NonNullable<PeerNote["mode"]>>("in_person");
+  const { t } = useI18n();
   return (
     <div className="space-y-3">
       {canWrite && (
         <Card className="p-3 space-y-2">
-          <div className="text-xs uppercase tracking-wider text-muted-foreground">
-            Peer specialist note
+          <div
+            className="text-xs uppercase tracking-wider text-muted-foreground"
+            data-testid="peer-note-heading"
+          >
+            {t("peerNoteHeading")}
           </div>
           <div>
             <Label className="text-[10px] text-muted-foreground">Modality</Label>
@@ -1533,6 +1539,7 @@ export function NotesTab({
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName, staffId, clinicianId, role } = useActingStaff();
+  const { t: tr } = useI18n();
   const [note, setNote] = useState({
     sessionType: "individual" as "individual" | "group" | "phone" | "check_in",
     subjective: "",
@@ -1583,7 +1590,9 @@ export function NotesTab({
     <div className="space-y-4">
       {canWrite && (
         <Card className="p-4">
-          <h4 className="font-display text-sm text-navy">New progress note</h4>
+          <h4 className="font-display text-sm text-navy" data-testid="note-composer-heading">
+            {restrictToTemplateKey === "chw_service" ? tr("chwNoteHeading") : "New progress note"}
+          </h4>
           <p className="mt-0.5 text-[11px] text-muted-foreground">
             Authoring as <span className="text-navy font-medium">{staffName}</span>
           </p>
@@ -1872,6 +1881,25 @@ function ProgressNoteCard({
   // makes an ACTIVE choice, mirroring the Suboxone mouth-check gate.
   const [crisisChoice, setCrisisChoice] = useState<"" | "escalate" | "not_escalating">("");
   const [crisisReason, setCrisisReason] = useState("");
+  const { t } = useI18n();
+  // §Group C — CHW service notes bill at sign time. The provider the claim is
+  // billed through is chosen HERE; eligibility is the shared LPHA-tier list,
+  // not a second definition of "enrolled provider".
+  const isChwNote = note.templateKey === "chw_service";
+  const isChwBiller = isChwNote && role === "community_health_worker";
+  const [chwSupervisorId, setChwSupervisorId] = useState("");
+  const supervisorOptions = eligibleSupervisingProviders();
+  // The banner reads the audit row the block itself wrote — same reasonCode,
+  // same reason text, no parallel copy that can drift.
+  const chwBlock = useEhr(() =>
+    isChwNote
+      ? AdelanteEHR.lastCommunityBillingBlock({
+          patientId,
+          service: "chw_services",
+          noteId: note.id,
+        })
+      : undefined,
+  );
   // §Phase 3b — a finalized note shows its FROZEN autofill snapshot; a draft
   // shows the live resolution, which is what gets frozen at sign time.
   const liveAutofill = useNoteAutofillSnapshots(patientId, note.templateSchema, {
@@ -1934,7 +1962,7 @@ function ProgressNoteCard({
       // §Phase 3 — a signed CHW service note bills through the same claims
       // pipeline. The hook itself enforces ECM exclusivity, the supervising
       // provider link and the 2 hr/day unit cap, and audits any refusal.
-      if (note.templateKey === "chw_service" && role === "community_health_worker") {
+      if (isChwBiller) {
         const mins = Number(note.templateAnswers?.["service_minutes"] ?? 0) || 0;
         const claim = AdelanteEHRExt.upsertClaimFromChwNote({
           patientId,
@@ -1943,9 +1971,12 @@ function ProgressNoteCard({
           clinicianId: actingClinicianId ?? note.clinicianId,
           dateISO: note.date,
           minutes: mins,
+          // Explicit `null` when nothing is picked: "asked and not selected"
+          // is a refusal, not a fall-through to the standing link.
+          supervisingStaffId: chwSupervisorId || null,
         });
         if (claim) toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
-        else toast.error("No CHW claim created — see the audit log for the reason.");
+        else toast.error("No CHW claim created — see the reason on the note.");
       }
       setAttested(false);
       setCrisisChoice("");
@@ -2071,8 +2102,49 @@ function ProgressNoteCard({
         </div>
       )}
       <NoteExportButton patientId={patientId} note={note} authorLabel={authorLabel} />
+      {chwBlock && (
+        <div
+          data-testid="chw-billing-block-banner"
+          className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive"
+        >
+          <p className="font-medium">
+            {t("chwBlockTitle")} —{" "}
+            <span className="font-mono" data-testid="chw-block-reason-code">
+              {chwBlock.reasonCode}
+            </span>
+          </p>
+          <p className="mt-0.5 text-foreground/80" data-testid="chw-block-reason">
+            {chwBlock.reason}
+          </p>
+          <p className="mt-0.5 text-[10px] text-muted-foreground">
+            {t("chwBlockReasonCode")}: {chwBlock.reasonCode} · <ClientDate value={chwBlock.at} />
+          </p>
+        </div>
+      )}
       {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
+          {isChwBiller && (
+            <div className="space-y-1.5" data-testid="chw-supervisor-picker">
+              <Label className="text-[11px]">{t("chwSupervisingProvider")}</Label>
+              <Select value={chwSupervisorId} onValueChange={setChwSupervisorId}>
+                <SelectTrigger
+                  className="h-8 text-xs"
+                  aria-label="Supervising provider"
+                >
+                  <SelectValue placeholder={t("chwSupervisingNone")} />
+                </SelectTrigger>
+                <SelectContent>
+                  {supervisorOptions.map((s) => (
+                    <SelectItem key={s.id} value={s.id}>
+                      {s.name}
+                      {s.credential ? `, ${s.credential}` : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground">{t("chwSupervisingHelp")}</p>
+            </div>
+          )}
           {crisisScores.length > 0 && (
             <div
               data-testid="crisis-band-prompt"
