@@ -30,7 +30,7 @@ import {
   staffForRole,
   useActingStaff,
 } from "@/lib/roles";
-import { resolveCfAttribution } from "@/lib/reentry";
+import { resolveEpisodeEntry } from "@/lib/reentry";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -242,18 +242,21 @@ function OpenEpisodeForm() {
   );
 }
 
-/** Proxy picker — Phase 1's dual access model, surfaced where work is entered. */
+/**
+ * Phase 1's dual access model, decided from the EPISODE's CF Care Manager.
+ * Previously this only asked the proxy question when the owner was proxy-mode,
+ * so an ECM Provider on a direct-mode owner's episode silently self-attributed.
+ */
 function useAttribution(episode: PreReleaseEpisode) {
   const { role, staffId, staffName } = useActingStaff();
   const subject = getStaffMember(episode.cfCareManagerStaffId);
-  const needsProxy = subject?.accessMode === "proxy" && staffId !== subject.id;
-  const result = resolveCfAttribution({
+  const result = resolveEpisodeEntry({
     actorStaffId: staffId,
     actorName: staffName,
     actorRole: role,
-    onBehalfOfStaffId: needsProxy ? subject?.id : undefined,
+    episodeCfStaffId: episode.cfCareManagerStaffId,
   });
-  return { ...result, needsProxy, subject };
+  return { ...result, needsProxy: result.mode === "proxy", subject };
 }
 
 function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
@@ -276,11 +279,25 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
             </p>
           </div>
           {needsProxy && (
-            <Badge variant="outline">
-              {ok ? `Proxy entry for ${subject?.name}` : `Proxy blocked — ${reason}`}
+            <Badge variant="outline" data-testid="proxy-mode-badge">
+              Proxy entry for {subject?.name}
+            </Badge>
+          )}
+          {!ok && (
+            <Badge variant="destructive" data-testid="proxy-blocked-badge">
+              Entry blocked — {reason}
             </Badge>
           )}
         </div>
+        {!ok && (
+          <p
+            data-testid="proxy-blocked-reason"
+            className="mt-2 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive"
+          >
+            {reason} You can read this episode, but only {episode.cfCareManagerName} can record
+            their own task-list and Reentry Care Plan activity.
+          </p>
+        )}
       </Card>
 
       {PRE_RELEASE_FORM_CATEGORIES.map((cat) => (
@@ -311,11 +328,22 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                         <Link to="/consent">Capture in consent ledger</Link>
                       </Button>
                     ) : r.def.satisfiedByCarePlan ? (
-                      <Button size="sm" onClick={() => setPlanOpen(true)}>
+                      <Button
+                        size="sm"
+                        disabled={!ok}
+                        data-testid="open-care-plan"
+                        onClick={() => setPlanOpen(true)}
+                      >
                         {plan?.status === "completed" ? "View plan" : "Open care plan"}
                       </Button>
                     ) : (
-                      <Button size="sm" variant="outline" onClick={() => setOpenForm(r.def)}>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        disabled={!ok}
+                        data-testid={`capture-${r.def.key}`}
+                        onClick={() => setOpenForm(r.def)}
+                      >
                         Capture
                       </Button>
                     )}
