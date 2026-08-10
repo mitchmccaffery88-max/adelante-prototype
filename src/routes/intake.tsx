@@ -869,9 +869,6 @@ function IntakePage() {
           </div>
         )}
 
-        {current.key === "review" && (
-          <></>
-        )}
         {current.key === "source" && (
           <div className="space-y-3" data-testid="heard-about-step">
             <p className="text-sm text-muted-foreground">
