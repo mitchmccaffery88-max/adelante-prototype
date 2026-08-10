@@ -16,6 +16,13 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
+import {
+  MEDI_CAL_FOLLOW_UP_TASK_TITLE,
+  matchExistingRecord,
+  shouldRunSafetyNetLookup,
+  type LookupResult,
+  type LookupSubject,
+} from "./missedHandoff";
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
@@ -191,6 +198,25 @@ export interface FrontDoorEntry {
   /** Free text captured on the Q3 = no escape screen (placeholder path). */
   otherHelpNote?: string;
   recordedAt: string;
+}
+
+/**
+ * §Front-door Phase 2 — the "missed pre-release coordination" flag. Written
+ * only by `generateMissedHandoffCatchUp`, after a safety-net lookup came back
+ * with no existing record.
+ */
+export interface MissedPreReleaseFlag {
+  flaggedAt: string;
+  /** Why the lookup ran: "record_lookup_pending" or "justice_involvement". */
+  trigger: "record_lookup_pending" | "justice_involvement";
+  /** The person running the intake session, who owns the catch-up list. */
+  ownerStaffId?: string;
+  ownerName: string;
+  ownerRole: string;
+  /** The day-one catch-up episode carrying the task list. */
+  episodeId: string;
+  /** Medi-Cal is flagged for active troubleshooting, never assumed automatic. */
+  mediCalFollowUpRequired: boolean;
 }
 
 // Funding lane classifies a billable event independently of its billingStatus.
@@ -908,6 +934,11 @@ export interface Patient {
       food?: boolean;
       transport?: boolean;
     };
+    /**
+     * §Front-door Phase 2 — Medi-Cal needs ACTIVE troubleshooting; the passive
+     * "reactivates automatically" messaging must not be shown to this person.
+     */
+    mediCalReactivationFollowUp?: boolean;
     /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
     snapshots?: CoverageSnapshot[];
   };
@@ -947,6 +978,13 @@ export interface Patient {
    * before intake begins. See `src/lib/frontDoor.ts`.
    */
   frontDoor?: FrontDoorEntry;
+  /**
+   * §Front-door Phase 2 — set when the safety-net lookup found no existing
+   * record for someone who should have had pre-release coordination. Staff
+   * see this so a day-one catch-up task list makes sense outside the normal
+   * 90-day pre-release window.
+   */
+  missedPreReleaseCoordination?: MissedPreReleaseFlag;
   // Appointment-related notifications (booked / rescheduled / cancelled).
   notifications?: ApptNotification[];
   // §Messaging Phase 2 — one ongoing care-team thread per patient.
@@ -2019,6 +2057,12 @@ export interface PreReleaseEpisode {
   openedBy: string;
   closedAt?: string;
   closedReason?: string;
+  /**
+   * §Front-door Phase 2 — this episode was opened AFTER release, at intake,
+   * because pre-release coordination never happened. Same forms, same tasks,
+   * compressed into day one.
+   */
+  missedHandoff?: boolean;
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
@@ -5414,6 +5458,128 @@ export const AdelanteEHR = {
     return patients.find((x) => x.id === patientId)?.frontDoor;
   },
 
+  // ---------- §Front-door Phase 2 — missed pre-release hand-off ----------
+
+  /**
+   * Safety-net background lookup. Runs for the Phase 1 "not sure" population
+   * (`frontDoor.recordLookupPending`) and for anyone answering yes / not sure
+   * to justice-involvement history with no plan already found.
+   *
+   * A match routes toward the Phase 1 reconnection path (`/start/reconnect`);
+   * no match means a genuine missed hand-off and the caller generates the
+   * catch-up list. The lookup is DISCLOSED to the person — see
+   * `LOOKUP_DISCLOSURE` in src/lib/missedHandoff.ts.
+   */
+  runSafetyNetRecordLookup(
+    patientId: string,
+    input: { justiceInvolvement?: TriState } = {},
+  ): LookupResult & { ran: boolean } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ran: false, status: "none", candidateIds: [] };
+    const ran = shouldRunSafetyNetLookup({
+      recordLookupPending: p.frontDoor?.recordLookupPending,
+      justiceInvolvement: input.justiceInvolvement ?? p.coverage?.justiceInvolvement,
+      existingPlanFound: Boolean(AdelanteEHR.activePreReleaseEpisode(patientId)),
+    });
+    if (!ran) return { ran: false, status: "none", candidateIds: [] };
+    const subject: LookupSubject = {
+      id: p.id,
+      dob: p.dob,
+      cin: p.cin,
+      phone: p.phone,
+      lastName: p.lastName,
+    };
+    const result = matchExistingRecord(
+      subject,
+      patients.map((c) => ({
+        id: c.id,
+        dob: c.dob,
+        cin: c.cin,
+        phone: c.phone,
+        lastName: c.lastName,
+      })),
+    );
+    appendAudit({
+      category: "clinical",
+      action: "front_door_safety_net_lookup",
+      patientId,
+      actorId: "system",
+      detail: {
+        status: result.status,
+        basis: result.basis,
+        candidateCount: result.candidateIds.length,
+        disclosedToPatient: true,
+      },
+    });
+    emit();
+    return { ran: true, ...result };
+  },
+
+  /**
+   * No match → genuine missed hand-off. Reuses the CF Care Manager's own
+   * pre-release task generation (`openPreReleaseEpisode` over
+   * `PRE_RELEASE_FORMS`) rather than duplicating a second task list, but
+   * compressed to day one of intake, plus a Medi-Cal reactivation task
+   * because reactivation must NOT be assumed automatic for this population.
+   */
+  generateMissedHandoffCatchUp(input: {
+    patientId: string;
+    ownerStaffId?: string;
+    ownerName: string;
+    ownerRole: string;
+    trigger: MissedPreReleaseFlag["trigger"];
+    facilityId?: string;
+  }): MissedPreReleaseFlag | undefined {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return undefined;
+    if (p.missedPreReleaseCoordination) return p.missedPreReleaseCoordination;
+    const today = new Date().toISOString().slice(0, 10);
+    const ep = AdelanteEHR.openPreReleaseEpisode({
+      patientId: p.id,
+      anticipatedReleaseDate: today,
+      cfCareManagerStaffId: input.ownerStaffId ?? "",
+      cfCareManagerName: input.ownerName,
+      facilityId: input.facilityId,
+      openedBy: input.ownerName,
+      actorRole: input.ownerRole,
+      missedHandoff: true,
+    });
+    AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: "",
+      title: MEDI_CAL_FOLLOW_UP_TASK_TITLE,
+      detail:
+        "Missed pre-release coordination: verify Medi-Cal status with the county and troubleshoot a suspended or terminated record. Do not tell the member it reactivates automatically.",
+      dueDate: today,
+      taskType: "missed_handoff_catch_up",
+      priority: "urgent",
+      allowedRoles: ["cf_care_manager", "ecm_provider", "clinical_coordinator"],
+      source: "missed_pre_release_handoff",
+      dedupeKey: `missedhandoff:${ep.id}:medi_cal_reactivation`,
+    });
+    if (p.coverage) p.coverage.mediCalReactivationFollowUp = true;
+    const flag: MissedPreReleaseFlag = {
+      flaggedAt: new Date().toISOString(),
+      trigger: input.trigger,
+      ownerStaffId: input.ownerStaffId,
+      ownerName: input.ownerName,
+      ownerRole: input.ownerRole,
+      episodeId: ep.id,
+      mediCalFollowUpRequired: true,
+    };
+    p.missedPreReleaseCoordination = flag;
+    appendAudit({
+      category: "clinical",
+      action: "missed_pre_release_coordination_flagged",
+      patientId: p.id,
+      actorId: input.ownerStaffId ?? input.ownerName,
+      actorRole: input.ownerRole,
+      detail: { episodeId: ep.id, trigger: input.trigger },
+    });
+    emit();
+    return flag;
+  },
+
   /**
    * True when the person's referral source is already known to the system, so
    * "how did you hear about us" must not be asked. Two known-source paths
@@ -6580,6 +6746,8 @@ export const AdelanteEHR = {
     receivingEcmStaffId?: string;
     openedBy: string;
     actorRole: string;
+    /** §Front-door Phase 2 — day-one catch-up rather than pre-release timing. */
+    missedHandoff?: boolean;
   }): PreReleaseEpisode {
     if (!patients.some((p) => p.id === input.patientId)) throw new Error("Patient not found.");
     if (!input.anticipatedReleaseDate)
@@ -6600,6 +6768,7 @@ export const AdelanteEHR = {
       status: "open",
       openedAt: new Date().toISOString(),
       openedBy: input.openedBy,
+      missedHandoff: input.missedHandoff || undefined,
     };
     preReleaseEpisodes.unshift(ep);
     // Every form becomes a real worklist row — no parallel task mechanism.
@@ -6607,10 +6776,11 @@ export const AdelanteEHR = {
       AdelanteEHR.createCaseTask({
         patientId: ep.patientId,
         assignedTo: "",
-        title: `Pre-release — ${def.label}`,
-        detail: `${PRE_RELEASE_FORM_CATEGORIES.find((c) => c.key === def.category)?.label ?? def.category} · release ${ep.anticipatedReleaseDate}`,
+        title: `${ep.missedHandoff ? "Catch-up (missed pre-release)" : "Pre-release"} — ${def.label}`,
+        detail: `${PRE_RELEASE_FORM_CATEGORIES.find((c) => c.key === def.category)?.label ?? def.category} · ${ep.missedHandoff ? `due day one of intake (${ep.anticipatedReleaseDate})` : `release ${ep.anticipatedReleaseDate}`}`,
         dueDate: ep.anticipatedReleaseDate,
-        taskType: "pre_release_form",
+        taskType: ep.missedHandoff ? "missed_handoff_catch_up" : "pre_release_form",
+        priority: ep.missedHandoff ? "urgent" : undefined,
         allowedRoles: ["cf_care_manager", "ecm_provider"],
         facilityId: ep.facilityId,
         facilityContext: true,

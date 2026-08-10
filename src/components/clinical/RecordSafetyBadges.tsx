@@ -2,13 +2,17 @@
 // Shared by the quick-peek drawer header and the full-page chart header.
 import { Badge } from "@/components/ui/badge";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { AlertTriangle, HeartPulse, Lock, ShieldAlert } from "lucide-react";
+import { AlertTriangle, HeartPulse, Lock, ShieldAlert, CalendarX } from "lucide-react";
 import type { Patient } from "@/lib/ehr";
 import { safetyCounts } from "@/components/clinical/recordSections";
 
 export function RecordSafetyBadges({ patient }: { patient: Patient }) {
   const s = safetyCounts(patient);
+  // §Front-door Phase 2 — the missed-handoff flag must be visible to staff
+  // wherever the safety badges render (quick-peek drawer + full chart).
+  const missed = patient.missedPreReleaseCoordination;
   if (
+    !missed &&
     s.activeProblemsCount === 0 &&
     s.hiddenSud === 0 &&
     s.allergyEntries.length === 0 &&
@@ -19,6 +23,24 @@ export function RecordSafetyBadges({ patient }: { patient: Patient }) {
   return (
     <TooltipProvider delayDuration={150}>
       <div className="flex flex-wrap items-center gap-1.5">
+        {missed && (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Badge
+                data-testid="missed-prerelease-badge"
+                className="bg-destructive/15 text-destructive border-0 text-[10px] gap-1"
+              >
+                <CalendarX className="h-3 w-3" />
+                Missed pre-release coordination
+              </Badge>
+            </TooltipTrigger>
+            <TooltipContent side="bottom" className="max-w-xs text-xs">
+              No pre-release plan was found at intake, so the pre-release task list was generated on
+              day one instead. Owner: {missed.ownerName}. Medi-Cal must be actively verified — do
+              not assume automatic reactivation.
+            </TooltipContent>
+          </Tooltip>
+        )}
         {s.activeProblemsCount > 0 && (
           <Tooltip>
             <TooltipTrigger asChild>

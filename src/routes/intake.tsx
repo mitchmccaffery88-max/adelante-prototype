@@ -36,6 +36,14 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
+import { Link } from "@tanstack/react-router";
+import { useActingStaff } from "@/lib/roles";
+import {
+  LOOKUP_DISCLOSURE,
+  MEDI_CAL_FOLLOW_UP_MESSAGE,
+  shouldRunSafetyNetLookup,
+  type LookupResult,
+} from "@/lib/missedHandoff";
 import {
   ShieldCheck,
   Lock,
@@ -44,6 +52,7 @@ import {
   Heart,
   Save,
   Sparkles,
+  Search,
   CalendarCheck,
   HelpingHand,
   Building2,
@@ -162,6 +171,18 @@ function IntakePage() {
     justiceInvolvement: "no",
     ecmEligible: false,
   });
+  /**
+   * §Front-door Phase 2 — safety-net record lookup.
+   *
+   * DECISION (made, not assumed): the lookup is DISCLOSED, not silent. A
+   * silent background search on a justice-involved population reads as
+   * surveillance the moment anyone discovers it, and this flow's whole premise
+   * is that the person may already be in a system they weren't told about.
+   * Disclosure also has a practical payoff: the person can say "yes, that was
+   * at Kern" and resolve an ambiguous match a deterministic rule can't.
+   */
+  const [lookup, setLookup] = useState<(LookupResult & { ran: boolean }) | null>(null);
+  const acting = useActingStaff();
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // P1 — About you
@@ -268,6 +289,21 @@ function IntakePage() {
     hasPreReleaseEpisode: knownSource && !patient?.referralId,
   });
 
+  const lookupApplies = shouldRunSafetyNetLookup({
+    recordLookupPending: frontDoor?.recordLookupPending,
+    justiceInvolvement: coverage.justiceInvolvement,
+    existingPlanFound: knownSource,
+  });
+  useEffect(() => {
+    if (!lookupApplies || !currentId) return;
+    setLookup(
+      AdelanteEHR.runSafetyNetRecordLookup(currentId, {
+        justiceInvolvement: coverage.justiceInvolvement,
+      }),
+    );
+  }, [lookupApplies, currentId, coverage.justiceInvolvement]);
+  const missedHandoff = Boolean(lookup?.ran && lookup.status === "none");
+
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
     () => SCREENERS.filter((s) => !s.isSud || sudConsent === true),
@@ -340,6 +376,22 @@ function IntakePage() {
       ecmEligible: ecmQuestionApplies(coverage.coverageType) ? coverage.ecmEligible : false,
       otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
     });
+    // §Front-door Phase 2 — no match on the safety-net lookup means a genuine
+    // missed hand-off: generate the CF Care Manager's own pre-release task
+    // list, compressed to day one, owned by whoever is running this session.
+    if (missedHandoff) {
+      try {
+        AdelanteEHR.generateMissedHandoffCatchUp({
+          patientId: currentId,
+          ownerStaffId: acting.staffId,
+          ownerName: acting.staffName || "Intake staff",
+          ownerRole: acting.role,
+          trigger: frontDoor?.recordLookupPending ? "record_lookup_pending" : "justice_involvement",
+        });
+      } catch {
+        /* no-op */
+      }
+    }
     if (askHeardAbout && heardAbout) {
       AdelanteEHR.recordFrontDoorEntry(currentId, { heardAbout });
     }
@@ -717,6 +769,50 @@ function IntakePage() {
                 </SelectContent>
               </Select>
             </div>
+
+            {lookupApplies && (
+              <div
+                data-testid="safety-net-lookup"
+                className="rounded-lg border bg-secondary/40 p-4 text-sm space-y-2"
+              >
+                <div className="flex items-center gap-2 font-medium text-navy">
+                  <Search className="h-4 w-4 text-teal" /> We're checking for an existing plan
+                </div>
+                <p className="text-muted-foreground">{LOOKUP_DISCLOSURE}</p>
+                {lookup?.status === "match" && (
+                  <div className="space-y-2">
+                    <p className="text-foreground">
+                      We found a record that looks like yours. Let's get you back into it instead of
+                      starting over.
+                    </p>
+                    <Button asChild size="sm">
+                      <Link to="/start/reconnect">Reconnect to my record</Link>
+                    </Button>
+                  </div>
+                )}
+                {lookup?.status === "ambiguous" && (
+                  <div className="space-y-2">
+                    <p className="text-foreground">
+                      We found more than one possible record, so a person needs to check which one
+                      is yours.
+                    </p>
+                    <Button asChild size="sm" variant="outline">
+                      <Link to="/start/reconnect">Have someone check</Link>
+                    </Button>
+                  </div>
+                )}
+                {missedHandoff && (
+                  <div className="space-y-1" data-testid="missed-handoff-notice">
+                    <p className="text-foreground">
+                      We didn't find a plan started for you. That means coordination that should
+                      have happened before your release didn't — so we'll do all of it today
+                      instead, starting with your Medi-Cal.
+                    </p>
+                    <p className="text-muted-foreground">{MEDI_CAL_FOLLOW_UP_MESSAGE}</p>
+                  </div>
+                )}
+              </div>
+            )}
 
             <CoverageCallout
               coverageType={coverage.coverageType}
