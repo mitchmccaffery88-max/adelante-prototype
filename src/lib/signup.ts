@@ -126,6 +126,31 @@ export function credentialMeta(kind: CredentialKind, now = new Date()): SignupCr
   return { kind, verificationAvailable: false, setAt: now.toISOString() };
 }
 
+/**
+ * Credential rules only, for the code-redemption branch where name/DOB/contact
+ * already exist on the record being claimed. Runs the SAME schema over a
+ * placeholder identity so the two branches can never drift apart.
+ */
+export function validateCredentialOnly(input: {
+  credentialKind: CredentialKind;
+  credential: string;
+  credentialConfirm: string;
+}): SignupErrors {
+  const errs = validateSignup({
+    firstName: "x",
+    lastName: "x",
+    dob: "2000-01-01",
+    phone: "5555550123",
+    email: "",
+    preferredLanguage: "en",
+    ...input,
+  });
+  const out: SignupErrors = {};
+  if (errs.credential) out.credential = errs.credential;
+  if (errs.credentialConfirm) out.credentialConfirm = errs.credentialConfirm;
+  return out;
+}
+
 /* ===================== §Code redemption (Phase 3 groundwork) ==============
  * The OTHER branch of the front door: someone whose record already exists
  * because a CF Care Manager completed their Reentry Care Plan and handed them
