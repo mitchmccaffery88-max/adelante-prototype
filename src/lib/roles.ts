@@ -622,7 +622,6 @@ export function canAccess(
  * visibility and disposition remain gated by the `crisis_queue` record class.
  */
 export const CRISIS_FLAG_ROLES: StaffRole[] = [
-
   "pmhnp",
   "therapist",
   "ecm_provider",
@@ -638,6 +637,18 @@ export const CRISIS_FLAG_ROLES: StaffRole[] = [
 export function canFlagCrisis(role: StaffRole): boolean {
   return CRISIS_FLAG_ROLES.includes(role);
 }
+
+/**
+ * §Front-door Phase 3 — Tier 2 gate. Derived FROM the matrix, never a second
+ * list: change `assisted_signup` above and this follows automatically.
+ */
+export function canRunAssistedSignup(role: StaffRole): boolean {
+  return canAccess(role, "assisted_signup").level === "write";
+}
+
+export const ASSISTED_SIGNUP_ROLES: StaffRole[] = STAFF_ROLES.map((r) => r.key).filter(
+  canRunAssistedSignup,
+);
 
 /**
  * §Worklist Phase B — starting/stopping a withdrawal or safety protocol.
