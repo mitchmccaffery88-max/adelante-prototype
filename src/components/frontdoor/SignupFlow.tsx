@@ -438,9 +438,12 @@ function NewPatientForm({
       preferredLanguage: draft.preferredLanguage,
       // Metadata only — the password/PIN itself is intentionally discarded.
       signupCredential: credentialMeta(draft.credentialKind),
-      signupAttributionUnused: undefined,
+      signupAssistedBy: attributionFor(operator, draft.helperName ?? ""),
     });
-    navigate({ to: "/start" });
+    // Tier 2 runs on a staff device: never switch the staff member's UI
+    // language to the patient's preference.
+    if (!operator) setLang(draft.preferredLanguage);
+    onComplete(created, "created");
   }
 
   const err = (k: keyof SignupInput) =>
