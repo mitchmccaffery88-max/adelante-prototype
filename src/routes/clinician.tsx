@@ -246,6 +246,9 @@ function ClinicianPage() {
         </Link>
       </header>
 
+      {/* §Quality pass Group A — supervised roles see live supervision status. */}
+      <SupervisionBanner />
+
       {clinician?.licenseExpiresOn &&
         (() => {
           const daysUntil = Math.ceil(
