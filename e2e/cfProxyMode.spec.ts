@@ -9,7 +9,16 @@ import { test, expect, type Page } from "@playwright/test";
 
 const ECM_STAFF_ID = "s-cm1"; // Luz Herrera, ECM Provider
 const DIRECT_CF = "Rosa Delgado"; // accessMode: "direct"
-const PROXY_CF = "Darnell Pope (facility contract)"; // accessMode: "proxy"
+const PROXY_CF = "Darnell Pope"; // accessMode: "proxy"
+/**
+ * Radix selects open on keyboard here; a synthetic pointer click does not
+ * trip their pointer-capture path in headless Chromium.
+ */
+async function pickOption(page: Page, comboIndex: number, label: RegExp) {
+  await page.getByRole("combobox").nth(comboIndex).press("Enter");
+  await page.getByRole("option", { name: label }).first().click();
+}
+
 
 /** Sign in as the ECM Provider — the only role that may ever proxy. */
 async function actAsEcmProvider(page: Page) {
@@ -30,11 +39,9 @@ async function openEpisode(page: Page, cfName: string, patientIndex = 0) {
   await page.goto("/pre-release");
   await expect(page.getByRole("heading", { name: "Pre-release list" })).toBeVisible();
 
-  await page.getByRole("combobox").first().click();
-  await page.getByRole("option").nth(patientIndex).click();
-
-  await page.getByRole("combobox").nth(1).click();
-  await page.getByRole("option", { name: new RegExp(cfName.split(" (")[0]) }).click();
+  const patientLabels = [/^Daniel M\./, /^Rosa T\./];
+  await pickOption(page, 0, patientLabels[patientIndex]!);
+  await pickOption(page, 1, new RegExp(cfName));
 
   await page.locator('input[type="date"]').fill("2026-12-01");
   await page.getByRole("button", { name: "Open episode" }).click();
