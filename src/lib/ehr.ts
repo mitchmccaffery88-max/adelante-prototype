@@ -7159,7 +7159,7 @@ export const AdelanteEHR = {
   getEnrollmentCode(code: string): EnrollmentCode | undefined {
     return enrollmentCodes.find((c) => c.code === code.trim().toUpperCase());
   },
-  /** Validity read only — the consumption flow itself is a later phase. */
+  /** Validity read. Consumption happens in `redeemEnrollmentCode`. */
   enrollmentCodeStatus(
     code: string,
     at = new Date(),
@@ -7168,6 +7168,49 @@ export const AdelanteEHR = {
     if (!rec) return "unknown";
     if (rec.consumedAt) return "consumed";
     return +new Date(rec.expiresAt) < +at ? "expired" : "valid";
+  },
+  /**
+   * §Front-door Phase 3 — the one place Track A and self-service sign-up meet.
+   *
+   * A released member types the `RE-XXXX-XXXX` code their CF Care Manager gave
+   * them and CLAIMS the record that already exists for them. This must never
+   * create a patient: it attaches the same prototype `signupCredential`
+   * metadata the self-service path sets, marks the code consumed (single-use,
+   * the `consumedAt`/`consumedBy` fields reserved at issue), and returns the
+   * existing patient so the caller can route on its real id.
+   *
+   * Throws on any non-valid status so the caller can't half-claim; the UI
+   * checks `enrollmentCodeStatus` first to show the specific message.
+   */
+  redeemEnrollmentCode(input: {
+    code: string;
+    credential: SignupCredentialMeta;
+    at?: Date;
+  }): { patient: Patient; enrollmentCode: EnrollmentCode } {
+    const at = input.at ?? new Date();
+    const status = AdelanteEHR.enrollmentCodeStatus(input.code, at);
+    if (status !== "valid") throw new Error(`This code is ${status}.`);
+    const rec = AdelanteEHR.getEnrollmentCode(input.code)!;
+    const patient = patients.find((p) => p.id === rec.patientId);
+    if (!patient) throw new Error("The record this code belongs to is no longer available.");
+    rec.consumedAt = at.toISOString();
+    rec.consumedBy = patient.id;
+    patient.signupCredential = input.credential;
+    appendAudit({
+      category: "clinical",
+      action: "enrollment_code_redeemed",
+      patientId: patient.id,
+      actorId: patient.id,
+      actorRole: "patient",
+      detail: {
+        episodeId: rec.episodeId,
+        carePlanId: rec.carePlanId,
+        // The code is an identity token — audit the event, never the value.
+        credentialKind: input.credential.kind,
+      },
+    });
+    emit();
+    return { patient, enrollmentCode: rec };
   },
   listCaseTasks(): CaseTask[] {
     return [...caseTasks];
