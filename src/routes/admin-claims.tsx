@@ -375,21 +375,29 @@ function ClaimsPage() {
               : "No claims match the current filters."}
           </p>
         ) : (
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
-              <thead className="text-left text-xs text-muted-foreground">
-                <tr><th className="py-1">Patient</th><th>Source</th><th>Code</th><th>Clinician</th><th>State</th><th>Charge</th><th>Denial</th><th></th></tr>
-              </thead>
-              <tbody className="divide-y">
-                {visibleClaims.map((c) => {
+          <Table>
+              <TableHeader className="text-left text-xs text-muted-foreground">
+                <TableRow>
+                  <SortHeader label="Patient" sortKey="patient" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <TableHead className="h-8 px-2 text-xs">Source</TableHead>
+                  <SortHeader label="Code" sortKey="code" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="Clinician" sortKey="clinician" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="State" sortKey="state" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <SortHeader label="Charge" sortKey="charge" sort={sort} onSort={(k) => setSort((s) => nextSort(s, k))} />
+                  <TableHead className="h-8 px-2 text-xs">Denial</TableHead>
+                  <TableHead className="h-8 px-2" />
+                </TableRow>
+              </TableHeader>
+              <TableBody className="divide-y">
+                {sortedClaims.map((c) => {
                   const pt = patients.find((p) => p.id === c.patientId);
                   const cl = clinicians.find((x) => x.id === c.clinicianId);
                   const next = flow[c.state];
                   const groupRef = parseGroupEncounterId(c.encounterId);
                   return (
-                    <tr key={c.id} data-testid="claim-row">
-                      <td className="py-2">{pt?.firstName} {pt?.lastName}</td>
-                      <td>
+                    <TableRow key={c.id} data-testid="claim-row">
+                      <TableCell className="px-2 py-2" data-cell="patient">{pt?.firstName} {pt?.lastName}</TableCell>
+                      <TableCell className="px-2 py-2">
                         {groupRef ? (
                           <Popover>
                             <PopoverTrigger asChild>
