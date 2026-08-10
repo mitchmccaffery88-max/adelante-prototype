@@ -889,6 +889,18 @@ export interface Patient {
     verified: "verified" | "pending" | "not_found";
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
+    /**
+     * Payer bucket — independent of `status` and of justice involvement.
+     * A Medicare patient with justice-involvement history is representable:
+     * coverageType "medicare" + justiceInvolvement "yes".
+     */
+    coverageType?: CoverageType;
+    /**
+     * Justice-involvement history, fully independent of the payer. Drives the
+     * reentry safety-net messaging (never the coverage type — see
+     * `coverageMessage` in src/lib/frontDoor.ts).
+     */
+    justiceInvolvement?: TriState;
     ecmEligible?: boolean;
     otherPlanName?: string;
     communitySupports?: {
