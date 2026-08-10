@@ -16,6 +16,13 @@ import type {
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
+import {
+  MEDI_CAL_FOLLOW_UP_TASK_TITLE,
+  matchExistingRecord,
+  shouldRunSafetyNetLookup,
+  type LookupResult,
+  type LookupSubject,
+} from "./missedHandoff";
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
@@ -927,6 +934,11 @@ export interface Patient {
       food?: boolean;
       transport?: boolean;
     };
+    /**
+     * §Front-door Phase 2 — Medi-Cal needs ACTIVE troubleshooting; the passive
+     * "reactivates automatically" messaging must not be shown to this person.
+     */
+    mediCalReactivationFollowUp?: boolean;
     /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
     snapshots?: CoverageSnapshot[];
   };
@@ -5541,7 +5553,7 @@ export const AdelanteEHR = {
       dueDate: today,
       taskType: "missed_handoff_catch_up",
       priority: "urgent",
-      allowedRoles: ["cf_care_manager", "ecm_provider", "case_manager"],
+      allowedRoles: ["cf_care_manager", "ecm_provider", "clinical_coordinator"],
       source: "missed_pre_release_handoff",
       dedupeKey: `missedhandoff:${ep.id}:medi_cal_reactivation`,
     });
