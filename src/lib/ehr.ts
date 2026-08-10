@@ -5048,6 +5048,10 @@ export const AdelanteEHR = {
       const [primary] = patch.emergencyContacts;
       if (primary) p.emergencyContact = primary;
       else delete p.emergencyContact;
+    } else if (patch.emergencyContact) {
+      // Legacy single-field writers become the primary of the list.
+      const rest = (p.emergencyContacts ?? []).slice(1);
+      p.emergencyContacts = [patch.emergencyContact, ...rest];
     }
     emit();
   },
