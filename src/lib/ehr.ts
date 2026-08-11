@@ -8213,6 +8213,10 @@ export const AdelanteEHR = {
       throw new Error(
         "Capacity & legal authority is recorded through the capacity determination step.",
       );
+    if (def.satisfiedByScreeners)
+      throw new Error(
+        "This step is satisfied by a real completed screener result, not by form fields.",
+      );
     // The real gate: an impaired individual with no legal-authority
     // instrument on file cannot be treated as having consented themselves.
     if (def.requiresConsentCapacity) {
