@@ -7766,6 +7766,228 @@ export const AdelanteEHR = {
   preReleaseTaskFor(episodeId: string, formKey: string): CaseTask | undefined {
     return caseTasks.find((t) => t.dedupeKey === `prerelease:${episodeId}:${formKey}`);
   },
+
+  // ---------- §Pre-release intake build 1 — in-custody profile creation ----
+  /**
+   * Create the person AND open their pre-release episode as ONE action.
+   *
+   * For this population the record almost never exists first: the CF Care
+   * Manager meets somebody in custody. Both halves reuse the real primitives
+   * (`createPatient`, `openPreReleaseEpisode`) unchanged, so the population
+   * resolver classifies the new patient as `pre_release_ji` from the moment
+   * this returns — an open, non-missed-handoff episode is its strongest
+   * signal, and there is nothing extra to remember to set.
+   */
+  openPreReleaseEpisodeForNewPatient(input: {
+    firstName: string;
+    lastName: string;
+    dob?: string;
+    phone?: string;
+    preferredLanguage?: PreferredLanguage;
+    cin?: string;
+    anticipatedReleaseDate: string;
+    cfCareManagerStaffId: string;
+    cfCareManagerName: string;
+    facilityId?: string;
+    bookingId?: string;
+    openedBy: string;
+    actorRole: string;
+  }): { patient: Patient; episode: PreReleaseEpisode } {
+    if (!input.firstName.trim() || !input.lastName.trim())
+      throw new Error("A first and last name are required to create the record.");
+    if (!input.anticipatedReleaseDate)
+      throw new Error("An anticipated release date is required to open a pre-release episode.");
+    const patient = AdelanteEHR.createPatient({
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      ...(input.dob ? { dob: input.dob } : {}),
+      ...(input.phone ? { phone: input.phone } : {}),
+      ...(input.preferredLanguage ? { preferredLanguage: input.preferredLanguage } : {}),
+      ...(input.cin ? { cin: input.cin } : {}),
+    });
+    appendAudit({
+      category: "clinical",
+      action: "in_custody_patient_created",
+      patientId: patient.id,
+      actorId: input.openedBy,
+      actorRole: input.actorRole,
+      detail: {
+        anticipatedReleaseDate: input.anticipatedReleaseDate,
+        facilityId: input.facilityId,
+        cfCareManagerStaffId: input.cfCareManagerStaffId,
+      },
+    });
+    const episode = AdelanteEHR.openPreReleaseEpisode({
+      patientId: patient.id,
+      anticipatedReleaseDate: input.anticipatedReleaseDate,
+      cfCareManagerStaffId: input.cfCareManagerStaffId,
+      cfCareManagerName: input.cfCareManagerName,
+      ...(input.facilityId ? { facilityId: input.facilityId } : {}),
+      ...(input.bookingId ? { bookingId: input.bookingId } : {}),
+      openedBy: input.openedBy,
+      actorRole: input.actorRole,
+    });
+    return { patient, episode };
+  },
+
+  // ---------- §Pre-release intake build 1 — capacity & legal authority -----
+  getPreReleaseCapacity(episodeId: string): PreReleaseCapacityDetermination | undefined {
+    return preReleaseCapacity.find((c) => c.episodeId === episodeId);
+  },
+
+  /**
+   * Record (or re-record) the capacity determination. Required and early: the
+   * checklist row for it is generated with every episode and this is the only
+   * way to satisfy it.
+   */
+  recordPreReleaseCapacity(input: {
+    episodeId: string;
+    status: IntakeCapacityStatus;
+    basis: string;
+    determinedBy: string;
+    actorRole: string;
+  }): PreReleaseCapacityDetermination {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (!input.basis.trim())
+      throw new Error("Record what you observed — the basis for the capacity determination.");
+    const now = new Date().toISOString();
+    let rec = preReleaseCapacity.find((c) => c.episodeId === ep.id);
+    if (!rec) {
+      rec = {
+        id: uid(),
+        episodeId: ep.id,
+        patientId: ep.patientId,
+        status: input.status,
+        basis: input.basis.trim(),
+        determinedBy: input.determinedBy,
+        determinedByRole: input.actorRole,
+        determinedAt: now,
+        identifiedAdvocates: [],
+      };
+      preReleaseCapacity.unshift(rec);
+    } else {
+      rec.status = input.status;
+      rec.basis = input.basis.trim();
+      rec.determinedBy = input.determinedBy;
+      rec.determinedByRole = input.actorRole;
+      rec.determinedAt = now;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_capacity_determined",
+      patientId: ep.patientId,
+      actorId: input.determinedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        capacity: rec.status,
+        requiresSurrogate: capacityRequiresSurrogate(rec.status),
+        basis: rec.basis,
+      },
+    });
+    emit();
+    return { ...rec };
+  },
+
+  /**
+   * Identify an advocate AT the capacity step, which is the point at which a
+   * real invitation goes out. Same one-way designation rule as everywhere
+   * else: `createAdvocateInvitation` is the mechanism, unchanged, so the
+   * invitation is traceable rather than a recorded name.
+   */
+  identifyPreReleaseAdvocate(input: {
+    episodeId: string;
+    advocateName: string;
+    relationship?: string;
+    invitationSentTo: string;
+    invitationChannel: "email" | "sms";
+    expectedAuthorization: PreReleaseCapacityDetermination["identifiedAdvocates"][number]["expectedAuthorization"];
+    identifiedBy: string;
+    actorRole: string;
+  }): AdvocateLink {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const rec = preReleaseCapacity.find((c) => c.episodeId === ep.id);
+    if (!rec)
+      throw new Error(
+        "Record the capacity determination first — the advocate step follows from its answer.",
+      );
+    const link = AdelanteEHR.createAdvocateInvitation({
+      patientId: ep.patientId,
+      advocateName: input.advocateName,
+      ...(input.relationship ? { relationship: input.relationship } : {}),
+      invitationSentTo: input.invitationSentTo,
+      invitationChannel: input.invitationChannel,
+      designatedBy: {
+        actor: input.actorRole === "ecm_provider" ? "ecm_provider" : "cf_care_manager",
+        name: input.identifiedBy,
+      },
+    });
+    rec.identifiedAdvocates = [
+      ...rec.identifiedAdvocates,
+      { advocateLinkId: link.id, expectedAuthorization: input.expectedAuthorization },
+    ];
+    appendAudit({
+      category: "advocate",
+      action: "pre_release_advocate_identified",
+      patientId: ep.patientId,
+      actorId: input.identifiedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        expectedAuthorization: input.expectedAuthorization,
+        capacity: rec.status,
+      },
+    });
+    emit();
+    return link;
+  },
+
+  /**
+   * The live capacity/authority state for an episode. Whether an instrument is
+   * in force is re-read through the EXISTING advocate gate every call — a
+   * lapsed temporary AHCD determination or a revoked link closes this gate
+   * with nothing needing to be told.
+   */
+  preReleaseCapacityState(episodeId: string): {
+    determination?: PreReleaseCapacityDetermination;
+    /** Legal-authority links (AHCD / conservatorship) for this patient. */
+    authorityLinks: AdvocateLink[];
+    activeAuthorityLinkId?: string;
+    decision: CapacityGateDecision;
+  } {
+    const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
+    const determination = preReleaseCapacity.find((c) => c.episodeId === episodeId);
+    if (!ep)
+      return {
+        authorityLinks: [],
+        decision: capacityGateDecision({ legalAuthorityActive: false, legalAuthorityPending: false }),
+      };
+    const expected = new Map(
+      (determination?.identifiedAdvocates ?? []).map((a) => [a.advocateLinkId, a.expectedAuthorization]),
+    );
+    const authorityLinks = AdelanteEHR.listAdvocateLinks(ep.patientId).filter((l) => {
+      const claimed = l.authorizationType;
+      if (claimed) return claimed === "ahcd" || claimed === "conservatorship";
+      const exp = expected.get(l.id);
+      return exp === "ahcd" || exp === "conservatorship";
+    });
+    const active = authorityLinks.find((l) => AdelanteEHR.advocateAccess(l.id).allowed);
+    const pending = authorityLinks.some((l) => l.status !== "revoked" && l.status !== "expired");
+    return {
+      ...(determination ? { determination } : {}),
+      authorityLinks,
+      ...(active ? { activeAuthorityLinkId: active.id } : {}),
+      decision: capacityGateDecision({
+        ...(determination ? { capacity: determination.status } : {}),
+        legalAuthorityActive: Boolean(active),
+        legalAuthorityPending: Boolean(!active && pending),
+      }),
+    };
+  },
   /**
    * Closes an episode (member released, transferred, or opened in error). The
    * episode and its captured forms are retained — they are the hand-off
