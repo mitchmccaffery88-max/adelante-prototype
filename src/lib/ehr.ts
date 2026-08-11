@@ -14303,6 +14303,8 @@ export const AdelanteEHR = {
         attendeeNotes: noteIds.length,
         sharedNote: true,
         modality,
+        facilitators: facilitators.map((f) => `${f.staffId}:${f.minutes}m`),
+        renderingProviderId,
       },
     });
     emit();
