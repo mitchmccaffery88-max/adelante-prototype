@@ -102,8 +102,8 @@ export function AhcdValidationChecklist({
                   <p className="text-xs text-muted-foreground">{item.detail}</p>
                   {item.finding && (
                     <p className="mt-1 text-xs text-muted-foreground">
-                      {ui.label} by {item.finding.reviewedBy} ·{" "}
-                      <ClientDate value={item.finding.reviewedAt} />
+                      {ui.label} by {item.finding.checkedBy} ·{" "}
+                      <ClientDate value={item.finding.checkedAt ?? ""} />
                     </p>
                   )}
                 </div>

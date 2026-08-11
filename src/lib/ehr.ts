@@ -8993,8 +8993,8 @@ export const AdelanteEHR = {
       ...(link.ahcdValidation ?? {}),
       [input.item]: {
         outcome: input.outcome,
-        reviewedAt: new Date().toISOString(),
-        reviewedBy: who,
+        checkedAt: new Date().toISOString(),
+        checkedBy: who,
         ...(input.note?.trim() ? { note: input.note.trim() } : {}),
       },
     };
