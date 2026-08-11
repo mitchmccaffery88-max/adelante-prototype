@@ -4,14 +4,16 @@
 //   1. "Your group calendar" — read-only upcoming occurrences for groups the
 //      patient is ALREADY enrolled in (both categories; seeing what you are
 //      enrolled in is not the same as enrolling yourself).
-//   2. "Open groups you can join" — self-service enrollment, restricted to
-//      `open_psychoeducational` ONLY. `sud_clinical_preauth` groups must never
-//      surface here; the store enforces this too (`openGroupsForPatient` +
-//      `assertEnrollmentAllowed`), this is not a UI-only filter.
+//   2. "Open groups you can join" — self-service enrollment, restricted to the
+//      self-service categories (`open_psychoeducational` and the billable
+//      `skills_education`). `sud_clinical_preauth` groups must never surface
+//      here; the store enforces this too (`openGroupsForPatient` +
+//      `assertEnrollmentAllowed`), this is not a UI-only filter. Billability
+//      is deliberately NOT shown to patients.
 //
 // Both paths require the care-plan group-eligibility flag, which staff set.
-// PLACEHOLDER: category names, curriculum tags and eligibility criteria are
-// all provisional pending Christi/SME content.
+// PLACEHOLDER: curriculum tags and eligibility criteria are still provisional
+// pending Christi/SME content; categories and billing codes are now real.
 //
 // FUTURE: an Authorized Representative / Collateral (advocate) acting for the
 // patient will reuse this surface — the actor is passed to the store, which is
