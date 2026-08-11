@@ -141,6 +141,38 @@ function GroupSessionsPage() {
 }
 
 function CreateGroupCard({ actor }: { actor: string }) {
+  return <CreateGroupCardInner actor={actor} />;
+}
+
+/**
+ * Billing status at the point of choice. Staff should never have to reach the
+ * claim-time block to learn a group is non-billable — this renders the moment
+ * a category is selected. The hard enforcement stays in
+ * `upsertClaimFromGroupAttendee`; this is prevention, not the gate.
+ */
+function GroupBillingStatus({ category }: { category: GroupCategory }) {
+  const info = GROUP_BILLING[category];
+  return (
+    <div
+      data-testid="group-billing-status"
+      data-billable={info.billable ? "true" : "false"}
+      className={
+        info.billable
+          ? "rounded-md border border-teal/40 bg-teal/10 px-2 py-1.5 text-[11px] text-navy"
+          : "rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-navy"
+      }
+    >
+      {info.statusLabel}
+      <span className="block text-muted-foreground">
+        {info.billable
+          ? `An occurrence with fewer than 2 present attendees is not billable as a group.`
+          : `Attendance is engagement/reach data only — no claim is ever created.`}
+      </span>
+    </div>
+  );
+}
+
+function CreateGroupCardInner({ actor }: { actor: string }) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
