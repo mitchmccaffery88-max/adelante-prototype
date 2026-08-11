@@ -6,6 +6,26 @@ export interface ScreenerDef {
   questions: string[];
   options: { label: string; value: number }[];
   bands: { max: number; label: string }[];
+  /**
+   * §Pre-release build 2 — the standard clinical cutoff at or above which the
+   * instrument counts as a POSITIVE screen. Optional because not every
+   * instrument has one (PCL-5 short form here does not). Adding it to the
+   * base def — rather than to a parallel type — is what makes
+   * positive-screen-rate reporting possible across every instrument at once.
+   */
+  positiveCutoff?: number;
+  /**
+   * Per-item option override, by question index. The shared `options` list
+   * stays the default; instruments whose items genuinely use different
+   * anchors (AHC-HRSN) declare only the ones that differ. Every existing
+   * consumer that reads `options` keeps working unchanged.
+   */
+  itemOptions?: Record<number, { label: string; value: number }[]>;
+}
+
+/** The option list to render/score for a given item of any instrument. */
+export function optionsForItem(def: ScreenerDef, index: number) {
+  return def.itemOptions?.[index] ?? def.options;
 }
 
 const standard4 = [
@@ -67,6 +87,8 @@ export const SCREENERS: ScreenerDef[] = [
     description:
       "Alcohol use — past year. One drink = one beer, one glass of wine, or one shot. Protected by 42 CFR Part 2.",
     isSud: true,
+    // Standard AUDIT cutoff for hazardous / harmful drinking.
+    positiveCutoff: 8,
     questions: [
       "How often do you have a drink containing alcohol?",
       "How many drinks containing alcohol do you have on a typical day when you are drinking?",
@@ -101,6 +123,8 @@ export const SCREENERS: ScreenerDef[] = [
     name: "DAST-10",
     description: "Drug use — protected by 42 CFR Part 2",
     isSud: true,
+    // Standard DAST-10 cutoff: 3+ indicates a probable drug problem.
+    positiveCutoff: 3,
     questions: [
       "Used drugs other than those required for medical reasons",
       "Abused prescription drugs",
