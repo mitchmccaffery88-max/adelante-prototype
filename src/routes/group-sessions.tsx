@@ -189,7 +189,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Category (PLACEHOLDER — confirm the real list with Christi)</Label>
+          <Label className="text-xs">Category</Label>
           <Select value={category} onValueChange={(v) => setCategory(v as GroupCategory)}>
             <SelectTrigger>
               <SelectValue />
@@ -202,18 +202,26 @@ function CreateGroupCard({ actor }: { actor: string }) {
               ))}
             </SelectContent>
           </Select>
+          <GroupBillingStatus category={category} />
           <p className="text-[11px] text-muted-foreground">
             {GROUP_CATEGORIES.find((c) => c.key === category)?.helper}
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Capacity (placeholder — no DHCS limit encoded)</Label>
+          <Label className="text-xs">
+            Capacity ({GROUP_CAPACITY_MIN}–{GROUP_CAPACITY_MAX}, DHCS limit)
+          </Label>
           <Input
             type="number"
-            min={1}
+            min={GROUP_CAPACITY_MIN}
+            max={GROUP_CAPACITY_MAX}
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
           />
+          <p className="text-[11px] text-muted-foreground">
+            {GROUP_CAPACITY_MAX} is the regulatory maximum (same for telehealth). A lower local cap
+            is allowed; a higher one is not.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Session length (minutes)</Label>
@@ -274,7 +282,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
                 locationId: locationId || undefined,
                 start: startIso,
                 durationMin: Number(durationMin) || 60,
-                capacity: Number(capacity) || 1,
+                capacity: Number(capacity),
                 recurrence: weekly
                   ? { kind: "weekly", daysOfWeek: [new Date(startIso).getDay()] }
                   : { kind: "none" },
