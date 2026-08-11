@@ -16,6 +16,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
 import { ShieldCheck, UserPlus, Send } from "lucide-react";
+import { AhcdValidationChecklist } from "./AhcdValidationChecklist";
 
 const AUTH_LABEL = new Map(ADVOCATE_AUTHORIZATION_TYPES.map((a) => [a.key, a.label]));
 
