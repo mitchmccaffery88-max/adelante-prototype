@@ -6237,37 +6237,63 @@ export const AdelanteEHR = {
    * analytics table: positive-screen rates and SDOH domain prevalence are
    * derived from `patient.screeners` / `screenerHistory` on demand.
    */
-  screenerPopulationSummary(opts: { keys?: string[]; patientIds?: string[] } = {}): {
+  /**
+   * §Part 2 — aggregates are computed over the cohort the VIEWER may actually
+   * read. Counts and rates are not individual-level disclosures, but a cohort
+   * of one makes them exactly that, so the same `screenerAccess` gate filters
+   * the contributing patients per Part 2 instrument. A row whose cohort was
+   * narrowed is flagged `restricted`, and a row with no readable patients is
+   * reported as zero-administered rather than silently blended into the rest.
+   * Non-Part 2 instruments and SDOH domain prevalence are unaffected.
+   */
+  screenerPopulationSummary(
+    opts: { keys?: string[]; patientIds?: string[]; viewer?: ScreenerViewer } = {},
+  ): {
     instruments: {
       key: string;
       name: string;
       administered: number;
       positive: number;
       positiveRate: number;
+      restricted?: boolean;
     }[];
     sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
   } {
     const cohort = patients.filter(
       (p) => !opts.patientIds || opts.patientIds.includes(p.id),
     );
+    const viewer: ScreenerViewer = opts.viewer ?? { kind: "staff" };
     const keys =
       opts.keys ??
       Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
     const instruments = keys.map((key) => {
       const def = screenerByKey(key);
-      const results = cohort
+      const part2 = isPart2Screener(key);
+      const readable = part2
+        ? cohort.filter((p) => AdelanteEHR.screenerAccess(p.id, key, viewer).allowed)
+        : cohort;
+      const results = readable
         .map((p) => p.screeners[key])
         .filter((r): r is ScreenerResult => Boolean(r));
       const positive = results.filter((r) =>
         r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
       ).length;
-      return {
+      const row: {
+        key: string;
+        name: string;
+        administered: number;
+        positive: number;
+        positiveRate: number;
+        restricted?: boolean;
+      } = {
         key,
         name: def?.name ?? key,
         administered: results.length,
         positive,
         positiveRate: results.length ? positive / results.length : 0,
       };
+      if (part2 && readable.length < cohort.length) row.restricted = true;
+      return row;
     });
     // Domain prevalence across everyone with a domain instrument on file.
     const tally = new Map<string, { label: string; positive: number; screened: number }>();
