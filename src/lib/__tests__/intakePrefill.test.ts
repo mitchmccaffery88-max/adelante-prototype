@@ -49,7 +49,7 @@ describe("intake About-you pre-fill", () => {
 
   it("keeps a real edit from the saved draft but never lets a blank erase record data", () => {
     const p = AdelanteEHR.getPatient(
-      AdelanteEHR.createPatient({ firstName: "Ana", phone: "555-0100" }).id,
+      AdelanteEHR.createPatient({ firstName: "Ana", lastName: "R", phone: "555-0100" }).id,
     )!;
     const seed = seedIntakeProfile(p);
     const merged = mergeSavedIntakeProfile(seed, {
@@ -63,7 +63,7 @@ describe("intake About-you pre-fill", () => {
   });
 
   it("persists a correction back to the record", () => {
-    const p = AdelanteEHR.createPatient({ firstName: "Edit", phone: "555-0000" });
+    const p = AdelanteEHR.createPatient({ firstName: "Edit", lastName: "R", phone: "555-0000" });
     AdelanteEHR.updateProfile(p.id, { phone: "555-9999", preferredName: "Eddie" });
     const after = AdelanteEHR.getPatient(p.id)!;
     expect(after.phone).toBe("555-9999");
