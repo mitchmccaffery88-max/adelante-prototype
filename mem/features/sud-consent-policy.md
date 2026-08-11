@@ -39,3 +39,11 @@ status is not content). `screenerPopulationSummary` takes a `viewer` and
 filters the contributing cohort per Part 2 instrument, flagging narrowed rows
 `restricted` — so aggregates can't become a second unprotected read path.
 `intake.tsx`'s `isSud` filter stays as defense in depth, not the enforcement.
+
+**Author/actor exception (narrow).** A Part 2 result carries
+`ScreenerResult.administeredBy` (the same `CfAttribution` shape the pre-release
+build produces). In `screenerAccess`, a staff viewer whose `staffId` matches
+that result's `enteredBy`/`attributedTo` is allowed BEFORE the general
+`canAccess(role, "screeners_sud", patient)` fall-through. `cf_care_manager`
+stays `none` in the matrix — the exception is per-stored-result authorship, not
+role-level or episode/patient proximity. Never broaden it to "on my caseload".
