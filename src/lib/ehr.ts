@@ -4949,6 +4949,15 @@ export interface GroupSession {
   facilitatorId: string;
   coFacilitatorId?: string;
   /**
+   * §Multi-facilitator. Real list of additional practitioners who may deliver
+   * this group. Per-occurrence direct-care MINUTES are not stored here — they
+   * are recorded at documentation time on the occurrence, because two
+   * facilitators genuinely can (and often do) deliver different durations.
+   * `coFacilitatorId` above is the retired single-slot field, kept only so
+   * legacy rows still read; new code writes `coFacilitatorIds`.
+   */
+  coFacilitatorIds?: string[];
+  /**
    * Reuses the existing `ServiceType` union: `therapy_group` already exists,
    * so no new service taxonomy is invented here.
    */
@@ -4991,6 +5000,26 @@ export interface GroupSessionEnrollment {
 
 export type GroupAttendanceStatus = "present" | "absent" | "late";
 
+/**
+ * §Multi-facilitator minute tracking (Christi / DHCS crosswalk).
+ *
+ * When 2+ practitioners deliver one group, the note must document EACH
+ * provider's specific involvement AND their own duration of direct patient
+ * care. San Francisco county splits this into separate notes per facilitator
+ * purely because their EHR cannot record different service times per
+ * provider — an EHR constraint, explicitly NOT a rule to replicate. Here the
+ * minutes are per-facilitator on ONE occurrence, and every individualized
+ * attendee note renders the full list.
+ */
+export interface GroupFacilitatorMinutes {
+  staffId: string;
+  role: "primary" | "co";
+  /** Direct patient-care minutes delivered by THIS provider, independently. */
+  minutes: number;
+  /** This provider's specific involvement (what they actually did). */
+  involvement: string;
+}
+
 export interface GroupAttendanceEntry {
   patientId: string;
   status: GroupAttendanceStatus;
@@ -5025,6 +5054,25 @@ export interface GroupOccurrenceRecord {
   modality?: GroupOccurrenceModality;
   modalitySetAt?: string;
   modalitySetBy?: string;
+  /**
+   * Per-facilitator direct-care minutes for THIS meeting. Absent = not yet
+   * documented; readers fall back to `defaultGroupFacilitators(session)`.
+   */
+  facilitators?: GroupFacilitatorMinutes[];
+  /**
+   * §Designated rendering provider. DHCS duplicate-claim logic keys on member
+   * CIN + rendering provider NPI + procedure code + date, so each beneficiary
+   * claim carries exactly ONE rendering provider. Defaults to the primary
+   * facilitator, changeable per occurrence.
+   *
+   * OPEN — COUNTY CONFIRMATION REQUIRED: whether a SECOND facilitator's time
+   * is ever separately claimable is NOT decided here. DHCS is silent; we
+   * resolve conservatively (co-facilitator time is documented only, never
+   * separately claimed). Do not treat this as settled policy.
+   */
+  renderingProviderId?: string;
+  renderingProviderSetAt?: string;
+  renderingProviderSetBy?: string;
   attendance: GroupAttendanceEntry[];
   attendanceRecordedAt?: string;
   attendanceRecordedBy?: string;
@@ -5059,6 +5107,14 @@ export interface GroupAttendeeNoteRef {
   occurrenceStart: string;
   facilitatorId: string;
   /**
+   * FULL facilitator list with each provider's independent minutes and
+   * involvement, snapshotted at documentation time. Rendered on every
+   * individualized attendee note (one note per client, all providers shown).
+   */
+  facilitators?: GroupFacilitatorMinutes[];
+  /** The single designated rendering provider that flows to the claim. */
+  renderingProviderId?: string;
+  /**
    * Individualized attendee notes are the billable unit in DMC-ODS. False for
    * a non-billable category OR an occurrence with fewer than 2 present.
    */
@@ -5072,6 +5128,52 @@ export interface GroupAttendeeNoteRef {
    * (see noteGateClass): only `sud_clinical_preauth` is Part 2 content.
    */
   category?: GroupCategory;
+}
+
+/**
+ * Default facilitator list for a session: primary first, then co-facilitators
+ * (new list field, falling back to the retired single slot). Minutes default
+ * to the scheduled session length and are meant to be EDITED per provider —
+ * that editability is the whole point of the model.
+ */
+export function defaultGroupFacilitators(session: GroupSession): GroupFacilitatorMinutes[] {
+  const cos = session.coFacilitatorIds?.length
+    ? session.coFacilitatorIds
+    : session.coFacilitatorId
+      ? [session.coFacilitatorId]
+      : [];
+  return [
+    { staffId: session.facilitatorId, role: "primary" as const, minutes: session.durationMin, involvement: "" },
+    ...cos
+      .filter((id) => id && id !== session.facilitatorId)
+      .map((id) => ({ staffId: id, role: "co" as const, minutes: session.durationMin, involvement: "" })),
+  ];
+}
+
+/** Sensible default rendering provider: the primary facilitator. */
+export function defaultRenderingProviderId(facilitators: GroupFacilitatorMinutes[]): string {
+  return (facilitators.find((f) => f.role === "primary") ?? facilitators[0])?.staffId ?? "";
+}
+
+/** Normalize + validate a documented facilitator list. Throws on bad input. */
+export function normalizeGroupFacilitators(
+  input: GroupFacilitatorMinutes[] | undefined,
+  session: GroupSession,
+): GroupFacilitatorMinutes[] {
+  const list = (input?.length ? input : defaultGroupFacilitators(session)).map((f) => ({
+    staffId: f.staffId,
+    role: f.role,
+    minutes: Math.round(Number(f.minutes) || 0),
+    involvement: (f.involvement ?? "").trim(),
+  }));
+  if (list.length === 0) throw new Error("At least one facilitator is required.");
+  if (new Set(list.map((f) => f.staffId)).size !== list.length)
+    throw new Error("Each facilitator can only be listed once.");
+  if (list.some((f) => f.minutes <= 0))
+    throw new Error("Every facilitator needs their own direct-care minutes.");
+  if (list.filter((f) => f.role === "primary").length !== 1)
+    throw new Error("Exactly one facilitator must be marked primary.");
+  return list;
 }
 
 
@@ -13976,6 +14078,53 @@ export const AdelanteEHR = {
     );
   },
 
+  /** Effective facilitator list for one occurrence (documented, else default). */
+  groupOccurrenceFacilitators(sessionId: string, occurrenceStart: string): GroupFacilitatorMinutes[] {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) return [];
+    const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+    return occ?.facilitators?.length ? occ.facilitators : defaultGroupFacilitators(g);
+  },
+
+  /** Effective designated rendering provider for one occurrence. */
+  groupRenderingProviderId(sessionId: string, occurrenceStart: string): string {
+    const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+    if (occ?.renderingProviderId) return occ.renderingProviderId;
+    return defaultRenderingProviderId(
+      AdelanteEHR.groupOccurrenceFacilitators(sessionId, occurrenceStart),
+    );
+  },
+
+  /**
+   * Change the designated rendering provider for ONE occurrence. Only a
+   * facilitator of that occurrence is eligible — the rendering provider must
+   * have actually delivered direct care.
+   */
+  setGroupRenderingProvider(
+    sessionId: string,
+    occurrenceStart: string,
+    staffId: string,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const eligible = AdelanteEHR.groupOccurrenceFacilitators(sessionId, occurrenceStart);
+    if (!eligible.some((f) => f.staffId === staffId))
+      throw new Error("The rendering provider must be one of this meeting's facilitators.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.renderingProviderId = staffId;
+    row.renderingProviderSetAt = new Date().toISOString();
+    row.renderingProviderSetBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_rendering_provider_set",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart, renderingProviderId: staffId },
+    });
+    emit();
+    return row;
+  },
+
   /** Facilitator-recorded per-occurrence attendance. */
   recordGroupAttendance(
     sessionId: string,
@@ -14019,6 +14168,14 @@ export const AdelanteEHR = {
     facilitatorId: string;
     topicCovered: string;
     groupProcess: string;
+    /**
+     * Full facilitator list with INDEPENDENT per-provider direct-care minutes.
+     * Omitted = derived from the session (primary + co-facilitators, session
+     * length each).
+     */
+    facilitators?: GroupFacilitatorMinutes[];
+    /** Designated rendering provider; defaults to the primary facilitator. */
+    renderingProviderId?: string;
     /** patientId -> that patient's individualized participation narrative. */
     perAttendee: Record<string, string>;
     /**
@@ -14037,6 +14194,15 @@ export const AdelanteEHR = {
       row.modalitySetBy = input.actor;
     }
     const modality = row.modality ?? defaultOccurrenceModality(g.modality);
+    // §Multi-facilitator: independent minutes per provider, one note per client.
+    const facilitators = normalizeGroupFacilitators(input.facilitators, g);
+    const renderingProviderId = input.renderingProviderId ?? row.renderingProviderId ?? defaultRenderingProviderId(facilitators);
+    if (!facilitators.some((f) => f.staffId === renderingProviderId))
+      throw new Error("The rendering provider must be one of this meeting's facilitators.");
+    row.facilitators = facilitators;
+    row.renderingProviderId = renderingProviderId;
+    row.renderingProviderSetAt = new Date().toISOString();
+    row.renderingProviderSetBy = input.actor;
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
     // §Group sessions — telehealth gate. Per-member, live against the
@@ -14087,12 +14253,24 @@ export const AdelanteEHR = {
 
     const noteIds: string[] = [];
     for (const a of present) {
+      // Every individualized note renders the FULL facilitator list with each
+      // provider's own involvement and minutes — the one-note-per-client
+      // convention WITHOUT collapsing distinct provider durations.
+      const facilitatorLines = facilitators
+        .map((f) => {
+          const s = clinicians.find((c) => c.id === f.staffId);
+          const name = s?.name ?? f.staffId;
+          const label = f.role === "primary" ? "primary facilitator" : "co-facilitator";
+          const rendering = f.staffId === renderingProviderId ? "; designated rendering provider" : "";
+          return `${name} (${label}${rendering}) — ${f.minutes} min direct care${f.involvement ? `: ${f.involvement}` : ""}`;
+        })
+        .join(" | ");
       const saved = AdelanteEHR.addProgressNote(a.patientId, {
         clinicianId: input.facilitatorId,
         date: input.occurrenceStart,
         sessionType: "group",
         subjective: input.perAttendee[a.patientId]!.trim(),
-        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}.`,
+        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}. Facilitators: ${facilitatorLines}.`,
         assessment: "",
         plan: "",
         category: "group",
@@ -14101,6 +14279,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
+          facilitators: facilitators.map((f) => ({ ...f })),
+          renderingProviderId,
           billingEligible: occurrenceBillable,
           billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
           modality,
@@ -14123,6 +14303,8 @@ export const AdelanteEHR = {
         attendeeNotes: noteIds.length,
         sharedNote: true,
         modality,
+        facilitators: facilitators.map((f) => `${f.staffId}:${f.minutes}m`),
+        renderingProviderId,
       },
     });
     emit();

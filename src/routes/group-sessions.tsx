@@ -14,6 +14,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
+  defaultGroupFacilitators,
+  defaultRenderingProviderId,
   formatLocationAddress,
   GROUP_BILLING,
   GROUP_CAPACITY_MAX,
@@ -206,6 +208,7 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [facilitatorId, setFacilitatorId] = useState("");
+  const [coFacilitatorId, setCoFacilitatorId] = useState("");
   const [start, setStart] = useState("");
   const [capacity, setCapacity] = useState("8");
   const [durationMin, setDurationMin] = useState("60");
@@ -248,6 +251,26 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
         <div className="space-y-1.5">
           <Label className="text-xs">First occurrence</Label>
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Co-facilitator (optional)</Label>
+          <Select value={coFacilitatorId} onValueChange={setCoFacilitatorId}>
+            <SelectTrigger>
+              <SelectValue placeholder="None" />
+            </SelectTrigger>
+            <SelectContent>
+              {clinicians
+                .filter((c) => c.id !== facilitatorId)
+                .map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            Each facilitator records their own direct-care minutes when the meeting is documented.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Category</Label>
@@ -338,6 +361,7 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
                 description,
                 category,
                 facilitatorId,
+                coFacilitatorIds: coFacilitatorId ? [coFacilitatorId] : undefined,
                 serviceType: "therapy_group",
                 modality: "in_person",
                 locationId: locationId || undefined,
@@ -391,6 +415,11 @@ function GroupDetail({
   const [topicCovered, setTopicCovered] = useState("");
   const [groupProcess, setGroupProcess] = useState("");
   const [perAttendee, setPerAttendee] = useState<Record<string, string>>({});
+  // §Multi-facilitator: minutes + involvement are per-provider and edited at
+  // documentation time, never a single combined time field.
+  const [facMinutes, setFacMinutes] = useState<Record<string, string>>({});
+  const [facInvolve, setFacInvolve] = useState<Record<string, string>>({});
+  const [renderingId, setRenderingId] = useState("");
 
   const roster = useMemo(
     () =>
@@ -403,6 +432,15 @@ function GroupDetail({
 
   const savedAttendance = record?.attendance ?? [];
   const present = savedAttendance.filter((a) => a.status !== "absent");
+  const clinicians = AdelanteEHR.listClinicians();
+  const baseFacilitators = defaultGroupFacilitators(group);
+  const facilitatorDraft = baseFacilitators.map((f) => ({
+    ...f,
+    minutes: Number(facMinutes[f.staffId] ?? f.minutes) || 0,
+    involvement: facInvolve[f.staffId] ?? "",
+  }));
+  const effectiveRenderingId =
+    renderingId || defaultRenderingProviderId(facilitatorDraft);
 
   return (
     <div className="space-y-4">
@@ -610,6 +648,65 @@ function GroupDetail({
               Every present attendee needs their own individualized note — a blanket group note is a
               documented DMC-ODS denial risk.
             </p>
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="text-xs font-medium text-navy">
+                Facilitators — each provider's own direct-care time
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Record each provider's involvement and minutes independently. Every attendee note
+                lists all facilitators; co-facilitator time is documented, not separately claimed
+                (county confirmation still pending on whether it ever can be).
+              </p>
+              {facilitatorDraft.map((f) => {
+                const c = clinicians.find((x) => x.id === f.staffId);
+                return (
+                  <div key={f.staffId} className="space-y-1.5">
+                    <Label className="text-xs">
+                      {c?.name ?? f.staffId} — {f.role === "primary" ? "primary facilitator" : "co-facilitator"}
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        className="w-28"
+                        value={facMinutes[f.staffId] ?? String(f.minutes)}
+                        onChange={(e) =>
+                          setFacMinutes((prev) => ({ ...prev, [f.staffId]: e.target.value }))
+                        }
+                        aria-label={`Direct-care minutes for ${c?.name ?? f.staffId}`}
+                      />
+                      <Input
+                        placeholder="Specific involvement"
+                        value={facInvolve[f.staffId] ?? ""}
+                        onChange={(e) =>
+                          setFacInvolve((prev) => ({ ...prev, [f.staffId]: e.target.value }))
+                        }
+                        aria-label={`Involvement for ${c?.name ?? f.staffId}`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Designated rendering provider (goes on the claim)</Label>
+                <Select value={effectiveRenderingId} onValueChange={setRenderingId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {facilitatorDraft.map((f) => (
+                      <SelectItem key={f.staffId} value={f.staffId}>
+                        {clinicians.find((x) => x.id === f.staffId)?.name ?? f.staffId}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Exactly one provider per beneficiary claim — DHCS duplicate logic keys on CIN +
+                  rendering provider NPI + procedure code + date.
+                </p>
+              </div>
+            </div>
             {present.map((a) => {
               const p = patients.find((x) => x.id === a.patientId);
               return (
@@ -637,6 +734,8 @@ function GroupDetail({
                     facilitatorId: group.facilitatorId,
                     topicCovered,
                     groupProcess,
+                    facilitators: facilitatorDraft,
+                    renderingProviderId: effectiveRenderingId,
                     perAttendee,
                     modality: AdelanteEHR.groupOccurrenceModality(group.id, activeStart),
                     actor,
@@ -651,6 +750,7 @@ function GroupDetail({
                       occurrenceStart: activeStart,
                       patientId,
                       facilitatorId: group.facilitatorId,
+                      renderingProviderId: effectiveRenderingId,
                       noteId,
                     });
                   }
