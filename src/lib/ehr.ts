@@ -8385,6 +8385,7 @@ export const AdelanteEHR = {
       responses: input.answers,
       context: "pre_release",
       episodeId: ep.id,
+      administeredBy: input.attribution,
       ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
       ...(scored.domains ? { domains: scored.domains } : {}),
     };
