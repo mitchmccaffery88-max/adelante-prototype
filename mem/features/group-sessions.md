@@ -64,10 +64,19 @@ parallel group-consent check.
 claims list keyed by `encounterId` = `group:<sessionId>:<start>:<patientId>`.
 Claim carries `serviceCode` = H0005/H2014; `GroupAttendeeNoteRef.billingCode` mirrors it.
 
-**OPEN QUESTIONS for Christi (do not decide in code):** whether
-`group_participation` is legally distinct from general treatment consent;
-real curriculum/topic names; modality/telehealth consent; multi-facilitator
-minute tracking. Group sizes and billing codes are now REAL DHCS content.
+**Modality + consent (REAL DHCS content).** Modality lives on the OCCURRENCE
+(`GroupOccurrenceRecord.modality`: `in_person | video | audio_only`) and is
+stamped onto every attendee note (`GroupAttendeeNoteRef.modality`). The old
+`group_participation` placeholder category was RETIRED and split: telehealth
+consent reuses the existing `telehealth_services` ConsentRecord category
+(`TELEHEALTH_CONSENT_CATEGORY`, four required disclosure elements in
+`TELEHEALTH_DISCLOSURE_ELEMENTS`) and gates virtual participation per member;
+`group_confidentiality_ack` is OPTIONAL and county-toggled (default OFF,
+`AdelanteEHR.setGroupConfidentialityAckRequired`). `group_notes` masking now
+gates on `sud_treatment`. Roster snapshots stay on the shared group note only.
+
+**OPEN QUESTIONS for Christi (do not decide in code):** real curriculum/topic
+names; multi-facilitator minute tracking; same-day claim verification.
 
 **Not built (flagged, needs confirmation):** patient-visible "your groups" on
 `/home`.
