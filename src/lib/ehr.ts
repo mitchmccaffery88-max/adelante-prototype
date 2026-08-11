@@ -6129,8 +6129,88 @@ export const AdelanteEHR = {
     emit();
   },
   /** Latest stored result for an instrument — the one the checklist reads. */
-  getScreenerResult(patientId: string, key: string): ScreenerResult | undefined {
+  /**
+   * §Part 2 store gate — is this viewer allowed to read THIS instrument for
+   * THIS patient? One evaluation point, reusing the mechanisms that already
+   * govern every other piece of Part 2 content:
+   *   • staff → `canAccess(role, "screeners_sud", patient)`, the same class
+   *     `noteGateClass()` routes SUD notes through and the same live ASCMI
+   *     `sud_treatment` consent check;
+   *   • advocate → `advocatePart2Access(linkId)`, i.e. the Phase 4
+   *     `advocateSudAccess` axis, plus the link's own patient scope;
+   *   • patient → their own record, always.
+   * Non-Part 2 instruments (PHQ-9/GAD-7/PHQ-2/GAD-2/PCL-5/AHC-HRSN) are never
+   * gated here — Part 2 is not a general chart lock.
+   */
+  screenerAccess(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): { part2: boolean; allowed: boolean; reason?: string } {
+    if (!isPart2Screener(key)) return { part2: false, allowed: true };
+    if (viewer.kind === "system") return { part2: true, allowed: true };
+    if (viewer.kind === "patient")
+      return viewer.patientId === patientId
+        ? { part2: true, allowed: true }
+        : { part2: true, allowed: false, reason: "A patient may only read their own screeners." };
+    if (viewer.kind === "advocate") {
+      const link = advocateLinks.find((l) => l.id === viewer.linkId);
+      if (!link || link.patientId !== patientId)
+        return { part2: true, allowed: false, reason: "No advocate connection to this patient." };
+      const gate = AdelanteEHR.advocatePart2Access(link.id);
+      return gate.unmasked
+        ? { part2: true, allowed: true }
+        : {
+            part2: true,
+            allowed: false,
+            reason: "42 CFR Part 2 content is masked for this advocate connection.",
+          };
+    }
+    const role = viewer.role ?? getActingRole();
+    const patient = patients.find((x) => x.id === patientId);
+    const gate = canAccess(role, "screeners_sud", patient);
+    return gate.locked
+      ? {
+          part2: true,
+          allowed: false,
+          reason: gate.reason ?? "42 CFR Part 2 consent required to view this screener.",
+        }
+      : { part2: true, allowed: true };
+  },
+  /**
+   * Latest stored result for an instrument. ENFORCED at the store: a Part 2
+   * instrument read by an unauthorized caller throws — it is not silently
+   * reported as "never administered", which would be a different (and false)
+   * clinical statement. UI that wants to render a masked row should call
+   * `viewScreenerResult` instead.
+   */
+  getScreenerResult(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): ScreenerResult | undefined {
+    const gate = AdelanteEHR.screenerAccess(patientId, key, viewer);
+    if (!gate.allowed) throw new Part2AccessError(gate.reason ?? "Access denied.");
     return patients.find((x) => x.id === patientId)?.screeners[key];
+  },
+  /** Non-throwing read for UI: either the result, or an explained mask. */
+  viewScreenerResult(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): { restricted: boolean; reason?: string; result?: ScreenerResult } {
+    const gate = AdelanteEHR.screenerAccess(patientId, key, viewer);
+    if (!gate.allowed) return { restricted: true, reason: gate.reason };
+    const result = patients.find((x) => x.id === patientId)?.screeners[key];
+    return result ? { restricted: false, result } : { restricted: false };
+  },
+  /**
+   * Existence only, no score/severity/answers. Workflow completion ("this
+   * checklist step has been done") is not a disclosure of Part 2 CONTENT, so
+   * this is deliberately ungated — it is what the pre-release checklist uses.
+   */
+  hasScreenerResult(patientId: string, key: string): boolean {
+    return Boolean(patients.find((x) => x.id === patientId)?.screeners[key]);
   },
   /**
    * §Pre-release build 2 — population-health rollup over the SAME
