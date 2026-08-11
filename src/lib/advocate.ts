@@ -515,3 +515,192 @@ export function advocateHasPermission(
   const d = advocateAccessDecision(facts);
   return d.allowed && d.permissions.includes(permission);
 }
+
+// ---------------------------------------------------------------------------
+// §v3.0 Phase 4.2 (gap analysis 6.4 / 6.5) — AHCD activation + the frontline
+// validation checklist.
+//
+// The checklist is the WORKFLOW; the activation is the LEGAL STATE. They are
+// wired together in exactly one direction: satisfying item 4 CALLS the
+// activation, and activation refuses to happen unless the rest of the
+// checklist has already been resolved. There is no second "activated" flag to
+// drift out of sync, and no way to activate around the checklist.
+// ---------------------------------------------------------------------------
+
+/**
+ * Who may record the incapacity determination.
+ *
+ * Probate Code § 4658 speaks of the "primary physician". This build has no
+ * physician role; the clinically defensible equivalents here are the PMHNP
+ * (an independently licensed prescriber who performs capacity assessments in
+ * this program) and the therapist (licensed clinician). Everyone else —
+ * including the CF Care Manager who OWNS the checklist, the peer specialist,
+ * the medical assistant, billing and sys_admin — is excluded. Note that the
+ * person who works the checklist is deliberately NOT the person who can
+ * satisfy item 4: the determination is a clinical act, and separating the two
+ * is the whole point of the gate.
+ */
+export const AHCD_DETERMINATION_ROLES = ["pmhnp", "therapist"] as const;
+export type AhcdDeterminationRole = (typeof AHCD_DETERMINATION_ROLES)[number];
+
+export function isAhcdDeterminationRole(role: string): role is AhcdDeterminationRole {
+  return (AHCD_DETERMINATION_ROLES as readonly string[]).includes(role);
+}
+
+/** The real `dormant → clinically active` state, not a bare timestamp. */
+export type AhcdActivationState = "dormant" | "clinically_active" | "expired";
+
+export type AhcdChecklistItemKey =
+  | "identity_match"
+  | "agent_identification"
+  | "execution_validity"
+  | "incapacity_determination"
+  | "part2_scope";
+
+/**
+ * Item outcomes. `unclear` exists only for the Part 2 scope item, where "we
+ * could not tell" is a real, actionable finding rather than a failure — it
+ * routes the agent to the ASCMI form instead of blocking the directive.
+ */
+export type AhcdChecklistOutcome = "pending" | "verified" | "failed" | "unclear";
+
+export const AHCD_CHECKLIST_ITEMS: {
+  key: AhcdChecklistItemKey;
+  order: number;
+  label: string;
+  /** What the CF Care Manager is actually being asked to look at. */
+  detail: string;
+  /** Whether `unclear` is a permitted outcome for this item. */
+  allowsUnclear: boolean;
+}[] = [
+  {
+    key: "identity_match",
+    order: 1,
+    label: "Identity match",
+    detail:
+      "The client's legal name, date of birth and booking number match the Principal named on the document exactly.",
+    allowsUnclear: false,
+  },
+  {
+    key: "agent_identification",
+    order: 2,
+    label: "Agent identification",
+    detail:
+      "The person presenting the document is the named Agent, or a named alternate agent whose turn to act has come.",
+    allowsUnclear: false,
+  },
+  {
+    key: "execution_validity",
+    order: 3,
+    label: "Execution validity (Probate Code § 4701)",
+    detail:
+      "Two qualified witnesses — none of whom is the agent, an operator of the facility, or a direct care provider — OR notarization.",
+    allowsUnclear: false,
+  },
+  {
+    key: "incapacity_determination",
+    order: 4,
+    label: "Incapacity determination documented in the chart",
+    detail:
+      "A licensed clinician (PMHNP or therapist) has determined and documented that the client cannot make or communicate their own health care decisions. Satisfying this item is what activates the directive.",
+    allowsUnclear: false,
+  },
+  {
+    key: "part2_scope",
+    order: 5,
+    label: "42 CFR Part 2 scope check",
+    detail:
+      "Does the directive's own text explicitly cover SUD treatment and psychotherapy records? If the wording is vague, mark it unclear — the agent must then separately execute the ASCMI form.",
+    allowsUnclear: true,
+  },
+];
+
+/**
+ * The items that must be RESOLVED before the determination may be recorded.
+ * Item 4 is excluded (it is the act being gated) and item 5 must be answered
+ * but may legitimately be answered `unclear`.
+ */
+export const AHCD_ACTIVATION_PREREQUISITES: AhcdChecklistItemKey[] = [
+  "identity_match",
+  "agent_identification",
+  "execution_validity",
+];
+
+export interface AhcdChecklistEntry {
+  outcome: AhcdChecklistOutcome;
+  checkedBy?: string;
+  checkedByRole?: string;
+  checkedAt?: string;
+  note?: string;
+}
+
+export type AhcdChecklistState = Partial<Record<AhcdChecklistItemKey, AhcdChecklistEntry>>;
+
+export interface AhcdActivationReadiness {
+  ready: boolean;
+  /** Prerequisite items not yet `verified`. */
+  outstanding: AhcdChecklistItemKey[];
+  /** Prerequisite items explicitly `failed` — a harder stop than outstanding. */
+  failed: AhcdChecklistItemKey[];
+  /** Item 5 has not been answered either way. */
+  part2ScopeUnanswered: boolean;
+  reason?: string;
+}
+
+/**
+ * Pure evaluation of "may item 4 be recorded now?". Kept out of the store so
+ * the UI can show the same answer it will get when it tries.
+ */
+export function ahcdActivationReadiness(state: AhcdChecklistState): AhcdActivationReadiness {
+  const failed = AHCD_ACTIVATION_PREREQUISITES.filter((k) => state[k]?.outcome === "failed");
+  const outstanding = AHCD_ACTIVATION_PREREQUISITES.filter((k) => state[k]?.outcome !== "verified");
+  const scope = state["part2_scope"]?.outcome;
+  const part2ScopeUnanswered = scope !== "verified" && scope !== "unclear";
+  if (failed.length > 0)
+    return {
+      ready: false,
+      outstanding,
+      failed,
+      part2ScopeUnanswered,
+      reason: `A validation check failed: ${failed
+        .map((k) => AHCD_CHECKLIST_ITEMS.find((i) => i.key === k)?.label ?? k)
+        .join(", ")}. The directive cannot be activated.`,
+    };
+  if (outstanding.length > 0)
+    return {
+      ready: false,
+      outstanding,
+      failed,
+      part2ScopeUnanswered,
+      reason: `Validation is incomplete: ${outstanding
+        .map((k) => AHCD_CHECKLIST_ITEMS.find((i) => i.key === k)?.label ?? k)
+        .join(", ")}.`,
+    };
+  if (part2ScopeUnanswered)
+    return {
+      ready: false,
+      outstanding,
+      failed,
+      part2ScopeUnanswered,
+      reason:
+        "The 42 CFR Part 2 scope check has not been answered. Mark it covered or unclear before activating.",
+    };
+  return { ready: true, outstanding, failed, part2ScopeUnanswered };
+}
+
+/** Item 5 answered `unclear` ⇒ the directive does not itself reach Part 2. */
+export function ahcdPart2ScopeUnclear(state: AhcdChecklistState): boolean {
+  return state["part2_scope"]?.outcome !== "verified";
+}
+
+/**
+ * A temporary determination lapses on its review date. Evaluated live from the
+ * date, never cached, so nothing has to be told to expire.
+ */
+export function ahcdDeterminationExpired(
+  activation: { reviewByDate?: string } | undefined,
+  today = new Date().toISOString().slice(0, 10),
+): boolean {
+  if (!activation?.reviewByDate) return false;
+  return activation.reviewByDate < today;
+}
