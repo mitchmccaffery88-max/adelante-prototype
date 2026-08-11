@@ -11,9 +11,16 @@ worksheet/mapper/calculator/scale). Every seeded lesson currently carries
 `placeholder: true` — real Adelante text replaces it; a test asserts the flag
 so nothing ships silently as final.
 
-**Progress is real patient data**, never localStorage: `completedLibraryItems`,
-`completedExercises`, `savedToolkitItems` are flat append-only arrays on
-`Patient`, matching the `refusalForms` / `kopIssuances` convention. Completion
+**Progress is engagement data, NOT clinical documentation.** It lives in its
+own store, `src/lib/engagement.ts`, keyed by `patientId` as a foreign
+reference — `completedLibraryItems`, `completedExercises`,
+`savedToolkitItems` must never be fields on `Patient`, so the designated
+clinical record does not carry, export or disclose them. Separate but
+joinable: `engagementRecords(ids)` / `engagementSummary(id)` exist so
+population-health and outcomes reporting can join engagement to clinical data
+by patient id. `AdelanteEHR.*` keeps thin facade wrappers (state-free) so UI
+has one entry point, writes re-broadcast to EHR subscribers, and audit still
+lands in the single audit stream via an injected sink. Completion
 is idempotent and audited once; finishing a lesson auto-saves its
 `toolkitLabel`. Removing a toolkit entry does NOT un-complete the lesson.
 
