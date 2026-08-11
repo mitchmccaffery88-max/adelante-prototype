@@ -5475,6 +5475,7 @@ const groupOccurrences: GroupOccurrenceRecord[] = [];
 // §v3.0 Phase 2 — pre-release episode stores.
 const preReleaseEpisodes: PreReleaseEpisode[] = [];
 const preReleaseForms: PreReleaseFormRecord[] = [];
+const preReleaseCapacity: PreReleaseCapacityDetermination[] = [];
 const reentryCarePlans: ReentryCarePlan[] = [];
 const enrollmentCodes: EnrollmentCode[] = [];
 
