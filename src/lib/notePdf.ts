@@ -75,9 +75,10 @@ export function noteExportGate(
       };
     }
   }
-  // §Group sessions — group notes route through the SAME canAccess() gate,
-  // just against the `group_notes` class / `group_participation` consent
-  // category. No parallel consent mechanism.
+  // §Group sessions — group notes route through the SAME canAccess() gate.
+  // noteGateClass() decides the class: only `sud_clinical_preauth` groups
+  // resolve to the consent-gated `group_notes` class; skills_education and
+  // open_psychoeducational resolve to no class, i.e. the ordinary note tier.
   const gateCls = noteGateClass(note);
   if (gateCls === "group_notes") {
     const grp = canAccess(role, "group_notes", patient);
