@@ -17,7 +17,7 @@ import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
-import { HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock, FileText, Info, Download, Bell } from "lucide-react";
+import { BookOpen, HeartHandshake, ClipboardList, IdCard, Stethoscope, Lock, FileText, Info, Download, Bell } from "lucide-react";
 import { DocumentUploadForm } from "@/components/documents/DocumentUploadForm";
 import { downloadDocumentPayload } from "@/components/documents/PatientDocumentsCard";
 import { useI18n } from "@/lib/i18n";
@@ -254,6 +254,59 @@ export function AdvocateClinicalPanel({ linkId }: { linkId: string }) {
         <Lock className="h-3.5 w-3.5" /> Substance-use treatment information is protected under 42
         CFR Part 2 and is never shown here, whatever your authorization.
       </p>
+    </Card>
+  );
+}
+
+/**
+ * §Adelante Journey Phase 5 — the person's self-help PROGRESS.
+ *
+ * At the HIPAA-only read floor and above. What an advocate sees is how much
+ * someone has worked through, never what they wrote: reflections, worksheet
+ * answers and saved toolkit labels are patient-authored free text and are not
+ * part of the DTO at any tier.
+ */
+export function AdvocateSelfHelpPanel({ linkId }: { linkId: string }) {
+  const view = useEhr(() => AdelanteEHR.advocateLibraryProgress(linkId));
+  if (!view.allowed) return null;
+  return (
+    <Card className="p-5">
+      <h2 className="flex items-center gap-2 font-display text-lg text-navy">
+        <BookOpen className="h-5 w-5 text-teal" /> Self-help progress
+      </h2>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Lessons and exercises finished. What they wrote in them stays private.
+      </p>
+      <div className="mt-3 flex gap-6 text-sm">
+        <div>
+          <div className="font-display text-2xl text-navy">
+            {view.lessonsCompleted}
+            <span className="text-base text-muted-foreground">/{view.lessonsTotal}</span>
+          </div>
+          <div className="text-xs text-muted-foreground">Lessons</div>
+        </div>
+        <div>
+          <div className="font-display text-2xl text-navy">
+            {view.exercisesCompleted}
+            <span className="text-base text-muted-foreground">/{view.exercisesTotal}</span>
+          </div>
+          <div className="text-xs text-muted-foreground">Exercises</div>
+        </div>
+      </div>
+      {view.completed.length > 0 && (
+        <ul className="mt-3 space-y-1 text-sm">
+          {view.completed.map((c) => (
+            <li key={`${c.kind}-${c.id}`} className="flex items-center gap-2">
+              {c.restricted ? (
+                <Lock className="h-3.5 w-3.5 text-muted-foreground" />
+              ) : (
+                <ClipboardList className="h-3.5 w-3.5 text-teal" />
+              )}
+              <span className={c.restricted ? "text-muted-foreground" : ""}>{c.title}</span>
+            </li>
+          ))}
+        </ul>
+      )}
     </Card>
   );
 }
