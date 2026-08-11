@@ -14,8 +14,11 @@
 //  • Advocate visibility is Phase 4's tier system (src/lib/advocate.ts). The
 //    new `library_progress_view` permission sits at the HIPAA-only read floor
 //    and above — see the reasoning there.
-import type { PopulationTrack } from "@/lib/population";
-import { isPopulationAllowed, type PopulationResolution } from "@/lib/population";
+// TYPE-ONLY on purpose: `ehr.ts` imports this module for the advocate progress
+// read, and `population.ts` imports `ehr.ts`. Keeping this edge erased means
+// there is no runtime cycle. The gate LOGIC is Phase 2's, restated in the one
+// place it is applied (`isLibraryItemVisible`) rather than duplicated widely.
+import type { PopulationResolution, PopulationTrack } from "@/lib/population";
 
 // ---------------------------------------------------------------------------
 // Categories + lessons
@@ -448,7 +451,9 @@ export function isLibraryItemVisible(
   resolution: PopulationResolution,
 ): boolean {
   if (!item.populations || item.populations.length === 0) return true;
-  return isPopulationAllowed(resolution, item.populations);
+  // Identical to `isPopulationAllowed(resolution, item.populations)` with the
+  // default `requireConfirmed: true`.
+  return item.populations.includes(resolution.track) && !resolution.provisional;
 }
 
 export function visibleItemsInCategory(

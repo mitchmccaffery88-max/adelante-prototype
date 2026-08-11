@@ -52,6 +52,17 @@ import {
   type AhcdChecklistState,
   type AhcdDeterminationRole,
 } from "./advocate";
+// §Adelante Journey Phase 5 — self-help Library. Content + pure selectors.
+// The module imports nothing at runtime (its population import is type-only),
+// so there is no cycle back into this store.
+import { getExercise, getLibraryItem, LIBRARY_ITEMS, EXERCISES } from "./library";
+import type { SavedToolkitItem, ToolkitOrigin } from "./library";
+export type {
+  LibraryCategory,
+  LibraryItem,
+  Exercise,
+  SavedToolkitItem,
+} from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
 import {
