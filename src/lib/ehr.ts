@@ -3742,7 +3742,7 @@ function _advocatePart2Unmasked(link: AdvocateLink): boolean {
 /**
  * The same two gates, reported individually so the audit row (and the consent
  * audit viewer, §Group D item 7) can show WHICH of the two passed. There is
- * still exactly one evaluation of the rule — `advocatePart2Masked` — and this
+ * still exactly one evaluation of the rule — `advocateSudAccess` — and this
  * is the only place either fact is gathered.
  */
 function _advocatePart2Gates(link: AdvocateLink): {
