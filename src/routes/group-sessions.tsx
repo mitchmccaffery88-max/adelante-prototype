@@ -712,6 +712,8 @@ function GroupDetail({
                     facilitatorId: group.facilitatorId,
                     topicCovered,
                     groupProcess,
+                    facilitators: facilitatorDraft,
+                    renderingProviderId: effectiveRenderingId,
                     perAttendee,
                     modality: AdelanteEHR.groupOccurrenceModality(group.id, activeStart),
                     actor,
@@ -726,6 +728,7 @@ function GroupDetail({
                       occurrenceStart: activeStart,
                       patientId,
                       facilitatorId: group.facilitatorId,
+                      renderingProviderId: effectiveRenderingId,
                       noteId,
                     });
                   }
