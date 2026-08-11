@@ -4860,20 +4860,19 @@ export interface GroupSession {
   modality: "video" | "phone" | "in_person";
   locationId?: string;
   /**
-   * PLACEHOLDER TAXONOMY — exactly two categories, both provisional. Christi /
-   * SMEs must confirm whether more categories exist and whether
-   * "pre-authorization" here (internal clinical eligibility + placement
-   * approval) is the right reading, or whether a payer-facing prior-auth
-   * process is meant. This pass assumes the INTERNAL reading only.
+   * Three categories (DHCS content via Christi). "Pre-authorization" is still
+   * read as INTERNAL clinical eligibility/placement approval, not payer-facing
+   * prior auth.
    *
-   *   sud_clinical_preauth   — staff-only enrollment, billable, claims flow.
+   *   sud_clinical_preauth   — staff-only enrollment, billable H0005.
+   *   skills_education       — patient self-service, billable H2014.
    *   open_psychoeducational — patient self-service, NON-billing engagement.
    */
   category: GroupCategory;
   /** ISO datetime of the first occurrence. */
   start: string;
   durationMin: number;
-  /** PLACEHOLDER: not a DHCS-sanctioned group-size limit. */
+  /** Roster cap. DHCS allows 2–12; configurable below 12, never above. */
   capacity: number;
   recurrence: GroupRecurrence;
   status: GroupSessionStatus;
@@ -4947,18 +4946,22 @@ export interface GroupOccurrenceRecord {
 /**
  * Back-reference stamped onto each individualized attendee note.
  *
- * BILLING PLACEHOLDER: `billingCodePlaceholder` is intentionally empty. No
- * CPT/H-code is invented anywhere in this codebase; the Claims Worklist reads
- * charges from `ehr-ext` claims, and a group attendee claim is created from
- * this reference (see `upsertClaimFromGroupAttendee` in ehr-ext.ts).
+ * `billingCode` carries the real HCPCS code (H0005 / H2014) for billable
+ * occurrences. The Claims Worklist reads charges from `ehr-ext` claims, and a
+ * group attendee claim is created from this reference (see
+ * `upsertClaimFromGroupAttendee` in ehr-ext.ts).
  */
 export interface GroupAttendeeNoteRef {
   sessionId: string;
   occurrenceStart: string;
   facilitatorId: string;
-  /** Individualized attendee notes are the billable unit in DMC-ODS. */
+  /**
+   * Individualized attendee notes are the billable unit in DMC-ODS. False for
+   * a non-billable category OR an occurrence with fewer than 2 present.
+   */
   billingEligible: boolean;
-  billingCodePlaceholder?: string;
+  /** HCPCS code when billable; absent otherwise. */
+  billingCode?: string;
 }
 
 const groupSessions: GroupSession[] = [];
