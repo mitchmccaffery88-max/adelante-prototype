@@ -16,6 +16,11 @@ function eligible(patientId: string) {
 
 function makeGroup(category: GroupCategory, coFacilitatorIds?: string[], startOffsetMin = 0) {
   const [a] = AdelanteEHR.listClinicians();
+  // Anchor to 09:00 local TOMORROW so a same-day second occurrence (+180 min)
+  // never rolls over midnight when the suite happens to run late in the day.
+  const start = new Date(Date.now() + 86400000);
+  start.setHours(9, 0, 0, 0);
+  start.setMinutes(start.getMinutes() + startOffsetMin);
   return AdelanteEHR.createGroupSession({
     topic: "Multi-facilitator group",
     category,
@@ -23,7 +28,7 @@ function makeGroup(category: GroupCategory, coFacilitatorIds?: string[], startOf
     coFacilitatorIds,
     serviceType: "therapy_group",
     modality: "in_person",
-    start: new Date(Date.now() + 86400000 + startOffsetMin * 60000).toISOString(),
+    start: start.toISOString(),
     durationMin: 60,
     capacity: 8,
     recurrence: { kind: "none" },

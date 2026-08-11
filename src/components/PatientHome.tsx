@@ -42,6 +42,8 @@ import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { ReentryDayZeroModule } from "@/components/reentry/ReentryDayZeroModule";
 import { ObligationsCard } from "@/components/reentry/ObligationsCard";
 import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
+import { QuickCheckCard } from "@/components/clinical/QuickCheckCard";
+import { MedCheckInCard } from "@/components/clinical/MedCheckInCard";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -310,6 +312,9 @@ export function PatientHome() {
       </section>
 
       <YourGroupsSection patientId={patient.id} />
+
+      <QuickCheckCard patientId={patient.id} />
+      <MedCheckInCard patientId={patient.id} />
 
       {meds.length > 0 && (
         <Card className="p-5">

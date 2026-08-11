@@ -156,3 +156,71 @@ export function severityFor(def: ScreenerDef, score: number) {
   for (const b of def.bands) if (score <= b.max) return b.label;
   return def.bands[def.bands.length - 1].label;
 }
+
+// ---------------------------------------------------------------------------
+// §Adelante Journey Phase 7 part 2 — PHQ-2 / GAD-2 weekly quick check.
+//
+// These are NOT a parallel screening system. They are the validated SHORT
+// FORMS of the PHQ-9 / GAD-7 already defined above, and they are stored,
+// scored, trended and audited through the exact same `ScreenerResult` /
+// `recordScreener` path (record class `screeners_mh`). The only thing that is
+// new is the CADENCE (weekly, patient-facing) and the GATEWAY behaviour: at or
+// above the standard cutoff of 3 the short form hands off to the full
+// instrument rather than trying to grade severity itself.
+// ---------------------------------------------------------------------------
+
+export interface ShortFormScreenerDef extends ScreenerDef {
+  /** Key of the full instrument this short form is a gateway into. */
+  fullFormKey: string;
+  /** Standard clinical cutoff for a positive short-form result. */
+  positiveCutoff: number;
+}
+
+export const SHORT_FORM_SCREENERS: ShortFormScreenerDef[] = [
+  {
+    key: "phq-2",
+    name: "PHQ-2",
+    description: "Depression quick check — past 2 weeks",
+    fullFormKey: "phq-9",
+    positiveCutoff: 3,
+    // Verbatim PHQ-2 items (= PHQ-9 items 1 and 2).
+    questions: [
+      "Little interest or pleasure in doing things",
+      "Feeling down, depressed, or hopeless",
+    ],
+    options: standard4,
+    bands: [
+      { max: 2, label: "Negative" },
+      { max: 6, label: "Positive — full PHQ-9 indicated" },
+    ],
+  },
+  {
+    key: "gad-2",
+    name: "GAD-2",
+    description: "Anxiety quick check — past 2 weeks",
+    fullFormKey: "gad-7",
+    positiveCutoff: 3,
+    // Verbatim GAD-2 items (= GAD-7 items 1 and 2).
+    questions: [
+      "Feeling nervous, anxious, or on edge",
+      "Not being able to stop or control worrying",
+    ],
+    options: standard4,
+    bands: [
+      { max: 2, label: "Negative" },
+      { max: 6, label: "Positive — full GAD-7 indicated" },
+    ],
+  },
+];
+
+/** Weekly cadence for the patient-facing quick check. */
+export const QUICK_CHECK_INTERVAL_DAYS = 7;
+
+export function shortFormByKey(key: string): ShortFormScreenerDef | undefined {
+  return SHORT_FORM_SCREENERS.find((s) => s.key === key);
+}
+
+/** True when a short-form total meets the standard escalation cutoff. */
+export function isShortFormPositive(def: ShortFormScreenerDef, score: number): boolean {
+  return score >= def.positiveCutoff;
+}
