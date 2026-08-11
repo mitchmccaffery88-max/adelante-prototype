@@ -4850,6 +4850,44 @@ export function isOccurrenceBillable(category: GroupCategory, presentCount: numb
 }
 
 /**
+ * §Group sessions — modality lives on the OCCURRENCE, not the session: a
+ * recurring group can meet in person one week and by video the next, and the
+ * note has to reflect how the service was ACTUALLY delivered because that is
+ * how it is billed.
+ */
+export type GroupOccurrenceModality = "in_person" | "video" | "audio_only";
+
+export const GROUP_OCCURRENCE_MODALITIES: { key: GroupOccurrenceModality; label: string }[] = [
+  { key: "in_person", label: "In person" },
+  { key: "video", label: "Video (telehealth)" },
+  { key: "audio_only", label: "Audio only (telephone)" },
+];
+
+/** Virtual = telehealth consent applies. In-person never checks it. */
+export function isVirtualGroupModality(m: GroupOccurrenceModality): boolean {
+  return m === "video" || m === "audio_only";
+}
+
+/** Session-level default, mapped onto the occurrence-level union. */
+export function defaultOccurrenceModality(
+  sessionModality: "video" | "phone" | "in_person",
+): GroupOccurrenceModality {
+  return sessionModality === "phone"
+    ? "audio_only"
+    : sessionModality === "video"
+      ? "video"
+      : "in_person";
+}
+
+/**
+ * County/admin configuration. The group confidentiality acknowledgment is
+ * explicitly NOT a DHCS mandate, so it ships OFF and a county can turn it on.
+ */
+const groupConfig: { requireConfidentialityAck: boolean } = {
+  requireConfidentialityAck: false,
+};
+
+/**
  * Single place the regulatory roster range is enforced, so no write path
  * (create or edit) can configure a group above the DHCS ceiling of 12.
  */
