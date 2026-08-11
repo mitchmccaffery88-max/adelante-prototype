@@ -555,9 +555,13 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     peer_specialist: "write",
     sys_admin: "write",
   },
-  // §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, just
-  // pointed at the `group_participation` consent category. No parallel check:
-  // every group note flows through canAccess() like any other note.
+// §Group sessions — documentation. Gated EXACTLY like `sud_treatment`, and
+  // now pointed at the `sud_treatment` category itself: the old
+  // `group_participation` placeholder was repurposed into telehealth consent
+  // and an OPTIONAL confidentiality acknowledgment, neither of which is a
+  // legitimate gate on clinical note visibility (an optional, default-off ack
+  // would silently unlock/lock the chart). No parallel check: every group
+  // note still flows through canAccess() like any other note.
   group_notes: {
     therapist: "write",
     pmhnp: "write",
@@ -577,9 +581,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
 const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
   screeners_sud: "sud_treatment",
   sud_treatment: "sud_treatment",
-  // OPEN QUESTION (Christi): is group participation legally its own ASCMI
-  // category, or covered by general treatment consent? Placeholder mapping.
-  group_notes: "group_participation",
+  // Group notes carry Part 2-protected treatment content; the gate reason is
+  // literally 42 CFR Part 2, so the treatment-consent category is the honest
+  // mapping. Telehealth/confidentiality consents gate PARTICIPATION, not
+  // record visibility, and are checked in the group occurrence flow instead.
+  group_notes: "sud_treatment",
 };
 
 /**

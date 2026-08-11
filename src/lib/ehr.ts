@@ -1770,12 +1770,14 @@ export type ConsentCategory =
   | "mental_health"
   | "case_coordination"
   | "billing"
-  // §Group sessions — PLACEHOLDER category. OPEN QUESTION FOR CHRISTI:
-  // whether group participation genuinely requires its own ASCMI consent
-  // category, or whether it falls under general treatment consent, is a
-  // regulatory/clinical determination that is explicitly NOT decided here.
-  // The mechanism is wired so either answer is a one-line change.
-  | "group_participation"
+  // §Group sessions — the former generic `group_participation` PLACEHOLDER is
+  // gone. Christi's answer describes TWO distinct concerns, so they are two
+  // keys, not one with sub-fields:
+  //   1. telehealth consent   -> the pre-existing `telehealth_services` key
+  //      below (a real, required, per-member gate on virtual participation);
+  //   2. group confidentiality acknowledgment -> `group_confidentiality_ack`,
+  //      OPTIONAL and county-configurable (default OFF). NOT a DHCS mandate.
+  | "group_confidentiality_ack"
   // §v3.0 Phase 2 — the three Release & Consent pre-release forms. PLACEHOLDER
   // keys and labels, same discipline as every other category here: the real
   // DHCS/ASCMI form language is Christi's to supply, and nothing legal is
@@ -1805,9 +1807,16 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "mental_health", label: "Mental health (placeholder)" },
   { key: "case_coordination", label: "Case coordination (placeholder)" },
   { key: "billing", label: "Billing (placeholder)" },
-  { key: "group_participation", label: "Group participation (placeholder)" },
+  {
+    key: "group_confidentiality_ack",
+    label:
+      "Group confidentiality acknowledgment — optional, county-configurable (placeholder wording)",
+  },
   { key: "pre_release_services", label: "Pre-release services (placeholder)" },
-  { key: "telehealth_services", label: "Telehealth (placeholder)" },
+  {
+    key: "telehealth_services",
+    label: "Telehealth services consent — required before virtual participation (placeholder wording)",
+  },
   {
     key: "information_sharing_disclosure",
     label: "Information sharing / disclosure authorization (placeholder)",
@@ -1824,6 +1833,42 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
 
 /** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
 export const COLLATERAL_ROI_CATEGORY: ConsentCategory = "roi_collateral";
+
+/**
+ * §Group sessions — telehealth. Reuses the EXISTING `telehealth_services`
+ * ConsentRecord category rather than minting a group-specific one: the
+ * disclosure elements below are about telehealth as a delivery mode, not
+ * about groups, and a member who consented to telehealth for individual care
+ * has consented to the same disclosures.
+ */
+export const TELEHEALTH_CONSENT_CATEGORY: ConsentCategory = "telehealth_services";
+
+/** Optional (default OFF) county-configurable group confidentiality ack. */
+export const GROUP_CONFIDENTIALITY_CATEGORY: ConsentCategory = "group_confidentiality_ack";
+
+/**
+ * REAL DHCS-required disclosure elements for telehealth consent. The legal
+ * WORDING is still placeholder and flagged as such in the capture UI, but
+ * these four elements are real content and must actually be presented.
+ */
+export const TELEHEALTH_DISCLOSURE_ELEMENTS: { key: string; text: string }[] = [
+  {
+    key: "right_to_in_person",
+    text: "You have the right to receive these services in person instead of by video or phone.",
+  },
+  {
+    key: "voluntary_revocable",
+    text: "Telehealth is voluntary. You may withdraw this consent at any time without losing services.",
+  },
+  {
+    key: "transportation_benefits",
+    text: "Telehealth can remove travel time, transportation cost and childcare barriers to attending.",
+  },
+  {
+    key: "limitations",
+    text: "Telehealth has limitations: no hands-on assessment, possible technology failure, and privacy depends on where you take the session.",
+  },
+];
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
 export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded";
@@ -4805,6 +4850,44 @@ export function isOccurrenceBillable(category: GroupCategory, presentCount: numb
 }
 
 /**
+ * §Group sessions — modality lives on the OCCURRENCE, not the session: a
+ * recurring group can meet in person one week and by video the next, and the
+ * note has to reflect how the service was ACTUALLY delivered because that is
+ * how it is billed.
+ */
+export type GroupOccurrenceModality = "in_person" | "video" | "audio_only";
+
+export const GROUP_OCCURRENCE_MODALITIES: { key: GroupOccurrenceModality; label: string }[] = [
+  { key: "in_person", label: "In person" },
+  { key: "video", label: "Video (telehealth)" },
+  { key: "audio_only", label: "Audio only (telephone)" },
+];
+
+/** Virtual = telehealth consent applies. In-person never checks it. */
+export function isVirtualGroupModality(m: GroupOccurrenceModality): boolean {
+  return m === "video" || m === "audio_only";
+}
+
+/** Session-level default, mapped onto the occurrence-level union. */
+export function defaultOccurrenceModality(
+  sessionModality: "video" | "phone" | "in_person",
+): GroupOccurrenceModality {
+  return sessionModality === "phone"
+    ? "audio_only"
+    : sessionModality === "video"
+      ? "video"
+      : "in_person";
+}
+
+/**
+ * County/admin configuration. The group confidentiality acknowledgment is
+ * explicitly NOT a DHCS mandate, so it ships OFF and a county can turn it on.
+ */
+const groupConfig: { requireConfidentialityAck: boolean } = {
+  requireConfidentialityAck: false,
+};
+
+/**
  * Single place the regulatory roster range is enforced, so no write path
  * (create or edit) can configure a group above the DHCS ceiling of 12.
  */
@@ -4935,6 +5018,13 @@ export interface GroupOccurrenceRecord {
   sessionId: string;
   /** ISO datetime identifying which occurrence of the recurring group. */
   occurrenceStart: string;
+  /**
+   * How THIS meeting is delivered. Absent = not yet chosen; readers fall back
+   * to `defaultOccurrenceModality(session.modality)`.
+   */
+  modality?: GroupOccurrenceModality;
+  modalitySetAt?: string;
+  modalitySetBy?: string;
   attendance: GroupAttendanceEntry[];
   attendanceRecordedAt?: string;
   attendanceRecordedBy?: string;
@@ -4975,6 +5065,8 @@ export interface GroupAttendeeNoteRef {
   billingEligible: boolean;
   /** HCPCS code when billable; absent otherwise. */
   billingCode?: string;
+  /** How the service was actually delivered for THIS occurrence. */
+  modality?: GroupOccurrenceModality;
 }
 
 const groupSessions: GroupSession[] = [];
@@ -13776,6 +13868,102 @@ export const AdelanteEHR = {
   listGroupOccurrenceRecords: (sessionId: string) =>
     groupOccurrences.filter((o) => o.sessionId === sessionId),
 
+  // §Group sessions — county configuration for the OPTIONAL group
+  // confidentiality acknowledgment. Default OFF; not a DHCS mandate.
+  isGroupConfidentialityAckRequired: () => groupConfig.requireConfidentialityAck,
+
+  setGroupConfidentialityAckRequired(required: boolean, actor: string) {
+    groupConfig.requireConfidentialityAck = required;
+    appendAudit({
+      category: "clinical",
+      action: "group_confidentiality_ack_setting_changed",
+      actorId: actor,
+      detail: { required },
+    });
+    emit();
+  },
+
+  /** Effective modality for one occurrence (falls back to the session default). */
+  groupOccurrenceModality(sessionId: string, occurrenceStart: string): GroupOccurrenceModality {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    const occ = groupOccurrences.find(
+      (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
+    );
+    return occ?.modality ?? defaultOccurrenceModality(g?.modality ?? "in_person");
+  },
+
+  setGroupOccurrenceModality(
+    sessionId: string,
+    occurrenceStart: string,
+    modality: GroupOccurrenceModality,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.modality = modality;
+    row.modalitySetAt = new Date().toISOString();
+    row.modalitySetBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_occurrence_modality_set",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart, modality },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * §Group sessions — per-member telehealth consent gate.
+   *
+   * REAL per-member check against the structured ConsentRecord ledger (same
+   * `isConsentCategoryAuthorized` call every other consent gate uses — no
+   * parallel consent mechanism, and no group-level "we asked everyone" flag).
+   * An in-person occurrence returns `virtual: false` and blocks nobody.
+   */
+  groupOccurrenceConsentGate(
+    sessionId: string,
+    occurrenceStart: string,
+  ): {
+    modality: GroupOccurrenceModality;
+    virtual: boolean;
+    /** Rostered members missing ACTIVE telehealth consent. */
+    blocked: { patientId: string; name: string }[];
+    /** Rostered members missing the OPTIONAL confidentiality ack (when required). */
+    confidentialityMissing: { patientId: string; name: string }[];
+    confidentialityRequired: boolean;
+  } {
+    const modality = AdelanteEHR.groupOccurrenceModality(sessionId, occurrenceStart);
+    const virtual = isVirtualGroupModality(modality);
+    const confidentialityRequired = groupConfig.requireConfidentialityAck;
+    const roster = AdelanteEHR.listGroupEnrollments(sessionId);
+    const named = (patientId: string) => {
+      const p = patients.find((x) => x.id === patientId);
+      return { patientId, name: p ? `${p.firstName} ${p.lastName}` : patientId };
+    };
+    const blocked = virtual
+      ? roster
+          .filter(
+            (e) =>
+              !AdelanteEHR.isConsentCategoryAuthorized(e.patientId, TELEHEALTH_CONSENT_CATEGORY),
+          )
+          .map((e) => named(e.patientId))
+      : [];
+    const confidentialityMissing = confidentialityRequired
+      ? roster
+          .filter(
+            (e) =>
+              !AdelanteEHR.isConsentCategoryAuthorized(
+                e.patientId,
+                GROUP_CONFIDENTIALITY_CATEGORY,
+              ),
+          )
+          .map((e) => named(e.patientId))
+      : [];
+    return { modality, virtual, blocked, confidentialityMissing, confidentialityRequired };
+  },
+
   getGroupOccurrence(sessionId: string, occurrenceStart: string) {
     return groupOccurrences.find(
       (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
@@ -13827,13 +14015,52 @@ export const AdelanteEHR = {
     groupProcess: string;
     /** patientId -> that patient's individualized participation narrative. */
     perAttendee: Record<string, string>;
+    /**
+     * How this meeting was actually delivered. Persisted onto the occurrence
+     * and stamped onto every attendee note.
+     */
+    modality?: GroupOccurrenceModality;
     actor: string;
   }): { occurrence: GroupOccurrenceRecord; attendeeNoteIds: string[] } {
     const g = groupSessions.find((x) => x.id === input.sessionId);
     if (!g) throw new Error("Group not found.");
     const row = _ensureGroupOccurrence(input.sessionId, input.occurrenceStart);
+    if (input.modality) {
+      row.modality = input.modality;
+      row.modalitySetAt = new Date().toISOString();
+      row.modalitySetBy = input.actor;
+    }
+    const modality = row.modality ?? defaultOccurrenceModality(g.modality);
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
+    // §Group sessions — telehealth gate. Per-member, live against the
+    // ConsentRecord ledger, and only for a virtual occurrence.
+    if (isVirtualGroupModality(modality)) {
+      const missing = present.filter(
+        (a) => !AdelanteEHR.isConsentCategoryAuthorized(a.patientId, TELEHEALTH_CONSENT_CATEGORY),
+      );
+      if (missing.length > 0) {
+        const names = missing
+          .map((a) => {
+            const p = patients.find((x) => x.id === a.patientId);
+            return p ? `${p.firstName} ${p.lastName}` : a.patientId;
+          })
+          .join(", ");
+        throw new Error(
+          `Telehealth consent is required before virtual participation: ${names}. Capture consent, or record them as not attending this meeting.`,
+        );
+      }
+    }
+    if (groupConfig.requireConfidentialityAck) {
+      const missing = present.filter(
+        (a) =>
+          !AdelanteEHR.isConsentCategoryAuthorized(a.patientId, GROUP_CONFIDENTIALITY_CATEGORY),
+      );
+      if (missing.length > 0)
+        throw new Error(
+          "This county requires a group confidentiality acknowledgment from every attendee before documenting.",
+        );
+    }
     // Occurrence-level DHCS rule: fewer than 2 present = individual session in
     // practice, so no group claim. The occurrence still happens and is still
     // documented — only the billing flag changes.
@@ -13859,7 +14086,7 @@ export const AdelanteEHR = {
         date: input.occurrenceStart,
         sessionType: "group",
         subjective: input.perAttendee[a.patientId]!.trim(),
-        objective: `Attendance: ${a.status}. Group topic: ${g.topic}.`,
+        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}.`,
         assessment: "",
         plan: "",
         category: "group",
@@ -13870,6 +14097,7 @@ export const AdelanteEHR = {
           facilitatorId: input.facilitatorId,
           billingEligible: occurrenceBillable,
           billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
+          modality,
         },
       });
       if (saved) {
@@ -13887,6 +14115,7 @@ export const AdelanteEHR = {
         occurrenceStart: input.occurrenceStart,
         attendeeNotes: noteIds.length,
         sharedNote: true,
+        modality,
       },
     });
     emit();

@@ -19,9 +19,12 @@ import {
   GROUP_CAPACITY_MAX,
   GROUP_CAPACITY_MIN,
   GROUP_CATEGORIES,
+  GROUP_OCCURRENCE_MODALITIES,
+  isVirtualGroupModality,
   useEhr,
   type GroupAttendanceStatus,
   type GroupCategory,
+  type GroupOccurrenceModality,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
@@ -136,7 +139,33 @@ function GroupSessionsPage() {
           )}
         </div>
       )}
+      {access.level === "write" && <ConfidentialityAckSetting actor={staffName || role} />}
     </div>
+  );
+}
+
+/**
+ * County/admin setting. The group confidentiality acknowledgment is NOT a DHCS
+ * mandate, so it ships OFF and a county opts in. When off, nothing checks it.
+ */
+function ConfidentialityAckSetting({ actor }: { actor: string }) {
+  const required = useEhr(() => AdelanteEHR.isGroupConfidentialityAckRequired());
+  return (
+    <Card className="p-4 space-y-1">
+      <label className="flex items-center gap-2 text-xs text-navy">
+        <input
+          type="checkbox"
+          aria-label="Require group confidentiality acknowledgment"
+          checked={required}
+          onChange={(e) => AdelanteEHR.setGroupConfidentialityAckRequired(e.target.checked, actor)}
+        />
+        Require a group confidentiality acknowledgment from every member (county setting)
+      </label>
+      <p className="text-[11px] text-muted-foreground">
+        Optional — not a DHCS requirement. Off by default. When on, members agree not to disclose
+        other participants' identities before an occurrence can be documented.
+      </p>
+    </Card>
   );
 }
 
@@ -507,6 +536,7 @@ function GroupDetail({
 
         {canWrite && activeStart && (
           <div className="space-y-2">
+            <OccurrenceModalityPicker group={group} occurrenceStart={activeStart} actor={actor} />
             <h4 className="text-xs font-medium text-navy">Attendance</h4>
             {roster.map(({ enrollment, patient }) => {
               const current =
@@ -608,6 +638,7 @@ function GroupDetail({
                     topicCovered,
                     groupProcess,
                     perAttendee,
+                    modality: AdelanteEHR.groupOccurrenceModality(group.id, activeStart),
                     actor,
                   });
                   // Billing hook: each individualized note becomes its own
@@ -649,6 +680,79 @@ function GroupDetail({
           </div>
         )}
       </Card>
+    </div>
+  );
+}
+
+// §Group sessions — occurrence-level modality + the per-member telehealth
+// consent gate.
+//
+// UX choice: the gate is surfaced HERE, before documentation, listing the
+// specific rostered members missing telehealth consent. The store throws if a
+// blocked member is documented as present, so the facilitator's resolution is
+// explicit — capture consent, or record that member as not attending this
+// virtual meeting. The meeting itself is never blocked for everyone else.
+function OccurrenceModalityPicker({
+  group,
+  occurrenceStart,
+  actor,
+}: {
+  group: GroupSession;
+  occurrenceStart: string;
+  actor: string;
+}) {
+  const gate = useEhr(() => AdelanteEHR.groupOccurrenceConsentGate(group.id, occurrenceStart));
+  const modality = gate.modality;
+  return (
+    <div className="space-y-2 rounded-md border bg-secondary/20 p-3">
+      <Label className="text-xs">How is this meeting delivered?</Label>
+      <div className="flex flex-wrap gap-1">
+        {GROUP_OCCURRENCE_MODALITIES.map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            onClick={() => {
+              try {
+                AdelanteEHR.setGroupOccurrenceModality(
+                  group.id,
+                  occurrenceStart,
+                  m.key as GroupOccurrenceModality,
+                  actor,
+                );
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not set modality.");
+              }
+            }}
+            className={
+              "rounded-md border px-2 py-1 text-xs " +
+              (modality === m.key ? "border-teal bg-teal/10 text-navy" : "bg-card")
+            }
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Modality is per meeting, not per group — it is stamped onto every attendee note because the
+        service is billed as delivered.
+      </p>
+      {isVirtualGroupModality(modality) &&
+        (gate.blocked.length > 0 ? (
+          <p className="text-[11px] text-destructive" role="alert">
+            Telehealth consent missing for: {gate.blocked.map((b) => b.name).join(", ")}. They
+            cannot be documented as attending this virtual meeting until consent is captured.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">
+            Telehealth consent is active for every rostered member.
+          </p>
+        ))}
+      {gate.confidentialityRequired && gate.confidentialityMissing.length > 0 && (
+        <p className="text-[11px] text-destructive" role="alert">
+          Group confidentiality acknowledgment missing for:{" "}
+          {gate.confidentialityMissing.map((b) => b.name).join(", ")}.
+        </p>
+      )}
     </div>
   );
 }
