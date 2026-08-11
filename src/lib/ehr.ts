@@ -1800,9 +1800,15 @@ export type ConsentCategory =
   // 42 CFR Part 2 disclosure-authorization language is Christi's to supply.
   // Active + a valid advocate link => that advocate may see SUD group topics
   // and appointment service types for THAT patient. Nothing else changes.
-  | "advocate_sud_disclosure";
+  | "advocate_sud_disclosure"
+  // §Adelante Journey Phase 3 — the ONE new category the PO two-tier split
+  // needs. It covers ONLY voluntary, patient-controlled care-coordination
+  // sharing with a probation/parole officer. Legally MANDATED PO disclosure
+  // deliberately has NO category here: it is not consent-based and must never
+  // be representable as a revocable authorization. See src/lib/poDisclosure.ts.
+  | "po_voluntary_coordination";
 
-// §Adelante Journey Phase 3 — the ONE new category the PO two-tier split
+// §Adelante Journey Phase 3 — the category the PO two-tier split
 // needs. It covers ONLY voluntary, patient-controlled care-coordination
 // sharing with a probation/parole officer. Legally MANDATED PO disclosure
 // deliberately has NO category here: it is not consent-based and must never
@@ -1836,7 +1842,15 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     key: "advocate_sud_disclosure",
     label: "Part 2 disclosure to advocate — SUD service details (placeholder)",
   },
+  {
+    key: "po_voluntary_coordination",
+    label:
+      "Voluntary care-coordination sharing with probation/parole — patient-controlled, revocable (placeholder)",
+  },
 ];
+
+/** The ONLY consent category a probation/parole disclosure may ever turn on. */
+export const PO_VOLUNTARY_CONSENT_CATEGORY: ConsentCategory = "po_voluntary_coordination";
 
 /** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
 export const COLLATERAL_ROI_CATEGORY: ConsentCategory = "roi_collateral";
