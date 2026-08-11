@@ -5054,6 +5054,25 @@ export interface GroupOccurrenceRecord {
   modality?: GroupOccurrenceModality;
   modalitySetAt?: string;
   modalitySetBy?: string;
+  /**
+   * Per-facilitator direct-care minutes for THIS meeting. Absent = not yet
+   * documented; readers fall back to `defaultGroupFacilitators(session)`.
+   */
+  facilitators?: GroupFacilitatorMinutes[];
+  /**
+   * §Designated rendering provider. DHCS duplicate-claim logic keys on member
+   * CIN + rendering provider NPI + procedure code + date, so each beneficiary
+   * claim carries exactly ONE rendering provider. Defaults to the primary
+   * facilitator, changeable per occurrence.
+   *
+   * OPEN — COUNTY CONFIRMATION REQUIRED: whether a SECOND facilitator's time
+   * is ever separately claimable is NOT decided here. DHCS is silent; we
+   * resolve conservatively (co-facilitator time is documented only, never
+   * separately claimed). Do not treat this as settled policy.
+   */
+  renderingProviderId?: string;
+  renderingProviderSetAt?: string;
+  renderingProviderSetBy?: string;
   attendance: GroupAttendanceEntry[];
   attendanceRecordedAt?: string;
   attendanceRecordedBy?: string;
