@@ -2119,25 +2119,19 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
   {
     key: "dhcs_hra",
     category: "clinical_assessment",
-    label: "DHCS Health Risk Assessment (placeholder)",
-    fields: [
-      { key: "chronicConditions", label: "Chronic conditions (comma separated)", type: "text" },
-      { key: "pregnancyFlag", label: "Pregnancy flag", type: "bool" },
-      { key: "mobilityNeeds", label: "Mobility / DME needs noted", type: "bool" },
-      { key: "riskTier", label: "Risk tier", type: "select", options: ["Low", "Moderate", "High"] },
-    ],
+    label: "Health-Related Social Needs screening (AHC-HRSN core)",
+    fields: [],
+    // Real instrument, administered and stored exactly like AUDIT-10/DAST-10.
+    satisfiedByScreeners: ["ahc-hrsn"],
+    requiresConsentCapacity: true,
   },
   {
     key: "bh_sud_loc",
     category: "clinical_assessment",
-    label: "Behavioral Health / SUD Level of Care Screening (placeholder)",
+    label: "SUD screening — AUDIT-10 & DAST-10",
     requiresConsentCapacity: true,
-    fields: [
-      { key: "mhScreenPositive", label: "MH screen positive", type: "bool" },
-      { key: "sudScreenPositive", label: "SUD screen positive", type: "bool" },
-      { key: "matInPlace", label: "MAT in place at facility", type: "bool" },
-      { key: "recommendedLoc", label: "Recommended level of care", type: "select", options: ["Outpatient", "Intensive outpatient", "Residential", "Withdrawal management"] },
-    ],
+    fields: [],
+    satisfiedByScreeners: ["audit", "dast-10"],
   },
   {
     key: "informed_consent_prerelease",
