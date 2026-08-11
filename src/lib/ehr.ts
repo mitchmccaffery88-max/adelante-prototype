@@ -2084,6 +2084,13 @@ export interface PreReleaseFormDef {
    * is impaired and no legal-authority instrument is in force.
    */
   requiresConsentCapacity?: boolean;
+  /**
+   * §Pre-release build 2 — satisfied by REAL completed screener results
+   * (`ScreenerResult` keys), not by field capture. The checklist row reads the
+   * patient's ordinary screener record; `savePreReleaseForm` refuses these
+   * defs so a placeholder flag can never stand in for a real instrument.
+   */
+  satisfiedByScreeners?: string[];
 }
 
 export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
