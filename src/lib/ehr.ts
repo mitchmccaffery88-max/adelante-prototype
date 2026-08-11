@@ -175,8 +175,25 @@ export type ReferralSource =
   | "parole"
   | "drug_court"
   | "correctional"
+  // §Front-door Phase 4. Deliberately NOT `peer_specialist`: that name belongs
+  // to Adelante's own employed, billable StaffRole. A community peer is an
+  // outside, unverified referrer and must stay distinct in code and reporting.
+  | "community_based_organization"
+  | "community_peer"
   | "self"
   | "other";
+
+/** Single source of truth for human-readable referral-source labels. */
+export const REFERRAL_SOURCE_LABELS: Record<ReferralSource, string> = {
+  probation: "Probation",
+  parole: "Parole",
+  drug_court: "Drug court / reentry court",
+  correctional: "Correctional health",
+  community_based_organization: "Community-based organization",
+  community_peer: "Community peer specialist (not Adelante staff)",
+  self: "Self / family / friend",
+  other: "Other",
+};
 
 /**
  * Front-door entry sequence (Phase 1). Recorded before intake begins so the
