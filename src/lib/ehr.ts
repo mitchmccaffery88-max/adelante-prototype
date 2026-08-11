@@ -9461,7 +9461,8 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Decision-making tier ONLY: the clinical care-plan snapshot. Part 2 content
+   * Authority tiers ONLY (activated AHCD agent / conservator): the clinical
+   * care-plan snapshot. Part 2 content
    * is stripped here as well — SUD focus areas, sensitive medications,
    * sensitive screeners and SUD problems never cross this boundary, and the
    * hidden-problem count is reported without any description.

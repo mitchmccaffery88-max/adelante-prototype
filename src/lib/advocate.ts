@@ -194,13 +194,14 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
  *                                     visibility (the `eligibility`
  *                                     RecordClass workflow, read side).
  *  - `eligibility_assist_write`       submitting/attesting on the member's
- *                                     behalf. Decision-making tier, PLUS the
- *                                     DHCS AR by type addendum — an AR's
+ *                                     behalf. The AR tier and above — an AR's
  *                                     entire purpose is acting on the
  *                                     application.
  *  - `care_plan_clinical_view`        the clinical care-plan snapshot (goals,
  *                                     focus areas, non-Part-2 problems).
- *                                     Decision-making tier only.
+ *                                     Authority tiers only (activated AHCD
+ *                                     agent, conservator) — an AR is
+ *                                     categorically barred from it.
  *
  * NEVER granted, names only: `clinical_notes_view`, `messaging`. Do not grant
  * one without Mitch's swim-lane documentation.
@@ -216,10 +217,10 @@ export type AdvocatePermission =
   | "care_plan_clinical_view"
   // §v3.0 Phase 5 — documents. Uploading and reviewing a patient's own
   // paperwork is the SAME category of supportive access Phase 4 already
-  // granted for coordination and care-plan participation, so both tiers hold
-  // it and no new authorization tier was introduced. Part 2 documents are
-  // gated separately by the `advocate_sud_disclosure` consent, exactly as SUD
-  // group topics are — a permission never lifts Part 2 masking.
+  // granted for coordination and care-plan participation. Part 2 documents are
+  // gated separately by the SUD axis (§Phase 4.1) — a permission never lifts
+  // Part 2 masking. `document_upload` is a WRITE and therefore belongs to the
+  // authority tiers only; HIPAA-only and AR hold `document_view` alone.
   | "document_view"
   | "document_upload"
   | "clinical_notes_view"
@@ -232,7 +233,12 @@ export type AdvocatePermission =
  * clinical staff role in this build. No advocate permission exists that lifts
  * it, and this constant exists so a future edit has to argue with it.
  *
- * The ONE exception, added deliberately and narrowly: a patient-signed Part 2
+ * §Phase 4.1 makes this the DEFAULT rather than the whole story: SUD access is
+ * its own axis (`AdvocateSudAccessMode`). An AR is barred outright, the two
+ * authority tiers are unmasked by the instrument itself, and HIPAA-only keeps
+ * the consent-conditional exception below unchanged.
+ *
+ * The ONE consent-based exception, added deliberately and narrowly: a patient-signed Part 2
  * disclosure authorization naming advocate disclosure
  * (`advocate_sud_disclosure`). That is a consent artifact, not a permission —
  * it is checked per-patient at read time, IN ADDITION TO the advocate's own
