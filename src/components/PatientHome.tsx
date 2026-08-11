@@ -53,6 +53,7 @@ import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
 import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
+import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
 // so a true value never renders as a blank chip. Unknown keys are filtered
@@ -499,6 +500,8 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
       requestedBy: "patient",
     });
     if (req) {
+      // §Crisis detection — patient-authored free text to the prescriber.
+      scanTextForCrisis(patientId, note, { surface: "a refill request note" });
       toast.success("Refill request sent to your care team");
       setOpen(false);
       setNote("");
