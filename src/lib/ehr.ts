@@ -8901,24 +8901,112 @@ export const AdelanteEHR = {
   },
 
   /**
-   * AHCD activation — a physician's capacity determination. Separate call
-   * because it is a clinical act, not an advocate self-assertion.
+   * §Phase 4.2 (6.4) — AHCD activation. A clinical incapacity determination,
+   * not a flag. Three real preconditions, all enforced here:
+   *   1. the recorder holds a clinical role that may determine capacity
+   *      (`AHCD_DETERMINATION_ROLES`) — a CF Care Manager, peer or admin
+   *      cannot do it, and the advocate certainly cannot;
+   *   2. the frontline validation checklist (6.5) has cleared identity, agent
+   *      identity and § 4701 execution validity, and the Part 2 scope question
+   *      has been answered one way or the other;
+   *   3. a stated basis for the determination.
+   * A `reviewByDate` makes the determination TEMPORARY: it lapses on that date
+   * and the link returns to dormant with no further action.
    */
-  activateAdvocateAhcd(linkId: string, physicianName: string): AdvocateLink {
+  activateAdvocateAhcd(
+    linkId: string,
+    input: {
+      determinedBy: string;
+      determinedByRole: string;
+      basis: string;
+      /** YYYY-MM-DD. Present ⇒ temporary determination. */
+      reviewByDate?: string;
+    },
+  ): AdvocateLink {
     const link = advocateLinks.find((l) => l.id === linkId);
     if (!link) throw new Error("Unknown advocate connection.");
     if (link.authorizationType !== "ahcd")
       throw new Error("Only an AHCD connection can be activated this way.");
-    const who = physicianName.trim();
-    if (!who) throw new Error("The determining physician must be named.");
-    link.ahcdActivatedAt = new Date().toISOString();
+    const who = input.determinedBy.trim();
+    if (!who) throw new Error("The determining clinician must be named.");
+    if (!isAhcdDeterminationRole(input.determinedByRole))
+      throw new Error(
+        "Only a PMHNP or licensed therapist may record an incapacity determination. This is a clinical act and cannot be recorded by the staff member working the validation checklist.",
+      );
+    const basis = input.basis.trim();
+    if (!basis) throw new Error("The basis for the incapacity determination is required.");
+    const readiness = ahcdActivationReadiness(link.ahcdValidation ?? {});
+    if (!readiness.ready)
+      throw new Error(
+        readiness.reason ?? "The AHCD validation checklist is not complete.",
+      );
+    const reviewByDate = input.reviewByDate?.trim();
+    if (reviewByDate && reviewByDate < new Date().toISOString().slice(0, 10))
+      throw new Error("A review date must be in the future.");
+    const now = new Date().toISOString();
+    link.ahcdActivation = {
+      state: "clinically_active",
+      determinedAt: now,
+      determinedBy: who,
+      determinedByRole: input.determinedByRole as AhcdDeterminationRole,
+      basis,
+      temporary: Boolean(reviewByDate),
+      ...(reviewByDate ? { reviewByDate } : {}),
+    };
+    link.ahcdActivatedAt = now;
     link.ahcdActivatedBy = who;
     appendAudit({
       category: "advocate",
       action: "advocate_ahcd_activated",
       patientId: link.patientId,
       actorId: who,
-      detail: { advocateLinkId: link.id, advocateName: link.advocateName },
+      actorRole: input.determinedByRole,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        state: "dormant -> clinically_active",
+        basis,
+        temporary: Boolean(reviewByDate),
+        ...(reviewByDate ? { reviewByDate } : {}),
+        part2ScopeCoveredByDirective: !ahcdPart2ScopeUnclear(link.ahcdValidation ?? {}),
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /**
+   * Return an active directive to dormant — a capacity re-determination, a
+   * documentation problem, or the review date lapsing (see `_ahcdEffective`).
+   */
+  deactivateAdvocateAhcd(
+    linkId: string,
+    input: { deactivatedBy: string; reason: string; expired?: boolean },
+  ): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link?.ahcdActivation) throw new Error("This directive is not active.");
+    const why = input.reason.trim();
+    if (!why) throw new Error("A reason is required to deactivate a directive.");
+    link.ahcdActivation = {
+      ...link.ahcdActivation,
+      state: input.expired ? "expired" : "dormant",
+      deactivatedAt: new Date().toISOString(),
+      deactivatedBy: input.deactivatedBy,
+      deactivatedReason: why,
+    };
+    delete link.ahcdActivatedAt;
+    delete link.ahcdActivatedBy;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_ahcd_deactivated",
+      patientId: link.patientId,
+      actorId: input.deactivatedBy,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        state: `clinically_active -> ${input.expired ? "expired" : "dormant"}`,
+        reason: why,
+      },
     });
     emit();
     return { ...link };
