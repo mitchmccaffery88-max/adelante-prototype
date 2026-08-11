@@ -57,6 +57,7 @@ import {
 // so there is no cycle back into this store.
 import { getExercise, getLibraryItem, LIBRARY_ITEMS, EXERCISES } from "./library";
 import type { SavedToolkitItem, ToolkitOrigin } from "./library";
+import * as Engagement from "./engagement";
 export type {
   LibraryCategory,
   LibraryItem,
@@ -5971,60 +5972,38 @@ export const AdelanteEHR = {
 
   // ---------- §Adelante Journey Phase 5 — self-help Library / Exercises ----
   //
-  // Real, store-backed patient progress. Every write is idempotent (a lesson
-  // can be re-read without inflating the count) and audited in the EXISTING
-  // `clinical` stream — a completed self-help lesson is care participation,
-  // not a new audit category.
+  // FACADE ONLY. The data lives in `src/lib/engagement.ts`, keyed by patient
+  // id — it is engagement data, not clinical documentation, and no longer sits
+  // on `Patient`. These wrappers exist so callers keep one entry point and so
+  // writes still fan out to the EHR subscriber set; they hold no state.
 
   /** Lesson ids this patient has completed. */
   completedLibraryItems(patientId: string): string[] {
-    return [...(_patient(patientId)?.completedLibraryItems ?? [])];
+    return Engagement.completedLibraryItems(patientId);
   },
 
   /** Exercise ids this patient has completed. */
   completedExercises(patientId: string): string[] {
-    return [...(_patient(patientId)?.completedExercises ?? [])];
+    return Engagement.completedExercises(patientId);
   },
 
   savedToolkitItems(patientId: string): SavedToolkitItem[] {
-    return [...(_patient(patientId)?.savedToolkitItems ?? [])];
+    return Engagement.savedToolkitItems(patientId);
   },
 
-  /**
-   * Mark a lesson complete. Idempotent. When the lesson carries a toolkit
-   * takeaway it is saved in the same act — step 8 of the instructional
-   * sequence IS the completion, not a second opt-in.
-   */
+  /** Counts for population-health/outcomes joins, by patient id. */
+  engagementSummary(patientId: string) {
+    return Engagement.engagementSummary(patientId);
+  },
+
+  /** Mark a lesson complete. Idempotent; auto-saves the toolkit takeaway. */
   completeLibraryItem(
     patientId: string,
     itemId: string,
     opts: { saveToolkit?: boolean; actorRole?: string } = {},
   ): { completed: boolean; alreadyComplete: boolean } {
-    const p = _patient(patientId);
-    const item = getLibraryItem(itemId);
-    if (!p || !item) return { completed: false, alreadyComplete: false };
-    const list = p.completedLibraryItems ?? (p.completedLibraryItems = []);
-    const already = list.includes(itemId);
-    if (!already) list.push(itemId);
-    if (opts.saveToolkit !== false) {
-      AdelanteEHR.saveToolkitItem(patientId, {
-        id: itemId,
-        label: item.toolkitLabel,
-        from: "library",
-      });
-    }
-    if (!already) {
-      appendAudit({
-        category: "clinical",
-        action: "library_item_completed",
-        patientId,
-        programId: p.programId,
-        actorRole: opts.actorRole ?? "patient",
-        detail: { itemId, categoryId: item.categoryId, title: item.title, minutes: item.minutes },
-      });
-    }
-    emit();
-    return { completed: true, alreadyComplete: already };
+    if (!_patient(patientId)) return { completed: false, alreadyComplete: false };
+    return Engagement.completeLibraryItem(patientId, itemId, opts);
   },
 
   /** Mark an exercise complete. Idempotent; same shape as lessons. */
@@ -6033,58 +6012,21 @@ export const AdelanteEHR = {
     exerciseId: string,
     opts: { saveToolkit?: boolean; actorRole?: string } = {},
   ): { completed: boolean; alreadyComplete: boolean } {
-    const p = _patient(patientId);
-    const ex = getExercise(exerciseId);
-    if (!p || !ex) return { completed: false, alreadyComplete: false };
-    const list = p.completedExercises ?? (p.completedExercises = []);
-    const already = list.includes(exerciseId);
-    if (!already) list.push(exerciseId);
-    if (opts.saveToolkit) {
-      AdelanteEHR.saveToolkitItem(patientId, {
-        id: exerciseId,
-        label: ex.title,
-        from: "exercise",
-      });
-    }
-    if (!already) {
-      appendAudit({
-        category: "clinical",
-        action: "library_exercise_completed",
-        patientId,
-        programId: p.programId,
-        actorRole: opts.actorRole ?? "patient",
-        detail: { exerciseId, title: ex.title, type: ex.type, minutes: ex.minutes },
-      });
-    }
-    emit();
-    return { completed: true, alreadyComplete: already };
+    if (!_patient(patientId)) return { completed: false, alreadyComplete: false };
+    return Engagement.completeExercise(patientId, exerciseId, opts);
   },
 
-  /** One saved entry per source id. Re-saving refreshes the label, not the count. */
+  /** One saved entry per source id. Re-saving refreshes the label. */
   saveToolkitItem(
     patientId: string,
     input: { id: string; label: string; from: ToolkitOrigin },
   ): SavedToolkitItem | undefined {
-    const p = _patient(patientId);
-    if (!p) return undefined;
-    const list = p.savedToolkitItems ?? (p.savedToolkitItems = []);
-    const existing = list.find((t) => t.id === input.id);
-    if (existing) {
-      existing.label = input.label;
-      emit();
-      return { ...existing };
-    }
-    const entry: SavedToolkitItem = { ...input, createdAt: new Date().toISOString() };
-    list.push(entry);
-    emit();
-    return { ...entry };
+    if (!_patient(patientId)) return undefined;
+    return Engagement.saveToolkitItem(patientId, input);
   },
 
   removeToolkitItem(patientId: string, id: string): void {
-    const p = _patient(patientId);
-    if (!p?.savedToolkitItems) return;
-    p.savedToolkitItems = p.savedToolkitItems.filter((t) => t.id !== id);
-    emit();
+    Engagement.removeToolkitItem(patientId, id);
   },
 
   // ---------- Front-door entry sequence (Phase 1) ----------
