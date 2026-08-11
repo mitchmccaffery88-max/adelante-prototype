@@ -369,7 +369,12 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
 
       {PRE_RELEASE_FORM_CATEGORIES.map((cat) => (
         cat.key === "capacity_authority" ? (
-          <CapacityAuthorityStep key={cat.key} episode={episode} />
+          <CapacityAuthorityStep
+            key={cat.key}
+            episode={episode}
+            {...(attribution ? { attribution } : {})}
+            {...(reason ? { entryBlockedReason: reason } : {})}
+          />
         ) : (
         <Card key={cat.key} className="p-4">
           <div className="mb-1 font-medium">{cat.label}</div>
