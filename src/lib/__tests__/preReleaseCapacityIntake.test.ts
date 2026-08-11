@@ -1,7 +1,7 @@
 // §CF pre-release intake build 1 — in-custody profile creation and the early,
 // required capacity / legal-authority step.
 import { afterEach, describe, expect, it } from "vitest";
-import { AdelanteEHR, PRE_RELEASE_FORMS } from "@/lib/ehr";
+import { AdelanteEHR, PRE_RELEASE_FORMS, type CfAttribution } from "@/lib/ehr";
 import { getStaffMember } from "@/lib/roles";
 import { resolvePopulation } from "@/lib/population";
 import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
@@ -38,7 +38,7 @@ function newIntake(first = "Marco", last = "Silva") {
   return r;
 }
 
-function attribution() {
+function attribution(): CfAttribution {
   return { enteredBy: { staffId: cf().id, staffName: cf().name, role: "cf_care_manager" } };
 }
 
