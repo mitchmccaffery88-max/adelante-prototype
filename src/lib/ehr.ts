@@ -2279,8 +2279,16 @@ export interface PreReleaseCapacityDetermination {
   determinedBy: string;
   determinedByRole: string;
   determinedAt: string;
-  /** `AdvocateLink.id`s identified during this step, in invitation order. */
-  advocateLinkIds: string[];
+  /**
+   * Advocates identified during this step, in invitation order. The expected
+   * instrument is what the CF Care Manager BELIEVES is out there; the real
+   * `authorizationType` is only ever set by the advocate at claim time, which
+   * is why both are kept.
+   */
+  identifiedAdvocates: {
+    advocateLinkId: string;
+    expectedAuthorization: LegalAuthorityType | "hipaa_authorization" | "dhcs_authorized_representative" | "family_participation";
+  }[];
 }
 
 export interface PreReleaseFormRecord {
