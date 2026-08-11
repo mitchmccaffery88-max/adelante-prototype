@@ -2280,6 +2280,11 @@ export interface PreReleaseCapacityDetermination {
   determinedByRole: string;
   determinedAt: string;
   /**
+   * Same CF attribution every other pre-release entry carries: who keyed it,
+   * and whose episode work it belongs to when proxy-entered.
+   */
+  attribution: CfAttribution;
+  /**
    * Advocates identified during this step, in invitation order. The expected
    * instrument is what the CF Care Manager BELIEVES is out there; the real
    * `authorizationType` is only ever set by the advocate at claim time, which
