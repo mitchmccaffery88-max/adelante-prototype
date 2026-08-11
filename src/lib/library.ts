@@ -80,12 +80,48 @@ export interface LibraryItem {
   placeholder?: boolean;
 }
 
-/** Step 4 — a small, typed interaction, not free text. */
+/**
+ * Step 4 — a small, typed interaction, not free text.
+ *
+ * The variants below are the ones the real Starting Strong content actually
+ * uses. Every variant stays a closed, discriminated member so the renderer
+ * fails to compile if one is left unhandled.
+ */
 export type LibraryActivity =
   | { kind: "checklist"; prompt: string; items: string[] }
   | { kind: "sort"; prompt: string; buckets: string[]; cards: string[] }
   | { kind: "write"; prompt: string; lines: number; placeholder?: string }
-  | { kind: "rate"; prompt: string; min: number; max: number; minLabel: string; maxLabel: string };
+  | { kind: "rate"; prompt: string; min: number; max: number; minLabel: string; maxLabel: string }
+  /** Tap-to-select cards; nothing is right or wrong. */
+  | { kind: "reflection"; title: string; prompt: string; cards: string[] }
+  /** Order a handful of anchors into the shape of a day. */
+  | { kind: "timeline"; title: string; prompt: string; steps: string[] }
+  /** A paced-breath activity inside a lesson (the exercise type is separate). */
+  | {
+      kind: "breathing";
+      title: string;
+      prompt: string;
+      inhaleSec: number;
+      holdSec: number;
+      exhaleSec: number;
+      rounds: number;
+    }
+  /** Several labelled sliders scored together. */
+  | {
+      kind: "sliders";
+      title: string;
+      prompt: string;
+      sliders: { id: string; label: string; minLabel: string; maxLabel: string }[];
+    }
+  /** 5-4-3-2-1 style sensory grounding. */
+  | { kind: "grounding"; title: string; prompt: string; senses: { label: string; count: number }[] }
+  /** Pick a response and get feedback on it. */
+  | {
+      kind: "decision";
+      title: string;
+      prompt: string;
+      choices: { label: string; feedback: string; good?: boolean }[];
+    };
 
 // ---------------------------------------------------------------------------
 // Exercises — standalone tools, reachable without a lesson
