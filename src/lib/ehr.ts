@@ -2382,8 +2382,9 @@ export type CaseTaskOrigin =
   /** §Phase 3c — created by a note template automation at sign time. */
   | "note_automation"
   /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
-  | "advocate_ahcd_validation";
-  // (see `med_side_effect` below — declared inline to keep the union in one place)
+  | "advocate_ahcd_validation"
+  /** §Phase 7 part 2 — patient reported a medication side effect. */
+  | "med_side_effect";
 
 export interface CaseTask {
   id: string;
