@@ -6279,8 +6279,6 @@ export const AdelanteEHR = {
       dedupeKey: `sideeffect:${report.id}`,
     });
     if (task) MedAdherence.attachSideEffectTask(patientId, report.id, task.id);
-    // Real in-app notice to the care team surface the patient already uses.
-    AdelanteEHR.notifyCareTeamOfSideEffect?.(patientId, report.id);
     return MedAdherence.listSideEffectReports(patientId, { orderId: input.orderId })[0];
   },
   listMedSideEffects(patientId: string, opts?: { orderId?: string; openOnly?: boolean }) {
