@@ -14078,6 +14078,53 @@ export const AdelanteEHR = {
     );
   },
 
+  /** Effective facilitator list for one occurrence (documented, else default). */
+  groupOccurrenceFacilitators(sessionId: string, occurrenceStart: string): GroupFacilitatorMinutes[] {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) return [];
+    const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+    return occ?.facilitators?.length ? occ.facilitators : defaultGroupFacilitators(g);
+  },
+
+  /** Effective designated rendering provider for one occurrence. */
+  groupRenderingProviderId(sessionId: string, occurrenceStart: string): string {
+    const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+    if (occ?.renderingProviderId) return occ.renderingProviderId;
+    return defaultRenderingProviderId(
+      AdelanteEHR.groupOccurrenceFacilitators(sessionId, occurrenceStart),
+    );
+  },
+
+  /**
+   * Change the designated rendering provider for ONE occurrence. Only a
+   * facilitator of that occurrence is eligible — the rendering provider must
+   * have actually delivered direct care.
+   */
+  setGroupRenderingProvider(
+    sessionId: string,
+    occurrenceStart: string,
+    staffId: string,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const eligible = AdelanteEHR.groupOccurrenceFacilitators(sessionId, occurrenceStart);
+    if (!eligible.some((f) => f.staffId === staffId))
+      throw new Error("The rendering provider must be one of this meeting's facilitators.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.renderingProviderId = staffId;
+    row.renderingProviderSetAt = new Date().toISOString();
+    row.renderingProviderSetBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_rendering_provider_set",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart, renderingProviderId: staffId },
+    });
+    emit();
+    return row;
+  },
+
   /** Facilitator-recorded per-occurrence attendance. */
   recordGroupAttendance(
     sessionId: string,
