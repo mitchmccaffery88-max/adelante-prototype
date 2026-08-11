@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
+import { CapacityAuthorityStep } from "@/components/prerelease/CapacityAuthorityStep";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
 
@@ -182,17 +183,40 @@ function OpenEpisodeForm() {
   const { role, staffName } = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const cfStaff = staffForRole("cf_care_manager");
+  // In-custody profile creation is the DEFAULT: for this population the CF
+  // Care Manager usually meets someone who has no record here yet.
+  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [dob, setDob] = useState("");
   const [patientId, setPatientId] = useState<string>("");
   const [cfId, setCfId] = useState<string>(cfStaff[0]?.id ?? "");
   const [date, setDate] = useState("");
 
   const submit = () => {
     const cf = getStaffMember(cfId);
-    if (!patientId || !cf || !date) {
+    if (!cf || !date || (mode === "existing" ? !patientId : !firstName.trim() || !lastName.trim())) {
       toast.error("Patient, CF Care Manager and anticipated release date are required.");
       return;
     }
     try {
+      if (mode === "new") {
+        AdelanteEHR.openPreReleaseEpisodeForNewPatient({
+          firstName,
+          lastName,
+          ...(dob ? { dob } : {}),
+          anticipatedReleaseDate: date,
+          cfCareManagerStaffId: cf.id,
+          cfCareManagerName: cf.name,
+          openedBy: staffName,
+          actorRole: role,
+        });
+        setFirstName("");
+        setLastName("");
+        setDob("");
+        toast.success("Record created and pre-release episode opened.");
+        return;
+      }
       AdelanteEHR.openPreReleaseEpisode({
         patientId,
         anticipatedReleaseDate: date,
@@ -210,18 +234,61 @@ function OpenEpisodeForm() {
   return (
     <div className="mt-4 space-y-2 border-t pt-3">
       <div className="text-sm font-medium">Open an episode</div>
-      <Select value={patientId} onValueChange={setPatientId}>
-        <SelectTrigger>
-          <SelectValue placeholder="Patient" />
-        </SelectTrigger>
-        <SelectContent>
-          {patients.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {p.firstName} {p.lastName}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex gap-1">
+        <Button
+          size="sm"
+          className="flex-1"
+          variant={mode === "new" ? "default" : "outline"}
+          data-testid="episode-mode-new"
+          onClick={() => setMode("new")}
+        >
+          New person in custody
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1"
+          variant={mode === "existing" ? "default" : "outline"}
+          data-testid="episode-mode-existing"
+          onClick={() => setMode("existing")}
+        >
+          Existing record
+        </Button>
+      </div>
+      {mode === "new" ? (
+        <div className="space-y-2">
+          <Input
+            data-testid="new-first-name"
+            placeholder="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+          <Input
+            data-testid="new-last-name"
+            placeholder="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+          <Input
+            type="date"
+            aria-label="Date of birth"
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+          />
+        </div>
+      ) : (
+        <Select value={patientId} onValueChange={setPatientId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Patient" />
+          </SelectTrigger>
+          <SelectContent>
+            {patients.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.firstName} {p.lastName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       <Select value={cfId} onValueChange={setCfId}>
         <SelectTrigger>
           <SelectValue placeholder="CF Care Manager" />
@@ -236,7 +303,7 @@ function OpenEpisodeForm() {
       </Select>
       <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <Button className="w-full" size="sm" onClick={submit}>
-        Open episode
+        {mode === "new" ? "Create record & open episode" : "Open episode"}
       </Button>
     </div>
   );
