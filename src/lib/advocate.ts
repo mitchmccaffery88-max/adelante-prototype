@@ -482,10 +482,15 @@ export function advocateAccessDecision(facts: AdvocateAccessFacts): AdvocateAcce
 
   // AHCD authority is dormant until a physician activates it.
   if (type === "ahcd" && !facts.ahcdActivated)
-    return DENY(
-      "ahcd_not_activated",
-      "This Advance Health Care Directive is on file but not activated by a physician.",
-    );
+    return facts.ahcdDeterminationExpired
+      ? DENY(
+          "ahcd_determination_expired",
+          "The temporary incapacity determination behind this directive has passed its review date. It is dormant again until a clinician re-determines capacity.",
+        )
+      : DENY(
+          "ahcd_not_activated",
+          "This Advance Health Care Directive is on file but not activated by a clinician.",
+        );
 
   // Conservatorship rests on certified court documents. No documents on file,
   // no access — the broadest tier has the hardest precondition.
