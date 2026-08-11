@@ -1987,6 +1987,12 @@ export interface ConsentRecord {
 // with Christi's real DHCS-sourced field sets before production.
 // ===========================================================================
 export type PreReleaseFormCategory =
+  /**
+   * §Pre-release intake build 1 — the EARLY, required branch point. Listed
+   * first because it is sequenced first: nothing consent-dependent below it
+   * may honestly proceed until it is answered.
+   */
+  | "capacity_authority"
   | "medi_cal_enrollment"
   | "clinical_assessment"
   | "release_consent"
@@ -1997,6 +2003,12 @@ export const PRE_RELEASE_FORM_CATEGORIES: {
   label: string;
   helper: string;
 }[] = [
+  {
+    key: "capacity_authority",
+    label: "Capacity & legal authority",
+    helper:
+      "Required first. Can this individual participate in and consent to their own intake — and if not, who legally can?",
+  },
   {
     key: "medi_cal_enrollment",
     label: "Medi-Cal enrollment & eligibility",
