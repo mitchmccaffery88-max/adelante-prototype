@@ -350,6 +350,7 @@ export type AdvocateDenyReason =
   | "authorization_not_confirmed"
   | "roi_missing"
   | "ahcd_not_activated"
+  | "ahcd_determination_expired"
   | "conservatorship_docs_missing"
   | "permission_not_granted";
 
