@@ -1,3 +1,4 @@
+import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
 // §v3.0 Phase 4 EXPANSION — two-tier permissions + advocate-as-own-patient.
 //
 // Proves the four things the expansion has to be true about:
@@ -37,7 +38,7 @@ function connected(type: AdvocateAuthorizationType, patientId = pid()) {
     authorizationType: type,
     attestedName: "Rosa Ibarra",
   });
-  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "ahcd") activateAhcdForTest(link.id);
   if (type === "conservatorship")
     AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
       verifiedBy: "Records Clerk",

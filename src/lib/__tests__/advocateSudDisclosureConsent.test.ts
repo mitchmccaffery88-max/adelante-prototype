@@ -1,3 +1,4 @@
+import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
 // §v3.0 Phase 4 expansion — CONSENT-CONDITIONAL Part 2 visibility for advocates.
 //
 // The rule under test: SUD group topics and appointment service-type labels are
@@ -78,7 +79,7 @@ function connected(patientId: string, type: AdvocateAuthorizationType = "hipaa_a
   });
   // §Phase 4.1 — the two authority tiers with real preconditions must have
   // them satisfied here, or the link is claimed but inert.
-  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "ahcd") activateAhcdForTest(link.id);
   if (type === "conservatorship")
     AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
       verifiedBy: "Records Clerk",
