@@ -42,6 +42,9 @@ function TimerBody({ c }: { c: Extract<ExerciseContent, { type: "timer" }> }) {
       <div className="font-display text-4xl tabular-nums text-navy">{mmss(left)}</div>
       <Progress value={(elapsed / c.seconds) * 100} className="h-2" />
       <p className="text-sm text-muted-foreground">{c.prompts[promptIdx]}</p>
+      {left === 0 && c.closing && (
+        <p className="rounded-lg bg-teal/10 p-3 text-sm text-teal">{c.closing}</p>
+      )}
       <div className="flex gap-2">
         <Button type="button" onClick={() => setRunning((r) => !r)}>
           {running ? "Pause" : left === 0 ? "Done" : "Start"}
@@ -121,11 +124,13 @@ function ChecklistBody({ c }: { c: Extract<ExerciseContent, { type: "checklist" 
           </li>
         ))}
       </ul>
+      {c.closing && <p className="text-sm text-muted-foreground">{c.closing}</p>}
     </div>
   );
 }
 
 function WorksheetBody({ c }: { c: Extract<ExerciseContent, { type: "worksheet" }> }) {
+  const [vals, setVals] = useState<Record<string, string>>({});
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">{c.intro}</p>
@@ -135,9 +140,35 @@ function WorksheetBody({ c }: { c: Extract<ExerciseContent, { type: "worksheet" 
             {f.label}
           </label>
           {f.multiline ? (
-            <Textarea id={`ws-${f.id}`} placeholder={f.placeholder ?? ""} rows={3} />
+            <Textarea
+              id={`ws-${f.id}`}
+              placeholder={f.placeholder ?? ""}
+              rows={3}
+              value={vals[f.id] ?? ""}
+              onChange={(e) => setVals((v) => ({ ...v, [f.id]: e.target.value }))}
+            />
           ) : (
-            <Input id={`ws-${f.id}`} placeholder={f.placeholder ?? ""} />
+            <Input
+              id={`ws-${f.id}`}
+              placeholder={f.placeholder ?? ""}
+              value={vals[f.id] ?? ""}
+              onChange={(e) => setVals((v) => ({ ...v, [f.id]: e.target.value }))}
+            />
+          )}
+          {f.options && (
+            <div className="flex flex-wrap gap-1.5 pt-1">
+              {f.options.map((o) => (
+                <Button
+                  key={o}
+                  type="button"
+                  size="sm"
+                  variant={vals[f.id] === o ? "default" : "outline"}
+                  onClick={() => setVals((v) => ({ ...v, [f.id]: o }))}
+                >
+                  {o}
+                </Button>
+              ))}
+            </div>
           )}
         </div>
       ))}
@@ -146,6 +177,7 @@ function WorksheetBody({ c }: { c: Extract<ExerciseContent, { type: "worksheet" 
 }
 
 function MapperBody({ c }: { c: Extract<ExerciseContent, { type: "mapper" }> }) {
+  const [zones, setZones] = useState<Record<string, string>>({});
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">{c.intro}</p>
@@ -154,7 +186,32 @@ function MapperBody({ c }: { c: Extract<ExerciseContent, { type: "mapper" }> }) 
           <div key={col.id} className="space-y-1 rounded-lg border p-3">
             <div className="text-sm font-medium text-navy">{col.label}</div>
             <p className="text-xs text-muted-foreground">{col.hint}</p>
-            <Textarea rows={3} aria-label={col.label} />
+            <Textarea
+              rows={3}
+              aria-label={col.label}
+              value={zones[col.id] ?? ""}
+              onChange={(e) => setZones((z) => ({ ...z, [col.id]: e.target.value }))}
+            />
+            {col.suggestions && (
+              <div className="flex flex-wrap gap-1.5 pt-1">
+                {col.suggestions.map((s) => (
+                  <Button
+                    key={s}
+                    type="button"
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setZones((z) => {
+                        const cur = z[col.id] ?? "";
+                        return { ...z, [col.id]: cur ? `${cur}\n${s}` : s };
+                      })
+                    }
+                  >
+                    {s}
+                  </Button>
+                ))}
+              </div>
+            )}
           </div>
         ))}
       </div>
