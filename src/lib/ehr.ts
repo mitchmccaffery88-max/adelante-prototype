@@ -3497,9 +3497,38 @@ export interface AdvocateLink {
   /**
    * AHCD only — a physician's determination that the patient cannot
    * communicate or decide. Until this exists the directive is dormant.
+   * Retained as the denormalised "when/who" of the CURRENT activation; the
+   * authoritative state lives in `ahcdActivation` below (§Phase 4.2).
    */
   ahcdActivatedAt?: string;
   ahcdActivatedBy?: string;
+  /**
+   * §Phase 4.2 (6.4) — the real `dormant → clinically active` state, with the
+   * clinician and role that determined incapacity and an optional review date
+   * for a TEMPORARY determination. Once the review date passes the link is
+   * dormant again; see `ahcdDeterminationExpired`.
+   */
+  ahcdActivation?: {
+    state: AhcdActivationState;
+    determinedAt: string;
+    determinedBy: string;
+    determinedByRole: AhcdDeterminationRole;
+    /** The clinician's own words for the basis of the determination. */
+    basis: string;
+    /** True when a review date was set, i.e. the determination is temporary. */
+    temporary: boolean;
+    /** YYYY-MM-DD. Past this date the determination no longer authorises. */
+    reviewByDate?: string;
+    deactivatedAt?: string;
+    deactivatedBy?: string;
+    deactivatedReason?: string;
+  };
+  /**
+   * §Phase 4.2 (6.5) — the frontline validation checklist. Five independently
+   * trackable findings, each mirrored by a real CaseTask on the CF Care
+   * Manager's worklist.
+   */
+  ahcdValidation?: AhcdChecklistState;
   /**
    * §Phase 4.1 — conservator tier precondition. Certified court documents are
    * a real, recorded fact, not an implied consequence of picking the type at
