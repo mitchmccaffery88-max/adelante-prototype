@@ -2,7 +2,13 @@
 // Additive layer on top of the existing persona routing; never replaces it.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } from "./ehr";
+import {
+  AdelanteEHR,
+  type ConsentCategory,
+  type GroupCategory,
+  type Patient,
+  type ProgressNote,
+} from "./ehr";
 
 export type StaffRole =
   | "ecm_provider"
@@ -593,9 +599,8 @@ const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
  * diverge between the chart, print/export and autofill.
  */
 export function noteGateClass(
-  note: Pick<ProgressNote, "category" | "restrictedTier"> & {
-    groupRef?: { category?: GroupCategory };
-  },
+  note: Pick<ProgressNote, "category" | "restrictedTier"> &
+    Partial<Pick<ProgressNote, "groupRef">>,
 ): RecordClass | undefined {
   if (note.restrictedTier === "psychotherapy_notes") return "psychotherapy_notes";
   if (note.category === "sud") return "screeners_sud";
