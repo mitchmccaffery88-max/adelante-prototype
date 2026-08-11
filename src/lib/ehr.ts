@@ -6100,6 +6100,199 @@ export const AdelanteEHR = {
     return SafetyPlanStore.markSafetyPlanReviewed(patientId, reviewedBy, actorRole);
   },
 
+  // ---------- §Phase 7 part 2 — PHQ-2 / GAD-2 weekly quick check ----------
+  //
+  // The short forms are stored through the SAME `recordScreener` path as the
+  // full instruments (same `ScreenerResult`, same `screenerHistory`, same
+  // `screeners_mh` record class, same care-plan recompute). The only new
+  // behaviour is the gateway: at or above the standard cutoff of 3 we create
+  // the real follow-up work for the FULL instrument — a `PatientTask` of the
+  // existing "rescreen" kind (the same shape `rescreensDue` produces) plus a
+  // CaseTask for the clinician who administers it.
+  recordQuickCheck(
+    patientId: string,
+    answers: { "phq-2"?: number[]; "gad-2"?: number[] },
+    opts: { actorRole?: string } = {},
+  ): {
+    results: ScreenerResult[];
+    escalated: { shortFormKey: string; fullFormKey: string; score: number; taskId: string }[];
+  } {
+    const p = _patient(patientId);
+    const results: ScreenerResult[] = [];
+    const escalated: {
+      shortFormKey: string;
+      fullFormKey: string;
+      score: number;
+      taskId: string;
+    }[] = [];
+    if (!p) return { results, escalated };
+    const completedAt = new Date().toISOString();
+    for (const def of SHORT_FORM_SCREENERS) {
+      const items = answers[def.key as "phq-2" | "gad-2"];
+      if (!items || items.length === 0) continue;
+      const score = items.reduce((a, b) => a + (Number(b) || 0), 0);
+      const result: ScreenerResult = {
+        key: def.key,
+        score,
+        severity: _severityFor(def, score),
+        completedAt,
+        timepoint: "adhoc",
+      };
+      AdelanteEHR.recordScreener(patientId, result);
+      results.push(result);
+      if (!isShortFormPositive(def, score)) continue;
+      // Real, traceable hand-off into the full instrument.
+      const taskId = uid();
+      p.tasks = [
+        {
+          id: taskId,
+          kind: "rescreen",
+          label: `Complete the full ${def.fullFormKey.toUpperCase()} — your ${def.name} quick check suggested it would help`,
+          screenerKey: def.fullFormKey,
+          createdAt: completedAt,
+        },
+        ...(p.tasks ?? []),
+      ];
+      AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: p.caseManagerId ?? "",
+        title: `Administer ${def.fullFormKey.toUpperCase()} — positive ${def.name} (${score}/6)`,
+        detail: `${def.name} quick check scored ${score} (cutoff ${def.positiveCutoff}). Administer the full ${def.fullFormKey.toUpperCase()} and document the result.`,
+        dueDate: new Date().toISOString().slice(0, 10),
+        origin: "screener_flag",
+        allowedRoles: ["ecm_provider", "therapist", "pmhnp", "clinical_trainee"],
+        dedupeKey: `shortform:${patientId}:${def.key}:${completedAt.slice(0, 10)}`,
+      });
+      escalated.push({
+        shortFormKey: def.key,
+        fullFormKey: def.fullFormKey,
+        score,
+        taskId,
+      });
+      appendAudit({
+        category: "clinical",
+        action: "short_form_escalated",
+        patientId,
+        actorRole: opts.actorRole ?? "patient",
+        detail: { shortFormKey: def.key, fullFormKey: def.fullFormKey, score },
+      });
+    }
+    emit();
+    return { results, escalated };
+  },
+
+  /** Last completed quick check across both short forms. */
+  lastQuickCheckAt(patientId: string): string | undefined {
+    const p = _patient(patientId);
+    const rows = (p?.screenerHistory ?? []).filter((h) => shortFormByKey(h.key));
+    return rows.map((r) => r.completedAt).sort().pop();
+  },
+
+  /** Weekly cadence: due when never done, or 7+ days since the last one. */
+  quickCheckDue(patientId: string): boolean {
+    const last = AdelanteEHR.lastQuickCheckAt(patientId);
+    if (!last) return true;
+    const days = (Date.now() - new Date(last).getTime()) / 86_400_000;
+    return days >= QUICK_CHECK_INTERVAL_DAYS;
+  },
+
+  /** Open full-instrument follow-ups produced by a positive quick check. */
+  pendingFullScreeners(patientId: string): PatientTask[] {
+    return (_patient(patientId)?.tasks ?? []).filter(
+      (t) => t.kind === "rescreen" && !t.completedAt,
+    );
+  },
+
+  // ---------- §Phase 7 part 2 — medication adherence self-report ----------
+  //
+  // FACADE ONLY. Rows live in `src/lib/medAdherence.ts` and reference real
+  // MedOrder ids and real derived MAR slots. Charting a dose is still staff-
+  // only (`chartDose`) — nothing here writes a DoseAdministration.
+  selfReportDose(
+    patientId: string,
+    input: Parameters<typeof MedAdherence.recordSelfReport>[1],
+  ) {
+    if (!_patient(patientId)) return undefined;
+    return MedAdherence.recordSelfReport(patientId, input);
+  },
+  listDoseSelfReports(
+    patientId: string,
+    opts?: { orderId?: string; facilityDate?: string },
+  ) {
+    return MedAdherence.listSelfReports(patientId, opts);
+  },
+  adherenceWeek(
+    patientId: string,
+    opts?: { days?: number; endDate?: Date; orderId?: string },
+  ) {
+    const p = _patient(patientId);
+    return p ? MedAdherence.adherenceWeek(p, opts) : [];
+  },
+  /** Today's real MAR slots plus the patient's self-report on each. */
+  patientDoseChecklist(patientId: string, dateKey?: string) {
+    const p = _patient(patientId);
+    if (!p) return [];
+    const day = deriveMarDay(p, dateKey);
+    const reports = MedAdherence.listSelfReports(patientId, { facilityDate: day.dateKey });
+    return [...day.slots, ...day.prn].map((slot) => {
+      const selfReport = reports.find(
+        (r) => r.orderId === slot.order.id && r.scheduledAt === slot.scheduledAt,
+      );
+      return {
+        slot,
+        selfReport,
+        isMat: MedAdherence.isMatOrder(slot.order),
+        reconcile: MedAdherence.reconcileState(selfReport, slot.administration),
+      };
+    });
+  },
+
+  /**
+   * Patient-reported side effect on a REAL order. Creates the staff work item
+   * so it lands on a surface someone actually works, never unread data.
+   */
+  reportMedSideEffect(
+    patientId: string,
+    input: {
+      orderId: string;
+      severity: MedAdherence.SideEffectSeverity;
+      note: string;
+      reportedBy?: string;
+      actorRole?: string;
+    },
+  ) {
+    const p = _patient(patientId);
+    if (!p) return undefined;
+    const order = p.orders?.find((o) => o.id === input.orderId);
+    if (!order) throw new Error("That medication is not on your current order list.");
+    const drugName = order.productName ?? order.drugName;
+    const report = MedAdherence.addSideEffectReport(patientId, { ...input, drugName });
+    const task = AdelanteEHR.createCaseTask({
+      patientId,
+      assignedTo: p.caseManagerId ?? "",
+      title: `Side effect reported — ${drugName} (${report.severity})`,
+      detail: `${p.firstName} ${p.lastName} reported a ${report.severity} side effect on ${drugName}. Patient note: "${report.note}"`,
+      dueDate: new Date().toISOString().slice(0, 10),
+      origin: "med_side_effect",
+      priority: report.severity === "severe" ? "urgent" : "routine",
+      allowedRoles: ["pmhnp", "ecm_provider", "therapist", "medical_assistant"],
+      dedupeKey: `sideeffect:${report.id}`,
+    });
+    if (task) MedAdherence.attachSideEffectTask(patientId, report.id, task.id);
+    // Real in-app notice to the care team surface the patient already uses.
+    AdelanteEHR.notifyCareTeamOfSideEffect?.(patientId, report.id);
+    return MedAdherence.listSideEffectReports(patientId, { orderId: input.orderId })[0];
+  },
+  listMedSideEffects(patientId: string, opts?: { orderId?: string; openOnly?: boolean }) {
+    return MedAdherence.listSideEffectReports(patientId, opts);
+  },
+  allMedSideEffects(opts?: { openOnly?: boolean }) {
+    return MedAdherence.allSideEffectReports(opts);
+  },
+  acknowledgeMedSideEffect(patientId: string, reportId: string, by: string, actorRole?: string) {
+    return MedAdherence.acknowledgeSideEffect(patientId, reportId, by, actorRole);
+  },
+
   /** Mark a lesson complete. Idempotent; auto-saves the toolkit takeaway. */
   completeLibraryItem(
     patientId: string,
