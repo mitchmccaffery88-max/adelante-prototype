@@ -1,10 +1,10 @@
 // §Adelante Journey Phase 5 — self-help Library + Exercise system (schema).
 //
 // PURE MODULE. Content and shape only: no store access, no React, no
-// side effects. The patient's PROGRESS lives on the real patient record in
-// `src/lib/ehr.ts` (`completedLibraryItems`, `completedExercises`,
-// `savedToolkitItems`) exactly like every other patient data point in this
-// build — never localStorage.
+// side effects. The patient's PROGRESS lives in the separate ENGAGEMENT store
+// (`src/lib/engagement.ts`), keyed by patient id — real, queryable, server-
+// side data (never localStorage), but deliberately NOT a field on the
+// clinical `Patient` record: it is engagement data, not documentation.
 //
 // Reuse, not reinvention:
 //  • Population gating is Phase 2's `PopulationTrack` / `isPopulationAllowed`
