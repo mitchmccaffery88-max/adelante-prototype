@@ -133,7 +133,26 @@ describe("6.1 / 6.3 — each tier's permitted actions match its row exactly", ()
     const p = freshPatient();
     const link = connected(p.id, "conservatorship");
     expect(actions(link.id)).toEqual(actions(connected(freshPatient().id, "ahcd").id));
-    expect(AdelanteEHR.getAdvocateLink(link.id)?.conservatorshipDocs?.onFile).toBe(true);
+    expect(AdelanteEHR.getAdvocateLink(link.id)?.conservatorshipDocs?.courtOrderRef).toBe(
+      "PR-2026-0001",
+    );
+
+    // The documentation is a PRECONDITION, not a label: without it the same
+    // conservatorship connection is denied.
+    const bare = AdelanteEHR.createAdvocateInvitation({
+      patientId: freshPatient().id,
+      advocateName: "Rosa Ibarra",
+      relationship: "Sister",
+      invitationSentTo: "nodocs@example.org",
+      invitationChannel: "email",
+      designatedBy: { actor: "patient", name: "Test Patient" },
+    });
+    AdelanteEHR.claimAdvocateInvitation({
+      code: bare.invitationCode,
+      authorizationType: "conservatorship",
+      attestedName: "Rosa Ibarra",
+    });
+    expect(AdelanteEHR.advocateAccess(bare.id).allowed).toBe(false);
   });
 
   it("an AHCD agent that was never activated is dormant, not merely unlabelled", () => {
