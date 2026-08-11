@@ -150,7 +150,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
  * a category is selected. The hard enforcement stays in
  * `upsertClaimFromGroupAttendee`; this is prevention, not the gate.
  */
-function GroupBillingStatus({ category }: { category: GroupCategory }) {
+export function GroupBillingStatus({ category }: { category: GroupCategory }) {
   const info = GROUP_BILLING[category];
   return (
     <div
