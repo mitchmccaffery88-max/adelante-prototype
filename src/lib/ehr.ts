@@ -3138,6 +3138,22 @@ SafetyPlanStore.setSafetyPlanAuditSink((evt) => {
   });
 });
 
+// §Adelante Journey Phase 7 part 2 — patient-reported adherence / side effects.
+// Same treatment: separate store, one clinical audit stream, one UI wake-up.
+MedAdherence.subscribeMedAdherence(() => emit());
+MedAdherence.setMedAdherenceAuditSink((evt) => {
+  appendAudit({
+    category: "clinical",
+    action: evt.action,
+    patientId: evt.patientId,
+    ...(_patient(evt.patientId)?.programId
+      ? { programId: _patient(evt.patientId)!.programId }
+      : {}),
+    actorRole: evt.actorRole,
+    detail: evt.detail,
+  });
+});
+
 // Global case-task queue (across patients). Kept separately from Patient.tasks
 // (which is a legacy per-patient action list) so CM views can index by
 // assignee, status, and due date without walking every patient.
