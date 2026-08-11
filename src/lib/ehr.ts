@@ -59,6 +59,17 @@ import { getExercise, getLibraryItem, LIBRARY_ITEMS, EXERCISES } from "./library
 import type { SavedToolkitItem, ToolkitOrigin } from "./library";
 import * as Engagement from "./engagement";
 import * as SafetyPlanStore from "./safetyPlan";
+// §Adelante Journey Phase 7 part 2 — patient-reported adherence / side effects.
+// Foreign-keyed to real MedOrders and derived MAR slots; see the header note in
+// the module. Its ehr import is type-only, so there is no runtime cycle.
+import * as MedAdherence from "./medAdherence";
+import {
+  SHORT_FORM_SCREENERS,
+  isShortFormPositive,
+  QUICK_CHECK_INTERVAL_DAYS,
+  severityFor as _severityFor,
+  shortFormByKey,
+} from "./screeners";
 export type {
   LibraryCategory,
   LibraryItem,
@@ -2372,6 +2383,7 @@ export type CaseTaskOrigin =
   | "note_automation"
   /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
   | "advocate_ahcd_validation";
+  // (see `med_side_effect` below — declared inline to keep the union in one place)
 
 export interface CaseTask {
   id: string;
