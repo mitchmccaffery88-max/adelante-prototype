@@ -28,7 +28,26 @@ import {
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess, STAFF_ROLES } from "./roles";
+import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
+
+/**
+ * §Part 2 store gate — WHO is reading. `system` is reserved for internal
+ * derivation that never returns Part 2 content to a caller (care-plan
+ * recompute, workflow status), and must not be used by UI or reports.
+ */
+export type ScreenerViewer =
+  | { kind: "system" }
+  | { kind: "staff"; role?: StaffRole }
+  | { kind: "patient"; patientId: string }
+  | { kind: "advocate"; linkId: string };
+
+/** Thrown by the store when a Part 2-covered read is refused. */
+export class Part2AccessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "Part2AccessError";
+  }
+}
 // §v3.0 Phase 4 — advocate access policy. Pure module, imports nothing back
 // from here, so there is no cycle.
 import {
