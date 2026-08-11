@@ -30,8 +30,8 @@ describe("intake About-you pre-fill", () => {
       lastName: "Ortiz",
       dob: "1985-01-09",
       phone: "555-0144",
-      address: "12 Oak St",
     });
+    AdelanteEHR.updateProfile(staffMade.id, { address: "12 Oak St" });
     const seed = seedIntakeProfile(AdelanteEHR.getPatient(staffMade.id)!);
     expect(seed.preferredName).toBe("Luis");
     expect(seed.phone).toBe("555-0144");
