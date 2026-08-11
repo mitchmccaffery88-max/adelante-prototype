@@ -80,8 +80,30 @@ describe("library content shape", () => {
     );
   });
 
-  it("placeholder content is flagged, never silently shipped as final", () => {
-    for (const i of LIBRARY_ITEMS) expect(i.placeholder).toBe(true);
+  it("ships cleared content: nothing is flagged placeholder and no draft text remains", () => {
+    for (const i of LIBRARY_ITEMS) {
+      expect(i.placeholder).toBeUndefined();
+      expect(JSON.stringify(i)).not.toMatch(/PLACEHOLDER/i);
+    }
+    for (const e of EXERCISES) {
+      expect(e.placeholder).toBeUndefined();
+      expect(JSON.stringify(e)).not.toMatch(/PLACEHOLDER/i);
+    }
+  });
+
+  it("keeps the lesson and exercise ids the rest of the system references", () => {
+    expect(LIBRARY_ITEMS.map((i) => i.id)).toEqual([
+      "ss-finding-my-footing",
+      "ss-daily-rhythm",
+      "ss-calming-my-mind",
+      "ss-managing-overwhelm",
+      "ss-managing-worry",
+      "ss-grounding-myself",
+      "ss-managing-big-feelings",
+      "ss-creating-safety",
+      "ss-restoring-sleep",
+      "ss-stability-plan",
+    ]);
   });
 });
 
