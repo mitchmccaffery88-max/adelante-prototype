@@ -28,6 +28,7 @@ import {
   AdvocateClinicalPanel,
   AdvocateSelfCareCard,
   AdvocateDocumentsPanel,
+  AdvocateSelfHelpPanel,
 } from "@/components/advocate/AdvocateWorkspace";
 import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
 import { Info, Unlock } from "lucide-react";
@@ -291,6 +292,7 @@ function AdvocateScheduleView({
           <AdvocateCarePlanParticipationPanel linkId={linkId} />
           <AdvocateEligibilityPanel linkId={linkId} />
           <AdvocateDocumentsPanel linkId={linkId} />
+          <AdvocateSelfHelpPanel linkId={linkId} />
           <AdvocateClinicalPanel linkId={linkId} />
         </>
       )}

@@ -52,6 +52,17 @@ import {
   type AhcdChecklistState,
   type AhcdDeterminationRole,
 } from "./advocate";
+// §Adelante Journey Phase 5 — self-help Library. Content + pure selectors.
+// The module imports nothing at runtime (its population import is type-only),
+// so there is no cycle back into this store.
+import { getExercise, getLibraryItem, LIBRARY_ITEMS, EXERCISES } from "./library";
+import type { SavedToolkitItem, ToolkitOrigin } from "./library";
+export type {
+  LibraryCategory,
+  LibraryItem,
+  Exercise,
+  SavedToolkitItem,
+} from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
 import {
@@ -1106,6 +1117,20 @@ export interface Patient {
   medReconciliations?: MedReconciliation[];
   /** §Med reconciliation — flat item rows joined on `reconciliationId`. */
   medReconItems?: MedReconItem[];
+  // ----- §Adelante Journey Phase 5 — self-help Library / Exercises ---------
+  //
+  // Progress is PATIENT DATA and lives here with everything else, never in
+  // localStorage. Three flat arrays rather than a nested `libraryProgress`
+  // object, matching the convention every other Phase-5-era field already
+  // follows (`refusalForms`, `kopIssuances`, `doseClaims`): flat arrays keep
+  // the dominant write — "append one id" — a single find, and keep undefined
+  // meaning "nothing yet" without a container to create first.
+  /** Lesson ids the patient has completed. Idempotent set, append-only. */
+  completedLibraryItems?: string[];
+  /** Exercise ids the patient has completed. Separate namespace from lessons. */
+  completedExercises?: string[];
+  /** Saved toolkit takeaways, one per source lesson/exercise. */
+  savedToolkitItems?: SavedToolkitItem[];
 }
 
 /**
@@ -5951,6 +5976,124 @@ export const AdelanteEHR = {
     emit();
   },
 
+  // ---------- §Adelante Journey Phase 5 — self-help Library / Exercises ----
+  //
+  // Real, store-backed patient progress. Every write is idempotent (a lesson
+  // can be re-read without inflating the count) and audited in the EXISTING
+  // `clinical` stream — a completed self-help lesson is care participation,
+  // not a new audit category.
+
+  /** Lesson ids this patient has completed. */
+  completedLibraryItems(patientId: string): string[] {
+    return [...(_patient(patientId)?.completedLibraryItems ?? [])];
+  },
+
+  /** Exercise ids this patient has completed. */
+  completedExercises(patientId: string): string[] {
+    return [...(_patient(patientId)?.completedExercises ?? [])];
+  },
+
+  savedToolkitItems(patientId: string): SavedToolkitItem[] {
+    return [...(_patient(patientId)?.savedToolkitItems ?? [])];
+  },
+
+  /**
+   * Mark a lesson complete. Idempotent. When the lesson carries a toolkit
+   * takeaway it is saved in the same act — step 8 of the instructional
+   * sequence IS the completion, not a second opt-in.
+   */
+  completeLibraryItem(
+    patientId: string,
+    itemId: string,
+    opts: { saveToolkit?: boolean; actorRole?: string } = {},
+  ): { completed: boolean; alreadyComplete: boolean } {
+    const p = _patient(patientId);
+    const item = getLibraryItem(itemId);
+    if (!p || !item) return { completed: false, alreadyComplete: false };
+    const list = p.completedLibraryItems ?? (p.completedLibraryItems = []);
+    const already = list.includes(itemId);
+    if (!already) list.push(itemId);
+    if (opts.saveToolkit !== false) {
+      AdelanteEHR.saveToolkitItem(patientId, {
+        id: itemId,
+        label: item.toolkitLabel,
+        from: "library",
+      });
+    }
+    if (!already) {
+      appendAudit({
+        category: "clinical",
+        action: "library_item_completed",
+        patientId,
+        programId: p.programId,
+        actorRole: opts.actorRole ?? "patient",
+        detail: { itemId, categoryId: item.categoryId, title: item.title, minutes: item.minutes },
+      });
+    }
+    emit();
+    return { completed: true, alreadyComplete: already };
+  },
+
+  /** Mark an exercise complete. Idempotent; same shape as lessons. */
+  completeExercise(
+    patientId: string,
+    exerciseId: string,
+    opts: { saveToolkit?: boolean; actorRole?: string } = {},
+  ): { completed: boolean; alreadyComplete: boolean } {
+    const p = _patient(patientId);
+    const ex = getExercise(exerciseId);
+    if (!p || !ex) return { completed: false, alreadyComplete: false };
+    const list = p.completedExercises ?? (p.completedExercises = []);
+    const already = list.includes(exerciseId);
+    if (!already) list.push(exerciseId);
+    if (opts.saveToolkit) {
+      AdelanteEHR.saveToolkitItem(patientId, {
+        id: exerciseId,
+        label: ex.title,
+        from: "exercise",
+      });
+    }
+    if (!already) {
+      appendAudit({
+        category: "clinical",
+        action: "library_exercise_completed",
+        patientId,
+        programId: p.programId,
+        actorRole: opts.actorRole ?? "patient",
+        detail: { exerciseId, title: ex.title, type: ex.type, minutes: ex.minutes },
+      });
+    }
+    emit();
+    return { completed: true, alreadyComplete: already };
+  },
+
+  /** One saved entry per source id. Re-saving refreshes the label, not the count. */
+  saveToolkitItem(
+    patientId: string,
+    input: { id: string; label: string; from: ToolkitOrigin },
+  ): SavedToolkitItem | undefined {
+    const p = _patient(patientId);
+    if (!p) return undefined;
+    const list = p.savedToolkitItems ?? (p.savedToolkitItems = []);
+    const existing = list.find((t) => t.id === input.id);
+    if (existing) {
+      existing.label = input.label;
+      emit();
+      return { ...existing };
+    }
+    const entry: SavedToolkitItem = { ...input, createdAt: new Date().toISOString() };
+    list.push(entry);
+    emit();
+    return { ...entry };
+  },
+
+  removeToolkitItem(patientId: string, id: string): void {
+    const p = _patient(patientId);
+    if (!p?.savedToolkitItems) return;
+    p.savedToolkitItems = p.savedToolkitItems.filter((t) => t.id !== id);
+    emit();
+  },
+
   // ---------- Front-door entry sequence (Phase 1) ----------
 
   /** Merge-write the front-door answers. Safe to call once per question. */
@@ -10189,6 +10332,94 @@ export const AdelanteEHR = {
       reason: gate.reason,
       canUpload: AdelanteEHR.advocateCan(linkId, "document_upload"),
       items,
+    };
+  },
+
+  /**
+   * §Adelante Journey Phase 5 — self-help PROGRESS for an advocate.
+   *
+   * The read floor: available at `hipaa_only` and above, because completion
+   * counts are participation data, not clinical documentation. What it
+   * deliberately does NOT return, at any tier: the patient's reflection
+   * answers, worksheet text, saved toolkit LABELS (patient-authored free text
+   * that can carry anything), notes, or diagnoses. The DTO below is the whole
+   * surface — widening it takes a deliberate edit.
+   *
+   * Part 2: a lesson flagged `part2Sensitive` has its TITLE withheld unless
+   * the existing Part 2 gate is lifted for this link — the same rule
+   * `advocateSchedule` applies to SUD group topics. The row still counts, so
+   * the totals stay honest.
+   */
+  advocateLibraryProgress(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    part2Disclosed: boolean;
+    lessonsCompleted: number;
+    lessonsTotal: number;
+    exercisesCompleted: number;
+    exercisesTotal: number;
+    completed: { kind: "lesson" | "exercise"; id: string; title: string; restricted: boolean }[];
+  } {
+    const gate = _advocateGate(linkId, "library_progress_view", "self_help_progress");
+    if (!gate.ok)
+      return {
+        allowed: false,
+        reason: gate.reason,
+        part2Disclosed: false,
+        lessonsCompleted: 0,
+        lessonsTotal: 0,
+        exercisesCompleted: 0,
+        exercisesTotal: 0,
+        completed: [],
+      };
+    const gates = _advocatePart2Gates(gate.link);
+    const part2Ok = gates.unmasked;
+    const pid = gate.link.patientId;
+    const lessonIds = AdelanteEHR.completedLibraryItems(pid);
+    const exerciseIds = AdelanteEHR.completedExercises(pid);
+    const completed: {
+      kind: "lesson" | "exercise";
+      id: string;
+      title: string;
+      restricted: boolean;
+    }[] = [];
+    for (const id of lessonIds) {
+      const item = getLibraryItem(id);
+      if (!item) continue;
+      const restricted = Boolean(item.part2Sensitive) && !part2Ok;
+      completed.push({
+        kind: "lesson",
+        id,
+        title: restricted ? "Protected lesson" : item.title,
+        restricted,
+      });
+    }
+    for (const id of exerciseIds) {
+      const ex = getExercise(id);
+      if (!ex) continue;
+      const restricted = Boolean(ex.part2Sensitive) && !part2Ok;
+      completed.push({
+        kind: "exercise",
+        id,
+        title: restricted ? "Protected exercise" : ex.title,
+        restricted,
+      });
+    }
+    _advocateAudit(gate.link, "advocate_self_help_progress_viewed", "self_help_progress", {
+      lessonsCompleted: lessonIds.length,
+      exercisesCompleted: exerciseIds.length,
+      restrictedCount: completed.filter((c) => c.restricted).length,
+      part2Disclosed: part2Ok,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      part2Disclosed: part2Ok,
+      lessonsCompleted: lessonIds.length,
+      lessonsTotal: LIBRARY_ITEMS.length,
+      exercisesCompleted: exerciseIds.length,
+      exercisesTotal: EXERCISES.length,
+      completed,
     };
   },
 
