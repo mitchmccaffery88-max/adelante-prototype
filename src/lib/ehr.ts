@@ -8191,6 +8191,71 @@ export const AdelanteEHR = {
    * refuses the consent and transition-planning categories: those have their
    * own instruments and must not be shadow-captured as loose fields.
    */
+  /**
+   * §Pre-release build 2 — administer a REAL instrument inside a pre-release
+   * episode.
+   *
+   * This is deliberately NOT a new screening system. It performs the same two
+   * pre-release authorization checks every other episode write performs
+   * (`assertCfEntryScope` for direct/proxy attribution, and the Build-1
+   * capacity gate for consent-dependent steps), then hands off to the exact
+   * `scoreScreener` + `recordScreener` path intake uses — same ScreenerResult,
+   * same `screenerHistory`, same crisis handling, same care-plan recompute.
+   */
+  recordPreReleaseScreener(input: {
+    episodeId: string;
+    screenerKey: string;
+    answers: number[];
+    attribution: CfAttribution;
+  }): ScreenerResult {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const def = screenerByKey(input.screenerKey);
+    if (!def) throw new Error("Unknown screening instrument.");
+    const owner = PRE_RELEASE_FORMS.find((d) =>
+      d.satisfiedByScreeners?.includes(input.screenerKey),
+    );
+    if (!owner) throw new Error("That instrument is not part of the pre-release checklist.");
+    assertCfEntryScope(ep, input.attribution, `pre_release_screener:${input.screenerKey}`);
+    if (owner.requiresConsentCapacity) {
+      const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+      if (!gate.canProceed) throw new Error(gate.reason);
+    }
+    if (input.answers.length !== def.questions.length)
+      throw new Error(`${def.name} requires all ${def.questions.length} items.`);
+    const scored = scoreScreener(def, input.answers);
+    const result: ScreenerResult = {
+      key: def.key,
+      score: scored.score,
+      severity: scored.severity,
+      completedAt: new Date().toISOString(),
+      timepoint: "intake",
+      responses: input.answers,
+      context: "pre_release",
+      episodeId: ep.id,
+      ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+      ...(scored.domains ? { domains: scored.domains } : {}),
+    };
+    AdelanteEHR.recordScreener(ep.patientId, result);
+    appendAudit({
+      category: "clinical",
+      action: cfAuditAction("pre_release_screener_recorded", input.attribution),
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        formKey: owner.key,
+        screenerKey: def.key,
+        // Score/severity only — item responses are never audited.
+        score: scored.score,
+        severity: scored.severity,
+        ...cfAuditIdentities(input.attribution),
+      },
+    });
+    emit();
+    return result;
+  },
   savePreReleaseForm(input: {
     episodeId: string;
     formKey: string;
