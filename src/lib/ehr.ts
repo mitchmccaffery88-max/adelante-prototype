@@ -1770,12 +1770,14 @@ export type ConsentCategory =
   | "mental_health"
   | "case_coordination"
   | "billing"
-  // §Group sessions — PLACEHOLDER category. OPEN QUESTION FOR CHRISTI:
-  // whether group participation genuinely requires its own ASCMI consent
-  // category, or whether it falls under general treatment consent, is a
-  // regulatory/clinical determination that is explicitly NOT decided here.
-  // The mechanism is wired so either answer is a one-line change.
-  | "group_participation"
+  // §Group sessions — the former generic `group_participation` PLACEHOLDER is
+  // gone. Christi's answer describes TWO distinct concerns, so they are two
+  // keys, not one with sub-fields:
+  //   1. telehealth consent   -> the pre-existing `telehealth_services` key
+  //      below (a real, required, per-member gate on virtual participation);
+  //   2. group confidentiality acknowledgment -> `group_confidentiality_ack`,
+  //      OPTIONAL and county-configurable (default OFF). NOT a DHCS mandate.
+  | "group_confidentiality_ack"
   // §v3.0 Phase 2 — the three Release & Consent pre-release forms. PLACEHOLDER
   // keys and labels, same discipline as every other category here: the real
   // DHCS/ASCMI form language is Christi's to supply, and nothing legal is
@@ -1805,9 +1807,16 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "mental_health", label: "Mental health (placeholder)" },
   { key: "case_coordination", label: "Case coordination (placeholder)" },
   { key: "billing", label: "Billing (placeholder)" },
-  { key: "group_participation", label: "Group participation (placeholder)" },
+  {
+    key: "group_confidentiality_ack",
+    label:
+      "Group confidentiality acknowledgment — optional, county-configurable (placeholder wording)",
+  },
   { key: "pre_release_services", label: "Pre-release services (placeholder)" },
-  { key: "telehealth_services", label: "Telehealth (placeholder)" },
+  {
+    key: "telehealth_services",
+    label: "Telehealth services consent — required before virtual participation (placeholder wording)",
+  },
   {
     key: "information_sharing_disclosure",
     label: "Information sharing / disclosure authorization (placeholder)",
@@ -1824,6 +1833,42 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
 
 /** The ASCMI category a DHCS Collateral advocate's access hard-depends on. */
 export const COLLATERAL_ROI_CATEGORY: ConsentCategory = "roi_collateral";
+
+/**
+ * §Group sessions — telehealth. Reuses the EXISTING `telehealth_services`
+ * ConsentRecord category rather than minting a group-specific one: the
+ * disclosure elements below are about telehealth as a delivery mode, not
+ * about groups, and a member who consented to telehealth for individual care
+ * has consented to the same disclosures.
+ */
+export const TELEHEALTH_CONSENT_CATEGORY: ConsentCategory = "telehealth_services";
+
+/** Optional (default OFF) county-configurable group confidentiality ack. */
+export const GROUP_CONFIDENTIALITY_CATEGORY: ConsentCategory = "group_confidentiality_ack";
+
+/**
+ * REAL DHCS-required disclosure elements for telehealth consent. The legal
+ * WORDING is still placeholder and flagged as such in the capture UI, but
+ * these four elements are real content and must actually be presented.
+ */
+export const TELEHEALTH_DISCLOSURE_ELEMENTS: { key: string; text: string }[] = [
+  {
+    key: "right_to_in_person",
+    text: "You have the right to receive these services in person instead of by video or phone.",
+  },
+  {
+    key: "voluntary_revocable",
+    text: "Telehealth is voluntary. You may withdraw this consent at any time without losing services.",
+  },
+  {
+    key: "transportation_benefits",
+    text: "Telehealth can remove travel time, transportation cost and childcare barriers to attending.",
+  },
+  {
+    key: "limitations",
+    text: "Telehealth has limitations: no hands-on assessment, possible technology failure, and privacy depends on where you take the session.",
+  },
+];
 
 export type ConsentFormType = "AB133" | "NonAB133" | "Revocation";
 export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded";
