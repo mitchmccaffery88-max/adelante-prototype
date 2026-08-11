@@ -2280,6 +2280,11 @@ export interface PreReleaseCapacityDetermination {
   determinedByRole: string;
   determinedAt: string;
   /**
+   * Same CF attribution every other pre-release entry carries: who keyed it,
+   * and whose episode work it belongs to when proxy-entered.
+   */
+  attribution: CfAttribution;
+  /**
    * Advocates identified during this step, in invitation order. The expected
    * instrument is what the CF Care Manager BELIEVES is out there; the real
    * `authorizationType` is only ever set by the advocate at claim time, which
@@ -7844,14 +7849,18 @@ export const AdelanteEHR = {
     episodeId: string;
     status: IntakeCapacityStatus;
     basis: string;
-    determinedBy: string;
-    actorRole: string;
+    attribution: CfAttribution;
   }): PreReleaseCapacityDetermination {
     const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
     if (!ep) throw new Error("Pre-release episode not found.");
+    // Identical mechanism to every other pre-release entry — no stricter or
+    // looser rule carved out for the capacity determination.
+    assertCfEntryScope(ep, input.attribution, "pre_release_capacity");
     if (!input.basis.trim())
       throw new Error("Record what you observed — the basis for the capacity determination.");
     const now = new Date().toISOString();
+    const determinedBy = input.attribution.enteredBy.staffName;
+    const determinedByRole = input.attribution.enteredBy.role;
     let rec = preReleaseCapacity.find((c) => c.episodeId === ep.id);
     if (!rec) {
       rec = {
@@ -7860,27 +7869,30 @@ export const AdelanteEHR = {
         patientId: ep.patientId,
         status: input.status,
         basis: input.basis.trim(),
-        determinedBy: input.determinedBy,
-        determinedByRole: input.actorRole,
+        determinedBy,
+        determinedByRole,
         determinedAt: now,
+        attribution: input.attribution,
         identifiedAdvocates: [],
       };
       preReleaseCapacity.unshift(rec);
     } else {
       rec.status = input.status;
       rec.basis = input.basis.trim();
-      rec.determinedBy = input.determinedBy;
-      rec.determinedByRole = input.actorRole;
+      rec.determinedBy = determinedBy;
+      rec.determinedByRole = determinedByRole;
       rec.determinedAt = now;
+      rec.attribution = input.attribution;
     }
     appendAudit({
       category: "clinical",
-      action: "pre_release_capacity_determined",
+      action: cfAuditAction("pre_release_capacity_determined", input.attribution),
       patientId: ep.patientId,
-      actorId: input.determinedBy,
-      actorRole: input.actorRole,
+      actorId: determinedBy,
+      actorRole: determinedByRole,
       detail: {
         episodeId: ep.id,
+        ...cfAuditIdentities(input.attribution),
         capacity: rec.status,
         requiresSurrogate: capacityRequiresSurrogate(rec.status),
         basis: rec.basis,

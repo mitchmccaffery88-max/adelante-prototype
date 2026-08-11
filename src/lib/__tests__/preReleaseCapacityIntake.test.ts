@@ -1,7 +1,7 @@
 // §CF pre-release intake build 1 — in-custody profile creation and the early,
 // required capacity / legal-authority step.
 import { afterEach, describe, expect, it } from "vitest";
-import { AdelanteEHR, PRE_RELEASE_FORMS } from "@/lib/ehr";
+import { AdelanteEHR, PRE_RELEASE_FORMS, type CfAttribution } from "@/lib/ehr";
 import { getStaffMember } from "@/lib/roles";
 import { resolvePopulation } from "@/lib/population";
 import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
@@ -38,7 +38,7 @@ function newIntake(first = "Marco", last = "Silva") {
   return r;
 }
 
-function attribution() {
+function attribution(): CfAttribution {
   return { enteredBy: { staffId: cf().id, staffName: cf().name, role: "cf_care_manager" } };
 }
 
@@ -118,8 +118,7 @@ describe("capacity step is early and required", () => {
         episodeId: episode.id,
         status: "competent",
         basis: "  ",
-        determinedBy: cf().name,
-        actorRole: "cf_care_manager",
+        attribution: attribution(),
       }),
     ).toThrow(/basis/i);
   });
@@ -132,8 +131,7 @@ describe("competent branch", () => {
       episodeId: episode.id,
       status: "competent",
       basis: "Oriented, answered for themselves throughout.",
-      determinedBy: cf().name,
-      actorRole: "cf_care_manager",
+      attribution: attribution(),
     });
     const state = AdelanteEHR.preReleaseCapacityState(episode.id);
     expect(state.decision.state).toBe("self_consent");
@@ -159,8 +157,7 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
       episodeId: episode.id,
       status: "impaired",
       basis: "Cannot state the purpose of the interview; documented in chart.",
-      determinedBy: cf().name,
-      actorRole: "cf_care_manager",
+      attribution: attribution(),
     });
     return { patient, episode };
   }
