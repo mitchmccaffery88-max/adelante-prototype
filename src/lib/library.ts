@@ -137,7 +137,7 @@ export type ExerciseType =
   | "scale";
 
 export type ExerciseContent =
-  | { type: "timer"; seconds: number; prompts: string[] }
+  | { type: "timer"; seconds: number; prompts: string[]; closing?: string }
   | {
       type: "breathing";
       inhaleSec: number;
@@ -146,19 +146,33 @@ export type ExerciseContent =
       holdAfterSec: number;
       cycles: number;
     }
-  | { type: "checklist"; intro: string; items: string[] }
+  | { type: "checklist"; intro: string; items: string[]; closing?: string }
   | {
       type: "worksheet";
       intro: string;
-      fields: { id: string; label: string; placeholder?: string; multiline?: boolean }[];
+      fields: {
+        id: string;
+        label: string;
+        placeholder?: string;
+        multiline?: boolean;
+        /** Tappable suggested answers; the field stays free-text. */
+        options?: string[];
+      }[];
     }
-  | { type: "mapper"; intro: string; columns: { id: string; label: string; hint: string }[] }
+  | {
+      type: "mapper";
+      intro: string;
+      columns: { id: string; label: string; hint: string; suggestions?: string[] }[];
+    }
   | {
       type: "calculator";
       intro: string;
       rows: { id: string; label: string }[];
       totalLabel: string;
       againstLabel: string;
+      /** When present, income is itemised instead of a single figure. */
+      incomeRows?: { id: string; label: string }[];
+      closing?: string;
     }
   | {
       type: "scale";
@@ -167,7 +181,7 @@ export type ExerciseContent =
       max: number;
       minLabel: string;
       maxLabel: string;
-      bands: { upTo: number; label: string; guidance: string }[];
+      bands: { upTo: number; label: string; guidance?: string; moves?: string[] }[];
     };
 
 export interface Exercise {
