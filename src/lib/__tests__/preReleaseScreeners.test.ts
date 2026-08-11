@@ -95,7 +95,7 @@ describe("AUDIT-10 / DAST-10 reuse is the same mechanism, not a lookalike", () =
     const p = AdelanteEHR.getPatient(patient.id)!;
     expect(p.screeners["audit"]).toEqual(result);
     expect(p.screenerHistory?.at(-1)).toEqual(result);
-    expect(AdelanteEHR.getScreenerResult(patient.id, "audit")).toEqual(result);
+    expect(AdelanteEHR.getScreenerResult(patient.id, "audit", { kind: "staff", role: "therapist" })).toEqual(result);
   });
 
   it("completes the checklist row only once BOTH real instruments are on file", () => {
@@ -227,6 +227,8 @@ describe("population-health queries run against the stored results", () => {
     const summary = AdelanteEHR.screenerPopulationSummary({
       patientIds: cohort,
       keys: ["audit", "ahc-hrsn"],
+      // §Part 2 store gate — AUDIT-10 aggregation needs an authorized viewer.
+      viewer: { kind: "staff", role: "therapist" },
     });
     const audit = summary.instruments.find((i) => i.key === "audit")!;
     expect(audit.administered).toBe(2);

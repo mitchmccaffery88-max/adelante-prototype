@@ -108,7 +108,7 @@ describe("Part 2 is not over-applied", () => {
 });
 
 describe("population health is not a second unprotected path", () => {
-  const opts = { patientIds: [patient.id], keys: ["audit", "ahc-hrsn"] } as const;
+  const opts = { patientIds: [patient.id], keys: ["audit", "ahc-hrsn"] };
 
   it("suppresses Part 2 contributions for an unauthorized viewer", () => {
     const s = AdelanteEHR.screenerPopulationSummary({
