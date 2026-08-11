@@ -62,6 +62,12 @@ export type RecordClass =
   | "telehealth_room"
   | "sdoh"
   | "self_help"
+  // §Adelante Journey Phase 7 — patient-authored Stanley-Brown safety plan.
+  // Its own class, NOT `self_help` and NOT `therapy_notes`: it is clinical-
+  // adjacent risk-management content a crisis responder may need to read
+  // during an active concern, but it is authored by the patient, so it must
+  // not inherit the write semantics of clinician documentation.
+  | "safety_plan"
   | "sud_treatment"
   // §ASCMI stricter tier — see PSYCHOTHERAPY_NOTES_TIER note below.
   | "psychotherapy_notes"
@@ -309,6 +315,26 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sud_counselor: "read",
     clinical_trainee: "read",
     medical_assistant: "read",
+  },
+  // §Adelante Journey Phase 7 — safety plan. Read is deliberately WIDE across
+  // roles that respond to a crisis (peers included — a peer specialist on the
+  // phone at 2am is exactly who needs the patient's own plan). Write is for
+  // the roles that build the plan WITH the patient; billing roles get nothing
+  // — this is never claim data.
+  safety_plan: {
+    pmhnp: "write",
+    therapist: "write",
+    ecm_provider: "write",
+    sud_counselor: "write",
+    clinical_coordinator: "write",
+    peer_specialist: "read",
+    community_health_worker: "read",
+    cf_care_manager: "read",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
   },
   eligibility: {
     ecm_provider: "write",

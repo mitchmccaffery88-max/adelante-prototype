@@ -1,0 +1,42 @@
+// §Admin — real, visible status of clinical content still awaiting sign-off.
+// Reads the same flags the patient/clinician UI reads, so this panel can never
+// claim "reviewed" while the product still renders draft text.
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { SAFETY_PLAN_REVIEW, SAFETY_PLAN_SECTIONS } from "@/lib/safetyPlan";
+import { TriangleAlert, CheckCircle2 } from "lucide-react";
+
+export function ClinicalContentReviewCard() {
+  const pendingSections = SAFETY_PLAN_SECTIONS.filter((s) => s.clinicalReviewPending).length;
+  const pending = SAFETY_PLAN_REVIEW.pending || pendingSections > 0;
+  return (
+    <Card className="p-3 space-y-2" data-testid="clinical-content-review">
+      <div className="flex items-center justify-between gap-2">
+        <h2 className="text-sm font-medium text-navy">Clinical content review status</h2>
+        <Badge
+          className={
+            pending
+              ? "bg-amber-500/15 text-amber-700 border-0 text-[10px]"
+              : "bg-emerald-500/15 text-emerald-700 border-0 text-[10px]"
+          }
+        >
+          {pending ? "Review pending" : "Signed off"}
+        </Badge>
+      </div>
+      <div className="flex items-start gap-2 text-[11px] text-muted-foreground">
+        {pending ? (
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 text-amber-600" />
+        ) : (
+          <CheckCircle2 className="mt-0.5 h-3.5 w-3.5 text-emerald-600" />
+        )}
+        <div>
+          <p className="font-medium text-navy">Safety plan (Stanley-Brown)</p>
+          <p>
+            {pendingSections} of {SAFETY_PLAN_SECTIONS.length} section prompts are draft text
+            awaiting {SAFETY_PLAN_REVIEW.reviewers}. {SAFETY_PLAN_REVIEW.scope}
+          </p>
+        </div>
+      </div>
+    </Card>
+  );
+}

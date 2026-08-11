@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { CatalogResolutionMetricsCard } from "@/components/admin/CatalogResolutionMetricsCard";
 import { RiskTextReviewPanel } from "@/components/admin/RiskTextReviewPanel";
+import { ClinicalContentReviewCard } from "@/components/admin/ClinicalContentReviewCard";
 
 export const Route = createFileRoute("/admin-audit")({
   head: () => ({
@@ -170,6 +171,7 @@ function AdminAuditPage() {
       <CatalogResolutionMetricsCard />
 
       <RiskTextReviewPanel />
+      <ClinicalContentReviewCard />
 
       <div className="flex flex-wrap items-end gap-3">
         <Select value={cat} onValueChange={(v) => setCat(v as AuditCategory | "all")}>
