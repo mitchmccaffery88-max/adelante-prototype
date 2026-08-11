@@ -1562,7 +1562,7 @@ export interface CrisisEscalation {
    * record — kept distinct from `manual` (clinician-initiated from the chart)
    * and `screener_score` so the automated-vs-manual catch rate is measurable.
    */
-  triggerSource: "manual" | "screener_score" | "assisted_signup";
+  triggerSource: "manual" | "screener_score" | "assisted_signup" | "message_pattern";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
   triggeredBy: string;
