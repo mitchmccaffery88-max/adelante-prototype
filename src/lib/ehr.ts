@@ -1254,6 +1254,14 @@ export interface ScreenerResult {
   context?: "intake" | "pre_release" | "patient_self" | "clinic";
   /** Set when administered inside a pre-release episode. */
   episodeId?: string;
+  /**
+   * §Part 2 author/actor exception — WHO personally administered this specific
+   * result. Same `CfAttribution` shape the pre-release build already produces
+   * (`enteredBy` plus, for proxy entries, the CF Care Manager the work is
+   * attributed to), so there is no parallel identity mechanism. Absent for
+   * patient-self and legacy results.
+   */
+  administeredBy?: CfAttribution;
 }
 
 export interface Clinician {
