@@ -13,3 +13,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Front-door helper tiers](mem://features/front-door-helper-tiers) — Tier 1 informal helper field, Tier 2 staff assisted sign-up, consumedBy attribution rule
 - [PO disclosure two-tier](mem://features/po-disclosure-two-tier) — mandatory (legal mandate, never togglable) vs voluntary (revocable consent) probation/parole sharing
 - [Self-help library](mem://features/self-help-library) — Library/Exercise schema, store-backed progress, population gating, advocate read-floor visibility
+- [Safety plan](mem://features/safety-plan) — Stanley-Brown structure, clinical-adjacent store, safety_plan record class, 988 locked entry, pending clinical review flags
