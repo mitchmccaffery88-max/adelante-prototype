@@ -379,6 +379,20 @@ export function isDomainScreener(def: ScreenerDef): def is DomainScreenerDef {
   return (def as DomainScreenerDef).isSdoh === true;
 }
 
+/**
+ * §Part 2 store gate — is THIS instrument 42 CFR Part 2 material?
+ *
+ * Derived from the instrument definition's existing `isSud` flag, which is
+ * already the thing `intake.tsx` filters on, rather than a second hand-kept
+ * key list that could drift from it. Only AUDIT-10 and DAST-10 carry it:
+ * PHQ-9/GAD-7/PHQ-2/GAD-2 are mental-health, and AHC-HRSN is social-needs —
+ * neither is SUD-specific, so neither is Part 2 covered.
+ */
+export function isPart2Screener(keyOrDef: string | ScreenerDef): boolean {
+  const def = typeof keyOrDef === "string" ? screenerByKey(keyOrDef) : keyOrDef;
+  return def?.isSud === true;
+}
+
 /** Every instrument in one lookup — full, short-form and domain alike. */
 export function screenerByKey(key: string): ScreenerDef | undefined {
   return (
