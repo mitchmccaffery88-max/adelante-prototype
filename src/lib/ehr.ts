@@ -8288,8 +8288,9 @@ export const AdelanteEHR = {
       }
       if (def.satisfiedByScreeners && ep) {
         // Real completed instruments, read from the ordinary screener record.
+        // Existence only — workflow status is not a Part 2 content read.
         const done = def.satisfiedByScreeners.filter((k) =>
-          AdelanteEHR.getScreenerResult(ep.patientId, k),
+          AdelanteEHR.hasScreenerResult(ep.patientId, k),
         ).length;
         status =
           done === def.satisfiedByScreeners.length
