@@ -39,7 +39,7 @@ describe("PHQ-2 / GAD-2 quick check", () => {
     expect(pending.some((t) => t.screenerKey === "phq-9")).toBe(true);
 
     // Real clinician work item on the existing case-task queue.
-    const task = AdelanteEHR.listCaseTasks?.({ patientId: pid }) ?? [];
+    const task = (AdelanteEHR.listCaseTasks?.() ?? []).filter((t) => t.patientId === pid);
     expect(
       task.some((t) => t.origin === "screener_flag" && t.title.includes("PHQ-9")),
     ).toBe(true);
@@ -132,7 +132,7 @@ describe("medication self-report + side effects", () => {
       note: "Very dizzy in the mornings",
     })!;
     expect(report.caseTaskId).toBeTruthy();
-    const tasks = AdelanteEHR.listCaseTasks?.({ patientId: pid }) ?? [];
+    const tasks = (AdelanteEHR.listCaseTasks?.() ?? []).filter((t) => t.patientId === pid);
     const t = tasks.find((x) => x.origin === "med_side_effect");
     expect(t).toBeTruthy();
     expect(t!.priority).toBe("urgent");
