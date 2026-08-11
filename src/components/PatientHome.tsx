@@ -614,6 +614,9 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
     // Sent verbatim: no trimming of content, no translation, no rewriting.
     const sent = AdelanteEHR.sendPatientMessage(patientId, draft, sensitive);
     if (sent) {
+      // §Crisis detection — runs AFTER the message is committed and never
+      // blocks or edits it. Same flagCrisis mechanism as every other source.
+      scanTextForCrisis(patientId, sent.body, { surface: "a care-team message" });
       setDraft("");
       setSensitive(false);
       toast.success(t("msgSent"));

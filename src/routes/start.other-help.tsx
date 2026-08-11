@@ -7,6 +7,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { AdelanteEHR } from "@/lib/ehr";
+import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 export const Route = createFileRoute("/start/other-help")({
   head: () => ({
@@ -41,7 +42,11 @@ function OtherHelpPlaceholder() {
 
   function submit() {
     const id = AdelanteEHR.getCurrentPatientId();
-    if (id) AdelanteEHR.recordFrontDoorEntry(id, { otherHelpNote: note.trim() || undefined });
+    if (id) {
+      AdelanteEHR.recordFrontDoorEntry(id, { otherHelpNote: note.trim() || undefined });
+      // §Crisis detection — free text from a person at the front door.
+      scanTextForCrisis(id, note, { surface: "the front-door 'what brings you here' note" });
+    }
     setSent(true);
     toast.success("Thanks — we've got it.");
   }
