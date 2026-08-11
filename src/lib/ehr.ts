@@ -3779,6 +3779,51 @@ function _advocatePart2Unmasked(link: AdvocateLink): boolean {
   return _advocatePart2Gates(link).unmasked;
 }
 
+/** Stable worklist key per checklist item, mirroring `prerelease:<id>:<key>`. */
+function _ahcdTaskKey(linkId: string, item: AhcdChecklistItemKey): string {
+  return `ahcd:${linkId}:${item}`;
+}
+
+/**
+ * §Phase 4.2 (6.5) — open the five validation items as real CaseTasks on the
+ * CF Care Manager's worklist. Same mechanism as the pre-release checklist:
+ * `dedupeKey` for idempotency, `allowedRoles` for routing, no parallel store.
+ */
+function _openAhcdValidationTasks(link: AdvocateLink): void {
+  for (const item of AHCD_CHECKLIST_ITEMS) {
+    AdelanteEHR.createCaseTask({
+      patientId: link.patientId,
+      assignedTo: "",
+      title: `AHCD validation ${item.order}/5 — ${item.label}`,
+      detail: `${link.advocateName} (${link.relationship}). ${item.detail}`,
+      dueDate: new Date().toISOString().slice(0, 10),
+      taskType: "ahcd_validation",
+      allowedRoles: ["cf_care_manager", "ecm_provider"],
+      source: "advocate_ahcd_validation",
+      dedupeKey: _ahcdTaskKey(link.id, item.key),
+    });
+  }
+}
+
+/**
+ * The live activation state. A temporary determination whose review date has
+ * passed is expired HERE, on read, so nothing has to be told to expire it —
+ * the same live-evaluation approach `_effectiveAdvocateStatus` uses for the
+ * link itself. The lapse is written back once (and audited) so the worklist
+ * and the audit trail agree with what the gate just decided.
+ */
+function _ahcdEffective(link: AdvocateLink): { active: boolean; expired: boolean } {
+  const a = link.ahcdActivation;
+  if (!a || a.state !== "clinically_active") return { active: false, expired: a?.state === "expired" };
+  if (!ahcdDeterminationExpired(a)) return { active: true, expired: false };
+  AdelanteEHR.deactivateAdvocateAhcd(link.id, {
+    deactivatedBy: "system",
+    reason: `Temporary incapacity determination lapsed on its review date (${a.reviewByDate}).`,
+    expired: true,
+  });
+  return { active: false, expired: true };
+}
+
 /**
  * The same two gates, reported individually so the audit row (and the consent
  * audit viewer, §Group D item 7) can show WHICH of the two passed. There is
