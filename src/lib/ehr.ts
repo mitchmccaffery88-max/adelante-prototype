@@ -13522,7 +13522,7 @@ export const AdelanteEHR = {
         "Group eligibility has not been set for this patient. A therapist, PMHNP or case manager must set it before any enrollment.",
       );
     if (initiator.kind === "patient") {
-      if (group.category !== "open_psychoeducational")
+      if (!isSelfServiceGroupCategory(group.category))
         block("staff_enrolled_only", "This group is staff-enrolled only.");
       if (initiator.actorId !== patientId)
         block("not_self", "You can only book groups for yourself.");
@@ -13543,16 +13543,18 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Open groups this patient may self-book: open category only, eligibility
-   * set, not cancelled, not already enrolled, not at capacity. Used by the
-   * patient scheduling page — `sud_clinical_preauth` can never appear here.
+   * Groups this patient may self-book: self-service categories only
+   * (`open_psychoeducational` and the billable `skills_education`),
+   * eligibility set, not cancelled, not already enrolled, not at capacity.
+   * Used by the patient scheduling page — `sud_clinical_preauth` can never
+   * appear here.
    */
   openGroupsForPatient(patientId: string): GroupSession[] {
     if (!AdelanteEHR.isGroupEligible(patientId)) return [];
     const enrolled = new Set(AdelanteEHR.groupsForPatient(patientId).map((g) => g.id));
     return groupSessions.filter(
       (g) =>
-        g.category === "open_psychoeducational" &&
+        isSelfServiceGroupCategory(g.category) &&
         g.status !== "cancelled" &&
         !enrolled.has(g.id) &&
         AdelanteEHR.listGroupEnrollments(g.id).length < g.capacity,
@@ -13560,8 +13562,8 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Patient self-service enrollment. Open psychoeducational groups only —
-   * routed through the same `enrollInGroup` write so there is one enrollment
+   * Patient self-service enrollment. Self-service categories only — routed
+   * through the same `enrollInGroup` write so there is one enrollment
    * implementation, not a parallel patient path.
    */
   selfEnrollInGroup(input: { sessionId: string; patientId: string }): GroupSessionEnrollment {
