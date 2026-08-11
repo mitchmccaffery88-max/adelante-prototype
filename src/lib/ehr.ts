@@ -13262,7 +13262,7 @@ export const AdelanteEHR = {
     },
   ): GroupSession {
     if (!input.topic.trim()) throw new Error("Give the group a topic.");
-    if (input.capacity < 1) throw new Error("Capacity must be at least 1.");
+    _assertGroupCapacity(input.capacity);
     const row: GroupSession = {
       ...input,
       topic: input.topic.trim(),
@@ -13295,6 +13295,7 @@ export const AdelanteEHR = {
   updateGroupSession(id: string, patch: Partial<Omit<GroupSession, "id">>, actor: string) {
     const row = groupSessions.find((g) => g.id === id);
     if (!row) throw new Error("Group not found.");
+    if (patch.capacity !== undefined) _assertGroupCapacity(patch.capacity);
     Object.assign(row, patch);
     appendAudit({
       category: "clinical",
