@@ -47,6 +47,14 @@ function connected(patientId: string, type: AdvocateAuthorizationType = "hipaa_a
     authorizationType: type,
     attestedName: "Rosa Ibarra",
   });
+  // §Phase 4.1 — the two authority tiers with real preconditions must have
+  // them satisfied here, or the link is claimed but inert.
+  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "conservatorship")
+    AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+      verifiedBy: "Records Clerk",
+      courtOrderRef: "PR-2026-0001",
+    });
   return AdelanteEHR.getAdvocateLink(link.id)!;
 }
 
@@ -193,9 +201,11 @@ describe("verify queue ownership follows episode status", () => {
 });
 
 describe("advocate document access — extends Phase 4, reuses its consent gate", () => {
-  it("both tiers can upload and review; uploads land unverified in the same queue", () => {
-    for (const type of ["hipaa_authorization", "conservatorship"] as AdvocateAuthorizationType[]) {
-      const p = patientAt(type === "hipaa_authorization" ? 6 : 7);
+  // §Phase 4.1 — upload is a WRITE, so it now belongs to the authority tiers
+  // only. HIPAA-only and AR are read-only and are asserted so below.
+  it("the authority tiers can upload and review; uploads land unverified in the same queue", () => {
+    for (const type of ["ahcd", "conservatorship"] as AdvocateAuthorizationType[]) {
+      const p = patientAt(type === "ahcd" ? 6 : 7);
       const link = connected(p.id, type);
       const up = AdelanteEHR.advocateUploadDocument(link.id, {
         file: goodFile("id-card.jpg"),

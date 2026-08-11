@@ -32,6 +32,14 @@ function connected(patientId: string, type: AdvocateAuthorizationType = "hipaa_a
     authorizationType: type,
     attestedName: "Advocate",
   });
+  // §Phase 4.1 — the two authority tiers with real preconditions must have
+  // them satisfied here, or the link is claimed but inert.
+  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "conservatorship")
+    AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+      verifiedBy: "Records Clerk",
+      courtOrderRef: "PR-2026-0001",
+    });
   return AdelanteEHR.getAdvocateLink(link.id)!;
 }
 
@@ -178,6 +186,8 @@ describe("item 1 — advocate contribution review / acceptance", () => {
 // ---------------------------------------------------------------- item 2 ---
 
 describe("item 2 — eligibility-assist attestation is visible and reviewable", () => {
+  // §Phase 4.1 — eligibility_assist_write now belongs to the AR tier (and to
+  // the two authority tiers above it). AR is the natural holder of this act.
   const withWrite = (patientId: string) => connected(patientId, "dhcs_authorized_representative");
 
   it("an attestation creates a pending, reviewable record that submits nothing", () => {
@@ -337,7 +347,10 @@ describe("item 6 — consent revocation re-masks immediately (regression)", () =
     const p = freshPatient();
     sudGroupFor(p.id);
     const a = connected(p.id);
-    const b = connected(p.id, "conservatorship");
+    // Both are HIPAA-only: the consent-conditional tier is the one whose SUD
+    // visibility actually tracks the consent record. (A conservator is
+    // `authority_derived` and would NOT move with it — see Phase 4.1.)
+    const b = connected(p.id, "hipaa_authorization");
     const rec = signSudDisclosure(p.id);
     expect(labels(a.id).join("|")).toContain(SUD_TOPIC);
     expect(labels(b.id).join("|")).toContain(SUD_TOPIC);
@@ -358,7 +371,7 @@ describe("item 6 — consent revocation re-masks immediately (regression)", () =
     const p = freshPatient();
     sudGroupFor(p.id);
     const a = connected(p.id);
-    const b = connected(p.id, "conservatorship");
+    const b = connected(p.id, "hipaa_authorization");
     signSudDisclosure(p.id);
     AdelanteEHR.revokeAdvocateLink(a.id, "test", "one advocate only");
     expect(AdelanteEHR.advocateSchedule(a.id).allowed).toBe(false);
