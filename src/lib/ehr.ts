@@ -28,7 +28,7 @@ import {
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
+import { canAccess, getActingRole, getActingStaff, STAFF_ROLES } from "./roles";
 
 /**
  * §Part 2 store gate — WHO is reading. `system` is reserved for internal
