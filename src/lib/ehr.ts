@@ -8782,8 +8782,10 @@ export const AdelanteEHR = {
           id: `${g.id}_${start}`,
           start,
           durationMin: g.durationMin,
+          // Only SUD-track topics are Part 2 content; skills-education and
+          // open psychoeducational topics are shown.
           label:
-            g.category === "open_psychoeducational" || part2Ok ? g.topic : "Group session",
+            g.category !== "sud_clinical_preauth" || part2Ok ? g.topic : "Group session",
           modality: g.modality,
           ...(loc ? { locationName: loc.name } : {}),
         });
