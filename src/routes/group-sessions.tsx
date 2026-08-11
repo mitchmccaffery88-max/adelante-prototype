@@ -391,6 +391,11 @@ function GroupDetail({
   const [topicCovered, setTopicCovered] = useState("");
   const [groupProcess, setGroupProcess] = useState("");
   const [perAttendee, setPerAttendee] = useState<Record<string, string>>({});
+  // §Multi-facilitator: minutes + involvement are per-provider and edited at
+  // documentation time, never a single combined time field.
+  const [facMinutes, setFacMinutes] = useState<Record<string, string>>({});
+  const [facInvolve, setFacInvolve] = useState<Record<string, string>>({});
+  const [renderingId, setRenderingId] = useState("");
 
   const roster = useMemo(
     () =>
