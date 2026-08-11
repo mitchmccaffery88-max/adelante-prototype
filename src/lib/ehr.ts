@@ -40,6 +40,17 @@ import {
   type AdvocateSudAccessMode,
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
+  // §Phase 4.2 — AHCD activation + frontline validation checklist.
+  AHCD_CHECKLIST_ITEMS,
+  ahcdActivationReadiness,
+  ahcdDeterminationExpired,
+  ahcdPart2ScopeUnclear,
+  isAhcdDeterminationRole,
+  type AhcdActivationState,
+  type AhcdChecklistItemKey,
+  type AhcdChecklistOutcome,
+  type AhcdChecklistState,
+  type AhcdDeterminationRole,
 } from "./advocate";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
