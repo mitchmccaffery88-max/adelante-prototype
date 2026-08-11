@@ -77,7 +77,8 @@ export const RESOURCE_VERIFIER_ROLES: StaffRole[] = [
   "ecm_provider",
   "clinical_coordinator",
   "community_health_worker",
-  "admin",
+  "peer_specialist",
+  "sys_admin",
 ];
 
 /** How long a verification stands before it must be re-checked. */
