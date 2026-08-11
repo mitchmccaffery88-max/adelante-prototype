@@ -410,12 +410,22 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                     {r.def.satisfiedByScreeners && (
                       <span className="mt-1 block text-xs text-muted-foreground">
                         {r.def.satisfiedByScreeners.map((k) => {
-                          const res = AdelanteEHR.getScreenerResult(episode.patientId, k);
+                          // §Part 2 store gate — the store decides whether this
+                          // viewer may see the SCORE. Completion of the step
+                          // itself is existence-only and stays visible.
+                          const view = AdelanteEHR.viewScreenerResult(episode.patientId, k);
+                          const done = AdelanteEHR.hasScreenerResult(episode.patientId, k);
                           const name = screenerByKey(k)?.name ?? k;
+                          const label = view.restricted
+                            ? done
+                              ? "recorded — Part 2 restricted"
+                              : "not administered"
+                            : view.result
+                              ? `${view.result.score} — ${view.result.severity}`
+                              : "not administered";
                           return (
                             <span key={k} className="mr-3 inline-block">
-                              {name}:{" "}
-                              {res ? `${res.score} — ${res.severity}` : "not administered"}
+                              {name}: {label}
                             </span>
                           );
                         })}
