@@ -4696,21 +4696,73 @@ export interface GroupRecurrence {
 }
 
 /**
- * §Group sessions — PLACEHOLDER CATEGORY TAXONOMY (confirm with Christi/SMEs).
- * Only two values exist in this pass; there may well be more in reality.
+ * §Group sessions — CATEGORY TAXONOMY (DHCS-sourced content from Christi).
+ * Three buckets: two billable, one engagement-only.
  */
-export type GroupCategory = "sud_clinical_preauth" | "open_psychoeducational";
+export type GroupCategory = "sud_clinical_preauth" | "skills_education" | "open_psychoeducational";
+
+/**
+ * Billing content per category — real DHCS codes, no longer placeholders.
+ *
+ * INTERPRETATION (flagged): `selfService` is DERIVED from category here.
+ * `skills_education` is billable but behaves like an open group for
+ * enrollment (eligible patients self-book), because "is it billable" and
+ * "who may place a patient in it" are different questions. If a group ever
+ * needs billable+staff-placed or non-billable+staff-placed in a combination
+ * this table can't express, promote `selfService` to its own field on
+ * GroupSession rather than widening the taxonomy.
+ */
+export const GROUP_BILLING: Record<
+  GroupCategory,
+  {
+    billable: boolean;
+    /** HCPCS code used on the claim. Absent for non-billable categories. */
+    code?: string;
+    /** Short human label for the code. */
+    codeLabel?: string;
+    /** One-line billing status shown next to the category selector. */
+    statusLabel: string;
+    /** True when eligible patients may self-book from /schedule. */
+    selfService: boolean;
+  }
+> = {
+  sud_clinical_preauth: {
+    billable: true,
+    code: "H0005",
+    codeLabel: "SUD Group Counseling",
+    statusLabel: "Billable — H0005 SUD Group Counseling",
+    selfService: false,
+  },
+  skills_education: {
+    billable: true,
+    code: "H2014",
+    codeLabel: "Skills Training and Development, Group (per 15 min)",
+    statusLabel: "Billable — H2014 Skills Training and Development, Group (per 15 min)",
+    selfService: true,
+  },
+  open_psychoeducational: {
+    billable: false,
+    statusLabel: "Non-billable — engagement/reach only, not a clinical claim",
+    selfService: true,
+  },
+};
 
 export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: string }[] = [
   {
     key: "sud_clinical_preauth",
-    label: "SUD / clinically pre-authorized (placeholder)",
+    label: "SUD / clinically pre-authorized",
     helper:
-      "Staff enroll patients. Individualized attendee notes are billable and flow to the Claims Worklist.",
+      "Staff enroll patients. Individualized attendee notes bill as H0005 and flow to the Claims Worklist.",
+  },
+  {
+    key: "skills_education",
+    label: "Skills training & education",
+    helper:
+      "Eligible patients can self-enroll from their scheduling page. Individualized attendee notes bill as H2014.",
   },
   {
     key: "open_psychoeducational",
-    label: "Open psychoeducational (placeholder)",
+    label: "Open psychoeducational",
     helper:
       "Eligible patients can self-enroll from their scheduling page. Attendance is tracked for engagement reporting only — never billed.",
   },
@@ -4718,7 +4770,38 @@ export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: stri
 
 /** True when this category's attendee notes may create claims. */
 export function isBillableGroupCategory(category: GroupCategory): boolean {
-  return category === "sud_clinical_preauth";
+  return GROUP_BILLING[category]?.billable === true;
+}
+
+/** HCPCS code for a billable category, or undefined when non-billable. */
+export function groupBillingCode(category: GroupCategory): string | undefined {
+  return GROUP_BILLING[category]?.code;
+}
+
+/** True when eligible patients may self-book this category from /schedule. */
+export function isSelfServiceGroupCategory(category: GroupCategory): boolean {
+  return GROUP_BILLING[category]?.selfService === true;
+}
+
+/**
+ * DHCS group size: 2–12, same limit for telehealth. 12 is the hard regulatory
+ * ceiling; a county may configure a LOWER local cap, never a higher one. No
+ * county-specific cap is invented here — 12 is the default.
+ */
+export const GROUP_CAPACITY_MIN = 2;
+export const GROUP_CAPACITY_MAX = 12;
+
+/**
+ * Occurrence-level DHCS rule: an occurrence with fewer than 2 present
+ * attendees functions as an individual session in practice and is not
+ * billable as a group. Distinct from the category-level split — the
+ * occurrence still happens and is still documented normally.
+ */
+export const GROUP_MIN_BILLABLE_ATTENDEES = 2;
+
+/** Both gates together: billable category AND enough attendees present. */
+export function isOccurrenceBillable(category: GroupCategory, presentCount: number): boolean {
+  return isBillableGroupCategory(category) && presentCount >= GROUP_MIN_BILLABLE_ATTENDEES;
 }
 
 /**
