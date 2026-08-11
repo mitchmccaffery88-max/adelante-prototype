@@ -8034,9 +8034,12 @@ export const AdelanteEHR = {
     record?: PreReleaseFormRecord;
     task?: CaseTask;
     status: PreReleaseFormStatus;
+    /** Set when the capacity gate blocks this consent-dependent step. */
+    blocked?: string;
   }[] {
     const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
     const plan = reentryCarePlans.find((p) => p.episodeId === episodeId);
+    const capacity = AdelanteEHR.preReleaseCapacityState(episodeId);
     let changed = false;
     const rows = PRE_RELEASE_FORMS.map((def) => {
       const record = AdelanteEHR.getPreReleaseForm(episodeId, def.key);
@@ -8050,12 +8053,25 @@ export const AdelanteEHR = {
       if (def.satisfiedByCarePlan) {
         status = plan?.status === "completed" ? "complete" : plan ? "in_progress" : "not_started";
       }
+      if (def.satisfiedByCapacityStep) {
+        // Complete only when the branch is genuinely resolved: competent, or
+        // impaired WITH a legal-authority instrument actually in force.
+        status = capacity.decision.canProceed
+          ? "complete"
+          : capacity.determination
+            ? "in_progress"
+            : "not_started";
+      }
+      const blocked =
+        def.requiresConsentCapacity && !capacity.decision.canProceed && status !== "complete"
+          ? capacity.decision.reason
+          : undefined;
       // Keep the worklist row honest for the derived rows.
       if (task && status === "complete" && task.status !== "done") {
         AdelanteEHR.completeCaseTask(task.id);
         changed = true;
       }
-      return { def, record, task, status };
+      return { def, record, task, status, ...(blocked ? { blocked } : {}) };
     });
     if (changed) emit();
     return rows;
@@ -8083,6 +8099,16 @@ export const AdelanteEHR = {
       );
     if (def.satisfiedByCarePlan)
       throw new Error("Transition planning is captured on the Reentry Care Plan.");
+    if (def.satisfiedByCapacityStep)
+      throw new Error(
+        "Capacity & legal authority is recorded through the capacity determination step.",
+      );
+    // The real gate: an impaired individual with no legal-authority
+    // instrument on file cannot be treated as having consented themselves.
+    if (def.requiresConsentCapacity) {
+      const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+      if (!gate.canProceed) throw new Error(gate.reason);
+    }
     if (input.complete) {
       const missing = def.fields
         .filter((f) => f.required)
