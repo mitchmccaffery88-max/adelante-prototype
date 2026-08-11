@@ -38,6 +38,7 @@ import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
+import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -387,6 +388,8 @@ export function PatientHome() {
       <ConsentCard patientId={patient.id} />
       {/* §ASCMI — read-only structured consent status, adjacent to the toggles. */}
       <PatientConsentStatusCard patientId={patient.id} />
+      {/* §Phase 3 — PO two-tier disclosure; population-gated inside. */}
+      <PoDisclosureCard patientId={patient.id} />
     </div>
   );
 }
