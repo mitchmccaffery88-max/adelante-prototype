@@ -1,12 +1,12 @@
 // §Group sessions — staff-facing group care delivery.
 //
-// PLACEHOLDER CONTENT WARNING: topics, capacity numbers and any billing
-// linkage on this screen are STRUCTURE ONLY. DHCS/DMC-ODS group-size limits,
-// curriculum names and billing/CPT/H-codes are deliberately not authored here.
+// Billing codes and the 2–12 roster range are real DHCS content. Curriculum /
+// topic names are still placeholders pending clinical content sign-off.
 //
-// Enrollment paths now split by category (PLACEHOLDER taxonomy):
-//   sud_clinical_preauth   — staff-initiated only (this page), billable.
-//   open_psychoeducational — eligible patients self-book from /schedule.
+// Enrollment paths split by category:
+//   sud_clinical_preauth   — staff-initiated only (this page), billable H0005.
+//   skills_education       — eligible patients self-book from /schedule, H2014.
+//   open_psychoeducational — eligible patients self-book, never billed.
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
 import { createFileRoute } from "@tanstack/react-router";
@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import {
   AdelanteEHR,
   formatLocationAddress,
+  GROUP_BILLING,
+  GROUP_CAPACITY_MAX,
+  GROUP_CAPACITY_MIN,
   GROUP_CATEGORIES,
   useEhr,
   type GroupAttendanceStatus,
@@ -91,8 +94,9 @@ function GroupSessionsPage() {
           <Users className="h-5 w-5 text-teal" /> Group sessions
         </h1>
         <p className="text-sm text-muted-foreground">
-          Group counseling schedule, standing roster, attendance and documentation. Topics and
-          capacity are placeholders pending clinical content sign-off.
+          Group counseling schedule, standing roster, attendance and documentation. Topic and
+          curriculum names are placeholders pending clinical content sign-off; billing codes and
+          the 2–12 roster range are DHCS content.
         </p>
       </header>
 
