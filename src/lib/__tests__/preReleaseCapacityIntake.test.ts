@@ -88,11 +88,10 @@ describe("capacity step is early and required", () => {
     const row = AdelanteEHR.preReleaseChecklist(episode.id).find((r) => r.def.key === "bh_sud_loc")!;
     expect(row.blocked).toMatch(/Capacity has not been determined/);
     expect(() =>
-      AdelanteEHR.savePreReleaseForm({
+      AdelanteEHR.recordPreReleaseScreener({
         episodeId: episode.id,
-        formKey: "bh_sud_loc",
-        values: { sudScreenPositive: true },
-        complete: false,
+        screenerKey: "dast-10",
+        answers: Array(10).fill(0),
         attribution: attribution(),
       }),
     ).toThrow(/Capacity has not been determined/);
@@ -139,14 +138,13 @@ describe("competent branch", () => {
     const rows = AdelanteEHR.preReleaseChecklist(episode.id);
     expect(rows[0].status).toBe("complete");
     expect(rows.find((r) => r.def.key === "bh_sud_loc")!.blocked).toBeUndefined();
-    const rec = AdelanteEHR.savePreReleaseForm({
+    const rec = AdelanteEHR.recordPreReleaseScreener({
       episodeId: episode.id,
-      formKey: "bh_sud_loc",
-      values: { sudScreenPositive: true },
-      complete: false,
+      screenerKey: "dast-10",
+      answers: Array(10).fill(0),
       attribution: attribution(),
     });
-    expect(rec.values["sudScreenPositive"]).toBe(true);
+    expect(rec.key).toBe("dast-10");
   });
 });
 
@@ -179,11 +177,10 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
       expect(rows.find((r) => r.def.key === key)!.blocked).toMatch(/no AHCD or conservatorship/);
     }
     expect(() =>
-      AdelanteEHR.savePreReleaseForm({
+      AdelanteEHR.recordPreReleaseScreener({
         episodeId: episode.id,
-        formKey: "bh_sud_loc",
-        values: { sudScreenPositive: true },
-        complete: false,
+        screenerKey: "dast-10",
+        answers: Array(10).fill(0),
         attribution: attribution(),
       }),
     ).toThrow(/no AHCD or conservatorship/);
@@ -252,11 +249,10 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
     // Claimed but dormant — a directive on file is not authority.
     expect(AdelanteEHR.preReleaseCapacityState(episode.id).decision.canProceed).toBe(false);
     expect(() =>
-      AdelanteEHR.savePreReleaseForm({
+      AdelanteEHR.recordPreReleaseScreener({
         episodeId: episode.id,
-        formKey: "bh_sud_loc",
-        values: {},
-        complete: false,
+        screenerKey: "dast-10",
+        answers: Array(10).fill(0),
         attribution: attribution(),
       }),
     ).toThrow(/not in force yet|validation checklist/);
@@ -271,14 +267,13 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
     expect(rows[0].status).toBe("complete");
     expect(rows.find((r) => r.def.key === "bh_sud_loc")!.blocked).toBeUndefined();
     expect(
-      AdelanteEHR.savePreReleaseForm({
+      AdelanteEHR.recordPreReleaseScreener({
         episodeId: episode.id,
-        formKey: "bh_sud_loc",
-        values: { sudScreenPositive: true },
-        complete: false,
+        screenerKey: "dast-10",
+        answers: Array(10).fill(0),
         attribution: attribution(),
-      }).status,
-    ).toBe("in_progress");
+      }).key,
+    ).toBe("dast-10");
   });
 
   it("re-closes the gate when the advocate connection is revoked", () => {
