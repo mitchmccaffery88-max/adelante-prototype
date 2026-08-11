@@ -10335,6 +10335,94 @@ export const AdelanteEHR = {
     };
   },
 
+  /**
+   * §Adelante Journey Phase 5 — self-help PROGRESS for an advocate.
+   *
+   * The read floor: available at `hipaa_only` and above, because completion
+   * counts are participation data, not clinical documentation. What it
+   * deliberately does NOT return, at any tier: the patient's reflection
+   * answers, worksheet text, saved toolkit LABELS (patient-authored free text
+   * that can carry anything), notes, or diagnoses. The DTO below is the whole
+   * surface — widening it takes a deliberate edit.
+   *
+   * Part 2: a lesson flagged `part2Sensitive` has its TITLE withheld unless
+   * the existing Part 2 gate is lifted for this link — the same rule
+   * `advocateSchedule` applies to SUD group topics. The row still counts, so
+   * the totals stay honest.
+   */
+  advocateLibraryProgress(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    part2Disclosed: boolean;
+    lessonsCompleted: number;
+    lessonsTotal: number;
+    exercisesCompleted: number;
+    exercisesTotal: number;
+    completed: { kind: "lesson" | "exercise"; id: string; title: string; restricted: boolean }[];
+  } {
+    const gate = _advocateGate(linkId, "library_progress_view", "self_help_progress");
+    if (!gate.ok)
+      return {
+        allowed: false,
+        reason: gate.reason,
+        part2Disclosed: false,
+        lessonsCompleted: 0,
+        lessonsTotal: 0,
+        exercisesCompleted: 0,
+        exercisesTotal: 0,
+        completed: [],
+      };
+    const gates = _advocatePart2Gates(gate.link);
+    const part2Ok = gates.unmasked;
+    const pid = gate.link.patientId;
+    const lessonIds = AdelanteEHR.completedLibraryItems(pid);
+    const exerciseIds = AdelanteEHR.completedExercises(pid);
+    const completed: {
+      kind: "lesson" | "exercise";
+      id: string;
+      title: string;
+      restricted: boolean;
+    }[] = [];
+    for (const id of lessonIds) {
+      const item = getLibraryItem(id);
+      if (!item) continue;
+      const restricted = Boolean(item.part2Sensitive) && !part2Ok;
+      completed.push({
+        kind: "lesson",
+        id,
+        title: restricted ? "Protected lesson" : item.title,
+        restricted,
+      });
+    }
+    for (const id of exerciseIds) {
+      const ex = getExercise(id);
+      if (!ex) continue;
+      const restricted = Boolean(ex.part2Sensitive) && !part2Ok;
+      completed.push({
+        kind: "exercise",
+        id,
+        title: restricted ? "Protected exercise" : ex.title,
+        restricted,
+      });
+    }
+    _advocateAudit(gate.link, "advocate_self_help_progress_viewed", "self_help_progress", {
+      lessonsCompleted: lessonIds.length,
+      exercisesCompleted: exerciseIds.length,
+      restrictedCount: completed.filter((c) => c.restricted).length,
+      part2Disclosed: part2Ok,
+    });
+    return {
+      allowed: true,
+      reason: gate.reason,
+      part2Disclosed: part2Ok,
+      lessonsCompleted: lessonIds.length,
+      lessonsTotal: LIBRARY_ITEMS.length,
+      exercisesCompleted: exerciseIds.length,
+      exercisesTotal: EXERCISES.length,
+      completed,
+    };
+  },
+
   // ----- §Phase 4 expansion — advocate as their own patient ----------------
   //
   // ONE identity, TWO records. The advocate keeps a single sign-in; opening
