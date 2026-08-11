@@ -8,6 +8,11 @@ import { describe, it, expect } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { resolvePopulation } from "@/lib/population";
 import {
+  engagementRecords,
+  engagementSummary,
+  getEngagement,
+} from "@/lib/engagement";
+import {
   EXERCISES,
   LIBRARY_CATEGORIES,
   LIBRARY_ITEMS,
@@ -181,6 +186,49 @@ describe("population gating — Phase 2 reused, not reinvented", () => {
 });
 
 describe("advocate visibility — Phase 4 tiers reused", () => {
+  it("engagement data joins back to the clinical record by patient id", () => {
+    const a = newPatient({ firstName: "Ana" });
+    const b = newPatient({ firstName: "Beto" });
+    AdelanteEHR.completeLibraryItem(a, "ss-daily-rhythm");
+    AdelanteEHR.completeLibraryItem(a, "ss-calming-my-mind");
+    AdelanteEHR.completeExercise(b, "box-breathing");
+
+    // Population-health style query: cohort of clinical records LEFT JOINed
+    // to engagement rows on patientId — a real join, not a black box.
+    const cohort = [a, b].map((id) => AdelanteEHR.getPatient(id)!);
+    const byId = new Map(engagementRecords(cohort.map((p) => p.id)).map((r) => [r.patientId, r]));
+    const joined = cohort.map((p) => ({
+      patientId: p.id,
+      name: p.firstName,
+      lessons: byId.get(p.id)?.completedLibraryItems.length ?? 0,
+      exercises: byId.get(p.id)?.completedExercises.length ?? 0,
+    }));
+    expect(joined).toEqual([
+      { patientId: a, name: "Ana", lessons: 2, exercises: 0 },
+      { patientId: b, name: "Beto", lessons: 0, exercises: 1 },
+    ]);
+    expect(engagementSummary(a).lessonsCompleted).toBe(2);
+    expect(engagementSummary(a).lastActivityAt).toBeTruthy();
+  });
+
+  it("the clinical record carries none of the three engagement fields", () => {
+    const pid = newPatient();
+    AdelanteEHR.completeLibraryItem(pid, "ss-daily-rhythm");
+    AdelanteEHR.completeExercise(pid, "box-breathing", { saveToolkit: true });
+    const patient = AdelanteEHR.getPatient(pid)!;
+    for (const field of [
+      "completedLibraryItems",
+      "completedExercises",
+      "savedToolkitItems",
+    ] as const) {
+      expect(patient).not.toHaveProperty(field);
+    }
+    // Nothing leaks through a serialized copy of the record either.
+    expect(JSON.stringify(patient)).not.toContain("ss-daily-rhythm");
+    // …while the engagement store does hold it.
+    expect(getEngagement(pid)?.savedToolkitItems).toHaveLength(2);
+  });
+
   it("a HIPAA-only advocate sees progress counts", () => {
     const pid = newPatient();
     const link = hipaaOnlyLink(pid);
