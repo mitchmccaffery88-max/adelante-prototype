@@ -213,12 +213,13 @@ describe("capacity is a real precondition on the self-service path", () => {
   });
 
   it("blocks the staff path at capacity too, and audits the refusal", () => {
-    const roster = [patientAt(15), patientAt(16)];
+    const roster = [patientAt(15), patientAt(16), patientAt(19)];
     for (const p of roster) eligible(p.id);
-    const g = makeGroupWithCapacity("sud_clinical_preauth", 1);
+    const g = makeGroupWithCapacity("sud_clinical_preauth", 2);
     AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: roster[0]!.id, enrolledBy: "test" });
+    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: roster[1]!.id, enrolledBy: "test" });
     expect(() =>
-      AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: roster[1]!.id, enrolledBy: "test" }),
+      AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: roster[2]!.id, enrolledBy: "test" }),
     ).toThrow(/full/);
     const blocked = AdelanteEHR.listAuditEvents({ category: "clinical" }).filter(
       (e) =>
@@ -232,7 +233,7 @@ describe("capacity is a real precondition on the self-service path", () => {
   it("re-enrolling someone already on a full roster is a no-op, not a capacity error", () => {
     const p = patientAt(17);
     eligible(p.id);
-    const g = makeGroupWithCapacity("open_psychoeducational", 1);
+    const g = makeGroupWithCapacity("open_psychoeducational", 2);
     const first = AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId: p.id });
     const second = AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId: p.id });
     expect(second.id).toBe(first.id);
