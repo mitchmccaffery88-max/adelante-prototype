@@ -5130,6 +5130,52 @@ export interface GroupAttendeeNoteRef {
   category?: GroupCategory;
 }
 
+/**
+ * Default facilitator list for a session: primary first, then co-facilitators
+ * (new list field, falling back to the retired single slot). Minutes default
+ * to the scheduled session length and are meant to be EDITED per provider —
+ * that editability is the whole point of the model.
+ */
+export function defaultGroupFacilitators(session: GroupSession): GroupFacilitatorMinutes[] {
+  const cos = session.coFacilitatorIds?.length
+    ? session.coFacilitatorIds
+    : session.coFacilitatorId
+      ? [session.coFacilitatorId]
+      : [];
+  return [
+    { staffId: session.facilitatorId, role: "primary" as const, minutes: session.durationMin, involvement: "" },
+    ...cos
+      .filter((id) => id && id !== session.facilitatorId)
+      .map((id) => ({ staffId: id, role: "co" as const, minutes: session.durationMin, involvement: "" })),
+  ];
+}
+
+/** Sensible default rendering provider: the primary facilitator. */
+export function defaultRenderingProviderId(facilitators: GroupFacilitatorMinutes[]): string {
+  return (facilitators.find((f) => f.role === "primary") ?? facilitators[0])?.staffId ?? "";
+}
+
+/** Normalize + validate a documented facilitator list. Throws on bad input. */
+export function normalizeGroupFacilitators(
+  input: GroupFacilitatorMinutes[] | undefined,
+  session: GroupSession,
+): GroupFacilitatorMinutes[] {
+  const list = (input?.length ? input : defaultGroupFacilitators(session)).map((f) => ({
+    staffId: f.staffId,
+    role: f.role,
+    minutes: Math.round(Number(f.minutes) || 0),
+    involvement: (f.involvement ?? "").trim(),
+  }));
+  if (list.length === 0) throw new Error("At least one facilitator is required.");
+  if (new Set(list.map((f) => f.staffId)).size !== list.length)
+    throw new Error("Each facilitator can only be listed once.");
+  if (list.some((f) => f.minutes <= 0))
+    throw new Error("Every facilitator needs their own direct-care minutes.");
+  if (list.filter((f) => f.role === "primary").length !== 1)
+    throw new Error("Exactly one facilitator must be marked primary.");
+  return list;
+}
+
 
 const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
