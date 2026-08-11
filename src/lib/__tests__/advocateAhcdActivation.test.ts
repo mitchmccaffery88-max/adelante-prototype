@@ -171,19 +171,22 @@ describe("AHCD activation — temporary determinations expire", () => {
 
 describe("AHCD — Part 2 scope gates SUD independently of general access", () => {
   function signSud(patientId: string) {
-    AdelanteEHR.recordConsent({
+    AdelanteEHR.createConsentRecord({
       patientId,
-      category: ADVOCATE_SUD_DISCLOSURE_CATEGORY,
-      granted: true,
-      signedBy: "patient",
-      method: "electronic",
+      formType: "NonAB133",
+      source: "placeholder — pending Christi's DHCS-sourced language",
+      signedByName: "Test Patient",
+      attested: true,
+      effectiveDate: new Date(Date.now() - 86400000).toISOString().slice(0, 10),
+      sections: [{ category: ADVOCATE_SUD_DISCLOSURE_CATEGORY, authorized: true }],
+      capturedBy: { staffName: "Test", role: "therapist" },
     });
   }
 
   it("a clearly-scoped AHCD gets Part 2 from its own authority", () => {
     const { linkId } = ahcdLink();
     activateAhcdForTest(linkId);
-    expect(AdelanteEHR.advocateSudUnmasked(linkId)).toBe(true);
+    expect(AdelanteEHR.advocatePart2Access(linkId).unmasked).toBe(true);
   });
 
   it("an AHCD marked 'Part 2 unclear' still needs the separate ASCMI consent", () => {
@@ -192,8 +195,8 @@ describe("AHCD — Part 2 scope gates SUD independently of general access", () =
     // General clinical access is active…
     expect(AdelanteEHR.advocateAccess(linkId).allowed).toBe(true);
     // …but Part 2 is not, until the consent exists.
-    expect(AdelanteEHR.advocateSudUnmasked(linkId)).toBe(false);
+    expect(AdelanteEHR.advocatePart2Access(linkId).unmasked).toBe(false);
     signSud(patientId);
-    expect(AdelanteEHR.advocateSudUnmasked(linkId)).toBe(true);
+    expect(AdelanteEHR.advocatePart2Access(linkId).unmasked).toBe(true);
   });
 });
