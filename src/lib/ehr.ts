@@ -14104,6 +14104,7 @@ export const AdelanteEHR = {
           billingEligible: occurrenceBillable,
           billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
           modality,
+          category: g.category,
         },
       });
       if (saved) {
