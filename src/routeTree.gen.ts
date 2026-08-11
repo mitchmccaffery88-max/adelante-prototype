@@ -42,6 +42,7 @@ import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
+import { Route as LibraryRouteImport } from './routes/library'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
@@ -226,6 +227,11 @@ const IntakeRoute = IntakeRouteImport.update({
   path: '/intake',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LibraryRoute = LibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessageQueueRoute = MessageQueueRouteImport.update({
   id: '/message-queue',
   path: '/message-queue',
@@ -352,6 +358,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -405,6 +412,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -458,6 +466,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -513,6 +522,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/library'
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
@@ -566,6 +576,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/library'
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
@@ -618,6 +629,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/library'
     | '/message-queue'
     | '/notes-queue'
     | '/patient'
@@ -672,6 +684,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
+  LibraryRoute: typeof LibraryRoute
   MessageQueueRoute: typeof MessageQueueRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
@@ -919,6 +932,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IntakeRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/library': {
+      id: '/library'
+      path: '/library'
+      fullPath: '/library'
+      preLoaderRoute: typeof LibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/message-queue': {
       id: '/message-queue'
       path: '/message-queue'
@@ -1102,6 +1122,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
+  LibraryRoute: LibraryRoute,
   MessageQueueRoute: MessageQueueRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
@@ -1118,13 +1139,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
