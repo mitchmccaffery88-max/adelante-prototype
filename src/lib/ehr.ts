@@ -8883,6 +8883,10 @@ export const AdelanteEHR = {
     found.authorizationConfirmedAt = new Date().toISOString();
     found.authorizationAttestedName = attested;
     found.claimedAt = found.authorizationConfirmedAt;
+    // §Phase 4.2 (6.5) — an AHCD claim opens the frontline validation
+    // checklist as REAL worklist rows, reusing the pre-release CaseTask
+    // pattern rather than inventing a second task mechanism.
+    if (found.authorizationType === "ahcd") _openAhcdValidationTasks(found);
     appendAudit({
       category: "advocate",
       action: "advocate_connection_claimed",
