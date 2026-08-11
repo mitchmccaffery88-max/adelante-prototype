@@ -1,12 +1,12 @@
 // §Group sessions — staff-facing group care delivery.
 //
-// PLACEHOLDER CONTENT WARNING: topics, capacity numbers and any billing
-// linkage on this screen are STRUCTURE ONLY. DHCS/DMC-ODS group-size limits,
-// curriculum names and billing/CPT/H-codes are deliberately not authored here.
+// Billing codes and the 2–12 roster range are real DHCS content. Curriculum /
+// topic names are still placeholders pending clinical content sign-off.
 //
-// Enrollment paths now split by category (PLACEHOLDER taxonomy):
-//   sud_clinical_preauth   — staff-initiated only (this page), billable.
-//   open_psychoeducational — eligible patients self-book from /schedule.
+// Enrollment paths split by category:
+//   sud_clinical_preauth   — staff-initiated only (this page), billable H0005.
+//   skills_education       — eligible patients self-book from /schedule, H2014.
+//   open_psychoeducational — eligible patients self-book, never billed.
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
 import { createFileRoute } from "@tanstack/react-router";
@@ -15,6 +15,9 @@ import { toast } from "sonner";
 import {
   AdelanteEHR,
   formatLocationAddress,
+  GROUP_BILLING,
+  GROUP_CAPACITY_MAX,
+  GROUP_CAPACITY_MIN,
   GROUP_CATEGORIES,
   useEhr,
   type GroupAttendanceStatus,
@@ -91,8 +94,9 @@ function GroupSessionsPage() {
           <Users className="h-5 w-5 text-teal" /> Group sessions
         </h1>
         <p className="text-sm text-muted-foreground">
-          Group counseling schedule, standing roster, attendance and documentation. Topics and
-          capacity are placeholders pending clinical content sign-off.
+          Group counseling schedule, standing roster, attendance and documentation. Topic and
+          curriculum names are placeholders pending clinical content sign-off; billing codes and
+          the 2–12 roster range are DHCS content.
         </p>
       </header>
 
@@ -137,6 +141,38 @@ function GroupSessionsPage() {
 }
 
 function CreateGroupCard({ actor }: { actor: string }) {
+  return <CreateGroupCardInner actor={actor} />;
+}
+
+/**
+ * Billing status at the point of choice. Staff should never have to reach the
+ * claim-time block to learn a group is non-billable — this renders the moment
+ * a category is selected. The hard enforcement stays in
+ * `upsertClaimFromGroupAttendee`; this is prevention, not the gate.
+ */
+export function GroupBillingStatus({ category }: { category: GroupCategory }) {
+  const info = GROUP_BILLING[category];
+  return (
+    <div
+      data-testid="group-billing-status"
+      data-billable={info.billable ? "true" : "false"}
+      className={
+        info.billable
+          ? "rounded-md border border-teal/40 bg-teal/10 px-2 py-1.5 text-[11px] text-navy"
+          : "rounded-md border border-amber-500/40 bg-amber-500/10 px-2 py-1.5 text-[11px] text-navy"
+      }
+    >
+      {info.statusLabel}
+      <span className="block text-muted-foreground">
+        {info.billable
+          ? `An occurrence with fewer than 2 present attendees is not billable as a group.`
+          : `Attendance is engagement/reach data only — no claim is ever created.`}
+      </span>
+    </div>
+  );
+}
+
+function CreateGroupCardInner({ actor }: { actor: string }) {
   const [open, setOpen] = useState(false);
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
@@ -185,7 +221,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Category (PLACEHOLDER — confirm the real list with Christi)</Label>
+          <Label className="text-xs">Category</Label>
           <Select value={category} onValueChange={(v) => setCategory(v as GroupCategory)}>
             <SelectTrigger>
               <SelectValue />
@@ -198,18 +234,26 @@ function CreateGroupCard({ actor }: { actor: string }) {
               ))}
             </SelectContent>
           </Select>
+          <GroupBillingStatus category={category} />
           <p className="text-[11px] text-muted-foreground">
             {GROUP_CATEGORIES.find((c) => c.key === category)?.helper}
           </p>
         </div>
         <div className="space-y-1.5">
-          <Label className="text-xs">Capacity (placeholder — no DHCS limit encoded)</Label>
+          <Label className="text-xs">
+            Capacity ({GROUP_CAPACITY_MIN}–{GROUP_CAPACITY_MAX}, DHCS limit)
+          </Label>
           <Input
             type="number"
-            min={1}
+            min={GROUP_CAPACITY_MIN}
+            max={GROUP_CAPACITY_MAX}
             value={capacity}
             onChange={(e) => setCapacity(e.target.value)}
           />
+          <p className="text-[11px] text-muted-foreground">
+            {GROUP_CAPACITY_MAX} is the regulatory maximum (same for telehealth). A lower local cap
+            is allowed; a higher one is not.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Session length (minutes)</Label>
@@ -270,7 +314,7 @@ function CreateGroupCard({ actor }: { actor: string }) {
                 locationId: locationId || undefined,
                 start: startIso,
                 durationMin: Number(durationMin) || 60,
-                capacity: Number(capacity) || 1,
+                capacity: Number(capacity),
                 recurrence: weekly
                   ? { kind: "weekly", daysOfWeek: [new Date(startIso).getDay()] }
                   : { kind: "none" },
@@ -336,15 +380,19 @@ function GroupDetail({
       <Card className="p-4 space-y-2">
         <h2 className="font-display text-navy">{group.topic}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={group.category === "open_psychoeducational" ? "secondary" : "outline"}>
+          <Badge variant={GROUP_BILLING[group.category].billable ? "outline" : "secondary"}>
             {GROUP_CATEGORIES.find((c) => c.key === group.category)?.label}
           </Badge>
           <span className="text-[11px] text-muted-foreground">
-            {group.category === "open_psychoeducational"
-              ? "Eligible patients can self-book. Attendance is engagement data — never billed."
-              : "Staff enrollment only. Attendee notes flow to the Claims Worklist."}
+            {GROUP_BILLING[group.category].selfService
+              ? "Eligible patients can self-book."
+              : "Staff enrollment only."}{" "}
+            {GROUP_BILLING[group.category].billable
+              ? "Attendee notes flow to the Claims Worklist."
+              : "Attendance is engagement data — never billed."}
           </span>
         </div>
+        <GroupBillingStatus category={group.category} />
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}

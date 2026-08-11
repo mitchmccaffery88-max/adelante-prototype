@@ -4696,21 +4696,73 @@ export interface GroupRecurrence {
 }
 
 /**
- * §Group sessions — PLACEHOLDER CATEGORY TAXONOMY (confirm with Christi/SMEs).
- * Only two values exist in this pass; there may well be more in reality.
+ * §Group sessions — CATEGORY TAXONOMY (DHCS-sourced content from Christi).
+ * Three buckets: two billable, one engagement-only.
  */
-export type GroupCategory = "sud_clinical_preauth" | "open_psychoeducational";
+export type GroupCategory = "sud_clinical_preauth" | "skills_education" | "open_psychoeducational";
+
+/**
+ * Billing content per category — real DHCS codes, no longer placeholders.
+ *
+ * INTERPRETATION (flagged): `selfService` is DERIVED from category here.
+ * `skills_education` is billable but behaves like an open group for
+ * enrollment (eligible patients self-book), because "is it billable" and
+ * "who may place a patient in it" are different questions. If a group ever
+ * needs billable+staff-placed or non-billable+staff-placed in a combination
+ * this table can't express, promote `selfService` to its own field on
+ * GroupSession rather than widening the taxonomy.
+ */
+export const GROUP_BILLING: Record<
+  GroupCategory,
+  {
+    billable: boolean;
+    /** HCPCS code used on the claim. Absent for non-billable categories. */
+    code?: string;
+    /** Short human label for the code. */
+    codeLabel?: string;
+    /** One-line billing status shown next to the category selector. */
+    statusLabel: string;
+    /** True when eligible patients may self-book from /schedule. */
+    selfService: boolean;
+  }
+> = {
+  sud_clinical_preauth: {
+    billable: true,
+    code: "H0005",
+    codeLabel: "SUD Group Counseling",
+    statusLabel: "Billable — H0005 SUD Group Counseling",
+    selfService: false,
+  },
+  skills_education: {
+    billable: true,
+    code: "H2014",
+    codeLabel: "Skills Training and Development, Group (per 15 min)",
+    statusLabel: "Billable — H2014 Skills Training and Development, Group (per 15 min)",
+    selfService: true,
+  },
+  open_psychoeducational: {
+    billable: false,
+    statusLabel: "Non-billable — engagement/reach only, not a clinical claim",
+    selfService: true,
+  },
+};
 
 export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: string }[] = [
   {
     key: "sud_clinical_preauth",
-    label: "SUD / clinically pre-authorized (placeholder)",
+    label: "SUD / clinically pre-authorized",
     helper:
-      "Staff enroll patients. Individualized attendee notes are billable and flow to the Claims Worklist.",
+      "Staff enroll patients. Individualized attendee notes bill as H0005 and flow to the Claims Worklist.",
+  },
+  {
+    key: "skills_education",
+    label: "Skills training & education",
+    helper:
+      "Eligible patients can self-enroll from their scheduling page. Individualized attendee notes bill as H2014.",
   },
   {
     key: "open_psychoeducational",
-    label: "Open psychoeducational (placeholder)",
+    label: "Open psychoeducational",
     helper:
       "Eligible patients can self-enroll from their scheduling page. Attendance is tracked for engagement reporting only — never billed.",
   },
@@ -4718,7 +4770,51 @@ export const GROUP_CATEGORIES: { key: GroupCategory; label: string; helper: stri
 
 /** True when this category's attendee notes may create claims. */
 export function isBillableGroupCategory(category: GroupCategory): boolean {
-  return category === "sud_clinical_preauth";
+  return GROUP_BILLING[category]?.billable === true;
+}
+
+/** HCPCS code for a billable category, or undefined when non-billable. */
+export function groupBillingCode(category: GroupCategory): string | undefined {
+  return GROUP_BILLING[category]?.code;
+}
+
+/** True when eligible patients may self-book this category from /schedule. */
+export function isSelfServiceGroupCategory(category: GroupCategory): boolean {
+  return GROUP_BILLING[category]?.selfService === true;
+}
+
+/**
+ * DHCS group size: 2–12, same limit for telehealth. 12 is the hard regulatory
+ * ceiling; a county may configure a LOWER local cap, never a higher one. No
+ * county-specific cap is invented here — 12 is the default.
+ */
+export const GROUP_CAPACITY_MIN = 2;
+export const GROUP_CAPACITY_MAX = 12;
+
+/**
+ * Occurrence-level DHCS rule: an occurrence with fewer than 2 present
+ * attendees functions as an individual session in practice and is not
+ * billable as a group. Distinct from the category-level split — the
+ * occurrence still happens and is still documented normally.
+ */
+export const GROUP_MIN_BILLABLE_ATTENDEES = 2;
+
+/** Both gates together: billable category AND enough attendees present. */
+export function isOccurrenceBillable(category: GroupCategory, presentCount: number): boolean {
+  return isBillableGroupCategory(category) && presentCount >= GROUP_MIN_BILLABLE_ATTENDEES;
+}
+
+/**
+ * Single place the regulatory roster range is enforced, so no write path
+ * (create or edit) can configure a group above the DHCS ceiling of 12.
+ */
+function _assertGroupCapacity(capacity: number): void {
+  if (!Number.isFinite(capacity) || capacity < GROUP_CAPACITY_MIN)
+    throw new Error(`Capacity must be at least ${GROUP_CAPACITY_MIN} (DHCS group minimum).`);
+  if (capacity > GROUP_CAPACITY_MAX)
+    throw new Error(
+      `Capacity cannot exceed ${GROUP_CAPACITY_MAX} — the DHCS regulatory maximum. A lower local cap is allowed.`,
+    );
 }
 
 /**
@@ -4777,20 +4873,19 @@ export interface GroupSession {
   modality: "video" | "phone" | "in_person";
   locationId?: string;
   /**
-   * PLACEHOLDER TAXONOMY — exactly two categories, both provisional. Christi /
-   * SMEs must confirm whether more categories exist and whether
-   * "pre-authorization" here (internal clinical eligibility + placement
-   * approval) is the right reading, or whether a payer-facing prior-auth
-   * process is meant. This pass assumes the INTERNAL reading only.
+   * Three categories (DHCS content via Christi). "Pre-authorization" is still
+   * read as INTERNAL clinical eligibility/placement approval, not payer-facing
+   * prior auth.
    *
-   *   sud_clinical_preauth   — staff-only enrollment, billable, claims flow.
+   *   sud_clinical_preauth   — staff-only enrollment, billable H0005.
+   *   skills_education       — patient self-service, billable H2014.
    *   open_psychoeducational — patient self-service, NON-billing engagement.
    */
   category: GroupCategory;
   /** ISO datetime of the first occurrence. */
   start: string;
   durationMin: number;
-  /** PLACEHOLDER: not a DHCS-sanctioned group-size limit. */
+  /** Roster cap. DHCS allows 2–12; configurable below 12, never above. */
   capacity: number;
   recurrence: GroupRecurrence;
   status: GroupSessionStatus;
@@ -4864,18 +4959,22 @@ export interface GroupOccurrenceRecord {
 /**
  * Back-reference stamped onto each individualized attendee note.
  *
- * BILLING PLACEHOLDER: `billingCodePlaceholder` is intentionally empty. No
- * CPT/H-code is invented anywhere in this codebase; the Claims Worklist reads
- * charges from `ehr-ext` claims, and a group attendee claim is created from
- * this reference (see `upsertClaimFromGroupAttendee` in ehr-ext.ts).
+ * `billingCode` carries the real HCPCS code (H0005 / H2014) for billable
+ * occurrences. The Claims Worklist reads charges from `ehr-ext` claims, and a
+ * group attendee claim is created from this reference (see
+ * `upsertClaimFromGroupAttendee` in ehr-ext.ts).
  */
 export interface GroupAttendeeNoteRef {
   sessionId: string;
   occurrenceStart: string;
   facilitatorId: string;
-  /** Individualized attendee notes are the billable unit in DMC-ODS. */
+  /**
+   * Individualized attendee notes are the billable unit in DMC-ODS. False for
+   * a non-billable category OR an occurrence with fewer than 2 present.
+   */
   billingEligible: boolean;
-  billingCodePlaceholder?: string;
+  /** HCPCS code when billable; absent otherwise. */
+  billingCode?: string;
 }
 
 const groupSessions: GroupSession[] = [];
@@ -8683,8 +8782,10 @@ export const AdelanteEHR = {
           id: `${g.id}_${start}`,
           start,
           durationMin: g.durationMin,
+          // Only SUD-track topics are Part 2 content; skills-education and
+          // open psychoeducational topics are shown.
           label:
-            g.category === "open_psychoeducational" || part2Ok ? g.topic : "Group session",
+            g.category !== "sud_clinical_preauth" || part2Ok ? g.topic : "Group session",
           modality: g.modality,
           ...(loc ? { locationName: loc.name } : {}),
         });
@@ -13176,7 +13277,7 @@ export const AdelanteEHR = {
     },
   ): GroupSession {
     if (!input.topic.trim()) throw new Error("Give the group a topic.");
-    if (input.capacity < 1) throw new Error("Capacity must be at least 1.");
+    _assertGroupCapacity(input.capacity);
     const row: GroupSession = {
       ...input,
       topic: input.topic.trim(),
@@ -13209,6 +13310,7 @@ export const AdelanteEHR = {
   updateGroupSession(id: string, patch: Partial<Omit<GroupSession, "id">>, actor: string) {
     const row = groupSessions.find((g) => g.id === id);
     if (!row) throw new Error("Group not found.");
+    if (patch.capacity !== undefined) _assertGroupCapacity(patch.capacity);
     Object.assign(row, patch);
     appendAudit({
       category: "clinical",
@@ -13422,7 +13524,7 @@ export const AdelanteEHR = {
         "Group eligibility has not been set for this patient. A therapist, PMHNP or case manager must set it before any enrollment.",
       );
     if (initiator.kind === "patient") {
-      if (group.category !== "open_psychoeducational")
+      if (!isSelfServiceGroupCategory(group.category))
         block("staff_enrolled_only", "This group is staff-enrolled only.");
       if (initiator.actorId !== patientId)
         block("not_self", "You can only book groups for yourself.");
@@ -13443,16 +13545,18 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Open groups this patient may self-book: open category only, eligibility
-   * set, not cancelled, not already enrolled, not at capacity. Used by the
-   * patient scheduling page — `sud_clinical_preauth` can never appear here.
+   * Groups this patient may self-book: self-service categories only
+   * (`open_psychoeducational` and the billable `skills_education`),
+   * eligibility set, not cancelled, not already enrolled, not at capacity.
+   * Used by the patient scheduling page — `sud_clinical_preauth` can never
+   * appear here.
    */
   openGroupsForPatient(patientId: string): GroupSession[] {
     if (!AdelanteEHR.isGroupEligible(patientId)) return [];
     const enrolled = new Set(AdelanteEHR.groupsForPatient(patientId).map((g) => g.id));
     return groupSessions.filter(
       (g) =>
-        g.category === "open_psychoeducational" &&
+        isSelfServiceGroupCategory(g.category) &&
         g.status !== "cancelled" &&
         !enrolled.has(g.id) &&
         AdelanteEHR.listGroupEnrollments(g.id).length < g.capacity,
@@ -13460,8 +13564,8 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Patient self-service enrollment. Open psychoeducational groups only —
-   * routed through the same `enrollInGroup` write so there is one enrollment
+   * Patient self-service enrollment. Self-service categories only — routed
+   * through the same `enrollInGroup` write so there is one enrollment
    * implementation, not a parallel patient path.
    */
   selfEnrollInGroup(input: { sessionId: string; patientId: string }): GroupSessionEnrollment {
@@ -13730,6 +13834,10 @@ export const AdelanteEHR = {
     const row = _ensureGroupOccurrence(input.sessionId, input.occurrenceStart);
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
+    // Occurrence-level DHCS rule: fewer than 2 present = individual session in
+    // practice, so no group claim. The occurrence still happens and is still
+    // documented — only the billing flag changes.
+    const occurrenceBillable = isOccurrenceBillable(g.category, present.length);
     const missing = present.filter((a) => !(input.perAttendee[a.patientId] ?? "").trim());
     if (missing.length > 0)
       throw new Error("Every present attendee needs their own individualized note.");
@@ -13760,10 +13868,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
-          // Open psychoeducational groups are engagement, not claims.
-          billingEligible: isBillableGroupCategory(g.category),
-          // PLACEHOLDER: no CPT/H-code invented. Billing supplies this.
-          billingCodePlaceholder: undefined,
+          billingEligible: occurrenceBillable,
+          billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
         },
       });
       if (saved) {
