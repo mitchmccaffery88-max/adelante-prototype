@@ -133,3 +133,48 @@ describe("population health is not a second unprotected path", () => {
     expect(audit.restricted).toBeUndefined();
   });
 });
+
+describe("the advocate SUD axis is the gate for advocate readers", () => {
+  const other = AdelanteEHR.listPatients()[1]!;
+  function connect(patientId: string, type: "hipaa_authorization" | "conservatorship") {
+    const link = AdelanteEHR.createAdvocateInvitation({
+      patientId,
+      advocateName: "Rosa Ibarra",
+      relationship: "Sister",
+      invitationSentTo: "rosa@example.org",
+      invitationChannel: "email",
+      designatedBy: { actor: "patient", name: "Test Patient" },
+    });
+    AdelanteEHR.claimAdvocateInvitation({
+      code: link.invitationCode,
+      authorizationType: type,
+      attestedName: "Rosa Ibarra",
+    });
+    if (type === "conservatorship")
+      AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+        verifiedBy: "Records Clerk",
+        courtOrderRef: "PR-2026-0002",
+      });
+    return link.id;
+  }
+
+  it("masks a HIPAA-only advocate and unmasks an authority-derived one", () => {
+    const masked = connect(patient.id, "hipaa_authorization");
+    expect(() =>
+      AdelanteEHR.getScreenerResult(patient.id, "audit", { kind: "advocate", linkId: masked }),
+    ).toThrow(Part2AccessError);
+
+    const conservator = connect(patient.id, "conservatorship");
+    expect(
+      AdelanteEHR.getScreenerResult(patient.id, "audit", { kind: "advocate", linkId: conservator })!
+        .key,
+    ).toBe("audit");
+  });
+
+  it("never reaches a patient the link is not for", () => {
+    const linkId = connect(patient.id, "conservatorship");
+    expect(() =>
+      AdelanteEHR.getScreenerResult(other.id, "audit", { kind: "advocate", linkId }),
+    ).toThrow(Part2AccessError);
+  });
+});
