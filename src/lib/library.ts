@@ -559,106 +559,394 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
 export const EXERCISES: Exercise[] = [
   {
     id: "urge-surfing-timer",
-    title: "Urge Surfing",
-    subtitle: "Ride the wave for ten minutes without acting on it.",
-    minutes: 10,
+    title: "Urge Surfing Timer",
+    subtitle: "Ride the wave without acting on it",
+    minutes: 3,
     type: "timer",
-    tags: ["craving", "impulse", "distress tolerance"],
-    purpose:
-      "PLACEHOLDER. Urges peak and fall. Timing one, rather than fighting it, teaches the body that it ends on its own.",
+    tags: ["craving", "relapse-prevention", "triggers"],
+    purpose: "Cravings rise, peak, and pass. This timer keeps you company while it passes.",
     content: {
       type: "timer",
-      seconds: 600,
+      seconds: 180,
       prompts: [
-        "Name it: 'this is an urge, not an order.'",
-        "Where do you feel it? Put a hand there.",
-        "Rate it 0–10. Don't try to change it.",
-        "Rate it again. Notice whether it moved.",
+        "Notice where you feel it in your body. Don't fight it — just find it.",
+        "Give it a number, 1 to 10. Watch whether it moves.",
+        "Breathe out longer than you breathe in.",
+        "The wave is cresting. You don't have to do anything about it.",
+        "Still here. Still not using. That's the whole skill.",
+        "Feel it start to drop. This is what passing looks like.",
       ],
+      closing: "You rode it out. Cravings don't last — you just proved it to yourself.",
     },
-    // The tags are about craving, but the tool itself is not Part 2 content
-    // and is offered to everyone; nothing here discloses a diagnosis.
-    placeholder: true,
   },
   {
     id: "box-breathing",
     title: "Box Breathing",
-    subtitle: "Four counts in, four hold, four out, four hold.",
-    minutes: 4,
+    subtitle: "Four counts in, four hold, four out",
+    minutes: 2,
     type: "breathing",
-    tags: ["anxiety", "grounding", "sleep"],
-    purpose:
-      "PLACEHOLDER. An evenly paced breath with a lengthened out-breath lowers physiological arousal within a couple of minutes.",
+    tags: ["anxiety", "anger", "craving"],
+    purpose: "Slows your body down when your head is moving too fast.",
     content: { type: "breathing", inhaleSec: 4, holdSec: 4, exhaleSec: 4, holdAfterSec: 4, cycles: 8 },
-    placeholder: true,
   },
-  ...(
-    [
-      ["trigger-map", "Trigger Map", "mapper", 12],
-      ["thought-record", "Thought Record", "worksheet", 12],
-      ["anger-thermometer", "Anger Thermometer", "scale", 6],
-      ["support-circle", "Support Circle", "mapper", 8],
-      ["budget-basics", "Budget Basics", "calculator", 15],
-      ["communication-script", "Communication Script", "worksheet", 10],
-      ["if-i-slip-plan", "If I Slip Plan", "worksheet", 12],
-      ["warning-signs", "Warning Signs", "checklist", 8],
-      ["milestone-reward", "Milestone Reward", "worksheet", 6],
-    ] as const
-  ).map(([id, title, type, minutes]) => stubExercise(id, title, type, minutes)),
-];
-
-function stubExercise(id: string, title: string, type: ExerciseType, minutes: number): Exercise {
-  const content: ExerciseContent =
-    type === "mapper"
-      ? {
-          type: "mapper",
-          intro: `PLACEHOLDER — the real "${title}" instructions are incoming.`,
-          columns: [
-            { id: "a", label: "PLACEHOLDER column A", hint: "…" },
-            { id: "b", label: "PLACEHOLDER column B", hint: "…" },
+  {
+    id: "trigger-map",
+    title: "Trigger Map",
+    subtitle: "People, places, feelings, times",
+    minutes: 5,
+    type: "mapper",
+    tags: ["triggers", "craving", "relapse-prevention"],
+    purpose: "You can't dodge what you haven't named. Map yours so you see them coming.",
+    content: {
+      type: "mapper",
+      intro: "Add what belongs in each zone. Tap a suggestion or type your own.",
+      columns: [
+        {
+          id: "people",
+          label: "People",
+          hint: "Who makes it harder?",
+          suggestions: [
+            "Old running partner",
+            "Family member",
+            "Someone I owe",
+            "A dealer's number still in my phone",
           ],
-        }
-      : type === "checklist"
-        ? { type: "checklist", intro: `PLACEHOLDER — "${title}".`, items: ["PLACEHOLDER item"] }
-        : type === "scale"
-          ? {
-              type: "scale",
-              intro: `PLACEHOLDER — "${title}".`,
-              min: 0,
-              max: 10,
-              minLabel: "Calm",
-              maxLabel: "Peak",
-              bands: [
-                { upTo: 3, label: "Green", guidance: "PLACEHOLDER guidance." },
-                { upTo: 7, label: "Amber", guidance: "PLACEHOLDER guidance." },
-                { upTo: 10, label: "Red", guidance: "PLACEHOLDER guidance." },
-              ],
-            }
-          : type === "calculator"
-            ? {
-                type: "calculator",
-                intro: `PLACEHOLDER — "${title}".`,
-                rows: [{ id: "r1", label: "PLACEHOLDER row" }],
-                totalLabel: "Total",
-                againstLabel: "Money coming in",
-              }
-            : {
-                type: "worksheet",
-                intro: `PLACEHOLDER — "${title}".`,
-                fields: [{ id: "f1", label: "PLACEHOLDER field", multiline: true }],
-              };
-  return {
-    id,
-    title,
-    subtitle: `PLACEHOLDER — real subtitle incoming.`,
-    minutes,
-    type,
-    tags: ["placeholder"],
-    purpose: `PLACEHOLDER. The clinical purpose text for "${title}" is being supplied.`,
-    content,
-    placeholder: true,
-  };
-}
+        },
+        {
+          id: "places",
+          label: "Places",
+          hint: "Where does it get loud?",
+          suggestions: ["Old neighborhood", "Certain corner store", "Parties", "Alone in my room"],
+        },
+        {
+          id: "feelings",
+          label: "Feelings",
+          hint: "What sets it off inside?",
+          suggestions: ["Boredom", "Anger", "Shame", "Loneliness", "Being disrespected"],
+        },
+        {
+          id: "times",
+          label: "Times",
+          hint: "When is it worst?",
+          suggestions: ["Late night", "Payday", "Weekends", "After a hard call"],
+        },
+      ],
+    },
+  },
+  {
+    id: "thought-record",
+    title: "Thought Record",
+    subtitle: "Catch it, check it, change it",
+    minutes: 6,
+    type: "worksheet",
+    tags: ["cbt", "anxiety"],
+    purpose: "Thoughts feel like facts. Writing them down is how you tell the difference.",
+    content: {
+      type: "worksheet",
+      intro: "Take one thought that's been running you today.",
+      fields: [
+        {
+          id: "situation",
+          label: "What happened?",
+          placeholder: "Just the facts — what a camera would see.",
+        },
+        { id: "thought", label: "What did I think?", placeholder: "The exact sentence in your head." },
+        {
+          id: "feeling",
+          label: "What did I feel?",
+          options: ["Angry", "Ashamed", "Scared", "Hopeless", "Numb", "Anxious"],
+        },
+        {
+          id: "counter",
+          label: "What says it's not the whole story?",
+          multiline: true,
+          placeholder: "One fact that doesn't fit.",
+        },
+        {
+          id: "fairer",
+          label: "A fairer way to say it",
+          multiline: true,
+          placeholder: "Not fake-positive. Just fair.",
+        },
+      ],
+    },
+  },
+  {
+    id: "anger-thermometer",
+    title: "Anger Thermometer + De-escalation Plan",
+    subtitle: "Know your number, know your move",
+    minutes: 4,
+    type: "scale",
+    tags: ["anger", "communication"],
+    purpose: "Anger is easier to steer early. This sets a move for each level.",
+    content: {
+      type: "scale",
+      intro: "Where's your anger right now?",
+      min: 0,
+      max: 10,
+      minLabel: "Calm",
+      maxLabel: "About to blow",
+      bands: [
+        {
+          upTo: 3,
+          label: "Cool",
+          moves: [
+            "Name what bothered me",
+            "Say it plain before it builds",
+            "Keep doing what I'm doing",
+          ],
+        },
+        {
+          upTo: 6,
+          label: "Heating up",
+          moves: [
+            "Step outside for two minutes",
+            "Slow my breathing out",
+            "Text someone on my list",
+            "Drink water, eat something",
+          ],
+        },
+        {
+          upTo: 8,
+          label: "Hot",
+          moves: [
+            "Leave the room — no explanation needed",
+            "Walk until my hands unclench",
+            "Call my peer specialist",
+            "No decisions until I'm under 5",
+          ],
+        },
+        {
+          upTo: 10,
+          label: "Boiling",
+          moves: [
+            "Get physically away from the person",
+            "No phone, no texts, no driving",
+            "Call someone who can talk me down",
+            "Come back to it tomorrow",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "support-circle",
+    title: "Support Circle Mapper",
+    subtitle: "Who's actually in your corner",
+    minutes: 5,
+    type: "mapper",
+    tags: ["support", "communication"],
+    purpose: "Most people have more support than they can name under pressure. Name it now.",
+    content: {
+      type: "mapper",
+      intro: "Put real names or roles in each ring.",
+      columns: [
+        {
+          id: "any-hour",
+          label: "Call any hour",
+          hint: "The 2am people.",
+          suggestions: ["Sponsor", "Peer specialist", "Mom", "Best friend"],
+        },
+        {
+          id: "steady",
+          label: "Steady support",
+          hint: "Reliable, not urgent.",
+          suggestions: ["Case manager", "Therapist", "Sibling", "Coworker"],
+        },
+        {
+          id: "professional",
+          label: "Professional",
+          hint: "Paid to help — use them.",
+          suggestions: ["Doctor", "Counselor", "Parole officer", "Housing navigator"],
+        },
+        {
+          id: "group",
+          label: "Group support",
+          hint: "Rooms where you're not alone.",
+          suggestions: ["AA/NA meeting", "Church", "Peer group", "Gym"],
+        },
+      ],
+    },
+  },
+  {
+    id: "budget-basics",
+    title: "Budget Basics Calculator",
+    subtitle: "What's coming in, what's going out",
+    minutes: 6,
+    type: "calculator",
+    tags: ["money", "goal-setting"],
+    purpose: "Money stress is a relapse risk. Seeing the real number lowers the noise.",
+    content: {
+      type: "calculator",
+      intro: "Rough monthly numbers are fine. Guessing beats avoiding.",
+      incomeRows: [
+        { id: "job", label: "Job/wages" },
+        { id: "benefits", label: "Benefits (CalFresh, SSI, GA)" },
+        { id: "family", label: "Family help" },
+        { id: "other-income", label: "Other" },
+      ],
+      rows: [
+        { id: "rent", label: "Rent/sober living" },
+        { id: "food", label: "Food" },
+        { id: "phone", label: "Phone" },
+        { id: "transport", label: "Transportation" },
+        { id: "court", label: "Court fees/restitution" },
+        { id: "other-expense", label: "Other" },
+      ],
+      totalLabel: "Money going out",
+      againstLabel: "Money coming in",
+      closing:
+        "If the number is negative, that's information — not failure. Bring it to your case manager.",
+    },
+  },
+  {
+    id: "communication-script",
+    title: "Communication Script Builder",
+    subtitle: "Say the hard thing, calmly",
+    minutes: 5,
+    type: "worksheet",
+    tags: ["communication", "support", "anger"],
+    purpose: "Hard conversations go better with a script you wrote when you were calm.",
+    content: {
+      type: "worksheet",
+      intro: "Build one sentence you can actually say out loud.",
+      fields: [
+        { id: "who", label: "Who is this for?", placeholder: "Name or role" },
+        {
+          id: "when",
+          label: "When I…",
+          multiline: true,
+          placeholder: "The situation — no blame words.",
+        },
+        {
+          id: "feel",
+          label: "I feel…",
+          options: ["Frustrated", "Hurt", "Worried", "Disrespected", "Overwhelmed"],
+        },
+        {
+          id: "need",
+          label: "What I need is…",
+          multiline: true,
+          placeholder: "One clear, doable ask.",
+        },
+        {
+          id: "sideways",
+          label: "If it goes sideways, I'll…",
+          options: [
+            "Take a walk",
+            "End the call politely",
+            "Come back to it tomorrow",
+            "Text my sponsor",
+          ],
+        },
+      ],
+    },
+  },
+  {
+    id: "if-i-slip-plan",
+    title: '"If I Slip" Plan',
+    subtitle: "Decided ahead of time, not in the moment",
+    minutes: 5,
+    type: "worksheet",
+    tags: ["relapse-prevention", "craving"],
+    purpose: "A slip is not the end. What happens in the next hour is what matters.",
+    content: {
+      type: "worksheet",
+      intro: "Write this while you're steady, so it's ready if you're not.",
+      fields: [
+        { id: "first-tell", label: "First person I tell", placeholder: "Name and number" },
+        {
+          id: "first-hour",
+          label: "What I do in the first hour",
+          options: [
+            "Stop and get somewhere safe",
+            "Call my sponsor",
+            "Go to a meeting",
+            "Tell my peer specialist",
+            "Eat and sleep",
+          ],
+        },
+        {
+          id: "will-not",
+          label: "What I will NOT do",
+          options: [
+            "Disappear on everyone",
+            "Say it's over",
+            "Keep using to fix the shame",
+            "Skip my next appointment",
+          ],
+        },
+        {
+          id: "self-talk",
+          label: "What I'll tell myself",
+          multiline: true,
+          placeholder: "Your own words.",
+        },
+      ],
+    },
+  },
+  {
+    id: "warning-signs",
+    title: "Relapse Warning Signs Checklist",
+    subtitle: "The stuff that shows up before the using does",
+    minutes: 4,
+    type: "checklist",
+    tags: ["relapse-prevention", "triggers"],
+    purpose: "Relapse starts long before the substance. These are your early flags.",
+    content: {
+      type: "checklist",
+      intro: "Check anything that's true in the last week.",
+      items: [
+        "Skipping meetings",
+        "Isolating from people who care",
+        "Not sleeping",
+        "Skipping meals",
+        "Stopped taking my meds",
+        "Keeping secrets",
+        "Hanging around old people or places",
+        "Romanticizing using",
+        "Anger on a short fuse",
+        "Letting appointments slide",
+        "Telling people I'm fine when I'm not",
+        "Money disappearing",
+      ],
+      closing: "Three or more is a signal to reach out today — not a verdict on you.",
+    },
+  },
+  {
+    id: "milestone-reward",
+    title: "Milestone Reward Planner",
+    subtitle: "Something to walk toward",
+    minutes: 4,
+    type: "worksheet",
+    tags: ["goal-setting", "support"],
+    purpose: "Recovery needs something to move toward, not just something to avoid.",
+    content: {
+      type: "worksheet",
+      intro: "Pick one milestone that's close enough to feel real.",
+      fields: [
+        {
+          id: "milestone",
+          label: "My next milestone",
+          options: ["7 days", "30 days", "90 days", "First paycheck", "Own place"],
+        },
+        { id: "when", label: "Roughly when", placeholder: "A date or a week" },
+        {
+          id: "mark-it",
+          label: "How I'll mark it",
+          options: [
+            "Good meal",
+            "New shoes",
+            "Day at the lake",
+            "Call my kids",
+            "Share at a meeting",
+          ],
+        },
+        { id: "tell", label: "Who I'll tell", placeholder: "Name" },
+      ],
+    },
+  },
+];
 
 // ---------------------------------------------------------------------------
 // Pure selectors
