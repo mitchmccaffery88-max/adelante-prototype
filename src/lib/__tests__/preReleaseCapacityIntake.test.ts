@@ -302,7 +302,7 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
     });
     activateAhcdForTest(link.id);
     expect(AdelanteEHR.preReleaseCapacityState(episode.id).decision.canProceed).toBe(true);
-    AdelanteEHR.revokeAdvocateLink(link.id, "Family dispute — authority withdrawn.");
+    AdelanteEHR.revokeAdvocateLink(link.id, cf().name, "Family dispute — authority withdrawn.");
     expect(AdelanteEHR.preReleaseCapacityState(episode.id).decision.canProceed).toBe(false);
   });
 });
