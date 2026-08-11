@@ -38,38 +38,65 @@ function connected(type: AdvocateAuthorizationType, patientId = pid()) {
     attestedName: "Rosa Ibarra",
   });
   if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "conservatorship")
+    AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+      verifiedBy: "Records Clerk",
+      courtOrderRef: "PR-2026-0001",
+    });
   return { link: AdelanteEHR.getAdvocateLink(link.id)!, patientId };
 }
 
-describe("two-tier permission model", () => {
+describe("four-tier legal-authority permission model (§Phase 4.1)", () => {
   it("groups every authorization type into exactly one tier", () => {
     for (const t of ADVOCATE_AUTHORIZATION_TYPES) {
       expect(advocateTier(t.key)).toBe(t.tier);
     }
-    expect(advocateTier("ahcd")).toBe("decision_making");
-    expect(advocateTier("conservatorship")).toBe("decision_making");
-    expect(advocateTier("hipaa_authorization")).toBe("participation");
-    expect(advocateTier("family_participation")).toBe("participation");
+    expect(advocateTier("ahcd")).toBe("ahcd_agent");
+    expect(advocateTier("conservatorship")).toBe("conservator");
+    expect(advocateTier("hipaa_authorization")).toBe("hipaa_only");
+    expect(advocateTier("dhcs_authorized_representative")).toBe("authorized_representative");
+    expect(advocateTier("family_participation")).toBe("hipaa_only");
   });
 
-  it("participation is the floor and decision-making is a STRICT superset", () => {
-    const part = permissionsForType("hipaa_authorization");
-    const dec = permissionsForType("conservatorship");
-    for (const p of part) expect(dec).toContain(p);
-    // Not the same grants with different labels — a real difference.
-    const extra = dec.filter((p) => !part.includes(p));
-    expect(extra.sort()).toEqual(["care_plan_clinical_view", "eligibility_assist_write"]);
-  });
-
-  it("the DHCS AR gets the eligibility write addendum, other participation types do not", () => {
-    expect(permissionsForType("dhcs_authorized_representative")).toContain(
-      "eligibility_assist_write",
+  it("HIPAA-only is strictly read-only — no write grant of any kind", () => {
+    const hipaa = permissionsForType("hipaa_authorization");
+    expect(hipaa.some((p) => p.endsWith("_write") || p === "document_upload")).toBe(false);
+    expect(hipaa.sort()).toEqual(
+      [
+        "care_plan_participation_view",
+        "coordination_view",
+        "document_view",
+        "eligibility_assist_view",
+        "schedule_view",
+      ].sort(),
     );
-    expect(permissionsForType("hipaa_authorization")).not.toContain("eligibility_assist_write");
-    // ...but the addendum does NOT promote them to the decision tier.
-    expect(permissionsForType("dhcs_authorized_representative")).not.toContain(
+  });
+
+  it("AR = the HIPAA-only view set PLUS eligibility_assist_write, nothing else", () => {
+    const hipaa = permissionsForType("hipaa_authorization");
+    const ar = permissionsForType("dhcs_authorized_representative");
+    for (const p of hipaa) expect(ar).toContain(p);
+    expect(ar.filter((p) => !hipaa.includes(p))).toEqual(["eligibility_assist_write"]);
+    // Enrollment actions only — no clinical view, no coordination authorship.
+    expect(ar).not.toContain("care_plan_clinical_view");
+    expect(ar).not.toContain("coordination_write");
+    expect(ar).not.toContain("care_plan_participation_write");
+  });
+
+  it("the two authority tiers are a strict superset of AR and share one grant set", () => {
+    const ar = permissionsForType("dhcs_authorized_representative");
+    const ahcd = permissionsForType("ahcd");
+    const cons = permissionsForType("conservatorship");
+    for (const p of ar) expect(ahcd).toContain(p);
+    expect([...cons].sort()).toEqual([...ahcd].sort());
+    for (const extra of [
+      "coordination_write",
+      "care_plan_participation_write",
       "care_plan_clinical_view",
-    );
+    ]) {
+      expect(ahcd).toContain(extra);
+      expect(ar).not.toContain(extra);
+    }
   });
 
   it("clinical notes and messaging are granted to nobody, at any tier", () => {
@@ -79,20 +106,37 @@ describe("two-tier permission model", () => {
     }
   });
 
-  it("the tier difference is real at the STORE boundary, not only in the table", () => {
-    const part = connected("hipaa_authorization");
-    const dec = connected("conservatorship");
-    expect(AdelanteEHR.advocateCarePlanClinical(part.link.id).allowed).toBe(false);
-    expect(AdelanteEHR.advocateCarePlanClinical(dec.link.id).allowed).toBe(true);
+  it("the tier differences are real at the STORE boundary, not only in the table", () => {
+    const hipaa = connected("hipaa_authorization");
+    const ar = connected("dhcs_authorized_representative");
+    const auth = connected("conservatorship");
+
+    // Clinical care-plan view: authority tiers only.
+    expect(AdelanteEHR.advocateCarePlanClinical(hipaa.link.id).allowed).toBe(false);
+    expect(AdelanteEHR.advocateCarePlanClinical(ar.link.id).allowed).toBe(false);
+    expect(AdelanteEHR.advocateCarePlanClinical(auth.link.id).allowed).toBe(true);
+
+    // Eligibility write: AR and above.
     expect(
-      AdelanteEHR.advocateAttestEligibilityAssist(part.link.id, { attestedName: "Rosa" }).ok,
+      AdelanteEHR.advocateAttestEligibilityAssist(hipaa.link.id, { attestedName: "Rosa" }).ok,
     ).toBe(false);
     expect(
-      AdelanteEHR.advocateAttestEligibilityAssist(dec.link.id, { attestedName: "Rosa" }).ok,
+      AdelanteEHR.advocateAttestEligibilityAssist(ar.link.id, { attestedName: "Rosa" }).ok,
     ).toBe(true);
-    // Both tiers DO get the coordination floor.
-    expect(AdelanteEHR.advocateCoordination(part.link.id).allowed).toBe(true);
-    expect(AdelanteEHR.advocateCoordination(dec.link.id).allowed).toBe(true);
+    expect(
+      AdelanteEHR.advocateAttestEligibilityAssist(auth.link.id, { attestedName: "Rosa" }).ok,
+    ).toBe(true);
+
+    // Care-plan participation WRITE: authority tiers only.
+    const comment = { section: "housing", text: "Spare room in Fresno." } as const;
+    expect(AdelanteEHR.advocateAddCarePlanComment(hipaa.link.id, comment).ok).toBe(false);
+    expect(AdelanteEHR.advocateAddCarePlanComment(ar.link.id, comment).ok).toBe(false);
+    expect(AdelanteEHR.advocateAddCarePlanComment(auth.link.id, comment).ok).toBe(true);
+
+    // Every tier keeps the coordination READ floor.
+    for (const c of [hipaa, ar, auth]) {
+      expect(AdelanteEHR.advocateCoordination(c.link.id).allowed).toBe(true);
+    }
   });
 });
 
@@ -184,7 +228,8 @@ describe("expanded scope is audited", () => {
 
 describe("care plan PARTICIPATION does not become authorship", () => {
   it("comments land in a separate stream and never mutate the plan", () => {
-    const { link, patientId } = connected("hipaa_authorization");
+    // §Phase 4.1 — commenting is a write, so this is an activated AHCD agent.
+    const { link, patientId } = connected("ahcd");
     const before = JSON.stringify(AdelanteEHR.reentryCarePlanForPatient(patientId) ?? null);
     const res = AdelanteEHR.advocateAddCarePlanComment(link.id, {
       section: "housing",
