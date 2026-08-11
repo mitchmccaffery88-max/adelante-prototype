@@ -14253,12 +14253,24 @@ export const AdelanteEHR = {
 
     const noteIds: string[] = [];
     for (const a of present) {
+      // Every individualized note renders the FULL facilitator list with each
+      // provider's own involvement and minutes — the one-note-per-client
+      // convention WITHOUT collapsing distinct provider durations.
+      const facilitatorLines = facilitators
+        .map((f) => {
+          const s = clinicians.find((c) => c.id === f.staffId);
+          const name = s?.name ?? f.staffId;
+          const label = f.role === "primary" ? "primary facilitator" : "co-facilitator";
+          const rendering = f.staffId === renderingProviderId ? "; designated rendering provider" : "";
+          return `${name} (${label}${rendering}) — ${f.minutes} min direct care${f.involvement ? `: ${f.involvement}` : ""}`;
+        })
+        .join(" | ");
       const saved = AdelanteEHR.addProgressNote(a.patientId, {
         clinicianId: input.facilitatorId,
         date: input.occurrenceStart,
         sessionType: "group",
         subjective: input.perAttendee[a.patientId]!.trim(),
-        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}.`,
+        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}. Facilitators: ${facilitatorLines}.`,
         assessment: "",
         plan: "",
         category: "group",
@@ -14267,6 +14279,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
+          facilitators: facilitators.map((f) => ({ ...f })),
+          renderingProviderId,
           billingEligible: occurrenceBillable,
           billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
           modality,
