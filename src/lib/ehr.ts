@@ -5018,6 +5018,13 @@ export interface GroupOccurrenceRecord {
   sessionId: string;
   /** ISO datetime identifying which occurrence of the recurring group. */
   occurrenceStart: string;
+  /**
+   * How THIS meeting is delivered. Absent = not yet chosen; readers fall back
+   * to `defaultOccurrenceModality(session.modality)`.
+   */
+  modality?: GroupOccurrenceModality;
+  modalitySetAt?: string;
+  modalitySetBy?: string;
   attendance: GroupAttendanceEntry[];
   attendanceRecordedAt?: string;
   attendanceRecordedBy?: string;
@@ -5058,6 +5065,8 @@ export interface GroupAttendeeNoteRef {
   billingEligible: boolean;
   /** HCPCS code when billable; absent otherwise. */
   billingCode?: string;
+  /** How the service was actually delivered for THIS occurrence. */
+  modality?: GroupOccurrenceModality;
 }
 
 const groupSessions: GroupSession[] = [];
@@ -13858,6 +13867,102 @@ export const AdelanteEHR = {
 
   listGroupOccurrenceRecords: (sessionId: string) =>
     groupOccurrences.filter((o) => o.sessionId === sessionId),
+
+  // §Group sessions — county configuration for the OPTIONAL group
+  // confidentiality acknowledgment. Default OFF; not a DHCS mandate.
+  isGroupConfidentialityAckRequired: () => groupConfig.requireConfidentialityAck,
+
+  setGroupConfidentialityAckRequired(required: boolean, actor: string) {
+    groupConfig.requireConfidentialityAck = required;
+    appendAudit({
+      category: "clinical",
+      action: "group_confidentiality_ack_setting_changed",
+      actorId: actor,
+      detail: { required },
+    });
+    emit();
+  },
+
+  /** Effective modality for one occurrence (falls back to the session default). */
+  groupOccurrenceModality(sessionId: string, occurrenceStart: string): GroupOccurrenceModality {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    const occ = groupOccurrences.find(
+      (o) => o.sessionId === sessionId && o.occurrenceStart === occurrenceStart,
+    );
+    return occ?.modality ?? defaultOccurrenceModality(g?.modality ?? "in_person");
+  },
+
+  setGroupOccurrenceModality(
+    sessionId: string,
+    occurrenceStart: string,
+    modality: GroupOccurrenceModality,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    row.modality = modality;
+    row.modalitySetAt = new Date().toISOString();
+    row.modalitySetBy = actor;
+    appendAudit({
+      category: "clinical",
+      action: "group_occurrence_modality_set",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart, modality },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * §Group sessions — per-member telehealth consent gate.
+   *
+   * REAL per-member check against the structured ConsentRecord ledger (same
+   * `isConsentCategoryAuthorized` call every other consent gate uses — no
+   * parallel consent mechanism, and no group-level "we asked everyone" flag).
+   * An in-person occurrence returns `virtual: false` and blocks nobody.
+   */
+  groupOccurrenceConsentGate(
+    sessionId: string,
+    occurrenceStart: string,
+  ): {
+    modality: GroupOccurrenceModality;
+    virtual: boolean;
+    /** Rostered members missing ACTIVE telehealth consent. */
+    blocked: { patientId: string; name: string }[];
+    /** Rostered members missing the OPTIONAL confidentiality ack (when required). */
+    confidentialityMissing: { patientId: string; name: string }[];
+    confidentialityRequired: boolean;
+  } {
+    const modality = AdelanteEHR.groupOccurrenceModality(sessionId, occurrenceStart);
+    const virtual = isVirtualGroupModality(modality);
+    const confidentialityRequired = groupConfig.requireConfidentialityAck;
+    const roster = AdelanteEHR.listGroupEnrollments(sessionId);
+    const named = (patientId: string) => {
+      const p = patients.find((x) => x.id === patientId);
+      return { patientId, name: p ? `${p.firstName} ${p.lastName}` : patientId };
+    };
+    const blocked = virtual
+      ? roster
+          .filter(
+            (e) =>
+              !AdelanteEHR.isConsentCategoryAuthorized(e.patientId, TELEHEALTH_CONSENT_CATEGORY),
+          )
+          .map((e) => named(e.patientId))
+      : [];
+    const confidentialityMissing = confidentialityRequired
+      ? roster
+          .filter(
+            (e) =>
+              !AdelanteEHR.isConsentCategoryAuthorized(
+                e.patientId,
+                GROUP_CONFIDENTIALITY_CATEGORY,
+              ),
+          )
+          .map((e) => named(e.patientId))
+      : [];
+    return { modality, virtual, blocked, confidentialityMissing, confidentialityRequired };
+  },
 
   getGroupOccurrence(sessionId: string, occurrenceStart: string) {
     return groupOccurrences.find(
