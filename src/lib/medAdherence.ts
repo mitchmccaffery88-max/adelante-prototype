@@ -356,3 +356,31 @@ export function __resetMedAdherence(): void {
   rows.clear();
   notify();
 }
+
+export interface ChecklistRow {
+  slot: ReturnType<typeof deriveMarDay>["slots"][number];
+  selfReport?: DoseSelfReport;
+  isMat: boolean;
+  reconcile: ReconcileState;
+}
+
+/**
+ * Today's patient-facing checklist: REAL derived MAR slots (scheduled + PRN)
+ * for one facility day, each with the patient's self-report and how it
+ * reconciles with the charted administration.
+ */
+export function doseChecklist(patient: Patient, dateKey?: string): ChecklistRow[] {
+  const day = deriveMarDay(patient, dateKey);
+  const reports = listSelfReports(patient.id, { facilityDate: day.dateKey });
+  return [...day.slots, ...day.prn].map((slot) => {
+    const selfReport = reports.find(
+      (r) => r.orderId === slot.order.id && r.scheduledAt === slot.scheduledAt,
+    );
+    return {
+      slot,
+      ...(selfReport ? { selfReport } : {}),
+      isMat: isMatOrder(slot.order),
+      reconcile: reconcileState(selfReport, slot.administration),
+    };
+  });
+}
