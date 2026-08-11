@@ -79,7 +79,6 @@ describe("medication self-report + side effects", () => {
       startDate: new Date().toISOString().slice(0, 10),
     };
     // Attach directly to the real order list on the record.
-    (AdelanteEHR.__patientsForTest?.() ?? []).length; // no-op when helper absent
     p.orders = [...(p.orders ?? []), order as never];
     return { pid, orderId: order.id };
   }
