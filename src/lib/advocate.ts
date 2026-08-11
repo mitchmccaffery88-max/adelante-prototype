@@ -223,6 +223,14 @@ export type AdvocatePermission =
   // authority tiers only; HIPAA-only and AR hold `document_view` alone.
   | "document_view"
   | "document_upload"
+  // §Adelante Journey Phase 5 — self-help Library / Exercise PROGRESS only
+  // (which lessons were completed, how many, when). Deliberately at the read
+  // floor: this is participation data, not clinical documentation — no note,
+  // no diagnosis, no reflection answer is reachable through it, and every tier
+  // already holds comparable read grants (`schedule_view`,
+  // `care_plan_participation_view`). Part 2 masking still applies to the
+  // TITLES of any SUD-specific lesson, exactly as it does to group topics.
+  | "library_progress_view"
   | "clinical_notes_view"
   | "messaging";
 
@@ -409,6 +417,7 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "care_plan_participation_view",
     "eligibility_assist_view",
     "document_view",
+    "library_progress_view",
   ],
   authorized_representative: [
     "schedule_view",
@@ -416,6 +425,7 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "care_plan_participation_view",
     "eligibility_assist_view",
     "document_view",
+    "library_progress_view",
     "eligibility_assist_write",
   ],
   ahcd_agent: [
@@ -429,6 +439,7 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "care_plan_clinical_view",
     "document_view",
     "document_upload",
+    "library_progress_view",
   ],
   conservator: [
     "schedule_view",
@@ -441,6 +452,7 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
     "care_plan_clinical_view",
     "document_view",
     "document_upload",
+    "library_progress_view",
   ],
 };
 
