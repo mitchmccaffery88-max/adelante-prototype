@@ -91,9 +91,13 @@ const labels = (linkId: string) => AdelanteEHR.advocateSchedule(linkId).items.ma
 // ---------------------------------------------------------------- item 1 ---
 
 describe("item 1 — advocate contribution review / acceptance", () => {
+  // §Phase 4.1 — `care_plan_participation_write` moved out of the read-only
+  // HIPAA tier and into the authority tiers, so a contributing advocate here
+  // is an activated AHCD agent.
+  const contributor = (patientId: string) => connected(patientId, "ahcd");
   it("new contributions start pending and appear in the owner queue", () => {
     const p = freshPatient();
-    const link = connected(p.id);
+    const link = contributor(p.id);
     expect(
       AdelanteEHR.advocateAddCarePlanComment(link.id, {
         section: "housing",
@@ -111,7 +115,7 @@ describe("item 1 — advocate contribution review / acceptance", () => {
 
   it("only the ECM Provider / CF Care Manager may accept", () => {
     const p = freshPatient();
-    const link = connected(p.id);
+    const link = contributor(p.id);
     AdelanteEHR.advocateAddCarePlanComment(link.id, { section: "general", text: "Please call me." });
     const c = AdelanteEHR.advocateContributionsForPatient(p.id)[0]!;
     for (const role of ["peer_specialist", "therapist", "billing", "community_health_worker"]) {
@@ -128,7 +132,7 @@ describe("item 1 — advocate contribution review / acceptance", () => {
 
   it("accepting stamps who/when/what and does NOT mutate the authoritative plan", () => {
     const p = freshPatient();
-    const link = connected(p.id);
+    const link = contributor(p.id);
     AdelanteEHR.advocateAddCarePlanComment(link.id, {
       section: "pharmacy",
       text: "Use the pharmacy on Belmont.",
@@ -165,7 +169,7 @@ describe("item 1 — advocate contribution review / acceptance", () => {
 
   it("declining is a distinct, equally-audited terminal state", () => {
     const p = freshPatient();
-    const link = connected(p.id);
+    const link = contributor(p.id);
     AdelanteEHR.advocateAddCarePlanComment(link.id, { section: "dme", text: "A walker would help." });
     const c = AdelanteEHR.advocateContributionsForPatient(p.id)[0]!;
     expect(
@@ -280,8 +284,13 @@ describe("item 5 — the gate is in the data layer, not the UI", () => {
   it("a Part 2 document's name never crosses the boundary without consent", () => {
     const p = freshPatient();
     const link = connected(p.id);
-    const up = AdelanteEHR.advocateUploadDocument(link.id, {
+    // §Phase 4.1 — the HIPAA-only advocate is read-only now, so the Part 2
+    // document is uploaded by the patient; the assertion (can this advocate
+    // see it?) is unchanged.
+    const up = AdelanteEHR.uploadPatientDocument({
+      patientId: p.id,
       file: { fileName: "detox-discharge-summary.pdf", mimeType: "application/pdf", sizeBytes: 1024 },
+      uploader: { kind: "patient", name: "Test Patient" },
       isPart2: true,
     });
     expect(up.ok).toBe(true);
