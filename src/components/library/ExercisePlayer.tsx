@@ -223,22 +223,38 @@ function CalculatorBody({ c }: { c: Extract<ExerciseContent, { type: "calculator
   const [vals, setVals] = useState<Record<string, string>>({});
   const [against, setAgainst] = useState("");
   const total = c.rows.reduce((sum, r) => sum + (Number(vals[r.id]) || 0), 0);
-  const income = Number(against) || 0;
+  const income = c.incomeRows
+    ? c.incomeRows.reduce((sum, r) => sum + (Number(vals[r.id]) || 0), 0)
+    : Number(against) || 0;
   return (
     <div className="space-y-3">
       <p className="text-sm text-muted-foreground">{c.intro}</p>
       <div className="space-y-2">
-        <div className="space-y-1">
-          <label className="text-sm font-medium text-navy" htmlFor="calc-income">
-            {c.againstLabel}
-          </label>
+        <div className="text-sm font-medium text-navy">{c.againstLabel}</div>
+        {c.incomeRows ? (
+          c.incomeRows.map((r) => (
+            <div key={r.id} className="space-y-1">
+              <label className="text-sm" htmlFor={`calc-${r.id}`}>
+                {r.label}
+              </label>
+              <Input
+                id={`calc-${r.id}`}
+                inputMode="decimal"
+                value={vals[r.id] ?? ""}
+                onChange={(e) => setVals((v) => ({ ...v, [r.id]: e.target.value }))}
+              />
+            </div>
+          ))
+        ) : (
           <Input
             id="calc-income"
+            aria-label={c.againstLabel}
             inputMode="decimal"
             value={against}
             onChange={(e) => setAgainst(e.target.value)}
           />
-        </div>
+        )}
+        <div className="pt-2 text-sm font-medium text-navy">{c.totalLabel}</div>
         {c.rows.map((r) => (
           <div key={r.id} className="space-y-1">
             <label className="text-sm" htmlFor={`calc-${r.id}`}>
@@ -263,6 +279,7 @@ function CalculatorBody({ c }: { c: Extract<ExerciseContent, { type: "calculator
           <span className="font-medium tabular-nums">{(income - total).toFixed(2)}</span>
         </div>
       </div>
+      {c.closing && <p className="text-sm text-muted-foreground">{c.closing}</p>}
     </div>
   );
 }
@@ -289,7 +306,14 @@ function ScaleBody({ c }: { c: Extract<ExerciseContent, { type: "scale" }> }) {
       {band && (
         <div className="rounded-lg bg-secondary/50 p-3 text-sm">
           <div className="font-medium text-navy">{band.label}</div>
-          <p className="text-muted-foreground">{band.guidance}</p>
+          {band.guidance && <p className="text-muted-foreground">{band.guidance}</p>}
+          {band.moves && (
+            <ul className="mt-1 list-disc space-y-0.5 pl-4 text-muted-foreground">
+              {band.moves.map((m) => (
+                <li key={m}>{m}</li>
+              ))}
+            </ul>
+          )}
         </div>
       )}
     </div>
