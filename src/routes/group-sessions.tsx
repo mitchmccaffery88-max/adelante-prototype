@@ -208,6 +208,7 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
   const [topic, setTopic] = useState("");
   const [description, setDescription] = useState("");
   const [facilitatorId, setFacilitatorId] = useState("");
+  const [coFacilitatorId, setCoFacilitatorId] = useState("");
   const [start, setStart] = useState("");
   const [capacity, setCapacity] = useState("8");
   const [durationMin, setDurationMin] = useState("60");
@@ -250,6 +251,26 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
         <div className="space-y-1.5">
           <Label className="text-xs">First occurrence</Label>
           <Input type="datetime-local" value={start} onChange={(e) => setStart(e.target.value)} />
+        </div>
+        <div className="space-y-1.5">
+          <Label className="text-xs">Co-facilitator (optional)</Label>
+          <Select value={coFacilitatorId} onValueChange={setCoFacilitatorId}>
+            <SelectTrigger>
+              <SelectValue placeholder="None" />
+            </SelectTrigger>
+            <SelectContent>
+              {clinicians
+                .filter((c) => c.id !== facilitatorId)
+                .map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
+            </SelectContent>
+          </Select>
+          <p className="text-[11px] text-muted-foreground">
+            Each facilitator records their own direct-care minutes when the meeting is documented.
+          </p>
         </div>
         <div className="space-y-1.5">
           <Label className="text-xs">Category</Label>
@@ -340,6 +361,7 @@ function CreateGroupCardInner({ actor }: { actor: string }) {
                 description,
                 category,
                 facilitatorId,
+                coFacilitatorIds: coFacilitatorId ? [coFacilitatorId] : undefined,
                 serviceType: "therapy_group",
                 modality: "in_person",
                 locationId: locationId || undefined,
