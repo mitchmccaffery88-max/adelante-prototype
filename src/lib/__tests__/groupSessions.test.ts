@@ -208,3 +208,74 @@ describe("occurrence status reporting", () => {
     expect(s.notesComplete).toBe(2);
   });
 });
+
+// §Group notes — category-aware access. Retiring `group_participation`
+// briefly pointed EVERY group note at `sud_treatment`; only the SUD clinical
+// category is genuine Part 2 content.
+describe("group note access is category-aware", () => {
+  function documentedNoteFor(category: "sud_clinical_preauth" | "skills_education" | "open_psychoeducational") {
+    const clinician = AdelanteEHR.listClinicians()[0]!;
+    const g = AdelanteEHR.createGroupSession({
+      topic: "placeholder topic",
+      facilitatorId: clinician.id,
+      serviceType: "therapy_group",
+      modality: "in_person",
+      category,
+      start: new Date(Date.now() + 86400000).toISOString(),
+      durationMin: 60,
+      capacity: 8,
+      recurrence: { kind: "weekly", daysOfWeek: [new Date().getDay()] },
+      createdBy: "test",
+    } as never);
+    const two = patients().slice(0, 2);
+    for (const p of two) enrollEligible(g.id, p.id);
+    const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
+    AdelanteEHR.recordGroupAttendance(
+      g.id,
+      start,
+      two.map((p) => ({ patientId: p.id, status: "present" as const })),
+      "test",
+    );
+    AdelanteEHR.documentGroupOccurrence({
+      sessionId: g.id,
+      occurrenceStart: start,
+      facilitatorId: g.facilitatorId,
+      topicCovered: "t",
+      groupProcess: "p",
+      perAttendee: Object.fromEntries(two.map((p) => [p.id, "participated"])),
+      actor: "test",
+    });
+    const patient = AdelanteEHR.getPatient(two[0]!.id)!;
+    const note = (patient.progressNotes ?? [])
+      .filter((n) => n.groupRef?.sessionId === g.id)
+      .at(-1)!;
+    return { note, patient };
+  }
+
+  it("does NOT gate skills_education notes on SUD consent (positive access)", () => {
+    const { note, patient } = documentedNoteFor("skills_education");
+    expect(note.groupRef?.category).toBe("skills_education");
+    expect(noteGateClass(note)).toBeUndefined();
+    // peer_specialist is consent_gated for group_notes and has no SUD consent
+    // here — with the fix the note resolves to the ordinary note tier.
+    expect(noteExportGate(note, "peer_specialist", patient).allowed).toBe(true);
+  });
+
+  it("does NOT gate open_psychoeducational notes on SUD consent", () => {
+    const { note, patient } = documentedNoteFor("open_psychoeducational");
+    expect(noteGateClass(note)).toBeUndefined();
+    expect(noteExportGate(note, "peer_specialist", patient).allowed).toBe(true);
+  });
+
+  it("still gates sud_clinical_preauth group notes on SUD consent", () => {
+    const { note, patient } = documentedNoteFor("sud_clinical_preauth");
+    expect(noteGateClass(note)).toBe("group_notes");
+    const gate = canAccess("peer_specialist", "group_notes", patient);
+    expect(gate.locked).toBe(true);
+    expect(noteExportGate(note, "peer_specialist", patient).allowed).toBe(false);
+  });
+
+  it("keeps the conservative Part 2 gate for an unstamped legacy group note", () => {
+    expect(noteGateClass({ category: "group" })).toBe("group_notes");
+  });
+});
