@@ -2261,6 +2261,28 @@ export interface PreReleaseEpisode {
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
 
+/**
+ * §Pre-release intake build 1 — the recorded answer to the capacity question,
+ * plus the advocate links identified off the back of it.
+ *
+ * The advocate links are POINTERS into the existing four-tier model. Nothing
+ * about authority is duplicated here: whether an instrument is in force is
+ * always re-read live through `advocateAccess`.
+ */
+export interface PreReleaseCapacityDetermination {
+  id: string;
+  episodeId: string;
+  patientId: string;
+  status: IntakeCapacityStatus;
+  /** What the CF Care Manager observed, in their own words. */
+  basis: string;
+  determinedBy: string;
+  determinedByRole: string;
+  determinedAt: string;
+  /** `AdvocateLink.id`s identified during this step, in invitation order. */
+  advocateLinkIds: string[];
+}
+
 export interface PreReleaseFormRecord {
   id: string;
   episodeId: string;
