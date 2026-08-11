@@ -36,7 +36,8 @@ import {
   type AdvocateAccessDecision,
   type AdvocateAuthorizationType,
   type AdvocatePermission,
-  advocatePart2Masked,
+  advocateSudAccess,
+  type AdvocateSudAccessMode,
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
 } from "./advocate";
@@ -3499,6 +3500,18 @@ export interface AdvocateLink {
    */
   ahcdActivatedAt?: string;
   ahcdActivatedBy?: string;
+  /**
+   * §Phase 4.1 — conservator tier precondition. Certified court documents are
+   * a real, recorded fact, not an implied consequence of picking the type at
+   * claim time. Absent this, `advocateAccessDecision` denies with
+   * `conservatorship_docs_missing`. (Verification UI is a follow-up.)
+   */
+  conservatorshipDocs?: {
+    verifiedAt: string;
+    verifiedBy: string;
+    courtOrderRef: string;
+    documentId?: string;
+  };
   revokedAt?: string;
   revokedBy?: string;
   revokeReason?: string;
@@ -3729,26 +3742,38 @@ function _advocatePart2Unmasked(link: AdvocateLink): boolean {
 /**
  * The same two gates, reported individually so the audit row (and the consent
  * audit viewer, §Group D item 7) can show WHICH of the two passed. There is
- * still exactly one evaluation of the rule — `advocatePart2Masked` — and this
+ * still exactly one evaluation of the rule — `advocateSudAccess` — and this
  * is the only place either fact is gathered.
  */
 function _advocatePart2Gates(link: AdvocateLink): {
   linkValid: boolean;
   sudDisclosureConsentActive: boolean;
   unmasked: boolean;
+  /** §Phase 4.1 — WHY it is (un)masked: the tier's SUD mode and the basis. */
+  sudMode: AdvocateSudAccessMode;
+  sudBasis: "consent" | "authority" | "none";
 } {
   const linkValid = AdelanteEHR.advocateAccess(link.id).allowed;
   const sudDisclosureConsentActive = AdelanteEHR.isConsentCategoryAuthorized(
     link.patientId,
     ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   );
+  const tier = link.authorizationType ? advocateTier(link.authorizationType) : undefined;
+  if (!tier)
+    return {
+      linkValid,
+      sudDisclosureConsentActive,
+      unmasked: false,
+      sudMode: "categorically_barred",
+      sudBasis: "none",
+    };
+  const decision = advocateSudAccess(tier, { linkValid, sudDisclosureConsentActive });
   return {
     linkValid,
     sudDisclosureConsentActive,
-    unmasked: !advocatePart2Masked(link.authorizationType, {
-      linkValid,
-      sudDisclosureConsentActive,
-    }),
+    unmasked: decision.unmasked,
+    sudMode: decision.mode,
+    sudBasis: decision.basis,
   };
 }
 
@@ -8859,6 +8884,40 @@ export const AdelanteEHR = {
     return { ...link };
   },
 
+  /**
+   * §Phase 4.1 — record that certified conservatorship court documents were
+   * verified. This is the precondition for ANY conservator-tier access; until
+   * it exists the link is claimed but inert.
+   */
+  recordAdvocateConservatorshipDocs(
+    linkId: string,
+    input: { verifiedBy: string; courtOrderRef: string; documentId?: string },
+  ): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (link.authorizationType !== "conservatorship")
+      throw new Error("Only a conservatorship connection can record court documents.");
+    const who = input.verifiedBy.trim();
+    const ref = input.courtOrderRef.trim();
+    if (!who) throw new Error("The verifying staff member must be named.");
+    if (!ref) throw new Error("A court order reference is required.");
+    link.conservatorshipDocs = {
+      verifiedAt: new Date().toISOString(),
+      verifiedBy: who,
+      courtOrderRef: ref,
+      ...(input.documentId ? { documentId: input.documentId } : {}),
+    };
+    appendAudit({
+      category: "advocate",
+      action: "advocate_conservatorship_docs_verified",
+      patientId: link.patientId,
+      actorId: who,
+      detail: { advocateLinkId: link.id, advocateName: link.advocateName, courtOrderRef: ref },
+    });
+    emit();
+    return { ...link };
+  },
+
   revokeAdvocateLink(linkId: string, revokedBy: string, reason: string): AdvocateLink {
     const link = advocateLinks.find((l) => l.id === linkId);
     if (!link) throw new Error("Unknown advocate connection.");
@@ -8900,6 +8959,7 @@ export const AdelanteEHR = {
         COLLATERAL_ROI_CATEGORY,
       ),
       ahcdActivated: Boolean(link.ahcdActivatedAt),
+      conservatorshipDocsOnFile: Boolean(link.conservatorshipDocs),
     });
   },
 
@@ -9401,7 +9461,8 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Decision-making tier ONLY: the clinical care-plan snapshot. Part 2 content
+   * Authority tiers ONLY (activated AHCD agent / conservator): the clinical
+   * care-plan snapshot. Part 2 content
    * is stripped here as well — SUD focus areas, sensitive medications,
    * sensitive screeners and SUD problems never cross this boundary, and the
    * hidden-problem count is reported without any description.

@@ -29,6 +29,14 @@ function connected(patientId: string, type: AdvocateAuthorizationType = "hipaa_a
     authorizationType: type,
     attestedName: "Advocate",
   });
+  // §Phase 4.1 — the two authority tiers with real preconditions must have
+  // them satisfied here, or the link is claimed but inert.
+  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "conservatorship")
+    AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+      verifiedBy: "Records Clerk",
+      courtOrderRef: "PR-2026-0001",
+    });
   return AdelanteEHR.getAdvocateLink(link.id)!;
 }
 

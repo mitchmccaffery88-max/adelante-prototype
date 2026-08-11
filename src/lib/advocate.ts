@@ -38,30 +38,98 @@ export type AdvocateAuthorizationType =
   | "family_participation";
 
 /**
- * §Phase 4 expansion — two-tier permission model.
+ * §Adelante Journey Phase 4.1 — FOUR-TIER legal-authority model.
  *
- * Types are grouped by what the underlying legal instrument actually grants,
- * not by the original 5-way split:
+ * This REPLACES the earlier two-tier (`participation` / `decision_making`)
+ * split. The old split grouped by "does the instrument confer decision
+ * authority"; that collapsed two genuinely different legal instruments (a
+ * HIPAA authorization and a DHCS Authorized Representative designation) into
+ * one tier even though their permitted actions barely overlap, and it made
+ * SUD/Part 2 access look like a function of tier depth. Both are now fixed:
+ * the tier ladder is the GENERAL authority axis, and Part 2 access is a
+ * SEPARATE axis (see `ADVOCATE_SUD_MODE_BY_TIER`) that is not monotonic in it.
  *
- * - `decision_making` (AHCD, conservatorship): the instrument confers
- *   authority to DECIDE for the patient. Superset of participation.
- * - `participation` (HIPAA authorization, DHCS AR, family participation):
- *   communication / coordination rights. No medical decision-making authority.
- *   This tier is the FLOOR — every grantable type gets at least this.
+ * - `hipaa_only`               view clinical records / care plan / diagnostic
+ *                              info, request copies, talk to providers. No
+ *                              MCP or enrollment action, no care-plan
+ *                              signature, no consent to treatment.
+ * - `authorized_representative` sign/submit Medi-Cal applications, select or
+ *                              change an MCP, file eligibility appeals and
+ *                              grievances. CATEGORICALLY barred from clinical
+ *                              and SUD content — a HARDER restriction than
+ *                              hipaa_only, not a softer one.
+ * - `ahcd_agent`               full clinical file, signs/authorizes the care
+ *                              plan, consents to or refuses treatment,
+ *                              directs placement. Dormant until activated.
+ * - `conservator`              broadest. Requires certified court documents on
+ *                              file as a real precondition, not a grant.
+ *
+ * LEGAL-CONTENT WARNING (unchanged): working summaries for UI copy, not legal
+ * definitions.
  */
-export type AdvocateTier = "decision_making" | "participation";
+export type AdvocateTier =
+  | "hipaa_only"
+  | "authorized_representative"
+  | "ahcd_agent"
+  | "conservator";
 
 export const ADVOCATE_TIER_BY_TYPE: Record<AdvocateAuthorizationType, AdvocateTier> = {
-  ahcd: "decision_making",
-  conservatorship: "decision_making",
-  hipaa_authorization: "participation",
-  dhcs_authorized_representative: "participation",
-  family_participation: "participation",
+  ahcd: "ahcd_agent",
+  conservatorship: "conservator",
+  hipaa_authorization: "hipaa_only",
+  dhcs_authorized_representative: "authorized_representative",
+  // A family/support person participating in care holds no legal instrument
+  // beyond the ROI they must already have; they sit at the read-only floor.
+  family_participation: "hipaa_only",
 };
 
 export const ADVOCATE_TIER_LABEL: Record<AdvocateTier, string> = {
-  decision_making: "Decision-making",
-  participation: "Participation & coordination",
+  hipaa_only: "HIPAA authorization (view only)",
+  authorized_representative: "Authorized Representative (enrollment)",
+  ahcd_agent: "Activated AHCD agent",
+  conservator: "Legal conservator",
+};
+
+/**
+ * §6.2 — SUD / 42 CFR Part 2 access is its OWN axis.
+ *
+ * Deliberately NOT derived from the general tier ladder: `authorized_
+ * representative` sits ABOVE `hipaa_only` on the general axis and BELOW it
+ * here. An AR's authority is eligibility and enrollment; clinical — and
+ * especially Part 2 — content is outside its scope entirely, so no consent
+ * artifact unlocks it.
+ */
+export type AdvocateSudAccessMode =
+  /** The existing `advocate_sud_disclosure` consent-conditional gate, unchanged. */
+  | "consent_conditional"
+  /** No path to access. Consent is not consulted, because it cannot help. */
+  | "categorically_barred"
+  /** Access follows from the legal instrument itself. See the note below. */
+  | "authority_derived";
+
+/**
+ * AHCD / conservator = `authority_derived`, NOT "activation writes a consent
+ * record".
+ *
+ * The choice: an activated AHCD agent (and a conservator) holds, in the real
+ * world, the authority to sign the ASCMI/Part 2 disclosure form ON the
+ * client's behalf. Two ways to model that were available:
+ *   (a) programmatically mint an `advocate_sud_disclosure` ConsentRecord at
+ *       activation, or
+ *   (b) let the gate resolve on the instrument and leave the ledger alone.
+ * (b) is implemented. The consent ledger in this build is a record of what a
+ * PERSON SIGNED; auto-writing a row into it would put an unsigned artifact
+ * next to signed ones and make the audit trail lie about provenance — and it
+ * would then be revocable by a patient-facing toggle, which is exactly the
+ * two-tier confusion Phase 3 just removed for PO disclosure. So access is
+ * decided from the instrument, and the audit row records
+ * `sudBasis: "authority_derived"` so a reader can always tell the two apart.
+ */
+export const ADVOCATE_SUD_MODE_BY_TIER: Record<AdvocateTier, AdvocateSudAccessMode> = {
+  hipaa_only: "consent_conditional",
+  authorized_representative: "categorically_barred",
+  ahcd_agent: "authority_derived",
+  conservator: "authority_derived",
 };
 
 export const ADVOCATE_AUTHORIZATION_TYPES: {
@@ -74,34 +142,34 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
   {
     key: "ahcd",
     label: "Advance Health Care Directive (AHCD)",
-    tier: "decision_making",
+    tier: "ahcd_agent",
     summary:
       "Medical power of attorney and living will. Decision-making authority activates only when a physician determines the patient cannot communicate or decide.",
   },
   {
     key: "conservatorship",
     label: "Conservatorship",
-    tier: "decision_making",
+    tier: "conservator",
     summary: "Court-ordered authority, used when the patient lacks capacity and has no AHCD.",
   },
   {
     key: "hipaa_authorization",
     label: "HIPAA Authorization",
-    tier: "participation",
+    tier: "hipaa_only",
     summary:
       "Permission to speak with providers, review shared information and help coordinate. No decision-making authority.",
   },
   {
     key: "dhcs_authorized_representative",
     label: "DHCS Authorized Representative (AR)",
-    tier: "participation",
+    tier: "authorized_representative",
     summary:
       "CalAIM / Medi-Cal eligibility and enrollment support, including acting on the member's behalf on an application. (Placeholder — pending DHCS AR form content.)",
   },
   {
     key: "family_participation",
     label: "Family / support-person participation",
-    tier: "participation",
+    tier: "hipaa_only",
     summary:
       "A family member or support person participating in care coordination. Requires a signed Release of Information before any access is granted. (Placeholder — exact participation scope pending Christi's form content.)",
   },
@@ -126,13 +194,14 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
  *                                     visibility (the `eligibility`
  *                                     RecordClass workflow, read side).
  *  - `eligibility_assist_write`       submitting/attesting on the member's
- *                                     behalf. Decision-making tier, PLUS the
- *                                     DHCS AR by type addendum — an AR's
+ *                                     behalf. The AR tier and above — an AR's
  *                                     entire purpose is acting on the
  *                                     application.
  *  - `care_plan_clinical_view`        the clinical care-plan snapshot (goals,
  *                                     focus areas, non-Part-2 problems).
- *                                     Decision-making tier only.
+ *                                     Authority tiers only (activated AHCD
+ *                                     agent, conservator) — an AR is
+ *                                     categorically barred from it.
  *
  * NEVER granted, names only: `clinical_notes_view`, `messaging`. Do not grant
  * one without Mitch's swim-lane documentation.
@@ -148,10 +217,10 @@ export type AdvocatePermission =
   | "care_plan_clinical_view"
   // §v3.0 Phase 5 — documents. Uploading and reviewing a patient's own
   // paperwork is the SAME category of supportive access Phase 4 already
-  // granted for coordination and care-plan participation, so both tiers hold
-  // it and no new authorization tier was introduced. Part 2 documents are
-  // gated separately by the `advocate_sud_disclosure` consent, exactly as SUD
-  // group topics are — a permission never lifts Part 2 masking.
+  // granted for coordination and care-plan participation. Part 2 documents are
+  // gated separately by the SUD axis (§Phase 4.1) — a permission never lifts
+  // Part 2 masking. `document_upload` is a WRITE and therefore belongs to the
+  // authority tiers only; HIPAA-only and AR hold `document_view` alone.
   | "document_view"
   | "document_upload"
   | "clinical_notes_view"
@@ -164,7 +233,12 @@ export type AdvocatePermission =
  * clinical staff role in this build. No advocate permission exists that lifts
  * it, and this constant exists so a future edit has to argue with it.
  *
- * The ONE exception, added deliberately and narrowly: a patient-signed Part 2
+ * §Phase 4.1 makes this the DEFAULT rather than the whole story: SUD access is
+ * its own axis (`AdvocateSudAccessMode`). An AR is barred outright, the two
+ * authority tiers are unmasked by the instrument itself, and HIPAA-only keeps
+ * the consent-conditional exception below unchanged.
+ *
+ * The ONE consent-based exception, added deliberately and narrowly: a patient-signed Part 2
  * disclosure authorization naming advocate disclosure
  * (`advocate_sud_disclosure`). That is a consent artifact, not a permission —
  * it is checked per-patient at read time, IN ADDITION TO the advocate's own
@@ -188,11 +262,38 @@ export const ADVOCATE_SUD_DISCLOSURE_CATEGORY = "advocate_sud_disclosure" as con
  * caller that has not been taught about the exception stays masked.
  */
 export function advocatePart2Masked(
-  _type?: AdvocateAuthorizationType,
+  type?: AdvocateAuthorizationType,
   facts?: { linkValid: boolean; sudDisclosureConsentActive: boolean },
 ): boolean {
-  if (!facts) return ADVOCATE_PART2_ALWAYS_MASKED;
-  return !(facts.linkValid && facts.sudDisclosureConsentActive);
+  if (!facts || !type) return ADVOCATE_PART2_ALWAYS_MASKED;
+  return !advocateSudUnmasked(ADVOCATE_TIER_BY_TYPE[type], facts);
+}
+
+/**
+ * §6.2 — the SUD axis, resolved per tier. Returns the BASIS as well as the
+ * answer so the audit row can distinguish "the patient signed a disclosure"
+ * from "the instrument carries the authority".
+ */
+export function advocateSudAccess(
+  tier: AdvocateTier,
+  facts: { linkValid: boolean; sudDisclosureConsentActive: boolean },
+): { unmasked: boolean; mode: AdvocateSudAccessMode; basis: "consent" | "authority" | "none" } {
+  const mode = ADVOCATE_SUD_MODE_BY_TIER[tier];
+  // The link itself must be live no matter what. Authority does not survive
+  // revocation, expiry or an unclaimed invitation.
+  if (!facts.linkValid) return { unmasked: false, mode, basis: "none" };
+  if (mode === "categorically_barred") return { unmasked: false, mode, basis: "none" };
+  if (mode === "authority_derived") return { unmasked: true, mode, basis: "authority" };
+  return facts.sudDisclosureConsentActive
+    ? { unmasked: true, mode, basis: "consent" }
+    : { unmasked: false, mode, basis: "none" };
+}
+
+export function advocateSudUnmasked(
+  tier: AdvocateTier,
+  facts: { linkValid: boolean; sudDisclosureConsentActive: boolean },
+): boolean {
+  return advocateSudAccess(tier, facts).unmasked;
 }
 
 /** Facts the caller must supply. All live-evaluated by the store, never cached. */
@@ -211,6 +312,14 @@ export interface AdvocateAccessFacts {
    * decide. Until then the directive is on file but dormant.
    */
   ahcdActivated?: boolean;
+  /**
+   * Conservator only — certified court documents are ON FILE and verified.
+   * Modelled as a real precondition fact (backed by a field on `AdvocateLink`)
+   * rather than folded into the permission grant: the paperwork existing is
+   * itself the thing that must be true, and it can be absent on an otherwise
+   * fully-claimed link. Verification UI is a follow-up; the gate is real now.
+   */
+  conservatorshipDocsOnFile?: boolean;
 }
 
 export type AdvocateDenyReason =
@@ -221,6 +330,7 @@ export type AdvocateDenyReason =
   | "authorization_not_confirmed"
   | "roi_missing"
   | "ahcd_not_activated"
+  | "conservatorship_docs_missing"
   | "permission_not_granted";
 
 export interface AdvocateAccessDecision {
@@ -238,29 +348,61 @@ const DENY = (denyReason: AdvocateDenyReason, reason: string): AdvocateAccessDec
 });
 
 /**
- * Tier grants. `participation` is the floor; `decision_making` is a strict
- * superset — the extra grants are the ones that genuinely need the added legal
- * authority:
- *  - `care_plan_clinical_view`: reading clinical goals/problems is materially
- *    broader PHI than logistics, and is the information a decision-maker needs
- *    to decide. A coordinating family member does not need it to arrange a ride.
- *  - `eligibility_assist_write`: submitting or attesting on a member's behalf
- *    is an act with legal consequence, so it needs an instrument that confers
- *    authority to act — or the DHCS AR addendum below, whose whole purpose is
- *    exactly that act.
+ * §6.3 — the grants REMAPPED onto the four tiers. No new permission names were
+ * invented; every entry below already existed in the vocabulary above.
+ *
+ *  - `hipaa_only` is now genuinely READ-ONLY. The old `participation` tier
+ *    carried `coordination_write`, `care_plan_participation_write` and
+ *    `document_upload`; all three are removed here, because a HIPAA
+ *    authorization authorises DISCLOSURE TO the holder, not action BY them.
+ *    (This is a real narrowing of the old participation tier, not a relabel.)
+ *  - `authorized_representative` = that read-only set PLUS
+ *    `eligibility_assist_write` and nothing else. What used to be a by-type
+ *    addendum on a participation link is now the tier's whole point.
+ *  - `ahcd_agent` = the former decision-making set: AR's grants plus
+ *    `coordination_write`, `care_plan_participation_write`,
+ *    `care_plan_clinical_view` and `document_upload`.
+ *  - `conservator` = the SAME set as `ahcd_agent`. Deliberate: the permission
+ *    vocabulary has no grant beyond the AHCD set to hand out, and inventing
+ *    one purely to make conservator look broader would put an ungated name in
+ *    the table. Where conservatorship IS actually broader is expressed where
+ *    it is real rather than as a fake grant: (a) it is not dormant — no
+ *    activation determination is required, (b) it carries a hard
+ *    certified-court-document precondition that no other tier has, and (c) it
+ *    binds the client, which is a property of the signature's legal effect,
+ *    not of a read/write permission. If a future capability (e.g. signing
+ *    data waivers as a distinct auditable act) becomes a real code path, it
+ *    gets a real permission name then.
  */
 const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
-  participation: [
+  hipaa_only: [
+    "schedule_view",
+    "coordination_view",
+    "care_plan_participation_view",
+    "eligibility_assist_view",
+    "document_view",
+  ],
+  authorized_representative: [
+    "schedule_view",
+    "coordination_view",
+    "care_plan_participation_view",
+    "eligibility_assist_view",
+    "document_view",
+    "eligibility_assist_write",
+  ],
+  ahcd_agent: [
     "schedule_view",
     "coordination_view",
     "coordination_write",
     "care_plan_participation_view",
     "care_plan_participation_write",
     "eligibility_assist_view",
+    "eligibility_assist_write",
+    "care_plan_clinical_view",
     "document_view",
     "document_upload",
   ],
-  decision_making: [
+  conservator: [
     "schedule_view",
     "coordination_view",
     "coordination_write",
@@ -274,19 +416,16 @@ const TIER_PERMISSIONS: Record<AdvocateTier, AdvocatePermission[]> = {
   ],
 };
 
-/** Type-specific additions on top of the tier floor. */
-const TYPE_ADDENDA: Partial<Record<AdvocateAuthorizationType, AdvocatePermission[]>> = {
-  dhcs_authorized_representative: ["eligibility_assist_write"],
-};
-
 export function advocateTier(type: AdvocateAuthorizationType): AdvocateTier {
   return ADVOCATE_TIER_BY_TYPE[type];
 }
 
+export function permissionsForTier(tier: AdvocateTier): AdvocatePermission[] {
+  return [...TIER_PERMISSIONS[tier]];
+}
+
 export function permissionsForType(type: AdvocateAuthorizationType): AdvocatePermission[] {
-  const base = TIER_PERMISSIONS[ADVOCATE_TIER_BY_TYPE[type]];
-  const extra = TYPE_ADDENDA[type] ?? [];
-  return Array.from(new Set([...base, ...extra]));
+  return permissionsForTier(ADVOCATE_TIER_BY_TYPE[type]);
 }
 
 /** The whole gate. Deny by default; every allow path is explicit. */
@@ -318,6 +457,14 @@ export function advocateAccessDecision(facts: AdvocateAccessFacts): AdvocateAcce
     return DENY(
       "ahcd_not_activated",
       "This Advance Health Care Directive is on file but not activated by a physician.",
+    );
+
+  // Conservatorship rests on certified court documents. No documents on file,
+  // no access — the broadest tier has the hardest precondition.
+  if (type === "conservatorship" && !facts.conservatorshipDocsOnFile)
+    return DENY(
+      "conservatorship_docs_missing",
+      "Certified conservatorship court documents are not on file for this connection.",
     );
 
   const permissions = permissionsForType(type);

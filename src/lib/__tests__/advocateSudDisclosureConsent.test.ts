@@ -76,6 +76,14 @@ function connected(patientId: string, type: AdvocateAuthorizationType = "hipaa_a
     authorizationType: type,
     attestedName: "Rosa Ibarra",
   });
+  // §Phase 4.1 — the two authority tiers with real preconditions must have
+  // them satisfied here, or the link is claimed but inert.
+  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "conservatorship")
+    AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
+      verifiedBy: "Records Clerk",
+      courtOrderRef: "PR-2026-0001",
+    });
   return AdelanteEHR.getAdvocateLink(link.id)!;
 }
 
@@ -106,17 +114,28 @@ describe("the policy predicate itself", () => {
     for (const t of ADVOCATE_AUTHORIZATION_TYPES) expect(advocatePart2Masked(t.key)).toBe(true);
   });
 
-  it("requires BOTH facts — neither alone lifts the mask", () => {
-    for (const t of ADVOCATE_AUTHORIZATION_TYPES) {
+  it("requires BOTH facts for the CONSENT-CONDITIONAL tier — neither alone lifts the mask", () => {
+    // §Phase 4.1 narrowed this from "every type" to the consent-conditional
+    // tier, because SUD access is now its own axis: an AR can never be
+    // unmasked, and the two authority tiers do not depend on this consent.
+    for (const t of ["hipaa_authorization", "family_participation"] as const) {
       expect(
-        advocatePart2Masked(t.key, { linkValid: true, sudDisclosureConsentActive: false }),
+        advocatePart2Masked(t, { linkValid: true, sudDisclosureConsentActive: false }),
       ).toBe(true);
+      expect(
+        advocatePart2Masked(t, { linkValid: false, sudDisclosureConsentActive: true }),
+      ).toBe(true);
+      expect(
+        advocatePart2Masked(t, { linkValid: true, sudDisclosureConsentActive: true }),
+      ).toBe(false);
+    }
+  });
+
+  it("a dead link masks EVERY tier, authority tiers included", () => {
+    for (const t of ADVOCATE_AUTHORIZATION_TYPES) {
       expect(
         advocatePart2Masked(t.key, { linkValid: false, sudDisclosureConsentActive: true }),
       ).toBe(true);
-      expect(
-        advocatePart2Masked(t.key, { linkValid: true, sudDisclosureConsentActive: true }),
-      ).toBe(false);
     }
   });
 });
