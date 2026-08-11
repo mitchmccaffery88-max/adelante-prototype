@@ -276,9 +276,25 @@ export function advocatePart2Masked(
  */
 export function advocateSudAccess(
   tier: AdvocateTier,
-  facts: { linkValid: boolean; sudDisclosureConsentActive: boolean },
+  facts: {
+    linkValid: boolean;
+    sudDisclosureConsentActive: boolean;
+    /**
+     * §Phase 4.2 (6.5 item 5) — the frontline reviewer read the directive and
+     * could NOT find language that plainly covers SUD / psychotherapy records.
+     * When that is the finding, the instrument stops carrying Part 2 authority
+     * on its own: the agent must separately execute the ASCMI form, so this
+     * link drops back to the consent-conditional path for Part 2 content ONLY.
+     * General clinical access is unaffected — the two axes stay independent.
+     */
+    ahcdPart2ScopeUnclear?: boolean;
+  },
 ): { unmasked: boolean; mode: AdvocateSudAccessMode; basis: "consent" | "authority" | "none" } {
-  const mode = ADVOCATE_SUD_MODE_BY_TIER[tier];
+  let mode = ADVOCATE_SUD_MODE_BY_TIER[tier];
+  // An AHCD whose text does not clearly reach Part 2 records cannot derive
+  // Part 2 access from its own authority. A conservator is unaffected: that
+  // authority comes from a court order, not from the directive's wording.
+  if (tier === "ahcd_agent" && facts.ahcdPart2ScopeUnclear) mode = "consent_conditional";
   // The link itself must be live no matter what. Authority does not survive
   // revocation, expiry or an unclaimed invitation.
   if (!facts.linkValid) return { unmasked: false, mode, basis: "none" };
@@ -291,7 +307,11 @@ export function advocateSudAccess(
 
 export function advocateSudUnmasked(
   tier: AdvocateTier,
-  facts: { linkValid: boolean; sudDisclosureConsentActive: boolean },
+  facts: {
+    linkValid: boolean;
+    sudDisclosureConsentActive: boolean;
+    ahcdPart2ScopeUnclear?: boolean;
+  },
 ): boolean {
   return advocateSudAccess(tier, facts).unmasked;
 }
