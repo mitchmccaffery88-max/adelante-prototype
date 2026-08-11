@@ -6121,10 +6121,78 @@ export const AdelanteEHR = {
     emit();
   },
   raiseCrisisFlag(patientId: string, source: string) {
+    // (see screener helpers below)
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.crisisFlag = { source, raisedAt: new Date().toISOString() };
     emit();
+  },
+  /** Latest stored result for an instrument — the one the checklist reads. */
+  getScreenerResult(patientId: string, key: string): ScreenerResult | undefined {
+    return patients.find((x) => x.id === patientId)?.screeners[key];
+  },
+  /**
+   * §Pre-release build 2 — population-health rollup over the SAME
+   * `ScreenerResult` storage every instrument already writes to. No parallel
+   * analytics table: positive-screen rates and SDOH domain prevalence are
+   * derived from `patient.screeners` / `screenerHistory` on demand.
+   */
+  screenerPopulationSummary(opts: { keys?: string[]; patientIds?: string[] } = {}): {
+    instruments: {
+      key: string;
+      name: string;
+      administered: number;
+      positive: number;
+      positiveRate: number;
+    }[];
+    sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
+  } {
+    const cohort = patients.filter(
+      (p) => !opts.patientIds || opts.patientIds.includes(p.id),
+    );
+    const keys =
+      opts.keys ??
+      Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
+    const instruments = keys.map((key) => {
+      const def = screenerByKey(key);
+      const results = cohort
+        .map((p) => p.screeners[key])
+        .filter((r): r is ScreenerResult => Boolean(r));
+      const positive = results.filter((r) =>
+        r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
+      ).length;
+      return {
+        key,
+        name: def?.name ?? key,
+        administered: results.length,
+        positive,
+        positiveRate: results.length ? positive / results.length : 0,
+      };
+    });
+    // Domain prevalence across everyone with a domain instrument on file.
+    const tally = new Map<string, { label: string; positive: number; screened: number }>();
+    for (const p of cohort) {
+      for (const r of Object.values(p.screeners ?? {})) {
+        if (!r?.domains) continue;
+        if (opts.keys && !opts.keys.includes(r.key)) continue;
+        for (const d of r.domains) {
+          const row = tally.get(d.key) ?? { label: d.label, positive: 0, screened: 0 };
+          row.screened += 1;
+          if (d.positive) row.positive += 1;
+          tally.set(d.key, row);
+        }
+      }
+    }
+    return {
+      instruments,
+      sdohDomains: [...tally.entries()].map(([key, v]) => ({
+        key,
+        label: v.label,
+        positive: v.positive,
+        screened: v.screened,
+        rate: v.screened ? v.positive / v.screened : 0,
+      })),
+    };
   },
   setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
     const p = patients.find((x) => x.id === patientId);
