@@ -5069,6 +5069,7 @@ export interface GroupAttendeeNoteRef {
   modality?: GroupOccurrenceModality;
 }
 
+
 const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
