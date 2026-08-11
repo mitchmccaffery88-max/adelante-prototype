@@ -2055,9 +2055,28 @@ export interface PreReleaseFormDef {
   consentCategory?: ConsentCategory;
   /** Transition planning is satisfied by the Reentry Care Plan record. */
   satisfiedByCarePlan?: boolean;
+  /**
+   * §Pre-release intake build 1 — satisfied by the capacity & legal-authority
+   * determination, not by field capture. Exactly one def carries this.
+   */
+  satisfiedByCapacityStep?: boolean;
+  /**
+   * This step depends on somebody being able to CONSENT. It is blocked (and
+   * visibly flagged) whenever the capacity gate says nobody currently can —
+   * either because capacity was never determined, or because the individual
+   * is impaired and no legal-authority instrument is in force.
+   */
+  requiresConsentCapacity?: boolean;
 }
 
 export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
+  {
+    key: "capacity_authority",
+    category: "capacity_authority",
+    label: "Capacity determination & advocate/legal authority",
+    fields: [],
+    satisfiedByCapacityStep: true,
+  },
   {
     key: "ssapp",
     category: "medi_cal_enrollment",
@@ -2095,6 +2114,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     key: "bh_sud_loc",
     category: "clinical_assessment",
     label: "Behavioral Health / SUD Level of Care Screening (placeholder)",
+    requiresConsentCapacity: true,
     fields: [
       { key: "mhScreenPositive", label: "MH screen positive", type: "bool" },
       { key: "sudScreenPositive", label: "SUD screen positive", type: "bool" },
@@ -2108,6 +2128,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Informed Consent for Pre-Release Services (placeholder)",
     fields: [],
     consentCategory: "pre_release_services",
+    requiresConsentCapacity: true,
   },
   {
     key: "telehealth_consent",
@@ -2115,6 +2136,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Telehealth Informed Consent (placeholder)",
     fields: [],
     consentCategory: "telehealth_services",
+    requiresConsentCapacity: true,
   },
   {
     key: "information_sharing_authorization",
@@ -2122,6 +2144,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Information Sharing / Disclosure Authorization (placeholder)",
     fields: [],
     consentCategory: "information_sharing_disclosure",
+    requiresConsentCapacity: true,
   },
   {
     key: "reentry_care_plan",
