@@ -507,6 +507,7 @@ function GroupDetail({
 
         {canWrite && activeStart && (
           <div className="space-y-2">
+            <OccurrenceModalityPicker group={group} occurrenceStart={activeStart} actor={actor} />
             <h4 className="text-xs font-medium text-navy">Attendance</h4>
             {roster.map(({ enrollment, patient }) => {
               const current =
@@ -608,6 +609,7 @@ function GroupDetail({
                     topicCovered,
                     groupProcess,
                     perAttendee,
+                    modality: AdelanteEHR.groupOccurrenceModality(group.id, activeStart),
                     actor,
                   });
                   // Billing hook: each individualized note becomes its own
