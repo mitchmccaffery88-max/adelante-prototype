@@ -5067,6 +5067,11 @@ export interface GroupAttendeeNoteRef {
   billingCode?: string;
   /** How the service was actually delivered for THIS occurrence. */
   modality?: GroupOccurrenceModality;
+  /**
+   * Group category at documentation time. Drives note access resolution
+   * (see noteGateClass): only `sud_clinical_preauth` is Part 2 content.
+   */
+  category?: GroupCategory;
 }
 
 
