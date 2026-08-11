@@ -63,9 +63,10 @@ describe("pre-release episode + four form categories", () => {
     expect(tasks.every((t) => t.allowedRoles?.includes("cf_care_manager"))).toBe(true);
   });
 
-  it("covers all four categories", () => {
+  it("covers every form category, including the capacity/authority gate", () => {
     const cats = new Set(PRE_RELEASE_FORMS.map((f) => f.category));
     expect([...cats].sort()).toEqual([
+      "capacity_authority",
       "clinical_assessment",
       "medi_cal_enrollment",
       "release_consent",

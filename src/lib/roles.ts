@@ -1049,12 +1049,26 @@ export const PRE_RELEASE_FORM_WRITE_ROLES: StaffRole[] = [
 
 export function canWritePreReleaseForm(
   role: StaffRole,
-  category: "medi_cal_enrollment" | "clinical_assessment" | "release_consent" | "transition_planning",
+  category:
+    | "capacity_authority"
+    | "medi_cal_enrollment"
+    | "clinical_assessment"
+    | "release_consent"
+    | "transition_planning",
 ): { allowed: boolean; reason?: string } {
   if (category === "release_consent")
     return {
       allowed: false,
       reason: "Release & consent forms are captured in the consent ledger, not here.",
+    };
+  // The capacity determination is not a form-field capture: it is recorded
+  // through `recordPreReleaseCapacity`, which carries its own attribution.
+  if (category === "capacity_authority")
+    return {
+      allowed: PRE_RELEASE_FORM_WRITE_ROLES.includes(role),
+      ...(PRE_RELEASE_FORM_WRITE_ROLES.includes(role)
+        ? {}
+        : { reason: "Only CF Care Managers and ECM Providers work this list." }),
     };
   if (!PRE_RELEASE_FORM_WRITE_ROLES.includes(role))
     return { allowed: false, reason: "Only CF Care Managers and ECM Providers work this list." };

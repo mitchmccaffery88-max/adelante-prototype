@@ -54,6 +54,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
+import { CapacityAuthorityStep } from "@/components/prerelease/CapacityAuthorityStep";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
 
@@ -182,17 +183,40 @@ function OpenEpisodeForm() {
   const { role, staffName } = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const cfStaff = staffForRole("cf_care_manager");
+  // In-custody profile creation is the DEFAULT: for this population the CF
+  // Care Manager usually meets someone who has no record here yet.
+  const [mode, setMode] = useState<"new" | "existing">("new");
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [dob, setDob] = useState("");
   const [patientId, setPatientId] = useState<string>("");
   const [cfId, setCfId] = useState<string>(cfStaff[0]?.id ?? "");
   const [date, setDate] = useState("");
 
   const submit = () => {
     const cf = getStaffMember(cfId);
-    if (!patientId || !cf || !date) {
+    if (!cf || !date || (mode === "existing" ? !patientId : !firstName.trim() || !lastName.trim())) {
       toast.error("Patient, CF Care Manager and anticipated release date are required.");
       return;
     }
     try {
+      if (mode === "new") {
+        AdelanteEHR.openPreReleaseEpisodeForNewPatient({
+          firstName,
+          lastName,
+          ...(dob ? { dob } : {}),
+          anticipatedReleaseDate: date,
+          cfCareManagerStaffId: cf.id,
+          cfCareManagerName: cf.name,
+          openedBy: staffName,
+          actorRole: role,
+        });
+        setFirstName("");
+        setLastName("");
+        setDob("");
+        toast.success("Record created and pre-release episode opened.");
+        return;
+      }
       AdelanteEHR.openPreReleaseEpisode({
         patientId,
         anticipatedReleaseDate: date,
@@ -210,18 +234,61 @@ function OpenEpisodeForm() {
   return (
     <div className="mt-4 space-y-2 border-t pt-3">
       <div className="text-sm font-medium">Open an episode</div>
-      <Select value={patientId} onValueChange={setPatientId}>
-        <SelectTrigger>
-          <SelectValue placeholder="Patient" />
-        </SelectTrigger>
-        <SelectContent>
-          {patients.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {p.firstName} {p.lastName}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <div className="flex gap-1">
+        <Button
+          size="sm"
+          className="flex-1"
+          variant={mode === "new" ? "default" : "outline"}
+          data-testid="episode-mode-new"
+          onClick={() => setMode("new")}
+        >
+          New person in custody
+        </Button>
+        <Button
+          size="sm"
+          className="flex-1"
+          variant={mode === "existing" ? "default" : "outline"}
+          data-testid="episode-mode-existing"
+          onClick={() => setMode("existing")}
+        >
+          Existing record
+        </Button>
+      </div>
+      {mode === "new" ? (
+        <div className="space-y-2">
+          <Input
+            data-testid="new-first-name"
+            placeholder="First name"
+            value={firstName}
+            onChange={(e) => setFirstName(e.target.value)}
+          />
+          <Input
+            data-testid="new-last-name"
+            placeholder="Last name"
+            value={lastName}
+            onChange={(e) => setLastName(e.target.value)}
+          />
+          <Input
+            type="date"
+            aria-label="Date of birth"
+            value={dob}
+            onChange={(e) => setDob(e.target.value)}
+          />
+        </div>
+      ) : (
+        <Select value={patientId} onValueChange={setPatientId}>
+          <SelectTrigger>
+            <SelectValue placeholder="Patient" />
+          </SelectTrigger>
+          <SelectContent>
+            {patients.map((p) => (
+              <SelectItem key={p.id} value={p.id}>
+                {p.firstName} {p.lastName}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      )}
       <Select value={cfId} onValueChange={setCfId}>
         <SelectTrigger>
           <SelectValue placeholder="CF Care Manager" />
@@ -236,7 +303,7 @@ function OpenEpisodeForm() {
       </Select>
       <Input type="date" value={date} onChange={(e) => setDate(e.target.value)} />
       <Button className="w-full" size="sm" onClick={submit}>
-        Open episode
+        {mode === "new" ? "Create record & open episode" : "Open episode"}
       </Button>
     </div>
   );
@@ -301,6 +368,9 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
       </Card>
 
       {PRE_RELEASE_FORM_CATEGORIES.map((cat) => (
+        cat.key === "capacity_authority" ? (
+          <CapacityAuthorityStep key={cat.key} episode={episode} />
+        ) : (
         <Card key={cat.key} className="p-4">
           <div className="mb-1 font-medium">{cat.label}</div>
           <p className="mb-3 text-xs text-muted-foreground">{cat.helper}</p>
@@ -320,13 +390,28 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                         {r.record.attribution.attributedTo.staffName}
                       </span>
                     )}
+                    {r.blocked && (
+                      <span
+                        data-testid={`blocked-${r.def.key}`}
+                        className="mt-1 block text-xs text-destructive"
+                      >
+                        {r.blocked}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {r.blocked && <Badge variant="destructive">Blocked</Badge>}
                     <Badge className={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                     {r.def.consentCategory ? (
+                      r.blocked ? (
+                        <Button size="sm" variant="outline" disabled>
+                          Capture in consent ledger
+                        </Button>
+                      ) : (
                       <Button asChild size="sm" variant="outline">
                         <Link to="/consent">Capture in consent ledger</Link>
                       </Button>
+                      )
                     ) : r.def.satisfiedByCarePlan ? (
                       <Button
                         size="sm"
@@ -340,7 +425,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!ok}
+                        disabled={!ok || Boolean(r.blocked)}
                         data-testid={`capture-${r.def.key}`}
                         onClick={() => setOpenForm(r.def)}
                       >
@@ -352,6 +437,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
               ))}
           </div>
         </Card>
+        )
       ))}
 
       {plan?.enrollmentCode && (

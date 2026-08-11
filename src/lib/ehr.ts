@@ -52,6 +52,14 @@ import {
   type AhcdChecklistState,
   type AhcdDeterminationRole,
 } from "./advocate";
+// §CF pre-release intake — capacity / legal-authority policy. Pure module.
+import {
+  capacityGateDecision,
+  capacityRequiresSurrogate,
+  type CapacityGateDecision,
+  type IntakeCapacityStatus,
+  type LegalAuthorityType,
+} from "./capacity";
 // §Adelante Journey Phase 5 — self-help Library. Content + pure selectors.
 // The module imports nothing at runtime (its population import is type-only),
 // so there is no cycle back into this store.
@@ -1979,6 +1987,12 @@ export interface ConsentRecord {
 // with Christi's real DHCS-sourced field sets before production.
 // ===========================================================================
 export type PreReleaseFormCategory =
+  /**
+   * §Pre-release intake build 1 — the EARLY, required branch point. Listed
+   * first because it is sequenced first: nothing consent-dependent below it
+   * may honestly proceed until it is answered.
+   */
+  | "capacity_authority"
   | "medi_cal_enrollment"
   | "clinical_assessment"
   | "release_consent"
@@ -1989,6 +2003,12 @@ export const PRE_RELEASE_FORM_CATEGORIES: {
   label: string;
   helper: string;
 }[] = [
+  {
+    key: "capacity_authority",
+    label: "Capacity & legal authority",
+    helper:
+      "Required first. Can this individual participate in and consent to their own intake — and if not, who legally can?",
+  },
   {
     key: "medi_cal_enrollment",
     label: "Medi-Cal enrollment & eligibility",
@@ -2035,9 +2055,28 @@ export interface PreReleaseFormDef {
   consentCategory?: ConsentCategory;
   /** Transition planning is satisfied by the Reentry Care Plan record. */
   satisfiedByCarePlan?: boolean;
+  /**
+   * §Pre-release intake build 1 — satisfied by the capacity & legal-authority
+   * determination, not by field capture. Exactly one def carries this.
+   */
+  satisfiedByCapacityStep?: boolean;
+  /**
+   * This step depends on somebody being able to CONSENT. It is blocked (and
+   * visibly flagged) whenever the capacity gate says nobody currently can —
+   * either because capacity was never determined, or because the individual
+   * is impaired and no legal-authority instrument is in force.
+   */
+  requiresConsentCapacity?: boolean;
 }
 
 export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
+  {
+    key: "capacity_authority",
+    category: "capacity_authority",
+    label: "Capacity determination & advocate/legal authority",
+    fields: [],
+    satisfiedByCapacityStep: true,
+  },
   {
     key: "ssapp",
     category: "medi_cal_enrollment",
@@ -2075,6 +2114,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     key: "bh_sud_loc",
     category: "clinical_assessment",
     label: "Behavioral Health / SUD Level of Care Screening (placeholder)",
+    requiresConsentCapacity: true,
     fields: [
       { key: "mhScreenPositive", label: "MH screen positive", type: "bool" },
       { key: "sudScreenPositive", label: "SUD screen positive", type: "bool" },
@@ -2088,6 +2128,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Informed Consent for Pre-Release Services (placeholder)",
     fields: [],
     consentCategory: "pre_release_services",
+    requiresConsentCapacity: true,
   },
   {
     key: "telehealth_consent",
@@ -2095,6 +2136,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Telehealth Informed Consent (placeholder)",
     fields: [],
     consentCategory: "telehealth_services",
+    requiresConsentCapacity: true,
   },
   {
     key: "information_sharing_authorization",
@@ -2102,6 +2144,7 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     label: "Information Sharing / Disclosure Authorization (placeholder)",
     fields: [],
     consentCategory: "information_sharing_disclosure",
+    requiresConsentCapacity: true,
   },
   {
     key: "reentry_care_plan",
@@ -2217,6 +2260,36 @@ export interface PreReleaseEpisode {
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
+
+/**
+ * §Pre-release intake build 1 — the recorded answer to the capacity question,
+ * plus the advocate links identified off the back of it.
+ *
+ * The advocate links are POINTERS into the existing four-tier model. Nothing
+ * about authority is duplicated here: whether an instrument is in force is
+ * always re-read live through `advocateAccess`.
+ */
+export interface PreReleaseCapacityDetermination {
+  id: string;
+  episodeId: string;
+  patientId: string;
+  status: IntakeCapacityStatus;
+  /** What the CF Care Manager observed, in their own words. */
+  basis: string;
+  determinedBy: string;
+  determinedByRole: string;
+  determinedAt: string;
+  /**
+   * Advocates identified during this step, in invitation order. The expected
+   * instrument is what the CF Care Manager BELIEVES is out there; the real
+   * `authorizationType` is only ever set by the advocate at claim time, which
+   * is why both are kept.
+   */
+  identifiedAdvocates: {
+    advocateLinkId: string;
+    expectedAuthorization: LegalAuthorityType | "hipaa_authorization" | "dhcs_authorized_representative" | "family_participation";
+  }[];
+}
 
 export interface PreReleaseFormRecord {
   id: string;
@@ -5410,6 +5483,7 @@ const groupOccurrences: GroupOccurrenceRecord[] = [];
 // §v3.0 Phase 2 — pre-release episode stores.
 const preReleaseEpisodes: PreReleaseEpisode[] = [];
 const preReleaseForms: PreReleaseFormRecord[] = [];
+const preReleaseCapacity: PreReleaseCapacityDetermination[] = [];
 const reentryCarePlans: ReentryCarePlan[] = [];
 const enrollmentCodes: EnrollmentCode[] = [];
 
@@ -7692,6 +7766,228 @@ export const AdelanteEHR = {
   preReleaseTaskFor(episodeId: string, formKey: string): CaseTask | undefined {
     return caseTasks.find((t) => t.dedupeKey === `prerelease:${episodeId}:${formKey}`);
   },
+
+  // ---------- §Pre-release intake build 1 — in-custody profile creation ----
+  /**
+   * Create the person AND open their pre-release episode as ONE action.
+   *
+   * For this population the record almost never exists first: the CF Care
+   * Manager meets somebody in custody. Both halves reuse the real primitives
+   * (`createPatient`, `openPreReleaseEpisode`) unchanged, so the population
+   * resolver classifies the new patient as `pre_release_ji` from the moment
+   * this returns — an open, non-missed-handoff episode is its strongest
+   * signal, and there is nothing extra to remember to set.
+   */
+  openPreReleaseEpisodeForNewPatient(input: {
+    firstName: string;
+    lastName: string;
+    dob?: string;
+    phone?: string;
+    preferredLanguage?: PreferredLanguage;
+    cin?: string;
+    anticipatedReleaseDate: string;
+    cfCareManagerStaffId: string;
+    cfCareManagerName: string;
+    facilityId?: string;
+    bookingId?: string;
+    openedBy: string;
+    actorRole: string;
+  }): { patient: Patient; episode: PreReleaseEpisode } {
+    if (!input.firstName.trim() || !input.lastName.trim())
+      throw new Error("A first and last name are required to create the record.");
+    if (!input.anticipatedReleaseDate)
+      throw new Error("An anticipated release date is required to open a pre-release episode.");
+    const patient = AdelanteEHR.createPatient({
+      firstName: input.firstName.trim(),
+      lastName: input.lastName.trim(),
+      ...(input.dob ? { dob: input.dob } : {}),
+      ...(input.phone ? { phone: input.phone } : {}),
+      ...(input.preferredLanguage ? { preferredLanguage: input.preferredLanguage } : {}),
+      ...(input.cin ? { cin: input.cin } : {}),
+    });
+    appendAudit({
+      category: "clinical",
+      action: "in_custody_patient_created",
+      patientId: patient.id,
+      actorId: input.openedBy,
+      actorRole: input.actorRole,
+      detail: {
+        anticipatedReleaseDate: input.anticipatedReleaseDate,
+        facilityId: input.facilityId,
+        cfCareManagerStaffId: input.cfCareManagerStaffId,
+      },
+    });
+    const episode = AdelanteEHR.openPreReleaseEpisode({
+      patientId: patient.id,
+      anticipatedReleaseDate: input.anticipatedReleaseDate,
+      cfCareManagerStaffId: input.cfCareManagerStaffId,
+      cfCareManagerName: input.cfCareManagerName,
+      ...(input.facilityId ? { facilityId: input.facilityId } : {}),
+      ...(input.bookingId ? { bookingId: input.bookingId } : {}),
+      openedBy: input.openedBy,
+      actorRole: input.actorRole,
+    });
+    return { patient, episode };
+  },
+
+  // ---------- §Pre-release intake build 1 — capacity & legal authority -----
+  getPreReleaseCapacity(episodeId: string): PreReleaseCapacityDetermination | undefined {
+    return preReleaseCapacity.find((c) => c.episodeId === episodeId);
+  },
+
+  /**
+   * Record (or re-record) the capacity determination. Required and early: the
+   * checklist row for it is generated with every episode and this is the only
+   * way to satisfy it.
+   */
+  recordPreReleaseCapacity(input: {
+    episodeId: string;
+    status: IntakeCapacityStatus;
+    basis: string;
+    determinedBy: string;
+    actorRole: string;
+  }): PreReleaseCapacityDetermination {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (!input.basis.trim())
+      throw new Error("Record what you observed — the basis for the capacity determination.");
+    const now = new Date().toISOString();
+    let rec = preReleaseCapacity.find((c) => c.episodeId === ep.id);
+    if (!rec) {
+      rec = {
+        id: uid(),
+        episodeId: ep.id,
+        patientId: ep.patientId,
+        status: input.status,
+        basis: input.basis.trim(),
+        determinedBy: input.determinedBy,
+        determinedByRole: input.actorRole,
+        determinedAt: now,
+        identifiedAdvocates: [],
+      };
+      preReleaseCapacity.unshift(rec);
+    } else {
+      rec.status = input.status;
+      rec.basis = input.basis.trim();
+      rec.determinedBy = input.determinedBy;
+      rec.determinedByRole = input.actorRole;
+      rec.determinedAt = now;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_capacity_determined",
+      patientId: ep.patientId,
+      actorId: input.determinedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        capacity: rec.status,
+        requiresSurrogate: capacityRequiresSurrogate(rec.status),
+        basis: rec.basis,
+      },
+    });
+    emit();
+    return { ...rec };
+  },
+
+  /**
+   * Identify an advocate AT the capacity step, which is the point at which a
+   * real invitation goes out. Same one-way designation rule as everywhere
+   * else: `createAdvocateInvitation` is the mechanism, unchanged, so the
+   * invitation is traceable rather than a recorded name.
+   */
+  identifyPreReleaseAdvocate(input: {
+    episodeId: string;
+    advocateName: string;
+    relationship?: string;
+    invitationSentTo: string;
+    invitationChannel: "email" | "sms";
+    expectedAuthorization: PreReleaseCapacityDetermination["identifiedAdvocates"][number]["expectedAuthorization"];
+    identifiedBy: string;
+    actorRole: string;
+  }): AdvocateLink {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const rec = preReleaseCapacity.find((c) => c.episodeId === ep.id);
+    if (!rec)
+      throw new Error(
+        "Record the capacity determination first — the advocate step follows from its answer.",
+      );
+    const link = AdelanteEHR.createAdvocateInvitation({
+      patientId: ep.patientId,
+      advocateName: input.advocateName,
+      ...(input.relationship ? { relationship: input.relationship } : {}),
+      invitationSentTo: input.invitationSentTo,
+      invitationChannel: input.invitationChannel,
+      designatedBy: {
+        actor: input.actorRole === "ecm_provider" ? "ecm_provider" : "cf_care_manager",
+        name: input.identifiedBy,
+      },
+    });
+    rec.identifiedAdvocates = [
+      ...rec.identifiedAdvocates,
+      { advocateLinkId: link.id, expectedAuthorization: input.expectedAuthorization },
+    ];
+    appendAudit({
+      category: "advocate",
+      action: "pre_release_advocate_identified",
+      patientId: ep.patientId,
+      actorId: input.identifiedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        expectedAuthorization: input.expectedAuthorization,
+        capacity: rec.status,
+      },
+    });
+    emit();
+    return link;
+  },
+
+  /**
+   * The live capacity/authority state for an episode. Whether an instrument is
+   * in force is re-read through the EXISTING advocate gate every call — a
+   * lapsed temporary AHCD determination or a revoked link closes this gate
+   * with nothing needing to be told.
+   */
+  preReleaseCapacityState(episodeId: string): {
+    determination?: PreReleaseCapacityDetermination;
+    /** Legal-authority links (AHCD / conservatorship) for this patient. */
+    authorityLinks: AdvocateLink[];
+    activeAuthorityLinkId?: string;
+    decision: CapacityGateDecision;
+  } {
+    const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
+    const determination = preReleaseCapacity.find((c) => c.episodeId === episodeId);
+    if (!ep)
+      return {
+        authorityLinks: [],
+        decision: capacityGateDecision({ legalAuthorityActive: false, legalAuthorityPending: false }),
+      };
+    const expected = new Map(
+      (determination?.identifiedAdvocates ?? []).map((a) => [a.advocateLinkId, a.expectedAuthorization]),
+    );
+    const authorityLinks = AdelanteEHR.listAdvocateLinks(ep.patientId).filter((l) => {
+      const claimed = l.authorizationType;
+      if (claimed) return claimed === "ahcd" || claimed === "conservatorship";
+      const exp = expected.get(l.id);
+      return exp === "ahcd" || exp === "conservatorship";
+    });
+    const active = authorityLinks.find((l) => AdelanteEHR.advocateAccess(l.id).allowed);
+    const pending = authorityLinks.some((l) => l.status !== "revoked" && l.status !== "expired");
+    return {
+      ...(determination ? { determination } : {}),
+      authorityLinks,
+      ...(active ? { activeAuthorityLinkId: active.id } : {}),
+      decision: capacityGateDecision({
+        ...(determination ? { capacity: determination.status } : {}),
+        legalAuthorityActive: Boolean(active),
+        legalAuthorityPending: Boolean(!active && pending),
+      }),
+    };
+  },
   /**
    * Closes an episode (member released, transferred, or opened in error). The
    * episode and its captured forms are retained — they are the hand-off
@@ -7738,9 +8034,12 @@ export const AdelanteEHR = {
     record?: PreReleaseFormRecord;
     task?: CaseTask;
     status: PreReleaseFormStatus;
+    /** Set when the capacity gate blocks this consent-dependent step. */
+    blocked?: string;
   }[] {
     const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
     const plan = reentryCarePlans.find((p) => p.episodeId === episodeId);
+    const capacity = AdelanteEHR.preReleaseCapacityState(episodeId);
     let changed = false;
     const rows = PRE_RELEASE_FORMS.map((def) => {
       const record = AdelanteEHR.getPreReleaseForm(episodeId, def.key);
@@ -7754,12 +8053,25 @@ export const AdelanteEHR = {
       if (def.satisfiedByCarePlan) {
         status = plan?.status === "completed" ? "complete" : plan ? "in_progress" : "not_started";
       }
+      if (def.satisfiedByCapacityStep) {
+        // Complete only when the branch is genuinely resolved: competent, or
+        // impaired WITH a legal-authority instrument actually in force.
+        status = capacity.decision.canProceed
+          ? "complete"
+          : capacity.determination
+            ? "in_progress"
+            : "not_started";
+      }
+      const blocked =
+        def.requiresConsentCapacity && !capacity.decision.canProceed && status !== "complete"
+          ? capacity.decision.reason
+          : undefined;
       // Keep the worklist row honest for the derived rows.
       if (task && status === "complete" && task.status !== "done") {
         AdelanteEHR.completeCaseTask(task.id);
         changed = true;
       }
-      return { def, record, task, status };
+      return { def, record, task, status, ...(blocked ? { blocked } : {}) };
     });
     if (changed) emit();
     return rows;
@@ -7787,6 +8099,16 @@ export const AdelanteEHR = {
       );
     if (def.satisfiedByCarePlan)
       throw new Error("Transition planning is captured on the Reentry Care Plan.");
+    if (def.satisfiedByCapacityStep)
+      throw new Error(
+        "Capacity & legal authority is recorded through the capacity determination step.",
+      );
+    // The real gate: an impaired individual with no legal-authority
+    // instrument on file cannot be treated as having consented themselves.
+    if (def.requiresConsentCapacity) {
+      const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+      if (!gate.canProceed) throw new Error(gate.reason);
+    }
     if (input.complete) {
       const missing = def.fields
         .filter((f) => f.required)
