@@ -6033,6 +6033,44 @@ export const AdelanteEHR = {
     return Engagement.engagementSummary(patientId);
   },
 
+  // ---------- §Adelante Journey Phase 7 — Safety plan (Stanley-Brown) -------
+  //
+  // FACADE ONLY. Data lives in `src/lib/safetyPlan.ts` (clinical-adjacent,
+  // patient-authored, gated by the `safety_plan` record class). Callers use
+  // one entry point; these wrappers hold no state.
+  getSafetyPlan(patientId: string) {
+    return SafetyPlanStore.getSafetyPlan(patientId);
+  },
+  ensureSafetyPlan(patientId: string, author?: string) {
+    if (!_patient(patientId)) return undefined;
+    return SafetyPlanStore.ensureSafetyPlan(patientId, author);
+  },
+  safetyPlanEntries(patientId: string, sectionId?: SafetyPlanStore.SafetyPlanSectionId) {
+    return SafetyPlanStore.safetyPlanEntries(patientId, sectionId);
+  },
+  safetyPlanSummary(patientId: string) {
+    return SafetyPlanStore.safetyPlanSummary(patientId);
+  },
+  addSafetyPlanEntry(
+    patientId: string,
+    input: Parameters<typeof SafetyPlanStore.addSafetyPlanEntry>[1],
+  ) {
+    return SafetyPlanStore.addSafetyPlanEntry(patientId, input);
+  },
+  updateSafetyPlanEntry(
+    patientId: string,
+    entryId: string,
+    patch: Parameters<typeof SafetyPlanStore.updateSafetyPlanEntry>[2],
+  ) {
+    return SafetyPlanStore.updateSafetyPlanEntry(patientId, entryId, patch);
+  },
+  removeSafetyPlanEntry(patientId: string, entryId: string, opts?: { actorRole?: string }) {
+    return SafetyPlanStore.removeSafetyPlanEntry(patientId, entryId, opts ?? {});
+  },
+  markSafetyPlanReviewed(patientId: string, reviewedBy: string, actorRole?: string) {
+    return SafetyPlanStore.markSafetyPlanReviewed(patientId, reviewedBy, actorRole);
+  },
+
   /** Mark a lesson complete. Idempotent; auto-saves the toolkit takeaway. */
   completeLibraryItem(
     patientId: string,
