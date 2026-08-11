@@ -333,6 +333,13 @@ export interface AdvocateAccessFacts {
    */
   ahcdActivated?: boolean;
   /**
+   * §Phase 4.2 — an AHCD activation carrying a review-by date that has passed.
+   * A temporary incapacity determination is not permanent authority: when the
+   * review date lapses the link goes BACK to dormant and says so, rather than
+   * quietly staying active with a stale-looking date on screen.
+   */
+  ahcdDeterminationExpired?: boolean;
+  /**
    * Conservator only — certified court documents are ON FILE and verified.
    * Modelled as a real precondition fact (backed by a field on `AdvocateLink`)
    * rather than folded into the permission grant: the paperwork existing is
