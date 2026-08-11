@@ -40,6 +40,17 @@ import {
   type AdvocateSudAccessMode,
   ADVOCATE_SUD_DISCLOSURE_CATEGORY,
   advocateTier,
+  // §Phase 4.2 — AHCD activation + frontline validation checklist.
+  AHCD_CHECKLIST_ITEMS,
+  ahcdActivationReadiness,
+  ahcdDeterminationExpired,
+  ahcdPart2ScopeUnclear,
+  isAhcdDeterminationRole,
+  type AhcdActivationState,
+  type AhcdChecklistItemKey,
+  type AhcdChecklistOutcome,
+  type AhcdChecklistState,
+  type AhcdDeterminationRole,
 } from "./advocate";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
@@ -2338,7 +2349,9 @@ export type CaseTaskOrigin =
   | "notification_failed"
   | "provider_switch"
   /** §Phase 3c — created by a note template automation at sign time. */
-  | "note_automation";
+  | "note_automation"
+  /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
+  | "advocate_ahcd_validation";
 
 export interface CaseTask {
   id: string;
@@ -3497,9 +3510,38 @@ export interface AdvocateLink {
   /**
    * AHCD only — a physician's determination that the patient cannot
    * communicate or decide. Until this exists the directive is dormant.
+   * Retained as the denormalised "when/who" of the CURRENT activation; the
+   * authoritative state lives in `ahcdActivation` below (§Phase 4.2).
    */
   ahcdActivatedAt?: string;
   ahcdActivatedBy?: string;
+  /**
+   * §Phase 4.2 (6.4) — the real `dormant → clinically active` state, with the
+   * clinician and role that determined incapacity and an optional review date
+   * for a TEMPORARY determination. Once the review date passes the link is
+   * dormant again; see `ahcdDeterminationExpired`.
+   */
+  ahcdActivation?: {
+    state: AhcdActivationState;
+    determinedAt: string;
+    determinedBy: string;
+    determinedByRole: AhcdDeterminationRole;
+    /** The clinician's own words for the basis of the determination. */
+    basis: string;
+    /** True when a review date was set, i.e. the determination is temporary. */
+    temporary: boolean;
+    /** YYYY-MM-DD. Past this date the determination no longer authorises. */
+    reviewByDate?: string;
+    deactivatedAt?: string;
+    deactivatedBy?: string;
+    deactivatedReason?: string;
+  };
+  /**
+   * §Phase 4.2 (6.5) — the frontline validation checklist. Five independently
+   * trackable findings, each mirrored by a real CaseTask on the CF Care
+   * Manager's worklist.
+   */
+  ahcdValidation?: AhcdChecklistState;
   /**
    * §Phase 4.1 — conservator tier precondition. Certified court documents are
    * a real, recorded fact, not an implied consequence of picking the type at
@@ -3739,6 +3781,51 @@ function _advocatePart2Unmasked(link: AdvocateLink): boolean {
   return _advocatePart2Gates(link).unmasked;
 }
 
+/** Stable worklist key per checklist item, mirroring `prerelease:<id>:<key>`. */
+function _ahcdTaskKey(linkId: string, item: AhcdChecklistItemKey): string {
+  return `ahcd:${linkId}:${item}`;
+}
+
+/**
+ * §Phase 4.2 (6.5) — open the five validation items as real CaseTasks on the
+ * CF Care Manager's worklist. Same mechanism as the pre-release checklist:
+ * `dedupeKey` for idempotency, `allowedRoles` for routing, no parallel store.
+ */
+function _openAhcdValidationTasks(link: AdvocateLink): void {
+  for (const item of AHCD_CHECKLIST_ITEMS) {
+    AdelanteEHR.createCaseTask({
+      patientId: link.patientId,
+      assignedTo: "",
+      title: `AHCD validation ${item.order}/5 — ${item.label}`,
+      detail: `${link.advocateName} (${link.relationship}). ${item.detail}`,
+      dueDate: new Date().toISOString().slice(0, 10),
+      taskType: "ahcd_validation",
+      allowedRoles: ["cf_care_manager", "ecm_provider"],
+      origin: "advocate_ahcd_validation",
+      dedupeKey: _ahcdTaskKey(link.id, item.key),
+    });
+  }
+}
+
+/**
+ * The live activation state. A temporary determination whose review date has
+ * passed is expired HERE, on read, so nothing has to be told to expire it —
+ * the same live-evaluation approach `_effectiveAdvocateStatus` uses for the
+ * link itself. The lapse is written back once (and audited) so the worklist
+ * and the audit trail agree with what the gate just decided.
+ */
+function _ahcdEffective(link: AdvocateLink): { active: boolean; expired: boolean } {
+  const a = link.ahcdActivation;
+  if (!a || a.state !== "clinically_active") return { active: false, expired: a?.state === "expired" };
+  if (!ahcdDeterminationExpired(a)) return { active: true, expired: false };
+  AdelanteEHR.deactivateAdvocateAhcd(link.id, {
+    deactivatedBy: "system",
+    reason: `Temporary incapacity determination lapsed on its review date (${a.reviewByDate}).`,
+    expired: true,
+  });
+  return { active: false, expired: true };
+}
+
 /**
  * The same two gates, reported individually so the audit row (and the consent
  * audit viewer, §Group D item 7) can show WHICH of the two passed. There is
@@ -3767,7 +3854,15 @@ function _advocatePart2Gates(link: AdvocateLink): {
       sudMode: "categorically_barred",
       sudBasis: "none",
     };
-  const decision = advocateSudAccess(tier, { linkValid, sudDisclosureConsentActive });
+  // §Phase 4.2 (6.5 item 5) — an AHCD whose text does not plainly reach Part 2
+  // records falls back to the ASCMI consent path for SUD content only.
+  const decision = advocateSudAccess(tier, {
+    linkValid,
+    sudDisclosureConsentActive,
+    ...(link.authorizationType === "ahcd"
+      ? { ahcdPart2ScopeUnclear: ahcdPart2ScopeUnclear(link.ahcdValidation ?? {}) }
+      : {}),
+  });
   return {
     linkValid,
     sudDisclosureConsentActive,
@@ -8843,6 +8938,10 @@ export const AdelanteEHR = {
     found.authorizationConfirmedAt = new Date().toISOString();
     found.authorizationAttestedName = attested;
     found.claimedAt = found.authorizationConfirmedAt;
+    // §Phase 4.2 (6.5) — an AHCD claim opens the frontline validation
+    // checklist as REAL worklist rows, reusing the pre-release CaseTask
+    // pattern rather than inventing a second task mechanism.
+    if (found.authorizationType === "ahcd") _openAhcdValidationTasks(found);
     appendAudit({
       category: "advocate",
       action: "advocate_connection_claimed",
@@ -8861,24 +8960,209 @@ export const AdelanteEHR = {
   },
 
   /**
-   * AHCD activation — a physician's capacity determination. Separate call
-   * because it is a clinical act, not an advocate self-assertion.
+   * §Phase 4.2 (6.5) — record one frontline validation finding. Each item is
+   * independently trackable and closes its own worklist task; there is no
+   * single "verified" flag. Item 4 (the incapacity determination) is NOT
+   * recorded here — it is the activation itself, so `recordAhcdChecklistItem`
+   * refuses it and the caller must go through `activateAdvocateAhcd`.
    */
-  activateAdvocateAhcd(linkId: string, physicianName: string): AdvocateLink {
+  recordAhcdChecklistItem(
+    linkId: string,
+    input: {
+      item: AhcdChecklistItemKey;
+      outcome: AhcdChecklistOutcome;
+      note?: string;
+      reviewedBy: string;
+    },
+  ): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (link.authorizationType !== "ahcd")
+      throw new Error("The validation checklist only applies to an AHCD connection.");
+    if (input.item === "incapacity_determination")
+      throw new Error(
+        "The incapacity determination is recorded by activating the directive, not by checking a box.",
+      );
+    const def = AHCD_CHECKLIST_ITEMS.find((i) => i.key === input.item);
+    if (!def) throw new Error("Unknown checklist item.");
+    if (input.outcome === "unclear" && input.item !== "part2_scope")
+      throw new Error("Only the Part 2 scope check can be left unclear.");
+    const who = input.reviewedBy.trim();
+    if (!who) throw new Error("The reviewer must be named.");
+    link.ahcdValidation = {
+      ...(link.ahcdValidation ?? {}),
+      [input.item]: {
+        outcome: input.outcome,
+        checkedAt: new Date().toISOString(),
+        checkedBy: who,
+        ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      },
+    };
+    // A failed item invalidates an already-active directive: the authority it
+    // rests on turned out not to be valid.
+    if (input.outcome === "failed" && _ahcdEffective(link).active) {
+      AdelanteEHR.deactivateAdvocateAhcd(link.id, {
+        deactivatedBy: who,
+        reason: `Validation check failed: ${def.label}.`,
+      });
+    }
+    const task = caseTasks.find((t) => t.dedupeKey === _ahcdTaskKey(link.id, input.item));
+    if (task && input.outcome !== "pending") {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "advocate",
+      action: "advocate_ahcd_validation_recorded",
+      patientId: link.patientId,
+      actorId: who,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        item: input.item,
+        itemLabel: def.label,
+        outcome: input.outcome,
+        ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /**
+   * The Part 2 axis for one connection, as a readable result: whether SUD
+   * content is unmasked, under which mode, and on what basis (patient consent
+   * vs the advocate's own legal authority). Single evaluation point, so the
+   * UI and the audit trail cannot drift from what the gate actually decided.
+   */
+  advocatePart2Access(linkId: string) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return { unmasked: false, mode: "categorically_barred" as const, basis: "none" as const };
+    const g = _advocatePart2Gates(link);
+    return { unmasked: g.unmasked, mode: g.sudMode, basis: g.sudBasis };
+  },
+
+  /** Read the checklist plus whether activation is unblocked. */
+  ahcdValidationState(linkId: string) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    const state = link.ahcdValidation ?? {};
+    return {
+      items: AHCD_CHECKLIST_ITEMS.map((i) => ({ ...i, finding: state[i.key] })),
+      readiness: ahcdActivationReadiness(state),
+      activation: link.ahcdActivation,
+      active: _ahcdEffective(link).active,
+      part2ScopeUnclear: ahcdPart2ScopeUnclear(state),
+    };
+  },
+
+  /**
+   * §Phase 4.2 (6.4) — AHCD activation. A clinical incapacity determination,
+   * not a flag. Three real preconditions, all enforced here:
+   *   1. the recorder holds a clinical role that may determine capacity
+   *      (`AHCD_DETERMINATION_ROLES`) — a CF Care Manager, peer or admin
+   *      cannot do it, and the advocate certainly cannot;
+   *   2. the frontline validation checklist (6.5) has cleared identity, agent
+   *      identity and § 4701 execution validity, and the Part 2 scope question
+   *      has been answered one way or the other;
+   *   3. a stated basis for the determination.
+   * A `reviewByDate` makes the determination TEMPORARY: it lapses on that date
+   * and the link returns to dormant with no further action.
+   */
+  activateAdvocateAhcd(
+    linkId: string,
+    input: {
+      determinedBy: string;
+      determinedByRole: string;
+      basis: string;
+      /** YYYY-MM-DD. Present ⇒ temporary determination. */
+      reviewByDate?: string;
+    },
+  ): AdvocateLink {
     const link = advocateLinks.find((l) => l.id === linkId);
     if (!link) throw new Error("Unknown advocate connection.");
     if (link.authorizationType !== "ahcd")
       throw new Error("Only an AHCD connection can be activated this way.");
-    const who = physicianName.trim();
-    if (!who) throw new Error("The determining physician must be named.");
-    link.ahcdActivatedAt = new Date().toISOString();
+    const who = input.determinedBy.trim();
+    if (!who) throw new Error("The determining clinician must be named.");
+    if (!isAhcdDeterminationRole(input.determinedByRole))
+      throw new Error(
+        "Only a PMHNP or licensed therapist may record an incapacity determination. This is a clinical act and cannot be recorded by the staff member working the validation checklist.",
+      );
+    const basis = input.basis.trim();
+    if (!basis) throw new Error("The basis for the incapacity determination is required.");
+    const readiness = ahcdActivationReadiness(link.ahcdValidation ?? {});
+    if (!readiness.ready)
+      throw new Error(
+        readiness.reason ?? "The AHCD validation checklist is not complete.",
+      );
+    const reviewByDate = input.reviewByDate?.trim();
+    if (reviewByDate && reviewByDate < new Date().toISOString().slice(0, 10))
+      throw new Error("A review date must be in the future.");
+    const now = new Date().toISOString();
+    link.ahcdActivation = {
+      state: "clinically_active",
+      determinedAt: now,
+      determinedBy: who,
+      determinedByRole: input.determinedByRole as AhcdDeterminationRole,
+      basis,
+      temporary: Boolean(reviewByDate),
+      ...(reviewByDate ? { reviewByDate } : {}),
+    };
+    link.ahcdActivatedAt = now;
     link.ahcdActivatedBy = who;
     appendAudit({
       category: "advocate",
       action: "advocate_ahcd_activated",
       patientId: link.patientId,
       actorId: who,
-      detail: { advocateLinkId: link.id, advocateName: link.advocateName },
+      actorRole: input.determinedByRole,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        state: "dormant -> clinically_active",
+        basis,
+        temporary: Boolean(reviewByDate),
+        ...(reviewByDate ? { reviewByDate } : {}),
+        part2ScopeCoveredByDirective: !ahcdPart2ScopeUnclear(link.ahcdValidation ?? {}),
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /**
+   * Return an active directive to dormant — a capacity re-determination, a
+   * documentation problem, or the review date lapsing (see `_ahcdEffective`).
+   */
+  deactivateAdvocateAhcd(
+    linkId: string,
+    input: { deactivatedBy: string; reason: string; expired?: boolean },
+  ): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link?.ahcdActivation) throw new Error("This directive is not active.");
+    const why = input.reason.trim();
+    if (!why) throw new Error("A reason is required to deactivate a directive.");
+    link.ahcdActivation = {
+      ...link.ahcdActivation,
+      state: input.expired ? "expired" : "dormant",
+      deactivatedAt: new Date().toISOString(),
+      deactivatedBy: input.deactivatedBy,
+      deactivatedReason: why,
+    };
+    delete link.ahcdActivatedAt;
+    delete link.ahcdActivatedBy;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_ahcd_deactivated",
+      patientId: link.patientId,
+      actorId: input.deactivatedBy,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        state: `clinically_active -> ${input.expired ? "expired" : "dormant"}`,
+        reason: why,
+      },
     });
     emit();
     return { ...link };
@@ -8958,7 +9242,9 @@ export const AdelanteEHR = {
         link.patientId,
         COLLATERAL_ROI_CATEGORY,
       ),
-      ahcdActivated: Boolean(link.ahcdActivatedAt),
+      // §Phase 4.2 — live: an expired temporary determination is NOT activation.
+      ahcdActivated: _ahcdEffective(link).active,
+      ahcdDeterminationExpired: _ahcdEffective(link).expired,
       conservatorshipDocsOnFile: Boolean(link.conservatorshipDocs),
     });
   },

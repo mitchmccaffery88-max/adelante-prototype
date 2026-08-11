@@ -1,3 +1,4 @@
+import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
 // §v3.0 Phase 4 — Advocate / Family Member.
 //
 // These tests exist to prove the HARD invariants, not the happy path:
@@ -134,7 +135,7 @@ describe("advocate — authorization-type gates", () => {
     });
     expect(AdelanteEHR.advocateAccess(link.id).denyReason).toBe("ahcd_not_activated");
 
-    AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Reyes");
+    activateAhcdForTest(link.id, { clinician: "Dr. Reyes" });
     expect(AdelanteEHR.advocateAccess(link.id).allowed).toBe(true);
   });
 
@@ -145,7 +146,13 @@ describe("advocate — authorization-type gates", () => {
       authorizationType: "conservatorship",
       attestedName: "Rosa Ibarra",
     });
-    expect(() => AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Reyes")).toThrow(/AHCD/);
+    expect(() =>
+      AdelanteEHR.activateAdvocateAhcd(link.id, {
+        determinedBy: "Dr. Reyes",
+        determinedByRole: "pmhnp",
+        basis: "Incapacity determination.",
+      }),
+    ).toThrow(/AHCD/);
   });
 });
 

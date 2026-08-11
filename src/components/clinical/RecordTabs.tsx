@@ -1334,6 +1334,7 @@ export function TaskList({
     missed_appt: "No-show",
     screener_flag: "Screener",
     referral_stale: "Stale referral",
+    advocate_ahcd_validation: "AHCD validation",
     notification_failed: "Delivery failed",
     provider_switch: "Provider switch",
     note_automation: "Note automation",

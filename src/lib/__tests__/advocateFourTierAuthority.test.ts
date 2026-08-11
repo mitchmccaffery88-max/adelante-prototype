@@ -1,3 +1,4 @@
+import { activateAhcdForTest } from "./helpers/ahcdTestActivation";
 // §v3.0 Phase 4.1 — the four-tier legal-authority model (gap analysis 6.1–6.3).
 //
 // Each tier's PERMITTED ACTIONS are asserted at the store boundary, and the
@@ -32,7 +33,7 @@ function connected(patientId: string, type: AdvocateAuthorizationType) {
     authorizationType: type,
     attestedName: "Rosa Ibarra",
   });
-  if (type === "ahcd") AdelanteEHR.activateAdvocateAhcd(link.id, "Dr. Bagga");
+  if (type === "ahcd") activateAhcdForTest(link.id);
   if (type === "conservatorship")
     AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, {
       verifiedBy: "Records Clerk",
