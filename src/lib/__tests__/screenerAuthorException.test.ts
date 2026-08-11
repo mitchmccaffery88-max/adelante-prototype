@@ -27,6 +27,12 @@ function openEpisode(patientId: string, cfStaffId: string) {
 
 function administer(patientId: string, cfStaffId: string) {
   const ep = openEpisode(patientId, cfStaffId);
+  AdelanteEHR.recordPreReleaseCapacity({
+    episodeId: ep.id,
+    status: "competent",
+    basis: "Oriented and answering for themselves.",
+    attribution: attribution(cfStaffId),
+  });
   AdelanteEHR.recordPreReleaseScreener({
     episodeId: ep.id,
     screenerKey: "audit",
