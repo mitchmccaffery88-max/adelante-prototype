@@ -252,7 +252,11 @@ describe("group note access is category-aware", () => {
       perAttendee: Object.fromEntries(two.map((p) => [p.id, "participated"])),
       actor: "test",
     });
-    const patient = AdelanteEHR.getPatient(two[0]!.id)!;
+    // Deliberately pick an attendee with NO active sud_treatment consent, so
+    // the SUD-category regression case is a real lock, not an accident.
+    const target =
+      two.find((p) => !AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")) ?? two[0]!;
+    const patient = AdelanteEHR.getPatient(target.id)!;
     const note = (patient.progressNotes ?? []).filter((n) => n.groupRef?.sessionId === g.id).at(-1)!;
     return { note, patient };
   }
@@ -268,6 +272,8 @@ describe("group note access is category-aware", () => {
     const gate = resolve(note, GATED_ROLE, patient);
     expect(gate.locked).toBe(false);
     expect(gate.level).not.toBe("none");
+    // ...and the same patient/role IS locked out of Part 2 SUD content.
+    expect(canAccess(GATED_ROLE, "screeners_sud", patient).locked).toBe(true);
   });
 
   it("does NOT gate open_psychoeducational notes on SUD consent", () => {
@@ -279,9 +285,9 @@ describe("group note access is category-aware", () => {
   it("still gates sud_clinical_preauth group notes when SUD consent is absent", () => {
     const { note, patient } = documentedNoteFor("sud_clinical_preauth");
     expect(noteGateClass(note)).toBe("group_notes");
-    const hasConsent = AdelanteEHR.isConsentCategoryAuthorized(patient.id, "sud_treatment");
+    expect(AdelanteEHR.isConsentCategoryAuthorized(patient.id, "sud_treatment")).toBe(false);
     const gate = resolve(note, GATED_ROLE, patient);
-    expect(gate.locked).toBe(!hasConsent);
+    expect(gate.locked).toBe(true);
     // And with no patient at all (no consent resolvable) it is always locked.
     expect(canAccess(GATED_ROLE, "group_notes", undefined).locked).toBe(true);
   });
