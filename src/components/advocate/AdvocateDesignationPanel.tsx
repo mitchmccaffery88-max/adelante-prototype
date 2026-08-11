@@ -105,6 +105,21 @@ export function AdvocateDesignationPanel({
                   Remove access
                 </Button>
               )}
+              {/*
+                §Phase 4.2 (6.5) — staff-only. The validation checklist is
+                frontline work on the directive document itself, not something
+                the patient works through, so it never renders on /home.
+              */}
+              {designatedBy.actor !== "patient" &&
+                l.status === "active" &&
+                l.authorizationType === "ahcd" && (
+                  <AhcdValidationChecklist
+                    linkId={l.id}
+                    reviewerName={designatedBy.name}
+                    reviewerRole={designatedBy.actor}
+                    className="mt-3"
+                  />
+                )}
             </li>
           ))}
         </ul>
