@@ -132,7 +132,8 @@ function PreReleasePage() {
         <div>
           <h1 className="text-xl font-semibold">Pre-release list</h1>
           <p className="text-sm text-muted-foreground">
-            D90 → D0 countdown. Placeholder DHCS form content — pending Christi&apos;s real field sets.
+            D90 → D0 countdown. Clinical assessment uses real instruments (AUDIT-10, DAST-10,
+            AHC-HRSN); the Medi-Cal enrollment field sets are still placeholders.
           </p>
         </div>
       </div>
