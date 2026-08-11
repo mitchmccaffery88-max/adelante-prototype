@@ -118,8 +118,7 @@ describe("capacity step is early and required", () => {
         episodeId: episode.id,
         status: "competent",
         basis: "  ",
-        determinedBy: cf().name,
-        actorRole: "cf_care_manager",
+        attribution: attribution(),
       }),
     ).toThrow(/basis/i);
   });
@@ -132,8 +131,7 @@ describe("competent branch", () => {
       episodeId: episode.id,
       status: "competent",
       basis: "Oriented, answered for themselves throughout.",
-      determinedBy: cf().name,
-      actorRole: "cf_care_manager",
+      attribution: attribution(),
     });
     const state = AdelanteEHR.preReleaseCapacityState(episode.id);
     expect(state.decision.state).toBe("self_consent");
@@ -159,8 +157,7 @@ describe("impaired branch — real AHCD path, real invitation, real gate", () =>
       episodeId: episode.id,
       status: "impaired",
       basis: "Cannot state the purpose of the interview; documented in chart.",
-      determinedBy: cf().name,
-      actorRole: "cf_care_manager",
+      attribution: attribution(),
     });
     return { patient, episode };
   }
