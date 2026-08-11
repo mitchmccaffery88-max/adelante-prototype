@@ -587,10 +587,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
 const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
   screeners_sud: "sud_treatment",
   sud_treatment: "sud_treatment",
-  // Group notes carry Part 2-protected treatment content; the gate reason is
-  // literally 42 CFR Part 2, so the treatment-consent category is the honest
-  // mapping. Telehealth/confidentiality consents gate PARTICIPATION, not
-  // record visibility, and are checked in the group occurrence flow instead.
+  // Only SUD-clinical group notes ever reach this class (noteGateClass()
+  // routes the two non-SUD categories away from it), so `sud_treatment` is
+  // the honest mapping. Telehealth/confidentiality consents gate
+  // PARTICIPATION, not record visibility, and live in the occurrence flow.
   group_notes: "sud_treatment",
 };
 
