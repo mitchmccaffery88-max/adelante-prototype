@@ -408,6 +408,14 @@ function GroupDetail({
 
   const savedAttendance = record?.attendance ?? [];
   const present = savedAttendance.filter((a) => a.status !== "absent");
+  const baseFacilitators = defaultGroupFacilitators(group);
+  const facilitatorDraft = baseFacilitators.map((f) => ({
+    ...f,
+    minutes: Number(facMinutes[f.staffId] ?? f.minutes) || 0,
+    involvement: facInvolve[f.staffId] ?? "",
+  }));
+  const effectiveRenderingId =
+    renderingId || defaultRenderingProviderId(facilitatorDraft);
 
   return (
     <div className="space-y-4">
