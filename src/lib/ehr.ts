@@ -13816,6 +13816,10 @@ export const AdelanteEHR = {
     const row = _ensureGroupOccurrence(input.sessionId, input.occurrenceStart);
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
+    // Occurrence-level DHCS rule: fewer than 2 present = individual session in
+    // practice, so no group claim. The occurrence still happens and is still
+    // documented — only the billing flag changes.
+    const occurrenceBillable = isOccurrenceBillable(g.category, present.length);
     const missing = present.filter((a) => !(input.perAttendee[a.patientId] ?? "").trim());
     if (missing.length > 0)
       throw new Error("Every present attendee needs their own individualized note.");
@@ -13846,10 +13850,8 @@ export const AdelanteEHR = {
           sessionId: g.id,
           occurrenceStart: input.occurrenceStart,
           facilitatorId: input.facilitatorId,
-          // Open psychoeducational groups are engagement, not claims.
-          billingEligible: isBillableGroupCategory(g.category),
-          // PLACEHOLDER: no CPT/H-code invented. Billing supplies this.
-          billingCodePlaceholder: undefined,
+          billingEligible: occurrenceBillable,
+          billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
         },
       });
       if (saved) {
