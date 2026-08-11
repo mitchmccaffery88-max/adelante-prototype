@@ -14168,6 +14168,14 @@ export const AdelanteEHR = {
     facilitatorId: string;
     topicCovered: string;
     groupProcess: string;
+    /**
+     * Full facilitator list with INDEPENDENT per-provider direct-care minutes.
+     * Omitted = derived from the session (primary + co-facilitators, session
+     * length each).
+     */
+    facilitators?: GroupFacilitatorMinutes[];
+    /** Designated rendering provider; defaults to the primary facilitator. */
+    renderingProviderId?: string;
     /** patientId -> that patient's individualized participation narrative. */
     perAttendee: Record<string, string>;
     /**
@@ -14186,6 +14194,15 @@ export const AdelanteEHR = {
       row.modalitySetBy = input.actor;
     }
     const modality = row.modality ?? defaultOccurrenceModality(g.modality);
+    // §Multi-facilitator: independent minutes per provider, one note per client.
+    const facilitators = normalizeGroupFacilitators(input.facilitators, g);
+    const renderingProviderId = input.renderingProviderId ?? row.renderingProviderId ?? defaultRenderingProviderId(facilitators);
+    if (!facilitators.some((f) => f.staffId === renderingProviderId))
+      throw new Error("The rendering provider must be one of this meeting's facilitators.");
+    row.facilitators = facilitators;
+    row.renderingProviderId = renderingProviderId;
+    row.renderingProviderSetAt = new Date().toISOString();
+    row.renderingProviderSetBy = input.actor;
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
     // §Group sessions — telehealth gate. Per-member, live against the
