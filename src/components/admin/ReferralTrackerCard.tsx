@@ -48,14 +48,7 @@ export function ReferralTrackerCard({
   title?: string;
   limit?: number;
 }) {
-  const sourceLabels: Record<string, string> = {
-    probation: "Probation",
-    parole: "Parole",
-    drug_court: "Drug court",
-    correctional: "Correctional",
-    self: "Self-referred",
-    other: "Other",
-  };
+  const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
   // Live subscribe so timestamps update as intake/assignments advance.
   useEhr(() => AdelanteEHR.listPatients().length);
   const clinicians = AdelanteEHR.listClinicians();
