@@ -37,7 +37,7 @@ import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
  */
 export type ScreenerViewer =
   | { kind: "system" }
-  | { kind: "staff"; role?: StaffRole }
+  | { kind: "staff"; role?: StaffRole; staffId?: string }
   | { kind: "patient"; patientId: string }
   | { kind: "advocate"; linkId: string };
 
