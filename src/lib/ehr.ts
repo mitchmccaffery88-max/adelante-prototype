@@ -4805,6 +4805,19 @@ export function isOccurrenceBillable(category: GroupCategory, presentCount: numb
 }
 
 /**
+ * Single place the regulatory roster range is enforced, so no write path
+ * (create or edit) can configure a group above the DHCS ceiling of 12.
+ */
+function _assertGroupCapacity(capacity: number): void {
+  if (!Number.isFinite(capacity) || capacity < GROUP_CAPACITY_MIN)
+    throw new Error(`Capacity must be at least ${GROUP_CAPACITY_MIN} (DHCS group minimum).`);
+  if (capacity > GROUP_CAPACITY_MAX)
+    throw new Error(
+      `Capacity cannot exceed ${GROUP_CAPACITY_MAX} — the DHCS regulatory maximum. A lower local cap is allowed.`,
+    );
+}
+
+/**
  * §Group sessions — care-plan group eligibility.
  *
  * PLACEHOLDER: neither `reason` nor `curriculumNeedTag` encodes real clinical
