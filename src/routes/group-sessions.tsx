@@ -625,6 +625,65 @@ function GroupDetail({
               Every present attendee needs their own individualized note — a blanket group note is a
               documented DMC-ODS denial risk.
             </p>
+            <div className="rounded-md border p-3 space-y-3">
+              <div className="text-xs font-medium text-navy">
+                Facilitators — each provider's own direct-care time
+              </div>
+              <p className="text-[11px] text-muted-foreground">
+                Record each provider's involvement and minutes independently. Every attendee note
+                lists all facilitators; co-facilitator time is documented, not separately claimed
+                (county confirmation still pending on whether it ever can be).
+              </p>
+              {facilitatorDraft.map((f) => {
+                const c = clinicians.find((x) => x.id === f.staffId);
+                return (
+                  <div key={f.staffId} className="space-y-1.5">
+                    <Label className="text-xs">
+                      {c?.name ?? f.staffId} — {f.role === "primary" ? "primary facilitator" : "co-facilitator"}
+                    </Label>
+                    <div className="flex gap-2">
+                      <Input
+                        type="number"
+                        min={1}
+                        className="w-28"
+                        value={facMinutes[f.staffId] ?? String(f.minutes)}
+                        onChange={(e) =>
+                          setFacMinutes((prev) => ({ ...prev, [f.staffId]: e.target.value }))
+                        }
+                        aria-label={`Direct-care minutes for ${c?.name ?? f.staffId}`}
+                      />
+                      <Input
+                        placeholder="Specific involvement"
+                        value={facInvolve[f.staffId] ?? ""}
+                        onChange={(e) =>
+                          setFacInvolve((prev) => ({ ...prev, [f.staffId]: e.target.value }))
+                        }
+                        aria-label={`Involvement for ${c?.name ?? f.staffId}`}
+                      />
+                    </div>
+                  </div>
+                );
+              })}
+              <div className="space-y-1.5">
+                <Label className="text-xs">Designated rendering provider (goes on the claim)</Label>
+                <Select value={effectiveRenderingId} onValueChange={setRenderingId}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {facilitatorDraft.map((f) => (
+                      <SelectItem key={f.staffId} value={f.staffId}>
+                        {clinicians.find((x) => x.id === f.staffId)?.name ?? f.staffId}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <p className="text-[11px] text-muted-foreground">
+                  Exactly one provider per beneficiary claim — DHCS duplicate logic keys on CIN +
+                  rendering provider NPI + procedure code + date.
+                </p>
+              </div>
+            </div>
             {present.map((a) => {
               const p = patients.find((x) => x.id === a.patientId);
               return (
