@@ -250,3 +250,179 @@ export function shortFormByKey(key: string): ShortFormScreenerDef | undefined {
 export function isShortFormPositive(def: ShortFormScreenerDef, score: number): boolean {
   return score >= def.positiveCutoff;
 }
+
+// ---------------------------------------------------------------------------
+// §Pre-release build 2 — real structured SDOH screening.
+//
+// INSTRUMENT CHOICE: the CMS **Accountable Health Communities Health-Related
+// Social Needs (AHC-HRSN) core screening tool**, not PRAPARE. Both are real,
+// validated and domain-structured, but this is explicitly a DHCS build, and
+// DHCS's own CalAIM / PATH and Community Supports guidance is written against
+// the AHC-HRSN core domains (housing instability, food insecurity,
+// transportation, utility needs, interpersonal safety) — the same five this
+// build was asked for. PRAPARE is a broader 21-item practice-level profile
+// (race/ethnicity, incarceration history, migrant status, stress) whose extra
+// items are already captured elsewhere in this record, and whose scoring is
+// not domain-flag based. AHC-HRSN gives exactly the DHCS domains with real
+// item text and real per-domain positive rules.
+//
+// ARCHITECTURALLY this is a SIBLING, not a one-off: `AHC_HRSN` is a
+// `ScreenerDef` like AUDIT-10 and DAST-10, its result is stored through the
+// same `recordScreener` / `ScreenerResult` / `screenerHistory` path, and its
+// severity comes from the same `severityFor` band walk. The only addition is
+// per-domain positivity, which the population-health rollup reads.
+// ---------------------------------------------------------------------------
+
+export interface ScreenerDomain {
+  key: string;
+  label: string;
+  /** Indexes into `questions` that belong to this domain. */
+  itemIndexes: number[];
+  /** The domain screens positive when the sum of its items reaches this. */
+  positiveMinSum: number;
+}
+
+export interface DomainScreenerDef extends ScreenerDef {
+  isSdoh: true;
+  domains: ScreenerDomain[];
+}
+
+const HITS_OPTIONS = [
+  { label: "Never", value: 1 },
+  { label: "Rarely", value: 2 },
+  { label: "Sometimes", value: 3 },
+  { label: "Fairly often", value: 4 },
+  { label: "Frequently", value: 5 },
+];
+
+const FOOD_OPTIONS = [
+  { label: "Never true", value: 0 },
+  { label: "Sometimes true", value: 1 },
+  { label: "Often true", value: 2 },
+];
+
+/** CMS AHC-HRSN core screening tool — verbatim item text. */
+export const AHC_HRSN: DomainScreenerDef = {
+  key: "ahc-hrsn",
+  name: "AHC-HRSN core",
+  description:
+    "Health-related social needs — CMS Accountable Health Communities core screening tool (housing, food, transportation, utilities, safety).",
+  isSdoh: true,
+  questions: [
+    "What is your living situation today?",
+    "Think about the place you live. Do you have problems with any of the following? (bug infestation; mold; lead paint or pipes; inadequate heat; oven or stove not working; no or not working smoke detectors; water leaks)",
+    "Within the past 12 months, you worried that your food would run out before you got money to buy more.",
+    "Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.",
+    "In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?",
+    "In the past 12 months has the electric, gas, oil, or water company threatened to shut off services in your home?",
+    "How often does anyone, including family and friends, physically hurt you?",
+    "How often does anyone, including family and friends, insult or talk down to you?",
+    "How often does anyone, including family and friends, threaten you with harm?",
+    "How often does anyone, including family and friends, scream or curse at you?",
+  ],
+  // Default anchors (yes/no items 5 and 6 fall through to this list).
+  options: [
+    { label: "No", value: 0 },
+    { label: "Yes", value: 1 },
+  ],
+  itemOptions: {
+    0: [
+      { label: "I have a steady place to live", value: 0 },
+      {
+        label: "I have a place to live today, but I am worried about losing it in the future",
+        value: 1,
+      },
+      {
+        label:
+          "I do not have a steady place to live (temporarily staying with others, in a hotel, in a shelter, living outside, in a car, abandoned building, bus or train station, or in a park)",
+        value: 1,
+      },
+    ],
+    1: [
+      { label: "None of the above", value: 0 },
+      { label: "One or more of the above", value: 1 },
+    ],
+    2: FOOD_OPTIONS,
+    3: FOOD_OPTIONS,
+    5: [
+      { label: "No", value: 0 },
+      { label: "Yes", value: 1 },
+      { label: "Already shut off", value: 1 },
+    ],
+    6: HITS_OPTIONS,
+    7: HITS_OPTIONS,
+    8: HITS_OPTIONS,
+    9: HITS_OPTIONS,
+  },
+  domains: [
+    { key: "housing", label: "Housing instability & quality", itemIndexes: [0, 1], positiveMinSum: 1 },
+    { key: "food", label: "Food insecurity", itemIndexes: [2, 3], positiveMinSum: 1 },
+    { key: "transportation", label: "Transportation", itemIndexes: [4], positiveMinSum: 1 },
+    { key: "utilities", label: "Utility needs", itemIndexes: [5], positiveMinSum: 1 },
+    // HITS: 4 items scored 1–5; the validated positive threshold is > 10.
+    { key: "safety", label: "Interpersonal safety", itemIndexes: [6, 7, 8, 9], positiveMinSum: 11 },
+  ],
+  // The instrument "score" is the COUNT of positive domains (0–5) — that is
+  // the number DHCS reporting asks for, and it bands cleanly.
+  positiveCutoff: 1,
+  bands: [
+    { max: 0, label: "No identified social needs" },
+    { max: 1, label: "One identified need" },
+    { max: 2, label: "Two identified needs" },
+    { max: 5, label: "Multiple identified needs" },
+  ],
+};
+
+export const DOMAIN_SCREENERS: DomainScreenerDef[] = [AHC_HRSN];
+
+export function isDomainScreener(def: ScreenerDef): def is DomainScreenerDef {
+  return (def as DomainScreenerDef).isSdoh === true;
+}
+
+/** Every instrument in one lookup — full, short-form and domain alike. */
+export function screenerByKey(key: string): ScreenerDef | undefined {
+  return (
+    SCREENERS.find((s) => s.key === key) ??
+    SHORT_FORM_SCREENERS.find((s) => s.key === key) ??
+    DOMAIN_SCREENERS.find((s) => s.key === key)
+  );
+}
+
+export interface ScreenerDomainResult {
+  key: string;
+  label: string;
+  positive: boolean;
+}
+
+export function domainResults(
+  def: DomainScreenerDef,
+  answers: number[],
+): ScreenerDomainResult[] {
+  return def.domains.map((d) => {
+    const sum = d.itemIndexes.reduce((a, i) => a + (Number(answers[i]) || 0), 0);
+    return { key: d.key, label: d.label, positive: sum >= d.positiveMinSum };
+  });
+}
+
+/**
+ * PURE scoring for ANY instrument. Sum-of-items for ordinary screeners;
+ * count-of-positive-domains for domain instruments. One function so
+ * pre-release, intake and the quick check cannot drift apart.
+ */
+export function scoreScreener(
+  def: ScreenerDef,
+  answers: number[],
+): { score: number; severity: string; positive?: boolean; domains?: ScreenerDomainResult[] } {
+  if (isDomainScreener(def)) {
+    const domains = domainResults(def, answers);
+    const score = domains.filter((d) => d.positive).length;
+    return { score, severity: severityFor(def, score), positive: score >= 1, domains };
+  }
+  const score = answers.reduce((a, b) => a + (Number(b) || 0), 0);
+  const out: { score: number; severity: string; positive?: boolean } = {
+    score,
+    severity: severityFor(def, score),
+  };
+  if (def.positiveCutoff !== undefined) out.positive = score >= def.positiveCutoff;
+  return out;
+}
