@@ -5,7 +5,13 @@
 // worklist, and cross-surface event bus. Never mutates ehr.ts internals.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, isBillableGroupCategory, type ServiceType } from "./ehr";
+import {
+  AdelanteEHR,
+  GROUP_MIN_BILLABLE_ATTENDEES,
+  groupBillingCode,
+  isBillableGroupCategory,
+  type ServiceType,
+} from "./ehr";
 import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
 
 // ---------- Types ----------
@@ -538,12 +544,21 @@ export const AdelanteEHRExt = {
     noteId: string;
     chargeCents?: number;
   }): Claim | null {
-    // HARD SPLIT: `open_psychoeducational` occurrences never create a claim.
-    // Enforced here, at the single write point, so no caller can bypass it by
-    // forgetting to filter. Their attendance is engagement/utilization data
-    // only (see `openGroupEngagement` in groupMetrics).
+    // HARD SPLIT 1 (category): `open_psychoeducational` occurrences never
+    // create a claim. Enforced here, at the single write point, so no caller
+    // can bypass it by forgetting to filter. Their attendance is
+    // engagement/utilization data only (see `openGroupEngagement`).
     const session = AdelanteEHR.getGroupSession(input.sessionId);
     if (session && !isBillableGroupCategory(session.category)) return null;
+    // HARD SPLIT 2 (occurrence): fewer than 2 present attendees means the
+    // meeting functioned as an individual session per DHCS — no group claim,
+    // even for a billable category. The occurrence itself is untouched.
+    if (session) {
+      const present = (
+        AdelanteEHR.getGroupOccurrence(input.sessionId, input.occurrenceStart)?.attendance ?? []
+      ).filter((a) => a.status !== "absent");
+      if (present.length < GROUP_MIN_BILLABLE_ATTENDEES) return null;
+    }
     const encounterId = `group:${input.sessionId}:${input.occurrenceStart}:${input.patientId}`;
     let claim = claims.find((c) => c.encounterId === encounterId);
     if (claim) return claim;
@@ -555,6 +570,9 @@ export const AdelanteEHRExt = {
       state: "documented",
       chargeCents:
         input.chargeCents ?? AdelanteEHR.chargeForService?.("therapy_group") ?? 12000,
+      ...(session && groupBillingCode(session.category)
+        ? { serviceCode: groupBillingCode(session.category) }
+        : {}),
       updatedAt: iso(),
       history: [{ at: iso(), state: "documented", actor: "system", note: `note:${input.noteId}` }],
     };
