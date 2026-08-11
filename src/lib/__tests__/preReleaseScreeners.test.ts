@@ -287,7 +287,8 @@ describe("both instruments respect the Build-1 capacity gate", () => {
       invitationSentTo: "ruth@example.com",
       invitationChannel: "email",
       expectedAuthorization: "ahcd",
-      designatedBy: { actor: "cf_care_manager", name: cf().name },
+      identifiedBy: cf().name,
+      actorRole: "cf_care_manager",
     });
     AdelanteEHR.claimAdvocateInvitation({
       code: link.invitationCode,
