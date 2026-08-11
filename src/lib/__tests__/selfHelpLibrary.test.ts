@@ -87,9 +87,10 @@ describe("progress is real patient record data", () => {
     const res = AdelanteEHR.completeLibraryItem(pid, "ss-daily-rhythm");
     expect(res).toEqual({ completed: true, alreadyComplete: false });
 
-    // On the RECORD, not in a side store.
-    const patient = AdelanteEHR.getPatient(pid);
-    expect(patient?.completedLibraryItems).toContain("ss-daily-rhythm");
+    // In the ENGAGEMENT store, keyed by patient id — and explicitly NOT on
+    // the clinical record.
+    expect(getEngagement(pid)?.completedLibraryItems).toContain("ss-daily-rhythm");
+    expect(AdelanteEHR.getPatient(pid)).not.toHaveProperty("completedLibraryItems");
     const toolkit = AdelanteEHR.savedToolkitItems(pid);
     expect(toolkit).toHaveLength(1);
     expect(toolkit[0]?.label).toBe(getLibraryItem("ss-daily-rhythm")?.toolkitLabel);
