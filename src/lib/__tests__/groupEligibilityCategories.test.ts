@@ -46,6 +46,49 @@ function makeGroupWithCapacity(category: GroupCategory, capacity: number) {
   });
 }
 
+/**
+ * Full enroll → attend → document → bill cycle for one occurrence, so every
+ * billing test exercises the real write path rather than a stubbed claim.
+ */
+function billOccurrence(category: GroupCategory, roster: { id: string }[]) {
+  for (const p of roster) eligible(p.id);
+  const group = makeGroup(category);
+  for (const p of roster)
+    AdelanteEHR.enrollInGroup({ sessionId: group.id, patientId: p.id, enrolledBy: "test" });
+  const start = AdelanteEHR.groupOccurrenceStarts(group.id, 1)[0]!;
+  AdelanteEHR.recordGroupAttendance(
+    group.id,
+    start,
+    roster.map((p) => ({ patientId: p.id, status: "present" as const })),
+    "test",
+  );
+  AdelanteEHR.documentGroupOccurrence({
+    sessionId: group.id,
+    occurrenceStart: start,
+    facilitatorId: group.facilitatorId,
+    topicCovered: "t",
+    groupProcess: "pr",
+    perAttendee: Object.fromEntries(roster.map((p) => [p.id, "participated"])),
+    actor: "test",
+  });
+  const occ = AdelanteEHR.getGroupOccurrence(group.id, start)!;
+  const claims = roster.map((p) =>
+    AdelanteEHRExt.upsertClaimFromGroupAttendee({
+      sessionId: group.id,
+      occurrenceStart: start,
+      patientId: p.id,
+      facilitatorId: group.facilitatorId,
+      noteId: occ.attendeeNoteIds[p.id]!,
+    }),
+  );
+  const notes = roster.map((p) =>
+    (AdelanteEHR.getPatient(p.id)?.progressNotes ?? []).find(
+      (n) => n.id === occ.attendeeNoteIds[p.id],
+    ),
+  );
+  return { group, start, claims, notes };
+}
+
 describe("group eligibility is a real precondition for every enrollment path", () => {
   it("blocks staff enrollment in BOTH categories until eligibility is set", () => {
     const p = patientAt(0);
@@ -160,35 +203,67 @@ describe("open-group attendance never creates a claim", () => {
     expect(engagement.enrolledPatients).toBeGreaterThanOrEqual(1);
   });
 
-  it("still bills a clinical pre-authorized group", () => {
-    const p = patientAt(7);
-    eligible(p.id);
-    const g = makeGroup("sud_clinical_preauth");
-    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: "test" });
-    const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
-    AdelanteEHR.recordGroupAttendance(
-      g.id,
-      start,
-      [{ patientId: p.id, status: "present" as const }],
-      "test",
+  it("still bills a clinical pre-authorized group with H0005", () => {
+    const { claims } = billOccurrence("sud_clinical_preauth", [patientAt(7), patientAt(8)]);
+    expect(claims[0]).not.toBeNull();
+    expect(claims[0]!.serviceCode).toBe("H0005");
+  });
+
+  it("bills a skills_education group with H2014 through the same write path", () => {
+    const { claims, notes } = billOccurrence("skills_education", [patientAt(9), patientAt(10)]);
+    expect(claims).toHaveLength(2);
+    for (const c of claims) {
+      expect(c).not.toBeNull();
+      expect(c!.serviceCode).toBe("H2014");
+      // Exact same encounterId pattern H0005 already uses — not new logic.
+      expect(c!.encounterId.startsWith("group:")).toBe(true);
+    }
+    for (const n of notes) {
+      expect(n?.groupRef?.billingEligible).toBe(true);
+      expect(n?.groupRef?.billingCode).toBe("H2014");
+    }
+  });
+});
+
+describe("under-2 attendance is non-billable at the occurrence level", () => {
+  for (const cat of ["sud_clinical_preauth", "skills_education"] as GroupCategory[]) {
+    it(`creates no claim for a 1-attendee ${cat} occurrence, but the occurrence still exists`, () => {
+      const before = AdelanteEHRExt.listClaims().length;
+      const { claims, notes, group, start } = billOccurrence(cat, [patientAt(20)]);
+      expect(claims.every((c) => c === null)).toBe(true);
+      expect(AdelanteEHRExt.listClaims()).toHaveLength(before);
+      expect(notes[0]?.groupRef?.billingEligible).toBe(false);
+      // The occurrence itself is untouched: documented, attendance intact.
+      const occ = AdelanteEHR.getGroupOccurrence(group.id, start);
+      expect(occ?.sharedNote).toBeTruthy();
+      expect(occ?.attendance).toHaveLength(1);
+    });
+  }
+});
+
+describe("capacity is capped at the DHCS regulatory maximum", () => {
+  it("refuses a capacity above 12 on create and on edit", () => {
+    expect(() => makeGroupWithCapacity("skills_education", 13)).toThrow(/cannot exceed 12/i);
+    const g = makeGroupWithCapacity("skills_education", 12);
+    expect(() => AdelanteEHR.updateGroupSession(g.id, { capacity: 20 }, "test")).toThrow(
+      /cannot exceed 12/i,
     );
-    const res = AdelanteEHR.documentGroupOccurrence({
-      sessionId: g.id,
-      occurrenceStart: start,
-      facilitatorId: g.facilitatorId,
-      topicCovered: "t",
-      groupProcess: "pr",
-      perAttendee: { [p.id]: "participated" },
-      actor: "test",
-    });
-    const claim = AdelanteEHRExt.upsertClaimFromGroupAttendee({
-      sessionId: g.id,
-      occurrenceStart: start,
-      patientId: p.id,
-      facilitatorId: g.facilitatorId,
-      noteId: res.attendeeNoteIds[0]!,
-    });
-    expect(claim).not.toBeNull();
+    // A lower local cap is allowed.
+    expect(AdelanteEHR.updateGroupSession(g.id, { capacity: 6 }, "test").capacity).toBe(6);
+  });
+
+  it("refuses a capacity below the DHCS minimum of 2", () => {
+    expect(() => makeGroupWithCapacity("skills_education", 1)).toThrow(/at least 2/i);
+  });
+});
+
+describe("skills_education is self-service but billable", () => {
+  it("is offered for self-booking and accepts a patient-initiated enrollment", () => {
+    const p = patientAt(11);
+    eligible(p.id);
+    const g = makeGroup("skills_education");
+    expect(AdelanteEHR.openGroupsForPatient(p.id).map((x) => x.id)).toContain(g.id);
+    expect(AdelanteEHR.selfEnrollInGroup({ sessionId: g.id, patientId: p.id }).patientId).toBe(p.id);
   });
 });
 
