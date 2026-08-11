@@ -19,18 +19,15 @@ import {
   RESOURCE_VERIFIER_ROLES,
   listResources,
   resourceVerificationQueue,
+  subscribeResources,
   updateResourceDetails,
   verifyResource,
 } from "@/lib/communityResources";
 
 export function ResourceVerificationQueue() {
-  const { role, staffId, name } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
   const snapshot = useSyncExternalStore(
-    (l) => {
-      // subscribe through the module so edits re-render immediately
-      const { subscribeResources } = require("@/lib/communityResources");
-      return subscribeResources(l);
-    },
+    subscribeResources,
     () => JSON.stringify({ queue: resourceVerificationQueue(), all: listResources().length }),
     () => JSON.stringify({ queue: [], all: 0 }),
   );
@@ -56,7 +53,7 @@ export function ResourceVerificationQueue() {
             key={r.id}
             resource={r}
             canVerify={canVerify}
-            actorName={name}
+            actorName={staffName}
             actorStaffId={staffId ?? undefined}
             actorRole={role}
           />
