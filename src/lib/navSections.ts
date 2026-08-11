@@ -6,6 +6,7 @@
 // points at a `RecordClass` that already exists in the roles matrix, so adding
 // a role or changing a permission is a matrix edit, never a nav edit.
 import {
+  BookOpen,
   Building2,
   Calendar,
   Heart,
@@ -529,7 +530,7 @@ export interface PatientNavEntry {
   id: string;
   /** i18n key resolved by the rendering shell. */
   labelKey: string;
-  to: "/home" | "/intake" | "/schedule";
+  to: "/home" | "/intake" | "/schedule" | "/library";
   icon: LucideIcon;
 }
 
@@ -537,6 +538,10 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
   { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart },
   { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList },
   { id: "schedule", labelKey: "schTitle", to: "/schedule", icon: Calendar },
+  // §Adelante Journey Phase 5 — self-help library. A first-class patient
+  // route rather than a section inside /home: it is a browse-and-return
+  // surface with its own deep links, not a card.
+  { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen },
 ] as const;
 
 /** Every route the patient shell owns. */
