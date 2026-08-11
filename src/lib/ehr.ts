@@ -2349,7 +2349,9 @@ export type CaseTaskOrigin =
   | "notification_failed"
   | "provider_switch"
   /** §Phase 3c — created by a note template automation at sign time. */
-  | "note_automation";
+  | "note_automation"
+  /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
+  | "advocate_ahcd_validation";
 
 export interface CaseTask {
   id: string;
@@ -3799,7 +3801,7 @@ function _openAhcdValidationTasks(link: AdvocateLink): void {
       dueDate: new Date().toISOString().slice(0, 10),
       taskType: "ahcd_validation",
       allowedRoles: ["cf_care_manager", "ecm_provider"],
-      source: "advocate_ahcd_validation",
+      origin: "advocate_ahcd_validation",
       dedupeKey: _ahcdTaskKey(link.id, item.key),
     });
   }
