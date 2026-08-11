@@ -40,6 +40,7 @@ export const SCREENERS: ScreenerDef[] = [
     key: "phq-9",
     name: "PHQ-9",
     description: "Depression — past 2 weeks",
+    positiveCutoff: 10,
     questions: [
       "Little interest or pleasure in doing things",
       "Feeling down, depressed, or hopeless",
@@ -64,6 +65,7 @@ export const SCREENERS: ScreenerDef[] = [
     key: "gad-7",
     name: "GAD-7",
     description: "Anxiety — past 2 weeks",
+    positiveCutoff: 10,
     questions: [
       "Feeling nervous, anxious, or on edge",
       "Not being able to stop or control worrying",
