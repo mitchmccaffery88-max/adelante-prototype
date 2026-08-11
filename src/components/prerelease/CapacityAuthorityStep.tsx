@@ -8,7 +8,7 @@
 // directive renders the existing `AhcdValidationChecklist` verbatim.
 import { useState } from "react";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr, type PreReleaseEpisode } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type CfAttribution, type PreReleaseEpisode } from "@/lib/ehr";
 import {
   CAPACITY_GATE_BADGE,
   CAPACITY_LABEL,
@@ -34,7 +34,16 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { AlertTriangle, CheckCircle2, ShieldQuestion, UserPlus } from "lucide-react";
 
-export function CapacityAuthorityStep({ episode }: { episode: PreReleaseEpisode }) {
+export function CapacityAuthorityStep({
+  episode,
+  attribution,
+  entryBlockedReason,
+}: {
+  episode: PreReleaseEpisode;
+  /** Resolved by the same `resolveEpisodeEntry` call the forms use. */
+  attribution?: CfAttribution;
+  entryBlockedReason?: string;
+}) {
   const { role, staffName } = useActingStaff();
   const state = useEhr(() => AdelanteEHR.preReleaseCapacityState(episode.id));
   const [status, setStatus] = useState<IntakeCapacityStatus>(
@@ -46,13 +55,16 @@ export function CapacityAuthorityStep({ episode }: { episode: PreReleaseEpisode 
   const surrogateNeeded = determination ? capacityRequiresSurrogate(determination.status) : false;
 
   function save() {
+    if (!attribution) {
+      toast.error(entryBlockedReason ?? "You cannot record entries on this episode.");
+      return;
+    }
     try {
       AdelanteEHR.recordPreReleaseCapacity({
         episodeId: episode.id,
         status,
         basis,
-        determinedBy: staffName,
-        actorRole: role,
+        attribution,
       });
       setBasis("");
       toast.success("Capacity determination recorded.");
@@ -86,7 +98,11 @@ export function CapacityAuthorityStep({ episode }: { episode: PreReleaseEpisode 
         {determination && (
           <p className="text-xs text-muted-foreground" data-testid="capacity-recorded">
             Recorded as <strong>{CAPACITY_LABEL[determination.status]}</strong> by{" "}
-            {determination.determinedBy} · <ClientDate value={determination.determinedAt} /> —{" "}
+            {determination.determinedBy}
+            {determination.attribution.attributedTo
+              ? ` on behalf of ${determination.attribution.attributedTo.staffName}`
+              : ""}{" "}
+            · <ClientDate value={determination.determinedAt} /> —{" "}
             {determination.basis}
           </p>
         )}
@@ -119,7 +135,12 @@ export function CapacityAuthorityStep({ episode }: { episode: PreReleaseEpisode 
             placeholder="How you reached this determination, and where it is documented"
           />
         </div>
-        <Button size="sm" data-testid="capacity-save" disabled={!basis.trim()} onClick={save}>
+        <Button
+          size="sm"
+          data-testid="capacity-save"
+          disabled={!basis.trim() || !attribution}
+          onClick={save}
+        >
           {determination ? "Re-record determination" : "Record determination"}
         </Button>
       </div>
