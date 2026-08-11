@@ -79,6 +79,7 @@ import {
   shortFormByKey,
   scoreScreener,
   screenerByKey,
+  isPart2Screener,
   type ScreenerDomainResult,
 } from "./screeners";
 export type {
