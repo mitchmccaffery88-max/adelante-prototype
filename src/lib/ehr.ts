@@ -28,7 +28,7 @@ import {
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
+import { canAccess, getActingRole, getActingStaff, STAFF_ROLES } from "./roles";
 
 /**
  * §Part 2 store gate — WHO is reading. `system` is reserved for internal
@@ -37,7 +37,7 @@ import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
  */
 export type ScreenerViewer =
   | { kind: "system" }
-  | { kind: "staff"; role?: StaffRole }
+  | { kind: "staff"; role?: StaffRole; staffId?: string }
   | { kind: "patient"; patientId: string }
   | { kind: "advocate"; linkId: string };
 
@@ -1254,6 +1254,14 @@ export interface ScreenerResult {
   context?: "intake" | "pre_release" | "patient_self" | "clinic";
   /** Set when administered inside a pre-release episode. */
   episodeId?: string;
+  /**
+   * §Part 2 author/actor exception — WHO personally administered this specific
+   * result. Same `CfAttribution` shape the pre-release build already produces
+   * (`enteredBy` plus, for proxy entries, the CF Care Manager the work is
+   * attributed to), so there is no parallel identity mechanism. Absent for
+   * patient-self and legacy results.
+   */
+  administeredBy?: CfAttribution;
 }
 
 export interface Clinician {
@@ -6187,6 +6195,23 @@ export const AdelanteEHR = {
     }
     const role = viewer.role ?? getActingRole();
     const patient = patients.find((x) => x.id === patientId);
+    /**
+     * §Author/actor exception — the person who PERSONALLY administered THIS
+     * result keeps read access to it, whatever their role's general
+     * `screeners_sud` matrix entry says. Scoped to authorship of one specific
+     * stored result: it never widens a role, never reaches another patient,
+     * and never reaches a result the viewer did not key. Proxy entries count
+     * both identities, matching how the entry was authorized when written.
+     */
+    const staffId = viewer.staffId ?? (viewer.role ? undefined : getActingStaff()?.id);
+    if (staffId) {
+      const admin = patient?.screeners[key]?.administeredBy;
+      if (
+        admin &&
+        (admin.enteredBy.staffId === staffId || admin.attributedTo?.staffId === staffId)
+      )
+        return { part2: true, allowed: true };
+    }
     const gate = canAccess(role, "screeners_sud", patient);
     return gate.locked
       ? {
@@ -8360,6 +8385,7 @@ export const AdelanteEHR = {
       responses: input.answers,
       context: "pre_release",
       episodeId: ep.id,
+      administeredBy: input.attribution,
       ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
       ...(scored.domains ? { domains: scored.domains } : {}),
     };
