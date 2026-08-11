@@ -9029,6 +9029,19 @@ export const AdelanteEHR = {
     return { ...link };
   },
 
+  /**
+   * The Part 2 axis for one connection, as a readable result: whether SUD
+   * content is unmasked, under which mode, and on what basis (patient consent
+   * vs the advocate's own legal authority). Single evaluation point, so the
+   * UI and the audit trail cannot drift from what the gate actually decided.
+   */
+  advocatePart2Access(linkId: string) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return { unmasked: false, mode: "categorically_barred" as const, basis: "none" as const };
+    const g = _advocatePart2Gates(link);
+    return { unmasked: g.unmasked, mode: g.sudMode, basis: g.sudBasis };
+  },
+
   /** Read the checklist plus whether activation is unblocked. */
   ahcdValidationState(linkId: string) {
     const link = advocateLinks.find((l) => l.id === linkId);
