@@ -5000,6 +5000,26 @@ export interface GroupSessionEnrollment {
 
 export type GroupAttendanceStatus = "present" | "absent" | "late";
 
+/**
+ * §Multi-facilitator minute tracking (Christi / DHCS crosswalk).
+ *
+ * When 2+ practitioners deliver one group, the note must document EACH
+ * provider's specific involvement AND their own duration of direct patient
+ * care. San Francisco county splits this into separate notes per facilitator
+ * purely because their EHR cannot record different service times per
+ * provider — an EHR constraint, explicitly NOT a rule to replicate. Here the
+ * minutes are per-facilitator on ONE occurrence, and every individualized
+ * attendee note renders the full list.
+ */
+export interface GroupFacilitatorMinutes {
+  staffId: string;
+  role: "primary" | "co";
+  /** Direct patient-care minutes delivered by THIS provider, independently. */
+  minutes: number;
+  /** This provider's specific involvement (what they actually did). */
+  involvement: string;
+}
+
 export interface GroupAttendanceEntry {
   patientId: string;
   status: GroupAttendanceStatus;
