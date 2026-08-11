@@ -368,6 +368,9 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
       </Card>
 
       {PRE_RELEASE_FORM_CATEGORIES.map((cat) => (
+        cat.key === "capacity_authority" ? (
+          <CapacityAuthorityStep key={cat.key} episode={episode} />
+        ) : (
         <Card key={cat.key} className="p-4">
           <div className="mb-1 font-medium">{cat.label}</div>
           <p className="mb-3 text-xs text-muted-foreground">{cat.helper}</p>
@@ -387,13 +390,28 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                         {r.record.attribution.attributedTo.staffName}
                       </span>
                     )}
+                    {r.blocked && (
+                      <span
+                        data-testid={`blocked-${r.def.key}`}
+                        className="mt-1 block text-xs text-destructive"
+                      >
+                        {r.blocked}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
+                    {r.blocked && <Badge variant="destructive">Blocked</Badge>}
                     <Badge className={STATUS_TONE[r.status]}>{STATUS_LABEL[r.status]}</Badge>
                     {r.def.consentCategory ? (
+                      r.blocked ? (
+                        <Button size="sm" variant="outline" disabled>
+                          Capture in consent ledger
+                        </Button>
+                      ) : (
                       <Button asChild size="sm" variant="outline">
                         <Link to="/consent">Capture in consent ledger</Link>
                       </Button>
+                      )
                     ) : r.def.satisfiedByCarePlan ? (
                       <Button
                         size="sm"
@@ -407,7 +425,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                       <Button
                         size="sm"
                         variant="outline"
-                        disabled={!ok}
+                        disabled={!ok || Boolean(r.blocked)}
                         data-testid={`capture-${r.def.key}`}
                         onClick={() => setOpenForm(r.def)}
                       >
@@ -419,6 +437,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
               ))}
           </div>
         </Card>
+        )
       ))}
 
       {plan?.enrollmentCode && (
