@@ -6195,6 +6195,23 @@ export const AdelanteEHR = {
     }
     const role = viewer.role ?? getActingRole();
     const patient = patients.find((x) => x.id === patientId);
+    /**
+     * §Author/actor exception — the person who PERSONALLY administered THIS
+     * result keeps read access to it, whatever their role's general
+     * `screeners_sud` matrix entry says. Scoped to authorship of one specific
+     * stored result: it never widens a role, never reaches another patient,
+     * and never reaches a result the viewer did not key. Proxy entries count
+     * both identities, matching how the entry was authorized when written.
+     */
+    const staffId = viewer.staffId ?? (viewer.role ? undefined : getActingStaff()?.id);
+    if (staffId) {
+      const admin = patient?.screeners[key]?.administeredBy;
+      if (
+        admin &&
+        (admin.enteredBy.staffId === staffId || admin.attributedTo?.staffId === staffId)
+      )
+        return { part2: true, allowed: true };
+    }
     const gate = canAccess(role, "screeners_sud", patient);
     return gate.locked
       ? {
