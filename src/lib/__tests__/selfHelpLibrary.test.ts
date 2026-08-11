@@ -38,6 +38,7 @@ function hipaaOnlyLink(pid: string) {
   AdelanteEHR.claimAdvocateInvitation({
     code: link.invitationCode,
     authorizationType: "hipaa_authorization",
+    attestedName: "Rosa Ibarra",
   });
   return link;
 }
