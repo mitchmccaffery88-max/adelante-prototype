@@ -27,9 +27,7 @@ describe("population resolver — derived from real record data", () => {
 
   it("post-release JI: a confirmed front-door justice answer, no episode", () => {
     const pid = newPatient();
-    AdelanteEHR.updatePatient(pid, {
-      coverage: { justiceInvolvement: "yes" },
-    } as never);
+    AdelanteEHR.setCoverage(pid, { justiceInvolvement: "yes" } as never);
     expect(resolvePopulation(pid).track).toBe("post_release_ji");
   });
 
@@ -55,7 +53,7 @@ describe("population resolver — derived from real record data", () => {
 
   it("'not sure' is provisional and does NOT open a justice-only gate", () => {
     const pid = newPatient();
-    AdelanteEHR.updatePatient(pid, { coverage: { justiceInvolvement: "unsure" } } as never);
+    AdelanteEHR.setCoverage(pid, { justiceInvolvement: "unsure" } as never);
     const r = resolvePopulation(pid);
     expect(r.track).toBe("post_release_ji");
     expect(r.provisional).toBe(true);
@@ -67,7 +65,12 @@ describe("population resolver — derived from real record data", () => {
     const pid = newPatient();
     const ep = openEpisode(pid);
     expect(resolvePopulation(pid).track).toBe("pre_release_ji");
-    AdelanteEHR.closePreReleaseEpisode(ep.id, "Released", "CF Manager");
+    AdelanteEHR.closePreReleaseEpisode({
+      episodeId: ep.id,
+      reason: "Released from custody",
+      closedBy: "CF Manager",
+      actorRole: "cf_care_manager",
+    });
     expect(resolvePopulation(pid).track).toBe("post_release_ji");
   });
 });
