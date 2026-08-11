@@ -7,6 +7,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { ClientDate } from "@/components/ClientDate";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { ResourceVerificationQueue } from "@/components/admin/ResourceVerificationQueue";
 
 export const Route = createFileRoute("/admin-coordination")({
   head: () => ({
@@ -42,6 +43,9 @@ function CoordinationPage() {
         </div>
         <Link to="/admin" className="text-sm underline">← Admin</Link>
       </header>
+
+      {/* §Adelante Journey Phase 6 — community resource directory verification. */}
+      <ResourceVerificationQueue />
 
       <Card className="p-4">
         <h2 className="font-semibold mb-2">Frozen clinicians · appointments needing coverage ({affectedAppts.length})</h2>

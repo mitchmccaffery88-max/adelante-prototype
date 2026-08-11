@@ -49,6 +49,7 @@ import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
+import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as StartRouteImport } from './routes/start'
@@ -262,6 +263,11 @@ const ReleasedSearchRoute = ReleasedSearchRouteImport.update({
   path: '/released-search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ResourcesRoute = ResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ScheduleRoute = ScheduleRouteImport.update({
   id: '/schedule',
   path: '/schedule',
@@ -365,6 +371,7 @@ export interface FileRoutesByFullPath {
   '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/resources': typeof ResourcesRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/start': typeof StartRouteWithChildren
@@ -419,6 +426,7 @@ export interface FileRoutesByTo {
   '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/resources': typeof ResourcesRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/worklist': typeof WorklistRoute
@@ -473,6 +481,7 @@ export interface FileRoutesById {
   '/pre-release': typeof PreReleaseRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/resources': typeof ResourcesRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/start': typeof StartRouteWithChildren
@@ -529,6 +538,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/referral'
     | '/released-search'
+    | '/resources'
     | '/schedule'
     | '/shift-count'
     | '/start'
@@ -583,6 +593,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/referral'
     | '/released-search'
+    | '/resources'
     | '/schedule'
     | '/shift-count'
     | '/worklist'
@@ -636,6 +647,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/referral'
     | '/released-search'
+    | '/resources'
     | '/schedule'
     | '/shift-count'
     | '/start'
@@ -691,6 +703,7 @@ export interface RootRouteChildren {
   PreReleaseRoute: typeof PreReleaseRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
+  ResourcesRoute: typeof ResourcesRoute
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
   StartRoute: typeof StartRouteWithChildren
@@ -981,6 +994,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ReleasedSearchRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resources': {
+      id: '/resources'
+      path: '/resources'
+      fullPath: '/resources'
+      preLoaderRoute: typeof ResourcesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/schedule': {
       id: '/schedule'
       path: '/schedule'
@@ -1129,6 +1149,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreReleaseRoute: PreReleaseRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
+  ResourcesRoute: ResourcesRoute,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,
   StartRoute: StartRouteWithChildren,

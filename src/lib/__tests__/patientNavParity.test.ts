@@ -9,6 +9,7 @@ describe("patient nav registry", () => {
       "/intake",
       "/schedule",
       "/library",
+      "/resources",
     ]);
   });
 
