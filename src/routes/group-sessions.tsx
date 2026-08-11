@@ -19,9 +19,12 @@ import {
   GROUP_CAPACITY_MAX,
   GROUP_CAPACITY_MIN,
   GROUP_CATEGORIES,
+  GROUP_OCCURRENCE_MODALITIES,
+  isVirtualGroupModality,
   useEhr,
   type GroupAttendanceStatus,
   type GroupCategory,
+  type GroupOccurrenceModality,
   type GroupSession,
 } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
