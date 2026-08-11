@@ -39,6 +39,8 @@ import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
+import { ReentryDayZeroModule } from "@/components/reentry/ReentryDayZeroModule";
+import { ObligationsCard } from "@/components/reentry/ObligationsCard";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -390,6 +392,10 @@ export function PatientHome() {
       <PatientConsentStatusCard patientId={patient.id} />
       {/* §Phase 3 — PO two-tier disclosure; population-gated inside. */}
       <PoDisclosureCard patientId={patient.id} />
+      {/* §Phase 6 — reentry Day-0: triggers off the real safety-net lookup only. */}
+      <ReentryDayZeroModule patientId={patient.id} />
+      {/* §Phase 6 — Obligations; justice-involved populations only. */}
+      <ObligationsCard patientId={patient.id} />
     </div>
   );
 }

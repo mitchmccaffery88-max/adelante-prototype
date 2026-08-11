@@ -7,6 +7,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { ClientDate } from "@/components/ClientDate";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { ResourceVerificationQueue } from "@/components/admin/ResourceVerificationQueue";
 
 export const Route = createFileRoute("/admin-coordination")({
   head: () => ({
