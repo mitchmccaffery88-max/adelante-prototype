@@ -9143,7 +9143,9 @@ export const AdelanteEHR = {
         link.patientId,
         COLLATERAL_ROI_CATEGORY,
       ),
-      ahcdActivated: Boolean(link.ahcdActivatedAt),
+      // §Phase 4.2 — live: an expired temporary determination is NOT activation.
+      ahcdActivated: _ahcdEffective(link).active,
+      ahcdDeterminationExpired: _ahcdEffective(link).expired,
       conservatorshipDocsOnFile: Boolean(link.conservatorshipDocs),
     });
   },
