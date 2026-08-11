@@ -5107,6 +5107,14 @@ export interface GroupAttendeeNoteRef {
   occurrenceStart: string;
   facilitatorId: string;
   /**
+   * FULL facilitator list with each provider's independent minutes and
+   * involvement, snapshotted at documentation time. Rendered on every
+   * individualized attendee note (one note per client, all providers shown).
+   */
+  facilitators?: GroupFacilitatorMinutes[];
+  /** The single designated rendering provider that flows to the claim. */
+  renderingProviderId?: string;
+  /**
    * Individualized attendee notes are the billable unit in DMC-ODS. False for
    * a non-billable category OR an occurrence with fewer than 2 present.
    */
