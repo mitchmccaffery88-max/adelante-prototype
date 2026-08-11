@@ -1,6 +1,12 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AdelanteEHR, useEhr, type ReferralSource, type ReferralStatus } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  useEhr,
+  REFERRAL_SOURCE_LABELS,
+  type ReferralSource,
+  type ReferralStatus,
+} from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -40,14 +46,18 @@ export const Route = createFileRoute("/referral")({
   component: ReferralPage,
 });
 
-const sources: { value: ReferralSource; label: string }[] = [
-  { value: "probation", label: "Probation" },
-  { value: "parole", label: "Parole" },
-  { value: "drug_court", label: "Drug court / reentry court" },
-  { value: "correctional", label: "Correctional health" },
-  { value: "self", label: "Self / family / friend" },
-  { value: "other", label: "Other" },
-];
+const sources: { value: ReferralSource; label: string }[] = (
+  [
+    "probation",
+    "parole",
+    "drug_court",
+    "correctional",
+    "community_based_organization",
+    "community_peer",
+    "self",
+    "other",
+  ] as ReferralSource[]
+).map((value) => ({ value, label: REFERRAL_SOURCE_LABELS[value] }));
 
 function ReferralPage() {
   const { t } = useI18n();
