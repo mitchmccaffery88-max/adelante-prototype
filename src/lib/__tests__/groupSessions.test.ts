@@ -208,3 +208,91 @@ describe("occurrence status reporting", () => {
     expect(s.notesComplete).toBe(2);
   });
 });
+
+// §Group notes — category-aware access. Retiring `group_participation`
+// briefly pointed EVERY group note at `sud_treatment`; only the SUD clinical
+// category is genuine Part 2 content.
+describe("group note access is category-aware", () => {
+  // Same resolution the chart and the PDF export use: noteGateClass() then
+  // canAccess(). No parallel check.
+  function resolve(note: Parameters<typeof noteGateClass>[0], role: Parameters<typeof canAccess>[0], patient: ReturnType<typeof AdelanteEHR.getPatient>) {
+    const cls = noteGateClass(note);
+    return cls ? canAccess(role, cls, patient) : { level: "read" as const, locked: false };
+  }
+
+  function documentedNoteFor(category: "sud_clinical_preauth" | "skills_education" | "open_psychoeducational") {
+    const clinician = AdelanteEHR.listClinicians()[0]!;
+    const g = AdelanteEHR.createGroupSession({
+      topic: "placeholder topic",
+      facilitatorId: clinician.id,
+      serviceType: "therapy_group",
+      modality: "in_person",
+      category,
+      start: new Date(Date.now() + 86400000).toISOString(),
+      durationMin: 60,
+      capacity: 8,
+      recurrence: { kind: "weekly", daysOfWeek: [new Date().getDay()] },
+      createdBy: "test",
+    });
+    const two = patients().slice(0, 2);
+    for (const p of two) enrollEligible(g.id, p.id);
+    const start = AdelanteEHR.groupOccurrenceStarts(g.id, 1)[0]!;
+    AdelanteEHR.recordGroupAttendance(
+      g.id,
+      start,
+      two.map((p) => ({ patientId: p.id, status: "present" as const })),
+      "test",
+    );
+    AdelanteEHR.documentGroupOccurrence({
+      sessionId: g.id,
+      occurrenceStart: start,
+      facilitatorId: g.facilitatorId,
+      topicCovered: "t",
+      groupProcess: "p",
+      perAttendee: Object.fromEntries(two.map((p) => [p.id, "participated"])),
+      actor: "test",
+    });
+    // Deliberately pick an attendee with NO active sud_treatment consent, so
+    // the SUD-category regression case is a real lock, not an accident.
+    const target =
+      two.find((p) => !AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")) ?? two[0]!;
+    const patient = AdelanteEHR.getPatient(target.id)!;
+    const note = (patient.progressNotes ?? []).filter((n) => n.groupRef?.sessionId === g.id).at(-1)!;
+    return { note, patient };
+  }
+
+  // A role that is consent_gated for group_notes and holds NO sud_treatment
+  // consent for this patient.
+  const GATED_ROLE = "peer_specialist" as const;
+
+  it("does NOT gate skills_education notes on SUD consent (positive access)", () => {
+    const { note, patient } = documentedNoteFor("skills_education");
+    expect(note.groupRef?.category).toBe("skills_education");
+    expect(noteGateClass(note)).toBeUndefined();
+    const gate = resolve(note, GATED_ROLE, patient);
+    expect(gate.locked).toBe(false);
+    expect(gate.level).not.toBe("none");
+    // ...and the same patient/role IS locked out of Part 2 SUD content.
+    expect(canAccess(GATED_ROLE, "screeners_sud", patient).locked).toBe(true);
+  });
+
+  it("does NOT gate open_psychoeducational notes on SUD consent", () => {
+    const { note, patient } = documentedNoteFor("open_psychoeducational");
+    expect(noteGateClass(note)).toBeUndefined();
+    expect(resolve(note, GATED_ROLE, patient).locked).toBe(false);
+  });
+
+  it("still gates sud_clinical_preauth group notes when SUD consent is absent", () => {
+    const { note, patient } = documentedNoteFor("sud_clinical_preauth");
+    expect(noteGateClass(note)).toBe("group_notes");
+    expect(AdelanteEHR.isConsentCategoryAuthorized(patient.id, "sud_treatment")).toBe(false);
+    const gate = resolve(note, GATED_ROLE, patient);
+    expect(gate.locked).toBe(true);
+    // And with no patient at all (no consent resolvable) it is always locked.
+    expect(canAccess(GATED_ROLE, "group_notes", undefined).locked).toBe(true);
+  });
+
+  it("keeps the conservative Part 2 gate for an unstamped legacy group note", () => {
+    expect(noteGateClass({ category: "group" })).toBe("group_notes");
+  });
+});

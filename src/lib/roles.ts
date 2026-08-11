@@ -2,7 +2,13 @@
 // Additive layer on top of the existing persona routing; never replaces it.
 
 import { useSyncExternalStore } from "react";
-import { AdelanteEHR, type ConsentCategory, type Patient, type ProgressNote } from "./ehr";
+import {
+  AdelanteEHR,
+  type ConsentCategory,
+  type GroupCategory,
+  type Patient,
+  type ProgressNote,
+} from "./ehr";
 
 export type StaffRole =
   | "ecm_provider"
@@ -581,10 +587,10 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
 const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
   screeners_sud: "sud_treatment",
   sud_treatment: "sud_treatment",
-  // Group notes carry Part 2-protected treatment content; the gate reason is
-  // literally 42 CFR Part 2, so the treatment-consent category is the honest
-  // mapping. Telehealth/confidentiality consents gate PARTICIPATION, not
-  // record visibility, and are checked in the group occurrence flow instead.
+  // Only SUD-clinical group notes ever reach this class (noteGateClass()
+  // routes the two non-SUD categories away from it), so `sud_treatment` is
+  // the honest mapping. Telehealth/confidentiality consents gate
+  // PARTICIPATION, not record visibility, and live in the occurrence flow.
   group_notes: "sud_treatment",
 };
 
@@ -593,11 +599,24 @@ const CONSENT_GATE_CATEGORY: Partial<Record<RecordClass, ConsentCategory>> = {
  * diverge between the chart, print/export and autofill.
  */
 export function noteGateClass(
-  note: Pick<ProgressNote, "category" | "restrictedTier">,
+  note: Pick<ProgressNote, "category" | "restrictedTier"> &
+    Partial<Pick<ProgressNote, "groupRef">>,
 ): RecordClass | undefined {
   if (note.restrictedTier === "psychotherapy_notes") return "psychotherapy_notes";
   if (note.category === "sud") return "screeners_sud";
-  if (note.category === "group") return "group_notes";
+  if (note.category === "group") {
+    // §Group notes — category-aware. Only `sud_clinical_preauth` is genuine
+    // 42 CFR Part 2 treatment content, so only it routes through the
+    // consent-gated `group_notes` class. `skills_education` and
+    // `open_psychoeducational` are not SUD-sensitive: they fall back to the
+    // SAME tier ordinary (non-Part 2) progress notes already use — no record
+    // class at all, i.e. chart access governs. That is the existing tier, not
+    // a new one. An unstamped legacy group note keeps the conservative
+    // Part 2 gate.
+    const cat = note.groupRef?.category;
+    if (cat === "skills_education" || cat === "open_psychoeducational") return undefined;
+    return "group_notes";
+  }
   return undefined;
 }
 
