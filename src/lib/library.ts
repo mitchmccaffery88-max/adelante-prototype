@@ -218,12 +218,11 @@ export interface SavedToolkitItem {
 // ---------------------------------------------------------------------------
 // SEED CONTENT — "Starting Strong"
 //
-// PLACEHOLDER TEXT, deliberately and visibly flagged (`placeholder: true`).
-// The category and all ten lesson ids/titles below are the REAL structure from
-// the source; three lessons and two exercises are written out end-to-end so
-// the architecture is provably correct. Mitch is supplying the real full-text
-// content for all ten lessons and all eleven exercises next; replacing the
-// bodies is a content edit, not a schema change.
+// REAL, cleared content, transcribed verbatim from the source. No item below
+// carries `placeholder: true` any more; the flag stays on the type only so a
+// future draft can still be marked. Ids are UNCHANGED from the placeholder
+// build, so population gating, engagement progress rows and existing tests
+// keep resolving.
 // ---------------------------------------------------------------------------
 
 export const LIBRARY_CATEGORIES: LibraryCategory[] = [
