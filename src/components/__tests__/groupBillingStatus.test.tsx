@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // §Group sessions — the point-of-choice billing indicator. This is the
 // PREVENTIVE surface; the hard block stays in upsertClaimFromGroupAttendee.
 import { describe, expect, it } from "vitest";
