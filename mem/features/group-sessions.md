@@ -10,11 +10,35 @@ is the SINGLE place that decides who may enroll (the DHCS Authorized Representat
 Collateral role plugs in there, nowhere else). Only therapist/pmhnp/case_manager may
 set it (`GROUP_ELIGIBILITY_ROLES`). Criteria text + curriculum tag are PLACEHOLDER.
 
-**Category split (PLACEHOLDER taxonomy — confirm the real list with Christi).**
-`GroupSession.category`: `sud_clinical_preauth` (staff-only enrollment, BILLABLE) vs
-`open_psychoeducational` (eligible patients self-book from `/schedule`, NEVER billed).
-"Pre-authorization" here is read as INTERNAL clinical eligibility/placement approval,
-NOT a payer-facing prior-auth process — confirm.
+**Category split (REAL, DHCS-sourced from Christi).** `GroupSession.category`:
+`sud_clinical_preauth` (staff-only enrollment, billable H0005 SUD Group
+Counseling) | `skills_education` (self-service enrollment, billable H2014
+Skills Training and Development, Group, per 15 min) | `open_psychoeducational`
+(self-service, NEVER billed). Codes live in `GROUP_BILLING` in `src/lib/ehr.ts`
+— one table, no per-category branching elsewhere. No ODF/IOT/MAT variation on
+H0005. "Pre-authorization" is still read as INTERNAL clinical
+eligibility/placement approval, not payer prior auth.
+
+**Enrollment path is DERIVED from category via `GROUP_BILLING[c].selfService`
+(INTERPRETATION, flagged).** billable ≠ staff-placed: `skills_education` is
+billable but self-booked. If a combination ever appears that this table can't
+express, promote `selfService` to its own field on `GroupSession` rather than
+adding categories.
+
+**Occurrence-level billing rule.** `GROUP_MIN_BILLABLE_ATTENDEES = 2` /
+`isOccurrenceBillable(category, presentCount)`. Fewer than 2 present = an
+individual session in practice per DHCS: no claim, but the occurrence still
+happens and is documented normally. Enforced BOTH on the note's
+`groupRef.billingEligible`/`billingCode` and again at the claim write point.
+
+**Capacity.** DHCS 2–12, same for telehealth. `GROUP_CAPACITY_MIN`/`MAX` in
+`ehr.ts`, enforced by `_assertGroupCapacity` on create AND edit. Configurable
+below 12 for county-local caps, never above. No county cap is invented.
+
+**Billing status at point of choice.** `GroupBillingStatus` (exported from
+`src/routes/group-sessions.tsx`) renders the billable/non-billable line next to
+the category selector and on the group detail header. It is PREVENTIVE only —
+`upsertClaimFromGroupAttendee` remains the enforcement backstop.
 
 **Billing hard split.** `upsertClaimFromGroupAttendee` returns `null` for open groups,
 enforced at the write point (not by caller filtering); attendee notes get
@@ -38,12 +62,12 @@ parallel group-consent check.
 
 **Billing.** `AdelanteEHRExt.upsertClaimFromGroupAttendee` reuses the existing
 claims list keyed by `encounterId` = `group:<sessionId>:<start>:<patientId>`.
-No CPT/H-code invented — `billingCodePlaceholder` is deliberately empty.
+Claim carries `serviceCode` = H0005/H2014; `GroupAttendeeNoteRef.billingCode` mirrors it.
 
 **OPEN QUESTIONS for Christi (do not decide in code):** whether
 `group_participation` is legally distinct from general treatment consent;
-DHCS group-size limits; real curriculum/topic names; billing codes. All
-current values are placeholders.
+real curriculum/topic names; modality/telehealth consent; multi-facilitator
+minute tracking. Group sizes and billing codes are now REAL DHCS content.
 
 **Not built (flagged, needs confirmation):** patient-visible "your groups" on
 `/home`.
