@@ -198,38 +198,14 @@ function IntakePage() {
   const acting = useActingStaff();
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
-  // P1 — About you
-  const [profile, setProfile] = useState({
-    preferredName: "",
-    pronouns: "",
-    preferredLanguage: "en" as PreferredLanguage,
-    phone: "",
-    contactChannel: "text" as ContactChannel,
-    bestTime: "morning" as BestTime,
-    // §Emergency-contact expansion — a list, not one person. First = primary.
-    emergencyContacts: [emptyEmergencyContact()] as EmergencyContact[],
-    address: "",
-    releaseDate: "",
-  });
+  // P1 — About you. Seeded from the record on the very first render so nobody
+  // retypes what sign-up (or a CF Care Manager) already entered.
+  const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
-  // Seed profile defaults from the patient row, once.
+  // Re-seed if the acting patient changes mid-session (assisted mode).
   useEffect(() => {
-    if (!patient) return;
-    setProfile((prev) => ({
-      ...prev,
-      preferredName: patient.preferredName ?? prev.preferredName,
-      pronouns: patient.pronouns ?? prev.pronouns,
-      preferredLanguage: patient.preferredLanguage ?? prev.preferredLanguage,
-      phone: patient.phone || prev.phone,
-      contactChannel: patient.contactPrefs?.channel ?? prev.contactChannel,
-      bestTime: patient.contactPrefs?.bestTime ?? prev.bestTime,
-      emergencyContacts: readEmergencyContacts(patient).length
-        ? readEmergencyContacts(patient)
-        : prev.emergencyContacts,
-      address: patient.address ?? prev.address,
-      releaseDate: patient.releaseDate || prev.releaseDate,
-    }));
+    setProfile(seedIntakeProfile(patient));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId]);
 
@@ -248,11 +224,16 @@ function IntakePage() {
       if (saved.answers) setAnswers(saved.answers);
       if (saved.needs) setNeeds(saved.needs);
       if (saved.coverage) setCoverage(saved.coverage);
-      if (saved.profile) setProfile((p) => ({ ...p, ...saved.profile }));
+      // Merge, never overwrite: a blank field in an old draft must not erase
+      // something the record actually knows.
+      if (saved.profile) {
+        setProfile(mergeSavedIntakeProfile(seedIntakeProfile(patient), saved.profile));
+      }
       if (saved.savedAt) setSavedAt(saved.savedAt);
     } catch {
       /* no-op */
     }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [storageKey]);
   // Persist on every meaningful change.
   useEffect(() => {
