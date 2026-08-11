@@ -58,6 +58,7 @@ import {
 import { getExercise, getLibraryItem, LIBRARY_ITEMS, EXERCISES } from "./library";
 import type { SavedToolkitItem, ToolkitOrigin } from "./library";
 import * as Engagement from "./engagement";
+import * as SafetyPlanStore from "./safetyPlan";
 export type {
   LibraryCategory,
   LibraryItem,
@@ -3095,6 +3096,23 @@ let currentPatientId = "p2";
 // coupling the separation exists to remove).
 Engagement.subscribeEngagement(() => emit());
 Engagement.setEngagementAuditSink((evt) => {
+  appendAudit({
+    category: "clinical",
+    action: evt.action,
+    patientId: evt.patientId,
+    ...(_patient(evt.patientId)?.programId
+      ? { programId: _patient(evt.patientId)!.programId }
+      : {}),
+    actorRole: evt.actorRole,
+    detail: evt.detail,
+  });
+});
+
+// §Adelante Journey Phase 7 — the safety plan store (`src/lib/safetyPlan.ts`)
+// is clinical-ADJACENT: separate store (patient-authored), but its audit lands
+// in the same clinical stream and its writes wake the same UI subscribers.
+SafetyPlanStore.subscribeSafetyPlan(() => emit());
+SafetyPlanStore.setSafetyPlanAuditSink((evt) => {
   appendAudit({
     category: "clinical",
     action: evt.action,
