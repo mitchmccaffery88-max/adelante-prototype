@@ -17,6 +17,8 @@ function Activity({ activity }: { activity: LibraryActivity }) {
   const [checked, setChecked] = useState<string[]>([]);
   const [rating, setRating] = useState(0);
   const [sorted, setSorted] = useState<Record<string, string>>({});
+  const [scores, setScores] = useState<Record<string, number>>({});
+  const [choice, setChoice] = useState<string | null>(null);
   switch (activity.kind) {
     case "checklist":
       return (
@@ -86,6 +88,131 @@ function Activity({ activity }: { activity: LibraryActivity }) {
               ))}
             </div>
           ))}
+        </div>
+      );
+    case "reflection":
+      return (
+        <div className="space-y-2">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          <div className="flex flex-wrap gap-2">
+            {activity.cards.map((card) => (
+              <Button
+                key={card}
+                type="button"
+                size="sm"
+                variant={checked.includes(card) ? "default" : "outline"}
+                aria-pressed={checked.includes(card)}
+                onClick={() =>
+                  setChecked((p) =>
+                    p.includes(card) ? p.filter((x) => x !== card) : [...p, card],
+                  )
+                }
+              >
+                {card}
+              </Button>
+            ))}
+          </div>
+        </div>
+      );
+    case "timeline":
+      return (
+        <div className="space-y-2">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          <ol className="space-y-2">
+            {activity.steps.map((step, i) => (
+              <li key={step} className="flex items-start gap-2 text-sm">
+                <span className="mt-0.5 flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-secondary text-[11px] text-navy">
+                  {i + 1}
+                </span>
+                <span>{step}</span>
+              </li>
+            ))}
+          </ol>
+        </div>
+      );
+    case "breathing":
+      return (
+        <div className="space-y-2">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          <div className="flex flex-wrap gap-2 text-xs text-muted-foreground">
+            <span className="rounded-full bg-secondary/60 px-3 py-1">In {activity.inhaleSec}</span>
+            <span className="rounded-full bg-secondary/60 px-3 py-1">Hold {activity.holdSec}</span>
+            <span className="rounded-full bg-secondary/60 px-3 py-1">Out {activity.exhaleSec}</span>
+            <span className="rounded-full bg-secondary/60 px-3 py-1">
+              {activity.rounds} rounds
+            </span>
+          </div>
+        </div>
+      );
+    case "sliders":
+      return (
+        <div className="space-y-3">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          {activity.sliders.map((s) => (
+            <div key={s.id} className="space-y-1">
+              <p className="text-sm">{s.label}</p>
+              <Slider
+                value={[scores[s.id] ?? 0]}
+                min={0}
+                max={10}
+                step={1}
+                onValueChange={(v) => setScores((prev) => ({ ...prev, [s.id]: v[0] ?? 0 }))}
+                aria-label={s.label}
+              />
+              <div className="flex justify-between text-xs text-muted-foreground">
+                <span>{s.minLabel}</span>
+                <span className="text-navy">{scores[s.id] ?? 0}</span>
+                <span>{s.maxLabel}</span>
+              </div>
+            </div>
+          ))}
+        </div>
+      );
+    case "grounding":
+      return (
+        <div className="space-y-2">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          {activity.senses.map((s) => (
+            <div key={s.label} className="space-y-1">
+              <label className="text-sm font-medium text-navy" htmlFor={`gr-${s.label}`}>
+                {s.count} things you can {s.label.toLowerCase()}
+              </label>
+              <Textarea id={`gr-${s.label}`} rows={2} />
+            </div>
+          ))}
+        </div>
+      );
+    case "decision":
+      return (
+        <div className="space-y-2">
+          <h3 className="font-display text-base text-navy">{activity.title}</h3>
+          <p className="text-sm">{activity.prompt}</p>
+          <div className="space-y-2">
+            {activity.choices.map((c) => (
+              <div key={c.label} className="space-y-1">
+                <Button
+                  type="button"
+                  variant={choice === c.label ? "default" : "outline"}
+                  className="h-auto w-full justify-start whitespace-normal text-left"
+                  onClick={() => setChoice(c.label)}
+                >
+                  {c.label}
+                </Button>
+                {choice === c.label && (
+                  <p
+                    className={`rounded-lg p-2 text-sm ${c.good ? "bg-teal/10 text-teal" : "bg-secondary/60 text-muted-foreground"}`}
+                  >
+                    {c.feedback}
+                  </p>
+                )}
+              </div>
+            ))}
+          </div>
         </div>
       );
   }
