@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type ReferralStatus } from "@/lib/ehr";
 import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";

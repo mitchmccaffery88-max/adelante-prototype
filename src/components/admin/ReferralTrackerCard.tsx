@@ -10,7 +10,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ClientDate } from "@/components/ClientDate";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
 import type { EpisodeType, ReferralStatus } from "@/lib/ehr";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
