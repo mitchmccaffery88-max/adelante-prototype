@@ -541,6 +541,18 @@ export const AdelanteEHRExt = {
     occurrenceStart: string;
     patientId: string;
     facilitatorId: string;
+    /**
+     * §Designated rendering provider. DHCS duplicate detection is member CIN +
+     * rendering provider NPI + procedure code + date, so exactly ONE provider
+     * goes on the claim. Falls back to the occurrence's designated provider,
+     * then to the passed facilitator.
+     *
+     * OPEN — COUNTY CONFIRMATION REQUIRED: co-facilitator time is captured in
+     * documentation only and is NOT separately claimed. DHCS is silent on
+     * whether a second facilitator's time is ever separately claimable; this
+     * is the conservative resolution, not a settled answer.
+     */
+    renderingProviderId?: string;
     noteId: string;
     chargeCents?: number;
   }): Claim | null {
@@ -560,13 +572,22 @@ export const AdelanteEHRExt = {
       if (present.length < GROUP_MIN_BILLABLE_ATTENDEES) return null;
     }
     const encounterId = `group:${input.sessionId}:${input.occurrenceStart}:${input.patientId}`;
+    // NOTE (DHCS Short-Doyle): more than one group service for the same
+    // beneficiary, same provider, same DAY is explicitly allowed. The
+    // encounter id is occurrence-specific (it carries the full ISO start, not
+    // the date), so two distinct same-day occurrences mint two distinct
+    // claims. Covered by a regression test.
     let claim = claims.find((c) => c.encounterId === encounterId);
     if (claim) return claim;
+    const renderingProviderId =
+      input.renderingProviderId ??
+      AdelanteEHR.groupRenderingProviderId?.(input.sessionId, input.occurrenceStart) ??
+      input.facilitatorId;
     claim = {
       id: uid(),
       encounterId,
       patientId: input.patientId,
-      clinicianId: input.facilitatorId,
+      clinicianId: renderingProviderId || input.facilitatorId,
       state: "documented",
       chargeCents:
         input.chargeCents ?? AdelanteEHR.chargeForService?.("therapy_group") ?? 12000,
