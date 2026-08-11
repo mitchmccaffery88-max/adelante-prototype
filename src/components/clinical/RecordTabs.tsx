@@ -1338,6 +1338,7 @@ export function TaskList({
     notification_failed: "Delivery failed",
     provider_switch: "Provider switch",
     note_automation: "Note automation",
+    med_side_effect: "Side effect reported",
   };
   return (
     <div className="space-y-1.5">
