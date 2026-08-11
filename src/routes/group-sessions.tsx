@@ -14,6 +14,8 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
+  defaultGroupFacilitators,
+  defaultRenderingProviderId,
   formatLocationAddress,
   GROUP_BILLING,
   GROUP_CAPACITY_MAX,
