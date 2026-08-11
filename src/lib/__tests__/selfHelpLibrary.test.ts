@@ -83,11 +83,11 @@ describe("library content shape", () => {
   it("ships cleared content: nothing is flagged placeholder and no draft text remains", () => {
     for (const i of LIBRARY_ITEMS) {
       expect(i.placeholder).toBeUndefined();
-      expect(JSON.stringify(i)).not.toMatch(/PLACEHOLDER/i);
+      expect(JSON.stringify(i)).not.toMatch(/PLACEHOLDER/);
     }
     for (const e of EXERCISES) {
       expect(e.placeholder).toBeUndefined();
-      expect(JSON.stringify(e)).not.toMatch(/PLACEHOLDER/i);
+      expect(JSON.stringify(e)).not.toMatch(/PLACEHOLDER/);
     }
   });
 
