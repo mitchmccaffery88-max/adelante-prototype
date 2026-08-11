@@ -380,15 +380,19 @@ function GroupDetail({
       <Card className="p-4 space-y-2">
         <h2 className="font-display text-navy">{group.topic}</h2>
         <div className="flex flex-wrap items-center gap-2">
-          <Badge variant={group.category === "open_psychoeducational" ? "secondary" : "outline"}>
+          <Badge variant={GROUP_BILLING[group.category].billable ? "outline" : "secondary"}>
             {GROUP_CATEGORIES.find((c) => c.key === group.category)?.label}
           </Badge>
           <span className="text-[11px] text-muted-foreground">
-            {group.category === "open_psychoeducational"
-              ? "Eligible patients can self-book. Attendance is engagement data — never billed."
-              : "Staff enrollment only. Attendee notes flow to the Claims Worklist."}
+            {GROUP_BILLING[group.category].selfService
+              ? "Eligible patients can self-book."
+              : "Staff enrollment only."}{" "}
+            {GROUP_BILLING[group.category].billable
+              ? "Attendee notes flow to the Claims Worklist."
+              : "Attendance is engagement data — never billed."}
           </span>
         </div>
+        <GroupBillingStatus category={group.category} />
         <p className="text-xs text-muted-foreground">
           {group.serviceType} · {group.modality} · {group.durationMin} min · capacity{" "}
           {group.capacity}
