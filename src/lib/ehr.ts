@@ -8960,6 +8960,90 @@ export const AdelanteEHR = {
   },
 
   /**
+   * §Phase 4.2 (6.5) — record one frontline validation finding. Each item is
+   * independently trackable and closes its own worklist task; there is no
+   * single "verified" flag. Item 4 (the incapacity determination) is NOT
+   * recorded here — it is the activation itself, so `recordAhcdChecklistItem`
+   * refuses it and the caller must go through `activateAdvocateAhcd`.
+   */
+  recordAhcdChecklistItem(
+    linkId: string,
+    input: {
+      item: AhcdChecklistItemKey;
+      outcome: AhcdChecklistOutcome;
+      note?: string;
+      reviewedBy: string;
+    },
+  ): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (link.authorizationType !== "ahcd")
+      throw new Error("The validation checklist only applies to an AHCD connection.");
+    if (input.item === "incapacity_determination")
+      throw new Error(
+        "The incapacity determination is recorded by activating the directive, not by checking a box.",
+      );
+    const def = AHCD_CHECKLIST_ITEMS.find((i) => i.key === input.item);
+    if (!def) throw new Error("Unknown checklist item.");
+    if (input.outcome === "unclear" && input.item !== "part2_scope")
+      throw new Error("Only the Part 2 scope check can be left unclear.");
+    const who = input.reviewedBy.trim();
+    if (!who) throw new Error("The reviewer must be named.");
+    link.ahcdValidation = {
+      ...(link.ahcdValidation ?? {}),
+      [input.item]: {
+        outcome: input.outcome,
+        reviewedAt: new Date().toISOString(),
+        reviewedBy: who,
+        ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      },
+    };
+    // A failed item invalidates an already-active directive: the authority it
+    // rests on turned out not to be valid.
+    if (input.outcome === "failed" && _ahcdEffective(link).active) {
+      AdelanteEHR.deactivateAdvocateAhcd(link.id, {
+        deactivatedBy: who,
+        reason: `Validation check failed: ${def.label}.`,
+      });
+    }
+    const task = caseTasks.find((t) => t.dedupeKey === _ahcdTaskKey(link.id, input.item));
+    if (task && input.outcome !== "pending") {
+      task.status = "done";
+      task.completedAt = new Date().toISOString();
+    }
+    appendAudit({
+      category: "advocate",
+      action: "advocate_ahcd_validation_recorded",
+      patientId: link.patientId,
+      actorId: who,
+      detail: {
+        advocateLinkId: link.id,
+        advocateName: link.advocateName,
+        item: input.item,
+        itemLabel: def.label,
+        outcome: input.outcome,
+        ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /** Read the checklist plus whether activation is unblocked. */
+  ahcdValidationState(linkId: string) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    const state = link.ahcdValidation ?? {};
+    return {
+      items: AHCD_CHECKLIST_ITEMS.map((i) => ({ ...i, finding: state[i.key] })),
+      readiness: ahcdActivationReadiness(state),
+      activation: link.ahcdActivation,
+      active: _ahcdEffective(link).active,
+      part2ScopeUnclear: ahcdPart2ScopeUnclear(state),
+    };
+  },
+
+  /**
    * §Phase 4.2 (6.4) — AHCD activation. A clinical incapacity determination,
    * not a flag. Three real preconditions, all enforced here:
    *   1. the recorder holds a clinical role that may determine capacity
