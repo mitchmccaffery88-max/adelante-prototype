@@ -11,3 +11,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Patient documents](mem://features/patient-documents)
 - [SUD consent policy](mem://features/sud-consent-policy)
 - [Front-door helper tiers](mem://features/front-door-helper-tiers) — Tier 1 informal helper field, Tier 2 staff assisted sign-up, consumedBy attribution rule
+- [PO disclosure two-tier](mem://features/po-disclosure-two-tier) — mandatory (legal mandate, never togglable) vs voluntary (revocable consent) probation/parole sharing
