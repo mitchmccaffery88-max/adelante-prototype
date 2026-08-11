@@ -1802,6 +1802,13 @@ export type ConsentCategory =
   // and appointment service types for THAT patient. Nothing else changes.
   | "advocate_sud_disclosure";
 
+// §Adelante Journey Phase 3 — the ONE new category the PO two-tier split
+// needs. It covers ONLY voluntary, patient-controlled care-coordination
+// sharing with a probation/parole officer. Legally MANDATED PO disclosure
+// deliberately has NO category here: it is not consent-based and must never
+// be representable as a revocable authorization. See src/lib/poDisclosure.ts.
+// PLACEHOLDER label, same discipline as every other category in this file.
+
 export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "sud_treatment", label: "SUD treatment (placeholder)" },
   { key: "mental_health", label: "Mental health (placeholder)" },
