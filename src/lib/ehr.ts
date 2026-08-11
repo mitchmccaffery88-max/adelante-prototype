@@ -8092,6 +8092,18 @@ export const AdelanteEHR = {
             ? "in_progress"
             : "not_started";
       }
+      if (def.satisfiedByScreeners && ep) {
+        // Real completed instruments, read from the ordinary screener record.
+        const done = def.satisfiedByScreeners.filter((k) =>
+          AdelanteEHR.getScreenerResult(ep.patientId, k),
+        ).length;
+        status =
+          done === def.satisfiedByScreeners.length
+            ? "complete"
+            : done > 0
+              ? "in_progress"
+              : "not_started";
+      }
       const blocked =
         def.requiresConsentCapacity && !capacity.decision.canProceed && status !== "complete"
           ? capacity.decision.reason
