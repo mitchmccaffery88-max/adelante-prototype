@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, type ReferralStatus } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type ReferralStatus } from "@/lib/ehr";
 import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
@@ -420,14 +420,7 @@ function ReferralTrackerCard({
 }: {
   referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
 }) {
-  const sourceLabels: Record<string, string> = {
-    probation: "Probation",
-    parole: "Parole",
-    drug_court: "Drug court",
-    correctional: "Correctional",
-    self: "Self-referred",
-    other: "Other",
-  };
+  const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy mb-3">Referral status</h3>

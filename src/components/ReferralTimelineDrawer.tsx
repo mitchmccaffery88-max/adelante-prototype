@@ -7,7 +7,7 @@ import {
 } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 
@@ -50,8 +50,8 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
               <div className="flex flex-wrap items-center justify-between gap-2 text-xs">
                 <div className="text-muted-foreground">
                   Source:{" "}
-                  <span className="text-navy capitalize">
-                    {referral.referralSource.replace("_", " ")}
+                  <span className="text-navy">
+                    {REFERRAL_SOURCE_LABELS[referral.referralSource] ?? referral.referralSource}
                   </span>
                   {referral.referringAgency ? ` · ${referral.referringAgency}` : ""}
                 </div>
