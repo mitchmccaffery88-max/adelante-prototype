@@ -23,6 +23,11 @@ import {
   emptyEmergencyContact,
   readEmergencyContacts,
 } from "@/lib/emergencyContacts";
+import {
+  mergeSavedIntakeProfile,
+  seedIntakeProfile,
+  type IntakeProfile,
+} from "@/lib/intakeProfile";
 import { Input } from "@/components/ui/input";
 import {
   COVERAGE_TYPES,
