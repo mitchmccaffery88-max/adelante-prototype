@@ -3088,6 +3088,25 @@ const emit = () => {
 // who has not yet completed intake so the first-time flow is visible.
 let currentPatientId = "p2";
 
+// §Adelante Journey Phase 5 — the engagement store (`src/lib/engagement.ts`)
+// is structurally separate from the clinical record, but its writes still
+// belong in the one audit stream and still have to wake the UI. Wire both
+// here rather than letting engagement import the EHR (that would recreate the
+// coupling the separation exists to remove).
+Engagement.subscribeEngagement(() => emit());
+Engagement.setEngagementAuditSink((evt) => {
+  appendAudit({
+    category: "clinical",
+    action: evt.action,
+    patientId: evt.patientId,
+    ...(_patient(evt.patientId)?.programId
+      ? { programId: _patient(evt.patientId)!.programId }
+      : {}),
+    actorRole: evt.actorRole,
+    detail: evt.detail,
+  });
+});
+
 // Global case-task queue (across patients). Kept separately from Patient.tasks
 // (which is a legacy per-patient action list) so CM views can index by
 // assignee, status, and due date without walking every patient.
