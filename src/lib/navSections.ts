@@ -10,6 +10,7 @@ import {
   Building2,
   Calendar,
   Heart,
+  Map,
   CalendarClock,
   ClipboardList,
   ClipboardSignature,
@@ -530,7 +531,7 @@ export interface PatientNavEntry {
   id: string;
   /** i18n key resolved by the rendering shell. */
   labelKey: string;
-  to: "/home" | "/intake" | "/schedule" | "/library";
+  to: "/home" | "/intake" | "/schedule" | "/library" | "/resources";
   icon: LucideIcon;
 }
 
@@ -542,6 +543,10 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
   // route rather than a section inside /home: it is a browse-and-return
   // surface with its own deep links, not a card.
   { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen },
+  // §Adelante Journey Phase 6 — Community Resource Center. Population-neutral
+  // (housing/food/work help is not justice-specific), so it is nav-level;
+  // the reentry Day-0 module and Obligations are gated cards on /home instead.
+  { id: "resources", labelKey: "navResources", to: "/resources", icon: Map },
 ] as const;
 
 /** Every route the patient shell owns. */
