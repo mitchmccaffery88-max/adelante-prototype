@@ -28,7 +28,26 @@ import {
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess, STAFF_ROLES } from "./roles";
+import { canAccess, getActingRole, STAFF_ROLES } from "./roles";
+
+/**
+ * §Part 2 store gate — WHO is reading. `system` is reserved for internal
+ * derivation that never returns Part 2 content to a caller (care-plan
+ * recompute, workflow status), and must not be used by UI or reports.
+ */
+export type ScreenerViewer =
+  | { kind: "system" }
+  | { kind: "staff"; role?: StaffRole }
+  | { kind: "patient"; patientId: string }
+  | { kind: "advocate"; linkId: string };
+
+/** Thrown by the store when a Part 2-covered read is refused. */
+export class Part2AccessError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "Part2AccessError";
+  }
+}
 // §v3.0 Phase 4 — advocate access policy. Pure module, imports nothing back
 // from here, so there is no cycle.
 import {
@@ -79,6 +98,7 @@ import {
   shortFormByKey,
   scoreScreener,
   screenerByKey,
+  isPart2Screener,
   type ScreenerDomainResult,
 } from "./screeners";
 export type {
@@ -6128,8 +6148,88 @@ export const AdelanteEHR = {
     emit();
   },
   /** Latest stored result for an instrument — the one the checklist reads. */
-  getScreenerResult(patientId: string, key: string): ScreenerResult | undefined {
+  /**
+   * §Part 2 store gate — is this viewer allowed to read THIS instrument for
+   * THIS patient? One evaluation point, reusing the mechanisms that already
+   * govern every other piece of Part 2 content:
+   *   • staff → `canAccess(role, "screeners_sud", patient)`, the same class
+   *     `noteGateClass()` routes SUD notes through and the same live ASCMI
+   *     `sud_treatment` consent check;
+   *   • advocate → `advocatePart2Access(linkId)`, i.e. the Phase 4
+   *     `advocateSudAccess` axis, plus the link's own patient scope;
+   *   • patient → their own record, always.
+   * Non-Part 2 instruments (PHQ-9/GAD-7/PHQ-2/GAD-2/PCL-5/AHC-HRSN) are never
+   * gated here — Part 2 is not a general chart lock.
+   */
+  screenerAccess(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): { part2: boolean; allowed: boolean; reason?: string } {
+    if (!isPart2Screener(key)) return { part2: false, allowed: true };
+    if (viewer.kind === "system") return { part2: true, allowed: true };
+    if (viewer.kind === "patient")
+      return viewer.patientId === patientId
+        ? { part2: true, allowed: true }
+        : { part2: true, allowed: false, reason: "A patient may only read their own screeners." };
+    if (viewer.kind === "advocate") {
+      const link = advocateLinks.find((l) => l.id === viewer.linkId);
+      if (!link || link.patientId !== patientId)
+        return { part2: true, allowed: false, reason: "No advocate connection to this patient." };
+      const gate = AdelanteEHR.advocatePart2Access(link.id);
+      return gate.unmasked
+        ? { part2: true, allowed: true }
+        : {
+            part2: true,
+            allowed: false,
+            reason: "42 CFR Part 2 content is masked for this advocate connection.",
+          };
+    }
+    const role = viewer.role ?? getActingRole();
+    const patient = patients.find((x) => x.id === patientId);
+    const gate = canAccess(role, "screeners_sud", patient);
+    return gate.locked
+      ? {
+          part2: true,
+          allowed: false,
+          reason: gate.reason ?? "42 CFR Part 2 consent required to view this screener.",
+        }
+      : { part2: true, allowed: true };
+  },
+  /**
+   * Latest stored result for an instrument. ENFORCED at the store: a Part 2
+   * instrument read by an unauthorized caller throws — it is not silently
+   * reported as "never administered", which would be a different (and false)
+   * clinical statement. UI that wants to render a masked row should call
+   * `viewScreenerResult` instead.
+   */
+  getScreenerResult(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): ScreenerResult | undefined {
+    const gate = AdelanteEHR.screenerAccess(patientId, key, viewer);
+    if (!gate.allowed) throw new Part2AccessError(gate.reason ?? "Access denied.");
     return patients.find((x) => x.id === patientId)?.screeners[key];
+  },
+  /** Non-throwing read for UI: either the result, or an explained mask. */
+  viewScreenerResult(
+    patientId: string,
+    key: string,
+    viewer: ScreenerViewer = { kind: "staff" },
+  ): { restricted: boolean; reason?: string; result?: ScreenerResult } {
+    const gate = AdelanteEHR.screenerAccess(patientId, key, viewer);
+    if (!gate.allowed) return { restricted: true, reason: gate.reason };
+    const result = patients.find((x) => x.id === patientId)?.screeners[key];
+    return result ? { restricted: false, result } : { restricted: false };
+  },
+  /**
+   * Existence only, no score/severity/answers. Workflow completion ("this
+   * checklist step has been done") is not a disclosure of Part 2 CONTENT, so
+   * this is deliberately ungated — it is what the pre-release checklist uses.
+   */
+  hasScreenerResult(patientId: string, key: string): boolean {
+    return Boolean(patients.find((x) => x.id === patientId)?.screeners[key]);
   },
   /**
    * §Pre-release build 2 — population-health rollup over the SAME
@@ -6137,37 +6237,63 @@ export const AdelanteEHR = {
    * analytics table: positive-screen rates and SDOH domain prevalence are
    * derived from `patient.screeners` / `screenerHistory` on demand.
    */
-  screenerPopulationSummary(opts: { keys?: string[]; patientIds?: string[] } = {}): {
+  /**
+   * §Part 2 — aggregates are computed over the cohort the VIEWER may actually
+   * read. Counts and rates are not individual-level disclosures, but a cohort
+   * of one makes them exactly that, so the same `screenerAccess` gate filters
+   * the contributing patients per Part 2 instrument. A row whose cohort was
+   * narrowed is flagged `restricted`, and a row with no readable patients is
+   * reported as zero-administered rather than silently blended into the rest.
+   * Non-Part 2 instruments and SDOH domain prevalence are unaffected.
+   */
+  screenerPopulationSummary(
+    opts: { keys?: string[]; patientIds?: string[]; viewer?: ScreenerViewer } = {},
+  ): {
     instruments: {
       key: string;
       name: string;
       administered: number;
       positive: number;
       positiveRate: number;
+      restricted?: boolean;
     }[];
     sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
   } {
     const cohort = patients.filter(
       (p) => !opts.patientIds || opts.patientIds.includes(p.id),
     );
+    const viewer: ScreenerViewer = opts.viewer ?? { kind: "staff" };
     const keys =
       opts.keys ??
       Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
     const instruments = keys.map((key) => {
       const def = screenerByKey(key);
-      const results = cohort
+      const part2 = isPart2Screener(key);
+      const readable = part2
+        ? cohort.filter((p) => AdelanteEHR.screenerAccess(p.id, key, viewer).allowed)
+        : cohort;
+      const results = readable
         .map((p) => p.screeners[key])
         .filter((r): r is ScreenerResult => Boolean(r));
       const positive = results.filter((r) =>
         r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
       ).length;
-      return {
+      const row: {
+        key: string;
+        name: string;
+        administered: number;
+        positive: number;
+        positiveRate: number;
+        restricted?: boolean;
+      } = {
         key,
         name: def?.name ?? key,
         administered: results.length,
         positive,
         positiveRate: results.length ? positive / results.length : 0,
       };
+      if (part2 && readable.length < cohort.length) row.restricted = true;
+      return row;
     });
     // Domain prevalence across everyone with a domain instrument on file.
     const tally = new Map<string, { label: string; positive: number; screened: number }>();
@@ -8162,8 +8288,9 @@ export const AdelanteEHR = {
       }
       if (def.satisfiedByScreeners && ep) {
         // Real completed instruments, read from the ordinary screener record.
+        // Existence only — workflow status is not a Part 2 content read.
         const done = def.satisfiedByScreeners.filter((k) =>
-          AdelanteEHR.getScreenerResult(ep.patientId, k),
+          AdelanteEHR.hasScreenerResult(ep.patientId, k),
         ).length;
         status =
           done === def.satisfiedByScreeners.length

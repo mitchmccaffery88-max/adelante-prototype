@@ -32,7 +32,10 @@ export function PreReleaseScreenerDialog({
   onClose: () => void;
 }) {
   const def = screenerByKey(screenerKey);
-  const existing = useEhr(() => AdelanteEHR.getScreenerResult(episode.patientId, screenerKey));
+  // Prefill only what this viewer is allowed to read (§Part 2 store gate).
+  const existing = useEhr(
+    () => AdelanteEHR.viewScreenerResult(episode.patientId, screenerKey).result,
+  );
   const [answers, setAnswers] = useState<(number | undefined)[]>(
     () => existing?.responses ?? (def ? def.questions.map(() => undefined) : []),
   );
