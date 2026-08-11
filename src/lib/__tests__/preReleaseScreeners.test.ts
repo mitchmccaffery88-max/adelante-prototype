@@ -129,8 +129,8 @@ describe("AUDIT-10 / DAST-10 reuse is the same mechanism, not a lookalike", () =
       answers: Array(10).fill(1),
       attribution: attribution(),
     });
-    const entry = AdelanteEHR.listAudit()
-      .filter((a) => a.action === "pre_release_screener_recorded" && a.patientId === patient.id)
+    const entry = AdelanteEHR.listAuditEvents({ patientId: patient.id })
+      .filter((a) => a.action === "pre_release_screener_recorded")
       .at(0)!;
     expect(entry.detail?.["entryMode"]).toBe("direct");
     expect(entry.detail?.["screenerKey"]).toBe("dast-10");
