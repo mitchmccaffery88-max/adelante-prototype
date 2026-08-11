@@ -13,6 +13,7 @@ import {
   Home,
   KeyRound,
   LayoutDashboard,
+  LifeBuoy,
   ListChecks,
   MapPin,
   MessageSquare,
@@ -38,6 +39,7 @@ import { MedReconTab } from "@/components/clinical/MedReconTab";
 import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
+import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import {
   OverviewTab,
@@ -198,6 +200,23 @@ export function useRecordSections(
     icon: ClipboardCheck,
     group: "chart",
     render: (a) => <CarePlanTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  // §Phase 7 — patient-authored safety plan. Clinical-adjacent, so it lives in
+  // the Chart group next to Alerts (where crisis work already happens), gated
+  // by its own `safety_plan` class rather than therapy_notes.
+  add("safety_plan", {
+    id: "safety-plan",
+    label: "Safety plan",
+    icon: LifeBuoy,
+    group: "chart",
+    render: (a) => (
+      <SafetyPlanPanel
+        patientId={pid}
+        readOnly={a.level !== "write"}
+        author={`${role} (staff)`}
+        actorRole={role}
+      />
+    ),
   });
   add("therapy_notes", {
     id: "notes",
