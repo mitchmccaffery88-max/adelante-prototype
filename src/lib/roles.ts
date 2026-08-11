@@ -62,6 +62,12 @@ export type RecordClass =
   | "telehealth_room"
   | "sdoh"
   | "self_help"
+  // §Adelante Journey Phase 7 — patient-authored Stanley-Brown safety plan.
+  // Its own class, NOT `self_help` and NOT `therapy_notes`: it is clinical-
+  // adjacent risk-management content a crisis responder may need to read
+  // during an active concern, but it is authored by the patient, so it must
+  // not inherit the write semantics of clinician documentation.
+  | "safety_plan"
   | "sud_treatment"
   // §ASCMI stricter tier — see PSYCHOTHERAPY_NOTES_TIER note below.
   | "psychotherapy_notes"
