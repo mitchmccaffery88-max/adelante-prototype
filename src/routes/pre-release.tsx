@@ -55,6 +55,8 @@ import {
 } from "@/components/ui/select";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { CapacityAuthorityStep } from "@/components/prerelease/CapacityAuthorityStep";
+import { PreReleaseScreenerDialog } from "@/components/prerelease/PreReleaseScreenerDialog";
+import { screenerByKey } from "@/lib/screeners";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
 
@@ -130,7 +132,8 @@ function PreReleasePage() {
         <div>
           <h1 className="text-xl font-semibold">Pre-release list</h1>
           <p className="text-sm text-muted-foreground">
-            D90 → D0 countdown. Placeholder DHCS form content — pending Christi&apos;s real field sets.
+            D90 → D0 countdown. Clinical assessment uses real instruments (AUDIT-10, DAST-10,
+            AHC-HRSN); the Medi-Cal enrollment field sets are still placeholders.
           </p>
         </div>
       </div>
@@ -332,6 +335,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
   const patient = useEhr(() => AdelanteEHR.listPatients()).find((p) => p.id === episode.patientId);
   const { needsProxy, subject, ok, reason, attribution } = useAttribution(episode);
   const [openForm, setOpenForm] = useState<PreReleaseFormDef | null>(null);
+  const [openScreener, setOpenScreener] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
 
   return (
@@ -403,6 +407,20 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                         {r.blocked}
                       </span>
                     )}
+                    {r.def.satisfiedByScreeners && (
+                      <span className="mt-1 block text-xs text-muted-foreground">
+                        {r.def.satisfiedByScreeners.map((k) => {
+                          const res = AdelanteEHR.getScreenerResult(episode.patientId, k);
+                          const name = screenerByKey(k)?.name ?? k;
+                          return (
+                            <span key={k} className="mr-3 inline-block">
+                              {name}:{" "}
+                              {res ? `${res.score} — ${res.severity}` : "not administered"}
+                            </span>
+                          );
+                        })}
+                      </span>
+                    )}
                   </div>
                   <div className="flex items-center gap-2">
                     {r.blocked && <Badge variant="destructive">Blocked</Badge>}
@@ -426,6 +444,21 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                       >
                         {plan?.status === "completed" ? "View plan" : "Open care plan"}
                       </Button>
+                    ) : r.def.satisfiedByScreeners ? (
+                      <div className="flex flex-wrap gap-1.5">
+                        {r.def.satisfiedByScreeners.map((k) => (
+                          <Button
+                            key={k}
+                            size="sm"
+                            variant="outline"
+                            disabled={!ok || Boolean(r.blocked)}
+                            data-testid={`administer-${k}`}
+                            onClick={() => setOpenScreener(k)}
+                          >
+                            Administer {screenerByKey(k)?.name ?? k}
+                          </Button>
+                        ))}
+                      </div>
                     ) : (
                       <Button
                         size="sm"
@@ -475,6 +508,14 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
           def={openForm}
           attribution={attribution}
           onClose={() => setOpenForm(null)}
+        />
+      )}
+      {openScreener && attribution && (
+        <PreReleaseScreenerDialog
+          episode={episode}
+          screenerKey={openScreener}
+          attribution={attribution}
+          onClose={() => setOpenScreener(null)}
         />
       )}
       {planOpen && attribution && (

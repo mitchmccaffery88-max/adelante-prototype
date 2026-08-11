@@ -184,15 +184,15 @@ describe("direct vs proxy CF access (Phase 1 model)", () => {
     expect(r.ok).toBe(true);
     const rec = AdelanteEHR.savePreReleaseForm({
       episodeId: ep.id,
-      formKey: "dhcs_hra",
-      values: { riskTier: "High" },
+      formKey: "pre_release_screening",
+      values: { cin: "9000123" },
       complete: false,
       attribution: r.attribution!,
     });
     expect(rec.attribution.enteredBy.staffName).toBe("Luz Herrera");
     expect(rec.attribution.attributedTo?.staffId).toBe(PROXY_CF);
     // Retrievable by either party — same episode-scoped read.
-    expect(AdelanteEHR.getPreReleaseForm(ep.id, "dhcs_hra")?.id).toBe(rec.id);
+    expect(AdelanteEHR.getPreReleaseForm(ep.id, "pre_release_screening")?.id).toBe(rec.id);
   });
 
   it("refuses proxy entry for a direct-login CF Care Manager", () => {

@@ -15,3 +15,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Self-help library](mem://features/self-help-library) — Library/Exercise schema, store-backed progress, population gating, advocate read-floor visibility
 - [Safety plan](mem://features/safety-plan) — Stanley-Brown structure, clinical-adjacent store, safety_plan record class, 988 locked entry, pending clinical review flags
 - [Pre-release capacity gate](mem://features/pre-release-capacity-gate) — in-custody profile creation, required Step 1 capacity/surrogate determination, consent-step blocking
+- [Pre-release screening](mem://features/pre-release-screening) — real AUDIT-10/DAST-10 + AHC-HRSN SDOH satisfy pre-release checklist rows; shared ScreenerResult storage and population rollups

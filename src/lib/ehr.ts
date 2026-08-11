@@ -77,6 +77,9 @@ import {
   QUICK_CHECK_INTERVAL_DAYS,
   severityFor as _severityFor,
   shortFormByKey,
+  scoreScreener,
+  screenerByKey,
+  type ScreenerDomainResult,
 } from "./screeners";
 export type {
   LibraryCategory,
@@ -1217,6 +1220,20 @@ export interface ScreenerResult {
   completedAt: string;
   timepoint?: "intake" | "day30" | "day60" | "day90" | "adhoc";
   crisisFlag?: boolean;
+  /**
+   * §Pre-release build 2 — population-health fields. All optional, so every
+   * result written before this build stays valid.
+   */
+  /** Raw item responses, in question order. */
+  responses?: number[];
+  /** True when the total met the instrument's standard positive cutoff. */
+  positive?: boolean;
+  /** Per-domain positivity for domain instruments (AHC-HRSN). */
+  domains?: ScreenerDomainResult[];
+  /** Where the result was administered, for cohort slicing. */
+  context?: "intake" | "pre_release" | "patient_self" | "clinic";
+  /** Set when administered inside a pre-release episode. */
+  episodeId?: string;
 }
 
 export interface Clinician {
@@ -2067,6 +2084,13 @@ export interface PreReleaseFormDef {
    * is impaired and no legal-authority instrument is in force.
    */
   requiresConsentCapacity?: boolean;
+  /**
+   * §Pre-release build 2 — satisfied by REAL completed screener results
+   * (`ScreenerResult` keys), not by field capture. The checklist row reads the
+   * patient's ordinary screener record; `savePreReleaseForm` refuses these
+   * defs so a placeholder flag can never stand in for a real instrument.
+   */
+  satisfiedByScreeners?: string[];
 }
 
 export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
@@ -2102,25 +2126,19 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
   {
     key: "dhcs_hra",
     category: "clinical_assessment",
-    label: "DHCS Health Risk Assessment (placeholder)",
-    fields: [
-      { key: "chronicConditions", label: "Chronic conditions (comma separated)", type: "text" },
-      { key: "pregnancyFlag", label: "Pregnancy flag", type: "bool" },
-      { key: "mobilityNeeds", label: "Mobility / DME needs noted", type: "bool" },
-      { key: "riskTier", label: "Risk tier", type: "select", options: ["Low", "Moderate", "High"] },
-    ],
+    label: "Health-Related Social Needs screening (AHC-HRSN core)",
+    fields: [],
+    // Real instrument, administered and stored exactly like AUDIT-10/DAST-10.
+    satisfiedByScreeners: ["ahc-hrsn"],
+    requiresConsentCapacity: true,
   },
   {
     key: "bh_sud_loc",
     category: "clinical_assessment",
-    label: "Behavioral Health / SUD Level of Care Screening (placeholder)",
+    label: "SUD screening — AUDIT-10 & DAST-10",
     requiresConsentCapacity: true,
-    fields: [
-      { key: "mhScreenPositive", label: "MH screen positive", type: "bool" },
-      { key: "sudScreenPositive", label: "SUD screen positive", type: "bool" },
-      { key: "matInPlace", label: "MAT in place at facility", type: "bool" },
-      { key: "recommendedLoc", label: "Recommended level of care", type: "select", options: ["Outpatient", "Intensive outpatient", "Residential", "Withdrawal management"] },
-    ],
+    fields: [],
+    satisfiedByScreeners: ["audit", "dast-10"],
   },
   {
     key: "informed_consent_prerelease",
@@ -6103,10 +6121,78 @@ export const AdelanteEHR = {
     emit();
   },
   raiseCrisisFlag(patientId: string, source: string) {
+    // (see screener helpers below)
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.crisisFlag = { source, raisedAt: new Date().toISOString() };
     emit();
+  },
+  /** Latest stored result for an instrument — the one the checklist reads. */
+  getScreenerResult(patientId: string, key: string): ScreenerResult | undefined {
+    return patients.find((x) => x.id === patientId)?.screeners[key];
+  },
+  /**
+   * §Pre-release build 2 — population-health rollup over the SAME
+   * `ScreenerResult` storage every instrument already writes to. No parallel
+   * analytics table: positive-screen rates and SDOH domain prevalence are
+   * derived from `patient.screeners` / `screenerHistory` on demand.
+   */
+  screenerPopulationSummary(opts: { keys?: string[]; patientIds?: string[] } = {}): {
+    instruments: {
+      key: string;
+      name: string;
+      administered: number;
+      positive: number;
+      positiveRate: number;
+    }[];
+    sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
+  } {
+    const cohort = patients.filter(
+      (p) => !opts.patientIds || opts.patientIds.includes(p.id),
+    );
+    const keys =
+      opts.keys ??
+      Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
+    const instruments = keys.map((key) => {
+      const def = screenerByKey(key);
+      const results = cohort
+        .map((p) => p.screeners[key])
+        .filter((r): r is ScreenerResult => Boolean(r));
+      const positive = results.filter((r) =>
+        r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
+      ).length;
+      return {
+        key,
+        name: def?.name ?? key,
+        administered: results.length,
+        positive,
+        positiveRate: results.length ? positive / results.length : 0,
+      };
+    });
+    // Domain prevalence across everyone with a domain instrument on file.
+    const tally = new Map<string, { label: string; positive: number; screened: number }>();
+    for (const p of cohort) {
+      for (const r of Object.values(p.screeners ?? {})) {
+        if (!r?.domains) continue;
+        if (opts.keys && !opts.keys.includes(r.key)) continue;
+        for (const d of r.domains) {
+          const row = tally.get(d.key) ?? { label: d.label, positive: 0, screened: 0 };
+          row.screened += 1;
+          if (d.positive) row.positive += 1;
+          tally.set(d.key, row);
+        }
+      }
+    }
+    return {
+      instruments,
+      sdohDomains: [...tally.entries()].map(([key, v]) => ({
+        key,
+        label: v.label,
+        positive: v.positive,
+        screened: v.screened,
+        rate: v.screened ? v.positive / v.screened : 0,
+      })),
+    };
   },
   setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
     const p = patients.find((x) => x.id === patientId);
@@ -8074,6 +8160,18 @@ export const AdelanteEHR = {
             ? "in_progress"
             : "not_started";
       }
+      if (def.satisfiedByScreeners && ep) {
+        // Real completed instruments, read from the ordinary screener record.
+        const done = def.satisfiedByScreeners.filter((k) =>
+          AdelanteEHR.getScreenerResult(ep.patientId, k),
+        ).length;
+        status =
+          done === def.satisfiedByScreeners.length
+            ? "complete"
+            : done > 0
+              ? "in_progress"
+              : "not_started";
+      }
       const blocked =
         def.requiresConsentCapacity && !capacity.decision.canProceed && status !== "complete"
           ? capacity.decision.reason
@@ -8093,6 +8191,71 @@ export const AdelanteEHR = {
    * refuses the consent and transition-planning categories: those have their
    * own instruments and must not be shadow-captured as loose fields.
    */
+  /**
+   * §Pre-release build 2 — administer a REAL instrument inside a pre-release
+   * episode.
+   *
+   * This is deliberately NOT a new screening system. It performs the same two
+   * pre-release authorization checks every other episode write performs
+   * (`assertCfEntryScope` for direct/proxy attribution, and the Build-1
+   * capacity gate for consent-dependent steps), then hands off to the exact
+   * `scoreScreener` + `recordScreener` path intake uses — same ScreenerResult,
+   * same `screenerHistory`, same crisis handling, same care-plan recompute.
+   */
+  recordPreReleaseScreener(input: {
+    episodeId: string;
+    screenerKey: string;
+    answers: number[];
+    attribution: CfAttribution;
+  }): ScreenerResult {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    const def = screenerByKey(input.screenerKey);
+    if (!def) throw new Error("Unknown screening instrument.");
+    const owner = PRE_RELEASE_FORMS.find((d) =>
+      d.satisfiedByScreeners?.includes(input.screenerKey),
+    );
+    if (!owner) throw new Error("That instrument is not part of the pre-release checklist.");
+    assertCfEntryScope(ep, input.attribution, `pre_release_screener:${input.screenerKey}`);
+    if (owner.requiresConsentCapacity) {
+      const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+      if (!gate.canProceed) throw new Error(gate.reason);
+    }
+    if (input.answers.length !== def.questions.length)
+      throw new Error(`${def.name} requires all ${def.questions.length} items.`);
+    const scored = scoreScreener(def, input.answers);
+    const result: ScreenerResult = {
+      key: def.key,
+      score: scored.score,
+      severity: scored.severity,
+      completedAt: new Date().toISOString(),
+      timepoint: "intake",
+      responses: input.answers,
+      context: "pre_release",
+      episodeId: ep.id,
+      ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+      ...(scored.domains ? { domains: scored.domains } : {}),
+    };
+    AdelanteEHR.recordScreener(ep.patientId, result);
+    appendAudit({
+      category: "clinical",
+      action: cfAuditAction("pre_release_screener_recorded", input.attribution),
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        formKey: owner.key,
+        screenerKey: def.key,
+        // Score/severity only — item responses are never audited.
+        score: scored.score,
+        severity: scored.severity,
+        ...cfAuditIdentities(input.attribution),
+      },
+    });
+    emit();
+    return result;
+  },
   savePreReleaseForm(input: {
     episodeId: string;
     formKey: string;
@@ -8114,6 +8277,10 @@ export const AdelanteEHR = {
     if (def.satisfiedByCapacityStep)
       throw new Error(
         "Capacity & legal authority is recorded through the capacity determination step.",
+      );
+    if (def.satisfiedByScreeners)
+      throw new Error(
+        "This step is satisfied by a real completed screener result, not by form fields.",
       );
     // The real gate: an impaired individual with no legal-authority
     // instrument on file cannot be treated as having consented themselves.
