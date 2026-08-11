@@ -16,12 +16,10 @@ import {
   type ContactChannel,
   type BestTime,
   type PreferredLanguage,
-  type EmergencyContact,
 } from "@/lib/ehr";
 import {
   cleanEmergencyContacts,
   emptyEmergencyContact,
-  readEmergencyContacts,
 } from "@/lib/emergencyContacts";
 import {
   mergeSavedIntakeProfile,
