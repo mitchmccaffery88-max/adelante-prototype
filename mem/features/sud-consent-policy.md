@@ -27,3 +27,15 @@ that is both write-level `patient_messaging` (`MESSAGE_SUD_FLAG_ROLES`) and
 un-gated by the same `canAccess` check, excluding the flagger's own role.
 Selection is derived from the matrix, so flipping a cell updates it
 automatically. Unflag never notifies.
+**Store-level Part 2 gate (screeners).** `isPart2Screener()` in
+`src/lib/screeners.ts` derives coverage from the existing `ScreenerDef.isSud`
+flag — AUDIT-10 and DAST-10 only; PHQ/GAD and AHC-HRSN are never gated.
+`AdelanteEHR.screenerAccess/getScreenerResult/viewScreenerResult` enforce it in
+the STORE (throwing `Part2AccessError`), reusing `canAccess(role,
+"screeners_sud", patient)` for staff and `advocatePart2Access` (the Phase 4
+`advocateSudAccess` axis) for advocates; patients read their own.
+`hasScreenerResult` is existence-only and deliberately ungated (workflow
+status is not content). `screenerPopulationSummary` takes a `viewer` and
+filters the contributing cohort per Part 2 instrument, flagging narrowed rows
+`restricted` — so aggregates can't become a second unprotected read path.
+`intake.tsx`'s `isSud` filter stays as defense in depth, not the enforcement.
