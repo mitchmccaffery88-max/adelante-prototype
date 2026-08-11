@@ -1106,6 +1106,20 @@ export interface Patient {
   medReconciliations?: MedReconciliation[];
   /** §Med reconciliation — flat item rows joined on `reconciliationId`. */
   medReconItems?: MedReconItem[];
+  // ----- §Adelante Journey Phase 5 — self-help Library / Exercises ---------
+  //
+  // Progress is PATIENT DATA and lives here with everything else, never in
+  // localStorage. Three flat arrays rather than a nested `libraryProgress`
+  // object, matching the convention every other Phase-5-era field already
+  // follows (`refusalForms`, `kopIssuances`, `doseClaims`): flat arrays keep
+  // the dominant write — "append one id" — a single find, and keep undefined
+  // meaning "nothing yet" without a container to create first.
+  /** Lesson ids the patient has completed. Idempotent set, append-only. */
+  completedLibraryItems?: string[];
+  /** Exercise ids the patient has completed. Separate namespace from lessons. */
+  completedExercises?: string[];
+  /** Saved toolkit takeaways, one per source lesson/exercise. */
+  savedToolkitItems?: SavedToolkitItem[];
 }
 
 /**
