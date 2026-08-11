@@ -169,3 +169,56 @@ describe("data-layer backstop", () => {
     });
   });
 });
+
+// §Option A — capacity determination is an ordinary pre-release entry: same
+// authorization check, same audit shape, no special case.
+describe("capacity determination uses the identical proxy-attribution path", () => {
+  const recordCapacity = (episodeId: string, attribution: CfAttribution) =>
+    AdelanteEHR.recordPreReleaseCapacity({
+      episodeId,
+      status: "competent",
+      basis: "Oriented and answering for themselves.",
+      attribution,
+    });
+
+  it("attributes an ECM Provider's determination on a proxy-mode CF episode as a proxy entry", () => {
+    const ep = openEpisode("p1", PROXY_CF);
+    const rec = recordCapacity(ep.id, entry(ECM, ep.cfCareManagerStaffId).attribution!);
+    expect(rec.attribution.enteredBy.staffId).toBe(ECM);
+    expect(rec.attribution.attributedTo?.staffId).toBe(PROXY_CF);
+    const ev = AdelanteEHR.listAuditEvents({ since: auditFloor }).find(
+      (e) => e.action === "pre_release_capacity_determined_proxy",
+    );
+    expect(ev).toBeDefined();
+    expect(ev!.detail).toMatchObject({
+      entryMode: "proxy",
+      proxyEntry: true,
+      enteredByStaffId: ECM,
+      enteredByRole: "ecm_provider",
+      onBehalfOfStaffId: PROXY_CF,
+    });
+  });
+
+  it("keeps the owner's own determination a plain direct entry", () => {
+    const ep = openEpisode("p2", DIRECT_CF);
+    const rec = recordCapacity(ep.id, entry(DIRECT_CF, ep.cfCareManagerStaffId).attribution!);
+    expect(rec.attribution.attributedTo).toBeUndefined();
+    const ev = AdelanteEHR.listAuditEvents({ since: auditFloor }).find(
+      (e) => e.action === "pre_release_capacity_determined",
+    );
+    expect(ev!.detail).toMatchObject({ entryMode: "direct", proxyEntry: false });
+  });
+
+  it("refuses a self-attributed determination on someone else's episode, and audits the denial", () => {
+    const ep = openEpisode("p3", DIRECT_CF);
+    const forged: CfAttribution = {
+      enteredBy: { staffId: ECM, staffName: "Luz Herrera", role: "ecm_provider" },
+    };
+    expect(() => recordCapacity(ep.id, forged)).toThrow(/owns this pre-release episode/);
+    const denial = AdelanteEHR.listAuditEvents({ since: auditFloor }).find(
+      (e) => e.action === "cf_proxy_entry_denied" && (e.detail as Record<string, unknown>)["target"] === "pre_release_capacity",
+    );
+    expect(denial).toBeDefined();
+    expect(denial!.detail).toMatchObject({ reason: "not_owner_and_not_proxied" });
+  });
+});
