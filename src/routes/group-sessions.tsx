@@ -658,6 +658,79 @@ function GroupDetail({
   );
 }
 
+// §Group sessions — occurrence-level modality + the per-member telehealth
+// consent gate.
+//
+// UX choice: the gate is surfaced HERE, before documentation, listing the
+// specific rostered members missing telehealth consent. The store throws if a
+// blocked member is documented as present, so the facilitator's resolution is
+// explicit — capture consent, or record that member as not attending this
+// virtual meeting. The meeting itself is never blocked for everyone else.
+function OccurrenceModalityPicker({
+  group,
+  occurrenceStart,
+  actor,
+}: {
+  group: GroupSession;
+  occurrenceStart: string;
+  actor: string;
+}) {
+  const gate = useEhr(() => AdelanteEHR.groupOccurrenceConsentGate(group.id, occurrenceStart));
+  const modality = gate.modality;
+  return (
+    <div className="space-y-2 rounded-md border bg-secondary/20 p-3">
+      <Label className="text-xs">How is this meeting delivered?</Label>
+      <div className="flex flex-wrap gap-1">
+        {GROUP_OCCURRENCE_MODALITIES.map((m) => (
+          <button
+            key={m.key}
+            type="button"
+            onClick={() => {
+              try {
+                AdelanteEHR.setGroupOccurrenceModality(
+                  group.id,
+                  occurrenceStart,
+                  m.key as GroupOccurrenceModality,
+                  actor,
+                );
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Could not set modality.");
+              }
+            }}
+            className={
+              "rounded-md border px-2 py-1 text-xs " +
+              (modality === m.key ? "border-teal bg-teal/10 text-navy" : "bg-card")
+            }
+          >
+            {m.label}
+          </button>
+        ))}
+      </div>
+      <p className="text-[11px] text-muted-foreground">
+        Modality is per meeting, not per group — it is stamped onto every attendee note because the
+        service is billed as delivered.
+      </p>
+      {isVirtualGroupModality(modality) &&
+        (gate.blocked.length > 0 ? (
+          <p className="text-[11px] text-destructive" role="alert">
+            Telehealth consent missing for: {gate.blocked.map((b) => b.name).join(", ")}. They
+            cannot be documented as attending this virtual meeting until consent is captured.
+          </p>
+        ) : (
+          <p className="text-[11px] text-muted-foreground">
+            Telehealth consent is active for every rostered member.
+          </p>
+        ))}
+      {gate.confidentialityRequired && gate.confidentialityMissing.length > 0 && (
+        <p className="text-[11px] text-destructive" role="alert">
+          Group confidentiality acknowledgment missing for:{" "}
+          {gate.confidentialityMissing.map((b) => b.name).join(", ")}.
+        </p>
+      )}
+    </div>
+  );
+}
+
 // §Group sessions — recurrence editor.
 //
 // Editing the pattern regenerates FUTURE occurrences only; `updateGroupRecurrence`
