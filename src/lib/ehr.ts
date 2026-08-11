@@ -52,6 +52,14 @@ import {
   type AhcdChecklistState,
   type AhcdDeterminationRole,
 } from "./advocate";
+// §CF pre-release intake — capacity / legal-authority policy. Pure module.
+import {
+  capacityGateDecision,
+  capacityRequiresSurrogate,
+  type CapacityGateDecision,
+  type IntakeCapacityStatus,
+  type LegalAuthorityType,
+} from "./capacity";
 // §Adelante Journey Phase 5 — self-help Library. Content + pure selectors.
 // The module imports nothing at runtime (its population import is type-only),
 // so there is no cycle back into this store.
