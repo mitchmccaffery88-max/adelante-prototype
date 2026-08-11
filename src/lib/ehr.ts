@@ -3807,7 +3807,15 @@ function _advocatePart2Gates(link: AdvocateLink): {
       sudMode: "categorically_barred",
       sudBasis: "none",
     };
-  const decision = advocateSudAccess(tier, { linkValid, sudDisclosureConsentActive });
+  // §Phase 4.2 (6.5 item 5) — an AHCD whose text does not plainly reach Part 2
+  // records falls back to the ASCMI consent path for SUD content only.
+  const decision = advocateSudAccess(tier, {
+    linkValid,
+    sudDisclosureConsentActive,
+    ...(link.authorizationType === "ahcd"
+      ? { ahcdPart2ScopeUnclear: ahcdPart2ScopeUnclear(link.ahcdValidation ?? {}) }
+      : {}),
+  });
   return {
     linkValid,
     sudDisclosureConsentActive,
