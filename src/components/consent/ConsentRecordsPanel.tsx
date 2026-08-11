@@ -11,6 +11,8 @@ import { toast } from "sonner";
 import {
   AdelanteEHR,
   CONSENT_CATEGORIES,
+  TELEHEALTH_CONSENT_CATEGORY,
+  TELEHEALTH_DISCLOSURE_ELEMENTS,
   useEhr,
   type ConsentCategory,
   type ConsentFormType,
@@ -181,6 +183,22 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
                 {c.label}
               </label>
             ))}
+            {/* The WORDING below is placeholder, but these four DISCLOSURE
+                ELEMENTS are real DHCS telehealth-consent content and must be
+                presented whenever telehealth consent is captured. */}
+            {sections[TELEHEALTH_CONSENT_CATEGORY] ? (
+              <div className="rounded-md border bg-secondary/20 p-3 text-xs space-y-1">
+                <p className="font-medium">
+                  Telehealth disclosures read to the patient (wording is placeholder pending legal
+                  review; the elements themselves are required):
+                </p>
+                <ul className="list-disc pl-4 space-y-0.5">
+                  {TELEHEALTH_DISCLOSURE_ELEMENTS.map((el) => (
+                    <li key={el.key}>{el.text}</li>
+                  ))}
+                </ul>
+              </div>
+            ) : null}
           </fieldset>
 
           <div className="space-y-2">
