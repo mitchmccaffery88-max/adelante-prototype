@@ -6232,19 +6232,7 @@ export const AdelanteEHR = {
   patientDoseChecklist(patientId: string, dateKey?: string) {
     const p = _patient(patientId);
     if (!p) return [];
-    const day = deriveMarDay(p, dateKey);
-    const reports = MedAdherence.listSelfReports(patientId, { facilityDate: day.dateKey });
-    return [...day.slots, ...day.prn].map((slot) => {
-      const selfReport = reports.find(
-        (r) => r.orderId === slot.order.id && r.scheduledAt === slot.scheduledAt,
-      );
-      return {
-        slot,
-        selfReport,
-        isMat: MedAdherence.isMatOrder(slot.order),
-        reconcile: MedAdherence.reconcileState(selfReport, slot.administration),
-      };
-    });
+    return MedAdherence.doseChecklist(p, dateKey);
   },
 
   /**
