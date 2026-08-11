@@ -44,6 +44,9 @@ function CoordinationPage() {
         <Link to="/admin" className="text-sm underline">← Admin</Link>
       </header>
 
+      {/* §Adelante Journey Phase 6 — community resource directory verification. */}
+      <ResourceVerificationQueue />
+
       <Card className="p-4">
         <h2 className="font-semibold mb-2">Frozen clinicians · appointments needing coverage ({affectedAppts.length})</h2>
         {affectedAppts.length === 0 ? (
