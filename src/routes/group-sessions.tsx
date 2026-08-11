@@ -139,7 +139,33 @@ function GroupSessionsPage() {
           )}
         </div>
       )}
+      {access.level === "write" && <ConfidentialityAckSetting actor={staffName || role} />}
     </div>
+  );
+}
+
+/**
+ * County/admin setting. The group confidentiality acknowledgment is NOT a DHCS
+ * mandate, so it ships OFF and a county opts in. When off, nothing checks it.
+ */
+function ConfidentialityAckSetting({ actor }: { actor: string }) {
+  const required = useEhr(() => AdelanteEHR.isGroupConfidentialityAckRequired());
+  return (
+    <Card className="p-4 space-y-1">
+      <label className="flex items-center gap-2 text-xs text-navy">
+        <input
+          type="checkbox"
+          aria-label="Require group confidentiality acknowledgment"
+          checked={required}
+          onChange={(e) => AdelanteEHR.setGroupConfidentialityAckRequired(e.target.checked, actor)}
+        />
+        Require a group confidentiality acknowledgment from every member (county setting)
+      </label>
+      <p className="text-[11px] text-muted-foreground">
+        Optional — not a DHCS requirement. Off by default. When on, members agree not to disclose
+        other participants' identities before an occurrence can be documented.
+      </p>
+    </Card>
   );
 }
 
