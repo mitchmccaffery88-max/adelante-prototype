@@ -14015,13 +14015,52 @@ export const AdelanteEHR = {
     groupProcess: string;
     /** patientId -> that patient's individualized participation narrative. */
     perAttendee: Record<string, string>;
+    /**
+     * How this meeting was actually delivered. Persisted onto the occurrence
+     * and stamped onto every attendee note.
+     */
+    modality?: GroupOccurrenceModality;
     actor: string;
   }): { occurrence: GroupOccurrenceRecord; attendeeNoteIds: string[] } {
     const g = groupSessions.find((x) => x.id === input.sessionId);
     if (!g) throw new Error("Group not found.");
     const row = _ensureGroupOccurrence(input.sessionId, input.occurrenceStart);
+    if (input.modality) {
+      row.modality = input.modality;
+      row.modalitySetAt = new Date().toISOString();
+      row.modalitySetBy = input.actor;
+    }
+    const modality = row.modality ?? defaultOccurrenceModality(g.modality);
     const present = row.attendance.filter((a) => a.status !== "absent");
     if (present.length === 0) throw new Error("Record attendance before documenting.");
+    // §Group sessions — telehealth gate. Per-member, live against the
+    // ConsentRecord ledger, and only for a virtual occurrence.
+    if (isVirtualGroupModality(modality)) {
+      const missing = present.filter(
+        (a) => !AdelanteEHR.isConsentCategoryAuthorized(a.patientId, TELEHEALTH_CONSENT_CATEGORY),
+      );
+      if (missing.length > 0) {
+        const names = missing
+          .map((a) => {
+            const p = patients.find((x) => x.id === a.patientId);
+            return p ? `${p.firstName} ${p.lastName}` : a.patientId;
+          })
+          .join(", ");
+        throw new Error(
+          `Telehealth consent is required before virtual participation: ${names}. Capture consent, or record them as not attending this meeting.`,
+        );
+      }
+    }
+    if (groupConfig.requireConfidentialityAck) {
+      const missing = present.filter(
+        (a) =>
+          !AdelanteEHR.isConsentCategoryAuthorized(a.patientId, GROUP_CONFIDENTIALITY_CATEGORY),
+      );
+      if (missing.length > 0)
+        throw new Error(
+          "This county requires a group confidentiality acknowledgment from every attendee before documenting.",
+        );
+    }
     // Occurrence-level DHCS rule: fewer than 2 present = individual session in
     // practice, so no group claim. The occurrence still happens and is still
     // documented — only the billing flag changes.
@@ -14047,7 +14086,7 @@ export const AdelanteEHR = {
         date: input.occurrenceStart,
         sessionType: "group",
         subjective: input.perAttendee[a.patientId]!.trim(),
-        objective: `Attendance: ${a.status}. Group topic: ${g.topic}.`,
+        objective: `Attendance: ${a.status}. Delivered: ${modality.replace("_", " ")}. Group topic: ${g.topic}.`,
         assessment: "",
         plan: "",
         category: "group",
@@ -14058,6 +14097,7 @@ export const AdelanteEHR = {
           facilitatorId: input.facilitatorId,
           billingEligible: occurrenceBillable,
           billingCode: occurrenceBillable ? groupBillingCode(g.category) : undefined,
+          modality,
         },
       });
       if (saved) {
@@ -14075,6 +14115,7 @@ export const AdelanteEHR = {
         occurrenceStart: input.occurrenceStart,
         attendeeNotes: noteIds.length,
         sharedNote: true,
+        modality,
       },
     });
     emit();
