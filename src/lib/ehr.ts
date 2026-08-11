@@ -4949,6 +4949,15 @@ export interface GroupSession {
   facilitatorId: string;
   coFacilitatorId?: string;
   /**
+   * §Multi-facilitator. Real list of additional practitioners who may deliver
+   * this group. Per-occurrence direct-care MINUTES are not stored here — they
+   * are recorded at documentation time on the occurrence, because two
+   * facilitators genuinely can (and often do) deliver different durations.
+   * `coFacilitatorId` above is the retired single-slot field, kept only so
+   * legacy rows still read; new code writes `coFacilitatorIds`.
+   */
+  coFacilitatorIds?: string[];
+  /**
    * Reuses the existing `ServiceType` union: `therapy_group` already exists,
    * so no new service taxonomy is invented here.
    */
