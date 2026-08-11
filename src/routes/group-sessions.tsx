@@ -410,6 +410,7 @@ function GroupDetail({
 
   const savedAttendance = record?.attendance ?? [];
   const present = savedAttendance.filter((a) => a.status !== "absent");
+  const clinicians = AdelanteEHR.listClinicians();
   const baseFacilitators = defaultGroupFacilitators(group);
   const facilitatorDraft = baseFacilitators.map((f) => ({
     ...f,
