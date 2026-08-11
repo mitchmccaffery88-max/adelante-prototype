@@ -1220,6 +1220,20 @@ export interface ScreenerResult {
   completedAt: string;
   timepoint?: "intake" | "day30" | "day60" | "day90" | "adhoc";
   crisisFlag?: boolean;
+  /**
+   * §Pre-release build 2 — population-health fields. All optional, so every
+   * result written before this build stays valid.
+   */
+  /** Raw item responses, in question order. */
+  responses?: number[];
+  /** True when the total met the instrument's standard positive cutoff. */
+  positive?: boolean;
+  /** Per-domain positivity for domain instruments (AHC-HRSN). */
+  domains?: ScreenerDomainResult[];
+  /** Where the result was administered, for cohort slicing. */
+  context?: "intake" | "pre_release" | "patient_self" | "clinic";
+  /** Set when administered inside a pre-release episode. */
+  episodeId?: string;
 }
 
 export interface Clinician {
