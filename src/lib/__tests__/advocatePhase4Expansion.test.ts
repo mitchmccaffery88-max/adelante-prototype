@@ -68,6 +68,9 @@ describe("four-tier legal-authority permission model (§Phase 4.1)", () => {
         "coordination_view",
         "document_view",
         "eligibility_assist_view",
+        // §Adelante Journey Phase 5 — self-help progress is a READ at the
+        // floor tier; it adds no write and no clinical content.
+        "library_progress_view",
         "schedule_view",
       ].sort(),
     );
