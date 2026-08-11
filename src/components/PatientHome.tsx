@@ -41,6 +41,7 @@ import { PatientConsentStatusCard } from "@/components/consent/PatientConsentSta
 import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { ReentryDayZeroModule } from "@/components/reentry/ReentryDayZeroModule";
 import { ObligationsCard } from "@/components/reentry/ObligationsCard";
+import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -396,6 +397,8 @@ export function PatientHome() {
       <ReentryDayZeroModule patientId={patient.id} />
       {/* §Phase 6 — Obligations; justice-involved populations only. */}
       <ObligationsCard patientId={patient.id} />
+      {/* §Phase 7 — patient-authored Stanley-Brown safety plan. */}
+      <SafetyPlanPanel patientId={patient.id} author="patient" actorRole="patient" />
     </div>
   );
 }
