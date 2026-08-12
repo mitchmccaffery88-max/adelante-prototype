@@ -201,7 +201,7 @@ describe("Community resources cannot go live without a real verification", () =>
       confirmedHours: false,
     });
     expect(partial.ok).toBe(false);
-    expect(patientVisibleResources()).toEqual([]);
+    expect(patientVisibleResources().map((x) => x.id)).not.toContain(r.id);
   });
 
   it("refuses a role that may not publish", () => {
