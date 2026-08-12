@@ -5858,6 +5858,15 @@ export const AdelanteEHR = {
   getCurrentPatientId: () => currentPatientId,
   setCurrentPatientId(id: string) {
     currentPatientId = id;
+    // Persist so a hard reload / deep link does not silently drop the person
+    // back onto the default demo record. Rehydrated on mount by AppShell
+    // (never at module scope — SSR renders the default and the client would
+    // otherwise hydrate against a different patient).
+    try {
+      window.localStorage.setItem("adelante.currentPatientId", id);
+    } catch {
+      /* storage unavailable (SSR / private mode) — in-memory only */
+    }
     emit();
   },
   // P0 — create a new patient from signup. Minimal seed; intake fills the rest.
