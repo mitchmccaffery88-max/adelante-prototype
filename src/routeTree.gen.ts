@@ -59,6 +59,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as WeeklyRecapRouteImport } from './routes/weekly-recap'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
 import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
@@ -323,6 +324,11 @@ const StartRoute = StartRouteImport.update({
   path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WeeklyRecapRoute = WeeklyRecapRouteImport.update({
+  id: '/weekly-recap',
+  path: '/weekly-recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorklistRoute = WorklistRouteImport.update({
   id: '/worklist',
   path: '/worklist',
@@ -441,6 +447,7 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
@@ -504,6 +511,7 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
@@ -570,6 +578,7 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
@@ -637,6 +646,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
     | '/api/adel-recap'
@@ -700,6 +710,7 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/shift-count'
     | '/slip'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
     | '/api/adel-recap'
@@ -765,6 +776,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
     | '/api/adel-recap'
@@ -831,6 +843,7 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
+  WeeklyRecapRoute: typeof WeeklyRecapRoute
   WorklistRoute: typeof WorklistRoute
   ApiAdelChatRoute: typeof ApiAdelChatRoute
   ApiAdelRecapRoute: typeof ApiAdelRecapRoute
@@ -1190,6 +1203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/weekly-recap': {
+      id: '/weekly-recap'
+      path: '/weekly-recap'
+      fullPath: '/weekly-recap'
+      preLoaderRoute: typeof WeeklyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/worklist': {
       id: '/worklist'
       path: '/worklist'
@@ -1369,6 +1389,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
+  WeeklyRecapRoute: WeeklyRecapRoute,
   WorklistRoute: WorklistRoute,
   ApiAdelChatRoute: ApiAdelChatRoute,
   ApiAdelRecapRoute: ApiAdelRecapRoute,
