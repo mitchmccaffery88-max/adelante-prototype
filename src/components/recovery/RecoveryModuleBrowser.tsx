@@ -11,10 +11,10 @@ import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ArrowLeft, CheckCircle2, Lock } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useI18n, useRecoveryText } from "@/lib/i18n";
 import { usePopulation } from "@/components/PopulationGate";
 import { isLibraryItemVisible } from "@/lib/library";
 import {
-  LIVING_RECOVERY_WRAPPER,
   RECOVERY_MODULES,
   getRecoveryLesson,
   getRecoveryModule,
@@ -24,6 +24,8 @@ import {
 import { RecoveryLessonView } from "./RecoveryLessonView";
 
 export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: string } = {}) {
+  const { t } = useI18n();
+  const { rt, esPending } = useRecoveryText();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(patientId);
   const completed = useEhr(() =>
@@ -45,7 +47,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
         <Button type="button" variant="ghost" onClick={() => setOpenLesson(null)}>
-          <ArrowLeft className="mr-1 h-4 w-4" /> Back to my modules
+          <ArrowLeft className="mr-1 h-4 w-4" /> {t("recBackToModules")}
         </Button>
         <RecoveryLessonView
           lesson={lesson}
@@ -59,10 +61,13 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
   return (
     <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
       <header className="space-y-1">
-        <h1 className="font-display text-3xl text-navy">My recovery journey</h1>
-        <p className="text-muted-foreground">
-          Eight modules, each with its own mission. Work them in order or start where you are.
-        </p>
+        <h1 className="font-display text-3xl text-navy">{t("recJourneyTitle")}</h1>
+        <p className="text-muted-foreground">{t("recJourneyIntro")}</p>
+        {esPending && (
+          <p className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground">
+            {t("recEsReviewFlag")}
+          </p>
+        )}
       </header>
 
       {RECOVERY_MODULES.map((mod) => {
@@ -74,41 +79,51 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-xs font-medium uppercase tracking-wider text-teal">
-                  Module {mod.order}
+                  {t("recModuleLabel")} {mod.order}
                 </span>
-                <h2 className="font-display text-xl text-navy">{mod.name}</h2>
+                <h2 className="font-display text-xl text-navy">
+                  {rt(`rec.mod.${mod.id}.name`, mod.name)}
+                </h2>
                 {mod.populations && (
                   <Badge variant="outline" className="text-[10px]">
-                    Reentry-specific
+                    {t("recReentrySpecific")}
                   </Badge>
                 )}
                 {mod.contentPending && (
                   <Badge variant="outline" className="border-gold text-[10px] text-gold-foreground">
-                    Lesson content pending transcription
+                    {t("recPendingBadge")}
                   </Badge>
                 )}
               </div>
-              <p className="text-sm font-medium text-navy">Mission: {mod.mission}</p>
-              <p className="text-sm text-muted-foreground">{mod.subtitle}</p>
+              <p className="text-sm font-medium text-navy">
+                {t("recMissionLabel")}: {rt(`rec.mod.${mod.id}.mission`, mod.mission)}
+              </p>
+              <p className="text-sm text-muted-foreground">
+                {rt(`rec.mod.${mod.id}.subtitle`, mod.subtitle)}
+              </p>
+              {/* A module with no transcribed lessons reports its REAL count
+                  (zero) rather than a 0-of-0 fraction that would read like a
+                  stalled module. Modules WITH lessons show the real fraction
+                  next to the progress bar below instead. */}
+              {prog.total === 0 && (
+                <p className="text-xs text-muted-foreground">{t("recPendingProgress")}</p>
+              )}
             </div>
 
             {gated ? (
               <p className="flex items-center gap-2 rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
-                <Lock className="h-4 w-4" aria-hidden /> This module is written for people coming
-                out of custody. It isn&apos;t part of your track.
+                <Lock className="h-4 w-4" aria-hidden /> {t("recGatedBody")}
               </p>
             ) : mod.contentPending ? (
               <p className="rounded-lg bg-secondary/50 p-3 text-sm text-muted-foreground">
-                This module is real and confirmed, but its lessons haven&apos;t been transcribed
-                yet. Nothing has been made up to fill the gap — it will open when the real content
-                lands.
+                {t("recPendingBody")}
               </p>
             ) : (
               <>
                 <div>
                   <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
                     <span>
-                      {prog.completed} of {prog.total} finished
+                      {prog.completed} {t("recProgressOf")} {prog.total} {t("recProgressLessons")}
                     </span>
                     <span>{prog.pct}%</span>
                   </div>
@@ -121,12 +136,14 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                       <li key={l.id} className="flex items-center gap-3 py-2.5">
                         <div className="flex-1">
                           <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
-                            {l.title}
+                            {rt(`rec.${l.id}.title`, l.title)}
                             {done && (
                               <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />
                             )}
                           </div>
-                          <div className="text-xs text-muted-foreground">{l.minutes} min</div>
+                          <div className="text-xs text-muted-foreground">
+                            {l.minutes} {t("recMinutesShort")}
+                          </div>
                         </div>
                         <Button
                           type="button"
@@ -134,7 +151,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                           variant="outline"
                           onClick={() => setOpenLesson(l.id)}
                         >
-                          {done ? "Revisit" : "Start"}
+                          {done ? t("recRevisit") : t("recStart")}
                         </Button>
                       </li>
                     );
@@ -148,19 +165,15 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
 
       <Card className="space-y-1 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-xl text-navy">{LIVING_RECOVERY_WRAPPER.name}</h2>
+          <h2 className="font-display text-xl text-navy">{t("recLivingName")}</h2>
           <Badge variant="outline" className="border-gold text-[10px] text-gold-foreground">
-            Not yet confirmed as a module
+            {t("recLivingBadge")}
           </Badge>
         </div>
         <p className="text-sm font-medium text-navy">
-          Mission: {LIVING_RECOVERY_WRAPPER.mission}
+          {t("recMissionLabel")}: {t("recLivingMission")}
         </p>
-        <p className="text-sm text-muted-foreground">
-          {LIVING_RECOVERY_WRAPPER.subtitle} We&apos;ve kept this as a closing section over the
-          eight modules rather than building it as a ninth — that needs a human decision before any
-          lessons are written for it.
-        </p>
+        <p className="text-sm text-muted-foreground">{t("recLivingBody")}</p>
       </Card>
     </div>
   );
