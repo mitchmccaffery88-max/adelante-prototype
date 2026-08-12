@@ -2,7 +2,9 @@ import { Link } from "@tanstack/react-router";
 import { LifeBuoy, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { useI18n } from "@/lib/i18n";
-import { PATIENT_MORE_NAV } from "@/lib/navSections";
+import { PATIENT_MORE_NAV, patientNavForPopulation } from "@/lib/navSections";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { usePopulation } from "@/components/PopulationGate";
 
 /**
  * §Patient portal correction — the real "More" bottom sheet: rounded top,
@@ -16,6 +18,9 @@ export function PatientMoreSheet({
   onOpenChange: (open: boolean) => void;
 }) {
   const { t } = useI18n();
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const population = usePopulation(currentId);
+  const entries = patientNavForPopulation(PATIENT_MORE_NAV, population.track);
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -39,7 +44,7 @@ export function PatientMoreSheet({
         </div>
 
         <nav className="mt-3 grid max-h-[60vh] gap-1 overflow-y-auto">
-          {PATIENT_MORE_NAV.map((n) => {
+          {entries.map((n) => {
             const Icon = n.icon;
             return (
               <Link
