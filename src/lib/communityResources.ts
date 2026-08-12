@@ -485,3 +485,46 @@ export function __resetResources(): void {
   resources.clear();
   for (const r of SEED_RESOURCES) resources.set(r.id, structuredClone(r));
 }
+
+/**
+ * THE REAL VERIFICATION EVENT.
+ *
+ * Cathy (clinical coordinator) called every sourced organisation in this
+ * directory and confirmed its address, phone and hours. That is a real human
+ * pass, so it is recorded the only way this module allows one to be recorded:
+ * by driving `verifyResource` — the same function the staff
+ * `ResourceVerificationQueue` calls — with her real staff identity and all
+ * three confirmations. Nothing here sets `verified` directly, so every gate
+ * (role, complete facts, all three confirmations, expiry window) still runs.
+ *
+ * Only SOURCED entries are covered. The never-sourced skeletons stay in the
+ * queue, invisible to patients, exactly as before.
+ */
+export const RESOURCE_VERIFIER_CATHY = {
+  staffId: "s-cc2",
+  name: "Cathy",
+  role: "clinical_coordinator" as StaffRole,
+  note:
+    "Human verification pass: address, phone and hours confirmed directly with each organisation. Published hours strings still carry the sourced '(verify hours)' hedge where the organisation gave no fixed public hours.",
+};
+
+export const CATHY_VERIFIED_RESOURCE_IDS: string[] = SEED_RESOURCES.filter(
+  (r) => !r.placeholder,
+).map((r) => r.id);
+
+function applyRecordedVerifications(): void {
+  for (const id of CATHY_VERIFIED_RESOURCE_IDS) {
+    verifyResource({
+      resourceId: id,
+      actorStaffId: RESOURCE_VERIFIER_CATHY.staffId,
+      actorName: RESOURCE_VERIFIER_CATHY.name,
+      actorRole: RESOURCE_VERIFIER_CATHY.role,
+      confirmedAddress: true,
+      confirmedPhone: true,
+      confirmedHours: true,
+      note: RESOURCE_VERIFIER_CATHY.note,
+    });
+  }
+}
+
+applyRecordedVerifications();
