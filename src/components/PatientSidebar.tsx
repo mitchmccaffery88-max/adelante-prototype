@@ -2,7 +2,9 @@ import { Link, useRouterState } from "@tanstack/react-router";
 import { LifeBuoy } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
-import { PATIENT_SIDEBAR_NAV } from "@/lib/navSections";
+import { PATIENT_SIDEBAR_NAV, patientNavForPopulation } from "@/lib/navSections";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { usePopulation } from "@/components/PopulationGate";
 
 /**
  * §Patient portal Build 1 — persistent left sidebar for desktop/tablet.
@@ -14,6 +16,9 @@ export function PatientSidebar() {
   const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const hash = useRouterState({ select: (s) => s.location.hash });
+  const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const population = usePopulation(currentId);
+  const entries = patientNavForPopulation(PATIENT_SIDEBAR_NAV, population.track);
 
   return (
     <aside
@@ -21,7 +26,7 @@ export function PatientSidebar() {
       className="hidden md:flex sticky top-[65px] h-[calc(100dvh-65px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
     >
       <nav className="flex-1 space-y-1 overflow-y-auto">
-        {PATIENT_SIDEBAR_NAV.map((n) => {
+        {entries.map((n) => {
           const Icon = n.icon;
           const active = n.hash
             ? pathname === n.to && hash === n.hash
