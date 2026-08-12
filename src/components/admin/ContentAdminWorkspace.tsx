@@ -359,7 +359,7 @@ function ManageTab({ version }: { version: number }) {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               These are still served from the shipped baseline. Editing one creates a managed draft;
-              patients keep seeing the shipped version until the edit is approved.
+              patients keep seeing the shipped version until you publish the edit.
             </p>
             <ul className="mt-3 space-y-1.5">
               {baselineOnly.map((id) => (
