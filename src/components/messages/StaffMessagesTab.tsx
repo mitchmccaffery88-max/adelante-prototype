@@ -37,7 +37,9 @@ export function StaffMessagesTab({
   }, [patientId, staffName, unread]);
 
   const send = () => {
-    const sent = AdelanteEHR.sendStaffMessage(patientId, staffName, draft);
+    // Role travels with the message so the member sees WHO answered
+    // ("Peer specialist · Andre Willis"), not an anonymous "Care team".
+    const sent = AdelanteEHR.sendStaffMessage(patientId, staffName, draft, role);
     if (sent) {
       setDraft("");
       toast.success("Reply sent");
