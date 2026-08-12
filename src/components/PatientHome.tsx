@@ -59,6 +59,7 @@ import { Pill, X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
 import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
+import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
@@ -172,20 +173,16 @@ export function PatientHome() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
-      {/* Welcome */}
-      <Card className="p-6 border-2 bg-gradient-to-br from-card to-secondary/40">
-        <div className="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-4">
-          <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-teal">
-              {t("homeWelcomeBack")}
-            </div>
-            <h1 className="font-display text-3xl text-navy mt-1">
-              {t("homeHi")}, {patient.firstName}.
-            </h1>
-            <p className="text-muted-foreground mt-1 max-w-md">
-              {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining}{" "}
-              {t("homeDaysRemain")}
-            </p>
+      {/* §Patient portal Build 2 — the real home dashboard. Everything below
+          it stays exactly as built: these are the detail surfaces the
+          dashboard tiles link into, with their gates untouched. */}
+      <HomeDashboard patientId={patient.id} />
+
+      <Card className="p-5">
+        <div className="flex items-center justify-between gap-3">
+          <div className="text-sm text-muted-foreground">
+            {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining}{" "}
+            {t("homeDaysRemain")}
           </div>
           {smsOn && (
             <Badge className="bg-gold/30 text-navy border-0 flex items-center gap-1.5">
@@ -193,15 +190,7 @@ export function PatientHome() {
             </Badge>
           )}
         </div>
-        <div className="mt-5">
-          <div className="flex items-center justify-between text-xs text-muted-foreground mb-1.5">
-            <span>
-              {t("homeDay")} {patient.episodeDay}
-            </span>
-            <span>{t("homeDay")} 90</span>
-          </div>
-          <Progress value={(patient.episodeDay / 90) * 100} className="h-2" />
-        </div>
+        <Progress value={(patient.episodeDay / 90) * 100} className="mt-3 h-2" />
       </Card>
 
       <HomeScreenNudge />
@@ -313,7 +302,9 @@ export function PatientHome() {
 
       <YourGroupsSection patientId={patient.id} />
 
-      <QuickCheckCard patientId={patient.id} />
+      <div id="daily-check-in" className="scroll-mt-24">
+        <QuickCheckCard patientId={patient.id} />
+      </div>
       <MedCheckInCard patientId={patient.id} />
 
       {meds.length > 0 && (
@@ -399,7 +390,9 @@ export function PatientHome() {
       {/* §Phase 3 — PO two-tier disclosure; population-gated inside. */}
       <PoDisclosureCard patientId={patient.id} />
       {/* §Phase 6 — reentry Day-0: triggers off the real safety-net lookup only. */}
-      <ReentryDayZeroModule patientId={patient.id} />
+      <div id="day-zero" className="scroll-mt-24">
+        <ReentryDayZeroModule patientId={patient.id} />
+      </div>
       {/* §Phase 6 — Obligations; justice-involved populations only. */}
       <ObligationsCard patientId={patient.id} />
       {/* §Phase 7 — patient-authored Stanley-Brown safety plan. */}
