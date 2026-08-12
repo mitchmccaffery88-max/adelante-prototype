@@ -29,6 +29,7 @@ import {
   Settings2,
   ShieldCheck,
   Siren,
+  Sparkles,
   Stethoscope,
   Target,
   UserCog,
