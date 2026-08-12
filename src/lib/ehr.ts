@@ -8174,6 +8174,8 @@ export const AdelanteEHR = {
         anticipatedReleaseDate: ep.anticipatedReleaseDate,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_episode_opened");
     emit();
     return ep;
   },
@@ -8307,6 +8309,8 @@ export const AdelanteEHR = {
         basis: rec.basis,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_capacity");
     emit();
     return { ...rec };
   },
@@ -8363,6 +8367,8 @@ export const AdelanteEHR = {
         capacity: rec.status,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_advocate");
     emit();
     return link;
   },
@@ -8435,6 +8441,8 @@ export const AdelanteEHR = {
       actorRole: input.actorRole,
       detail: { episodeId: ep.id, reason: ep.closedReason },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_episode_closed");
     emit();
     return ep;
   },
@@ -8667,6 +8675,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_form");
     emit();
     return rec;
   },
@@ -8934,6 +8944,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "reentry_care_plan");
     emit();
     return plan;
   },
@@ -9010,6 +9022,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "reentry_care_plan_completed");
     emit();
     return { plan, enrollmentCode: code };
   },
