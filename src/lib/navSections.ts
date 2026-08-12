@@ -575,6 +575,13 @@ export interface PatientNavEntry {
   icon: LucideIcon;
   /** True when the entry is one of the five bottom tabs on mobile. */
   mobile: boolean;
+  /**
+   * Population tracks this entry is FOR. Omitted = every track. An entry that
+   * points at population-gated content must list its tracks here, or a
+   * general-population patient gets a nav link to a section that gates itself
+   * away — a dead end.
+   */
+  populations?: PopulationTrack[];
 }
 
 /**
@@ -612,6 +619,8 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     hash: "obligations",
     icon: ClipboardSignature,
     mobile: false,
+    // ObligationsCard is `PopulationGate`d to the justice-involved tracks.
+    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "peer-navigator",
