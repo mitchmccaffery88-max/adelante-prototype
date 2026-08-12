@@ -60,6 +60,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
 import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
+import { DailyCheckInCard } from "@/components/patient/DailyCheckInCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
@@ -301,6 +302,10 @@ export function PatientHome() {
       </section>
 
       <YourGroupsSection patientId={patient.id} />
+
+      <div id="daily-mood-check-in" className="scroll-mt-24">
+        <DailyCheckInCard patientId={patient.id} />
+      </div>
 
       <div id="daily-check-in" className="scroll-mt-24">
         <QuickCheckCard patientId={patient.id} />

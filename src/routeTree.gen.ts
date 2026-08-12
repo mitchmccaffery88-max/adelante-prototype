@@ -36,6 +36,7 @@ import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as CravingRouteImport } from './routes/craving'
 import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
@@ -56,9 +57,12 @@ import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
+import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
+import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
+import { Route as ResourcesSavedRouteImport } from './routes/resources.saved'
 import { Route as StartIndexRouteImport } from './routes/start.index'
 import { Route as StartHelpingRouteImport } from './routes/start.helping'
 import { Route as StartOtherHelpRouteImport } from './routes/start.other-help'
@@ -202,6 +206,11 @@ const CosignInboxRoute = CosignInboxRouteImport.update({
   path: '/cosign-inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CravingRoute = CravingRouteImport.update({
+  id: '/craving',
+  path: '/craving',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CrisisRoute = CrisisRouteImport.update({
   id: '/crisis',
   path: '/crisis',
@@ -302,6 +311,11 @@ const ShiftCountRoute = ShiftCountRouteImport.update({
   path: '/shift-count',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SlipRoute = SlipRouteImport.update({
+  id: '/slip',
+  path: '/slip',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const StartRoute = StartRouteImport.update({
   id: '/start',
   path: '/start',
@@ -316,6 +330,16 @@ const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   id: '/record/$patientId',
   path: '/record/$patientId',
   getParentRoute: () => rootRouteImport,
+} as any)
+const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => ResourcesRoute,
+} as any)
+const ResourcesSavedRoute = ResourcesSavedRouteImport.update({
+  id: '/saved',
+  path: '/saved',
+  getParentRoute: () => ResourcesRoute,
 } as any)
 const StartIndexRoute = StartIndexRouteImport.update({
   id: '/',
@@ -382,6 +406,7 @@ export interface FileRoutesByFullPath {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
@@ -399,17 +424,20 @@ export interface FileRoutesByFullPath {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
-  '/resources': typeof ResourcesRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
@@ -441,6 +469,7 @@ export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
@@ -458,16 +487,18 @@ export interface FileRoutesByTo {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
-  '/resources': typeof ResourcesRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/slip': typeof SlipRoute
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/resources': typeof ResourcesIndexRoute
   '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
@@ -500,6 +531,7 @@ export interface FileRoutesById {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
@@ -517,17 +549,20 @@ export interface FileRoutesById {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
-  '/resources': typeof ResourcesRoute
+  '/resources': typeof ResourcesRouteWithChildren
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
+  '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
   '/worklist': typeof WorklistRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
 }
@@ -561,6 +596,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/craving'
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
@@ -581,14 +617,17 @@ export interface FileRouteTypes {
     | '/resources'
     | '/schedule'
     | '/shift-count'
+    | '/slip'
     | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesByTo: FileRoutesByTo
@@ -620,6 +659,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/craving'
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
@@ -637,16 +677,18 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
-    | '/resources'
     | '/schedule'
     | '/shift-count'
+    | '/slip'
     | '/worklist'
     | '/record/$patientId'
+    | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/resources'
     | '/start'
     | '/print/patient-records/$patientId'
   id:
@@ -678,6 +720,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/craving'
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
@@ -698,14 +741,17 @@ export interface FileRouteTypes {
     | '/resources'
     | '/schedule'
     | '/shift-count'
+    | '/slip'
     | '/start'
     | '/worklist'
     | '/record/$patientId'
+    | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
   fileRoutesById: FileRoutesById
@@ -738,6 +784,7 @@ export interface RootRouteChildren {
   ConsentRoute: typeof ConsentRoute
   ConsentAuditRoute: typeof ConsentAuditRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  CravingRoute: typeof CravingRoute
   CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
@@ -755,9 +802,10 @@ export interface RootRouteChildren {
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
-  ResourcesRoute: typeof ResourcesRoute
+  ResourcesRoute: typeof ResourcesRouteWithChildren
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
+  SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
   WorklistRoute: typeof WorklistRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
@@ -955,6 +1003,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CosignInboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/craving': {
+      id: '/craving'
+      path: '/craving'
+      fullPath: '/craving'
+      preLoaderRoute: typeof CravingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/crisis': {
       id: '/crisis'
       path: '/crisis'
@@ -1095,6 +1150,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ShiftCountRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/slip': {
+      id: '/slip'
+      path: '/slip'
+      fullPath: '/slip'
+      preLoaderRoute: typeof SlipRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/start': {
       id: '/start'
       path: '/start'
@@ -1115,6 +1177,20 @@ declare module '@tanstack/react-router' {
       fullPath: '/record/$patientId'
       preLoaderRoute: typeof RecordPatientIdRouteImport
       parentRoute: typeof rootRouteImport
+    }
+    '/resources/': {
+      id: '/resources/'
+      path: '/'
+      fullPath: '/resources/'
+      preLoaderRoute: typeof ResourcesIndexRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
+    '/resources/saved': {
+      id: '/resources/saved'
+      path: '/saved'
+      fullPath: '/resources/saved'
+      preLoaderRoute: typeof ResourcesSavedRouteImport
+      parentRoute: typeof ResourcesRoute
     }
     '/start/': {
       id: '/start/'
@@ -1168,6 +1244,20 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface ResourcesRouteChildren {
+  ResourcesSavedRoute: typeof ResourcesSavedRoute
+  ResourcesIndexRoute: typeof ResourcesIndexRoute
+}
+
+const ResourcesRouteChildren: ResourcesRouteChildren = {
+  ResourcesSavedRoute: ResourcesSavedRoute,
+  ResourcesIndexRoute: ResourcesIndexRoute,
+}
+
+const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
+  ResourcesRouteChildren,
+)
+
 interface StartRouteChildren {
   StartHelpingRoute: typeof StartHelpingRoute
   StartOtherHelpRoute: typeof StartOtherHelpRoute
@@ -1216,6 +1306,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentRoute: ConsentRoute,
   ConsentAuditRoute: ConsentAuditRoute,
   CosignInboxRoute: CosignInboxRoute,
+  CravingRoute: CravingRoute,
   CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
@@ -1233,9 +1324,10 @@ const rootRouteChildren: RootRouteChildren = {
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
-  ResourcesRoute: ResourcesRoute,
+  ResourcesRoute: ResourcesRouteWithChildren,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,
+  SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
   WorklistRoute: WorklistRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,

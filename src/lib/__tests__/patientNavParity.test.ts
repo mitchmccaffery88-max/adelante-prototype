@@ -51,6 +51,10 @@ describe("patient nav registry", () => {
       // §Tier 1 Build A — patient-shell routes that are not nav entries.
       "/crisis",
       "/naloxone",
+      // §Tier 1 Build B — private tools + the saved-resources view.
+      "/craving",
+      "/slip",
+      "/resources/saved",
     ]);
   });
 });
