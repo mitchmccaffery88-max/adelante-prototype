@@ -20,6 +20,7 @@ describe("patient nav registry", () => {
       "appointments",
       "medication",
       "profile",
+      "weekly-recap",
       "intake",
     ]);
   });
@@ -47,6 +48,7 @@ describe("patient nav registry", () => {
       "/resources",
       "/recovery-journey",
       "/schedule",
+      "/weekly-recap",
       "/intake",
       // §Tier 1 Build A — patient-shell routes that are not nav entries.
       "/crisis",
