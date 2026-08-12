@@ -59,8 +59,10 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as WeeklyRecapRouteImport } from './routes/weekly-recap'
 import { Route as WorklistRouteImport } from './routes/worklist'
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
+import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
 import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
 import { Route as ResourcesSavedRouteImport } from './routes/resources.saved'
@@ -322,6 +324,11 @@ const StartRoute = StartRouteImport.update({
   path: '/start',
   getParentRoute: () => rootRouteImport,
 } as any)
+const WeeklyRecapRoute = WeeklyRecapRouteImport.update({
+  id: '/weekly-recap',
+  path: '/weekly-recap',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const WorklistRoute = WorklistRouteImport.update({
   id: '/worklist',
   path: '/worklist',
@@ -330,6 +337,11 @@ const WorklistRoute = WorklistRouteImport.update({
 const ApiAdelChatRoute = ApiAdelChatRouteImport.update({
   id: '/api/adel-chat',
   path: '/api/adel-chat',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ApiAdelRecapRoute = ApiAdelRecapRouteImport.update({
+  id: '/api/adel-recap',
+  path: '/api/adel-recap',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
@@ -435,8 +447,10 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
+  '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
@@ -497,8 +511,10 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
+  '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
@@ -562,8 +578,10 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
+  '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
@@ -628,8 +646,10 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
+    | '/api/adel-recap'
     | '/record/$patientId'
     | '/resources/saved'
     | '/start/helping'
@@ -690,8 +710,10 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/shift-count'
     | '/slip'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
+    | '/api/adel-recap'
     | '/record/$patientId'
     | '/resources/saved'
     | '/start/helping'
@@ -754,8 +776,10 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/weekly-recap'
     | '/worklist'
     | '/api/adel-chat'
+    | '/api/adel-recap'
     | '/record/$patientId'
     | '/resources/saved'
     | '/start/helping'
@@ -819,8 +843,10 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
+  WeeklyRecapRoute: typeof WeeklyRecapRoute
   WorklistRoute: typeof WorklistRoute
   ApiAdelChatRoute: typeof ApiAdelChatRoute
+  ApiAdelRecapRoute: typeof ApiAdelRecapRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
 }
@@ -1177,6 +1203,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof StartRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/weekly-recap': {
+      id: '/weekly-recap'
+      path: '/weekly-recap'
+      fullPath: '/weekly-recap'
+      preLoaderRoute: typeof WeeklyRecapRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/worklist': {
       id: '/worklist'
       path: '/worklist'
@@ -1189,6 +1222,13 @@ declare module '@tanstack/react-router' {
       path: '/api/adel-chat'
       fullPath: '/api/adel-chat'
       preLoaderRoute: typeof ApiAdelChatRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/api/adel-recap': {
+      id: '/api/adel-recap'
+      path: '/api/adel-recap'
+      fullPath: '/api/adel-recap'
+      preLoaderRoute: typeof ApiAdelRecapRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/record/$patientId': {
@@ -1349,8 +1389,10 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
+  WeeklyRecapRoute: WeeklyRecapRoute,
   WorklistRoute: WorklistRoute,
   ApiAdelChatRoute: ApiAdelChatRoute,
+  ApiAdelRecapRoute: ApiAdelRecapRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
 }

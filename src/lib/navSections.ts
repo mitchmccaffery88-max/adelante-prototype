@@ -539,6 +539,8 @@ export type PatientRoute =
   | "/recovery-journey"
   | "/schedule"
   | "/intake"
+  // §Weekly recap — real weekly stats plus a one-off Adel reflection.
+  | "/weekly-recap"
   // §Tier 1 Build A — real crisis landing page and the naloxone /
   // overdose-prevention content it links to. Not nav entries (crisis is a
   // pinned action, naloxone is reached from it), but both are patient-shell
@@ -617,6 +619,13 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     mobile: false,
   },
   { id: "profile", labelKey: "navProfile", to: "/home", hash: "my-profile", icon: UserCog, mobile: false },
+  {
+    id: "weekly-recap",
+    labelKey: "navWeeklyRecap",
+    to: "/weekly-recap",
+    icon: Sparkles,
+    mobile: false,
+  },
   // Not in the source nav, but /intake is a real patient route here and must
   // stay reachable rather than becoming an orphan.
   { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList, mobile: false },
