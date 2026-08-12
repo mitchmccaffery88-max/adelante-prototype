@@ -119,6 +119,9 @@ import {
   type DocumentUploaderKind,
   type DocumentVerificationStatus,
 } from "./documents";
+// §Message-routing gap #1 — out-of-band alert dispatch (SMS via Twilio when
+// configured). Pure transport: no recipient or escalation policy lives there.
+import { dispatchStaffAlert } from "./staffAlerts";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
@@ -3380,6 +3383,31 @@ const noteAutomationRuns: NoteAutomationRun[] = [];
 // §Notification feed — top-level, keyed to a staff identity (not a patient
 // record), because a notification belongs to a person's worklist.
 const notifications: AppNotification[] = [];
+
+// ---------------------------------------------------------------------------
+// §Message-routing gap #3 — anonymous front-door crisis alert.
+//
+// Crisis language can arrive from someone who is not a patient yet (the
+// front-door "what brings you here" note). There is no chart to attach a
+// CrisisEscalation to, so instead of silently dropping the detection we raise
+// a real, appropriately-scoped staff alert: same recipient role as the Crisis
+// Queue (clinical_coordinator), same out-of-band transport, surfaced on the
+// Crisis Queue page. It is deliberately NOT a CrisisEscalation and NOT a
+// patient record — no chart is created for someone who never asked for one.
+// ---------------------------------------------------------------------------
+export interface AnonymousCrisisAlert {
+  id: string;
+  /** Where the text came from, e.g. "the front-door note". */
+  surface: string;
+  /** Which detection patterns fired — the audit detail, never the raw text. */
+  patternIds: string[];
+  createdAt: string;
+  acknowledgedBy?: string;
+  acknowledgedAt?: string;
+  /** How the person can be reached back, when they volunteered it. */
+  contact?: string;
+}
+const anonymousCrisisAlerts: AnonymousCrisisAlert[] = [];
 // §Inbox — provider requests live cross-patient (like tasks/notifications),
 // not on the Patient record: the queue is the primary surface.
 const providerRequests: ProviderRequest[] = [];
@@ -9327,6 +9355,22 @@ export const AdelanteEHR = {
         });
       }
     }
+    // §Message-routing gap #1 — the /message-queue "nobody is told" gap. Only
+    // the FIRST unread message in a thread alerts out of band, so one patient
+    // typing several messages does not page the on-call repeatedly.
+    const unreadFromPatient = (p.careMessages ?? []).filter(
+      (m) => m.authorType === "patient" && !m.readByStaffAt,
+    ).length;
+    if (unreadFromPatient === 1) {
+      dispatchStaffAlert({
+        kind: "unread_patient_message",
+        recipientRole: "ecm_provider",
+        subject: "Adelante: new patient message",
+        body: "A patient is waiting on a reply. Open the message queue.",
+        linkRoute: "/message-queue",
+        patientId,
+      });
+    }
     emit();
     return msg;
   },
@@ -12643,6 +12687,65 @@ export const AdelanteEHR = {
     return out.sort((a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt));
   },
 
+  /** Open (unacknowledged) anonymous front-door crisis alerts, oldest first. */
+  listAnonymousCrisisAlerts(opts?: { includeAcknowledged?: boolean }): AnonymousCrisisAlert[] {
+    return anonymousCrisisAlerts
+      .filter((a) => opts?.includeAcknowledged || !a.acknowledgedAt)
+      .sort((a, b) => a.createdAt.localeCompare(b.createdAt));
+  },
+
+  raiseAnonymousCrisisAlert(input: {
+    surface: string;
+    patternIds: string[];
+    contact?: string;
+  }): AnonymousCrisisAlert {
+    const row: AnonymousCrisisAlert = {
+      id: uid(),
+      surface: input.surface,
+      patternIds: [...input.patternIds],
+      contact: input.contact?.trim() || undefined,
+      createdAt: new Date().toISOString(),
+    };
+    anonymousCrisisAlerts.unshift(row);
+    appendAudit({
+      category: "clinical",
+      action: "anonymous_crisis_alert_raised",
+      actorId: "Message scan (automated)",
+      detail: { alertId: row.id, surface: row.surface, patternIds: row.patternIds },
+    });
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "crisis_flagged",
+      subject: "Crisis language — front door (no patient record)",
+      body: `Automated flag: crisis language in ${row.surface}. There is no chart for this person yet — see the crisis queue.`,
+      linkRoute: "/crisis-queue",
+    });
+    dispatchStaffAlert({
+      kind: "anonymous_crisis",
+      recipientRole: "clinical_coordinator",
+      subject: "Adelante: crisis language at the front door",
+      body: "Someone with no patient record used crisis language. Open the crisis queue.",
+      linkRoute: "/crisis-queue",
+    });
+    emit();
+    return row;
+  },
+
+  acknowledgeAnonymousCrisisAlert(id: string, staffName: string): boolean {
+    const row = anonymousCrisisAlerts.find((a) => a.id === id);
+    if (!row || row.acknowledgedAt) return false;
+    row.acknowledgedBy = staffName;
+    row.acknowledgedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "anonymous_crisis_alert_acknowledged",
+      actorId: staffName,
+      detail: { alertId: row.id },
+    });
+    emit();
+    return true;
+  },
+
   flagCrisis(
     patientId: string,
     staffName: string,
@@ -12691,6 +12794,17 @@ export const AdelanteEHR = {
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
       body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : "manual"}): ${detail}`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
+    // §Message-routing gap #1 — same event, pushed out of band so the queue is
+    // no longer the only place anyone finds out. Every triggerSource.
+    dispatchStaffAlert({
+      kind: "crisis_flagged",
+      recipientRole: "clinical_coordinator",
+      subject: "Adelante: crisis flagged",
+      // No free text from the trigger — SMS is an unsecured channel.
+      body: `A crisis was flagged (${row.triggerSource.replace(/_/g, " ")}). Open the crisis queue.`,
       linkRoute: "/crisis-queue",
       patientId,
     });

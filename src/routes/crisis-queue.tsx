@@ -14,7 +14,7 @@ import { Card } from "@/components/ui/card";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
 import { ResolveCrisisDialog, timeOpenLabel } from "@/components/clinical/CrisisPanel";
-import { ArrowLeft, Lock, Siren } from "lucide-react";
+import { ArrowLeft, Lock, Siren, UserX } from "lucide-react";
 
 export const Route = createFileRoute("/crisis-queue")({
   head: () => ({
@@ -41,6 +41,8 @@ function CrisisQueuePage() {
   const { role } = useActingStaff();
   const access = canAccess(role, "crisis_queue");
   const rows = useEhr(() => AdelanteEHR.listOpenCrisisEscalations());
+  const anonymous = useEhr(() => AdelanteEHR.listAnonymousCrisisAlerts());
+  const { staffName } = useActingStaff();
   const [resolving, setResolving] = useState<{
     patientId: string;
     escalation: CrisisEscalation;
@@ -58,8 +60,10 @@ function CrisisQueuePage() {
           <Siren className="h-5 w-5 text-destructive" /> Crisis queue
         </h1>
         <p className="text-sm text-muted-foreground">
-          Open escalations across the population, longest-open first. This queue is the only
-          notification — there is no paging, SMS, or email.
+          Open escalations across the population, longest-open first. Every new escalation also
+          sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio
+          connection and alert numbers are configured; if they are not, this queue is still the
+          only notification.
         </p>
       </header>
 
@@ -68,9 +72,44 @@ function CrisisQueuePage() {
           <Lock className="h-4 w-4" />
           Your role does not have access to the cross-patient crisis queue.
         </Card>
-      ) : rows.length === 0 ? (
+      ) : rows.length === 0 && anonymous.length === 0 ? (
         <EmptyState icon={Siren} title="No open crisis escalations" />
       ) : (
+        <>
+        {anonymous.length > 0 && (
+          <section className="space-y-2">
+            <h2 className="flex items-center gap-1.5 font-display text-sm text-navy">
+              <UserX className="h-4 w-4 text-destructive" /> Front door — no patient record
+            </h2>
+            <p className="text-xs text-muted-foreground">
+              Crisis language from someone who is not a patient yet. There is no chart to open and
+              no escalation to resolve — acknowledge once someone has picked this up.
+            </p>
+            <ul className="space-y-2">
+              {anonymous.map((a) => (
+                <Card key={a.id} className="space-y-1.5 border-destructive/40 p-3 text-xs">
+                  <p className="text-navy">
+                    Crisis language detected in {a.surface}. Unvalidated screen — clinician review
+                    required.
+                  </p>
+                  <p className="text-muted-foreground">
+                    Patterns: {a.patternIds.join(", ")} · <ClientDate value={a.createdAt} />
+                    {a.contact ? ` · contact: ${a.contact}` : " · no contact details given"}
+                  </p>
+                  {access.level === "write" && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      onClick={() => AdelanteEHR.acknowledgeAnonymousCrisisAlert(a.id, staffName)}
+                    >
+                      Acknowledge
+                    </Button>
+                  )}
+                </Card>
+              ))}
+            </ul>
+          </section>
+        )}
         <ul className="space-y-2">
           {rows.map(({ patient, escalation }) => (
             <Card key={escalation.id} className="p-3 text-xs space-y-1.5">
@@ -105,6 +144,7 @@ function CrisisQueuePage() {
             </Card>
           ))}
         </ul>
+        </>
       )}
 
       <ResolveCrisisDialog

@@ -44,9 +44,11 @@ function OtherHelpPlaceholder() {
     const id = AdelanteEHR.getCurrentPatientId();
     if (id) {
       AdelanteEHR.recordFrontDoorEntry(id, { otherHelpNote: note.trim() || undefined });
-      // §Crisis detection — free text from a person at the front door.
-      scanTextForCrisis(id, note, { surface: "the front-door 'what brings you here' note" });
     }
+    // §Crisis detection — free text from a person at the front door. Runs
+    // whether or not a chart exists yet: with no patient id the scan raises an
+    // anonymous crisis alert to the same role that owns the crisis queue.
+    scanTextForCrisis(id, note, { surface: "the front-door 'what brings you here' note" });
     setSent(true);
     toast.success("Thanks — we've got it.");
   }
