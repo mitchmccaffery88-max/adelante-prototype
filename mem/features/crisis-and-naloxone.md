@@ -24,6 +24,9 @@ steps, Never Use Alone (1-800-484-3731) and the tolerance warning. All strings
 are VERBATIM transcriptions of SAMHSA / CDC / California DHCS material — never
 paraphrase, regenerate or "improve" them. `/naloxone` and
 `ClinicalContentReviewCard` on `/admin-audit` render both tracks separately.
+Access points are now MANAGED CONTENT (`naloxone_access_point`) edited at
+`/admin-content`; `/naloxone` reads `liveNaloxoneAccessPoints()`. The steps and
+tolerance warning are NOT managed and stay under clinical sign-off.
 Do not clear the clinical flag in code without sign-off.
 
 Community Resources: Cathy's real human verification pass is replayed at store
