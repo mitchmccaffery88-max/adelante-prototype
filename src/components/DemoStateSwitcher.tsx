@@ -182,7 +182,7 @@ export function DemoStateSwitcher() {
   return (
     <div className="fixed top-16 right-3 z-[70] print:hidden">
       <DropdownMenu>
-        <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur hover:bg-secondary">
+        <DropdownMenuTrigger data-testid="demo-state-switcher" className="inline-flex items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur hover:bg-secondary">
           <FlaskConical className="h-3.5 w-3.5 text-teal" />
           <span className="max-w-[9rem] truncate">
             {active ? STATE_LABEL[active].label : `Demo · ${patient?.firstName ?? "no record"}`}
