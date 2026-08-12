@@ -25,14 +25,14 @@ import { LibraryLesson } from "./LibraryLesson";
 import { ExerciseBody } from "./ExercisePlayer";
 import { toast } from "sonner";
 
-export function LibraryBrowser() {
+export function LibraryBrowser({ initialExercise }: { initialExercise?: string } = {}) {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(patientId);
   const completedItems = useEhr(() => AdelanteEHR.completedLibraryItems(patientId));
   const completedExercises = useEhr(() => AdelanteEHR.completedExercises(patientId));
   const toolkit = useEhr(() => AdelanteEHR.savedToolkitItems(patientId));
   const [openItem, setOpenItem] = useState<string | null>(null);
-  const [openExercise, setOpenExercise] = useState<string | null>(null);
+  const [openExercise, setOpenExercise] = useState<string | null>(initialExercise ?? null);
 
   if (!patientId) return null;
 

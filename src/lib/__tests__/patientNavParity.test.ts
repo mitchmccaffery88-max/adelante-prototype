@@ -1,19 +1,53 @@
 import { describe, it, expect } from "vitest";
-import { PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
+import {
+  PATIENT_NAV,
+  PATIENT_MOBILE_NAV,
+  PATIENT_MORE_NAV,
+  PATIENT_ROUTES,
+} from "@/lib/navSections";
 
 describe("patient nav registry", () => {
-  it("contains exactly the patient shell's routes", () => {
-    // §Adelante Journey Phase 5 added /library as a first-class patient route.
-    expect(PATIENT_NAV.map((e) => e.to)).toEqual([
-      "/home",
-      "/intake",
-      "/schedule",
-      "/library",
-      "/resources",
+  it("matches the real source nav order", () => {
+    expect(PATIENT_NAV.map((e) => e.id)).toEqual([
+      "home",
+      "adel",
+      "library",
+      "resources",
+      "recovery-journey",
+      "journey",
+      "obligations",
+      "peer-navigator",
+      "appointments",
+      "medication",
+      "profile",
+      "intake",
     ]);
   });
 
-  it("exposes PATIENT_ROUTES derived from the same registry", () => {
-    expect(PATIENT_ROUTES).toEqual(PATIENT_NAV.map((e) => e.to));
+  it("has exactly the five real mobile tabs", () => {
+    expect(PATIENT_MOBILE_NAV.map((e) => e.to)).toEqual([
+      "/home",
+      "/adel",
+      "/library",
+      "/resources",
+      "/recovery-journey",
+    ]);
+  });
+
+  it("puts every non-mobile entry in the More sheet", () => {
+    expect(PATIENT_MORE_NAV.every((e) => !e.mobile)).toBe(true);
+    expect(PATIENT_MOBILE_NAV.length + PATIENT_MORE_NAV.length).toBe(PATIENT_NAV.length);
+  });
+
+  it("derives deduped PATIENT_ROUTES from the same registry", () => {
+    expect(PATIENT_ROUTES).toEqual([
+      "/home",
+      "/adel",
+      "/library",
+      "/resources",
+      "/recovery-journey",
+      "/schedule",
+      "/intake",
+    ]);
   });
 });

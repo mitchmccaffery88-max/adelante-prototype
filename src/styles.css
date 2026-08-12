@@ -78,6 +78,10 @@
   --color-amber: var(--amber);
   --color-amber-soft: var(--amber-soft);
   --color-amber-foreground: var(--amber-foreground);
+  --color-surface: var(--surface);
+  --color-surface-elevated: var(--surface-elevated);
+  --color-amber-warm: var(--amber-warm);
+  --color-amber-warm-foreground: var(--amber-warm-foreground);
   --color-crisis: var(--crisis);
   --color-crisis-soft: var(--crisis-soft);
   --color-crisis-foreground: var(--crisis-foreground);
@@ -203,33 +207,105 @@
    * surfaces keep the existing tokens untouched.
    */
   .patient-theme {
-    --background: var(--sand);
-    --foreground: var(--ink);
-    --card: oklch(0.995 0.004 84);
-    --card-foreground: var(--ink);
-    --popover: oklch(0.995 0.004 84);
-    --popover-foreground: var(--ink);
-    --primary: oklch(0.45 0.085 190);
-    --primary-foreground: oklch(0.995 0.004 84);
-    --secondary: var(--sand-deep);
-    --secondary-foreground: var(--ink);
-    --muted: var(--sand-deep);
-    --muted-foreground: var(--ink-soft);
-    --accent: oklch(0.45 0.085 190);
-    --accent-foreground: oklch(0.995 0.004 84);
-    --teal: oklch(0.45 0.085 190);
-    --navy: oklch(0.3 0.045 235);
-    --border: oklch(0.9 0.018 82);
-    --input: oklch(0.9 0.018 82);
-    --ring: oklch(0.45 0.085 190);
-    /* Calm red is crisis-only on patient surfaces. */
-    --destructive: var(--crisis);
-    --destructive-foreground: var(--crisis-foreground);
+    /* Exact source values from the real patient-portal stylesheet. */
     --radius: 1rem;
+    --background: oklch(0.982 0.012 85);
+    --surface: oklch(0.968 0.018 82);
+    --surface-elevated: oklch(0.995 0.006 85);
+    --foreground: oklch(0.24 0.028 55);
+    --card: oklch(1 0 0);
+    --card-foreground: oklch(0.24 0.028 55);
+    --popover: oklch(1 0 0);
+    --popover-foreground: oklch(0.24 0.028 55);
+    --primary: oklch(0.44 0.075 195);
+    --primary-foreground: oklch(0.985 0.01 85);
+    --secondary: oklch(0.93 0.022 80);
+    --secondary-foreground: oklch(0.28 0.03 55);
+    --muted: oklch(0.945 0.016 82);
+    --muted-foreground: oklch(0.48 0.025 60);
+    --accent: oklch(0.92 0.03 175);
+    --accent-foreground: oklch(0.28 0.045 195);
+    --sage: oklch(0.78 0.065 155);
+    --sage-foreground: oklch(0.28 0.05 155);
+    --amber-warm: oklch(0.84 0.11 78);
+    --amber-warm-foreground: oklch(0.34 0.07 55);
+    --crisis: oklch(0.58 0.16 25);
+    --crisis-foreground: oklch(0.985 0.01 85);
+    --destructive: oklch(0.58 0.16 25);
+    --destructive-foreground: oklch(0.985 0.01 85);
+    --border: oklch(0.9 0.018 80);
+    --input: oklch(0.9 0.018 80);
+    --ring: oklch(0.5 0.075 195);
+    --sidebar: oklch(0.955 0.018 82);
+    --sidebar-foreground: oklch(0.28 0.03 55);
+    --sidebar-primary: oklch(0.44 0.075 195);
+    --sidebar-primary-foreground: oklch(0.985 0.01 85);
+    --sidebar-accent: oklch(0.92 0.025 80);
+    --sidebar-accent-foreground: oklch(0.28 0.045 195);
+    --sidebar-border: oklch(0.9 0.018 80);
+    --sidebar-ring: oklch(0.5 0.075 195);
+    /* Local aliases kept so existing patient markup keeps resolving. */
+    --sand: var(--background);
+    --sand-deep: var(--secondary);
+    --ink: var(--foreground);
+    --ink-soft: var(--muted-foreground);
+    --sage-soft: oklch(0.94 0.03 155);
+    --amber: var(--amber-warm);
+    --amber-soft: oklch(0.96 0.04 82);
+    --amber-foreground: var(--amber-warm-foreground);
+    --crisis-soft: oklch(0.958 0.028 25);
+    --teal: var(--primary);
+    --navy: var(--foreground);
+    --navy-foreground: var(--primary-foreground);
     background-color: var(--background);
     color: var(--foreground);
     font-size: 1rem;
     line-height: 1.6;
+  }
+
+  /* Dark parity — same hue axis, inverted lightness. Unused today. */
+  .dark .patient-theme,
+  .patient-theme.dark {
+    --background: oklch(0.19 0.016 55);
+    --surface: oklch(0.23 0.018 55);
+    --surface-elevated: oklch(0.27 0.02 55);
+    --foreground: oklch(0.955 0.012 85);
+    --card: oklch(0.24 0.018 55);
+    --card-foreground: oklch(0.955 0.012 85);
+    --popover: oklch(0.24 0.018 55);
+    --popover-foreground: oklch(0.955 0.012 85);
+    --primary: oklch(0.72 0.075 195);
+    --primary-foreground: oklch(0.2 0.03 195);
+    --secondary: oklch(0.29 0.02 60);
+    --secondary-foreground: oklch(0.955 0.012 85);
+    --muted: oklch(0.29 0.018 60);
+    --muted-foreground: oklch(0.75 0.02 70);
+    --accent: oklch(0.34 0.035 185);
+    --accent-foreground: oklch(0.93 0.03 180);
+    --sage: oklch(0.62 0.07 155);
+    --sage-soft: oklch(0.3 0.035 155);
+    --sage-foreground: oklch(0.95 0.02 155);
+    --amber-warm: oklch(0.76 0.1 78);
+    --amber-warm-foreground: oklch(0.2 0.04 60);
+    --amber: var(--amber-warm);
+    --amber-soft: oklch(0.32 0.05 78);
+    --amber-foreground: var(--amber-warm-foreground);
+    --crisis: oklch(0.68 0.15 25);
+    --crisis-soft: oklch(0.3 0.06 25);
+    --crisis-foreground: oklch(0.18 0.03 25);
+    --destructive: oklch(0.68 0.15 25);
+    --destructive-foreground: oklch(0.18 0.03 25);
+    --border: oklch(0.34 0.02 60);
+    --input: oklch(0.34 0.02 60);
+    --ring: oklch(0.72 0.075 195);
+    --sidebar: oklch(0.22 0.018 55);
+    --sidebar-foreground: oklch(0.93 0.014 85);
+    --sidebar-primary: oklch(0.72 0.075 195);
+    --sidebar-primary-foreground: oklch(0.2 0.03 195);
+    --sidebar-accent: oklch(0.3 0.022 60);
+    --sidebar-accent-foreground: oklch(0.93 0.03 180);
+    --sidebar-border: oklch(0.34 0.02 60);
+    --sidebar-ring: oklch(0.72 0.075 195);
   }
 
   /* 16px+ body minimum on patient surfaces: never render below 0.9375rem. */
@@ -248,4 +324,19 @@
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
+}
+
+/* Ported verbatim from the real patient-portal stylesheet. */
+@utility soft-shadow {
+  box-shadow:
+    0 1px 2px oklch(0.24 0.028 55 / 0.04),
+    0 8px 24px -12px oklch(0.24 0.028 55 / 0.08);
+}
+
+/* Patient-facing cards use the real soft shadow, not a generic Tailwind one. */
+.patient-theme [data-slot="card"],
+.patient-theme .soft-shadow {
+  box-shadow:
+    0 1px 2px oklch(0.24 0.028 55 / 0.04),
+    0 8px 24px -12px oklch(0.24 0.028 55 / 0.08);
 }

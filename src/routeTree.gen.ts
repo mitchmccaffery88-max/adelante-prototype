@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdelRouteImport } from './routes/adel'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminCatalogGovernanceRouteImport } from './routes/admin-catalog-governance'
@@ -47,6 +48,7 @@ import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
+import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ResourcesRouteImport } from './routes/resources'
@@ -66,6 +68,11 @@ import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdelRoute = AdelRouteImport.update({
+  id: '/adel',
+  path: '/adel',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -253,6 +260,11 @@ const PreReleaseRoute = PreReleaseRouteImport.update({
   path: '/pre-release',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RecoveryJourneyRoute = RecoveryJourneyRouteImport.update({
+  id: '/recovery-journey',
+  path: '/recovery-journey',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReferralRoute = ReferralRouteImport.update({
   id: '/referral',
   path: '/referral',
@@ -332,6 +344,7 @@ const PrintPatientRecordsPatientIdRoute =
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
@@ -369,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/resources': typeof ResourcesRoute
@@ -387,6 +401,7 @@ export interface FileRoutesByFullPath {
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
@@ -424,6 +439,7 @@ export interface FileRoutesByTo {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/resources': typeof ResourcesRoute
@@ -442,6 +458,7 @@ export interface FileRoutesByTo {
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/adel': typeof AdelRoute
   '/admin': typeof AdminRoute
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
@@ -479,6 +496,7 @@ export interface FileRoutesById {
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
   '/resources': typeof ResourcesRoute
@@ -499,6 +517,7 @@ export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/adel'
     | '/admin'
     | '/admin-audit'
     | '/admin-catalog-governance'
@@ -536,6 +555,7 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/recovery-journey'
     | '/referral'
     | '/released-search'
     | '/resources'
@@ -554,6 +574,7 @@ export interface FileRouteTypes {
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/adel'
     | '/admin'
     | '/admin-audit'
     | '/admin-catalog-governance'
@@ -591,6 +612,7 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/recovery-journey'
     | '/referral'
     | '/released-search'
     | '/resources'
@@ -608,6 +630,7 @@ export interface FileRouteTypes {
   id:
     | '__root__'
     | '/'
+    | '/adel'
     | '/admin'
     | '/admin-audit'
     | '/admin-catalog-governance'
@@ -645,6 +668,7 @@ export interface FileRouteTypes {
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/recovery-journey'
     | '/referral'
     | '/released-search'
     | '/resources'
@@ -664,6 +688,7 @@ export interface FileRouteTypes {
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdelRoute: typeof AdelRoute
   AdminRoute: typeof AdminRoute
   AdminAuditRoute: typeof AdminAuditRoute
   AdminCatalogGovernanceRoute: typeof AdminCatalogGovernanceRoute
@@ -701,6 +726,7 @@ export interface RootRouteChildren {
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   PreReleaseRoute: typeof PreReleaseRoute
+  RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ResourcesRoute: typeof ResourcesRoute
@@ -719,6 +745,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/adel': {
+      id: '/adel'
+      path: '/adel'
+      fullPath: '/adel'
+      preLoaderRoute: typeof AdelRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -980,6 +1013,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PreReleaseRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/recovery-journey': {
+      id: '/recovery-journey'
+      path: '/recovery-journey'
+      fullPath: '/recovery-journey'
+      preLoaderRoute: typeof RecoveryJourneyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/referral': {
       id: '/referral'
       path: '/referral'
@@ -1110,6 +1150,7 @@ const StartRouteWithChildren = StartRoute._addFileChildren(StartRouteChildren)
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdelRoute: AdelRoute,
   AdminRoute: AdminRoute,
   AdminAuditRoute: AdminAuditRoute,
   AdminCatalogGovernanceRoute: AdminCatalogGovernanceRoute,
@@ -1147,6 +1188,7 @@ const rootRouteChildren: RootRouteChildren = {
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   PreReleaseRoute: PreReleaseRoute,
+  RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
   ResourcesRoute: ResourcesRoute,

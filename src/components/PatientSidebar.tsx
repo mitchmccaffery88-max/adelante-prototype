@@ -18,7 +18,7 @@ export function PatientSidebar() {
   return (
     <aside
       aria-label="Patient navigation"
-      className="hidden md:flex sticky top-[73px] h-[calc(100dvh-73px)] w-64 shrink-0 flex-col gap-1 border-r bg-card/60 px-3 pt-4 pb-14"
+      className="hidden md:flex sticky top-[65px] h-[calc(100dvh-65px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
     >
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {PATIENT_SIDEBAR_NAV.map((n) => {
@@ -34,8 +34,8 @@ export function PatientSidebar() {
               className={cn(
                 "flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2.5 text-base font-medium transition-colors",
                 active
-                  ? "bg-primary text-primary-foreground shadow-sm"
-                  : "text-foreground/75 hover:bg-secondary hover:text-foreground",
+                  ? "bg-sidebar-primary text-sidebar-primary-foreground soft-shadow"
+                  : "text-sidebar-foreground/80 hover:bg-sidebar-accent hover:text-sidebar-accent-foreground",
               )}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
@@ -53,6 +53,7 @@ export function PatientSidebar() {
         <LifeBuoy className="h-5 w-5 shrink-0" aria-hidden="true" />
         {t("navCrisisSupport")} · 988
       </a>
+      <p className="mt-2 px-1 pb-2 text-sm leading-snug text-muted-foreground">{t("crisisReassurance")}</p>
     </aside>
   );
 }

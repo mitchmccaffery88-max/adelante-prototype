@@ -29,6 +29,7 @@ import {
   Settings2,
   ShieldCheck,
   Siren,
+  Sparkles,
   Stethoscope,
   Target,
   UserCog,
@@ -530,30 +531,95 @@ export const STAFF_ROUTES: string[] = STAFF_NAV.map((e) => e.to);
 // every other patient surface is a section inside `/home`. The registry exists
 // purely so the desktop top-nav strip and the mobile bottom tab bar read the
 // same list (they previously drifted: desktop was missing `/schedule`).
+export type PatientRoute =
+  | "/home"
+  | "/adel"
+  | "/library"
+  | "/resources"
+  | "/recovery-journey"
+  | "/schedule"
+  | "/intake";
+
 export interface PatientNavEntry {
   id: string;
   /** i18n key resolved by the rendering shell. */
   labelKey: string;
-  to: "/home" | "/intake" | "/schedule" | "/library" | "/resources";
+  to: PatientRoute;
+  /** In-page anchor when the destination is a section of `to`. */
+  hash?: string;
   icon: LucideIcon;
+  /** True when the entry is one of the five bottom tabs on mobile. */
+  mobile: boolean;
 }
 
+/**
+ * §Patient portal correction — this list and its ordering mirror the real
+ * source app-shell nav array: the five `mobile: true` entries are the bottom
+ * tab bar, every other entry is reachable from the "More" bottom sheet on
+ * mobile and from the sidebar on desktop.
+ */
 export const PATIENT_NAV: readonly PatientNavEntry[] = [
-  { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart },
-  { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList },
-  { id: "schedule", labelKey: "schTitle", to: "/schedule", icon: Calendar },
-  // §Adelante Journey Phase 5 — self-help library. A first-class patient
-  // route rather than a section inside /home: it is a browse-and-return
-  // surface with its own deep links, not a card.
-  { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen },
-  // §Adelante Journey Phase 6 — Community Resource Center. Population-neutral
-  // (housing/food/work help is not justice-specific), so it is nav-level;
-  // the reentry Day-0 module and Obligations are gated cards on /home instead.
-  { id: "resources", labelKey: "navResources", to: "/resources", icon: Map },
+  { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart, mobile: true },
+  // Nav slot reserved now; the assistant itself is a deferred phase.
+  { id: "adel", labelKey: "navAdel", to: "/adel", icon: MessageSquare, mobile: true },
+  { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen, mobile: true },
+  { id: "resources", labelKey: "navResources", to: "/resources", icon: Map, mobile: true },
+  {
+    id: "recovery-journey",
+    labelKey: "navRecoveryJourney",
+    to: "/recovery-journey",
+    icon: Sparkles,
+    mobile: true,
+  },
+  // ----- overflow ("More" sheet on mobile, sidebar on desktop) -----
+  {
+    id: "journey",
+    labelKey: "navCarePlan",
+    to: "/home",
+    hash: "your-care-plan-heading",
+    icon: Target,
+    mobile: false,
+  },
+  {
+    id: "obligations",
+    labelKey: "navObligations",
+    to: "/home",
+    hash: "obligations",
+    icon: ClipboardSignature,
+    mobile: false,
+  },
+  {
+    id: "peer-navigator",
+    labelKey: "navPeerNavigator",
+    to: "/home",
+    hash: "care-messages",
+    icon: HandHeart,
+    mobile: false,
+  },
+  { id: "appointments", labelKey: "navAppointments", to: "/schedule", icon: Calendar, mobile: false },
+  {
+    id: "medication",
+    labelKey: "navMedication",
+    to: "/home",
+    hash: "my-medications",
+    icon: Pill,
+    mobile: false,
+  },
+  { id: "profile", labelKey: "navProfile", to: "/home", hash: "my-profile", icon: UserCog, mobile: false },
+  // Not in the source nav, but /intake is a real patient route here and must
+  // stay reachable rather than becoming an orphan.
+  { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList, mobile: false },
 ] as const;
 
-/** Every route the patient shell owns. */
-export const PATIENT_ROUTES: readonly PatientNavEntry["to"][] = PATIENT_NAV.map((e) => e.to);
+/** The five bottom tabs. */
+export const PATIENT_MOBILE_NAV = PATIENT_NAV.filter((e) => e.mobile);
+/** Everything else — the "More" bottom sheet. */
+export const PATIENT_MORE_NAV = PATIENT_NAV.filter((e) => !e.mobile);
+
+/** Every route the patient shell owns (deduped — several entries are anchors). */
+export const PATIENT_ROUTES: readonly PatientRoute[] = Array.from(
+  new Set(PATIENT_NAV.map((e) => e.to)),
+);
 
 // §Patient portal Build 1 — responsive nav shell.
 //
@@ -562,22 +628,7 @@ export const PATIENT_ROUTES: readonly PatientNavEntry["to"][] = PATIENT_NAV.map(
 // that live on /home today (care plan, medications, profile). They are hash
 // targets rather than new routes because Build 1 is presentation only — the
 // home dashboard restructure is the next build.
-export interface PatientSidebarEntry {
-  id: string;
-  labelKey: string;
-  to: PatientNavEntry["to"];
-  /** In-page anchor when the destination is a section of `to`. */
-  hash?: string;
-  icon: LucideIcon;
-}
+export type PatientSidebarEntry = PatientNavEntry;
 
-export const PATIENT_SIDEBAR_NAV: readonly PatientSidebarEntry[] = [
-  { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart },
-  { id: "journey", labelKey: "navCarePlan", to: "/home", hash: "your-care-plan-heading", icon: Target },
-  { id: "schedule", labelKey: "navAppointments", to: "/schedule", icon: Calendar },
-  { id: "medication", labelKey: "navMedication", to: "/home", hash: "my-medications", icon: Pill },
-  { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen },
-  { id: "resources", labelKey: "navResources", to: "/resources", icon: Map },
-  { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList },
-  { id: "profile", labelKey: "navProfile", to: "/home", hash: "my-profile", icon: UserCog },
-] as const;
+/** Desktop sidebar shows the whole registry in source order. */
+export const PATIENT_SIDEBAR_NAV: readonly PatientNavEntry[] = PATIENT_NAV;
