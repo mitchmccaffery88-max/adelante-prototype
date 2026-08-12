@@ -404,8 +404,8 @@ function ReviewTab({ version }: { version: number }) {
         <ShieldCheck className="h-4 w-4" /> Content review queue
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Nothing here is visible to patients. Approving publishes it; the person who submitted it
-        cannot be the person who approves it.
+        An OPTIONAL second pair of eyes — content does not have to pass through here to go live.
+        Nothing in this queue is visible to patients until it is published.
         {!mayPublish && " Your role can read this queue but cannot publish."}
       </p>
       <ul className="mt-4 space-y-4">
@@ -444,7 +444,7 @@ function ReviewTab({ version }: { version: number }) {
                   disabled={!mayPublish}
                   data-testid={`approve-${e.id}`}
                   onClick={() => {
-                    const res = approveAndPublishContent({
+                    const res = publishContent({
                       typeId: e.typeId,
                       id: e.id,
                       actor,
@@ -455,7 +455,7 @@ function ReviewTab({ version }: { version: number }) {
                     else toast.success(`Published — patients can see "${d.titleOf(e.body)}" now.`);
                   }}
                 >
-                  Approve and publish
+                  Publish
                 </Button>
                 <Button
                   type="button"
@@ -544,8 +544,9 @@ export function ContentAdminWorkspace() {
           <FileEdit className="h-5 w-5 text-teal" /> Patient content management
         </h1>
         <p className="text-sm text-muted-foreground">
-          Author, review and publish the Library and Recovery-module lessons patients see — without
-          a code deployment. Draft → in review → published, with full revision history.
+          Author and publish what patients see — Library lessons, Recovery-module lessons, community
+          resources and naloxone access points — without a code deployment. Full revision history,
+          and no second approver required.
         </p>
       </div>
       <Tabs defaultValue="manage">

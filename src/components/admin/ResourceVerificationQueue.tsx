@@ -43,8 +43,9 @@ export function ResourceVerificationQueue() {
         <ShieldCheck className="h-4 w-4" /> Community resource verification
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        {all - queue.length} of {all} listings are live for patients. An entry is invisible to
-        patients until someone calls the provider and confirms the address, phone and hours.
+        {all - queue.length} of {all} listings have been confirmed with the provider. Verifying one
+        here publishes it to patients through the shared content model, with a real revision entry.
+        Verifications no longer expire — nothing drops off a patient's list on a timer.
         {!canVerify && " Your role can review these but cannot publish them."}
       </p>
       <ul className="mt-4 space-y-3">
