@@ -18,6 +18,8 @@ import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
+import { CrisisHeader } from "@/components/patient/CrisisHeader";
+import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
@@ -62,7 +64,7 @@ export function AppShell() {
     pathname as (typeof PATIENT_ROUTES)[number],
   );
   // The intake route renders its own crisis card; avoid a second 988 banner.
-  const showCrisisBanner = pathname !== "/intake";
+  const showCrisisBanner = pathname !== "/intake" && !isPatientSurface;
 
   // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
   // it can never drift from the mobile tab bar again.
@@ -77,7 +79,8 @@ export function AppShell() {
   return (
     <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
       <RouteAccessGuard />
-      <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
+      {isPatientSurface && <CrisisHeader />}
+      <header className={cn("z-30 border-b", !isPatientSurface && "sticky top-0")} data-x=" bg-background/85 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
           <Link to="/" className="flex items-center gap-2 group">
             <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
