@@ -39,7 +39,7 @@ describe("community resource + naloxone content migration", () => {
       expect(e?.status).toBe("published");
       const first = e!.revisions[0]!;
       expect(first.rev).toBe(1);
-      expect(first.actorStaffId).toBe(NALOXONE_ACCESS_REVIEW.verifiedByStaffId);
+      expect(first.byStaffId).toBe(NALOXONE_ACCESS_REVIEW.verifiedByStaffId);
       expect(first.at.startsWith(NALOXONE_ACCESS_REVIEW.verifiedOn)).toBe(true);
     }
     expect(liveNaloxoneAccessPoints().length).toBe(NALOXONE_ACCESS_POINTS.length);
