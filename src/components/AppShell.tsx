@@ -80,9 +80,14 @@ export function AppShell() {
     <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
       <RouteAccessGuard />
       {isPatientSurface && <CrisisHeader />}
-      <header className={cn("z-30 border-b", !isPatientSurface && "sticky top-0")} data-x=" bg-background/85 backdrop-blur">
+      <header
+        className={cn(
+          "z-30 border-b bg-background/85 backdrop-blur",
+          !isPatientSurface && "sticky top-0",
+        )}
+      >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
-          <Link to="/" className="flex items-center gap-2 group">
+          <Link to="/" className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}>
             <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
               A
             </span>
@@ -357,6 +362,7 @@ export function AppShell() {
       </footer>
 
       {isPatientSurface && <MobileNav />}
+      {isPatientSurface && <CravingFab />}
     </div>
   );
 }

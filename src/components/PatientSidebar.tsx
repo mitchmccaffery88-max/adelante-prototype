@@ -18,7 +18,7 @@ export function PatientSidebar() {
   return (
     <aside
       aria-label="Patient navigation"
-      className="hidden md:flex sticky top-[73px] h-[calc(100dvh-73px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-14"
+      className="hidden md:flex sticky top-[65px] h-[calc(100dvh-65px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-14"
     >
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {PATIENT_SIDEBAR_NAV.map((n) => {
