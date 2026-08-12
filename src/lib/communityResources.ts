@@ -34,6 +34,7 @@ import {
   seedDraftContent,
   seedPublishedContent,
   subscribeContent,
+  __resetContentOfType,
 } from "@/lib/contentPublishing";
 
 export interface ResourceCategory {
@@ -529,6 +530,7 @@ export function verifyResource(input: VerifyInput): VerifyResult {
 
 export function __resetResources(): void {
   resources.clear();
+  __resetContentOfType("community_resource");
   for (const r of SEED_RESOURCES) resources.set(r.id, structuredClone(r));
   applyRecordedVerifications();
 }
