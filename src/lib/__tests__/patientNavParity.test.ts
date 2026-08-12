@@ -48,6 +48,9 @@ describe("patient nav registry", () => {
       "/recovery-journey",
       "/schedule",
       "/intake",
+      // §Tier 1 Build A — patient-shell routes that are not nav entries.
+      "/crisis",
+      "/naloxone",
     ]);
   });
 });

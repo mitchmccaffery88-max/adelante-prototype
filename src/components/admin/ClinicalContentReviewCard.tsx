@@ -4,11 +4,17 @@
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { SAFETY_PLAN_REVIEW, SAFETY_PLAN_SECTIONS } from "@/lib/safetyPlan";
+import {
+  NALOXONE_ACCESS_POINTS,
+  NALOXONE_STEPS,
+  SAFETY_CONTENT_REVIEW,
+} from "@/lib/safetyContent";
 import { TriangleAlert, CheckCircle2 } from "lucide-react";
 
 export function ClinicalContentReviewCard() {
   const pendingSections = SAFETY_PLAN_SECTIONS.filter((s) => s.clinicalReviewPending).length;
-  const pending = SAFETY_PLAN_REVIEW.pending || pendingSections > 0;
+  const pending =
+    SAFETY_PLAN_REVIEW.pending || pendingSections > 0 || SAFETY_CONTENT_REVIEW.pending;
   return (
     <Card className="p-3 space-y-2" data-testid="clinical-content-review">
       <div className="flex items-center justify-between gap-2">
@@ -37,6 +43,22 @@ export function ClinicalContentReviewCard() {
           </p>
         </div>
       </div>
+      {SAFETY_CONTENT_REVIEW.pending && (
+        <div
+          className="flex items-start gap-2 text-[11px] text-muted-foreground"
+          data-testid="naloxone-content-review"
+        >
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 text-amber-600" />
+          <div>
+            <p className="font-medium text-navy">Naloxone / overdose prevention</p>
+            <p>
+              {NALOXONE_ACCESS_POINTS.length} access points (all unverified) and{" "}
+              {NALOXONE_STEPS.length} administration steps awaiting{" "}
+              {SAFETY_CONTENT_REVIEW.reviewers}. {SAFETY_CONTENT_REVIEW.scope}
+            </p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

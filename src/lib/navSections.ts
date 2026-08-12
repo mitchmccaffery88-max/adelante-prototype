@@ -538,7 +538,13 @@ export type PatientRoute =
   | "/resources"
   | "/recovery-journey"
   | "/schedule"
-  | "/intake";
+  | "/intake"
+  // §Tier 1 Build A — real crisis landing page and the naloxone /
+  // overdose-prevention content it links to. Not nav entries (crisis is a
+  // pinned action, naloxone is reached from it), but both are patient-shell
+  // routes and must theme/gate like the rest.
+  | "/crisis"
+  | "/naloxone";
 
 export interface PatientNavEntry {
   id: string;
@@ -616,9 +622,12 @@ export const PATIENT_MOBILE_NAV = PATIENT_NAV.filter((e) => e.mobile);
 /** Everything else — the "More" bottom sheet. */
 export const PATIENT_MORE_NAV = PATIENT_NAV.filter((e) => !e.mobile);
 
+/** Patient-shell routes that are not nav entries. */
+export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = ["/crisis", "/naloxone"];
+
 /** Every route the patient shell owns (deduped — several entries are anchors). */
 export const PATIENT_ROUTES: readonly PatientRoute[] = Array.from(
-  new Set(PATIENT_NAV.map((e) => e.to)),
+  new Set([...PATIENT_NAV.map((e) => e.to), ...PATIENT_EXTRA_ROUTES]),
 );
 
 // §Patient portal Build 1 — responsive nav shell.

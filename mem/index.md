@@ -16,3 +16,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Safety plan](mem://features/safety-plan) — Stanley-Brown structure, clinical-adjacent store, safety_plan record class, 988 locked entry, pending clinical review flags
 - [Pre-release capacity gate](mem://features/pre-release-capacity-gate) — in-custody profile creation, required Step 1 capacity/surrogate determination, consent-step blocking
 - [Pre-release screening](mem://features/pre-release-screening) — real AUDIT-10/DAST-10 + AHC-HRSN SDOH satisfy pre-release checklist rows; shared ScreenerResult storage and population rollups
+- [Crisis + naloxone content](mem://features/crisis-and-naloxone) — /crisis is the single crisis destination; verbatim SAMHSA/CDC/DHCS naloxone content with verified:false + pending review flags

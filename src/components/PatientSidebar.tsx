@@ -45,14 +45,14 @@ export function PatientSidebar() {
         })}
       </nav>
 
-      <a
-        href="tel:988"
+      <Link
+        to="/crisis"
         data-testid="patient-crisis-link"
         className="mt-2 flex min-h-11 items-center gap-3 rounded-2xl border border-crisis/30 bg-crisis-soft px-3 py-3 text-base font-semibold text-crisis shadow-sm hover:bg-crisis/10"
       >
         <LifeBuoy className="h-5 w-5 shrink-0" aria-hidden="true" />
         {t("navCrisisSupport")} · 988
-      </a>
+      </Link>
       <p className="mt-2 px-1 pb-2 text-sm leading-snug text-muted-foreground">{t("crisisReassurance")}</p>
     </aside>
   );
