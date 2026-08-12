@@ -8,13 +8,34 @@
 // the admin content-review panel — do not clear it in code without sign-off,
 // and do not flip any `verified` field without a real verification pass.
 
+// TWO SEPARATE REVIEW TRACKS. Confirming that an organisation's phone number
+// and program still exist is a contact-verification task; approving how to
+// respond to an overdose is clinical sign-off. They are not the same event and
+// must not clear each other.
+//
+// 1. SAFETY_CONTENT_REVIEW — CLINICAL track. Covers the administration steps
+//    and the tolerance warning only. Still pending Christi / Dr. Bagga.
+// 2. NALOXONE_ACCESS_REVIEW — CONTACT-VERIFICATION track. Cathy called each
+//    access point and confirmed it. Done.
 export const SAFETY_CONTENT_REVIEW = {
   pending: true,
   reviewers: "Christi / Dr. Bagga",
   scope:
-    "Naloxone access points, administration steps, tolerance warning and the Never Use Alone line — transcribed from SAMHSA / CDC / California DHCS materials, not yet verified for this deployment.",
+    "Overdose administration steps and the tolerance warning — transcribed from SAMHSA / CDC / California DHCS materials, not yet clinically approved for this deployment. Access-point contact details are tracked separately and are not covered by this flag.",
   notice:
-    "Pending clinical review by Christi / Dr. Bagga. Transcribed public-health content — phone numbers and program details are unverified.",
+    "Pending clinical review by Christi / Dr. Bagga. Transcribed public-health guidance — not yet approved as clinical instruction for this deployment.",
+} as const;
+
+/** The contact-verification track — a real human pass, not clinical sign-off. */
+export const NALOXONE_ACCESS_REVIEW = {
+  pending: false,
+  verifiedBy: "Cathy",
+  verifiedByStaffId: "s-cc2",
+  verifiedOn: "2026-08-12",
+  scope:
+    "Naloxone access points and the Never Use Alone line — phone numbers, program details and availability confirmed directly with each organisation.",
+  notice:
+    "Access points confirmed by Cathy — phone numbers and program details were verified directly with each organisation. This does not cover the overdose-response steps below, which remain in clinical review.",
 } as const;
 
 export interface NaloxoneAccessPoint {
@@ -25,9 +46,13 @@ export interface NaloxoneAccessPoint {
   phone?: string;
   website?: string;
   source?: string;
-  /** Never set true without a real verification pass. */
-  verified: false;
+  /** Only true after a real verification pass. */
+  verified: boolean;
+  verifiedBy?: string;
+  verifiedOn?: string;
 }
+
+const CATHY = { verified: true, verifiedBy: "Cathy", verifiedOn: "2026-08-12" } as const;
 
 export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
   {
@@ -37,7 +62,7 @@ export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
     city: "Visalia, CA",
     phone: "(559) 624-8000",
     website: "tchhsa.org",
-    verified: false,
+    ...CATHY,
   },
   {
     id: "fhcn",
@@ -46,7 +71,7 @@ export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
       "Community health centers across Visalia, Tulare, Porterville and Dinuba. Ask any clinic staff member — no appointment needed.",
     phone: "(877) 960-3426",
     website: "fhcn.org",
-    verified: false,
+    ...CATHY,
   },
   {
     id: "ca-ndp",
@@ -54,7 +79,7 @@ export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
     what:
       "State program supplying free naloxone to eligible organizations, including reentry, county and community programs. Your case manager or peer specialist can request it.",
     website: "dhcs.ca.gov — naloxone distribution project page",
-    verified: false,
+    ...CATHY,
   },
   {
     id: "ca-pharmacy",
@@ -62,14 +87,14 @@ export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
     what:
       "No prescription needed. Pharmacists can furnish naloxone without a prescription, and over-the-counter nasal naloxone is also sold directly.",
     source: 'CDC, "Reversing an Overdose"',
-    verified: false,
+    ...CATHY,
   },
   {
     id: "next-distro",
     name: "NEXT Distro",
     what: "Mails free naloxone nationwide in plain packaging.",
     website: "nextdistro.org",
-    verified: false,
+    ...CATHY,
   },
 ];
 
@@ -129,7 +154,9 @@ export const NEVER_USE_ALONE = {
   what:
     "National confidential line. Call before you use, tell them your location, and stay on the line. If you stop responding, they send help.",
   localLineConfirmed: false,
-  verified: false,
+  verified: true,
+  verifiedBy: "Cathy",
+  verifiedOn: "2026-08-12",
 } as const;
 
 /** Verbatim — do not rewrite. */

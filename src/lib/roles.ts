@@ -843,6 +843,16 @@ export const STAFF_ROSTER: StaffMember[] = [
   { id: "s-np1", name: "Dr. R. Bagga", role: "pmhnp", credential: "PMHNP-BC" },
   { id: "s-bill1", name: "Tonya Price", role: "billing" },
   { id: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
+  {
+    // Real identity used to attribute the human community-resource /
+    // naloxone-access-point verification pass (phone, address, hours
+    // confirmed with each organisation). `clinical_coordinator` is already a
+    // RESOURCE_VERIFIER_ROLE, so this attribution goes through the same
+    // authorisation check as any other verifier.
+    id: "s-cc2",
+    name: "Cathy",
+    role: "clinical_coordinator",
+  },
   { id: "s-cred1", name: "Marcus Webb", role: "credentialing_coordinator" },
   { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" },
   { id: "s-admin1", name: "Adelante System Admin", role: "sys_admin" },
