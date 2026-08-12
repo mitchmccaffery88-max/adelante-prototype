@@ -15,6 +15,8 @@ import {
   PATIENT_NAV,
   PATIENT_ROUTES,
   patientNavForPopulation,
+  PUBLIC_NAV,
+  isPublicRoute,
 } from "@/lib/navSections";
 import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
@@ -85,6 +87,8 @@ export function AppShell() {
   // hide the staff link strip in the mobile nav (still reachable via the
   // Staff dropdown on desktop).
   const isPatientSurface = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]);
+  // §Landing nav — public, pre-sign-in surfaces get their own minimal nav.
+  const isPublicSurface = !isPatientSurface && isPublicRoute(pathname);
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake" && !isPatientSurface;
 
@@ -132,7 +136,18 @@ export function AppShell() {
               isPatientSurface ? "hidden" : "hidden md:flex",
             )}
           >
-            {patientNav.map((n) => {
+            {isPublicSurface
+              ? PUBLIC_NAV.map((n) => (
+                  <Link
+                    key={n.id}
+                    to={n.to}
+                    hash={n.hash}
+                    className="px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
+                  >
+                    {n.label}
+                  </Link>
+                ))
+              : patientNav.map((n) => {
               const active = pathname === n.to;
               return (
                 <Link
@@ -152,6 +167,14 @@ export function AppShell() {
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
+            {isPublicSurface && (
+              <Link
+                to="/start"
+                className="inline-flex items-center rounded-md bg-navy px-3 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
+              >
+                Get started
+              </Link>
+            )}
             <div className="hidden sm:flex items-center gap-1 text-xs text-muted-foreground">
               <ShieldCheck className="h-4 w-4 text-teal" />
               HIPAA · 42 CFR Part 2
