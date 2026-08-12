@@ -48,6 +48,12 @@ import {
 } from "@/lib/communityResources";
 import { listObligations, subscribeObligations } from "@/lib/obligations";
 import {
+  dailyCheckInDayKeys,
+  listLapses,
+  subscribeSelfTracking,
+  todaysCheckIn,
+} from "@/lib/selfTracking";
+import {
   DAY_ZERO_STEPS,
   dayZeroAvailability,
   getDayZeroProgress,
@@ -140,13 +146,29 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
   const dayZero = useMemo(() => getDayZeroProgress(patientId), [patientId, dayZeroKey]);
   const dayZeroOpen = useEhr(() => dayZeroAvailability(patientId));
 
+  // §Tier 1 Build B — the daily mood check-in is a real third streak source.
+  const selfTrackingKey = useSyncExternalStore(
+    subscribeSelfTracking,
+    () => `${dailyCheckInDayKeys(patientId).join(",")}|${listLapses(patientId).length}`,
+    () => "",
+  );
+  const dailyKeys = useMemo(
+    () => dailyCheckInDayKeys(patientId),
+    [patientId, selfTrackingKey],
+  );
+  const checkedInTodayFlow = useMemo(
+    () => Boolean(todaysCheckIn(patientId)),
+    [patientId, selfTrackingKey],
+  );
+
   const streak = useMemo(
     () =>
       checkInStreakFrom({
         doseSelfReportDates: doseReports.map((r) => r.facilityDate),
         quickCheckCompletedAt: quickCheckDates,
+        dailyCheckInDayKeys: dailyKeys,
       }),
-    [doseReports, quickCheckDates],
+    [doseReports, quickCheckDates, dailyKeys],
   );
 
   const checkInDaysLast14 = useMemo(() => {
@@ -159,8 +181,10 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
       const d = new Date(iso);
       if (d.getTime() >= cutoff) keys.add(d.toISOString().slice(0, 10));
     }
+    const cutoffKey = new Date(cutoff).toISOString().slice(0, 10);
+    for (const k of dailyKeys) if (k >= cutoffKey) keys.add(k);
     return keys.size;
-  }, [doseReports, quickCheckDates]);
+  }, [doseReports, quickCheckDates, dailyKeys]);
 
   const medsScheduledToday = doseRows.length;
   const medsUnmarkedToday = doseRows.filter((r) => !r.selfReport).length;
@@ -386,20 +410,35 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
       {/* 8 — main grid --------------------------------------------------------- */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Daily check-in */}
+        {/* Daily check-in — the real Build B surface lives on /home */}
         <TileShell icon={HeartPulse} title="Daily check-in">
           <p className="text-sm text-muted-foreground">
-            {streak.checkedInToday
+            {checkedInTodayFlow
               ? "You've already checked in today."
-              : "A couple of questions, whenever you're ready."}
+              : "Nine feelings, one optional why. Under a minute."}
           </p>
-          <NotBuiltChip>
-            Daily check-in isn't built — the weekly one below is the real surface
-          </NotBuiltChip>
           <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/home" hash="daily-check-in">
-              Go to the weekly check-in
+            <Link to="/home" hash="daily-mood-check-in">
+              {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
             </Link>
+          </Button>
+          <Button asChild variant="ghost" className="mt-2 min-h-11 w-full rounded-2xl">
+            <Link to="/home" hash="daily-check-in">
+              The weekly PHQ-2 / GAD-2 check
+            </Link>
+          </Button>
+        </TileShell>
+
+        {/* Rough patch — craving tool and slip support, both patient-private */}
+        <TileShell icon={Waves} title="A rough patch">
+          <p className="text-sm text-muted-foreground">
+            Two tools for the hard hours. Neither is shared with anyone.
+          </p>
+          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+            <Link to="/craving">I&apos;m craving right now</Link>
+          </Button>
+          <Button asChild variant="outline" className="mt-2 min-h-11 w-full rounded-2xl">
+            <Link to="/slip">I used — help me pick it back up</Link>
           </Button>
         </TileShell>
 
