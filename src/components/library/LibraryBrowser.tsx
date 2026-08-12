@@ -6,6 +6,7 @@
 // carries no gate at all and is shown to everyone.
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -52,7 +53,7 @@ export function LibraryBrowser({
 
   if (lesson) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
+      <PatientPage>
         <Button type="button" variant="ghost" onClick={() => setOpenItem(null)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
         </Button>
@@ -64,21 +65,21 @@ export function LibraryBrowser({
   if (exercise) {
     const done = completedExercises.includes(exercise.id);
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
+      <PatientPage>
         <Button type="button" variant="ghost" onClick={() => setOpenExercise(null)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
         </Button>
         <Card className="space-y-4 p-6">
           <div className="space-y-1">
             <div className="flex flex-wrap items-center gap-2">
-              <h1 className="font-display text-2xl text-navy">{exercise.title}</h1>
+              <h1 className="font-display text-2xl text-foreground">{exercise.title}</h1>
               {done && (
-                <Badge className="border-0 bg-teal/15 text-teal">
+                <Badge className="border-0 bg-accent text-accent-foreground">
                   <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Completed
                 </Badge>
               )}
               {exercise.placeholder && (
-                <Badge variant="outline" className="border-gold text-gold-foreground">
+                <Badge variant="outline" className="border-amber-warm text-amber-warm-foreground">
                   Placeholder content
                 </Badge>
               )}
@@ -88,7 +89,7 @@ export function LibraryBrowser({
               <Clock className="h-3.5 w-3.5" /> About {exercise.minutes} minutes
             </div>
           </div>
-          <p className="rounded-lg bg-secondary/50 p-3 text-sm text-navy">{exercise.purpose}</p>
+          <p className="rounded-2xl bg-secondary/50 p-3 text-sm text-foreground">{exercise.purpose}</p>
           <ExerciseBody exercise={exercise} />
           <Button
             type="button"
@@ -108,13 +109,12 @@ export function LibraryBrowser({
   const exercises = visibleExercises(population);
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl text-navy">My library</h1>
-        <p className="text-muted-foreground">
-          Short lessons and practical tools you can use on your own, any time.
-        </p>
-      </header>
+    <PatientPage width="browse" className="space-y-6">
+      <PatientPageHeader
+        icon={BookOpen}
+        title="My library"
+        lede="Short lessons and practical tools you can use on your own, any time."
+      />
 
       <Tabs defaultValue="lessons">
         <TabsList>
