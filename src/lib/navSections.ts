@@ -566,6 +566,8 @@ export type PatientRoute =
   // pinned action, naloxone is reached from it), but both are patient-shell
   // routes and must theme/gate like the rest.
   | "/crisis"
+  // §P2 — the full editable safety plan owns a real route (was a /home anchor).
+  | "/safety-plan"
   | "/naloxone"
   // §Tier 1 Build B — patient-private tools reached from the home dashboard,
   // the craving FAB and the resources header, not from the nav registry.
@@ -677,6 +679,7 @@ export function patientNavForPopulation<T extends PatientNavEntry>(
 /** Patient-shell routes that are not nav entries. */
 export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
   "/crisis",
+  "/safety-plan",
   "/naloxone",
   "/craving",
   "/slip",

@@ -2840,6 +2840,38 @@ const patients: Patient[] = [
     },
     needs: { housing: true, food: false, employment: true, transport: true, family: true },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
+    // §P2 item 3 — the SDOH needs the care manager identified, with the real
+    // status the patient surface renders (referred / in-process / receiving).
+    sdohPlan: {
+      items: [
+        {
+          id: "sdoh1",
+          need: "Transitional housing placement",
+          status: "sent",
+          note: "Referred to Tulare Reentry Housing Collaborative.",
+          visibleToPatient: true,
+          createdAt: "2026-05-13",
+          updatedAt: "2026-05-20",
+        },
+        {
+          id: "sdoh2",
+          need: "Rides to appointments",
+          status: "scheduled",
+          note: "Medi-Cal transportation set up for therapy days.",
+          visibleToPatient: true,
+          createdAt: "2026-05-13",
+          updatedAt: "2026-05-28",
+        },
+        {
+          id: "sdoh3",
+          need: "Job readiness program",
+          status: "identified",
+          visibleToPatient: true,
+          createdAt: "2026-05-30",
+          updatedAt: "2026-05-30",
+        },
+      ],
+    },
     intakeCompletedAt: "2026-05-12",
     coverage: {
       status: "active",

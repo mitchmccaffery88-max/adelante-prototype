@@ -57,6 +57,7 @@ describe("patient nav registry", () => {
       "/intake",
       // §Tier 1 Build A — patient-shell routes that are not nav entries.
       "/crisis",
+      "/safety-plan",
       "/naloxone",
       // §Tier 1 Build B — private tools + the saved-resources view.
       "/craving",

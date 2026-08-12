@@ -56,8 +56,7 @@ function CrisisPage() {
           </span>
         </Link>
         <Link
-          to="/home"
-          hash="safety-plan"
+          to="/safety-plan"
           data-testid="crisis-safety-plan-link"
           className="flex min-h-16 items-center gap-3 p-4 hover:bg-secondary"
         >

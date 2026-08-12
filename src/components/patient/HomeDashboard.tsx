@@ -12,6 +12,7 @@ import {
   BookOpen,
   Calendar,
   Check,
+  ClipboardCheck,
   ChevronRight,
   HandHeart,
   HeartPulse,
@@ -72,6 +73,23 @@ import { toast } from "sonner";
 // ---------------------------------------------------------------------------
 // Small shared pieces
 // ---------------------------------------------------------------------------
+
+
+// §P2 item 3 — patient-facing wording for the real SDOH / referral statuses.
+const SDOH_STATUS_LABEL: Record<string, string> = {
+  identified: "We noted this",
+  sent: "Sent to partner",
+  accepted: "Partner accepted",
+  scheduled: "Scheduled",
+  completed: "Done",
+  not_completed: "Didn't happen",
+};
+
+const REFERRAL_STATUS_LABEL: Record<string, string> = {
+  pending: "In progress",
+  accepted: "Partner accepted",
+  completed: "Done",
+};
 
 function greeting(now: Date): string {
   const h = now.getHours();
@@ -195,6 +213,22 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
   const medsScheduledToday = doseRows.length;
   const medsUnmarkedToday = doseRows.filter((r) => !r.selfReport).length;
 
+  // §P2 item 2 — real recency of the weekly PHQ-2/GAD-2 check, used for tile
+  // prioritization. Same source the streak already reads.
+  const daysSinceQuickCheck = useMemo(() => {
+    const last = [...quickCheckDates].sort().pop();
+    if (!last) return undefined;
+    return Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
+  }, [quickCheckDates]);
+  const weeklyCheckDue = daysSinceQuickCheck === undefined || daysSinceQuickCheck >= 7;
+  const weeklyCheckOverdue = daysSinceQuickCheck !== undefined && daysSinceQuickCheck >= 10;
+
+  // §P2 item 3 — real SDOH needs and referrals off the active care plan.
+  const sdohItems = (patient?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
+  const referralItems = (patient?.resourceReferrals ?? []).filter(
+    (r) => r.visibleToPatient !== false,
+  );
+
   const daysSinceContact = useMemo(() => {
     const last = messages.map((m) => m.createdAt).sort().pop();
     if (!last) return undefined;
@@ -258,6 +292,317 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   if (!patient) return null;
   const firstName = patient.preferredName || patient.firstName;
+
+  // §P2 item 2 — tiles carry a real priority derived from live state instead
+  // of a fixed source order. Higher renders first; ties keep source order.
+  const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
+  tiles.push({
+    key: "daily-check-in",
+    priority: checkedInTodayFlow ? 10 : streak.days > 0 ? 95 : 90,
+    node: (
+      <TileShell icon={HeartPulse} title="Daily check-in">
+        {!checkedInTodayFlow && (
+          <Badge className="mb-2" variant="outline" data-testid="daily-check-in-due">
+            {streak.days > 0 ? `Due today · ${streak.days}-day streak on the line` : "Due today"}
+          </Badge>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {checkedInTodayFlow
+            ? "You've already checked in today."
+            : "Nine feelings, one optional why. Under a minute."}
+        </p>
+        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+          <Link to="/home" hash="daily-mood-check-in">
+            {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
+          </Link>
+        </Button>
+      </TileShell>
+    ),
+  });
+  tiles.push({
+    key: "weekly-check-in",
+    priority: weeklyCheckOverdue ? 88 : weeklyCheckDue ? 70 : 15,
+    node: (
+      <TileShell icon={ClipboardCheck} title="Weekly check">
+        {weeklyCheckDue && (
+          <Badge className="mb-2" variant="outline" data-testid="weekly-check-in-due">
+            {weeklyCheckOverdue ? "Overdue" : "Due this week"}
+          </Badge>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {daysSinceQuickCheck === undefined
+            ? "The PHQ-2 / GAD-2 check — six questions, once a week."
+            : `Last done ${daysSinceQuickCheck === 0 ? "today" : `${daysSinceQuickCheck} day${daysSinceQuickCheck === 1 ? "" : "s"} ago`}.`}
+        </p>
+        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+          <Link to="/home" hash="daily-check-in">
+            {weeklyCheckDue ? "Take this week's check" : "Open the weekly check"}
+          </Link>
+        </Button>
+      </TileShell>
+    ),
+  });
+
+  // Rough patch — craving tool and slip support, both patient-private
+  tiles.push({
+    key: "rough-patch",
+    priority: 60,
+    node: (
+          <TileShell icon={Waves} title="A rough patch">
+            <p className="text-sm text-muted-foreground">
+              Two tools for the hard hours. Neither is shared with anyone.
+            </p>
+            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+              <Link to="/craving">I&apos;m craving right now</Link>
+            </Button>
+            <Button asChild variant="outline" className="mt-2 min-h-11 w-full rounded-2xl">
+              <Link to="/slip">I used — help me pick it back up</Link>
+            </Button>
+          </TileShell>
+    ),
+  });
+  // Continue where you left off — polymorphic on real engagement data
+  tiles.push({
+    key: "pick-up",
+    priority: 35,
+    node: (
+          <TileShell icon={BookOpen} title="Pick up where you left off">
+            {lastToolkit ? (
+              <>
+                <p className="text-base">{lastToolkit.label}</p>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {lessonsDone.length} lesson{lessonsDone.length === 1 ? "" : "s"} ·{" "}
+                  {exercisesDone.length} tool{exercisesDone.length === 1 ? "" : "s"} finished
+                </p>
+                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+                  <Link
+                    to="/library"
+                    search={
+                      lastToolkit.from === "exercise"
+                        ? { exercise: lastToolkit.id }
+                        : { item: lastToolkit.id }
+                    }
+                  >
+                    {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
+                  </Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">
+                  Nothing started yet. The library is a good first stop.
+                </p>
+                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+                  <Link to="/library">Browse the library</Link>
+                </Button>
+              </>
+            )}
+          </TileShell>
+    ),
+  });
+  // Resources near you
+  tiles.push({
+    key: "resources",
+    priority: 30,
+    node: (
+          <TileShell icon={MapPin} title="Resources near you">
+            {liveCategories.length > 0 ? (
+              <div className="flex flex-wrap gap-2">
+                {liveCategories.slice(0, 6).map((c) => (
+                  <Link
+                    key={c.id}
+                    to="/resources"
+                    className="rounded-full border bg-secondary px-3 py-1.5 text-sm hover:bg-secondary/70"
+                  >
+                    {c.name}
+                  </Link>
+                ))}
+              </div>
+            ) : (
+              <p className="text-sm text-muted-foreground">
+                Nothing verified in your area yet. Our team calls every listing before it shows up
+                here.
+              </p>
+            )}
+            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+              <Link to="/resources">See all resources</Link>
+            </Button>
+          </TileShell>
+    ),
+  });
+  // Upcoming appointment + prep tip
+  tiles.push({
+    key: "next-appointment",
+    priority: 50,
+    node: (
+          <TileShell icon={Calendar} title="Next appointment">
+            {nextAppt ? (
+              <>
+                <p className="text-base">
+                  <ClientDate
+                    value={nextAppt.start}
+                    options={{
+                      weekday: "long",
+                      month: "short",
+                      day: "numeric",
+                      hour: "numeric",
+                      minute: "2-digit",
+                    }}
+                  />
+                </p>
+                <p className="mt-0.5 text-xs text-muted-foreground">
+                  {AdelanteEHR.getClinician(nextAppt.clinicianId)?.name}
+                  {nextAppt.modality === "phone"
+                    ? " · by phone"
+                    : nextAppt.modality === "in_person"
+                      ? " · in person"
+                      : " · video"}
+                </p>
+                <p className="mt-2 rounded-2xl bg-secondary p-3 text-sm">
+                  {nextAppt.modality === "in_person"
+                    ? "Prep tip: give yourself extra time for the trip, and bring your ID if you have it."
+                    : nextAppt.modality === "phone"
+                      ? "Prep tip: pick somewhere you won't be overheard, and keep your phone charged."
+                      : "Prep tip: test your camera a few minutes early and find a private spot."}
+                </p>
+                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+                  <Link to="/schedule">Manage appointments</Link>
+                </Button>
+              </>
+            ) : (
+              <>
+                <p className="text-sm text-muted-foreground">Nothing scheduled right now.</p>
+                <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+                  <Link to="/schedule">Book a time</Link>
+                </Button>
+              </>
+            )}
+          </TileShell>
+    ),
+  });
+  // Today's medication — real Phase 7 self-report, not a new mechanism
+  if (medsScheduledToday > 0)
+    tiles.push({
+    key: "medication",
+    priority: 65,
+    node: (
+          <TileShell icon={Pill} title="Today's medication">
+              <ul className="space-y-2">
+                {doseRows.slice(0, 3).map((row) => {
+                  const taken = row.selfReport?.status === "taken";
+                  return (
+                    <li
+                      key={row.slot.key}
+                      className="flex items-center justify-between gap-2 rounded-2xl border p-2.5"
+                    >
+                      <span className="min-w-0">
+                        <span className="block truncate text-sm font-medium">
+                          {marRowLabel(row.slot.order)}
+                        </span>
+                        <span className="block text-xs text-muted-foreground">
+                          {row.slot.timeLabel}
+                        </span>
+                      </span>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={taken ? "secondary" : "outline"}
+                        data-testid={`dashboard-mark-taken-${row.slot.key}`}
+                        className="min-h-11 shrink-0 rounded-2xl"
+                        onClick={() => {
+                          AdelanteEHR.selfReportDose(patientId, {
+                            orderId: row.slot.order.id,
+                            scheduledAt: row.slot.scheduledAt,
+                            facilityDate: row.slot.facilityDate,
+                            status: taken ? "not_taken" : "taken",
+                          });
+                          toast.success(taken ? ADHERENCE_TONE.missedDay : "Marked as taken");
+                        }}
+                      >
+                        {taken ? (
+                          <>
+                            <Check className="mr-1 h-4 w-4" /> Taken
+                          </>
+                        ) : (
+                          "Mark taken"
+                        )}
+                      </Button>
+                    </li>
+                  );
+                })}
+              </ul>
+              <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+                <Link to="/medications">
+                  All my medicines
+                </Link>
+              </Button>
+          </TileShell>
+    ),
+  });
+  // Your journey — the source's 5-stage model has no equivalent here
+  tiles.push({
+    key: "journey",
+    priority: 20,
+    node: (
+          <TileShell icon={RouteIcon} title="Your journey">
+            <p className="text-sm text-muted-foreground">
+              Your care plan and goals are the real picture of where you are.
+            </p>
+            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
+              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
+              No stage model exists in this build, and we won't guess at one.
+            </p>
+            <NotBuiltChip>A 5-stage journey model needs clinical sign-off first</NotBuiltChip>
+            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+              <Link to="/home" hash="your-care-plan-heading">
+                Open your care plan
+              </Link>
+            </Button>
+          </TileShell>
+    ),
+  });
+
+  // §P2 item 3 — real SDOH needs and referral status off the active care plan,
+  // not a generic link to the resource library.
+  if (sdohItems.length > 0 || referralItems.length > 0)
+    tiles.push({
+      key: "support-needs",
+      priority: 75,
+      node: (
+        <TileShell icon={HandHeart} title="Your support needs">
+          <p className="text-sm text-muted-foreground">
+            What your care team is actively working on with you.
+          </p>
+          <ul className="mt-3 space-y-2" data-testid="sdoh-status-list">
+            {sdohItems.slice(0, 3).map((i) => (
+              <li key={i.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
+                <span className="min-w-0 truncate text-sm">{i.need}</span>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {SDOH_STATUS_LABEL[i.status] ?? i.status}
+                </Badge>
+              </li>
+            ))}
+            {referralItems.slice(0, 2).map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
+                <span className="min-w-0 truncate text-sm capitalize">
+                  {r.category} — {r.provider}
+                </span>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {REFERRAL_STATUS_LABEL[r.status] ?? r.status}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+            <Link to="/home" hash="your-care-plan-heading">
+              See the full plan
+            </Link>
+          </Button>
+        </TileShell>
+      ),
+    });
+
+  tiles.sort((a, b) => b.priority - a.priority);
 
   return (
     <div className="space-y-5" data-testid="patient-home-dashboard">
@@ -414,215 +759,13 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
         )}
       </Card>
 
-      {/* 8 — main grid --------------------------------------------------------- */}
+      {/* 8 — main grid — ordered by live priority (see tiles above) --------- */}
       <div className="grid gap-4 md:grid-cols-2">
-        {/* Daily check-in — the real Build B surface lives on /home */}
-        <TileShell icon={HeartPulse} title="Daily check-in">
-          <p className="text-sm text-muted-foreground">
-            {checkedInTodayFlow
-              ? "You've already checked in today."
-              : "Nine feelings, one optional why. Under a minute."}
-          </p>
-          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/home" hash="daily-mood-check-in">
-              {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
-            </Link>
-          </Button>
-          <Button asChild variant="ghost" className="mt-2 min-h-11 w-full rounded-2xl">
-            <Link to="/home" hash="daily-check-in">
-              The weekly PHQ-2 / GAD-2 check
-            </Link>
-          </Button>
-        </TileShell>
-
-        {/* Rough patch — craving tool and slip support, both patient-private */}
-        <TileShell icon={Waves} title="A rough patch">
-          <p className="text-sm text-muted-foreground">
-            Two tools for the hard hours. Neither is shared with anyone.
-          </p>
-          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/craving">I&apos;m craving right now</Link>
-          </Button>
-          <Button asChild variant="outline" className="mt-2 min-h-11 w-full rounded-2xl">
-            <Link to="/slip">I used — help me pick it back up</Link>
-          </Button>
-        </TileShell>
-
-        {/* Continue where you left off — polymorphic on real engagement data */}
-        <TileShell icon={BookOpen} title="Pick up where you left off">
-          {lastToolkit ? (
-            <>
-              <p className="text-base">{lastToolkit.label}</p>
-              <p className="mt-1 text-xs text-muted-foreground">
-                {lessonsDone.length} lesson{lessonsDone.length === 1 ? "" : "s"} ·{" "}
-                {exercisesDone.length} tool{exercisesDone.length === 1 ? "" : "s"} finished
-              </p>
-              <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                <Link
-                  to="/library"
-                  search={
-                    lastToolkit.from === "exercise"
-                      ? { exercise: lastToolkit.id }
-                      : { item: lastToolkit.id }
-                  }
-                >
-                  {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
-                </Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">
-                Nothing started yet. The library is a good first stop.
-              </p>
-              <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                <Link to="/library">Browse the library</Link>
-              </Button>
-            </>
-          )}
-        </TileShell>
-
-        {/* Resources near you */}
-        <TileShell icon={MapPin} title="Resources near you">
-          {liveCategories.length > 0 ? (
-            <div className="flex flex-wrap gap-2">
-              {liveCategories.slice(0, 6).map((c) => (
-                <Link
-                  key={c.id}
-                  to="/resources"
-                  className="rounded-full border bg-secondary px-3 py-1.5 text-sm hover:bg-secondary/70"
-                >
-                  {c.name}
-                </Link>
-              ))}
-            </div>
-          ) : (
-            <p className="text-sm text-muted-foreground">
-              Nothing verified in your area yet. Our team calls every listing before it shows up
-              here.
-            </p>
-          )}
-          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/resources">See all resources</Link>
-          </Button>
-        </TileShell>
-
-        {/* Upcoming appointment + prep tip */}
-        <TileShell icon={Calendar} title="Next appointment">
-          {nextAppt ? (
-            <>
-              <p className="text-base">
-                <ClientDate
-                  value={nextAppt.start}
-                  options={{
-                    weekday: "long",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  }}
-                />
-              </p>
-              <p className="mt-0.5 text-xs text-muted-foreground">
-                {AdelanteEHR.getClinician(nextAppt.clinicianId)?.name}
-                {nextAppt.modality === "phone"
-                  ? " · by phone"
-                  : nextAppt.modality === "in_person"
-                    ? " · in person"
-                    : " · video"}
-              </p>
-              <p className="mt-2 rounded-2xl bg-secondary p-3 text-sm">
-                {nextAppt.modality === "in_person"
-                  ? "Prep tip: give yourself extra time for the trip, and bring your ID if you have it."
-                  : nextAppt.modality === "phone"
-                    ? "Prep tip: pick somewhere you won't be overheard, and keep your phone charged."
-                    : "Prep tip: test your camera a few minutes early and find a private spot."}
-              </p>
-              <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                <Link to="/schedule">Manage appointments</Link>
-              </Button>
-            </>
-          ) : (
-            <>
-              <p className="text-sm text-muted-foreground">Nothing scheduled right now.</p>
-              <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                <Link to="/schedule">Book a time</Link>
-              </Button>
-            </>
-          )}
-        </TileShell>
-
-        {/* Today's medication — real Phase 7 self-report, not a new mechanism */}
-        {medsScheduledToday > 0 && (
-          <TileShell icon={Pill} title="Today's medication">
-            <ul className="space-y-2">
-              {doseRows.slice(0, 3).map((row) => {
-                const taken = row.selfReport?.status === "taken";
-                return (
-                  <li
-                    key={row.slot.key}
-                    className="flex items-center justify-between gap-2 rounded-2xl border p-2.5"
-                  >
-                    <span className="min-w-0">
-                      <span className="block truncate text-sm font-medium">
-                        {marRowLabel(row.slot.order)}
-                      </span>
-                      <span className="block text-xs text-muted-foreground">
-                        {row.slot.timeLabel}
-                      </span>
-                    </span>
-                    <Button
-                      type="button"
-                      size="sm"
-                      variant={taken ? "secondary" : "outline"}
-                      data-testid={`dashboard-mark-taken-${row.slot.key}`}
-                      className="min-h-11 shrink-0 rounded-2xl"
-                      onClick={() => {
-                        AdelanteEHR.selfReportDose(patientId, {
-                          orderId: row.slot.order.id,
-                          scheduledAt: row.slot.scheduledAt,
-                          facilityDate: row.slot.facilityDate,
-                          status: taken ? "not_taken" : "taken",
-                        });
-                        toast.success(taken ? ADHERENCE_TONE.missedDay : "Marked as taken");
-                      }}
-                    >
-                      {taken ? (
-                        <>
-                          <Check className="mr-1 h-4 w-4" /> Taken
-                        </>
-                      ) : (
-                        "Mark taken"
-                      )}
-                    </Button>
-                  </li>
-                );
-              })}
-            </ul>
-            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-              <Link to="/medications">
-                All my medicines
-              </Link>
-            </Button>
-          </TileShell>
-        )}
-
-        {/* Your journey — the source's 5-stage model has no equivalent here */}
-        <TileShell icon={RouteIcon} title="Your journey">
-          <p className="text-sm text-muted-foreground">
-            Your care plan and goals are the real picture of where you are.
-          </p>
-          <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-            <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-            No stage model exists in this build, and we won't guess at one.
-          </p>
-          <NotBuiltChip>A 5-stage journey model needs clinical sign-off first</NotBuiltChip>
-          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/home" hash="your-care-plan-heading">
-              Open your care plan
-            </Link>
-          </Button>
-        </TileShell>
+        {tiles.map((t) => (
+          <div key={t.key} data-tile={t.key} className="contents">
+            {t.node}
+          </div>
+        ))}
       </div>
 
       <GetHelpNowModal open={helpOpen} onOpenChange={setHelpOpen} />
