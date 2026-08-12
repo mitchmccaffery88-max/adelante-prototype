@@ -251,10 +251,6 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
     () => String(patientVisibleResources().length),
     () => "0",
   );
-  const meetings = useMemo(
-    () => patientVisibleResources("recovery_meetings"),
-    [resourceKey],
-  );
   const liveCategories = useMemo(
     () => RESOURCE_CATEGORIES.filter((c) => patientVisibleResources(c.id).length > 0),
     [resourceKey],
