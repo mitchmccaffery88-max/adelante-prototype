@@ -104,7 +104,7 @@ describe("MAT ordering entry point", () => {
     const order = AdelanteEHR.orderPreReleaseMat({
       episodeId: episode.id,
       prescriber: PRESCRIBER,
-      order: { ...bupe, sigOverride: "1 film SL daily", quantity: 30, refills: 0 },
+      order: { ...bupe, sigOverride: "1 film SL daily", quantity: 30 },
     });
     const signed = AdelanteEHR.signPreReleaseMatOrders({
       episodeId: episode.id,
