@@ -15,6 +15,7 @@ import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AdminAuditRouteImport } from './routes/admin-audit'
 import { Route as AdminCatalogGovernanceRouteImport } from './routes/admin-catalog-governance'
 import { Route as AdminClaimsRouteImport } from './routes/admin-claims'
+import { Route as AdminContentRouteImport } from './routes/admin-content'
 import { Route as AdminCoordinationRouteImport } from './routes/admin-coordination'
 import { Route as AdminCredentialingRouteImport } from './routes/admin-credentialing'
 import { Route as AdminDocumentsAuditRouteImport } from './routes/admin-documents-audit'
@@ -102,6 +103,11 @@ const AdminCatalogGovernanceRoute = AdminCatalogGovernanceRouteImport.update({
 const AdminClaimsRoute = AdminClaimsRouteImport.update({
   id: '/admin-claims',
   path: '/admin-claims',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminContentRoute = AdminContentRouteImport.update({
+  id: '/admin-content',
+  path: '/admin-content',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminCoordinationRoute = AdminCoordinationRouteImport.update({
@@ -403,6 +409,7 @@ export interface FileRoutesByFullPath {
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
+  '/admin-content': typeof AdminContentRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
@@ -469,6 +476,7 @@ export interface FileRoutesByTo {
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
+  '/admin-content': typeof AdminContentRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
@@ -534,6 +542,7 @@ export interface FileRoutesById {
   '/admin-audit': typeof AdminAuditRoute
   '/admin-catalog-governance': typeof AdminCatalogGovernanceRoute
   '/admin-claims': typeof AdminClaimsRoute
+  '/admin-content': typeof AdminContentRoute
   '/admin-coordination': typeof AdminCoordinationRoute
   '/admin-credentialing': typeof AdminCredentialingRoute
   '/admin-documents-audit': typeof AdminDocumentsAuditRoute
@@ -602,6 +611,7 @@ export interface FileRouteTypes {
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
+    | '/admin-content'
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-documents-audit'
@@ -668,6 +678,7 @@ export interface FileRouteTypes {
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
+    | '/admin-content'
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-documents-audit'
@@ -732,6 +743,7 @@ export interface FileRouteTypes {
     | '/admin-audit'
     | '/admin-catalog-governance'
     | '/admin-claims'
+    | '/admin-content'
     | '/admin-coordination'
     | '/admin-credentialing'
     | '/admin-documents-audit'
@@ -799,6 +811,7 @@ export interface RootRouteChildren {
   AdminAuditRoute: typeof AdminAuditRoute
   AdminCatalogGovernanceRoute: typeof AdminCatalogGovernanceRoute
   AdminClaimsRoute: typeof AdminClaimsRoute
+  AdminContentRoute: typeof AdminContentRoute
   AdminCoordinationRoute: typeof AdminCoordinationRoute
   AdminCredentialingRoute: typeof AdminCredentialingRoute
   AdminDocumentsAuditRoute: typeof AdminDocumentsAuditRoute
@@ -893,6 +906,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-claims'
       fullPath: '/admin-claims'
       preLoaderRoute: typeof AdminClaimsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-content': {
+      id: '/admin-content'
+      path: '/admin-content'
+      fullPath: '/admin-content'
+      preLoaderRoute: typeof AdminContentRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-coordination': {
@@ -1345,6 +1365,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminAuditRoute: AdminAuditRoute,
   AdminCatalogGovernanceRoute: AdminCatalogGovernanceRoute,
   AdminClaimsRoute: AdminClaimsRoute,
+  AdminContentRoute: AdminContentRoute,
   AdminCoordinationRoute: AdminCoordinationRoute,
   AdminCredentialingRoute: AdminCredentialingRoute,
   AdminDocumentsAuditRoute: AdminDocumentsAuditRoute,

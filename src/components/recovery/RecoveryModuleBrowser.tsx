@@ -14,16 +14,20 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, useRecoveryText } from "@/lib/i18n";
 import { usePopulation } from "@/components/PopulationGate";
 import { isLibraryItemVisible } from "@/lib/library";
+// Resolved through the CONTENT CATALOG so published admin edits reach patients
+// without a deployment. See src/lib/contentCatalog.ts.
 import {
-  RECOVERY_MODULES,
-  getRecoveryLesson,
-  getRecoveryModule,
-  lessonsInModule,
-  moduleProgress,
-} from "@/lib/recovery";
+  liveLessonsInModule,
+  liveModuleProgress,
+  liveRecoveryLesson,
+  liveRecoveryModule,
+  liveRecoveryModules,
+  usePublishedContentVersion,
+} from "@/lib/contentCatalog";
 import { RecoveryLessonView } from "./RecoveryLessonView";
 
 export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: string } = {}) {
+  usePublishedContentVersion();
   const { t } = useI18n();
   const { rt, esPending } = useRecoveryText();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -37,8 +41,8 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
 
   // A deep-linked `?lesson=` must obey the same Phase 2 gate as the list —
   // the gate lives on the MODULE, so resolve it before rendering the lesson.
-  const openCandidate = openLesson ? getRecoveryLesson(openLesson) : undefined;
-  const openModule = openCandidate ? getRecoveryModule(openCandidate.moduleId) : undefined;
+  const openCandidate = openLesson ? liveRecoveryLesson(openLesson) : undefined;
+  const openModule = openCandidate ? liveRecoveryModule(openCandidate.moduleId) : undefined;
   const lesson =
     openCandidate && openModule && isLibraryItemVisible(openModule, population)
       ? openCandidate
@@ -70,10 +74,10 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
         )}
       </header>
 
-      {RECOVERY_MODULES.map((mod) => {
+      {liveRecoveryModules().map((mod) => {
         const gated = !isLibraryItemVisible(mod, population);
-        const lessons = lessonsInModule(mod.id);
-        const prog = moduleProgress(mod.id, completed);
+        const lessons = liveLessonsInModule(mod.id);
+        const prog = liveModuleProgress(mod.id, completed);
         return (
           <Card key={mod.id} className="space-y-4 p-5">
             <div className="space-y-1">

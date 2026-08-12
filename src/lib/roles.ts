@@ -129,7 +129,16 @@ export type RecordClass =
   // front door ON SOMEONE'S BEHALF. A record class, not a new permission
   // concept: it slots into the same matrix, the same canAccess() call and the
   // same nav gate as every other surface.
-  | "assisted_signup";
+  | "assisted_signup"
+  // §Content Management admin tooling — patient-facing educational content
+  // (Library lessons, Recovery-module lessons) as MANAGED content rather than
+  // hardcoded TypeScript. Its own class, in the same config tier as
+  // `note_templates` / `catalog_governance` / `scheduling_rules`: it is not
+  // patient data, it is what every patient is SHOWN. `write` = may AUTHOR and
+  // submit a draft; APPROVING and publishing is narrower still and is
+  // expressed the way `PROTOCOL_MANAGE_ROLES` already expresses that kind of
+  // rule — see CONTENT_APPROVER_ROLES below.
+  | "content_authoring";
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -462,6 +471,26 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "read",
     peer_specialist: "read",
   },
+  // §Content Management — WHO MAY AUTHOR patient-facing educational content.
+  // Deliberately WIDER than note_templates on the author side: the people who
+  // know what a lesson needs to say are the ones sitting with patients
+  // (SUD counselors, peers, CHWs, care managers), not only config owners. It
+  // is safe to be wide here precisely because authoring cannot publish —
+  // CONTENT_APPROVER_ROLES gates that, and the store enforces it.
+  content_authoring: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "write",
+    therapist: "write",
+    sud_counselor: "write",
+    peer_specialist: "write",
+    community_health_worker: "write",
+    ecm_provider: "write",
+    cf_care_manager: "write",
+    clinical_trainee: "write",
+    medical_assistant: "read",
+    billing: "none",
+  },
   // §Admin governance — frequency catalog + local RxNav suppressions. Same
   // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
   // the config, prescribing/administering roles read it (they see WHY a
@@ -754,6 +783,30 @@ export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "therapist", "clinic
 
 export function canManageProtocol(role: StaffRole): boolean {
   return PROTOCOL_MANAGE_ROLES.includes(role);
+}
+
+/**
+ * §Content Management admin tooling — WHO MAY APPROVE AND PUBLISH patient-
+ * facing educational content (Library / Recovery-module lessons).
+ *
+ * This is the existing clinical sign-off line, not a new one: it is exactly
+ * `PROTOCOL_MANAGE_ROLES` (pmhnp / therapist / clinical_coordinator) plus
+ * sys_admin, because a psychoeducational lesson shown to every patient is a
+ * clinical-content decision of the same weight as starting a protocol. It is
+ * deliberately NOT the `RESOURCE_VERIFIER_ROLES` list — that list is wide
+ * (peers, CHWs, care managers) because verifying a shelter's phone number is
+ * a contact-verification task anyone who made the call can attest to.
+ * Approving clinical teaching copy is not that task.
+ */
+export const CONTENT_APPROVER_ROLES: StaffRole[] = [
+  "pmhnp",
+  "therapist",
+  "clinical_coordinator",
+  "sys_admin",
+];
+
+export function canApproveContent(role: StaffRole): boolean {
+  return CONTENT_APPROVER_ROLES.includes(role);
 }
 
 // ----- Acting-role store (localStorage-backed, subscribable) -----
