@@ -554,3 +554,30 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
 
 /** Every route the patient shell owns. */
 export const PATIENT_ROUTES: readonly PatientNavEntry["to"][] = PATIENT_NAV.map((e) => e.to);
+
+// §Patient portal Build 1 — responsive nav shell.
+//
+// The bottom tab bar keeps the five real patient ROUTES (PATIENT_NAV); the
+// desktop/tablet sidebar is a superset that also deep-links to the sections
+// that live on /home today (care plan, medications, profile). They are hash
+// targets rather than new routes because Build 1 is presentation only — the
+// home dashboard restructure is the next build.
+export interface PatientSidebarEntry {
+  id: string;
+  labelKey: string;
+  to: PatientNavEntry["to"];
+  /** In-page anchor when the destination is a section of `to`. */
+  hash?: string;
+  icon: LucideIcon;
+}
+
+export const PATIENT_SIDEBAR_NAV: readonly PatientSidebarEntry[] = [
+  { id: "home", labelKey: "navMyCare", to: "/home", icon: Heart },
+  { id: "journey", labelKey: "navCarePlan", to: "/home", hash: "your-care-plan-heading", icon: Target },
+  { id: "schedule", labelKey: "navAppointments", to: "/schedule", icon: Calendar },
+  { id: "medication", labelKey: "navMedication", to: "/home", hash: "my-medications", icon: Pill },
+  { id: "library", labelKey: "navLibrary", to: "/library", icon: BookOpen },
+  { id: "resources", labelKey: "navResources", to: "/resources", icon: Map },
+  { id: "intake", labelKey: "navIntake", to: "/intake", icon: ClipboardList },
+  { id: "profile", labelKey: "navProfile", to: "/home", hash: "my-profile", icon: UserCog },
+] as const;

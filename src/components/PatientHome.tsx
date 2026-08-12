@@ -317,7 +317,7 @@ export function PatientHome() {
       <MedCheckInCard patientId={patient.id} />
 
       {meds.length > 0 && (
-        <Card className="p-5">
+        <Card className="p-5" id="my-medications">
           <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
             <Pill className="h-4 w-4" /> My medications
           </div>
@@ -720,7 +720,7 @@ function MyProfileCard({ patientId }: { patientId: string }) {
   };
   const langLabel: Record<string, string> = { en: "English", es: "Español" };
   return (
-    <Card className="p-5">
+    <Card className="p-5" id="my-profile">
       <div className="flex items-center justify-between gap-3">
         <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
           <UserCog className="h-4 w-4" /> My profile
