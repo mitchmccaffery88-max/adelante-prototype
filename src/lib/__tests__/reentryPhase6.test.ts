@@ -10,6 +10,7 @@ import {
   saveDayZeroPlan,
 } from "@/lib/reentryDayZero";
 import {
+  CATHY_VERIFIED_RESOURCE_IDS,
   RESOURCE_CATEGORIES,
   __resetResources,
   isResourceLive,
@@ -157,15 +158,25 @@ describe("Community resources cannot go live without a real verification", () =>
   /** A never-sourced skeleton: empty address/phone/hours. */
   const placeholder = () => listResources().find((r) => r.placeholder)!;
 
-  it("seeds sourced-but-unverified entries plus skeletons, none patient-visible", () => {
+  it("carries Cathy's recorded verification for sourced entries; skeletons stay in the queue", () => {
     const all = listResources();
     expect(all.length).toBeGreaterThan(RESOURCE_CATEGORIES.length);
-    // Sourcing is not verification: nothing seeded may be verified or live.
-    expect(all.every((r) => !r.verified && r.status === "unverified")).toBe(true);
-    expect(all.some((r) => !r.placeholder && r.address && r.phone)).toBe(true);
-    expect(all.some((r) => r.placeholder)).toBe(true);
-    expect(patientVisibleResources()).toEqual([]);
-    expect(resourceVerificationQueue()).toHaveLength(all.length);
+    // The real human pass covers exactly the sourced entries.
+    const visible = patientVisibleResources().map((r) => r.id).sort();
+    expect(visible).toEqual([...CATHY_VERIFIED_RESOURCE_IDS].sort());
+    expect(visible.length).toBe(20);
+    // Verification went through the real workflow, attributed to Cathy.
+    for (const r of patientVisibleResources()) {
+      expect(r.verification?.verifiedBy).toBe("Cathy");
+      expect(r.verification?.verifiedByStaffId).toBe("s-cc2");
+      expect(r.status).toBe("verified");
+    }
+    // Never-sourced skeletons remain unverified and invisible.
+    const queue = resourceVerificationQueue();
+    expect(queue.every((r) => r.placeholder)).toBe(true);
+    expect(queue.length).toBe(all.length - visible.length);
+    // Multiple categories are represented for patients.
+    expect(new Set(patientVisibleResources().map((r) => r.categoryId)).size).toBeGreaterThan(3);
   });
 
   it("refuses verification without address/phone/hours, and without all three confirmations", () => {
@@ -221,12 +232,12 @@ describe("Community resources cannot go live without a real verification", () =>
     expect(res.ok).toBe(true);
     if (!res.ok) return;
     expect(isResourceLive(res.resource)).toBe(true);
-    expect(patientVisibleResources().map((x) => x.id)).toEqual([r.id]);
+    expect(patientVisibleResources().map((x) => x.id)).toContain(r.id);
 
     // An expired verification is not live.
     expect(isResourceLive(res.resource, "2999-01-01")).toBe(false);
 
     updateResourceDetails(r.id, { hours: "10-4" });
-    expect(patientVisibleResources()).toEqual([]);
+    expect(patientVisibleResources().map((x) => x.id)).not.toContain(r.id);
   });
 });
