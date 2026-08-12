@@ -355,6 +355,14 @@ export function CarePlanCard({
             </div>
           )}
 
+          {plan.preRelease && (
+            <PreReleaseContinuity
+              pre={plan.preRelease}
+              audience={audience}
+              sudUnlocked={sudUnlocked}
+            />
+          )}
+
           <GoalHistoryTimeline events={goalHistory} audience={audience} />
         </div>
       )}
