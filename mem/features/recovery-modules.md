@@ -37,3 +37,20 @@ and the UI says so plainly.
 **OPEN**: "Living Recovery" / "Protect My Recovery for Life" is modelled as
 `LIVING_RECOVERY_WRAPPER` (`unconfirmed: true`), a closing section over the eight
 — NOT a 9th module. Needs a human decision before lessons are written for it.
+
+**Progress display** reads the same engagement data, nothing new: module list
+shows "N of M lessons complete" + a bar for modules WITH lessons; modules with
+no transcribed lessons show their real count ("No lessons yet — content
+pending"), never a 0-of-0 fraction. A lesson page shows a completion banner and,
+because completion is idempotent and stores the tool-flow selections, revisiting
+RESTORES the prior selections into the same controls (label: "Update my plan").
+
+**Spanish** goes through the ONE dictionary in `src/lib/i18n.tsx`; the entries
+live in `src/lib/i18n.recovery.ts` only to keep that file readable. Two tiers:
+short UI strings + module names/missions/subtitles are in both languages and
+directly usable; Module 1 lesson bodies are ES-ONLY overrides keyed
+`rec.<lessonId>.<field>` read through `useRecoveryText().rt(key, englishSource)`,
+so English stays single-sourced. That prose is FIRST-PASS, flagged in-app and by
+`RECOVERY_ES_REVIEW.reviewed === false` — pending a native/professional pass.
+Tool-flow SELECTIONS always store the canonical English option; translation is
+display-only (`labelFor` on the shared ModuleTemplate select step).
