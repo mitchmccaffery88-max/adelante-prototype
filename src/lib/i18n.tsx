@@ -1,9 +1,19 @@
 import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import {
+  recoveryContentEs,
+  recoveryModuleEn,
+  recoveryModuleEs,
+  recoveryUiEn,
+  recoveryUiEs,
+} from "./i18n.recovery";
 
 type Lang = "en" | "es";
 
 const dict = {
   en: {
+    // §Phase 5b — Recovery modules. Merged into THE dictionary; same `t()`.
+    ...recoveryUiEn,
+    ...recoveryModuleEn,
     appName: "Adelante",
     tagline: "Care that meets you where you are.",
     subtagline:
@@ -349,6 +359,10 @@ const dict = {
     docVerifiedNotice: "A document was added to the medical record.",
   },
   es: {
+    ...recoveryUiEs,
+    ...recoveryModuleEs,
+    // ES-only first-pass overrides for Module 1 lesson bodies (pending review).
+    ...recoveryContentEs,
     appName: "Adelante",
     tagline: "Atención que te encuentra donde estás.",
     subtagline:
@@ -737,3 +751,16 @@ export function I18nProvider({ children }: { children: ReactNode }) {
 }
 
 export const useI18n = () => useContext(I18nCtx);
+
+/**
+ * §Phase 5b — reader for CONTENT strings whose English source lives in
+ * `src/lib/recovery.ts` rather than in this dictionary. Same dictionary, same
+ * language state — it just falls back to the real English content when no
+ * Spanish override exists, so English stays single-sourced.
+ */
+export function useRecoveryText() {
+  const { lang } = useI18n();
+  const table = dict[lang] as unknown as Record<string, string | undefined>;
+  const rt = (key: string, fallback: string) => table[key] ?? fallback;
+  return { rt, lang, /** True while showing the first-pass Spanish content. */ esPending: lang === "es" };
+}

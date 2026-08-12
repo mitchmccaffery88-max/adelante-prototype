@@ -16,6 +16,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
 import { CheckCircle2, Clock } from "lucide-react";
+import { useI18n } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
 
 function Activity({ activity }: { activity: LibraryActivity }) {
@@ -264,6 +265,11 @@ export type ModuleStep =
       icon?: React.ReactNode;
       prompt: string;
       options: string[];
+      /**
+       * Display-only label for an option. The VALUE stored/selected is always
+       * the canonical English option, so translated UI never changes the data.
+       */
+      labelFor?: (option: string, index: number) => string;
       /** Max selections. 1 renders as a single-select. */
       max: number;
       value: string[];
@@ -274,16 +280,19 @@ export type ModuleStep =
 function SelectStep({
   prompt,
   options,
+  labelFor,
   max,
   value,
   onChange,
 }: {
   prompt: string;
   options: string[];
+  labelFor?: (option: string, index: number) => string;
   max: number;
   value: string[];
   onChange: (next: string[]) => void;
 }) {
+  const { t } = useI18n();
   const single = max === 1;
   function toggle(opt: string) {
     if (single) {
@@ -297,7 +306,7 @@ function SelectStep({
     <div className="space-y-2">
       <p className="text-sm">{prompt}</p>
       <div className="flex flex-wrap gap-2">
-        {options.map((opt) => {
+        {options.map((opt, i) => {
           const on = value.includes(opt);
           const full = !single && !on && value.length >= max;
           return (
@@ -311,13 +320,15 @@ function SelectStep({
               className="h-auto whitespace-normal text-left"
               onClick={() => toggle(opt)}
             >
-              {opt}
+              {labelFor ? labelFor(opt, i) : opt}
             </Button>
           );
         })}
       </div>
       <p className="text-xs text-muted-foreground">
-        {single ? "Pick one." : `Pick up to ${max}. ${value.length} of ${max} selected.`}
+        {single
+          ? t("modPickOne")
+          : `${t("modPickUpTo")} ${max}. ${value.length} ${t("modSelectedOf")} ${max} ${t("modSelectedSuffix")}`}
       </p>
     </div>
   );
@@ -330,6 +341,7 @@ export function ModuleTemplate({
   completed,
   placeholder,
   badges,
+  notice,
   steps,
   completeLabel,
   onComplete,
@@ -340,10 +352,13 @@ export function ModuleTemplate({
   completed?: boolean;
   placeholder?: boolean;
   badges?: React.ReactNode;
+  /** Optional banner under the header (completion / restored-selection notes). */
+  notice?: React.ReactNode;
   steps: ModuleStep[];
   completeLabel: string;
   onComplete: () => void;
 }) {
+  const { t } = useI18n();
   return (
     <Card className="space-y-6 p-6">
       <header className="space-y-2">
@@ -351,20 +366,21 @@ export function ModuleTemplate({
           <h1 className="font-display text-2xl text-navy">{title}</h1>
           {completed && (
             <Badge className="border-0 bg-teal/15 text-teal">
-              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> Completed
+              <CheckCircle2 className="mr-1 h-3.5 w-3.5" /> {t("modCompleted")}
             </Badge>
           )}
           {placeholder && (
             <Badge variant="outline" className="border-gold text-gold-foreground">
-              Placeholder content
+              {t("modPlaceholderBadge")}
             </Badge>
           )}
           {badges}
         </div>
         {subtitle && <p className="text-sm text-muted-foreground">{subtitle}</p>}
         <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-          <Clock className="h-3.5 w-3.5" /> About {minutes} minutes
+          <Clock className="h-3.5 w-3.5" /> {t("modAbout")} {minutes} {t("modMinutes")}
         </div>
+        {notice}
       </header>
 
       {steps.map((step, i) => (
@@ -395,6 +411,7 @@ export function ModuleTemplate({
             <SelectStep
               prompt={step.prompt}
               options={step.options}
+              {...(step.labelFor ? { labelFor: step.labelFor } : {})}
               max={step.max}
               value={step.value}
               onChange={step.onChange}
