@@ -678,6 +678,8 @@ const dict = {
     msgSend: "Enviar mensaje",
     msgSent: "Mensaje enviado a tu equipo de cuidado",
     msgNewReplies: "nuevos",
+    msgPeerNote:
+      "Un especialista de apoyo mutuo — alguien con experiencia propia de recuperación — puede responder aquí junto con tu equipo de cuidado. Su nombre y su función aparecen en cada respuesta.",
     msgAsyncNotice: "Esto no es para emergencias. No respondemos de inmediato.",
     msgSensitive: "Esto es privado — por favor trátenlo con cuidado",
     msgSensitiveConsentOff:
