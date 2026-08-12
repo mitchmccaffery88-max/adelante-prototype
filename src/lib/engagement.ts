@@ -17,7 +17,44 @@
 // takeaway, and every first-time completion is audited exactly once — through
 // the sink `src/lib/ehr.ts` registers, so audit stays in the one audit stream.
 import { getRecoveryLesson, TOOL_FLOW_LIMITS } from "./recovery";
-import { getExercise, getLibraryItem, type SavedToolkitItem, type ToolkitOrigin } from "./library";
+import {
+  getExercise,
+  getLibraryItem,
+  type LibraryItem,
+  type SavedToolkitItem,
+  type ToolkitOrigin,
+} from "./library";
+import type { RecoveryLesson } from "./recovery";
+
+/**
+ * §Content Management — LESSON RESOLUTION, INJECTED.
+ *
+ * A lesson published through the admin content tool exists in the content
+ * store, not in the baseline arrays, so completing one must still find its
+ * toolkit label and tool-flow option sets. This store cannot import
+ * `contentCatalog` directly — `ehr.ts` imports this module, and the catalog
+ * reaches `roles.ts` which reaches `ehr.ts`. Same solution the audit sink
+ * already uses: the catalog registers itself, and until it does the shipped
+ * baseline is the answer.
+ */
+export interface ContentResolver {
+  libraryItem: (id: string) => LibraryItem | undefined;
+  recoveryLesson: (id: string) => RecoveryLesson | undefined;
+}
+
+let contentResolver: ContentResolver | undefined;
+
+export function setContentResolver(r: ContentResolver | undefined): void {
+  contentResolver = r;
+}
+
+function resolveLibraryItem(id: string): LibraryItem | undefined {
+  return contentResolver?.libraryItem(id) ?? getLibraryItem(id);
+}
+
+function resolveRecoveryLesson(id: string): RecoveryLesson | undefined {
+  return contentResolver?.recoveryLesson(id) ?? getRecoveryLesson(id);
+}
 
 /** One patient's engagement row. `patientId` is a foreign key, not ownership. */
 export interface PatientEngagement {
@@ -207,7 +244,7 @@ export function completeLibraryItem(
   itemId: string,
   opts: { saveToolkit?: boolean; actorRole?: string } = {},
 ): { completed: boolean; alreadyComplete: boolean } {
-  const item = getLibraryItem(itemId);
+  const item = resolveLibraryItem(itemId);
   if (!item) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedLibraryItems.includes(itemId);
@@ -272,7 +309,7 @@ export function completeRecoveryLesson(
   selection: { warningSigns?: string[]; supportPeople?: string[]; todayAction?: string },
   opts: { saveToolkit?: boolean; actorRole?: string } = {},
 ): { completed: boolean; alreadyComplete: boolean } {
-  const lesson = getRecoveryLesson(lessonId);
+  const lesson = resolveRecoveryLesson(lessonId);
   if (!lesson) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedRecoveryLessons.includes(lessonId);

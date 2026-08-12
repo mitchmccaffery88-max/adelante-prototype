@@ -27,6 +27,7 @@ import {
   Receipt,
   ScrollText,
   Settings2,
+  FileEdit,
   ShieldCheck,
   Siren,
   Sparkles,
@@ -383,6 +384,17 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/admin-scheduling-rules",
     group: "administration",
     gate: { kind: "record_class", anyOf: ["scheduling_rules"] },
+  },
+  {
+    // §Content Management — same config tier as note templates: not patient
+    // data, but what every patient is SHOWN.
+    id: "admin-content",
+    label: "Patient content",
+    desc: "Library & recovery lessons — author, review, publish",
+    icon: FileEdit,
+    to: "/admin-content",
+    group: "administration",
+    gate: { kind: "record_class", anyOf: ["content_authoring"] },
   },
   {
     id: "admin-catalog-governance",

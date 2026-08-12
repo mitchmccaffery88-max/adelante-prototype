@@ -15,12 +15,19 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
 import {
   LIBRARY_CATEGORIES,
-  categoryProgress,
   getExercise,
-  getLibraryItem,
   visibleExercises,
-  visibleItemsInCategory,
 } from "@/lib/library";
+// Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
+// a published admin edit or a newly published lesson must reach patients
+// without a deployment. Exercises are not admin-managed yet, so they still
+// come straight from the baseline.
+import {
+  liveCategoryProgress,
+  liveLibraryItem,
+  liveVisibleItemsInCategory,
+  usePublishedContentVersion,
+} from "@/lib/contentCatalog";
 import { LibraryLesson } from "./LibraryLesson";
 import { ExerciseBody } from "./ExercisePlayer";
 import { toast } from "sonner";
@@ -29,6 +36,7 @@ export function LibraryBrowser({
   initialExercise,
   initialItem,
 }: { initialExercise?: string; initialItem?: string } = {}) {
+  usePublishedContentVersion();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(patientId);
   const completedItems = useEhr(() => AdelanteEHR.completedLibraryItems(patientId));
@@ -39,7 +47,7 @@ export function LibraryBrowser({
 
   if (!patientId) return null;
 
-  const lesson = openItem ? getLibraryItem(openItem) : undefined;
+  const lesson = openItem ? liveLibraryItem(openItem) : undefined;
   const exercise = openExercise ? getExercise(openExercise) : undefined;
 
   if (lesson) {
@@ -117,8 +125,8 @@ export function LibraryBrowser({
 
         <TabsContent value="lessons" className="space-y-4 pt-4">
           {LIBRARY_CATEGORIES.map((cat) => {
-            const items = visibleItemsInCategory(cat.id, population);
-            const prog = categoryProgress(cat.id, completedItems, population);
+            const items = liveVisibleItemsInCategory(cat.id, population);
+            const prog = liveCategoryProgress(cat.id, completedItems, population);
             return (
               <Card key={cat.id} className="space-y-4 p-5">
                 <div className="flex items-start gap-3">

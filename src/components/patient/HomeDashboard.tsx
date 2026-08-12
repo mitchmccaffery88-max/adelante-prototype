@@ -41,7 +41,12 @@ import {
   savedToolkitItems,
   subscribeEngagement,
 } from "@/lib/engagement";
-import { LIBRARY_ITEMS, isLibraryItemVisible, getLibraryItem } from "@/lib/library";
+import { isLibraryItemVisible } from "@/lib/library";
+import {
+  liveLibraryItem,
+  liveLibraryItems,
+  usePublishedContentVersion,
+} from "@/lib/contentCatalog";
 import {
   patientVisibleResources,
   RESOURCE_CATEGORIES,
@@ -218,13 +223,15 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
   );
 
   // --- "Today's forward step": the next unfinished, population-visible lesson
+  const contentVersion = usePublishedContentVersion();
   const nextLesson = useMemo(
     () =>
-      LIBRARY_ITEMS.filter((i) => isLibraryItemVisible(i, population))
+      liveLibraryItems()
+        .filter((i) => isLibraryItemVisible(i, population))
         .slice()
         .sort((a, b) => a.order - b.order)
         .find((i) => !lessonsDone.includes(i.id)),
-    [population, lessonsDone],
+    [population, lessonsDone, contentVersion],
   );
 
   const lastToolkit = useMemo(
@@ -461,7 +468,7 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                       : { item: lastToolkit.id }
                   }
                 >
-                  {getLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
+                  {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
                 </Link>
               </Button>
             </>
