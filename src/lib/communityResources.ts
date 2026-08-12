@@ -542,15 +542,26 @@ export function __resetResources(): void {
  * by driving `verifyResource` — the same function the staff
  * `ResourceVerificationQueue` calls — with her real staff identity and all
  * three confirmations. Nothing here sets `verified` directly, so every gate
- * (role, complete facts, all three confirmations, expiry window) still runs.
+ * (role, complete facts, all three confirmations) still runs.
+ *
+ * HOW IT SURVIVED THE MIGRATION ONTO THE CONTENT MODEL. It was not re-stamped
+ * with today's date and it was not replaced by a synthetic "migrated" event.
+ * `verifyResource` now publishes into the shared content store, and the replay
+ * passes Cathy's REAL verification timestamp through `atISO`, so each of the
+ * 20 sourced entries lands in `/admin-content` history as revision 1:
+ * published, by Cathy (clinical_coordinator, s-cc2), on 2026-08-12, carrying
+ * her verbatim verification note. Her pass IS the initial published revision.
  *
  * Only SOURCED entries are covered. The never-sourced skeletons stay in the
- * queue, invisible to patients, exactly as before.
+ * queue as unpublished DRAFTS in the content store — editable by the content
+ * manager, invisible to patients, exactly as before.
  */
 export const RESOURCE_VERIFIER_CATHY = {
   staffId: "s-cc2",
   name: "Cathy",
   role: "clinical_coordinator" as StaffRole,
+  /** The real date of her pass — the same one recorded on the naloxone track. */
+  verifiedOn: "2026-08-12",
   note:
     "Human verification pass: address, phone and hours confirmed directly with each organisation. Published hours strings still carry the sourced '(verify hours)' hedge where the organisation gave no fixed public hours.",
 };
@@ -570,6 +581,18 @@ function applyRecordedVerifications(): void {
       confirmedPhone: true,
       confirmedHours: true,
       note: RESOURCE_VERIFIER_CATHY.note,
+      atISO: `${RESOURCE_VERIFIER_CATHY.verifiedOn}T00:00:00.000Z`,
+    });
+  }
+  // Everything Cathy did NOT verify still becomes managed content — as a
+  // draft, so the content manager can source it in /admin-content instead of
+  // waiting for a code change. A draft is never served to a patient.
+  for (const r of SEED_RESOURCES) {
+    if (CATHY_VERIFIED_RESOURCE_IDS.includes(r.id)) continue;
+    seedDraftContent({
+      typeId: "community_resource",
+      id: r.id,
+      body: structuredClone(r) as unknown as Record<string, unknown>,
     });
   }
 }
