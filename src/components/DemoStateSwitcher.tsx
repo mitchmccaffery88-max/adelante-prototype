@@ -49,10 +49,10 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string }> = {
   },
   advocate_and_patient: {
     label: "Advocate + own patient record",
-    hint: "State 4 — Alicia is a patient AND advocate for Daniel M.",
+    hint: "State 4 — Alicia S. is a patient AND advocate for Daniel M.",
   },
   general_population: {
-    label: "Alicia R. — General Population",
+    label: "Alicia S. — General Population",
     hint: "State 5 — completed intake, no justice signal anywhere",
   },
 };
@@ -165,7 +165,7 @@ export function DemoStateSwitcher() {
           // record AND advocates for a DIFFERENT person (Daniel). The claim
           // runs with no patient session, then her own record is restored.
           AdelanteEHR.setCurrentPatientId("");
-          const id = ensureAdvocateLinkId("p1", "Alicia R. (advocate)");
+          const id = ensureAdvocateLinkId("p1", "Alicia S. (advocate)");
           localStorage.setItem(ADVOCATE_SESSION_KEY, id);
           setAdvocateLinkId(id);
           AdelanteEHR.setCurrentPatientId("p4");
@@ -180,7 +180,7 @@ export function DemoStateSwitcher() {
   }
 
   return (
-    <div className="fixed top-2 right-2 z-[70] print:hidden">
+    <div className="fixed top-16 right-3 z-[70] print:hidden">
       <DropdownMenu>
         <DropdownMenuTrigger className="inline-flex items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur hover:bg-secondary">
           <FlaskConical className="h-3.5 w-3.5 text-teal" />
