@@ -12852,7 +12852,18 @@ export const AdelanteEHR = {
   },
 
   acknowledgeAnonymousCrisisAlert(id: string, staffName: string): boolean {
-    return acknowledgeAnonymousCrisisAlertImpl(id, staffName);
+    const row = anonymousCrisisAlerts.find((a) => a.id === id);
+    if (!row || row.acknowledgedAt) return false;
+    row.acknowledgedBy = staffName;
+    row.acknowledgedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "anonymous_crisis_alert_acknowledged",
+      actorId: staffName,
+      detail: { alertId: row.id },
+    });
+    emit();
+    return true;
   },
 
   /** Non-clinical front-door inquiries, newest first. */
@@ -12923,20 +12934,7 @@ export const AdelanteEHR = {
     return true;
   },
 
-  _acknowledgeAnonymousCrisisAlertLegacy(id: string, staffName: string): boolean {
-    const row = anonymousCrisisAlerts.find((a) => a.id === id);
-    if (!row || row.acknowledgedAt) return false;
-    row.acknowledgedBy = staffName;
-    row.acknowledgedAt = new Date().toISOString();
-    appendAudit({
-      category: "clinical",
-      action: "anonymous_crisis_alert_acknowledged",
-      actorId: staffName,
-      detail: { alertId: row.id },
-    });
-    emit();
-    return true;
-  },
+  // (community inquiry helpers above)
 
   flagCrisis(
     patientId: string,
