@@ -25,11 +25,12 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { PatientGroupScheduling } from "@/components/PatientGroupScheduling";
 
-type ScheduleSearch = { reschedule?: string };
+type ScheduleSearch = { reschedule?: string; tab?: "one_to_one" | "groups" };
 
 export const Route = createFileRoute("/schedule")({
   validateSearch: (s: Record<string, unknown>): ScheduleSearch => ({
     reschedule: typeof s.reschedule === "string" ? s.reschedule : undefined,
+    tab: s.tab === "groups" || s.tab === "one_to_one" ? s.tab : undefined,
   }),
   head: () => ({
     meta: [

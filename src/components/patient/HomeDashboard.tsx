@@ -346,16 +346,15 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
         </Link>
 
         <Link
-          to="/resources"
+          to="/schedule"
+          search={{ tab: "groups" }}
           className="flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card px-4 text-base font-medium soft-shadow hover:bg-secondary"
         >
           <Users className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <span>
             Find a meeting
             <span className="block text-xs font-normal text-muted-foreground">
-              {meetings.length > 0
-                ? `${meetings.length} verified nearby`
-                : "None verified yet in your area"}
+              Browse and join open group sessions
             </span>
           </span>
         </Link>
@@ -370,9 +369,12 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
           <div className="min-w-0 flex-1">
             <h2 className="font-display text-xl">What Can I Help You With Today?</h2>
             <p className="mt-1 text-sm text-muted-foreground">
-              Adel is the assistant that will answer questions and pass messages to your care team.
+              Adel answers questions in your own words, any hour — and can hand you off to your
+              care team when a person is what you need.
             </p>
-            <NotBuiltChip>Adel is coming — your care-team thread works today</NotBuiltChip>
+            <Button asChild className="mt-3 min-h-11 rounded-2xl">
+              <Link to="/adel">Ask Adel</Link>
+            </Button>
           </div>
         </div>
       </Card>
