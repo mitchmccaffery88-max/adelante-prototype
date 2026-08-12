@@ -196,6 +196,51 @@
     font-family: var(--font-sans);
     -webkit-font-smoothing: antialiased;
   }
+
+  /*
+   * §Patient portal (Build 1) — scoped theme.
+   * Applied ONLY on the patient shell wrapper, so staff / clinical / admin
+   * surfaces keep the existing tokens untouched.
+   */
+  .patient-theme {
+    --background: var(--sand);
+    --foreground: var(--ink);
+    --card: oklch(0.995 0.004 84);
+    --card-foreground: var(--ink);
+    --popover: oklch(0.995 0.004 84);
+    --popover-foreground: var(--ink);
+    --primary: oklch(0.45 0.085 190);
+    --primary-foreground: oklch(0.995 0.004 84);
+    --secondary: var(--sand-deep);
+    --secondary-foreground: var(--ink);
+    --muted: var(--sand-deep);
+    --muted-foreground: var(--ink-soft);
+    --accent: oklch(0.45 0.085 190);
+    --accent-foreground: oklch(0.995 0.004 84);
+    --teal: oklch(0.45 0.085 190);
+    --navy: oklch(0.3 0.045 235);
+    --border: oklch(0.9 0.018 82);
+    --input: oklch(0.9 0.018 82);
+    --ring: oklch(0.45 0.085 190);
+    --radius: 1rem;
+    background-color: var(--background);
+    color: var(--foreground);
+    font-size: 1rem;
+    line-height: 1.6;
+  }
+
+  /* 16px+ body minimum on patient surfaces: never render below 0.9375rem. */
+  .patient-theme .text-xs,
+  .patient-theme .text-\[10px\],
+  .patient-theme .text-\[11px\] {
+    font-size: 0.875rem;
+    line-height: 1.5;
+  }
+  .patient-theme p,
+  .patient-theme li {
+    font-size: max(1rem, 1em);
+  }
+
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
