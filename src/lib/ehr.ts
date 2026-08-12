@@ -5127,6 +5127,10 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     medsActive: medications.length,
     nextApptStart: nextAppt?.start,
   });
+
+  // §Pre-release build 4 — CalAIM continuity slice, derived live.
+  const preRelease = _preReleaseCarePlanSlice(p);
+
   const override = p.carePlanOverride;
   const summary = override ? `${auto}\n\nCare team note: ${override.text}` : auto;
   const updatedBy: CarePlanSnapshot["updatedBy"] = override ? "clinician" : "system";
@@ -5158,6 +5162,7 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     hiddenSudProblems: (p.problems ?? []).filter(
       (pr) => isProblemClinicallyActive(pr) && pr.category === "sud",
     ).length,
+    ...(preRelease ? { preRelease } : {}),
   };
   p.carePlanSummary = summary;
 
