@@ -695,3 +695,26 @@ export type PatientSidebarEntry = PatientNavEntry;
 
 /** Desktop sidebar shows the whole registry in source order. */
 export const PATIENT_SIDEBAR_NAV: readonly PatientNavEntry[] = PATIENT_NAV;
+
+// §Landing nav — the public, pre-sign-in surface. It deliberately does NOT
+// reuse PATIENT_NAV: a visitor who has not signed in has no care plan,
+// medications or recap to open. Real page anchors + one Get-started action.
+export interface PublicNavEntry {
+  id: string;
+  label: string;
+  to: "/" | "/start";
+  hash?: string;
+}
+
+export const PUBLIC_NAV: readonly PublicNavEntry[] = [
+  { id: "how-it-works", label: "How it works", to: "/", hash: "how-it-works" },
+  { id: "what-you-get", label: "What you get", to: "/", hash: "what-you-get" },
+  { id: "who-its-for", label: "Who it's for", to: "/", hash: "who-its-for" },
+] as const;
+
+/** Routes that render the public marketing/entry shell. */
+export const PUBLIC_ROUTES: readonly string[] = ["/", "/auth", "/assisted-signup"];
+
+export function isPublicRoute(pathname: string): boolean {
+  return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/start");
+}
