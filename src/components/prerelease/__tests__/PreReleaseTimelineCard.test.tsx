@@ -1,6 +1,9 @@
+// @vitest-environment jsdom
 // §Build 5 — the timeline card renders the real staged window.
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { describe, it, expect, afterEach } from "vitest";
+import { cleanup, render, screen } from "@testing-library/react";
+
+afterEach(cleanup);
 import { PreReleaseTimelineCard } from "../PreReleaseTimelineCard";
 import type { PreReleaseEpisode } from "@/lib/ehr";
 
