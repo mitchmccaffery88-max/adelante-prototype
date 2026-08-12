@@ -18,9 +18,22 @@ function mmss(total: number): string {
   return `${m}:${String(s).padStart(2, "0")}`;
 }
 
-function TimerBody({ c }: { c: Extract<ExerciseContent, { type: "timer" }> }) {
+/**
+ * The one timer in this app. §Tier 1 Build B reuses it for the guided craving
+ * "surf" rather than building a second one — hence the optional `autoStart`
+ * and `onComplete` props, which the library player never passes.
+ */
+export function ExerciseTimer({
+  c,
+  autoStart,
+  onComplete,
+}: {
+  c: Extract<ExerciseContent, { type: "timer" }>;
+  autoStart?: boolean;
+  onComplete?: () => void;
+}) {
   const [left, setLeft] = useState(c.seconds);
-  const [running, setRunning] = useState(false);
+  const [running, setRunning] = useState(Boolean(autoStart));
   const ref = useRef<ReturnType<typeof setInterval> | null>(null);
   useEffect(() => {
     if (!running) return;
@@ -30,7 +43,10 @@ function TimerBody({ c }: { c: Extract<ExerciseContent, { type: "timer" }> }) {
     };
   }, [running]);
   useEffect(() => {
-    if (left === 0) setRunning(false);
+    if (left === 0) {
+      setRunning(false);
+      onComplete?.();
+    }
   }, [left]);
   const elapsed = c.seconds - left;
   const promptIdx = Math.min(
@@ -324,7 +340,7 @@ export function ExerciseBody({ exercise }: { exercise: Exercise }) {
   const c = exercise.content;
   switch (c.type) {
     case "timer":
-      return <TimerBody c={c} />;
+      return <ExerciseTimer c={c} />;
     case "breathing":
       return <BreathingBody c={c} />;
     case "checklist":
