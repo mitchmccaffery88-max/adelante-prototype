@@ -5,6 +5,7 @@
 // disabled. It deliberately does NOT define who may see what — every entry
 // points at a `RecordClass` that already exists in the roles matrix, so adding
 // a role or changing a permission is a matrix edit, never a nav edit.
+import type { PopulationTrack } from "@/lib/population";
 import {
   BookOpen,
   Building2,
