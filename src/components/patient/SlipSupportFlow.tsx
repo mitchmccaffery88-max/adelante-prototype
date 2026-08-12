@@ -68,7 +68,7 @@ function Chips({
 export function SlipSupportFlow() {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const navigate = useNavigate();
-  const [step, setStep] = useState(1);
+  const [step, setStep] = useState(0);
   const [contributors, setContributors] = useState<string[]>([]);
   const [helped, setHelped] = useState<string[]>([]);
 
@@ -106,6 +106,23 @@ export function SlipSupportFlow() {
           something your probation officer or the court can be shown from here.
         </p>
       </div>
+
+      {step === 0 && (
+        <Card className="space-y-3 p-5" data-testid="slip-arrive">
+          <p className="text-base">
+            Nothing here gets reported. Nobody is notified. You can stop at any screen and what
+            you&apos;ve picked so far is simply not saved.
+          </p>
+          <Button
+            type="button"
+            data-testid="slip-start"
+            className="min-h-12 w-full rounded-2xl text-base"
+            onClick={() => setStep(1)}
+          >
+            Start <ArrowRight className="ml-1 h-4 w-4" />
+          </Button>
+        </Card>
+      )}
 
       {step === 1 && (
         <Card className="space-y-3 p-5">
