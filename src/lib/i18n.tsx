@@ -321,6 +321,9 @@ const dict = {
     msgSend: "Send message",
     msgSent: "Message sent to your care team",
     msgNewReplies: "new",
+    // §Peer messaging — who can answer, named honestly.
+    msgPeerNote:
+      "A peer specialist — someone with lived recovery experience — may answer here alongside your care team. Their name and role are shown on every reply.",
     msgAsyncNotice: "This is not for emergencies. We don't reply right away.",
     msgSensitive: "This is private — please handle it with care",
     msgSensitiveConsentOff:
