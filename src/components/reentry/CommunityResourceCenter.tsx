@@ -5,17 +5,27 @@
 // AND hours, unexpired. An unverified seed entry cannot appear here at all —
 // there is no "unverified" patient state to accidentally render.
 import { useState, useSyncExternalStore } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { MapPin, Phone, Clock } from "lucide-react";
+import { Bookmark } from "lucide-react";
 import {
   RESOURCE_CATEGORIES,
   patientVisibleResources,
   subscribeResources,
 } from "@/lib/communityResources";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
+import { ResourceCard } from "@/components/reentry/ResourceCard";
 
 export function CommunityResourceCenter() {
   const [category, setCategory] = useState<string | null>(null);
+  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const savedCount = useSyncExternalStore(
+    subscribeSelfTracking,
+    () => String(savedResourceIds(patientId).length),
+    () => "0",
+  );
   const snapshot = useSyncExternalStore(
     subscribeResources,
     () => JSON.stringify(patientVisibleResources(category ?? undefined)),
@@ -25,12 +35,19 @@ export function CommunityResourceCenter() {
 
   return (
     <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
-      <header>
-        <h1 className="font-display text-2xl text-navy">Community resources</h1>
-        <p className="text-sm text-muted-foreground">
-          Housing, food, work, meetings and more. We only list a place here once someone on our team
-          has called it and confirmed the address, phone and hours.
-        </p>
+      <header className="flex items-start justify-between gap-3">
+        <div>
+          <h1 className="font-display text-2xl text-navy">Community resources</h1>
+          <p className="text-sm text-muted-foreground">
+            Housing, food, work, meetings and more. We only list a place here once someone on our
+            team has called it and confirmed the address, phone and hours.
+          </p>
+        </div>
+        <Button asChild variant="outline" className="min-h-11 shrink-0 rounded-2xl">
+          <Link to="/resources/saved" data-testid="saved-resources-link">
+            <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
+          </Link>
+        </Button>
       </header>
 
       <div className="flex flex-wrap gap-2">
@@ -64,19 +81,7 @@ export function CommunityResourceCenter() {
         <ul className="space-y-3">
           {resources.map((r) => (
             <li key={r.id}>
-              <Card className="space-y-1 p-4">
-                <div className="text-sm font-medium text-foreground">{r.name}</div>
-                <p className="text-xs text-muted-foreground">{r.description}</p>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <MapPin className="h-3.5 w-3.5" /> {r.address}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Phone className="h-3.5 w-3.5" /> {r.phone}
-                </div>
-                <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Clock className="h-3.5 w-3.5" /> {r.hours}
-                </div>
-              </Card>
+              <ResourceCard resource={r} patientId={patientId} />
             </li>
           ))}
         </ul>
