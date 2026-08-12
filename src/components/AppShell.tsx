@@ -16,7 +16,14 @@ import {
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
-import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
+import {
+  useStaffNavGroups,
+  STAFF_ROUTES,
+  PATIENT_NAV,
+  PATIENT_ROUTES,
+  patientNavForPopulation,
+} from "@/lib/navSections";
+import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
@@ -90,7 +97,9 @@ export function AppShell() {
 
   // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
   // it can never drift from the mobile tab bar again.
-  const patientNav = PATIENT_NAV;
+  // Population-gated entries (e.g. Obligations) are omitted for a general
+  // population patient rather than linking into a section that gates itself.
+  const patientNav = patientNavForPopulation(PATIENT_NAV, population.track);
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
   const showStaffShell =
