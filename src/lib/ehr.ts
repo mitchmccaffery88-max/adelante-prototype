@@ -12838,6 +12838,9 @@ export const AdelanteEHR = {
           },
         });
       }
+      // §Pre-release build 4 — signed orders (incl. pre-release MAT) are a
+      // live care-plan medication source, so the plan follows the chart.
+      _recomputeCarePlan(patientId, "orders_signed");
       emit();
     }
     return signed;
