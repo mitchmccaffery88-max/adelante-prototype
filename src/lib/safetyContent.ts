@@ -17,6 +17,20 @@
 //    and the tolerance warning only. Still pending Christi / Dr. Bagga.
 // 2. NALOXONE_ACCESS_REVIEW — CONTACT-VERIFICATION track. Cathy called each
 //    access point and confirmed it. Done.
+//
+// §Content Management correction — THE ACCESS POINTS ARE NOW MANAGED CONTENT.
+// Where to get naloxone is editorial, expanding content (new pharmacies,
+// new counties, new state programs), so the list below is the shipped
+// BASELINE and the patient-visible list is whatever is PUBLISHED in the shared
+// content store (`contentPublishing.ts`), authored through /admin-content.
+// The steps, the tolerance warning and the two review tracks are NOT migrated:
+// they are verbatim SAMHSA/CDC/DHCS transcriptions under a real clinical
+// sign-off flag, which is a different thing from editorial content.
+import {
+  publishedContentOfType,
+  seedPublishedContent,
+  subscribeContent,
+} from "@/lib/contentPublishing";
 export const SAFETY_CONTENT_REVIEW = {
   pending: true,
   reviewers: "Christi / Dr. Bagga",
@@ -97,6 +111,51 @@ export const NALOXONE_ACCESS_POINTS: readonly NaloxoneAccessPoint[] = [
     ...CATHY,
   },
 ];
+
+// ---------------------------------------------------------------------------
+// Migration onto the shared content lifecycle
+// ---------------------------------------------------------------------------
+
+/**
+ * Cathy's access-point verification pass is a REAL historical event, recorded
+ * on `NALOXONE_ACCESS_REVIEW` with her staff id and the date she did it. It is
+ * carried across the migration verbatim: each baseline access point is seeded
+ * as revision 1 — published, by Cathy (clinical_coordinator, s-cc2), on
+ * 2026-08-12, with her verification notice as the revision note. Nothing is
+ * re-dated to "now" and no synthetic migration actor is invented.
+ */
+export function seedNaloxoneAccessContent(): void {
+  for (const p of NALOXONE_ACCESS_POINTS) {
+    seedPublishedContent({
+      typeId: "naloxone_access_point",
+      id: p.id,
+      body: structuredClone(p) as unknown as Record<string, unknown>,
+      actor: {
+        staffId: NALOXONE_ACCESS_REVIEW.verifiedByStaffId,
+        name: NALOXONE_ACCESS_REVIEW.verifiedBy,
+        role: "clinical_coordinator",
+      },
+      atISO: `${NALOXONE_ACCESS_REVIEW.verifiedOn}T00:00:00.000Z`,
+      note: NALOXONE_ACCESS_REVIEW.notice,
+      overridesBaseline: true,
+    });
+  }
+}
+
+seedNaloxoneAccessContent();
+
+/** What the patient page renders: the PUBLISHED access points. */
+export function liveNaloxoneAccessPoints(): NaloxoneAccessPoint[] {
+  const published = publishedContentOfType("naloxone_access_point")
+    .map((b) => b as unknown as NaloxoneAccessPoint)
+    .filter((p) => !!p.id);
+  const order = new Map(NALOXONE_ACCESS_POINTS.map((p, i) => [p.id, i]));
+  return published.sort(
+    (a, b) => (order.get(a.id) ?? 999) - (order.get(b.id) ?? 999) || a.name.localeCompare(b.name),
+  );
+}
+
+export { subscribeContent as subscribeNaloxoneAccess };
 
 export interface NaloxoneStep {
   step: number;
