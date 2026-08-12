@@ -22,6 +22,16 @@ export function StaffMessagesTab({
   const unread = useEhr(() => AdelanteEHR.unreadCountForStaff(patientId));
   const [draft, setDraft] = useState("");
   const canFlag = canAccess(role, "patient_messaging").level === "write";
+  // §Peer acknowledgment — a peer specialist can reply here but cannot open
+  // the crisis queue, so without this they would never learn that a message
+  // in their own thread was auto-flagged. Existence of the flag only; no
+  // clinical detail, and it is not a substitute for queue access.
+  const autoFlagged = useEhr(
+    () =>
+      AdelanteEHR.listCrisisEscalations(patientId, { status: "open" }).filter(
+        (e) => e.triggerSource === "message_pattern",
+      ).length,
+  );
 
   const toggleFlag = (m: CareMessage) => {
     const ok = m.sudFlagged
@@ -57,6 +67,13 @@ export function StaffMessagesTab({
         A patient can also ask for a message to be handled carefully when they send it — but an
         unflagged message is <strong>not</strong> a clearance; this never replaces your own review.
       </p>
+      {autoFlagged > 0 && (
+        <p className="rounded-md border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive">
+          A message in this thread triggered automatic crisis-language detection. The care team was
+          alerted and a crisis escalation is open with the clinical coordinator — you do not need to
+          escalate it again. Keep responding as you normally would.
+        </p>
+      )}
       <CareMessageThread
         messages={messages}
         side="staff"

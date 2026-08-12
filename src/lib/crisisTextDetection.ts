@@ -43,10 +43,38 @@ export const CRISIS_PATTERNS: CrisisPattern[] = [
   { id: "no_reason_to_live", re: /\b(no|nothing)\s+(reason|point)\s+to\s+(live|go\s+on)\b/ },
   { id: "take_my_own_life", re: /\btak(e|ing)\s+my\s+own\s+life\b/ },
   { id: "overdose_intent", re: /\b(overdose|od)\s+on\s+purpose\b/ },
+  // ── Spanish — SAME binary match logic, same triggerSource, same queue.
+  // Vocabulary from the already-reviewed Spanish starting set. This is a
+  // language-coverage extension only: the broader tiered / modifier /
+  // negation system from the held proposal is deliberately NOT here.
+  // Text is diacritic-folded before matching, so patterns are written
+  // unaccented ("hacerme dano" matches "hacerme daño").
+  { id: "es_quiero_morirme", re: /\bquiero\s+morir(me)?\b/ },
+  { id: "es_quitarme_la_vida", re: /\bquitarme\s+la\s+vida\b/ },
+  { id: "es_terminar_con_mi_vida", re: /\b(terminar|acabar)\s+con\s+mi\s+vida\b/ },
+  { id: "es_suicidarme", re: /\bsuicidarme\b|\bpensamientos\s+suicidas\b|\bsuicid(io|a)\b/ },
+  { id: "es_cortarme", re: /\bcortarme\b/ },
+  { id: "es_hacerme_dano", re: /\bhacerme\s+dano\b|\blastimarme\b/ },
+  { id: "es_ya_no_quiero_estar_aqui", re: /\bya\s+no\s+quiero\s+estar\s+aqui\b/ },
+  { id: "es_estarian_mejor_sin_mi", re: /\bestarian\s+mejor\s+sin\s+mi\b/ },
+  { id: "es_ya_no_puedo_mas", re: /\bya\s+no\s+puedo\s+mas\b/ },
+  { id: "es_no_vale_la_pena_vivir", re: /\bno\s+vale\s+la\s+pena\s+vivir\b/ },
+  {
+    id: "es_sobredosis_intencional",
+    re: /\bsobredosis\s+a\s+proposito\b|\bdarme\s+un\s+pase\s+definitivo\b/,
+  },
 ];
 
 function normalize(text: string): string {
-  return text.toLowerCase().replace(/[\u2019\u02bc]/g, "'").replace(/\s+/g, " ").trim();
+  return text
+    .toLowerCase()
+    .replace(/[\u2019\u02bc]/g, "'")
+    // Fold diacritics so Spanish phrases match with or without accents —
+    // people type "dano" and "daño", "aqui" and "aquí".
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/\s+/g, " ")
+    .trim();
 }
 
 export interface CrisisTextMatch {
@@ -72,6 +100,15 @@ export interface CrisisScanOptions {
    * conversation does not flood the queue with duplicate rows.
    */
   dedupeWhileOpen?: boolean;
+  /**
+   * §Gap #3 — when there is no patient id (front door, before any record
+   * exists) the match still routes somewhere real: an anonymous crisis alert
+   * to the SAME recipient role as the crisis queue. Set false only where an
+   * anonymous alert would be meaningless.
+   */
+  anonymousFallback?: boolean;
+  /** Optional call-back detail the person volunteered (anonymous path only). */
+  anonymousContact?: string;
 }
 
 /**
@@ -88,9 +125,21 @@ export function scanTextForCrisis(
   text: string | undefined | null,
   opts: CrisisScanOptions,
 ): CrisisEscalation | undefined {
-  if (!patientId) return undefined;
   const hit = detectCrisisLanguage(text);
   if (!hit.matched) return undefined;
+
+  if (!patientId) {
+    // No chart to attach an escalation to — raise the anonymous alert instead
+    // of dropping a real detection on the floor.
+    if (opts.anonymousFallback !== false) {
+      AdelanteEHR.raiseAnonymousCrisisAlert({
+        surface: opts.surface,
+        patternIds: hit.patternIds,
+        contact: opts.anonymousContact,
+      });
+    }
+    return undefined;
+  }
 
   if (opts.dedupeWhileOpen !== false) {
     const alreadyOpen = AdelanteEHR.listCrisisEscalations(patientId, { status: "open" }).some(
