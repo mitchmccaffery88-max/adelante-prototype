@@ -50,6 +50,15 @@ export interface PopulationFacts {
   heardAbout?: HeardAboutSource;
   hasReferralRecord: boolean;
   hasMissedPreReleaseFlag: boolean;
+  /**
+   * `Patient.coverage.jiReentryFlag` — the Medi-Cal Justice-Involved Reentry
+   * Initiative box ("I'm coming home within the next 90 days"). Intake tells
+   * the person it "unlocks pre-release coordination", so it has to count as a
+   * confirmed justice signal here. It does NOT by itself prove current
+   * custody, so it resolves post-release: only a real open `PreReleaseEpisode`
+   * (rule 1) may claim `pre_release_ji`.
+   */
+  hasJiReentryFlag?: boolean;
 }
 
 export interface PopulationResolution {
@@ -87,6 +96,13 @@ export function resolvePopulationTrack(facts: PopulationFacts): PopulationResolu
   }
   if (facts.justiceInvolvement === "yes") {
     return { track: "post_release_ji", basis: "front-door justice-involvement answer", provisional: false };
+  }
+  if (facts.hasJiReentryFlag) {
+    return {
+      track: "post_release_ji",
+      basis: "Medi-Cal justice-involved reentry flag",
+      provisional: false,
+    };
   }
   if (facts.heardAbout && JUSTICE_HEARD_ABOUT.includes(facts.heardAbout)) {
     return { track: "post_release_ji", basis: `referral source: ${facts.heardAbout}`, provisional: false };
