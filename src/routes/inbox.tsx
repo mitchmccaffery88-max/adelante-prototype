@@ -19,6 +19,7 @@ import { UnsignedNotesQueue } from "@/components/inbox/UnsignedNotesQueue";
 import { ProviderRequestQueue } from "@/components/inbox/ProviderRequestQueue";
 import { DocumentVerifyQueue } from "@/components/documents/DocumentVerifyQueue";
 import { AdvocateReviewQueue } from "@/components/inbox/AdvocateReviewQueue";
+import { CommunityInquiryQueue } from "@/components/inbox/CommunityInquiryQueue";
 import { ArrowLeft, ClipboardList, FileSignature, Inbox as InboxIcon, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -47,6 +48,7 @@ function InboxPage() {
   const { role } = useActingStaff();
   const notes = canAccess(role, "therapy_notes");
   const requests = canAccess(role, "provider_requests");
+  const inquiries = canAccess(role, "community_inquiries");
   const [tab, setTab] = useState(notes.level === "none" ? "requests" : "unsigned");
 
   return (
@@ -82,6 +84,7 @@ function InboxPage() {
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="advocate">Advocate</TabsTrigger>
+          <TabsTrigger value="inquiries">Community</TabsTrigger>
         </TabsList>
         <TabsContent value="unsigned" className="pt-3">
           {notes.level === "none" ? (
@@ -113,6 +116,16 @@ function InboxPage() {
             attestations, reviewed by the episode-derived plan owner. */}
         <TabsContent value="advocate" className="pt-3">
           <AdvocateReviewQueue />
+        </TabsContent>
+        {/* §Front door — non-clinical inquiries from people with no chart. */}
+        <TabsContent value="inquiries" className="pt-3">
+          {inquiries.level === "none" ? (
+            <Card className="p-6 text-sm text-muted-foreground flex items-center gap-2">
+              <Lock className="h-4 w-4" /> Your role can&apos;t view community inquiries.
+            </Card>
+          ) : (
+            <CommunityInquiryQueue />
+          )}
         </TabsContent>
       </Tabs>
     </div>

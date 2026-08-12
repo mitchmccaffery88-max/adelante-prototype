@@ -112,6 +112,11 @@ export type RecordClass =
   | "crisis_queue"
   | "patient_messaging"
   | "provider_requests"
+  // §Front-door community inquiries — NON-clinical "what brings you here"
+  // notes from people who are not patients. Its own class so it never
+  // inherits chart permissions: the free text may still mention MH/SUD, so
+  // it is read by coordination roles, not by billing.
+  | "community_inquiries"
   | "worklist"
   | "note_templates"
   | "catalog_governance"
@@ -559,6 +564,24 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "write",
     clinical_coordinator: "read",
     peer_specialist: "read",
+    sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    cf_care_manager: "none",
+  },
+  // §Front-door community inquiries. Write = can disposition (contacted /
+  // resolved). Coordination + navigation roles work these; billing gets
+  // nothing because an inquiry is not claim data, and trainees stay read-only.
+  community_inquiries: {
+    ecm_provider: "write",
+    therapist: "write",
+    pmhnp: "write",
+    clinical_coordinator: "write",
+    peer_specialist: "write",
+    community_health_worker: "write",
     sys_admin: "read",
     billing: "none",
     billing_coordinator: "none",

@@ -3464,6 +3464,46 @@ export interface AnonymousCrisisAlert {
   contact?: string;
 }
 const anonymousCrisisAlerts: AnonymousCrisisAlert[] = [];
+
+// ---------------------------------------------------------------------------
+// §Front-door "what brings you here" — NON-CLINICAL community inquiry store.
+//
+// WHY THIS IS NOT AN EHR RECORD: this step is reached only by someone who
+// said they are NOT seeking MH / SUD / medication care for themselves. No
+// patient exists, no treatment relationship exists, and creating a chart for
+// a person who never asked for one would be wrong. It is also deliberately
+// NOT a `ProviderRequest`: that structure is staff→staff, requires a
+// patientId, and is claimed out of the clinical inbox.
+//
+// PART 2 / PHI NOTE (real, not theoretical): free text is free text. Someone
+// may still describe their own substance use or mental health here despite
+// the page's framing. This store therefore behaves as if that is possible:
+// the body is treated as confidential contact-us content, it is never copied
+// into a chart, never copied into an audit `detail`, and never merged into a
+// patient record automatically. If the person later becomes a patient, staff
+// re-collect the clinical history through intake rather than importing this
+// text. Access is gated by its own record class (`community_inquiries`).
+// ---------------------------------------------------------------------------
+export type CommunityInquiryStatus = "new" | "contacted" | "resolved";
+export interface CommunityInquiry {
+  id: string;
+  /** Verbatim free text the person wrote. Never copied into a chart. */
+  body: string;
+  /** Required at capture — the page promises a human follow-up. */
+  contact: string;
+  contactKind: "email" | "phone";
+  /** True when crisis language fired at capture time. */
+  crisisFlagged: boolean;
+  /** Detection pattern ids — the audit detail, never the raw text. */
+  patternIds?: string[];
+  createdAt: string;
+  status: CommunityInquiryStatus;
+  dispositionBy?: string;
+  dispositionAt?: string;
+  dispositionNote?: string;
+}
+const communityInquiries: CommunityInquiry[] = [];
+
 // §Inbox — provider requests live cross-patient (like tasks/notifications),
 // not on the Patient record: the queue is the primary surface.
 const providerRequests: ProviderRequest[] = [];
@@ -12825,6 +12865,76 @@ export const AdelanteEHR = {
     emit();
     return true;
   },
+
+  /** Non-clinical front-door inquiries, newest first. */
+  listCommunityInquiries(opts?: { includeResolved?: boolean }): CommunityInquiry[] {
+    return communityInquiries
+      .filter((r) => opts?.includeResolved !== false || r.status !== "resolved")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  createCommunityInquiry(input: {
+    body: string;
+    contact: string;
+    contactKind: "email" | "phone";
+    crisisFlagged?: boolean;
+    patternIds?: string[];
+  }): CommunityInquiry | undefined {
+    const body = input.body.trim();
+    const contact = input.contact.trim();
+    if (!body || !contact) return undefined;
+    const row: CommunityInquiry = {
+      id: uid(),
+      body,
+      contact,
+      contactKind: input.contactKind,
+      crisisFlagged: !!input.crisisFlagged,
+      patternIds: input.patternIds ? [...input.patternIds] : undefined,
+      createdAt: new Date().toISOString(),
+      status: "new",
+    };
+    communityInquiries.unshift(row);
+    // Audit records that an inquiry arrived — never the text itself.
+    appendAudit({
+      category: "clinical",
+      action: "community_inquiry_created",
+      actorId: "Front door (self-service)",
+      detail: { inquiryId: row.id, crisisFlagged: row.crisisFlagged },
+    });
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "task_assigned",
+      subject: "New community inquiry (front door)",
+      body: "Someone asked for help finding the right place. They left contact details.",
+      linkRoute: "/inbox",
+    });
+    emit();
+    return row;
+  },
+
+  dispositionCommunityInquiry(
+    id: string,
+    status: Exclude<CommunityInquiryStatus, "new">,
+    staffName: string,
+    note?: string,
+  ): boolean {
+    const row = communityInquiries.find((r) => r.id === id);
+    if (!row || row.status === status) return false;
+    row.status = status;
+    row.dispositionBy = staffName;
+    row.dispositionAt = new Date().toISOString();
+    if (note?.trim()) row.dispositionNote = note.trim();
+    appendAudit({
+      category: "clinical",
+      action: "community_inquiry_disposition",
+      actorId: staffName,
+      detail: { inquiryId: row.id, status },
+    });
+    emit();
+    return true;
+  },
+
+  // (community inquiry helpers above)
 
   flagCrisis(
     patientId: string,

@@ -176,3 +176,34 @@ export function shouldAskHeardAbout(input: {
   if (input.hasPreReleaseEpisode) return false;
   return true;
 }
+
+/**
+ * Front-door contact validation. The person picks either — we accept a valid
+ * email OR a real 10/11-digit US phone, and say which one we read it as so
+ * the staff queue can show it correctly.
+ */
+export type ContactKind = "email" | "phone";
+export interface ContactValidation {
+  valid: boolean;
+  kind?: ContactKind;
+  /** Plain-language reason, shown inline. */
+  error?: string;
+}
+
+const EMAIL_RE = /^[^\s@]+@[^\s@.]+(\.[^\s@.]+)+$/;
+
+export function validateContact(raw: string | undefined | null): ContactValidation {
+  const value = (raw ?? "").trim();
+  if (!value) return { valid: false, error: "Add an email or phone number so we can reach you." };
+  if (value.includes("@")) {
+    return EMAIL_RE.test(value)
+      ? { valid: true, kind: "email" }
+      : { valid: false, error: "That email address doesn't look right." };
+  }
+  const digits = value.replace(/\D/g, "");
+  if (/^1?\d{10}$/.test(digits)) return { valid: true, kind: "phone" };
+  return {
+    valid: false,
+    error: "Enter a 10-digit phone number or an email address.",
+  };
+}
