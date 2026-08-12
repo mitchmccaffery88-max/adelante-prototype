@@ -8868,6 +8868,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — the booking is care-plan data the moment it exists.
+    _recomputeCarePlan(ep.patientId, "pre_release_appointment_booked");
     emit();
     return { appointment, carePlanAppointment };
   },
