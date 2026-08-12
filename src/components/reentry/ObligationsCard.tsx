@@ -62,7 +62,7 @@ function ObligationsBody({ patientId }: { patientId: string }) {
   };
 
   return (
-    <Card className="p-5" data-testid="obligations-card">
+    <Card className="p-5" id="obligations" data-testid="obligations-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
         <Gavel className="h-4 w-4" /> My obligations
       </div>
