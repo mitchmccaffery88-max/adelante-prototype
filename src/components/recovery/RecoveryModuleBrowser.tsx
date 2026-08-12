@@ -17,6 +17,7 @@ import {
   LIVING_RECOVERY_WRAPPER,
   RECOVERY_MODULES,
   getRecoveryLesson,
+  getRecoveryModule,
   lessonsInModule,
   moduleProgress,
 } from "@/lib/recovery";
@@ -32,7 +33,14 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
 
   if (!patientId) return null;
 
-  const lesson = openLesson ? getRecoveryLesson(openLesson) : undefined;
+  // A deep-linked `?lesson=` must obey the same Phase 2 gate as the list —
+  // the gate lives on the MODULE, so resolve it before rendering the lesson.
+  const openCandidate = openLesson ? getRecoveryLesson(openLesson) : undefined;
+  const openModule = openCandidate ? getRecoveryModule(openCandidate.moduleId) : undefined;
+  const lesson =
+    openCandidate && openModule && isLibraryItemVisible(openModule, population)
+      ? openCandidate
+      : undefined;
   if (lesson) {
     return (
       <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
