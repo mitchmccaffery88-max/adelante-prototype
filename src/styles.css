@@ -222,6 +222,9 @@
     --border: oklch(0.9 0.018 82);
     --input: oklch(0.9 0.018 82);
     --ring: oklch(0.45 0.085 190);
+    /* Calm red is crisis-only on patient surfaces. */
+    --destructive: var(--crisis);
+    --destructive-foreground: var(--crisis-foreground);
     --radius: 1rem;
     background-color: var(--background);
     color: var(--foreground);
