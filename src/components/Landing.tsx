@@ -97,7 +97,7 @@ export function Landing() {
       </section>
 
       {/* How it works */}
-      <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20">
+      <section id="how-it-works" className="mx-auto max-w-7xl px-5 sm:px-8 py-20 scroll-mt-24">
         <div className="text-center max-w-2xl mx-auto">
           <h2 className="font-display text-4xl sm:text-5xl text-navy">How it works</h2>
           <p className="mt-3 text-lg text-muted-foreground">
@@ -143,7 +143,7 @@ export function Landing() {
       </section>
 
       {/* What you get */}
-      <section className="bg-secondary/50 border-y">
+      <section id="what-you-get" className="bg-secondary/50 border-y scroll-mt-24">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-20">
           <div className="max-w-2xl">
             <h2 className="font-display text-4xl sm:text-5xl text-navy">What you get</h2>
@@ -197,7 +197,10 @@ export function Landing() {
       </section>
 
       {/* Who it's for */}
-      <section className="mx-auto max-w-7xl px-5 sm:px-8 py-20 grid gap-8 lg:grid-cols-2">
+      <section
+        id="who-its-for"
+        className="mx-auto max-w-7xl px-5 sm:px-8 py-20 grid gap-8 lg:grid-cols-2 scroll-mt-24"
+      >
         <Card className="p-8 sm:p-10 bg-navy text-navy-foreground border-0">
           <Users className="h-7 w-7 text-gold" />
           <h2 className="mt-4 font-display text-3xl sm:text-4xl">Who it's for</h2>
