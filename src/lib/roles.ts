@@ -572,6 +572,24 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     medical_assistant: "read",
     cf_care_manager: "none",
   },
+  // §Front-door community inquiries. Write = can disposition (contacted /
+  // resolved). Coordination + navigation roles work these; billing gets
+  // nothing because an inquiry is not claim data, and trainees stay read-only.
+  community_inquiries: {
+    ecm_provider: "write",
+    therapist: "write",
+    pmhnp: "write",
+    clinical_coordinator: "write",
+    peer_specialist: "write",
+    community_health_worker: "write",
+    sys_admin: "read",
+    billing: "none",
+    billing_coordinator: "none",
+    sud_counselor: "write",
+    clinical_trainee: "read",
+    medical_assistant: "read",
+    cf_care_manager: "none",
+  },
   // §Worklist Phase A — cross-facility operational task table. NOT
   // patient-scoped, so it follows the crisis_queue / population_health
   // reasoning: the roles that actually do and claim the work write;
