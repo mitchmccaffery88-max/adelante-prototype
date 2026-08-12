@@ -197,9 +197,10 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
         <div>
           <p className="font-medium text-navy">{link.advocateName}</p>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          {/* div, not p: the tier badge renders a block element. */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {authLabel} <AdvocateTierBadge linkId={linkId} />
-          </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={view.allowed ? "default" : "secondary"}>
