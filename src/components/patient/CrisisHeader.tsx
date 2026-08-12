@@ -27,14 +27,16 @@ export function CrisisHeader() {
         >
           {t("patientHeaderPrompt")}
         </p>
-        <a
-          href="tel:988"
+        {/* §Tier 1 Build A — the pill now opens the real crisis landing page
+            (988 call + text, breathing, safety plan) instead of dialling. */}
+        <Link
+          to="/crisis"
           data-testid="patient-header-crisis-pill"
           className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-crisis/30 bg-crisis-soft px-4 py-2 text-sm font-semibold text-crisis hover:bg-crisis/10"
         >
           <LifeBuoy className="h-4 w-4" aria-hidden="true" />
           {t("navCrisisSupport")}
-        </a>
+        </Link>
       </div>
     </div>
   );

@@ -36,6 +36,7 @@ import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
@@ -45,6 +46,7 @@ import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
+import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
@@ -200,6 +202,11 @@ const CosignInboxRoute = CosignInboxRouteImport.update({
   path: '/cosign-inbox',
   getParentRoute: () => rootRouteImport,
 } as any)
+const CrisisRoute = CrisisRouteImport.update({
+  id: '/crisis',
+  path: '/crisis',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CrisisQueueRoute = CrisisQueueRouteImport.update({
   id: '/crisis-queue',
   path: '/crisis-queue',
@@ -243,6 +250,11 @@ const LibraryRoute = LibraryRouteImport.update({
 const MessageQueueRoute = MessageQueueRouteImport.update({
   id: '/message-queue',
   path: '/message-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NaloxoneRoute = NaloxoneRouteImport.update({
+  id: '/naloxone',
+  path: '/naloxone',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesQueueRoute = NotesQueueRouteImport.update({
@@ -370,6 +382,7 @@ export interface FileRoutesByFullPath {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/group-audit': typeof GroupAuditRoute
@@ -379,6 +392,7 @@ export interface FileRoutesByFullPath {
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
+  '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
@@ -427,6 +441,7 @@ export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/group-audit': typeof GroupAuditRoute
@@ -436,6 +451,7 @@ export interface FileRoutesByTo {
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
+  '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
@@ -484,6 +500,7 @@ export interface FileRoutesById {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/group-audit': typeof GroupAuditRoute
@@ -493,6 +510,7 @@ export interface FileRoutesById {
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
   '/message-queue': typeof MessageQueueRoute
+  '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
@@ -543,6 +561,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
     | '/group-audit'
@@ -552,6 +571,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/library'
     | '/message-queue'
+    | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
@@ -600,6 +620,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
     | '/group-audit'
@@ -609,6 +630,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/library'
     | '/message-queue'
+    | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
@@ -656,6 +678,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
     | '/group-audit'
@@ -665,6 +688,7 @@ export interface FileRouteTypes {
     | '/intake'
     | '/library'
     | '/message-queue'
+    | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
@@ -714,6 +738,7 @@ export interface RootRouteChildren {
   ConsentRoute: typeof ConsentRoute
   ConsentAuditRoute: typeof ConsentAuditRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   GroupAuditRoute: typeof GroupAuditRoute
@@ -723,6 +748,7 @@ export interface RootRouteChildren {
   IntakeRoute: typeof IntakeRoute
   LibraryRoute: typeof LibraryRoute
   MessageQueueRoute: typeof MessageQueueRoute
+  NaloxoneRoute: typeof NaloxoneRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   PreReleaseRoute: typeof PreReleaseRoute
@@ -929,6 +955,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof CosignInboxRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/crisis': {
+      id: '/crisis'
+      path: '/crisis'
+      fullPath: '/crisis'
+      preLoaderRoute: typeof CrisisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/crisis-queue': {
       id: '/crisis-queue'
       path: '/crisis-queue'
@@ -990,6 +1023,13 @@ declare module '@tanstack/react-router' {
       path: '/message-queue'
       fullPath: '/message-queue'
       preLoaderRoute: typeof MessageQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/naloxone': {
+      id: '/naloxone'
+      path: '/naloxone'
+      fullPath: '/naloxone'
+      preLoaderRoute: typeof NaloxoneRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes-queue': {
@@ -1176,6 +1216,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentRoute: ConsentRoute,
   ConsentAuditRoute: ConsentAuditRoute,
   CosignInboxRoute: CosignInboxRoute,
+  CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   GroupAuditRoute: GroupAuditRoute,
@@ -1185,6 +1226,7 @@ const rootRouteChildren: RootRouteChildren = {
   IntakeRoute: IntakeRoute,
   LibraryRoute: LibraryRoute,
   MessageQueueRoute: MessageQueueRoute,
+  NaloxoneRoute: NaloxoneRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   PreReleaseRoute: PreReleaseRoute,

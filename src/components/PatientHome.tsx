@@ -396,7 +396,9 @@ export function PatientHome() {
       {/* §Phase 6 — Obligations; justice-involved populations only. */}
       <ObligationsCard patientId={patient.id} />
       {/* §Phase 7 — patient-authored Stanley-Brown safety plan. */}
-      <SafetyPlanPanel patientId={patient.id} author="patient" actorRole="patient" />
+      <div id="safety-plan" className="scroll-mt-24">
+        <SafetyPlanPanel patientId={patient.id} author="patient" actorRole="patient" />
+      </div>
     </div>
   );
 }

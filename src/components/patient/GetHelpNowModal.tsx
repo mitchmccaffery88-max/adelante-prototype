@@ -76,8 +76,9 @@ export const HELP_ENTRIES: HelpEntry[] = [
     icon: ShieldPlus,
     title: "Naloxone & overdose prevention",
     body: "How to get naloxone, how to use it, and what to do while you wait for help.",
-    destination: { kind: "none" },
-    gap: "This page doesn't exist yet — ask your care team for naloxone today",
+    // §Tier 1 Build A — the real page now exists (transcribed SAMHSA / CDC /
+    // DHCS content, still flagged pending clinical review on the page itself).
+    destination: { kind: "route", to: "/naloxone" },
   },
   {
     id: "slip-support",
@@ -94,7 +95,7 @@ export const HELP_ENTRIES: HelpEntry[] = [
     icon: LifeBuoy,
     title: "Crisis support",
     body: "Your safety plan, your people, and the lifeline — all in one place.",
-    destination: { kind: "route", to: "/home", hash: "safety-plan" },
+    destination: { kind: "route", to: "/crisis" },
     emphasis: "crisis",
   },
 ];

@@ -55,14 +55,15 @@ export function PatientMoreSheet({
             );
           })}
 
-          <a
-            href="tel:988"
+          <Link
+            to="/crisis"
+            data-testid="patient-more-crisis-link"
             onClick={() => onOpenChange(false)}
             className="mt-2 flex min-h-12 items-center gap-3 rounded-2xl border border-crisis/30 bg-crisis-soft px-3 py-3 text-base font-semibold text-crisis"
           >
             <LifeBuoy className="h-5 w-5 shrink-0" aria-hidden="true" />
             {t("navCrisisSupport")} · 988
-          </a>
+          </Link>
         </nav>
       </SheetContent>
     </Sheet>
