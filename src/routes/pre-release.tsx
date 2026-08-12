@@ -56,6 +56,8 @@ import {
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { CapacityAuthorityStep } from "@/components/prerelease/CapacityAuthorityStep";
 import { PreReleaseScreenerDialog } from "@/components/prerelease/PreReleaseScreenerDialog";
+import { MatOrderCard } from "@/components/prerelease/MatOrderCard";
+import { PreReleaseAppointmentCard } from "@/components/prerelease/PreReleaseAppointmentCard";
 import { screenerByKey } from "@/lib/screeners";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, CheckCircle2, KeyRound, Lock, ShieldAlert } from "lucide-react";
@@ -332,11 +334,15 @@ function useAttribution(episode: PreReleaseEpisode) {
 function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
   const rows = useEhr(() => AdelanteEHR.preReleaseChecklist(episode.id));
   const plan = useEhr(() => AdelanteEHR.getReentryCarePlan(episode.id));
+  const capacity = useEhr(() => AdelanteEHR.preReleaseCapacityState(episode.id));
   const patient = useEhr(() => AdelanteEHR.listPatients()).find((p) => p.id === episode.patientId);
   const { needsProxy, subject, ok, reason, attribution } = useAttribution(episode);
   const [openForm, setOpenForm] = useState<PreReleaseFormDef | null>(null);
   const [openScreener, setOpenScreener] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
+  // Both MAT ordering and appointment booking are consent-dependent clinical
+  // actions, so they read the SAME Build-1 gate the checklist rows read.
+  const capacityBlocked = capacity.decision.canProceed ? undefined : capacity.decision.reason;
 
   return (
     <div className="space-y-4">
@@ -484,6 +490,24 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
                 </div>
               ))}
           </div>
+          {cat.key === "clinical_assessment" && (
+            <div className="mt-3">
+              <MatOrderCard
+                episode={episode}
+                {...(capacityBlocked ? { blockedReason: capacityBlocked } : {})}
+              />
+            </div>
+          )}
+          {cat.key === "transition_planning" && (
+            <div className="mt-3">
+              <PreReleaseAppointmentCard
+                episode={episode}
+                {...(attribution ? { attribution } : {})}
+                {...(capacityBlocked ? { blockedReason: capacityBlocked } : {})}
+                {...(!ok && reason ? { entryBlockedReason: reason } : {})}
+              />
+            </div>
+          )}
         </Card>
         )
       ))}
