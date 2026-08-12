@@ -1108,9 +1108,14 @@ export function canWritePreReleaseForm(
   return { allowed: true };
 }
 
-/** Reading the pre-release surface at all (episode, checklist, care plan). */
+/**
+ * Reading the pre-release surface at all (episode, checklist, care plan).
+ *
+ * §Build 5 — now the SAME `pre_release` matrix row the nav entry gates on, so
+ * the sidebar and the page can never disagree about who owns this workspace.
+ */
 export function canReadPreRelease(role: StaffRole): boolean {
-  return canAccess(role, "care_coordination").level !== "none";
+  return canAccess(role, "pre_release").level !== "none";
 }
 
 let acting: StaffRole = (() => {
