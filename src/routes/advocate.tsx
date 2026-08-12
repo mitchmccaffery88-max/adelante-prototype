@@ -27,6 +27,7 @@ import {
   AdvocateDocumentsPanel,
   AdvocateSelfHelpPanel,
 } from "@/components/advocate/AdvocateWorkspace";
+import { AdvocatePoAwarenessPanel } from "@/components/advocate/AdvocatePoAwarenessPanel";
 import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
 import { Info, Unlock } from "lucide-react";
 import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
@@ -285,6 +286,7 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
 
       {view.allowed && (
         <>
+          <AdvocatePoAwarenessPanel linkId={linkId} patientId={link?.patientId} />
           <AdvocateCoordinationPanel linkId={linkId} />
           <AdvocateCarePlanParticipationPanel linkId={linkId} />
           <AdvocateEligibilityPanel linkId={linkId} />

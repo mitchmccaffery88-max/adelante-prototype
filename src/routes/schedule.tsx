@@ -24,22 +24,34 @@ import {
 } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import { PatientGroupScheduling } from "@/components/PatientGroupScheduling";
+import { AppointmentsSummary } from "@/components/patient/AppointmentsSummary";
 
-type ScheduleSearch = { reschedule?: string; tab?: "one_to_one" | "groups" };
+// §P1 My Care de-clutter — "yours" is the new default landing tab: the
+// summary of everything already booked. Booking is still one tap away.
+type ScheduleTab = "yours" | "one_to_one" | "groups";
+type ScheduleSearch = { reschedule?: string; tab?: ScheduleTab };
 
 export const Route = createFileRoute("/schedule")({
   validateSearch: (s: Record<string, unknown>): ScheduleSearch => ({
     reschedule: typeof s.reschedule === "string" ? s.reschedule : undefined,
-    tab: s.tab === "groups" || s.tab === "one_to_one" ? s.tab : undefined,
+    tab:
+      s.tab === "groups" || s.tab === "one_to_one" || s.tab === "yours" ? s.tab : undefined,
   }),
   head: () => ({
     meta: [
-      { title: "Schedule a session — Adelante" },
+      { title: "My appointments — Adelante" },
       {
         name: "description",
         content:
-          "Schedule a private visit with your Adelante care team — video, phone, or in person.",
+          "See every appointment you have booked, reschedule it, or book a new visit with your Adelante care team — video, phone, or in person.",
       },
+      { property: "og:title", content: "My appointments — Adelante" },
+      {
+        property: "og:description",
+        content: "Your upcoming and past visits, with rescheduling and booking in one place.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: SchedulePage,
@@ -80,9 +92,12 @@ function SchedulePage() {
   const clinicianStillValid = clinicians.some((c) => c.id === clinicianId);
   const effectiveClinicianId = clinicianStillValid ? clinicianId : (clinicians[0]?.id ?? "");
   const [selectedStart, setSelectedStart] = useState<string>("");
-  // Two booking paths on one page: the untouched 1:1 flow, and group
-  // scheduling (view enrolled groups + self-join OPEN groups only).
-  const [tab, setTab] = useState<"one_to_one" | "groups">(tabParam ?? "one_to_one");
+  // Three panes on one page: the appointments summary (default), the
+  // untouched 1:1 booking flow, and group scheduling (view enrolled groups +
+  // self-join OPEN groups only). A reschedule link jumps straight to booking.
+  const [tab, setTab] = useState<ScheduleTab>(
+    tabParam ?? (rescheduleId ? "one_to_one" : "yours"),
+  );
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
@@ -152,7 +167,8 @@ function SchedulePage() {
               : t("schRequestedDesc"),
         });
       }
-      navigate({ to: "/home" });
+      // Land on the summary so the new booking is immediately visible.
+      navigate({ to: "/schedule", search: { tab: "yours" } });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Could not book that slot.");
     }
@@ -167,19 +183,31 @@ function SchedulePage() {
       </Button>
       <header className="mb-5">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
-          {isReschedule ? "Reschedule" : t("homeSchedule")}
+          {isReschedule ? "Reschedule" : "Appointments"}
         </div>
         <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">
-          {isReschedule ? "Pick a new time" : t("schTitle")}
+          {isReschedule ? "Pick a new time" : "My appointments"}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {isReschedule
             ? "These are your counselor's open times pulled from their live calendar."
-            : t("schSubtitle")}
+            : "Everything you have booked, plus a place to book something new."}
         </p>
       </header>
 
       <div className="mb-4 flex gap-2" role="tablist" aria-label="Scheduling type">
+        <button
+          type="button"
+          role="tab"
+          aria-selected={tab === "yours"}
+          onClick={() => setTab("yours")}
+          className={
+            "rounded-md border px-3 py-1.5 text-sm " +
+            (tab === "yours" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
+          }
+        >
+          Your appointments
+        </button>
         <button
           type="button"
           role="tab"
@@ -190,7 +218,7 @@ function SchedulePage() {
             (tab === "one_to_one" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
           }
         >
-          One-on-one visit
+          Book one-on-one
         </button>
         <button
           type="button"
@@ -205,6 +233,8 @@ function SchedulePage() {
           Groups
         </button>
       </div>
+
+      {tab === "yours" && <AppointmentsSummary patientId={currentId} />}
 
       {tab === "groups" && <PatientGroupScheduling patientId={currentId} />}
 

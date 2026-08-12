@@ -11046,6 +11046,43 @@ export const AdelanteEHR = {
   },
 
   /**
+   * §P1 My Care de-clutter — PO-sharing AWARENESS for an identified advocate.
+   *
+   * Real scoping, and the two halves are different questions:
+   *  - The PATIENT sees this only on the justice-involved tracks
+   *    (`PoDisclosureCard` is `PopulationGate`d) — showing PO sharing to a
+   *    General Population member would be actively wrong.
+   *  - The ADVOCATE sees it on a knowledge basis only, behind the SAME
+   *    population scope. That half is enforced at the render boundary with
+   *    `PopulationGate` rather than here: `population.ts` imports this module,
+   *    so calling back into it from the store would close an import cycle.
+   *    The store still owns the part that matters — link validity, revocation
+   *    and the audit trail.
+   *
+   * It is deliberately awareness-only: whether voluntary sharing is on, and
+   * the standing two-tier framing. No clinical content, no Part 2 material,
+   * and no control — the advocate cannot grant or revoke. It runs through
+   * `_advocateGate` like every other advocate read, so an inactive or revoked
+   * link returns nothing and the attempt is audited.
+   */
+  advocatePoDisclosure(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    voluntaryActive: boolean;
+  } {
+    const gate = _advocateGate(linkId, "coordination_view", "care_coordination");
+    if (!gate.ok) return { allowed: false, reason: gate.reason, voluntaryActive: false };
+    const voluntaryActive = AdelanteEHR.isConsentCategoryAuthorized(
+      gate.link.patientId,
+      PO_VOLUNTARY_CONSENT_CATEGORY,
+    );
+    _advocateAudit(gate.link, "advocate_po_disclosure_viewed", "care_coordination", {
+      voluntaryActive,
+    });
+    return { allowed: true, reason: gate.reason, voluntaryActive };
+  },
+
+  /**
    * Coordination write. Reuses `addSdohItem` so the item lands in the same
    * closed-loop workflow the care team already works, attributed to the
    * advocate in the note text (there is no separate authorship field on
