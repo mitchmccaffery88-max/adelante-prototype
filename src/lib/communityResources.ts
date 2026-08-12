@@ -484,6 +484,7 @@ export function flagResourceForRecheck(id: string, reason: string): CommunityRes
 export function __resetResources(): void {
   resources.clear();
   for (const r of SEED_RESOURCES) resources.set(r.id, structuredClone(r));
+  applyRecordedVerifications();
 }
 
 /**
