@@ -355,10 +355,79 @@ export function CarePlanCard({
             </div>
           )}
 
+          {plan.preRelease && (
+            <PreReleaseContinuity
+              pre={plan.preRelease}
+              audience={audience}
+              sudUnlocked={sudUnlocked}
+            />
+          )}
+
           <GoalHistoryTimeline events={goalHistory} audience={audience} />
         </div>
       )}
     </Card>
+  );
+}
+
+/**
+ * §Pre-release build 4 — the custody→community continuity block. Everything
+ * here is derived live from the pre-release episode; MAT is Part 2 content
+ * and follows the SAME gate as every other SUD slice on this card.
+ */
+function PreReleaseContinuity({
+  pre,
+  audience,
+  sudUnlocked,
+}: {
+  pre: NonNullable<CarePlanSnapshot["preRelease"]>;
+  audience: Audience;
+  sudUnlocked: boolean;
+}) {
+  const matVisible = sudUnlocked ? pre.matMedications : [];
+  return (
+    <div className="sm:col-span-2 rounded-md border border-dashed p-3">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="text-xs font-medium uppercase tracking-wider text-navy">
+          {audience === "patient" ? "Your release plan" : "Reentry (pre-release) continuity"}
+        </div>
+        <Badge variant="outline" className="text-[10px] capitalize">
+          {pre.status.replace("_", " ")} · release <ClientDate value={pre.anticipatedReleaseDate} />
+        </Badge>
+      </div>
+      <ul className="mt-2 space-y-1 text-xs text-foreground">
+        {pre.facilityName && <li>• Facility: {pre.facilityName}</li>}
+        {pre.housingArrangement && <li>• Housing: {pre.housingArrangement}</li>}
+        <li>• Screenings captured before release: {pre.screeningsCaptured}</li>
+        {pre.advocates.map((a, i) => (
+          <li key={i}>
+            • Advocate: {a.name}
+            {a.relationship ? ` (${a.relationship})` : ""}
+          </li>
+        ))}
+        {pre.appointments.map((a, i) => (
+          <li key={`a-${i}`}>
+            • {a.kind.replace(/_/g, " ")} with {a.providerName} · <ClientDate value={a.start} />
+          </li>
+        ))}
+        {matVisible.map((m, i) => (
+          <li key={`m-${i}`} className="inline-flex items-center gap-2">
+            • {m.name}
+            <Badge variant="outline" className="text-[10px]">
+              {m.status}
+            </Badge>
+            <span className="text-[10px] text-muted-foreground">Part 2</span>
+          </li>
+        ))}
+      </ul>
+      {pre.sensitive && !sudUnlocked && (
+        <div className="mt-2 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+          <Lock className="h-3 w-3" />
+          Medication-assisted treatment started before release is hidden — 42 CFR Part 2 consent
+          required.
+        </div>
+      )}
+    </div>
   );
 }
 

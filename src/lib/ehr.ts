@@ -1556,10 +1556,51 @@ export interface CarePlanMedicationSlice {
   name: string;
   state: "active" | "refill_pending" | "changed";
   sensitive: boolean;
+  /** §Pre-release build 4 — this row came out of the pre-release episode. */
+  source?: "pre_release";
 }
 export interface CarePlanSdohSlice {
   need: string;
   status: SdohStatus;
+  /** §Pre-release build 4 — identified by the pre-release AHC-HRSN screening. */
+  source?: "pre_release";
+}
+
+/**
+ * §Pre-release build 4 — CalAIM continuity slice.
+ *
+ * The CalAIM requirement is that the plan SURVIVES the custody→community
+ * transition, so the reconciliation runs pre-release → CalAIM, live, and it
+ * is recomputed while the person is still in custody (not only at release):
+ * the ECM Provider must be able to see the plan they are inheriting BEFORE
+ * day zero, and there must be no window in which the plan is blank.
+ *
+ * Every field here is DERIVED at recompute time from the real records
+ * (episode, capacity determination, advocate links, chart orders, scheduling
+ * store, screener results) — nothing is copied, so nothing goes stale.
+ */
+export interface CarePlanPreReleaseSlice {
+  episodeId: string;
+  status: PreReleaseEpisodeStatus;
+  anticipatedReleaseDate: string;
+  facilityName?: string;
+  receivingEcmStaffId?: string;
+  /** Build-1 capacity gate state, e.g. "self_consent" / "surrogate_required". */
+  capacityState: string;
+  /** Build-1 designations — names only, no invitation material. */
+  advocates: { name: string; relationship?: string; authorizationType?: string }[];
+  /** Build-3 bookings, resolved live against the real scheduling store. */
+  appointments: { kind: ReentryAppointmentKind; start: string; providerName: string; status?: string }[];
+  /** Count of pre-release screenings on the chart. */
+  screeningsCaptured: number;
+  housingArrangement?: string;
+  /**
+   * Build-3 MAT — 42 CFR Part 2 content. Present in the snapshot but ALWAYS
+   * flagged sensitive; surfaces must gate it exactly like the SUD slices.
+   */
+  matMedications: { name: string; status: string }[];
+  /** True when any Part 2-covered content is present in this slice. */
+  sensitive: boolean;
 }
 export interface CarePlanMetrics {
   phq9Latest?: number;
@@ -1592,6 +1633,12 @@ export interface CarePlanSnapshot {
   activeProblems?: CarePlanProblemEntry[];
   /** Count of active SUD problems hidden from non-Part-2 viewers (never leaks descriptions). */
   hiddenSudProblems?: number;
+  /**
+   * §Pre-release build 4 — present whenever the patient has (or had) a
+   * pre-release episode, so the community-side care plan already reflects
+   * custody-side work instead of starting blank at release.
+   */
+  preRelease?: CarePlanPreReleaseSlice;
 }
 
 export interface CarePlanAllergyEntry {
@@ -4896,6 +4943,68 @@ function _flagProviderSwitch(input: {
 const SUD_SCREENER_KEYS = new Set(["audit", "dast-10"]);
 const SUD_MED_RE = /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol/i;
 
+/**
+ * §Pre-release build 4 — derive the CalAIM continuity slice from the REAL
+ * pre-release records. Direction of reconciliation is pre-release → CalAIM:
+ * the pre-release workspace is where the data is captured, and the CalAIM
+ * plan is the artefact the community care team (ECM Provider, case manager,
+ * the patient) reads everywhere else in the system.
+ *
+ * Runs on every recompute, including while the person is still in custody,
+ * and keeps running after the episode closes — the plan a released member
+ * carries into the community is the same plan, not a copy of it.
+ */
+function _preReleaseCarePlanSlice(p: Patient): CarePlanPreReleaseSlice | undefined {
+  const ep = preReleaseEpisodes
+    .filter((e) => e.patientId === p.id)
+    .sort((a, b) => +new Date(b.openedAt) - +new Date(a.openedAt))[0];
+  if (!ep) return undefined;
+  const plan = reentryCarePlans.find((r) => r.episodeId === ep.id);
+  const capacity = AdelanteEHR.preReleaseCapacityState(ep.id);
+  const matMedications = (p.orders ?? [])
+    .filter(
+      (o) =>
+        o.preReleaseEpisodeId === ep.id &&
+        (o.status === "signed" || o.status === "held") &&
+        SUD_MED_RE.test(o.productName ?? o.drugName),
+    )
+    .map((o) => ({ name: o.productName ?? o.drugName, status: o.status }));
+  const bookings = (plan?.appointments ?? [])
+    .filter((a) => a.apptId)
+    .map((a) => {
+      const live = appointments.find((x) => x.id === a.apptId);
+      return {
+        kind: a.kind,
+        start: live?.start ?? a.start,
+        providerName: a.providerName,
+        ...(live?.status ? { status: live.status } : {}),
+      };
+    });
+  const screeningsCaptured = Object.values(p.screeners ?? {}).filter(
+    (r) => r?.context === "pre_release",
+  ).length;
+  return {
+    episodeId: ep.id,
+    status: ep.status,
+    anticipatedReleaseDate: ep.anticipatedReleaseDate,
+    ...(ep.facilityName ? { facilityName: ep.facilityName } : {}),
+    ...(ep.receivingEcmStaffId ? { receivingEcmStaffId: ep.receivingEcmStaffId } : {}),
+    capacityState: capacity.decision.state,
+    advocates: advocateLinks
+      .filter((l) => l.patientId === p.id && l.status === "active")
+      .map((l) => ({
+        name: l.advocateName,
+        ...(l.relationship ? { relationship: l.relationship } : {}),
+        ...(l.authorizationType ? { authorizationType: l.authorizationType } : {}),
+      })),
+    appointments: bookings,
+    screeningsCaptured,
+    ...(plan?.housing.arrangement ? { housingArrangement: plan.housing.arrangement } : {}),
+    matMedications,
+    sensitive: matMedications.length > 0,
+  };
+}
+
 function _composeSummary(
   p: Patient,
   parts: {
@@ -4942,6 +5051,22 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     sensitive: SUD_MED_RE.test(m.name),
   }));
 
+  // §Pre-release build 4 — the chart's own signed orders are a real
+  // medication source too, not just the eRx vendor feed. This is how MAT
+  // started in the pre-release workspace (build 3) reaches the CalAIM plan:
+  // read live off `p.orders`, deduped by name, never copied.
+  const chartOrders = (p.orders ?? []).filter((o) => o.status === "signed" || o.status === "held");
+  for (const o of chartOrders) {
+    const name = o.productName ?? o.drugName;
+    if (medications.some((m) => m.name.toLowerCase() === name.toLowerCase())) continue;
+    medications.push({
+      name,
+      state: "active",
+      sensitive: SUD_MED_RE.test(name),
+      ...(o.preReleaseEpisodeId ? { source: "pre_release" as const } : {}),
+    });
+  }
+
   const screenerHighlights: CarePlanScreenerHighlight[] = [];
   for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"]) {
     const r = p.screeners[key];
@@ -4972,6 +5097,18 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     status: i.status,
   }));
   const sdohClosed = sdohItems.filter((i) => i.status === "completed").length;
+
+  // §Pre-release build 4 — social needs identified by the AHC-HRSN screening
+  // (build 2) are real, captured needs; surface them as open SDOH rows until
+  // the community team creates a real referral row for the same need.
+  const hrsn = p.screeners["ahc-hrsn"];
+  for (const d of hrsn?.domains ?? []) {
+    if (!d.positive) continue;
+    const label = d.label;
+    if (sdohItems.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
+    if (sdohOpen.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
+    sdohOpen.push({ need: label, status: "identified", source: "pre_release" });
+  }
 
   const upcoming = appointments
     .filter((a) => a.patientId === p.id && a.status === "scheduled")
@@ -5052,6 +5189,10 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     medsActive: medications.length,
     nextApptStart: nextAppt?.start,
   });
+
+  // §Pre-release build 4 — CalAIM continuity slice, derived live.
+  const preRelease = _preReleaseCarePlanSlice(p);
+
   const override = p.carePlanOverride;
   const summary = override ? `${auto}\n\nCare team note: ${override.text}` : auto;
   const updatedBy: CarePlanSnapshot["updatedBy"] = override ? "clinician" : "system";
@@ -5083,6 +5224,7 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     hiddenSudProblems: (p.problems ?? []).filter(
       (pr) => isProblemClinicallyActive(pr) && pr.category === "sud",
     ).length,
+    ...(preRelease ? { preRelease } : {}),
   };
   p.carePlanSummary = summary;
 
@@ -8032,6 +8174,8 @@ export const AdelanteEHR = {
         anticipatedReleaseDate: ep.anticipatedReleaseDate,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_episode_opened");
     emit();
     return ep;
   },
@@ -8165,6 +8309,8 @@ export const AdelanteEHR = {
         basis: rec.basis,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_capacity");
     emit();
     return { ...rec };
   },
@@ -8221,6 +8367,8 @@ export const AdelanteEHR = {
         capacity: rec.status,
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_advocate");
     emit();
     return link;
   },
@@ -8293,6 +8441,8 @@ export const AdelanteEHR = {
       actorRole: input.actorRole,
       detail: { episodeId: ep.id, reason: ep.closedReason },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_episode_closed");
     emit();
     return ep;
   },
@@ -8525,6 +8675,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "pre_release_form");
     emit();
     return rec;
   },
@@ -8716,6 +8868,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — the booking is care-plan data the moment it exists.
+    _recomputeCarePlan(ep.patientId, "pre_release_appointment_booked");
     emit();
     return { appointment, carePlanAppointment };
   },
@@ -8792,6 +8946,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "reentry_care_plan");
     emit();
     return plan;
   },
@@ -8868,6 +9024,8 @@ export const AdelanteEHR = {
         ...cfAuditIdentities(input.attribution),
       },
     });
+    // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    _recomputeCarePlan(ep.patientId, "reentry_care_plan_completed");
     emit();
     return { plan, enrollmentCode: code };
   },
@@ -12682,6 +12840,9 @@ export const AdelanteEHR = {
           },
         });
       }
+      // §Pre-release build 4 — signed orders (incl. pre-release MAT) are a
+      // live care-plan medication source, so the plan follows the chart.
+      _recomputeCarePlan(patientId, "orders_signed");
       emit();
     }
     return signed;
@@ -12719,6 +12880,8 @@ export const AdelanteEHR = {
       actorId: staffName,
       detail: { orderId, drugName: row.drugName, from, to, reason: trimmed ?? null },
     });
+    // §Pre-release build 4 — lifecycle changes must reach the care plan too.
+    _recomputeCarePlan(patientId, opts.action);
     emit();
     return row;
   },
