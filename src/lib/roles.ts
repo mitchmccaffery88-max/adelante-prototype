@@ -786,28 +786,44 @@ export function canManageProtocol(role: StaffRole): boolean {
 }
 
 /**
- * §Content Management admin tooling — WHO MAY APPROVE AND PUBLISH patient-
- * facing educational content (Library / Recovery-module lessons).
+ * §Content Management admin tooling — WHO MAY PUBLISH general patient-facing
+ * content (Library lessons, Recovery-module lessons, Community Resources,
+ * naloxone access points).
  *
- * This is the existing clinical sign-off line, not a new one: it is exactly
- * `PROTOCOL_MANAGE_ROLES` (pmhnp / therapist / clinical_coordinator) plus
- * sys_admin, because a psychoeducational lesson shown to every patient is a
- * clinical-content decision of the same weight as starting a protocol. It is
- * deliberately NOT the `RESOURCE_VERIFIER_ROLES` list — that list is wide
- * (peers, CHWs, care managers) because verifying a shelter's phone number is
- * a contact-verification task anyone who made the call can attest to.
- * Approving clinical teaching copy is not that task.
+ * THERE IS NO SECOND-APPROVER REQUIREMENT ON THIS TOOL, by product direction.
+ * A two-person sign-off is a CLINICAL control, and it stays exactly where it
+ * already is: anything written into an INDIVIDUAL patient's record or care
+ * plan (notes cosign, protocol start, care-plan entries, orders) keeps its own
+ * gating, none of which reads this list. General content touches no
+ * individual patient record, so the person who writes it may publish it.
+ *
+ * WHY THIS ROSTER, AND NOT A NEW ROLE. The roster has no literal "content
+ * manager", but it already has the role that owns every other org-wide
+ * configuration surface — note templates, catalog governance, scheduling
+ * rules, KPI targets: `clinical_coordinator`. That IS the content-manager
+ * seat here (it is Cathy's role, and she is the person who did the real
+ * resource verification pass), so no role was invented. `sys_admin` keeps
+ * platform-owner access, and `pmhnp` / `therapist` keep the publish rights
+ * they already had rather than being demoted by this change.
  */
-export const CONTENT_APPROVER_ROLES: StaffRole[] = [
-  "pmhnp",
-  "therapist",
+export const CONTENT_PUBLISHER_ROLES: StaffRole[] = [
   "clinical_coordinator",
   "sys_admin",
+  "pmhnp",
+  "therapist",
 ];
 
-export function canApproveContent(role: StaffRole): boolean {
-  return CONTENT_APPROVER_ROLES.includes(role);
+/** The designated content-manager seat, for UI copy. */
+export const CONTENT_MANAGER_ROLE: StaffRole = "clinical_coordinator";
+
+export function canPublishContentRole(role: StaffRole): boolean {
+  return CONTENT_PUBLISHER_ROLES.includes(role);
 }
+
+/** @deprecated Publishing no longer requires a separate approver. */
+export const CONTENT_APPROVER_ROLES = CONTENT_PUBLISHER_ROLES;
+/** @deprecated Use `canPublishContentRole`. */
+export const canApproveContent = canPublishContentRole;
 
 // ----- Acting-role store (localStorage-backed, subscribable) -----
 const KEY = "adelante.actingRole";

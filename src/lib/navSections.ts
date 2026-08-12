@@ -390,7 +390,7 @@ export const STAFF_NAV: NavEntry[] = [
     // data, but what every patient is SHOWN.
     id: "admin-content",
     label: "Patient content",
-    desc: "Library & recovery lessons — author, review, publish",
+    desc: "Lessons, community resources & naloxone access — author and publish",
     icon: FileEdit,
     to: "/admin-content",
     group: "administration",

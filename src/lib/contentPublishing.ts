@@ -29,12 +29,21 @@
 // entry creates a NEW working revision while patients keep being served the
 // approved one, and every transition is appended to `revisions` with a real
 // actor and timestamp. "Which version did the patient see" is answerable.
-import { CONTENT_APPROVER_ROLES, canAccess, getStaffMember, type StaffRole } from "@/lib/roles";
+import { CONTENT_PUBLISHER_ROLES, canAccess, getStaffMember, type StaffRole } from "@/lib/roles";
 
 /** draft → pending_review → published. There is no fourth state. */
 export type ContentStatus = "draft" | "pending_review" | "published";
 
-export type ContentTypeId = "library_lesson" | "recovery_lesson";
+export type ContentTypeId =
+  | "library_lesson"
+  | "recovery_lesson"
+  // §Content Management correction — Community Resources and naloxone access
+  // points are EDITORIAL content for this program, not one-off reference data:
+  // the content manager adds locations and counties as the program expands, and
+  // the same entries feed the website, the patient portal, intake, onboarding
+  // and SDOH-needs alignment. They belong on the same lifecycle as lessons.
+  | "community_resource"
+  | "naloxone_access_point";
 
 /** A content body is whatever the type descriptor says it is. */
 export type ContentBody = Record<string, unknown>;
@@ -205,8 +214,13 @@ export function canAuthorContent(role: StaffRole): boolean {
   return canAccess(role, "content_authoring").level === "write";
 }
 
+/**
+ * No second approver. A content manager creates AND publishes. See
+ * `CONTENT_PUBLISHER_ROLES` for why that is safe here and where the real
+ * two-person clinical control still lives.
+ */
 export function canPublishContent(role: StaffRole): boolean {
-  return CONTENT_APPROVER_ROLES.includes(role);
+  return CONTENT_PUBLISHER_ROLES.includes(role);
 }
 
 // ---------------------------------------------------------------------------
@@ -322,26 +336,25 @@ export interface ReviewInput {
 }
 
 /**
- * Approve AND publish. Two real gates beyond role:
- *  1. The content must still validate at approval time.
- *  2. SEPARATION OF DUTIES — the approver cannot be the staff member who
- *     submitted it. A one-person "review" is not a review, and every other
- *     sign-off surface in this app (cosign, verification) already holds this
- *     line.
+ * PUBLISH. One real gate beyond role: the content must still validate.
+ *
+ * The separation-of-duties check that used to live here was REMOVED by product
+ * direction: general content (lessons, community resources, naloxone access
+ * points) touches no individual patient's record, so a two-person clinical
+ * sign-off model does not fit it. The submit-for-review path below still
+ * exists for teams that want a second pair of eyes — it is optional now, not a
+ * precondition, so publishing straight from `draft` is allowed.
+ *
+ * Nothing here is reachable from the per-patient care-plan / cosign / order
+ * surfaces; those keep their own, unchanged gates.
  */
-export function approveAndPublishContent(input: ReviewInput): ContentResult {
+export function publishContent(input: ReviewInput): ContentResult {
   const problem = actorProblem(input.actor);
   if (problem) return { ok: false, reason: problem };
   if (!canPublishContent(input.actor.role))
-    return { ok: false, reason: "This role cannot approve and publish content." };
+    return { ok: false, reason: "This role cannot publish content." };
   const e = entries.get(key(input.typeId, input.id));
   if (!e) return { ok: false, reason: "No such content entry." };
-  if (e.status !== "pending_review")
-    return { ok: false, reason: "Only content submitted for review can be published." };
-
-  const submitted = [...e.revisions].reverse().find((r) => r.action === "submitted");
-  if (submitted?.byStaffId && input.actor.staffId && submitted.byStaffId === input.actor.staffId)
-    return { ok: false, reason: "The person who submitted this cannot also approve it." };
 
   const errors = input.validate?.(e.body) ?? [];
   if (errors.length > 0) return { ok: false, reason: errors[0]! };
@@ -354,6 +367,87 @@ export function approveAndPublishContent(input: ReviewInput): ContentResult {
   e.publishedBy = input.actor.name;
   notify();
   return { ok: true, entry: clone(e) };
+}
+
+/** @deprecated Kept as the old call site's name; publishing needs no approval. */
+export const approveAndPublishContent = publishContent;
+
+// ---------------------------------------------------------------------------
+// Migration seeding — importing content that was ALREADY published elsewhere
+// ---------------------------------------------------------------------------
+
+export interface SeedPublishedInput {
+  typeId: ContentTypeId;
+  id: string;
+  body: ContentBody;
+  /** The real person who published it, historically. */
+  actor: ContentActor;
+  /** The real timestamp of that historical event — NOT "now". */
+  atISO: string;
+  note?: string;
+  overridesBaseline?: boolean;
+}
+
+/**
+ * Import an entry that was made patient-visible BEFORE this store existed, so
+ * the migration does not erase the real event that made it live.
+ *
+ * This is not a back door around the role gate: it replays a historical actor
+ * and timestamp into revision history verbatim, and it refuses to touch an
+ * entry that already exists in the store. Used to carry Cathy's real community
+ * resource verification pass and her naloxone access-point pass across the
+ * migration as revision 1 rather than restarting their history at zero.
+ */
+export function seedPublishedContent(input: SeedPublishedInput): ContentResult {
+  const k = key(input.typeId, input.id);
+  const e: ContentEntry = entries.get(k) ?? {
+    id: input.id,
+    typeId: input.typeId,
+    status: "published",
+    body: clone(input.body),
+    revisions: [],
+    overridesBaseline: input.overridesBaseline ?? false,
+  };
+  e.body = clone(input.body);
+  e.status = "published";
+  const rev: ContentRevision = {
+    rev: e.revisions.length + 1,
+    action: "published",
+    body: clone(input.body),
+    statusAfter: "published",
+    at: input.atISO,
+    by: input.actor.name,
+    byStaffId: input.actor.staffId,
+    byRole: input.actor.role,
+    ...(input.note ? { note: input.note } : {}),
+  };
+  e.revisions.push(rev);
+  e.publishedBody = clone(input.body);
+  e.publishedRev = rev.rev;
+  e.publishedAt = input.atISO;
+  e.publishedBy = input.actor.name;
+  entries.set(k, e);
+  notify();
+  return { ok: true, entry: clone(e) };
+}
+
+/** Draft-only seeding: content that exists but is NOT patient-visible yet. */
+export function seedDraftContent(input: {
+  typeId: ContentTypeId;
+  id: string;
+  body: ContentBody;
+}): void {
+  const k = key(input.typeId, input.id);
+  if (entries.has(k)) return;
+  entries.set(k, {
+    id: input.id,
+    typeId: input.typeId,
+    status: "draft",
+    body: clone(input.body),
+    revisions: [],
+    overridesBaseline: false,
+  });
+  notify();
 }
 
 /** Send it back to the author. Requires a real reason. */
@@ -378,5 +472,11 @@ export function returnContentForChanges(input: ReviewInput): ContentResult {
 
 export function __resetContent(): void {
   entries.clear();
+  notify();
+}
+
+/** Test/reset helper: drop just one type's entries. */
+export function __resetContentOfType(typeId: ContentTypeId): void {
+  for (const [k, e] of [...entries.entries()]) if (e.typeId === typeId) entries.delete(k);
   notify();
 }

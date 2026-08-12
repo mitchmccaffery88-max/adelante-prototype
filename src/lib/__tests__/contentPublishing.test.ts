@@ -97,7 +97,9 @@ describe("content publishing lifecycle", () => {
     expect(res.ok).toBe(false);
   });
 
-  it("the submitter cannot approve their own submission", () => {
+  // Product direction: general content needs NO second approver. A content
+  // manager creates and publishes in one seat.
+  it("a publisher can publish their own work with no second approver", () => {
     const id = "lib_sleep_reset";
     saveContentDraft({ typeId: "library_lesson", id, body: draftBody(id), actor: APPROVER });
     submitContentForReview({
@@ -107,8 +109,16 @@ describe("content publishing lifecycle", () => {
       validate: LIBRARY_LESSON_TYPE.validate,
     });
     const res = approveAndPublishContent({ typeId: "library_lesson", id, actor: APPROVER });
-    expect(res.ok).toBe(false);
-    expect(liveLibraryItem(id)).toBeUndefined();
+    expect(res.ok).toBe(true);
+    expect(liveLibraryItem(id)?.id).toBe(id);
+  });
+
+  it("publishing straight from a draft, without any review step, works", () => {
+    const id = "lib_sleep_reset";
+    saveContentDraft({ typeId: "library_lesson", id, body: draftBody(id), actor: APPROVER });
+    const res = approveAndPublishContent({ typeId: "library_lesson", id, actor: APPROVER });
+    expect(res.ok).toBe(true);
+    expect(liveLibraryItem(id)?.id).toBe(id);
   });
 
   it("an author cannot publish even after a valid submission", () => {

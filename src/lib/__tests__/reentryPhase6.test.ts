@@ -13,7 +13,7 @@ import {
   CATHY_VERIFIED_RESOURCE_IDS,
   RESOURCE_CATEGORIES,
   __resetResources,
-  isResourceLive,
+  isResourceVerified,
   listResources,
   patientVisibleResources,
   resourceVerificationQueue,
@@ -231,13 +231,13 @@ describe("Community resources cannot go live without a real verification", () =>
     });
     expect(res.ok).toBe(true);
     if (!res.ok) return;
-    expect(isResourceLive(res.resource)).toBe(true);
+    expect(isResourceVerified(res.resource)).toBe(true);
     expect(patientVisibleResources().map((x) => x.id)).toContain(r.id);
 
-    // An expired verification is not live.
-    expect(isResourceLive(res.resource, "2999-01-01")).toBe(false);
-
+    // Verifications no longer expire, and editing the working copy does NOT
+    // yank the published entry away from patients — nothing disappears on a
+    // timer or behind the content manager's back.
     updateResourceDetails(r.id, { hours: "10-4" });
-    expect(patientVisibleResources().map((x) => x.id)).not.toContain(r.id);
+    expect(patientVisibleResources().map((x) => x.id)).toContain(r.id);
   });
 });

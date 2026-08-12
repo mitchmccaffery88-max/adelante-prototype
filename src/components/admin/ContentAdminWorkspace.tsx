@@ -10,9 +10,11 @@
 //             revision before it. No silent overwrites.
 //
 // RBAC is the existing matrix, not a new scheme: `content_authoring` write
-// = may author/submit; CONTENT_APPROVER_ROLES = may publish. The store
-// enforces both plus separation of duties, so this UI cannot talk its way
-// past either.
+// = may author; CONTENT_PUBLISHER_ROLES = may publish, and a publisher may
+// publish their OWN work — general content needs no second approver. The
+// review queue is still here, as an OPTIONAL second pair of eyes rather than a
+// precondition. None of this touches the per-patient care-plan / cosign /
+// order gates, which are a separate, unchanged clinical control.
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -36,7 +38,6 @@ import { ContentForm } from "./ContentForm";
 import { ContentPreview } from "./ContentPreview";
 import { CONTENT_TYPES, contentType } from "@/lib/contentTypes";
 import {
-  approveAndPublishContent,
   canAuthorContent,
   canPublishContent,
   contentReviewQueue,
@@ -45,6 +46,7 @@ import {
   hasUnpublishedChanges,
   isContentLive,
   listContent,
+  publishContent,
   returnContentForChanges,
   saveContentDraft,
   submitContentForReview,
@@ -90,6 +92,7 @@ function StatusBadge({ entry }: { entry: ContentEntry }) {
 function ManageTab({ version }: { version: number }) {
   const { role, staffId, staffName } = useActingStaff();
   const mayAuthor = canAuthorContent(role);
+  const mayPublish = canPublishContent(role);
   const [typeId, setTypeId] = useState<ContentTypeId>("library_lesson");
   const descriptor = contentType(typeId);
   const [openId, setOpenId] = useState<string | null>(null);
@@ -123,7 +126,7 @@ function ManageTab({ version }: { version: number }) {
 
   const startNew = () => {
     const id = newId.trim();
-    if (!id) return toast.error("Give the new lesson an id first.");
+    if (!id) return toast.error("Give the new entry an id first.");
     if (getContentEntry(typeId, id) || descriptor.baselineIds().includes(id))
       return toast.error("That id is already taken.");
     open(id, { ...descriptor.emptyBody(), id });
@@ -161,7 +164,28 @@ function ManageTab({ version }: { version: number }) {
       validate: descriptor.validate,
     });
     if (!res.ok) return toast.error(res.reason);
-    toast.success("Sent for review. Someone else has to approve it before patients see it.");
+    toast.success("Sent for a second look. It stays invisible to patients until published.");
+    setOpenId(null);
+    setBody(null);
+  };
+
+  /**
+   * Direct publish — no second approver. The store still validates and still
+   * checks the role; it just no longer demands a different person.
+   */
+  const publish = () => {
+    if (!openId || !body) return;
+    const saved = saveContentDraft({
+      typeId,
+      id: openId,
+      body,
+      actor,
+      overridesBaseline: descriptor.baselineIds().includes(openId),
+    });
+    if (!saved.ok) return toast.error(saved.reason);
+    const res = publishContent({ typeId, id: openId, actor, validate: descriptor.validate });
+    if (!res.ok) return toast.error(res.reason);
+    toast.success("Published — patients can see this now.");
     setOpenId(null);
     setBody(null);
   };
@@ -195,22 +219,27 @@ function ManageTab({ version }: { version: number }) {
           </Select>
         </div>
         <div className="space-y-1">
-          <Label className="text-xs">New lesson id</Label>
+          <Label className="text-xs">New entry id</Label>
           <div className="flex gap-2">
             <Input
               className="w-56"
-              placeholder="e.g. lib_sleep_reset"
+              placeholder="e.g. lib_sleep_reset / res_housing_x"
               value={newId}
               onChange={(e) => setNewId(e.target.value)}
               data-testid="new-content-id"
             />
             <Button type="button" onClick={startNew} disabled={!mayAuthor}>
-              New lesson
+              New entry
             </Button>
           </div>
         </div>
       </div>
       <p className="text-xs text-muted-foreground">{descriptor.publishEffect}</p>
+      {mayPublish && (
+        <p className="text-xs text-muted-foreground">
+          Your role may publish directly — no second approver is required for this content.
+        </p>
+      )}
       {!mayAuthor && (
         <p className="text-xs text-destructive">
           Your role can read this workspace but cannot author or submit content.
@@ -243,7 +272,7 @@ function ManageTab({ version }: { version: number }) {
               </ul>
             )}
             <div className="space-y-1">
-              <Label className="text-xs">Note for the reviewer (optional)</Label>
+              <Label className="text-xs">Note (optional)</Label>
               <Textarea
                 rows={2}
                 value={submitNote}
@@ -256,11 +285,20 @@ function ManageTab({ version }: { version: number }) {
               </Button>
               <Button
                 type="button"
+                onClick={publish}
+                disabled={!mayPublish || errors.length > 0}
+                data-testid="publish-now"
+              >
+                Publish now
+              </Button>
+              <Button
+                type="button"
+                variant="outline"
                 onClick={submit}
                 disabled={!mayAuthor || errors.length > 0}
                 data-testid="submit-for-review"
               >
-                Submit for review
+                Send for a second look
               </Button>
               <Button
                 type="button"
@@ -321,7 +359,7 @@ function ManageTab({ version }: { version: number }) {
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
               These are still served from the shipped baseline. Editing one creates a managed draft;
-              patients keep seeing the shipped version until the edit is approved.
+              patients keep seeing the shipped version until you publish the edit.
             </p>
             <ul className="mt-3 space-y-1.5">
               {baselineOnly.map((id) => (
@@ -366,8 +404,8 @@ function ReviewTab({ version }: { version: number }) {
         <ShieldCheck className="h-4 w-4" /> Content review queue
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Nothing here is visible to patients. Approving publishes it; the person who submitted it
-        cannot be the person who approves it.
+        An OPTIONAL second pair of eyes — content does not have to pass through here to go live.
+        Nothing in this queue is visible to patients until it is published.
         {!mayPublish && " Your role can read this queue but cannot publish."}
       </p>
       <ul className="mt-4 space-y-4">
@@ -406,7 +444,7 @@ function ReviewTab({ version }: { version: number }) {
                   disabled={!mayPublish}
                   data-testid={`approve-${e.id}`}
                   onClick={() => {
-                    const res = approveAndPublishContent({
+                    const res = publishContent({
                       typeId: e.typeId,
                       id: e.id,
                       actor,
@@ -417,7 +455,7 @@ function ReviewTab({ version }: { version: number }) {
                     else toast.success(`Published — patients can see "${d.titleOf(e.body)}" now.`);
                   }}
                 >
-                  Approve and publish
+                  Publish
                 </Button>
                 <Button
                   type="button"
@@ -506,8 +544,9 @@ export function ContentAdminWorkspace() {
           <FileEdit className="h-5 w-5 text-teal" /> Patient content management
         </h1>
         <p className="text-sm text-muted-foreground">
-          Author, review and publish the Library and Recovery-module lessons patients see — without
-          a code deployment. Draft → in review → published, with full revision history.
+          Author and publish what patients see — Library lessons, Recovery-module lessons, community
+          resources and naloxone access points — without a code deployment. Full revision history,
+          and no second approver required.
         </p>
       </div>
       <Tabs defaultValue="manage">

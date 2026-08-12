@@ -14,9 +14,28 @@
 // VERIFICATION IS REAL, NOT COSMETIC. A seeded entry is `unverified` and is
 // invisible to patients. It only becomes live when a named staff member
 // records a verification with the three facts they actually confirmed
-// (address, phone, hours). Verifications expire, which sends the entry back
-// out of the patient-facing list rather than quietly ageing into fiction.
+// (address, phone, hours).
+//
+// §Content Management correction — THIS DIRECTORY IS NOW MANAGED CONTENT.
+// Community Resources are editorial content for this program: the content
+// manager adds locations and whole counties as it expands, and the same
+// entries feed the website, patient portal, intake, onboarding and SDOH-needs
+// alignment. So patient visibility no longer lives in this module's own
+// `verified` flag — it lives in the shared content lifecycle store
+// (`contentPublishing.ts`), exactly like a Library lesson: what a patient sees
+// is the PUBLISHED snapshot, and it keeps being served until a new revision
+// replaces it. This module remains the directory's typed shape, its seed data
+// and its contact-verification workflow; `verifyResource` now publishes
+// through the shared store, so a verification is a real publish with real
+// revision history rather than a private boolean.
 import { getStaffMember, type StaffRole } from "@/lib/roles";
+import {
+  publishedContentOfType,
+  seedDraftContent,
+  seedPublishedContent,
+  subscribeContent,
+  __resetContentOfType,
+} from "@/lib/contentPublishing";
 
 export interface ResourceCategory {
   id: string;
@@ -52,8 +71,6 @@ export interface ResourceVerification {
   confirmedPhone: boolean;
   confirmedHours: boolean;
   note?: string;
-  /** Verification is not permanent; re-check by this date. */
-  expiresOn: string;
 }
 
 export interface CommunityResource {
@@ -81,8 +98,19 @@ export const RESOURCE_VERIFIER_ROLES: StaffRole[] = [
   "sys_admin",
 ];
 
-/** How long a verification stands before it must be re-checked. */
-export const VERIFICATION_VALID_DAYS = 180;
+// REMOVED: the 180-day verification expiry and the silent auto-unpublish that
+// went with it (`VERIFICATION_VALID_DAYS`, `ResourceVerification.expiresOn`,
+// `flagResourceForRecheck`). Product direction: at this stage of the program
+// there is one county and one team, and content silently vanishing from the
+// patient portal on a timer is worse than a stale phone number nobody was
+// warned about.
+//
+// THIS IS ANTICIPATED TO COME BACK. Once there are multiple site / county /
+// state partners, "who last confirmed this, and how long ago" stops being
+// answerable from memory and a re-check clock becomes genuinely valuable. The
+// shape to reintroduce is a re-check DUE DATE that surfaces the entry in the
+// staff queue and badges it in the admin UI — it should still not unpublish
+// anything on its own; a human decides to pull an entry.
 
 function seed(
   id: string,
@@ -363,21 +391,22 @@ export function subscribeResources(l: () => void): () => void {
   return () => listeners.delete(l);
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+// A publish in the shared content store must also wake this module's
+// subscribers: a resource published through /admin-content is patient-visible
+// immediately, so the patient list has to re-render.
+subscribeContent(() => notify());
 
 /**
- * PURE. The single definition of "live". Expired verifications are not live,
- * and an entry missing address/phone/hours can never be live regardless of
- * what someone ticked.
+ * PURE. Whether this entry has a COMPLETE contact verification on it. No
+ * expiry: a verification does not rot on a timer any more (see the removal
+ * note above). This is the staff-queue predicate, not the patient one —
+ * patient visibility is `patientVisibleResources`, i.e. what is PUBLISHED.
  */
-export function isResourceLive(r: CommunityResource, asOf: string = today()): boolean {
+export function isResourceVerified(r: CommunityResource): boolean {
   if (r.status !== "verified" || !r.verified || !r.verification) return false;
   const v = r.verification;
   if (!v.confirmedAddress || !v.confirmedPhone || !v.confirmedHours) return false;
-  if (!r.address.trim() || !r.phone.trim() || !r.hours.trim()) return false;
-  return v.expiresOn >= asOf;
+  return !!(r.address.trim() && r.phone.trim() && r.hours.trim());
 }
 
 export function listResources(categoryId?: string): CommunityResource[] {
@@ -387,14 +416,23 @@ export function listResources(categoryId?: string): CommunityResource[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** What a PATIENT may see: live entries only. */
+/**
+ * What a PATIENT may see: the PUBLISHED snapshot of every managed resource,
+ * read straight out of the shared content store. Nothing here consults the
+ * local `verified` flag — publishing is the one visibility switch, whether the
+ * publish came from `verifyResource` or from the content manager in
+ * /admin-content.
+ */
 export function patientVisibleResources(categoryId?: string): CommunityResource[] {
-  return listResources(categoryId).filter((r) => isResourceLive(r));
+  return publishedContentOfType("community_resource")
+    .map((b) => b as unknown as CommunityResource)
+    .filter((r) => !!r.id && (!categoryId || r.categoryId === categoryId))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** The staff verification queue — everything not currently live. */
+/** The staff verification queue — everything without a complete verification. */
 export function resourceVerificationQueue(): CommunityResource[] {
-  return listResources().filter((r) => !isResourceLive(r));
+  return listResources().filter((r) => !isResourceVerified(r));
 }
 
 export function getResource(id: string): CommunityResource | undefined {
@@ -402,7 +440,12 @@ export function getResource(id: string): CommunityResource | undefined {
   return r ? structuredClone(r) : undefined;
 }
 
-/** Staff sourcing pass: fill in the facts. Does NOT make anything live. */
+/**
+ * Staff sourcing pass: fill in the facts. Does NOT publish, and — unlike
+ * before — does NOT yank a published entry away from patients either. The
+ * published snapshot keeps being served until a new one replaces it, the same
+ * rule every managed lesson follows. Nothing disappears without a human act.
+ */
 export function updateResourceDetails(
   id: string,
   patch: Partial<Pick<CommunityResource, "name" | "address" | "phone" | "hours" | "description">>,
@@ -428,6 +471,8 @@ export interface VerifyInput {
   confirmedPhone: boolean;
   confirmedHours: boolean;
   note?: string;
+  /** Historical replay only: the real timestamp of a past verification. */
+  atISO?: string;
 }
 
 export type VerifyResult =
@@ -435,9 +480,16 @@ export type VerifyResult =
   | { ok: false; reason: string };
 
 /**
- * The real staff verification action. Everything that could make this a badge
- * rather than a workflow is refused here: the wrong role, a missing fact, or
- * an incomplete confirmation.
+ * The real staff verification action, and now also the PUBLISH act for a
+ * directory entry: on success it writes the entry into the shared content
+ * store as a published revision attributed to the verifier. The role gate that
+ * protects publishing here is `RESOURCE_VERIFIER_ROLES` (checked immediately
+ * below) — deliberately wider than the content-manager roster, because
+ * confirming a shelter's phone number is a task anyone who made the call can
+ * attest to.
+ *
+ * Everything that could make this a badge rather than a workflow is still
+ * refused: the wrong role, a missing fact, an incomplete confirmation.
  */
 export function verifyResource(input: VerifyInput): VerifyResult {
   const r = resources.get(input.resourceId);
@@ -451,38 +503,34 @@ export function verifyResource(input: VerifyInput): VerifyResult {
   if (!input.confirmedAddress || !input.confirmedPhone || !input.confirmedHours)
     return { ok: false, reason: "All three facts must be confirmed with the provider." };
 
-  const expires = new Date();
-  expires.setDate(expires.getDate() + VERIFICATION_VALID_DAYS);
+  const at = input.atISO ?? new Date().toISOString();
   r.verification = {
     verifiedBy: input.actorName,
     verifiedByStaffId: input.actorStaffId,
-    verifiedAt: new Date().toISOString(),
+    verifiedAt: at,
     confirmedAddress: true,
     confirmedPhone: true,
     confirmedHours: true,
     note: input.note,
-    expiresOn: expires.toISOString().slice(0, 10),
   };
   r.status = "verified";
   r.verified = true;
   r.placeholder = false;
+  seedPublishedContent({
+    typeId: "community_resource",
+    id: r.id,
+    body: structuredClone(r) as unknown as Record<string, unknown>,
+    actor: { staffId: input.actorStaffId, name: input.actorName, role: input.actorRole },
+    atISO: at,
+    note: input.note,
+  });
   notify();
   return { ok: true, resource: structuredClone(r) };
 }
 
-/** Send a live entry back to the queue (hours changed, phone dead, closed). */
-export function flagResourceForRecheck(id: string, reason: string): CommunityResource | undefined {
-  const r = resources.get(id);
-  if (!r) return undefined;
-  r.status = "needs_update";
-  r.verified = false;
-  if (r.verification) r.verification.note = reason;
-  notify();
-  return structuredClone(r);
-}
-
 export function __resetResources(): void {
   resources.clear();
+  __resetContentOfType("community_resource");
   for (const r of SEED_RESOURCES) resources.set(r.id, structuredClone(r));
   applyRecordedVerifications();
 }
@@ -496,15 +544,26 @@ export function __resetResources(): void {
  * by driving `verifyResource` — the same function the staff
  * `ResourceVerificationQueue` calls — with her real staff identity and all
  * three confirmations. Nothing here sets `verified` directly, so every gate
- * (role, complete facts, all three confirmations, expiry window) still runs.
+ * (role, complete facts, all three confirmations) still runs.
+ *
+ * HOW IT SURVIVED THE MIGRATION ONTO THE CONTENT MODEL. It was not re-stamped
+ * with today's date and it was not replaced by a synthetic "migrated" event.
+ * `verifyResource` now publishes into the shared content store, and the replay
+ * passes Cathy's REAL verification timestamp through `atISO`, so each of the
+ * 20 sourced entries lands in `/admin-content` history as revision 1:
+ * published, by Cathy (clinical_coordinator, s-cc2), on 2026-08-12, carrying
+ * her verbatim verification note. Her pass IS the initial published revision.
  *
  * Only SOURCED entries are covered. The never-sourced skeletons stay in the
- * queue, invisible to patients, exactly as before.
+ * queue as unpublished DRAFTS in the content store — editable by the content
+ * manager, invisible to patients, exactly as before.
  */
 export const RESOURCE_VERIFIER_CATHY = {
   staffId: "s-cc2",
   name: "Cathy",
   role: "clinical_coordinator" as StaffRole,
+  /** The real date of her pass — the same one recorded on the naloxone track. */
+  verifiedOn: "2026-08-12",
   note:
     "Human verification pass: address, phone and hours confirmed directly with each organisation. Published hours strings still carry the sourced '(verify hours)' hedge where the organisation gave no fixed public hours.",
 };
@@ -524,6 +583,18 @@ function applyRecordedVerifications(): void {
       confirmedPhone: true,
       confirmedHours: true,
       note: RESOURCE_VERIFIER_CATHY.note,
+      atISO: `${RESOURCE_VERIFIER_CATHY.verifiedOn}T00:00:00.000Z`,
+    });
+  }
+  // Everything Cathy did NOT verify still becomes managed content — as a
+  // draft, so the content manager can source it in /admin-content instead of
+  // waiting for a code change. A draft is never served to a patient.
+  for (const r of SEED_RESOURCES) {
+    if (CATHY_VERIFIED_RESOURCE_IDS.includes(r.id)) continue;
+    seedDraftContent({
+      typeId: "community_resource",
+      id: r.id,
+      body: structuredClone(r) as unknown as Record<string, unknown>,
     });
   }
 }

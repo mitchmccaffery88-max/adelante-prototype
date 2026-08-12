@@ -55,6 +55,12 @@ export function ContentPreview({
   descriptor: ContentTypeDescriptor;
   body: ContentBody;
 }) {
+  // Lessons carry a numbered instructional sequence; a community resource or a
+  // naloxone access point does not. Preview whichever shape this type is,
+  // rather than pretending every managed type is a lesson.
+  const stepped = descriptor.fields.filter((f) => f.step);
+  const shown = stepped.length > 0 ? stepped : descriptor.fields;
+  const minutes = readField(body, "minutes");
   return (
     <Card className="space-y-4 p-5" data-testid="content-preview">
       <div>
@@ -62,13 +68,11 @@ export function ContentPreview({
           Preview — what a patient would see
         </p>
         <h3 className="font-display text-2xl text-navy">{descriptor.titleOf(body)}</h3>
-        <p className="text-xs text-muted-foreground">
-          About {String(readField(body, "minutes") ?? "?")} minutes
-        </p>
+        {typeof minutes === "number" && (
+          <p className="text-xs text-muted-foreground">About {minutes} minutes</p>
+        )}
       </div>
-      {descriptor.fields
-        .filter((f) => f.step)
-        .map((f) => {
+      {shown.map((f) => {
           const value = readField(body, f.key);
           if (f.kind === "activity") return <ActivityPreview key={f.key} activity={value} />;
           if (f.kind === "list") {
@@ -76,7 +80,8 @@ export function ContentPreview({
             return (
               <div key={f.key}>
                 <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {f.step}. {f.label}
+                  {f.step ? `${f.step}. ` : ""}
+                  {f.label}
                 </p>
                 <ul className="mt-1 flex flex-wrap gap-1.5">
                   {items.filter(Boolean).map((i, n) => (
@@ -95,7 +100,8 @@ export function ContentPreview({
           return (
             <div key={f.key}>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {f.step}. {f.label}
+                {f.step ? `${f.step}. ` : ""}
+                {f.label}
               </p>
               <p className="whitespace-pre-wrap text-sm text-foreground">
                 {text || <span className="text-muted-foreground">— empty —</span>}
