@@ -18,6 +18,7 @@ import {
   FileInput,
   FileSearch,
   FileStack,
+  FileText,
   Gauge,
   HandHeart,
   Inbox,
@@ -552,6 +553,12 @@ export type PatientRoute =
   | "/recovery-journey"
   | "/schedule"
   | "/intake"
+  // §P1 My Care de-clutter — real routes for what used to be `/home` anchors.
+  // Medication, Profile and Documents each own a real surface now, so the nav
+  // entry is a destination rather than a scroll position inside My Care.
+  | "/medications"
+  | "/profile"
+  | "/documents"
   // §Weekly recap — real weekly stats plus a one-off Adel reflection.
   | "/weekly-recap"
   // §Tier 1 Build A — real crisis landing page and the naloxone /
@@ -632,15 +639,12 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     mobile: false,
   },
   { id: "appointments", labelKey: "navAppointments", to: "/schedule", icon: Calendar, mobile: false },
-  {
-    id: "medication",
-    labelKey: "navMedication",
-    to: "/home",
-    hash: "my-medications",
-    icon: Pill,
-    mobile: false,
-  },
-  { id: "profile", labelKey: "navProfile", to: "/home", hash: "my-profile", icon: UserCog, mobile: false },
+  // §P1 My Care de-clutter — real destinations, not `/home` anchors. The
+  // duplicated tiles were removed from My Care, so an anchor would now scroll
+  // to nothing.
+  { id: "medication", labelKey: "navMedication", to: "/medications", icon: Pill, mobile: false },
+  { id: "profile", labelKey: "navProfile", to: "/profile", icon: UserCog, mobile: false },
+  { id: "documents", labelKey: "navDocuments", to: "/documents", icon: FileText, mobile: false },
   {
     id: "weekly-recap",
     labelKey: "navWeeklyRecap",
@@ -688,9 +692,9 @@ export const PATIENT_ROUTES: readonly PatientRoute[] = Array.from(
 //
 // The bottom tab bar keeps the five real patient ROUTES (PATIENT_NAV); the
 // desktop/tablet sidebar is a superset that also deep-links to the sections
-// that live on /home today (care plan, medications, profile). They are hash
-// targets rather than new routes because Build 1 is presentation only — the
-// home dashboard restructure is the next build.
+// that still genuinely live on /home (care plan, obligations, care messages).
+// Medication, Profile and Documents are real routes as of the My Care
+// de-clutter pass.
 export type PatientSidebarEntry = PatientNavEntry;
 
 /** Desktop sidebar shows the whole registry in source order. */

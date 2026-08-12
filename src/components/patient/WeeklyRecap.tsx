@@ -162,7 +162,7 @@ export function WeeklyRecap() {
             </p>
           )}
           <Button asChild variant="outline" size="patient" className="mt-3">
-            <Link to="/home" hash="my-medications">
+            <Link to="/medications">
               Open my medications
             </Link>
           </Button>

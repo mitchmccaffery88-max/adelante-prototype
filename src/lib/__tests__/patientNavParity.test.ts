@@ -20,6 +20,7 @@ describe("patient nav registry", () => {
       "appointments",
       "medication",
       "profile",
+      "documents",
       "weekly-recap",
       "intake",
     ]);
@@ -48,6 +49,10 @@ describe("patient nav registry", () => {
       "/resources",
       "/recovery-journey",
       "/schedule",
+      // §P1 My Care de-clutter — real routes, no longer /home hash anchors.
+      "/medications",
+      "/profile",
+      "/documents",
       "/weekly-recap",
       "/intake",
       // §Tier 1 Build A — patient-shell routes that are not nav entries.

@@ -41,17 +41,20 @@ import { Route as CravingRouteImport } from './routes/craving'
 import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
+import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
 import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as MedicationsRouteImport } from './routes/medications'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
+import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
@@ -235,6 +238,11 @@ const DashboardsRoute = DashboardsRouteImport.update({
   path: '/dashboards',
   getParentRoute: () => rootRouteImport,
 } as any)
+const DocumentsRoute = DocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GroupAuditRoute = GroupAuditRouteImport.update({
   id: '/group-audit',
   path: '/group-audit',
@@ -265,6 +273,11 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MedicationsRoute = MedicationsRouteImport.update({
+  id: '/medications',
+  path: '/medications',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MessageQueueRoute = MessageQueueRouteImport.update({
   id: '/message-queue',
   path: '/message-queue',
@@ -288,6 +301,11 @@ const PatientRoute = PatientRouteImport.update({
 const PreReleaseRoute = PreReleaseRouteImport.update({
   id: '/pre-release',
   path: '/pre-release',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfileRoute = ProfileRouteImport.update({
+  id: '/profile',
+  path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RecoveryJourneyRoute = RecoveryJourneyRouteImport.update({
@@ -435,17 +453,20 @@ export interface FileRoutesByFullPath {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/documents': typeof DocumentsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
@@ -502,17 +523,20 @@ export interface FileRoutesByTo {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/documents': typeof DocumentsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
@@ -568,17 +592,20 @@ export interface FileRoutesById {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/documents': typeof DocumentsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/pre-release': typeof PreReleaseRoute
+  '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
@@ -637,17 +664,20 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/documents'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/medications'
     | '/message-queue'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/profile'
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
@@ -704,17 +734,20 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/documents'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/medications'
     | '/message-queue'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/profile'
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
@@ -769,17 +802,20 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/documents'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/medications'
     | '/message-queue'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
     | '/pre-release'
+    | '/profile'
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
@@ -837,17 +873,20 @@ export interface RootRouteChildren {
   CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
+  DocumentsRoute: typeof DocumentsRoute
   GroupAuditRoute: typeof GroupAuditRoute
   GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
   LibraryRoute: typeof LibraryRoute
+  MedicationsRoute: typeof MedicationsRoute
   MessageQueueRoute: typeof MessageQueueRoute
   NaloxoneRoute: typeof NaloxoneRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   PreReleaseRoute: typeof PreReleaseRoute
+  ProfileRoute: typeof ProfileRoute
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
@@ -1090,6 +1129,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof DashboardsRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/documents': {
+      id: '/documents'
+      path: '/documents'
+      fullPath: '/documents'
+      preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/group-audit': {
       id: '/group-audit'
       path: '/group-audit'
@@ -1132,6 +1178,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/medications': {
+      id: '/medications'
+      path: '/medications'
+      fullPath: '/medications'
+      preLoaderRoute: typeof MedicationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/message-queue': {
       id: '/message-queue'
       path: '/message-queue'
@@ -1165,6 +1218,13 @@ declare module '@tanstack/react-router' {
       path: '/pre-release'
       fullPath: '/pre-release'
       preLoaderRoute: typeof PreReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profile': {
+      id: '/profile'
+      path: '/profile'
+      fullPath: '/profile'
+      preLoaderRoute: typeof ProfileRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recovery-journey': {
@@ -1391,17 +1451,20 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
+  DocumentsRoute: DocumentsRoute,
   GroupAuditRoute: GroupAuditRoute,
   GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
   LibraryRoute: LibraryRoute,
+  MedicationsRoute: MedicationsRoute,
   MessageQueueRoute: MessageQueueRoute,
   NaloxoneRoute: NaloxoneRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   PreReleaseRoute: PreReleaseRoute,
+  ProfileRoute: ProfileRoute,
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,

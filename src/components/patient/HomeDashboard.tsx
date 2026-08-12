@@ -600,7 +600,7 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
               })}
             </ul>
             <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-              <Link to="/home" hash="my-medications">
+              <Link to="/medications">
                 All my medicines
               </Link>
             </Button>

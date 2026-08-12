@@ -1,53 +1,30 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { useI18n, type Key } from "@/lib/i18n";
+import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import {
-  Video,
   Smartphone,
   Calendar as CalIcon,
   HeartPulse,
-  MapPin,
   ClipboardList,
   ShieldCheck,
   ArrowRight,
   Sparkles,
-  Target,
-  CalendarPlus,
-  CheckCircle2,
-  Lock,
   Bell,
 } from "lucide-react";
-import {
-  Home,
-  Utensils,
-  Activity,
-  Briefcase,
-  FileText,
-  Users,
-  Car,
-  CalendarClock,
-  MessageSquare,
-  Mail,
-  HandHeart,
-} from "lucide-react";
+import { Users, MessageSquare, HandHeart } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
-import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
-import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { ReentryDayZeroModule } from "@/components/reentry/ReentryDayZeroModule";
 import { ObligationsCard } from "@/components/reentry/ObligationsCard";
 import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
 import { QuickCheckCard } from "@/components/clinical/QuickCheckCard";
-import { MedCheckInCard } from "@/components/clinical/MedCheckInCard";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
-import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
-import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { EmptyState } from "@/components/EmptyState";
 import { CrisisNotice } from "@/components/CrisisNotice";
@@ -55,40 +32,11 @@ import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { useEffect, useRef, useState } from "react";
-import { UserCog, Phone as PhoneIcon, Globe2 } from "lucide-react";
-import { Pill, X } from "lucide-react";
+import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
-import type { Medication } from "@/lib/ehr";
-import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { DailyCheckInCard } from "@/components/patient/DailyCheckInCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
-
-// Reconcile every Patient.needs key with both a translation key and an icon
-// so a true value never renders as a blank chip. Unknown keys are filtered
-// out defensively in the render below.
-const needMeta: Record<string, { tKey: Key; Icon: typeof Home }> = {
-  housing: { tKey: "needHousing", Icon: Home },
-  food: { tKey: "needFood", Icon: Utensils },
-  substanceUse: { tKey: "needSubstanceUse", Icon: Activity },
-  employment: { tKey: "needEmployment", Icon: Briefcase },
-  benefits: { tKey: "needBenefits", Icon: FileText },
-  family: { tKey: "needFamily", Icon: Users },
-  transport: { tKey: "needTransport", Icon: Car },
-};
-
-const statusMap: Record<string, Key> = {
-  scheduled: "statusScheduled",
-  completed: "statusCompleted",
-  cancelled: "statusCancelled",
-  no_show: "statusNoShow",
-};
-
-const goalStatusMap: Record<string, Key> = {
-  not_started: "goalNotStarted",
-  in_progress: "goalInProgress",
-  done: "goalDone",
-};
 
 const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
 
@@ -149,7 +97,6 @@ export function PatientHome() {
   const search = useSearch({ strict: false }) as { msg?: string };
   const messagePrefill = typeof search.msg === "string" ? search.msg : undefined;
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
-  const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
   const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
 
   // No record for the acting id (pre-intake front-door visitor, or a
@@ -172,20 +119,9 @@ export function PatientHome() {
     return <FirstTimeWelcome firstName={patient.firstName} />;
   }
 
-  const upcoming = appts.filter((a) => a.status === "scheduled");
-  const next = upcoming[0];
+  // §P1 My Care de-clutter — the appointment and medication lists that used
+  // to be derived here now live on /schedule and /medications.
   const remaining = Math.max(0, 90 - patient.episodeDay);
-  const goals = patient.goals ?? [];
-  const meds = AdelanteEHR.listMedications(patient.id);
-
-  const now = Date.now();
-  const futureAppts = [...appts]
-    .filter((a) => new Date(a.start).getTime() > now)
-    .sort((a, b) => +new Date(a.start) - +new Date(b.start));
-  const pastAppts = [...appts]
-    .filter((a) => new Date(a.start).getTime() <= now)
-    .sort((a, b) => +new Date(b.start) - +new Date(a.start))
-    .slice(0, 5);
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
@@ -210,91 +146,6 @@ export function PatientHome() {
       </Card>
 
       <HomeScreenNudge />
-
-      <PatientDocumentsCard patientId={patient.id} />
-
-      <Card className="p-5">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-            <CalIcon className="h-4 w-4" /> {t("homeNextSession")}
-          </div>
-          {next ? (
-            <>
-              <div className="mt-2 font-display text-xl text-navy">
-                <ClientDate
-                  value={next.start}
-                  options={{
-                    weekday: "long",
-                    month: "short",
-                    day: "numeric",
-                    hour: "numeric",
-                    minute: "2-digit",
-                  }}
-                />
-              </div>
-              <div className="text-sm text-muted-foreground">
-                {AdelanteEHR.getClinician(next.clinicianId)?.name} · {next.durationMin}{" "}
-                {t("homeMin")} ·{" "}
-                {next.modality === "phone"
-                  ? t("schPhone")
-                  : next.modality === "in_person"
-                    ? "In person"
-                    : t("homeVideo")}
-                {next.serviceType &&
-                  ` · ${AdelanteEHR.getServiceType(next.serviceType)?.label ?? ""}`}
-              </div>
-              {next.modality === "in_person" &&
-                next.locationId &&
-                (() => {
-                  const loc = AdelanteEHR.getLocation(next.locationId);
-                  if (!loc) return null;
-                  return (
-                    <div className="mt-1 text-xs text-muted-foreground flex items-start gap-1.5">
-                      <MapPin className="h-3.5 w-3.5 text-teal mt-0.5" />
-                      <span>
-                        {loc.name} — {loc.address}, {loc.city}
-                        {loc.room ? ` · ${loc.room}` : ""}
-                      </span>
-                    </div>
-                  );
-                })()}
-              <NotificationLine patientId={patient.id} apptId={next.id} />
-              <Button
-                className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90"
-                onClick={() =>
-                  toast.success("Joining video session", {
-                    description: "Adelante telehealth (mock)",
-                  })
-                }
-              >
-                <Video className="h-4 w-4 mr-2" /> {t("homeJoin")}
-              </Button>
-            </>
-          ) : (
-            <>
-              <div className="mt-2 text-sm text-muted-foreground">{t("homeNoSessions")}</div>
-              <Button asChild className="mt-4 w-full bg-teal text-teal-foreground hover:bg-teal/90">
-                <Link to="/schedule">
-                  <CalendarPlus className="h-4 w-4 mr-2" /> {t("homeSchedule")}
-                </Link>
-              </Button>
-            </>
-          )}
-          {next && (
-            <div className="mt-2 grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <Button asChild variant="outline" size="sm">
-                <Link to="/schedule" search={{ reschedule: next.id }}>
-                  <CalendarClock className="h-4 w-4 mr-1.5" /> Reschedule
-                </Link>
-              </Button>
-              <Button asChild variant="outline" size="sm">
-                <Link to="/schedule">
-                  <CalendarPlus className="h-4 w-4 mr-1.5" /> {t("homeBookAnother")}
-                </Link>
-              </Button>
-            </div>
-          )}
-      </Card>
-
       {/* Grouped care-plan section: plan summary + goals, support needs, referrals. */}
       <section
         aria-labelledby="your-care-plan-heading"
@@ -306,9 +157,7 @@ export function PatientHome() {
         >
           <HeartPulse className="h-5 w-5 text-teal" /> Your Care Plan
         </h2>
-        <p className="text-xs text-muted-foreground mt-1">
-          {t("homeGoalsHelp")}
-        </p>
+        <p className="text-xs text-muted-foreground mt-1">{t("homeGoalsHelp")}</p>
         <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
           <SupportPlanCard patientId={patient.id} />
@@ -325,90 +174,12 @@ export function PatientHome() {
       <div id="daily-check-in" className="scroll-mt-24">
         <QuickCheckCard patientId={patient.id} />
       </div>
-      <MedCheckInCard patientId={patient.id} />
-
-      {meds.length > 0 && (
-        <Card className="p-5" id="my-medications">
-          <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-            <Pill className="h-4 w-4" /> My medications
-          </div>
-          <p className="mt-1 text-xs text-muted-foreground">
-            Managed with your care team through eScribe.
-          </p>
-          <ul className="mt-3 space-y-2 text-sm">
-            {meds.map((m) => (
-              <MedRow key={m.id} med={m} patientId={patient.id} />
-            ))}
-          </ul>
-          <p className="mt-3 text-[10px] text-muted-foreground">
-            Questions about your medication? Message your care team.
-          </p>
-        </Card>
-      )}
-
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} prefill={messagePrefill} />
-      <MyProfileCard patientId={patient.id} />
       <AdvocateDesignationPanel
         patientId={patient.id}
         designatedBy={{ actor: "patient", name: `${patient.firstName} ${patient.lastName}` }}
       />
-
-      <div>
-        <h2 className="font-display text-lg text-navy mb-3">{t("patUpcoming")}</h2>
-        <div className="space-y-2">
-          {futureAppts.length === 0 ? (
-            <Card className="p-4 text-sm text-muted-foreground">{t("patNoneUpcoming")}</Card>
-          ) : (
-            futureAppts.map((a) => (
-              <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
-                <div>
-                  <div className="text-navy font-medium">
-                    <ClientDate value={a.start} />
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {AdelanteEHR.getClinician(a.clinicianId)?.name}
-                  </div>
-                </div>
-                <Badge variant="outline" className="capitalize">
-                  {t(statusMap[a.status] ?? (a.status as Key))}
-                </Badge>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>
-      <div>
-        <h2 className="font-display text-lg text-navy mb-3">{t("patHistory")}</h2>
-        <div className="space-y-2">
-          {pastAppts.length === 0 ? (
-            <Card className="p-4 text-sm text-muted-foreground">{t("patNoneHistory")}</Card>
-          ) : (
-            pastAppts.map((a) => (
-              <Card key={a.id} className="p-3 flex items-center justify-between text-sm">
-                <div>
-                  <div className="text-navy font-medium">
-                    <ClientDate value={a.start} />
-                  </div>
-                  <div className="text-xs text-muted-foreground">
-                    {AdelanteEHR.getClinician(a.clinicianId)?.name}
-                  </div>
-                </div>
-                <Badge variant="outline" className="capitalize">
-                  {t(statusMap[a.status] ?? (a.status as Key))}
-                </Badge>
-              </Card>
-            ))
-          )}
-        </div>
-      </div>
-
-      {/* Privacy & Consent — moved to bottom so it sits beneath upcoming/history */}
-      <ConsentCard patientId={patient.id} />
-      {/* §ASCMI — read-only structured consent status, adjacent to the toggles. */}
-      <PatientConsentStatusCard patientId={patient.id} />
-      {/* §Phase 3 — PO two-tier disclosure; population-gated inside. */}
-      <PoDisclosureCard patientId={patient.id} />
       {/* §Phase 6 — reentry Day-0: triggers off the real safety-net lookup only. */}
       <div id="day-zero" className="scroll-mt-24">
         <ReentryDayZeroModule patientId={patient.id} />
@@ -516,112 +287,6 @@ function TasksCard({ patientId }: { patientId: string }) {
   );
 }
 
-function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
-  const requests = useEhr(() =>
-    AdelanteEHR.listRefillRequests({ patientId }).filter((r) => r.medicationId === med.id),
-  );
-  const latest = requests[0];
-  const [open, setOpen] = useState(false);
-  const [note, setNote] = useState("");
-
-  const submit = () => {
-    const req = AdelanteEHR.requestRefill({
-      patientId,
-      medicationId: med.id,
-      pharmacyNote: note.trim() || undefined,
-      requestedBy: "patient",
-    });
-    if (req) {
-      // §Crisis detection — patient-authored free text to the prescriber.
-      scanTextForCrisis(patientId, note, { surface: "a refill request note" });
-      toast.success("Refill request sent to your care team");
-      setOpen(false);
-      setNote("");
-    } else {
-      toast.error("Could not send that request.");
-    }
-  };
-
-  const statusBadge = latest
-    ? latest.status === "pending"
-      ? { label: "Refill pending", cls: "bg-gold/30 text-navy" }
-      : latest.status === "sent_to_pharmacy" || latest.status === "approved"
-        ? { label: "Refill approved", cls: "bg-success/20 text-success" }
-        : { label: "Refill denied", cls: "bg-destructive/15 text-destructive" }
-    : null;
-
-  return (
-    <li className="border-b last:border-0 pb-2 last:pb-0">
-      <div className="flex items-center justify-between gap-2">
-        <div className="min-w-0">
-          <div className="font-medium text-navy">
-            {med.name} <span className="text-muted-foreground font-normal">· {med.dose}</span>
-          </div>
-          <div className="text-[11px] text-muted-foreground">
-            {med.frequency} · {med.prescriber}
-          </div>
-        </div>
-        <div className="flex items-center gap-2 shrink-0">
-          {statusBadge ? (
-            <Badge
-              className={`${statusBadge.cls} border-0 text-[10px]`}
-              title={latest?.denyReason ?? undefined}
-            >
-              {statusBadge.label}
-            </Badge>
-          ) : (
-            <Badge variant="outline" className="text-[10px]">
-              active
-            </Badge>
-          )}
-          {(!latest || latest.status === "denied") && (
-            <Button
-              size="sm"
-              variant="outline"
-              className="min-h-11 min-w-11 text-[11px]"
-              onClick={() => setOpen((v) => !v)}
-            >
-              Request refill
-            </Button>
-          )}
-        </div>
-      </div>
-      {open && (
-        <div className="mt-2 rounded-md border bg-muted/30 p-2 space-y-2">
-          <Textarea
-            value={note}
-            onChange={(e) => setNote(e.target.value)}
-            placeholder="Note for your prescriber (optional) — e.g. pharmacy name, ran out early"
-            className="min-h-[60px] text-xs"
-          />
-          <div className="flex justify-end gap-2">
-            <Button
-              size="sm"
-              variant="ghost"
-              className="min-h-11 text-[11px]"
-              onClick={() => setOpen(false)}
-            >
-              Cancel
-            </Button>
-            <Button
-              size="sm"
-              className="min-h-11 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
-              onClick={submit}
-            >
-              Send request
-            </Button>
-          </div>
-        </div>
-      )}
-      {latest?.denyReason && latest.status === "denied" && (
-        <div className="mt-1 text-[10px] text-destructive">
-          Prescriber note: {latest.denyReason}
-        </div>
-      )}
-    </li>
-  );
-}
-
 // §Messaging Phase 2 — "message your care team". One ongoing thread.
 function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: string }) {
   const { t } = useI18n();
@@ -724,137 +389,6 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
   );
 }
 
-function MyProfileCard({ patientId }: { patientId: string }) {
-  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const [open, setOpen] = useState(false);
-  if (!patient) return null;
-  const channelLabel: Record<string, string> = {
-    text: "Text",
-    call: "Phone call",
-    video: "Video",
-  };
-  const timeLabel: Record<string, string> = {
-    morning: "Mornings",
-    afternoon: "Afternoons",
-    evening: "Evenings",
-  };
-  const langLabel: Record<string, string> = { en: "English", es: "Español" };
-  return (
-    <Card className="p-5" id="my-profile">
-      <div className="flex items-center justify-between gap-3">
-        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-          <UserCog className="h-4 w-4" /> My profile
-        </div>
-        <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
-          Edit
-        </Button>
-      </div>
-      <dl className="mt-3 grid sm:grid-cols-2 gap-y-2 gap-x-4 text-sm">
-        <Row label="Name">
-          {patient.firstName} {patient.lastName}
-          {patient.preferredName ? (
-            <span className="text-muted-foreground"> · "{patient.preferredName}"</span>
-          ) : null}
-        </Row>
-        {patient.pronouns && <Row label="Pronouns">{patient.pronouns}</Row>}
-        <Row label="Phone">
-          {patient.phone ? (
-            <span className="inline-flex items-center gap-1.5">
-              <PhoneIcon className="h-3.5 w-3.5 text-muted-foreground" /> {patient.phone}
-            </span>
-          ) : (
-            <span className="text-muted-foreground">Not on file</span>
-          )}
-        </Row>
-        <Row label="Language">
-          <span className="inline-flex items-center gap-1.5">
-            <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
-            {langLabel[patient.preferredLanguage ?? "en"]}
-          </span>
-        </Row>
-        {patient.contactPrefs && (
-          <Row label="Contact">
-            {channelLabel[patient.contactPrefs.channel]} ·{" "}
-            {timeLabel[patient.contactPrefs.bestTime]}
-          </Row>
-        )}
-        {patient.address && <Row label="Address">{patient.address}</Row>}
-        {patient.emergencyContact?.name && (
-          <Row label="Emergency">
-            {patient.emergencyContact.name}
-            {patient.emergencyContact.relationship
-              ? ` (${patient.emergencyContact.relationship})`
-              : ""}
-            {patient.emergencyContact.phone ? ` · ${patient.emergencyContact.phone}` : ""}
-          </Row>
-        )}
-      </dl>
-      <PatientProfileDialog patientId={patientId} open={open} onOpenChange={setOpen} />
-    </Card>
-  );
-}
-
-function NotificationLine({ patientId, apptId }: { patientId: string; apptId: string }) {
-  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const notes = (patient?.notifications ?? []).filter((n) => n.apptId === apptId);
-  if (notes.length === 0) return null;
-  const note = notes[0];
-  const verb =
-    note.kind === "booked"
-      ? "Booked"
-      : note.kind === "rescheduled"
-        ? "Rescheduled"
-        : note.kind === "cancelled"
-          ? "Cancelled"
-          : "Confirmed";
-  // Group latest state per channel across the batch tied to this event.
-  const latestByChannel = new Map<string, typeof note>();
-  for (const n of notes) {
-    if (n.kind !== note.kind) continue;
-    if (!latestByChannel.has(n.channel)) latestByChannel.set(n.channel, n);
-  }
-  const label = (c: string) => (c === "profile" ? "profile" : c === "sms" ? "text" : "email");
-  const dot = (s: string) =>
-    s === "delivered"
-      ? "bg-teal"
-      : s === "sent"
-        ? "bg-amber-500"
-        : s === "failed"
-          ? "bg-destructive"
-          : "bg-muted-foreground";
-  return (
-    <div className="mt-2 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
-      <span className="inline-flex items-center gap-1.5 text-teal">
-        <CheckCircle2 className="h-3 w-3" />
-        {verb}
-      </span>
-      {Array.from(latestByChannel.values()).map((n) => (
-        <span
-          key={n.id}
-          className="inline-flex items-center gap-1 rounded-full border border-border bg-background px-2 py-0.5"
-          title={n.error ?? n.state}
-        >
-          <span className={`inline-block h-1.5 w-1.5 rounded-full ${dot(n.state)}`} />
-          {label(n.channel)} · {n.state}
-        </span>
-      ))}
-    </div>
-  );
-}
-
-function Row({ label, children }: { label: string; children: React.ReactNode }) {
-  return (
-    <div className="flex items-baseline gap-2">
-      <dt className="text-xs text-muted-foreground w-24 shrink-0">{label}</dt>
-      <dd className="text-foreground">{children}</dd>
-    </div>
-  );
-}
-
-function ConsentCard({ patientId }: { patientId: string }) {
-  return <ConsentCardInner patientId={patientId} />;
-}
-
 // §Group sessions — patient-facing, read-only. Topic + next date ONLY: no
 // attendance history, no roster of other members, no note content. Reuses
 // groupsForPatient / nextGroupOccurrenceForPatient rather than recomputing.
@@ -880,8 +414,8 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
           className="mt-4 rounded-lg border bg-card p-3 text-sm text-muted-foreground"
           data-testid="patient-your-groups-empty"
         >
-          No groups scheduled right now. If a group would be a good fit, your care team will
-          talk it through with you first.
+          No groups scheduled right now. If a group would be a good fit, your care team will talk it
+          through with you first.
         </p>
       )}
       <ul className="mt-4 space-y-3">
@@ -976,54 +510,6 @@ function ReferralsForYouCard({ patientId }: { patientId: string }) {
               <Badge variant="outline" className="text-[10px]">
                 {statusLabel[r.status] ?? r.status}
               </Badge>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
-
-function ConsentCardInner({ patientId }: { patientId: string }) {
-  const consent = useEhr(() => AdelanteEHR.getConsentState(patientId));
-  const rows: { key: "part2Sud" | "ecmShare" | "sms"; label: string; help: string }[] = [
-    {
-      key: "part2Sud",
-      label: "Share substance-use information with my care team",
-      help: "42 CFR Part 2 — only your Adelante care team. Never probation/parole.",
-    },
-    {
-      key: "ecmShare",
-      label: "Share with Enhanced Care Management partners",
-      help: "Lets housing, food, and reentry partners coordinate.",
-    },
-    {
-      key: "sms",
-      label: "Text-message reminders",
-      help: "Appointment and check-in reminders by SMS.",
-    },
-  ];
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <Lock className="h-4 w-4" /> Privacy & consent
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">
-        You can change these at any time. Changes apply right away.
-      </p>
-      <ul className="mt-3 space-y-3">
-        {rows.map((r) => (
-          <li key={r.key} className="flex items-start gap-3 rounded-md border p-3">
-            <Switch
-              checked={consent[r.key]}
-              onCheckedChange={(v) => {
-                AdelanteEHR.setConsent(patientId, r.key, v);
-                toast.success(v ? "Consent granted" : "Consent withdrawn");
-              }}
-            />
-            <div className="text-sm flex-1">
-              <div className="font-medium text-foreground">{r.label}</div>
-              <div className="text-xs text-muted-foreground mt-0.5">{r.help}</div>
             </div>
           </li>
         ))}

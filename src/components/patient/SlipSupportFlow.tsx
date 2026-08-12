@@ -28,7 +28,7 @@ export const NEXT_STEP_DESTINATIONS: Record<
   message_care_team: { to: "/home", hash: "care-messages" },
   find_meeting: { to: "/resources" },
   craving_tool: { to: "/craving" },
-  back_on_meds: { to: "/home", hash: "my-medications" },
+  back_on_meds: { to: "/medications" },
   rest: { to: "/home" },
 };
 
