@@ -72,6 +72,12 @@ export interface CheckInSources {
   doseSelfReportDates: readonly string[];
   /** `ScreenerResult.completedAt` ISO strings for the short-form quick checks. */
   quickCheckCompletedAt: readonly string[];
+  /**
+   * §Tier 1 Build B — day keys from the real daily mood check-in
+   * (`selfTracking.dailyCheckInDayKeys`). A third genuinely patient-authored,
+   * genuinely dated source, distinct from the clinical PHQ-2/GAD-2 quick check.
+   */
+  dailyCheckInDayKeys?: readonly string[];
 }
 
 /** Fold the real sources into distinct day keys, then compute the run. */
@@ -80,6 +86,7 @@ export function checkInStreakFrom(
   now: Date = new Date(),
 ): CheckInStreak {
   const keys = new Set<string>(sources.doseSelfReportDates);
+  for (const k of sources.dailyCheckInDayKeys ?? []) keys.add(k);
   for (const iso of sources.quickCheckCompletedAt) {
     const d = new Date(iso);
     if (!Number.isNaN(d.getTime())) keys.add(dayKey(d));
