@@ -400,8 +400,7 @@ export interface SeedPublishedInput {
  */
 export function seedPublishedContent(input: SeedPublishedInput): ContentResult {
   const k = key(input.typeId, input.id);
-  if (entries.has(k)) return { ok: false, reason: "Already under content management." };
-  const e: ContentEntry = {
+  const e: ContentEntry = entries.get(k) ?? {
     id: input.id,
     typeId: input.typeId,
     status: "published",
@@ -409,8 +408,10 @@ export function seedPublishedContent(input: SeedPublishedInput): ContentResult {
     revisions: [],
     overridesBaseline: input.overridesBaseline ?? false,
   };
+  e.body = clone(input.body);
+  e.status = "published";
   const rev: ContentRevision = {
-    rev: 1,
+    rev: e.revisions.length + 1,
     action: "published",
     body: clone(input.body),
     statusAfter: "published",
@@ -422,7 +423,7 @@ export function seedPublishedContent(input: SeedPublishedInput): ContentResult {
   };
   e.revisions.push(rev);
   e.publishedBody = clone(input.body);
-  e.publishedRev = 1;
+  e.publishedRev = rev.rev;
   e.publishedAt = input.atISO;
   e.publishedBy = input.actor.name;
   entries.set(k, e);
