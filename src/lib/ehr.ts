@@ -4989,6 +4989,22 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     sensitive: SUD_MED_RE.test(m.name),
   }));
 
+  // §Pre-release build 4 — the chart's own signed orders are a real
+  // medication source too, not just the eRx vendor feed. This is how MAT
+  // started in the pre-release workspace (build 3) reaches the CalAIM plan:
+  // read live off `p.orders`, deduped by name, never copied.
+  const chartOrders = (p.orders ?? []).filter((o) => o.status === "signed" || o.status === "held");
+  for (const o of chartOrders) {
+    const name = o.productName ?? o.drugName;
+    if (medications.some((m) => m.name.toLowerCase() === name.toLowerCase())) continue;
+    medications.push({
+      name,
+      state: "active",
+      sensitive: SUD_MED_RE.test(name),
+      ...(o.preReleaseEpisodeId ? { source: "pre_release" as const } : {}),
+    });
+  }
+
   const screenerHighlights: CarePlanScreenerHighlight[] = [];
   for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"]) {
     const r = p.screeners[key];
@@ -5019,6 +5035,18 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
     status: i.status,
   }));
   const sdohClosed = sdohItems.filter((i) => i.status === "completed").length;
+
+  // §Pre-release build 4 — social needs identified by the AHC-HRSN screening
+  // (build 2) are real, captured needs; surface them as open SDOH rows until
+  // the community team creates a real referral row for the same need.
+  const hrsn = p.screeners["ahc-hrsn"];
+  for (const d of hrsn?.domains ?? []) {
+    if (!d.positive) continue;
+    const label = d.label;
+    if (sdohItems.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
+    if (sdohOpen.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
+    sdohOpen.push({ need: label, status: "identified", source: "pre_release" });
+  }
 
   const upcoming = appointments
     .filter((a) => a.patientId === p.id && a.status === "scheduled")
