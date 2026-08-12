@@ -390,21 +390,22 @@ export function subscribeResources(l: () => void): () => void {
   return () => listeners.delete(l);
 }
 
-function today(): string {
-  return new Date().toISOString().slice(0, 10);
-}
+// A publish in the shared content store must also wake this module's
+// subscribers: a resource published through /admin-content is patient-visible
+// immediately, so the patient list has to re-render.
+subscribeContent(() => notify());
 
 /**
- * PURE. The single definition of "live". Expired verifications are not live,
- * and an entry missing address/phone/hours can never be live regardless of
- * what someone ticked.
+ * PURE. Whether this entry has a COMPLETE contact verification on it. No
+ * expiry: a verification does not rot on a timer any more (see the removal
+ * note above). This is the staff-queue predicate, not the patient one —
+ * patient visibility is `patientVisibleResources`, i.e. what is PUBLISHED.
  */
-export function isResourceLive(r: CommunityResource, asOf: string = today()): boolean {
+export function isResourceVerified(r: CommunityResource): boolean {
   if (r.status !== "verified" || !r.verified || !r.verification) return false;
   const v = r.verification;
   if (!v.confirmedAddress || !v.confirmedPhone || !v.confirmedHours) return false;
-  if (!r.address.trim() || !r.phone.trim() || !r.hours.trim()) return false;
-  return v.expiresOn >= asOf;
+  return !!(r.address.trim() && r.phone.trim() && r.hours.trim());
 }
 
 export function listResources(categoryId?: string): CommunityResource[] {
@@ -414,9 +415,18 @@ export function listResources(categoryId?: string): CommunityResource[] {
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** What a PATIENT may see: live entries only. */
+/**
+ * What a PATIENT may see: the PUBLISHED snapshot of every managed resource,
+ * read straight out of the shared content store. Nothing here consults the
+ * local `verified` flag — publishing is the one visibility switch, whether the
+ * publish came from `verifyResource` or from the content manager in
+ * /admin-content.
+ */
 export function patientVisibleResources(categoryId?: string): CommunityResource[] {
-  return listResources(categoryId).filter((r) => isResourceLive(r));
+  return publishedContentOfType("community_resource")
+    .map((b) => b as unknown as CommunityResource)
+    .filter((r) => !!r.id && (!categoryId || r.categoryId === categoryId))
+    .sort((a, b) => a.name.localeCompare(b.name));
 }
 
 /** The staff verification queue — everything not currently live. */
