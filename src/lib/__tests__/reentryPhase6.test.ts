@@ -154,15 +154,22 @@ describe("Obligations are strictly justice-involved only", () => {
 });
 
 describe("Community resources cannot go live without a real verification", () => {
-  it("seeds one clearly-placeholder skeleton per category, none patient-visible", () => {
-    expect(listResources()).toHaveLength(RESOURCE_CATEGORIES.length);
-    expect(listResources().every((r) => r.placeholder && !r.verified)).toBe(true);
+  /** A never-sourced skeleton: empty address/phone/hours. */
+  const placeholder = () => listResources().find((r) => r.placeholder)!;
+
+  it("seeds sourced-but-unverified entries plus skeletons, none patient-visible", () => {
+    const all = listResources();
+    expect(all.length).toBeGreaterThan(RESOURCE_CATEGORIES.length);
+    // Sourcing is not verification: nothing seeded may be verified or live.
+    expect(all.every((r) => !r.verified && r.status === "unverified")).toBe(true);
+    expect(all.some((r) => !r.placeholder && r.address && r.phone)).toBe(true);
+    expect(all.some((r) => r.placeholder)).toBe(true);
     expect(patientVisibleResources()).toEqual([]);
-    expect(resourceVerificationQueue()).toHaveLength(RESOURCE_CATEGORIES.length);
+    expect(resourceVerificationQueue()).toHaveLength(all.length);
   });
 
   it("refuses verification without address/phone/hours, and without all three confirmations", () => {
-    const r = listResources()[0]!;
+    const r = placeholder();
     const bare = verifyResource({
       resourceId: r.id,
       actorName: "CM",
@@ -187,7 +194,7 @@ describe("Community resources cannot go live without a real verification", () =>
   });
 
   it("refuses a role that may not publish", () => {
-    const r = listResources()[0]!;
+    const r = placeholder();
     updateResourceDetails(r.id, { address: "1 Main St", phone: "559-555-0000", hours: "9-5" });
     const res = verifyResource({
       resourceId: r.id,
@@ -201,7 +208,7 @@ describe("Community resources cannot go live without a real verification", () =>
   });
 
   it("goes live only after a complete staff verification, and drops out again on edit", () => {
-    const r = listResources()[0]!;
+    const r = placeholder();
     updateResourceDetails(r.id, { address: "1 Main St", phone: "559-555-0000", hours: "9-5" });
     const res = verifyResource({
       resourceId: r.id,
