@@ -150,7 +150,20 @@ export function PatientHome() {
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
   const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
 
-  if (!patient) return null;
+  // No record for the acting id (pre-intake front-door visitor, or a
+  // runtime-created demo record dropped by a reload). Rendering `null` here
+  // used to produce a silent blank page with no way forward.
+  if (!patient) {
+    return (
+      <div className="mx-auto w-full max-w-2xl p-4 sm:p-6">
+        <EmptyState
+          title="We don't have a record for you yet"
+          description="Start with a few questions and we'll set up your care. If you already signed up, sign in again to pick up where you left off."
+          action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
+        />
+      </div>
+    );
+  }
 
   // First-time experience: intake not yet completed.
   if (!patient.intakeCompletedAt) {
