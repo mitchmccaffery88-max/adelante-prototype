@@ -16,12 +16,22 @@ const buttonVariants = cva(
         secondary: "bg-secondary text-secondary-foreground shadow-sm hover:bg-secondary/80",
         ghost: "hover:bg-accent hover:text-accent-foreground",
         link: "text-primary underline-offset-4 hover:underline",
+        /* §Patient portal alignment — the two crisis affordances. Previously
+           hand-rolled as bespoke <a className="..."> strings on /crisis and
+           /naloxone, which drifted (one used a raw `text-white`). */
+        crisis: "bg-crisis text-crisis-foreground shadow hover:opacity-90",
+        crisisSoft: "border border-crisis/40 bg-crisis-soft text-crisis hover:bg-crisis/10",
       },
       size: {
         default: "h-9 px-4 py-2",
         sm: "h-8 rounded-md px-3 text-xs",
         lg: "h-10 rounded-md px-8",
         icon: "h-9 w-9",
+        /* Patient-surface touch targets: 48px+ tap height, patient radius,
+           16px minimum label. `patient` is the standard in-card action,
+           `patientLg` the primary "do this now" action on a landing page. */
+        patient: "min-h-12 rounded-2xl px-5 py-3 text-base",
+        patientLg: "min-h-16 rounded-2xl px-5 py-4 text-lg font-semibold",
       },
     },
     defaultVariants: {
