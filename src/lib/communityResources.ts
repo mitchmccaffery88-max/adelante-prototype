@@ -14,9 +14,27 @@
 // VERIFICATION IS REAL, NOT COSMETIC. A seeded entry is `unverified` and is
 // invisible to patients. It only becomes live when a named staff member
 // records a verification with the three facts they actually confirmed
-// (address, phone, hours). Verifications expire, which sends the entry back
-// out of the patient-facing list rather than quietly ageing into fiction.
+// (address, phone, hours).
+//
+// §Content Management correction — THIS DIRECTORY IS NOW MANAGED CONTENT.
+// Community Resources are editorial content for this program: the content
+// manager adds locations and whole counties as it expands, and the same
+// entries feed the website, patient portal, intake, onboarding and SDOH-needs
+// alignment. So patient visibility no longer lives in this module's own
+// `verified` flag — it lives in the shared content lifecycle store
+// (`contentPublishing.ts`), exactly like a Library lesson: what a patient sees
+// is the PUBLISHED snapshot, and it keeps being served until a new revision
+// replaces it. This module remains the directory's typed shape, its seed data
+// and its contact-verification workflow; `verifyResource` now publishes
+// through the shared store, so a verification is a real publish with real
+// revision history rather than a private boolean.
 import { getStaffMember, type StaffRole } from "@/lib/roles";
+import {
+  publishedContentOfType,
+  seedDraftContent,
+  seedPublishedContent,
+  subscribeContent,
+} from "@/lib/contentPublishing";
 
 export interface ResourceCategory {
   id: string;
@@ -52,8 +70,6 @@ export interface ResourceVerification {
   confirmedPhone: boolean;
   confirmedHours: boolean;
   note?: string;
-  /** Verification is not permanent; re-check by this date. */
-  expiresOn: string;
 }
 
 export interface CommunityResource {
@@ -81,8 +97,19 @@ export const RESOURCE_VERIFIER_ROLES: StaffRole[] = [
   "sys_admin",
 ];
 
-/** How long a verification stands before it must be re-checked. */
-export const VERIFICATION_VALID_DAYS = 180;
+// REMOVED: the 180-day verification expiry and the silent auto-unpublish that
+// went with it (`VERIFICATION_VALID_DAYS`, `ResourceVerification.expiresOn`,
+// `flagResourceForRecheck`). Product direction: at this stage of the program
+// there is one county and one team, and content silently vanishing from the
+// patient portal on a timer is worse than a stale phone number nobody was
+// warned about.
+//
+// THIS IS ANTICIPATED TO COME BACK. Once there are multiple site / county /
+// state partners, "who last confirmed this, and how long ago" stops being
+// answerable from memory and a re-check clock becomes genuinely valuable. The
+// shape to reintroduce is a re-check DUE DATE that surfaces the entry in the
+// staff queue and badges it in the admin UI — it should still not unpublish
+// anything on its own; a human decides to pull an entry.
 
 function seed(
   id: string,
