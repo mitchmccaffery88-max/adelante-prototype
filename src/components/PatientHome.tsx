@@ -302,6 +302,10 @@ export function PatientHome() {
 
       <YourGroupsSection patientId={patient.id} />
 
+      <div id="daily-mood-check-in" className="scroll-mt-24">
+        <DailyCheckInCard patientId={patient.id} />
+      </div>
+
       <div id="daily-check-in" className="scroll-mt-24">
         <QuickCheckCard patientId={patient.id} />
       </div>
