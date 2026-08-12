@@ -297,7 +297,7 @@ export function AppShell() {
         </div>
 
         {/* Mobile nav — staff links only; patient nav lives in the bottom tab bar. */}
-        {!isPatientSurface && (
+        {!isPatientSurface && !isPublicSurface && (
           <div className="md:hidden border-t overflow-x-auto">
             <div className="flex gap-1 px-3 py-2 min-w-max">
               {staffNav.map((n) => {
