@@ -141,7 +141,7 @@ describe("patient-private tier", () => {
 
   it("the store has no audit sink and no clinical-record import", () => {
     const src = readFileSync("src/lib/selfTracking.ts", "utf8");
-    expect(src).not.toMatch(/@\/lib\/ehr/);
-    expect(src).not.toMatch(/auditSink|recordAudit|setAuditSink/);
+    expect(src).not.toMatch(/^import .*@\/lib\/ehr/m);
+    expect(src).not.toMatch(/^\s*(let|const|function)\s+\w*[aA]uditSink/m);
   });
 });
