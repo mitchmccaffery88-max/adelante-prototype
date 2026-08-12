@@ -195,6 +195,22 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
   const medsScheduledToday = doseRows.length;
   const medsUnmarkedToday = doseRows.filter((r) => !r.selfReport).length;
 
+  // §P2 item 2 — real recency of the weekly PHQ-2/GAD-2 check, used for tile
+  // prioritization. Same source the streak already reads.
+  const daysSinceQuickCheck = useMemo(() => {
+    const last = [...quickCheckDates].sort().pop();
+    if (!last) return undefined;
+    return Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
+  }, [quickCheckDates]);
+  const weeklyCheckDue = daysSinceQuickCheck === undefined || daysSinceQuickCheck >= 7;
+  const weeklyCheckOverdue = daysSinceQuickCheck !== undefined && daysSinceQuickCheck >= 10;
+
+  // §P2 item 3 — real SDOH needs and referrals off the active care plan.
+  const sdohItems = (patient?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
+  const referralItems = (patient?.resourceReferrals ?? []).filter(
+    (r) => r.visibleToPatient !== false,
+  );
+
   const daysSinceContact = useMemo(() => {
     const last = messages.map((m) => m.createdAt).sort().pop();
     if (!last) return undefined;
@@ -258,6 +274,56 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   if (!patient) return null;
   const firstName = patient.preferredName || patient.firstName;
+
+  // §P2 item 2 — tiles carry a real priority derived from live state instead
+  // of a fixed source order. Higher renders first; ties keep source order.
+  const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
+  tiles.push({
+    key: "daily-check-in",
+    priority: checkedInTodayFlow ? 10 : streak.days > 0 ? 95 : 90,
+    node: (
+      <TileShell icon={HeartPulse} title="Daily check-in">
+        {!checkedInTodayFlow && (
+          <Badge className="mb-2" variant="outline" data-testid="daily-check-in-due">
+            {streak.days > 0 ? `Due today · ${streak.days}-day streak on the line` : "Due today"}
+          </Badge>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {checkedInTodayFlow
+            ? "You've already checked in today."
+            : "Nine feelings, one optional why. Under a minute."}
+        </p>
+        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+          <Link to="/home" hash="daily-mood-check-in">
+            {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
+          </Link>
+        </Button>
+      </TileShell>
+    ),
+  });
+  tiles.push({
+    key: "weekly-check-in",
+    priority: weeklyCheckOverdue ? 88 : weeklyCheckDue ? 70 : 15,
+    node: (
+      <TileShell icon={ClipboardCheck} title="Weekly check">
+        {weeklyCheckDue && (
+          <Badge className="mb-2" variant="outline" data-testid="weekly-check-in-due">
+            {weeklyCheckOverdue ? "Overdue" : "Due this week"}
+          </Badge>
+        )}
+        <p className="text-sm text-muted-foreground">
+          {daysSinceQuickCheck === undefined
+            ? "The PHQ-2 / GAD-2 check — six questions, once a week."
+            : `Last done ${daysSinceQuickCheck === 0 ? "today" : `${daysSinceQuickCheck} day${daysSinceQuickCheck === 1 ? "" : "s"} ago`}.`}
+        </p>
+        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+          <Link to="/home" hash="daily-check-in">
+            {weeklyCheckDue ? "Take this week's check" : "Open the weekly check"}
+          </Link>
+        </Button>
+      </TileShell>
+    ),
+  });
 
   return (
     <div className="space-y-5" data-testid="patient-home-dashboard">
