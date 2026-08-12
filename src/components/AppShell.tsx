@@ -52,6 +52,7 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const population = usePopulation(currentId);
   // Restore the acting patient after a hard reload. Only ever accepts an id
   // that still exists (runtime-created demo records do not survive a reload),
   // and runs in an effect so SSR and hydration agree on the first paint.
