@@ -12,6 +12,7 @@ import {
   BookOpen,
   Calendar,
   Check,
+  ClipboardCheck,
   ChevronRight,
   HandHeart,
   HeartPulse,
@@ -72,6 +73,23 @@ import { toast } from "sonner";
 // ---------------------------------------------------------------------------
 // Small shared pieces
 // ---------------------------------------------------------------------------
+
+
+// §P2 item 3 — patient-facing wording for the real SDOH / referral statuses.
+const SDOH_STATUS_LABEL: Record<string, string> = {
+  identified: "We noted this",
+  sent: "Sent to partner",
+  accepted: "Partner accepted",
+  scheduled: "Scheduled",
+  completed: "Done",
+  not_completed: "Didn't happen",
+};
+
+const REFERRAL_STATUS_LABEL: Record<string, string> = {
+  pending: "In progress",
+  accepted: "Partner accepted",
+  completed: "Done",
+};
 
 function greeting(now: Date): string {
   const h = now.getHours();
@@ -463,12 +481,12 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
     ),
   });
   // Today's medication — real Phase 7 self-report, not a new mechanism
-  tiles.push({
+  if (medsScheduledToday > 0)
+    tiles.push({
     key: "medication",
     priority: 65,
     node: (
-          {medsScheduledToday > 0 && (
-            <TileShell icon={Pill} title="Today's medication">
+          <TileShell icon={Pill} title="Today's medication">
               <ul className="space-y-2">
                 {doseRows.slice(0, 3).map((row) => {
                   const taken = row.selfReport?.status === "taken";
@@ -518,8 +536,7 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                   All my medicines
                 </Link>
               </Button>
-            </TileShell>
-          )}
+          </TileShell>
     ),
   });
   // Your journey — the source's 5-stage model has no equivalent here
@@ -544,6 +561,46 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
           </TileShell>
     ),
   });
+
+  // §P2 item 3 — real SDOH needs and referral status off the active care plan,
+  // not a generic link to the resource library.
+  if (sdohItems.length > 0 || referralItems.length > 0)
+    tiles.push({
+      key: "support-needs",
+      priority: 75,
+      node: (
+        <TileShell icon={HandHeart} title="Your support needs">
+          <p className="text-sm text-muted-foreground">
+            What your care team is actively working on with you.
+          </p>
+          <ul className="mt-3 space-y-2" data-testid="sdoh-status-list">
+            {sdohItems.slice(0, 3).map((i) => (
+              <li key={i.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
+                <span className="min-w-0 truncate text-sm">{i.need}</span>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {SDOH_STATUS_LABEL[i.status] ?? i.status}
+                </Badge>
+              </li>
+            ))}
+            {referralItems.slice(0, 2).map((r) => (
+              <li key={r.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
+                <span className="min-w-0 truncate text-sm capitalize">
+                  {r.category} — {r.provider}
+                </span>
+                <Badge variant="outline" className="shrink-0 text-[10px]">
+                  {REFERRAL_STATUS_LABEL[r.status] ?? r.status}
+                </Badge>
+              </li>
+            ))}
+          </ul>
+          <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+            <Link to="/home" hash="your-care-plan-heading">
+              See the full plan
+            </Link>
+          </Button>
+        </TileShell>
+      ),
+    });
 
   tiles.sort((a, b) => b.priority - a.priority);
 
