@@ -11,6 +11,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { dailyCheckInDayKeys, subscribeSelfTracking } from "@/lib/selfTracking";
 import { subscribeEngagement } from "@/lib/engagement";
 import { computeWeeklyRecap, recapIsEmpty, type WeeklyRecapStats } from "@/lib/weeklyRecap";
@@ -109,14 +110,12 @@ export function WeeklyRecap() {
   const med = stats.medication;
 
   return (
-    <div className="space-y-5" data-testid="weekly-recap">
-      <header>
-        <h1 className="font-display text-3xl text-foreground sm:text-4xl">Your week, {firstName}</h1>
-        <p className="mt-1 text-base text-muted-foreground">
-          The last 7 days ({stats.weekStartKey} to {stats.weekEndKey}). Only what the app actually
-          knows.
-        </p>
-      </header>
+    <PatientPage data-testid="weekly-recap">
+      <PatientPageHeader
+        icon={Sparkles}
+        title={`Your week, ${firstName}`}
+        lede={`The last 7 days (${stats.weekStartKey} to ${stats.weekEndKey}). Only what the app actually knows.`}
+      />
 
       {/* Adel reflection — enhancement only, never fabricated ---------------- */}
       <Card className="border-accent/40 bg-accent/10 p-5 soft-shadow" data-testid="recap-reflection">
@@ -162,7 +161,7 @@ export function WeeklyRecap() {
               here is a judgement.
             </p>
           )}
-          <Button asChild variant="outline" className="mt-3 min-h-11 rounded-2xl">
+          <Button asChild variant="outline" size="patient" className="mt-3">
             <Link to="/home" hash="my-medications">
               Open my medications
             </Link>
@@ -186,7 +185,7 @@ export function WeeklyRecap() {
           The app records what you've finished, not the day you finished it, so these are running
           totals rather than a count for this week.
         </p>
-        <Button asChild variant="outline" className="mt-3 min-h-11 rounded-2xl">
+        <Button asChild variant="outline" size="patient" className="mt-3">
           <Link to="/library">Open my library</Link>
         </Button>
       </Section>
@@ -196,6 +195,6 @@ export function WeeklyRecap() {
           A quiet week is still a week. Today can start the next one.
         </p>
       )}
-    </div>
+    </PatientPage>
   );
 }

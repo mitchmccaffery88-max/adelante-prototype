@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { BadgeCheck, LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
 import {
   NALOXONE_ACCESS_REVIEW,
@@ -19,7 +21,7 @@ function ReviewPendingBanner() {
   return (
     <div
       data-testid="naloxone-review-pending"
-      className="flex items-start gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200"
+      className="flex items-start gap-2 rounded-2xl border border-amber-warm/50 bg-amber-soft p-3 text-sm text-amber-warm-foreground"
     >
       <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
@@ -31,7 +33,7 @@ function ReviewPendingBanner() {
 
 function PendingChip() {
   return (
-    <Badge className="border-0 bg-amber-500/15 text-[10px] text-amber-700">
+    <Badge className="border-0 bg-amber-soft text-amber-warm-foreground">
       Pending clinical review
     </Badge>
   );
@@ -39,7 +41,7 @@ function PendingChip() {
 
 function VerifiedChip() {
   return (
-    <Badge className="border-0 bg-emerald-500/15 text-[10px] text-emerald-700">
+    <Badge className="border-0 bg-sage-soft text-sage-foreground">
       Confirmed by {NALOXONE_ACCESS_REVIEW.verifiedBy}
     </Badge>
   );
@@ -50,7 +52,7 @@ function AccessVerifiedBanner() {
   return (
     <div
       data-testid="naloxone-access-verified"
-      className="flex items-start gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-900 dark:text-emerald-200"
+      className="flex items-start gap-2 rounded-2xl border border-sage/50 bg-sage-soft p-3 text-sm text-sage-foreground"
     >
       <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" />
       <span>{NALOXONE_ACCESS_REVIEW.notice}</span>
