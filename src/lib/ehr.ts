@@ -6676,6 +6676,19 @@ export const AdelanteEHR = {
     return rows.map((r) => r.completedAt).sort().pop();
   },
 
+  /**
+   * §Patient portal Build 2 — every quick-check completion instant, for the
+   * dashboard's check-in streak. Short forms only (the same `shortFormByKey`
+   * filter `lastQuickCheckAt` uses), so this never exposes an AUDIT-10 /
+   * DAST-10 date and needs no Part 2 gate.
+   */
+  quickCheckDates(patientId: string): string[] {
+    const p = _patient(patientId);
+    return (p?.screenerHistory ?? [])
+      .filter((h) => shortFormByKey(h.key))
+      .map((r) => r.completedAt);
+  },
+
   /** Weekly cadence: due when never done, or 7+ days since the last one. */
   quickCheckDue(patientId: string): boolean {
     const last = AdelanteEHR.lastQuickCheckAt(patientId);

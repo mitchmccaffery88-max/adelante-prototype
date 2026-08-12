@@ -2,15 +2,18 @@ import { createFileRoute } from "@tanstack/react-router";
 import { LibraryBrowser } from "@/components/library/LibraryBrowser";
 
 /** `?exercise=<id>` deep-links straight into an exercise (used by the
- *  always-visible "Craving right now" action → urge-surfing timer). */
-function validateSearch(search: Record<string, unknown>): { exercise?: string } {
-  const exercise = typeof search["exercise"] === "string" ? (search["exercise"] as string) : undefined;
-  return exercise ? { exercise } : {};
+ *  always-visible "Craving right now" action → urge-surfing timer).
+ *  `?item=<id>` does the same for a lesson (patient home "forward step"). */
+function validateSearch(search: Record<string, unknown>): { exercise?: string; item?: string } {
+  const out: { exercise?: string; item?: string } = {};
+  if (typeof search["exercise"] === "string") out.exercise = search["exercise"];
+  if (typeof search["item"] === "string") out.item = search["item"];
+  return out;
 }
 
 function LibraryRoute() {
-  const { exercise } = Route.useSearch();
-  return <LibraryBrowser initialExercise={exercise} />;
+  const { exercise, item } = Route.useSearch();
+  return <LibraryBrowser initialExercise={exercise} initialItem={item} />;
 }
 
 export const Route = createFileRoute("/library")({
