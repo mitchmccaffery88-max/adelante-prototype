@@ -12852,6 +12852,78 @@ export const AdelanteEHR = {
   },
 
   acknowledgeAnonymousCrisisAlert(id: string, staffName: string): boolean {
+    return acknowledgeAnonymousCrisisAlertImpl(id, staffName);
+  },
+
+  /** Non-clinical front-door inquiries, newest first. */
+  listCommunityInquiries(opts?: { includeResolved?: boolean }): CommunityInquiry[] {
+    return communityInquiries
+      .filter((r) => opts?.includeResolved !== false || r.status !== "resolved")
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  createCommunityInquiry(input: {
+    body: string;
+    contact: string;
+    contactKind: "email" | "phone";
+    crisisFlagged?: boolean;
+    patternIds?: string[];
+  }): CommunityInquiry | undefined {
+    const body = input.body.trim();
+    const contact = input.contact.trim();
+    if (!body || !contact) return undefined;
+    const row: CommunityInquiry = {
+      id: uid(),
+      body,
+      contact,
+      contactKind: input.contactKind,
+      crisisFlagged: !!input.crisisFlagged,
+      patternIds: input.patternIds ? [...input.patternIds] : undefined,
+      createdAt: new Date().toISOString(),
+      status: "new",
+    };
+    communityInquiries.unshift(row);
+    // Audit records that an inquiry arrived — never the text itself.
+    appendAudit({
+      category: "clinical",
+      action: "community_inquiry_created",
+      actorId: "Front door (self-service)",
+      detail: { inquiryId: row.id, crisisFlagged: row.crisisFlagged },
+    });
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "task_assigned",
+      subject: "New community inquiry (front door)",
+      body: "Someone asked for help finding the right place. They left contact details.",
+      linkRoute: "/inbox",
+    });
+    emit();
+    return row;
+  },
+
+  dispositionCommunityInquiry(
+    id: string,
+    status: Exclude<CommunityInquiryStatus, "new">,
+    staffName: string,
+    note?: string,
+  ): boolean {
+    const row = communityInquiries.find((r) => r.id === id);
+    if (!row || row.status === status) return false;
+    row.status = status;
+    row.dispositionBy = staffName;
+    row.dispositionAt = new Date().toISOString();
+    if (note?.trim()) row.dispositionNote = note.trim();
+    appendAudit({
+      category: "clinical",
+      action: "community_inquiry_disposition",
+      actorId: staffName,
+      detail: { inquiryId: row.id, status },
+    });
+    emit();
+    return true;
+  },
+
+  _acknowledgeAnonymousCrisisAlertLegacy(id: string, staffName: string): boolean {
     const row = anonymousCrisisAlerts.find((a) => a.id === id);
     if (!row || row.acknowledgedAt) return false;
     row.acknowledgedBy = staffName;
