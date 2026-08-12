@@ -170,7 +170,7 @@ export function AppShell() {
             {isPublicSurface && (
               <Link
                 to="/start"
-                className="inline-flex items-center rounded-md bg-navy px-3 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
+                className="hidden sm:inline-flex items-center rounded-md bg-navy px-3 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
               >
                 Get started
               </Link>
