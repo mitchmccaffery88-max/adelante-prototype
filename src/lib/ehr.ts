@@ -534,6 +534,13 @@ export interface MedOrder {
   sourceNoteId?: string;
   // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
   orderingProviderId?: string;
+  /**
+   * §Pre-release build 3 — the pre-release episode this order was initiated
+   * from. Traceability only, exactly like `sourceNoteId`: a MAT order started
+   * in the pre-release workspace is an ordinary `MedOrder` and follows the
+   * same validation, lifecycle and attestation as any other.
+   */
+  preReleaseEpisodeId?: string;
   orderSource?: "verbal" | "telephone" | "protocol" | "standing";
   readBackConfirmed?: boolean;
   // ----- Attestation -----
@@ -2277,6 +2284,29 @@ function assertCfEntryScope(ep: PreReleaseEpisode, a: CfAttribution, what: strin
 }
 
 export type PreReleaseEpisodeStatus = "open" | "released" | "closed";
+
+/**
+ * §Pre-release build 3 — the prescriber gate for MAT ordering.
+ *
+ * Deliberately NOT a pre-release-specific permission: it is the SAME
+ * `meds_erx` write level the Orders tab and the note orders_section already
+ * use to decide who may place a medication order. If the matrix changes, the
+ * pre-release entry point changes with it.
+ */
+export function canPrescribeMedications(role: StaffRole): boolean {
+  return canAccess(role, "meds_erx").level === "write";
+}
+
+/**
+ * Which real `ServiceType` each reentry appointment kind books against. The
+ * pre-release step books into the ordinary scheduling system; this map only
+ * chooses a sensible default service for the kind.
+ */
+export const REENTRY_APPT_SERVICE_TYPE: Record<ReentryAppointmentKind, ServiceType> = {
+  mental_health: "therapy_individual",
+  med_management: "med_management",
+  sud: "therapy_individual",
+};
 
 export interface PreReleaseEpisode {
   id: string;
@@ -8502,6 +8532,192 @@ export const AdelanteEHR = {
   // ---------- §v3.0 Phase 2 — Person-Centered Reentry Care Plan ----------
   getReentryCarePlan(episodeId: string): ReentryCarePlan | undefined {
     return reentryCarePlans.find((p) => p.episodeId === episodeId);
+  },
+
+  // ---------- §Pre-release build 3 — MAT ordering & real appointment booking ----------
+  //
+  // Neither of these is a parallel tracking system. `orderPreReleaseMat`
+  // creates an ordinary draft `MedOrder` through `addDraftOrder`, and
+  // `bookPreReleaseAppointment` creates an ordinary `Appointment` through
+  // `bookAppointment`. What this layer adds is the two pre-release
+  // authorizations: the Build-1 capacity/legal-authority gate (both actions
+  // are consent-dependent clinical treatment) and, for the appointment, the
+  // ordinary CF direct/proxy entry scope.
+
+  /**
+   * Initiate MAT from the pre-release workspace. Prescriber-only: the gate is
+   * `canPrescribeMedications`, i.e. `meds_erx` write — the exact gate the
+   * Orders tab uses. The prescriber is acting as a clinician, not as the
+   * episode's CF Care Manager, so `assertCfEntryScope` deliberately does NOT
+   * apply; the capacity gate does.
+   */
+  orderPreReleaseMat(input: {
+    episodeId: string;
+    prescriber: { staffId?: string; staffName: string; role: StaffRole };
+    order: Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">;
+  }): MedOrder {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (!canPrescribeMedications(input.prescriber.role))
+      throw new Error(
+        "Only a prescriber (meds_erx write) can initiate MAT. Ask the prescriber to place the order.",
+      );
+    const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+    if (!gate.canProceed) throw new Error(gate.reason);
+    const row = AdelanteEHR.addDraftOrder(ep.patientId, {
+      ...input.order,
+      createdBy: input.order.createdBy ?? input.prescriber.staffName,
+      preReleaseEpisodeId: ep.id,
+    });
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_mat_drafted",
+      patientId: ep.patientId,
+      actorId: input.prescriber.staffName,
+      actorRole: input.prescriber.role,
+      detail: { episodeId: ep.id, orderId: row.id, drugName: row.drugName },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * Sign MAT drafts staged in the pre-release workspace. Re-checks the
+   * capacity gate at sign time (authority can lapse between drafting and
+   * signing), then delegates to the ordinary `signOrders` path — same
+   * attestation, same provenance audit, same chart.
+   */
+  signPreReleaseMatOrders(input: {
+    episodeId: string;
+    orderIds: string[];
+    prescriber: { staffName: string; role: StaffRole };
+    strengthProvenance?: Record<string, unknown[]>;
+  }): MedOrder[] {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (!canPrescribeMedications(input.prescriber.role))
+      throw new Error("Only a prescriber (meds_erx write) can sign medication orders.");
+    const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+    if (!gate.canProceed) throw new Error(gate.reason);
+    const signed = AdelanteEHR.signOrders(ep.patientId, input.orderIds, input.prescriber.staffName, {
+      ...(input.strengthProvenance ? { strengthProvenance: input.strengthProvenance } : {}),
+    });
+    if (signed.length)
+      appendAudit({
+        category: "clinical",
+        action: "pre_release_mat_signed",
+        patientId: ep.patientId,
+        actorId: input.prescriber.staffName,
+        actorRole: input.prescriber.role,
+        detail: {
+          episodeId: ep.id,
+          orderIds: signed.map((o) => o.id),
+          drugNames: signed.map((o) => o.drugName),
+        },
+      });
+    return signed;
+  },
+
+  /** Orders initiated from a pre-release episode, read off the real chart. */
+  listPreReleaseMatOrders(episodeId: string): MedOrder[] {
+    const ep = AdelanteEHR.getPreReleaseEpisode(episodeId);
+    if (!ep) return [];
+    return AdelanteEHR.listOrders(ep.patientId).filter((o) => o.preReleaseEpisodeId === ep.id);
+  },
+
+  /**
+   * Book the pre-release "first appointment" as a REAL appointment.
+   *
+   * Before build 3 this step only recorded provider/location strings on the
+   * care plan. Now it creates an actual `Appointment` through the same
+   * `bookAppointment` the scheduling surfaces use (same credential check,
+   * same double-book check, same reminders/notification), and links it back
+   * onto the care-plan row via `apptId` so the ECM hand-off view resolves the
+   * live booking rather than a typed string.
+   */
+  bookPreReleaseAppointment(input: {
+    episodeId: string;
+    kind: ReentryAppointmentKind;
+    clinicianId: string;
+    start: string;
+    durationMin?: number;
+    serviceType?: ServiceType;
+    modality?: "video" | "phone" | "in_person";
+    locationId?: string;
+    attribution: CfAttribution;
+  }): { appointment: Appointment; carePlanAppointment: ReentryAppointment } {
+    const ep = AdelanteEHR.getPreReleaseEpisode(input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    assertCfEntryScope(ep, input.attribution, `pre_release_appointment:${input.kind}`);
+    // Scheduling a treatment appointment is consent-dependent, exactly like
+    // the other clinical steps on this checklist.
+    const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
+    if (!gate.canProceed) throw new Error(gate.reason);
+    const plan = AdelanteEHR.getReentryCarePlan(ep.id);
+    if (plan?.status === "completed")
+      throw new Error("This care plan is completed and member-signed; it can no longer be edited.");
+    const serviceType = input.serviceType ?? REENTRY_APPT_SERVICE_TYPE[input.kind];
+    const modality = input.modality ?? "in_person";
+    const appointment = AdelanteEHR.bookAppointment({
+      patientId: ep.patientId,
+      clinicianId: input.clinicianId,
+      start: new Date(input.start).toISOString(),
+      durationMin: input.durationMin ?? 30,
+      serviceType,
+      modality,
+      ...(input.locationId ? { locationId: input.locationId } : {}),
+    });
+    const clinician = AdelanteEHR.getClinician(input.clinicianId);
+    const location = input.locationId ? AdelanteEHR.getLocation(input.locationId) : undefined;
+    const carePlanAppointment: ReentryAppointment = {
+      id: uid(),
+      kind: input.kind,
+      apptId: appointment.id,
+      start: appointment.start,
+      providerName: clinician?.name ?? "Adelante clinician",
+      location: location?.name ?? (modality === "in_person" ? "Adelante clinic" : "Telehealth"),
+      modality,
+    };
+    const now = new Date().toISOString();
+    if (!plan) {
+      reentryCarePlans.unshift({
+        id: uid(),
+        episodeId: ep.id,
+        patientId: ep.patientId,
+        housing: { arrangement: "" },
+        appointments: [carePlanAppointment],
+        dmeNeeds: [],
+        status: "draft",
+        attribution: input.attribution,
+        updatedAt: now,
+      });
+    } else {
+      // Replace any unbooked placeholder of the same kind rather than stacking
+      // a second row alongside it.
+      const placeholder = plan.appointments.findIndex((a) => a.kind === input.kind && !a.apptId);
+      if (placeholder >= 0) plan.appointments.splice(placeholder, 1, carePlanAppointment);
+      else plan.appointments = [...plan.appointments, carePlanAppointment];
+      plan.attribution = input.attribution;
+      plan.updatedAt = now;
+    }
+    appendAudit({
+      category: "clinical",
+      action: cfAuditAction("pre_release_appointment_booked", input.attribution),
+      patientId: ep.patientId,
+      actorId: input.attribution.enteredBy.staffName,
+      actorRole: input.attribution.enteredBy.role,
+      detail: {
+        episodeId: ep.id,
+        kind: input.kind,
+        apptId: appointment.id,
+        clinicianId: input.clinicianId,
+        serviceType,
+        modality,
+        ...cfAuditIdentities(input.attribution),
+      },
+    });
+    emit();
+    return { appointment, carePlanAppointment };
   },
   /**
    * The ECM Provider's D0 intake read: a queryable structured record, not a

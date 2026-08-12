@@ -8,12 +8,13 @@
 // by design. Any Part 2 / third-party content would go through
 // `disclosureAccess` instead; that split is in src/lib/ab133.ts.
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { ab133CoordinationAccess } from "@/lib/ab133";
+import { ab133CoordinationAccess, disclosureAccess } from "@/lib/ab133";
+import { isMatOrder } from "@/lib/medAdherence";
 import { useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { EmptyState } from "@/components/EmptyState";
-import { KeyRound, Route as RouteIcon } from "lucide-react";
+import { KeyRound, Pill, Route as RouteIcon } from "lucide-react";
 
 const KIND_LABEL: Record<string, string> = {
   mental_health: "Mental health",
@@ -25,6 +26,18 @@ export function ReentryHandoffTab({ patientId }: { patientId: string }) {
   const { role } = useActingStaff();
   const plan = useEhr(() => AdelanteEHR.reentryCarePlanForPatient(patientId));
   const episode = useEhr(() => AdelanteEHR.activePreReleaseEpisode(patientId));
+  // §Pre-release build 3 — both new data points come out of the REAL systems:
+  // appointments are resolved live from the scheduling store by `apptId`, and
+  // MAT is read off the ordinary order list. Nothing is duplicated onto the
+  // care plan for the hand-off.
+  const appointments = useEhr(() => AdelanteEHR.listAppointments());
+  const orders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  // MAT is 42 CFR Part 2 content — it is NOT an AB 133 coordination dataset,
+  // so it goes through the consent path, not the exemption path.
+  const matDecision = disclosureAccess({ patientId, kind: "part2_sud", actorRole: role });
+  const matOrders = orders.filter(
+    (o) => isMatOrder(o) && o.status !== "draft" && o.status !== "discontinued",
+  );
 
   const decision = ab133CoordinationAccess({
     dataset: "reentry_care_plan",
@@ -96,14 +109,61 @@ export function ReentryHandoffTab({ patientId }: { patientId: string }) {
           <p className="text-sm text-muted-foreground">None recorded.</p>
         ) : (
           <ul className="space-y-2">
-            {plan.appointments.map((a) => (
-              <li key={a.id} className="rounded-md border p-2 text-sm">
-                <div className="font-medium">{KIND_LABEL[a.kind] ?? a.kind}</div>
-                <div className="text-xs text-muted-foreground">
-                  {a.start ? new Date(a.start).toLocaleString() : "unscheduled"} · {a.providerName}{" "}
-                  · {a.location} · {a.modality}
-                  {a.phone ? ` · ${a.phone}` : ""}
-                </div>
+            {plan.appointments.map((a) => {
+              const live = a.apptId ? appointments.find((x) => x.id === a.apptId) : undefined;
+              return (
+                <li key={a.id} className="rounded-md border p-2 text-sm">
+                  <div className="flex flex-wrap items-center gap-2 font-medium">
+                    {KIND_LABEL[a.kind] ?? a.kind}
+                    {live ? (
+                      <Badge variant="outline" data-testid="handoff-booked-appt">
+                        Booked in Adelante · {live.status}
+                      </Badge>
+                    ) : (
+                      <Badge variant="secondary">External / recorded</Badge>
+                    )}
+                  </div>
+                  <div className="text-xs text-muted-foreground">
+                    {(live?.start ?? a.start)
+                      ? new Date(live?.start ?? a.start).toLocaleString()
+                      : "unscheduled"}{" "}
+                    · {a.providerName} · {a.location} · {live?.modality ?? a.modality}
+                    {a.phone ? ` · ${a.phone}` : ""}
+                  </div>
+                </li>
+              );
+            })}
+          </ul>
+        )}
+      </Card>
+
+      <Card className="p-3">
+        <div className="mb-2 flex items-center gap-2 text-sm font-medium">
+          <Pill className="h-4 w-4" /> Medication-assisted treatment
+        </div>
+        {!matDecision.allowed ? (
+          <p className="text-xs text-muted-foreground" data-testid="handoff-mat-restricted">
+            {matDecision.reason}
+          </p>
+        ) : matOrders.length === 0 ? (
+          <p className="text-sm text-muted-foreground">No MAT orders on the chart.</p>
+        ) : (
+          <ul className="space-y-2">
+            {matOrders.map((o) => (
+              <li
+                key={o.id}
+                className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm"
+                data-testid="handoff-mat-order"
+              >
+                <span>
+                  {o.drugName}
+                  {o.sigOverride || o.sig ? (
+                    <span className="block text-xs text-muted-foreground">
+                      {o.sigOverride ?? o.sig}
+                    </span>
+                  ) : null}
+                </span>
+                <Badge variant="outline">{o.status}</Badge>
               </li>
             ))}
           </ul>
