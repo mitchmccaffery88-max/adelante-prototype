@@ -68,6 +68,7 @@ describe("pre-release data feeds the real CalAIM care plan", () => {
       kind: "primary_care",
       clinicianId: clinician.id,
       start: new Date(Date.now() + 7 * 864e5).toISOString(),
+      modality: "video",
       attribution: attribution(),
     });
     const order = AdelanteEHR.orderPreReleaseMat({
@@ -121,6 +122,7 @@ describe("pre-release data feeds the real CalAIM care plan", () => {
       kind: "behavioral_health",
       clinicianId: clinician.id,
       start: new Date(Date.now() + 3 * 864e5).toISOString(),
+      modality: "video",
       attribution: attribution(),
     });
     expect(AdelanteEHR.getCarePlan(patient.id)?.preRelease?.appointments).toHaveLength(1);
