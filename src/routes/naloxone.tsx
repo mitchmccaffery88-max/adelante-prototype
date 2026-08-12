@@ -1,9 +1,10 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
+import { BadgeCheck, LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
 import {
   NALOXONE_ACCESS_POINTS,
+  NALOXONE_ACCESS_REVIEW,
   NALOXONE_STEPS,
   NALOXONE_STEPS_SOURCE,
   NEVER_USE_ALONE,
@@ -34,6 +35,27 @@ function PendingChip() {
   );
 }
 
+function VerifiedChip() {
+  return (
+    <Badge className="border-0 bg-emerald-500/15 text-[10px] text-emerald-700">
+      Confirmed by {NALOXONE_ACCESS_REVIEW.verifiedBy}
+    </Badge>
+  );
+}
+
+function AccessVerifiedBanner() {
+  if (NALOXONE_ACCESS_REVIEW.pending) return null;
+  return (
+    <div
+      data-testid="naloxone-access-verified"
+      className="flex items-start gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-900 dark:text-emerald-200"
+    >
+      <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" />
+      <span>{NALOXONE_ACCESS_REVIEW.notice}</span>
+    </div>
+  );
+}
+
 function NaloxonePage() {
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="naloxone-page">
@@ -47,6 +69,7 @@ function NaloxonePage() {
         </p>
       </div>
 
+      <AccessVerifiedBanner />
       <ReviewPendingBanner />
 
       <Card className="soft-shadow space-y-3 border-crisis/30 bg-crisis-soft p-5">
@@ -60,14 +83,18 @@ function NaloxonePage() {
       <Card className="soft-shadow space-y-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-xl">Where to get naloxone</h2>
-          <PendingChip />
+          <VerifiedChip />
         </div>
         <ul className="space-y-3" data-testid="naloxone-access-points">
           {NALOXONE_ACCESS_POINTS.map((p) => (
             <li key={p.id} className="rounded-2xl border p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold">{p.name}</span>
-                {!p.verified && (
+                {p.verified ? (
+                  <Badge variant="outline" className="text-[10px]">
+                    Verified{p.verifiedBy ? ` — ${p.verifiedBy}` : ""}
+                  </Badge>
+                ) : (
                   <Badge variant="outline" className="text-[10px]">
                     Unverified
                   </Badge>
@@ -117,7 +144,7 @@ function NaloxonePage() {
       <Card className="soft-shadow space-y-3 p-5">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <h2 className="font-display text-xl">{NEVER_USE_ALONE.name}</h2>
-          <PendingChip />
+          <VerifiedChip />
         </div>
         <a
           href={`tel:${NEVER_USE_ALONE.phone.replace(/[^\d+]/g, "")}`}
