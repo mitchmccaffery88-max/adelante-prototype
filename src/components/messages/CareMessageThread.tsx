@@ -2,9 +2,16 @@
 // Patient bodies are rendered verbatim: never translated, never edited.
 import { AdelanteEHR, type CareMessage } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
+import { STAFF_ROLES } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import { Lock, ShieldAlert } from "lucide-react";
 import { Button } from "@/components/ui/button";
+
+/** Display attribution for a staff-authored message, e.g. "Peer specialist". */
+export function staffRoleLabel(m: CareMessage): string | undefined {
+  if (m.authorType !== "staff" || !m.authorRole) return undefined;
+  return STAFF_ROLES.find((r) => r.key === m.authorRole)?.label;
+}
 
 export function CareMessageThread({
   messages,
@@ -48,7 +55,9 @@ export function CareMessageThread({
               )}
             >
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {mine ? youLabel : themLabel} · {m.authorName} · <ClientDate value={m.createdAt} />
+                {mine ? youLabel : themLabel} · {m.authorName}
+                {staffRoleLabel(m) ? ` (${staffRoleLabel(m)})` : ""} ·{" "}
+                <ClientDate value={m.createdAt} />
               </div>
               {/* The flag itself is always visible, even when the body is not:
                   a clinician without consent access should know something was
