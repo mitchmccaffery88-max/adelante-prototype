@@ -16,6 +16,7 @@
 // completion is idempotent, finishing a lesson auto-saves its toolkit
 // takeaway, and every first-time completion is audited exactly once — through
 // the sink `src/lib/ehr.ts` registers, so audit stays in the one audit stream.
+import { getRecoveryLesson, TOOL_FLOW_LIMITS } from "./recovery";
 import { getExercise, getLibraryItem, type SavedToolkitItem, type ToolkitOrigin } from "./library";
 
 /** One patient's engagement row. `patientId` is a foreign key, not ownership. */
@@ -25,10 +26,27 @@ export interface PatientEngagement {
   completedLibraryItems: string[];
   /** Exercise ids completed. Separate namespace from lessons. */
   completedExercises: string[];
+  /** §Phase 5b — Recovery module lesson ids completed. Own namespace again. */
+  completedRecoveryLessons: string[];
+  /** §Phase 5b — structured tool-flow selections, keyed by recovery lesson id. */
+  recoveryToolFlows: Record<string, RecoveryToolFlowSelection>;
   /** Saved takeaways, one per source lesson/exercise. */
   savedToolkitItems: SavedToolkitItem[];
   firstActivityAt?: string;
   lastActivityAt?: string;
+}
+
+/**
+ * What a patient selected in steps 7–9 of a recovery lesson. Structured, not
+ * free text — so it can be counted, joined and re-shown, exactly like the rest
+ * of engagement data, and equally NOT part of the clinical record.
+ */
+export interface RecoveryToolFlowSelection {
+  warningSigns: string[];
+  supportPeople: string[];
+  /** Single select — one action for today. */
+  todayAction?: string;
+  updatedAt: string;
 }
 
 const records = new Map<string, PatientEngagement>();
@@ -64,6 +82,8 @@ function row(patientId: string): PatientEngagement {
       patientId,
       completedLibraryItems: [],
       completedExercises: [],
+      completedRecoveryLessons: [],
+      recoveryToolFlows: {},
       savedToolkitItems: [],
     };
     records.set(patientId, r);
@@ -93,6 +113,18 @@ export function savedToolkitItems(patientId: string): SavedToolkitItem[] {
   return (records.get(patientId)?.savedToolkitItems ?? []).map((t) => ({ ...t }));
 }
 
+export function completedRecoveryLessons(patientId: string): string[] {
+  return [...(records.get(patientId)?.completedRecoveryLessons ?? [])];
+}
+
+export function recoveryToolFlow(
+  patientId: string,
+  lessonId: string,
+): RecoveryToolFlowSelection | undefined {
+  const sel = records.get(patientId)?.recoveryToolFlows[lessonId];
+  return sel ? structuredClone(sel) : undefined;
+}
+
 /** The whole row for one patient, or undefined when they have no activity. */
 export function getEngagement(patientId: string): PatientEngagement | undefined {
   const r = records.get(patientId);
@@ -115,6 +147,7 @@ export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
 export function engagementSummary(patientId: string): {
   patientId: string;
   lessonsCompleted: number;
+  recoveryLessonsCompleted: number;
   exercisesCompleted: number;
   toolkitSaved: number;
   lastActivityAt?: string;
@@ -123,6 +156,7 @@ export function engagementSummary(patientId: string): {
   return {
     patientId,
     lessonsCompleted: r?.completedLibraryItems.length ?? 0,
+    recoveryLessonsCompleted: r?.completedRecoveryLessons.length ?? 0,
     exercisesCompleted: r?.completedExercises.length ?? 0,
     toolkitSaved: r?.savedToolkitItems.length ?? 0,
     ...(r?.lastActivityAt ? { lastActivityAt: r.lastActivityAt } : {}),
@@ -217,6 +251,61 @@ export function completeExercise(
       action: "library_exercise_completed",
       actorRole: opts.actorRole ?? "patient",
       detail: { exerciseId, title: ex.title, type: ex.type, minutes: ex.minutes },
+    });
+  }
+  notify();
+  return { completed: true, alreadyComplete: already };
+}
+
+/**
+ * §Phase 5b — complete a recovery lesson, storing its tool-flow selections.
+ * Idempotent like the Library equivalent; selections are re-saved on a revisit
+ * so the most recent answers are the ones kept. Limits are enforced here too,
+ * not only in the UI.
+ */
+export function completeRecoveryLesson(
+  patientId: string,
+  lessonId: string,
+  selection: { warningSigns?: string[]; supportPeople?: string[]; todayAction?: string },
+  opts: { saveToolkit?: boolean; actorRole?: string } = {},
+): { completed: boolean; alreadyComplete: boolean } {
+  const lesson = getRecoveryLesson(lessonId);
+  if (!lesson) return { completed: false, alreadyComplete: false };
+  const r = row(patientId);
+  const already = r.completedRecoveryLessons.includes(lessonId);
+  if (!already) r.completedRecoveryLessons.push(lessonId);
+  const warningSigns = (selection.warningSigns ?? [])
+    .filter((s) => lesson.toolFlow.warningSigns.includes(s))
+    .slice(0, TOOL_FLOW_LIMITS.warningSigns);
+  const supportPeople = (selection.supportPeople ?? [])
+    .filter((s) => lesson.toolFlow.supportPeople.includes(s))
+    .slice(0, TOOL_FLOW_LIMITS.supportPeople);
+  r.recoveryToolFlows[lessonId] = {
+    warningSigns,
+    supportPeople,
+    ...(selection.todayAction && lesson.toolFlow.todayActions.includes(selection.todayAction)
+      ? { todayAction: selection.todayAction }
+      : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  if (opts.saveToolkit !== false) {
+    saveToolkitItem(patientId, { id: lessonId, label: lesson.toolkitLabel, from: "library" });
+  }
+  if (!already) {
+    touch(r);
+    auditSink?.({
+      patientId,
+      action: "recovery_lesson_completed",
+      actorRole: opts.actorRole ?? "patient",
+      detail: {
+        lessonId,
+        moduleId: lesson.moduleId,
+        title: lesson.title,
+        minutes: lesson.minutes,
+        warningSignCount: warningSigns.length,
+        supportPersonCount: supportPeople.length,
+        hasTodayAction: Boolean(r.recoveryToolFlows[lessonId]?.todayAction),
+      },
     });
   }
   notify();
