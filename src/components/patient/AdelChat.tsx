@@ -143,9 +143,9 @@ export function AdelChat() {
 
   return (
     <div className="mx-auto flex min-h-[70vh] max-w-2xl flex-col gap-3 px-4 py-6 sm:px-6">
-      <header>
-        <h1 className="font-display text-2xl">Adel</h1>
-        <p className="text-sm text-muted-foreground">
+      <header className="space-y-2">
+        <h1 className="font-display text-3xl text-foreground">Adel</h1>
+        <p className="text-base text-muted-foreground">
           A guide, not a clinician. Adel can&apos;t give medical advice. If you need someone now,
           call or text <span className="font-semibold">988</span>.
         </p>
