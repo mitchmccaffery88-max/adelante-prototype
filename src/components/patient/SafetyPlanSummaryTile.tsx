@@ -10,12 +10,12 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
 import { PopulationGate } from "@/components/PopulationGate";
-import { safetyPlanSummary, subscribeSafetyPlans } from "@/lib/safetyPlan";
+import { safetyPlanSummary, subscribeSafetyPlan } from "@/lib/safetyPlan";
 import { useSyncExternalStore } from "react";
 
 export function SafetyPlanSummaryTile({ patientId }: { patientId: string }) {
   const key = useSyncExternalStore(
-    subscribeSafetyPlans,
+    subscribeSafetyPlan,
     () => {
       const s = safetyPlanSummary(patientId);
       return `${s.exists}|${s.entryCount}|${s.sectionsFilled}|${s.updatedAt ?? ""}`;
