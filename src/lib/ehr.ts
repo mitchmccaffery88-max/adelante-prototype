@@ -198,6 +198,16 @@ export interface CareMessage {
   authorType: "patient" | "staff";
   /** Patient's own name, or the staff display name. Never altered. */
   authorName: string;
+  /**
+   * §Peer messaging — the acting staff role at the time of authorship, stored
+   * on staff messages only. Deliberately NOT a new `authorType` value: every
+   * other surface in this build distinguishes staff types by StaffRole on top
+   * of a named identity, never by forking the author kind. `authorType` stays
+   * `patient | staff` so read/unread, masking and the queue keep working
+   * unchanged; the role only drives display attribution ("Peer specialist ·
+   * Andre Willis") and is captured in the audit trail.
+   */
+  authorRole?: StaffRole;
   /** Verbatim as authored. Patient messages are NEVER translated or edited. */
   body: string;
   createdAt: string;
@@ -3406,9 +3416,13 @@ function patientLabel(patientId?: string): string {
 }
 
 /**
- * Write-level `patient_messaging` roles, mirrored from the RBAC matrix in
- * `roles.ts`. Duplicated as a value here only because `ehr.ts` may import
- * `roles.ts` for TYPES only (roles.ts imports ehr.ts at runtime).
+ * Roles that may change a message's 42 CFR Part 2 flag. Originally the
+ * write-level `patient_messaging` set; it is now deliberately NARROWER than
+ * that set: `peer_specialist` has messaging write (they answer members) but is
+ * `consent_gated` for `screeners_sud`, and flagging REMOVES visibility, so a
+ * consent-gated role must not be able to mask content from treating roles.
+ * Duplicated as a value here only because `ehr.ts` may import `roles.ts` for
+ * TYPES only (roles.ts imports ehr.ts at runtime).
  */
 export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp"];
 
@@ -9316,7 +9330,13 @@ export const AdelanteEHR = {
     emit();
     return msg;
   },
-  sendStaffMessage(patientId: string, staffName: string, body: string): CareMessage | undefined {
+  sendStaffMessage(
+    patientId: string,
+    staffName: string,
+    body: string,
+    /** Acting role — recorded for display attribution + audit. */
+    role?: StaffRole,
+  ): CareMessage | undefined {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !body.trim()) return undefined;
     const msg: CareMessage = {
@@ -9324,6 +9344,7 @@ export const AdelanteEHR = {
       threadPatientId: patientId,
       authorType: "staff",
       authorName: staffName,
+      ...(role ? { authorRole: role } : {}),
       body,
       createdAt: new Date().toISOString(),
       readByStaffAt: new Date().toISOString(),
@@ -9334,7 +9355,7 @@ export const AdelanteEHR = {
       action: "care_message_sent",
       patientId,
       actorId: staffName,
-      detail: { authorType: "staff", messageId: msg.id },
+      detail: { authorType: "staff", messageId: msg.id, authorRole: role ?? null },
     });
     emit();
     return msg;

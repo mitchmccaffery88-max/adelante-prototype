@@ -502,7 +502,13 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "write",
     therapist: "write",
     pmhnp: "write",
-    peer_specialist: "read",
+    // §Peer messaging — peers now WRITE. The role's whole purpose is walking
+    // alongside the member (same reasoning as `assisted_signup` above), and a
+    // peer who can read a member's message but not answer it is a dead end.
+    // Note this does NOT make them a Part 2 flagger: MESSAGE_SUD_FLAG_ROLES in
+    // ehr.ts deliberately stays therapist/pmhnp/ecm_provider, because flagging
+    // REMOVES visibility and peers are `consent_gated` for screeners_sud.
+    peer_specialist: "write",
     clinical_coordinator: "read",
     sys_admin: "read",
     billing: "none",

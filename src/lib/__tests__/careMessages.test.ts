@@ -68,7 +68,8 @@ describe("care messaging — Phase 2", () => {
     expect(canAccess("ecm_provider", "patient_messaging").level).toBe("write");
     expect(canAccess("therapist", "patient_messaging").level).toBe("write");
     expect(canAccess("pmhnp", "patient_messaging").level).toBe("write");
-    expect(canAccess("peer_specialist", "patient_messaging").level).toBe("read");
+    // §Peer messaging — peers answer members; Part 2 flagging stays narrower.
+    expect(canAccess("peer_specialist", "patient_messaging").level).toBe("write");
     expect(canAccess("billing", "patient_messaging").locked).toBe(true);
   });
 
