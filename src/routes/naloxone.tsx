@@ -70,16 +70,12 @@ function NaloxonePage() {
   );
   const accessPoints = JSON.parse(accessJson) as ReturnType<typeof liveNaloxoneAccessPoints>;
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="naloxone-page">
-      <div className="space-y-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-          <ShieldPlus className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <h1 className="font-display text-3xl">Naloxone &amp; overdose prevention</h1>
-        <p className="text-lg text-muted-foreground">
-          How to get naloxone, how to use it, and what to do while you wait for help.
-        </p>
-      </div>
+    <PatientPage data-testid="naloxone-page">
+      <PatientPageHeader
+        icon={ShieldPlus}
+        title={<>Naloxone &amp; overdose prevention</>}
+        lede="How to get naloxone, how to use it, and what to do while you wait for help."
+      />
 
       <AccessVerifiedBanner />
       <ReviewPendingBanner />
@@ -103,11 +99,11 @@ function NaloxonePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold">{p.name}</span>
                 {p.verified ? (
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline">
                     Verified{p.verifiedBy ? ` — ${p.verifiedBy}` : ""}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline">
                     Unverified
                   </Badge>
                 )}
