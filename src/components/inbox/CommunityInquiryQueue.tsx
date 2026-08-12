@@ -60,7 +60,7 @@ export function CommunityInquiryQueue() {
               ) : null}
               <Badge variant={r.status === "new" ? "default" : "outline"}>{r.status}</Badge>
               <span className="text-xs text-muted-foreground">
-                <ClientDate value={r.createdAt} withTime />
+                <ClientDate value={r.createdAt} options={{ dateStyle: "medium", timeStyle: "short" }} />
               </span>
             </div>
             <p className="whitespace-pre-wrap text-sm text-navy">{r.body}</p>
@@ -79,7 +79,7 @@ export function CommunityInquiryQueue() {
             </div>
             {r.dispositionBy ? (
               <p className="text-xs text-muted-foreground">
-                {r.status} by {r.dispositionBy} · <ClientDate value={r.dispositionAt!} withTime />
+                {r.status} by {r.dispositionBy} · <ClientDate value={r.dispositionAt!} options={{ dateStyle: "medium", timeStyle: "short" }} />
               </p>
             ) : null}
             {canWrite ? (
