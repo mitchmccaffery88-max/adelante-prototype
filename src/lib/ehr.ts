@@ -12878,6 +12878,8 @@ export const AdelanteEHR = {
       actorId: staffName,
       detail: { orderId, drugName: row.drugName, from, to, reason: trimmed ?? null },
     });
+    // §Pre-release build 4 — lifecycle changes must reach the care plan too.
+    _recomputeCarePlan(patientId, opts.action);
     emit();
     return row;
   },
