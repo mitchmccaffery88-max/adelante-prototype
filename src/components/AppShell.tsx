@@ -5,14 +5,7 @@ import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { MobileNav } from "@/components/MobileNav";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
-import {
-  ShieldCheck,
-  UserCog,
-  ChevronDown,
-  User as UserIcon,
-  Phone,
-  LogOut,
-} from "lucide-react";
+import { ShieldCheck, UserCog, ChevronDown, User as UserIcon, Phone, LogOut } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
@@ -29,6 +22,7 @@ import { PatientSidebar } from "@/components/PatientSidebar";
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
+import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
 import {
@@ -90,9 +84,7 @@ export function AppShell() {
   // Surfaces where the patient-facing UI should feel private:
   // hide the staff link strip in the mobile nav (still reachable via the
   // Staff dropdown on desktop).
-  const isPatientSurface = PATIENT_ROUTES.includes(
-    pathname as (typeof PATIENT_ROUTES)[number],
-  );
+  const isPatientSurface = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]);
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake" && !isPatientSurface;
 
@@ -111,6 +103,9 @@ export function AppShell() {
   return (
     <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
       <RouteAccessGuard />
+      {/* Demo scenario control — fixed to the viewport so it is reachable at
+          any height, not buried in the footer. */}
+      <DemoStateSwitcher />
       {isPatientSurface && <CrisisHeader />}
       <header
         className={cn(
@@ -119,7 +114,10 @@ export function AppShell() {
         )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
-          <Link to="/" className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}>
+          <Link
+            to="/"
+            className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}
+          >
             <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
               A
             </span>
@@ -128,7 +126,12 @@ export function AppShell() {
 
           {/* §Patient portal Build 1 — on patient surfaces the top strip is
               replaced by the persistent left sidebar. */}
-          <nav className={cn("items-center gap-1 ml-4", isPatientSurface ? "hidden" : "hidden md:flex")}>
+          <nav
+            className={cn(
+              "items-center gap-1 ml-4",
+              isPatientSurface ? "hidden" : "hidden md:flex",
+            )}
+          >
             {patientNav.map((n) => {
               const active = pathname === n.to;
               return (
@@ -357,38 +360,9 @@ export function AppShell() {
               <span className="h-2 w-2 rounded-full bg-teal" />
               Demo data · no real PHI
             </span>
-            <DropdownMenu>
-              <DropdownMenuTrigger className="inline-flex items-center gap-1 rounded-full border bg-card px-2 py-0.5 text-[10px] text-foreground/70 hover:bg-secondary">
-                Demo · switch patient
-                <ChevronDown className="h-3 w-3 opacity-60" />
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-60">
-                <DropdownMenuLabel className="text-xs text-muted-foreground">
-                  Demo control · resets on reload
-                </DropdownMenuLabel>
-                <DropdownMenuRadioGroup
-                  value={currentId}
-                  onValueChange={(v) => AdelanteEHR.setCurrentPatientId(v)}
-                >
-                  {patients.map((p) => (
-                    <DropdownMenuRadioItem key={p.id} value={p.id} className="text-sm">
-                      <UserIcon className="h-3.5 w-3.5 mr-2 text-muted-foreground" />
-                      <span className="flex-1">
-                        {p.firstName} {p.lastName}
-                      </span>
-                      <span
-                        className={cn(
-                          "text-[10px] rounded-full px-1.5 py-0.5",
-                          p.intakeCompletedAt ? "bg-teal/15 text-teal" : "bg-gold/20 text-navy",
-                        )}
-                      >
-                        {p.intakeCompletedAt ? "intake ✓" : "new"}
-                      </span>
-                    </DropdownMenuRadioItem>
-                  ))}
-                </DropdownMenuRadioGroup>
-              </DropdownMenuContent>
-            </DropdownMenu>
+            <span className="text-[10px] text-muted-foreground">
+              Demo scenarios · top-right control
+            </span>
           </div>
         </div>
       </footer>
