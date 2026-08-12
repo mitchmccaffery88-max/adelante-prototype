@@ -1,13 +1,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { AdelanteEHR } from "@/lib/ehr";
-import { scanTextForCrisis } from "@/lib/crisisTextDetection";
+import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
+import { validateContact } from "@/lib/frontDoor";
+import { Phone, Siren } from "lucide-react";
 
 export const Route = createFileRoute("/start/other-help")({
   head: () => ({
@@ -38,17 +41,40 @@ export const Route = createFileRoute("/start/other-help")({
  */
 function OtherHelpPlaceholder() {
   const [note, setNote] = useState("");
+  const [contact, setContact] = useState("");
+  const [touched, setTouched] = useState(false);
   const [sent, setSent] = useState(false);
 
+  // §Real-time crisis interception — same detector Adel uses, fired as the
+  // person types. Resources appear immediately, before and regardless of any
+  // submit. The staff-alert layer below is additive, not a replacement.
+  const crisis = useMemo(() => detectCrisisLanguage(note), [note]);
+  const contactCheck = validateContact(contact);
+
   function submit() {
+    if (!contactCheck.valid) {
+      setTouched(true);
+      return;
+    }
     const id = AdelanteEHR.getCurrentPatientId();
     if (id) {
       AdelanteEHR.recordFrontDoorEntry(id, { otherHelpNote: note.trim() || undefined });
     }
+    // Non-clinical holding store — explicitly NOT a chart. See CommunityInquiry.
+    AdelanteEHR.createCommunityInquiry({
+      body: note,
+      contact,
+      contactKind: contactCheck.kind ?? "phone",
+      crisisFlagged: crisis.matched,
+      patternIds: crisis.patternIds,
+    });
     // §Crisis detection — free text from a person at the front door. Runs
     // whether or not a chart exists yet: with no patient id the scan raises an
     // anonymous crisis alert to the same role that owns the crisis queue.
-    scanTextForCrisis(id, note, { surface: "the front-door 'what brings you here' note" });
+    scanTextForCrisis(id, note, {
+      surface: "the front-door 'what brings you here' note",
+      anonymousContact: contact.trim(),
+    });
     setSent(true);
     toast.success("Thanks — we've got it.");
   }
@@ -66,6 +92,35 @@ function OtherHelpPlaceholder() {
           point you in the right direction.
         </p>
       </div>
+
+      {crisis.matched ? (
+        <div
+          role="alert"
+          data-testid="frontdoor-crisis-resources"
+          className="space-y-2 rounded-lg border-2 border-destructive/50 bg-destructive/5 p-4 text-sm"
+        >
+          <div className="flex items-center gap-2 font-semibold text-destructive">
+            <Siren className="h-4 w-4" /> Help is available right now
+          </div>
+          <p className="text-muted-foreground">
+            What you wrote sounds heavy. You don&apos;t have to finish this form — talk to a person
+            now. The 988 Suicide &amp; Crisis Lifeline answers any hour, free.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            <Button asChild variant="crisis" size="sm">
+              <a href="tel:988">
+                <Phone className="h-4 w-4" /> Call 988
+              </a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <a href="sms:988">Text 988</a>
+            </Button>
+            <Button asChild variant="outline" size="sm">
+              <Link to="/crisis">Get help right now</Link>
+            </Button>
+          </div>
+        </div>
+      ) : null}
 
       {sent ? (
         <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4 text-sm">
@@ -85,7 +140,26 @@ function OtherHelpPlaceholder() {
             rows={5}
             placeholder="In your own words — there's no wrong answer."
           />
-          <Button onClick={submit} disabled={!note.trim()}>
+          <div className="space-y-1 pt-2">
+            <Label htmlFor="other-help-contact">
+              Email or phone <span className="text-destructive">*</span>
+            </Label>
+            <Input
+              id="other-help-contact"
+              value={contact}
+              onBlur={() => setTouched(true)}
+              onChange={(e) => setContact(e.target.value)}
+              placeholder="you@example.com or (559) 555-0123"
+              aria-invalid={touched && !contactCheck.valid}
+            />
+            <p className="text-xs text-muted-foreground">
+              Required — we can&apos;t point you anywhere if we can&apos;t reach you.
+            </p>
+            {touched && contactCheck.error ? (
+              <p className="text-xs font-medium text-destructive">{contactCheck.error}</p>
+            ) : null}
+          </div>
+          <Button onClick={submit} disabled={!note.trim() || !contactCheck.valid}>
             Send
           </Button>
         </div>
