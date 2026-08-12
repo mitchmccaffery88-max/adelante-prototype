@@ -6545,6 +6545,25 @@ export const AdelanteEHR = {
     return Engagement.savedToolkitItems(patientId);
   },
 
+  /** §Phase 5b — Recovery module lesson ids this patient has completed. */
+  completedRecoveryLessons(patientId: string): string[] {
+    return Engagement.completedRecoveryLessons(patientId);
+  },
+
+  /** §Phase 5b — structured tool-flow selections for one recovery lesson. */
+  recoveryToolFlow(patientId: string, lessonId: string) {
+    return Engagement.recoveryToolFlow(patientId, lessonId);
+  },
+
+  completeRecoveryLesson(
+    patientId: string,
+    lessonId: string,
+    selection: { warningSigns?: string[]; supportPeople?: string[]; todayAction?: string },
+    opts: { saveToolkit?: boolean; actorRole?: string } = {},
+  ) {
+    return Engagement.completeRecoveryLesson(patientId, lessonId, selection, opts);
+  },
+
   /** Counts for population-health/outcomes joins, by patient id. */
   engagementSummary(patientId: string) {
     return Engagement.engagementSummary(patientId);

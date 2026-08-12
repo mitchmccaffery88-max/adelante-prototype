@@ -13,6 +13,7 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Front-door helper tiers](mem://features/front-door-helper-tiers) — Tier 1 informal helper field, Tier 2 staff assisted sign-up, consumedBy attribution rule
 - [PO disclosure two-tier](mem://features/po-disclosure-two-tier) — mandatory (legal mandate, never togglable) vs voluntary (revocable consent) probation/parole sharing
 - [Self-help library](mem://features/self-help-library) — Library/Exercise schema, store-backed progress, population gating, advocate read-floor visibility
+- [Recovery modules](mem://features/recovery-modules) — 8 modules/10-step schema, ONE shared ModuleTemplate renderer, structured tool-flow steps, Living Recovery still unconfirmed
 - [Safety plan](mem://features/safety-plan) — Stanley-Brown structure, clinical-adjacent store, safety_plan record class, 988 locked entry, pending clinical review flags
 - [Pre-release capacity gate](mem://features/pre-release-capacity-gate) — in-custody profile creation, required Step 1 capacity/surrogate determination, consent-step blocking
 - [Pre-release screening](mem://features/pre-release-screening) — real AUDIT-10/DAST-10 + AHC-HRSN SDOH satisfy pre-release checklist rows; shared ScreenerResult storage and population rollups
