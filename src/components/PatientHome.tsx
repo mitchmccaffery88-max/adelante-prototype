@@ -60,6 +60,7 @@ import { Textarea } from "@/components/ui/textarea";
 import type { Medication } from "@/lib/ehr";
 import { PatientDocumentsCard } from "@/components/documents/PatientDocumentsCard";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
+import { DailyCheckInCard } from "@/components/patient/DailyCheckInCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 // Reconcile every Patient.needs key with both a translation key and an icon
