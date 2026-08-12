@@ -49,6 +49,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { EmptyState } from "@/components/EmptyState";
 import { CrisisNotice } from "@/components/CrisisNotice";
 import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
