@@ -10,7 +10,7 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, Lock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Map } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, useRecoveryText } from "@/lib/i18n";
 import { usePopulation } from "@/components/PopulationGate";
@@ -59,7 +59,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
           patientId={patientId}
           onDone={() => setOpenLesson(null)}
         />
-      </div>
+      </PatientPage>
     );
   }
 
@@ -182,6 +182,6 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
         </p>
         <p className="text-sm text-muted-foreground">{t("recLivingBody")}</p>
       </Card>
-    </div>
+    </PatientPage>
   );
 }

@@ -58,7 +58,7 @@ export function LibraryBrowser({
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
         </Button>
         <LibraryLesson item={lesson} patientId={patientId} onDone={() => setOpenItem(null)} />
-      </div>
+      </PatientPage>
     );
   }
 
@@ -102,7 +102,7 @@ export function LibraryBrowser({
             Finish and save to my toolkit
           </Button>
         </Card>
-      </div>
+      </PatientPage>
     );
   }
 
@@ -232,6 +232,6 @@ export function LibraryBrowser({
           )}
         </TabsContent>
       </Tabs>
-    </div>
+    </PatientPage>
   );
 }
