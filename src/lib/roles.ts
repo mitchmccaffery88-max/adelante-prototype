@@ -112,6 +112,11 @@ export type RecordClass =
   | "crisis_queue"
   | "patient_messaging"
   | "provider_requests"
+  // §Front-door community inquiries — NON-clinical "what brings you here"
+  // notes from people who are not patients. Its own class so it never
+  // inherits chart permissions: the free text may still mention MH/SUD, so
+  // it is read by coordination roles, not by billing.
+  | "community_inquiries"
   | "worklist"
   | "note_templates"
   | "catalog_governance"
