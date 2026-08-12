@@ -477,6 +477,27 @@ function IntakePage() {
           </div>
         </Card>
       )}
+      {consentOnFile && (
+        <Card className="mb-4 p-4 bg-secondary/50 flex items-start gap-3">
+          <ShieldCheck className="h-5 w-5 text-teal mt-0.5" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">
+              Your consent is already on file — we won't ask again.
+            </div>
+            <div className="text-muted-foreground">
+              HIPAA acknowledged, and substance-use sharing is currently{" "}
+              <strong className="text-foreground">
+                {consentOnFile.part2Sud ? "allowed" : "not allowed"}
+              </strong>
+              . Nothing you do here changes that.{" "}
+              <Link to="/consent" className="underline text-teal">
+                Review or change your consent
+              </Link>
+              .
+            </div>
+          </div>
+        </Card>
+      )}
       <header className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-4 bg-background/95 backdrop-blur border-b">
         <div className="flex items-center justify-between gap-3 mb-3">
           <div>
