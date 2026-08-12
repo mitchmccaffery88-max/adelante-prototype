@@ -107,12 +107,250 @@ function seed(
 }
 
 /**
- * A small, explicitly-placeholder seed: one skeleton entry per category, so
- * the structure is exercised end to end and nothing reads as a real listing.
+ * A SOURCED entry: a real Tulare County organisation with real web-sourced
+ * contact details. Sourced is NOT verified — `verified: false` /
+ * `status: "unverified"` still holds, so these stay out of the patient-facing
+ * list until a named staff member actually calls and confirms address, phone
+ * and hours through `verifyResource`. Hedges like "(verify hours)" are part of
+ * the sourced text and are preserved verbatim.
  */
-export const SEED_RESOURCES: CommunityResource[] = RESOURCE_CATEGORIES.map((c) =>
-  seed(`res_${c.id}_1`, c.id, `${c.name} — placeholder entry`, `Needs human sourcing: a real ${c.name.toLowerCase()} provider serving Tulare/Kings County.`),
-);
+function sourced(
+  id: string,
+  categoryId: string,
+  name: string,
+  address: string,
+  phone: string,
+  hours: string,
+  description: string,
+): CommunityResource {
+  return {
+    id,
+    categoryId,
+    name,
+    address,
+    phone,
+    hours,
+    description,
+    placeholder: false,
+    verified: false,
+    status: "unverified",
+  };
+}
+
+/** Categories still awaiting human sourcing keep a skeleton placeholder. */
+const UNSOURCED_CATEGORIES = [
+  "recovery_meetings",
+  "support_groups",
+  "family_reunification",
+  "healthcare",
+  "education",
+  "parenting",
+  "financial",
+  "legal",
+  "life_skills",
+];
+
+export const SEED_RESOURCES: CommunityResource[] = [
+  // ---- Housing -------------------------------------------------------
+  sourced(
+    "res_housing_teac",
+    "housing",
+    "Tulare Emergency Aid Council",
+    "424 North N Street, Tulare, CA",
+    "(559) 686-3693",
+    "(verify hours)",
+    "Local emergency aid for Tulare residents, including help with rent, utilities and basic needs.",
+  ),
+  sourced(
+    "res_housing_hatc",
+    "housing",
+    "Housing Authority of the County of Tulare",
+    "5140 W. Cypress Ave, Visalia, CA",
+    "(559) 627-3700",
+    "(verify hours)",
+    "Public housing and Section 8 / Housing Choice Voucher programs countywide. hatc.net",
+  ),
+  sourced(
+    "res_housing_cset",
+    "housing",
+    "CSET – Housing & Homeless Services",
+    "312 NW 3rd Ave, Visalia, CA",
+    "(559) 741-4640",
+    "(verify hours)",
+    "Housing navigation, homeless outreach and rapid re-housing support across Tulare County. cset.org",
+  ),
+  sourced(
+    "res_housing_selfhelp",
+    "housing",
+    "Self-Help Enterprises",
+    "8445 W. Elowin Ct, Visalia, CA",
+    "(559) 651-1000",
+    "(verify hours)",
+    "Affordable housing development, home repair and housing counseling for the San Joaquin Valley. selfhelpenterprises.org",
+  ),
+  sourced(
+    "res_housing_211",
+    "housing",
+    "211 Tulare County – Housing Referrals",
+    "Countywide (phone and web)",
+    "211",
+    "24/7",
+    "Free, confidential referral line for housing and shelter options in Tulare County. 211tularecounty.org",
+  ),
+
+  // ---- Emergency Shelter ---------------------------------------------
+  sourced(
+    "res_shelter_tularecares",
+    "emergency_shelter",
+    "Tulare Cares Emergency Homeless Shelter",
+    "Tulare, CA (verify address)",
+    "(559) 684-4200",
+    "(verify hours)",
+    "Low-barrier navigation center with roughly 200 beds.",
+  ),
+  sourced(
+    "res_shelter_vrm",
+    "emergency_shelter",
+    "Visalia Rescue Mission",
+    "741 S. Santa Fe St, Visalia, CA",
+    "(559) 740-4178",
+    "(verify hours)",
+    "Emergency shelter, meals and recovery programming in Visalia. vrmhope.org",
+  ),
+  sourced(
+    "res_shelter_hope",
+    "emergency_shelter",
+    "Women and Children's Shelter of Hope / Visalia Rescue Mission",
+    "Visalia, CA (verify address)",
+    "(559) 734-7921",
+    "Intake 4pm daily (verify)",
+    "Shelter for women and children, with daily intake.",
+  ),
+  sourced(
+    "res_shelter_karens_house",
+    "emergency_shelter",
+    "Family Services of Tulare County – Karen's House",
+    "Confidential location",
+    "(559) 732-5941",
+    "24/7 crisis line",
+    "Domestic-violence emergency shelter with a 24/7 crisis line. fstc.net",
+  ),
+
+  // ---- Food Assistance -----------------------------------------------
+  sourced(
+    "res_food_calfresh",
+    "food",
+    "CalFresh Tulare County",
+    "Countywide (phone and web)",
+    "1-877-410-8813",
+    "(verify hours)",
+    "Monthly food benefits (SNAP) — apply by phone or online. tularecounty.ca.gov",
+  ),
+  sourced(
+    "res_food_foodlink",
+    "food",
+    "FoodLink for Tulare County",
+    "7427 Sunnyview Ave, Visalia, CA",
+    "(559) 651-3663",
+    "(verify hours)",
+    "County food bank supplying pantries and distributions across Tulare County. foodlinktc.org",
+  ),
+  sourced(
+    "res_food_veac",
+    "food",
+    "Visalia Emergency Aid Council (VEAC)",
+    "217 NE 3rd Street, Visalia, CA",
+    "(559) 732-0101",
+    "(verify hours)",
+    "Emergency food boxes and basic-needs assistance for Visalia residents.",
+  ),
+  sourced(
+    "res_food_mow",
+    "food",
+    "Meals on Wheels of Tulare County",
+    "312 NW 3rd Street, Visalia, CA",
+    "(559) 732-4194",
+    "(verify hours)",
+    "Home-delivered meals for seniors and homebound adults.",
+  ),
+  sourced(
+    "res_food_211",
+    "food",
+    "211 Tulare County",
+    "Countywide (phone and web)",
+    "211",
+    "24/7",
+    "Free, confidential referral line for food pantries and distributions. 211tularecounty.org",
+  ),
+
+  // ---- Employment -----------------------------------------------------
+  sourced(
+    "res_employment_reset",
+    "employment",
+    "RESET – Readiness for Employment through Sustainable Education & Training",
+    "Tulare County Probation, Adult Division",
+    "(559) 730-2540",
+    "(verify hours)",
+    "Employment readiness, education and training built specifically for justice-involved adults. tcprobation.com",
+  ),
+  sourced(
+    "res_employment_cset",
+    "employment",
+    "CSET Employment Training",
+    "312 NW 3rd Ave, Visalia, CA",
+    "(559) 741-4640",
+    "(verify hours)",
+    "Job training, placement and workforce services across Tulare County. cset.org",
+  ),
+  sourced(
+    "res_employment_proteus",
+    "employment",
+    "Proteus Inc.",
+    "1830 N. Dinuba Blvd, Visalia, CA",
+    "(559) 733-5423",
+    "(verify hours)",
+    "Workforce training, education and support services, including for farmworkers. proteusinc.org",
+  ),
+  sourced(
+    "res_employment_edd",
+    "employment",
+    "California EDD",
+    "Statewide (phone and web)",
+    "1-800-300-5616",
+    "(verify hours)",
+    "Unemployment benefits and statewide job services. edd.ca.gov",
+  ),
+
+  // ---- Transportation --------------------------------------------------
+  sourced(
+    "res_transportation_tcrta",
+    "transportation",
+    "RIDE Tulare County / TCRTA",
+    "Countywide",
+    "(800) 692-5915",
+    "(verify hours)",
+    "Countywide fixed-route buses, ADA paratransit and microtransit. ridetc.org",
+  ),
+  sourced(
+    "res_transportation_visalia",
+    "transportation",
+    "Visalia Transit",
+    "425 E. Oak Ave, Visalia, CA",
+    "(559) 713-4100",
+    "(verify hours)",
+    "City bus service within Visalia. visalia.city/transit",
+  ),
+
+  // ---- Still awaiting human sourcing ----------------------------------
+  ...RESOURCE_CATEGORIES.filter((c) => UNSOURCED_CATEGORIES.includes(c.id)).map((c) =>
+    seed(
+      `res_${c.id}_1`,
+      c.id,
+      `${c.name} — placeholder entry`,
+      `Needs human sourcing: a real ${c.name.toLowerCase()} provider serving Tulare/Kings County.`,
+    ),
+  ),
+];
 
 const resources = new Map<string, CommunityResource>(
   SEED_RESOURCES.map((r) => [r.id, structuredClone(r)]),
