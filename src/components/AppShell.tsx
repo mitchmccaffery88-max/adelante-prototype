@@ -17,6 +17,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
+import { PatientSidebar } from "@/components/PatientSidebar";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
@@ -74,7 +75,7 @@ export function AppShell() {
     staffNav.length > 0;
 
   return (
-    <div className="min-h-dvh flex flex-col">
+    <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
       <RouteAccessGuard />
       <header className="sticky top-0 z-40 border-b bg-background/85 backdrop-blur">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
@@ -85,7 +86,9 @@ export function AppShell() {
             <span className="font-display text-xl text-navy">{t("appName")}</span>
           </Link>
 
-          <nav className="hidden md:flex items-center gap-1 ml-4">
+          {/* §Patient portal Build 1 — on patient surfaces the top strip is
+              replaced by the persistent left sidebar. */}
+          <nav className={cn("items-center gap-1 ml-4", isPatientSurface ? "hidden" : "hidden md:flex")}>
             {patientNav.map((n) => {
               const active = pathname === n.to;
               return (
@@ -256,7 +259,14 @@ export function AppShell() {
       </header>
 
       <main className={cn("flex-1", isPatientSurface && "pb-24 md:pb-0")}>
-        {showStaffShell ? (
+        {isPatientSurface ? (
+          <div className="flex min-h-full">
+            <PatientSidebar />
+            <div className="min-w-0 flex-1">
+              <Outlet />
+            </div>
+          </div>
+        ) : showStaffShell ? (
           <div className="flex min-h-full">
             <StaffNavSidebar />
             <div className="min-w-0 flex-1">
