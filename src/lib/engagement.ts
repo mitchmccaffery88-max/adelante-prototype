@@ -63,7 +63,10 @@ export function subscribeEngagement(l: Listener): () => void {
 
 export type EngagementAuditEvent = {
   patientId: string;
-  action: "library_item_completed" | "library_exercise_completed";
+  action:
+    | "library_item_completed"
+    | "library_exercise_completed"
+    | "recovery_lesson_completed";
   actorRole: string;
   detail: Record<string, unknown>;
 };
