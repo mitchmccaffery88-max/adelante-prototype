@@ -1,15 +1,17 @@
+import { useSyncExternalStore } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { BadgeCheck, LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
 import {
-  NALOXONE_ACCESS_POINTS,
   NALOXONE_ACCESS_REVIEW,
   NALOXONE_STEPS,
   NALOXONE_STEPS_SOURCE,
   NEVER_USE_ALONE,
   SAFETY_CONTENT_REVIEW,
   TOLERANCE_WARNING,
+  liveNaloxoneAccessPoints,
+  subscribeNaloxoneAccess,
 } from "@/lib/safetyContent";
 
 function ReviewPendingBanner() {
@@ -57,6 +59,14 @@ function AccessVerifiedBanner() {
 }
 
 function NaloxonePage() {
+  // Access points are managed content now: whatever the content manager has
+  // published is what a patient sees, live.
+  const accessJson = useSyncExternalStore(
+    subscribeNaloxoneAccess,
+    () => JSON.stringify(liveNaloxoneAccessPoints()),
+    () => JSON.stringify(liveNaloxoneAccessPoints()),
+  );
+  const accessPoints = JSON.parse(accessJson) as ReturnType<typeof liveNaloxoneAccessPoints>;
   return (
     <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="naloxone-page">
       <div className="space-y-2">
@@ -86,7 +96,7 @@ function NaloxonePage() {
           <VerifiedChip />
         </div>
         <ul className="space-y-3" data-testid="naloxone-access-points">
-          {NALOXONE_ACCESS_POINTS.map((p) => (
+          {accessPoints.map((p) => (
             <li key={p.id} className="rounded-2xl border p-4">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold">{p.name}</span>

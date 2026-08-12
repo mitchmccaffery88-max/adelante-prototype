@@ -18,6 +18,12 @@ import {
   type LibraryItem,
 } from "@/lib/library";
 import { RECOVERY_LESSONS, RECOVERY_MODULES, TOOL_FLOW_LIMITS, type RecoveryLesson } from "@/lib/recovery";
+import {
+  RESOURCE_CATEGORIES,
+  SEED_RESOURCES,
+  type CommunityResource,
+} from "@/lib/communityResources";
+import { NALOXONE_ACCESS_POINTS, type NaloxoneAccessPoint } from "@/lib/safetyContent";
 import type { ContentBody, ContentTypeId } from "@/lib/contentPublishing";
 
 export type ContentFieldKind =
@@ -358,7 +364,121 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
   },
 };
 
-export const CONTENT_TYPES: ContentTypeDescriptor[] = [LIBRARY_LESSON_TYPE, RECOVERY_LESSON_TYPE];
+// ---------------------------------------------------------------------------
+// Community resource — the directory record (address / phone / hours)
+// ---------------------------------------------------------------------------
+
+const RESOURCE_FIELDS: ContentField[] = [
+  {
+    key: "categoryId",
+    label: "Category",
+    kind: "select",
+    required: true,
+    options: [...RESOURCE_CATEGORIES]
+      .sort((a, b) => a.order - b.order)
+      .map((c) => ({ value: c.id, label: c.name })),
+  },
+  { key: "name", label: "Organisation name", kind: "text", required: true },
+  {
+    key: "address",
+    label: "Address",
+    kind: "text",
+    required: true,
+    help: "Write what you confirmed. Never invent an address.",
+  },
+  { key: "phone", label: "Phone", kind: "text", required: true },
+  { key: "hours", label: "Hours", kind: "text", required: true },
+  {
+    key: "description",
+    label: "What they do",
+    kind: "textarea",
+    required: true,
+    rows: 3,
+    help: "Plain language a patient can act on.",
+  },
+];
+
+export const COMMUNITY_RESOURCE_TYPE: ContentTypeDescriptor = {
+  typeId: "community_resource",
+  label: "Community resource",
+  labelPlural: "Community resources",
+  publishEffect:
+    "Publishing puts this organisation in the patient Resource Center immediately, in its category, and makes it available for SDOH-need matching and referrals.",
+  fields: RESOURCE_FIELDS,
+  baselineIds: () => SEED_RESOURCES.map((r) => r.id),
+  baselineBody: (id) => {
+    const r = SEED_RESOURCES.find((x) => x.id === id);
+    return r ? (structuredClone(r) as unknown as ContentBody) : undefined;
+  },
+  emptyBody: () => ({
+    id: "",
+    categoryId: RESOURCE_CATEGORIES[0]?.id ?? "",
+    name: "",
+    address: "",
+    phone: "",
+    hours: "",
+    description: "",
+    placeholder: false,
+    verified: false,
+    status: "unverified",
+  }),
+  titleOf: (b) => str(b, "name") || "(unnamed resource)",
+  validate: (b) => {
+    const errors = requireText(b, RESOURCE_FIELDS);
+    if (!RESOURCE_CATEGORIES.some((c) => c.id === str(b, "categoryId")))
+      errors.push("Pick a real resource category.");
+    return errors;
+  },
+};
+
+// ---------------------------------------------------------------------------
+// Naloxone access point — where to get naloxone
+// ---------------------------------------------------------------------------
+
+const NALOXONE_FIELDS: ContentField[] = [
+  { key: "name", label: "Where", kind: "text", required: true },
+  {
+    key: "what",
+    label: "What to ask for",
+    kind: "textarea",
+    required: true,
+    rows: 3,
+    help: "Exactly what a patient should say or do to walk out with naloxone.",
+  },
+  { key: "city", label: "City", kind: "text" },
+  { key: "phone", label: "Phone", kind: "text" },
+  { key: "website", label: "Website", kind: "text" },
+  { key: "source", label: "Source citation", kind: "text" },
+];
+
+export const NALOXONE_ACCESS_TYPE: ContentTypeDescriptor = {
+  typeId: "naloxone_access_point",
+  label: "Naloxone access point",
+  labelPlural: "Naloxone access points",
+  publishEffect:
+    "Publishing adds this to the 'Where to get naloxone' list on the patient overdose-prevention page immediately. It does not touch the overdose-response steps, which stay under clinical review.",
+  fields: NALOXONE_FIELDS,
+  baselineIds: () => NALOXONE_ACCESS_POINTS.map((p) => p.id),
+  baselineBody: (id) => {
+    const p = NALOXONE_ACCESS_POINTS.find((x) => x.id === id);
+    return p ? (structuredClone(p) as unknown as ContentBody) : undefined;
+  },
+  emptyBody: () => ({ id: "", name: "", what: "", verified: false }),
+  titleOf: (b) => str(b, "name") || "(unnamed access point)",
+  validate: (b) => {
+    const errors = requireText(b, NALOXONE_FIELDS);
+    if (!str(b, "phone").trim() && !str(b, "website").trim())
+      errors.push("Give a phone number or a website — a patient needs a way to reach this.");
+    return errors;
+  },
+};
+
+export const CONTENT_TYPES: ContentTypeDescriptor[] = [
+  LIBRARY_LESSON_TYPE,
+  RECOVERY_LESSON_TYPE,
+  COMMUNITY_RESOURCE_TYPE,
+  NALOXONE_ACCESS_TYPE,
+];
 
 export function contentType(typeId: ContentTypeId): ContentTypeDescriptor {
   const d = CONTENT_TYPES.find((t) => t.typeId === typeId);
@@ -373,4 +493,12 @@ export function asLibraryItem(body: ContentBody, id: string): LibraryItem {
 
 export function asRecoveryLesson(body: ContentBody, id: string): RecoveryLesson {
   return { ...(structuredClone(body) as unknown as RecoveryLesson), id };
+}
+
+export function asCommunityResource(body: ContentBody, id: string): CommunityResource {
+  return { ...(structuredClone(body) as unknown as CommunityResource), id };
+}
+
+export function asNaloxoneAccessPoint(body: ContentBody, id: string): NaloxoneAccessPoint {
+  return { ...(structuredClone(body) as unknown as NaloxoneAccessPoint), id };
 }
