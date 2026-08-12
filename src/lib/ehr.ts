@@ -6085,7 +6085,17 @@ export const AdelanteEHR = {
     if (!p) return;
     const now = new Date().toISOString();
     p.needs = payload.needs;
-    p.consents = { hipaa: payload.hipaa, part2Sud: payload.part2Sud, signedAt: now };
+    // §Consent re-prompt safety — intake is re-enterable (re-screen tasks
+    // deep-link back to /intake). A second pass through this flow must never
+    // DOWNGRADE a consent that is already on file: an abandoned or skipped
+    // re-consent is not a revocation. Revocation happens only through the
+    // consent ledger (`revokeConsentRecord` / `setConsent(..., false)`), which
+    // records reason, actor and timestamp. So this write is grant-only.
+    p.consents = {
+      hipaa: payload.hipaa || p.consents.hipaa,
+      part2Sud: payload.part2Sud || p.consents.part2Sud,
+      signedAt: p.consents.signedAt ?? now,
+    };
     p.intakeCompletedAt = now;
     _recomputeCarePlan(p.id, "intake_completed");
     emit();

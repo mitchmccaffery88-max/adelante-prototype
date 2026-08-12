@@ -201,6 +201,31 @@ function IntakePage() {
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
   const [savedAt, setSavedAt] = useState<string | null>(null);
 
+  /**
+   * §Consent re-prompt gate.
+   *
+   * Intake is re-enterable (re-screen tasks deep-link straight back here).
+   * Re-asking for HIPAA + Part 2 acknowledgment when a valid consent is
+   * already on the ledger is both noise and a real compliance hazard: an
+   * abandoned or declined redundant prompt must never downgrade a live
+   * consent. Read the SAME live ledger every other gate reads — no cached
+   * copy — and skip the step entirely when consent is genuinely in force.
+   * Changing or revoking consent happens on /consent, never as a side effect
+   * of re-screening.
+   */
+  const consentOnFile = useEhr(() => {
+    const p = AdelanteEHR.getPatient(currentId);
+    if (!p?.consents?.signedAt || !p.consents.hipaa) return null;
+    return {
+      signedAt: p.consents.signedAt,
+      part2Sud: AdelanteEHR.isConsentCategoryAuthorized(currentId, "sud_treatment"),
+    };
+  });
+  // Effective values: the ledger wins whenever it has something to say, so a
+  // stale local draft can't contradict it.
+  const effectiveHipaa = consentOnFile ? true : hipaaConsent;
+  const effectiveSud: boolean | null = consentOnFile ? consentOnFile.part2Sud : sudConsent;
+
   // Re-seed if the acting patient changes mid-session (assisted mode).
   useEffect(() => {
     setProfile(seedIntakeProfile(patient));
@@ -297,21 +322,21 @@ function IntakePage() {
 
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
-    () => SCREENERS.filter((s) => !s.isSud || sudConsent === true),
-    [sudConsent],
+    () => SCREENERS.filter((s) => !s.isSud || effectiveSud === true),
+    [effectiveSud],
   );
   const steps = useMemo(
     () => [
       { key: "welcome", label: "Welcome" },
       { key: "about", label: "About you" },
-      { key: "consent", label: "Consent" },
+      ...(consentOnFile ? [] : [{ key: "consent", label: "Consent" }]),
       { key: "coverage", label: "Coverage" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
       ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
-    [activeScreeners, askHeardAbout],
+    [activeScreeners, askHeardAbout, consentOnFile],
   );
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
@@ -383,8 +408,8 @@ function IntakePage() {
     }
     AdelanteEHR.completeIntake(currentId, {
       needs,
-      hipaa: hipaaConsent,
-      part2Sud: sudConsent === true,
+      hipaa: effectiveHipaa,
+      part2Sud: effectiveSud === true,
     });
     if (crisisFlagged) {
       // Legacy soft flag — still read by case-manager / caseload / referral filters.
@@ -448,6 +473,27 @@ function IntakePage() {
             <div className="font-medium text-navy">You've already completed intake.</div>
             <div className="text-muted-foreground">
               You can update your answers below — your care team will be notified of any changes.
+            </div>
+          </div>
+        </Card>
+      )}
+      {consentOnFile && (
+        <Card className="mb-4 p-4 bg-secondary/50 flex items-start gap-3">
+          <ShieldCheck className="h-5 w-5 text-teal mt-0.5" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">
+              Your consent is already on file — we won't ask again.
+            </div>
+            <div className="text-muted-foreground">
+              HIPAA acknowledged, and substance-use sharing is currently{" "}
+              <strong className="text-foreground">
+                {consentOnFile.part2Sud ? "allowed" : "not allowed"}
+              </strong>
+              . Nothing you do here changes that.{" "}
+              <Link to="/consent" className="underline text-teal">
+                Review or change your consent
+              </Link>
+              .
             </div>
           </div>
         </Card>

@@ -180,7 +180,7 @@ export function DemoStateSwitcher() {
   }
 
   return (
-    <div className="fixed top-16 right-3 z-[70] print:hidden">
+    <div className="fixed top-[136px] right-3 z-[70] print:hidden">
       <DropdownMenu>
         <DropdownMenuTrigger
           data-testid="demo-state-switcher"

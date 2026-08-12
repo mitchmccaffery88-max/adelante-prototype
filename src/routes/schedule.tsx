@@ -25,11 +25,12 @@ import {
 import { useI18n } from "@/lib/i18n";
 import { PatientGroupScheduling } from "@/components/PatientGroupScheduling";
 
-type ScheduleSearch = { reschedule?: string };
+type ScheduleSearch = { reschedule?: string; tab?: "one_to_one" | "groups" };
 
 export const Route = createFileRoute("/schedule")({
   validateSearch: (s: Record<string, unknown>): ScheduleSearch => ({
     reschedule: typeof s.reschedule === "string" ? s.reschedule : undefined,
+    tab: s.tab === "groups" || s.tab === "one_to_one" ? s.tab : undefined,
   }),
   head: () => ({
     meta: [
@@ -47,7 +48,7 @@ export const Route = createFileRoute("/schedule")({
 function SchedulePage() {
   const { t } = useI18n();
   const navigate = useNavigate();
-  const { reschedule: rescheduleId } = Route.useSearch();
+  const { reschedule: rescheduleId, tab: tabParam } = Route.useSearch();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const existing = useEhr(() =>
@@ -81,7 +82,7 @@ function SchedulePage() {
   const [selectedStart, setSelectedStart] = useState<string>("");
   // Two booking paths on one page: the untouched 1:1 flow, and group
   // scheduling (view enrolled groups + self-join OPEN groups only).
-  const [tab, setTab] = useState<"one_to_one" | "groups">("one_to_one");
+  const [tab, setTab] = useState<"one_to_one" | "groups">(tabParam ?? "one_to_one");
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
