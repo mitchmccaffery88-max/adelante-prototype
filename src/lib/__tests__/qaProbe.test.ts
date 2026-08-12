@@ -1,14 +1,14 @@
 import { describe, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
-import { resolvePopulation } from "@/lib/population";
 
 describe("qa probe", () => {
-  it("lists patients + tracks", () => {
+  it("dumps", () => {
     for (const p of AdelanteEHR.listPatients()) {
-      const r = resolvePopulation(p.id);
-      console.log(p.id, p.firstName, p.lastName, "intake:", !!p.intakeCompletedAt, "|", r.track, "|", r.basis, "| provisional:", r.provisional);
+      console.log(p.id, p.firstName, JSON.stringify({
+        releaseDate: p.releaseDate, coverage: p.coverage, frontDoor: p.frontDoor,
+        referralId: p.referralId, missed: p.missedPreReleaseCoordination,
+        eps: AdelanteEHR.listPreReleaseEpisodes(p.id).map(e=>({s:e.status,m:e.missedHandoff})),
+      }));
     }
-    console.log("current:", AdelanteEHR.getCurrentPatientId());
-    console.log("advocateLinks:", JSON.stringify((AdelanteEHR as any).listAdvocateLinks?.("p1") ?? "n/a"));
   });
 });
