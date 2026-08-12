@@ -101,12 +101,7 @@ import {
   isPart2Screener,
   type ScreenerDomainResult,
 } from "./screeners";
-export type {
-  LibraryCategory,
-  LibraryItem,
-  Exercise,
-  SavedToolkitItem,
-} from "./library";
+export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
 // §v3.0 Phase 5 — patient documents. Pure policy module (scan gate, queue
 // ownership, Part 2 restriction messaging); imports nothing back from here.
 import {
@@ -1603,7 +1598,12 @@ export interface CarePlanPreReleaseSlice {
   /** Build-1 designations — names only, no invitation material. */
   advocates: { name: string; relationship?: string; authorizationType?: string }[];
   /** Build-3 bookings, resolved live against the real scheduling store. */
-  appointments: { kind: ReentryAppointmentKind; start: string; providerName: string; status?: string }[];
+  appointments: {
+    kind: ReentryAppointmentKind;
+    start: string;
+    providerName: string;
+    status?: string;
+  }[];
   /** Count of pre-release screenings on the chart. */
   screeningsCaptured: number;
   housingArrangement?: string;
@@ -1991,7 +1991,8 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   { key: "pre_release_services", label: "Pre-release services (placeholder)" },
   {
     key: "telehealth_services",
-    label: "Telehealth services consent — required before virtual participation (placeholder wording)",
+    label:
+      "Telehealth services consent — required before virtual participation (placeholder wording)",
   },
   {
     key: "information_sharing_disclosure",
@@ -2214,8 +2215,18 @@ export const PRE_RELEASE_FORMS: PreReleaseFormDef[] = [
     fields: [
       { key: "currentlyEnrolled", label: "Currently Medi-Cal enrolled", type: "bool" },
       { key: "cin", label: "CIN / member id", type: "text" },
-      { key: "suspensionStatus", label: "Suspension status", type: "select", options: ["Unknown", "Suspended", "Active", "Terminated"] },
-      { key: "anticipatedReleaseDate", label: "Anticipated release date", type: "date", required: true },
+      {
+        key: "suspensionStatus",
+        label: "Suspension status",
+        type: "select",
+        options: ["Unknown", "Suspended", "Active", "Terminated"],
+      },
+      {
+        key: "anticipatedReleaseDate",
+        label: "Anticipated release date",
+        type: "date",
+        required: true,
+      },
     ],
   },
   {
@@ -2428,7 +2439,11 @@ export interface PreReleaseCapacityDetermination {
    */
   identifiedAdvocates: {
     advocateLinkId: string;
-    expectedAuthorization: LegalAuthorityType | "hipaa_authorization" | "dhcs_authorized_representative" | "family_participation";
+    expectedAuthorization:
+      | LegalAuthorityType
+      | "hipaa_authorization"
+      | "dhcs_authorized_representative"
+      | "family_participation";
   }[];
 }
 
@@ -3186,6 +3201,47 @@ const patients: Patient[] = [
     ],
   },
 ];
+
+// §QA 5-state pass — the general-population demo persona. Deliberately carries
+// NO justice signal at all: no pre-release episode, no `jiReentryFlag`, no
+// referral record and a non-justice `heardAbout`, so `resolvePopulationTrack`
+// resolves her to `general_population` from live facts rather than a flag.
+patients.push({
+  id: "p4",
+  programId: "ADL-2026-004",
+  firstName: "Alicia",
+  lastName: "Serrano",
+  dob: "1991-06-17",
+  phone: "+15595550104",
+  email: "alicia.r@example.com",
+  // No custody history. `releaseDate` is required by the type, so it mirrors
+  // her enrollment date and is never surfaced for a general-population track.
+  releaseDate: "2026-03-02",
+  enrolledAt: "2026-03-02",
+  episodeDay: 34,
+  smsFallback: true,
+  consents: { hipaa: true, part2Sud: true, signedAt: "2026-03-02" },
+  screeners: {
+    "phq-9": { key: "phq-9", score: 9, severity: "Mild", completedAt: "2026-03-02" },
+    "gad-7": { key: "gad-7", score: 7, severity: "Mild", completedAt: "2026-03-02" },
+  },
+  needs: { housing: false, food: false, employment: true, transport: false, substanceUse: true },
+  carePlanSummary: "Outpatient SUD counseling + weekly peer group; self-referred.",
+  intakeCompletedAt: "2026-03-02",
+  coverage: {
+    status: "active",
+    verified: "verified",
+    countyOfRelease: "Tulare",
+    justiceInvolvement: "no",
+  },
+  frontDoor: {
+    existingCare: "yes",
+    seekingCareForSelf: "yes",
+    heardAbout: "word_of_mouth",
+    recordedAt: "2026-03-02T15:00:00.000Z",
+  },
+  caseManagerId: "cm2",
+});
 
 const today = new Date();
 const inHours = (h: number) => new Date(today.getTime() + h * 3600 * 1000).toISOString();
@@ -3966,10 +4022,7 @@ export type AdvocateContributionReviewStatus = "pending" | "accepted" | "decline
  * but the queue names the owner so work is not silently dropped at handoff.
  */
 export type AdvocatePlanOwnerRole = "cf_care_manager" | "ecm_provider";
-export const ADVOCATE_REVIEW_ROLES: AdvocatePlanOwnerRole[] = [
-  "cf_care_manager",
-  "ecm_provider",
-];
+export const ADVOCATE_REVIEW_ROLES: AdvocatePlanOwnerRole[] = ["cf_care_manager", "ecm_provider"];
 
 /**
  * §Group D item 2 — an advocate eligibility-assist attestation, as a REVIEWABLE
@@ -4066,8 +4119,6 @@ function _documentOwnerRole(patientId: string): "cf_care_manager" | "ecm_provide
   return verifyQueueOwnerRole(ep?.status);
 }
 
-
-
 /** Crockford-ish, unambiguous, high-entropy. Same family as the reentry code. */
 function _advocateInviteCode(): string {
   const alphabet = "ABCDEFGHJKMNPQRSTVWXYZ0123456789";
@@ -4082,7 +4133,6 @@ function _effectiveAdvocateStatus(link: AdvocateLink, at = new Date()): Advocate
   if (link.status === "invited" && +new Date(link.invitationExpiresAt) <= +at) return "expired";
   return link.status;
 }
-
 
 /**
  * §Phase 4 expansion — SUD / 42 CFR Part 2 text screen for advocate surfaces.
@@ -4144,7 +4194,8 @@ function _openAhcdValidationTasks(link: AdvocateLink): void {
  */
 function _ahcdEffective(link: AdvocateLink): { active: boolean; expired: boolean } {
   const a = link.ahcdActivation;
-  if (!a || a.state !== "clinically_active") return { active: false, expired: a?.state === "expired" };
+  if (!a || a.state !== "clinically_active")
+    return { active: false, expired: a?.state === "expired" };
   if (!ahcdDeterminationExpired(a)) return { active: true, expired: false };
   AdelanteEHR.deactivateAdvocateAhcd(link.id, {
     deactivatedBy: "system",
@@ -4316,9 +4367,7 @@ function _advocateGate(
     });
     return {
       ok: false,
-      reason: decision.allowed
-        ? "Your authorization doesn't include this."
-        : decision.reason,
+      reason: decision.allowed ? "Your authorization doesn't include this." : decision.reason,
     };
   }
   return { ok: true, link, reason: decision.reason };
@@ -5707,10 +5756,20 @@ export function defaultGroupFacilitators(session: GroupSession): GroupFacilitato
       ? [session.coFacilitatorId]
       : [];
   return [
-    { staffId: session.facilitatorId, role: "primary" as const, minutes: session.durationMin, involvement: "" },
+    {
+      staffId: session.facilitatorId,
+      role: "primary" as const,
+      minutes: session.durationMin,
+      involvement: "",
+    },
     ...cos
       .filter((id) => id && id !== session.facilitatorId)
-      .map((id) => ({ staffId: id, role: "co" as const, minutes: session.durationMin, involvement: "" })),
+      .map((id) => ({
+        staffId: id,
+        role: "co" as const,
+        minutes: session.durationMin,
+        involvement: "",
+      })),
   ];
 }
 
@@ -5739,7 +5798,6 @@ export function normalizeGroupFacilitators(
     throw new Error("Exactly one facilitator must be marked primary.");
   return list;
 }
-
 
 const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
@@ -6429,10 +6487,7 @@ export const AdelanteEHR = {
     const staffId = viewer.staffId ?? (viewer.role ? undefined : getActingStaff()?.id);
     if (staffId) {
       const admin = patient?.screeners[key]?.administeredBy;
-      if (
-        admin &&
-        (admin.enteredBy.staffId === staffId || admin.attributedTo?.staffId === staffId)
-      )
+      if (admin && (admin.enteredBy.staffId === staffId || admin.attributedTo?.staffId === staffId))
         return { part2: true, allowed: true };
     }
     const gate = canAccess(role, "screeners_sud", patient);
@@ -6507,13 +6562,10 @@ export const AdelanteEHR = {
     }[];
     sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
   } {
-    const cohort = patients.filter(
-      (p) => !opts.patientIds || opts.patientIds.includes(p.id),
-    );
+    const cohort = patients.filter((p) => !opts.patientIds || opts.patientIds.includes(p.id));
     const viewer: ScreenerViewer = opts.viewer ?? { kind: "staff" };
     const keys =
-      opts.keys ??
-      Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
+      opts.keys ?? Array.from(new Set(cohort.flatMap((p) => Object.keys(p.screeners ?? {}))));
     const instruments = keys.map((key) => {
       const def = screenerByKey(key);
       const part2 = isPart2Screener(key);
@@ -6523,8 +6575,9 @@ export const AdelanteEHR = {
       const results = readable
         .map((p) => p.screeners[key])
         .filter((r): r is ScreenerResult => Boolean(r));
-      const positive = results.filter((r) =>
-        r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
+      const positive = results.filter(
+        (r) =>
+          r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
       ).length;
       const row: {
         key: string;
@@ -6743,7 +6796,10 @@ export const AdelanteEHR = {
   lastQuickCheckAt(patientId: string): string | undefined {
     const p = _patient(patientId);
     const rows = (p?.screenerHistory ?? []).filter((h) => shortFormByKey(h.key));
-    return rows.map((r) => r.completedAt).sort().pop();
+    return rows
+      .map((r) => r.completedAt)
+      .sort()
+      .pop();
   },
 
   /**
@@ -6779,23 +6835,14 @@ export const AdelanteEHR = {
   // FACADE ONLY. Rows live in `src/lib/medAdherence.ts` and reference real
   // MedOrder ids and real derived MAR slots. Charting a dose is still staff-
   // only (`chartDose`) — nothing here writes a DoseAdministration.
-  selfReportDose(
-    patientId: string,
-    input: Parameters<typeof MedAdherence.recordSelfReport>[1],
-  ) {
+  selfReportDose(patientId: string, input: Parameters<typeof MedAdherence.recordSelfReport>[1]) {
     if (!_patient(patientId)) return undefined;
     return MedAdherence.recordSelfReport(patientId, input);
   },
-  listDoseSelfReports(
-    patientId: string,
-    opts?: { orderId?: string; facilityDate?: string },
-  ) {
+  listDoseSelfReports(patientId: string, opts?: { orderId?: string; facilityDate?: string }) {
     return MedAdherence.listSelfReports(patientId, opts);
   },
-  adherenceWeek(
-    patientId: string,
-    opts?: { days?: number; endDate?: Date; orderId?: string },
-  ) {
+  adherenceWeek(patientId: string, opts?: { days?: number; endDate?: Date; orderId?: string }) {
     const p = _patient(patientId);
     return p ? MedAdherence.adherenceWeek(p, opts) : [];
   },
@@ -7184,9 +7231,7 @@ export const AdelanteEHR = {
        * with `triggersCrisis`. There is no third option: the signer either
        * escalates or records why not. Silence is not a valid outcome.
        */
-      crisisDecision?:
-        | { kind: "escalate" }
-        | { kind: "not_escalating"; reason: string };
+      crisisDecision?: { kind: "escalate" } | { kind: "not_escalating"; reason: string };
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -7240,9 +7285,9 @@ export const AdelanteEHR = {
     // §Notification feed — cosign routing. No named-cosigner field exists on
     // ProgressNote, so a note routes to its eligible cosign role pool.
     if (cosignRequired) {
-      const roles = (n.cosignRole?.length
-        ? n.cosignRole
-        : (NOTE_SELF_SIGN_ROLES as readonly string[])) as StaffRole[];
+      const roles = (
+        n.cosignRole?.length ? n.cosignRole : (NOTE_SELF_SIGN_ROLES as readonly string[])
+      ) as StaffRole[];
       const subject = `Cosignature needed — ${n.templateTitle ?? "progress note"}`;
       const body = `${input.signedBy} signed a note for ${patientLabel(patientId)} that requires your cosignature.`;
       for (const r of roles) {
@@ -7341,9 +7386,7 @@ export const AdelanteEHR = {
   // in templateSchema.ts — nothing here can place a medication order.
 
   listNoteAutomationRuns(noteId?: string): NoteAutomationRun[] {
-    return noteAutomationRuns
-      .filter((r) => !noteId || r.noteId === noteId)
-      .map((r) => ({ ...r }));
+    return noteAutomationRuns.filter((r) => !noteId || r.noteId === noteId).map((r) => ({ ...r }));
   },
 
   hasAutomationRun(noteId: string, automationId: string): boolean {
@@ -7378,7 +7421,11 @@ export const AdelanteEHR = {
   ): NoteAutomationRun[] {
     const { p, n } = AdelanteEHR._findNote(patientId, noteId);
     if (!p || !n) return [];
-    const planned = AdelanteEHR.plannedNoteAutomations(patientId, n.templateSchema, n.templateAnswers);
+    const planned = AdelanteEHR.plannedNoteAutomations(
+      patientId,
+      n.templateSchema,
+      n.templateAnswers,
+    );
     const fired: NoteAutomationRun[] = [];
 
     for (const automation of planned) {
@@ -7693,7 +7740,10 @@ export const AdelanteEHR = {
     // §ASCMI — Part 2 is now DERIVED from the structured record, evaluated
     // live on every read. The legacy boolean is only a fallback for patients
     // who have no ConsentRecord captured yet.
-    return { ...base, part2Sud: AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment") };
+    return {
+      ...base,
+      part2Sud: AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment"),
+    };
   },
 
   // ----- §ASCMI structured consent records -------------------------------
@@ -8474,10 +8524,16 @@ export const AdelanteEHR = {
     if (!ep)
       return {
         authorityLinks: [],
-        decision: capacityGateDecision({ legalAuthorityActive: false, legalAuthorityPending: false }),
+        decision: capacityGateDecision({
+          legalAuthorityActive: false,
+          legalAuthorityPending: false,
+        }),
       };
     const expected = new Map(
-      (determination?.identifiedAdvocates ?? []).map((a) => [a.advocateLinkId, a.expectedAuthorization]),
+      (determination?.identifiedAdvocates ?? []).map((a) => [
+        a.advocateLinkId,
+        a.expectedAuthorization,
+      ]),
     );
     const authorityLinks = AdelanteEHR.listAdvocateLinks(ep.patientId).filter((l) => {
       const claimed = l.authorizationType;
@@ -8512,7 +8568,8 @@ export const AdelanteEHR = {
   }): PreReleaseEpisode {
     const ep = preReleaseEpisodes.find((e) => e.id === input.episodeId);
     if (!ep) throw new Error("Pre-release episode not found.");
-    if (!input.reason.trim()) throw new Error("A reason is required to close a pre-release episode.");
+    if (!input.reason.trim())
+      throw new Error("A reason is required to close a pre-release episode.");
     ep.status = "closed";
     ep.closedAt = new Date().toISOString();
     ep.closedReason = input.reason.trim();
@@ -8834,9 +8891,14 @@ export const AdelanteEHR = {
       throw new Error("Only a prescriber (meds_erx write) can sign medication orders.");
     const gate = AdelanteEHR.preReleaseCapacityState(ep.id).decision;
     if (!gate.canProceed) throw new Error(gate.reason);
-    const signed = AdelanteEHR.signOrders(ep.patientId, input.orderIds, input.prescriber.staffName, {
-      ...(input.strengthProvenance ? { strengthProvenance: input.strengthProvenance } : {}),
-    });
+    const signed = AdelanteEHR.signOrders(
+      ep.patientId,
+      input.orderIds,
+      input.prescriber.staffName,
+      {
+        ...(input.strengthProvenance ? { strengthProvenance: input.strengthProvenance } : {}),
+      },
+    );
     if (signed.length)
       appendAudit({
         category: "clinical",
@@ -9058,8 +9120,9 @@ export const AdelanteEHR = {
     if (!plan.housing.arrangement.trim())
       throw new Error("A post-release housing plan is required.");
     const kinds = new Set(plan.appointments.map((a) => a.kind));
-    const missingKinds = (["mental_health", "med_management", "sud"] as ReentryAppointmentKind[])
-      .filter((k) => !kinds.has(k));
+    const missingKinds = (
+      ["mental_health", "med_management", "sud"] as ReentryAppointmentKind[]
+    ).filter((k) => !kinds.has(k));
     if (missingKinds.length === 3)
       throw new Error("At least one scheduled first appointment is required.");
     const undated = plan.appointments.filter((a) => !a.start || !a.providerName.trim());
@@ -9160,8 +9223,7 @@ export const AdelanteEHR = {
     const patient = patients.find((p) => p.id === rec.patientId);
     if (!patient) throw new Error("The record this code belongs to is no longer available.");
     rec.consumedAt = at.toISOString();
-    const operatorId =
-      input.assistedBy?.tier === 2 ? input.assistedBy.operatorStaffId : undefined;
+    const operatorId = input.assistedBy?.tier === 2 ? input.assistedBy.operatorStaffId : undefined;
     rec.consumedBy = operatorId ?? patient.id;
     patient.signupCredential = input.credential;
     if (input.assistedBy) patient.signupAssistedBy = input.assistedBy;
@@ -9497,8 +9559,12 @@ export const AdelanteEHR = {
     oldestUnreadAt: string;
     latest: CareMessage;
   }[] {
-    const rows: { patient: Patient; unread: number; oldestUnreadAt: string; latest: CareMessage }[] =
-      [];
+    const rows: {
+      patient: Patient;
+      unread: number;
+      oldestUnreadAt: string;
+      latest: CareMessage;
+    }[] = [];
     for (const p of patients) {
       const msgs = p.careMessages ?? [];
       const unread = msgs.filter((m) => m.authorType === "patient" && !m.readByStaffAt);
@@ -9656,12 +9722,7 @@ export const AdelanteEHR = {
     return true;
   },
   /** Explicit worklist status change (cancel / miss / complete / reopen). */
-  setWorklistStatus(
-    id: string,
-    next: WorklistStatus,
-    staffName: string,
-    role: StaffRole,
-  ): boolean {
+  setWorklistStatus(id: string, next: WorklistStatus, staffName: string, role: StaffRole): boolean {
     const t = caseTasks.find((x) => x.id === id);
     if (!t || worklistStatusFor(t) === next) return false;
     const prev = worklistStatusFor(t);
@@ -9789,9 +9850,7 @@ export const AdelanteEHR = {
         templateId,
         facilityContext: inCustody || undefined,
         facilityId: inCustody ? booking?.facilityId : undefined,
-        housingUnit: inCustody
-          ? AdelanteEHR.currentHousingUnit(patientId)
-          : undefined,
+        housingUnit: inCustody ? AdelanteEHR.currentHousingUnit(patientId) : undefined,
       });
     }
 
@@ -10416,11 +10475,27 @@ export const AdelanteEHR = {
     code: string;
     authorizationType: AdvocateAuthorizationType;
     attestedName: string;
+    /**
+     * The patient record the claimer is currently signed in as, when there is
+     * a live patient session. Passed explicitly rather than read off the
+     * module-level demo session: "who is claiming" is a property of the
+     * caller's session, not of store state.
+     */
+    actingPatientId?: string;
   }): AdvocateLink {
-    const found = advocateLinks.find(
-      (x) => x.invitationCode === input.code.trim().toUpperCase(),
-    );
+    const found = advocateLinks.find((x) => x.invitationCode === input.code.trim().toUpperCase());
     if (!found) throw new Error("That invitation code isn't valid.");
+    // §Product decision — an advocate connection is always to SOMEONE ELSE's
+    // record. If the claimer is signed in AS the person this invitation was
+    // written for, the claim is self-referential: it would open a second
+    // access path to your own record with a different (weaker, schedule-only)
+    // permission shape and a misleading "advocate" actor in the audit trail.
+    // Block it loudly rather than letting it succeed silently.
+    if (input.actingPatientId && found.patientId === input.actingPatientId) {
+      throw new Error(
+        "This invitation is for the record you're already signed in to. You can't be your own advocate — sign out of that person's account first if you're claiming this for someone else.",
+      );
+    }
     const status = _effectiveAdvocateStatus(found);
     if (status === "expired") throw new Error("That invitation has expired.");
     if (status === "revoked") throw new Error("That invitation was revoked.");
@@ -10532,7 +10607,8 @@ export const AdelanteEHR = {
    */
   advocatePart2Access(linkId: string) {
     const link = advocateLinks.find((l) => l.id === linkId);
-    if (!link) return { unmasked: false, mode: "categorically_barred" as const, basis: "none" as const };
+    if (!link)
+      return { unmasked: false, mode: "categorically_barred" as const, basis: "none" as const };
     const g = _advocatePart2Gates(link);
     return { unmasked: g.unmasked, mode: g.sudMode, basis: g.sudBasis };
   },
@@ -10588,9 +10664,7 @@ export const AdelanteEHR = {
     if (!basis) throw new Error("The basis for the incapacity determination is required.");
     const readiness = ahcdActivationReadiness(link.ahcdValidation ?? {});
     if (!readiness.ready)
-      throw new Error(
-        readiness.reason ?? "The AHCD validation checklist is not complete.",
-      );
+      throw new Error(readiness.reason ?? "The AHCD validation checklist is not complete.");
     const reviewByDate = input.reviewByDate?.trim();
     if (reviewByDate && reviewByDate < new Date().toISOString().slice(0, 10))
       throw new Error("A review date must be in the future.");
@@ -10846,8 +10920,7 @@ export const AdelanteEHR = {
           durationMin: g.durationMin,
           // Only SUD-track topics are Part 2 content; skills-education and
           // open psychoeducational topics are shown.
-          label:
-            g.category !== "sud_clinical_preauth" || part2Ok ? g.topic : "Group session",
+          label: g.category !== "sud_clinical_preauth" || part2Ok ? g.topic : "Group session",
           modality: g.modality,
           ...(loc ? { locationName: loc.name } : {}),
         });
@@ -11297,7 +11370,6 @@ export const AdelanteEHR = {
     };
   },
 
-
   // ----- §v3.0 Phase 5 — documents -----------------------------------------
   //
   // STORAGE HONESTY FLAG: metadata only, no bytes, no encryption, no object
@@ -11321,9 +11393,7 @@ export const AdelanteEHR = {
    * but is never chart content.
    */
   chartDocuments(patientId: string): PatientDocument[] {
-    return AdelanteEHR.listPatientDocuments(patientId).filter(
-      (d) => d.verification === "verified",
-    );
+    return AdelanteEHR.listPatientDocuments(patientId).filter((d) => d.verification === "verified");
   },
 
   documentUploaderLabel(doc: PatientDocument): string {
@@ -11348,8 +11418,7 @@ export const AdelanteEHR = {
     | { ok: true; fileName: string; mimeType: string; text: string }
     | { ok: false; reason: string; restricted: boolean } {
     const doc = patientDocuments.find((d) => d.id === input.documentId);
-    if (!doc)
-      return { ok: false, reason: "That document no longer exists.", restricted: false };
+    if (!doc) return { ok: false, reason: "That document no longer exists.", restricted: false };
 
     let part2Unmasked = true;
     let link: AdvocateLink | undefined;
@@ -12693,7 +12762,9 @@ export const AdelanteEHR = {
         if (e.status === "open") out.push({ patient: p, escalation: e });
       }
     }
-    return out.sort((a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt));
+    return out.sort(
+      (a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt),
+    );
   },
 
   /** Open (unacknowledged) anonymous front-door crisis alerts, oldest first. */
@@ -13149,12 +13220,7 @@ export const AdelanteEHR = {
     const minGapMinutes = freq?.minGapMinutes;
     const since = now.getTime() - 24 * 3600_000;
     const live = (p?.administrations ?? [])
-      .filter(
-        (a) =>
-          a.orderId === orderId &&
-          !a.voided &&
-          a.action === "given",
-      )
+      .filter((a) => a.orderId === orderId && !a.voided && a.action === "given")
       .sort((a, b) => b.chartedAt.localeCompare(a.chartedAt));
     const rows = live.filter((a) => new Date(a.chartedAt).getTime() >= since);
     const lastGivenAt = live[0]?.chartedAt;
@@ -15876,9 +15942,7 @@ export const AdelanteEHR = {
     if (!g) return [];
     const first = new Date(g.start);
     if (g.recurrence.kind === "none") return [first.toISOString()];
-    const days = g.recurrence.daysOfWeek?.length
-      ? g.recurrence.daysOfWeek
-      : [first.getDay()];
+    const days = g.recurrence.daysOfWeek?.length ? g.recurrence.daysOfWeek : [first.getDay()];
     const until = g.recurrence.until ? new Date(`${g.recurrence.until}T23:59:59`) : undefined;
     const out: string[] = [];
     const cursor = new Date(first);
@@ -16088,10 +16152,7 @@ export const AdelanteEHR = {
       ? roster
           .filter(
             (e) =>
-              !AdelanteEHR.isConsentCategoryAuthorized(
-                e.patientId,
-                GROUP_CONFIDENTIALITY_CATEGORY,
-              ),
+              !AdelanteEHR.isConsentCategoryAuthorized(e.patientId, GROUP_CONFIDENTIALITY_CATEGORY),
           )
           .map((e) => named(e.patientId))
       : [];
@@ -16105,7 +16166,10 @@ export const AdelanteEHR = {
   },
 
   /** Effective facilitator list for one occurrence (documented, else default). */
-  groupOccurrenceFacilitators(sessionId: string, occurrenceStart: string): GroupFacilitatorMinutes[] {
+  groupOccurrenceFacilitators(
+    sessionId: string,
+    occurrenceStart: string,
+  ): GroupFacilitatorMinutes[] {
     const g = groupSessions.find((x) => x.id === sessionId);
     if (!g) return [];
     const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
@@ -16222,7 +16286,10 @@ export const AdelanteEHR = {
     const modality = row.modality ?? defaultOccurrenceModality(g.modality);
     // §Multi-facilitator: independent minutes per provider, one note per client.
     const facilitators = normalizeGroupFacilitators(input.facilitators, g);
-    const renderingProviderId = input.renderingProviderId ?? row.renderingProviderId ?? defaultRenderingProviderId(facilitators);
+    const renderingProviderId =
+      input.renderingProviderId ??
+      row.renderingProviderId ??
+      defaultRenderingProviderId(facilitators);
     if (!facilitators.some((f) => f.staffId === renderingProviderId))
       throw new Error("The rendering provider must be one of this meeting's facilitators.");
     row.facilitators = facilitators;
@@ -16287,7 +16354,8 @@ export const AdelanteEHR = {
           const s = clinicians.find((c) => c.id === f.staffId);
           const name = s?.name ?? f.staffId;
           const label = f.role === "primary" ? "primary facilitator" : "co-facilitator";
-          const rendering = f.staffId === renderingProviderId ? "; designated rendering provider" : "";
+          const rendering =
+            f.staffId === renderingProviderId ? "; designated rendering provider" : "";
           return `${name} (${label}${rendering}) — ${f.minutes} min direct care${f.involvement ? `: ${f.involvement}` : ""}`;
         })
         .join(" | ");

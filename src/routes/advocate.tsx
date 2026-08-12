@@ -9,10 +9,7 @@ import { createFileRoute } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import {
-  ADVOCATE_AUTHORIZATION_TYPES,
-  type AdvocateAuthorizationType,
-} from "@/lib/advocate";
+import { ADVOCATE_AUTHORIZATION_TYPES, type AdvocateAuthorizationType } from "@/lib/advocate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -112,6 +109,11 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
         code,
         authorizationType: authType,
         attestedName: attested,
+        // Self-referential guard: if a patient session is live, the store
+        // refuses a claim on that same person's record.
+        ...(AdelanteEHR.getCurrentPatientId()
+          ? { actingPatientId: AdelanteEHR.getCurrentPatientId() }
+          : {}),
       });
       toast.success("Connected.");
       onClaimed(link.id);
@@ -170,13 +172,7 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
   );
 }
 
-function AdvocateScheduleView({
-  linkId,
-  onSignOut,
-}: {
-  linkId: string;
-  onSignOut: () => void;
-}) {
+function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut: () => void }) {
   // Live-evaluated on every render: a revocation, an expiry, or a withdrawn
   // ROI stops this view without anything needing to be told to stop.
   const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
@@ -201,9 +197,10 @@ function AdvocateScheduleView({
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
         <div>
           <p className="font-medium text-navy">{link.advocateName}</p>
-          <p className="flex items-center gap-2 text-xs text-muted-foreground">
+          {/* div, not p: the tier badge renders a block element. */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
             {authLabel} <AdvocateTierBadge linkId={linkId} />
-          </p>
+          </div>
         </div>
         <div className="flex items-center gap-2">
           <Badge variant={view.allowed ? "default" : "secondary"}>
