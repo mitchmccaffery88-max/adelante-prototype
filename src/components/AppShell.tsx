@@ -1,4 +1,5 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { MobileNav } from "@/components/MobileNav";
