@@ -23,6 +23,7 @@ import {
   Route as RouteIcon,
   Sparkles,
   Users,
+  Waves,
 } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
