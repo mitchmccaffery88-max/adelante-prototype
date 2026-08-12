@@ -21,7 +21,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { ReentryDayZeroModule } from "@/components/reentry/ReentryDayZeroModule";
 import { ObligationsCard } from "@/components/reentry/ObligationsCard";
-import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
+import { SafetyPlanSummaryTile } from "@/components/patient/SafetyPlanSummaryTile";
 import { QuickCheckCard } from "@/components/clinical/QuickCheckCard";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -125,12 +125,10 @@ export function PatientHome() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
-      {/* §Patient portal Build 2 — the real home dashboard. Everything below
-          it stays exactly as built: these are the detail surfaces the
-          dashboard tiles link into, with their gates untouched. */}
-      <HomeDashboard patientId={patient.id} />
-
-      <Card className="p-5">
+      {/* §P2 item 1 — the 90-day care progress bar leads the page: it is the
+          one number that frames everything below it, and it must be visible
+          without scrolling. */}
+      <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm text-muted-foreground">
             {t("homeDayOf")} {patient.episodeDay} {t("homeOfPlan")} {remaining}{" "}
@@ -144,6 +142,15 @@ export function PatientHome() {
         </div>
         <Progress value={(patient.episodeDay / 90) * 100} className="mt-3 h-2" />
       </Card>
+
+      {/* §P2 item 4 — safety-critical, so it sits above the content cascade.
+          Justice-involved tracks only; counts only, never plan text. */}
+      <SafetyPlanSummaryTile patientId={patient.id} />
+
+      {/* §Patient portal Build 2 — the real home dashboard. Everything below
+          it stays exactly as built: these are the detail surfaces the
+          dashboard tiles link into, with their gates untouched. */}
+      <HomeDashboard patientId={patient.id} />
 
       <HomeScreenNudge />
       {/* Grouped care-plan section: plan summary + goals, support needs, referrals. */}
@@ -186,10 +193,6 @@ export function PatientHome() {
       </div>
       {/* §Phase 6 — Obligations; justice-involved populations only. */}
       <ObligationsCard patientId={patient.id} />
-      {/* §Phase 7 — patient-authored Stanley-Brown safety plan. */}
-      <div id="safety-plan" className="scroll-mt-24">
-        <SafetyPlanPanel patientId={patient.id} author="patient" actorRole="patient" />
-      </div>
     </div>
   );
 }
