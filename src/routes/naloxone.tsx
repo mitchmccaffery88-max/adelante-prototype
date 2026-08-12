@@ -154,14 +154,15 @@ function NaloxonePage() {
           <h2 className="font-display text-xl">{NEVER_USE_ALONE.name}</h2>
           <VerifiedChip />
         </div>
-        <a
-          href={`tel:${NEVER_USE_ALONE.phone.replace(/[^\d+]/g, "")}`}
-          data-testid="never-use-alone-call"
-          className="inline-flex min-h-12 items-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold hover:bg-secondary"
-        >
-          <Phone className="h-5 w-5" aria-hidden="true" />
-          {NEVER_USE_ALONE.phone} · {NEVER_USE_ALONE.hours}
-        </a>
+        <Button asChild variant="outline" size="patient">
+          <a
+            href={`tel:${NEVER_USE_ALONE.phone.replace(/[^\d+]/g, "")}`}
+            data-testid="never-use-alone-call"
+          >
+            <Phone className="h-5 w-5" aria-hidden="true" />
+            {NEVER_USE_ALONE.phone} · {NEVER_USE_ALONE.hours}
+          </a>
+        </Button>
         <p className="text-sm leading-relaxed text-muted-foreground">{NEVER_USE_ALONE.what}</p>
         {!NEVER_USE_ALONE.localLineConfirmed && (
           <p className="text-xs text-muted-foreground">
@@ -170,13 +171,12 @@ function NaloxonePage() {
         )}
       </Card>
 
-      <Link
-        to="/crisis"
-        className="flex min-h-12 items-center gap-2 rounded-2xl border border-crisis/30 bg-crisis-soft px-4 py-3 text-base font-semibold text-crisis hover:bg-crisis/10"
-      >
-        <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
-      </Link>
-    </div>
+      <Button asChild variant="crisisSoft" size="patient" className="w-full">
+        <Link to="/crisis">
+          <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
+        </Link>
+      </Button>
+    </PatientPage>
   );
 }
 
