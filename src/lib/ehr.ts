@@ -1633,6 +1633,12 @@ export interface CarePlanSnapshot {
   activeProblems?: CarePlanProblemEntry[];
   /** Count of active SUD problems hidden from non-Part-2 viewers (never leaks descriptions). */
   hiddenSudProblems?: number;
+  /**
+   * §Pre-release build 4 — present whenever the patient has (or had) a
+   * pre-release episode, so the community-side care plan already reflects
+   * custody-side work instead of starting blank at release.
+   */
+  preRelease?: CarePlanPreReleaseSlice;
 }
 
 export interface CarePlanAllergyEntry {
