@@ -203,6 +203,6 @@ export function SlipSupportFlow() {
       <p className="px-1 text-sm text-muted-foreground">
         If you&apos;re in danger right now, <Link to="/crisis" className="underline">get help here</Link>.
       </p>
-    </div>
+    </PatientPage>
   );
 }

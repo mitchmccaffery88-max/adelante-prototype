@@ -197,6 +197,6 @@ export function CravingFlow() {
           </div>
         </Card>
       )}
-    </div>
+    </PatientPage>
   );
 }
