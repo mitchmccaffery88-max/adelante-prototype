@@ -474,3 +474,9 @@ export function __resetContent(): void {
   entries.clear();
   notify();
 }
+
+/** Test/reset helper: drop just one type's entries. */
+export function __resetContentOfType(typeId: ContentTypeId): void {
+  for (const [k, e] of [...entries.entries()]) if (e.typeId === typeId) entries.delete(k);
+  notify();
+}
