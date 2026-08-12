@@ -5,6 +5,7 @@
 // disabled. It deliberately does NOT define who may see what — every entry
 // points at a `RecordClass` that already exists in the roles matrix, so adding
 // a role or changing a permission is a matrix edit, never a nav edit.
+import type { PopulationTrack } from "@/lib/population";
 import {
   BookOpen,
   Building2,
@@ -575,6 +576,13 @@ export interface PatientNavEntry {
   icon: LucideIcon;
   /** True when the entry is one of the five bottom tabs on mobile. */
   mobile: boolean;
+  /**
+   * Population tracks this entry is FOR. Omitted = every track. An entry that
+   * points at population-gated content must list its tracks here, or a
+   * general-population patient gets a nav link to a section that gates itself
+   * away — a dead end.
+   */
+  populations?: PopulationTrack[];
 }
 
 /**
@@ -612,6 +620,8 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     hash: "obligations",
     icon: ClipboardSignature,
     mobile: false,
+    // ObligationsCard is `PopulationGate`d to the justice-involved tracks.
+    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "peer-navigator",
@@ -647,6 +657,18 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
 export const PATIENT_MOBILE_NAV = PATIENT_NAV.filter((e) => e.mobile);
 /** Everything else — the "More" bottom sheet. */
 export const PATIENT_MORE_NAV = PATIENT_NAV.filter((e) => !e.mobile);
+
+/**
+ * Drop entries whose destination is population-gated away from this person.
+ * Same rule as the staff nav: an entry you cannot use is OMITTED, not shown
+ * disabled or left to dead-end on a gated section.
+ */
+export function patientNavForPopulation<T extends PatientNavEntry>(
+  entries: readonly T[],
+  track: PopulationTrack,
+): T[] {
+  return entries.filter((e) => !e.populations || e.populations.includes(track));
+}
 
 /** Patient-shell routes that are not nav entries. */
 export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [

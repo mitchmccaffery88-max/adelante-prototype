@@ -10,9 +10,11 @@ const moreSheet = readFileSync("src/components/patient/PatientMoreSheet.tsx", "u
 
 describe("desktop and mobile patient nav parity", () => {
   it("both shells read PATIENT_NAV from the registry", () => {
-    expect(appShell).toMatch(/patientNav = PATIENT_NAV/);
+    // Both shells still read the one registry; the desktop strip and the More
+    // sheet now run it through the population filter first.
+    expect(appShell).toMatch(/patientNavForPopulation\(PATIENT_NAV/);
     expect(mobileNav).toContain('PATIENT_MOBILE_NAV.map(');
-    expect(moreSheet).toContain('PATIENT_MORE_NAV.map(');
+    expect(moreSheet).toMatch(/patientNavForPopulation\(PATIENT_MORE_NAV/);
     expect(PATIENT_MOBILE_NAV.length).toBe(5);
     expect(PATIENT_MORE_NAV.length).toBeGreaterThan(0);
   });

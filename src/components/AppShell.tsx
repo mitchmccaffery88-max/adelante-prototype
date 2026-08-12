@@ -1,4 +1,5 @@
 import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-router";
+import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
 import { MobileNav } from "@/components/MobileNav";
@@ -15,7 +16,14 @@ import {
 import { cn } from "@/lib/utils";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
-import { useStaffNavGroups, STAFF_ROUTES, PATIENT_NAV, PATIENT_ROUTES } from "@/lib/navSections";
+import {
+  useStaffNavGroups,
+  STAFF_ROUTES,
+  PATIENT_NAV,
+  PATIENT_ROUTES,
+  patientNavForPopulation,
+} from "@/lib/navSections";
+import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
@@ -44,6 +52,28 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  const population = usePopulation(currentId);
+  // Restore the acting patient after a hard reload. Only ever accepts an id
+  // that still exists (runtime-created demo records do not survive a reload),
+  // and runs in an effect so SSR and hydration agree on the first paint.
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem("adelante.currentPatientId");
+    } catch {
+      stored = null;
+    }
+    if (!stored || stored === AdelanteEHR.getCurrentPatientId()) return;
+    if (!AdelanteEHR.getPatient(stored)) {
+      try {
+        window.localStorage.removeItem("adelante.currentPatientId");
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    AdelanteEHR.setCurrentPatientId(stored);
+  }, []);
   const { staffId, setActingStaff } = useActingStaff();
   // §Platform nav — every staff link comes from the RBAC nav engine, so a
   // role that fails a gate never sees the entry (same rule as recordSections).
@@ -68,7 +98,9 @@ export function AppShell() {
 
   // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
   // it can never drift from the mobile tab bar again.
-  const patientNav = PATIENT_NAV;
+  // Population-gated entries (e.g. Obligations) are omitted for a general
+  // population patient rather than linking into a section that gates itself.
+  const patientNav = patientNavForPopulation(PATIENT_NAV, population.track);
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
   const showStaffShell =

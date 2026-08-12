@@ -1,4 +1,4 @@
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -49,6 +49,7 @@ import { Switch } from "@/components/ui/switch";
 import { Checkbox } from "@/components/ui/checkbox";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { EmptyState } from "@/components/EmptyState";
 import { CrisisNotice } from "@/components/CrisisNotice";
 import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
@@ -142,6 +143,7 @@ function HomeScreenNudge() {
 
 export function PatientHome() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   // §Group sessions — optional `?msg=` prefill for the care-team composer.
   const search = useSearch({ strict: false }) as { msg?: string };
@@ -150,7 +152,20 @@ export function PatientHome() {
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(currentId));
   const smsOn = useEhr(() => AdelanteEHR.isSmsOn(currentId));
 
-  if (!patient) return null;
+  // No record for the acting id (pre-intake front-door visitor, or a
+  // runtime-created demo record dropped by a reload). Rendering `null` here
+  // used to produce a silent blank page with no way forward.
+  if (!patient) {
+    return (
+      <div className="mx-auto w-full max-w-2xl p-4 sm:p-6">
+        <EmptyState
+          title="We don't have a record for you yet"
+          description="Start with a few questions and we'll set up your care. If you already signed up, sign in again to pick up where you left off."
+          action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
+        />
+      </div>
+    );
+  }
 
   // First-time experience: intake not yet completed.
   if (!patient.intakeCompletedAt) {
