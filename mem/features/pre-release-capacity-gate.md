@@ -20,3 +20,17 @@ so the plan is populated WHILE in custody, not only at release, and it survives
 episode close. Part 2: MAT keeps `sensitive: true` and `CarePlanCard` gates the
 continuity block's MAT list behind the same `sud_treatment` check as every other
 SUD slice. Test: src/lib/__tests__/preReleaseBuild4.test.ts
+
+## Build 5 — nav ownership & staged timeline (presentation only)
+
+- `/pre-release` no longer gates on the generic `custody_tracking` class. It has
+  its own matrix row `pre_release` in `src/lib/roles.ts` (cf_care_manager,
+  ecm_provider, pmhnp write; therapist, sud_counselor, clinical_coordinator,
+  sys_admin read). Nav gate (`canSeeNavEntry`) and page gate
+  (`canReadPreRelease`) read the SAME row — never add a one-off role list.
+- Receiving-side narrowing: `visiblePreReleaseEpisodes` limits an ECM Provider
+  to episodes where they are `receivingEcmStaffId`.
+- `src/lib/preReleaseTimeline.ts` derives DHCS phases from
+  `anticipatedReleaseDate`: T-90→T-60 intake/screening, T-60→T-72h
+  coordination, ≤3 days warm handoff, past = released. A `missedHandoff`
+  episode is the front-door Phase 2 catch-up lane, never a countdown.

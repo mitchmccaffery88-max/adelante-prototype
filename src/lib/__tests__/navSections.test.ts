@@ -48,7 +48,11 @@ describe("nav registry integrity", () => {
       ["admin-facilities", "facility-protocols", "pre-release", "released-search"].sort(),
     );
     for (const e of STAFF_NAV.filter((x) => x.group === "facility")) {
-      expect(e.gate).toMatchObject({ anyOf: ["custody_tracking"] });
+      // §Build 5 — the pre-release workspace has its own matrix row; the rest
+      // of the group is still generic custody data.
+      expect(e.gate).toMatchObject({
+        anyOf: [e.id === "pre-release" ? "pre_release" : "custody_tracking"],
+      });
     }
     const order = staffNavGroupsForRole("ecm_provider").map((g) => g.group);
     expect(order.indexOf("facility")).toBe(order.indexOf("population") + 1);

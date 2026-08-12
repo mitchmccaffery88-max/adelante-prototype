@@ -257,10 +257,13 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ClipboardSignature,
     to: "/pre-release",
     group: "facility",
-    // Keeps the group invariant: every Facility & Custody entry gates on
-    // `custody_tracking`, which both CF Care Manager and the receiving ECM
-    // Provider hold write on. The page applies its own finer read gate.
-    gate: { kind: "record_class", anyOf: ["custody_tracking"] },
+    // §Build 5 — no longer the generic `custody_tracking` class. The
+    // pre-release reentry workspace has its own matrix row naming its real
+    // owners (CF Care Manager, MAT prescriber, screening clinicians, clinical
+    // coordinator, receiving ECM Provider, sys_admin). Still a matrix edit,
+    // still the same `canSeeNavEntry` gate model — no role list lives here.
+    // `canReadPreRelease` gates the page on the SAME row.
+    gate: { kind: "record_class", anyOf: ["pre_release"] },
   },
   {
     id: "released-search",

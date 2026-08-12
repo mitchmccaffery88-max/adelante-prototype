@@ -55,6 +55,8 @@ import {
 } from "@/components/ui/select";
 import { AdvocateDesignationPanel } from "@/components/advocate/AdvocateDesignationPanel";
 import { CapacityAuthorityStep } from "@/components/prerelease/CapacityAuthorityStep";
+import { PreReleaseTimelineCard } from "@/components/prerelease/PreReleaseTimelineCard";
+import { preReleaseTimeline, visiblePreReleaseEpisodes } from "@/lib/preReleaseTimeline";
 import { PreReleaseScreenerDialog } from "@/components/prerelease/PreReleaseScreenerDialog";
 import { MatOrderCard } from "@/components/prerelease/MatOrderCard";
 import { PreReleaseAppointmentCard } from "@/components/prerelease/PreReleaseAppointmentCard";
@@ -106,7 +108,10 @@ const fullName = (p?: { firstName: string; lastName: string }) =>
 function PreReleasePage() {
   const { role, staffId, staffName } = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
-  const episodes = useEhr(() => AdelanteEHR.listPreReleaseEpisodes());
+  const allEpisodes = useEhr(() => AdelanteEHR.listPreReleaseEpisodes());
+  // §Build 5 — receiving-side narrowing: an ECM Provider is the continuity
+  // point for the episodes handing off to them, not the whole facility list.
+  const episodes = visiblePreReleaseEpisodes(allEpisodes, role, staffId);
   const [selectedId, setSelectedId] = useState<string | null>(null);
 
   if (!canReadPreRelease(role)) {
@@ -144,7 +149,12 @@ function PreReleasePage() {
         <Card className="p-3">
           <div className="mb-2 text-sm font-medium">Episodes</div>
           <div className="space-y-1">
-            {episodes.map((e) => (
+            {episodes.map((e) => {
+              const t = preReleaseTimeline({
+                anticipatedReleaseDate: e.anticipatedReleaseDate,
+                ...(e.missedHandoff ? { missedHandoff: true } : {}),
+              });
+              return (
               <button
                 key={e.id}
                 onClick={() => setSelectedId(e.id)}
@@ -156,10 +166,25 @@ function PreReleasePage() {
                 <span className="block text-xs text-muted-foreground">
                   Release {e.anticipatedReleaseDate}
                 </span>
+                <span
+                  data-testid={`episode-phase-${e.id}`}
+                  className={`mt-1 inline-block rounded px-1.5 py-0.5 text-[10px] ${
+                    t.inWarmHandoffWindow
+                      ? "bg-destructive/15 text-destructive"
+                      : "bg-muted text-muted-foreground"
+                  }`}
+                >
+                  {t.label}
+                </span>
               </button>
-            ))}
+              );
+            })}
             {episodes.length === 0 && (
-              <p className="px-2 py-3 text-sm text-muted-foreground">No open episodes yet.</p>
+              <p className="px-2 py-3 text-sm text-muted-foreground">
+                {role === "ecm_provider"
+                  ? "No episodes name you as the receiving ECM Provider yet."
+                  : "No open episodes yet."}
+              </p>
             )}
           </div>
           <OpenEpisodeForm />
@@ -346,6 +371,7 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
 
   return (
     <div className="space-y-4">
+      <PreReleaseTimelineCard episode={episode} />
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>

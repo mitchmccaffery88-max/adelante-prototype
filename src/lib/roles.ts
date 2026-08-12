@@ -86,6 +86,23 @@ export type RecordClass =
   | "eligibility"
   | "care_coordination"
   | "custody_tracking"
+  // §Pre-release build 5 — WHO OWNS THE PRE-RELEASE WORKSPACE.
+  //
+  // Replaces the old generic `custody_tracking` gate on /pre-release. Custody
+  // tracking is facility/booking data that many facility-adjacent roles read;
+  // the pre-release reentry workspace is a narrower job: the CF Care Manager
+  // owns it, the MAT prescriber orders in it (Build 3), the screening
+  // clinicians score AUDIT-10/DAST-10/AHC-HRSN in it (Build 2), the clinical
+  // coordinator routes it, the receiving ECM Provider is the continuity point
+  // (`receivingEcmStaffId`), and sys_admin supports it.
+  //
+  // This is deliberately a MATRIX row, not a role list in the nav registry, so
+  // the existing `canSeeNavEntry` gate model and `canAccess` helper keep being
+  // the only "who can see this" mechanism in the app. It grants VISIBILITY of
+  // the workspace only — every action inside it still re-checks its own class
+  // (meds_erx for MAT, screeners_sud for Part 2 content, custody_tracking for
+  // facility data), so Builds 1-4 permission logic is untouched.
+  | "pre_release"
   // §Facility & Custody reorg — physical controlled-substance stock and
   // chain-of-custody reconciliation. Deliberately NOT `custody_tracking`
   // (facility/incarceration) and NOT `meds_erx` (prescribing/transmission):
@@ -371,6 +388,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     sys_admin: "read",
     // Pre-release work happens inside the facility record.
     cf_care_manager: "write",
+  },
+  // §Pre-release build 5 — see the RecordClass comment above.
+  pre_release: {
+    // Owner of the D90→0 list.
+    cf_care_manager: "write",
+    // Receiving-side continuity point; the page further narrows an ECM
+    // Provider to episodes where they are the named receiving provider.
+    ecm_provider: "write",
+    // MAT prescriber (Build 3 reuses the `meds_erx` write gate to sign).
+    pmhnp: "write",
+    // Screening clinicians (Build 2 instruments).
+    therapist: "read",
+    sud_counselor: "read",
+    // Routing / coverage.
+    clinical_coordinator: "read",
+    sys_admin: "read",
   },
   // §Facility & Custody reorg — controlled-substance custody: physical stock
   // on hand and chain-of-custody reconciliation (Shift count).
@@ -1075,9 +1108,14 @@ export function canWritePreReleaseForm(
   return { allowed: true };
 }
 
-/** Reading the pre-release surface at all (episode, checklist, care plan). */
+/**
+ * Reading the pre-release surface at all (episode, checklist, care plan).
+ *
+ * §Build 5 — now the SAME `pre_release` matrix row the nav entry gates on, so
+ * the sidebar and the page can never disagree about who owns this workspace.
+ */
 export function canReadPreRelease(role: StaffRole): boolean {
-  return canAccess(role, "care_coordination").level !== "none";
+  return canAccess(role, "pre_release").level !== "none";
 }
 
 let acting: StaffRole = (() => {
