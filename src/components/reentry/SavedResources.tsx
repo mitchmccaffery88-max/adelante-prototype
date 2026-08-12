@@ -4,6 +4,7 @@
 import { useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { Bookmark } from "lucide-react";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -28,18 +29,17 @@ export function SavedResources() {
   const resources = patientVisibleResources().filter((r) => ids.has(r.id));
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6" data-testid="saved-resources">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl">Saved resources</h1>
-          <p className="text-sm text-muted-foreground">
-            The listings you bookmarked. Only you see this list.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="min-h-11 shrink-0 rounded-2xl">
-          <Link to="/resources">All resources</Link>
-        </Button>
-      </header>
+    <PatientPage width="browse" data-testid="saved-resources">
+      <PatientPageHeader
+        icon={Bookmark}
+        title="Saved resources"
+        lede="The listings you bookmarked. Only you see this list."
+        action={
+          <Button asChild variant="outline" size="patient" className="shrink-0">
+            <Link to="/resources">All resources</Link>
+          </Button>
+        }
+      />
 
       {resources.length === 0 ? (
         <EmptyState
