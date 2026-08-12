@@ -1,6 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { LifeBuoy, MessageSquare, Phone, ShieldPlus, Wind } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 
 /**
@@ -13,32 +15,27 @@ import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
  */
 function CrisisPage() {
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="crisis-page">
-      <div className="space-y-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-crisis-soft text-crisis">
-          <LifeBuoy className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <h1 className="font-display text-3xl">You are not alone</h1>
-        <p className="text-lg text-muted-foreground">Let&apos;s get you some help right now.</p>
-      </div>
+    <PatientPage data-testid="crisis-page">
+      <PatientPageHeader
+        icon={LifeBuoy}
+        tone="crisis"
+        title="You are not alone"
+        lede="Let's get you some help right now."
+      />
 
       <div className="grid gap-3 sm:grid-cols-2">
-        <a
-          href={`tel:${CRISIS_LIFELINE_NUMBER}`}
-          data-testid="crisis-call-988"
-          className="flex min-h-16 items-center justify-center gap-3 rounded-2xl bg-crisis px-5 py-4 text-lg font-semibold text-white soft-shadow hover:opacity-90"
-        >
-          <Phone className="h-5 w-5" aria-hidden="true" />
-          Call {CRISIS_LIFELINE_NUMBER}
-        </a>
-        <a
-          href={`sms:${CRISIS_LIFELINE_NUMBER}`}
-          data-testid="crisis-text-988"
-          className="flex min-h-16 items-center justify-center gap-3 rounded-2xl border border-crisis/40 bg-crisis-soft px-5 py-4 text-lg font-semibold text-crisis hover:bg-crisis/10"
-        >
-          <MessageSquare className="h-5 w-5" aria-hidden="true" />
-          Text {CRISIS_LIFELINE_NUMBER}
-        </a>
+        <Button asChild variant="crisis" size="patientLg" className="soft-shadow w-full">
+          <a href={`tel:${CRISIS_LIFELINE_NUMBER}`} data-testid="crisis-call-988">
+            <Phone className="h-5 w-5" aria-hidden="true" />
+            Call {CRISIS_LIFELINE_NUMBER}
+          </a>
+        </Button>
+        <Button asChild variant="crisisSoft" size="patientLg" className="w-full">
+          <a href={`sms:${CRISIS_LIFELINE_NUMBER}`} data-testid="crisis-text-988">
+            <MessageSquare className="h-5 w-5" aria-hidden="true" />
+            Text {CRISIS_LIFELINE_NUMBER}
+          </a>
+        </Button>
       </div>
 
       <Card className="soft-shadow divide-y p-0">
@@ -95,7 +92,7 @@ function CrisisPage() {
         {CRISIS_LIFELINE_NUMBER} is the U.S. Suicide &amp; Crisis Lifeline. This is the only crisis
         number this app will show unless a local line has been verified.
       </p>
-    </div>
+    </PatientPage>
   );
 }
 

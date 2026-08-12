@@ -6,10 +6,11 @@
 // only Module 1 is release-specific copy, so only it carries a gate.
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, Lock } from "lucide-react";
+import { ArrowLeft, CheckCircle2, Lock, Map } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, useRecoveryText } from "@/lib/i18n";
 import { usePopulation } from "@/components/PopulationGate";
@@ -49,7 +50,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
       : undefined;
   if (lesson) {
     return (
-      <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
+      <PatientPage>
         <Button type="button" variant="ghost" onClick={() => setOpenLesson(null)}>
           <ArrowLeft className="mr-1 h-4 w-4" /> {t("recBackToModules")}
         </Button>
@@ -58,21 +59,23 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
           patientId={patientId}
           onDone={() => setOpenLesson(null)}
         />
-      </div>
+      </PatientPage>
     );
   }
 
   return (
-    <div className="mx-auto max-w-4xl space-y-6 px-4 py-8 sm:px-6">
-      <header className="space-y-1">
-        <h1 className="font-display text-3xl text-navy">{t("recJourneyTitle")}</h1>
-        <p className="text-muted-foreground">{t("recJourneyIntro")}</p>
+    <PatientPage width="browse" className="space-y-6">
+      <PatientPageHeader
+        icon={Map}
+        title={t("recJourneyTitle")}
+        lede={t("recJourneyIntro")}
+      >
         {esPending && (
-          <p className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground">
+          <p className="rounded-2xl border border-amber-warm bg-amber-soft p-3 text-sm text-amber-warm-foreground">
             {t("recEsReviewFlag")}
           </p>
         )}
-      </header>
+      </PatientPageHeader>
 
       {liveRecoveryModules().map((mod) => {
         const gated = !isLibraryItemVisible(mod, population);
@@ -82,10 +85,10 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
           <Card key={mod.id} className="space-y-4 p-5">
             <div className="space-y-1">
               <div className="flex flex-wrap items-center gap-2">
-                <span className="text-xs font-medium uppercase tracking-wider text-teal">
+                <span className="text-xs font-medium uppercase tracking-wider text-primary">
                   {t("recModuleLabel")} {mod.order}
                 </span>
-                <h2 className="font-display text-xl text-navy">
+                <h2 className="font-display text-xl text-foreground">
                   {rt(`rec.mod.${mod.id}.name`, mod.name)}
                 </h2>
                 {mod.populations && (
@@ -99,7 +102,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                   </Badge>
                 )}
               </div>
-              <p className="text-sm font-medium text-navy">
+              <p className="text-sm font-medium text-foreground">
                 {t("recMissionLabel")}: {rt(`rec.mod.${mod.id}.mission`, mod.mission)}
               </p>
               <p className="text-sm text-muted-foreground">
@@ -139,10 +142,10 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                     return (
                       <li key={l.id} className="flex items-center gap-3 py-2.5">
                         <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
+                          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-foreground">
                             {rt(`rec.${l.id}.title`, l.title)}
                             {done && (
-                              <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />
+                              <CheckCircle2 className="h-4 w-4 text-primary" aria-label="Completed" />
                             )}
                           </div>
                           <div className="text-xs text-muted-foreground">
@@ -169,16 +172,16 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
 
       <Card className="space-y-1 p-5">
         <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-xl text-navy">{t("recLivingName")}</h2>
+          <h2 className="font-display text-xl text-foreground">{t("recLivingName")}</h2>
           <Badge variant="outline" className="border-gold text-[10px] text-gold-foreground">
             {t("recLivingBadge")}
           </Badge>
         </div>
-        <p className="text-sm font-medium text-navy">
+        <p className="text-sm font-medium text-foreground">
           {t("recMissionLabel")}: {t("recLivingMission")}
         </p>
         <p className="text-sm text-muted-foreground">{t("recLivingBody")}</p>
       </Card>
-    </div>
+    </PatientPage>
   );
 }

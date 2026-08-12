@@ -8,7 +8,8 @@ import { useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Bookmark } from "lucide-react";
+import { Bookmark, MapPinned } from "lucide-react";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import {
   RESOURCE_CATEGORIES,
   patientVisibleResources,
@@ -34,21 +35,19 @@ export function CommunityResourceCenter() {
   const resources = JSON.parse(snapshot) as ReturnType<typeof patientVisibleResources>;
 
   return (
-    <div className="mx-auto max-w-3xl space-y-4 px-4 py-8 sm:px-6">
-      <header className="flex items-start justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl text-navy">Community resources</h1>
-          <p className="text-sm text-muted-foreground">
-            Housing, food, work, meetings and more. We only list a place here once someone on our
-            team has called it and confirmed the address, phone and hours.
-          </p>
-        </div>
-        <Button asChild variant="outline" className="min-h-11 shrink-0 rounded-2xl">
-          <Link to="/resources/saved" data-testid="saved-resources-link">
-            <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
-          </Link>
-        </Button>
-      </header>
+    <PatientPage width="browse">
+      <PatientPageHeader
+        icon={MapPinned}
+        title="Community resources"
+        lede="Housing, food, work, meetings and more. We only list a place here once someone on our team has called it and confirmed the address, phone and hours."
+        action={
+          <Button asChild variant="outline" size="patient" className="shrink-0">
+            <Link to="/resources/saved" data-testid="saved-resources-link">
+              <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
+            </Link>
+          </Button>
+        }
+      />
 
       <div className="flex flex-wrap gap-2">
         <Button
@@ -86,6 +85,6 @@ export function CommunityResourceCenter() {
           ))}
         </ul>
       )}
-    </div>
+    </PatientPage>
   );
 }

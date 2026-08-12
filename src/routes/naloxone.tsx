@@ -2,6 +2,8 @@ import { useSyncExternalStore } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { BadgeCheck, LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
 import {
   NALOXONE_ACCESS_REVIEW,
@@ -19,7 +21,7 @@ function ReviewPendingBanner() {
   return (
     <div
       data-testid="naloxone-review-pending"
-      className="flex items-start gap-2 rounded-2xl border border-amber-500/40 bg-amber-500/10 p-3 text-sm text-amber-900 dark:text-amber-200"
+      className="flex items-start gap-2 rounded-2xl border border-amber-warm/50 bg-amber-soft p-3 text-sm text-amber-warm-foreground"
     >
       <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0" />
       <span>
@@ -31,7 +33,7 @@ function ReviewPendingBanner() {
 
 function PendingChip() {
   return (
-    <Badge className="border-0 bg-amber-500/15 text-[10px] text-amber-700">
+    <Badge className="border-0 bg-amber-soft text-amber-warm-foreground">
       Pending clinical review
     </Badge>
   );
@@ -39,7 +41,7 @@ function PendingChip() {
 
 function VerifiedChip() {
   return (
-    <Badge className="border-0 bg-emerald-500/15 text-[10px] text-emerald-700">
+    <Badge className="border-0 bg-sage-soft text-sage-foreground">
       Confirmed by {NALOXONE_ACCESS_REVIEW.verifiedBy}
     </Badge>
   );
@@ -50,7 +52,7 @@ function AccessVerifiedBanner() {
   return (
     <div
       data-testid="naloxone-access-verified"
-      className="flex items-start gap-2 rounded-2xl border border-emerald-500/40 bg-emerald-500/10 p-3 text-sm text-emerald-900 dark:text-emerald-200"
+      className="flex items-start gap-2 rounded-2xl border border-sage/50 bg-sage-soft p-3 text-sm text-sage-foreground"
     >
       <BadgeCheck className="mt-0.5 h-4 w-4 shrink-0" />
       <span>{NALOXONE_ACCESS_REVIEW.notice}</span>
@@ -68,16 +70,12 @@ function NaloxonePage() {
   );
   const accessPoints = JSON.parse(accessJson) as ReturnType<typeof liveNaloxoneAccessPoints>;
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="naloxone-page">
-      <div className="space-y-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-          <ShieldPlus className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <h1 className="font-display text-3xl">Naloxone &amp; overdose prevention</h1>
-        <p className="text-lg text-muted-foreground">
-          How to get naloxone, how to use it, and what to do while you wait for help.
-        </p>
-      </div>
+    <PatientPage data-testid="naloxone-page">
+      <PatientPageHeader
+        icon={ShieldPlus}
+        title={<>Naloxone &amp; overdose prevention</>}
+        lede="How to get naloxone, how to use it, and what to do while you wait for help."
+      />
 
       <AccessVerifiedBanner />
       <ReviewPendingBanner />
@@ -101,11 +99,11 @@ function NaloxonePage() {
               <div className="flex flex-wrap items-center gap-2">
                 <span className="text-base font-semibold">{p.name}</span>
                 {p.verified ? (
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline">
                     Verified{p.verifiedBy ? ` — ${p.verifiedBy}` : ""}
                   </Badge>
                 ) : (
-                  <Badge variant="outline" className="text-[10px]">
+                  <Badge variant="outline">
                     Unverified
                   </Badge>
                 )}
@@ -156,14 +154,15 @@ function NaloxonePage() {
           <h2 className="font-display text-xl">{NEVER_USE_ALONE.name}</h2>
           <VerifiedChip />
         </div>
-        <a
-          href={`tel:${NEVER_USE_ALONE.phone.replace(/[^\d+]/g, "")}`}
-          data-testid="never-use-alone-call"
-          className="inline-flex min-h-12 items-center gap-2 rounded-2xl border px-4 py-3 text-base font-semibold hover:bg-secondary"
-        >
-          <Phone className="h-5 w-5" aria-hidden="true" />
-          {NEVER_USE_ALONE.phone} · {NEVER_USE_ALONE.hours}
-        </a>
+        <Button asChild variant="outline" size="patient">
+          <a
+            href={`tel:${NEVER_USE_ALONE.phone.replace(/[^\d+]/g, "")}`}
+            data-testid="never-use-alone-call"
+          >
+            <Phone className="h-5 w-5" aria-hidden="true" />
+            {NEVER_USE_ALONE.phone} · {NEVER_USE_ALONE.hours}
+          </a>
+        </Button>
         <p className="text-sm leading-relaxed text-muted-foreground">{NEVER_USE_ALONE.what}</p>
         {!NEVER_USE_ALONE.localLineConfirmed && (
           <p className="text-xs text-muted-foreground">
@@ -172,13 +171,12 @@ function NaloxonePage() {
         )}
       </Card>
 
-      <Link
-        to="/crisis"
-        className="flex min-h-12 items-center gap-2 rounded-2xl border border-crisis/30 bg-crisis-soft px-4 py-3 text-base font-semibold text-crisis hover:bg-crisis/10"
-      >
-        <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
-      </Link>
-    </div>
+      <Button asChild variant="crisisSoft" size="patient" className="w-full">
+        <Link to="/crisis">
+          <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
+        </Link>
+      </Button>
+    </PatientPage>
   );
 }
 
