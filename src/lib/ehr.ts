@@ -3416,9 +3416,13 @@ function patientLabel(patientId?: string): string {
 }
 
 /**
- * Write-level `patient_messaging` roles, mirrored from the RBAC matrix in
- * `roles.ts`. Duplicated as a value here only because `ehr.ts` may import
- * `roles.ts` for TYPES only (roles.ts imports ehr.ts at runtime).
+ * Roles that may change a message's 42 CFR Part 2 flag. Originally the
+ * write-level `patient_messaging` set; it is now deliberately NARROWER than
+ * that set: `peer_specialist` has messaging write (they answer members) but is
+ * `consent_gated` for `screeners_sud`, and flagging REMOVES visibility, so a
+ * consent-gated role must not be able to mask content from treating roles.
+ * Duplicated as a value here only because `ehr.ts` may import `roles.ts` for
+ * TYPES only (roles.ts imports ehr.ts at runtime).
  */
 export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp"];
 
