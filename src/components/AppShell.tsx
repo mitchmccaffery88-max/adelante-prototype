@@ -44,6 +44,27 @@ export function AppShell() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  // Restore the acting patient after a hard reload. Only ever accepts an id
+  // that still exists (runtime-created demo records do not survive a reload),
+  // and runs in an effect so SSR and hydration agree on the first paint.
+  useEffect(() => {
+    let stored: string | null = null;
+    try {
+      stored = window.localStorage.getItem("adelante.currentPatientId");
+    } catch {
+      stored = null;
+    }
+    if (!stored || stored === AdelanteEHR.getCurrentPatientId()) return;
+    if (!AdelanteEHR.getPatient(stored)) {
+      try {
+        window.localStorage.removeItem("adelante.currentPatientId");
+      } catch {
+        /* ignore */
+      }
+      return;
+    }
+    AdelanteEHR.setCurrentPatientId(stored);
+  }, []);
   const { staffId, setActingStaff } = useActingStaff();
   // §Platform nav — every staff link comes from the RBAC nav engine, so a
   // role that fails a gate never sees the entry (same rule as recordSections).
