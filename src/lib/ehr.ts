@@ -198,6 +198,16 @@ export interface CareMessage {
   authorType: "patient" | "staff";
   /** Patient's own name, or the staff display name. Never altered. */
   authorName: string;
+  /**
+   * §Peer messaging — the acting staff role at the time of authorship, stored
+   * on staff messages only. Deliberately NOT a new `authorType` value: every
+   * other surface in this build distinguishes staff types by StaffRole on top
+   * of a named identity, never by forking the author kind. `authorType` stays
+   * `patient | staff` so read/unread, masking and the queue keep working
+   * unchanged; the role only drives display attribution ("Peer specialist ·
+   * Andre Willis") and is captured in the audit trail.
+   */
+  authorRole?: StaffRole;
   /** Verbatim as authored. Patient messages are NEVER translated or edited. */
   body: string;
   createdAt: string;
