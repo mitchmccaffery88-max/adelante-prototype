@@ -658,6 +658,18 @@ export const PATIENT_MOBILE_NAV = PATIENT_NAV.filter((e) => e.mobile);
 /** Everything else — the "More" bottom sheet. */
 export const PATIENT_MORE_NAV = PATIENT_NAV.filter((e) => !e.mobile);
 
+/**
+ * Drop entries whose destination is population-gated away from this person.
+ * Same rule as the staff nav: an entry you cannot use is OMITTED, not shown
+ * disabled or left to dead-end on a gated section.
+ */
+export function patientNavForPopulation<T extends PatientNavEntry>(
+  entries: readonly T[],
+  track: PopulationTrack,
+): T[] {
+  return entries.filter((e) => !e.populations || e.populations.includes(track));
+}
+
 /** Patient-shell routes that are not nav entries. */
 export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
   "/crisis",
