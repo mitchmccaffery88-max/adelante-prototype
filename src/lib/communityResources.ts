@@ -429,9 +429,9 @@ export function patientVisibleResources(categoryId?: string): CommunityResource[
     .sort((a, b) => a.name.localeCompare(b.name));
 }
 
-/** The staff verification queue — everything not currently live. */
+/** The staff verification queue — everything without a complete verification. */
 export function resourceVerificationQueue(): CommunityResource[] {
-  return listResources().filter((r) => !isResourceLive(r));
+  return listResources().filter((r) => !isResourceVerified(r));
 }
 
 export function getResource(id: string): CommunityResource | undefined {
@@ -439,7 +439,12 @@ export function getResource(id: string): CommunityResource | undefined {
   return r ? structuredClone(r) : undefined;
 }
 
-/** Staff sourcing pass: fill in the facts. Does NOT make anything live. */
+/**
+ * Staff sourcing pass: fill in the facts. Does NOT publish, and — unlike
+ * before — does NOT yank a published entry away from patients either. The
+ * published snapshot keeps being served until a new one replaces it, the same
+ * rule every managed lesson follows. Nothing disappears without a human act.
+ */
 export function updateResourceDetails(
   id: string,
   patch: Partial<Pick<CommunityResource, "name" | "address" | "phone" | "hours" | "description">>,
@@ -465,6 +470,8 @@ export interface VerifyInput {
   confirmedPhone: boolean;
   confirmedHours: boolean;
   note?: string;
+  /** Historical replay only: the real timestamp of a past verification. */
+  atISO?: string;
 }
 
 export type VerifyResult =
@@ -472,9 +479,16 @@ export type VerifyResult =
   | { ok: false; reason: string };
 
 /**
- * The real staff verification action. Everything that could make this a badge
- * rather than a workflow is refused here: the wrong role, a missing fact, or
- * an incomplete confirmation.
+ * The real staff verification action, and now also the PUBLISH act for a
+ * directory entry: on success it writes the entry into the shared content
+ * store as a published revision attributed to the verifier. The role gate that
+ * protects publishing here is `RESOURCE_VERIFIER_ROLES` (checked immediately
+ * below) — deliberately wider than the content-manager roster, because
+ * confirming a shelter's phone number is a task anyone who made the call can
+ * attest to.
+ *
+ * Everything that could make this a badge rather than a workflow is still
+ * refused: the wrong role, a missing fact, an incomplete confirmation.
  */
 export function verifyResource(input: VerifyInput): VerifyResult {
   const r = resources.get(input.resourceId);
@@ -488,34 +502,29 @@ export function verifyResource(input: VerifyInput): VerifyResult {
   if (!input.confirmedAddress || !input.confirmedPhone || !input.confirmedHours)
     return { ok: false, reason: "All three facts must be confirmed with the provider." };
 
-  const expires = new Date();
-  expires.setDate(expires.getDate() + VERIFICATION_VALID_DAYS);
+  const at = input.atISO ?? new Date().toISOString();
   r.verification = {
     verifiedBy: input.actorName,
     verifiedByStaffId: input.actorStaffId,
-    verifiedAt: new Date().toISOString(),
+    verifiedAt: at,
     confirmedAddress: true,
     confirmedPhone: true,
     confirmedHours: true,
     note: input.note,
-    expiresOn: expires.toISOString().slice(0, 10),
   };
   r.status = "verified";
   r.verified = true;
   r.placeholder = false;
+  seedPublishedContent({
+    typeId: "community_resource",
+    id: r.id,
+    body: structuredClone(r) as unknown as Record<string, unknown>,
+    actor: { staffId: input.actorStaffId, name: input.actorName, role: input.actorRole },
+    atISO: at,
+    note: input.note,
+  });
   notify();
   return { ok: true, resource: structuredClone(r) };
-}
-
-/** Send a live entry back to the queue (hours changed, phone dead, closed). */
-export function flagResourceForRecheck(id: string, reason: string): CommunityResource | undefined {
-  const r = resources.get(id);
-  if (!r) return undefined;
-  r.status = "needs_update";
-  r.verified = false;
-  if (r.verification) r.verification.note = reason;
-  notify();
-  return structuredClone(r);
 }
 
 export function __resetResources(): void {
