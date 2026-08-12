@@ -656,6 +656,11 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
         )}
       </div>
       <p className="mt-1 text-xs text-muted-foreground">{t("msgSubtitle")}</p>
+      {/* §Peer messaging — one thread, honest sender identity. There is no
+          second peer-only channel: the existing care-team thread already IS
+          the member's messaging surface, and splitting it would fragment
+          crisis detection, unread state and the staff queue. */}
+      <p className="mt-1 text-xs text-muted-foreground">{t("msgPeerNote")}</p>
       <div className="mt-3">
         <CareMessageThread
           messages={messages.slice(-8)}
