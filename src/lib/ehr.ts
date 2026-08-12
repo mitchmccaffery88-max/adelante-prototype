@@ -9326,7 +9326,13 @@ export const AdelanteEHR = {
     emit();
     return msg;
   },
-  sendStaffMessage(patientId: string, staffName: string, body: string): CareMessage | undefined {
+  sendStaffMessage(
+    patientId: string,
+    staffName: string,
+    body: string,
+    /** Acting role — recorded for display attribution + audit. */
+    role?: StaffRole,
+  ): CareMessage | undefined {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !body.trim()) return undefined;
     const msg: CareMessage = {
@@ -9334,6 +9340,7 @@ export const AdelanteEHR = {
       threadPatientId: patientId,
       authorType: "staff",
       authorName: staffName,
+      ...(role ? { authorRole: role } : {}),
       body,
       createdAt: new Date().toISOString(),
       readByStaffAt: new Date().toISOString(),
@@ -9344,7 +9351,7 @@ export const AdelanteEHR = {
       action: "care_message_sent",
       patientId,
       actorId: staffName,
-      detail: { authorType: "staff", messageId: msg.id },
+      detail: { authorType: "staff", messageId: msg.id, authorRole: role ?? null },
     });
     emit();
     return msg;
