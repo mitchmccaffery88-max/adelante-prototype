@@ -1,4 +1,4 @@
-import { Link, useSearch } from "@tanstack/react-router";
+import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, type Key } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
@@ -143,6 +143,7 @@ function HomeScreenNudge() {
 
 export function PatientHome() {
   const { t } = useI18n();
+  const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   // §Group sessions — optional `?msg=` prefill for the care-team composer.
   const search = useSearch({ strict: false }) as { msg?: string };
