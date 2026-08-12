@@ -57,6 +57,6 @@ export function SavedResources() {
           ))}
         </ul>
       )}
-    </div>
+    </PatientPage>
   );
 }

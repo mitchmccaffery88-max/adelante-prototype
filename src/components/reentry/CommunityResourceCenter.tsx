@@ -85,6 +85,6 @@ export function CommunityResourceCenter() {
           ))}
         </ul>
       )}
-    </div>
+    </PatientPage>
   );
 }
