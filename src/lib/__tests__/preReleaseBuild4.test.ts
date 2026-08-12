@@ -65,7 +65,7 @@ describe("pre-release data feeds the real CalAIM care plan", () => {
     const clinician = AdelanteEHR.cliniciansForService("therapy_individual")[0]!;
     AdelanteEHR.bookPreReleaseAppointment({
       episodeId: episode.id,
-      kind: "primary_care",
+      kind: "mental_health",
       clinicianId: clinician.id,
       start: new Date(Date.now() + 7 * 864e5).toISOString(),
       modality: "video",
@@ -97,7 +97,7 @@ describe("pre-release data feeds the real CalAIM care plan", () => {
     expect(pre.episodeId).toBe(episode.id);
     expect(pre.capacityState).toBe("self_consent");
     expect(pre.screeningsCaptured).toBeGreaterThan(0);
-    expect(pre.appointments.map((a) => a.kind)).toContain("primary_care");
+    expect(pre.appointments.map((a) => a.kind)).toContain("mental_health");
     expect(pre.matMedications.map((m) => m.name.toLowerCase()).join(" ")).toMatch(/buprenorphine/);
 
     // SDOH needs identified pre-release are open needs on the plan.
@@ -119,7 +119,7 @@ describe("pre-release data feeds the real CalAIM care plan", () => {
     const clinician = AdelanteEHR.cliniciansForService("therapy_individual")[0]!;
     AdelanteEHR.bookPreReleaseAppointment({
       episodeId: episode.id,
-      kind: "behavioral_health",
+      kind: "med_management",
       clinicianId: clinician.id,
       start: new Date(Date.now() + 3 * 864e5).toISOString(),
       modality: "video",
