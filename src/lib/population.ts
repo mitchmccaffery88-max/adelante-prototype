@@ -147,6 +147,7 @@ export function populationFactsFor(patientId: string): PopulationFacts | undefin
     ...(p.frontDoor?.heardAbout ? { heardAbout: p.frontDoor.heardAbout } : {}),
     hasReferralRecord: Boolean(p.referralId),
     hasMissedPreReleaseFlag: Boolean(p.missedPreReleaseCoordination),
+    hasJiReentryFlag: Boolean(p.coverage?.jiReentryFlag),
   };
 }
 
