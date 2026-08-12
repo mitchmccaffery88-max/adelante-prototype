@@ -8,6 +8,7 @@ import { useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Lock, RotateCcw } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -87,16 +88,12 @@ export function SlipSupportFlow() {
   }
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="slip-flow">
-      <div className="space-y-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-          <RotateCcw className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <h1 className="font-display text-3xl">You came back. That&apos;s the part that counts.</h1>
-        <p className="text-lg text-muted-foreground">
-          A slip is information, not a verdict. Four short screens, then one thing for the next 24
-          hours.
-        </p>
+    <PatientPage data-testid="slip-flow">
+      <PatientPageHeader
+        icon={RotateCcw}
+        title={<>You came back. That&apos;s the part that counts.</>}
+        lede="A slip is information, not a verdict. Four short screens, then one thing for the next 24 hours."
+      >
         <p
           className="flex items-start gap-2 rounded-2xl bg-secondary p-3 text-sm"
           data-testid="slip-privacy-note"
@@ -105,7 +102,7 @@ export function SlipSupportFlow() {
           This stays with you. It is not in your chart, not visible to your care team, and not
           something your probation officer or the court can be shown from here.
         </p>
-      </div>
+      </PatientPageHeader>
 
       {step === 0 && (
         <Card className="space-y-3 p-5" data-testid="slip-arrive">
@@ -116,7 +113,8 @@ export function SlipSupportFlow() {
           <Button
             type="button"
             data-testid="slip-start"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => setStep(1)}
           >
             Start <ArrowRight className="ml-1 h-4 w-4" />
@@ -139,7 +137,8 @@ export function SlipSupportFlow() {
           <Button
             type="button"
             data-testid="slip-step1-next"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => setStep(2)}
           >
             Next <ArrowRight className="ml-1 h-4 w-4" />
@@ -162,7 +161,8 @@ export function SlipSupportFlow() {
           <Button
             type="button"
             data-testid="slip-step2-next"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => setStep(3)}
           >
             Next <ArrowRight className="ml-1 h-4 w-4" />
@@ -191,7 +191,8 @@ export function SlipSupportFlow() {
           <Button
             type="button"
             variant="ghost"
-            className="min-h-11 w-full rounded-2xl"
+            size="patient"
+            className="w-full"
             onClick={() => setStep(2)}
           >
             Back

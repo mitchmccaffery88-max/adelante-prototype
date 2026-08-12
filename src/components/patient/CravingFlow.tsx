@@ -10,6 +10,7 @@ import { useMemo, useState } from "react";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { ArrowRight, Waves } from "lucide-react";
 import { Card } from "@/components/ui/card";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
@@ -35,17 +36,17 @@ export function CravingFlow() {
     exercise && exercise.content.type === "timer" ? exercise.content : undefined;
 
   return (
-    <div className="mx-auto max-w-2xl space-y-4 px-4 py-8 sm:px-6" data-testid="craving-flow">
-      <div className="space-y-2">
-        <span className="grid h-12 w-12 place-items-center rounded-2xl bg-secondary text-primary">
-          <Waves className="h-6 w-6" aria-hidden="true" />
-        </span>
-        <h1 className="font-display text-3xl">A craving is a wave</h1>
-        <p className="text-lg text-muted-foreground">
-          It rises, it peaks, and it passes — whether or not you act on it. You don&apos;t have to
-          make it stop. You just have to still be here when it goes.
-        </p>
-      </div>
+    <PatientPage data-testid="craving-flow">
+      <PatientPageHeader
+        icon={Waves}
+        title="A craving is a wave"
+        lede={
+          <>
+            It rises, it peaks, and it passes — whether or not you act on it. You don&apos;t have to
+            make it stop. You just have to still be here when it goes.
+          </>
+        }
+      />
 
       {step === "arrive" && (
         <Card className="space-y-3 p-5">
@@ -55,7 +56,8 @@ export function CravingFlow() {
           <Button
             type="button"
             data-testid="craving-start"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => setStep("before")}
           >
             Start <ArrowRight className="ml-1 h-4 w-4" />
@@ -85,7 +87,8 @@ export function CravingFlow() {
           <Button
             type="button"
             data-testid="craving-to-surf"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => {
               const log = startCravingLog(patientId, before);
               setLogId(log.id);
@@ -119,7 +122,8 @@ export function CravingFlow() {
             type="button"
             variant="outline"
             data-testid="craving-to-after"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => {
               setAfter(before);
               setStep("after");
@@ -152,7 +156,8 @@ export function CravingFlow() {
           <Button
             type="button"
             data-testid="craving-log"
-            className="min-h-12 w-full rounded-2xl text-base"
+            size="patient"
+            className="w-full"
             onClick={() => {
               if (logId) {
                 completeCravingLog(patientId, logId, { levelAfter: after, surfCompleted: surfDone });
@@ -166,7 +171,8 @@ export function CravingFlow() {
           <Button
             type="button"
             variant="ghost"
-            className="min-h-11 w-full rounded-2xl"
+            size="patient"
+            className="w-full"
             onClick={() => navigate({ to: "/home" })}
           >
             Skip — I&apos;d rather not rate it
