@@ -1556,10 +1556,51 @@ export interface CarePlanMedicationSlice {
   name: string;
   state: "active" | "refill_pending" | "changed";
   sensitive: boolean;
+  /** §Pre-release build 4 — this row came out of the pre-release episode. */
+  source?: "pre_release";
 }
 export interface CarePlanSdohSlice {
   need: string;
   status: SdohStatus;
+  /** §Pre-release build 4 — identified by the pre-release AHC-HRSN screening. */
+  source?: "pre_release";
+}
+
+/**
+ * §Pre-release build 4 — CalAIM continuity slice.
+ *
+ * The CalAIM requirement is that the plan SURVIVES the custody→community
+ * transition, so the reconciliation runs pre-release → CalAIM, live, and it
+ * is recomputed while the person is still in custody (not only at release):
+ * the ECM Provider must be able to see the plan they are inheriting BEFORE
+ * day zero, and there must be no window in which the plan is blank.
+ *
+ * Every field here is DERIVED at recompute time from the real records
+ * (episode, capacity determination, advocate links, chart orders, scheduling
+ * store, screener results) — nothing is copied, so nothing goes stale.
+ */
+export interface CarePlanPreReleaseSlice {
+  episodeId: string;
+  status: PreReleaseEpisodeStatus;
+  anticipatedReleaseDate: string;
+  facilityName?: string;
+  receivingEcmStaffId?: string;
+  /** Build-1 capacity gate state, e.g. "self_consent" / "surrogate_required". */
+  capacityState: string;
+  /** Build-1 designations — names only, no invitation material. */
+  advocates: { name: string; relationship?: string; authorizationType?: string }[];
+  /** Build-3 bookings, resolved live against the real scheduling store. */
+  appointments: { kind: ReentryAppointmentKind; start: string; providerName: string; status?: string }[];
+  /** Count of pre-release screenings on the chart. */
+  screeningsCaptured: number;
+  housingArrangement?: string;
+  /**
+   * Build-3 MAT — 42 CFR Part 2 content. Present in the snapshot but ALWAYS
+   * flagged sensitive; surfaces must gate it exactly like the SUD slices.
+   */
+  matMedications: { name: string; status: string }[];
+  /** True when any Part 2-covered content is present in this slice. */
+  sensitive: boolean;
 }
 export interface CarePlanMetrics {
   phq9Latest?: number;
