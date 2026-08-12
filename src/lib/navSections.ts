@@ -544,7 +544,12 @@ export type PatientRoute =
   // pinned action, naloxone is reached from it), but both are patient-shell
   // routes and must theme/gate like the rest.
   | "/crisis"
-  | "/naloxone";
+  | "/naloxone"
+  // §Tier 1 Build B — patient-private tools reached from the home dashboard,
+  // the craving FAB and the resources header, not from the nav registry.
+  | "/craving"
+  | "/slip"
+  | "/resources/saved";
 
 export interface PatientNavEntry {
   id: string;
@@ -623,7 +628,13 @@ export const PATIENT_MOBILE_NAV = PATIENT_NAV.filter((e) => e.mobile);
 export const PATIENT_MORE_NAV = PATIENT_NAV.filter((e) => !e.mobile);
 
 /** Patient-shell routes that are not nav entries. */
-export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = ["/crisis", "/naloxone"];
+export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
+  "/crisis",
+  "/naloxone",
+  "/craving",
+  "/slip",
+  "/resources/saved",
+];
 
 /** Every route the patient shell owns (deduped — several entries are anchors). */
 export const PATIENT_ROUTES: readonly PatientRoute[] = Array.from(
