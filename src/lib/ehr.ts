@@ -4943,6 +4943,68 @@ function _flagProviderSwitch(input: {
 const SUD_SCREENER_KEYS = new Set(["audit", "dast-10"]);
 const SUD_MED_RE = /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol/i;
 
+/**
+ * §Pre-release build 4 — derive the CalAIM continuity slice from the REAL
+ * pre-release records. Direction of reconciliation is pre-release → CalAIM:
+ * the pre-release workspace is where the data is captured, and the CalAIM
+ * plan is the artefact the community care team (ECM Provider, case manager,
+ * the patient) reads everywhere else in the system.
+ *
+ * Runs on every recompute, including while the person is still in custody,
+ * and keeps running after the episode closes — the plan a released member
+ * carries into the community is the same plan, not a copy of it.
+ */
+function _preReleaseCarePlanSlice(p: Patient): CarePlanPreReleaseSlice | undefined {
+  const ep = preReleaseEpisodes
+    .filter((e) => e.patientId === p.id)
+    .sort((a, b) => +new Date(b.openedAt) - +new Date(a.openedAt))[0];
+  if (!ep) return undefined;
+  const plan = reentryCarePlans.find((r) => r.episodeId === ep.id);
+  const capacity = AdelanteEHR.preReleaseCapacityState(ep.id);
+  const matMedications = (p.orders ?? [])
+    .filter(
+      (o) =>
+        o.preReleaseEpisodeId === ep.id &&
+        (o.status === "signed" || o.status === "held") &&
+        SUD_MED_RE.test(o.productName ?? o.drugName),
+    )
+    .map((o) => ({ name: o.productName ?? o.drugName, status: o.status }));
+  const bookings = (plan?.appointments ?? [])
+    .filter((a) => a.apptId)
+    .map((a) => {
+      const live = appointments.find((x) => x.id === a.apptId);
+      return {
+        kind: a.kind,
+        start: live?.start ?? a.start,
+        providerName: a.providerName,
+        ...(live?.status ? { status: live.status } : {}),
+      };
+    });
+  const screeningsCaptured = Object.values(p.screeners ?? {}).filter(
+    (r) => r?.context === "pre_release",
+  ).length;
+  return {
+    episodeId: ep.id,
+    status: ep.status,
+    anticipatedReleaseDate: ep.anticipatedReleaseDate,
+    ...(ep.facilityName ? { facilityName: ep.facilityName } : {}),
+    ...(ep.receivingEcmStaffId ? { receivingEcmStaffId: ep.receivingEcmStaffId } : {}),
+    capacityState: capacity.decision.state,
+    advocates: advocateLinks
+      .filter((l) => l.patientId === p.id && l.status === "active")
+      .map((l) => ({
+        name: l.advocateName,
+        ...(l.relationship ? { relationship: l.relationship } : {}),
+        ...(l.authorizationType ? { authorizationType: l.authorizationType } : {}),
+      })),
+    appointments: bookings,
+    screeningsCaptured,
+    ...(plan?.housing.arrangement ? { housingArrangement: plan.housing.arrangement } : {}),
+    matMedications,
+    sensitive: matMedications.length > 0,
+  };
+}
+
 function _composeSummary(
   p: Patient,
   parts: {
