@@ -20,7 +20,15 @@ export type AdvocateDocRequirementKey =
   | "ahcd_document"
   | "ahcd_clinician_activation"
   | "conservatorship_order"
-  | "collateral_roi";
+  | "collateral_roi"
+  // §Advocate build 3 — the COMMUNICATION RIGHTS axis. These are deliberately
+  // NOT part of any type's default requirement set: holding an authorization
+  // is not the same as being authorized to exchange messages with the care
+  // team on the person's behalf. Staff request one of these explicitly, and
+  // verify it the same way as every other document row.
+  | "hipaa_roi_communication"
+  | "poa_communication"
+  | "dhcs_ar_communication";
 
 export type AdvocateDocRequirementStatus =
   /** Nothing yet — the advocate has not attested and staff have not verified. */
@@ -94,7 +102,44 @@ export const ADVOCATE_DOC_REQUIREMENTS: Record<
       "A release the person you're supporting signs before a family member or support person can take part in care coordination. Without it, nothing is shared.",
     attestation: "A signed release naming me is on file, or is being sent to the care team.",
   },
+  hipaa_roi_communication: {
+    key: "hipaa_roi_communication",
+    label: "HIPAA release that includes two-way communication",
+    plainLanguage:
+      "A HIPAA release that says, in its own text, that we may exchange messages with you about this person's care — not only share information when you ask. Staff read the form and check for that language before messaging opens.",
+    attestation:
+      "The release naming me includes permission for the care team to communicate with me directly.",
+  },
+  poa_communication: {
+    key: "poa_communication",
+    label: "Valid power of attorney covering health care communication",
+    plainLanguage:
+      "A power of attorney that is currently in effect and covers speaking and corresponding with health care providers on this person's behalf.",
+    attestation: "A valid power of attorney naming me is on file, or is being sent in.",
+  },
+  dhcs_ar_communication: {
+    key: "dhcs_ar_communication",
+    label: "Medi-Cal Authorized Representative with communication rights granted",
+    plainLanguage:
+      "Being an Authorized Representative for Medi-Cal does NOT by itself allow messaging with the care team — that scope is eligibility and enrollment. This row is for an AR designation where communication rights were specifically granted as well.",
+    attestation:
+      "My Authorized Representative designation specifically grants communication rights, not eligibility help alone.",
+  },
 };
+
+/**
+ * The three instruments that can carry communication rights. ANY ONE of them,
+ * verified by staff, opens the axis — they are alternatives, not a checklist.
+ */
+export const COMMUNICATION_RIGHTS_REQUIREMENT_KEYS = [
+  "hipaa_roi_communication",
+  "poa_communication",
+  "dhcs_ar_communication",
+] as const satisfies readonly AdvocateDocRequirementKey[];
+
+export function isCommunicationRightsRequirement(key: AdvocateDocRequirementKey): boolean {
+  return (COMMUNICATION_RIGHTS_REQUIREMENT_KEYS as readonly string[]).includes(key);
+}
 
 /** Which requirements apply to each legal instrument. Order is display order. */
 export const ADVOCATE_DOCS_BY_TYPE: Record<

@@ -79,6 +79,13 @@ import {
   type AdvocateDocRequirementStatus,
 } from "./advocateDocs";
 import { isAdvocateDemoClaimEnabled } from "./advocateDemo";
+// §Advocate build 3 — messaging review gate + communication-rights axis.
+import {
+  ADVOCATE_MESSAGING_REVIEW,
+  advocateCommunicationRightsDecision,
+  type AdvocateCommunicationRightsDecision,
+} from "./advocateMessaging";
+import { visibleAdvocateMessageBody, isAdvocateMessageBodyMasked } from "./careMessageMasking";
 // §CF pre-release intake — capacity / legal-authority policy. Pure module.
 import {
   capacityGateDecision,
@@ -201,9 +208,18 @@ export interface CareMessage {
   id: string;
   /** The thread. One thread per patient. */
   threadPatientId: string;
-  authorType: "patient" | "staff";
+  /**
+   * §Advocate build 3 — "advocate" is a real third author kind, not a staff
+   * sub-role: an advocate is an external authorized person, has no StaffRole,
+   * and must never be attributed to the care team. Unread accounting below
+   * still keys on "patient" / "staff" explicitly, so advocate messages never
+   * silently inflate a queue count.
+   */
+  authorType: "patient" | "staff" | "advocate";
   /** Patient's own name, or the staff display name. Never altered. */
   authorName: string;
+  /** Advocate messages only — which link authored it. */
+  authorAdvocateLinkId?: string;
   /**
    * §Peer messaging — the acting staff role at the time of authorship, stored
    * on staff messages only. Deliberately NOT a new `authorType` value: every
@@ -3966,6 +3982,14 @@ export interface AdvocateDocRequirementState {
   requestedAt?: string;
   requestedBy?: string;
   requestCount?: number;
+  /**
+   * §Advocate build 3 — the advocate said "I'm waiting on you" for a row only
+   * STAFF can move. Rate-limited to once a day per row by
+   * `advocateNudgeCareTeam`; recorded so a nudge is auditable and cannot be
+   * used as a channel for anything but "still waiting".
+   */
+  nudgedAt?: string;
+  nudgeCount?: number;
 }
 
 export interface AdvocateLink {
@@ -11428,6 +11452,224 @@ export const AdelanteEHR = {
     }
     const p = _patient(link.patientId);
     return { allowed: true, reason: decision.reason, ...(p ? { firstName: p.firstName } : {}) };
+  },
+
+  // ----- §Advocate build 3 — "what you need next" + gated messaging -----
+
+  /**
+   * Everything still standing between this advocate and effective access, read
+   * from the REAL Build 1 requirement rows plus the live access decision. No
+   * parallel tracking: `advocateDocumentRequirements` is the source of truth
+   * for paperwork, `advocateAccess` for whether anything is outstanding at all.
+   */
+  advocateOutstandingRequirements(linkId: string): {
+    accessAllowed: boolean;
+    accessReason: string;
+    items: {
+      key: AdvocateDocRequirementKey;
+      status: AdvocateDocRequirementStatus;
+      /** TRUE when only staff/clinician action can move this row forward. */
+      staffAction: boolean;
+      requestedAt?: string;
+      nudgedAt?: string;
+    }[];
+  } {
+    const decision = AdelanteEHR.advocateAccess(linkId);
+    const rows = AdelanteEHR.advocateDocumentRequirements(linkId);
+    return {
+      accessAllowed: decision.allowed,
+      accessReason: decision.reason,
+      items: rows
+        .filter((r) => r.status !== "verified")
+        .map((r) => ({
+          key: r.key,
+          status: r.status,
+          // Two ways a row is staff-actionable: the requirement is staff-only
+          // by definition (clinician activation, certified court order), or
+          // the advocate has already attested and is waiting on verification.
+          staffAction: Boolean(ADVOCATE_DOC_REQUIREMENTS[r.key].staffOnly) || r.status === "attested",
+          ...(r.requestedAt ? { requestedAt: r.requestedAt } : {}),
+          ...(r.nudgedAt ? { nudgedAt: r.nudgedAt } : {}),
+        })),
+    };
+  },
+
+  /**
+   * "I'm still waiting on you." Allowed ONLY for rows the advocate cannot move
+   * themselves, carries no free text, and is rate-limited to once per 24h per
+   * row — so it is a status ping, not a message channel (messaging has its own
+   * gate, below).
+   */
+  advocateNudgeCareTeam(input: { linkId: string; key: AdvocateDocRequirementKey }): {
+    sent: boolean;
+    reason: string;
+  } {
+    const link = advocateLinks.find((l) => l.id === input.linkId);
+    if (!link) return { sent: false, reason: "This connection no longer exists." };
+    if (_effectiveAdvocateStatus(link) === "revoked")
+      return { sent: false, reason: "That connection has been removed." };
+    const row = (link.documentRequirements ?? []).find((r) => r.key === input.key);
+    if (!row || row.status === "verified")
+      return { sent: false, reason: "Nothing is outstanding on that item." };
+    const staffAction =
+      Boolean(ADVOCATE_DOC_REQUIREMENTS[input.key].staffOnly) || row.status === "attested";
+    if (!staffAction)
+      return { sent: false, reason: "This one is yours to complete — nobody is waiting on us." };
+    const now = new Date();
+    if (row.nudgedAt && now.getTime() - new Date(row.nudgedAt).getTime() < 24 * 60 * 60 * 1000)
+      return { sent: false, reason: "You've already let the care team know today." };
+    row.nudgedAt = now.toISOString();
+    row.nudgeCount = (row.nudgeCount ?? 0) + 1;
+    AdelanteEHR.notify({
+      recipientRole: "ecm_provider",
+      category: "task_assigned",
+      subject: `Advocate waiting — ${patientLabel(link.patientId)}`,
+      body: `${link.advocateName} is waiting on: ${ADVOCATE_DOC_REQUIREMENTS[input.key].label}.`,
+      linkRoute: "/record/$patientId",
+      linkParams: { patientId: link.patientId, section: "advocates" },
+      patientId: link.patientId,
+    });
+    appendAudit({
+      category: "advocate",
+      action: "advocate_document_nudge",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: {
+        advocateLinkId: link.id,
+        requirement: input.key,
+        nudgeCount: row.nudgeCount,
+      },
+    });
+    emit();
+    return { sent: true, reason: "The care team has been told you're waiting." };
+  },
+
+  /** The communication-rights axis. Independent of tier and of Part 2. */
+  advocateCommunicationRights(linkId: string): AdvocateCommunicationRightsDecision {
+    const decision = AdelanteEHR.advocateAccess(linkId);
+    return advocateCommunicationRightsDecision({
+      accessAllowed: decision.allowed,
+      accessReason: decision.reason,
+      rows: AdelanteEHR.advocateDocumentRequirements(linkId).map((r) => ({
+        key: r.key,
+        status: r.status,
+      })),
+    });
+  },
+
+  /**
+   * The patient's care-team thread, as an advocate may see it. Same store, same
+   * rows as the patient and staff surfaces — no parallel thread.
+   *
+   * Part 2 masking is applied HERE, in the data layer, from
+   * `_advocatePart2Gates` — the identical evaluation the schedule and document
+   * reads use — so a UI bug cannot unmask anything, and communication rights
+   * have no bearing on it.
+   */
+  advocateCareMessages(linkId: string): {
+    allowed: boolean;
+    reason: string;
+    reviewPending: boolean;
+    part2Disclosed: boolean;
+    messages: (CareMessage & { bodyMasked: boolean })[];
+  } {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    const rights = AdelanteEHR.advocateCommunicationRights(linkId);
+    const gates = link ? _advocatePart2Gates(link) : { unmasked: false };
+    if (!link || !rights.granted)
+      return {
+        allowed: false,
+        reason: link ? rights.reason : "This connection no longer exists.",
+        reviewPending: ADVOCATE_MESSAGING_REVIEW.pending,
+        part2Disclosed: false,
+        messages: [],
+      };
+    const messages = AdelanteEHR.listCareMessages(link.patientId).map((m) => ({
+      ...m,
+      body: visibleAdvocateMessageBody(m, gates.unmasked),
+      bodyMasked: isAdvocateMessageBodyMasked(m, gates.unmasked),
+    }));
+    appendAudit({
+      category: "access",
+      action: "advocate_messages_viewed",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: {
+        advocateLinkId: link.id,
+        count: messages.length,
+        masked: messages.filter((m) => m.bodyMasked).length,
+        part2Disclosed: gates.unmasked,
+      },
+    });
+    return {
+      allowed: true,
+      reason: rights.reason,
+      reviewPending: ADVOCATE_MESSAGING_REVIEW.pending,
+      part2Disclosed: gates.unmasked,
+      messages,
+    };
+  },
+
+  /**
+   * Advocate-authored message into the patient's care-team thread.
+   *
+   * THE REVIEW GATE IS ENFORCED HERE, not only in the UI: while
+   * `ADVOCATE_MESSAGING_REVIEW.pending` is true the write is refused for every
+   * real caller. `allowPendingReview` exists solely so the built feature stays
+   * testable in isolation (tests, demo harness) before sign-off; no product
+   * code path passes it.
+   */
+  advocateSendMessage(
+    linkId: string,
+    body: string,
+    opts?: { allowPendingReview?: boolean },
+  ): { sent: boolean; reason: string; message?: CareMessage } {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return { sent: false, reason: "This connection no longer exists." };
+    if (ADVOCATE_MESSAGING_REVIEW.pending && !opts?.allowPendingReview)
+      return { sent: false, reason: ADVOCATE_MESSAGING_REVIEW.notice };
+    const rights = AdelanteEHR.advocateCommunicationRights(linkId);
+    if (!rights.granted) return { sent: false, reason: rights.reason };
+    if (!body.trim()) return { sent: false, reason: "Nothing to send." };
+    const p = _patient(link.patientId);
+    if (!p) return { sent: false, reason: "This connection no longer exists." };
+    const msg: CareMessage = {
+      id: uid(),
+      threadPatientId: link.patientId,
+      authorType: "advocate",
+      authorName: link.advocateName,
+      authorAdvocateLinkId: link.id,
+      // Verbatim, exactly like every other authored body in this build.
+      body,
+      createdAt: new Date().toISOString(),
+    };
+    p.careMessages = [...(p.careMessages ?? []), msg];
+    appendAudit({
+      category: "access",
+      action: "care_message_sent",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: {
+        authorType: "advocate",
+        messageId: msg.id,
+        advocateLinkId: link.id,
+        communicationRightsBasis: rights.basis ?? null,
+      },
+    });
+    AdelanteEHR.notify({
+      recipientRole: "ecm_provider",
+      category: "patient_message",
+      subject: `Advocate message — ${patientLabel(link.patientId)}`,
+      body: "An authorized advocate sent a message to the care team.",
+      linkRoute: "/record/$patientId",
+      linkParams: { patientId: link.patientId, section: "messages" },
+      patientId: link.patientId,
+    });
+    emit();
+    return { sent: true, reason: "Sent.", message: msg };
   },
 
   /**

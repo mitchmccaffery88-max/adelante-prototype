@@ -26,10 +26,11 @@ export function CareMessageThread({
 }: {
   messages: CareMessage[];
   /** Whose perspective is reading — their own messages align right. */
-  side: "patient" | "staff";
+  side: "patient" | "staff" | "advocate";
   emptyLabel: string;
   youLabel: string;
-  themLabel: string;
+  /** Static label, or resolved per message (advocate side sees two kinds). */
+  themLabel: string | ((m: CareMessage) => string);
   /** Staff-side Part 2 gate. Omitted on the patient side — patients always
    *  see their own thread in full. */
   maskBody?: (m: CareMessage) => boolean;
@@ -46,6 +47,7 @@ export function CareMessageThread({
       {messages.map((m) => {
         const mine = m.authorType === side;
         const masked = maskBody?.(m) ?? false;
+        const them = typeof themLabel === "function" ? themLabel(m) : themLabel;
         return (
           <li key={m.id} className={cn("flex", mine ? "justify-end" : "justify-start")}>
             <div
@@ -55,7 +57,7 @@ export function CareMessageThread({
               )}
             >
               <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {mine ? youLabel : themLabel} · {m.authorName}
+                {mine ? youLabel : them} · {m.authorName}
                 {staffRoleLabel(m) ? ` (${staffRoleLabel(m)})` : ""} ·{" "}
                 <ClientDate value={m.createdAt} />
               </div>
