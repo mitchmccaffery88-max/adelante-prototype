@@ -35,6 +35,7 @@ import { useEffect, useRef, useState } from "react";
 import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
+import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
 import { DailyCheckInCard } from "@/components/patient/DailyCheckInCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
@@ -105,10 +106,17 @@ export function PatientHome() {
   if (!patient) {
     return (
       <div className="mx-auto w-full max-w-2xl p-4 sm:p-6">
-        <EmptyState
-          title="We don't have a record for you yet"
-          description="Start with a few questions and we'll set up your care. If you already signed up, sign in again to pick up where you left off."
-          action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
+        {/* §Advocate Build 2 — an advocate-only visitor landing here isn't a
+            person without a record, they're on the wrong shell. Point them at
+            /advocate instead of the generic sign-up empty state. */}
+        <AdvocateNoPatientPrompt
+          fallback={
+            <EmptyState
+              title="We don't have a record for you yet"
+              description="Start with a few questions and we'll set up your care. If you already signed up, sign in again to pick up where you left off."
+              action={{ label: "Get started", onClick: () => void navigate({ to: "/start" }) }}
+            />
+          }
         />
       </div>
     );

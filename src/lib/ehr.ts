@@ -4492,6 +4492,19 @@ function _notifyDocumentVerified(doc: PatientDocument): void {
 }
 
 /** Uniform advocate audit row — every advocate touch lands in one shape. */
+/**
+ * §Advocate Build 2 — advocate RSVPs live BESIDE the appointment, never on it.
+ * `Appointment.status` is a clinical attendance record owned by staff; an
+ * advocate's "they'll be there" is a different fact with a different author.
+ */
+export interface AdvocateApptRsvp {
+  apptId: string;
+  advocateLinkId: string;
+  response: "yes" | "no";
+  at: string;
+}
+const advocateApptRsvps: AdvocateApptRsvp[] = [];
+
 function _advocateAudit(
   link: AdvocateLink,
   action: string,
@@ -11381,6 +11394,186 @@ export const AdelanteEHR = {
       },
     });
     return { allowed: true, reason: decision.reason, part2Disclosed: part2Ok, items };
+  },
+
+  /**
+   * §Advocate Build 2 item 1 — the identity banner's ONLY source.
+   *
+   * Deliberately NOT "does a link row exist". The name of the person an
+   * advocate is connected to is itself a disclosure, so it is released on the
+   * SAME live decision that guards every other advocate read
+   * (`advocateAccess` → `advocateAccessDecision`). An AHCD link whose
+   * determination has not been activated by a clinician, a family_participation
+   * link with no active ROI, a revoked/expired/unclaimed link and a link whose
+   * authorization type was never confirmed all return `allowed: false` and NO
+   * name — the UI shows "access pending verification" instead. Only the first
+   * name is ever returned; a full name plus a program affiliation is more
+   * identifying than the banner needs.
+   */
+  advocatePatientIdentity(linkId: string): {
+    allowed: boolean;
+    firstName?: string;
+    reason: string;
+    denyReason?: AdvocateAccessDecision["denyReason"];
+  } {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return { allowed: false, reason: "This connection no longer exists." };
+    const decision = AdelanteEHR.advocateAccess(linkId);
+    if (!decision.allowed) {
+      return {
+        allowed: false,
+        reason: decision.reason,
+        ...(decision.denyReason ? { denyReason: decision.denyReason } : {}),
+      };
+    }
+    const p = _patient(link.patientId);
+    return { allowed: true, reason: decision.reason, ...(p ? { firstName: p.firstName } : {}) };
+  },
+
+  /**
+   * §Advocate Build 2 item 2 — appointment HISTORY, same masking as upcoming.
+   *
+   * A separate method rather than a `window` flag on `advocateSchedule` so the
+   * existing upcoming read keeps its exact shape and audit action. Group
+   * occurrences are projected forward only in this build, so history is
+   * appointments; the generic-label rule is identical (service type is only
+   * revealed under the live Part 2 disclosure exception).
+   */
+  advocateScheduleHistory(
+    linkId: string,
+    now = new Date(),
+  ): {
+    allowed: boolean;
+    reason: string;
+    part2Disclosed: boolean;
+    items: {
+      kind: "appointment";
+      id: string;
+      start: string;
+      durationMin: number;
+      label: string;
+      status: SessionStatus;
+      modality?: string;
+      locationName?: string;
+    }[];
+  } {
+    const gate = _advocateGate(linkId, "schedule_view", "appointment_history");
+    if (!gate.ok) return { allowed: false, reason: gate.reason, part2Disclosed: false, items: [] };
+    const link = gate.link;
+    const gates = _advocatePart2Gates(link);
+    const part2Ok = gates.unmasked;
+    const items = AdelanteEHR.appointmentsForPatient(link.patientId)
+      .filter((a) => +new Date(a.start) <= +now)
+      .sort((a, b) => +new Date(b.start) - +new Date(a.start))
+      .slice(0, 20)
+      .map((a) => {
+        const loc = a.locationId ? AdelanteEHR.getLocation(a.locationId) : undefined;
+        return {
+          kind: "appointment" as const,
+          id: a.id,
+          start: a.start,
+          durationMin: a.durationMin,
+          status: a.status,
+          label:
+            part2Ok && a.serviceType
+              ? (AdelanteEHR.getServiceType(a.serviceType)?.label ?? "Appointment")
+              : "Appointment",
+          ...(a.modality ? { modality: a.modality } : {}),
+          ...(loc ? { locationName: loc.name } : {}),
+        };
+      });
+    _advocateAudit(link, "advocate_schedule_history_viewed", "appointment_history", {
+      itemCount: items.length,
+      part2Disclosed: part2Ok,
+      advocateLinkValid: gates.linkValid,
+      sudDisclosureConsentActive: gates.sudDisclosureConsentActive,
+    });
+    return { allowed: true, reason: gate.reason, part2Disclosed: part2Ok, items };
+  },
+
+  /**
+   * §Advocate Build 2 item 2 — who may ACT on the schedule.
+   *
+   * No new permission name was invented (the tier model is out of scope for
+   * this build). Scheduling on someone's behalf is an act of directing care,
+   * so it is keyed to `care_plan_participation_write`, which the tier table
+   * already grants to `ahcd_agent` and `conservator` only:
+   *  - hipaa_only  — a HIPAA authorization authorises DISCLOSURE TO the
+   *                  holder, not action BY them. Read-only history.
+   *  - authorized_representative — authority is eligibility/enrollment; a
+   *                  clinical appointment is outside its scope entirely.
+   *  - ahcd_agent / conservator — hold the authority to consent to treatment
+   *                  and direct placement; moving an appointment is strictly
+   *                  narrower than that.
+   */
+  advocateCanActOnSchedule(linkId: string): boolean {
+    return AdelanteEHR.advocateCan(linkId, "care_plan_participation_write");
+  },
+
+  /** Reschedule slots for one appointment. Times only — no clinician identity. */
+  advocateRescheduleOptions(
+    linkId: string,
+    apptId: string,
+  ): { allowed: boolean; reason: string; slots: string[] } {
+    const gate = _advocateGate(linkId, "care_plan_participation_write", "appointment_reschedule");
+    if (!gate.ok) return { allowed: false, reason: gate.reason, slots: [] };
+    const appt = appointments.find((a) => a.id === apptId && a.patientId === gate.link.patientId);
+    if (!appt) return { allowed: false, reason: "That appointment is not available.", slots: [] };
+    const slots = AdelanteEHR.getClinicianAvailability(appt.clinicianId, 14, {
+      excludeApptId: appt.id,
+    }).map((s) => s.start);
+    return { allowed: true, reason: gate.reason, slots };
+  },
+
+  /** Move an appointment through the SAME store path the patient portal uses. */
+  advocateRescheduleAppointment(linkId: string, apptId: string, newStart: string) {
+    const gate = _advocateGate(linkId, "care_plan_participation_write", "appointment_reschedule");
+    if (!gate.ok) throw new Error(gate.reason);
+    const appt = appointments.find((a) => a.id === apptId && a.patientId === gate.link.patientId);
+    if (!appt) throw new Error("That appointment is not available.");
+    const previousStart = appt.start;
+    AdelanteEHR.rescheduleAppointment(apptId, newStart);
+    _advocateAudit(gate.link, "advocate_appointment_rescheduled", "appointment_reschedule", {
+      apptId,
+      previousStart,
+      newStart,
+    });
+    emit();
+  },
+
+  /**
+   * RSVP — an advocate's stated intent that the patient will attend. It is NOT
+   * an attendance record: `SessionStatus` is clinical and stays owned by staff,
+   * so this is stored alongside, never written onto the appointment.
+   */
+  advocateRsvpAppointment(linkId: string, apptId: string, response: "yes" | "no") {
+    const gate = _advocateGate(linkId, "care_plan_participation_write", "appointment_rsvp");
+    if (!gate.ok) throw new Error(gate.reason);
+    const appt = appointments.find((a) => a.id === apptId && a.patientId === gate.link.patientId);
+    if (!appt) throw new Error("That appointment is not available.");
+    const existing = advocateApptRsvps.find(
+      (r) => r.apptId === apptId && r.advocateLinkId === gate.link.id,
+    );
+    if (existing) {
+      existing.response = response;
+      existing.at = new Date().toISOString();
+    } else {
+      advocateApptRsvps.push({
+        apptId,
+        advocateLinkId: gate.link.id,
+        response,
+        at: new Date().toISOString(),
+      });
+    }
+    _advocateAudit(gate.link, "advocate_appointment_rsvp", "appointment_rsvp", {
+      apptId,
+      response,
+    });
+    emit();
+  },
+
+  advocateRsvpFor(linkId: string, apptId: string): AdvocateApptRsvp | undefined {
+    return advocateApptRsvps.find((r) => r.apptId === apptId && r.advocateLinkId === linkId);
   },
   // ----- §Phase 4 expansion — coordination / participation / eligibility ----
   //

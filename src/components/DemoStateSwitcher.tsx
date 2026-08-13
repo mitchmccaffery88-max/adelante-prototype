@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, COLLATERAL_ROI_CATEGORY } from "@/lib/ehr";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -93,7 +93,10 @@ function ensureAdvocateLinkId(patientId: string, advocateName: string): string {
   const existing = AdelanteEHR.listAdvocateLinks(patientId).find(
     (l) => l.advocateName === advocateName && l.status === "active",
   );
-  if (existing) return existing.id;
+  if (existing) {
+    ensureCollateralRoi(patientId);
+    return existing.id;
+  }
   const invite = AdelanteEHR.createAdvocateInvitation({
     patientId,
     advocateName,
@@ -107,7 +110,36 @@ function ensureAdvocateLinkId(patientId: string, advocateName: string): string {
     authorizationType: "family_participation",
     attestedName: advocateName,
   });
+  ensureCollateralRoi(patientId);
   return claimed.id;
+}
+
+/**
+ * §Advocate Build 2 — the demo advocate is a `family_participation` link, which
+ * by design grants ZERO access until the patient signs a collateral ROI. Sign a
+ * real ConsentRecord (the same store path the consent tab uses) so the demo
+ * shows effective access rather than a permanent pending state. Any categories
+ * already authorized are carried forward so nothing is silently withdrawn.
+ */
+function ensureCollateralRoi(patientId: string): void {
+  if (AdelanteEHR.isConsentCategoryAuthorized(patientId, COLLATERAL_ROI_CATEGORY)) return;
+  const prior = AdelanteEHR.activeConsentRecord(patientId);
+  const sections = [
+    ...(prior?.sections ?? []).filter((s) => s.category !== COLLATERAL_ROI_CATEGORY),
+    { category: COLLATERAL_ROI_CATEGORY, authorized: true },
+  ];
+  AdelanteEHR.createConsentRecord({
+    patientId,
+    formType: "NonAB133",
+    source: "Demo setup — advocate scenario",
+    signedByName: "Demo Patient",
+    relationship: "patient",
+    attested: true,
+    effectiveDate: new Date().toISOString().slice(0, 10),
+    sections,
+    capturedBy: { staffName: "Demo setup", role: "cf_care_manager" },
+    ...(prior ? { supersedesId: prior.id } : {}),
+  });
 }
 
 export function DemoStateSwitcher() {
