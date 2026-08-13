@@ -39,3 +39,18 @@ discipline as every other ASCMI category.
 `auditRedaction.ts`). Every designation, claim, AHCD activation, revocation,
 allowed view AND denial is logged with advocate identity + authorization type.
 The invitation code is never written to the audit log.
+
+**Build 2 (banner / appointments / role switch).** The identity banner reads
+`advocatePatientIdentity`, which returns the patient's FIRST name only when
+`advocateAccess().allowed` is live-true — an unactivated AHCD, a
+family_participation link without an active `roi_collateral` consent, a revoked
+or unclaimed link all render "access pending verification" with no name.
+Schedule WRITE (RSVP, reschedule) is keyed to the existing
+`care_plan_participation_write` permission, so only `ahcd_agent` and
+`conservator` may act; `hipaa_only` (disclosure TO, not action BY) and
+`dhcs_authorized_representative` (eligibility scope only) are read-only.
+Reschedule routes through `rescheduleAppointment`, never a parallel booking
+path; RSVP is stored in `advocateApptRsvps` and never written onto
+`Appointment.status`, which stays a clinical staff-owned record. The dual
+session model (`adelante.currentPatientId` + `adelante.advocateLinkId`) is
+UNCHANGED — `ContextSwitcher.tsx` only surfaces it on both shells.
