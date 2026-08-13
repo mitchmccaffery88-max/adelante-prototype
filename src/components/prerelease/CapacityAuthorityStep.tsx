@@ -18,6 +18,7 @@ import {
 } from "@/lib/capacity";
 import { useActingStaff } from "@/lib/roles";
 import { AhcdValidationChecklist } from "@/components/advocate/AhcdValidationChecklist";
+import { AdvocateInviteForm } from "@/components/advocate/AdvocateInviteForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -205,33 +206,6 @@ export function CapacityAuthorityStep({
 
 function IdentifyAdvocateForm({ episode }: { episode: PreReleaseEpisode }) {
   const { role, staffName } = useActingStaff();
-  const [name, setName] = useState("");
-  const [relationship, setRelationship] = useState("");
-  const [contact, setContact] = useState("");
-  const [channel, setChannel] = useState<"email" | "sms">("email");
-  const [expected, setExpected] = useState<"ahcd" | "conservatorship">("ahcd");
-
-  function submit() {
-    try {
-      const link = AdelanteEHR.identifyPreReleaseAdvocate({
-        episodeId: episode.id,
-        advocateName: name,
-        ...(relationship.trim() ? { relationship: relationship.trim() } : {}),
-        invitationSentTo: contact,
-        invitationChannel: channel,
-        expectedAuthorization: expected,
-        identifiedBy: staffName,
-        actorRole: role,
-      });
-      setName("");
-      setRelationship("");
-      setContact("");
-      toast.success(`Invitation sent to ${link.invitationSentTo} — code ${link.invitationCode}`);
-    } catch (e) {
-      toast.error(e instanceof Error ? e.message : "Could not send the invitation.");
-    }
-  }
-
   return (
     <div className="space-y-2 rounded-md border p-3">
       <div className="flex items-center gap-2 text-sm font-medium">
@@ -241,54 +215,26 @@ function IdentifyAdvocateForm({ episode }: { episode: PreReleaseEpisode }) {
         Identify the person named on the directive or court order. Sending the invitation here is
         the real designation — it goes directly to them, never through the member.
       </p>
-      <div className="grid gap-2 sm:grid-cols-2">
-        <Input
-          data-testid="advocate-name"
-          placeholder="Advocate name"
-          value={name}
-          onChange={(e) => setName(e.target.value)}
-        />
-        <Input
-          placeholder="Relationship (optional)"
-          value={relationship}
-          onChange={(e) => setRelationship(e.target.value)}
-        />
-        <Input
-          data-testid="advocate-contact"
-          placeholder={channel === "email" ? "Their email" : "Their mobile number"}
-          value={contact}
-          onChange={(e) => setContact(e.target.value)}
-        />
-        <Select value={channel} onValueChange={(v) => setChannel(v as "email" | "sms")}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="email">Email</SelectItem>
-            <SelectItem value="sms">Text message</SelectItem>
-          </SelectContent>
-        </Select>
-        <Select
-          value={expected}
-          onValueChange={(v) => setExpected(v as "ahcd" | "conservatorship")}
-        >
-          <SelectTrigger data-testid="advocate-instrument">
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="ahcd">Advance Health Care Directive (AHCD)</SelectItem>
-            <SelectItem value="conservatorship">Conservatorship</SelectItem>
-          </SelectContent>
-        </Select>
-      </div>
-      <Button
-        size="sm"
-        data-testid="advocate-invite"
-        disabled={!name.trim() || !contact.trim()}
-        onClick={submit}
-      >
-        Send invitation
-      </Button>
+      {/* Same component the patient and staff record surfaces render, so the
+          type descriptions and documentation preview stay identical. The
+          submit is overridden because a pre-release designation must also
+          attach to the episode's capacity determination. */}
+      <AdvocateInviteForm
+        allowedTypes={["ahcd", "conservatorship"]}
+        title="Identify the named agent or conservator"
+        onSubmit={(draft) =>
+          AdelanteEHR.identifyPreReleaseAdvocate({
+            episodeId: episode.id,
+            advocateName: draft.advocateName,
+            ...(draft.relationship ? { relationship: draft.relationship } : {}),
+            invitationSentTo: draft.invitationSentTo,
+            invitationChannel: draft.invitationChannel,
+            expectedAuthorization: draft.expectedAuthorizationType as "ahcd" | "conservatorship",
+            identifiedBy: staffName,
+            actorRole: role,
+          })
+        }
+      />
     </div>
   );
 }

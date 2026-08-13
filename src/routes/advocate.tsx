@@ -28,6 +28,11 @@ import {
   AdvocateSelfHelpPanel,
 } from "@/components/advocate/AdvocateWorkspace";
 import { AdvocatePoAwarenessPanel } from "@/components/advocate/AdvocatePoAwarenessPanel";
+import {
+  AdvocateClaimDocumentChecklist,
+  AdvocateDocumentStatusPanel,
+} from "@/components/advocate/AdvocateDocumentChecklist";
+import type { AdvocateDocRequirementKey } from "@/lib/advocateDocs";
 import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
 import { Info, Unlock } from "lucide-react";
 import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
@@ -99,6 +104,13 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
   const [code, setCode] = useState("");
   const [authType, setAuthType] = useState<AdvocateAuthorizationType | "">("");
   const [attested, setAttested] = useState("");
+  const [docs, setDocs] = useState<AdvocateDocRequirementKey[]>([]);
+
+  // Deep link from the invitation notification: /advocate?code=ADV-...
+  useEffect(() => {
+    const fromLink = new URLSearchParams(window.location.search).get("code");
+    if (fromLink) setCode(fromLink);
+  }, []);
 
   function claim() {
     if (!authType) {
@@ -110,6 +122,7 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
         code,
         authorizationType: authType,
         attestedName: attested,
+        attestedRequirements: docs,
         // Self-referential guard: if a patient session is live, the store
         // refuses a claim on that same person's record.
         ...(AdelanteEHR.getCurrentPatientId()
@@ -144,7 +157,11 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
         <Label>Which authorization applies to you?</Label>
         <RadioGroup
           value={authType}
-          onValueChange={(v) => setAuthType(v as AdvocateAuthorizationType)}
+          onValueChange={(v) => {
+            setAuthType(v as AdvocateAuthorizationType);
+            // Requirements are per-instrument; a changed answer resets them.
+            setDocs([]);
+          }}
           className="space-y-2"
         >
           {ADVOCATE_AUTHORIZATION_TYPES.map((a) => (
@@ -162,6 +179,14 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
           ))}
         </RadioGroup>
       </div>
+
+      {authType && (
+        <AdvocateClaimDocumentChecklist
+          authorizationType={authType}
+          checked={docs}
+          onChange={setDocs}
+        />
+      )}
 
       <div className="space-y-1">
         <Label htmlFor="adv-attest">Type your full name to attest this is accurate</Label>
@@ -283,6 +308,14 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
           </p>
         </Card>
       )}
+
+      {/* Paperwork status renders whether or not access is open — missing
+          documentation is usually the REASON access is closed, so hiding it
+          behind the gate would hide the fix. */}
+      <AdvocateDocumentStatusPanel
+        linkId={linkId}
+        attestedName={link.authorizationAttestedName ?? link.advocateName}
+      />
 
       {view.allowed && (
         <>

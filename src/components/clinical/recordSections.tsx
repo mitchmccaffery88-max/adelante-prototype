@@ -21,6 +21,7 @@ import {
   Repeat2,
   Route as RouteIcon,
   ShieldAlert,
+  ShieldCheck,
   Syringe,
   Stethoscope,
   Timer,
@@ -41,6 +42,7 @@ import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs"
 import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
 import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
+import { StaffAdvocatesTab } from "@/components/advocate/StaffAdvocatesTab";
 import {
   OverviewTab,
   ContactTab,
@@ -327,6 +329,17 @@ export function useRecordSections(
     group: "case",
     alwaysVisible: true,
     render: (a) => <EligibilityTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  // §Advocate build 1 — advocate connections are consent instruments, so they
+  // ride the consent-ledger class: ECM Provider and Administrator write (the
+  // two invite actors this build adds), clinical roles read.
+  add("consent_ledger", {
+    id: "advocates",
+    label: "Advocates",
+    icon: ShieldCheck,
+    group: "case",
+    alwaysVisible: true,
+    render: (a) => <StaffAdvocatesTab patientId={pid} readOnly={a.level === "read"} />,
   });
   add("case_notes", {
     id: "tasks",

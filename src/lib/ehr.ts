@@ -71,6 +71,14 @@ import {
   type AhcdChecklistState,
   type AhcdDeterminationRole,
 } from "./advocate";
+// §Advocate build 1 — consent-documentation requirements. Pure definitions.
+import {
+  ADVOCATE_DOC_REQUIREMENTS,
+  ADVOCATE_DOCS_BY_TYPE,
+  type AdvocateDocRequirementKey,
+  type AdvocateDocRequirementStatus,
+} from "./advocateDocs";
+import { isAdvocateDemoClaimEnabled } from "./advocateDemo";
 // §CF pre-release intake — capacity / legal-authority policy. Pure module.
 import {
   capacityGateDecision,
@@ -3939,6 +3947,27 @@ const auditEvents: AuditEvent[] = [];
 // ---------------------------------------------------------------------------
 export type AdvocateLinkStatus = "invited" | "active" | "revoked" | "expired";
 
+/**
+ * §Advocate build 1 — one consent-documentation requirement on one link.
+ * The DEFINITION (label, plain language) lives in `advocateDocs.ts`; only the
+ * state lives here, so UI copy can change without touching stored data.
+ */
+export interface AdvocateDocRequirementState {
+  key: AdvocateDocRequirementKey;
+  status: AdvocateDocRequirementStatus;
+  /** The advocate's own confirmation at claim time (or a later resend). */
+  attestedAt?: string;
+  attestedName?: string;
+  /** Staff confirmation that the real document is on file. */
+  verifiedAt?: string;
+  verifiedBy?: string;
+  verificationRef?: string;
+  /** Set when staff (re)request this document outside a new invite cycle. */
+  requestedAt?: string;
+  requestedBy?: string;
+  requestCount?: number;
+}
+
 export interface AdvocateLink {
   id: string;
   patientId: string;
@@ -3954,7 +3983,35 @@ export interface AdvocateLink {
    */
   invitationCode: string;
   invitationExpiresAt: string;
-  designatedBy: { actor: "patient" | "cf_care_manager" | "ecm_provider"; name: string };
+  /**
+   * §Advocate build 1 — the 14-day window is a property of the invitation
+   * being RECEIVED, not of the row being written. Kept separately from
+   * `invitationExpiresAt` so the window can be re-based when delivery is
+   * confirmed (see `recordAdvocateInvitationDelivery`).
+   */
+  invitationWindowDays: number;
+  /** When the notification transport confirmed a send. Starts the window. */
+  notificationSentAt?: string;
+  notificationDelivery?: {
+    status: "pending" | "sent" | "not_configured" | "failed";
+    at: string;
+    detail?: string;
+  };
+  /** Persistent deep link embedded in the notification. */
+  claimLink?: string;
+  /**
+   * The instrument the INVITER expects this person to hold. Advisory only:
+   * it selects which documentation requirements are shown at claim time, and
+   * is never a substitute for the advocate's own confirmed
+   * `authorizationType` below. An invitation still grants nothing.
+   */
+  expectedAuthorizationType?: AdvocateAuthorizationType;
+  /** §Advocate build 1 — consent-documentation trail. See `advocateDocs.ts`. */
+  documentRequirements?: AdvocateDocRequirementState[];
+  designatedBy: {
+    actor: "patient" | "cf_care_manager" | "ecm_provider" | "administrator";
+    name: string;
+  };
   designatedAt: string;
   status: AdvocateLinkStatus;
   /** Set ONLY at claim time, by the advocate. An invite alone grants nothing. */
@@ -4200,6 +4257,45 @@ function _advocateInviteCode(): string {
 }
 
 /** Expiry is evaluated live — an unclaimed invite lapses on its own. */
+
+/**
+ * §Advocate build 1 — seed the documentation rows for an authorization type.
+ * Staff-only rows (clinician activation, court order) start `pending` and can
+ * never be self-attested by the advocate.
+ */
+function _advocateRequirementRows(
+  type: AdvocateAuthorizationType,
+): AdvocateDocRequirementState[] {
+  return ADVOCATE_DOCS_BY_TYPE[type].map((key) => ({ key, status: "pending" as const }));
+}
+
+/**
+ * Non-reversible short fingerprint of an invitation code. Lets the audit log
+ * tie a generation event to a specific code WITHOUT ever storing the code —
+ * the invariant that the code lives only in the advocate's own channel.
+ */
+function _advocateCodeFingerprint(code: string): string {
+  let h = 2166136261;
+  for (let i = 0; i < code.length; i++) {
+    h ^= code.charCodeAt(i);
+    h = Math.imul(h, 16777619);
+  }
+  return (h >>> 0).toString(16).padStart(8, "0");
+}
+
+/**
+ * Persistent deep link embedded in the notification. Deliberately carries the
+ * code only — no patient id, no link id — so a forwarded link leaks nothing
+ * about who the invitation concerns.
+ */
+function _advocateClaimLink(link: AdvocateLink): string {
+  const origin =
+    typeof window !== "undefined" && window.location?.origin
+      ? window.location.origin
+      : "https://adelmvp1.lovable.app";
+  return `${origin}/advocate?code=${encodeURIComponent(link.invitationCode)}`;
+}
+
 function _effectiveAdvocateStatus(link: AdvocateLink, at = new Date()): AdvocateLinkStatus {
   if (link.status === "revoked") return "revoked";
   if (link.status === "invited" && +new Date(link.invitationExpiresAt) <= +at) return "expired";
@@ -8559,8 +8655,16 @@ export const AdelanteEHR = {
       ...(input.relationship ? { relationship: input.relationship } : {}),
       invitationSentTo: input.invitationSentTo,
       invitationChannel: input.invitationChannel,
+      // The instrument the CF/ECM staffer expects drives which consent
+      // documentation the advocate is asked for at claim time.
+      expectedAuthorizationType: input.expectedAuthorization,
       designatedBy: {
-        actor: input.actorRole === "ecm_provider" ? "ecm_provider" : "cf_care_manager",
+        actor:
+          input.actorRole === "ecm_provider"
+            ? "ecm_provider"
+            : input.actorRole === "sys_admin"
+              ? "administrator"
+              : "cf_care_manager",
         name: input.identifiedBy,
       },
     });
@@ -10494,8 +10598,8 @@ export const AdelanteEHR = {
   },
 
   /**
-   * Designation — by the patient, or by the CF Care Manager / ECM Provider on
-   * the patient's behalf during pre-release intake. The code is returned to
+   * Designation — by the patient, or by the CF Care Manager / ECM Provider /
+   * Administrator on the patient's behalf. The code is returned to
    * the DESIGNATION transaction (which sends it to `invitationSentTo`), not to
    * the patient surface: relaying it through the patient is the tampering /
    * impersonation vector this whole mechanism exists to close.
@@ -10509,6 +10613,11 @@ export const AdelanteEHR = {
     designatedBy: AdvocateLink["designatedBy"];
     /** Days until an unclaimed invitation lapses. */
     expiresInDays?: number;
+    /**
+     * The instrument the inviter expects. Drives which documentation
+     * requirements the claimant is shown; grants nothing on its own.
+     */
+    expectedAuthorizationType?: AdvocateAuthorizationType;
   }): AdvocateLink {
     const name = input.advocateName.trim();
     const contact = input.invitationSentTo.trim();
@@ -10524,12 +10633,42 @@ export const AdelanteEHR = {
       invitationSentTo: contact,
       invitationChannel: input.invitationChannel,
       invitationCode: _advocateInviteCode(),
+      // PROVISIONAL until delivery is confirmed. The real window starts on
+      // notification receipt — see `recordAdvocateInvitationDelivery`.
       invitationExpiresAt: new Date(Date.now() + days * 86400_000).toISOString(),
+      invitationWindowDays: days,
+      ...(input.expectedAuthorizationType
+        ? {
+            expectedAuthorizationType: input.expectedAuthorizationType,
+            documentRequirements: _advocateRequirementRows(input.expectedAuthorizationType),
+          }
+        : {}),
       designatedBy: input.designatedBy,
       designatedAt: new Date().toISOString(),
       status: "invited",
     };
+    link.claimLink = _advocateClaimLink(link);
     advocateLinks.unshift(link);
+    // §Audit fix — code GENERATION is now a real, recorded event. The code
+    // itself still never enters the audit log (hard invariant); a short
+    // non-reversible fingerprint is written instead so a specific code can be
+    // tied to its generation event during an investigation.
+    appendAudit({
+      category: "advocate",
+      action: "advocate_invite_code_generated",
+      patientId: link.patientId,
+      actorRole: link.designatedBy.actor,
+      actorId: link.designatedBy.name,
+      detail: {
+        advocateLinkId: link.id,
+        codeFingerprint: _advocateCodeFingerprint(link.invitationCode),
+        windowDays: days,
+        windowStartsOn: "notification_delivery",
+        ...(input.expectedAuthorizationType
+          ? { expectedAuthorizationType: input.expectedAuthorizationType }
+          : {}),
+      },
+    });
     appendAudit({
       category: "advocate",
       action: "advocate_invited",
@@ -10549,6 +10688,179 @@ export const AdelanteEHR = {
     return { ...link };
   },
 
+  // ---------------------------------------------------------------------
+  // §Advocate build 1 — delivery + consent-documentation trail.
+  // ---------------------------------------------------------------------
+
+  /**
+   * Record the outcome of an invitation send and START the 14-day window.
+   *
+   * The window is deliberately based on the notification event rather than on
+   * row creation: an invitation the advocate never received should not be
+   * burning its own clock. Today the practical trigger is the transport's
+   * send confirmation.
+   *
+   * TODO(transport): move this call site to a real delivery-confirmation
+   * webhook (Twilio status callback / email delivery event) once actual
+   * transport exists. `status: "sent"` is currently the strongest signal
+   * available and is treated as receipt.
+   */
+  recordAdvocateInvitationDelivery(
+    linkId: string,
+    result: { status: "sent" | "not_configured" | "failed"; detail?: string },
+  ): AdvocateLink | undefined {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) return undefined;
+    const at = new Date().toISOString();
+    link.notificationDelivery = {
+      status: result.status,
+      at,
+      ...(result.detail ? { detail: result.detail } : {}),
+    };
+    if (result.status === "sent" && link.status === "invited") {
+      link.notificationSentAt = at;
+      link.invitationExpiresAt = new Date(
+        +new Date(at) + link.invitationWindowDays * 86400_000,
+      ).toISOString();
+    }
+    appendAudit({
+      category: "advocate",
+      action: "advocate_invitation_delivery",
+      patientId: link.patientId,
+      actorRole: "system",
+      detail: {
+        advocateLinkId: link.id,
+        channel: link.invitationChannel,
+        deliveryStatus: result.status,
+        ...(result.detail ? { deliveryDetail: result.detail } : {}),
+        expiresAt: link.invitationExpiresAt,
+        windowStarted: result.status === "sent",
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  advocateDocumentRequirements(linkId: string): AdvocateDocRequirementState[] {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    return (link?.documentRequirements ?? []).map((r) => ({ ...r }));
+  },
+
+  /**
+   * Staff (re)request a specific missing consent document from an advocate
+   * who is already connected — closing a paperwork gap without forcing a new
+   * invitation cycle. The advocate keeps their existing claim and link.
+   */
+  requestAdvocateDocument(input: {
+    linkId: string;
+    key: AdvocateDocRequirementKey;
+    requestedBy: string;
+  }): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === input.linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (_effectiveAdvocateStatus(link) === "revoked")
+      throw new Error("That connection has been removed.");
+    link.documentRequirements ??= link.authorizationType
+      ? _advocateRequirementRows(link.authorizationType)
+      : [];
+    let row = link.documentRequirements.find((r) => r.key === input.key);
+    if (!row) {
+      // Staff can request a document outside the type's default set — e.g. a
+      // collateral ROI for a family member who claimed as HIPAA-only.
+      row = { key: input.key, status: "pending" };
+      link.documentRequirements.push(row);
+    }
+    row.requestedAt = new Date().toISOString();
+    row.requestedBy = input.requestedBy;
+    row.requestCount = (row.requestCount ?? 0) + 1;
+    // A re-request reopens an attestation that was never verified: the point
+    // of asking again is that the real document is still not on file.
+    if (row.status === "attested") row.status = "pending";
+    appendAudit({
+      category: "advocate",
+      action: "advocate_document_requested",
+      patientId: link.patientId,
+      actorId: input.requestedBy,
+      detail: {
+        advocateLinkId: link.id,
+        requirement: input.key,
+        requirementLabel: ADVOCATE_DOC_REQUIREMENTS[input.key].label,
+        sentTo: link.invitationSentTo,
+        requestCount: row.requestCount,
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /** The advocate's own confirmation. Staff-only rows are refused. */
+  attestAdvocateDocumentRequirement(input: {
+    linkId: string;
+    key: AdvocateDocRequirementKey;
+    attestedName: string;
+  }): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === input.linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    if (ADVOCATE_DOC_REQUIREMENTS[input.key].staffOnly)
+      throw new Error("That step is recorded by staff, not by the advocate.");
+    const name = input.attestedName.trim();
+    if (!name) throw new Error("Type your full name to confirm.");
+    link.documentRequirements ??= [];
+    let row = link.documentRequirements.find((r) => r.key === input.key);
+    if (!row) {
+      row = { key: input.key, status: "pending" };
+      link.documentRequirements.push(row);
+    }
+    if (row.status === "verified") return { ...link };
+    row.status = "attested";
+    row.attestedAt = new Date().toISOString();
+    row.attestedName = name;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_document_attested",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: { advocateLinkId: link.id, requirement: input.key, attestedName: name },
+    });
+    emit();
+    return { ...link };
+  },
+
+  /** Staff confirm the real document is on file. */
+  verifyAdvocateDocumentRequirement(input: {
+    linkId: string;
+    key: AdvocateDocRequirementKey;
+    verifiedBy: string;
+    verificationRef?: string;
+  }): AdvocateLink {
+    const link = advocateLinks.find((l) => l.id === input.linkId);
+    if (!link) throw new Error("Unknown advocate connection.");
+    link.documentRequirements ??= [];
+    let row = link.documentRequirements.find((r) => r.key === input.key);
+    if (!row) {
+      row = { key: input.key, status: "pending" };
+      link.documentRequirements.push(row);
+    }
+    row.status = "verified";
+    row.verifiedAt = new Date().toISOString();
+    row.verifiedBy = input.verifiedBy;
+    if (input.verificationRef?.trim()) row.verificationRef = input.verificationRef.trim();
+    appendAudit({
+      category: "advocate",
+      action: "advocate_document_verified",
+      patientId: link.patientId,
+      actorId: input.verifiedBy,
+      detail: {
+        advocateLinkId: link.id,
+        requirement: input.key,
+        ...(row.verificationRef ? { verificationRef: row.verificationRef } : {}),
+      },
+    });
+    emit();
+    return { ...link };
+  },
+
   /**
    * Claim requires BOTH halves: the invitation code AND an explicitly
    * confirmed authorization type. Neither alone grants anything.
@@ -10558,6 +10870,12 @@ export const AdelanteEHR = {
     authorizationType: AdvocateAuthorizationType;
     attestedName: string;
     /**
+     * Requirement keys the advocate ticked at claim time. Staff-only rows are
+     * ignored — the advocate cannot self-attest a clinician determination or
+     * a certified court order.
+     */
+    attestedRequirements?: AdvocateDocRequirementKey[];
+    /**
      * The patient record the claimer is currently signed in as, when there is
      * a live patient session. Passed explicitly rather than read off the
      * module-level demo session: "who is claiming" is a property of the
@@ -10565,7 +10883,20 @@ export const AdelanteEHR = {
      */
     actingPatientId?: string;
   }): AdvocateLink {
-    const found = advocateLinks.find((x) => x.invitationCode === input.code.trim().toUpperCase());
+    const typed = input.code.trim().toUpperCase();
+    // REAL path first, always: an exact code match resolves normally.
+    let found = advocateLinks.find((x) => x.invitationCode === typed);
+    let demoBypass = false;
+    if (!found && typed && isAdvocateDemoClaimEnabled()) {
+      // §TEMPORARY demo affordance — see `advocateDemo.ts` for the safety
+      // properties. No transport exists yet, so a reviewer cannot receive a
+      // real code. This resolves to an EXISTING open invitation only; it
+      // never creates a link and never searches by patient identity.
+      found = advocateLinks.find(
+        (x) => _effectiveAdvocateStatus(x) === "invited" && !x.claimedAt,
+      );
+      demoBypass = Boolean(found);
+    }
     if (!found) throw new Error("That invitation code isn't valid.");
     // §Product decision — an advocate connection is always to SOMEONE ELSE's
     // record. If the claimer is signed in AS the person this invitation was
@@ -10590,6 +10921,21 @@ export const AdelanteEHR = {
     found.authorizationConfirmedAt = new Date().toISOString();
     found.authorizationAttestedName = attested;
     found.claimedAt = found.authorizationConfirmedAt;
+    // The confirmed instrument governs the paperwork, not the inviter's
+    // expectation: re-seed the rows if the advocate confirmed a different type.
+    if (
+      !found.documentRequirements ||
+      found.expectedAuthorizationType !== input.authorizationType
+    ) {
+      found.documentRequirements = _advocateRequirementRows(input.authorizationType);
+    }
+    for (const key of input.attestedRequirements ?? []) {
+      const row = found.documentRequirements.find((r) => r.key === key);
+      if (!row || ADVOCATE_DOC_REQUIREMENTS[key].staffOnly) continue;
+      row.status = "attested";
+      row.attestedAt = found.authorizationConfirmedAt;
+      row.attestedName = attested;
+    }
     // §Phase 4.2 (6.5) — an AHCD claim opens the frontline validation
     // checklist as REAL worklist rows, reusing the pre-release CaseTask
     // pattern rather than inventing a second task mechanism.
@@ -10605,6 +10951,11 @@ export const AdelanteEHR = {
         advocateName: found.advocateName,
         authorizationType: found.authorizationType,
         attestedName: attested,
+        attestedRequirements: (found.documentRequirements ?? [])
+          .filter((r) => r.status === "attested")
+          .map((r) => r.key),
+        // A demo-bypassed claim is always distinguishable in the trail.
+        ...(demoBypass ? { demoBypass: true } : {}),
       },
     });
     emit();
