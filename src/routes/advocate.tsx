@@ -41,6 +41,10 @@ import type { AdvocateDocRequirementKey } from "@/lib/advocateDocs";
 import { ShieldCheck, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/advocate")({
+  // The advocate session (`adelante.advocateLinkId`) is client-only, so the
+  // server can never render the right view here. Client-render the route to
+  // avoid a guaranteed hydration mismatch.
+  ssr: false,
   head: () => ({
     meta: [
       { title: "Advocate access — Adelante" },
