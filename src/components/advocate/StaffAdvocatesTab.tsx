@@ -13,12 +13,16 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type AdvocateLink } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { ADVOCATE_AUTHORIZATION_TYPES } from "@/lib/advocate";
-import { ADVOCATE_DOC_REQUIREMENTS, requirementsForType } from "@/lib/advocateDocs";
+import {
+  ADVOCATE_DOC_REQUIREMENTS,
+  COMMUNICATION_RIGHTS_REQUIREMENT_KEYS,
+  requirementsForType,
+} from "@/lib/advocateDocs";
 import { AdvocateInviteForm } from "./AdvocateInviteForm";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
-import { MailWarning, ShieldCheck } from "lucide-react";
+import { MailWarning, MessageSquare, ShieldCheck } from "lucide-react";
 
 const AUTH_LABEL = new Map(ADVOCATE_AUTHORIZATION_TYPES.map((a) => [a.key, a.label]));
 
@@ -169,6 +173,28 @@ function StaffAdvocateCard({
             );
           })}
         </ul>
+      )}
+
+      {/* §Build 3 — the communication-rights axis is separate paperwork, not a
+          tier upgrade: a general AR designation does NOT carry it. Staff add
+          the specific row here, and it only counts once verified. */}
+      {!readOnly && (
+        <div className="space-y-2 rounded-md border border-dashed p-2">
+          <p className="flex items-center gap-1.5 text-xs font-medium text-navy">
+            <MessageSquare className="h-3.5 w-3.5 text-teal" /> Communication rights (messaging)
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Two-way messaging with the care team needs its own authorization. Add and verify the
+            document that actually grants it.
+          </p>
+          <div className="flex flex-wrap gap-2">
+            {COMMUNICATION_RIGHTS_REQUIREMENT_KEYS.filter((k) => !keys.includes(k)).map((k) => (
+              <Button key={k} size="sm" variant="outline" onClick={() => request(k)}>
+                Add: {ADVOCATE_DOC_REQUIREMENTS[k].label}
+              </Button>
+            ))}
+          </div>
+        </div>
       )}
     </div>
   );

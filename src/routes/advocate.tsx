@@ -29,6 +29,8 @@ import {
 } from "@/components/advocate/AdvocateWorkspace";
 import { AdvocatePoAwarenessPanel } from "@/components/advocate/AdvocatePoAwarenessPanel";
 import { AdvocateIdentityBanner } from "@/components/advocate/AdvocateIdentityBanner";
+import { AdvocateNextStepsPanel } from "@/components/advocate/AdvocateNextStepsPanel";
+import { AdvocateMessagesPanel } from "@/components/advocate/AdvocateMessagesPanel";
 import { AdvocateAppointmentsPanel } from "@/components/advocate/AdvocateAppointmentsPanel";
 import { SelfCareContextSwitch } from "@/components/ContextSwitcher";
 import {
@@ -247,6 +249,13 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
       {/* §Build 2 item 1 — identity banner sits above everything and is
           driven by effective access, not by the link row existing. */}
       <AdvocateIdentityBanner linkId={linkId} />
+      {/* §Build 3 Part A — what is still outstanding, and who has to move it.
+          Renders directly under the banner and disappears once access is
+          effective with nothing pending. */}
+      <AdvocateNextStepsPanel
+        linkId={linkId}
+        attestedName={link.authorizationAttestedName ?? link.advocateName}
+      />
       {/* Dual-role: reverse switch back to this person's own care, when they
           also hold a patient session. */}
       <SelfCareContextSwitch />
@@ -277,6 +286,7 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
       {view.allowed && (
         <>
           <AdvocatePoAwarenessPanel linkId={linkId} patientId={link?.patientId} />
+          <AdvocateMessagesPanel linkId={linkId} />
           <AdvocateCoordinationPanel linkId={linkId} />
           <AdvocateCarePlanParticipationPanel linkId={linkId} />
           <AdvocateEligibilityPanel linkId={linkId} />

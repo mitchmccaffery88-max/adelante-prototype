@@ -32,3 +32,27 @@ export function visibleMessageBody(
 ): string {
   return isMessageBodyMasked(message, role, patient) ? MASKED_MESSAGE_BODY : message.body;
 }
+
+// §Advocate build 3 — the SAME rule, one axis over.
+//
+// A staff viewer's Part 2 access comes from the RBAC matrix; an advocate's
+// comes from `advocateSudAccess` (tier + an active advocate_sud_disclosure
+// consent). The masking decision is otherwise identical, and deliberately has
+// NOTHING to do with communication rights: an advocate with full messaging
+// authorization and no Part 2 disclosure on file still sees the placeholder.
+
+export function isAdvocateMessageBodyMasked(
+  message: Pick<CareMessage, "sudFlagged">,
+  part2Unmasked: boolean,
+): boolean {
+  return Boolean(message.sudFlagged) && !part2Unmasked;
+}
+
+export function visibleAdvocateMessageBody(
+  message: Pick<CareMessage, "sudFlagged" | "body">,
+  part2Unmasked: boolean,
+): string {
+  return isAdvocateMessageBodyMasked(message, part2Unmasked)
+    ? MASKED_MESSAGE_BODY
+    : message.body;
+}
