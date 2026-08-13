@@ -24,6 +24,7 @@ import { PatientSidebar } from "@/components/PatientSidebar";
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
+import { AdvocateContextSwitch } from "@/components/ContextSwitcher";
 import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
@@ -329,6 +330,11 @@ export function AppShell() {
           <div className="flex min-h-full">
             <PatientSidebar />
             <div className="min-w-0 flex-1">
+              {/* §Advocate Build 2 item 3 — persistent, visible switch to the
+                  advocate shell whenever an advocate session also exists. */}
+              <div className="px-4 pt-4 sm:px-6 empty:hidden">
+                <AdvocateContextSwitch />
+              </div>
               <Outlet />
             </div>
           </div>

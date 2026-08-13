@@ -28,14 +28,15 @@ import {
   AdvocateSelfHelpPanel,
 } from "@/components/advocate/AdvocateWorkspace";
 import { AdvocatePoAwarenessPanel } from "@/components/advocate/AdvocatePoAwarenessPanel";
+import { AdvocateIdentityBanner } from "@/components/advocate/AdvocateIdentityBanner";
+import { AdvocateAppointmentsPanel } from "@/components/advocate/AdvocateAppointmentsPanel";
+import { SelfCareContextSwitch } from "@/components/ContextSwitcher";
 import {
   AdvocateClaimDocumentChecklist,
   AdvocateDocumentStatusPanel,
 } from "@/components/advocate/AdvocateDocumentChecklist";
 import type { AdvocateDocRequirementKey } from "@/lib/advocateDocs";
-import { CalendarClock, ShieldCheck, Lock, Users } from "lucide-react";
-import { Info, Unlock } from "lucide-react";
-import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
+import { ShieldCheck, Lock } from "lucide-react";
 
 export const Route = createFileRoute("/advocate")({
   head: () => ({
@@ -94,7 +95,12 @@ function AdvocatePage() {
       {linkId ? (
         <AdvocateScheduleView linkId={linkId} onSignOut={signOut} />
       ) : (
-        <ClaimForm onClaimed={connect} />
+        <>
+          {/* Dual-role: someone who also has their own record can get back to
+              it without claiming anything. */}
+          <SelfCareContextSwitch />
+          <ClaimForm onClaimed={connect} />
+        </>
       )}
     </div>
   );
@@ -238,6 +244,13 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
         </div>
       </Card>
 
+      {/* §Build 2 item 1 — identity banner sits above everything and is
+          driven by effective access, not by the link row existing. */}
+      <AdvocateIdentityBanner linkId={linkId} />
+      {/* Dual-role: reverse switch back to this person's own care, when they
+          also hold a patient session. */}
+      <SelfCareContextSwitch />
+
       {!view.allowed ? (
         <Card className="flex gap-3 p-5 text-sm">
           <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
@@ -250,63 +263,7 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
           </div>
         </Card>
       ) : (
-        <Card className="p-5" data-testid="advocate-upcoming">
-          <h2 className="flex items-center gap-2 font-display text-lg text-navy">
-            <CalendarClock className="h-5 w-5 text-teal" /> Upcoming
-          </h2>
-          {/* §Group D item 4 — the unmasked-and-here's-why counterpart to the
-              "restricted, here's what's missing" pattern. `part2Disclosed`
-              comes from the data layer with the labels it applies to; this
-              component cannot compute or override it. */}
-          {view.part2Disclosed && (
-            <div className="mt-3 space-y-2" data-testid="advocate-part2-disclosed">
-              <Badge variant="outline" className="gap-1">
-                <Unlock className="h-3 w-3" /> {PART2_DISCLOSED_BADGE_LABEL}
-              </Badge>
-              <p className="flex gap-2 rounded-md bg-muted/60 p-2 text-xs text-muted-foreground">
-                <Info className="mt-0.5 h-3.5 w-3.5 shrink-0" />
-                {PART2_DISCLOSED_MESSAGE}
-              </p>
-            </div>
-          )}
-          {view.items.length === 0 ? (
-            <p className="mt-3 text-sm text-muted-foreground">Nothing scheduled right now.</p>
-          ) : (
-            <ul className="mt-3 space-y-2">
-              {view.items.map((item) => (
-                <li
-                  key={`${item.kind}_${item.id}`}
-                  className="flex items-center justify-between gap-3 rounded-lg border p-3 text-sm"
-                >
-                  <span className="flex items-center gap-2">
-                    {item.kind === "group" ? (
-                      <Users className="h-4 w-4 text-muted-foreground" />
-                    ) : (
-                      <CalendarClock className="h-4 w-4 text-muted-foreground" />
-                    )}
-                    <span>
-                      <span className="font-medium text-navy">{item.label}</span>
-                      <span className="block text-xs text-muted-foreground">
-                        {item.durationMin} min
-                        {item.modality ? ` · ${item.modality}` : ""}
-                        {item.locationName ? ` · ${item.locationName}` : ""}
-                      </span>
-                    </span>
-                  </span>
-                  <span className="text-xs text-muted-foreground">
-                    <ClientDate value={item.start} />
-                  </span>
-                </li>
-              ))}
-            </ul>
-          )}
-          <p className="mt-4 text-xs text-muted-foreground">
-            Clinical notes, medications and messages are never visible to advocates.{" "}
-            {view.part2Disclosed
-              ? "Substance-use treatment information is protected under 42 CFR Part 2 and is shown here only because of the disclosure authorization noted above."
-              : "Substance-use treatment information is protected under 42 CFR Part 2 whatever your authorization."}
-          </p>
-        </Card>
+        <AdvocateAppointmentsPanel linkId={linkId} />
       )}
 
       {/* Paperwork status renders whether or not access is open — missing
