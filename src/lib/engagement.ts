@@ -147,7 +147,8 @@ export type EngagementAuditEvent = {
   action:
     | "library_item_completed"
     | "library_exercise_completed"
-    | "recovery_lesson_completed";
+    | "recovery_lesson_completed"
+    | "lesson_response_started";
   actorRole: string;
   detail: Record<string, unknown>;
 };
@@ -211,6 +212,20 @@ export function recoveryToolFlow(
 ): RecoveryToolFlowSelection | undefined {
   const sel = records.get(patientId)?.recoveryToolFlows[lessonId];
   return sel ? structuredClone(sel) : undefined;
+}
+
+/**
+ * §Lesson-player Build 2 — the patient's own saved work for one lesson.
+ * Undefined until they touch something. Cloned, so callers cannot mutate the
+ * store by editing what they read.
+ */
+export function lessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+): LessonResponse | undefined {
+  const r = records.get(patientId)?.lessonResponses?.[lessonResponseKey(surface, lessonId)];
+  return r ? structuredClone(r) : undefined;
 }
 
 /** The whole row for one patient, or undefined when they have no activity. */
