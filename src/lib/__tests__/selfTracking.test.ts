@@ -121,6 +121,9 @@ function walk(dir: string, out: string[] = []): string[] {
 
 const PATIENT_PRIVATE_CALLERS = [
   "src/lib/selfTracking.ts",
+  // §Build A item 3 — pure emotion→reflection mapping for the check-in
+  // summary screen; type-only patient-side consumer, no staff surface.
+  "src/lib/checkInSummary.ts",
   "src/lib/__tests__/selfTracking.test.ts",
   "src/components/patient/DailyCheckInCard.tsx",
   "src/components/patient/CravingFlow.tsx",
