@@ -34,6 +34,10 @@ import {
   liveRecoveryModuleList,
 } from "@/lib/contentTypes";
 import { setContentResolver } from "@/lib/engagement";
+// Side-effect import: Module 1 lessons 6–10 are authored as PUBLISHED managed
+// content rather than shipped-array entries, so they must be seeded before any
+// surface resolves the live catalog.
+import "@/lib/recovery.firstDaysOut.authored";
 
 export { subscribeContent };
 
