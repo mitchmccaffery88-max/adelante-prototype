@@ -67,6 +67,7 @@ import {
   subscribeDayZero,
 } from "@/lib/reentryDayZero";
 import { ADHERENCE_TONE } from "@/lib/medAdherence";
+import { apptPrepTip } from "@/lib/apptPrep";
 import { marRowLabel } from "@/lib/mar";
 import { toast } from "sonner";
 
