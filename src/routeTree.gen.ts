@@ -78,6 +78,7 @@ import { Route as StartReconnectRouteImport } from './routes/start.reconnect'
 import { Route as StartSignupRouteImport } from './routes/start.signup'
 import { Route as StartSupportRouteImport } from './routes/start.support'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
+import { Route as ResourcesCategoryIdOrgIdRouteImport } from './routes/resources.$categoryId.$orgId'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -425,6 +426,12 @@ const PrintPatientRecordsPatientIdRoute =
     path: '/print/patient-records/$patientId',
     getParentRoute: () => rootRouteImport,
   } as any)
+const ResourcesCategoryIdOrgIdRoute =
+  ResourcesCategoryIdOrgIdRouteImport.update({
+    id: '/$categoryId/$orgId',
+    path: '/$categoryId/$orgId',
+    getParentRoute: () => ResourcesRoute,
+  } as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -496,6 +503,7 @@ export interface FileRoutesByFullPath {
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
+  '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -565,6 +573,7 @@ export interface FileRoutesByTo {
   '/resources': typeof ResourcesIndexRoute
   '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
+  '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -637,6 +646,7 @@ export interface FileRoutesById {
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
+  '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -710,6 +720,7 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
+    | '/resources/$categoryId/$orgId'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -779,6 +790,7 @@ export interface FileRouteTypes {
     | '/resources'
     | '/start'
     | '/print/patient-records/$patientId'
+    | '/resources/$categoryId/$orgId'
   id:
     | '__root__'
     | '/'
@@ -850,6 +862,7 @@ export interface FileRouteTypes {
     | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
+    | '/resources/$categoryId/$orgId'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -1401,17 +1414,26 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PrintPatientRecordsPatientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/resources/$categoryId/$orgId': {
+      id: '/resources/$categoryId/$orgId'
+      path: '/$categoryId/$orgId'
+      fullPath: '/resources/$categoryId/$orgId'
+      preLoaderRoute: typeof ResourcesCategoryIdOrgIdRouteImport
+      parentRoute: typeof ResourcesRoute
+    }
   }
 }
 
 interface ResourcesRouteChildren {
   ResourcesSavedRoute: typeof ResourcesSavedRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
+  ResourcesCategoryIdOrgIdRoute: typeof ResourcesCategoryIdOrgIdRoute
 }
 
 const ResourcesRouteChildren: ResourcesRouteChildren = {
   ResourcesSavedRoute: ResourcesSavedRoute,
   ResourcesIndexRoute: ResourcesIndexRoute,
+  ResourcesCategoryIdOrgIdRoute: ResourcesCategoryIdOrgIdRoute,
 }
 
 const ResourcesRouteWithChildren = ResourcesRoute._addFileChildren(
