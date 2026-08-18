@@ -131,6 +131,7 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/components/patient/HomeDashboard.tsx",
   "src/components/patient/WeeklyRecap.tsx",
   "src/components/reentry/ResourceCard.tsx",
+  "src/components/reentry/ResourceDetail.tsx",
   "src/components/reentry/SavedResources.tsx",
   "src/components/reentry/CommunityResourceCenter.tsx",
 ];
