@@ -34,6 +34,14 @@ export interface LibraryCategory {
   icon: string;
   /** What the category is clinically aiming at — shown to staff, not patients. */
   clinicalTarget: string;
+  /**
+   * OPTIONAL authored short eyebrow shown to patients on the category card.
+   * When absent the UI derives one from `clinicalTarget`, which is a best-guess
+   * trim and can be plausible-but-wrong — so any category whose intended short
+   * phrase differs from the first two clauses of `clinicalTarget` should set
+   * this explicitly. Admin-editable through the content-management workspace.
+   */
+  eyebrow?: string;
   order: number;
 }
 
@@ -235,6 +243,7 @@ const STARTING_STRONG_CATEGORY: LibraryCategory[] = [
     icon: "Sunrise",
     clinicalTarget:
       "Behavioral activation, arousal regulation, sleep hygiene and early stability planning.",
+    eyebrow: "Grounding · Nervous system regulation",
     order: 1,
   },
 ];
