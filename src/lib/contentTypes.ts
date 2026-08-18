@@ -444,6 +444,12 @@ const RESOURCE_FIELDS: ContentField[] = [
   { key: "phone", label: "Phone", kind: "text", required: true },
   { key: "hours", label: "Hours", kind: "text", required: true },
   {
+    key: "website",
+    label: "Website",
+    kind: "text",
+    help: "Full URL, e.g. https://cset.org. Leave blank if the organisation has none.",
+  },
+  {
     key: "description",
     label: "What they do",
     kind: "textarea",
@@ -472,6 +478,7 @@ export const COMMUNITY_RESOURCE_TYPE: ContentTypeDescriptor = {
     address: "",
     phone: "",
     hours: "",
+    website: "",
     description: "",
     placeholder: false,
     verified: false,
