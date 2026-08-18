@@ -356,15 +356,10 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "City bus service within Visalia. visalia.city/transit",
   ),
 
-  // ---- Still awaiting human sourcing ----------------------------------
-  ...RESOURCE_CATEGORIES.filter((c) => UNSOURCED_CATEGORIES.includes(c.id)).map((c) =>
-    seed(
-      `res_${c.id}_1`,
-      c.id,
-      `${c.name} — placeholder entry`,
-      `Needs human sourcing: a real ${c.name.toLowerCase()} provider serving Tulare/Kings County.`,
-    ),
-  ),
+  // ---- Ported Adelante Journey listings (sourced, still unverified) ----
+  // Every remaining category is now covered by real organisations instead of
+  // a skeleton placeholder. They stay invisible to patients until verified.
+  ...PORTED_RESOURCES,
 ];
 
 const resources = new Map<string, CommunityResource>(
