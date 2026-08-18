@@ -29,6 +29,8 @@
 // through the shared store, so a verification is a real publish with real
 // revision history rather than a private boolean.
 import { getStaffMember, type StaffRole } from "@/lib/roles";
+// Ported Adelante Journey directory listings (generated).
+import { PORTED_RESOURCES } from "@/lib/communityResources.ported";
 import {
   publishedContentOfType,
   seedDraftContent,
@@ -164,19 +166,6 @@ function sourced(
     status: "unverified",
   };
 }
-
-/** Categories still awaiting human sourcing keep a skeleton placeholder. */
-const UNSOURCED_CATEGORIES = [
-  "recovery_meetings",
-  "support_groups",
-  "family_reunification",
-  "healthcare",
-  "education",
-  "parenting",
-  "financial",
-  "legal",
-  "life_skills",
-];
 
 export const SEED_RESOURCES: CommunityResource[] = [
   // ---- Housing -------------------------------------------------------
@@ -369,15 +358,10 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "City bus service within Visalia. visalia.city/transit",
   ),
 
-  // ---- Still awaiting human sourcing ----------------------------------
-  ...RESOURCE_CATEGORIES.filter((c) => UNSOURCED_CATEGORIES.includes(c.id)).map((c) =>
-    seed(
-      `res_${c.id}_1`,
-      c.id,
-      `${c.name} — placeholder entry`,
-      `Needs human sourcing: a real ${c.name.toLowerCase()} provider serving Tulare/Kings County.`,
-    ),
-  ),
+  // ---- Ported Adelante Journey listings (sourced, still unverified) ----
+  // Every remaining category is now covered by real organisations instead of
+  // a skeleton placeholder. They stay invisible to patients until verified.
+  ...PORTED_RESOURCES,
 ];
 
 const resources = new Map<string, CommunityResource>(
@@ -568,8 +552,16 @@ export const RESOURCE_VERIFIER_CATHY = {
     "Human verification pass: address, phone and hours confirmed directly with each organisation. Published hours strings still carry the sourced '(verify hours)' hedge where the organisation gave no fixed public hours.",
 };
 
+/**
+ * Cathy's real pass covers only the entries THIS program sourced and she
+ * actually called. The ported Adelante Journey listings were never part of
+ * that pass, so they must not inherit her attribution: they stay unverified
+ * and land in the staff verification queue like any newly sourced entry.
+ */
+const PORTED_RESOURCE_IDS = new Set(PORTED_RESOURCES.map((r) => r.id));
+
 export const CATHY_VERIFIED_RESOURCE_IDS: string[] = SEED_RESOURCES.filter(
-  (r) => !r.placeholder,
+  (r) => !r.placeholder && !PORTED_RESOURCE_IDS.has(r.id),
 ).map((r) => r.id);
 
 function applyRecordedVerifications(): void {

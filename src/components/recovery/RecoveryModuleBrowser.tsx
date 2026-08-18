@@ -169,19 +169,6 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
           </Card>
         );
       })}
-
-      <Card className="space-y-1 p-5">
-        <div className="flex flex-wrap items-center gap-2">
-          <h2 className="font-display text-xl text-foreground">{t("recLivingName")}</h2>
-          <Badge variant="outline" className="border-gold text-[10px] text-gold-foreground">
-            {t("recLivingBadge")}
-          </Badge>
-        </div>
-        <p className="text-sm font-medium text-foreground">
-          {t("recMissionLabel")}: {t("recLivingMission")}
-        </p>
-        <p className="text-sm text-muted-foreground">{t("recLivingBody")}</p>
-      </Card>
     </PatientPage>
   );
 }

@@ -17,8 +17,8 @@ describe("recovery Spanish scaffolding", () => {
     expect(Object.keys(recoveryUiEs).sort()).toEqual(Object.keys(recoveryUiEn).sort());
   });
 
-  it("has a real name, mission and subtitle in Spanish for all 8 modules", () => {
-    expect(RECOVERY_MODULES).toHaveLength(8);
+  it("has a real name, mission and subtitle in Spanish for all 9 modules", () => {
+    expect(RECOVERY_MODULES).toHaveLength(9);
     for (const m of RECOVERY_MODULES) {
       for (const field of ["name", "mission", "subtitle"] as const) {
         const key = `rec.mod.${m.id}.${field}` as keyof typeof recoveryModuleEn;
