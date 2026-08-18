@@ -240,7 +240,14 @@ export function getEngagement(patientId: string): PatientEngagement | undefined 
  * data on `patientId` themselves — this module knows nothing about `Patient`.
  */
 export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
-  const all = [...records.values()].map((r) => structuredClone(r));
+  // Cohort read. Lesson responses are stripped here on purpose: population
+  // health counts activity, it never needs what a patient wrote. The only
+  // read that returns free text is `lessonResponse` (the patient's own
+  // player) and `getEngagement` (single-row, patient-scoped).
+  const all = [...records.values()].map((r) => ({
+    ...structuredClone(r),
+    lessonResponses: {},
+  }));
   if (!patientIds) return all;
   const want = new Set(patientIds);
   return all.filter((r) => want.has(r.patientId));
