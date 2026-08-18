@@ -17,7 +17,6 @@ import {
   HandHeart,
   HeartPulse,
   LifeBuoy,
-  Lock,
   MapPin,
   MessageSquare,
   Pill,
@@ -35,6 +34,8 @@ import { ClientDate } from "@/components/ClientDate";
 import { GetHelpNowModal } from "@/components/patient/GetHelpNowModal";
 import { usePopulation } from "@/components/PopulationGate";
 import { checkInStreakFrom } from "@/lib/checkInStreak";
+import { recoveryMilestones } from "@/lib/recoveryStages";
+import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
 import { privateNudge } from "@/lib/privateNudge";
 import {
   completedLibraryItems,
@@ -97,14 +98,6 @@ function greeting(now: Date): string {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
-}
-
-function NotBuiltChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mt-2 inline-block rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-      Not built yet · {children}
-    </span>
-  );
 }
 
 function TileShell({
@@ -295,6 +288,21 @@ export function HomeDashboard({
   const lastToolkit = useMemo(
     () => [...toolkit].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).pop(),
     [toolkit],
+  );
+
+  // §5-stage journey — milestone celebrations. Pure function over the SAME real
+  // dated events the streak already reads; no points, badges or leaderboard,
+  // and nothing here feeds the stage model.
+  const milestones = useMemo(
+    () =>
+      recoveryMilestones({
+        streakDays: streak.days,
+        checkInDaysLast14,
+        lessonsDone: lessonsDoneVisible,
+        exercisesDone: exercisesDone.length,
+        toolkitSaved: toolkit.length,
+      }).slice(0, 3),
+    [streak.days, checkInDaysLast14, lessonsDoneVisible, exercisesDone, toolkit],
   );
 
   const nextAppt = useMemo(() => {
@@ -548,21 +556,20 @@ export function HomeDashboard({
           </TileShell>
     ),
   });
-  // Your journey — the source's 5-stage model has no equivalent here
+  // Your journey — the real 5-stage model. The stage is person-set (see
+  // `recoveryStages.ts`); this tile never derives one from activity data.
   tiles.push({
     key: "journey",
     priority: 20,
     node: (
           <TileShell icon={RouteIcon} title="Your journey">
-            <p className="text-sm text-muted-foreground">
-              Your care plan and goals are the real picture of where you are.
-            </p>
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              No stage model exists in this build, and we won't guess at one.
-            </p>
-            <NotBuiltChip>A 5-stage journey model needs clinical sign-off first</NotBuiltChip>
-            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+            <RecoveryStagePanel
+              patientId={patientId}
+              actor="patient"
+              actorName={`${firstName} (patient)`}
+              compact
+            />
+            <Button asChild variant="ghost" className="mt-2 min-h-11 w-full rounded-2xl">
               <Link to="/home" hash="your-care-plan-heading">
                 Open your care plan
               </Link>
@@ -649,6 +656,23 @@ export function HomeDashboard({
             </div>
           </div>
         </Card>
+      )}
+
+      {/* 2b — milestone celebrations, from real engagement data ------------- */}
+      {milestones.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3" data-testid="recovery-milestones">
+          {milestones.map((m) => (
+            <Card key={m.id} className="border-primary/30 bg-primary/5 p-4 soft-shadow">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{m.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{m.body}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
       )}
 
       {/* 3 — onboarding / reentry progress (justice-involved only) ---------- */}

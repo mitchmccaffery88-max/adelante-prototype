@@ -11,11 +11,15 @@ import {
   SAFETY_CONTENT_REVIEW,
 } from "@/lib/safetyContent";
 import { TriangleAlert, CheckCircle2 } from "lucide-react";
+import { RECOVERY_STAGES, RECOVERY_STAGE_REVIEW } from "@/lib/recoveryStages";
 
 export function ClinicalContentReviewCard() {
   const pendingSections = SAFETY_PLAN_SECTIONS.filter((s) => s.clinicalReviewPending).length;
   const pending =
-    SAFETY_PLAN_REVIEW.pending || pendingSections > 0 || SAFETY_CONTENT_REVIEW.pending;
+    SAFETY_PLAN_REVIEW.pending ||
+    pendingSections > 0 ||
+    SAFETY_CONTENT_REVIEW.pending ||
+    RECOVERY_STAGE_REVIEW.pending;
   return (
     <Card className="p-3 space-y-2" data-testid="clinical-content-review">
       <div className="flex items-center justify-between gap-2">
@@ -78,6 +82,21 @@ export function ClinicalContentReviewCard() {
           </p>
         </div>
       </div>
+      {RECOVERY_STAGE_REVIEW.pending && (
+        <div
+          className="flex items-start gap-2 text-[11px] text-muted-foreground"
+          data-testid="recovery-stage-review"
+        >
+          <TriangleAlert className="mt-0.5 h-3.5 w-3.5 text-amber-600" />
+          <div>
+            <p className="font-medium text-navy">Recovery journey stage model</p>
+            <p>
+              {RECOVERY_STAGES.length} stages and their observable signals awaiting{" "}
+              {RECOVERY_STAGE_REVIEW.reviewers}. {RECOVERY_STAGE_REVIEW.scope}
+            </p>
+          </div>
+        </div>
+      )}
     </Card>
   );
 }

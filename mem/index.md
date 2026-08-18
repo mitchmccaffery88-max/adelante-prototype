@@ -24,3 +24,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Message routing architecture](mem://architecture/message-routing) — audited map of every patient free-text surface, crisis-detection wiring, Crisis Queue attribution, and honest gaps
 - [Content management](mem://features/content-management) — /admin-content manages lessons + community resources + naloxone access; direct publish, no second approver, no expiry
 - [Weekly recap](mem://features/weekly-recap) — /weekly-recap real stats, Adel reflection grounding contract, stats-only fallback
+- [Recovery stage model](mem://features/recovery-stage-model) — 5 person-set stages + signals, pending clinical review, never auto-derived
