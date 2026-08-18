@@ -156,7 +156,7 @@ describe("roster privacy — no attendee ever learns who else attended", () => {
       );
       const serialized = JSON.stringify(notes);
       for (const o of others) {
-        expect(serialized).not.toContain(o.id);
+        expect(serialized).not.toMatch(new RegExp(`"${o.id}"`));
         expect(serialized).not.toContain(o.firstName);
         expect(serialized).not.toContain(o.lastName);
       }
@@ -167,7 +167,9 @@ describe("roster privacy — no attendee ever learns who else attended", () => {
         starts: AdelanteEHR.groupOccurrenceStarts(g.id, 4),
       });
       for (const o of others) {
-        expect(facing).not.toContain(o.id);
+        // Match the id as a whole JSON value — a bare substring check also
+        // hits random generated ids that happen to embed "p1".
+        expect(facing).not.toMatch(new RegExp(`"${o.id}"`));
         expect(facing).not.toContain(o.lastName);
       }
     }
