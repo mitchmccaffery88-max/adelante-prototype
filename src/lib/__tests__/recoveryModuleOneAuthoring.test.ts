@@ -1,7 +1,7 @@
 // §Adelante Journey sync Build 3 — Module 1 authoring + editorial-quality guard.
 import { describe, expect, it } from "vitest";
 import { liveLessonsInModule, liveRecoveryLessons } from "@/lib/contentCatalog";
-import { contentEntry } from "@/lib/contentPublishing";
+import { getContentEntry } from "@/lib/contentPublishing";
 import { RECOVERY_LESSON_TYPE } from "@/lib/contentTypes";
 import { AUTHORED_FIRST_DAYS_OUT_LESSONS } from "@/lib/recovery.firstDaysOut.authored";
 import { PORTED_RECOVERY_LESSONS } from "@/lib/recovery.ported";
@@ -25,7 +25,7 @@ describe("Module 1 reaches ten lessons through the content lifecycle", () => {
 
   it("carries the five new lessons as PUBLISHED managed content, not hardcoded baseline", () => {
     for (const l of AUTHORED_FIRST_DAYS_OUT_LESSONS) {
-      const entry = contentEntry("recovery_lesson", l.id);
+      const entry = getContentEntry("recovery_lesson", l.id);
       expect(entry?.status).toBe("published");
       expect(entry?.revisions[0]?.by).toBe("Cathy");
       expect(entry?.overridesBaseline).toBe(false);
