@@ -155,10 +155,11 @@ describe("Obligations are strictly justice-involved only", () => {
 });
 
 describe("Community resources cannot go live without a real verification", () => {
-  /** A never-sourced skeleton: empty address/phone/hours. */
-  const placeholder = () => listResources().find((r) => r.placeholder)!;
+  /** An entry nobody has verified yet — the ported listings land here. */
+  const unverified = () =>
+    listResources().find((r) => r.status === "unverified" && !r.verification)!;
 
-  it("carries Cathy's recorded verification for sourced entries; skeletons stay in the queue", () => {
+  it("carries Cathy's recorded verification for the entries she sourced; the rest stay in the queue", () => {
     const all = listResources();
     expect(all.length).toBeGreaterThan(RESOURCE_CATEGORIES.length);
     // The real human pass covers exactly the sourced entries.
@@ -171,16 +172,17 @@ describe("Community resources cannot go live without a real verification", () =>
       expect(r.verification?.verifiedByStaffId).toBe("s-cc2");
       expect(r.status).toBe("verified");
     }
-    // Never-sourced skeletons remain unverified and invisible.
+    // Everything she did not verify remains unverified and invisible.
     const queue = resourceVerificationQueue();
-    expect(queue.every((r) => r.placeholder)).toBe(true);
+    expect(queue.every((r) => r.status !== "verified")).toBe(true);
     expect(queue.length).toBe(all.length - visible.length);
     // Multiple categories are represented for patients.
     expect(new Set(patientVisibleResources().map((r) => r.categoryId)).size).toBeGreaterThan(3);
   });
 
   it("refuses verification without address/phone/hours, and without all three confirmations", () => {
-    const r = placeholder();
+    const r = unverified();
+    updateResourceDetails(r.id, { address: "", phone: "", hours: "" });
     const bare = verifyResource({
       resourceId: r.id,
       actorName: "CM",
@@ -205,7 +207,7 @@ describe("Community resources cannot go live without a real verification", () =>
   });
 
   it("refuses a role that may not publish", () => {
-    const r = placeholder();
+    const r = unverified();
     updateResourceDetails(r.id, { address: "1 Main St", phone: "559-555-0000", hours: "9-5" });
     const res = verifyResource({
       resourceId: r.id,
@@ -219,7 +221,7 @@ describe("Community resources cannot go live without a real verification", () =>
   });
 
   it("goes live only after a complete staff verification, and drops out again on edit", () => {
-    const r = placeholder();
+    const r = unverified();
     updateResourceDetails(r.id, { address: "1 Main St", phone: "559-555-0000", hours: "9-5" });
     const res = verifyResource({
       resourceId: r.id,
