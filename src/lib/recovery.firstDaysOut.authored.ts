@@ -53,11 +53,11 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       title: "Bring it down where you're standing",
       prompt: "Do it right now, wherever you are. Nobody around you has to know you're doing it.",
       senses: [
-        { label: "things you can see", count: 5 },
-        { label: "things you can feel touching you", count: 4 },
-        { label: "sounds you can hear", count: 3 },
-        { label: "things you can smell", count: 2 },
-        { label: "slow breath, all the way out", count: 1 },
+        { label: "see", count: 5 },
+        { label: "feel touching you", count: 4 },
+        { label: "hear", count: 3 },
+        { label: "smell", count: 2 },
+        { label: "do — one slow breath, all the way out", count: 1 },
       ],
     },
     adelReflection:
