@@ -133,9 +133,18 @@ export function PatientHome() {
 
   return (
     <div className="mx-auto max-w-4xl px-4 sm:px-6 py-8 space-y-6">
-      {/* §P2 item 1 — the 90-day care progress bar leads the page: it is the
-          one number that frames everything below it, and it must be visible
-          without scrolling. */}
+      {/* §Build A item 9 — ACTIONABLE FIRST. The greeting, the hero "Today's
+          forward step" and the daily check-in are what a patient came here to
+          do; the 90-day strip, the safety-plan banner and the weekly PHQ-2 /
+          GAD-2 card are status, and status now sits below the doing. Nothing
+          moved out of /home and no gate changed — only the order. */}
+      <HomeDashboard patientId={patient.id} />
+
+      {/* §Build A item 1 — the ONE rendering of the daily check-in. */}
+      <div id="daily-mood-check-in" className="scroll-mt-24">
+        <DailyCheckInCard patientId={patient.id} />
+      </div>
+
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
           <div className="text-sm text-muted-foreground">
@@ -151,14 +160,13 @@ export function PatientHome() {
         <Progress value={(patient.episodeDay / 90) * 100} className="mt-3 h-2" />
       </Card>
 
-      {/* §P2 item 4 — safety-critical, so it sits above the content cascade.
-          Justice-involved tracks only; counts only, never plan text. */}
+      {/* Safety-critical, justice-involved tracks only; counts only, never
+          plan text. Still above the informational cascade. */}
       <SafetyPlanSummaryTile patientId={patient.id} />
 
-      {/* §Patient portal Build 2 — the real home dashboard. Everything below
-          it stays exactly as built: these are the detail surfaces the
-          dashboard tiles link into, with their gates untouched. */}
-      <HomeDashboard patientId={patient.id} />
+      <div id="daily-check-in" className="scroll-mt-24">
+        <QuickCheckCard patientId={patient.id} />
+      </div>
 
       <HomeScreenNudge />
       {/* Grouped care-plan section: plan summary + goals, support needs, referrals. */}
@@ -181,14 +189,6 @@ export function PatientHome() {
       </section>
 
       <YourGroupsSection patientId={patient.id} />
-
-      <div id="daily-mood-check-in" className="scroll-mt-24">
-        <DailyCheckInCard patientId={patient.id} />
-      </div>
-
-      <div id="daily-check-in" className="scroll-mt-24">
-        <QuickCheckCard patientId={patient.id} />
-      </div>
       <TasksCard patientId={patient.id} />
       <MessagesCard patientId={patient.id} prefill={messagePrefill} />
       <AdvocateDesignationPanel
