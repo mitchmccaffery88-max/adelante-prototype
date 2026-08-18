@@ -305,6 +305,60 @@ export function removeToolkitItem(patientId: string, id: string): void {
 }
 
 /**
+ * §Lesson-player Build 2 — save in-progress lesson work.
+ *
+ * Merge semantics, not replace: the player writes one control at a time
+ * (a keystroke-debounced textarea, a slider, the current step), so a patch
+ * must never clear the fields it does not mention. `text` merges per key for
+ * the same reason.
+ *
+ * Audit discipline matches completion: this is written constantly, so it is
+ * audited ONCE per lesson — the first time a patient records anything — and
+ * the event carries no patient text, only which lesson it was.
+ */
+export function saveLessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+  patch: LessonResponsePatch,
+  opts: { actorRole?: string } = {},
+): LessonResponse {
+  const r = row(patientId);
+  const key = lessonResponseKey(surface, lessonId);
+  const prev = r.lessonResponses[key];
+  const next: LessonResponse = {
+    ...(prev ?? {}),
+    ...patch,
+    ...(patch.text ? { text: { ...(prev?.text ?? {}), ...patch.text } } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  r.lessonResponses[key] = next;
+  touch(r);
+  if (!prev) {
+    auditSink?.({
+      patientId,
+      action: "lesson_response_started",
+      actorRole: opts.actorRole ?? "patient",
+      detail: { surface, lessonId },
+    });
+  }
+  notify();
+  return structuredClone(next);
+}
+
+/** Drop one lesson's saved work (patient-initiated clear). */
+export function clearLessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+): void {
+  const r = records.get(patientId);
+  if (!r?.lessonResponses) return;
+  delete r.lessonResponses[lessonResponseKey(surface, lessonId)];
+  notify();
+}
+
+/**
  * Mark a lesson complete. Idempotent. When the lesson carries a toolkit
  * takeaway it is saved in the same act — step 8 of the instructional sequence
  * IS the completion, not a second opt-in.
