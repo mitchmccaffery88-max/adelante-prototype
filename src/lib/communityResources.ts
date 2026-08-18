@@ -165,19 +165,6 @@ function sourced(
   };
 }
 
-/** Categories still awaiting human sourcing keep a skeleton placeholder. */
-const UNSOURCED_CATEGORIES = [
-  "recovery_meetings",
-  "support_groups",
-  "family_reunification",
-  "healthcare",
-  "education",
-  "parenting",
-  "financial",
-  "legal",
-  "life_skills",
-];
-
 export const SEED_RESOURCES: CommunityResource[] = [
   // ---- Housing -------------------------------------------------------
   sourced(
