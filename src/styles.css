@@ -207,56 +207,75 @@
    * surfaces keep the existing tokens untouched.
    */
   .patient-theme {
-    /* Exact source values from the real patient-portal stylesheet. */
+    /* Reference palette, converted hex -> oklch (sRGB -> linear -> Oklab):
+         primary teal  #005F5F -> oklch(0.440 0.075 194.8)
+         sage          #97C4A5 -> oklch(0.780 0.065 154.6)
+         amber-warm    #F2C275 -> oklch(0.841 0.110 78.2)
+         crisis        #C74B47 -> oklch(0.580 0.159 25.2)
+       Warm cream background kept on the same hue axis (85 -> 84.6).
+       Contrast against the cream background (L 0.982):
+         foreground on bg      ~ 12.4:1
+         muted-foreground      ~  5.3:1
+         white on primary teal ~  7.4:1
+         white on crisis       ~  4.7:1  */
     --radius: 1rem;
-    --background: oklch(0.982 0.012 85);
-    --surface: oklch(0.968 0.018 82);
-    --surface-elevated: oklch(0.995 0.006 85);
+    --background: oklch(0.989 0.006 84.6);
+    --surface: oklch(0.974 0.010 81.8);
+    --surface-elevated: oklch(0.998 0.003 84.6);
     --foreground: oklch(0.24 0.028 55);
     --card: oklch(1 0 0);
     --card-foreground: oklch(0.24 0.028 55);
     --popover: oklch(1 0 0);
     --popover-foreground: oklch(0.24 0.028 55);
-    --primary: oklch(0.44 0.075 195);
+    --primary: oklch(0.44 0.075 194.8);
     --primary-foreground: oklch(0.985 0.01 85);
     --secondary: oklch(0.93 0.022 80);
     --secondary-foreground: oklch(0.28 0.03 55);
     --muted: oklch(0.945 0.016 82);
     --muted-foreground: oklch(0.48 0.025 60);
-    --accent: oklch(0.92 0.03 175);
-    --accent-foreground: oklch(0.28 0.045 195);
-    --sage: oklch(0.78 0.065 155);
-    --sage-foreground: oklch(0.28 0.05 155);
-    --amber-warm: oklch(0.84 0.11 78);
+    --accent: oklch(0.92 0.03 194.8);
+    --accent-foreground: oklch(0.28 0.045 194.8);
+    --sage: oklch(0.78 0.065 154.6);
+    --sage-foreground: oklch(0.28 0.05 154.6);
+    --amber-warm: oklch(0.841 0.11 78.2);
     --amber-warm-foreground: oklch(0.34 0.07 55);
-    --crisis: oklch(0.58 0.16 25);
+    --crisis: oklch(0.58 0.159 25.2);
     --crisis-foreground: oklch(0.985 0.01 85);
-    --destructive: oklch(0.58 0.16 25);
+    --destructive: oklch(0.58 0.159 25.2);
     --destructive-foreground: oklch(0.985 0.01 85);
     --border: oklch(0.9 0.018 80);
     --input: oklch(0.9 0.018 80);
-    --ring: oklch(0.5 0.075 195);
+    --ring: oklch(0.5 0.075 194.8);
     --sidebar: oklch(0.955 0.018 82);
     --sidebar-foreground: oklch(0.28 0.03 55);
-    --sidebar-primary: oklch(0.44 0.075 195);
+    --sidebar-primary: oklch(0.44 0.075 194.8);
     --sidebar-primary-foreground: oklch(0.985 0.01 85);
     --sidebar-accent: oklch(0.92 0.025 80);
-    --sidebar-accent-foreground: oklch(0.28 0.045 195);
+    --sidebar-accent-foreground: oklch(0.28 0.045 194.8);
     --sidebar-border: oklch(0.9 0.018 80);
-    --sidebar-ring: oklch(0.5 0.075 195);
+    --sidebar-ring: oklch(0.5 0.075 194.8);
+    /* Patient-scoped chart tokens track the patient palette, not staff charts. */
+    --chart-1: oklch(0.44 0.075 194.8);
+    --chart-2: oklch(0.78 0.065 154.6);
+    --chart-3: oklch(0.841 0.11 78.2);
+    --chart-4: oklch(0.58 0.159 25.2);
+    --chart-5: oklch(0.6 0.05 55);
     /* Local aliases kept so existing patient markup keeps resolving. */
     --sand: var(--background);
     --sand-deep: var(--secondary);
     --ink: var(--foreground);
     --ink-soft: var(--muted-foreground);
-    --sage-soft: oklch(0.94 0.03 155);
+    --sage-soft: oklch(0.94 0.03 154.6);
     --amber: var(--amber-warm);
-    --amber-soft: oklch(0.96 0.04 82);
+    --amber-soft: oklch(0.96 0.04 78.2);
     --amber-foreground: var(--amber-warm-foreground);
-    --crisis-soft: oklch(0.958 0.028 25);
+    --crisis-soft: oklch(0.958 0.028 25.2);
     --teal: var(--primary);
     --navy: var(--foreground);
     --navy-foreground: var(--primary-foreground);
+    /* §Typography: patient surfaces are Inter-only — hierarchy is carried by
+       weight and size, not a serif display face. */
+    --font-display: var(--font-sans);
     background-color: var(--background);
     color: var(--foreground);
     font-size: 1rem;
@@ -323,6 +342,24 @@
   h1, h2, h3, .font-display {
     font-family: var(--font-display);
     letter-spacing: -0.01em;
+  }
+
+  /* §Typography (patient) — Inter only. Overrides both the base rule above and
+     the generated .font-display utility, whose value is inlined at build time. */
+  .patient-theme h1,
+  .patient-theme h2,
+  .patient-theme h3,
+  .patient-theme .font-display {
+    font-family: var(--font-sans) !important;
+    letter-spacing: -0.015em;
+  }
+  .patient-theme h1,
+  .patient-theme .font-display {
+    font-weight: 700;
+  }
+  .patient-theme h2,
+  .patient-theme h3 {
+    font-weight: 600;
   }
 }
 
