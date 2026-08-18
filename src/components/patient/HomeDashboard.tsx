@@ -462,11 +462,7 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                       : " · video"}
                 </p>
                 <p className="mt-2 rounded-2xl bg-secondary p-3 text-sm">
-                  {nextAppt.modality === "in_person"
-                    ? "Prep tip: give yourself extra time for the trip, and bring your ID if you have it."
-                    : nextAppt.modality === "phone"
-                      ? "Prep tip: pick somewhere you won't be overheard, and keep your phone charged."
-                      : "Prep tip: test your camera a few minutes early and find a private spot."}
+                  {apptPrepTip(nextAppt.modality)}
                 </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
                   <Link to="/schedule">Manage appointments</Link>
