@@ -168,6 +168,10 @@ export const recoveryModuleEn = {
   "rec.mod.becoming-someone-new.mission": "Grow Into Who I'm Becoming",
   "rec.mod.becoming-someone-new.subtitle":
     "Identity, purpose, and a version of you that isn't the old one.",
+  "rec.mod.living-recovery.name": "Living Recovery",
+  "rec.mod.living-recovery.mission": "Protect My Recovery for Life",
+  "rec.mod.living-recovery.subtitle":
+    "Everything you have built, kept going — maintenance for the long haul.",
 } as const;
 
 export const recoveryModuleEs: Record<keyof typeof recoveryModuleEn, string> = {
@@ -203,6 +207,10 @@ export const recoveryModuleEs: Record<keyof typeof recoveryModuleEn, string> = {
   "rec.mod.becoming-someone-new.mission": "Crecer Hacia Quien Estoy Siendo",
   "rec.mod.becoming-someone-new.subtitle":
     "Identidad, propósito y una versión tuya que no es la de antes.",
+  "rec.mod.living-recovery.name": "Vivir en Recuperación",
+  "rec.mod.living-recovery.mission": "Proteger Mi Recuperación de por Vida",
+  "rec.mod.living-recovery.subtitle":
+    "Todo lo que has construido, en marcha — mantenimiento para el largo plazo.",
 };
 
 /**
