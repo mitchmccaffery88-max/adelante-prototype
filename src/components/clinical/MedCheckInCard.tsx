@@ -15,6 +15,21 @@ import { toast } from "sonner";
 
 const SEVERITIES: SideEffectSeverity[] = ["mild", "moderate", "severe"];
 
+// §Build A item 6 — time-of-day grouping for today's doses. Derived from the
+// slot's own scheduled time, so it follows the real MAR schedule.
+const GROUPS = [
+  { id: "morning", label: "Morning" },
+  { id: "afternoon", label: "Afternoon" },
+  { id: "evening", label: "Evening" },
+] as const;
+
+function timeOfDay(scheduledAt: string): (typeof GROUPS)[number]["id"] {
+  const h = new Date(scheduledAt).getHours();
+  if (h < 12) return "morning";
+  if (h < 17) return "afternoon";
+  return "evening";
+}
+
 export function MedCheckInCard({ patientId }: { patientId: string }) {
   const rows = useEhr(() => AdelanteEHR.patientDoseChecklist(patientId));
   const week = useEhr(() => AdelanteEHR.adherenceWeek(patientId));
@@ -64,10 +79,10 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
           the legend below names all four states. Data source is unchanged. */}
       <div>
         <div className="flex gap-1.5" data-testid="adherence-week-strip">
-          {week.map((d) => {
+          {week.map((d, i) => {
             const done = d.chartedGiven > 0 || d.selfTaken > 0;
             const none = d.scheduled === 0;
-            const isToday = d.dateKey === todayKey;
+            const isToday = i === week.length - 1;
             const state = none ? "none" : done ? "taken" : isToday ? "upcoming" : "missed";
             const cell = {
               none: { cls: "bg-muted/40 text-muted-foreground", label: "—", title: "Nothing scheduled" },
