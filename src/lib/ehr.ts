@@ -2831,7 +2831,7 @@ const clinicians: Clinician[] = [
       "care_coordination",
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
-    licenseExpiresOn: "2026-08-15",
+    licenseExpiresOn: "2028-12-31",
   },
   {
     id: "c2",
@@ -2841,7 +2841,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "active",
     services: ["therapy_individual", "med_management", "intake"],
     locationIds: ["loc-visalia"],
-    licenseExpiresOn: "2027-06-30",
+    licenseExpiresOn: "2028-12-31",
   },
   {
     id: "c3",
@@ -2851,7 +2851,7 @@ const clinicians: Clinician[] = [
     mediCalStatus: "pending",
     services: ["therapy_individual", "peer_support", "case_management"],
     locationIds: ["loc-porterville"],
-    licenseExpiresOn: "2027-12-31",
+    licenseExpiresOn: "2028-12-31",
   },
 ];
 
