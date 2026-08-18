@@ -30,9 +30,17 @@ its copy is explicitly post-release — using Phase 2 tracks via the SAME predic
 `isLibraryItemVisible`. The gate lives on the MODULE and is re-checked for
 `?lesson=` deep links.
 
-**Content state**: Module 1 is real, complete (5 lessons). Modules 2–8 are real
-names/missions with `contentPending: true` and zero lessons — nothing fabricated,
-and the UI says so plainly.
+**Content state**: Module 1 has 10 lessons — 5 transcribed in `recovery.ts`
+plus lessons 6–10 authored in `src/lib/recovery.firstDaysOut.authored.ts` as
+PUBLISHED entries in the content lifecycle store (Cathy, 2026-08-18), seeded
+via `seedPublishedContent` and pulled in by a side-effect import in
+`contentCatalog.ts`. Every lesson written from now on is authored that way —
+managed content with revision history, never a new hardcoded array entry.
+Modules 2–9 carry the ported Journey lessons (`recovery.ported.ts`), which had
+an editorial pass removing generator artifacts (duplicated `learnBody`
+sentences, one shared `learnTitle`/`insight`, templated decision feedback).
+`src/lib/__tests__/recoveryModuleOneAuthoring.test.ts` guards both: 10 ordered
+lessons in Module 1, and no repeated sentence / reused feedback anywhere.
 
 **OPEN**: "Living Recovery" / "Protect My Recovery for Life" is modelled as
 `LIVING_RECOVERY_WRAPPER` (`unconfirmed: true`), a closing section over the eight
