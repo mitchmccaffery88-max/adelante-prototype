@@ -92,7 +92,9 @@ describe("library content shape", () => {
   });
 
   it("keeps the lesson and exercise ids the rest of the system references", () => {
-    expect(LIBRARY_ITEMS.map((i) => i.id)).toEqual([
+    // Starting Strong keeps its original ids and stays first; the ported
+    // Journey collections are appended after it.
+    expect(LIBRARY_ITEMS.map((i) => i.id).slice(0, 10)).toEqual([
       "ss-finding-my-footing",
       "ss-daily-rhythm",
       "ss-calming-my-mind",
@@ -104,6 +106,16 @@ describe("library content shape", () => {
       "ss-restoring-sleep",
       "ss-stability-plan",
     ]);
+    expect(new Set(LIBRARY_ITEMS.map((i) => i.id)).size).toBe(LIBRARY_ITEMS.length);
+  });
+
+  it("ships the ported Journey collections alongside Starting Strong", () => {
+    expect(LIBRARY_CATEGORIES).toHaveLength(9);
+    expect(LIBRARY_ITEMS).toHaveLength(90);
+    for (const i of LIBRARY_ITEMS) {
+      expect(LIBRARY_CATEGORIES.some((c) => c.id === i.categoryId)).toBe(true);
+      expect(i.activity.kind).toBeTruthy();
+    }
   });
 });
 

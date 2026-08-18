@@ -16,6 +16,8 @@
 // through. There is deliberately no second renderer.
 import type { LibraryActivity } from "@/lib/library";
 import type { PopulationTrack } from "@/lib/population";
+// Ported Adelante Journey lessons for modules 2–9 (generated).
+import { PORTED_RECOVERY_LESSONS } from "@/lib/recovery.ported";
 
 /** Steps 7–9: the tool flow. Closed option sets, with selection limits. */
 export interface RecoveryToolFlow {
@@ -70,12 +72,11 @@ export interface RecoveryModule {
 }
 
 // ---------------------------------------------------------------------------
-// The eight confirmed modules.
+// The nine modules.
 //
-// "Living Recovery" / "Protect My Recovery for Life" is NOT modelled as a 9th
-// module here — see `LIVING_RECOVERY_WRAPPER`. It reads as the closing/toolkit
-// wrapper over the eight, and is flagged for confirmation rather than invented
-// as a full module with fabricated lessons.
+// "Living Recovery" / "Protect My Recovery for Life" is module 9: the Journey
+// build ships it as a full module with its own lessons, so it is no longer a
+// flagged wrapper here.
 // ---------------------------------------------------------------------------
 
 export const RECOVERY_MODULES: RecoveryModule[] = [
@@ -97,7 +98,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Build My Support System",
     subtitle: "Who you can call, who you can trust, and how to ask.",
     icon: "Users",
-    contentPending: true,
   },
   {
     id: "understanding-my-addiction",
@@ -106,7 +106,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Know My Patterns",
     subtitle: "Triggers, cycles, and what your use has been doing for you.",
     icon: "Brain",
-    contentPending: true,
   },
   {
     id: "changing-my-everyday-life",
@@ -115,7 +114,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Create Healthy Routines",
     subtitle: "Sleep, food, movement, money, and the shape of a day.",
     icon: "CalendarClock",
-    contentPending: true,
   },
   {
     id: "healing-my-relationships",
@@ -124,7 +122,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Repair and Protect",
     subtitle: "Making amends where you can, setting limits where you must.",
     icon: "HeartHandshake",
-    contentPending: true,
   },
   {
     id: "building-a-life-that-works",
@@ -133,7 +130,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Get Stable",
     subtitle: "Housing, work, documents, and income that hold.",
     icon: "Home",
-    contentPending: true,
   },
   {
     id: "when-recovery-gets-hard",
@@ -142,7 +138,6 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Strengthen My Recovery",
     subtitle: "Cravings, setbacks, grief, and the days you want to quit.",
     icon: "ShieldCheck",
-    contentPending: true,
   },
   {
     id: "becoming-someone-new",
@@ -151,33 +146,24 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Grow Into Who I'm Becoming",
     subtitle: "Identity, purpose, and a version of you that isn't the old one.",
     icon: "Sparkles",
-    contentPending: true,
+  },
+  {
+    id: "living-recovery",
+    order: 9,
+    name: "Living Recovery",
+    mission: "Protect My Recovery for Life",
+    subtitle: "Everything you have built, kept going — maintenance for the long haul.",
+    icon: "Infinity",
   },
 ];
 
-/**
- * OPEN QUESTION, deliberately not resolved by guessing. Everything about
- * "Living Recovery" / "Protect My Recovery for Life" reads as a closing
- * wrapper over the eight missions (it has no distinct skill target the eight
- * do not already cover, and its mission is maintenance of the whole), so it
- * is represented as a wrapper and NOT built as a 9th module with invented
- * lessons. Surfaced in the UI as an unconfirmed closing section.
- */
-export const LIVING_RECOVERY_WRAPPER = {
-  id: "living-recovery",
-  name: "Living Recovery",
-  mission: "Protect My Recovery for Life",
-  subtitle: "Everything you have built, kept going — the closing section over all eight modules.",
-  /** Needs a human answer before it is built either way. */
-  unconfirmed: true,
-} as const;
 
 // ---------------------------------------------------------------------------
 // REAL CONTENT — Module 1, "My First Days Out".
-// Modules 2–8 intentionally contribute NO lessons (contentPending).
+// Modules 2–9 carry the ported Adelante Journey lessons (recovery.ported.ts).
 // ---------------------------------------------------------------------------
 
-export const RECOVERY_LESSONS: RecoveryLesson[] = [
+const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
   {
     id: "fdo-first-72-hours",
     moduleId: "first-days-out",
@@ -466,6 +452,12 @@ export const RECOVERY_LESSONS: RecoveryLesson[] = [
 // ---------------------------------------------------------------------------
 // Pure selectors
 // ---------------------------------------------------------------------------
+
+/** Module 1 (transcribed here) plus the ported Journey modules 2–9. */
+export const RECOVERY_LESSONS: RecoveryLesson[] = [
+  ...FIRST_DAYS_OUT_LESSONS,
+  ...PORTED_RECOVERY_LESSONS,
+];
 
 export function getRecoveryModule(id: string): RecoveryModule | undefined {
   return RECOVERY_MODULES.find((m) => m.id === id);

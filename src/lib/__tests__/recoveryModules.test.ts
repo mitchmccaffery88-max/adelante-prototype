@@ -1,6 +1,5 @@
 import { describe, it, expect, beforeEach } from "vitest";
 import {
-  LIVING_RECOVERY_WRAPPER,
   RECOVERY_MODULES,
   RECOVERY_LESSONS,
   TOOL_FLOW_LIMITS,
@@ -19,8 +18,8 @@ import {
 beforeEach(() => __resetEngagement());
 
 describe("recovery module structure", () => {
-  it("has the eight confirmed modules, in order, with real missions", () => {
-    expect(RECOVERY_MODULES).toHaveLength(8);
+  it("has the nine modules, in order, with real missions", () => {
+    expect(RECOVERY_MODULES).toHaveLength(9);
     expect(RECOVERY_MODULES.map((m) => m.name)).toEqual([
       "My First Days Out",
       "Finding My People",
@@ -30,25 +29,21 @@ describe("recovery module structure", () => {
       "Building a Life That Works",
       "When Recovery Gets Hard",
       "Becoming Someone New",
+      "Living Recovery",
     ]);
     expect(RECOVERY_MODULES.every((m) => m.mission.length > 0)).toBe(true);
   });
 
-  it("keeps Living Recovery as an unconfirmed wrapper, not a ninth module", () => {
-    expect(LIVING_RECOVERY_WRAPPER.unconfirmed).toBe(true);
-    expect(RECOVERY_MODULES.some((m) => m.id === LIVING_RECOVERY_WRAPPER.id)).toBe(false);
-  });
-
-  it("ships real lessons only for module 1; 2-8 are pending, never fabricated", () => {
-    expect(lessonsInModule("first-days-out").length).toBeGreaterThanOrEqual(5);
-    for (const mod of RECOVERY_MODULES.slice(1)) {
-      expect(mod.contentPending).toBe(true);
-      expect(lessonsInModule(mod.id)).toHaveLength(0);
+  it("ships real lessons for every module, none flagged pending", () => {
+    for (const mod of RECOVERY_MODULES) {
+      expect(mod.contentPending).toBeUndefined();
+      expect(lessonsInModule(mod.id).length).toBeGreaterThanOrEqual(5);
     }
+    expect(new Set(RECOVERY_LESSONS.map((l) => l.id)).size).toBe(RECOVERY_LESSONS.length);
   });
 
-  it("gives every module-1 lesson a complete 10-step schema with real tool flow", () => {
-    for (const l of lessonsInModule("first-days-out")) {
+  it("gives every lesson a complete 10-step schema with real tool flow", () => {
+    for (const l of RECOVERY_LESSONS) {
       expect(l.problem && l.checkIn && l.learnTitle && l.learnBody).toBeTruthy();
       expect(l.adelReflection && l.adelQuestion && l.insight && l.toolkitLabel).toBeTruthy();
       expect(l.activity).toBeTruthy();

@@ -19,6 +19,8 @@
 // there is no runtime cycle. The gate LOGIC is Phase 2's, restated in the one
 // place it is applied (`isLibraryItemVisible`) rather than duplicated widely.
 import type { PopulationResolution, PopulationTrack } from "@/lib/population";
+// Ported Adelante Journey collections (generated, copy-identical to source).
+import { PORTED_LIBRARY_CATEGORIES, PORTED_LIBRARY_ITEMS } from "@/lib/library.ported";
 
 // ---------------------------------------------------------------------------
 // Categories + lessons
@@ -225,7 +227,7 @@ export interface SavedToolkitItem {
 // keep resolving.
 // ---------------------------------------------------------------------------
 
-export const LIBRARY_CATEGORIES: LibraryCategory[] = [
+const STARTING_STRONG_CATEGORY: LibraryCategory[] = [
   {
     id: "starting-strong",
     name: "Starting Strong",
@@ -238,7 +240,7 @@ export const LIBRARY_CATEGORIES: LibraryCategory[] = [
 ];
 
 /** Every lesson in the Starting Strong sequence, in order. */
-export const LIBRARY_ITEMS: LibraryItem[] = [
+const STARTING_STRONG_ITEMS: LibraryItem[] = [
   {
     id: "ss-finding-my-footing",
     categoryId: "starting-strong",
@@ -554,6 +556,19 @@ export const LIBRARY_ITEMS: LibraryItem[] = [
     action: "Write your three daily anchors and two support numbers somewhere you'll see them.",
     toolkitLabel: "My stability plan",
   },
+];
+
+/** Starting Strong (transcribed here) plus the eight ported Journey
+ *  collections. The ported set lives in its own generated module so this
+ *  file stays reviewable. */
+export const LIBRARY_CATEGORIES: LibraryCategory[] = [
+  ...STARTING_STRONG_CATEGORY,
+  ...PORTED_LIBRARY_CATEGORIES,
+];
+
+export const LIBRARY_ITEMS: LibraryItem[] = [
+  ...STARTING_STRONG_ITEMS,
+  ...PORTED_LIBRARY_ITEMS,
 ];
 
 export const EXERCISES: Exercise[] = [
