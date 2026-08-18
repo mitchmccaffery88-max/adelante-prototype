@@ -17,6 +17,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
+import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
 import {
   Select,
   SelectContent,
