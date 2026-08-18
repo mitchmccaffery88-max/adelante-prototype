@@ -5075,6 +5075,27 @@ function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
 }
 
 // ----- Refill request lifecycle -------------------------------------------
+// ----- §5-stage recovery journey ------------------------------------------
+/**
+ * One append-only stage entry. Nothing is ever mutated or deleted: a change of
+ * mind is a new row, so the history reads as a real conversation between the
+ * patient and the care team rather than a single overwritten field.
+ */
+export interface RecoveryStageEntry {
+  id: string;
+  patientId: string;
+  stage: RecoveryStageId;
+  at: string;
+  setByActor: "patient" | "staff";
+  setByName: string;
+  setByRole?: string;
+  note?: string;
+  previousStage?: RecoveryStageId;
+  /** Snapshot of the review flag at write time — demo rows stay identifiable. */
+  reviewPending: boolean;
+}
+const recoveryStageEntries: RecoveryStageEntry[] = [];
+
 export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy";
 export interface RefillRequest {
   id: string;
