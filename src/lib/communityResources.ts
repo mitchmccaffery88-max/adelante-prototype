@@ -83,6 +83,21 @@ export interface CommunityResource {
   phone: string;
   hours: string;
   description: string;
+  /**
+   * Real public website for the organisation. Previously these URLs were
+   * stranded inside `description` text; Build B migrated every one of them
+   * into this field (15 hand-sourced entries + 38 ported listings).
+   */
+  website?: string;
+  /**
+   * Geo is DELIBERATELY EMPTY. Nobody has geocoded this directory, so there
+   * are no real coordinates to store and we will not fabricate any. The
+   * fields exist so a real geocoding pass can populate them later; until then
+   * "Directions" opens a maps SEARCH for the address string, which is honest
+   * about the fact that we only know the address, not the point.
+   */
+  lat?: number;
+  lng?: number;
   /** Seed data is structure, not sourced fact. */
   placeholder?: boolean;
   verified: boolean;
@@ -152,6 +167,7 @@ function sourced(
   phone: string,
   hours: string,
   description: string,
+  website?: string,
 ): CommunityResource {
   return {
     id,
@@ -161,6 +177,7 @@ function sourced(
     phone,
     hours,
     description,
+    website,
     placeholder: false,
     verified: false,
     status: "unverified",
@@ -447,7 +464,9 @@ export function getResource(id: string): CommunityResource | undefined {
  */
 export function updateResourceDetails(
   id: string,
-  patch: Partial<Pick<CommunityResource, "name" | "address" | "phone" | "hours" | "description">>,
+  patch: Partial<
+    Pick<CommunityResource, "name" | "address" | "phone" | "hours" | "description" | "website">
+  >,
 ): CommunityResource | undefined {
   const r = resources.get(id);
   if (!r) return undefined;
