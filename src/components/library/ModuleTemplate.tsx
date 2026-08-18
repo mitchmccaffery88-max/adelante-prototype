@@ -8,23 +8,45 @@
 // of `ModuleStep`s; the extra recovery steps (the tool-flow selects) are just
 // another step kind here, not a second renderer. Do NOT add a parallel lesson
 // component — add a step kind.
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
+import type { LessonResponse, LessonResponsePatch } from "@/lib/engagement";
 
-function Activity({ activity }: { activity: LibraryActivity }) {
-  const [checked, setChecked] = useState<string[]>([]);
-  const [rating, setRating] = useState(0);
-  const [sorted, setSorted] = useState<Record<string, string>>({});
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [choice, setChoice] = useState<string | null>(null);
+/**
+ * §Lesson-player Build 2 — the activity is CONTROLLED now. Every control used
+ * to be component-local `useState` that vanished on unmount; the value and the
+ * writer both come from the caller, which persists them into the engagement
+ * store. Nothing a patient touches is thrown away.
+ */
+function Activity({
+  activity,
+  response,
+  onChange,
+}: {
+  activity: LibraryActivity;
+  response: LessonResponse | undefined;
+  onChange: (patch: LessonResponsePatch) => void;
+}) {
+  const checked = response?.checked ?? [];
+  const rating = response?.rating ?? 0;
+  const sorted = response?.sorted ?? {};
+  const scores = response?.scores ?? {};
+  const choice = response?.choice ?? null;
+  const setChecked = (next: string[]) => onChange({ checked: next });
+  const setRating = (n: number) => onChange({ rating: n });
+  const setSorted = (next: Record<string, string>) => onChange({ sorted: next });
+  const setScores = (next: Record<string, number>) => onChange({ scores: next });
+  const setChoice = (label: string) => onChange({ choice: label });
+  const text = (key: string) => response?.text?.[key] ?? "";
+  const setText = (key: string, value: string) => onChange({ text: { [key]: value } });
   switch (activity.kind) {
     case "checklist":
       return (
@@ -36,7 +58,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 id={`act-${item}`}
                 checked={checked.includes(item)}
                 onCheckedChange={(v) =>
-                  setChecked((p) => (v ? [...p, item] : p.filter((x) => x !== item)))
+                  setChecked(v ? [...checked, item] : checked.filter((x) => x !== item))
                 }
               />
               <label htmlFor={`act-${item}`}>{item}</label>
@@ -52,6 +74,8 @@ function Activity({ activity }: { activity: LibraryActivity }) {
             rows={activity.lines}
             placeholder={activity.placeholder ?? ""}
             aria-label={activity.prompt}
+            value={text("activity")}
+            onChange={(e) => setText("activity", e.target.value)}
           />
         </div>
       );
@@ -87,7 +111,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                   type="button"
                   size="sm"
                   variant={sorted[card] === b ? "default" : "outline"}
-                  onClick={() => setSorted((s) => ({ ...s, [card]: b }))}
+                  onClick={() => setSorted({ ...sorted, [card]: b })}
                 >
                   {b}
                 </Button>
@@ -110,8 +134,10 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 variant={checked.includes(card) ? "default" : "outline"}
                 aria-pressed={checked.includes(card)}
                 onClick={() =>
-                  setChecked((p) =>
-                    p.includes(card) ? p.filter((x) => x !== card) : [...p, card],
+                  setChecked(
+                    checked.includes(card)
+                      ? checked.filter((x) => x !== card)
+                      : [...checked, card],
                   )
                 }
               >
@@ -166,7 +192,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 min={0}
                 max={10}
                 step={1}
-                onValueChange={(v) => setScores((prev) => ({ ...prev, [s.id]: v[0] ?? 0 }))}
+                onValueChange={(v) => setScores({ ...scores, [s.id]: v[0] ?? 0 })}
                 aria-label={s.label}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -188,7 +214,12 @@ function Activity({ activity }: { activity: LibraryActivity }) {
               <label className="text-sm font-medium text-navy" htmlFor={`gr-${s.label}`}>
                 {s.count} things you can {s.label.toLowerCase()}
               </label>
-              <Textarea id={`gr-${s.label}`} rows={2} />
+              <Textarea
+                id={`gr-${s.label}`}
+                rows={2}
+                value={text(`grounding:${s.label}`)}
+                onChange={(e) => setText(`grounding:${s.label}`, e.target.value)}
+              />
             </div>
           ))}
         </div>
