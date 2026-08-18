@@ -413,6 +413,8 @@ export function ModuleTemplate({
   steps,
   completeLabel,
   onComplete,
+  response,
+  onResponseChange,
 }: {
   title: string;
   subtitle?: string;
@@ -425,8 +427,46 @@ export function ModuleTemplate({
   steps: ModuleStep[];
   completeLabel: string;
   onComplete: () => void;
+  /**
+   * §Build 2 — the patient's saved work for THIS lesson. Supplies the value of
+   * every free-text box and activity control, and `stepIndex` is what makes
+   * resume-on-return real. Omit it and the player still works, unsaved.
+   */
+  response?: LessonResponse | undefined;
+  onResponseChange?: (patch: LessonResponsePatch) => void;
 }) {
   const { t } = useI18n();
+  const total = steps.length;
+  /**
+   * Resume-on-return: the saved step is the STARTING point only. Seeding state
+   * once (rather than binding to the prop) keeps Back/Continue from fighting
+   * the store as it re-broadcasts each save.
+   */
+  const savedStep = response?.stepIndex;
+  const [index, setIndex] = useState(() => Math.min(Math.max(savedStep ?? 0, 0), total - 1));
+  const resumeKey = useMemo(() => `${title}:${total}`, [title, total]);
+  const [seededFor, setSeededFor] = useState(resumeKey);
+  useEffect(() => {
+    // A different lesson mounted into the same component instance.
+    if (seededFor !== resumeKey) {
+      setSeededFor(resumeKey);
+      setIndex(Math.min(Math.max(savedStep ?? 0, 0), total - 1));
+    }
+  }, [resumeKey, seededFor, savedStep, total]);
+
+  const step = steps[Math.min(index, total - 1)];
+  const last = index >= total - 1;
+  const patch = (p: LessonResponsePatch) => onResponseChange?.(p);
+
+  function go(next: number) {
+    const clamped = Math.min(Math.max(next, 0), total - 1);
+    setIndex(clamped);
+    patch({ stepIndex: clamped });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (!step) return null;
+
   return (
     <Card className="space-y-6 p-6">
       <header className="space-y-2">
@@ -451,47 +491,68 @@ export function ModuleTemplate({
         {notice}
       </header>
 
-      {steps.map((step, i) => (
-        <Step key={`${step.label}-${i}`} n={i + 1} label={step.label} icon={step.icon}>
-          {step.kind === "text" && (
-            <>
-              {step.heading && <h2 className="font-display text-lg text-navy">{step.heading}</h2>}
-              <p
-                className={
-                  step.boxed
-                    ? "rounded-lg bg-secondary/50 p-3 text-sm text-navy"
-                    : "text-sm text-muted-foreground"
-                }
-              >
-                {step.body}
-              </p>
-            </>
-          )}
-          {step.kind === "activity" && <Activity activity={step.activity} />}
-          {step.kind === "reflect" && (
-            <>
-              <p className="text-sm italic text-muted-foreground">{step.reflection}</p>
-              <p className="text-sm font-medium text-navy">{step.question}</p>
-              <Textarea rows={3} aria-label={step.question} />
-            </>
-          )}
-          {step.kind === "select" && (
-            <SelectStep
-              prompt={step.prompt}
-              options={step.options}
-              {...(step.labelFor ? { labelFor: step.labelFor } : {})}
-              max={step.max}
-              value={step.value}
-              onChange={step.onChange}
-            />
-          )}
-          {step.kind === "custom" && step.content}
-        </Step>
-      ))}
+      <StepProgress index={index} total={total} />
 
-      <Button type="button" onClick={onComplete}>
-        {completeLabel}
-      </Button>
+      <Step n={index + 1} total={total} label={step.label} icon={step.icon}>
+        {step.kind === "text" && (
+          <>
+            {step.heading && <h3 className="font-display text-lg text-navy">{step.heading}</h3>}
+            <p
+              className={
+                step.boxed
+                  ? "rounded-lg bg-secondary/50 p-3 text-sm text-navy"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {step.body}
+            </p>
+          </>
+        )}
+        {step.kind === "activity" && (
+          <Activity activity={step.activity} response={response} onChange={patch} />
+        )}
+        {step.kind === "reflect" && (
+          <>
+            <p className="text-sm italic text-muted-foreground">{step.reflection}</p>
+            <p className="text-sm font-medium text-navy">{step.question}</p>
+            <Textarea
+              rows={3}
+              aria-label={step.question}
+              value={response?.text?.["reflect"] ?? ""}
+              onChange={(e) => patch({ text: { reflect: e.target.value } })}
+            />
+            {onResponseChange && (
+              <p className="text-xs text-muted-foreground">{t("modSavedNote")}</p>
+            )}
+          </>
+        )}
+        {step.kind === "select" && (
+          <SelectStep
+            prompt={step.prompt}
+            options={step.options}
+            {...(step.labelFor ? { labelFor: step.labelFor } : {})}
+            max={step.max}
+            value={step.value}
+            onChange={step.onChange}
+          />
+        )}
+        {step.kind === "custom" && step.content}
+      </Step>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" disabled={index === 0} onClick={() => go(index - 1)}>
+          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> {t("modBack")}
+        </Button>
+        {last ? (
+          <Button type="button" onClick={onComplete}>
+            {completeLabel}
+          </Button>
+        ) : (
+          <Button type="button" onClick={() => go(index + 1)}>
+            {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }
