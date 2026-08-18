@@ -176,7 +176,7 @@ describe("progress is real patient record data", () => {
 });
 
 describe("population gating — Phase 2 reused, not reinvented", () => {
-  it("reentry-specific copy is hidden from a general-population patient", () => {
+  it("Finding My Footing is population-neutral and shown to a general-population patient", () => {
     const pid = newPatient();
     AdelanteEHR.recordFrontDoorEntry(pid, {
       existingCare: "no",
@@ -185,9 +185,11 @@ describe("population gating — Phase 2 reused, not reinvented", () => {
     const r = resolvePopulation(pid);
     expect(r.track).toBe("general_population");
     const visible = visibleItemsInCategory("starting-strong", r);
-    expect(visible.map((i) => i.id)).not.toContain("ss-finding-my-footing");
+    // Build D: its copy contains no incarceration/release reference, so the
+    // gate was removed — every Starting Strong lesson is now ungated.
+    expect(visible.map((i) => i.id)).toContain("ss-finding-my-footing");
     // …and the progress denominator follows the visible set.
-    expect(categoryProgress("starting-strong", [], r).total).toBe(9);
+    expect(categoryProgress("starting-strong", [], r).total).toBe(10);
   });
 
   it("the same lesson is shown to a confirmed justice-involved patient", () => {
@@ -200,14 +202,13 @@ describe("population gating — Phase 2 reused, not reinvented", () => {
     );
   });
 
-  it("an unconfirmed 'not sure' answer does not open the gate", () => {
+  it("an unconfirmed 'not sure' answer still resolves as provisional", () => {
     const pid = newPatient();
     AdelanteEHR.setCoverage(pid, { justiceInvolvement: "unsure" } as never);
     const r = resolvePopulation(pid);
     expect(r.provisional).toBe(true);
-    expect(visibleItemsInCategory("starting-strong", r).map((i) => i.id)).not.toContain(
-      "ss-finding-my-footing",
-    );
+    // Ungated content is unaffected by a provisional track.
+    expect(visibleItemsInCategory("starting-strong", r)).toHaveLength(10);
   });
 
   it("population-neutral content is visible to everyone", () => {
