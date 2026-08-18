@@ -270,9 +270,10 @@ const STARTING_STRONG_ITEMS: LibraryItem[] = [
     insight: "You don't build a life from nothing. You build it from what's already holding.",
     action: "Name one thing that stays the same every day this week and do it on purpose.",
     toolkitLabel: "My footholds",
-    // Kept from the placeholder build: this lesson stays gated to the
-    // justice-involved tracks. Content swap only — the gate is unchanged.
-    populations: ["pre_release_ji", "post_release_ji"],
+    // Build D: the gate is REMOVED. The authored copy says nothing about
+    // incarceration or release — "a fresh start" applies to anyone starting
+    // recovery — so under the library's own rule (gate only when the text is
+    // written for one population) this lesson is population-neutral.
   },
   {
     id: "ss-daily-rhythm",
