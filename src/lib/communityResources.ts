@@ -185,7 +185,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "5140 W. Cypress Ave, Visalia, CA",
     "(559) 627-3700",
     "(verify hours)",
-    "Public housing and Section 8 / Housing Choice Voucher programs countywide. hatc.net",
+    "Public housing and Section 8 / Housing Choice Voucher programs countywide.",
+    "https://hatc.net",
   ),
   sourced(
     "res_housing_cset",
@@ -194,7 +195,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "312 NW 3rd Ave, Visalia, CA",
     "(559) 741-4640",
     "(verify hours)",
-    "Housing navigation, homeless outreach and rapid re-housing support across Tulare County. cset.org",
+    "Housing navigation, homeless outreach and rapid re-housing support across Tulare County.",
+    "https://cset.org",
   ),
   sourced(
     "res_housing_selfhelp",
@@ -203,7 +205,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "8445 W. Elowin Ct, Visalia, CA",
     "(559) 651-1000",
     "(verify hours)",
-    "Affordable housing development, home repair and housing counseling for the San Joaquin Valley. selfhelpenterprises.org",
+    "Affordable housing development, home repair and housing counseling for the San Joaquin Valley.",
+    "https://selfhelpenterprises.org",
   ),
   sourced(
     "res_housing_211",
@@ -212,7 +215,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Countywide (phone and web)",
     "211",
     "24/7",
-    "Free, confidential referral line for housing and shelter options in Tulare County. 211tularecounty.org",
+    "Free, confidential referral line for housing and shelter options in Tulare County.",
+    "https://211tularecounty.org",
   ),
 
   // ---- Emergency Shelter ---------------------------------------------
@@ -232,7 +236,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "741 S. Santa Fe St, Visalia, CA",
     "(559) 740-4178",
     "(verify hours)",
-    "Emergency shelter, meals and recovery programming in Visalia. vrmhope.org",
+    "Emergency shelter, meals and recovery programming in Visalia.",
+    "https://vrmhope.org",
   ),
   sourced(
     "res_shelter_hope",
@@ -250,7 +255,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Confidential location",
     "(559) 732-5941",
     "24/7 crisis line",
-    "Domestic-violence emergency shelter with a 24/7 crisis line. fstc.net",
+    "Domestic-violence emergency shelter with a 24/7 crisis line.",
+    "https://fstc.net",
   ),
 
   // ---- Food Assistance -----------------------------------------------
@@ -261,7 +267,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Countywide (phone and web)",
     "1-877-410-8813",
     "(verify hours)",
-    "Monthly food benefits (SNAP) — apply by phone or online. tularecounty.ca.gov",
+    "Monthly food benefits (SNAP) — apply by phone or online.",
+    "https://tularecounty.ca.gov",
   ),
   sourced(
     "res_food_foodlink",
@@ -270,7 +277,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "7427 Sunnyview Ave, Visalia, CA",
     "(559) 651-3663",
     "(verify hours)",
-    "County food bank supplying pantries and distributions across Tulare County. foodlinktc.org",
+    "County food bank supplying pantries and distributions across Tulare County.",
+    "https://foodlinktc.org",
   ),
   sourced(
     "res_food_veac",
@@ -297,7 +305,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Countywide (phone and web)",
     "211",
     "24/7",
-    "Free, confidential referral line for food pantries and distributions. 211tularecounty.org",
+    "Free, confidential referral line for food pantries and distributions.",
+    "https://211tularecounty.org",
   ),
 
   // ---- Employment -----------------------------------------------------
@@ -308,7 +317,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Tulare County Probation, Adult Division",
     "(559) 730-2540",
     "(verify hours)",
-    "Employment readiness, education and training built specifically for justice-involved adults. tcprobation.com",
+    "Employment readiness, education and training built specifically for justice-involved adults.",
+    "https://tcprobation.com",
   ),
   sourced(
     "res_employment_cset",
@@ -317,7 +327,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "312 NW 3rd Ave, Visalia, CA",
     "(559) 741-4640",
     "(verify hours)",
-    "Job training, placement and workforce services across Tulare County. cset.org",
+    "Job training, placement and workforce services across Tulare County.",
+    "https://cset.org",
   ),
   sourced(
     "res_employment_proteus",
@@ -326,7 +337,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "1830 N. Dinuba Blvd, Visalia, CA",
     "(559) 733-5423",
     "(verify hours)",
-    "Workforce training, education and support services, including for farmworkers. proteusinc.org",
+    "Workforce training, education and support services, including for farmworkers.",
+    "https://proteusinc.org",
   ),
   sourced(
     "res_employment_edd",
@@ -335,7 +347,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Statewide (phone and web)",
     "1-800-300-5616",
     "(verify hours)",
-    "Unemployment benefits and statewide job services. edd.ca.gov",
+    "Unemployment benefits and statewide job services.",
+    "https://edd.ca.gov",
   ),
 
   // ---- Transportation --------------------------------------------------
@@ -346,7 +359,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "Countywide",
     "(800) 692-5915",
     "(verify hours)",
-    "Countywide fixed-route buses, ADA paratransit and microtransit. ridetc.org",
+    "Countywide fixed-route buses, ADA paratransit and microtransit.",
+    "https://ridetc.org",
   ),
   sourced(
     "res_transportation_visalia",
@@ -355,7 +369,8 @@ export const SEED_RESOURCES: CommunityResource[] = [
     "425 E. Oak Ave, Visalia, CA",
     "(559) 713-4100",
     "(verify hours)",
-    "City bus service within Visalia. visalia.city/transit",
+    "City bus service within Visalia.",
+    "https://visalia.city/transit",
   ),
 
   // ---- Ported Adelante Journey listings (sourced, still unverified) ----
