@@ -17,10 +17,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
-
-// `Appointment.modality` is optional in the store; anything unset is treated
-// as video, which is what the booking form defaults to.
-type ApptModality = "video" | "phone" | "in_person";
+import {
+  apptJoinUrl,
+  apptPrepTip,
+  joinWindowState,
+  type ApptModality,
+} from "@/lib/apptPrep";
 
 const MODALITY: Record<ApptModality, { label: string; icon: typeof Video }> = {
   video: { label: "Video", icon: Video },
@@ -73,6 +75,10 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
               {appt.status.replace(/_/g, " ")}
             </Badge>
           </div>
+          {/* §Build A item 4 — real join action for video visits. */}
+          {!past && appt.status !== "cancelled" && (appt.modality ?? "video") === "video" && (
+            <JoinCallButton appt={appt} />
+          )}
           {!past && appt.status !== "cancelled" && (
             <Button asChild size="sm" variant="outline" className="min-h-11">
               <Link to="/schedule" search={{ reschedule: appt.id }}>
@@ -82,7 +88,34 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           )}
         </div>
       </div>
+      {/* §Build A item 4 — the same prep tip Home's next-appointment card
+          shows, now consistently on every upcoming visit. */}
+      {!past && appt.status !== "cancelled" && (
+        <p className="mt-3 rounded-2xl bg-secondary p-3 text-sm" data-testid="appointment-prep-tip">
+          {apptPrepTip(appt.modality)}
+        </p>
+      )}
     </Card>
+  );
+}
+
+function JoinCallButton({ appt }: { appt: Appointment }) {
+  const state = joinWindowState(appt.start, appt.durationMin);
+  const { url, real } = apptJoinUrl(appt);
+  if (state === "over") return null;
+  if (state === "early") {
+    return (
+      <Button size="sm" variant="outline" className="min-h-11" disabled data-testid="join-call-early">
+        <Video className="mr-1.5 h-4 w-4" /> Join opens 15 min before
+      </Button>
+    );
+  }
+  return (
+    <Button asChild size="sm" className="min-h-11" data-testid="join-call-button">
+      <a href={url} target="_blank" rel="noreferrer">
+        <Video className="mr-1.5 h-4 w-4" /> {real ? "Join video call" : "Join video call (demo room)"}
+      </a>
+    </Button>
   );
 }
 

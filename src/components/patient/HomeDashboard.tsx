@@ -67,6 +67,7 @@ import {
   subscribeDayZero,
 } from "@/lib/reentryDayZero";
 import { ADHERENCE_TONE } from "@/lib/medAdherence";
+import { apptPrepTip } from "@/lib/apptPrep";
 import { marRowLabel } from "@/lib/mar";
 import { toast } from "sonner";
 
@@ -131,7 +132,16 @@ function TileShell({
 // Dashboard
 // ---------------------------------------------------------------------------
 
-export function HomeDashboard({ patientId }: { patientId: string }) {
+export function HomeDashboard({
+  patientId,
+  // §Build A item 9 — slot rendered immediately under the greeting, so the
+  // daily check-in (the one thing a patient is asked to DO each day) is the
+  // first interactive thing on the page instead of sitting under the tiles.
+  afterHeader,
+}: {
+  patientId: string;
+  afterHeader?: React.ReactNode;
+}) {
   const [helpOpen, setHelpOpen] = useState(false);
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const population = usePopulation(patientId);
@@ -258,15 +268,29 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   // --- "Today's forward step": the next unfinished, population-visible lesson
   const contentVersion = usePublishedContentVersion();
-  const nextLesson = useMemo(
+  const visibleLessons = useMemo(
     () =>
       liveLibraryItems()
         .filter((i) => isLibraryItemVisible(i, population))
         .slice()
-        .sort((a, b) => a.order - b.order)
-        .find((i) => !lessonsDone.includes(i.id)),
-    [population, lessonsDone, contentVersion],
+        .sort((a, b) => a.order - b.order),
+    [population, contentVersion],
   );
+  const nextLesson = useMemo(
+    () => visibleLessons.find((i) => !lessonsDone.includes(i.id)),
+    [visibleLessons, lessonsDone],
+  );
+  // §Build A item 7 — a real completion percentage, over the lessons this
+  // patient can actually see (population-filtered), not the whole catalogue.
+  const lessonsDoneVisible = useMemo(
+    () => visibleLessons.filter((i) => lessonsDone.includes(i.id)).length,
+    [visibleLessons, lessonsDone],
+  );
+  const libraryPercent =
+    visibleLessons.length > 0
+      ? Math.round((lessonsDoneVisible / visibleLessons.length) * 100)
+      : 0;
+  const hasProgress = lessonsDoneVisible > 0 || exercisesDone.length > 0;
 
   const lastToolkit = useMemo(
     () => [...toolkit].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).pop(),
@@ -295,30 +319,11 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   // §P2 item 2 — tiles carry a real priority derived from live state instead
   // of a fixed source order. Higher renders first; ties keep source order.
+  // §Build A item 1 — the daily check-in used to render TWICE on /home: this
+  // status tile plus the real `DailyCheckInCard` picker further down. The tile
+  // is gone; the picker is the single rendering and now sits at the top of the
+  // page (see PatientHome).
   const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
-  tiles.push({
-    key: "daily-check-in",
-    priority: checkedInTodayFlow ? 10 : streak.days > 0 ? 95 : 90,
-    node: (
-      <TileShell icon={HeartPulse} title="Daily check-in">
-        {!checkedInTodayFlow && (
-          <Badge className="mb-2" variant="outline" data-testid="daily-check-in-due">
-            {streak.days > 0 ? `Due today · ${streak.days}-day streak on the line` : "Due today"}
-          </Badge>
-        )}
-        <p className="text-sm text-muted-foreground">
-          {checkedInTodayFlow
-            ? "You've already checked in today."
-            : "Nine feelings, one optional why. Under a minute."}
-        </p>
-        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-          <Link to="/home" hash="daily-mood-check-in">
-            {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
-          </Link>
-        </Button>
-      </TileShell>
-    ),
-  });
   tiles.push({
     key: "weekly-check-in",
     priority: weeklyCheckOverdue ? 88 : weeklyCheckDue ? 70 : 15,
@@ -367,15 +372,20 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
     priority: 35,
     node: (
           <TileShell icon={BookOpen} title="Pick up where you left off">
-            {lastToolkit ? (
+            {hasProgress ? (
               <>
-                <p className="text-base">{lastToolkit.label}</p>
+                <p className="text-base">{lastToolkit ? lastToolkit.label : "Keep going"}</p>
+                <p className="mt-1 text-sm font-medium text-foreground" data-testid="library-progress-percent">
+                  {libraryPercent}% of your lessons done
+                </p>
+                <Progress className="mt-2 h-2" value={libraryPercent} />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {lessonsDone.length} lesson{lessonsDone.length === 1 ? "" : "s"} ·{" "}
                   {exercisesDone.length} tool{exercisesDone.length === 1 ? "" : "s"} finished
                 </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link
+                  {lastToolkit ? (
+                    <Link
                     to="/library"
                     search={
                       lastToolkit.from === "exercise"
@@ -384,7 +394,10 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                     }
                   >
                     {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
-                  </Link>
+                    </Link>
+                  ) : (
+                    <Link to="/library">Back to the library</Link>
+                  )}
                 </Button>
               </>
             ) : (
@@ -459,11 +472,7 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                       : " · video"}
                 </p>
                 <p className="mt-2 rounded-2xl bg-secondary p-3 text-sm">
-                  {nextAppt.modality === "in_person"
-                    ? "Prep tip: give yourself extra time for the trip, and bring your ID if you have it."
-                    : nextAppt.modality === "phone"
-                      ? "Prep tip: pick somewhere you won't be overheard, and keep your phone charged."
-                      : "Prep tip: test your camera a few minutes early and find a private spot."}
+                  {apptPrepTip(nextAppt.modality)}
                 </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
                   <Link to="/schedule">Manage appointments</Link>
@@ -617,6 +626,8 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
             : "No check-in streak going right now — today can start one."}
         </p>
       </header>
+
+      {afterHeader}
 
       {/* 2 — private pattern nudge ------------------------------------------
           Rendered from a pure function with no store and no audit sink, so the

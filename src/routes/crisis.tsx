@@ -3,6 +3,7 @@ import { LifeBuoy, MessageSquare, Phone, ShieldPlus, Wind } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
+import { NotifyCareTeamCard } from "@/components/patient/NotifyCareTeamCard";
 import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 
 /**
@@ -37,6 +38,9 @@ function CrisisPage() {
           </a>
         </Button>
       </div>
+
+      {/* §Build A item 5 — reuses the existing flagCrisis escalation path. */}
+      <NotifyCareTeamCard />
 
       <Card className="soft-shadow divide-y p-0">
         <Link

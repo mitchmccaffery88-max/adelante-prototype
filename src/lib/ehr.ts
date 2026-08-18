@@ -1749,7 +1749,18 @@ export interface CrisisEscalation {
    * record — kept distinct from `manual` (clinician-initiated from the chart)
    * and `screener_score` so the automated-vs-manual catch rate is measurable.
    */
-  triggerSource: "manual" | "screener_score" | "assisted_signup" | "message_pattern";
+  triggerSource:
+    | "manual"
+    | "screener_score"
+    | "assisted_signup"
+    | "message_pattern"
+    /**
+     * §Build A item 5 — the patient asked for their care team themselves from
+     * /crisis. Same escalation record, same queue, same out-of-band alert:
+     * only the attribution differs, so a self-initiated ask stays visibly
+     * distinct from a clinician flag or an automated text catch.
+     */
+    | "patient_request";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
   triggeredBy: string;
@@ -13848,7 +13859,7 @@ export const AdelanteEHR = {
       recipientRole: "clinical_coordinator",
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
-      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : "manual"}): ${detail}`,
+      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : row.triggerSource === "patient_request" ? "patient asked for their care team" : "manual"}): ${detail}`,
       linkRoute: "/crisis-queue",
       patientId,
     });

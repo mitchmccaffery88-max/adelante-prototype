@@ -7,7 +7,8 @@
 // reads for its Part 2 nudge. Only their home moved.
 import { useState } from "react";
 import { toast } from "sonner";
-import { Globe2, Lock, Phone as PhoneIcon, UserCog } from "lucide-react";
+import { Globe2, Lock, LogOut, Phone as PhoneIcon, UserCog } from "lucide-react";
+import { useNavigate } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -137,6 +138,43 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
           </li>
         ))}
       </ul>
+    </Card>
+  );
+}
+
+/**
+ * §Build A item 8 — sign out. The patient shell had no way out at all: every
+ * exit was a staff-facing affordance. This clears the session the same way the
+ * shell establishes it (`setCurrentPatientId`, which is what AppShell persists
+ * to localStorage) and returns to the public front door.
+ *
+ * Notification preferences are deliberately NOT duplicated here — SMS
+ * reminders already live in Privacy & consent above, and one switch for one
+ * setting is the rule.
+ */
+export function SignOutCard() {
+  const navigate = useNavigate();
+  return (
+    <Card className="flex flex-wrap items-center justify-between gap-3 p-5" data-testid="sign-out-card">
+      <div>
+        <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+          <LogOut className="h-4 w-4" /> Sign out
+        </div>
+        <p className="mt-1 text-xs text-muted-foreground">
+          Signs you out on this device. Good idea on a shared or borrowed phone.
+        </p>
+      </div>
+      <Button
+        variant="outline"
+        data-testid="sign-out-button"
+        onClick={() => {
+          AdelanteEHR.setCurrentPatientId("");
+          toast.success("Signed out.");
+          void navigate({ to: "/" });
+        }}
+      >
+        Sign out
+      </Button>
     </Card>
   );
 }

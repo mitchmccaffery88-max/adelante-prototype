@@ -6,7 +6,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { UserCog, FileText } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
-import { MyProfileCard, PrivacyConsentCard } from "@/components/patient/ProfilePanels";
+import { MyProfileCard, PrivacyConsentCard, SignOutCard } from "@/components/patient/ProfilePanels";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -82,6 +82,7 @@ function ProfilePage() {
           <Link to="/documents">Open documents</Link>
         </Button>
       </Card>
+      <SignOutCard />
     </PatientPage>
   );
 }
