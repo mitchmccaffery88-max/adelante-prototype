@@ -451,6 +451,33 @@ export function resourceVerificationQueue(): CommunityResource[] {
   return listResources().filter((r) => !isResourceVerified(r));
 }
 
+/**
+ * PURE. Free-text match over the facts a patient would actually type: the
+ * organisation's name and what it does. Case- and accent-insensitive enough
+ * for a phone keyboard; deliberately not fuzzy, so results never look random.
+ */
+export function matchesResourceQuery(r: CommunityResource, query: string): boolean {
+  const q = query.trim().toLowerCase();
+  if (!q) return true;
+  const hay = `${r.name} ${r.description}`.toLowerCase();
+  return q.split(/\s+/).every((t) => hay.includes(t));
+}
+
+/** One published listing, for the detail screen. Undefined if not live. */
+export function patientVisibleResource(id: string): CommunityResource | undefined {
+  return patientVisibleResources().find((r) => r.id === id);
+}
+
+/** Honest directions: a maps SEARCH for the address string, or the point if
+ *  a real geocode ever lands on the record. Never a fabricated coordinate. */
+export function directionsUrl(r: CommunityResource): string | null {
+  if (typeof r.lat === "number" && typeof r.lng === "number")
+    return `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
+  const addr = r.address.trim();
+  if (!addr || /^countywide|^statewide|^confidential/i.test(addr)) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+}
+
 export function getResource(id: string): CommunityResource | undefined {
   const r = resources.get(id);
   return r ? structuredClone(r) : undefined;
