@@ -658,6 +658,23 @@ export function HomeDashboard({
         </Card>
       )}
 
+      {/* 2b — milestone celebrations, from real engagement data ------------- */}
+      {milestones.length > 0 && (
+        <div className="grid gap-3 sm:grid-cols-3" data-testid="recovery-milestones">
+          {milestones.map((m) => (
+            <Card key={m.id} className="border-primary/30 bg-primary/5 p-4 soft-shadow">
+              <div className="flex items-start gap-2">
+                <Sparkles className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
+                <div className="min-w-0">
+                  <p className="text-sm font-semibold text-foreground">{m.title}</p>
+                  <p className="mt-1 text-xs text-muted-foreground">{m.body}</p>
+                </div>
+              </div>
+            </Card>
+          ))}
+        </div>
+      )}
+
       {/* 3 — onboarding / reentry progress (justice-involved only) ---------- */}
       {dayZeroOpen.available && (
         <Card className="p-5" data-testid="reentry-progress-card">
