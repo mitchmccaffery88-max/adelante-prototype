@@ -51,6 +51,7 @@ export function PatientPage({
 export function PatientPageHeader({
   icon: Icon,
   tone = "calm",
+  eyebrow,
   title,
   lede,
   action,
@@ -59,6 +60,8 @@ export function PatientPageHeader({
   icon?: LucideIcon;
   /** `crisis` swaps the tile to the crisis token pair; content decides, not the page. */
   tone?: "calm" | "crisis";
+  /** Optional small uppercase kicker above the h1. Omitted → nothing renders. */
+  eyebrow?: React.ReactNode;
   title: React.ReactNode;
   lede?: React.ReactNode;
   action?: React.ReactNode;
@@ -77,6 +80,11 @@ export function PatientPageHeader({
             >
               <Icon className="h-6 w-6" aria-hidden="true" />
             </span>
+          )}
+          {eyebrow && (
+            <p className="text-[11px] font-medium uppercase tracking-[0.14em] text-muted-foreground">
+              {eyebrow}
+            </p>
           )}
           <h1 className="font-display text-3xl text-foreground">{title}</h1>
         </div>
