@@ -57,37 +57,83 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
       </h3>
       <p className="text-xs text-muted-foreground">{ADHERENCE_TONE.encouragement}</p>
 
-      {/* Week strip — real scheduled slots vs. what's been marked/charted. */}
-      <div className="flex gap-1.5">
-        {week.map((d) => {
-          const done = d.chartedGiven > 0 || d.selfTaken > 0;
-          const none = d.scheduled === 0;
-          return (
-            <div key={d.dateKey} className="flex-1 text-center">
-              <div
-                className={`h-8 rounded-md border flex items-center justify-center text-[10px] ${
-                  none
-                    ? "bg-muted/40 text-muted-foreground"
-                    : done
-                      ? "bg-success/20 border-success/40 text-success"
-                      : "bg-gold/10 border-gold/40 text-navy"
-                }`}
-                title={none ? "Nothing scheduled" : done ? ADHERENCE_TONE.takenDay : ADHERENCE_TONE.missedDay}
-              >
-                {none ? "–" : done ? <Check className="h-3.5 w-3.5" /> : "·"}
+      {/* §Build A item 6 — week strip. It used to render an unlabelled "–" for
+          every day, because the only visible glyphs were "–" (nothing
+          scheduled), a check, and a bare "·" for everything else — with no
+          legend to read them by. Cells now carry a real short status word and
+          the legend below names all four states. Data source is unchanged. */}
+      <div>
+        <div className="flex gap-1.5" data-testid="adherence-week-strip">
+          {week.map((d) => {
+            const done = d.chartedGiven > 0 || d.selfTaken > 0;
+            const none = d.scheduled === 0;
+            const isToday = d.dateKey === todayKey;
+            const state = none ? "none" : done ? "taken" : isToday ? "upcoming" : "missed";
+            const cell = {
+              none: { cls: "bg-muted/40 text-muted-foreground", label: "—", title: "Nothing scheduled" },
+              taken: {
+                cls: "bg-success/20 border-success/40 text-success",
+                label: "Taken",
+                title: ADHERENCE_TONE.takenDay,
+              },
+              upcoming: {
+                cls: "bg-secondary border-border text-foreground",
+                label: "Due",
+                title: "Still to mark today",
+              },
+              missed: {
+                cls: "bg-gold/15 border-gold/50 text-navy",
+                label: "Missed",
+                title: ADHERENCE_TONE.missedDay,
+              },
+            }[state];
+            return (
+              <div key={d.dateKey} className="flex-1 text-center">
+                <div
+                  data-testid={`adherence-day-${state}`}
+                  className={`h-9 rounded-md border flex items-center justify-center gap-0.5 text-[10px] font-medium ${cell.cls}`}
+                  title={cell.title}
+                >
+                  {state === "taken" && <Check className="h-3 w-3" aria-hidden="true" />}
+                  {cell.label}
+                </div>
+                <div className="text-[9px] text-muted-foreground mt-0.5">
+                  {new Date(`${d.dateKey}T12:00:00Z`).toLocaleDateString(undefined, {
+                    weekday: "narrow",
+                  })}
+                </div>
               </div>
-              <div className="text-[9px] text-muted-foreground mt-0.5">
-                {new Date(`${d.dateKey}T12:00:00Z`).toLocaleDateString(undefined, {
-                  weekday: "narrow",
-                })}
-              </div>
-            </div>
-          );
-        })}
+            );
+          })}
+        </div>
+        <ul className="mt-2 flex flex-wrap gap-x-3 gap-y-1 text-[10px] text-muted-foreground">
+          <li className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-sm border border-success/40 bg-success/20" /> Taken
+          </li>
+          <li className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-sm border border-gold/50 bg-gold/15" /> Missed
+          </li>
+          <li className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-sm border bg-secondary" /> Still to mark
+          </li>
+          <li className="flex items-center gap-1">
+            <span className="h-2.5 w-2.5 rounded-sm bg-muted" /> Nothing scheduled
+          </li>
+        </ul>
       </div>
 
-      <ul className="space-y-2">
-        {rows.map((row) => (
+      {/* §Build A item 6 — today's doses grouped under real Morning /
+          Afternoon / Evening headers instead of a flat list of timestamps. */}
+      {GROUPS.map((group) => {
+        const groupRows = rows.filter((r) => timeOfDay(r.slot.scheduledAt) === group.id);
+        if (groupRows.length === 0) return null;
+        return (
+          <div key={group.id} className="space-y-2" data-testid={`dose-group-${group.id}`}>
+            <h4 className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+              {group.label}
+            </h4>
+            <ul className="space-y-2">
+        {groupRows.map((row) => (
           <li key={row.slot.key} className="rounded-md border p-2 space-y-2">
             <div className="flex items-start justify-between gap-2">
               <div className="min-w-0">
@@ -179,7 +225,10 @@ export function MedCheckInCard({ patientId }: { patientId: string }) {
             )}
           </li>
         ))}
-      </ul>
+            </ul>
+          </div>
+        );
+      })}
 
       {sideEffects.length > 0 && (
         <div className="text-[11px] text-muted-foreground space-y-1">
