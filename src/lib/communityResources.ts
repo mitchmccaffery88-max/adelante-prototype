@@ -552,8 +552,16 @@ export const RESOURCE_VERIFIER_CATHY = {
     "Human verification pass: address, phone and hours confirmed directly with each organisation. Published hours strings still carry the sourced '(verify hours)' hedge where the organisation gave no fixed public hours.",
 };
 
+/**
+ * Cathy's real pass covers only the entries THIS program sourced and she
+ * actually called. The ported Adelante Journey listings were never part of
+ * that pass, so they must not inherit her attribution: they stay unverified
+ * and land in the staff verification queue like any newly sourced entry.
+ */
+const PORTED_RESOURCE_IDS = new Set(PORTED_RESOURCES.map((r) => r.id));
+
 export const CATHY_VERIFIED_RESOURCE_IDS: string[] = SEED_RESOURCES.filter(
-  (r) => !r.placeholder,
+  (r) => !r.placeholder && !PORTED_RESOURCE_IDS.has(r.id),
 ).map((r) => r.id);
 
 function applyRecordedVerifications(): void {
