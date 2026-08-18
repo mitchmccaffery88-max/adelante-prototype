@@ -6,13 +6,19 @@
 // keeps `consent_ledger` writes off patient surfaces.
 //
 // PLACEHOLDER WARNING: the category labels come from CONSENT_CATEGORIES and are
-// placeholders pending Christi's DHCS-sourced ASCMI categories.
+// placeholders pending Christi's DHCS-sourced ASCMI categories. §Build A item 2
+// — the pending flag STAYS in the data (staff surfaces rely on it); what changed
+// is that the literal "(placeholder)" marker is stripped at the display layer so
+// it can never render raw to a patient.
 import { AdelanteEHR, CONSENT_CATEGORIES, useEhr, type ConsentRecord } from "@/lib/ehr";
+import { patientConsentLabel } from "@/lib/consentLabels";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { FileCheck2 } from "lucide-react";
 
-const CATEGORY_LABEL = new Map(CONSENT_CATEGORIES.map((c) => [c.key, c.label]));
+const CATEGORY_LABEL = new Map(
+  CONSENT_CATEGORIES.map((c) => [c.key, patientConsentLabel(c.label)]),
+);
 
 const FORM_LABEL: Record<ConsentRecord["formType"], string> = {
   AB133: "Standard consent form",

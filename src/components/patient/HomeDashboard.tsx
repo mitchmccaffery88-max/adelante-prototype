@@ -295,30 +295,11 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   // §P2 item 2 — tiles carry a real priority derived from live state instead
   // of a fixed source order. Higher renders first; ties keep source order.
+  // §Build A item 1 — the daily check-in used to render TWICE on /home: this
+  // status tile plus the real `DailyCheckInCard` picker further down. The tile
+  // is gone; the picker is the single rendering and now sits at the top of the
+  // page (see PatientHome).
   const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
-  tiles.push({
-    key: "daily-check-in",
-    priority: checkedInTodayFlow ? 10 : streak.days > 0 ? 95 : 90,
-    node: (
-      <TileShell icon={HeartPulse} title="Daily check-in">
-        {!checkedInTodayFlow && (
-          <Badge className="mb-2" variant="outline" data-testid="daily-check-in-due">
-            {streak.days > 0 ? `Due today · ${streak.days}-day streak on the line` : "Due today"}
-          </Badge>
-        )}
-        <p className="text-sm text-muted-foreground">
-          {checkedInTodayFlow
-            ? "You've already checked in today."
-            : "Nine feelings, one optional why. Under a minute."}
-        </p>
-        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-          <Link to="/home" hash="daily-mood-check-in">
-            {checkedInTodayFlow ? "Change today's check-in" : "Check in for today"}
-          </Link>
-        </Button>
-      </TileShell>
-    ),
-  });
   tiles.push({
     key: "weekly-check-in",
     priority: weeklyCheckOverdue ? 88 : weeklyCheckDue ? 70 : 15,
