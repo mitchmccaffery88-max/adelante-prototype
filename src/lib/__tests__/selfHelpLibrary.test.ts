@@ -392,7 +392,7 @@ describe("lesson response persistence", () => {
     expect(JSON.stringify(cohort)).not.toContain("I relapsed last week.");
 
     // Advocate DTO at the read floor: the whole surface is counts + titles.
-    const link = claimedHipaaLink(pid);
+    const link = hipaaOnlyLink(pid);
     const view = AdelanteEHR.advocateLibraryProgress(link.id);
     expect(view.allowed).toBe(true);
     expect(JSON.stringify(view)).not.toContain("I relapsed last week.");
