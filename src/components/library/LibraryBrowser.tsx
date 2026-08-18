@@ -11,11 +11,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock, Wrench, X } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, ChevronRight, Clock, Wrench, X } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
 import { getExercise, visibleExercises } from "@/lib/library";
 import { resolveContentIcon } from "@/lib/contentIcons";
+import { activityKindLabel, shortClinicalTarget } from "@/lib/contentDisplay";
 // Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
 // a published admin edit or a newly published lesson must reach patients
 // without a deployment. Exercises are not admin-managed yet, so they still
@@ -128,8 +129,9 @@ export function LibraryBrowser({
     <PatientPage width="browse" className="space-y-6">
       <PatientPageHeader
         icon={BookOpen}
-        title="My library"
-        lede="Short lessons and practical tools you can use on your own, any time."
+        eyebrow="Self-help learning library"
+        title="Real tools for real moments."
+        lede="Short lessons and practical exercises — most take 2 to 10 minutes. Work through a collection in order or open whatever fits today. It's yours to use for as long as you need it."
       />
 
       <Tabs defaultValue="lessons">
@@ -168,7 +170,7 @@ export function LibraryBrowser({
                       </span>
                       <div className="flex-1">
                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {current.cat.clinicalTarget}
+                          {shortClinicalTarget(current.cat.clinicalTarget)}
                         </p>
                         <h2 className="font-display text-xl text-navy">{current.cat.name}</h2>
                         <p className="text-sm text-muted-foreground">{current.cat.desc}</p>
@@ -183,26 +185,40 @@ export function LibraryBrowser({
                       </div>
                       <Progress value={prog.pct} className="h-2" />
                     </div>
-                    <ul className="divide-y">
+                    <ul className="space-y-2">
                       {current.items.map((item) => {
                         const done = completedItems.includes(item.id);
                         return (
-                          <li key={item.id} className="flex items-center gap-3 py-2.5">
-                            <div className="flex-1">
-                              <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
-                                {item.title}
-                                {done && <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />}
-                                {item.populations && (
-                                  <Badge variant="outline" className="text-[10px]">
-                                    Reentry-specific
+                          <li key={item.id}>
+                            <button
+                              type="button"
+                              onClick={() => setOpenItem(item.id)}
+                              className="flex w-full items-center gap-3 rounded-2xl border border-border bg-card p-4 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                            >
+                              <div className="flex-1 space-y-1.5">
+                                <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
+                                  {item.title}
+                                  {done && (
+                                    <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />
+                                  )}
+                                  {item.populations && (
+                                    <Badge variant="outline" className="text-[10px]">
+                                      Reentry-specific
+                                    </Badge>
+                                  )}
+                                </div>
+                                <p className="text-sm italic text-muted-foreground">“{item.problem}”</p>
+                                <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                                  <span className="inline-flex items-center gap-1">
+                                    <Clock className="h-3.5 w-3.5" aria-hidden /> {item.minutes} min
+                                  </span>
+                                  <Badge variant="secondary" className="text-[10px]">
+                                    {activityKindLabel(item.activity.kind)}
                                   </Badge>
-                                )}
+                                </div>
                               </div>
-                              <div className="text-xs text-muted-foreground">{item.minutes} min</div>
-                            </div>
-                            <Button type="button" size="sm" variant="outline" onClick={() => setOpenItem(item.id)}>
-                              {done ? "Revisit" : "Start"}
-                            </Button>
+                              <ChevronRight className="h-4 w-4 shrink-0 text-muted-foreground" aria-hidden />
+                            </button>
                           </li>
                         );
                       })}
@@ -230,7 +246,7 @@ export function LibraryBrowser({
                           </span>
                           <div className="flex-1">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                              {cat.clinicalTarget}
+                              {shortClinicalTarget(cat.clinicalTarget)}
                             </p>
                             <h2 className="font-display text-lg text-navy">{cat.name}</h2>
                             <p className="text-sm text-muted-foreground">{cat.desc}</p>
