@@ -255,28 +255,65 @@ function Activity({
   }
 }
 
+/**
+ * One step, presented on its own: a small numbered eyebrow AND a real step
+ * title. Previously the label was only the tiny eyebrow, so nine of ten steps
+ * had no heading at all.
+ */
 function Step({
   n,
+  total,
   label,
   icon,
   children,
 }: {
   n: number;
+  total: number;
   label: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[11px] text-navy">
-          {n}
-        </span>
-        {icon}
-        {label}
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-teal">
+          {icon}
+          {t("modStepLabel")} {n} {t("modStepOf")} {total}
+        </div>
+        <h2 className="font-display text-xl text-navy">{label}</h2>
       </div>
       {children}
     </section>
+  );
+}
+
+/** Segmented progress — one bar per step, filled up to where the patient is. */
+function StepProgress({ index, total }: { index: number; total: number }) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-1.5">
+      <div
+        className="flex gap-1"
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={index + 1}
+        aria-label={`${t("modStepLabel")} ${index + 1} ${t("modStepOf")} ${total}`}
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              i <= index ? "bg-teal" : "bg-secondary"
+            }`}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {index + 1}/{total} {t("modStepsWord")}
+      </p>
+    </div>
   );
 }
 
