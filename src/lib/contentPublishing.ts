@@ -37,6 +37,11 @@ export type ContentStatus = "draft" | "pending_review" | "published";
 export type ContentTypeId =
   | "library_lesson"
   | "recovery_lesson"
+  // §Adelante Journey sync Build 2 — the CONTAINERS are content too. A
+  // category / module was a hardcoded array entry, so adding one needed a
+  // deploy. They ride the same lifecycle as the lessons inside them.
+  | "library_category"
+  | "recovery_module"
   // §Content Management correction — Community Resources and naloxone access
   // points are EDITORIAL content for this program, not one-off reference data:
   // the content manager adds locations and counties as the program expands, and
@@ -48,7 +53,16 @@ export type ContentTypeId =
 /** A content body is whatever the type descriptor says it is. */
 export type ContentBody = Record<string, unknown>;
 
-export type ContentAction = "created" | "edited" | "submitted" | "returned" | "published";
+export type ContentAction =
+  | "created"
+  | "edited"
+  | "submitted"
+  | "returned"
+  | "published"
+  /** Withdrawn from patients. The entry and its history survive. */
+  | "retired"
+  /** A never-published draft was discarded outright. */
+  | "discarded";
 
 export interface ContentRevision {
   /** 1-based, monotonic per entry. This is the number a patient "saw". */
@@ -371,6 +385,112 @@ export function publishContent(input: ReviewInput): ContentResult {
 
 /** @deprecated Kept as the old call site's name; publishing needs no approval. */
 export const approveAndPublishContent = publishContent;
+
+// ---------------------------------------------------------------------------
+// §Referential integrity — retire / discard, and the guard that blocks them
+// ---------------------------------------------------------------------------
+//
+// WHAT "DELETE" MEANS HERE. There is no hard delete of published content, and
+// adding one would break the store's central promise: "which revision did the
+// patient see" must stay answerable. So removal splits in two:
+//
+//   RETIRE   — the entry was published. Clear the frozen snapshot so patients
+//              stop being served it; keep the entry, its working body and its
+//              full revision history, with `retired` appended as a real event.
+//              An entry that shadowed a shipped baseline falls BACK to that
+//              baseline rather than vanishing — the code is still the floor.
+//   DISCARD  — the entry was never published, so no patient ever saw it and
+//              there is nothing to be accountable for. The row is dropped.
+//
+// The guard is a registry rather than a descriptor method because the honest
+// answer to "is anything still using this category" lives in the CATALOG
+// (baseline lessons overlaid with published ones), and the catalog imports
+// this module. `src/lib/contentCatalog.ts` registers the real implementation
+// at import time; the default is permissive so this store stays standalone.
+
+export type ContentIntegrityGuard = (typeId: ContentTypeId, id: string) => string | undefined;
+
+let integrityGuard: ContentIntegrityGuard = () => undefined;
+
+export function setContentIntegrityGuard(fn: ContentIntegrityGuard): void {
+  integrityGuard = fn;
+}
+
+/**
+ * The reason this entry may NOT be withdrawn from patients right now, or
+ * undefined when it may. Exported so the admin UI can disable the control and
+ * explain itself — but the mutations below re-check it, so the guard is real
+ * and not a UI decoration.
+ */
+export function contentRemovalBlockReason(
+  typeId: ContentTypeId,
+  id: string,
+): string | undefined {
+  return integrityGuard(typeId, id);
+}
+
+export interface RemoveInput {
+  typeId: ContentTypeId;
+  id: string;
+  actor: ContentActor;
+  /** Required. Withdrawing content from patients needs a stated reason. */
+  note: string;
+}
+
+/** Unpublish: patients stop being served this. History is kept. */
+export function retireContent(input: RemoveInput): ContentResult {
+  const problem = actorProblem(input.actor);
+  if (problem) return { ok: false, reason: problem };
+  if (!canPublishContent(input.actor.role))
+    return { ok: false, reason: "This role cannot withdraw published content." };
+  if (!input.note?.trim())
+    return { ok: false, reason: "Say why this is being withdrawn from patients." };
+  const e = entries.get(key(input.typeId, input.id));
+  if (!e) return { ok: false, reason: "No such content entry." };
+  if (!isContentLive(e)) return { ok: false, reason: "This is not published, so nothing to withdraw." };
+
+  const blocked = integrityGuard(input.typeId, input.id);
+  if (blocked) return { ok: false, reason: blocked };
+
+  e.status = "draft";
+  delete e.publishedBody;
+  delete e.publishedRev;
+  delete e.publishedAt;
+  delete e.publishedBy;
+  appendRevision(e, "retired", input.actor, "draft", input.note.trim());
+  notify();
+  return { ok: true, entry: clone(e) };
+}
+
+/** Discard a never-published draft outright. Refuses once anything went live. */
+export function discardContentDraft(input: RemoveInput): ContentResult {
+  const problem = actorProblem(input.actor);
+  if (problem) return { ok: false, reason: problem };
+  if (!canAuthorContent(input.actor.role))
+    return { ok: false, reason: "This role cannot discard content." };
+  if (!input.note?.trim()) return { ok: false, reason: "Say why this draft is being discarded." };
+  const k = key(input.typeId, input.id);
+  const e = entries.get(k);
+  if (!e) return { ok: false, reason: "No such content entry." };
+  if (isContentLive(e))
+    return {
+      ok: false,
+      reason: "This is published. Withdraw it from patients first — published history is never deleted.",
+    };
+  if (e.revisions.some((r) => r.action === "published"))
+    return {
+      ok: false,
+      reason: "This was published before. Its history is kept; it cannot be discarded.",
+    };
+
+  const blocked = integrityGuard(input.typeId, input.id);
+  if (blocked) return { ok: false, reason: blocked };
+
+  const snapshot = clone(e);
+  entries.delete(k);
+  notify();
+  return { ok: true, entry: snapshot };
+}
 
 // ---------------------------------------------------------------------------
 // Migration seeding — importing content that was ALREADY published elsewhere

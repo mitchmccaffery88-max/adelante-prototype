@@ -40,13 +40,16 @@ import { CONTENT_TYPES, contentType } from "@/lib/contentTypes";
 import {
   canAuthorContent,
   canPublishContent,
+  contentRemovalBlockReason,
   contentReviewQueue,
   contentStoreVersion,
+  discardContentDraft,
   getContentEntry,
   hasUnpublishedChanges,
   isContentLive,
   listContent,
   publishContent,
+  retireContent,
   returnContentForChanges,
   saveContentDraft,
   submitContentForReview,
@@ -82,6 +85,60 @@ function StatusBadge({ entry }: { entry: ContentEntry }) {
         </Badge>
       )}
     </div>
+  );
+}
+
+/**
+ * §Referential integrity, at the surface. The button is disabled with the
+ * store's OWN reason string — and the store re-checks on click, so this is a
+ * readout of a real guard rather than the guard itself.
+ */
+function RemoveControl({
+  entry,
+  actor,
+  mayAuthor,
+  mayPublish,
+}: {
+  entry: ContentEntry;
+  actor: { staffId?: string; name: string; role: ReturnType<typeof useActingStaff>["role"] };
+  mayAuthor: boolean;
+  mayPublish: boolean;
+}) {
+  const live = isContentLive(entry);
+  const blocked = contentRemovalBlockReason(entry.typeId, entry.id);
+  const label = live ? "Withdraw" : "Discard draft";
+  const allowed = live ? mayPublish : mayAuthor;
+  const run = () => {
+    const note = window.prompt(
+      live
+        ? "Why is this being withdrawn from patients?"
+        : "Why is this draft being discarded?",
+    );
+    if (!note?.trim()) return;
+    const res = live
+      ? retireContent({ typeId: entry.typeId, id: entry.id, actor, note })
+      : discardContentDraft({ typeId: entry.typeId, id: entry.id, actor, note });
+    if (!res.ok) toast.error(res.reason);
+    else
+      toast.success(
+        live
+          ? "Withdrawn. Patients no longer see this; its history is kept."
+          : "Draft discarded.",
+      );
+  };
+  return (
+    <Button
+      type="button"
+      size="sm"
+      variant="ghost"
+      className="text-destructive"
+      title={blocked ?? undefined}
+      disabled={!allowed || !!blocked || entry.status === "pending_review"}
+      onClick={run}
+      data-testid={`remove-${entry.id}`}
+    >
+      {label}
+    </Button>
   );
 }
 
@@ -343,6 +400,12 @@ function ManageTab({ version }: { version: number }) {
                     >
                       Edit
                     </Button>
+                    <RemoveControl
+                      entry={e}
+                      actor={actor}
+                      mayAuthor={mayAuthor}
+                      mayPublish={mayPublish}
+                    />
                   </div>
                 </li>
               ))}

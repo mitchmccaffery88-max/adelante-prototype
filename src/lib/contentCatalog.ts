@@ -14,19 +14,25 @@
 // an admin can edit a live lesson without patients seeing half-written text.
 import { useSyncExternalStore } from "react";
 import {
-  LIBRARY_CATEGORIES,
   LIBRARY_ITEMS,
   isLibraryItemVisible,
   type LibraryItem,
 } from "@/lib/library";
-import { RECOVERY_LESSONS, RECOVERY_MODULES, type RecoveryLesson } from "@/lib/recovery";
+import { RECOVERY_LESSONS, type RecoveryLesson } from "@/lib/recovery";
 import type { PopulationResolution } from "@/lib/population";
 import {
   publishedContentOfType,
   publishedVersion,
+  setContentIntegrityGuard,
   subscribeContent,
+  type ContentTypeId,
 } from "@/lib/contentPublishing";
-import { asLibraryItem, asRecoveryLesson } from "@/lib/contentTypes";
+import {
+  asLibraryItem,
+  asRecoveryLesson,
+  liveLibraryCategoryList,
+  liveRecoveryModuleList,
+} from "@/lib/contentTypes";
 import { setContentResolver } from "@/lib/engagement";
 
 export { subscribeContent };
@@ -93,7 +99,7 @@ export function liveCategoryProgress(
 }
 
 export function liveLibraryCategories() {
-  return [...LIBRARY_CATEGORIES].sort((a, b) => a.order - b.order);
+  return liveLibraryCategoryList();
 }
 
 // ---------------------------------------------------------------------------
@@ -136,7 +142,7 @@ export function liveModuleProgress(
  * admin tool could add content the patient UI still calls "pending".
  */
 export function liveRecoveryModules() {
-  return RECOVERY_MODULES.map((m) => ({
+  return liveRecoveryModuleList().map((m) => ({
     ...m,
     contentPending: m.contentPending && liveLessonsInModule(m.id).length === 0,
   }));
@@ -152,4 +158,37 @@ export function liveRecoveryModule(id: string) {
 setContentResolver({
   libraryItem: liveLibraryItem,
   recoveryLesson: liveRecoveryLesson,
+});
+
+// ---------------------------------------------------------------------------
+// §Referential integrity — the real implementation of the store's guard.
+//
+// "In use" is deliberately measured against the LIVE catalog, not the store:
+// a category is in use when a lesson a PATIENT CAN REACH points at it, which
+// includes shipped baseline lessons the admin tool has never touched. Nothing
+// here is advisory — `retireContent` / `discardContentDraft` call it and
+// refuse, so a category cannot be pulled out from under live lessons even if
+// a UI is bypassed.
+// ---------------------------------------------------------------------------
+
+export function containerUsage(typeId: ContentTypeId, id: string): string[] {
+  if (typeId === "library_category")
+    return liveLibraryItems()
+      .filter((i) => i.categoryId === id)
+      .map((i) => i.id);
+  if (typeId === "recovery_module")
+    return liveRecoveryLessons()
+      .filter((l) => l.moduleId === id)
+      .map((l) => l.id);
+  return [];
+}
+
+setContentIntegrityGuard((typeId, id) => {
+  const users = containerUsage(typeId, id);
+  if (users.length === 0) return undefined;
+  const what = typeId === "library_category" ? "library category" : "recovery module";
+  const shown = users.slice(0, 3).join(", ");
+  return `This ${what} still holds ${users.length} lesson${users.length === 1 ? "" : "s"} (${shown}${
+    users.length > 3 ? ", …" : ""
+  }). Move or withdraw those lessons first.`;
 });
