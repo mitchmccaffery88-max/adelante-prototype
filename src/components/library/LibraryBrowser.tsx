@@ -11,7 +11,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { ArrowLeft, BookOpen, CheckCircle2, Clock, Sunrise, Wrench, X } from "lucide-react";
+import { ArrowLeft, BookOpen, CheckCircle2, Clock, Wrench, X } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
 import { getExercise, visibleExercises } from "@/lib/library";
@@ -56,10 +56,24 @@ export function LibraryBrowser({
   if (lesson) {
     return (
       <PatientPage>
-        <Button type="button" variant="ghost" onClick={() => setOpenItem(null)}>
+        <Button
+          type="button"
+          variant="ghost"
+          onClick={() => {
+            setOpenCategory(lesson.categoryId);
+            setOpenItem(null);
+          }}
+        >
           <ArrowLeft className="mr-1 h-4 w-4" /> Back to the library
         </Button>
-        <LibraryLesson item={lesson} patientId={patientId} onDone={() => setOpenItem(null)} />
+        <LibraryLesson
+          item={lesson}
+          patientId={patientId}
+          onDone={() => {
+            setOpenCategory(lesson.categoryId);
+            setOpenItem(null);
+          }}
+        />
       </PatientPage>
     );
   }
