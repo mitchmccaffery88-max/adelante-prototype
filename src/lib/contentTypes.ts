@@ -557,6 +557,12 @@ const CATEGORY_FIELDS: ContentField[] = [
     help: "What this category is clinically aiming at. Shown to staff, never to patients.",
   },
   {
+    key: "eyebrow",
+    label: "Short eyebrow (patient-facing)",
+    kind: "text",
+    help: "The short phrase above the category name on the patient Library card, e.g. \"Grounding · Nervous system regulation\". Leave blank to derive one automatically from the clinical target — set it whenever that guess reads wrong.",
+  },
+  {
     key: "icon",
     label: "Icon name",
     kind: "text",

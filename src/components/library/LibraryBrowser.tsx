@@ -16,7 +16,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
 import { getExercise, visibleExercises } from "@/lib/library";
 import { resolveContentIcon } from "@/lib/contentIcons";
-import { activityKindLabel, shortClinicalTarget } from "@/lib/contentDisplay";
+import { activityKindLabel, categoryEyebrow } from "@/lib/contentDisplay";
 // Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
 // a published admin edit or a newly published lesson must reach patients
 // without a deployment. Exercises are not admin-managed yet, so they still
@@ -170,7 +170,7 @@ export function LibraryBrowser({
                       </span>
                       <div className="flex-1">
                         <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                          {shortClinicalTarget(current.cat.clinicalTarget)}
+                          {categoryEyebrow(current.cat)}
                         </p>
                         <h2 className="font-display text-xl text-navy">{current.cat.name}</h2>
                         <p className="text-sm text-muted-foreground">{current.cat.desc}</p>
@@ -246,7 +246,7 @@ export function LibraryBrowser({
                           </span>
                           <div className="flex-1">
                             <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
-                              {shortClinicalTarget(cat.clinicalTarget)}
+                              {categoryEyebrow(cat)}
                             </p>
                             <h2 className="font-display text-lg text-navy">{cat.name}</h2>
                             <p className="text-sm text-muted-foreground">{cat.desc}</p>

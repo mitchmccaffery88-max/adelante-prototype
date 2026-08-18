@@ -43,3 +43,14 @@ export function shortClinicalTarget(value: string): string {
 function cap(s: string): string {
   return s.charAt(0).toUpperCase() + s.slice(1);
 }
+
+/**
+ * The patient-facing eyebrow for a Library category. An AUTHORED `eyebrow`
+ * always wins; the algorithmic trim of `clinicalTarget` is only a fallback,
+ * because it can silently produce plausible-but-wrong phrasing.
+ */
+export function categoryEyebrow(cat: { eyebrow?: string; clinicalTarget: string }): string {
+  const authored = cat.eyebrow?.trim();
+  if (authored) return authored;
+  return shortClinicalTarget(cat.clinicalTarget);
+}
