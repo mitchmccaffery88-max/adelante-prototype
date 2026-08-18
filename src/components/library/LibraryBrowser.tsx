@@ -15,6 +15,7 @@ import { ArrowLeft, BookOpen, CheckCircle2, Clock, Sunrise, Wrench, X } from "lu
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
 import { getExercise, visibleExercises } from "@/lib/library";
+import { resolveContentIcon } from "@/lib/contentIcons";
 // Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
 // a published admin edit or a newly published lesson must reach patients
 // without a deployment. Exercises are not admin-managed yet, so they still
@@ -42,6 +43,10 @@ export function LibraryBrowser({
   const toolkit = useEhr(() => AdelanteEHR.savedToolkitItems(patientId));
   const [openItem, setOpenItem] = useState<string | null>(initialItem ?? null);
   const [openExercise, setOpenExercise] = useState<string | null>(initialExercise ?? null);
+  // Build C: the lessons tab is an INDEX first. `openCategory` is the only
+  // new navigation state — a category's item list is the same list markup
+  // that used to be expanded inline, just gated behind a tap.
+  const [openCategory, setOpenCategory] = useState<string | null>(null);
 
   if (!patientId) return null;
 
@@ -121,59 +126,118 @@ export function LibraryBrowser({
         </TabsList>
 
         <TabsContent value="lessons" className="space-y-4 pt-4">
-          {liveLibraryCategories().map((cat) => {
-            const items = liveVisibleItemsInCategory(cat.id, population);
-            // A category with nothing in it for this person is a dead end —
-            // either it was just created and has no lessons yet, or every
-            // lesson in it is written for a different population. Don't show
-            // an empty shelf with a 0% bar on it.
-            if (items.length === 0) return null;
-            const prog = liveCategoryProgress(cat.id, completedItems, population);
+          {(() => {
+            const cats = liveLibraryCategories()
+              .map((cat) => ({
+                cat,
+                items: liveVisibleItemsInCategory(cat.id, population),
+              }))
+              // A category with nothing in it for this person is a dead end —
+              // either it was just created and has no lessons yet, or every
+              // lesson in it is written for a different population.
+              .filter((c) => c.items.length > 0);
+
+            const current = cats.find((c) => c.cat.id === openCategory);
+
+            if (current) {
+              const prog = liveCategoryProgress(current.cat.id, completedItems, population);
+              const CatIcon = resolveContentIcon(current.cat.icon);
+              return (
+                <div className="space-y-4">
+                  <Button type="button" variant="ghost" onClick={() => setOpenCategory(null)}>
+                    <ArrowLeft className="mr-1 h-4 w-4" /> All collections
+                  </Button>
+                  <Card className="space-y-4 p-5">
+                    <div className="flex items-start gap-3">
+                      <span className="mt-0.5 grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-teal">
+                        <CatIcon className="h-5 w-5" aria-hidden />
+                      </span>
+                      <div className="flex-1">
+                        <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                          {current.cat.clinicalTarget}
+                        </p>
+                        <h2 className="font-display text-xl text-navy">{current.cat.name}</h2>
+                        <p className="text-sm text-muted-foreground">{current.cat.desc}</p>
+                      </div>
+                    </div>
+                    <div>
+                      <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+                        <span>
+                          {prog.completed} of {prog.total} finished
+                        </span>
+                        <span>{prog.pct}%</span>
+                      </div>
+                      <Progress value={prog.pct} className="h-2" />
+                    </div>
+                    <ul className="divide-y">
+                      {current.items.map((item) => {
+                        const done = completedItems.includes(item.id);
+                        return (
+                          <li key={item.id} className="flex items-center gap-3 py-2.5">
+                            <div className="flex-1">
+                              <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
+                                {item.title}
+                                {done && <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />}
+                                {item.populations && (
+                                  <Badge variant="outline" className="text-[10px]">
+                                    Reentry-specific
+                                  </Badge>
+                                )}
+                              </div>
+                              <div className="text-xs text-muted-foreground">{item.minutes} min</div>
+                            </div>
+                            <Button type="button" size="sm" variant="outline" onClick={() => setOpenItem(item.id)}>
+                              {done ? "Revisit" : "Start"}
+                            </Button>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  </Card>
+                </div>
+              );
+            }
+
             return (
-              <Card key={cat.id} className="space-y-4 p-5">
-                <div className="flex items-start gap-3">
-                  <Sunrise className="mt-0.5 h-5 w-5 text-teal" aria-hidden />
-                  <div className="flex-1">
-                    <h2 className="font-display text-xl text-navy">{cat.name}</h2>
-                    <p className="text-sm text-muted-foreground">{cat.desc}</p>
-                  </div>
-                </div>
-                <div>
-                  <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
-                    <span>
-                      {prog.completed} of {prog.total} finished
-                    </span>
-                    <span>{prog.pct}%</span>
-                  </div>
-                  <Progress value={prog.pct} className="h-2" />
-                </div>
-                <ul className="divide-y">
-                  {items.map((item) => {
-                    const done = completedItems.includes(item.id);
-                    return (
-                      <li key={item.id} className="flex items-center gap-3 py-2.5">
-                        <div className="flex-1">
-                          <div className="flex flex-wrap items-center gap-2 text-sm font-medium text-navy">
-                            {item.title}
-                            {done && <CheckCircle2 className="h-4 w-4 text-teal" aria-label="Completed" />}
-                            {item.populations && (
-                              <Badge variant="outline" className="text-[10px]">
-                                Reentry-specific
-                              </Badge>
-                            )}
+              <div className="grid gap-3 sm:grid-cols-2">
+                {cats.map(({ cat, items }) => {
+                  const prog = liveCategoryProgress(cat.id, completedItems, population);
+                  const CatIcon = resolveContentIcon(cat.icon);
+                  return (
+                    <Card key={cat.id} className="p-0">
+                      <button
+                        type="button"
+                        onClick={() => setOpenCategory(cat.id)}
+                        className="flex w-full flex-col gap-3 rounded-[inherit] p-5 text-left transition-colors hover:bg-secondary/40 focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                      >
+                        <div className="flex items-start gap-3">
+                          <span className="grid h-10 w-10 shrink-0 place-items-center rounded-2xl bg-secondary text-teal">
+                            <CatIcon className="h-5 w-5" aria-hidden />
+                          </span>
+                          <div className="flex-1">
+                            <p className="text-[11px] font-medium uppercase tracking-wide text-muted-foreground">
+                              {cat.clinicalTarget}
+                            </p>
+                            <h2 className="font-display text-lg text-navy">{cat.name}</h2>
+                            <p className="text-sm text-muted-foreground">{cat.desc}</p>
                           </div>
-                          <div className="text-xs text-muted-foreground">{item.minutes} min</div>
                         </div>
-                        <Button type="button" size="sm" variant="outline" onClick={() => setOpenItem(item.id)}>
-                          {done ? "Revisit" : "Start"}
-                        </Button>
-                      </li>
-                    );
-                  })}
-                </ul>
-              </Card>
+                        <div className="w-full">
+                          <div className="mb-1.5 flex justify-between text-xs text-muted-foreground">
+                            <span>
+                              {items.length} lesson{items.length === 1 ? "" : "s"} · {prog.completed} done
+                            </span>
+                            <span>{prog.pct}%</span>
+                          </div>
+                          <Progress value={prog.pct} className="h-2" />
+                        </div>
+                      </button>
+                    </Card>
+                  );
+                })}
+              </div>
             );
-          })}
+          })()}
         </TabsContent>
 
         <TabsContent value="exercises" className="grid gap-3 pt-4 sm:grid-cols-2">
