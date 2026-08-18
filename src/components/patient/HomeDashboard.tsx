@@ -258,15 +258,29 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
 
   // --- "Today's forward step": the next unfinished, population-visible lesson
   const contentVersion = usePublishedContentVersion();
-  const nextLesson = useMemo(
+  const visibleLessons = useMemo(
     () =>
       liveLibraryItems()
         .filter((i) => isLibraryItemVisible(i, population))
         .slice()
-        .sort((a, b) => a.order - b.order)
-        .find((i) => !lessonsDone.includes(i.id)),
-    [population, lessonsDone, contentVersion],
+        .sort((a, b) => a.order - b.order),
+    [population, contentVersion],
   );
+  const nextLesson = useMemo(
+    () => visibleLessons.find((i) => !lessonsDone.includes(i.id)),
+    [visibleLessons, lessonsDone],
+  );
+  // §Build A item 7 — a real completion percentage, over the lessons this
+  // patient can actually see (population-filtered), not the whole catalogue.
+  const lessonsDoneVisible = useMemo(
+    () => visibleLessons.filter((i) => lessonsDone.includes(i.id)).length,
+    [visibleLessons, lessonsDone],
+  );
+  const libraryPercent =
+    visibleLessons.length > 0
+      ? Math.round((lessonsDoneVisible / visibleLessons.length) * 100)
+      : 0;
+  const hasProgress = lessonsDoneVisible > 0 || exercisesDone.length > 0;
 
   const lastToolkit = useMemo(
     () => [...toolkit].sort((a, b) => a.createdAt.localeCompare(b.createdAt)).pop(),
@@ -348,15 +362,20 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
     priority: 35,
     node: (
           <TileShell icon={BookOpen} title="Pick up where you left off">
-            {lastToolkit ? (
+            {hasProgress ? (
               <>
-                <p className="text-base">{lastToolkit.label}</p>
+                <p className="text-base">{lastToolkit ? lastToolkit.label : "Keep going"}</p>
+                <p className="mt-1 text-sm font-medium text-foreground" data-testid="library-progress-percent">
+                  {libraryPercent}% of your lessons done
+                </p>
+                <Progress className="mt-2 h-2" value={libraryPercent} />
                 <p className="mt-1 text-xs text-muted-foreground">
                   {lessonsDone.length} lesson{lessonsDone.length === 1 ? "" : "s"} ·{" "}
                   {exercisesDone.length} tool{exercisesDone.length === 1 ? "" : "s"} finished
                 </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link
+                  {lastToolkit ? (
+                    <Link
                     to="/library"
                     search={
                       lastToolkit.from === "exercise"
@@ -365,7 +384,10 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
                     }
                   >
                     {liveLibraryItem(lastToolkit.id) ? "Open the lesson" : "Open the tool"}
-                  </Link>
+                    </Link>
+                  ) : (
+                    <Link to="/library">Back to the library</Link>
+                  )}
                 </Button>
               </>
             ) : (
