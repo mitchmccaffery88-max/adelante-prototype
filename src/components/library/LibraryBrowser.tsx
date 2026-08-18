@@ -14,16 +14,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ArrowLeft, BookOpen, CheckCircle2, Clock, Sunrise, Wrench, X } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
-import {
-  LIBRARY_CATEGORIES,
-  getExercise,
-  visibleExercises,
-} from "@/lib/library";
+import { getExercise, visibleExercises } from "@/lib/library";
 // Lessons resolve through the CONTENT CATALOG, not the raw baseline module:
 // a published admin edit or a newly published lesson must reach patients
 // without a deployment. Exercises are not admin-managed yet, so they still
 // come straight from the baseline.
 import {
+  liveLibraryCategories,
   liveCategoryProgress,
   liveLibraryItem,
   liveVisibleItemsInCategory,
@@ -124,7 +121,7 @@ export function LibraryBrowser({
         </TabsList>
 
         <TabsContent value="lessons" className="space-y-4 pt-4">
-          {LIBRARY_CATEGORIES.map((cat) => {
+          {liveLibraryCategories().map((cat) => {
             const items = liveVisibleItemsInCategory(cat.id, population);
             const prog = liveCategoryProgress(cat.id, completedItems, population);
             return (

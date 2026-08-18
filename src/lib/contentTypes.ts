@@ -16,15 +16,23 @@ import {
   LIBRARY_ITEMS,
   type LibraryActivity,
   type LibraryItem,
+  type LibraryCategory,
 } from "@/lib/library";
-import { RECOVERY_LESSONS, RECOVERY_MODULES, TOOL_FLOW_LIMITS, type RecoveryLesson } from "@/lib/recovery";
+import {
+  RECOVERY_LESSONS,
+  RECOVERY_MODULES,
+  TOOL_FLOW_LIMITS,
+  type RecoveryLesson,
+  type RecoveryModule,
+} from "@/lib/recovery";
+import { POPULATION_LABEL, type PopulationTrack } from "@/lib/population";
 import {
   RESOURCE_CATEGORIES,
   SEED_RESOURCES,
   type CommunityResource,
 } from "@/lib/communityResources";
 import { NALOXONE_ACCESS_POINTS, type NaloxoneAccessPoint } from "@/lib/safetyContent";
-import type { ContentBody, ContentTypeId } from "@/lib/contentPublishing";
+import { publishedContentOfType, type ContentBody, type ContentTypeId } from "@/lib/contentPublishing";
 
 export type ContentFieldKind =
   | "text"
@@ -57,6 +65,13 @@ export interface ContentTypeDescriptor {
   /** One line explaining what publishing this actually changes for patients. */
   publishEffect: string;
   fields: ContentField[];
+  /**
+   * Fields whose OPTIONS depend on live published content — the lesson forms'
+   * category / module pickers, which must list categories an admin created
+   * five seconds ago. Static `fields` stays the fallback so every existing
+   * consumer keeps working.
+   */
+  fieldsFor?: () => ContentField[];
   /** Every id that exists as shipped, hardcoded baseline content. */
   baselineIds: () => string[];
   /** The shipped body for an id, so the editor can start from real text. */
@@ -121,6 +136,37 @@ function requireText(body: ContentBody, fields: ContentField[]): string[] {
     if (!str(body, f.key).trim()) errors.push(`${f.label} is required.`);
   }
   return errors;
+}
+
+// ---------------------------------------------------------------------------
+// §Adelante Journey sync Build 2 — LIVE CONTAINERS.
+//
+// Categories and modules are read here, not only in the catalog, because the
+// lesson forms need them: a lesson written into a category that was created a
+// minute ago must validate. `contentCatalog.ts` imports this module (not the
+// other way round), so this is the lowest place the overlay can live without
+// a cycle. The resolution rule is the catalog's, unchanged: a PUBLISHED
+// override wins over the shipped baseline, a draft never displaces it.
+// ---------------------------------------------------------------------------
+
+function overlayById<T extends { id: string }>(baseline: readonly T[], overrides: T[]): T[] {
+  const byId = new Map<string, T>(baseline.map((b) => [b.id, b]));
+  for (const o of overrides) if (o.id) byId.set(o.id, o);
+  return [...byId.values()];
+}
+
+export function liveLibraryCategoryList(): LibraryCategory[] {
+  const overrides = publishedContentOfType("library_category")
+    .map((b) => structuredClone(b) as unknown as LibraryCategory)
+    .filter((c) => !!c.id);
+  return overlayById(LIBRARY_CATEGORIES, overrides).sort((a, b) => a.order - b.order);
+}
+
+export function liveRecoveryModuleList(): RecoveryModule[] {
+  const overrides = publishedContentOfType("recovery_module")
+    .map((b) => structuredClone(b) as unknown as RecoveryModule)
+    .filter((m) => !!m.id);
+  return overlayById(RECOVERY_MODULES, overrides).sort((a, b) => a.order - b.order);
 }
 
 /** The activity is a discriminated union — validate the variant that is set. */
@@ -188,17 +234,19 @@ function validateActivity(body: ContentBody): string[] {
 // Library lesson — the eight-part instructional sequence
 // ---------------------------------------------------------------------------
 
-const LIBRARY_FIELDS: ContentField[] = [
-  {
+function libraryCategoryField(): ContentField {
+  return {
     key: "categoryId",
     label: "Category",
     kind: "select",
     required: true,
-    options: LIBRARY_CATEGORIES.sort((a, b) => a.order - b.order).map((c) => ({
-      value: c.id,
-      label: c.name,
-    })),
-  },
+    help: "Includes categories created in this workspace, once they are published.",
+    options: liveLibraryCategoryList().map((c) => ({ value: c.id, label: c.name })),
+  };
+}
+
+const LIBRARY_FIELDS: ContentField[] = [
+  libraryCategoryField(),
   { key: "title", label: "Lesson title", kind: "text", required: true },
   { key: "minutes", label: "Minutes to read", kind: "number", required: true },
   { key: "order", label: "Order within the category", kind: "number", required: true },
@@ -235,6 +283,7 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
   publishEffect:
     "Publishing puts this lesson in the patient Library immediately, inside its category, subject to the same population gate every other lesson uses.",
   fields: LIBRARY_FIELDS,
+  fieldsFor: () => [libraryCategoryField(), ...LIBRARY_FIELDS.slice(1)],
   baselineIds: () => LIBRARY_ITEMS.map((i) => i.id),
   baselineBody: (id) => {
     const item = LIBRARY_ITEMS.find((i) => i.id === id);
@@ -242,7 +291,7 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
   },
   emptyBody: () => ({
     id: "",
-    categoryId: LIBRARY_CATEGORIES[0]?.id ?? "",
+    categoryId: liveLibraryCategoryList()[0]?.id ?? "",
     title: "",
     minutes: 5,
     order: 99,
@@ -259,7 +308,7 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
   titleOf: (b) => str(b, "title") || "(untitled lesson)",
   validate: (b) => {
     const errors = requireText(b, LIBRARY_FIELDS);
-    if (!LIBRARY_CATEGORIES.some((c) => c.id === str(b, "categoryId")))
+    if (!liveLibraryCategoryList().some((c) => c.id === str(b, "categoryId")))
       errors.push("Pick a real library category.");
     return [...errors, ...validateActivity(b)];
   },
@@ -269,17 +318,22 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
 // Recovery lesson — the ten-step sequence, including the typed tool flow
 // ---------------------------------------------------------------------------
 
-const RECOVERY_FIELDS: ContentField[] = [
-  {
+function recoveryModuleField(): ContentField {
+  return {
     key: "moduleId",
     label: "Module",
     kind: "select",
     required: true,
-    options: RECOVERY_MODULES.sort((a, b) => a.order - b.order).map((m) => ({
+    help: "Includes modules created in this workspace, once they are published.",
+    options: liveRecoveryModuleList().map((m) => ({
       value: m.id,
       label: `${m.order}. ${m.name}`,
     })),
-  },
+  };
+}
+
+const RECOVERY_FIELDS: ContentField[] = [
+  recoveryModuleField(),
   { key: "title", label: "Lesson title", kind: "text", required: true },
   { key: "minutes", label: "Minutes to read", kind: "number", required: true },
   { key: "order", label: "Order within the module", kind: "number", required: true },
@@ -325,6 +379,7 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
   publishEffect:
     "Publishing adds this lesson to its recovery module for patients, and counts toward that module's real progress fraction.",
   fields: RECOVERY_FIELDS,
+  fieldsFor: () => [recoveryModuleField(), ...RECOVERY_FIELDS.slice(1)],
   baselineIds: () => RECOVERY_LESSONS.map((l) => l.id),
   baselineBody: (id) => {
     const l = RECOVERY_LESSONS.find((x) => x.id === id);
@@ -332,7 +387,7 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
   },
   emptyBody: () => ({
     id: "",
-    moduleId: RECOVERY_MODULES[0]?.id ?? "",
+    moduleId: liveRecoveryModuleList()[0]?.id ?? "",
     title: "",
     minutes: 5,
     order: 99,
@@ -350,7 +405,7 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
   titleOf: (b) => str(b, "title") || "(untitled lesson)",
   validate: (b) => {
     const errors = requireText(b, RECOVERY_FIELDS);
-    if (!RECOVERY_MODULES.some((m) => m.id === str(b, "moduleId")))
+    if (!liveRecoveryModuleList().some((m) => m.id === str(b, "moduleId")))
       errors.push("Pick a real recovery module.");
     // The tool flow's limits are real selection limits, so an option set
     // smaller than the limit would make the limit a lie.
@@ -473,9 +528,159 @@ export const NALOXONE_ACCESS_TYPE: ContentTypeDescriptor = {
   },
 };
 
+// ---------------------------------------------------------------------------
+// §Library category — the CONTAINER, now managed content
+// ---------------------------------------------------------------------------
+
+const CATEGORY_FIELDS: ContentField[] = [
+  { key: "name", label: "Category name", kind: "text", required: true },
+  {
+    key: "desc",
+    label: "Description",
+    kind: "textarea",
+    required: true,
+    rows: 2,
+    help: "Shown to patients under the category heading. Plain language.",
+  },
+  {
+    key: "clinicalTarget",
+    label: "Clinical target",
+    kind: "text",
+    required: true,
+    help: "What this category is clinically aiming at. Shown to staff, never to patients.",
+  },
+  {
+    key: "icon",
+    label: "Icon name",
+    kind: "text",
+    required: true,
+    help: "A lucide-react icon name in PascalCase, e.g. Sunrise. Stored as metadata; surfaces that do not resolve icons ignore it.",
+  },
+  {
+    key: "order",
+    label: "Order in the library",
+    kind: "number",
+    required: true,
+    help: "Lower numbers come first. Reuse of a number is allowed; ties fall back to insertion order.",
+  },
+];
+
+function validateIconName(body: ContentBody): string[] {
+  const icon = str(body, "icon").trim();
+  if (!icon) return [];
+  return /^[A-Z][A-Za-z0-9]*$/.test(icon)
+    ? []
+    : ["Icon name must be a PascalCase lucide-react name, e.g. Sunrise."];
+}
+
+export const LIBRARY_CATEGORY_TYPE: ContentTypeDescriptor = {
+  typeId: "library_category",
+  label: "Library category",
+  labelPlural: "Library categories",
+  publishEffect:
+    "Publishing adds this category to the patient Library immediately and makes it selectable when authoring a Library lesson. It starts empty until lessons are published into it.",
+  fields: CATEGORY_FIELDS,
+  baselineIds: () => LIBRARY_CATEGORIES.map((c) => c.id),
+  baselineBody: (id) => {
+    const c = LIBRARY_CATEGORIES.find((x) => x.id === id);
+    return c ? (structuredClone(c) as unknown as ContentBody) : undefined;
+  },
+  emptyBody: () => ({
+    id: "",
+    name: "",
+    desc: "",
+    clinicalTarget: "",
+    icon: "BookOpen",
+    order: (liveLibraryCategoryList().at(-1)?.order ?? 0) + 1,
+  }),
+  titleOf: (b) => str(b, "name") || "(unnamed category)",
+  validate: (b) => [...requireText(b, CATEGORY_FIELDS), ...validateIconName(b)],
+};
+
+// ---------------------------------------------------------------------------
+// §Recovery module — the CONTAINER, with its real population gate
+// ---------------------------------------------------------------------------
+
+const POPULATION_GATE_VALUES: PopulationTrack[] = [
+  "pre_release_ji",
+  "post_release_ji",
+  "general_population",
+];
+
+const MODULE_FIELDS: ContentField[] = [
+  { key: "name", label: "Module name", kind: "text", required: true },
+  {
+    key: "mission",
+    label: "Mission",
+    kind: "text",
+    required: true,
+    help: "The module's mission statement, e.g. 'Build My Support System'.",
+  },
+  { key: "subtitle", label: "Subtitle", kind: "textarea", required: true, rows: 2 },
+  {
+    key: "icon",
+    label: "Icon name",
+    kind: "text",
+    required: true,
+    help: "A lucide-react icon name in PascalCase, e.g. Users.",
+  },
+  {
+    key: "order",
+    label: "Order in the journey",
+    kind: "number",
+    required: true,
+    help: "Lower numbers come first. This number is also shown to patients as the module number.",
+  },
+  {
+    key: "populations",
+    label: "Population gate",
+    kind: "list",
+    help: `Leave empty to show this module to everyone. Otherwise list tracks: ${POPULATION_GATE_VALUES.join(", ")}.`,
+  },
+];
+
+export const RECOVERY_MODULE_TYPE: ContentTypeDescriptor = {
+  typeId: "recovery_module",
+  label: "Recovery module",
+  labelPlural: "Recovery modules",
+  publishEffect:
+    "Publishing adds this module to the patient Recovery Journey immediately, subject to its population gate, and makes it selectable when authoring a recovery lesson.",
+  fields: MODULE_FIELDS,
+  baselineIds: () => RECOVERY_MODULES.map((m) => m.id),
+  baselineBody: (id) => {
+    const m = RECOVERY_MODULES.find((x) => x.id === id);
+    return m ? (structuredClone(m) as unknown as ContentBody) : undefined;
+  },
+  emptyBody: () => ({
+    id: "",
+    name: "",
+    mission: "",
+    subtitle: "",
+    icon: "Compass",
+    order: (liveRecoveryModuleList().at(-1)?.order ?? 0) + 1,
+    populations: [],
+  }),
+  titleOf: (b) => str(b, "name") || "(unnamed module)",
+  validate: (b) => {
+    const errors = [...requireText(b, MODULE_FIELDS), ...validateIconName(b)];
+    // A gate that names a track the population resolver cannot produce would
+    // hide the module from everyone, silently. Refuse it.
+    const bad = list(b, "populations").filter(
+      (p) => !POPULATION_GATE_VALUES.includes(p as PopulationTrack),
+    );
+    if (bad.length > 0)
+      errors.push(
+        `Not a real population track: ${bad.join(", ")}. Use ${POPULATION_GATE_VALUES.map((p) => `${p} (${POPULATION_LABEL[p]})`).join(", ")}.`,
+      );
+    return errors;
+  },
+};
+
 export const CONTENT_TYPES: ContentTypeDescriptor[] = [
   LIBRARY_LESSON_TYPE,
   RECOVERY_LESSON_TYPE,
+  LIBRARY_CATEGORY_TYPE,
+  RECOVERY_MODULE_TYPE,
   COMMUNITY_RESOURCE_TYPE,
   NALOXONE_ACCESS_TYPE,
 ];
@@ -484,6 +689,11 @@ export function contentType(typeId: ContentTypeId): ContentTypeDescriptor {
   const d = CONTENT_TYPES.find((t) => t.typeId === typeId);
   if (!d) throw new Error(`Unknown content type ${typeId}`);
   return d;
+}
+
+/** The real field list for a descriptor, live options included. */
+export function descriptorFields(d: ContentTypeDescriptor): ContentField[] {
+  return d.fieldsFor ? d.fieldsFor() : d.fields;
 }
 
 /** Typed casts used by the catalog once a body has passed `validate`. */

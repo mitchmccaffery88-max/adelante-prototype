@@ -26,6 +26,7 @@ import {
   type ContentField,
   type ContentTypeDescriptor,
   type EditableActivityKind,
+  descriptorFields,
 } from "@/lib/contentTypes";
 import type { ContentBody } from "@/lib/contentPublishing";
 
@@ -179,10 +180,14 @@ function FieldEditor({
 }) {
   const value = readField(body, field.key);
   const set = (v: unknown) => onChange(writeField(body, field.key, v));
+  // Associate the label with its control, so clicking the label focuses the
+  // field and a screen reader announces the two together.
+  const fieldId = `field-${field.key}`;
+  const helpId = field.help ? `${fieldId}-help` : undefined;
 
   return (
     <div className="space-y-1.5">
-      <Label className="flex flex-wrap items-center gap-2 text-xs">
+      <Label htmlFor={fieldId} className="flex flex-wrap items-center gap-2 text-xs">
         {field.step && (
           <Badge variant="outline" className="text-[10px]">
             Step {field.step}
@@ -191,9 +196,15 @@ function FieldEditor({
         <span className="font-medium text-navy">{field.label}</span>
         {field.required && <span className="text-destructive">*</span>}
       </Label>
-      {field.help && <p className="text-[11px] text-muted-foreground">{field.help}</p>}
+      {field.help && (
+        <p id={helpId} className="text-[11px] text-muted-foreground">
+          {field.help}
+        </p>
+      )}
       {field.kind === "text" && (
         <Input
+          id={fieldId}
+          aria-describedby={helpId}
           data-testid={`field-${field.key}`}
           value={typeof value === "string" ? value : ""}
           onChange={(e) => set(e.target.value)}
@@ -201,6 +212,8 @@ function FieldEditor({
       )}
       {field.kind === "textarea" && (
         <Textarea
+          id={fieldId}
+          aria-describedby={helpId}
           data-testid={`field-${field.key}`}
           rows={field.rows ?? 3}
           value={typeof value === "string" ? value : ""}
@@ -209,6 +222,8 @@ function FieldEditor({
       )}
       {field.kind === "number" && (
         <Input
+          id={fieldId}
+          aria-describedby={helpId}
           data-testid={`field-${field.key}`}
           type="number"
           value={typeof value === "number" ? value : ""}
@@ -217,7 +232,7 @@ function FieldEditor({
       )}
       {field.kind === "select" && (
         <Select value={typeof value === "string" ? value : ""} onValueChange={(v) => set(v)}>
-          <SelectTrigger data-testid={`field-${field.key}`}>
+          <SelectTrigger id={fieldId} aria-describedby={helpId} data-testid={`field-${field.key}`}>
             <SelectValue placeholder="Choose one" />
           </SelectTrigger>
           <SelectContent>
@@ -254,7 +269,7 @@ export function ContentForm({
 }) {
   return (
     <div className="space-y-4" data-testid="content-form">
-      {descriptor.fields.map((f) => (
+      {descriptorFields(descriptor).map((f) => (
         <FieldEditor key={f.key} field={f} body={body} onChange={onChange} />
       ))}
     </div>

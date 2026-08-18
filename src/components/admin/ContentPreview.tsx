@@ -6,7 +6,7 @@
 // completions against a patient id, and a preview must not do either.
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { readField, type ContentTypeDescriptor } from "@/lib/contentTypes";
+import { descriptorFields, readField, type ContentTypeDescriptor } from "@/lib/contentTypes";
 import type { ContentBody } from "@/lib/contentPublishing";
 
 function ActivityPreview({ activity }: { activity: unknown }) {
@@ -58,8 +58,9 @@ export function ContentPreview({
   // Lessons carry a numbered instructional sequence; a community resource or a
   // naloxone access point does not. Preview whichever shape this type is,
   // rather than pretending every managed type is a lesson.
-  const stepped = descriptor.fields.filter((f) => f.step);
-  const shown = stepped.length > 0 ? stepped : descriptor.fields;
+  const allFields = descriptorFields(descriptor);
+  const stepped = allFields.filter((f) => f.step);
+  const shown = stepped.length > 0 ? stepped : allFields;
   const minutes = readField(body, "minutes");
   return (
     <Card className="space-y-4 p-5" data-testid="content-preview">
@@ -96,7 +97,14 @@ export function ContentPreview({
               </div>
             );
           }
-          const text = typeof value === "string" ? value : "";
+          // A number field (order, minutes) is a real authored value; rendering
+          // it as "empty" made a filled-in form look unsaved.
+          const text =
+            typeof value === "string"
+              ? value
+              : typeof value === "number"
+                ? String(value)
+                : "";
           return (
             <div key={f.key}>
               <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
