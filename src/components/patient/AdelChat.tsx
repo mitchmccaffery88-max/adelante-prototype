@@ -13,6 +13,7 @@ import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Loader2, Send, ShieldAlert } from "lucide-react";
 import { AdelanteEHR } from "@/lib/ehr";
+import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { buildAdelSystemPrompt, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
 import { Button } from "@/components/ui/button";
@@ -30,11 +31,22 @@ interface Turn {
 const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
-export function AdelChat() {
+export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
+  // A resource-contextual open: Adel starts on that organisation instead of a
+  // cold greeting, and the patient's first message is pre-written for them.
+  const contextResource = resourceId ? patientVisibleResource(resourceId) : undefined;
   const [turns, setTurns] = useState<Turn[]>([
-    { role: "assistant", content: GREETING, actions: [] },
+    {
+      role: "assistant",
+      content: contextResource
+        ? `Hi — I'm Adel. You were just looking at ${contextResource.name}. Want help figuring out whether they're a fit, what to ask when you call, or how to get there?`
+        : GREETING,
+      actions: [],
+    },
   ]);
-  const [draft, setDraft] = useState("");
+  const [draft, setDraft] = useState(
+    contextResource ? `Can you tell me more about ${contextResource.name}?` : "",
+  );
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);

@@ -49,7 +49,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "312 NW 3rd Ave, Visalia, CA 93291",
     "phone": "(559) 741-4640",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Job readiness, paid training, and placement support across Tulare County. They work with people who have records. https://www.cset.org",
+    "website": "https://www.cset.org",
+    "description": "Job readiness, paid training, and placement support across Tulare County. They work with people who have records.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -61,7 +62,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Statewide — online and America's Job Center offices, California",
     "phone": "1-800-300-5616",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Unemployment benefits, CalJOBS job search, and career services statewide. Free to use. https://edd.ca.gov",
+    "website": "https://edd.ca.gov",
+    "description": "Unemployment benefits, CalJOBS job search, and career services statewide. Free to use.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -85,7 +87,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Through your Medi-Cal plan, California",
     "phone": "Call the number on your Medi-Cal card",
     "hours": "Mon–Fri (verify with plan)",
-    "description": "If you have Medi-Cal, your plan may cover free rides to medical and behavioral health appointments. https://www.dhcs.ca.gov",
+    "website": "https://www.dhcs.ca.gov",
+    "description": "If you have Medi-Cal, your plan may cover free rides to medical and behavioral health appointments.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -97,7 +100,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "559 E. Bardsley Ave, Tulare, CA 93274",
     "phone": "(559) 687-8000",
     "hours": "Mon–Fri, 8:00am – 5:00pm (verify)",
-    "description": "Outpatient substance use treatment, groups, and case management in Tulare. (Kings View is the organization's name — the program serves Tulare County.) https://kingsview.org",
+    "website": "https://kingsview.org",
+    "description": "Outpatient substance use treatment, groups, and case management in Tulare. (Kings View is the organization's name — the program serves Tulare County.)",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -109,7 +113,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "201 N. K St, Tulare, CA 93274",
     "phone": "(559) 686-6771",
     "hours": "Mon–Fri, 8:00am – 5:00pm (verify)",
-    "description": "Groups, case management, and court-related classes (this is the same site listed for your anger management group on the Obligations screen). https://www.tpocc.org",
+    "website": "https://www.tpocc.org",
+    "description": "Groups, case management, and court-related classes (this is the same site listed for your anger management group on the Obligations screen).",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -121,7 +126,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Meetings across Visalia, Tulare, Porterville, Dinuba, Tulare County, CA",
     "phone": "(559) 570-5464",
     "hours": "Daily meetings, morning through evening",
-    "description": "AA meetings all over the county, most days of the week. Check the current schedule before you go. https://www.aacentralvalley.org",
+    "website": "https://www.aacentralvalley.org",
+    "description": "AA meetings all over the county, most days of the week. Check the current schedule before you go.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -133,7 +139,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Meetings across Tulare County, Tulare County, CA",
     "phone": "(559) 224-5800",
     "hours": "Daily meetings (verify schedule)",
-    "description": "NA meetings across the county, including evening options. Newcomers are welcome and nobody has to speak. https://www.centralvalleyna.org",
+    "website": "https://www.centralvalleyna.org",
+    "description": "NA meetings across the county, including evening options. Newcomers are welcome and nobody has to speak.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -145,7 +152,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Online and in-person meetings, California",
     "phone": "",
     "hours": "Daily online meetings",
-    "description": "Science-based recovery support group. Good option if 12-step isn't your thing, and online meetings run around the clock. https://meetings.smartrecovery.org",
+    "website": "https://meetings.smartrecovery.org",
+    "description": "Science-based recovery support group. Good option if 12-step isn't your thing, and online meetings run around the clock.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -157,7 +165,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Near Tulare County Probation Adult Division, Visalia, CA",
     "phone": "Verify number",
     "hours": "Mon–Fri (verify)",
-    "description": "Supervised Opportunity and Resource Team — community navigation, targeted interventions, and referrals for housing, health, and counseling after release. https://www.georeentry.com",
+    "website": "https://www.georeentry.com",
+    "description": "Supervised Opportunity and Resource Team — community navigation, targeted interventions, and referrals for housing, health, and counseling after release.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -169,7 +178,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "201 N. K St, Tulare, CA 93274",
     "phone": "(559) 687-8000",
     "hours": "Mon–Fri, 8:00am – 5:00pm (verify)",
-    "description": "Counseling, groups, and mental health case management. (Kings View is the org's name, not a county.) https://kingsview.org",
+    "website": "https://kingsview.org",
+    "description": "Counseling, groups, and mental health case management. (Kings View is the org's name, not a county.)",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -181,7 +191,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Verify address, Visalia, CA",
     "phone": "Verify number",
     "hours": "Weekly peer and family groups (verify)",
-    "description": "Free peer-led support groups for people living with mental health conditions, plus groups for family members. https://namica.org",
+    "website": "https://namica.org",
+    "description": "Free peer-led support groups for people living with mental health conditions, plus groups for family members.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -193,7 +204,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "5957 S. Mooney Blvd, Visalia, CA 93277",
     "phone": "1-800-320-1616",
     "hours": "24/7 crisis line",
-    "description": "County behavioral health — 24/7 crisis line, therapy, psychiatry, and case management. https://tchhsa.org",
+    "website": "https://tchhsa.org",
+    "description": "County behavioral health — 24/7 crisis line, therapy, psychiatry, and case management.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -205,7 +217,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "815 W. Oak Ave, Visalia, CA 93291",
     "phone": "(559) 732-5941",
     "hours": "Mon–Fri, 8:00am – 5:00pm; 24/7 crisis line",
-    "description": "Trauma-informed domestic violence services, counseling, and in-person victim response across the county. https://www.fstc.net",
+    "website": "https://www.fstc.net",
+    "description": "Trauma-informed domestic violence services, counseling, and in-person victim response across the county.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -217,7 +230,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Offices in Lindsay, Porterville, Visalia, Tulare, Dinuba, Tulare County, CA",
     "phone": "1-877-410-8813",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Cash aid and support services for families with children. State program, county offices — apply at whichever office is closest. https://tularecounty.ca.gov",
+    "website": "https://tularecounty.ca.gov",
+    "description": "Cash aid and support services for families with children. State program, county offices — apply at whichever office is closest.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -229,7 +243,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "3500 W. Mineral King Ave, Visalia, CA 93291",
     "phone": "(559) 623-0700",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Case workers who handle reunification plans, visitation, and the steps required to get your kids back home. https://tchhsa.org",
+    "website": "https://tchhsa.org",
+    "description": "Case workers who handle reunification plans, visitation, and the steps required to get your kids back home.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -241,7 +256,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "400 W. Mineral King Ave, Visalia, CA 93291",
     "phone": "(559) 624-2000",
     "hours": "24/7 emergency; clinics Mon–Fri",
-    "description": "Main hospital system for Tulare County, with clinics in several cities. Emergency care regardless of ability to pay. https://www.kaweahhealth.org",
+    "website": "https://www.kaweahhealth.org",
+    "description": "Main hospital system for Tulare County, with clinics in several cities. Emergency care regardless of ability to pay.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -253,7 +269,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Offices in Visalia, Tulare, Porterville, Dinuba, Lindsay, Tulare County, CA",
     "phone": "1-877-410-8813",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Free or low-cost health coverage. Most people leaving custody qualify — you can apply the same week you're out. https://tularecounty.ca.gov",
+    "website": "https://tularecounty.ca.gov",
+    "description": "Free or low-cost health coverage. Most people leaving custody qualify — you can apply the same week you're out.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -265,7 +282,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "1095 E. Prosperity Ave, Tulare, CA 93274",
     "phone": "(559) 686-8677",
     "hours": "Mon–Fri (verify hours)",
-    "description": "Community health centers — primary care, behavioral health, and dental on a sliding scale. https://alturacenters.org",
+    "website": "https://alturacenters.org",
+    "description": "Community health centers — primary care, behavioral health, and dental on a sliding scale.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -277,7 +295,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Clinics countywide, Tulare County, CA",
     "phone": "1-877-960-3426",
     "hours": "Mon–Sat (verify by clinic)",
-    "description": "Clinics across the county for primary care, MAT, behavioral health, and dental. Sliding-scale fees and Medi-Cal accepted. https://www.fhcn.org",
+    "website": "https://www.fhcn.org",
+    "description": "Clinics across the county for primary care, MAT, behavioral health, and dental. Sliding-scale fees and Medi-Cal accepted.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -289,7 +308,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "915 S. Mooney Blvd, Visalia, CA 93277",
     "phone": "(559) 730-3700",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Community college with campuses in Visalia, Hanford, and Tulare. Certificates, degrees, and free tuition for many first-year students. https://www.cos.edu",
+    "website": "https://www.cos.edu",
+    "description": "Community college with campuses in Visalia, Hanford, and Tulare. Certificates, degrees, and free tuition for many first-year students.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -301,7 +321,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "6200 S. Mooney Blvd, Visalia, CA 93277",
     "phone": "(559) 733-6300",
     "hours": "Mon–Fri (verify class times)",
-    "description": "Free adult education, high school equivalency prep, and testing across Tulare County. https://tcoe.org",
+    "website": "https://tcoe.org",
+    "description": "Free adult education, high school equivalency prep, and testing across Tulare County.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -313,7 +334,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "100 E. College Ave, Porterville, CA 93257",
     "phone": "(559) 791-2200",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Community college in the south county with certificate programs and transfer degrees. https://www.portervillecollege.edu",
+    "website": "https://www.portervillecollege.edu",
+    "description": "Community college in the south county with certificate programs and transfer degrees.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -325,7 +347,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "1100 E. Bardsley Ave, Tulare, CA 93274",
     "phone": "(559) 687-7320",
     "hours": "Day and evening classes (verify)",
-    "description": "Free GED prep, English classes, and career training with evening options if you work days. https://www.tulare.k12.ca.us",
+    "website": "https://www.tulare.k12.ca.us",
+    "description": "Free GED prep, English classes, and career training with evening options if you work days.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -337,7 +360,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "312 NW 3rd Ave, Visalia, CA 93291",
     "phone": "(559) 741-4640",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Free preschool and childcare for kids 0–5, plus family support for parents getting back on their feet. https://www.cset.org",
+    "website": "https://www.cset.org",
+    "description": "Free preschool and childcare for kids 0–5, plus family support for parents getting back on their feet.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -349,7 +373,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "4949 W. Cypress Ave, Visalia, CA 93277",
     "phone": "(559) 622-8650",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Parenting classes, early childhood support, and family resource centers around the county. https://www.first5tulare.org",
+    "website": "https://www.first5tulare.org",
+    "description": "Parenting classes, early childhood support, and family resource centers around the county.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -361,7 +386,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "323 N. Johnson St, Visalia, CA 93291",
     "phone": "(559) 625-0384",
     "hours": "Mon–Fri, 8:30am – 5:00pm (verify)",
-    "description": "Parenting classes (including court-approved ones), home visits, and a parent warmline for hard days. https://parentingnetwork.org",
+    "website": "https://parentingnetwork.org",
+    "description": "Parenting classes (including court-approved ones), home visits, and a parent warmline for hard days.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -373,7 +399,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Statewide program — apply online or by mail, California",
     "phone": "1-866-272-0349",
     "hours": "Mon–Fri, 7:00am – 7:00pm",
-    "description": "State program that gets you a discounted (often free) cell phone and service if you're low-income or on benefits like Medi-Cal or CalFresh. A working phone is how everything else gets easier. https://www.californialifeline.com/en",
+    "website": "https://www.californialifeline.com/en",
+    "description": "State program that gets you a discounted (often free) cell phone and service if you're low-income or on benefits like Medi-Cal or CalFresh. A working phone is how everything else gets easier.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -385,7 +412,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "Offices in Visalia, Tulare, Porterville, Dinuba, Lindsay, Tulare County, CA",
     "phone": "1-877-410-8813",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "County-funded cash aid for adults without children who don't qualify for other programs. Small amount, but it's something while you get set up. https://tularecounty.ca.gov",
+    "website": "https://tularecounty.ca.gov",
+    "description": "County-funded cash aid for adults without children who don't qualify for other programs. Small amount, but it's something while you get set up.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -397,7 +425,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "5040 W. Cypress Ave, Visalia, CA 93277",
     "phone": "1-800-772-1213",
     "hours": "Mon–Fri, 9:00am – 4:00pm",
-    "description": "Disability and supplemental income benefits. Worth applying if a health condition limits your ability to work. https://www.ssa.gov",
+    "website": "https://www.ssa.gov",
+    "description": "Disability and supplemental income benefits. Worth applying if a health condition limits your ability to work.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -409,7 +438,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "312 NW 3rd Ave, Visalia, CA 93291",
     "phone": "(559) 741-4640",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Help paying past-due utility bills so the power stays on while you're getting stable. https://www.cset.org",
+    "website": "https://www.cset.org",
+    "description": "Help paying past-due utility bills so the power stays on while you're getting stable.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -421,7 +451,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "208 W. Main St, Suite U-1, Visalia, CA 93291",
     "phone": "(559) 733-8770",
     "hours": "Mon–Fri, 9:00am – 5:00pm (clinic days vary)",
-    "description": "Free legal information on expungement eligibility and record clearing, serving Tulare plus Fresno, Kings, Madera, Merced, Mariposa, and Tuolumne counties. https://centralcallegal.org",
+    "website": "https://centralcallegal.org",
+    "description": "Free legal information on expungement eligibility and record clearing, serving Tulare plus Fresno, Kings, Madera, Merced, Mariposa, and Tuolumne counties.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -433,7 +464,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "221 S. Mooney Blvd, Visalia, CA 93291",
     "phone": "(559) 730-5000",
     "hours": "Mon–Fri (verify walk-in hours)",
-    "description": "Free help with court forms — custody, child support, expungement, fee waivers — if you don't have a lawyer. https://tularecounty.ca.gov",
+    "website": "https://tularecounty.ca.gov",
+    "description": "Free help with court forms — custody, child support, expungement, fee waivers — if you don't have a lawyer.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -445,7 +477,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "800 S. Akers St, Visalia, CA 93277",
     "phone": "(559) 636-4500",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Representation on open cases and, in some situations, help with post-conviction relief and record clearance. https://tularecounty.ca.gov",
+    "website": "https://tularecounty.ca.gov",
+    "description": "Representation on open cases and, in some situations, help with post-conviction relief and record clearance.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -457,7 +490,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "1445 N. Ben Maddox Way, Visalia, CA 93292",
     "phone": "1-800-777-0133",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Get a state ID card — reduced-fee IDs are available if you're low-income or recently released. Make an appointment online to skip the line. https://www.dmv.ca.gov",
+    "website": "https://www.dmv.ca.gov",
+    "description": "Get a state ID card — reduced-fee IDs are available if you're low-income or recently released. Make an appointment online to skip the line.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -469,7 +503,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "5957 S. Mooney Blvd, Visalia, CA 93277",
     "phone": "(559) 730-2540",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Beyond supervision: help with medical and mental health referrals, Medi-Cal applications, and employment or education goals. https://www.tcprobation.com",
+    "website": "https://www.tcprobation.com",
+    "description": "Beyond supervision: help with medical and mental health referrals, Medi-Cal applications, and employment or education goals.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -481,7 +516,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "312 NW 3rd Ave, Visalia, CA 93291",
     "phone": "(559) 741-4640",
     "hours": "Mon–Fri, 8:00am – 5:00pm",
-    "description": "Budgeting, banking, and daily-living workshops, plus one-on-one coaching to build savings and credit. https://www.cset.org",
+    "website": "https://www.cset.org",
+    "description": "Budgeting, banking, and daily-living workshops, plus one-on-one coaching to build savings and credit.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -493,7 +529,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "1441 W. Main St, Visalia, CA 93291",
     "phone": "(559) 732-1976",
     "hours": "Mon–Fri, 9:00am – 5:00pm (verify)",
-    "description": "Computer basics, resume help, interview practice, and work clothes if you need them for an interview. https://www.goodwill.org",
+    "website": "https://www.goodwill.org",
+    "description": "Computer basics, resume help, interview practice, and work clothes if you need them for an interview.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
@@ -505,7 +542,8 @@ export const PORTED_RESOURCES: CommunityResource[] = [
     "address": "1500 W. Main St, Visalia, CA 93291",
     "phone": "(559) 741-1006",
     "hours": "Mon–Fri (verify hours)",
-    "description": "Practical support — meals, clothing, life skills classes, and case management for people rebuilding. https://visalia.salvationarmy.org",
+    "website": "https://visalia.salvationarmy.org",
+    "description": "Practical support — meals, clothing, life skills classes, and case management for people rebuilding.",
     "placeholder": false,
     "verified": false,
     "status": "unverified"
