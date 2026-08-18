@@ -290,6 +290,21 @@ export function HomeDashboard({
     [toolkit],
   );
 
+  // §5-stage journey — milestone celebrations. Pure function over the SAME real
+  // dated events the streak already reads; no points, badges or leaderboard,
+  // and nothing here feeds the stage model.
+  const milestones = useMemo(
+    () =>
+      recoveryMilestones({
+        streakDays: streak.days,
+        checkInDaysLast14,
+        lessonsDone: lessonsDoneVisible,
+        exercisesDone: exercisesDone.length,
+        toolkitSaved: toolkit.length,
+      }).slice(0, 3),
+    [streak.days, checkInDaysLast14, lessonsDoneVisible, exercisesDone, toolkit],
+  );
+
   const nextAppt = useMemo(() => {
     const now = Date.now();
     return [...appts]
