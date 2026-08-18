@@ -67,11 +67,55 @@ export interface PatientEngagement {
   completedRecoveryLessons: string[];
   /** §Phase 5b — structured tool-flow selections, keyed by recovery lesson id. */
   recoveryToolFlows: Record<string, RecoveryToolFlowSelection>;
+  /**
+   * §Lesson-player Build 2 — what the patient actually typed/selected inside a
+   * lesson, keyed `"<surface>:<lessonId>"`. Same store, same rule: engagement
+   * data, never a field on `Patient`. Free text here is PATIENT-AUTHORED and
+   * is redacted out of the cohort read (`engagementRecords`) for the same
+   * reason the advocate DTO has never carried reflections.
+   */
+  lessonResponses: Record<string, LessonResponse>;
   /** Saved takeaways, one per source lesson/exercise. */
   savedToolkitItems: SavedToolkitItem[];
   firstActivityAt?: string;
   lastActivityAt?: string;
 }
+
+/** Which lesson system a response belongs to — ids live in separate namespaces. */
+export type LessonSurface = "library" | "recovery";
+
+export function lessonResponseKey(surface: LessonSurface, lessonId: string): string {
+  return `${surface}:${lessonId}`;
+}
+
+/**
+ * One lesson's in-progress work. Everything is optional because a patient can
+ * leave at any step; `stepIndex` is what makes resume-on-return real.
+ *
+ * `text` is free text (reflect answer, `write` activity, `grounding` senses)
+ * keyed by a caller-chosen field key. The rest mirror the activity controls
+ * one-for-one so nothing a patient touches is thrown away on unmount.
+ */
+export interface LessonResponse {
+  /** Last step the patient was on (0-based). */
+  stepIndex?: number;
+  /** Free text, keyed by field (`reflect`, `activity`, `grounding:<sense>`). */
+  text?: Record<string, string>;
+  /** Checklist / tap-to-select cards / check-in options. */
+  checked?: string[];
+  /** `rate` activity. */
+  rating?: number;
+  /** `sort` activity — card → bucket. */
+  sorted?: Record<string, string>;
+  /** `sliders` activity — slider id → score. */
+  scores?: Record<string, number>;
+  /** `decision` activity — the chosen label. */
+  choice?: string;
+  updatedAt: string;
+}
+
+/** A patch is any subset; `text` merges key-by-key rather than replacing. */
+export type LessonResponsePatch = Partial<Omit<LessonResponse, "updatedAt">>;
 
 /**
  * What a patient selected in steps 7–9 of a recovery lesson. Structured, not
@@ -124,10 +168,14 @@ function row(patientId: string): PatientEngagement {
       completedExercises: [],
       completedRecoveryLessons: [],
       recoveryToolFlows: {},
+      lessonResponses: {},
       savedToolkitItems: [],
     };
     records.set(patientId, r);
   }
+  // Rows created before this field existed (or restored from a fixture) still
+  // have to answer reads without a guard at every call site.
+  r.lessonResponses ??= {};
   return r;
 }
 
