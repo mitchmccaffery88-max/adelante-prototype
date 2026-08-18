@@ -123,6 +123,11 @@ export function LibraryBrowser({
         <TabsContent value="lessons" className="space-y-4 pt-4">
           {liveLibraryCategories().map((cat) => {
             const items = liveVisibleItemsInCategory(cat.id, population);
+            // A category with nothing in it for this person is a dead end —
+            // either it was just created and has no lessons yet, or every
+            // lesson in it is written for a different population. Don't show
+            // an empty shelf with a 0% bar on it.
+            if (items.length === 0) return null;
             const prog = liveCategoryProgress(cat.id, completedItems, population);
             return (
               <Card key={cat.id} className="space-y-4 p-5">
