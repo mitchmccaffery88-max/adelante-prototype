@@ -29,6 +29,8 @@
 // through the shared store, so a verification is a real publish with real
 // revision history rather than a private boolean.
 import { getStaffMember, type StaffRole } from "@/lib/roles";
+// Ported Adelante Journey directory listings (generated).
+import { PORTED_RESOURCES } from "@/lib/communityResources.ported";
 import {
   publishedContentOfType,
   seedDraftContent,
