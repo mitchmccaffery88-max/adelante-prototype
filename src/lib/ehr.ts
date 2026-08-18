@@ -6104,12 +6104,14 @@ export const AdelanteEHR = {
   // assessment done TO them — exactly what the pending clinical review is
   // about. Every change is an append-only audited row, so a care-team
   // correction and a patient's own reading are both visible and reversible.
-  /** Full append-only history, newest first. */
+  /**
+   * Full append-only history, newest first. Ordered by INSERTION, not by the
+   * timestamp string: two entries written in the same millisecond (a
+   * correction made right after a mistake) must still read back in the order
+   * they happened.
+   */
   recoveryStageHistory(patientId: string): RecoveryStageEntry[] {
-    return recoveryStageEntries
-      .filter((e) => e.patientId === patientId)
-      .slice()
-      .sort((a, b) => b.at.localeCompare(a.at));
+    return recoveryStageEntries.filter((e) => e.patientId === patientId).reverse();
   },
   /** The current stage, or undefined when nobody has set one yet. */
   getRecoveryStage(patientId: string): RecoveryStageEntry | undefined {
