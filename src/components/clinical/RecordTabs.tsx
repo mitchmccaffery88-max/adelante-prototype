@@ -1418,6 +1418,21 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   return (
     <div className="space-y-4">
       <CarePlanCard patientId={patient.id} audience="clinician" />
+      {/* §5-stage journey — care-team view of the person-set stage. Same
+          component the patient sees, so the model can't drift between them. */}
+      <Card className="p-4">
+        <h4 className="font-display text-sm text-navy">Recovery journey stage</h4>
+        <p className="mb-3 mt-0.5 text-[11px] text-muted-foreground">
+          Person-set, never computed. The patient can set this themselves; a care-team change is
+          audited the same way.
+        </p>
+        <RecoveryStagePanel
+          patientId={patient.id}
+          actor="staff"
+          actorName={staffName}
+          {...(readOnly ? { readOnly: true } : {})}
+        />
+      </Card>
       <Card className="p-4">
         <h4 className="font-display text-sm text-navy">Care plan note</h4>
         <p className="text-[11px] text-muted-foreground mt-0.5">
