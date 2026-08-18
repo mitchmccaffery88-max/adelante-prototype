@@ -138,12 +138,16 @@ export function PatientHome() {
           do; the 90-day strip, the safety-plan banner and the weekly PHQ-2 /
           GAD-2 card are status, and status now sits below the doing. Nothing
           moved out of /home and no gate changed — only the order. */}
-      <HomeDashboard patientId={patient.id} />
-
-      {/* §Build A item 1 — the ONE rendering of the daily check-in. */}
-      <div id="daily-mood-check-in" className="scroll-mt-24">
-        <DailyCheckInCard patientId={patient.id} />
-      </div>
+      <HomeDashboard
+        patientId={patient.id}
+        afterHeader={
+          /* §Build A item 1 — the ONE rendering of the daily check-in, and
+             §item 9 — it sits directly under the greeting. */
+          <div id="daily-mood-check-in" className="scroll-mt-24">
+            <DailyCheckInCard patientId={patient.id} />
+          </div>
+        }
+      />
 
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">

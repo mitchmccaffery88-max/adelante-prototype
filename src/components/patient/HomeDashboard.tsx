@@ -132,7 +132,16 @@ function TileShell({
 // Dashboard
 // ---------------------------------------------------------------------------
 
-export function HomeDashboard({ patientId }: { patientId: string }) {
+export function HomeDashboard({
+  patientId,
+  // §Build A item 9 — slot rendered immediately under the greeting, so the
+  // daily check-in (the one thing a patient is asked to DO each day) is the
+  // first interactive thing on the page instead of sitting under the tiles.
+  afterHeader,
+}: {
+  patientId: string;
+  afterHeader?: React.ReactNode;
+}) {
   const [helpOpen, setHelpOpen] = useState(false);
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const population = usePopulation(patientId);
@@ -617,6 +626,8 @@ export function HomeDashboard({ patientId }: { patientId: string }) {
             : "No check-in streak going right now — today can start one."}
         </p>
       </header>
+
+      {afterHeader}
 
       {/* 2 — private pattern nudge ------------------------------------------
           Rendered from a pure function with no store and no audit sink, so the
