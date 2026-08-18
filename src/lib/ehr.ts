@@ -6070,6 +6070,62 @@ export const AdelanteEHR = {
     listeners.add(l);
     return () => listeners.delete(l);
   },
+  // ----- §5-stage recovery journey ----------------------------------------
+  // The stage is SET BY A PERSON, never computed. Both the patient and the
+  // care team can set it: the model is a self-check the patient is meant to
+  // recognise themselves in, so locking it to staff would make it an
+  // assessment done TO them — exactly what the pending clinical review is
+  // about. Every change is an append-only audited row, so a care-team
+  // correction and a patient's own reading are both visible and reversible.
+  /** Full append-only history, newest first. */
+  recoveryStageHistory(patientId: string): RecoveryStageEntry[] {
+    return recoveryStageEntries
+      .filter((e) => e.patientId === patientId)
+      .slice()
+      .sort((a, b) => b.at.localeCompare(a.at));
+  },
+  /** The current stage, or undefined when nobody has set one yet. */
+  getRecoveryStage(patientId: string): RecoveryStageEntry | undefined {
+    return AdelanteEHR.recoveryStageHistory(patientId)[0];
+  },
+  setRecoveryStage(input: {
+    patientId: string;
+    stage: RecoveryStageId;
+    setBy: { actor: "patient" | "staff"; name: string; role?: string };
+    note?: string;
+  }): RecoveryStageEntry {
+    if (!isRecoveryStageId(input.stage)) throw new Error("Unknown recovery stage");
+    const previous = AdelanteEHR.getRecoveryStage(input.patientId);
+    const entry: RecoveryStageEntry = {
+      id: `rstage_${recoveryStageEntries.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
+      patientId: input.patientId,
+      stage: input.stage,
+      at: new Date().toISOString(),
+      setByActor: input.setBy.actor,
+      setByName: input.setBy.name,
+      ...(input.setBy.role ? { setByRole: input.setBy.role } : {}),
+      ...(input.note ? { note: input.note } : {}),
+      ...(previous ? { previousStage: previous.stage } : {}),
+      reviewPending: RECOVERY_STAGE_REVIEW.pending,
+    };
+    recoveryStageEntries.push(entry);
+    appendAudit({
+      category: "care_plan",
+      action: "recovery_stage_set",
+      patientId: input.patientId,
+      actorId: input.setBy.name,
+      detail: {
+        stage: entry.stage,
+        previousStage: entry.previousStage ?? null,
+        setBy: entry.setByActor,
+        role: entry.setByRole ?? null,
+        // Recorded so a reviewer can tell demo-era rows from post-sign-off ones.
+        clinicalReviewPending: entry.reviewPending,
+      },
+    });
+    emit();
+    return entry;
+  },
   /** Force a care-plan recompute. Idempotent; safe to call from any surface. */
   recomputeCarePlan(patientId: string, triggeredBy?: string) {
     _recomputeCarePlan(patientId, triggeredBy);
