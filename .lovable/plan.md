@@ -1,59 +1,52 @@
-# Port the AdelanteJourney design system and patient experience
+# Import Adelante Journey patient experience into Adelante Pathways
 
-## Blocker first
+Bring the Journey build's full patient content, layout and interaction fidelity into this project, without disturbing the clinical/staff side (RBAC, population gating, consent, content catalog all stay).
 
-I can't reach `AdelanteJourney` from this workspace — cross-project tools only see projects that live in the same workspace with sharing enabled. Once you move/share it in, tell me and I'll start with a read-only checkout of its source.
+## What the comparison actually shows
 
-Nothing below can begin before that.
+| Area | Journey (source) | This build today |
+| --- | --- | --- |
+| Library | 9 categories, 90 lessons | 2 categories, 11 lessons |
+| Exercises | 10 full exercises (trigger map, thought record, support circle, budget, communication script, slip plan, warning signs, milestone reward, urge surfing, box breathing) | small subset |
+| Recovery Journey | 9 modules, all with generated lessons (learn / peer story / build-a-tool / practice / action / tool) | 9 modules, 7 marked "content pending", 10 lessons total |
+| Resources | category → org browse + detail + saved, with search | single-page list |
+| Adel chat | dedicated chat surface | present but thinner |
+| Colors/typography | warm cream + deep teal + sage/amber OKLCH | already matched in `.patient-theme` |
 
-## Phase 0 — Read and diff (no code changes)
+So the color tokens already line up; the real gaps are **content volume, activity interactions, resource browse flow, and shell chrome**.
 
-Check out AdelanteJourney read-only and produce a written diff against this project across four axes:
+## Plan
 
-1. **Tokens** — its stylesheet vs our `src/styles.css` `.patient-theme` block: colors, radii, shadows, spacing scale, animation keyframes/durations.
-2. **Typography** — font families, weights, loaded font files, heading scale, line heights.
-3. **Components** — its shared UI primitives (cards, buttons, tiles, sheets, nav) vs ours; which are genuinely different vs cosmetically renamed.
-4. **Screens and features** — its patient routes vs ours; flag anything it has that we don't.
+### 1. Library — full 90-lesson port
+- Port all 9 categories and 90 lessons from the Journey data files into `src/lib/library.ts`, mapped onto this project's stricter lesson schema (adds `categoryId`, `order`, population gate — left absent unless the copy genuinely references custody/release).
+- Extend the activity renderer in `ModuleTemplate.tsx` to cover the Journey activity kinds this build doesn't render yet: card-sort buckets, decision-path with per-choice feedback, multi-slider states, reflection card tapping, scenario response, ordered timeline, paced breathing, 5-4-3-2-1 grounding.
+- Port the remaining exercises into the exercise player.
 
-I'll report the diff before writing code, so you can confirm the port list.
+### 2. Recovery Journey — remove every "content pending"
+- Port the Journey module/lesson generator output into `src/lib/recovery.ts` so all 9 modules ship real lessons with the full five-step flow.
+- Keep the existing progress, toolkit, Spanish-review flag and Module 1 reentry gate.
 
-## Phase 1 — Design system
+### 3. Resources — replace with the Journey set
+- Replace the resource dataset with Journey's categories and org listings.
+- Rebuild the surface as category grid → category listing → org detail, plus search and Saved, matching Journey's layout.
+- Note: Journey's own file marks these listings as needing re-verification, so each imported org lands as **unverified** and flows through this build's existing staff verification queue rather than being presented to patients as confirmed.
 
-Adopt AdelanteJourney's tokens as the source of truth in `src/styles.css`: full color set, radii, shadow utilities, animation keyframes, and the typography stack (including loading its exact fonts via the root route head). Mirror them into the shadcn component variants so the change is token-level, not per-component overrides.
+### 4. Adel chat
+- Match Journey's chat layout, message styling, suggestion chips and empty state, keeping this build's real streaming endpoint and crisis-detection bypass.
 
-Applied app-wide, not just patient surfaces — staff and admin pick up the same tokens. Where our staff screens rely on tokens AdelanteJourney doesn't define (crisis, gold/teal/navy, sidebar), those stay and are re-tuned to sit inside the new palette rather than being deleted.
+### 5. Shell and typography
+- Align the patient-facing shell chrome to Journey's: sidebar wordmark, crisis-support pill header, mobile tab bar treatment, page heading scale and spacing rhythm.
+- Keep this build's RBAC/population-aware nav filtering and role/context switching — only the chrome and type scale change.
+- Add the soft-shadow / motion utilities Journey uses so cards and transitions feel identical.
 
-## Phase 2 — Shared components
+### 6. Publish into the content catalog
+- Every imported lesson and recovery lesson is also registered as a **published** catalog entry, so admins see and can edit the full set in `/admin-content` immediately, with the code modules as the baseline.
 
-Port its layout primitives and interaction patterns (page shells, headers, cards, buttons, nav rail, bottom sheet, motion/transition behavior) into our existing `PatientPage`, `PatientPageHeader`, `AppShell`, `PatientSidebar`, `PatientMoreSheet`, and the shadcn variants. Prefer updating our primitives over adding parallel ones, so every screen inherits the change.
-
-## Phase 3 — Patient screens
-
-Rebuild each patient surface to match its AdelanteJourney counterpart visually — home dashboard, crisis, naloxone, craving/slip, check-in, library, recovery journey, resources, schedule, medications, documents, profile, Adel, weekly recap.
-
-Rule for this phase: presentation changes only. Every screen keeps the data, state, and gating it has today.
-
-## Phase 4 — Missing features
-
-For anything AdelanteJourney has that we don't, I'll list it after Phase 0 with a rough size each, and we decide together what's in scope. I won't silently build new features into this phase.
-
-## Non-negotiable constraints
-
-Per your call, this project's behavior wins over visual fidelity wherever they conflict:
-
-- 42 CFR Part 2 SUD masking stays exactly as implemented
-- RBAC and route access gates stay enforced
-- Crisis detection, crisis banners, and the 988 affordance stay present and reachable on every patient surface
-- Population-based nav filtering, advocate document gates, and consent flows stay intact
-
-Where AdelanteJourney's design has no slot for one of these, I restyle our element to match its visual language rather than removing it, and note each instance.
-
-## Verification
-
-Per phase: typecheck plus the existing test suite (patient nav shell parity, RBAC route access, documents i18n), then a real browser pass over the patient routes across desktop and mobile viewports checking for console errors, contrast, and 44px tap targets.
+### 7. Verification
+- Unit tests for content integrity (every lesson has all required steps; every module has lessons; no orphan category).
+- Browser pass over Library, Recovery Journey, Resources, Adel and Home at mobile and desktop widths, checking for console errors and dead ends.
 
 ## Technical notes
-
-- Tokens live in `src/styles.css` as OKLCH custom properties registered in `@theme inline`; no hardcoded color utilities in components.
-- Fonts load via a `<link>` in `src/routes/__root.tsx` — Tailwind v4 can't `@import` a remote stylesheet here.
-- AdelanteJourney is likely a Vite SPA; any `src/pages/`, React Router, or `App.tsx` structure gets translated to `src/routes/` file-based routing on the way in. No router or framework swap.
+- Staff, admin and advocate surfaces are untouched; imported content is patient-facing only.
+- Population gating, 42 CFR Part 2 masking, and advocate progress rules continue to apply to all new content.
+- Content is ported into this project's existing schemas rather than copying Journey's loose types, so nothing regresses on type safety or catalog compatibility.
