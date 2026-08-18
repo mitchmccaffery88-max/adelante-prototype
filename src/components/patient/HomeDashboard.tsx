@@ -17,7 +17,6 @@ import {
   HandHeart,
   HeartPulse,
   LifeBuoy,
-  Lock,
   MapPin,
   MessageSquare,
   Pill,
@@ -35,6 +34,8 @@ import { ClientDate } from "@/components/ClientDate";
 import { GetHelpNowModal } from "@/components/patient/GetHelpNowModal";
 import { usePopulation } from "@/components/PopulationGate";
 import { checkInStreakFrom } from "@/lib/checkInStreak";
+import { recoveryMilestones } from "@/lib/recoveryStages";
+import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
 import { privateNudge } from "@/lib/privateNudge";
 import {
   completedLibraryItems,
@@ -97,14 +98,6 @@ function greeting(now: Date): string {
   if (h < 12) return "Good morning";
   if (h < 18) return "Good afternoon";
   return "Good evening";
-}
-
-function NotBuiltChip({ children }: { children: React.ReactNode }) {
-  return (
-    <span className="mt-2 inline-block rounded-full bg-muted px-2.5 py-1 text-xs font-medium text-muted-foreground">
-      Not built yet · {children}
-    </span>
-  );
 }
 
 function TileShell({
