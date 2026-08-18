@@ -214,7 +214,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       "A support network sounds like a lot of people. In the first weeks it's usually one. The person who counts isn't the one who cares the most on paper — it's the one who picks up, who knows you're out, and who won't make you explain yourself from the beginning. It's also someone you've already called once about something small, because a number you've never used is a number you won't use at the worst moment.",
     activity: {
       kind: "write",
-      title: "Name them, then use them once",
       prompt:
         "Write who you'd call, and the sentence you'd open with. Plain words. You're not writing a speech.",
       lines: 4,
@@ -264,7 +263,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       "The first weeks ask one thing: stay alive and get a floor under you. When that floor holds for a few days running, survival stops being a full-time job and something uncomfortable shows up in the space — the question of what this is all for. That's the point where people either build something or drift back, because nothing pulls harder than an empty life that's technically going fine. The rest of this journey is that build: your people, your patterns, your days, your relationships, and eventually who you're becoming.",
     activity: {
       kind: "checklist",
-      title: "Is the floor holding?",
       prompt: "Check what's been true for three days straight. Unchecked items are still first-days work.",
       items: [
         "I've slept somewhere safe three nights running",
