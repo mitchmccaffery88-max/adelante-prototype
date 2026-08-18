@@ -343,6 +343,24 @@
     font-family: var(--font-display);
     letter-spacing: -0.01em;
   }
+
+  /* §Typography (patient) — Inter only. Overrides both the base rule above and
+     the generated .font-display utility, whose value is inlined at build time. */
+  .patient-theme h1,
+  .patient-theme h2,
+  .patient-theme h3,
+  .patient-theme .font-display {
+    font-family: var(--font-sans) !important;
+    letter-spacing: -0.015em;
+  }
+  .patient-theme h1,
+  .patient-theme .font-display {
+    font-weight: 700;
+  }
+  .patient-theme h2,
+  .patient-theme h3 {
+    font-weight: 600;
+  }
 }
 
 /* Ported verbatim from the real patient-portal stylesheet. */
