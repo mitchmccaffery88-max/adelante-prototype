@@ -36,3 +36,9 @@ and no clinical content. `advocateLibraryProgress` returns counts plus lesson
 titles only; patient-authored text (reflections, worksheet answers, toolkit
 labels) is never in the DTO, and `part2Sensitive` items are masked without
 explicit Part 2 disclosure. Allowed reads and denials are both audited.
+
+**Category eyebrow is authored, not derived.** `LibraryCategory.eyebrow` is an
+optional short patient-facing phrase (admin-editable). `categoryEyebrow()` in
+`src/lib/contentDisplay.ts` prefers it and only falls back to the
+`shortClinicalTarget()` trim, which can silently produce plausible-but-wrong
+text. Starting Strong is authored as "Grounding · Nervous system regulation".
