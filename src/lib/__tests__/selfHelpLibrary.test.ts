@@ -404,8 +404,8 @@ describe("lesson response persistence", () => {
       text: { reflect: "secret words" },
     });
     AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", { stepIndex: 2 });
-    const events = AdelanteEHR.auditLog().filter(
-      (e) => e.action === "lesson_response_started" && e.patientId === pid,
+    const events = AdelanteEHR.listAuditEvents({ patientId: pid }).filter(
+      (e) => e.action === "lesson_response_started",
     );
     expect(events).toHaveLength(1);
     expect(JSON.stringify(events)).not.toContain("secret words");
