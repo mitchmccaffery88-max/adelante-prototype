@@ -548,21 +548,20 @@ export function HomeDashboard({
           </TileShell>
     ),
   });
-  // Your journey — the source's 5-stage model has no equivalent here
+  // Your journey — the real 5-stage model. The stage is person-set (see
+  // `recoveryStages.ts`); this tile never derives one from activity data.
   tiles.push({
     key: "journey",
     priority: 20,
     node: (
           <TileShell icon={RouteIcon} title="Your journey">
-            <p className="text-sm text-muted-foreground">
-              Your care plan and goals are the real picture of where you are.
-            </p>
-            <p className="mt-2 flex items-start gap-1.5 text-xs text-muted-foreground">
-              <Lock className="mt-0.5 h-3.5 w-3.5 shrink-0" aria-hidden="true" />
-              No stage model exists in this build, and we won't guess at one.
-            </p>
-            <NotBuiltChip>A 5-stage journey model needs clinical sign-off first</NotBuiltChip>
-            <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
+            <RecoveryStagePanel
+              patientId={patientId}
+              actor="patient"
+              actorName={`${firstName} (patient)`}
+              compact
+            />
+            <Button asChild variant="ghost" className="mt-2 min-h-11 w-full rounded-2xl">
               <Link to="/home" hash="your-care-plan-heading">
                 Open your care plan
               </Link>
