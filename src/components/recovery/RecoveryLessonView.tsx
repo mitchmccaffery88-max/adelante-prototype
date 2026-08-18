@@ -82,6 +82,9 @@ export function RecoveryLessonView({
     AdelanteEHR.completedRecoveryLessons(patientId).includes(lesson.id),
   );
   const saved = useEhr(() => AdelanteEHR.recoveryToolFlow(patientId, lesson.id));
+  // §Build 2 — free text + activity selections for this lesson. Separate from
+  // the tool flow above, which was already persisted and stays as it is.
+  const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, "recovery", lesson.id));
   const id = lesson.id;
   /** Selections the patient already saved, restored into the same controls. */
   const hasSaved =
@@ -203,6 +206,10 @@ export function RecoveryLessonView({
         </div>
       }
       steps={steps}
+      response={response}
+      onResponseChange={(patch) =>
+        AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, patch)
+      }
       completeLabel={completed ? t("recUpdatePlan") : t("recFinishSave")}
       onComplete={complete}
     />

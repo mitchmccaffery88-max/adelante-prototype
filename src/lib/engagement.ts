@@ -67,11 +67,55 @@ export interface PatientEngagement {
   completedRecoveryLessons: string[];
   /** §Phase 5b — structured tool-flow selections, keyed by recovery lesson id. */
   recoveryToolFlows: Record<string, RecoveryToolFlowSelection>;
+  /**
+   * §Lesson-player Build 2 — what the patient actually typed/selected inside a
+   * lesson, keyed `"<surface>:<lessonId>"`. Same store, same rule: engagement
+   * data, never a field on `Patient`. Free text here is PATIENT-AUTHORED and
+   * is redacted out of the cohort read (`engagementRecords`) for the same
+   * reason the advocate DTO has never carried reflections.
+   */
+  lessonResponses: Record<string, LessonResponse>;
   /** Saved takeaways, one per source lesson/exercise. */
   savedToolkitItems: SavedToolkitItem[];
   firstActivityAt?: string;
   lastActivityAt?: string;
 }
+
+/** Which lesson system a response belongs to — ids live in separate namespaces. */
+export type LessonSurface = "library" | "recovery";
+
+export function lessonResponseKey(surface: LessonSurface, lessonId: string): string {
+  return `${surface}:${lessonId}`;
+}
+
+/**
+ * One lesson's in-progress work. Everything is optional because a patient can
+ * leave at any step; `stepIndex` is what makes resume-on-return real.
+ *
+ * `text` is free text (reflect answer, `write` activity, `grounding` senses)
+ * keyed by a caller-chosen field key. The rest mirror the activity controls
+ * one-for-one so nothing a patient touches is thrown away on unmount.
+ */
+export interface LessonResponse {
+  /** Last step the patient was on (0-based). */
+  stepIndex?: number;
+  /** Free text, keyed by field (`reflect`, `activity`, `grounding:<sense>`). */
+  text?: Record<string, string>;
+  /** Checklist / tap-to-select cards / check-in options. */
+  checked?: string[];
+  /** `rate` activity. */
+  rating?: number;
+  /** `sort` activity — card → bucket. */
+  sorted?: Record<string, string>;
+  /** `sliders` activity — slider id → score. */
+  scores?: Record<string, number>;
+  /** `decision` activity — the chosen label. */
+  choice?: string;
+  updatedAt: string;
+}
+
+/** A patch is any subset; `text` merges key-by-key rather than replacing. */
+export type LessonResponsePatch = Partial<Omit<LessonResponse, "updatedAt">>;
 
 /**
  * What a patient selected in steps 7–9 of a recovery lesson. Structured, not
@@ -103,7 +147,8 @@ export type EngagementAuditEvent = {
   action:
     | "library_item_completed"
     | "library_exercise_completed"
-    | "recovery_lesson_completed";
+    | "recovery_lesson_completed"
+    | "lesson_response_started";
   actorRole: string;
   detail: Record<string, unknown>;
 };
@@ -124,10 +169,14 @@ function row(patientId: string): PatientEngagement {
       completedExercises: [],
       completedRecoveryLessons: [],
       recoveryToolFlows: {},
+      lessonResponses: {},
       savedToolkitItems: [],
     };
     records.set(patientId, r);
   }
+  // Rows created before this field existed (or restored from a fixture) still
+  // have to answer reads without a guard at every call site.
+  r.lessonResponses ??= {};
   return r;
 }
 
@@ -165,6 +214,20 @@ export function recoveryToolFlow(
   return sel ? structuredClone(sel) : undefined;
 }
 
+/**
+ * §Lesson-player Build 2 — the patient's own saved work for one lesson.
+ * Undefined until they touch something. Cloned, so callers cannot mutate the
+ * store by editing what they read.
+ */
+export function lessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+): LessonResponse | undefined {
+  const r = records.get(patientId)?.lessonResponses?.[lessonResponseKey(surface, lessonId)];
+  return r ? structuredClone(r) : undefined;
+}
+
 /** The whole row for one patient, or undefined when they have no activity. */
 export function getEngagement(patientId: string): PatientEngagement | undefined {
   const r = records.get(patientId);
@@ -177,7 +240,14 @@ export function getEngagement(patientId: string): PatientEngagement | undefined 
  * data on `patientId` themselves — this module knows nothing about `Patient`.
  */
 export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
-  const all = [...records.values()].map((r) => structuredClone(r));
+  // Cohort read. Lesson responses are stripped here on purpose: population
+  // health counts activity, it never needs what a patient wrote. The only
+  // read that returns free text is `lessonResponse` (the patient's own
+  // player) and `getEngagement` (single-row, patient-scoped).
+  const all = [...records.values()].map((r) => ({
+    ...structuredClone(r),
+    lessonResponses: {},
+  }));
   if (!patientIds) return all;
   const want = new Set(patientIds);
   return all.filter((r) => want.has(r.patientId));
@@ -231,6 +301,60 @@ export function removeToolkitItem(patientId: string, id: string): void {
   const r = records.get(patientId);
   if (!r) return;
   r.savedToolkitItems = r.savedToolkitItems.filter((t) => t.id !== id);
+  notify();
+}
+
+/**
+ * §Lesson-player Build 2 — save in-progress lesson work.
+ *
+ * Merge semantics, not replace: the player writes one control at a time
+ * (a keystroke-debounced textarea, a slider, the current step), so a patch
+ * must never clear the fields it does not mention. `text` merges per key for
+ * the same reason.
+ *
+ * Audit discipline matches completion: this is written constantly, so it is
+ * audited ONCE per lesson — the first time a patient records anything — and
+ * the event carries no patient text, only which lesson it was.
+ */
+export function saveLessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+  patch: LessonResponsePatch,
+  opts: { actorRole?: string } = {},
+): LessonResponse {
+  const r = row(patientId);
+  const key = lessonResponseKey(surface, lessonId);
+  const prev = r.lessonResponses[key];
+  const next: LessonResponse = {
+    ...(prev ?? {}),
+    ...patch,
+    ...(patch.text ? { text: { ...(prev?.text ?? {}), ...patch.text } } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+  r.lessonResponses[key] = next;
+  touch(r);
+  if (!prev) {
+    auditSink?.({
+      patientId,
+      action: "lesson_response_started",
+      actorRole: opts.actorRole ?? "patient",
+      detail: { surface, lessonId },
+    });
+  }
+  notify();
+  return structuredClone(next);
+}
+
+/** Drop one lesson's saved work (patient-initiated clear). */
+export function clearLessonResponse(
+  patientId: string,
+  surface: LessonSurface,
+  lessonId: string,
+): void {
+  const r = records.get(patientId);
+  if (!r?.lessonResponses) return;
+  delete r.lessonResponses[lessonResponseKey(surface, lessonId)];
   notify();
 }
 

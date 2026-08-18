@@ -8,23 +8,45 @@
 // of `ModuleStep`s; the extra recovery steps (the tool-flow selects) are just
 // another step kind here, not a second renderer. Do NOT add a parallel lesson
 // component — add a step kind.
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
+import type { LessonResponse, LessonResponsePatch } from "@/lib/engagement";
 
-function Activity({ activity }: { activity: LibraryActivity }) {
-  const [checked, setChecked] = useState<string[]>([]);
-  const [rating, setRating] = useState(0);
-  const [sorted, setSorted] = useState<Record<string, string>>({});
-  const [scores, setScores] = useState<Record<string, number>>({});
-  const [choice, setChoice] = useState<string | null>(null);
+/**
+ * §Lesson-player Build 2 — the activity is CONTROLLED now. Every control used
+ * to be component-local `useState` that vanished on unmount; the value and the
+ * writer both come from the caller, which persists them into the engagement
+ * store. Nothing a patient touches is thrown away.
+ */
+function Activity({
+  activity,
+  response,
+  onChange,
+}: {
+  activity: LibraryActivity;
+  response: LessonResponse | undefined;
+  onChange: (patch: LessonResponsePatch) => void;
+}) {
+  const checked = response?.checked ?? [];
+  const rating = response?.rating ?? 0;
+  const sorted = response?.sorted ?? {};
+  const scores = response?.scores ?? {};
+  const choice = response?.choice ?? null;
+  const setChecked = (next: string[]) => onChange({ checked: next });
+  const setRating = (n: number) => onChange({ rating: n });
+  const setSorted = (next: Record<string, string>) => onChange({ sorted: next });
+  const setScores = (next: Record<string, number>) => onChange({ scores: next });
+  const setChoice = (label: string) => onChange({ choice: label });
+  const text = (key: string) => response?.text?.[key] ?? "";
+  const setText = (key: string, value: string) => onChange({ text: { [key]: value } });
   switch (activity.kind) {
     case "checklist":
       return (
@@ -36,7 +58,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 id={`act-${item}`}
                 checked={checked.includes(item)}
                 onCheckedChange={(v) =>
-                  setChecked((p) => (v ? [...p, item] : p.filter((x) => x !== item)))
+                  setChecked(v ? [...checked, item] : checked.filter((x) => x !== item))
                 }
               />
               <label htmlFor={`act-${item}`}>{item}</label>
@@ -52,6 +74,8 @@ function Activity({ activity }: { activity: LibraryActivity }) {
             rows={activity.lines}
             placeholder={activity.placeholder ?? ""}
             aria-label={activity.prompt}
+            value={text("activity")}
+            onChange={(e) => setText("activity", e.target.value)}
           />
         </div>
       );
@@ -87,7 +111,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                   type="button"
                   size="sm"
                   variant={sorted[card] === b ? "default" : "outline"}
-                  onClick={() => setSorted((s) => ({ ...s, [card]: b }))}
+                  onClick={() => setSorted({ ...sorted, [card]: b })}
                 >
                   {b}
                 </Button>
@@ -110,8 +134,10 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 variant={checked.includes(card) ? "default" : "outline"}
                 aria-pressed={checked.includes(card)}
                 onClick={() =>
-                  setChecked((p) =>
-                    p.includes(card) ? p.filter((x) => x !== card) : [...p, card],
+                  setChecked(
+                    checked.includes(card)
+                      ? checked.filter((x) => x !== card)
+                      : [...checked, card],
                   )
                 }
               >
@@ -166,7 +192,7 @@ function Activity({ activity }: { activity: LibraryActivity }) {
                 min={0}
                 max={10}
                 step={1}
-                onValueChange={(v) => setScores((prev) => ({ ...prev, [s.id]: v[0] ?? 0 }))}
+                onValueChange={(v) => setScores({ ...scores, [s.id]: v[0] ?? 0 })}
                 aria-label={s.label}
               />
               <div className="flex justify-between text-xs text-muted-foreground">
@@ -188,7 +214,12 @@ function Activity({ activity }: { activity: LibraryActivity }) {
               <label className="text-sm font-medium text-navy" htmlFor={`gr-${s.label}`}>
                 {s.count} things you can {s.label.toLowerCase()}
               </label>
-              <Textarea id={`gr-${s.label}`} rows={2} />
+              <Textarea
+                id={`gr-${s.label}`}
+                rows={2}
+                value={text(`grounding:${s.label}`)}
+                onChange={(e) => setText(`grounding:${s.label}`, e.target.value)}
+              />
             </div>
           ))}
         </div>
@@ -224,28 +255,65 @@ function Activity({ activity }: { activity: LibraryActivity }) {
   }
 }
 
+/**
+ * One step, presented on its own: a small numbered eyebrow AND a real step
+ * title. Previously the label was only the tiny eyebrow, so nine of ten steps
+ * had no heading at all.
+ */
 function Step({
   n,
+  total,
   label,
   icon,
   children,
 }: {
   n: number;
+  total: number;
   label: string;
   icon?: React.ReactNode;
   children: React.ReactNode;
 }) {
+  const { t } = useI18n();
   return (
-    <section className="space-y-2">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <span className="flex h-5 w-5 items-center justify-center rounded-full bg-secondary text-[11px] text-navy">
-          {n}
-        </span>
-        {icon}
-        {label}
+    <section className="space-y-3">
+      <div className="space-y-1">
+        <div className="flex items-center gap-2 text-[11px] font-medium uppercase tracking-wider text-teal">
+          {icon}
+          {t("modStepLabel")} {n} {t("modStepOf")} {total}
+        </div>
+        <h2 className="font-display text-xl text-navy">{label}</h2>
       </div>
       {children}
     </section>
+  );
+}
+
+/** Segmented progress — one bar per step, filled up to where the patient is. */
+function StepProgress({ index, total }: { index: number; total: number }) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-1.5">
+      <div
+        className="flex gap-1"
+        role="progressbar"
+        aria-valuemin={1}
+        aria-valuemax={total}
+        aria-valuenow={index + 1}
+        aria-label={`${t("modStepLabel")} ${index + 1} ${t("modStepOf")} ${total}`}
+      >
+        {Array.from({ length: total }, (_, i) => (
+          <span
+            key={i}
+            className={`h-1.5 flex-1 rounded-full transition-colors ${
+              i <= index ? "bg-teal" : "bg-secondary"
+            }`}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">
+        {index + 1}/{total} {t("modStepsWord")}
+      </p>
+    </div>
   );
 }
 
@@ -345,6 +413,8 @@ export function ModuleTemplate({
   steps,
   completeLabel,
   onComplete,
+  response,
+  onResponseChange,
 }: {
   title: string;
   subtitle?: string;
@@ -357,8 +427,46 @@ export function ModuleTemplate({
   steps: ModuleStep[];
   completeLabel: string;
   onComplete: () => void;
+  /**
+   * §Build 2 — the patient's saved work for THIS lesson. Supplies the value of
+   * every free-text box and activity control, and `stepIndex` is what makes
+   * resume-on-return real. Omit it and the player still works, unsaved.
+   */
+  response?: LessonResponse | undefined;
+  onResponseChange?: (patch: LessonResponsePatch) => void;
 }) {
   const { t } = useI18n();
+  const total = steps.length;
+  /**
+   * Resume-on-return: the saved step is the STARTING point only. Seeding state
+   * once (rather than binding to the prop) keeps Back/Continue from fighting
+   * the store as it re-broadcasts each save.
+   */
+  const savedStep = response?.stepIndex;
+  const [index, setIndex] = useState(() => Math.min(Math.max(savedStep ?? 0, 0), total - 1));
+  const resumeKey = useMemo(() => `${title}:${total}`, [title, total]);
+  const [seededFor, setSeededFor] = useState(resumeKey);
+  useEffect(() => {
+    // A different lesson mounted into the same component instance.
+    if (seededFor !== resumeKey) {
+      setSeededFor(resumeKey);
+      setIndex(Math.min(Math.max(savedStep ?? 0, 0), total - 1));
+    }
+  }, [resumeKey, seededFor, savedStep, total]);
+
+  const step = steps[Math.min(index, total - 1)];
+  const last = index >= total - 1;
+  const patch = (p: LessonResponsePatch) => onResponseChange?.(p);
+
+  function go(next: number) {
+    const clamped = Math.min(Math.max(next, 0), total - 1);
+    setIndex(clamped);
+    patch({ stepIndex: clamped });
+    if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  if (!step) return null;
+
   return (
     <Card className="space-y-6 p-6">
       <header className="space-y-2">
@@ -383,47 +491,68 @@ export function ModuleTemplate({
         {notice}
       </header>
 
-      {steps.map((step, i) => (
-        <Step key={`${step.label}-${i}`} n={i + 1} label={step.label} icon={step.icon}>
-          {step.kind === "text" && (
-            <>
-              {step.heading && <h2 className="font-display text-lg text-navy">{step.heading}</h2>}
-              <p
-                className={
-                  step.boxed
-                    ? "rounded-lg bg-secondary/50 p-3 text-sm text-navy"
-                    : "text-sm text-muted-foreground"
-                }
-              >
-                {step.body}
-              </p>
-            </>
-          )}
-          {step.kind === "activity" && <Activity activity={step.activity} />}
-          {step.kind === "reflect" && (
-            <>
-              <p className="text-sm italic text-muted-foreground">{step.reflection}</p>
-              <p className="text-sm font-medium text-navy">{step.question}</p>
-              <Textarea rows={3} aria-label={step.question} />
-            </>
-          )}
-          {step.kind === "select" && (
-            <SelectStep
-              prompt={step.prompt}
-              options={step.options}
-              {...(step.labelFor ? { labelFor: step.labelFor } : {})}
-              max={step.max}
-              value={step.value}
-              onChange={step.onChange}
-            />
-          )}
-          {step.kind === "custom" && step.content}
-        </Step>
-      ))}
+      <StepProgress index={index} total={total} />
 
-      <Button type="button" onClick={onComplete}>
-        {completeLabel}
-      </Button>
+      <Step n={index + 1} total={total} label={step.label} icon={step.icon}>
+        {step.kind === "text" && (
+          <>
+            {step.heading && <h3 className="font-display text-lg text-navy">{step.heading}</h3>}
+            <p
+              className={
+                step.boxed
+                  ? "rounded-lg bg-secondary/50 p-3 text-sm text-navy"
+                  : "text-sm text-muted-foreground"
+              }
+            >
+              {step.body}
+            </p>
+          </>
+        )}
+        {step.kind === "activity" && (
+          <Activity activity={step.activity} response={response} onChange={patch} />
+        )}
+        {step.kind === "reflect" && (
+          <>
+            <p className="text-sm italic text-muted-foreground">{step.reflection}</p>
+            <p className="text-sm font-medium text-navy">{step.question}</p>
+            <Textarea
+              rows={3}
+              aria-label={step.question}
+              value={response?.text?.["reflect"] ?? ""}
+              onChange={(e) => patch({ text: { reflect: e.target.value } })}
+            />
+            {onResponseChange && (
+              <p className="text-xs text-muted-foreground">{t("modSavedNote")}</p>
+            )}
+          </>
+        )}
+        {step.kind === "select" && (
+          <SelectStep
+            prompt={step.prompt}
+            options={step.options}
+            {...(step.labelFor ? { labelFor: step.labelFor } : {})}
+            max={step.max}
+            value={step.value}
+            onChange={step.onChange}
+          />
+        )}
+        {step.kind === "custom" && step.content}
+      </Step>
+
+      <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">
+        <Button type="button" variant="outline" disabled={index === 0} onClick={() => go(index - 1)}>
+          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> {t("modBack")}
+        </Button>
+        {last ? (
+          <Button type="button" onClick={onComplete}>
+            {completeLabel}
+          </Button>
+        ) : (
+          <Button type="button" onClick={() => go(index + 1)}>
+            {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+          </Button>
+        )}
+      </div>
     </Card>
   );
 }

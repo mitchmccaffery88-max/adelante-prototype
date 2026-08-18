@@ -6885,6 +6885,30 @@ export const AdelanteEHR = {
     return Engagement.recoveryToolFlow(patientId, lessonId);
   },
 
+  /**
+   * §Lesson-player Build 2 — the patient's own in-progress lesson work
+   * (current step, free text, activity selections). Patient-scoped read; it is
+   * deliberately NOT part of any advocate or cohort DTO.
+   */
+  lessonResponse(patientId: string, surface: Engagement.LessonSurface, lessonId: string) {
+    return Engagement.lessonResponse(patientId, surface, lessonId);
+  },
+
+  /** Save in-progress lesson work. Merge semantics; audited once per lesson. */
+  saveLessonResponse(
+    patientId: string,
+    surface: Engagement.LessonSurface,
+    lessonId: string,
+    patch: Engagement.LessonResponsePatch,
+    opts: { actorRole?: string } = {},
+  ) {
+    return Engagement.saveLessonResponse(patientId, surface, lessonId, patch, opts);
+  },
+
+  clearLessonResponse(patientId: string, surface: Engagement.LessonSurface, lessonId: string) {
+    Engagement.clearLessonResponse(patientId, surface, lessonId);
+  },
+
   completeRecoveryLesson(
     patientId: string,
     lessonId: string,

@@ -325,3 +325,115 @@ describe("advocate visibility — Phase 4 tiers reused", () => {
     expect(events).toHaveLength(1);
   });
 });
+
+// ---------------------------------------------------------------------------
+// §Lesson-player Build 2 — response persistence.
+//
+// The bug this covers was real: the Reflect textarea, the `write` activity
+// textarea and every `grounding` sense box were uncontrolled local state,
+// thrown away on unmount. Answers are engagement data — same store, same
+// "never on `Patient`" rule, and free text stays out of cohort/advocate reads.
+// ---------------------------------------------------------------------------
+describe("lesson response persistence", () => {
+  it("saves free text and activity state, and merges patches instead of clearing", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-finding-my-footing", {
+      text: { reflect: "Mornings are the hard part." },
+      stepIndex: 4,
+    });
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-finding-my-footing", {
+      checked: ["Sleep", "Food"],
+    });
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-finding-my-footing", {
+      text: { "grounding:See": "the window" },
+    });
+
+    const r = AdelanteEHR.lessonResponse(pid, "library", "ss-finding-my-footing");
+    // The second and third writes must not have wiped the first.
+    expect(r?.text?.["reflect"]).toBe("Mornings are the hard part.");
+    expect(r?.text?.["grounding:See"]).toBe("the window");
+    expect(r?.checked).toEqual(["Sleep", "Food"]);
+    expect(r?.stepIndex).toBe(4);
+    expect(r?.updatedAt).toBeTruthy();
+  });
+
+  it("resume-on-return: the saved step survives a fresh read", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "recovery", "fdo-urge-right-now", { stepIndex: 6 });
+    expect(AdelanteEHR.lessonResponse(pid, "recovery", "fdo-urge-right-now")?.stepIndex).toBe(6);
+  });
+
+  it("library and recovery ids are separate namespaces", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "library", "shared-id", { choice: "lib" });
+    AdelanteEHR.saveLessonResponse(pid, "recovery", "shared-id", { choice: "rec" });
+    expect(AdelanteEHR.lessonResponse(pid, "library", "shared-id")?.choice).toBe("lib");
+    expect(AdelanteEHR.lessonResponse(pid, "recovery", "shared-id")?.choice).toBe("rec");
+  });
+
+  it("reads are cloned — a caller cannot mutate the store", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", { checked: ["a"] });
+    const r = AdelanteEHR.lessonResponse(pid, "library", "ss-daily-rhythm")!;
+    r.checked!.push("b");
+    expect(AdelanteEHR.lessonResponse(pid, "library", "ss-daily-rhythm")?.checked).toEqual(["a"]);
+  });
+
+  it("free text never reaches the cohort read or the advocate DTO", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", {
+      text: { reflect: "I relapsed last week." },
+    });
+    AdelanteEHR.completeLibraryItem(pid, "ss-daily-rhythm");
+
+    // Cohort read: counts, never content.
+    const cohort = engagementRecords([pid]);
+    expect(cohort[0]?.completedLibraryItems).toContain("ss-daily-rhythm");
+    expect(JSON.stringify(cohort)).not.toContain("I relapsed last week.");
+
+    // Advocate DTO at the read floor: the whole surface is counts + titles.
+    const link = hipaaOnlyLink(pid);
+    const view = AdelanteEHR.advocateLibraryProgress(link.id);
+    expect(view.allowed).toBe(true);
+    expect(JSON.stringify(view)).not.toContain("I relapsed last week.");
+  });
+
+  it("is audited once per lesson, and the event carries no patient text", () => {
+    const pid = newPatient();
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", {
+      text: { reflect: "secret words" },
+    });
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", { stepIndex: 2 });
+    const events = AdelanteEHR.listAuditEvents({ patientId: pid }).filter(
+      (e) => e.action === "lesson_response_started",
+    );
+    expect(events).toHaveLength(1);
+    expect(JSON.stringify(events)).not.toContain("secret words");
+  });
+
+  it("clearing removes the row's work without touching completion", () => {
+    const pid = newPatient();
+    AdelanteEHR.completeLibraryItem(pid, "ss-daily-rhythm");
+    AdelanteEHR.saveLessonResponse(pid, "library", "ss-daily-rhythm", { rating: 7 });
+    AdelanteEHR.clearLessonResponse(pid, "library", "ss-daily-rhythm");
+    expect(AdelanteEHR.lessonResponse(pid, "library", "ss-daily-rhythm")).toBeUndefined();
+    expect(getEngagement(pid)?.completedLibraryItems).toContain("ss-daily-rhythm");
+  });
+});
+
+// ---------------------------------------------------------------------------
+// §Lesson-player Build 3 — the new OPTIONAL check-in fields.
+// Capability only: no content is authored in this build, so every shipped item
+// must still be valid with both fields absent.
+// ---------------------------------------------------------------------------
+describe("optional library check-in fields", () => {
+  it("are absent across the shipped library — this build adds capability, not content", () => {
+    const authored = LIBRARY_ITEMS.filter((i) => i.checkIn || i.checkInOptions?.length);
+    expect(authored).toHaveLength(0);
+  });
+
+  it("are accepted by the type when authored", () => {
+    const item = { ...LIBRARY_ITEMS[0]!, checkIn: "How is today going?", checkInOptions: ["Rough", "Okay"] };
+    expect(item.checkInOptions).toHaveLength(2);
+  });
+});

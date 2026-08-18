@@ -59,6 +59,19 @@ export interface LibraryItem {
   order: number;
   /** 1 — the lived problem, in the patient's own words. */
   problem: string;
+  /**
+   * 2 — OPTIONAL per-item check-in. The Library shipped without this field, so
+   * the player falls back to a shared generic line when it is absent; nothing
+   * looks broken while these are being authored. Recovery's `checkIn` is the
+   * same idea, already required there.
+   */
+  checkIn?: string;
+  /**
+   * 2 — OPTIONAL card-style "which of these sound like you" options. When set,
+   * the check-in step renders as a multi-select the patient's answers persist
+   * from; when absent the step is read-only text.
+   */
+  checkInOptions?: string[];
   /** 3 — teaching block. */
   learnTitle: string;
   learnBody: string;
