@@ -86,6 +86,12 @@ import {
   type AdvocateCommunicationRightsDecision,
 } from "./advocateMessaging";
 import { visibleAdvocateMessageBody, isAdvocateMessageBodyMasked } from "./careMessageMasking";
+// §5-stage recovery journey — pure model + the pending clinical-review flag.
+import {
+  RECOVERY_STAGE_REVIEW,
+  isRecoveryStageId,
+  type RecoveryStageId,
+} from "./recoveryStages";
 // §CF pre-release intake — capacity / legal-authority policy. Pure module.
 import {
   capacityGateDecision,
