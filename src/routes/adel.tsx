@@ -2,6 +2,12 @@ import { createFileRoute } from "@tanstack/react-router";
 import { AdelChat } from "@/components/patient/AdelChat";
 
 export const Route = createFileRoute("/adel")({
+  // §Build B — `?resource=<id>` opens Adel with a real directory listing as
+  // context, the same shape the library route already uses for `?item=`.
+  validateSearch: (search: Record<string, unknown>): { resource?: string } =>
+    typeof search.resource === "string" && search.resource
+      ? { resource: search.resource }
+      : {},
   head: () => ({
     meta: [
       { title: "Adel — Adelante" },
@@ -16,5 +22,10 @@ export const Route = createFileRoute("/adel")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: AdelChat,
+  component: AdelRoute,
 });
+
+function AdelRoute() {
+  const { resource } = Route.useSearch();
+  return <AdelChat resourceId={resource} />;
+}
