@@ -1,0 +1,83 @@
+// §Content-authoring pass Batch 3 — Module 3 authoring + anti-templating guard.
+import { describe, expect, it } from "vitest";
+import { liveLessonsInModule } from "@/lib/contentCatalog";
+import { originalityErrors } from "@/lib/contentOriginality";
+import { getContentEntry } from "@/lib/contentPublishing";
+import { RECOVERY_LESSON_TYPE } from "@/lib/contentTypes";
+import { UNDERSTANDING_MY_ADDICTION_FIELDS } from "@/lib/recovery.understandingMyAddiction.authored";
+
+const lessons = () => liveLessonsInModule("understanding-my-addiction");
+
+describe("Module 3 'Understanding My Addiction' is really authored, not templated", () => {
+  it("still has its ten lessons in order", () => {
+    expect(lessons()).toHaveLength(10);
+    expect(lessons().map((l) => l.order)).toEqual([1, 2, 3, 4, 5, 6, 7, 8, 9, 10]);
+  });
+
+  it("passes the real quality gate on every lesson", () => {
+    for (const l of lessons()) {
+      expect(
+        originalityErrors("recovery_lesson", structuredClone(l) as unknown as Record<string, unknown>),
+        `${l.id} failed the originality gate`,
+      ).toEqual([]);
+    }
+  });
+
+  it("passes the same validation the admin form enforces", () => {
+    for (const l of lessons()) {
+      expect(
+        RECOVERY_LESSON_TYPE.validate(structuredClone(l) as unknown as Record<string, unknown>),
+        `${l.id} failed validate()`,
+      ).toEqual([]);
+    }
+  });
+
+  it("carries no remaining instance of the measured filler strings", () => {
+    for (const l of lessons()) {
+      expect(l.adelQuestion).not.toBe("What part of this feels hardest for you?");
+      expect(l.adelReflection).not.toMatch(/^Adel can help you go deeper on/);
+      expect(l.checkIn).not.toMatch(/^Right now, how much is/);
+    }
+  });
+
+  it("gives each lesson its own check-in, question and reflection", () => {
+    const l = lessons();
+    for (const key of ["checkIn", "adelQuestion", "adelReflection"] as const) {
+      expect(new Set(l.map((x) => x[key])).size, `${key} repeats inside the module`).toBe(l.length);
+    }
+  });
+
+  it("shares no tool-flow option set between two lessons", () => {
+    const l = lessons();
+    for (const key of ["warningSigns", "supportPeople", "todayActions"] as const) {
+      const sets = l.map((x) => JSON.stringify(x.toolFlow[key]));
+      expect(new Set(sets).size, `${key} is shared between lessons`).toBe(l.length);
+    }
+  });
+
+  it("ships as PUBLISHED overrides authored by Cathy, not baseline edits", () => {
+    for (const f of UNDERSTANDING_MY_ADDICTION_FIELDS) {
+      const entry = getContentEntry("recovery_lesson", f.lessonId);
+      expect(entry?.status).toBe("published");
+      expect(entry?.revisions[0]?.by).toBe("Cathy");
+      expect(entry?.overridesBaseline).toBe(true);
+    }
+  });
+});
+
+describe("Module 3 keeps the established voice and format", () => {
+  it("asks no 1-10 scale questions — the format issue caught in Batch 2", () => {
+    for (const l of lessons()) {
+      for (const text of [l.checkIn, l.adelQuestion]) {
+        expect(text, `${l.id} uses a scale question`).not.toMatch(/\b1\s*(-|–|to)\s*10\b|on a scale/i);
+      }
+    }
+  });
+
+  it("keeps the teaching content the editorial pass already approved", () => {
+    for (const l of lessons()) {
+      expect(l.learnBody.length).toBeGreaterThan(80);
+      expect(l.insight.trim()).toBeTruthy();
+    }
+  });
+});
