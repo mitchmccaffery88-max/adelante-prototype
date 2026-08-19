@@ -41,6 +41,9 @@ import "@/lib/recovery.firstDaysOut.authored";
 // Side-effect import: Starting Strong's step-2 check-ins are authored the same
 // way — published overrides of the shipped lessons, not edits to the array.
 import "@/lib/library.startingStrong.authored";
+// Side-effect import: Module 2's per-lesson check-in, Adel question/reflection
+// and tool-flow option sets, authored as published overrides (Batch 2).
+import "@/lib/recovery.findingMyPeople.authored";
 
 export { subscribeContent };
 
