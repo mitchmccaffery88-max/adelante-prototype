@@ -292,12 +292,15 @@ describe("finalizeRefusalForm", () => {
 
 describe("3-in-7-days escalation", () => {
   it("triggers only at the third live refusal in the window", () => {
-    // Start the course yesterday: on the START day, slotsForOrder suppresses
+    // Start the course two days back: on the START day, slotsForOrder suppresses
     // times earlier than the hour the order was written, so a TID order created
     // late in the day would project fewer than 3 slots and make this test
     // clock-dependent.
-    const yesterday = new Date(Date.now() - 86_400_000).toISOString().slice(0, 10);
-    const { pid, orderId } = signedOrder({ frequencyCode: "TID", startDate: yesterday });
+    // Two days, not one: "yesterday" in UTC is still TODAY in the facility's
+    // Pacific timezone during the evening, which put the order back on its
+    // start day and made this fail only after 4pm local.
+    const started = new Date(Date.now() - 2 * 86_400_000).toISOString().slice(0, 10);
+    const { pid, orderId } = signedOrder({ frequencyCode: "TID", startDate: started });
     const slots = deriveMarDay(AdelanteEHR.getPatient(pid)!, today()).slots.filter(
       (s) => s.order.id === orderId,
     );
