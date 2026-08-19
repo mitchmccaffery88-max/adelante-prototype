@@ -53,6 +53,10 @@ import "@/lib/recovery.changingMyEverydayLife.authored";
 // Side-effect import: Module 5's per-lesson check-in, Adel question/reflection
 // and tool-flow option sets, authored as published overrides (Batch 5).
 import "@/lib/recovery.healingMyRelationships.authored";
+// Side-effect import: Module 6's per-lesson check-in, Adel question/reflection,
+// tool-flow option sets and decision-activity choices, authored as published
+// overrides (Batch 6).
+import "@/lib/recovery.buildingALifeThatWorks.authored";
 
 export { subscribeContent };
 
