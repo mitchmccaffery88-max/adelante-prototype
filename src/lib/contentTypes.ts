@@ -33,6 +33,10 @@ import {
 } from "@/lib/communityResources";
 import { NALOXONE_ACCESS_POINTS, type NaloxoneAccessPoint } from "@/lib/safetyContent";
 import { publishedContentOfType, type ContentBody, type ContentTypeId } from "@/lib/contentPublishing";
+// §Content-authoring pass Batch 1 — completeness is not the only bar. The
+// originality gate runs inside the same `validate` every lifecycle mutation
+// already calls, so it is enforced on the real submit/publish paths.
+import { originalityErrors } from "@/lib/contentOriginality";
 
 export type ContentFieldKind =
   | "text"
