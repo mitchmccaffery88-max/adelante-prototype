@@ -47,6 +47,9 @@ import "@/lib/recovery.findingMyPeople.authored";
 // Side-effect import: Module 3's per-lesson check-in, Adel question/reflection
 // and tool-flow option sets, authored as published overrides (Batch 3).
 import "@/lib/recovery.understandingMyAddiction.authored";
+// Side-effect import: Module 4's per-lesson check-in, Adel question/reflection
+// and tool-flow option sets, authored as published overrides (Batch 4).
+import "@/lib/recovery.changingMyEverydayLife.authored";
 
 export { subscribeContent };
 
