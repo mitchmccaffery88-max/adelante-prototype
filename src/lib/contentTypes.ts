@@ -33,6 +33,10 @@ import {
 } from "@/lib/communityResources";
 import { NALOXONE_ACCESS_POINTS, type NaloxoneAccessPoint } from "@/lib/safetyContent";
 import { publishedContentOfType, type ContentBody, type ContentTypeId } from "@/lib/contentPublishing";
+// §Content-authoring pass Batch 1 — completeness is not the only bar. The
+// originality gate runs inside the same `validate` every lifecycle mutation
+// already calls, so it is enforced on the real submit/publish paths.
+import { originalityErrors } from "@/lib/contentOriginality";
 
 export type ContentFieldKind =
   | "text"
@@ -325,7 +329,7 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
     const errors = requireText(b, LIBRARY_FIELDS);
     if (!liveLibraryCategoryList().some((c) => c.id === str(b, "categoryId")))
       errors.push("Pick a real library category.");
-    return [...errors, ...validateActivity(b)];
+    return [...errors, ...validateActivity(b), ...originalityErrors("library_lesson", b)];
   },
 };
 
@@ -430,7 +434,7 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
       errors.push(`Give at least ${TOOL_FLOW_LIMITS.supportPeople} support people to choose from.`);
     if (list(b, "toolFlow.todayActions").length < 2)
       errors.push("Give at least two actions for today to choose from.");
-    return [...errors, ...validateActivity(b)];
+    return [...errors, ...validateActivity(b), ...originalityErrors("recovery_lesson", b)];
   },
 };
 

@@ -38,6 +38,9 @@ import { setContentResolver } from "@/lib/engagement";
 // content rather than shipped-array entries, so they must be seeded before any
 // surface resolves the live catalog.
 import "@/lib/recovery.firstDaysOut.authored";
+// Side-effect import: Starting Strong's step-2 check-ins are authored the same
+// way — published overrides of the shipped lessons, not edits to the array.
+import "@/lib/library.startingStrong.authored";
 
 export { subscribeContent };
 
