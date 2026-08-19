@@ -40,8 +40,11 @@ import { publishedContentOfType, type ContentBody, type ContentTypeId } from "@/
 export function normalizeForCompare(text: string): string {
   return text
     .toLowerCase()
-    .replace(/[\u2018\u2019\u201c\u201d]/g, "'")
-    .replace(/[^a-z0-9' ]+/g, " ")
+    // Curly and straight apostrophes are dropped, not kept, so "don't" and
+    // "dont" compare equal — otherwise a smart-quote pass over an existing
+    // lesson would read as fresh writing to the gate.
+    .replace(/[\u2018\u2019\u201c\u201d']/g, "")
+    .replace(/[^a-z0-9 ]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 }
