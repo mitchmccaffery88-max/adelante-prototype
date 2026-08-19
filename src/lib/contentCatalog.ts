@@ -57,6 +57,10 @@ import "@/lib/recovery.healingMyRelationships.authored";
 // tool-flow option sets and decision-activity choices, authored as published
 // overrides (Batch 6).
 import "@/lib/recovery.buildingALifeThatWorks.authored";
+// Side-effect import: Module 7's per-lesson check-in, Adel question/reflection,
+// tool-flow option sets and decision-activity choices, authored as published
+// overrides (Batch 7).
+import "@/lib/recovery.whenRecoveryGetsHard.authored";
 
 export { subscribeContent };
 
