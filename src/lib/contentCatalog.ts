@@ -61,6 +61,14 @@ import "@/lib/recovery.buildingALifeThatWorks.authored";
 // tool-flow option sets and decision-activity choices, authored as published
 // overrides (Batch 7).
 import "@/lib/recovery.whenRecoveryGetsHard.authored";
+// Side-effect import: Module 8's per-lesson check-in, Adel question/reflection,
+// tool-flow option sets and decision-activity choices, authored as published
+// overrides (Batch 8 — final module).
+import "@/lib/recovery.becomingSomeoneNew.authored";
+// Side-effect import: catalog-wide remediation of the single decision-choice
+// set Modules 2-5 each shared across all ten of their lessons. MUST stay last —
+// it republishes on top of those modules' authored bodies (Batch 8).
+import "@/lib/recovery.activityChoices.remediation";
 
 export { subscribeContent };
 

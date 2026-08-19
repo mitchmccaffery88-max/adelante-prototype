@@ -14,5 +14,9 @@ export default defineConfig({
   test: {
     environment: "node",
     include: ["src/**/*.test.ts", "src/**/*.test.tsx"],
+    // The content catalog now seeds 80 authored recovery lessons plus the
+    // library on first import, so catalog-wide tests legitimately run for a
+    // few seconds under a fully parallel suite. 5s (the default) flaked.
+    testTimeout: 20000,
   },
 });
