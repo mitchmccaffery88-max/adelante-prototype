@@ -1,7 +1,7 @@
-import { liveRecoveryModuleList, liveLessonsInModule } from "@/lib/contentCatalog";
+import { liveRecoveryModules, liveLessonsInModule } from "@/lib/contentCatalog";
 import { originalityErrors } from "@/lib/contentOriginality";
 import { RECOVERY_LESSON_TYPE } from "@/lib/contentTypes";
-const mods = liveRecoveryModuleList();
+const mods = liveRecoveryModules();
 console.log(mods.map((m:any)=>`${m.order} ${m.id} ${m.name} / ${m.mission}`).join("\n"));
 const l = liveLessonsInModule("finding-my-people");
 console.log("count", l.length);
