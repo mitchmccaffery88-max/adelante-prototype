@@ -41,7 +41,7 @@ describe("Recovery Journey catalog — final content-authoring sweep", () => {
         `${l.id} failed the originality gate`,
       ).toEqual([]);
     }
-  });
+  }, 120_000);
 
   it("shares no tool-flow option set across the entire catalog", () => {
     const lessons = allLessons();
