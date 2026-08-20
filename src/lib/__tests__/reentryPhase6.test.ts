@@ -172,7 +172,8 @@ describe("Community resources cannot go live without a real verification", () =>
       expect(r.verification?.verifiedByStaffId).toBe("s-cc2");
       expect(r.status).toBe("verified");
     }
-    // Everything she did not verify remains unverified and invisible.
+    // Everything she did not verify remains unverified — still listed for
+    // patients, but badged rather than published.
     const queue = resourceVerificationQueue();
     expect(queue.every((r) => r.status !== "verified")).toBe(true);
     expect(queue.length).toBe(all.length - visible.length);

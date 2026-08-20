@@ -40,9 +40,8 @@ describe("Module 1 reaches ten lessons through the content lifecycle", () => {
     }
   });
 
-  it("keeps the module's post-release population gate on every new lesson", () => {
-    for (const l of AUTHORED_FIRST_DAYS_OUT_LESSONS)
-      expect(l.populations).toEqual(["pre_release_ji", "post_release_ji"]);
+  it("carries no population gate — module 1 is visible to every track", () => {
+    for (const l of AUTHORED_FIRST_DAYS_OUT_LESSONS) expect(l.populations).toBeUndefined();
   });
 });
 
