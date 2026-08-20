@@ -225,6 +225,10 @@ export function SlipSupportFlow() {
             count after a slip, some don&apos;t — both are real recovery. Nothing changes unless
             you say so.
           </p>
+          <p className="text-xs text-muted-foreground">
+            Heads up: unlike this slip record, your recovery start date lives on your profile, so
+            care team members with your 42 CFR Part 2 permission can see it.
+          </p>
           <Button
             type="button"
             data-testid="slip-date-keep"
