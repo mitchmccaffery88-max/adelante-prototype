@@ -12,6 +12,8 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { dayKeyLocal, daysSober, daysSoberLabel } from "@/lib/recoveryStartDate";
+import { useMyRecoveryStartDate } from "@/components/patient/RecoveryDateCard";
 import {
   LAPSE_CONTRIBUTORS,
   LAPSE_HELPED_BEFORE,
@@ -72,6 +74,12 @@ export function SlipSupportFlow() {
   const [step, setStep] = useState(0);
   const [contributors, setContributors] = useState<string[]>([]);
   const [helped, setHelped] = useState<string[]>([]);
+  // §Recovery date — the OPTIONAL post-slip prompt. Nothing here changes the
+  // date on its own: a slip is information, not a reset button. The prompt
+  // only appears when a date is actually set, and "Keep my date" is a real,
+  // equally-weighted answer.
+  const recoveryDate = useMyRecoveryStartDate(patientId);
+  const [pendingStep, setPendingStep] = useState<LapseNextStepId | null>(null);
 
   const toggle = (setter: typeof setContributors) => (id: string) =>
     setter((prev) => (prev.includes(id) ? prev.filter((x) => x !== id) : [...prev, id]));
@@ -79,6 +87,15 @@ export function SlipSupportFlow() {
   function finish(nextStep: LapseNextStepId) {
     recordLapse(patientId, { contributors, helpedBefore: helped, nextStep });
     toast.success("Saved. Just for you.");
+    if (recoveryDate) {
+      setPendingStep(nextStep);
+      setStep(4);
+      return;
+    }
+    goNext(nextStep);
+  }
+
+  function goNext(nextStep: LapseNextStepId) {
     const dest = NEXT_STEP_DESTINATIONS[nextStep];
     navigate({
       to: dest.to,
@@ -196,6 +213,51 @@ export function SlipSupportFlow() {
             onClick={() => setStep(2)}
           >
             Back
+          </Button>
+        </Card>
+      )}
+
+      {step === 4 && pendingStep && (
+        <Card className="space-y-3 p-5" data-testid="slip-date-prompt">
+          <p className="text-base font-medium">Your recovery start date is up to you.</p>
+          <p className="text-sm text-muted-foreground">
+            It currently reads {daysSoberLabel(daysSober(recoveryDate))}. Some people restart the
+            count after a slip, some don&apos;t — both are real recovery. Nothing changes unless
+            you say so.
+          </p>
+          <Button
+            type="button"
+            data-testid="slip-date-keep"
+            size="patient"
+            className="w-full"
+            onClick={() => goNext(pendingStep)}
+          >
+            Keep my date
+          </Button>
+          <Button
+            type="button"
+            variant="outline"
+            size="patient"
+            data-testid="slip-date-today"
+            className="w-full"
+            onClick={() => {
+              AdelanteEHR.setRecoveryStartDate(patientId, dayKeyLocal(new Date()), {
+                kind: "patient",
+              });
+              toast.success("Updated to today.");
+              goNext(pendingStep);
+            }}
+          >
+            Start the count from today
+          </Button>
+          <Button
+            type="button"
+            variant="ghost"
+            size="patient"
+            className="w-full"
+            onClick={() => goNext(pendingStep)}
+          >
+            Skip
           </Button>
         </Card>
       )}
