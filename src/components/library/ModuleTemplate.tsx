@@ -288,30 +288,61 @@ function Step({
   );
 }
 
-/** Segmented progress — one bar per step, filled up to where the patient is. */
-function StepProgress({ index, total }: { index: number; total: number }) {
+/**
+ * §Lesson-player Phase A — real per-step dots. Each dot carries that step's
+ * real title (the ones the step-title build added — nothing invented here).
+ * Visited steps are tappable to jump back; unvisited steps stay disabled, so
+ * the existing forward-only progression is preserved.
+ */
+function StepProgress({
+  index,
+  maxVisited,
+  labels,
+  onJump,
+}: {
+  index: number;
+  maxVisited: number;
+  labels: string[];
+  onJump: (i: number) => void;
+}) {
   const { t } = useI18n();
+  const total = labels.length;
   return (
     <div className="space-y-1.5">
       <div
-        className="flex gap-1"
-        role="progressbar"
-        aria-valuemin={1}
-        aria-valuemax={total}
-        aria-valuenow={index + 1}
+        className="flex flex-wrap gap-1"
+        role="group"
         aria-label={`${t("modStepLabel")} ${index + 1} ${t("modStepOf")} ${total}`}
       >
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i <= index ? "bg-teal" : "bg-secondary"
-            }`}
-          />
-        ))}
+        {labels.map((label, i) => {
+          const visited = i <= maxVisited;
+          const current = i === index;
+          const title = `${t("modStepLabel")} ${i + 1} ${t("modStepOf")} ${total} — ${label}${
+            visited ? "" : ` (${t("modStepNotVisited")})`
+          }`;
+          return (
+            <button
+              key={`${label}-${i}`}
+              type="button"
+              title={title}
+              aria-label={`${t("modGoToStep")} ${i + 1}: ${label}`}
+              aria-current={current ? "step" : undefined}
+              disabled={!visited}
+              onClick={() => visited && onJump(i)}
+              className={`h-2.5 min-w-[1.25rem] flex-1 rounded-full transition-colors ${
+                current
+                  ? "bg-teal ring-2 ring-teal/40 ring-offset-1 ring-offset-background"
+                  : visited
+                    ? "bg-teal/60 hover:bg-teal"
+                    : "cursor-default bg-secondary"
+              }`}
+            />
+          );
+        })}
       </div>
       <p className="text-xs text-muted-foreground">
-        {index + 1}/{total} {t("modStepsWord")}
+        {index + 1}/{total} {t("modStepsWord")} · {maxVisited + 1} {t("modStepOf")} {total}{" "}
+        {t("modVisitedCount")}
       </p>
     </div>
   );
