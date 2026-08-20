@@ -18,7 +18,7 @@ export const Route = createFileRoute("/recovery-journey")({
       {
         name: "description",
         content:
-          "Eight recovery modules — from surviving your first days out to building a life that works — with warning signs, support people and one action for today.",
+          "Nine recovery modules — from surviving your first days out to building a life that works — with warning signs, support people and one action for today.",
       },
       { property: "og:title", content: "Recovery journey — Adelante" },
       {

@@ -27,10 +27,10 @@
 export const recoveryUiEn = {
   recJourneyTitle: "My recovery journey",
   recJourneyIntro:
-    "Eight modules, each with its own mission. Work them in order or start where you are.",
+    "Nine modules, each with its own mission. Work them in order or start where you are.",
   recModuleLabel: "Module",
   recMissionLabel: "Mission",
-  recReentrySpecific: "Reentry-specific",
+  recReentrySpecific: "Written for reentry — open to everyone",
   recPendingBadge: "Lesson content pending transcription",
   recPendingBody:
     "This module is real and confirmed, but its lessons haven't been transcribed yet. Nothing has been made up to fill the gap — it will open when the real content lands.",
@@ -100,10 +100,10 @@ export const recoveryUiEn = {
 export const recoveryUiEs: Record<keyof typeof recoveryUiEn, string> = {
   recJourneyTitle: "Mi camino de recuperación",
   recJourneyIntro:
-    "Ocho módulos, cada uno con su propia misión. Hazlos en orden o empieza donde estés.",
+    "Nueve módulos, cada uno con su propia misión. Hazlos en orden o empieza donde estés.",
   recModuleLabel: "Módulo",
   recMissionLabel: "Misión",
-  recReentrySpecific: "Para la reintegración",
+  recReentrySpecific: "Escrito para la reintegración — abierto a todos",
   recPendingBadge: "Contenido de las lecciones pendiente de transcripción",
   recPendingBody:
     "Este módulo es real y está confirmado, pero sus lecciones todavía no se han transcrito. No se inventó nada para llenar el vacío — se abrirá cuando llegue el contenido real.",

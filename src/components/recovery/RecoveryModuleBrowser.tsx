@@ -91,7 +91,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
                 <h2 className="font-display text-xl text-foreground">
                   {rt(`rec.mod.${mod.id}.name`, mod.name)}
                 </h2>
-                {mod.populations && (
+                {mod.reentryFocus && (
                   <Badge variant="outline" className="text-[10px]">
                     {t("recReentrySpecific")}
                   </Badge>
