@@ -49,7 +49,7 @@ describe("the date is patient-private self-tracking", () => {
       AdelanteEHR.setConsent(patientId, "part2Sud", consent);
       const record = AdelanteEHR.listPatients().find((p) => p.id === patientId)!;
       expect(JSON.stringify(record)).not.toContain(DATE);
-      expect("recoveryStartDate" in (record as Record<string, unknown>)).toBe(false);
+      expect("recoveryStartDate" in (record as unknown as Record<string, unknown>)).toBe(false);
     }
   });
 
