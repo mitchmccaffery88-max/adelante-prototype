@@ -5,7 +5,8 @@ import { Link } from "@tanstack/react-router";
 import { Bookmark, BookmarkCheck, ChevronRight, Clock, Globe, MapPin, Phone } from "lucide-react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import type { CommunityResource } from "@/lib/communityResources";
+import { isResourceVerified, type CommunityResource } from "@/lib/communityResources";
+import { Badge } from "@/components/ui/badge";
 import { isResourceSaved, toggleSavedResource } from "@/lib/selfTracking";
 
 export function ResourceCard({
@@ -43,6 +44,15 @@ export function ResourceCard({
           )}
         </button>
       </div>
+      {!isResourceVerified(r) && (
+        <Badge
+          variant="outline"
+          className="border-amber-warm text-[10px] text-amber-warm-foreground"
+          data-testid={`unverified-${r.id}`}
+        >
+          Pending verification
+        </Badge>
+      )}
       <p className="text-xs text-muted-foreground">{r.description}</p>
       <div className="flex items-center gap-1.5 text-xs text-muted-foreground">
         <MapPin className="h-3.5 w-3.5" /> {r.address}

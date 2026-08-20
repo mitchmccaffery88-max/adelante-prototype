@@ -8,7 +8,7 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { Button } from "@/components/ui/button";
 import { EmptyState } from "@/components/EmptyState";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { patientVisibleResources, subscribeResources } from "@/lib/communityResources";
+import { patientBrowsableResources, subscribeResources } from "@/lib/communityResources";
 import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
 import { ResourceCard } from "@/components/reentry/ResourceCard";
 
@@ -21,12 +21,12 @@ export function SavedResources() {
   );
   const liveKey = useSyncExternalStore(
     subscribeResources,
-    () => String(patientVisibleResources().length),
+    () => String(patientBrowsableResources().length),
     () => "0",
   );
   void liveKey;
   const ids = new Set(savedKey ? savedKey.split(",") : []);
-  const resources = patientVisibleResources().filter((r) => ids.has(r.id));
+  const resources = patientBrowsableResources().filter((r) => ids.has(r.id));
 
   return (
     <PatientPage width="browse" data-testid="saved-resources">

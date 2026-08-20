@@ -25,7 +25,8 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   RESOURCE_CATEGORIES,
   directionsUrl,
-  patientVisibleResource,
+  isResourceVerified,
+  patientBrowsableResource,
   subscribeResources,
 } from "@/lib/communityResources";
 import { isResourceSaved, subscribeSelfTracking, toggleSavedResource } from "@/lib/selfTracking";
@@ -34,7 +35,7 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const snapshot = useSyncExternalStore(
     subscribeResources,
-    () => JSON.stringify(patientVisibleResource(orgId) ?? null),
+    () => JSON.stringify(patientBrowsableResource(orgId) ?? null),
     () => "null",
   );
   const savedKey = useSyncExternalStore(
@@ -42,7 +43,7 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
     () => String(isResourceSaved(patientId, orgId)),
     () => "false",
   );
-  const r = JSON.parse(snapshot) as ReturnType<typeof patientVisibleResource>;
+  const r = JSON.parse(snapshot) as ReturnType<typeof patientBrowsableResource>;
   const saved = savedKey === "true";
 
   if (!r) {

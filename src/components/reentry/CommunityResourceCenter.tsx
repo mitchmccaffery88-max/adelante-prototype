@@ -14,7 +14,7 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import {
   RESOURCE_CATEGORIES,
   matchesResourceQuery,
-  patientVisibleResources,
+  patientBrowsableResources,
   subscribeResources,
 } from "@/lib/communityResources";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -32,10 +32,10 @@ export function CommunityResourceCenter() {
   );
   const snapshot = useSyncExternalStore(
     subscribeResources,
-    () => JSON.stringify(patientVisibleResources(category ?? undefined)),
+    () => JSON.stringify(patientBrowsableResources(category ?? undefined)),
     () => "[]",
   );
-  const inCategory = JSON.parse(snapshot) as ReturnType<typeof patientVisibleResources>;
+  const inCategory = JSON.parse(snapshot) as ReturnType<typeof patientBrowsableResources>;
   // Search NARROWS the chosen category rather than replacing it — both filters
   // apply together, so a category stays selected while you type.
   const resources = inCategory.filter((r) => matchesResourceQuery(r, query));
@@ -45,7 +45,7 @@ export function CommunityResourceCenter() {
       <PatientPageHeader
         icon={MapPinned}
         title="Community resources"
-        lede="Housing, food, work, meetings and more. We only list a place here once someone on our team has called it and confirmed the address, phone and hours."
+        lede="Housing, food, work, meetings and more. Listings our team has called and confirmed show their details as confirmed; the rest are marked pending verification so you know to call ahead."
         action={
           <Button asChild variant="outline" size="patient" className="shrink-0">
             <Link to="/resources/saved" data-testid="saved-resources-link">
@@ -96,7 +96,7 @@ export function CommunityResourceCenter() {
         <Card className="p-6 text-sm text-muted-foreground" data-testid="resources-empty">
           {query.trim()
             ? "No listings match that search. Try a shorter word, or clear the category filter."
-            : "Nothing is confirmed here yet. Our team is verifying local listings before we show them — ask your care team and they can connect you directly today."}
+            : "Nothing is listed here yet — ask your care team and they can connect you directly today."}
         </Card>
       ) : (
         <ul className="space-y-3">
@@ -109,9 +109,9 @@ export function CommunityResourceCenter() {
       )}
 
       <p className="text-xs text-muted-foreground" data-testid="resources-disclaimer">
-        This list only shows organisations someone on our team has called and confirmed. Other real
-        help exists that isn&apos;t here yet — listings still waiting on verification are hidden on
-        purpose rather than shown unconfirmed. Details can also change after we call, so if
+        Listings marked &ldquo;Pending verification&rdquo; are real organisations we have sourced but
+        nobody on our team has called yet, so the address, phone or hours may be out of date — call
+        ahead. Everything else has been confirmed by our team, though details can still change; if
         something is wrong when you get there, tell your care team and we&apos;ll re-check it.
       </p>
     </PatientPage>
