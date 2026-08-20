@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { dayKeyLocal, daysSober, daysSoberLabel } from "@/lib/recoveryStartDate";
+import { setRecoveryStartDate } from "@/lib/selfTracking";
 import { useMyRecoveryStartDate } from "@/components/patient/RecoveryDateCard";
 import {
   LAPSE_CONTRIBUTORS,

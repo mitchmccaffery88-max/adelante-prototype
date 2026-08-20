@@ -126,6 +126,7 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/lib/checkInSummary.ts",
   "src/lib/__tests__/selfTracking.test.ts",
   "src/components/patient/DailyCheckInCard.tsx",
+  "src/components/patient/RecoveryDateCard.tsx",
   "src/components/patient/CravingFlow.tsx",
   "src/components/patient/SlipSupportFlow.tsx",
   "src/components/patient/HomeDashboard.tsx",
