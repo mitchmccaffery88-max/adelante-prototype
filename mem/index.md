@@ -25,3 +25,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Content management](mem://features/content-management) — /admin-content manages lessons + community resources + naloxone access; direct publish, no second approver, no expiry
 - [Weekly recap](mem://features/weekly-recap) — /weekly-recap real stats, Adel reflection grounding contract, stats-only fallback
 - [Recovery stage model](mem://features/recovery-stage-model) — 5 person-set stages + signals, pending clinical review, never auto-derived
+- [Recovery start date](mem://features/recovery-start-date) — patient-owned sobriety date on the Patient record, Part 2-gated like SUD screeners, never auto-reset after a slip
