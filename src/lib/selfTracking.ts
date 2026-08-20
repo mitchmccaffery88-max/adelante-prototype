@@ -202,6 +202,8 @@ interface SelfTrackingRow {
   cravings: CravingLog[];
   lapses: LapseRecord[];
   savedResourceIds: string[];
+  /** §Recovery start date — see section 5 below. */
+  recoveryStartDate?: string;
 }
 
 const rows = new Map<string, SelfTrackingRow>();
@@ -373,6 +375,33 @@ export function savedResourceIds(patientId: string): string[] {
 
 export function isResourceSaved(patientId: string, resourceId: string): boolean {
   return (rows.get(patientId)?.savedResourceIds ?? []).includes(resourceId);
+}
+
+// ---------------------------------------------------------------------------
+// 5 — Recovery start date (self-reported)
+// ---------------------------------------------------------------------------
+//
+// CORRECTED LOCATION. This briefly lived on `Patient.recoveryStartDate` in
+// `ehr.ts`, Part 2-gated like a SUD screener. It was moved here because it has
+// NOT been clinically validated as medically necessary (pending Dr. Bagga's
+// sign-off), and an unvalidated self-reported abstinence marker does not
+// belong in the clinical record at all. It therefore gets the strongest
+// available guarantee, the same one craving and lapse records get: patient-
+// scoped, no EHR write, no audit entry, no staff or advocate read path under
+// ANY role or consent state. Moving it back into the EHR is a real open
+// clinical decision, not a refactor.
+
+/** The patient's own self-reported recovery start date (`YYYY-MM-DD`). */
+export function recoveryStartDate(patientId: string): string | undefined {
+  return rows.get(patientId)?.recoveryStartDate;
+}
+
+/** Patient-controlled write; `null` clears it. Never called automatically. */
+export function setRecoveryStartDate(patientId: string, date: string | null): void {
+  const r = row(patientId);
+  if (date) r.recoveryStartDate = date;
+  else delete r.recoveryStartDate;
+  notify();
 }
 
 /** Test/demo helper — drops every private row. */
