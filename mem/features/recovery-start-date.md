@@ -1,30 +1,30 @@
 ---
 name: Recovery / sobriety start date
-description: Patient-owned self-reported recovery start date on the Patient record, Part 2-gated like SUD screeners, with the never-auto-reset slip prompt rule
+description: Patient-private self-reported recovery start date in selfTracking.ts (NOT the EHR), with the never-auto-reset slip prompt rule and the open clinical-validation decision
 type: feature
 ---
-**Where it lives.** `Patient.recoveryStartDate` (`YYYY-MM-DD`, local day key) in
-`src/lib/ehr.ts`. On the Patient record — not self-tracking — because product
-direction is that it belongs to the medical record and the streak surfaces need
-one durable value.
+**Where it lives.** `selfTracking.ts` — `recoveryStartDate(patientId)` /
+`setRecoveryStartDate(patientId, date | null)`, `YYYY-MM-DD` local day key.
+Same isolation tier as craving logs and lapse records: patient-scoped, no EHR
+write, no audit-sink entry, no cross-patient listing, and NO staff or advocate
+read path under any role or consent state.
 
-**Part 2.** A self-reported abstinence date is close to a direct SUD status
-marker, so it reuses the EXISTING Part 2 framework — no new consent category.
-`AdelanteEHR.recoveryStartDateAccess/getRecoveryStartDate/viewRecoveryStartDate`
-mirror `screenerAccess`: patient reads own always; advocate via
-`advocatePart2Access(linkId)`; staff via `canAccess(role, "screeners_sud",
-patient)`. Never read the raw field outside those helpers.
+**OPEN CLINICAL DECISION — do not silently reverse.** This field briefly lived
+on `Patient.recoveryStartDate` in `ehr.ts`, Part 2-gated like a SUD screener.
+It was moved out because it has NOT been clinically validated by Dr. Bagga as
+medically necessary. Putting it back into the EHR / clinical record is a real,
+open decision that requires that sign-off — it is not a refactor and must not
+be reconsidered without it. Until then there is no Part 2 gate for it, because
+there is nothing for staff to gate.
 
-**Audit.** `setRecoveryStartDate` appends to the unified stream, category
-`clinical`, actions `recovery_start_date_set` / `recovery_start_date_cleared`,
-with `{ previous, next }`. No parallel history log.
-
-**Never auto-reset on a slip.** The slip flow offers an OPTIONAL step (only when
-a date exists) with "Keep my date" / "Start the count from today" / "Skip".
-Nothing in the code changes the date without an explicit patient tap, and the
-wording stays shame-free (no "clean", no "relapse-free", no score).
+**Never auto-reset on a slip.** The slip flow offers an OPTIONAL step (only
+when a date exists) with "Keep my date" / "Start the count from today" /
+"Skip". Nothing changes the date without an explicit patient tap, and the
+wording stays shame-free (no "clean", no "relapse-free", no score). The prompt
+states the truth: nobody else sees the date.
 
 **Math + copy** live in the pure module `src/lib/recoveryStartDate.ts`
 (`daysSober`, `daysSoberLabel`, milestones). A future date returns null rather
-than a negative count. Surfaces: `/profile` card, Home header, Recovery Journey
-header ("Set your date" when unset).
+than a negative count. Surfaces: `/profile` card (`RecoveryDateCard`), Home
+header and Recovery Journey header (`DaysSoberLine`, "Set your date" when
+unset).

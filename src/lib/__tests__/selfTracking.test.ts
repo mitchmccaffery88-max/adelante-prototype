@@ -125,6 +125,7 @@ const PATIENT_PRIVATE_CALLERS = [
   // summary screen; type-only patient-side consumer, no staff surface.
   "src/lib/checkInSummary.ts",
   "src/lib/__tests__/selfTracking.test.ts",
+  "src/lib/__tests__/recoveryStartDate.test.ts",
   "src/components/patient/DailyCheckInCard.tsx",
   "src/components/patient/RecoveryDateCard.tsx",
   "src/components/patient/CravingFlow.tsx",
