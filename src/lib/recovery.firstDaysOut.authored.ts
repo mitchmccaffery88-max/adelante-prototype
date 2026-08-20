@@ -34,7 +34,6 @@ export const FIRST_DAYS_OUT_AUTHOR = {
     "Module 1 lessons 6–10 authored to bring 'My First Days Out' to the same ten-lesson depth as the rest of the journey. Post-release copy, so the module's justice-involved population gate applies to each one.",
 };
 
-const JI = ["pre_release_ji", "post_release_ji"] as const;
 
 export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
   {
@@ -90,7 +89,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My twenty-minute urge plan",
-    populations: [...JI],
   },
   {
     id: "fdo-shape-of-the-first-day",
@@ -144,7 +142,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My four daily anchors",
-    populations: [...JI],
   },
   {
     id: "fdo-too-much-at-once",
@@ -199,7 +196,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "What's loudest for me right now",
-    populations: [...JI],
   },
   {
     id: "fdo-one-person-i-can-call",
@@ -248,7 +244,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My first call",
-    populations: [...JI],
   },
   {
     id: "fdo-what-comes-after-week-one",
@@ -301,7 +296,6 @@ export const AUTHORED_FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My move out of survival mode",
-    populations: [...JI],
   },
 ];
 

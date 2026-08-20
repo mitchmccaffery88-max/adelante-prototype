@@ -64,6 +64,11 @@ export interface RecoveryModule {
   icon: string;
   populations?: PopulationTrack[];
   /**
+   * Content is written for people leaving custody, but the module is visible
+   * to everyone — this only drives an honest label, never a gate.
+   */
+  reentryFocus?: boolean;
+  /**
    * TRUE when the module's real name/mission are confirmed but its lesson
    * content has not been transcribed yet. Nothing is fabricated for these —
    * the UI states plainly that content is pending.
@@ -87,9 +92,10 @@ export const RECOVERY_MODULES: RecoveryModule[] = [
     mission: "Survive and Stabilize",
     subtitle: "The first stretch: staying alive, staying safe, getting a floor under you.",
     icon: "Sunrise",
-    // Written explicitly for the days after release — gated to the
-    // justice-involved tracks, same Phase 2 gate the Library uses.
-    populations: ["pre_release_ji", "post_release_ji"],
+    // Content stays written for the days after release, but it is NO LONGER
+    // population-gated: early stabilisation reads usefully for everyone, so
+    // the module is universally visible and only labelled reentry-focused.
+    reentryFocus: true,
   },
   {
     id: "finding-my-people",
@@ -217,7 +223,6 @@ const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My first 72 hours plan",
-    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "fdo-tolerance-and-overdose",
@@ -284,7 +289,6 @@ const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "Tolerance reset — my overdose safety plan",
-    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "fdo-where-i-sleep",
@@ -337,7 +341,6 @@ const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My sleep-safe plan and backup",
-    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "fdo-paperwork-and-appointments",
@@ -391,7 +394,6 @@ const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My first-week appointment order",
-    populations: ["pre_release_ji", "post_release_ji"],
   },
   {
     id: "fdo-people-places-things",
@@ -445,7 +447,6 @@ const FIRST_DAYS_OUT_LESSONS: RecoveryLesson[] = [
       ],
     },
     toolkitLabel: "My people-and-places plan",
-    populations: ["pre_release_ji", "post_release_ji"],
   },
 ];
 
