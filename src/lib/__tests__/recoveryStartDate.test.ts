@@ -37,12 +37,12 @@ describe("Part 2 gating of the recovery start date", () => {
     AdelanteEHR.setConsent(patientId, "part2Sud", false);
     const view = AdelanteEHR.viewRecoveryStartDate(patientId, {
       kind: "staff",
-      role: "case_manager",
+      role: "ecm_provider",
     });
     expect(view.masked).toBe(true);
     expect(view.date).toBeUndefined();
     expect(() =>
-      AdelanteEHR.getRecoveryStartDate(patientId, { kind: "staff", role: "case_manager" }),
+      AdelanteEHR.getRecoveryStartDate(patientId, { kind: "staff", role: "ecm_provider" }),
     ).toThrow();
   });
 
@@ -53,7 +53,7 @@ describe("Part 2 gating of the recovery start date", () => {
     ).toBe(false);
     AdelanteEHR.setConsent(patientId, "part2Sud", true);
     expect(
-      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "staff", role: "case_manager" }).masked,
+      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "staff", role: "ecm_provider" }).masked,
     ).toBe(false);
   });
 
