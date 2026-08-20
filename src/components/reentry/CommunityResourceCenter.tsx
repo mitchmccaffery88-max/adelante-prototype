@@ -14,7 +14,6 @@ import {
   Bookmark,
   Bus,
   Baby,
-  BookOpen,
   Briefcase,
   BedDouble,
   Coins,
@@ -200,7 +199,7 @@ function CategoryTile({
       )}
     >
       <span className="grid h-9 w-9 shrink-0 place-items-center rounded-xl bg-secondary text-primary">
-        <Icon className="h-4.5 w-4.5" aria-hidden="true" />
+        <Icon className="h-4 w-4" aria-hidden="true" />
       </span>
       <span className="min-w-0">
         <span className="block truncate text-sm font-medium text-foreground">{name}</span>
