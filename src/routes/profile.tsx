@@ -7,6 +7,7 @@ import { UserCog, FileText } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { MyProfileCard, PrivacyConsentCard, SignOutCard } from "@/components/patient/ProfilePanels";
+import { RecoveryDateCard } from "@/components/patient/RecoveryDateCard";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
 import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { EmptyState } from "@/components/EmptyState";
@@ -64,6 +65,7 @@ function ProfilePage() {
         }
       />
       <MyProfileCard patientId={patient.id} />
+      <RecoveryDateCard patientId={patient.id} />
       <PrivacyConsentCard patientId={patient.id} />
       {/* Reused consent-ledger tooling: read-only per-person form record. */}
       <PatientConsentStatusCard patientId={patient.id} />

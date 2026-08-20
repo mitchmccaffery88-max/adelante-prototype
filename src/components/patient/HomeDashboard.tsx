@@ -34,6 +34,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { GetHelpNowModal } from "@/components/patient/GetHelpNowModal";
 import { usePopulation } from "@/components/PopulationGate";
 import { checkInStreakFrom } from "@/lib/checkInStreak";
+import { DaysSoberLine } from "@/components/patient/RecoveryDateCard";
 import { recoveryMilestones } from "@/lib/recoveryStages";
 import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
 import { privateNudge } from "@/lib/privateNudge";
@@ -632,6 +633,9 @@ export function HomeDashboard({
             ? `${streak.days}-day check-in streak${streak.checkedInToday ? "" : " · today's still open"}`
             : "No check-in streak going right now — today can start one."}
         </p>
+        <div className="mt-1">
+          <DaysSoberLine patientId={patientId} />
+        </div>
       </header>
 
       {afterHeader}

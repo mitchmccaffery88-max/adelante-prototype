@@ -26,6 +26,7 @@ import {
   usePublishedContentVersion,
 } from "@/lib/contentCatalog";
 import { RecoveryLessonView } from "./RecoveryLessonView";
+import { DaysSoberLine } from "@/components/patient/RecoveryDateCard";
 
 export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: string } = {}) {
   usePublishedContentVersion();
@@ -70,6 +71,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
         title={t("recJourneyTitle")}
         lede={t("recJourneyIntro")}
       >
+        <DaysSoberLine patientId={patientId} />
         {esPending && (
           <p className="rounded-2xl border border-amber-warm bg-amber-soft p-3 text-sm text-amber-warm-foreground">
             {t("recEsReviewFlag")}
