@@ -1031,6 +1031,19 @@ export interface Patient {
   episodeDay: number; // day within 90-day window
   smsFallback: boolean;
   consents: { hipaa: boolean; part2Sud: boolean; signedAt?: string };
+  /**
+   * §Recovery start date — self-reported abstinence/recovery start, owned by
+   * the PATIENT. It lives on the Patient record (not in self-tracking) because
+   * product direction is that it belongs to the medical record, and because
+   * the streak surfaces need one durable value.
+   *
+   * It is treated as 42 CFR Part 2 content: a self-reported abstinence date is
+   * close to a direct SUD status marker, so every non-patient read MUST go
+   * through `AdelanteEHR.recoveryStartDateAccess` / `viewRecoveryStartDate`,
+   * which reuse the SAME `screeners_sud` / advocate Part 2 gates as SUD
+   * screeners. Never read this field directly outside those helpers.
+   */
+  recoveryStartDate?: string; // YYYY-MM-DD, local day key
   screeners: Record<string, ScreenerResult | undefined>;
   // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
   screenerHistory?: ScreenerResult[];
