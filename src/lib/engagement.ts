@@ -99,8 +99,16 @@ export function lessonResponseKey(surface: LessonSurface, lessonId: string): str
 export interface LessonResponse {
   /** Last step the patient was on (0-based). */
   stepIndex?: number;
+  /**
+   * §Lesson-player Phase A — position WITHIN the current step, for steps that
+   * paginate internally (Part A/B, one scenario at a time). One value per
+   * lesson, not per step: it is a resume cursor for wherever the patient last
+   * was, and it is reset by the step-level navigation, not persisted per step.
+   */
+  subIndex?: number;
   /** Free text, keyed by field (`reflect`, `activity`, `grounding:<sense>`). */
   text?: Record<string, string>;
+
   /** Checklist / tap-to-select cards / check-in options. */
   checked?: string[];
   /** `rate` activity. */

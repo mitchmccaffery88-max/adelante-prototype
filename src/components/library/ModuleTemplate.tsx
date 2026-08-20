@@ -348,6 +348,59 @@ function StepProgress({
   );
 }
 
+/**
+ * §Lesson-player Phase A — shared SUB-PAGINATION primitive.
+ *
+ * A step can itself contain several panels (Part A/B, one scenario at a time,
+ * before/after ratings). Those are Phase B/C features, but they all need the
+ * same control, so it lands once here: a label, an "i of n" readout, and
+ * tappable dots. Deliberately unwired in this phase — no step type uses it
+ * yet — and deliberately NOT gated on visit order: sub-panels within a step
+ * the patient already reached are all reachable.
+ */
+export function SubTabProgress({
+  label,
+  index,
+  total,
+  onJump,
+  titles,
+}: {
+  label?: string;
+  index: number;
+  total: number;
+  onJump: (i: number) => void;
+  titles?: string[];
+}) {
+  const { t } = useI18n();
+  if (total <= 1) return null;
+  return (
+    <div className="flex items-center gap-2">
+      {label && <span className="text-xs font-medium text-muted-foreground">{label}</span>}
+      <span className="text-xs text-muted-foreground">
+        {index + 1} {t("modStepOf")} {total}
+      </span>
+      <div className="flex items-center gap-1" role="group" aria-label={label ?? undefined}>
+        {Array.from({ length: total }, (_, i) => {
+          const title = titles?.[i];
+          return (
+            <button
+              key={i}
+              type="button"
+              {...(title ? { title } : {})}
+              aria-label={`${t("modGoToStep")} ${i + 1}${title ? `: ${title}` : ""}`}
+              aria-current={i === index ? "true" : undefined}
+              onClick={() => onJump(i)}
+              className={`h-2 w-2 rounded-full transition-colors ${
+                i === index ? "bg-teal ring-2 ring-teal/30" : "bg-secondary hover:bg-teal/50"
+              }`}
+            />
+          );
+        })}
+      </div>
+    </div>
+  );
+}
+
 
 /**
  * A single step in a module lesson. `select` is the structured skill-building
