@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { dayKeyLocal, daysSober, daysSoberLabel } from "@/lib/recoveryStartDate";
+import { setRecoveryStartDate } from "@/lib/selfTracking";
 import { useMyRecoveryStartDate } from "@/components/patient/RecoveryDateCard";
 import {
   LAPSE_CONTRIBUTORS,
@@ -226,8 +227,7 @@ export function SlipSupportFlow() {
             you say so.
           </p>
           <p className="text-xs text-muted-foreground">
-            Heads up: unlike this slip record, your recovery start date lives on your profile, so
-            care team members with your 42 CFR Part 2 permission can see it.
+            Like this slip record, your recovery start date is yours alone — nobody else sees it.
           </p>
           <Button
             type="button"
@@ -245,9 +245,7 @@ export function SlipSupportFlow() {
             data-testid="slip-date-today"
             className="w-full"
             onClick={() => {
-              AdelanteEHR.setRecoveryStartDate(patientId, dayKeyLocal(new Date()), {
-                kind: "patient",
-              });
+              setRecoveryStartDate(patientId, dayKeyLocal(new Date()));
               toast.success("Updated to today.");
               goNext(pendingStep);
             }}

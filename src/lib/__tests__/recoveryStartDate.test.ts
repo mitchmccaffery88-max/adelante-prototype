@@ -1,7 +1,15 @@
-// §Recovery start date — the two things that must hold: the math is honest,
-// and the field is Part 2-gated exactly like SUD screener content.
+// §Recovery start date — two things must hold: the math is honest, and the
+// field is PATIENT-PRIVATE. It is deliberately NOT in the clinical record
+// (pending clinical validation), so there is no Part 2 gate to test: there is
+// no staff or advocate read path at all, under any role or consent state.
 import { describe, it, expect, beforeEach } from "vitest";
+import { readFileSync } from "node:fs";
 import { AdelanteEHR } from "@/lib/ehr";
+import {
+  __resetSelfTracking,
+  recoveryStartDate,
+  setRecoveryStartDate,
+} from "@/lib/selfTracking";
 import { daysSober, daysSoberLabel, passedMilestone } from "@/lib/recoveryStartDate";
 
 describe("daysSober", () => {
@@ -21,56 +29,48 @@ describe("daysSober", () => {
   });
 });
 
-describe("Part 2 gating of the recovery start date", () => {
+describe("the date is patient-private self-tracking", () => {
   const patientId = AdelanteEHR.listPatients()[0]!.id;
+  const DATE = "2026-01-01";
   beforeEach(() => {
-    AdelanteEHR.setRecoveryStartDate(patientId, "2026-01-01", { kind: "patient" });
+    __resetSelfTracking();
+    setRecoveryStartDate(patientId, DATE);
   });
 
-  it("lets the patient read their own date", () => {
-    expect(
-      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "patient", patientId }).date,
-    ).toBe("2026-01-01");
+  it("stores and clears, scoped to one patient", () => {
+    expect(recoveryStartDate(patientId)).toBe(DATE);
+    expect(recoveryStartDate("someone_else")).toBeUndefined();
+    setRecoveryStartDate(patientId, null);
+    expect(recoveryStartDate(patientId)).toBeUndefined();
   });
 
-  it("masks it from a consent-gated staff role without Part 2 consent", () => {
-    AdelanteEHR.setConsent(patientId, "part2Sud", false);
-    const view = AdelanteEHR.viewRecoveryStartDate(patientId, {
-      kind: "staff",
-      role: "ecm_provider",
-    });
-    expect(view.masked).toBe(true);
-    expect(view.date).toBeUndefined();
-    expect(() =>
-      AdelanteEHR.getRecoveryStartDate(patientId, { kind: "staff", role: "ecm_provider" }),
-    ).toThrow();
+  it("never appears on the EHR patient record, under any consent state", () => {
+    for (const consent of [true, false]) {
+      AdelanteEHR.setConsent(patientId, "part2Sud", consent);
+      const record = AdelanteEHR.listPatients().find((p) => p.id === patientId)!;
+      expect(JSON.stringify(record)).not.toContain(DATE);
+      expect("recoveryStartDate" in (record as unknown as Record<string, unknown>)).toBe(false);
+    }
   });
 
-  it("unmasks for a treating clinician and for a consented gated role", () => {
-    AdelanteEHR.setConsent(patientId, "part2Sud", false);
-    expect(
-      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "staff", role: "therapist" }).masked,
-    ).toBe(false);
-    AdelanteEHR.setConsent(patientId, "part2Sud", true);
-    expect(
-      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "staff", role: "ecm_provider" }).masked,
-    ).toBe(false);
+  it("never appears in the audit stream", () => {
+    setRecoveryStartDate(patientId, "2026-02-02");
+    setRecoveryStartDate(patientId, null);
+    const events = AdelanteEHR.listAuditEvents({ patientId });
+    expect(events.some((e) => e.action.startsWith("recovery_start_date"))).toBe(false);
+    expect(JSON.stringify(events)).not.toContain(DATE);
   });
 
-  it("never lets a billing role read it", () => {
-    AdelanteEHR.setConsent(patientId, "part2Sud", true);
-    expect(
-      AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "staff", role: "billing" }).masked,
-    ).toBe(true);
-  });
-
-  it("writes an audit entry on every change, including a clear", () => {
-    AdelanteEHR.setRecoveryStartDate(patientId, "2026-02-02", { kind: "patient" });
-    AdelanteEHR.setRecoveryStartDate(patientId, null, { kind: "patient" });
-    const events = AdelanteEHR.listAuditEvents({ patientId }).filter((e) =>
-      e.action.startsWith("recovery_start_date"),
-    );
-    expect(events[0]?.action).toBe("recovery_start_date_cleared");
-    expect(events.some((e) => e.action === "recovery_start_date_set")).toBe(true);
+  it("has no staff- or advocate-facing accessor left on the EHR at all", () => {
+    const api = AdelanteEHR as unknown as Record<string, unknown>;
+    for (const name of [
+      "recoveryStartDateAccess",
+      "getRecoveryStartDate",
+      "viewRecoveryStartDate",
+      "setRecoveryStartDate",
+    ]) {
+      expect(api[name], name).toBeUndefined();
+    }
+    expect(readFileSync("src/lib/ehr.ts", "utf8")).not.toMatch(/recoveryStartDate\??:/);
   });
 });

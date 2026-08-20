@@ -1,13 +1,16 @@
 // §Recovery start date — the patient-facing surfaces.
 //
-// The date is Part 2-gated in the store; the patient reading their OWN record
-// is always allowed, so every component here passes an explicit
-// `{ kind: "patient", patientId }` viewer rather than relying on a default.
-import { useState } from "react";
+// The date is PATIENT-PRIVATE self-tracking (`@/lib/selfTracking`), not a
+// clinical field: no EHR write, no audit entry, no staff/advocate read path.
+import { useState, useSyncExternalStore } from "react";
 import { toast } from "sonner";
 import { CalendarHeart } from "lucide-react";
 import { Link } from "@tanstack/react-router";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import {
+  recoveryStartDate as readRecoveryStartDate,
+  setRecoveryStartDate,
+  subscribeSelfTracking,
+} from "@/lib/selfTracking";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,12 +22,12 @@ import {
   passedMilestone,
 } from "@/lib/recoveryStartDate";
 
-/** Patient's own date, or undefined. Never throws — patient reads own record. */
+/** Patient's own date, or undefined. Only the patient can ever read this. */
 export function useMyRecoveryStartDate(patientId: string): string | undefined {
-  return useEhr(() =>
-    patientId
-      ? AdelanteEHR.viewRecoveryStartDate(patientId, { kind: "patient", patientId }).date
-      : undefined,
+  return useSyncExternalStore(
+    subscribeSelfTracking,
+    () => (patientId ? readRecoveryStartDate(patientId) : undefined),
+    () => undefined,
   );
 }
 
@@ -40,8 +43,8 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
         <CalendarHeart className="h-4 w-4" /> My recovery start date
       </div>
       <p className="mt-1 text-xs text-muted-foreground">
-        Only you and the care team members you&apos;ve given 42 CFR Part 2 permission can see
-        this. Set it, change it, or clear it whenever you want — no explanation needed.
+        Only you can see this — it stays on your side of the app and isn&apos;t part of your
+        medical record. Set it, change it, or clear it whenever you want — no explanation needed.
       </p>
       {date && (
         <p className="mt-3 text-base text-foreground" data-testid="recovery-date-current">
@@ -69,7 +72,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
           data-testid="recovery-date-save"
           disabled={!draft || draft === date}
           onClick={() => {
-            AdelanteEHR.setRecoveryStartDate(patientId, draft, { kind: "patient" });
+            setRecoveryStartDate(patientId, draft);
             toast.success("Saved. Yours to change any time.");
           }}
         >
@@ -81,7 +84,7 @@ export function RecoveryDateCard({ patientId }: { patientId: string }) {
             variant="ghost"
             data-testid="recovery-date-clear"
             onClick={() => {
-              AdelanteEHR.setRecoveryStartDate(patientId, null, { kind: "patient" });
+              setRecoveryStartDate(patientId, null);
               setDraft("");
               toast.success("Cleared.");
             }}
