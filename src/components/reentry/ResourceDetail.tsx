@@ -25,7 +25,8 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   RESOURCE_CATEGORIES,
   directionsUrl,
-  patientVisibleResource,
+  isResourceVerified,
+  patientBrowsableResource,
   subscribeResources,
 } from "@/lib/communityResources";
 import { isResourceSaved, subscribeSelfTracking, toggleSavedResource } from "@/lib/selfTracking";
@@ -34,7 +35,7 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const snapshot = useSyncExternalStore(
     subscribeResources,
-    () => JSON.stringify(patientVisibleResource(orgId) ?? null),
+    () => JSON.stringify(patientBrowsableResource(orgId) ?? null),
     () => "null",
   );
   const savedKey = useSyncExternalStore(
@@ -42,7 +43,7 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
     () => String(isResourceSaved(patientId, orgId)),
     () => "false",
   );
-  const r = JSON.parse(snapshot) as ReturnType<typeof patientVisibleResource>;
+  const r = JSON.parse(snapshot) as ReturnType<typeof patientBrowsableResource>;
   const saved = savedKey === "true";
 
   if (!r) {
@@ -51,7 +52,7 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
         <EmptyState
           icon={MapPinFallback}
           title="This listing isn't available"
-          description="It may still be waiting on verification, or it may have been taken down. Your care team can connect you directly."
+          description="It may have been taken down. Your care team can connect you directly."
         />
         <Button asChild variant="outline" size="patient">
           <Link to="/resources">Back to resources</Link>
@@ -67,6 +68,16 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
   return (
     <PatientPage width="reading" data-testid="resource-detail">
       <PatientPageHeader icon={MapPin} title={r.name} lede={r.description} />
+
+      {!isResourceVerified(r) && (
+        <p
+          className="rounded-2xl border border-amber-warm bg-amber-soft p-3 text-sm text-amber-warm-foreground"
+          data-testid="resource-detail-unverified"
+        >
+          Pending verification — nobody on our team has called this listing yet, so the address,
+          phone or hours may have changed. Call ahead before you go.
+        </p>
+      )}
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {category && <span className="rounded-full bg-secondary px-3 py-1">{category.name}</span>}

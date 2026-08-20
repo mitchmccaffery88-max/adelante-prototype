@@ -54,9 +54,16 @@ describe("recovery module structure", () => {
     }
   });
 
-  it("gates module 1 to justice-involved tracks only", () => {
-    expect(RECOVERY_MODULES[0]!.populations).toEqual(["pre_release_ji", "post_release_ji"]);
-    expect(RECOVERY_MODULES.slice(1).every((m) => m.populations === undefined)).toBe(true);
+  it("gates no module by population — module 1 is reentry-focused but universal", () => {
+    expect(RECOVERY_MODULES[0]!.id).toBe("first-days-out");
+    expect(RECOVERY_MODULES[0]!.populations).toBeUndefined();
+    expect(RECOVERY_MODULES[0]!.reentryFocus).toBe(true);
+    expect(RECOVERY_MODULES.every((m) => m.populations === undefined)).toBe(true);
+    expect(
+      RECOVERY_LESSONS.filter((l) => l.moduleId === "first-days-out").every(
+        (l) => l.populations === undefined,
+      ),
+    ).toBe(true);
   });
 });
 

@@ -468,6 +468,28 @@ export function patientVisibleResource(id: string): CommunityResource | undefine
   return patientVisibleResources().find((r) => r.id === id);
 }
 
+/**
+ * §Gap-closure Build 1 — what a patient BROWSES.
+ *
+ * Hiding unverified listings hid real help. The directory now shows every
+ * listing we hold, with the published (staff-verified) snapshot winning for
+ * anything that has one, and the rest surfaced honestly as pending
+ * verification. The verification workflow itself is untouched:
+ * `patientVisibleResources` is still the PUBLISHED set, and
+ * `isResourceVerified` still decides the badge.
+ */
+export function patientBrowsableResources(categoryId?: string): CommunityResource[] {
+  const byId = new Map<string, CommunityResource>(
+    listResources(categoryId).map((r) => [r.id, r]),
+  );
+  for (const r of patientVisibleResources(categoryId)) byId.set(r.id, r);
+  return [...byId.values()].sort((a, b) => a.name.localeCompare(b.name));
+}
+
+export function patientBrowsableResource(id: string): CommunityResource | undefined {
+  return patientBrowsableResources().find((r) => r.id === id);
+}
+
 /** Honest directions: a maps SEARCH for the address string, or the point if
  *  a real geocode ever lands on the record. Never a fabricated coordinate. */
 export function directionsUrl(r: CommunityResource): string | null {
