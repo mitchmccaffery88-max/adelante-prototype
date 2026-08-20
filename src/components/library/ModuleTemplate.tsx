@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, RotateCcw } from "lucide-react";
 import { useI18n } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
 import type { LessonResponse, LessonResponsePatch } from "@/lib/engagement";
@@ -288,30 +288,61 @@ function Step({
   );
 }
 
-/** Segmented progress — one bar per step, filled up to where the patient is. */
-function StepProgress({ index, total }: { index: number; total: number }) {
+/**
+ * §Lesson-player Phase A — real per-step dots. Each dot carries that step's
+ * real title (the ones the step-title build added — nothing invented here).
+ * Visited steps are tappable to jump back; unvisited steps stay disabled, so
+ * the existing forward-only progression is preserved.
+ */
+function StepProgress({
+  index,
+  maxVisited,
+  labels,
+  onJump,
+}: {
+  index: number;
+  maxVisited: number;
+  labels: string[];
+  onJump: (i: number) => void;
+}) {
   const { t } = useI18n();
+  const total = labels.length;
   return (
     <div className="space-y-1.5">
       <div
-        className="flex gap-1"
-        role="progressbar"
-        aria-valuemin={1}
-        aria-valuemax={total}
-        aria-valuenow={index + 1}
+        className="flex flex-wrap gap-1"
+        role="group"
         aria-label={`${t("modStepLabel")} ${index + 1} ${t("modStepOf")} ${total}`}
       >
-        {Array.from({ length: total }, (_, i) => (
-          <span
-            key={i}
-            className={`h-1.5 flex-1 rounded-full transition-colors ${
-              i <= index ? "bg-teal" : "bg-secondary"
-            }`}
-          />
-        ))}
+        {labels.map((label, i) => {
+          const visited = i <= maxVisited;
+          const current = i === index;
+          const title = `${t("modStepLabel")} ${i + 1} ${t("modStepOf")} ${total} — ${label}${
+            visited ? "" : ` (${t("modStepNotVisited")})`
+          }`;
+          return (
+            <button
+              key={`${label}-${i}`}
+              type="button"
+              title={title}
+              aria-label={`${t("modGoToStep")} ${i + 1}: ${label}`}
+              aria-current={current ? "step" : undefined}
+              disabled={!visited}
+              onClick={() => visited && onJump(i)}
+              className={`h-2.5 min-w-[1.25rem] flex-1 rounded-full transition-colors ${
+                current
+                  ? "bg-teal ring-2 ring-teal/40 ring-offset-1 ring-offset-background"
+                  : visited
+                    ? "bg-teal/60 hover:bg-teal"
+                    : "cursor-default bg-secondary"
+              }`}
+            />
+          );
+        })}
       </div>
       <p className="text-xs text-muted-foreground">
-        {index + 1}/{total} {t("modStepsWord")}
+        {index + 1}/{total} {t("modStepsWord")} · {maxVisited + 1} {t("modStepOf")} {total}{" "}
+        {t("modVisitedCount")}
       </p>
     </div>
   );
@@ -445,12 +476,19 @@ export function ModuleTemplate({
   const savedStep = response?.stepIndex;
   const [index, setIndex] = useState(() => Math.min(Math.max(savedStep ?? 0, 0), total - 1));
   const resumeKey = useMemo(() => `${title}:${total}`, [title, total]);
+  const [maxVisited, setMaxVisited] = useState(() =>
+    Math.min(Math.max(savedStep ?? 0, 0), total - 1),
+  );
+  const [restarted, setRestarted] = useState(false);
   const [seededFor, setSeededFor] = useState(resumeKey);
   useEffect(() => {
     // A different lesson mounted into the same component instance.
     if (seededFor !== resumeKey) {
       setSeededFor(resumeKey);
-      setIndex(Math.min(Math.max(savedStep ?? 0, 0), total - 1));
+      const seed = Math.min(Math.max(savedStep ?? 0, 0), total - 1);
+      setIndex(seed);
+      setMaxVisited(seed);
+      setRestarted(false);
     }
   }, [resumeKey, seededFor, savedStep, total]);
 
@@ -461,8 +499,20 @@ export function ModuleTemplate({
   function go(next: number) {
     const clamped = Math.min(Math.max(next, 0), total - 1);
     setIndex(clamped);
+    setMaxVisited((m) => Math.max(m, clamped));
     patch({ stepIndex: clamped });
     if (typeof window !== "undefined") window.scrollTo({ top: 0, behavior: "smooth" });
+  }
+
+  /**
+   * Restart = position only. Saved answers stay: silently deleting a patient's
+   * reflections because they tapped "start over" would be real data loss, and
+   * every control re-hydrates from the same saved response anyway. Clearing
+   * work is a separate, explicit action if it is ever asked for.
+   */
+  function restart() {
+    setRestarted(true);
+    go(0);
   }
 
   if (!step) return null;
@@ -491,7 +541,17 @@ export function ModuleTemplate({
         {notice}
       </header>
 
-      <StepProgress index={index} total={total} />
+      <StepProgress
+        index={index}
+        maxVisited={maxVisited}
+        labels={steps.map((s) => s.label)}
+        onJump={go}
+      />
+      {restarted && index === 0 && (
+        <p className="rounded-lg bg-secondary/50 p-2 text-xs text-muted-foreground">
+          {t("modRestarted")}
+        </p>
+      )}
 
       <Step n={index + 1} total={total} label={step.label} icon={step.icon}>
         {step.kind === "text" && (
@@ -544,9 +604,14 @@ export function ModuleTemplate({
           <ArrowLeft className="mr-1 h-4 w-4" aria-hidden /> {t("modBack")}
         </Button>
         {last ? (
-          <Button type="button" onClick={onComplete}>
-            {completeLabel}
-          </Button>
+          <>
+            <Button type="button" onClick={onComplete}>
+              {completeLabel}
+            </Button>
+            <Button type="button" variant="ghost" onClick={restart}>
+              <RotateCcw className="mr-1 h-4 w-4" aria-hidden /> {t("modRestart")}
+            </Button>
+          </>
         ) : (
           <Button type="button" onClick={() => go(index + 1)}>
             {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
