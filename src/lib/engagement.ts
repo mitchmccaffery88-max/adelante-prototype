@@ -106,8 +106,9 @@ export interface LessonResponse {
    * was, and it is reset by the step-level navigation, not persisted per step.
    */
   subIndex?: number;
-
+  /** Free text, keyed by field (`reflect`, `activity`, `grounding:<sense>`). */
   text?: Record<string, string>;
+
   /** Checklist / tap-to-select cards / check-in options. */
   checked?: string[];
   /** `rate` activity. */
