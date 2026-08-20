@@ -1,9 +1,10 @@
 // §Adelante Journey Phase 6 — Community Resource Center (patient-facing).
 //
-// Patients only ever see LIVE entries: `patientVisibleResources` filters on
-// `isResourceLive`, which requires a real staff verification of address, phone
-// AND hours, unexpired. An unverified seed entry cannot appear here at all —
-// there is no "unverified" patient state to accidentally render.
+// Gap-closure Build 1: the directory now lists EVERY sourced organisation via
+// `patientBrowsableResources`. Staff-verified entries come from the published
+// snapshot; the rest render with a "Pending verification" badge instead of
+// being hidden, because hiding real help served nobody. The staff verification
+// workflow is unchanged — it now drives a label, not visibility.
 import { useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
