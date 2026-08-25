@@ -490,15 +490,28 @@ export function patientBrowsableResource(id: string): CommunityResource | undefi
   return patientBrowsableResources().find((r) => r.id === id);
 }
 
+/**
+ * Honest maps link for a plain address string: a maps SEARCH, never a
+ * fabricated coordinate. Returns null when there is nothing real to search
+ * (blank, or a countywide/statewide/confidential placeholder).
+ *
+ * Shared with non-resource surfaces (e.g. in-person appointment locations) so
+ * there is exactly one geo behaviour in the app.
+ */
+export function mapsSearchUrl(address: string | undefined | null): string | null {
+  const addr = (address ?? "").trim();
+  if (!addr || /^countywide|^statewide|^confidential/i.test(addr)) return null;
+  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+}
+
 /** Honest directions: a maps SEARCH for the address string, or the point if
  *  a real geocode ever lands on the record. Never a fabricated coordinate. */
 export function directionsUrl(r: CommunityResource): string | null {
   if (typeof r.lat === "number" && typeof r.lng === "number")
     return `https://www.google.com/maps/search/?api=1&query=${r.lat},${r.lng}`;
-  const addr = r.address.trim();
-  if (!addr || /^countywide|^statewide|^confidential/i.test(addr)) return null;
-  return `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(addr)}`;
+  return mapsSearchUrl(r.address);
 }
+
 
 export function getResource(id: string): CommunityResource | undefined {
   const r = resources.get(id);

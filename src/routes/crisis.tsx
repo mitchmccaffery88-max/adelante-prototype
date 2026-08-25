@@ -22,7 +22,13 @@ function CrisisPage() {
         tone="crisis"
         title="You are not alone"
         lede="Let's get you some help right now."
+        action={
+          <Button asChild variant="ghost" size="sm" data-testid="crisis-back-link">
+            <Link to="/home">Back to My care</Link>
+          </Button>
+        }
       />
+
 
       <div className="grid gap-3 sm:grid-cols-2">
         <Button asChild variant="crisis" size="patientLg" className="soft-shadow w-full">

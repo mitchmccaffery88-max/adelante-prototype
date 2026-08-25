@@ -122,6 +122,39 @@ export function isMatOrder(order: MedOrder): boolean {
 }
 
 // ---------------------------------------------------------------------------
+// Refill runway — days of supply left on a REAL signed order.
+//
+// Computed ONLY from two first-class order fields: `startDate` (the facility
+// date therapy begins) and `daysSupply`. There is no dispense/fill event
+// stream in this build, so we never pretend to know when the pharmacy last
+// filled it — an order with either field missing returns undefined and the UI
+// says nothing rather than guessing.
+// ---------------------------------------------------------------------------
+
+export type RunwayTone = "ok" | "soon" | "out";
+
+export interface RefillRunway {
+  daysLeft: number;
+  /** Facility-style YYYY-MM-DD the supply runs out. */
+  runsOutOn: string;
+  tone: RunwayTone;
+}
+
+export function refillRunway(order: MedOrder, now: Date = new Date()): RefillRunway | undefined {
+  if (!order.startDate || !order.daysSupply || order.daysSupply <= 0) return undefined;
+  const start = new Date(`${order.startDate}T00:00:00`);
+  if (Number.isNaN(start.getTime())) return undefined;
+  const end = new Date(start.getTime() + order.daysSupply * 86_400_000);
+  const daysLeft = Math.ceil((end.getTime() - now.getTime()) / 86_400_000);
+  return {
+    daysLeft,
+    runsOutOn: end.toISOString().slice(0, 10),
+    tone: daysLeft <= 0 ? "out" : daysLeft <= 7 ? "soon" : "ok",
+  };
+}
+
+
+// ---------------------------------------------------------------------------
 // Self-report layer
 // ---------------------------------------------------------------------------
 

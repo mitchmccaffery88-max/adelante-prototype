@@ -752,9 +752,23 @@ export function HomeDashboard({
               Adel answers questions in your own words, any hour — and can hand you off to your
               care team when a person is what you need.
             </p>
+            {/* §Small UI gaps batch item 2 — Adel conversations are held in
+                memory for the session only (transcript retention is an open
+                Part 2 decision), so there is no real "last message" to show.
+                This bubble is therefore an EXAMPLE and is labelled as one — we
+                do not imply the patient said it. */}
+            <div className="mt-3 space-y-1" data-testid="adel-example-bubble">
+              <p className="text-[11px] font-medium uppercase tracking-wider text-muted-foreground">
+                Example
+              </p>
+              <p className="w-fit max-w-full rounded-2xl rounded-bl-sm bg-secondary px-3 py-2 text-sm">
+                &ldquo;I couldn&apos;t sleep last night and I&apos;m worried about my appointment.&rdquo;
+              </p>
+            </div>
             <Button asChild className="mt-3 min-h-11 rounded-2xl">
               <Link to="/adel">Ask Adel</Link>
             </Button>
+
           </div>
         </div>
       </Card>
