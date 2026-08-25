@@ -136,7 +136,25 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/components/reentry/ResourceDetail.tsx",
   "src/components/reentry/SavedResources.tsx",
   "src/components/reentry/CommunityResourceCenter.tsx",
+  // §Engagement/Reporting Build 1 — the ONE population-reporting consumer,
+  // allowed by explicit product decision. It may only touch the de-aggregated
+  // `selfTrackingAggregate` / `MIN_COHORT_SIZE` exports; the assertion below
+  // enforces that it never reaches a per-patient read.
+  "src/lib/engagementReporting.ts",
+  "src/lib/__tests__/engagementReporting.test.ts",
 ];
+
+/** Per-patient reads that must never appear on a reporting surface. */
+const PER_PATIENT_READS = [
+  "listCravingLogs",
+  "listLapses",
+  "listDailyCheckIns",
+  "todaysCheckIn",
+  "dailyCheckInDayKeys",
+  "recoveryStartDate(",
+  "savedResourceIds",
+];
+
 
 describe("patient-private tier", () => {
   it("no staff or admin surface imports the private store", () => {
