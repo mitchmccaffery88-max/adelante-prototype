@@ -164,6 +164,14 @@ describe("patient-private tier", () => {
     expect(offenders).toEqual([]);
   });
 
+  it("the population-reporting consumer only reads de-aggregated counts", () => {
+    const src = readFileSync("src/lib/engagementReporting.ts", "utf8");
+    for (const read of PER_PATIENT_READS) {
+      expect(src).not.toContain(read);
+    }
+    expect(src).toContain("selfTrackingAggregate");
+  });
+
   it("the store has no audit sink and no clinical-record import", () => {
     const src = readFileSync("src/lib/selfTracking.ts", "utf8");
     expect(src).not.toMatch(/^import .*@\/lib\/ehr/m);
