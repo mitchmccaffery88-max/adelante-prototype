@@ -3,6 +3,10 @@
 // Counts only: `safetyPlanSummary` never returns patient text, so this tile is
 // safe to render high on My Care without exposing plan content on a shared or
 // shoulder-surfed screen. The full editable plan lives at /safety-plan.
+//
+// Shown to EVERY patient, deliberately ungated: a safety plan is not
+// justice-involvement-specific, and gating it to the JI populations left
+// general-population patients with no in-app entry point outside /crisis.
 import { Link } from "@tanstack/react-router";
 import { LifeBuoy, ChevronRight } from "lucide-react";
 import { Card } from "@/components/ui/card";
