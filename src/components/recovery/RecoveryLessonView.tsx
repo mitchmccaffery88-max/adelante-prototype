@@ -11,6 +11,9 @@ import { TOOL_FLOW_LIMITS, type RecoveryLesson } from "@/lib/recovery";
 import { ModuleTemplate, type ModuleStep } from "@/components/library/ModuleTemplate";
 import { GuidedToolFlow, type ToolGroup } from "@/components/recovery/GuidedToolFlow";
 import { matchExerciseForLesson } from "@/lib/recovery.exerciseMatch";
+import { dimensionsForLesson } from "@/lib/lessonRatings";
+import { recommendsForRecoveryLesson } from "@/lib/lessonRecommends";
+
 import { toast } from "sonner";
 
 /**
@@ -160,9 +163,14 @@ export function RecoveryLessonView({
   ];
   const toolsDone = subIndex >= groups.length;
 
+  const dimensions = dimensionsForLesson(lesson.checkIn);
+  const recommends = recommendsForRecoveryLesson(lesson);
+
   const steps: ModuleStep[] = [
     { kind: "text", label: t("recStepProblem"), body: rt(`rec.${id}.problem`, lesson.problem) },
     { kind: "text", label: t("recStepCheckIn"), body: rt(`rec.${id}.checkIn`, lesson.checkIn) },
+    // §Phase C — "before" ratings.
+    { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
       kind: "text",
       label: t("recStepLearn"),
@@ -172,10 +180,11 @@ export function RecoveryLessonView({
     },
     { kind: "activity", label: t("recStepTryIt"), activity: translateActivity(lesson.activity, id, rt) },
     {
-      kind: "reflect",
+      kind: "adel",
       label: t("recStepReflect"),
       reflection: rt(`rec.${id}.adelReflection`, lesson.adelReflection),
       question: rt(`rec.${id}.adelQuestion`, lesson.adelQuestion),
+      recommends,
     },
     {
       kind: "text",
@@ -201,6 +210,8 @@ export function RecoveryLessonView({
         />
       ),
     },
+    // §Phase C — "after" ratings, same dimensions, delta tiles.
+    { kind: "rating", label: t("modRateAfterLabel"), phase: "after", dimensions },
     {
       kind: "text",
       label: t("recStepToolkit"),
@@ -208,6 +219,7 @@ export function RecoveryLessonView({
       body: `Finishing saves "${rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)}" — with what you picked above — to your toolkit.`,
     },
   ];
+
 
 
   return (

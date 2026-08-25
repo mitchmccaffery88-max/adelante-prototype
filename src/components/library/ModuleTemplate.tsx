@@ -15,10 +15,19 @@ import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Slider } from "@/components/ui/slider";
-import { ArrowLeft, ArrowRight, CheckCircle2, Clock, RotateCcw } from "lucide-react";
+import { ArrowLeft, ArrowRight, CheckCircle2, Clock, MessageCircleHeart, Minus, RotateCcw, TrendingDown, TrendingUp } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { useI18n } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
 import type { LessonResponse, LessonResponsePatch } from "@/lib/engagement";
+import {
+  RATING_SCALE_MAX,
+  RATING_SCALE_MIN,
+  deltaVerdict,
+  type RatingDimension,
+} from "@/lib/lessonRatings";
+import type { LessonRecommend } from "@/lib/lessonRecommends";
+
 
 /**
  * §Lesson-player Build 2 — the activity is CONTROLLED now. Every control used
@@ -480,7 +489,217 @@ export type ModuleStep =
       /** When false, the main Continue is blocked (the step gates itself). */
       canContinue?: boolean;
       continueHint?: string;
+    }
+  /**
+   * §Phase C — the same dimensions rendered twice per lesson. `before` writes
+   * `ratingsBefore`, `after` writes `ratingsAfter` and shows the delta tiles.
+   */
+  | {
+      kind: "rating";
+      label: string;
+      icon?: React.ReactNode;
+      phase: "before" | "after";
+      dimensions: RatingDimension[];
+    }
+  /** §Phase C — the existing single Adel question, as a real answerable step. */
+  | {
+      kind: "adel";
+      label: string;
+      icon?: React.ReactNode;
+      reflection: string;
+      question: string;
+      recommends: LessonRecommend[];
     };
+
+/** One 1–5 scale. Unanswered is a real state, not a defaulted 3. */
+function RatingScale({
+  dimension,
+  value,
+  onChange,
+}: {
+  dimension: RatingDimension;
+  value: number | undefined;
+  onChange: (n: number) => void;
+}) {
+  const scores = Array.from(
+    { length: RATING_SCALE_MAX - RATING_SCALE_MIN + 1 },
+    (_, i) => RATING_SCALE_MIN + i,
+  );
+  return (
+    <div className="space-y-1.5">
+      <p className="text-sm font-medium text-navy">{dimension.label}</p>
+      <div className="flex flex-wrap items-center gap-1.5" role="group" aria-label={dimension.label}>
+        {scores.map((n) => (
+          <Button
+            key={n}
+            type="button"
+            size="sm"
+            variant={value === n ? "default" : "outline"}
+            aria-pressed={value === n}
+            aria-label={`${dimension.label}: ${n}`}
+            className="h-9 w-9 p-0"
+            onClick={() => onChange(n)}
+          >
+            {n}
+          </Button>
+        ))}
+      </div>
+      <div className="flex justify-between text-xs text-muted-foreground">
+        <span>{dimension.lowLabel}</span>
+        <span>{dimension.highLabel}</span>
+      </div>
+    </div>
+  );
+}
+
+/**
+ * Before/after ratings. The "after" pass adds delta tiles coloured by whether
+ * the move was an IMPROVEMENT for that dimension — distress dropping is good.
+ */
+export function RatingStep({
+  phase,
+  dimensions,
+  before,
+  after,
+  onChange,
+}: {
+  phase: "before" | "after";
+  dimensions: RatingDimension[];
+  before: Record<string, number> | undefined;
+  after: Record<string, number> | undefined;
+  onChange: (dimensionId: string, score: number) => void;
+}) {
+  const { t } = useI18n();
+  const current = phase === "before" ? before : after;
+  const hasBefore = dimensions.some((d) => typeof before?.[d.id] === "number");
+  return (
+    <div className="space-y-5">
+      <p className="text-sm text-muted-foreground">
+        {phase === "before" ? t("modRateBeforeIntro") : t("modRateAfterIntro")}
+      </p>
+      <div className="space-y-4">
+        {dimensions.map((d) => (
+          <RatingScale
+            key={d.id}
+            dimension={d}
+            value={current?.[d.id]}
+            onChange={(n) => onChange(d.id, n)}
+          />
+        ))}
+      </div>
+      <p className="text-xs text-muted-foreground">{t("modRateSkipNote")}</p>
+
+      {phase === "after" && (
+        <div className="space-y-2 border-t border-border pt-4">
+          <p className="text-sm font-medium text-navy">{t("modRateChange")}</p>
+          {!hasBefore ? (
+            <p className="text-sm text-muted-foreground">{t("modRateNoBefore")}</p>
+          ) : (
+            <>
+              <div className="grid gap-2 sm:grid-cols-3">
+                {dimensions.map((d) => {
+                  const b = before?.[d.id];
+                  const a = after?.[d.id];
+                  const verdict = deltaVerdict(d, b, a);
+                  const diff = typeof a === "number" && typeof b === "number" ? a - b : null;
+                  const tone =
+                    verdict === "better"
+                      ? "border-teal/40 bg-teal/10 text-teal"
+                      : verdict === "worse"
+                        ? "border-gold bg-gold/10 text-gold-foreground"
+                        : "border-border bg-secondary/40 text-muted-foreground";
+                  const Icon =
+                    diff === null || diff === 0 ? Minus : diff > 0 ? TrendingUp : TrendingDown;
+                  return (
+                    <div key={d.id} className={`rounded-lg border p-3 ${tone}`}>
+                      <p className="text-xs font-medium">{d.label}</p>
+                      <p className="mt-1 flex items-center gap-1.5 text-sm font-semibold">
+                        <Icon className="h-4 w-4" aria-hidden />
+                        {diff === null
+                          ? "—"
+                          : `${b} → ${a} (${diff > 0 ? "+" : ""}${diff})`}
+                      </p>
+                      <p className="mt-0.5 text-xs">
+                        {verdict === "better"
+                          ? t("modRateBetter")
+                          : verdict === "worse"
+                            ? t("modRateWorse")
+                            : verdict === "same"
+                              ? t("modRateSame")
+                              : "—"}
+                      </p>
+                    </div>
+                  );
+                })}
+              </div>
+              <p className="text-xs text-muted-foreground">{t("modRateHonest")}</p>
+            </>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
+/** The Adel step: intro, the lesson's existing question, and real link chips. */
+export function AdelStep({
+  reflection,
+  question,
+  recommends,
+  value,
+  onChange,
+  savedNote,
+}: {
+  reflection: string;
+  question: string;
+  recommends: LessonRecommend[];
+  value: string;
+  onChange: (next: string) => void;
+  savedNote?: boolean;
+}) {
+  const { t } = useI18n();
+  return (
+    <div className="space-y-3">
+      <div className="flex items-start gap-2 rounded-lg bg-secondary/50 p-3">
+        <MessageCircleHeart className="mt-0.5 h-4 w-4 shrink-0 text-teal" aria-hidden />
+        <div className="space-y-1">
+          <p className="text-xs text-muted-foreground">{t("modAdelIntro")}</p>
+          <p className="text-sm italic text-navy">{reflection}</p>
+        </div>
+      </div>
+      <p className="text-sm font-medium text-navy">{question}</p>
+      <Textarea
+        rows={4}
+        aria-label={question}
+        placeholder={t("modAdelAnswerLabel")}
+        value={value}
+        onChange={(e) => onChange(e.target.value)}
+      />
+      {savedNote && <p className="text-xs text-muted-foreground">{t("modSavedNote")}</p>}
+      {recommends.length > 0 && (
+        <div className="space-y-2 pt-1">
+          <p className="text-xs font-medium text-muted-foreground">{t("modAdelRecommends")}</p>
+          <div className="flex flex-wrap gap-2">
+            {recommends.map((r) => (
+              <Link
+                key={`${r.to}-${r.label}`}
+                to={r.to}
+                search={r.search}
+                className="rounded-full border border-teal/40 bg-teal/5 px-3 py-1.5 text-xs text-teal hover:bg-teal/10"
+                title={r.reason}
+              >
+                {r.label}
+                <span className="ml-1 text-muted-foreground">· {r.reason}</span>
+              </Link>
+            ))}
+          </div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+
 
 export function SelectStep({
 
@@ -703,7 +922,33 @@ export function ModuleTemplate({
             onChange={step.onChange}
           />
         )}
+        {step.kind === "rating" && (
+          <RatingStep
+            phase={step.phase}
+            dimensions={step.dimensions}
+            before={response?.ratingsBefore}
+            after={response?.ratingsAfter}
+            onChange={(id, score) =>
+              patch(
+                step.phase === "before"
+                  ? { ratingsBefore: { [id]: score } }
+                  : { ratingsAfter: { [id]: score } },
+              )
+            }
+          />
+        )}
+        {step.kind === "adel" && (
+          <AdelStep
+            reflection={step.reflection}
+            question={step.question}
+            recommends={step.recommends}
+            value={response?.text?.["reflect"] ?? ""}
+            onChange={(next) => patch({ text: { reflect: next } })}
+            savedNote={Boolean(onResponseChange)}
+          />
+        )}
         {step.kind === "custom" && step.content}
+
       </Step>
 
       <div className="flex flex-wrap items-center gap-2 border-t border-border pt-4">

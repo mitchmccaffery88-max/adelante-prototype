@@ -119,8 +119,16 @@ export interface LessonResponse {
   scores?: Record<string, number>;
   /** `decision` activity — the chosen label. */
   choice?: string;
+  /**
+   * §Lesson-player Phase C — before/after self-ratings, dimension id → 1..5.
+   * Additive and optional: a lesson answered before this shipped simply has
+   * neither, and the player renders empty scales.
+   */
+  ratingsBefore?: Record<string, number>;
+  ratingsAfter?: Record<string, number>;
   updatedAt: string;
 }
+
 
 /** A patch is any subset; `text` merges key-by-key rather than replacing. */
 export type LessonResponsePatch = Partial<Omit<LessonResponse, "updatedAt">>;
@@ -338,8 +346,16 @@ export function saveLessonResponse(
     ...(prev ?? {}),
     ...patch,
     ...(patch.text ? { text: { ...(prev?.text ?? {}), ...patch.text } } : {}),
+    // §Phase C — rating maps merge per-dimension, like `text` does per-field.
+    ...(patch.ratingsBefore
+      ? { ratingsBefore: { ...(prev?.ratingsBefore ?? {}), ...patch.ratingsBefore } }
+      : {}),
+    ...(patch.ratingsAfter
+      ? { ratingsAfter: { ...(prev?.ratingsAfter ?? {}), ...patch.ratingsAfter } }
+      : {}),
     updatedAt: new Date().toISOString(),
   };
+
   r.lessonResponses[key] = next;
   touch(r);
   if (!prev) {
