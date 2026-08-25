@@ -75,7 +75,7 @@ describe("engagement projection", () => {
   it("exposes self-tracking only as population totals, with the small-cohort flag", () => {
     const [a, b] = AdelanteEHR.listPatients();
     startCravingLog(a!.id, 7);
-    recordLapse(b!.id, { contributors: [], helpedBefore: [], nextStep: "talk_to_someone" });
+    recordLapse(b!.id, { contributors: [], helpedBefore: [], nextStep: "message_care_team" });
     setRecoveryStartDate(a!.id, "2026-01-01");
 
     const p = engagementProjection();
