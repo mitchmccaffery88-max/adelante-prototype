@@ -136,7 +136,27 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/components/reentry/ResourceDetail.tsx",
   "src/components/reentry/SavedResources.tsx",
   "src/components/reentry/CommunityResourceCenter.tsx",
+  // §Engagement/Reporting Build 1 — the ONE population-reporting consumer,
+  // allowed by explicit product decision. It may only touch the de-aggregated
+  // `selfTrackingAggregate` / `MIN_COHORT_SIZE` exports; the assertion below
+  // enforces that it never reaches a per-patient read.
+  "src/lib/engagementReporting.ts",
+  "src/lib/__tests__/engagementReporting.test.ts",
+  // Renders the population-level dashboard section; seeds aggregate data only.
+  "src/components/dashboards/__tests__/engagementSection.test.tsx",
 ];
+
+/** Per-patient reads that must never appear on a reporting surface. */
+const PER_PATIENT_READS = [
+  "listCravingLogs",
+  "listLapses",
+  "listDailyCheckIns",
+  "todaysCheckIn",
+  "dailyCheckInDayKeys",
+  "recoveryStartDate(",
+  "savedResourceIds",
+];
+
 
 describe("patient-private tier", () => {
   it("no staff or admin surface imports the private store", () => {
@@ -144,6 +164,14 @@ describe("patient-private tier", () => {
       .filter((f) => !PATIENT_PRIVATE_CALLERS.includes(f.replace(/\\/g, "/")))
       .filter((f) => /from ["']@\/lib\/selfTracking["']/.test(readFileSync(f, "utf8")));
     expect(offenders).toEqual([]);
+  });
+
+  it("the population-reporting consumer only reads de-aggregated counts", () => {
+    const src = readFileSync("src/lib/engagementReporting.ts", "utf8");
+    for (const read of PER_PATIENT_READS) {
+      expect(src).not.toContain(read);
+    }
+    expect(src).toContain("selfTrackingAggregate");
   });
 
   it("the store has no audit sink and no clinical-record import", () => {

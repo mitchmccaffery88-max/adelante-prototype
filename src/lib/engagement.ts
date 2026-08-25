@@ -77,7 +77,24 @@ export interface PatientEngagement {
   lessonResponses: Record<string, LessonResponse>;
   /** Saved takeaways, one per source lesson/exercise. */
   savedToolkitItems: SavedToolkitItem[];
+  /**
+   * §Engagement/Reporting Build 1 — PER-COMPLETION TIMESTAMP.
+   *
+   * Additive and optional. Until this shipped the store kept only the
+   * row-level `firstActivityAt`/`lastActivityAt` high-water marks, so
+   * "what did this person finish, in what order, on which day" was not
+   * derivable and a chronological journey timeline was impossible to build
+   * without fabricating dates. This records the FIRST completion instant per
+   * item, keyed `"<namespace>:<id>"` (`library:` | `exercise:` | `recovery:`).
+   *
+   * Write-once per item: completion is idempotent, so a revisit must not
+   * rewrite history. Rows created before this existed simply have fewer keys
+   * than they have completions — every reader must tolerate a missing entry
+   * rather than assume a date.
+   */
+  completedAt?: Record<string, string>;
   firstActivityAt?: string;
+
   lastActivityAt?: string;
 }
 
@@ -200,6 +217,8 @@ function row(patientId: string): PatientEngagement {
   // Rows created before this field existed (or restored from a fixture) still
   // have to answer reads without a guard at every call site.
   r.lessonResponses ??= {};
+  r.completedAt ??= {};
+
   return r;
 }
 
@@ -208,6 +227,47 @@ function touch(r: PatientEngagement) {
   r.firstActivityAt ??= now;
   r.lastActivityAt = now;
 }
+
+/** Namespaces for `PatientEngagement.completedAt` keys. */
+export type CompletionNamespace = "library" | "exercise" | "recovery";
+
+export function completionKey(ns: CompletionNamespace, id: string): string {
+  return `${ns}:${id}`;
+}
+
+/** Write-once: an idempotent re-completion must not rewrite the first date. */
+function markCompletedAt(r: PatientEngagement, ns: CompletionNamespace, id: string) {
+  r.completedAt ??= {};
+  r.completedAt[completionKey(ns, id)] ??= new Date().toISOString();
+}
+
+export interface CompletionEvent {
+  namespace: CompletionNamespace;
+  itemId: string;
+  at: string;
+}
+
+/**
+ * Real chronological completion history for one patient, oldest first.
+ *
+ * Only items with a recorded timestamp appear — completions written before
+ * `completedAt` existed are omitted rather than backfilled with a guessed
+ * date. A caller that needs the full set still reads the id arrays.
+ */
+export function completionTimeline(patientId: string): CompletionEvent[] {
+  const map = records.get(patientId)?.completedAt ?? {};
+  return Object.entries(map)
+    .map(([key, at]) => {
+      const idx = key.indexOf(":");
+      return {
+        namespace: key.slice(0, idx) as CompletionNamespace,
+        itemId: key.slice(idx + 1),
+        at,
+      };
+    })
+    .sort((a, b) => a.at.localeCompare(b.at));
+}
+
 
 // ---------------------------------------------------------------------------
 // Reads
@@ -413,7 +473,10 @@ export function completeLibraryItem(
   if (!item) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedLibraryItems.includes(itemId);
-  if (!already) r.completedLibraryItems.push(itemId);
+  if (!already) {
+    r.completedLibraryItems.push(itemId);
+    markCompletedAt(r, "library", itemId);
+  }
   if (opts.saveToolkit !== false) {
     saveToolkitItem(patientId, { id: itemId, label: item.toolkitLabel, from: "library" });
   }
@@ -445,7 +508,10 @@ export function completeExercise(
   if (!ex) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedExercises.includes(exerciseId);
-  if (!already) r.completedExercises.push(exerciseId);
+  if (!already) {
+    r.completedExercises.push(exerciseId);
+    markCompletedAt(r, "exercise", exerciseId);
+  }
   if (opts.saveToolkit) {
     saveToolkitItem(patientId, { id: exerciseId, label: ex.title, from: "exercise" });
   }
@@ -478,7 +544,10 @@ export function completeRecoveryLesson(
   if (!lesson) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedRecoveryLessons.includes(lessonId);
-  if (!already) r.completedRecoveryLessons.push(lessonId);
+  if (!already) {
+    r.completedRecoveryLessons.push(lessonId);
+    markCompletedAt(r, "recovery", lessonId);
+  }
   const warningSigns = (selection.warningSigns ?? [])
     .filter((s) => lesson.toolFlow.warningSigns.includes(s))
     .slice(0, TOOL_FLOW_LIMITS.warningSigns);

@@ -404,7 +404,90 @@ export function setRecoveryStartDate(patientId: string, date: string | null): vo
   notify();
 }
 
+// ---------------------------------------------------------------------------
+// 6 — Population-health aggregate (DE-AGGREGATED, COUNTS ONLY)
+// ---------------------------------------------------------------------------
+//
+// Product decision: self-tracking data may feed POPULATION reporting even
+// though it is excluded from the EHR and from every individual-record read
+// path. This function is the only door for that, and it is deliberately
+// shaped so it cannot become one: it returns counts, never rows, never ids,
+// never day keys — nothing that can be joined back to a person.
+//
+// ⚠️ MINIMUM COHORT SIZE — REAL PRODUCTION CONSIDERATION, NOT A DEMO NICETY.
+// At demo scale (10 patients) an aggregate like "3 lapses this week" is
+// practically re-identifiable: staff who know the caseload can often infer
+// who. Small-cell suppression is the standard control. `MIN_COHORT_SIZE`
+// below is the threshold, and `belowMinimumCohort` tells the UI the numbers
+// are NOT safe to publish. For the demo we still compute and display them
+// with that flag surfaced; before production the dev team must decide the
+// real threshold with compliance and switch this to hard suppression
+// (return nulls) rather than an advisory flag.
+export const MIN_COHORT_SIZE = 11;
+
+export interface SelfTrackingAggregate {
+  /** Patients considered — the denominator, not a list. */
+  cohortSize: number;
+  /** True when the cohort is too small for these numbers to be safely shared. */
+  belowMinimumCohort: boolean;
+  cravingLogs: number;
+  cravingLogsWithSurfCompleted: number;
+  lapses: number;
+  /** Patients who have set a recovery start date. */
+  recoveryDateSet: number;
+  /** recoveryDateSet / cohortSize, or null when the cohort is empty. */
+  recoveryDateSetRate: number | null;
+  /** Patients with any self-tracking activity at all. */
+  patientsWithAnyActivity: number;
+}
+
+/**
+ * Aggregate counts across a cohort. `patientIds` is the cohort denominator —
+ * patients with no row count as zeros rather than being dropped, so a rate is
+ * a real rate. Omitting it aggregates only patients who have a row, which is
+ * why callers should always pass the cohort.
+ */
+export function selfTrackingAggregate(
+  patientIds?: string[],
+  opts: { since?: Date } = {},
+): SelfTrackingAggregate {
+  const ids = patientIds ?? [...rows.keys()];
+  const from = opts.since ? opts.since.getTime() : undefined;
+  const inWindow = (iso: string) => from === undefined || Date.parse(iso) >= from;
+
+  let cravingLogs = 0;
+  let cravingLogsWithSurfCompleted = 0;
+  let lapses = 0;
+  let recoveryDateSet = 0;
+  let patientsWithAnyActivity = 0;
+
+  for (const id of ids) {
+    const r = rows.get(id);
+    if (!r) continue;
+    const c = r.cravings.filter((x) => inWindow(x.startedAt));
+    const l = r.lapses.filter((x) => inWindow(x.createdAt));
+    cravingLogs += c.length;
+    cravingLogsWithSurfCompleted += c.filter((x) => x.surfCompleted).length;
+    lapses += l.length;
+    if (r.recoveryStartDate) recoveryDateSet += 1;
+    if (c.length || l.length || r.recoveryStartDate || r.checkIns.length)
+      patientsWithAnyActivity += 1;
+  }
+
+  return {
+    cohortSize: ids.length,
+    belowMinimumCohort: ids.length < MIN_COHORT_SIZE,
+    cravingLogs,
+    cravingLogsWithSurfCompleted,
+    lapses,
+    recoveryDateSet,
+    recoveryDateSetRate: ids.length ? recoveryDateSet / ids.length : null,
+    patientsWithAnyActivity,
+  };
+}
+
 /** Test/demo helper — drops every private row. */
+
 export function __resetSelfTracking(): void {
   rows.clear();
   notify();
