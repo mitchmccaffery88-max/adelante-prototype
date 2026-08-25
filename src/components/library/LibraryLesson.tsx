@@ -70,9 +70,9 @@ export function LibraryLesson({
           prompt: item.checkIn?.trim() || t("libCheckInPrompt"),
           options: checkInOptions,
           max: checkInOptions.length,
-          value: response?.checked ?? [],
+          value: response?.checkIn ?? [],
           onChange: (next: string[]) =>
-            AdelanteEHR.saveLessonResponse(patientId, "library", item.id, { checked: next }),
+            AdelanteEHR.saveLessonResponse(patientId, "library", item.id, { checkIn: next }),
         }
       : {
           kind: "text" as const,
