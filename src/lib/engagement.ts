@@ -503,7 +503,10 @@ export function completeRecoveryLesson(
   if (!lesson) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedRecoveryLessons.includes(lessonId);
-  if (!already) r.completedRecoveryLessons.push(lessonId);
+  if (!already) {
+    r.completedRecoveryLessons.push(lessonId);
+    markCompletedAt(r, "recovery", lessonId);
+  }
   const warningSigns = (selection.warningSigns ?? [])
     .filter((s) => lesson.toolFlow.warningSigns.includes(s))
     .slice(0, TOOL_FLOW_LIMITS.warningSigns);
