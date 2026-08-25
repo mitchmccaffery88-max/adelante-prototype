@@ -8,7 +8,7 @@ import {
   completeLibraryItem,
   completionTimeline,
 } from "@/lib/engagement";
-import { getLibraryItems } from "@/lib/library";
+import { LIBRARY_ITEMS } from "@/lib/library";
 import {
   __resetSelfTracking,
   MIN_COHORT_SIZE,
@@ -60,7 +60,7 @@ describe("engagement projection", () => {
 
   it("counts real completions and rolls them into the right cohort", () => {
     const patient = AdelanteEHR.listPatients()[0]!;
-    const item = getLibraryItems()[0]!;
+    const item = LIBRARY_ITEMS[0]!;
     completeLibraryItem(patient.id, item.id);
 
     const p = engagementProjection();
@@ -105,7 +105,7 @@ describe("per-lesson completion timestamps", () => {
 
   it("records one write-once timestamp per completed item", () => {
     const patient = AdelanteEHR.listPatients()[0]!;
-    const [one, two] = getLibraryItems();
+    const [one, two] = LIBRARY_ITEMS;
     completeLibraryItem(patient.id, one!.id);
     completeLibraryItem(patient.id, two!.id);
     const first = completionTimeline(patient.id);
