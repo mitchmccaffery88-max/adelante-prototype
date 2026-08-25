@@ -432,7 +432,10 @@ export function completeLibraryItem(
   if (!item) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedLibraryItems.includes(itemId);
-  if (!already) r.completedLibraryItems.push(itemId);
+  if (!already) {
+    r.completedLibraryItems.push(itemId);
+    markCompletedAt(r, "library", itemId);
+  }
   if (opts.saveToolkit !== false) {
     saveToolkitItem(patientId, { id: itemId, label: item.toolkitLabel, from: "library" });
   }
