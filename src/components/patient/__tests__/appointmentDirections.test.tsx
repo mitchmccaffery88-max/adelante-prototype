@@ -1,3 +1,4 @@
+// @vitest-environment jsdom
 // §Small UI gaps batch item 5 — in-person appointments get an honest
 // Directions action: a maps SEARCH on the real location address, never a
 // fabricated coordinate. No seeded appointment in the demo data is in-person,
