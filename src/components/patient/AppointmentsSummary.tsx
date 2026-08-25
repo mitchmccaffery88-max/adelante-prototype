@@ -12,6 +12,7 @@
 import { Link } from "@tanstack/react-router";
 import { Building2, CalendarClock, CalendarPlus, MapPin, Phone, Video } from "lucide-react";
 import { AdelanteEHR, useEhr, type Appointment } from "@/lib/ehr";
+import { mapsSearchUrl } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -36,6 +37,9 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
   const location = appt.locationId ? AdelanteEHR.getLocation(appt.locationId) : undefined;
   const mod = MODALITY[(appt.modality ?? "video") as ApptModality] ?? MODALITY.video;
   const ModIcon = mod.icon;
+  const directions = location
+    ? mapsSearchUrl([location.address, location.city].filter(Boolean).join(", "))
+    : null;
   return (
     <Card className="p-4" data-testid="appointment-row">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -78,6 +82,16 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           {/* §Build A item 4 — real join action for video visits. */}
           {!past && appt.status !== "cancelled" && (appt.modality ?? "video") === "video" && (
             <JoinCallButton appt={appt} />
+          )}
+          {/* §Small UI gaps batch item 5 — honest directions: a maps SEARCH on
+              the real location address, exactly the Resources pattern. No
+              fabricated coordinates; hidden when there is no real address. */}
+          {appt.modality === "in_person" && directions && (
+            <Button asChild size="sm" variant="outline" className="min-h-11" data-testid="appt-directions">
+              <a href={directions} target="_blank" rel="noreferrer">
+                <MapPin className="mr-1.5 h-4 w-4" /> Directions
+              </a>
+            </Button>
           )}
           {!past && appt.status !== "cancelled" && (
             <Button asChild size="sm" variant="outline" className="min-h-11">

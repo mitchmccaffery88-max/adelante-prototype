@@ -1,7 +1,11 @@
-// §Patient portal Build 2 — the "Get help now" modal.
+// §Patient portal Build 2 — the "Get help now" sheet.
 //
-// Bottom sheet on mobile, centred dialog on desktop, matching the source
-// shell. Six entries, ported one-for-one. Where this build has the real thing
+// §Small UI gaps batch item 1 — this is now the ONE aggregated crisis-access
+// surface, and it is a bottom sheet on every viewport (it used to switch to a
+// centred desktop dialog, which meant two different crisis presentations).
+// It aggregates call 988, text 988, /crisis, /naloxone and the real peer
+// contact path. Nothing here is rebuilt — every row points at a component or
+// route that already exists. Where this build has the real thing
 // the entry is a working link; where it does NOT, the entry says so plainly
 // instead of shipping a fake destination. Every honest gap is marked with a
 // visible "Not built yet" chip AND `data-gap` so the verification pass can
@@ -19,12 +23,11 @@ import {
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
-import { Dialog, DialogContent, DialogTitle, DialogDescription } from "@/components/ui/dialog";
-import { useIsMobile } from "@/hooks/use-mobile";
 import { CRISIS_LIFELINE_NUMBER, CRISIS_LIFELINE_NAME } from "@/lib/safetyPlan";
 
 type HelpDestination =
   | { kind: "tel"; number: string }
+  | { kind: "sms"; number: string }
   | { kind: "route"; to: string; hash?: string; search?: Record<string, string> }
   | { kind: "none" };
 
@@ -57,12 +60,11 @@ export const HELP_ENTRIES: HelpEntry[] = [
     gap: "Goes to your care team — a peer-specific channel isn't built yet",
   },
   {
-    id: "case-manager-adel",
+    id: "adel",
     icon: MessageSquare,
-    title: "Message your case manager through Adel",
-    body: "Adel will pass a message to your case manager for you.",
+    title: "Talk to Adel",
+    body: "Adel can listen and point you to the right tool. Not a clinician.",
     destination: { kind: "route", to: "/adel" },
-    gap: "Adel isn't built yet — use your care-team thread meanwhile",
   },
   {
     id: "call-988",
@@ -70,6 +72,13 @@ export const HELP_ENTRIES: HelpEntry[] = [
     title: `Call ${CRISIS_LIFELINE_NUMBER}`,
     body: `${CRISIS_LIFELINE_NAME}. Free, 24/7, Spanish-capable.`,
     destination: { kind: "tel", number: CRISIS_LIFELINE_NUMBER },
+  },
+  {
+    id: "text-988",
+    icon: MessageSquare,
+    title: `Text ${CRISIS_LIFELINE_NUMBER}`,
+    body: "If talking out loud is too much right now, text instead.",
+    destination: { kind: "sms", number: CRISIS_LIFELINE_NUMBER },
   },
   {
     id: "naloxone",
@@ -154,12 +163,13 @@ function HelpList({ onNavigate }: { onNavigate: () => void }) {
           </EntryShell>
         );
 
-        if (entry.destination.kind === "tel") {
+        if (entry.destination.kind === "tel" || entry.destination.kind === "sms") {
+          const scheme = entry.destination.kind === "sms" ? "sms" : "tel";
           return (
             <a
               key={entry.id}
               data-testid={`get-help-${entry.id}`}
-              href={`tel:${entry.destination.number}`}
+              href={`${scheme}:${entry.destination.number}`}
               onClick={onNavigate}
               className={rowClass(entry)}
             >
@@ -212,50 +222,32 @@ export function GetHelpNowModal({
   open: boolean;
   onOpenChange: (open: boolean) => void;
 }) {
-  const isMobile = useIsMobile();
   const close = () => onOpenChange(false);
 
-  if (isMobile) {
-    return (
-      <Sheet open={open} onOpenChange={onOpenChange}>
-        <SheetContent
-          side="bottom"
-          data-testid="get-help-sheet"
-          className="patient-theme rounded-t-3xl border-t bg-card px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-3 [&>button:first-of-type]:hidden"
-        >
-          <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-border" aria-hidden="true" />
-          <div className="flex items-center justify-between">
-            <SheetTitle className="font-display text-lg">{TITLE}</SheetTitle>
-            <button
-              type="button"
-              aria-label="Close"
-              onClick={close}
-              className="grid h-11 w-11 place-items-center rounded-full hover:bg-secondary"
-            >
-              <X className="h-5 w-5" />
-            </button>
-          </div>
-          <p className="mt-1 text-sm text-muted-foreground">{SUBTITLE}</p>
-          <div className="mt-3 max-h-[60vh] overflow-y-auto pb-2">
-            <HelpList onNavigate={close} />
-          </div>
-        </SheetContent>
-      </Sheet>
-    );
-  }
-
   return (
-    <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent
-        data-testid="get-help-dialog"
-        className="patient-theme max-w-lg rounded-3xl"
+    <Sheet open={open} onOpenChange={onOpenChange}>
+      <SheetContent
+        side="bottom"
+        data-testid="get-help-sheet"
+        className="patient-theme mx-auto max-h-[88vh] rounded-t-3xl border-t bg-card px-4 pb-[calc(env(safe-area-inset-bottom)+1.5rem)] pt-3 sm:max-w-xl [&>button:first-of-type]:hidden"
       >
-        <DialogTitle className="font-display text-xl">{TITLE}</DialogTitle>
-        <DialogDescription>{SUBTITLE}</DialogDescription>
-        <div className="mt-1 max-h-[70vh] overflow-y-auto pr-1">
+        <div className="mx-auto mb-3 h-1.5 w-12 rounded-full bg-border" aria-hidden="true" />
+        <div className="flex items-center justify-between">
+          <SheetTitle className="font-display text-lg">{TITLE}</SheetTitle>
+          <button
+            type="button"
+            aria-label="Close"
+            onClick={close}
+            className="grid h-11 w-11 place-items-center rounded-full hover:bg-secondary"
+          >
+            <X className="h-5 w-5" />
+          </button>
+        </div>
+        <p className="mt-1 text-sm text-muted-foreground">{SUBTITLE}</p>
+        <div className="mt-3 max-h-[62vh] overflow-y-auto pb-2">
           <HelpList onNavigate={close} />
         </div>
-      </DialogContent>
-    </Dialog>
+      </SheetContent>
+    </Sheet>
   );
 }

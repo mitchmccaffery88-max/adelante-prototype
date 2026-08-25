@@ -5,6 +5,8 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { MedCheckInCard } from "@/components/clinical/MedCheckInCard";
 import { MyMedicationsCard } from "@/components/patient/MyMedicationsCard";
+import { RefillRunwayCard } from "@/components/patient/RefillRunwayCard";
+
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 
@@ -59,7 +61,9 @@ function MedicationsPage() {
         }
       />
       <MedCheckInCard patientId={patient.id} />
+      <RefillRunwayCard patientId={patient.id} />
       <MyMedicationsCard patientId={patient.id} />
+
     </PatientPage>
   );
 }

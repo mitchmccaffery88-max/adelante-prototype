@@ -11,7 +11,7 @@
 // Christi / Dr. Bagga, not a code decision. Do not add persistence until then.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { Loader2, Send, ShieldAlert } from "lucide-react";
+import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, Phone, Send, ShieldAlert, Wind } from "lucide-react";
 import { AdelanteEHR } from "@/lib/ehr";
 import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
@@ -20,6 +20,20 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
+import { CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
+
+// §Small UI gaps batch item 4 — chip rendering is differentiated BY KIND only.
+// Destinations still come from the real `resolveAdelAction` resolver; nothing
+// about action resolution changed here.
+const ACTION_STYLE: Record<
+  AdelAction["kind"],
+  { icon: typeof BookOpen; className: string }
+> = {
+  lesson: { icon: BookOpen, className: "border-primary/40 bg-primary/10 text-primary" },
+  exercise: { icon: Wind, className: "border-teal/40 bg-teal/10 text-teal" },
+  resources: { icon: MapPin, className: "border-gold/50 bg-gold/15 text-navy" },
+  page: { icon: Compass, className: "border-border bg-secondary text-foreground" },
+};
 
 interface Turn {
   role: "user" | "assistant";
@@ -185,13 +199,25 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
                 <p className="whitespace-pre-wrap">{t.content}</p>
                 {t.actions && t.actions.length > 0 && (
                   <div className="mt-2 flex flex-wrap gap-2">
-                    {t.actions.map((a) => (
-                      <Button key={`${a.kind}:${a.id}`} size="sm" variant="secondary" asChild>
-                        <Link to={a.to} {...(a.search ? { search: a.search } : {})}>
-                          {a.label}
-                        </Link>
-                      </Button>
-                    ))}
+                    {t.actions.map((a) => {
+                      const style = ACTION_STYLE[a.kind];
+                      const Icon = style.icon;
+                      return (
+                        <Button
+                          key={`${a.kind}:${a.id}`}
+                          size="sm"
+                          variant="outline"
+                          asChild
+                          data-testid={`adel-action-${a.kind}`}
+                          className={cn("rounded-full", style.className)}
+                        >
+                          <Link to={a.to} {...(a.search ? { search: a.search } : {})}>
+                            <Icon className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+                            {a.label}
+                          </Link>
+                        </Button>
+                      );
+                    })}
                   </div>
                 )}
               </div>
@@ -205,6 +231,25 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
         </ul>
         <div ref={endRef} />
       </Card>
+
+      {/* §Small UI gaps batch item 4 — persistent, non-intrusive crisis strip.
+          Visible for the whole conversation, not only in a header pill. */}
+      <div
+        data-testid="adel-crisis-strip"
+        className="flex flex-wrap items-center gap-2 rounded-2xl border border-crisis/30 bg-crisis-soft px-3 py-2 text-sm"
+      >
+        <LifeBuoy className="h-4 w-4 shrink-0 text-crisis" aria-hidden="true" />
+        <span className="text-muted-foreground">Need a person right now?</span>
+        <Button asChild size="sm" variant="crisis" className="h-9 rounded-full">
+          <a href={`tel:${CRISIS_LIFELINE_NUMBER}`}>
+            <Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
+            Call {CRISIS_LIFELINE_NUMBER}
+          </a>
+        </Button>
+        <Button asChild size="sm" variant="crisisSoft" className="h-9 rounded-full">
+          <Link to="/crisis">Crisis support</Link>
+        </Button>
+      </div>
 
       {error && <p className="text-sm text-destructive">{error}</p>}
 
