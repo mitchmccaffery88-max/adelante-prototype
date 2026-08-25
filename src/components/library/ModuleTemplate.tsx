@@ -225,35 +225,80 @@ function Activity({
         </div>
       );
     case "decision":
-      return (
-        <div className="space-y-2">
-          <h3 className="font-display text-base text-navy">{activity.title}</h3>
-          <p className="text-sm">{activity.prompt}</p>
-          <div className="space-y-2">
-            {activity.choices.map((c) => (
-              <div key={c.label} className="space-y-1">
-                <Button
-                  type="button"
-                  variant={choice === c.label ? "default" : "outline"}
-                  className="h-auto w-full justify-start whitespace-normal text-left"
-                  onClick={() => setChoice(c.label)}
-                >
-                  {c.label}
-                </Button>
-                {choice === c.label && (
-                  <p
-                    className={`rounded-lg p-2 text-sm ${c.good ? "bg-teal/10 text-teal" : "bg-secondary/60 text-muted-foreground"}`}
-                  >
-                    {c.feedback}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </div>
-      );
+      // §Lesson-player Phase B — scenario-practice presentation. Same authored
+      // data ({label, feedback, good}); richer treatment: the prompt reads as a
+      // scenario card, choices are lettered, and the feedback lands as a
+      // verdict panel under the choice the patient actually picked.
+      return <PracticeStep activity={activity} choice={choice} setChoice={setChoice} />;
   }
 }
+
+function PracticeStep({
+  activity,
+  choice,
+  setChoice,
+}: {
+  activity: Extract<LibraryActivity, { kind: "decision" }>;
+  choice: string | null;
+  setChoice: (label: string) => void;
+}) {
+  const { t } = useI18n();
+  const picked = activity.choices.find((c) => c.label === choice);
+  return (
+    <div className="space-y-3">
+      <h3 className="font-display text-base text-navy">{activity.title}</h3>
+      <div className="rounded-lg border-l-4 border-teal bg-secondary/40 p-3">
+        <div className="text-[11px] font-medium uppercase tracking-wider text-teal">
+          {t("modPracticeScenario")}
+        </div>
+        <p className="text-sm text-navy">{activity.prompt}</p>
+      </div>
+      <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+        {t("modPracticeChoose")}
+      </p>
+      <div className="space-y-2">
+        {activity.choices.map((c, i) => {
+          const on = choice === c.label;
+          return (
+            <Button
+              key={c.label}
+              type="button"
+              variant={on ? "default" : "outline"}
+              aria-pressed={on}
+              className="h-auto w-full justify-start whitespace-normal text-left"
+              onClick={() => setChoice(c.label)}
+            >
+              <span className="mr-2 font-display">{String.fromCharCode(65 + i)}.</span>
+              {c.label}
+            </Button>
+          );
+        })}
+      </div>
+      {picked && (
+        <div
+          className={`space-y-1 rounded-lg p-3 text-sm ${
+            picked.good ? "bg-teal/10 text-teal" : "bg-gold/10 text-navy"
+          }`}
+          role="status"
+        >
+          <div className="flex items-center gap-1.5 text-[11px] font-medium uppercase tracking-wider">
+            {picked.good ? (
+              <CheckCircle2 className="h-3.5 w-3.5" aria-hidden />
+            ) : (
+              <RotateCcw className="h-3.5 w-3.5" aria-hidden />
+            )}
+            {picked.good ? t("modPracticeGood") : t("modPracticeRethink")}
+          </div>
+          <p>{picked.feedback}</p>
+          {!picked.good && (
+            <p className="text-xs text-muted-foreground">{t("modPracticeTryAnother")}</p>
+          )}
+        </div>
+      )}
+    </div>
+  );
+}
+
 
 /**
  * One step, presented on its own: a small numbered eyebrow AND a real step
@@ -427,9 +472,18 @@ export type ModuleStep =
       value: string[];
       onChange: (next: string[]) => void;
     }
-  | { kind: "custom"; label: string; icon?: React.ReactNode; content: React.ReactNode };
+  | {
+      kind: "custom";
+      label: string;
+      icon?: React.ReactNode;
+      content: React.ReactNode;
+      /** When false, the main Continue is blocked (the step gates itself). */
+      canContinue?: boolean;
+      continueHint?: string;
+    };
 
-function SelectStep({
+export function SelectStep({
+
   prompt,
   options,
   labelFor,
@@ -666,11 +720,21 @@ export function ModuleTemplate({
             </Button>
           </>
         ) : (
-          <Button type="button" onClick={() => go(index + 1)}>
-            {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
-          </Button>
+          <>
+            <Button
+              type="button"
+              disabled={step.kind === "custom" && step.canContinue === false}
+              onClick={() => go(index + 1)}
+            >
+              {t("modContinue")} <ArrowRight className="ml-1 h-4 w-4" aria-hidden />
+            </Button>
+            {step.kind === "custom" && step.canContinue === false && step.continueHint && (
+              <span className="text-xs text-muted-foreground">{step.continueHint}</span>
+            )}
+          </>
         )}
       </div>
+
     </Card>
   );
 }
