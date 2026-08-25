@@ -142,6 +142,8 @@ const PATIENT_PRIVATE_CALLERS = [
   // enforces that it never reaches a per-patient read.
   "src/lib/engagementReporting.ts",
   "src/lib/__tests__/engagementReporting.test.ts",
+  // Renders the population-level dashboard section; seeds aggregate data only.
+  "src/components/dashboards/__tests__/engagementSection.test.tsx",
 ];
 
 /** Per-patient reads that must never appear on a reporting surface. */
