@@ -131,7 +131,11 @@ function median(nums: number[]): number | null {
   return s.length % 2 ? (s[mid] as number) : (((s[mid - 1] as number) + (s[mid] as number)) / 2);
 }
 
-function rollUp(track: PopulationTrack, rows: PatientEngagementRow[]): CohortEngagement {
+function rollUp(
+  track: PopulationTrack,
+  rows: PatientEngagementRow[],
+  label?: string,
+): CohortEngagement {
   const completions = rows.map(
     (r) => r.lessonsCompleted + r.recoveryLessonsCompleted + r.exercisesCompleted,
   );
@@ -142,7 +146,7 @@ function rollUp(track: PopulationTrack, rows: PatientEngagementRow[]): CohortEng
   const active = rows.filter((r) => r.activeInWindow).length;
   return {
     track,
-    label: POPULATION_LABEL[track],
+    label: label ?? POPULATION_LABEL[track],
     patients: rows.length,
     provisionalPatients: rows.filter((r) => r.provisional).length,
     everEngaged: everEngaged.length,
@@ -209,7 +213,7 @@ export function engagementProjection(
     windowDays,
     cohorts,
     rows,
-    overall: rollUp("general_population", rows),
+    overall: rollUp("general_population", rows, "All patients"),
     byTrack: cohorts.buckets.map((b) =>
       rollUp(
         b.track,
