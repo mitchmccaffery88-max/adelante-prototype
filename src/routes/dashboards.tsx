@@ -19,6 +19,8 @@ import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { CalAimSection } from "@/components/dashboards/CalAimSection";
 import { GroupUtilizationSection } from "@/components/dashboards/GroupUtilizationSection";
 import { FacilityCustodySection } from "@/components/dashboards/FacilityCustodySection";
+import { EngagementSection } from "@/components/dashboards/EngagementSection";
+import { engagementProjection } from "@/lib/engagementReporting";
 import {
   activeGroupSessions,
   enrolledPatientCount,
@@ -86,6 +88,9 @@ function DashboardsPage() {
   const lockedShiftCounts = useEhr(() =>
     seesFacility ? AdelanteEHR.listShiftCounts(100).length : 0,
   );
+  // §Engagement Build 1 — derived cohorts + engagement projection. Same
+  // `population_health` gate as the rest of this page; no new access path.
+  const engagement = useEhr(() => engagementProjection());
   const [drill, setDrill] = useState<DrillKind>(null);
 
   const drillConfig = useMemo(() => {
@@ -286,6 +291,8 @@ function DashboardsPage() {
       />
 
       <PopulationCarePlanStrip />
+
+      <EngagementSection projection={engagement} />
 
       <GroupUtilizationSection
         activeGroups={groupActive}
