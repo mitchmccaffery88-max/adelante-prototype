@@ -217,6 +217,8 @@ function row(patientId: string): PatientEngagement {
   // Rows created before this field existed (or restored from a fixture) still
   // have to answer reads without a guard at every call site.
   r.lessonResponses ??= {};
+  r.completedAt ??= {};
+
   return r;
 }
 
