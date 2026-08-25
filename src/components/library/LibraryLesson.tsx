@@ -10,6 +10,10 @@ import type { LibraryItem } from "@/lib/library";
 import { dimensionsForLesson } from "@/lib/lessonRatings";
 import { recommendsForLibraryItem } from "@/lib/lessonRecommends";
 import { ModuleTemplate, type ModuleStep } from "./ModuleTemplate";
+// §Phase D — optional authored structures. All absent today; the resolver
+// falls straight back to the single `learnBody` block and no extra step.
+import { hasIfThen } from "@/lib/lessonAuthoring";
+import { resolveLearnStages } from "@/lib/lessonLearn";
 
 import { toast } from "sonner";
 
@@ -30,7 +34,16 @@ export function LibraryLesson({
   const checkInOptions = item.checkInOptions?.filter((o) => o.trim()) ?? [];
   // §Phase C — dimensions derived from the lesson's OWN check-in text, and
   // recommendation chips derived from its category. No new authored content.
-  const dimensions = dimensionsForLesson(item.checkIn);
+  const dimensions = dimensionsForLesson(item.checkIn, item.ratingPrimary);
+  // §Phase D — teaching stages (enrichment → learnStages → single block) and
+  // the optional if/then step. Empty for every lesson until Cathy authors one.
+  const learnStages = resolveLearnStages(item, {
+    happening: t("modLearnHappening"),
+    why: t("modLearnWhy"),
+    canChange: t("modLearnCanChange"),
+    beforeMovingOn: t("modLearnBeforeMovingOn"),
+  });
+  const ifThen = hasIfThen(item.ifThenPractice) ? item.ifThenPractice : undefined;
   const recommends = recommendsForLibraryItem(item);
 
 
@@ -69,13 +82,27 @@ export function LibraryLesson({
     // §Phase C — "before" ratings, on the shared derived dimension set.
     { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
-      kind: "text",
+      kind: "learn",
       label: t("libStepLearn"),
       icon: <Sparkles className="h-3.5 w-3.5" />,
       heading: item.learnTitle,
       body: item.learnBody,
+      ...(learnStages.length > 0 ? { stages: learnStages } : {}),
     },
     { kind: "activity", label: t("libStepActivity"), activity: item.activity },
+    ...(ifThen
+      ? [
+          {
+            kind: "ifthen" as const,
+            label: t("modIfThenStep"),
+            practice: ifThen,
+            ifPicks: response?.ifThen?.ifPicks ?? [],
+            thenPicks: response?.ifThen?.thenPicks ?? [],
+            onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
+              AdelanteEHR.saveLessonResponse(patientId, "library", item.id, { ifThen: next }),
+          },
+        ]
+      : []),
     {
       kind: "adel",
       label: t("libStepReflect"),

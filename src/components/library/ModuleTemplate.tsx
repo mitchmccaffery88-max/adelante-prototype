@@ -27,6 +27,7 @@ import {
   type RatingDimension,
 } from "@/lib/lessonRatings";
 import type { LessonRecommend } from "@/lib/lessonRecommends";
+import type { IfThenPractice, LearnStage } from "@/lib/lessonAuthoring";
 
 
 /**
@@ -463,6 +464,29 @@ export function SubTabProgress({
  */
 export type ModuleStep =
   | { kind: "text"; label: string; icon?: React.ReactNode; body: string; heading?: string; boxed?: boolean }
+  /**
+   * §Phase D item 2/5 — the teaching step. `stages` is OPTIONAL: with none
+   * (the state every lesson ships in) this renders exactly like a `text` step
+   * with a heading. With stages it sub-paginates through them.
+   */
+  | {
+      kind: "learn";
+      label: string;
+      icon?: React.ReactNode;
+      heading?: string;
+      body: string;
+      stages?: LearnStage[];
+    }
+  /** §Phase D item 4 — the authored if/then plan builder. */
+  | {
+      kind: "ifthen";
+      label: string;
+      icon?: React.ReactNode;
+      practice: IfThenPractice;
+      ifPicks: string[];
+      thenPicks: string[];
+      onChange: (next: { ifPicks: string[]; thenPicks: string[] }) => void;
+    }
   | { kind: "activity"; label: string; icon?: React.ReactNode; activity: LibraryActivity }
   | { kind: "reflect"; label: string; icon?: React.ReactNode; reflection: string; question: string }
   | {
@@ -701,6 +725,126 @@ export function AdelStep({
 
 
 
+/**
+ * §Phase D item 2 — the sub-paginated teaching block, built on the Phase A
+ * `SubTabProgress` primitive rather than a second pagination control. Position
+ * is component-local on purpose: the persisted `subIndex` is already the
+ * recovery tool flow's cursor, and one lesson has both.
+ */
+export function LearnStages({ stages }: { stages: LearnStage[] }) {
+  const { t } = useI18n();
+  const [i, setI] = useState(0);
+  const index = Math.min(i, stages.length - 1);
+  const stage = stages[index];
+  if (!stage) return null;
+  return (
+    <div className="space-y-3" data-testid="learn-stages">
+      <SubTabProgress
+        label={t("modLearnPart")}
+        index={index}
+        total={stages.length}
+        titles={stages.map((s) => s.title)}
+        onJump={setI}
+      />
+      <h3 className="font-display text-lg text-navy">{stage.title}</h3>
+      <p className="whitespace-pre-wrap text-sm text-muted-foreground">{stage.body}</p>
+      {stages.length > 1 && (
+        <div className="flex gap-2">
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={index === 0}
+            onClick={() => setI(index - 1)}
+          >
+            <ArrowLeft className="mr-1 h-3.5 w-3.5" aria-hidden /> {t("modBack")}
+          </Button>
+          <Button
+            type="button"
+            size="sm"
+            variant="outline"
+            disabled={index >= stages.length - 1}
+            onClick={() => setI(index + 1)}
+          >
+            {t("modLearnNextPart")} <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden />
+          </Button>
+        </div>
+      )}
+    </div>
+  );
+}
+
+/**
+ * §Phase D item 4 — IF this happens / THEN I will. Two closed option sets,
+ * multi-select on both sides, matching the reference's practice pattern. The
+ * picks persist through the same lesson response row as everything else.
+ */
+export function IfThenStep({
+  practice,
+  ifPicks,
+  thenPicks,
+  onChange,
+}: {
+  practice: IfThenPractice;
+  ifPicks: string[];
+  thenPicks: string[];
+  onChange: (next: { ifPicks: string[]; thenPicks: string[] }) => void;
+}) {
+  const { t } = useI18n();
+  const toggle = (side: "if" | "then", opt: string) => {
+    const current = side === "if" ? ifPicks : thenPicks;
+    const next = current.includes(opt) ? current.filter((x) => x !== opt) : [...current, opt];
+    onChange(side === "if" ? { ifPicks: next, thenPicks } : { ifPicks, thenPicks: next });
+  };
+  const column = (side: "if" | "then", title: string, options: string[], picks: string[]) => (
+    <div className="space-y-2">
+      <p className="text-xs font-medium uppercase tracking-wider text-teal">{title}</p>
+      <div className="flex flex-col gap-1.5">
+        {options
+          .filter((o) => o.trim())
+          .map((o) => {
+            const on = picks.includes(o);
+            return (
+              <Button
+                key={o}
+                type="button"
+                size="sm"
+                variant={on ? "default" : "outline"}
+                aria-pressed={on}
+                className="h-auto justify-start whitespace-normal text-left"
+                onClick={() => toggle(side, o)}
+              >
+                {o}
+              </Button>
+            );
+          })}
+      </div>
+    </div>
+  );
+  const pairs = ifPicks.length > 0 && thenPicks.length > 0;
+  return (
+    <div className="space-y-4" data-testid="ifthen-step">
+      <p className="text-sm font-medium text-navy">{t("modIfThenTitle")}</p>
+      <div className="grid gap-4 sm:grid-cols-2">
+        {column("if", t("modIfThenIf"), practice.ifOptions, ifPicks)}
+        {column("then", t("modIfThenThen"), practice.thenOptions, thenPicks)}
+      </div>
+      {pairs ? (
+        <div className="space-y-1 rounded-lg bg-secondary/50 p-3 text-sm text-navy">
+          {ifPicks.map((i) => (
+            <p key={i}>
+              <span className="font-medium">{t("modIfThenIfWord")}</span> {i}{" "}
+              <span className="font-medium">{t("modIfThenThenWord")}</span> {thenPicks.join(", ")}
+            </p>
+          ))}
+        </div>
+      ) : (
+        <p className="text-xs text-muted-foreground">{t("modIfThenHint")}</p>
+      )}
+    </div>
+  );
+}
+
 export function SelectStep({
 
   prompt,
@@ -893,6 +1037,24 @@ export function ModuleTemplate({
               {step.body}
             </p>
           </>
+        )}
+        {step.kind === "learn" && (
+          <>
+            {step.heading && <h3 className="font-display text-lg text-navy">{step.heading}</h3>}
+            {step.stages && step.stages.length > 0 ? (
+              <LearnStages stages={step.stages} />
+            ) : (
+              <p className="whitespace-pre-wrap text-sm text-muted-foreground">{step.body}</p>
+            )}
+          </>
+        )}
+        {step.kind === "ifthen" && (
+          <IfThenStep
+            practice={step.practice}
+            ifPicks={step.ifPicks}
+            thenPicks={step.thenPicks}
+            onChange={step.onChange}
+          />
         )}
         {step.kind === "activity" && (
           <Activity activity={step.activity} response={response} onChange={patch} />

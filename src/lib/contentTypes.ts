@@ -44,7 +44,12 @@ export type ContentFieldKind =
   | "number"
   | "select"
   | "list"
-  | "activity";
+  | "activity"
+  // §Lesson-player Phase D — two new authoring inputs. `stages` is a
+  // repeatable title+body list (the sub-paginated teaching block); `toggle` is
+  // a real boolean (the rating scale's direction), not a string "true".
+  | "stages"
+  | "toggle";
 
 export interface ContentField {
   /** Dotted path into the body, e.g. `toolFlow.warningSigns`. */
@@ -295,14 +300,116 @@ const LIBRARY_FIELDS: ContentField[] = [
   { key: "toolkitLabel", label: "Saves to the toolkit as", kind: "text", step: "8", required: true },
 ];
 
+
+// ---------------------------------------------------------------------------
+// §Lesson-player Phase D — the OPTIONAL authoring surface, identical on both
+// lesson types. Every field here ships empty on all 180 lessons: the renderer
+// falls back to what it does today until someone authors into them.
+// ---------------------------------------------------------------------------
+
+const PHASE_D_FIELDS: ContentField[] = [
+  {
+    key: "learnStages",
+    label: "Teaching block, split into parts (optional)",
+    kind: "stages",
+    step: "3",
+    help: "Leave empty and the teaching block shows as one block, exactly as it does now. Add parts and the patient pages through them.",
+  },
+  {
+    key: "enrichment.happening.headline",
+    label: "Part 1 headline — what's happening (optional)",
+    kind: "text",
+    step: "3",
+    help: "The four enrichment parts replace the split above when filled. Leave all of them blank to keep the lesson as it is.",
+  },
+  {
+    key: "enrichment.happening.body",
+    label: "Part 1 body — what's happening",
+    kind: "textarea",
+    step: "3",
+    rows: 4,
+  },
+  { key: "enrichment.why.headline", label: "Part 2 headline — why it happens", kind: "text", step: "3" },
+  { key: "enrichment.why.body", label: "Part 2 body — why it happens", kind: "textarea", step: "3", rows: 4 },
+  {
+    key: "enrichment.approach",
+    label: "Clinical approach line (optional)",
+    kind: "text",
+    step: "3",
+    help: 'Shown under part 2, e.g. "Trauma-informed care · Nervous system regulation".',
+  },
+  { key: "enrichment.canChange.headline", label: "Part 3 headline — what can change", kind: "text", step: "3" },
+  { key: "enrichment.canChange.body", label: "Part 3 body — what can change", kind: "textarea", step: "3", rows: 4 },
+  {
+    key: "enrichment.takeaway",
+    label: "Part 4 — the one line to take away",
+    kind: "textarea",
+    step: "3",
+    rows: 2,
+  },
+  {
+    key: "enrichment.reflection",
+    label: "Part 4 — one reflection question",
+    kind: "text",
+    step: "3",
+  },
+  {
+    key: "ratingPrimary.label",
+    label: "Custom rating dimension (optional)",
+    kind: "text",
+    help: "Leave blank and the lesson uses the shared before/after scales derived from its check-in wording.",
+  },
+  { key: "ratingPrimary.lowLabel", label: "Rating — what 1 means", kind: "text" },
+  { key: "ratingPrimary.highLabel", label: "Rating — what 5 means", kind: "text" },
+  {
+    key: "ratingPrimary.higherIsHarder",
+    label: "A higher score means a HARDER day",
+    kind: "toggle",
+    help: "On for distress-style scales (craving, overwhelm) so improvement is read as the score going down.",
+  },
+  {
+    key: "ifThenPractice.ifOptions",
+    label: "If–then plan: IF options (optional)",
+    kind: "list",
+    help: "Both lists must have at least one entry for the if–then step to appear at all.",
+  },
+  { key: "ifThenPractice.thenOptions", label: "If–then plan: THEN options (optional)", kind: "list" },
+];
+
+/** Real, light validation: half-authored optional structures are refused. */
+function phaseDErrors(body: ContentBody): string[] {
+  const errors: string[] = [];
+  const stages = readField(body, "learnStages");
+  if (Array.isArray(stages)) {
+    for (const [i, raw] of stages.entries()) {
+      const st = (raw ?? {}) as Record<string, unknown>;
+      const title = typeof st["title"] === "string" ? st["title"].trim() : "";
+      const stBody = typeof st["body"] === "string" ? st["body"].trim() : "";
+      if (title && !stBody) errors.push(`Teaching part ${i + 1} has a title but no text.`);
+      if (!title && stBody) errors.push(`Teaching part ${i + 1} has text but no title.`);
+    }
+  }
+  const ifs = list(body, "ifThenPractice.ifOptions").filter((x) => x.trim());
+  const thens = list(body, "ifThenPractice.thenOptions").filter((x) => x.trim());
+  if (ifs.length > 0 && thens.length === 0)
+    errors.push("An if–then plan needs at least one THEN option.");
+  if (thens.length > 0 && ifs.length === 0)
+    errors.push("An if–then plan needs at least one IF option.");
+  const ratingLabel = str(body, "ratingPrimary.label").trim();
+  const anchors = str(body, "ratingPrimary.lowLabel") + str(body, "ratingPrimary.highLabel");
+  if (!ratingLabel && anchors.trim())
+    errors.push("Give the custom rating dimension a label, or clear its anchors.");
+  return errors;
+}
+
 export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
   typeId: "library_lesson",
   label: "Library lesson",
   labelPlural: "Library lessons",
   publishEffect:
     "Publishing puts this lesson in the patient Library immediately, inside its category, subject to the same population gate every other lesson uses.",
-  fields: LIBRARY_FIELDS,
-  fieldsFor: () => [libraryCategoryField(), ...LIBRARY_FIELDS.slice(1)],
+  fields: [...LIBRARY_FIELDS, ...PHASE_D_FIELDS],
+  fieldsFor: () => [libraryCategoryField(), ...LIBRARY_FIELDS.slice(1), ...PHASE_D_FIELDS],
   baselineIds: () => LIBRARY_ITEMS.map((i) => i.id),
   baselineBody: (id) => {
     const item = LIBRARY_ITEMS.find((i) => i.id === id);
@@ -329,7 +436,12 @@ export const LIBRARY_LESSON_TYPE: ContentTypeDescriptor = {
     const errors = requireText(b, LIBRARY_FIELDS);
     if (!liveLibraryCategoryList().some((c) => c.id === str(b, "categoryId")))
       errors.push("Pick a real library category.");
-    return [...errors, ...validateActivity(b), ...originalityErrors("library_lesson", b)];
+    return [
+      ...errors,
+      ...validateActivity(b),
+      ...phaseDErrors(b),
+      ...originalityErrors("library_lesson", b),
+    ];
   },
 };
 
@@ -397,8 +509,8 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
   labelPlural: "Recovery-module lessons",
   publishEffect:
     "Publishing adds this lesson to its recovery module for patients, and counts toward that module's real progress fraction.",
-  fields: RECOVERY_FIELDS,
-  fieldsFor: () => [recoveryModuleField(), ...RECOVERY_FIELDS.slice(1)],
+  fields: [...RECOVERY_FIELDS, ...PHASE_D_FIELDS],
+  fieldsFor: () => [recoveryModuleField(), ...RECOVERY_FIELDS.slice(1), ...PHASE_D_FIELDS],
   baselineIds: () => RECOVERY_LESSONS.map((l) => l.id),
   baselineBody: (id) => {
     const l = RECOVERY_LESSONS.find((x) => x.id === id);
@@ -434,7 +546,12 @@ export const RECOVERY_LESSON_TYPE: ContentTypeDescriptor = {
       errors.push(`Give at least ${TOOL_FLOW_LIMITS.supportPeople} support people to choose from.`);
     if (list(b, "toolFlow.todayActions").length < 2)
       errors.push("Give at least two actions for today to choose from.");
-    return [...errors, ...validateActivity(b), ...originalityErrors("recovery_lesson", b)];
+    return [
+      ...errors,
+      ...validateActivity(b),
+      ...phaseDErrors(b),
+      ...originalityErrors("recovery_lesson", b),
+    ];
   },
 };
 
