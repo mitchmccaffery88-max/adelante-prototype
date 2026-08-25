@@ -228,6 +228,47 @@ function touch(r: PatientEngagement) {
   r.lastActivityAt = now;
 }
 
+/** Namespaces for `PatientEngagement.completedAt` keys. */
+export type CompletionNamespace = "library" | "exercise" | "recovery";
+
+export function completionKey(ns: CompletionNamespace, id: string): string {
+  return `${ns}:${id}`;
+}
+
+/** Write-once: an idempotent re-completion must not rewrite the first date. */
+function markCompletedAt(r: PatientEngagement, ns: CompletionNamespace, id: string) {
+  r.completedAt ??= {};
+  r.completedAt[completionKey(ns, id)] ??= new Date().toISOString();
+}
+
+export interface CompletionEvent {
+  namespace: CompletionNamespace;
+  itemId: string;
+  at: string;
+}
+
+/**
+ * Real chronological completion history for one patient, oldest first.
+ *
+ * Only items with a recorded timestamp appear — completions written before
+ * `completedAt` existed are omitted rather than backfilled with a guessed
+ * date. A caller that needs the full set still reads the id arrays.
+ */
+export function completionTimeline(patientId: string): CompletionEvent[] {
+  const map = records.get(patientId)?.completedAt ?? {};
+  return Object.entries(map)
+    .map(([key, at]) => {
+      const idx = key.indexOf(":");
+      return {
+        namespace: key.slice(0, idx) as CompletionNamespace,
+        itemId: key.slice(idx + 1),
+        at,
+      };
+    })
+    .sort((a, b) => a.at.localeCompare(b.at));
+}
+
+
 // ---------------------------------------------------------------------------
 // Reads
 // ---------------------------------------------------------------------------
