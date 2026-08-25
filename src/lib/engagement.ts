@@ -77,7 +77,24 @@ export interface PatientEngagement {
   lessonResponses: Record<string, LessonResponse>;
   /** Saved takeaways, one per source lesson/exercise. */
   savedToolkitItems: SavedToolkitItem[];
+  /**
+   * §Engagement/Reporting Build 1 — PER-COMPLETION TIMESTAMP.
+   *
+   * Additive and optional. Until this shipped the store kept only the
+   * row-level `firstActivityAt`/`lastActivityAt` high-water marks, so
+   * "what did this person finish, in what order, on which day" was not
+   * derivable and a chronological journey timeline was impossible to build
+   * without fabricating dates. This records the FIRST completion instant per
+   * item, keyed `"<namespace>:<id>"` (`library:` | `exercise:` | `recovery:`).
+   *
+   * Write-once per item: completion is idempotent, so a revisit must not
+   * rewrite history. Rows created before this existed simply have fewer keys
+   * than they have completions — every reader must tolerate a missing entry
+   * rather than assume a date.
+   */
+  completedAt?: Record<string, string>;
   firstActivityAt?: string;
+
   lastActivityAt?: string;
 }
 
