@@ -3,12 +3,14 @@
 // The three extra steps (7–9) are the real tool flow, rendered by the shared
 // `select` step kind — structured selections, not free text.
 import { useState } from "react";
-import { CheckCircle2, HeartHandshake, Lightbulb, ShieldAlert, Sparkles, Target, Wrench } from "lucide-react";
+import { CheckCircle2, Lightbulb, Sparkles, Wrench } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, useRecoveryText } from "@/lib/i18n";
 import type { LibraryActivity } from "@/lib/library";
 import { TOOL_FLOW_LIMITS, type RecoveryLesson } from "@/lib/recovery";
 import { ModuleTemplate, type ModuleStep } from "@/components/library/ModuleTemplate";
+import { GuidedToolFlow, type ToolGroup } from "@/components/recovery/GuidedToolFlow";
+import { matchExerciseForLesson } from "@/lib/recovery.exerciseMatch";
 import { toast } from "sonner";
 
 /**
@@ -114,6 +116,50 @@ export function RecoveryLessonView({
     onDone?.();
   }
 
+  // §Phase B — Part A/B tools step. Sub-position persists through the SAME
+  // lessonResponses row the player already writes (`subIndex`), so returning
+  // to a lesson lands back on the sub-tab the patient left.
+  const [part, setPart] = useState<"a" | "b">("a");
+  const subIndex = response?.subIndex ?? 0;
+  const setSubIndex = (i: number) => {
+    setPart("b");
+    AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, { subIndex: i });
+  };
+  const match = matchExerciseForLesson(lesson);
+  const groups: ToolGroup[] = [
+    {
+      key: "warnings",
+      label: t("recStepWarnings"),
+      prompt: t("recPromptWarnings"),
+      options: lesson.toolFlow.warningSigns,
+      labelFor: (opt, i) => rt(`rec.${id}.warn.${i}`, opt),
+      max: TOOL_FLOW_LIMITS.warningSigns,
+      value: warningSigns,
+      onChange: setWarningSigns,
+    },
+    {
+      key: "support",
+      label: t("recStepSupport"),
+      prompt: t("recPromptSupport"),
+      options: lesson.toolFlow.supportPeople,
+      labelFor: (opt, i) => rt(`rec.${id}.sup.${i}`, opt),
+      max: TOOL_FLOW_LIMITS.supportPeople,
+      value: supportPeople,
+      onChange: setSupportPeople,
+    },
+    {
+      key: "action",
+      label: t("recStepAction"),
+      prompt: t("recPromptAction"),
+      options: lesson.toolFlow.todayActions,
+      labelFor: (opt, i) => rt(`rec.${id}.todo.${i}`, opt),
+      max: TOOL_FLOW_LIMITS.todayActions,
+      value: todayAction,
+      onChange: setTodayAction,
+    },
+  ];
+  const toolsDone = subIndex >= groups.length;
+
   const steps: ModuleStep[] = [
     { kind: "text", label: t("recStepProblem"), body: rt(`rec.${id}.problem`, lesson.problem) },
     { kind: "text", label: t("recStepCheckIn"), body: rt(`rec.${id}.checkIn`, lesson.checkIn) },
@@ -139,37 +185,21 @@ export function RecoveryLessonView({
       boxed: true,
     },
     {
-      kind: "select",
-      label: t("recStepWarnings"),
-      icon: <ShieldAlert className="h-3.5 w-3.5" />,
-      prompt: t("recPromptWarnings"),
-      options: lesson.toolFlow.warningSigns,
-      labelFor: (opt, i) => rt(`rec.${id}.warn.${i}`, opt),
-      max: TOOL_FLOW_LIMITS.warningSigns,
-      value: warningSigns,
-      onChange: setWarningSigns,
-    },
-    {
-      kind: "select",
-      label: t("recStepSupport"),
-      icon: <HeartHandshake className="h-3.5 w-3.5" />,
-      prompt: t("recPromptSupport"),
-      options: lesson.toolFlow.supportPeople,
-      labelFor: (opt, i) => rt(`rec.${id}.sup.${i}`, opt),
-      max: TOOL_FLOW_LIMITS.supportPeople,
-      value: supportPeople,
-      onChange: setSupportPeople,
-    },
-    {
-      kind: "select",
-      label: t("recStepAction"),
-      icon: <Target className="h-3.5 w-3.5" />,
-      prompt: t("recPromptAction"),
-      options: lesson.toolFlow.todayActions,
-      labelFor: (opt, i) => rt(`rec.${id}.todo.${i}`, opt),
-      max: TOOL_FLOW_LIMITS.todayActions,
-      value: todayAction,
-      onChange: setTodayAction,
+      kind: "custom",
+      label: t("recToolsStep"),
+      icon: <Wrench className="h-3.5 w-3.5" />,
+      canContinue: toolsDone,
+      continueHint: t("modFinishToolsHint"),
+      content: (
+        <GuidedToolFlow
+          match={match}
+          groups={groups}
+          part={part}
+          onPartChange={setPart}
+          subIndex={subIndex}
+          onSubIndexChange={setSubIndex}
+        />
+      ),
     },
     {
       kind: "text",
@@ -178,6 +208,7 @@ export function RecoveryLessonView({
       body: `Finishing saves "${rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)}" — with what you picked above — to your toolkit.`,
     },
   ];
+
 
   return (
     <ModuleTemplate
