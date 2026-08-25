@@ -467,7 +467,10 @@ export function completeExercise(
   if (!ex) return { completed: false, alreadyComplete: false };
   const r = row(patientId);
   const already = r.completedExercises.includes(exerciseId);
-  if (!already) r.completedExercises.push(exerciseId);
+  if (!already) {
+    r.completedExercises.push(exerciseId);
+    markCompletedAt(r, "exercise", exerciseId);
+  }
   if (opts.saveToolkit) {
     saveToolkitItem(patientId, { id: exerciseId, label: ex.title, from: "exercise" });
   }
