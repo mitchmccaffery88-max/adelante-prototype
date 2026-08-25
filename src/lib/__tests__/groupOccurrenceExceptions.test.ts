@@ -3,6 +3,24 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "../ehr";
 import { occurrenceStatuses, owedAttendeesForRole } from "../groupMetrics";
 
+/**
+ * Every string that actually appears as a VALUE (or key) anywhere in a payload.
+ * PHI leak assertions must compare whole values: substring matching against a
+ * JSON blob false-positives whenever a random id happens to contain a short
+ * patient id like "p1".
+ */
+function leafStrings(value: unknown, out: string[] = []): string[] {
+  if (typeof value === "string") out.push(value);
+  else if (Array.isArray(value)) for (const v of value) leafStrings(v, out);
+  else if (value && typeof value === "object")
+    for (const [k, v] of Object.entries(value)) {
+      out.push(k);
+      leafStrings(v, out);
+    }
+  return out;
+}
+
+
 
 function enrollEligible(sessionId: string, patientId: string) {
   makeEligible(patientId);
@@ -158,18 +176,21 @@ describe("PHI gate on occurrence status — enforced in the DATA layer", () => {
     const denied = owedAttendeesForRole("credentialing_coordinator", g.id, start);
     expect(denied.allowed).toBe(false);
     expect(denied.attendees).toEqual([]);
-    const serialized = JSON.stringify(denied);
+    // Compare WHOLE values, never substrings: a randomly-generated group id
+    // such as `grp_9xe4p189` contains "p1" and used to fail this spuriously.
+    const deniedValues = leafStrings(denied);
     for (const p of two) {
-      expect(serialized).not.toContain(p.id);
-      expect(serialized).not.toContain(p.firstName);
-      expect(serialized).not.toContain(p.lastName);
+      expect(deniedValues).not.toContain(p.id);
+      expect(deniedValues).not.toContain(p.firstName);
+      expect(deniedValues).not.toContain(p.lastName);
     }
 
     // The aggregate status a lower-gated role may read carries counts only.
-    const statuses = JSON.stringify(occurrenceStatuses(g.id, 6));
+    const statusValues = leafStrings(occurrenceStatuses(g.id, 6));
     for (const p of two) {
-      expect(statuses).not.toContain(p.id);
-      expect(statuses).not.toContain(p.lastName);
+      expect(statusValues).not.toContain(p.id);
+      expect(statusValues).not.toContain(p.lastName);
     }
+
   });
 });

@@ -7,7 +7,10 @@ import { Lightbulb, Sparkles, Target, Wrench } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import type { LibraryItem } from "@/lib/library";
+import { dimensionsForLesson } from "@/lib/lessonRatings";
+import { recommendsForLibraryItem } from "@/lib/lessonRecommends";
 import { ModuleTemplate, type ModuleStep } from "./ModuleTemplate";
+
 import { toast } from "sonner";
 
 export function LibraryLesson({
@@ -25,6 +28,11 @@ export function LibraryLesson({
   // subscribed facade every other engagement read uses.
   const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, "library", item.id));
   const checkInOptions = item.checkInOptions?.filter((o) => o.trim()) ?? [];
+  // §Phase C — dimensions derived from the lesson's OWN check-in text, and
+  // recommendation chips derived from its category. No new authored content.
+  const dimensions = dimensionsForLesson(item.checkIn);
+  const recommends = recommendsForLibraryItem(item);
+
 
   function complete() {
     const res = AdelanteEHR.completeLibraryItem(patientId, item.id);
@@ -58,6 +66,8 @@ export function LibraryLesson({
           label: t("libStepCheckIn"),
           body: item.checkIn?.trim() || t("libCheckInFallback"),
         },
+    // §Phase C — "before" ratings, on the shared derived dimension set.
+    { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
       kind: "text",
       label: t("libStepLearn"),
@@ -67,10 +77,11 @@ export function LibraryLesson({
     },
     { kind: "activity", label: t("libStepActivity"), activity: item.activity },
     {
-      kind: "reflect",
+      kind: "adel",
       label: t("libStepReflect"),
       reflection: item.adelReflection,
       question: item.adelQuestion,
+      recommends,
     },
     {
       kind: "text",
@@ -85,6 +96,8 @@ export function LibraryLesson({
       icon: <Target className="h-3.5 w-3.5" />,
       body: item.action,
     },
+    // §Phase C — "after" ratings, same dimensions, with the delta tiles.
+    { kind: "rating", label: t("modRateAfterLabel"), phase: "after", dimensions },
     {
       kind: "text",
       label: t("libStepToolkit"),
@@ -92,6 +105,7 @@ export function LibraryLesson({
       body: `Finishing saves "${item.toolkitLabel}" to your toolkit so you can find it again.`,
     },
   ];
+
 
   return (
     <ModuleTemplate
