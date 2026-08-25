@@ -36,7 +36,7 @@ import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
-import { DailyCheckInCard } from "@/components/patient/DailyCheckInCard";
+import { DailyCheckInSummaryCard } from "@/components/patient/DailyCheckInSummaryCard";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
@@ -141,10 +141,11 @@ export function PatientHome() {
       <HomeDashboard
         patientId={patient.id}
         afterHeader={
-          /* §Build A item 1 — the ONE rendering of the daily check-in, and
-             §item 9 — it sits directly under the greeting. */
+          /* §Standalone route items — the full daily check-in flow now lives
+             at /checkin; /home keeps ONE real entry point (status + streak)
+             directly under the greeting. Still a single implementation. */
           <div id="daily-mood-check-in" className="scroll-mt-24">
-            <DailyCheckInCard patientId={patient.id} />
+            <DailyCheckInSummaryCard patientId={patient.id} />
           </div>
         }
       />

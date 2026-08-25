@@ -30,6 +30,7 @@ import { Route as AssistedSignupRouteImport } from './routes/assisted-signup'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
+import { Route as CheckinRouteImport } from './routes/checkin'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
 import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-credentials'
@@ -183,6 +184,11 @@ const BillingRoute = BillingRouteImport.update({
 const CaseManagerRoute = CaseManagerRouteImport.update({
   id: '/case-manager',
   path: '/case-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CheckinRoute = CheckinRouteImport.update({
+  id: '/checkin',
+  path: '/checkin',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicianRoute = ClinicianRouteImport.update({
@@ -455,6 +461,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
+  '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -527,6 +534,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
+  '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -598,6 +606,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/case-manager': typeof CaseManagerRoute
+  '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -672,6 +681,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/case-manager'
+    | '/checkin'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -744,6 +754,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/case-manager'
+    | '/checkin'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -814,6 +825,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/case-manager'
+    | '/checkin'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -887,6 +899,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   CaseManagerRoute: typeof CaseManagerRoute
+  CheckinRoute: typeof CheckinRoute
   ClinicianRoute: typeof ClinicianRoute
   ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
   ClinicianCredentialsRoute: typeof ClinicianCredentialsRoute
@@ -1076,6 +1089,13 @@ declare module '@tanstack/react-router' {
       path: '/case-manager'
       fullPath: '/case-manager'
       preLoaderRoute: typeof CaseManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/checkin': {
+      id: '/checkin'
+      path: '/checkin'
+      fullPath: '/checkin'
+      preLoaderRoute: typeof CheckinRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinician': {
@@ -1482,6 +1502,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   CaseManagerRoute: CaseManagerRoute,
+  CheckinRoute: CheckinRoute,
   ClinicianRoute: ClinicianRoute,
   ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,
   ClinicianCredentialsRoute: ClinicianCredentialsRoute,

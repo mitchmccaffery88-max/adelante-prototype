@@ -62,6 +62,7 @@ describe("patient nav registry", () => {
       // §Tier 1 Build B — private tools + the saved-resources view.
       "/craving",
       "/slip",
+      "/checkin",
       "/resources/saved",
     ]);
   });
