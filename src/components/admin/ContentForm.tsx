@@ -8,6 +8,7 @@
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
+import { Checkbox } from "@/components/ui/checkbox";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -61,6 +62,65 @@ function StringListEditor({
       ))}
       <Button type="button" variant="outline" size="sm" onClick={() => onChange([...value, ""])}>
         <Plus className="mr-1 h-3.5 w-3.5" /> {addLabel}
+      </Button>
+    </div>
+  );
+}
+
+/**
+ * §Lesson-player Phase D — the repeatable teaching-part editor. Each part is
+ * a title + body; an empty list means the lesson keeps its single teaching
+ * block, which is what every lesson ships with.
+ */
+function StagesEditor({
+  value,
+  onChange,
+}: {
+  value: { title: string; body: string }[];
+  onChange: (next: { title: string; body: string }[]) => void;
+}) {
+  const set = (i: number, patch: Partial<{ title: string; body: string }>) =>
+    onChange(value.map((v, n) => (n === i ? { ...v, ...patch } : v)));
+  return (
+    <div className="space-y-2" data-testid="stages-editor">
+      {value.map((stage, i) => (
+        <div key={i} className="space-y-1.5 rounded-lg border border-border p-3">
+          <div className="flex items-center gap-1.5">
+            <Badge variant="outline" className="text-[10px]">
+              Part {i + 1}
+            </Badge>
+            <Input
+              data-testid="stage-title"
+              placeholder="Part title"
+              value={stage.title}
+              onChange={(e) => set(i, { title: e.target.value })}
+            />
+            <Button
+              type="button"
+              variant="ghost"
+              size="icon"
+              aria-label="Remove part"
+              onClick={() => onChange(value.filter((_, n) => n !== i))}
+            >
+              <Trash2 className="h-4 w-4" />
+            </Button>
+          </div>
+          <Textarea
+            data-testid="stage-body"
+            rows={3}
+            placeholder="What this part teaches"
+            value={stage.body}
+            onChange={(e) => set(i, { body: e.target.value })}
+          />
+        </div>
+      ))}
+      <Button
+        type="button"
+        variant="outline"
+        size="sm"
+        onClick={() => onChange([...value, { title: "", body: "" }])}
+      >
+        <Plus className="mr-1 h-3.5 w-3.5" /> Add teaching part
       </Button>
     </div>
   );
@@ -250,6 +310,33 @@ function FieldEditor({
           onChange={(next) => set(next)}
           addLabel="Add option"
         />
+      )}
+      {field.kind === "stages" && (
+        <StagesEditor
+          value={
+            Array.isArray(value)
+              ? (value as { title?: string; body?: string }[]).map((v) => ({
+                  title: typeof v?.title === "string" ? v.title : "",
+                  body: typeof v?.body === "string" ? v.body : "",
+                }))
+              : []
+          }
+          onChange={(next) => set(next)}
+        />
+      )}
+      {field.kind === "toggle" && (
+        <div className="flex items-center gap-2">
+          <Checkbox
+            id={fieldId}
+            aria-describedby={helpId}
+            data-testid={`field-${field.key}`}
+            checked={value === true}
+            onCheckedChange={(v) => set(v === true)}
+          />
+          <label htmlFor={fieldId} className="text-xs text-muted-foreground">
+            {field.label}
+          </label>
+        </div>
       )}
       {field.kind === "activity" && (
         <ActivityEditor activity={value} onChange={(next) => set(next)} />

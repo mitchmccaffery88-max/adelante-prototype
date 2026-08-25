@@ -8,6 +8,8 @@
 // `higherIsBetter` is what makes a delta honest: "confidence" going up is an
 // improvement, "how heavy this feels" going up is not. The tile colour is
 // computed from the dimension, never from the raw sign of the change.
+import type { LessonRatingOverride } from "@/lib/lessonAuthoring";
+
 
 export interface RatingDimension {
   id: string;
@@ -118,18 +120,39 @@ const PRIMARY_RULES: { words: string[]; dimension: RatingDimension }[] = [
 ];
 
 /**
- * The dimensions for one lesson: the derived primary (when the lesson's own
- * check-in names a feeling) followed by the shared default pair. Deterministic,
- * so a patient's "before" and "after" always line up on the same scales.
+ * The dimensions for one lesson: the primary followed by the shared default
+ * pair. Deterministic, so a patient's "before" and "after" always line up on
+ * the same scales.
+ *
+ * §Phase D item 1 — an OPTIONAL authored override takes precedence over the
+ * Phase C derivation. When no label is authored (the state every lesson ships
+ * in) the derivation below is used exactly as before.
  */
-export function dimensionsForLesson(checkIn?: string): RatingDimension[] {
-  const hay = (checkIn ?? "").toLowerCase();
-  const primary = hay
-    ? PRIMARY_RULES.find((r) => r.words.some((w) => hay.includes(w)))?.dimension
-    : undefined;
+export function dimensionsForLesson(
+  checkIn?: string,
+  override?: LessonRatingOverride,
+): RatingDimension[] {
+  const authored = override?.label?.trim();
+  const primary = authored
+    ? ({
+        id: "authored",
+        label: authored,
+        lowLabel: override?.lowLabel?.trim() || "Not at all",
+        highLabel: override?.highLabel?.trim() || "Very much",
+        higherIsBetter: !override?.higherIsHarder,
+      } satisfies RatingDimension)
+    : derivedPrimary(checkIn);
   if (!primary) return DEFAULT_RATING_DIMENSIONS;
   return [primary, ...DEFAULT_RATING_DIMENSIONS.filter((d) => d.id !== primary.id)];
 }
+
+/** Phase C's derivation, unchanged — now the fallback when nothing is authored. */
+function derivedPrimary(checkIn?: string): RatingDimension | undefined {
+  const hay = (checkIn ?? "").toLowerCase();
+  if (!hay) return undefined;
+  return PRIMARY_RULES.find((r) => r.words.some((w) => hay.includes(w)))?.dimension;
+}
+
 
 export type DeltaVerdict = "better" | "worse" | "same" | "incomplete";
 

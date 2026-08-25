@@ -13,6 +13,9 @@ import { GuidedToolFlow, type ToolGroup } from "@/components/recovery/GuidedTool
 import { matchExerciseForLesson } from "@/lib/recovery.exerciseMatch";
 import { dimensionsForLesson } from "@/lib/lessonRatings";
 import { recommendsForRecoveryLesson } from "@/lib/lessonRecommends";
+// §Phase D — optional authored structures; absent on all 85 lessons today.
+import { hasIfThen } from "@/lib/lessonAuthoring";
+import { resolveLearnStages } from "@/lib/lessonLearn";
 
 import { toast } from "sonner";
 
@@ -163,7 +166,14 @@ export function RecoveryLessonView({
   ];
   const toolsDone = subIndex >= groups.length;
 
-  const dimensions = dimensionsForLesson(lesson.checkIn);
+  const dimensions = dimensionsForLesson(lesson.checkIn, lesson.ratingPrimary);
+  const learnStages = resolveLearnStages(lesson, {
+    happening: t("modLearnHappening"),
+    why: t("modLearnWhy"),
+    canChange: t("modLearnCanChange"),
+    beforeMovingOn: t("modLearnBeforeMovingOn"),
+  });
+  const ifThen = hasIfThen(lesson.ifThenPractice) ? lesson.ifThenPractice : undefined;
   const recommends = recommendsForRecoveryLesson(lesson);
 
   const steps: ModuleStep[] = [
@@ -172,13 +182,27 @@ export function RecoveryLessonView({
     // §Phase C — "before" ratings.
     { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
-      kind: "text",
+      kind: "learn",
       label: t("recStepLearn"),
       icon: <Sparkles className="h-3.5 w-3.5" />,
       heading: rt(`rec.${id}.learnTitle`, lesson.learnTitle),
       body: rt(`rec.${id}.learnBody`, lesson.learnBody),
+      ...(learnStages.length > 0 ? { stages: learnStages } : {}),
     },
     { kind: "activity", label: t("recStepTryIt"), activity: translateActivity(lesson.activity, id, rt) },
+    ...(ifThen
+      ? [
+          {
+            kind: "ifthen" as const,
+            label: t("modIfThenStep"),
+            practice: ifThen,
+            ifPicks: response?.ifThen?.ifPicks ?? [],
+            thenPicks: response?.ifThen?.thenPicks ?? [],
+            onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
+              AdelanteEHR.saveLessonResponse(patientId, "recovery", lesson.id, { ifThen: next }),
+          },
+        ]
+      : []),
     {
       kind: "adel",
       label: t("recStepReflect"),

@@ -76,6 +76,36 @@ export function ContentPreview({
       {shown.map((f) => {
           const value = readField(body, f.key);
           if (f.kind === "activity") return <ActivityPreview key={f.key} activity={value} />;
+          // §Phase D — optional structures. An unauthored one is skipped
+          // entirely rather than shown as "— empty —" on every lesson.
+          if (f.kind === "stages") {
+            const stages = Array.isArray(value)
+              ? (value as { title?: string; body?: string }[])
+              : [];
+            if (stages.length === 0) return null;
+            return (
+              <div key={f.key} className="space-y-1">
+                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
+                  {f.step ? `${f.step}. ` : ""}
+                  {f.label}
+                </p>
+                {stages.map((s, n) => (
+                  <div key={n} className="rounded-lg border border-border p-2">
+                    <p className="text-sm font-medium text-navy">{s.title}</p>
+                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">{s.body}</p>
+                  </div>
+                ))}
+              </div>
+            );
+          }
+          if (f.kind === "toggle") {
+            if (value !== true) return null;
+            return (
+              <p key={f.key} className="text-xs text-muted-foreground">
+                {f.label}: yes
+              </p>
+            );
+          }
           if (f.kind === "list") {
             const items = Array.isArray(value) ? (value as string[]) : [];
             return (

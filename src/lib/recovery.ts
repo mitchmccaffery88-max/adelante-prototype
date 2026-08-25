@@ -15,6 +15,8 @@
 // (`src/components/library/ModuleTemplate.tsx`) that the Library also renders
 // through. There is deliberately no second renderer.
 import type { LibraryActivity } from "@/lib/library";
+// §Lesson-player Phase D — same optional authoring surface the Library uses.
+import type { LessonAuthoringExtras } from "@/lib/lessonAuthoring";
 import type { PopulationTrack } from "@/lib/population";
 // Ported Adelante Journey lessons for modules 2–9 (generated).
 import { PORTED_RECOVERY_LESSONS } from "@/lib/recovery.ported";
@@ -31,7 +33,7 @@ export interface RecoveryToolFlow {
 
 export const TOOL_FLOW_LIMITS = { warningSigns: 3, supportPeople: 3, todayActions: 1 } as const;
 
-export interface RecoveryLesson {
+export interface RecoveryLesson extends LessonAuthoringExtras {
   id: string;
   moduleId: string;
   title: string;

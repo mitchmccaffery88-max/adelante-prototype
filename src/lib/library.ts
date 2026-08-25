@@ -19,6 +19,9 @@
 // there is no runtime cycle. The gate LOGIC is Phase 2's, restated in the one
 // place it is applied (`isLibraryItemVisible`) rather than duplicated widely.
 import type { PopulationResolution, PopulationTrack } from "@/lib/population";
+// §Lesson-player Phase D — the optional authoring surface, shared verbatim
+// with `RecoveryLesson`. Every field ships absent on all 90 items here.
+import type { LessonAuthoringExtras } from "@/lib/lessonAuthoring";
 // Ported Adelante Journey collections (generated, copy-identical to source).
 import { PORTED_LIBRARY_CATEGORIES, PORTED_LIBRARY_ITEMS } from "@/lib/library.ported";
 
@@ -51,7 +54,7 @@ export interface LibraryCategory {
  * → Insight → Action → Toolkit. Every field below is required so a lesson
  * cannot ship with a missing step.
  */
-export interface LibraryItem {
+export interface LibraryItem extends LessonAuthoringExtras {
   id: string;
   categoryId: string;
   title: string;
@@ -75,6 +78,7 @@ export interface LibraryItem {
   /** 3 — teaching block. */
   learnTitle: string;
   learnBody: string;
+
   /** 4 — the interactive activity (the doing part). */
   activity: LibraryActivity;
   /** 5 — Adel's reflection prompt + the question the patient answers. */

@@ -126,6 +126,13 @@ export interface LessonResponse {
    */
   ratingsBefore?: Record<string, number>;
   ratingsAfter?: Record<string, number>;
+  /**
+   * §Lesson-player Phase D — the if/then plan the patient built, when the
+   * lesson has authored option sets. Structured picks (never free text), same
+   * rule as the recovery tool flow: engagement data, not clinical
+   * documentation. Absent for every lesson until an if/then set is authored.
+   */
+  ifThen?: { ifPicks: string[]; thenPicks: string[] };
   updatedAt: string;
 }
 
@@ -352,6 +359,16 @@ export function saveLessonResponse(
       : {}),
     ...(patch.ratingsAfter
       ? { ratingsAfter: { ...(prev?.ratingsAfter ?? {}), ...patch.ratingsAfter } }
+      : {}),
+    // §Phase D — the two halves of the if/then plan are saved independently,
+    // so a patch carrying only one side must not wipe the other.
+    ...(patch.ifThen
+      ? {
+          ifThen: {
+            ifPicks: patch.ifThen.ifPicks ?? prev?.ifThen?.ifPicks ?? [],
+            thenPicks: patch.ifThen.thenPicks ?? prev?.ifThen?.thenPicks ?? [],
+          },
+        }
       : {}),
     updatedAt: new Date().toISOString(),
   };
