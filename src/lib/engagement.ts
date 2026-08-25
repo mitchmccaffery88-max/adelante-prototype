@@ -126,8 +126,14 @@ export interface LessonResponse {
   /** Free text, keyed by field (`reflect`, `activity`, `grounding:<sense>`). */
   text?: Record<string, string>;
 
-  /** Checklist / tap-to-select cards / check-in options. */
+  /** Checklist / tap-to-select cards in the ACTIVITY step. */
   checked?: string[];
+  /**
+   * The lesson's opening check-in options. Deliberately a separate field from
+   * `checked`: the activity renderer owns `checked`, and sharing one array let
+   * activity card picks bleed into the check-in's `max` count (and vice versa).
+   */
+  checkIn?: string[];
   /** `rate` activity. */
   rating?: number;
   /** `sort` activity — card → bucket. */
