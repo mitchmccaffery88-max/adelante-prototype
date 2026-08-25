@@ -573,6 +573,9 @@ export type PatientRoute =
   // the craving FAB and the resources header, not from the nav registry.
   | "/craving"
   | "/slip"
+  // §Standalone route items — the daily mood check-in owns a real route,
+  // reached from the /home entry card (same precedent as /craving and /slip).
+  | "/checkin"
   | "/resources/saved";
 
 export interface PatientNavEntry {
@@ -683,6 +686,7 @@ export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
   "/naloxone",
   "/craving",
   "/slip",
+  "/checkin",
   "/resources/saved",
 ];
 
