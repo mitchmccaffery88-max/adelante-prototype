@@ -127,6 +127,8 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/lib/__tests__/selfTracking.test.ts",
   "src/lib/__tests__/recoveryStartDate.test.ts",
   "src/components/patient/DailyCheckInCard.tsx",
+  // §Standalone route items — /home's entry card for the same flow.
+  "src/components/patient/DailyCheckInSummaryCard.tsx",
   "src/components/patient/RecoveryDateCard.tsx",
   "src/components/patient/CravingFlow.tsx",
   "src/components/patient/SlipSupportFlow.tsx",
