@@ -653,6 +653,8 @@ const dict = {
     schPhone: "Teléfono",
     schRequest: "Solicitar sesión",
     schSafety: "Tu sesión es privada y protegida. Gratis con Medi-Cal.",
+    schNotReported:
+      "Reservar una cita no se reporta a un oficial de libertad condicional ni a la corte. No se comparte nada con ellos a menos que firmes una autorización pidiéndonos que lo hagamos.",
     schErrPickTime: "Elige un consejero y un horario.",
     schErrWeekday: "Elige un día entre semana, de 9:00 a 17:00.",
     schRequested: "Sesión solicitada",
