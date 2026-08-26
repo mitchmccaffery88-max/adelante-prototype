@@ -48,6 +48,9 @@ describe("patient nav registry", () => {
       "/library",
       "/resources",
       "/recovery-journey",
+      // §Standalone route items — the existing Peer Specialist nav entry now
+      // points at the focused view of the same care-team thread.
+      "/peer",
       "/schedule",
       // §P1 My Care de-clutter — real routes, no longer /home hash anchors.
       "/medications",
