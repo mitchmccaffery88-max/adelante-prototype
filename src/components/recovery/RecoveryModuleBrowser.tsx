@@ -5,12 +5,13 @@
 // Recovery content is SUD-population-general by default, like craving/slip;
 // only Module 1 is release-specific copy, so only it carries a gate.
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
-import { ArrowLeft, CheckCircle2, Lock, Map } from "lucide-react";
+import { ArrowLeft, Backpack, CheckCircle2, Lock, Map } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n, useRecoveryText } from "@/lib/i18n";
 import { usePopulation } from "@/components/PopulationGate";
@@ -77,7 +78,15 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
             {t("recEsReviewFlag")}
           </p>
         )}
+        {/* §Standalone route items — the only entry point to /toolkit, which
+            aggregates the Part B picks these lessons write. */}
+        <Button asChild variant="outline" className="min-h-11 rounded-2xl">
+          <Link to="/toolkit">
+            <Backpack className="mr-1 h-4 w-4" aria-hidden="true" /> My toolkit
+          </Link>
+        </Button>
       </PatientPageHeader>
+
 
       {liveRecoveryModules().map((mod) => {
         const gated = !isLibraryItemVisible(mod, population);

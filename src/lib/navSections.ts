@@ -579,6 +579,9 @@ export type PatientRoute =
   // §Standalone route items — a focused view of the SAME care-team thread,
   // scoped to the peer specialist. Reached from My Care's messages card.
   | "/peer"
+  // §Standalone route items — read-only aggregation of the tools the patient
+  // built inside lessons. Reached from the Recovery Journey header.
+  | "/toolkit"
   | "/resources/saved";
 
 export interface PatientNavEntry {
@@ -693,6 +696,7 @@ export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
   "/craving",
   "/slip",
   "/checkin",
+  "/toolkit",
   "/resources/saved",
 ];
 
