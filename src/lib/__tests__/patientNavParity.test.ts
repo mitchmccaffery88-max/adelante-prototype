@@ -66,6 +66,7 @@ describe("patient nav registry", () => {
       "/craving",
       "/slip",
       "/checkin",
+      "/toolkit",
       "/resources/saved",
     ]);
   });
