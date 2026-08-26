@@ -171,11 +171,23 @@ function NaloxonePage() {
         )}
       </Card>
 
-      <Button asChild variant="crisisSoft" size="patient" className="w-full">
-        <Link to="/crisis">
-          <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
-        </Link>
-      </Button>
+      <div className="grid gap-3 sm:grid-cols-3">
+        <Button asChild variant="crisisSoft" size="patient" className="w-full">
+          <Link to="/crisis">
+            <LifeBuoy className="h-5 w-5" aria-hidden="true" /> Crisis support
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="patient" className="w-full">
+          <Link to="/craving" data-testid="naloxone-craving-link">
+            <Waves className="h-5 w-5" aria-hidden="true" /> I'm craving right now
+          </Link>
+        </Button>
+        <Button asChild variant="outline" size="patient" className="w-full">
+          <Link to="/slip" data-testid="naloxone-slip-link">
+            <HeartHandshake className="h-5 w-5" aria-hidden="true" /> I already used
+          </Link>
+        </Button>
+      </div>
     </PatientPage>
   );
 }
