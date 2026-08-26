@@ -693,7 +693,6 @@ export const PATIENT_EXTRA_ROUTES: readonly PatientRoute[] = [
   "/craving",
   "/slip",
   "/checkin",
-  "/peer",
   "/resources/saved",
 ];
 
