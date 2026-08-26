@@ -77,7 +77,15 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
             {t("recEsReviewFlag")}
           </p>
         )}
+        {/* §Standalone route items — the only entry point to /toolkit, which
+            aggregates the Part B picks these lessons write. */}
+        <Button asChild variant="outline" className="min-h-11 rounded-2xl">
+          <Link to="/toolkit">
+            <Backpack className="mr-1 h-4 w-4" aria-hidden="true" /> My toolkit
+          </Link>
+        </Button>
       </PatientPageHeader>
+
 
       {liveRecoveryModules().map((mod) => {
         const gated = !isLibraryItemVisible(mod, population);
