@@ -217,8 +217,8 @@ export function RecoveryLessonView({
     {
       kind: "adel",
       label: t("recStepReflect"),
-      reflection: rt(`rec.${id}.adelReflection`, lesson.adelReflection),
-      question: rt(`rec.${id}.adelQuestion`, lesson.adelQuestion),
+      reflection: adelReflectionText || t("recAdelFallbackReflection"),
+      question: adelQuestionText || t("recAdelFallbackQuestion"),
       recommends,
     },
     {
