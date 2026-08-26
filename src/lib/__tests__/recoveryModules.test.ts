@@ -44,9 +44,17 @@ describe("recovery module structure", () => {
 
   it("gives every lesson a complete 10-step schema with real tool flow", () => {
     for (const l of RECOVERY_LESSONS) {
-      expect(l.problem && l.checkIn && l.learnTitle && l.learnBody).toBeTruthy();
-      expect(l.adelReflection && l.adelQuestion && l.insight && l.toolkitLabel).toBeTruthy();
+      // Module 9 ships with its check-in / Adel questions deliberately EMPTY —
+      // un-authored content renders the honest shared fallback instead of
+      // templated filler. Every other field must still be real.
+      const questionsAuthored = l.moduleId !== "living-recovery";
+      expect(l.problem && l.learnTitle && l.learnBody).toBeTruthy();
+      expect(l.insight && l.toolkitLabel).toBeTruthy();
+      if (questionsAuthored) {
+        expect(l.checkIn && l.adelReflection && l.adelQuestion, l.id).toBeTruthy();
+      }
       expect(l.activity).toBeTruthy();
+
       expect(l.toolFlow.warningSigns.length).toBeGreaterThan(TOOL_FLOW_LIMITS.warningSigns);
       expect(l.toolFlow.supportPeople.length).toBeGreaterThan(TOOL_FLOW_LIMITS.supportPeople);
       expect(l.toolFlow.todayActions.length).toBeGreaterThan(1);
