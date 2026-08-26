@@ -293,6 +293,8 @@ const dict = {
     schPhone: "Phone",
     schRequest: "Request session",
     schSafety: "Your session is private and protected. Free with Medi-Cal.",
+    schNotReported:
+      "Booking an appointment is not reported to a probation or parole officer, and it is not reported to the court. Nothing is shared with them unless you sign a release asking us to.",
     schErrPickTime: "Pick a counselor and a time.",
     schErrWeekday: "Pick a weekday between 9:00 and 17:00.",
     schRequested: "Session requested",
