@@ -176,9 +176,20 @@ export function RecoveryLessonView({
   const ifThen = hasIfThen(lesson.ifThenPractice) ? lesson.ifThenPractice : undefined;
   const recommends = recommendsForRecoveryLesson(lesson);
 
+  /**
+   * Un-authored lesson questions (Module 9 today). We show the SAME honest
+   * fallbacks the Library already uses for lessons with no authored check-in,
+   * rather than templated text that pretends to be lesson-specific content.
+   */
+  const checkInText = rt(`rec.${id}.checkIn`, lesson.checkIn).trim();
+  const adelReflectionText = rt(`rec.${id}.adelReflection`, lesson.adelReflection).trim();
+  const adelQuestionText = rt(`rec.${id}.adelQuestion`, lesson.adelQuestion).trim();
+  const questionsPending = !checkInText && !adelQuestionText;
+
   const steps: ModuleStep[] = [
     { kind: "text", label: t("recStepProblem"), body: rt(`rec.${id}.problem`, lesson.problem) },
-    { kind: "text", label: t("recStepCheckIn"), body: rt(`rec.${id}.checkIn`, lesson.checkIn) },
+    { kind: "text", label: t("recStepCheckIn"), body: checkInText || t("libCheckInFallback") },
+
     // §Phase C — "before" ratings.
     { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
