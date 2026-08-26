@@ -4364,7 +4364,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 5,
     "order": 1,
     "problem": "How do I keep this going long-term?",
-    "checkIn": "Right now, how much is \"How do I keep this going long-term\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Recovery Lasts a Lifetime",
     "learnBody": "Recovery is something you actively maintain each day, not a goal you simply finish. You need to stay connected and avoid letting your guard down, because complacency is a quiet risk. Anchor yourself with three key areas: the people in your life, your daily routines, and a clear sense of purpose. These anchors give you stability and direction over time.",
     "activity": {
@@ -4390,8 +4390,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Do I Stay in Recovery?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "True recovery isn't a destination; it's a daily commitment you actively maintain.",
     "toolFlow": {
       "warningSigns": [
@@ -4426,7 +4426,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 6,
     "order": 2,
     "problem": "Do I still need meetings?",
-    "checkIn": "Right now, how much is \"Do I still need meetings\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Meetings Keep You Strong and Connected",
     "learnBody": "Regular meetings are essential for your ongoing recovery. They help you stay honest with yourself and connected to a supportive community. You become a role model, someone newer members can look to for guidance. Attending just one meeting a week provides substantial protection for your sobriety.",
     "activity": {
@@ -4452,8 +4452,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"Why Should I Keep Going to Meetings?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Meetings are a foundation for staying connected and honest in your recovery.",
     "toolFlow": {
       "warningSigns": [
@@ -4488,7 +4488,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 7,
     "order": 3,
     "problem": "What changes with a sponsor?",
-    "checkIn": "Right now, how much is \"What changes with a sponsor\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Sponsorship Changes Your Recovery",
     "learnBody": "Working with a sponsor adds structure and honesty to your recovery journey. They share their experience to help you navigate challenges and stay on track. When you sponsor others, you deepen your own commitment and understanding of recovery principles. This two-way street strengthens everyone involved, building a stronger foundation for lasting change.",
     "activity": {
@@ -4514,8 +4514,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Does Sponsorship Change Recovery?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Sponsorship offers structure, truth, and a deeper commitment to your own recovery by helping others.",
     "toolFlow": {
       "warningSigns": [
@@ -4550,7 +4550,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 5,
     "order": 4,
     "problem": "Why does service work?",
-    "checkIn": "Right now, how much is \"Why does service work\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Help Others, Help Yourself",
     "learnBody": "When you help others, you step outside your own thoughts. This act quickly rebuilds your self-respect. You maintain that good feeling by continuing to give back. It's a cycle that strengthens your recovery every time.",
     "activity": {
@@ -4576,8 +4576,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Can Helping Others Help Me?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Helping someone else can be the most direct way to get out of your own head and feel better about yourself.",
     "toolFlow": {
       "warningSigns": [
@@ -4612,7 +4612,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 6,
     "order": 5,
     "problem": "What can I offer my community?",
-    "checkIn": "Right now, how much is \"What can I offer my community\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Give Back, Build Your Recovery",
     "learnBody": "You might wonder what you have to offer. Giving back doesn't always mean big gestures or lots of time. Share your story when it feels right and you know it's welcome. You can also offer practical help like driving, cooking, or setting up for events. Give only what you can consistently sustain without burning out.",
     "activity": {
@@ -4638,8 +4638,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Do I Give Back?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Start with small, sustainable acts of kindness that you can consistently offer.",
     "toolFlow": {
       "warningSigns": [
@@ -4674,7 +4674,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 7,
     "order": 6,
     "problem": "How do I not lose this?",
-    "checkIn": "Right now, how much is \"How do I not lose this\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Keep Your Recovery Secure",
     "learnBody": "You've worked hard to build your recovery. Now you need to protect it. That means guarding your sleep, choosing your companions wisely, and sticking to a healthy schedule. Say no to anything that puts your progress at risk. Take time each month to look over your plan and make sure it still works for you.",
     "activity": {
@@ -4700,8 +4700,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Do I Protect Everything I've Built?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Protect your recovery by actively guarding your sleep, your people, and your schedule, and by regularly reviewing your plan.",
     "toolFlow": {
       "warningSigns": [
@@ -4736,7 +4736,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 5,
     "order": 7,
     "problem": "What about the next crisis?",
-    "checkIn": "Right now, how much is \"What about the next crisis\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Prepare for Life's Challenges",
     "learnBody": "Hard times will come again, that's just how life works. Having a clear plan helps you navigate them without losing your way. You can use the same core strategies that helped you before. Reach out for support as soon as trouble starts. Don't wait until things get overwhelming.",
     "activity": {
@@ -4762,8 +4762,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"What Do I Do When Life Gets Hard Again?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Anticipate that hard times will return and have a plan ready to put into action.",
     "toolFlow": {
       "warningSigns": [
@@ -4798,7 +4798,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 6,
     "order": 8,
     "problem": "How do I mark milestones?",
-    "checkIn": "Right now, how much is \"How do I mark milestones\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Mark Your Milestones",
     "learnBody": "Marking your milestones helps you see your progress. Each step forward, like 30, 60, or 90 days sober, shows how far you've come. These markers are important reminders of your hard work. You should celebrate your achievements, but always do it sober and with your support network. Recognizing these moments strengthens your commitment to recovery.",
     "activity": {
@@ -4824,8 +4824,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Should I Celebrate My Progress?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Acknowledge every step you take in your recovery, and celebrate it sober with your support network.",
     "toolFlow": {
       "warningSigns": [
@@ -4860,7 +4860,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 7,
     "order": 9,
     "problem": "What have I actually done?",
-    "checkIn": "Right now, how much is \"What have I actually done\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "See How Far You've Come",
     "learnBody": "Take a moment to reflect on your journey. Think about where you started and everything you have accomplished since then. Notice the new tools you've learned, the days you've stayed committed, and the stronger connections you've built. Recognizing your real progress helps you keep moving forward.",
     "activity": {
@@ -4886,8 +4886,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"How Far Have I Come?\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Your past successes are real proof of your strength and dedication.",
     "toolFlow": {
       "warningSigns": [
@@ -4922,7 +4922,7 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
     "minutes": 5,
     "order": 10,
     "problem": "What's my forever plan?",
-    "checkIn": "Right now, how much is \"What's my forever plan\" a struggle for you?",
+    "checkIn": "",
     "learnTitle": "Build Your Lasting Recovery Plan",
     "learnBody": "A lifelong recovery plan helps you stay on track. It includes your support people, your daily routines, and your warning signs. You also write down your purpose for living sober. Make sure you update this plan regularly, about every three months, and share a copy with someone you trust.",
     "activity": {
@@ -4948,8 +4948,8 @@ export const PORTED_RECOVERY_LESSONS: RecoveryLesson[] = [
         }
       ]
     },
-    "adelReflection": "Adel can help you go deeper on \"My Lifelong Recovery Plan.\" — or just listen. Nothing you say here gets you in trouble.",
-    "adelQuestion": "What part of this feels hardest for you?",
+    "adelReflection": "",
+    "adelQuestion": "",
     "insight": "Your lifelong recovery plan is a living document that guides you through challenges and celebrates your progress.",
     "toolFlow": {
       "warningSigns": [
