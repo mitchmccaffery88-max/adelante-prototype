@@ -55,6 +55,13 @@ export const recoveryUiEn = {
   recEsReviewFlag:
     "Spanish translation is a first pass and is pending review by a native or professional translator. The English version is the reviewed source.",
   recEsReviewBadge: "Translation pending review",
+  // Module 9 — un-authored content. Honest fallbacks, not invented copy.
+  recContentPendingNote:
+    "This lesson's check-in and reflection questions haven't been written yet. A clinical content reviewer is authoring them. Everything else on this page is real, and what you save still counts.",
+  recContentPendingBadge: "Questions pending authoring",
+  recAdelFallbackReflection:
+    "Adel can talk this through with you. Nothing you say here gets you in trouble.",
+  recAdelFallbackQuestion: "What's on your mind after reading this?",
   modCompleted: "Completed",
   modPlaceholderBadge: "Placeholder content",
   modAbout: "About",
