@@ -42,9 +42,12 @@ sentences, one shared `learnTitle`/`insight`, templated decision feedback).
 `src/lib/__tests__/recoveryModuleOneAuthoring.test.ts` guards both: 10 ordered
 lessons in Module 1, and no repeated sentence / reused feedback anywhere.
 
-**OPEN**: "Living Recovery" / "Protect My Recovery for Life" is modelled as
-`LIVING_RECOVERY_WRAPPER` (`unconfirmed: true`), a closing section over the eight
-— NOT a 9th module. Needs a human decision before lessons are written for it.
+**Module 9 "Living Recovery"** is a REAL 9th module (`living-recovery`,
+order 9), authored in Batch 9 via
+`src/lib/recovery.livingRecovery.authored.ts` (Cathy, 2026-08-26). The catalog
+is now 9 modules / 90 lessons, all 90 passing `originalityErrors` with 90/90
+distinct warning-sign, support-people, today-action and activity-choice sets
+(`recoveryCatalogFinalSweep.test.ts`).
 
 **Progress display** reads the same engagement data, nothing new: module list
 shows "N of M lessons complete" + a bar for modules WITH lessons; modules with
