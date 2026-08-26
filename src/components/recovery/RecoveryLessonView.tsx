@@ -263,6 +263,15 @@ export function RecoveryLessonView({
       minutes={lesson.minutes}
       completed={completed}
       {...(lesson.placeholder ? { placeholder: true } : {})}
+      {...(questionsPending
+        ? {
+            badges: (
+              <span className="rounded-full border border-gold px-2 py-0.5 text-xs text-muted-foreground">
+                {t("recContentPendingBadge")}
+              </span>
+            ),
+          }
+        : {})}
       notice={
         <div className="space-y-2 pt-1">
           <p
