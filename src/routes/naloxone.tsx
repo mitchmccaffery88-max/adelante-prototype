@@ -4,7 +4,7 @@ import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
-import { BadgeCheck, LifeBuoy, Phone, ShieldPlus, TriangleAlert } from "lucide-react";
+import { BadgeCheck, HeartHandshake, LifeBuoy, Phone, ShieldPlus, TriangleAlert, Waves } from "lucide-react";
 import {
   NALOXONE_ACCESS_REVIEW,
   NALOXONE_STEPS,
