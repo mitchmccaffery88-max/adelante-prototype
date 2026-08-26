@@ -6,6 +6,9 @@ import { describe, expect, it } from "vitest";
 import { liveRecoveryModules, liveLessonsInModule } from "@/lib/contentCatalog";
 import { originalityErrors } from "@/lib/contentOriginality";
 
+// Module 9 "living-recovery" is deliberately NOT in this list: it is
+// un-authored content awaiting Cathy, and is guarded by the placeholder test
+// below instead of the authored-content gate.
 const AUTHORED_MODULES = [
   "first-days-out",
   "finding-my-people",
@@ -15,18 +18,27 @@ const AUTHORED_MODULES = [
   "building-a-life-that-works",
   "when-recovery-gets-hard",
   "becoming-someone-new",
-  // Batch 9 — the module the eight-module sweep never reached.
-  "living-recovery",
 ];
 
 const allLessons = () => AUTHORED_MODULES.flatMap((id) => liveLessonsInModule(id));
 
 describe("Recovery Journey catalog — final content-authoring sweep", () => {
-  it("covers all nine authored modules and ninety lessons", () => {
+  it("covers all eight authored modules and eighty lessons", () => {
     const ids = liveRecoveryModules().map((m) => m.id);
     for (const id of AUTHORED_MODULES) expect(ids).toContain(id);
-    expect(allLessons()).toHaveLength(90);
+    expect(allLessons()).toHaveLength(80);
   });
+
+  it("keeps Module 9 honestly empty rather than templated", () => {
+    const nine = liveLessonsInModule("living-recovery");
+    expect(nine).toHaveLength(10);
+    for (const l of nine) {
+      expect(l.checkIn.trim(), l.id).toBe("");
+      expect(l.adelReflection.trim(), l.id).toBe("");
+      expect(l.adelQuestion.trim(), l.id).toBe("");
+    }
+  });
+
 
   it("has zero remaining instances of the original filler patterns", () => {
     for (const l of allLessons()) {
