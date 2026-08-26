@@ -276,6 +276,14 @@ export function RecoveryLessonView({
               {completed && hasSaved ? ` ${t("recLessonSelectionsRestored")}` : ""}
             </span>
           </p>
+          {questionsPending && (
+            <p
+              data-testid="recovery-content-pending"
+              className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground"
+            >
+              {t("recContentPendingNote")}
+            </p>
+          )}
           {esPending && (
             <p className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground">
               {t("recEsReviewFlag")}
