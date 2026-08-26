@@ -37,3 +37,21 @@ describe("peer specialist messaging", () => {
     expect(AdelanteEHR.listCareMessages(pid).at(-1)!.body).toBe("I want to kill myself");
   });
 });
+
+// §Standalone route items — /peer must be a VIEW of the one thread.
+describe("/peer focused view", () => {
+  it("filters the same thread instead of creating a second one", async () => {
+    const { peerStrand } = await import("@/components/patient/PeerChatPage");
+    const pid = newPatient();
+    AdelanteEHR.sendPatientMessage(pid, "hi Andre");
+    AdelanteEHR.sendStaffMessage(pid, "Andre Willis", "hey, I'm here", "peer_specialist");
+    AdelanteEHR.sendStaffMessage(pid, "Dr. Bagga", "labs are back", "pmhnp");
+
+    const all = AdelanteEHR.listCareMessages(pid);
+    const strand = peerStrand(all);
+    expect(all).toHaveLength(3);
+    expect(strand.map((m) => m.body)).toEqual(["hi Andre", "hey, I'm here"]);
+    // Every message in the focused view is a row of the SAME thread.
+    expect(strand.every((m) => all.includes(m))).toBe(true);
+  });
+});

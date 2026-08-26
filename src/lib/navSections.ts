@@ -576,6 +576,9 @@ export type PatientRoute =
   // §Standalone route items — the daily mood check-in owns a real route,
   // reached from the /home entry card (same precedent as /craving and /slip).
   | "/checkin"
+  // §Standalone route items — a focused view of the SAME care-team thread,
+  // scoped to the peer specialist. Reached from My Care's messages card.
+  | "/peer"
   | "/resources/saved";
 
 export interface PatientNavEntry {
@@ -636,13 +639,16 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     populations: ["pre_release_ji", "post_release_ji"],
   },
   {
+    // §Standalone route items — this entry already existed and pointed at the
+    // My Care messages anchor. It now points at the real focused view of that
+    // SAME thread; no new nav slot was invented.
     id: "peer-navigator",
     labelKey: "navPeerNavigator",
-    to: "/home",
-    hash: "care-messages",
+    to: "/peer",
     icon: HandHeart,
     mobile: false,
   },
+
   { id: "appointments", labelKey: "navAppointments", to: "/schedule", icon: Calendar, mobile: false },
   // §P1 My Care de-clutter — real destinations, not `/home` anchors. The
   // duplicated tiles were removed from My Care, so an anchor would now scroll

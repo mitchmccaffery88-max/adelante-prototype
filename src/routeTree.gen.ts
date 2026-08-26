@@ -54,6 +54,7 @@ import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
+import { Route as PeerRouteImport } from './routes/peer'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
@@ -306,6 +307,11 @@ const PatientRoute = PatientRouteImport.update({
   path: '/patient',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PeerRoute = PeerRouteImport.update({
+  id: '/peer',
+  path: '/peer',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PreReleaseRoute = PreReleaseRouteImport.update({
   id: '/pre-release',
   path: '/pre-release',
@@ -485,6 +491,7 @@ export interface FileRoutesByFullPath {
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
@@ -558,6 +565,7 @@ export interface FileRoutesByTo {
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
@@ -630,6 +638,7 @@ export interface FileRoutesById {
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
+  '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
@@ -705,6 +714,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
+    | '/peer'
     | '/pre-release'
     | '/profile'
     | '/recovery-journey'
@@ -778,6 +788,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
+    | '/peer'
     | '/pre-release'
     | '/profile'
     | '/recovery-journey'
@@ -849,6 +860,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
+    | '/peer'
     | '/pre-release'
     | '/profile'
     | '/recovery-journey'
@@ -923,6 +935,7 @@ export interface RootRouteChildren {
   NaloxoneRoute: typeof NaloxoneRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
+  PeerRoute: typeof PeerRoute
   PreReleaseRoute: typeof PreReleaseRoute
   ProfileRoute: typeof ProfileRoute
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
@@ -1259,6 +1272,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PatientRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/peer': {
+      id: '/peer'
+      path: '/peer'
+      fullPath: '/peer'
+      preLoaderRoute: typeof PeerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/pre-release': {
       id: '/pre-release'
       path: '/pre-release'
@@ -1526,6 +1546,7 @@ const rootRouteChildren: RootRouteChildren = {
   NaloxoneRoute: NaloxoneRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
+  PeerRoute: PeerRoute,
   PreReleaseRoute: PreReleaseRoute,
   ProfileRoute: ProfileRoute,
   RecoveryJourneyRoute: RecoveryJourneyRoute,

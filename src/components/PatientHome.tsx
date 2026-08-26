@@ -15,7 +15,7 @@ import {
   Sparkles,
   Bell,
 } from "lucide-react";
-import { Users, MessageSquare, HandHeart } from "lucide-react";
+import { Users, MessageSquare, HandHeart, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
@@ -355,8 +355,21 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
       {/* §Peer messaging — one thread, honest sender identity. There is no
           second peer-only channel: the existing care-team thread already IS
           the member's messaging surface, and splitting it would fragment
-          crisis detection, unread state and the staff queue. */}
+          crisis detection, unread state and the staff queue. `/peer` is a
+          focused VIEW of this same thread, not another one. */}
       <p className="mt-1 text-xs text-muted-foreground">{t("msgPeerNote")}</p>
+      <Button
+        asChild
+        variant="outline"
+        size="sm"
+        className="mt-2 min-h-11 rounded-2xl"
+        data-testid="peer-chat-entry"
+      >
+        <Link to="/peer">
+          <HeartHandshake className="mr-1 h-4 w-4" aria-hidden="true" /> Talk with a peer specialist
+        </Link>
+      </Button>
+
       <div className="mt-3">
         <CareMessageThread
           messages={messages.slice(-8)}

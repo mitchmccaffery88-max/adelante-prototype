@@ -9,3 +9,4 @@ type: feature
 - Andre Willis (`s-peer1`, CPSS) is the real peer identity — never invent another.
 - Crisis language in this channel uses the one real mechanism (`scanTextForCrisis` → `flagCrisis`, `message_pattern`) after commit; the message is still delivered verbatim.
 - Full audited map of every free-text surface, crisis wiring and known gaps: `mem/architecture/message-routing.md`.
+- `/peer` (`src/routes/peer.tsx` + `src/components/patient/PeerChatPage.tsx`) is a FOCUSED VIEW of that same thread — `peerStrand()` filters to patient messages + `authorRole === "peer_specialist"` replies, and the composer calls the same `sendPatientMessage` + `scanTextForCrisis`. No second store, no second channel. The pre-existing "Peer Specialist" nav entry (`peer-navigator`) now points here instead of `/home#care-messages`; My Care's messages card also links here.
