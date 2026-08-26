@@ -27,3 +27,4 @@ Staff surfaces are gated by the `roles.ts` record-class matrix and registered in
 - [Recovery stage model](mem://features/recovery-stage-model) — 5 person-set stages + signals, pending clinical review, never auto-derived
 - [Recovery start date](mem://features/recovery-start-date) — patient-private sobriety date in selfTracking.ts (NOT the EHR, pending Dr. Bagga's clinical validation), never auto-reset after a slip
 - [Lesson-player Phase D](mem://features/lesson-player-phase-d) — optional per-lesson rating override, learn stages, if/then, 4-part enrichment; ship empty, Cathy authors via /admin-content
+- [My toolkit](mem://features/my-toolkit) — /toolkit read-only aggregation of Part B picks + saved takeaways, by tool type, entry point on Recovery Journey
