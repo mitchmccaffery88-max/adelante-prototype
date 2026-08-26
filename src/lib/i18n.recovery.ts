@@ -187,6 +187,12 @@ export const recoveryUiEs: Record<keyof typeof recoveryUiEn, string> = {
   recEsReviewFlag:
     "La traducción al español es un primer borrador y está pendiente de revisión por una persona traductora nativa o profesional. La versión en inglés es la fuente revisada.",
   recEsReviewBadge: "Traducción pendiente de revisión",
+  recContentPendingNote:
+    "Las preguntas de esta lección todavía no están escritas. Una persona revisora de contenido clínico las está redactando. Todo lo demás en esta página es real, y lo que guardes cuenta igual.",
+  recContentPendingBadge: "Preguntas pendientes de redacción",
+  recAdelFallbackReflection:
+    "Adel puede conversar esto contigo. Nada de lo que digas aquí te mete en problemas.",
+  recAdelFallbackQuestion: "¿Qué se te queda en la mente después de leer esto?",
   modCompleted: "Completada",
   modPlaceholderBadge: "Contenido de ejemplo",
   modAbout: "Unos",
