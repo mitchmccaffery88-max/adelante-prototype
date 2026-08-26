@@ -293,6 +293,8 @@ const dict = {
     schPhone: "Phone",
     schRequest: "Request session",
     schSafety: "Your session is private and protected. Free with Medi-Cal.",
+    schNotReported:
+      "Booking an appointment is not reported to a probation or parole officer, and it is not reported to the court. Nothing is shared with them unless you sign a release asking us to.",
     schErrPickTime: "Pick a counselor and a time.",
     schErrWeekday: "Pick a weekday between 9:00 and 17:00.",
     schRequested: "Session requested",
@@ -651,6 +653,8 @@ const dict = {
     schPhone: "Teléfono",
     schRequest: "Solicitar sesión",
     schSafety: "Tu sesión es privada y protegida. Gratis con Medi-Cal.",
+    schNotReported:
+      "Reservar una cita no se reporta a un oficial de libertad condicional ni a la corte. No se comparte nada con ellos a menos que firmes una autorización pidiéndonos que lo hagamos.",
     schErrPickTime: "Elige un consejero y un horario.",
     schErrWeekday: "Elige un día entre semana, de 9:00 a 17:00.",
     schRequested: "Sesión solicitada",

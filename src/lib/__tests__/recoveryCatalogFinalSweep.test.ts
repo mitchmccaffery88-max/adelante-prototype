@@ -15,15 +15,17 @@ const AUTHORED_MODULES = [
   "building-a-life-that-works",
   "when-recovery-gets-hard",
   "becoming-someone-new",
+  // Batch 9 — the module the eight-module sweep never reached.
+  "living-recovery",
 ];
 
 const allLessons = () => AUTHORED_MODULES.flatMap((id) => liveLessonsInModule(id));
 
 describe("Recovery Journey catalog — final content-authoring sweep", () => {
-  it("covers all eight authored modules and eighty lessons", () => {
+  it("covers all nine authored modules and ninety lessons", () => {
     const ids = liveRecoveryModules().map((m) => m.id);
     for (const id of AUTHORED_MODULES) expect(ids).toContain(id);
-    expect(allLessons()).toHaveLength(80);
+    expect(allLessons()).toHaveLength(90);
   });
 
   it("has zero remaining instances of the original filler patterns", () => {

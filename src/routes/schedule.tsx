@@ -519,6 +519,13 @@ function SchedulePage() {
           <ShieldCheck className="h-3.5 w-3.5 text-teal mt-0.5" />
           {t("schSafety")}
         </p>
+        <p
+          data-testid="booking-not-reported"
+          className="text-xs text-muted-foreground flex items-start gap-1.5"
+        >
+          <ShieldCheck className="h-3.5 w-3.5 text-teal mt-0.5" />
+          {t("schNotReported")}
+        </p>
       </Card>
       )}
     </div>
