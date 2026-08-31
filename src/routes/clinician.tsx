@@ -41,6 +41,8 @@ import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
+import { unsignedNotes } from "@/lib/dashboardMetrics";
+
 
 export const Route = createFileRoute("/clinician")({
   head: () => ({
@@ -165,18 +167,36 @@ function ClinicianPage() {
   );
   const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
 
+  // §Workspace restructure — two explicit modes. "dashboard" is the daily
+  // operational view (schedule + queue counts + clinical alerts); "chart" is a
+  // single patient's record. Patient-specific context only renders in chart
+  // mode so the dashboard never mixes provider and patient identity.
+  const [mode, setMode] = useState<"dashboard" | "chart">("dashboard");
+  const openChart = (patientId: string) => {
+    if (patientId !== selectedPatientId && !confirmDiscardDrawerEdits()) return;
+    setSelectedPatientId(patientId);
+    setMode("chart");
+  };
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
-      <header className="mb-6 flex flex-wrap items-end justify-between gap-4">
+      <header className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">
             {t("navClinician")}
           </div>
           <h1 className="font-display text-3xl text-navy mt-1">{t("clinTitle")}</h1>
           {clinician && (
-            <div className="mt-1 text-sm text-muted-foreground flex items-center gap-2">
-              <ShieldCheck className="h-4 w-4 text-teal" />
-              Medi-Cal:{" "}
+            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+              <ShieldCheck className="h-4 w-4 text-teal" aria-hidden="true" />
+              <span>
+                Signed in as{" "}
+                <span className="font-medium text-navy">
+                  {clinician.name}, {clinician.credential}
+                </span>
+              </span>
+              {/* Provider-side enrollment (NOT patient coverage — patient
+                  coverage lives on the chart header in chart mode). */}
               <Badge
                 className={
                   clinician.mediCalStatus === "active"
@@ -186,7 +206,7 @@ function ClinicianPage() {
                       : "bg-destructive/15 text-destructive border-0"
                 }
               >
-                {clinician.mediCalStatus}
+                Medi-Cal enrollment: {clinician.mediCalStatus}
               </Badge>
             </div>
           )}
@@ -203,105 +223,66 @@ function ClinicianPage() {
             ))}
           </SelectContent>
         </Select>
-        {/* §Shift count — cross-patient controlled reconciliation. */}
-        <Link
-          to="/shift-count"
-          className="text-xs text-teal underline-offset-2 hover:underline self-center"
-        >
-          Controlled shift count
-        </Link>
-        {/* §Cosign inbox — cross-patient queue of notes awaiting cosignature. */}
-        {/* §Inbox — unsigned notes + provider requests. */}
-        <Link
-          to="/inbox"
-          className="text-xs text-teal underline-offset-2 hover:underline self-center"
-        >
-          Inbox
-        </Link>
-        <Link
-          to="/cosign-inbox"
-          className="text-xs text-teal underline-offset-2 hover:underline self-center"
-        >
-          Cosign inbox
-        </Link>
-        {/* §Worklist Phase A — cross-facility operational task table. */}
-        <Link
-          to="/worklist"
-          className="text-xs text-teal underline-offset-2 hover:underline self-center"
-        >
-          Worklist
-        </Link>
-        {/* §Crisis escalation — cross-patient queue of open escalations. */}
-        <Link
-          to="/crisis-queue"
-          className="text-xs text-destructive underline-offset-2 hover:underline self-center"
-        >
-          Crisis queue
-        </Link>
-        {/* §Messaging Phase 2 — cross-patient queue of unanswered patient messages. */}
-        <Link
-          to="/message-queue"
-          className="text-xs text-teal underline-offset-2 hover:underline self-center"
-        >
-          Message queue
-        </Link>
       </header>
 
-      {/* §Quality pass Group A — supervised roles see live supervision status. */}
-      <SupervisionBanner />
-
-      {clinician?.licenseExpiresOn &&
-        (() => {
-          const daysUntil = Math.ceil(
-            (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
-          );
-          if (daysUntil > 30) return null;
-          const expired = daysUntil < 0;
-          return (
-            <div
-              role="alert"
-              className={
-                "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
-                (expired
-                  ? "border-destructive/40 bg-destructive/10 text-destructive"
-                  : "border-gold/40 bg-gold/10 text-navy")
-              }
-            >
-              <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
-              <div>
-                <div className="font-semibold">
-                  {expired
-                    ? "License expired — booking is blocked"
-                    : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
-                </div>
-                <div className="text-xs opacity-80">
-                  Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing
-                  coordinator to renew.
-                </div>
-              </div>
-            </div>
-          );
-        })()}
-
-      <Tabs defaultValue="schedule" className="w-full">
-        <div className="mb-4 -mx-4 px-4 sm:mx-0 sm:px-0 overflow-x-auto snap-x snap-mandatory">
+      <Tabs value={mode} onValueChange={(v) => setMode(v as "dashboard" | "chart")} className="w-full">
+        {/* §Mode toggle — pinned directly under the page header, above all
+            content, so it is never below the fold. */}
+        <div className="sticky top-[64px] z-20 -mx-4 mb-4 border-b bg-background/95 px-4 py-2 backdrop-blur sm:mx-0 sm:px-0">
           <TabsList className="w-max min-w-full sm:w-auto">
-            <TabsTrigger value="schedule" className="whitespace-nowrap snap-start">
-              <CalIcon className="h-4 w-4 mr-1.5" /> {t("clinSchedule")}
+            <TabsTrigger value="dashboard" className="whitespace-nowrap">
+              <CalIcon className="h-4 w-4 mr-1.5" /> Dashboard
             </TabsTrigger>
-            <TabsTrigger value="record" className="whitespace-nowrap snap-start">
-              <FileText className="h-4 w-4 mr-1.5" /> Patient record
+            <TabsTrigger value="chart" className="whitespace-nowrap">
+              <FileText className="h-4 w-4 mr-1.5" /> Patient chart
             </TabsTrigger>
           </TabsList>
         </div>
 
-        <TabsContent value="schedule">
+        <TabsContent value="dashboard">
+          {/* §Queue counts — the one canonical at-a-glance row. Replaces the
+              old scattered text links; the sidebar remains canonical nav. */}
+          <QueueCountRow patients={patients} />
+
+          {/* §Quality pass Group A — supervised roles see live supervision status. */}
+          <SupervisionBanner />
+
+          {clinician?.licenseExpiresOn &&
+            (() => {
+              const daysUntil = Math.ceil(
+                (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
+              );
+              if (daysUntil > 30) return null;
+              const expired = daysUntil < 0;
+              return (
+                <div
+                  role="alert"
+                  className={
+                    "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
+                    (expired
+                      ? "border-destructive/40 bg-destructive/10 text-destructive"
+                      : "border-gold/40 bg-gold/10 text-navy")
+                  }
+                >
+                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
+                  <div>
+                    <div className="font-semibold">
+                      {expired
+                        ? "License expired — booking is blocked"
+                        : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
+                    </div>
+                    <div className="text-xs opacity-80">
+                      Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing
+                      coordinator to renew.
+                    </div>
+                  </div>
+                </div>
+              );
+            })()}
+
           <div className="grid lg:grid-cols-3 gap-6">
             <div className="lg:col-span-2 space-y-3">
               <h2 className="font-display text-lg text-navy">{t("clinAppointments")}</h2>
-              <RescreenDuePanel
-                patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))}
-              />
               {appts.length === 0 && (
                 <Card className="p-6 text-sm text-muted-foreground">{t("clinNoAppts")}</Card>
               )}
@@ -315,6 +296,7 @@ function ClinicianPage() {
                       patients={patients}
                       launch={launch}
                       endSession={endSession}
+                      onOpenChart={openChart}
                       t={t}
                     />
                   ))}
@@ -330,6 +312,7 @@ function ClinicianPage() {
                       patients={patients}
                       launch={launch}
                       endSession={endSession}
+                      onOpenChart={openChart}
                       t={t}
                     />
                   ))}
@@ -345,6 +328,7 @@ function ClinicianPage() {
                       patients={patients}
                       launch={launch}
                       endSession={endSession}
+                      onOpenChart={openChart}
                       t={t}
                     />
                   ))}
@@ -352,8 +336,13 @@ function ClinicianPage() {
               )}
             </div>
 
-            {/* Book + availability */}
+            {/* Action items + booking */}
             <div className="space-y-3">
+              {/* §Clinical alerts — action items that are NOT appointments. */}
+              <h2 className="font-display text-lg text-navy">Clinical alerts &amp; action items</h2>
+              <RescreenDuePanel
+                patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))}
+              />
               <ProviderSwitchAlerts
                 clinicianId={clinicianId}
                 onOpen={(pid) => {
@@ -363,7 +352,9 @@ function ClinicianPage() {
                   setDrawerOpen(true);
                 }}
               />
-              <RefillReviewCard />
+              <div id="refill-requests" className="scroll-mt-32">
+                <RefillReviewCard />
+              </div>
               <NurseRefusalWorklistSection />
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
@@ -529,15 +520,23 @@ function ClinicianPage() {
           </div>
         </TabsContent>
 
-        <TabsContent value="record">
-          <PatientPicker
-            patients={patients}
-            value={selectedPatientId}
-            onChange={(id) => {
-              if (id === selectedPatientId) return;
-              if (!confirmDiscardDrawerEdits()) return;
-              setSelectedPatientId(id);
-            }}
+        <TabsContent value="chart">
+          {/* §Chart mode — patient identity, coverage, and identifiers live
+              here only. */}
+          <ChartHeader
+            patient={selectedPatient}
+            onBack={() => setMode("dashboard")}
+            picker={
+              <PatientPicker
+                patients={patients}
+                value={selectedPatientId}
+                onChange={(id) => {
+                  if (id === selectedPatientId) return;
+                  if (!confirmDiscardDrawerEdits()) return;
+                  setSelectedPatientId(id);
+                }}
+              />
+            }
           />
           {selectedPatient && (
             <div className="mt-4 space-y-4">
@@ -618,6 +617,146 @@ function ClinicianPage() {
   );
 }
 
+/**
+ * §Queue counts — one compact, scannable row of live counts. Each badge links
+ * to the real queue page; the left sidebar stays the canonical navigation, this
+ * is the "what needs me right now" signal.
+ */
+function QueueCountRow({ patients }: { patients: ReturnType<typeof AdelanteEHR.listPatients> }) {
+  const crisis = useEhr(
+    () =>
+      AdelanteEHR.listOpenCrisisEscalations().length +
+      AdelanteEHR.listAnonymousCrisisAlerts().length,
+  );
+  const cosign = useEhr(() => AdelanteEHR.listNotesAwaitingCosign().length);
+  const messages = useEhr(() => AdelanteEHR.listUnreadMessageThreads().length);
+  const refills = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }).length);
+  const worklist = useEhr(
+    () => AdelanteEHR.listCaseTasks().filter((t) => t.status === "open").length,
+  );
+  const unsigned = unsignedNotes(patients).length;
+
+  const items = [
+    { id: "crisis", label: "Crisis", count: crisis, to: "/crisis-queue" as const, urgent: true },
+    { id: "unsigned", label: "Unsigned notes", count: unsigned, to: "/inbox" as const },
+    { id: "cosign", label: "Cosign inbox", count: cosign, to: "/cosign-inbox" as const },
+    { id: "messages", label: "Messages", count: messages, to: "/message-queue" as const },
+    { id: "worklist", label: "Worklist", count: worklist, to: "/worklist" as const },
+  ];
+
+  return (
+    <div
+      aria-label="Queue counts"
+      className="mb-5 flex flex-wrap items-center gap-2"
+      data-testid="clinician-queue-counts"
+    >
+      {items.map((i) => {
+        const hot = i.urgent && i.count > 0;
+        return (
+          <Link
+            key={i.id}
+            to={i.to}
+            className={
+              "inline-flex items-center gap-2 rounded-full border px-3 py-1.5 text-xs font-medium transition-colors " +
+              (hot
+                ? "border-destructive/50 bg-destructive/10 text-destructive hover:bg-destructive/15"
+                : "bg-card text-foreground/80 hover:bg-secondary")
+            }
+          >
+            {i.label}
+            <span
+              className={
+                "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums " +
+                (hot
+                  ? "bg-destructive text-destructive-foreground"
+                  : i.count > 0
+                    ? "bg-navy text-navy-foreground"
+                    : "bg-muted text-muted-foreground")
+              }
+            >
+              {i.count}
+            </span>
+          </Link>
+        );
+      })}
+      <a
+        href="#refill-requests"
+        className="inline-flex items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary"
+      >
+        Refill requests
+        <span
+          className={
+            "rounded-full px-1.5 py-0.5 text-[11px] tabular-nums " +
+            (refills > 0 ? "bg-navy text-navy-foreground" : "bg-muted text-muted-foreground")
+          }
+        >
+          {refills}
+        </span>
+      </a>
+      <Link
+        to="/shift-count"
+        className="inline-flex items-center rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary"
+      >
+        Controlled shift count
+      </Link>
+    </div>
+  );
+}
+
+/** Patient identity band — chart mode only. */
+function ChartHeader({
+  patient,
+  picker,
+  onBack,
+}: {
+  patient: ReturnType<typeof AdelanteEHR.getPatient>;
+  picker: React.ReactNode;
+  onBack: () => void;
+}) {
+  return (
+    <Card className="p-4">
+      <div className="flex flex-wrap items-start justify-between gap-3">
+        <div className="min-w-0">
+          {patient ? (
+            <>
+              <div className="font-display text-xl text-navy">
+                {patient.firstName} {patient.lastName}
+              </div>
+              <div className="mt-1 flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
+                <span>DOB {patient.dob}</span>
+                <span aria-hidden="true">·</span>
+                <span>ID {patient.id}</span>
+                <span aria-hidden="true">·</span>
+                <span>Day {patient.episodeDay}/90</span>
+                {patient.coverage && (
+                  <Badge
+                    className={
+                      patient.coverage.status === "active"
+                        ? "bg-success/20 text-success border-0"
+                        : "bg-gold/30 text-navy border-0"
+                    }
+                  >
+                    Medi-Cal: {patient.coverage.status}
+                  </Badge>
+                )}
+              </div>
+            </>
+          ) : (
+            <div className="text-sm text-muted-foreground">Pick a patient to open their chart.</div>
+          )}
+        </div>
+        <div className="flex flex-wrap items-center gap-2">
+          {picker}
+          <Button size="sm" variant="ghost" onClick={onBack}>
+            Back to dashboard
+          </Button>
+        </div>
+      </div>
+    </Card>
+  );
+}
+
+
 function PatientPicker({
   patients,
   value,
@@ -661,12 +800,14 @@ function ApptCard({
   launch,
   t,
   endSession,
+  onOpenChart,
 }: {
   a: ReturnType<typeof AdelanteEHR.appointmentsForClinician>[number];
   patients: ReturnType<typeof AdelanteEHR.listPatients>;
   launch: (id: string) => void;
   t: (k: never) => string;
   endSession: (id: string) => void;
+  onOpenChart?: (patientId: string) => void;
 }) {
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
@@ -678,9 +819,20 @@ function ApptCard({
             <CalIcon className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-medium text-navy">
-              {p?.firstName} {p?.lastName}
-            </div>
+            {onOpenChart && p ? (
+              <button
+                type="button"
+                onClick={() => onOpenChart(p.id)}
+                className="font-medium text-navy underline-offset-2 hover:underline"
+              >
+                {p.firstName} {p.lastName}
+              </button>
+            ) : (
+              <div className="font-medium text-navy">
+                {p?.firstName} {p?.lastName}
+              </div>
+            )}
+
             <div className="text-xs text-muted-foreground">
               <ClientDate value={a.start} /> · {a.durationMin} min
             </div>
