@@ -98,12 +98,15 @@ export function AppShell() {
   // Population-gated entries (e.g. Obligations) are omitted for a general
   // population patient rather than linking into a section that gates itself.
   const patientNav = patientNavForPopulation(PATIENT_NAV, population.track);
+  // §Staff nav leak fix — a staff-owned route is neither patient nor public,
+  // so the desktop strip used to fall through to the PATIENT registry. Staff
+  // surfaces navigate via the left sidebar / Staff dropdown instead.
+  const isStaffSurface =
+    !isPatientSurface && (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/"));
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
-  const showStaffShell =
-    !isPatientSurface &&
-    (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/")) &&
-    staffNav.length > 0;
+  const showStaffShell = isStaffSurface && staffNav.length > 0;
+
 
   return (
     <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
