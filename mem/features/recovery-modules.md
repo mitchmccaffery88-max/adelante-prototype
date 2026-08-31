@@ -42,12 +42,16 @@ sentences, one shared `learnTitle`/`insight`, templated decision feedback).
 `src/lib/__tests__/recoveryModuleOneAuthoring.test.ts` guards both: 10 ordered
 lessons in Module 1, and no repeated sentence / reused feedback anywhere.
 
-**Module 9 "Living Recovery"** is a REAL 9th module (`living-recovery`,
-order 9), authored in Batch 9 via
-`src/lib/recovery.livingRecovery.authored.ts` (Cathy, 2026-08-26). The catalog
-is now 9 modules / 90 lessons, all 90 passing `originalityErrors` with 90/90
-distinct warning-sign, support-people, today-action and activity-choice sets
-(`recoveryCatalogFinalSweep.test.ts`).
+**Module 9 "Living Recovery"** (`living-recovery`, order 9) is a real module
+whose QUESTIONS ARE DELIBERATELY UNWRITTEN. Product decision 2026-08-26: do NOT
+author its content — Cathy is the clinical SME and will author it later. Its
+`checkIn` / `adelReflection` / `adelQuestion` are empty strings in
+`recovery.ported.ts`; `RecoveryLessonView` renders the shared honest fallbacks
+(`libCheckInFallback`, `recAdelFallback*`) plus a "Questions pending authoring"
+badge and `recContentPendingNote` banner. Never refill these with templated or
+invented copy, and never run Module 9 through the authored-content originality
+gate — `recoveryCatalogFinalSweep.test.ts` covers the 8 authored modules
+(80 lessons) and asserts Module 9 stays empty.
 
 **Progress display** reads the same engagement data, nothing new: module list
 shows "N of M lessons complete" + a bar for modules WITH lessons; modules with

@@ -176,9 +176,20 @@ export function RecoveryLessonView({
   const ifThen = hasIfThen(lesson.ifThenPractice) ? lesson.ifThenPractice : undefined;
   const recommends = recommendsForRecoveryLesson(lesson);
 
+  /**
+   * Un-authored lesson questions (Module 9 today). We show the SAME honest
+   * fallbacks the Library already uses for lessons with no authored check-in,
+   * rather than templated text that pretends to be lesson-specific content.
+   */
+  const checkInText = rt(`rec.${id}.checkIn`, lesson.checkIn).trim();
+  const adelReflectionText = rt(`rec.${id}.adelReflection`, lesson.adelReflection).trim();
+  const adelQuestionText = rt(`rec.${id}.adelQuestion`, lesson.adelQuestion).trim();
+  const questionsPending = !checkInText && !adelQuestionText;
+
   const steps: ModuleStep[] = [
     { kind: "text", label: t("recStepProblem"), body: rt(`rec.${id}.problem`, lesson.problem) },
-    { kind: "text", label: t("recStepCheckIn"), body: rt(`rec.${id}.checkIn`, lesson.checkIn) },
+    { kind: "text", label: t("recStepCheckIn"), body: checkInText || t("libCheckInFallback") },
+
     // §Phase C — "before" ratings.
     { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },
     {
@@ -206,8 +217,8 @@ export function RecoveryLessonView({
     {
       kind: "adel",
       label: t("recStepReflect"),
-      reflection: rt(`rec.${id}.adelReflection`, lesson.adelReflection),
-      question: rt(`rec.${id}.adelQuestion`, lesson.adelQuestion),
+      reflection: adelReflectionText || t("recAdelFallbackReflection"),
+      question: adelQuestionText || t("recAdelFallbackQuestion"),
       recommends,
     },
     {
@@ -252,6 +263,15 @@ export function RecoveryLessonView({
       minutes={lesson.minutes}
       completed={completed}
       {...(lesson.placeholder ? { placeholder: true } : {})}
+      {...(questionsPending
+        ? {
+            badges: (
+              <span className="rounded-full border border-gold px-2 py-0.5 text-xs text-muted-foreground">
+                {t("recContentPendingBadge")}
+              </span>
+            ),
+          }
+        : {})}
       notice={
         <div className="space-y-2 pt-1">
           <p
@@ -265,6 +285,14 @@ export function RecoveryLessonView({
               {completed && hasSaved ? ` ${t("recLessonSelectionsRestored")}` : ""}
             </span>
           </p>
+          {questionsPending && (
+            <p
+              data-testid="recovery-content-pending"
+              className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground"
+            >
+              {t("recContentPendingNote")}
+            </p>
+          )}
           {esPending && (
             <p className="rounded-lg border border-gold bg-gold/5 p-3 text-xs text-muted-foreground">
               {t("recEsReviewFlag")}
