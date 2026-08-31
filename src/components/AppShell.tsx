@@ -141,8 +141,11 @@ export function AppShell() {
             )}
           >
 
-            {isPublicSurface
+            {isStaffSurface
+              ? null
+              : isPublicSurface
               ? PUBLIC_NAV.map((n) => (
+
                   <Link
                     key={n.id}
                     to={n.to}
