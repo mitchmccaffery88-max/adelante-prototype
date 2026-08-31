@@ -137,9 +137,10 @@ export function AppShell() {
           <nav
             className={cn(
               "items-center gap-1 ml-4",
-              isPatientSurface ? "hidden" : "hidden md:flex",
+              isPatientSurface || isStaffSurface ? "hidden" : "hidden md:flex",
             )}
           >
+
             {isPublicSurface
               ? PUBLIC_NAV.map((n) => (
                   <Link
