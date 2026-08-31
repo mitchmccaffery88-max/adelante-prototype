@@ -798,12 +798,14 @@ function ApptCard({
   launch,
   t,
   endSession,
+  onOpenChart,
 }: {
   a: ReturnType<typeof AdelanteEHR.appointmentsForClinician>[number];
   patients: ReturnType<typeof AdelanteEHR.listPatients>;
   launch: (id: string) => void;
   t: (k: never) => string;
   endSession: (id: string) => void;
+  onOpenChart?: (patientId: string) => void;
 }) {
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
@@ -815,9 +817,20 @@ function ApptCard({
             <CalIcon className="h-5 w-5" />
           </div>
           <div>
-            <div className="font-medium text-navy">
-              {p?.firstName} {p?.lastName}
-            </div>
+            {onOpenChart && p ? (
+              <button
+                type="button"
+                onClick={() => onOpenChart(p.id)}
+                className="font-medium text-navy underline-offset-2 hover:underline"
+              >
+                {p.firstName} {p.lastName}
+              </button>
+            ) : (
+              <div className="font-medium text-navy">
+                {p?.firstName} {p?.lastName}
+              </div>
+            )}
+
             <div className="text-xs text-muted-foreground">
               <ClientDate value={a.start} /> · {a.durationMin} min
             </div>
