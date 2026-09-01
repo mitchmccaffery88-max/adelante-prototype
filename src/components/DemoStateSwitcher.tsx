@@ -205,6 +205,9 @@ export function DemoStateSwitcher() {
           break;
         }
       }
+      // The advocate shell reads its session from localStorage on mount, so a
+      // switch made while that shell is already mounted has to announce itself.
+      window.dispatchEvent(new Event("adelante:advocate-session"));
       toast.success(STATE_LABEL[state].label, { description: STATE_LABEL[state].hint });
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not switch demo state.");

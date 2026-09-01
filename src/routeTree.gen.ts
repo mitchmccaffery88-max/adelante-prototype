@@ -69,6 +69,18 @@ import { Route as StartRouteImport } from './routes/start'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as WeeklyRecapRouteImport } from './routes/weekly-recap'
 import { Route as WorklistRouteImport } from './routes/worklist'
+import { Route as AdvocateIndexRouteImport } from './routes/advocate.index'
+import { Route as AdvocateAppointmentsRouteImport } from './routes/advocate.appointments'
+import { Route as AdvocateCoordinationRouteImport } from './routes/advocate.coordination'
+import { Route as AdvocateDocumentsRouteImport } from './routes/advocate.documents'
+import { Route as AdvocateLibraryRouteImport } from './routes/advocate.library'
+import { Route as AdvocateMessagesRouteImport } from './routes/advocate.messages'
+import { Route as AdvocateMyDocumentsRouteImport } from './routes/advocate.my-documents'
+import { Route as AdvocateMyProfileRouteImport } from './routes/advocate.my-profile'
+import { Route as AdvocateNextRouteImport } from './routes/advocate.next'
+import { Route as AdvocateResourcesRouteImport } from './routes/advocate.resources'
+import { Route as AdvocateSelfHelpRouteImport } from './routes/advocate.self-help'
+import { Route as AdvocateSupportForMyselfRouteImport } from './routes/advocate.support-for-myself'
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
 import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
@@ -383,6 +395,67 @@ const WorklistRoute = WorklistRouteImport.update({
   path: '/worklist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdvocateIndexRoute = AdvocateIndexRouteImport.update({
+  id: '/',
+  path: '/',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateAppointmentsRoute = AdvocateAppointmentsRouteImport.update({
+  id: '/appointments',
+  path: '/appointments',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateCoordinationRoute = AdvocateCoordinationRouteImport.update({
+  id: '/coordination',
+  path: '/coordination',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateDocumentsRoute = AdvocateDocumentsRouteImport.update({
+  id: '/documents',
+  path: '/documents',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateLibraryRoute = AdvocateLibraryRouteImport.update({
+  id: '/library',
+  path: '/library',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateMessagesRoute = AdvocateMessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateMyDocumentsRoute = AdvocateMyDocumentsRouteImport.update({
+  id: '/my-documents',
+  path: '/my-documents',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateMyProfileRoute = AdvocateMyProfileRouteImport.update({
+  id: '/my-profile',
+  path: '/my-profile',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateNextRoute = AdvocateNextRouteImport.update({
+  id: '/next',
+  path: '/next',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateResourcesRoute = AdvocateResourcesRouteImport.update({
+  id: '/resources',
+  path: '/resources',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateSelfHelpRoute = AdvocateSelfHelpRouteImport.update({
+  id: '/self-help',
+  path: '/self-help',
+  getParentRoute: () => AdvocateRoute,
+} as any)
+const AdvocateSupportForMyselfRoute =
+  AdvocateSupportForMyselfRouteImport.update({
+    id: '/support-for-myself',
+    path: '/support-for-myself',
+    getParentRoute: () => AdvocateRoute,
+  } as any)
 const ApiAdelChatRoute = ApiAdelChatRouteImport.update({
   id: '/api/adel-chat',
   path: '/api/adel-chat',
@@ -468,7 +541,7 @@ export interface FileRoutesByFullPath {
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
-  '/advocate': typeof AdvocateRoute
+  '/advocate': typeof AdvocateRouteWithChildren
   '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -512,6 +585,17 @@ export interface FileRoutesByFullPath {
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
+  '/advocate/appointments': typeof AdvocateAppointmentsRoute
+  '/advocate/coordination': typeof AdvocateCoordinationRoute
+  '/advocate/documents': typeof AdvocateDocumentsRoute
+  '/advocate/library': typeof AdvocateLibraryRoute
+  '/advocate/messages': typeof AdvocateMessagesRoute
+  '/advocate/my-documents': typeof AdvocateMyDocumentsRoute
+  '/advocate/my-profile': typeof AdvocateMyProfileRoute
+  '/advocate/next': typeof AdvocateNextRoute
+  '/advocate/resources': typeof AdvocateResourcesRoute
+  '/advocate/self-help': typeof AdvocateSelfHelpRoute
+  '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
@@ -521,6 +605,7 @@ export interface FileRoutesByFullPath {
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/advocate/': typeof AdvocateIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -543,7 +628,6 @@ export interface FileRoutesByTo {
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
-  '/advocate': typeof AdvocateRoute
   '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -585,6 +669,17 @@ export interface FileRoutesByTo {
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
+  '/advocate/appointments': typeof AdvocateAppointmentsRoute
+  '/advocate/coordination': typeof AdvocateCoordinationRoute
+  '/advocate/documents': typeof AdvocateDocumentsRoute
+  '/advocate/library': typeof AdvocateLibraryRoute
+  '/advocate/messages': typeof AdvocateMessagesRoute
+  '/advocate/my-documents': typeof AdvocateMyDocumentsRoute
+  '/advocate/my-profile': typeof AdvocateMyProfileRoute
+  '/advocate/next': typeof AdvocateNextRoute
+  '/advocate/resources': typeof AdvocateResourcesRoute
+  '/advocate/self-help': typeof AdvocateSelfHelpRoute
+  '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
@@ -594,6 +689,7 @@ export interface FileRoutesByTo {
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/advocate': typeof AdvocateIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/start': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -617,7 +713,7 @@ export interface FileRoutesById {
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
-  '/advocate': typeof AdvocateRoute
+  '/advocate': typeof AdvocateRouteWithChildren
   '/assisted-signup': typeof AssistedSignupRoute
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
@@ -661,6 +757,17 @@ export interface FileRoutesById {
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
+  '/advocate/appointments': typeof AdvocateAppointmentsRoute
+  '/advocate/coordination': typeof AdvocateCoordinationRoute
+  '/advocate/documents': typeof AdvocateDocumentsRoute
+  '/advocate/library': typeof AdvocateLibraryRoute
+  '/advocate/messages': typeof AdvocateMessagesRoute
+  '/advocate/my-documents': typeof AdvocateMyDocumentsRoute
+  '/advocate/my-profile': typeof AdvocateMyProfileRoute
+  '/advocate/next': typeof AdvocateNextRoute
+  '/advocate/resources': typeof AdvocateResourcesRoute
+  '/advocate/self-help': typeof AdvocateSelfHelpRoute
+  '/advocate/support-for-myself': typeof AdvocateSupportForMyselfRoute
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
@@ -670,6 +777,7 @@ export interface FileRoutesById {
   '/start/reconnect': typeof StartReconnectRoute
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
+  '/advocate/': typeof AdvocateIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
@@ -738,6 +846,17 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
+    | '/advocate/appointments'
+    | '/advocate/coordination'
+    | '/advocate/documents'
+    | '/advocate/library'
+    | '/advocate/messages'
+    | '/advocate/my-documents'
+    | '/advocate/my-profile'
+    | '/advocate/next'
+    | '/advocate/resources'
+    | '/advocate/self-help'
+    | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
@@ -747,6 +866,7 @@ export interface FileRouteTypes {
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/advocate/'
     | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
@@ -769,7 +889,6 @@ export interface FileRouteTypes {
     | '/admin-scheduling-rules'
     | '/admin-supervision'
     | '/admin-vendors'
-    | '/advocate'
     | '/assisted-signup'
     | '/auth'
     | '/billing'
@@ -811,6 +930,17 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
+    | '/advocate/appointments'
+    | '/advocate/coordination'
+    | '/advocate/documents'
+    | '/advocate/library'
+    | '/advocate/messages'
+    | '/advocate/my-documents'
+    | '/advocate/my-profile'
+    | '/advocate/next'
+    | '/advocate/resources'
+    | '/advocate/self-help'
+    | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
@@ -820,6 +950,7 @@ export interface FileRouteTypes {
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/advocate'
     | '/resources'
     | '/start'
     | '/print/patient-records/$patientId'
@@ -886,6 +1017,17 @@ export interface FileRouteTypes {
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
+    | '/advocate/appointments'
+    | '/advocate/coordination'
+    | '/advocate/documents'
+    | '/advocate/library'
+    | '/advocate/messages'
+    | '/advocate/my-documents'
+    | '/advocate/my-profile'
+    | '/advocate/next'
+    | '/advocate/resources'
+    | '/advocate/self-help'
+    | '/advocate/support-for-myself'
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
@@ -895,6 +1037,7 @@ export interface FileRouteTypes {
     | '/start/reconnect'
     | '/start/signup'
     | '/start/support'
+    | '/advocate/'
     | '/resources/'
     | '/start/'
     | '/print/patient-records/$patientId'
@@ -918,7 +1061,7 @@ export interface RootRouteChildren {
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
   AdminSupervisionRoute: typeof AdminSupervisionRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
-  AdvocateRoute: typeof AdvocateRoute
+  AdvocateRoute: typeof AdvocateRouteWithChildren
   AssistedSignupRoute: typeof AssistedSignupRoute
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
@@ -1390,6 +1533,90 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof WorklistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/advocate/': {
+      id: '/advocate/'
+      path: '/'
+      fullPath: '/advocate/'
+      preLoaderRoute: typeof AdvocateIndexRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/appointments': {
+      id: '/advocate/appointments'
+      path: '/appointments'
+      fullPath: '/advocate/appointments'
+      preLoaderRoute: typeof AdvocateAppointmentsRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/coordination': {
+      id: '/advocate/coordination'
+      path: '/coordination'
+      fullPath: '/advocate/coordination'
+      preLoaderRoute: typeof AdvocateCoordinationRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/documents': {
+      id: '/advocate/documents'
+      path: '/documents'
+      fullPath: '/advocate/documents'
+      preLoaderRoute: typeof AdvocateDocumentsRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/library': {
+      id: '/advocate/library'
+      path: '/library'
+      fullPath: '/advocate/library'
+      preLoaderRoute: typeof AdvocateLibraryRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/messages': {
+      id: '/advocate/messages'
+      path: '/messages'
+      fullPath: '/advocate/messages'
+      preLoaderRoute: typeof AdvocateMessagesRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/my-documents': {
+      id: '/advocate/my-documents'
+      path: '/my-documents'
+      fullPath: '/advocate/my-documents'
+      preLoaderRoute: typeof AdvocateMyDocumentsRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/my-profile': {
+      id: '/advocate/my-profile'
+      path: '/my-profile'
+      fullPath: '/advocate/my-profile'
+      preLoaderRoute: typeof AdvocateMyProfileRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/next': {
+      id: '/advocate/next'
+      path: '/next'
+      fullPath: '/advocate/next'
+      preLoaderRoute: typeof AdvocateNextRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/resources': {
+      id: '/advocate/resources'
+      path: '/resources'
+      fullPath: '/advocate/resources'
+      preLoaderRoute: typeof AdvocateResourcesRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/self-help': {
+      id: '/advocate/self-help'
+      path: '/self-help'
+      fullPath: '/advocate/self-help'
+      preLoaderRoute: typeof AdvocateSelfHelpRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
+    '/advocate/support-for-myself': {
+      id: '/advocate/support-for-myself'
+      path: '/support-for-myself'
+      fullPath: '/advocate/support-for-myself'
+      preLoaderRoute: typeof AdvocateSupportForMyselfRouteImport
+      parentRoute: typeof AdvocateRoute
+    }
     '/api/adel-chat': {
       id: '/api/adel-chat'
       path: '/api/adel-chat'
@@ -1484,6 +1711,40 @@ declare module '@tanstack/react-router' {
   }
 }
 
+interface AdvocateRouteChildren {
+  AdvocateAppointmentsRoute: typeof AdvocateAppointmentsRoute
+  AdvocateCoordinationRoute: typeof AdvocateCoordinationRoute
+  AdvocateDocumentsRoute: typeof AdvocateDocumentsRoute
+  AdvocateLibraryRoute: typeof AdvocateLibraryRoute
+  AdvocateMessagesRoute: typeof AdvocateMessagesRoute
+  AdvocateMyDocumentsRoute: typeof AdvocateMyDocumentsRoute
+  AdvocateMyProfileRoute: typeof AdvocateMyProfileRoute
+  AdvocateNextRoute: typeof AdvocateNextRoute
+  AdvocateResourcesRoute: typeof AdvocateResourcesRoute
+  AdvocateSelfHelpRoute: typeof AdvocateSelfHelpRoute
+  AdvocateSupportForMyselfRoute: typeof AdvocateSupportForMyselfRoute
+  AdvocateIndexRoute: typeof AdvocateIndexRoute
+}
+
+const AdvocateRouteChildren: AdvocateRouteChildren = {
+  AdvocateAppointmentsRoute: AdvocateAppointmentsRoute,
+  AdvocateCoordinationRoute: AdvocateCoordinationRoute,
+  AdvocateDocumentsRoute: AdvocateDocumentsRoute,
+  AdvocateLibraryRoute: AdvocateLibraryRoute,
+  AdvocateMessagesRoute: AdvocateMessagesRoute,
+  AdvocateMyDocumentsRoute: AdvocateMyDocumentsRoute,
+  AdvocateMyProfileRoute: AdvocateMyProfileRoute,
+  AdvocateNextRoute: AdvocateNextRoute,
+  AdvocateResourcesRoute: AdvocateResourcesRoute,
+  AdvocateSelfHelpRoute: AdvocateSelfHelpRoute,
+  AdvocateSupportForMyselfRoute: AdvocateSupportForMyselfRoute,
+  AdvocateIndexRoute: AdvocateIndexRoute,
+}
+
+const AdvocateRouteWithChildren = AdvocateRoute._addFileChildren(
+  AdvocateRouteChildren,
+)
+
 interface ResourcesRouteChildren {
   ResourcesSavedRoute: typeof ResourcesSavedRoute
   ResourcesIndexRoute: typeof ResourcesIndexRoute
@@ -1537,7 +1798,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
   AdminSupervisionRoute: AdminSupervisionRoute,
   AdminVendorsRoute: AdminVendorsRoute,
-  AdvocateRoute: AdvocateRoute,
+  AdvocateRoute: AdvocateRouteWithChildren,
   AssistedSignupRoute: AssistedSignupRoute,
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,

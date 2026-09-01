@@ -117,7 +117,7 @@ export function AppShell() {
   const showStaffShell = isStaffSurface && staffNav.length > 0;
 
   return (
-    <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
+    <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
       <RouteAccessGuard />
       {/* Demo scenario control — fixed to the viewport so it is reachable at
           any height, not buried in the footer. */}
@@ -320,8 +320,12 @@ export function AppShell() {
                   <Link
                     key={n.id}
                     to={n.to}
-                    hash={n.hash}
-                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px] text-foreground/70 border border-dashed"
+                    className={cn(
+                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px]",
+                      pathname === n.to
+                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
+                        : "text-foreground/70 border border-dashed",
+                    )}
                   >
                     <Icon className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
                     {n.label}
