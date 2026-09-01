@@ -17,6 +17,8 @@ import {
   patientNavForPopulation,
   PUBLIC_NAV,
   isPublicRoute,
+  ADVOCATE_NAV,
+  isAdvocateRoute,
 } from "@/lib/navSections";
 import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
@@ -90,6 +92,9 @@ export function AppShell() {
   const isPatientSurface = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]);
   // §Landing nav — public, pre-sign-in surfaces get their own minimal nav.
   const isPublicSurface = !isPatientSurface && isPublicRoute(pathname);
+  // §Advocate Access Redesign Phase 1 — advocate surfaces are their own shell.
+  // Without this branch `/advocate` fell through to the PATIENT registry.
+  const isAdvocateSurface = !isPatientSurface && isAdvocateRoute(pathname);
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake" && !isPatientSurface;
 
@@ -102,7 +107,9 @@ export function AppShell() {
   // so the desktop strip used to fall through to the PATIENT registry. Staff
   // surfaces navigate via the left sidebar / Staff dropdown instead.
   const isStaffSurface =
-    !isPatientSurface && (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/"));
+    !isPatientSurface &&
+    !isAdvocateSurface &&
+    (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/"));
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
   const showStaffShell = isStaffSurface && staffNav.length > 0;
@@ -143,6 +150,21 @@ export function AppShell() {
 
             {isStaffSurface
               ? null
+              : isAdvocateSurface
+              ? ADVOCATE_NAV.map((n) => {
+                  const Icon = n.icon;
+                  return (
+                    <Link
+                      key={n.id}
+                      to={n.to}
+                      hash={n.hash}
+                      className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
+                    >
+                      <Icon className="h-4 w-4 text-teal" aria-hidden="true" />
+                      {n.label}
+                    </Link>
+                  );
+                })
               : isPublicSurface
               ? PUBLIC_NAV.map((n) => (
 
@@ -305,7 +327,28 @@ export function AppShell() {
         </div>
 
         {/* Mobile nav — staff links only; patient nav lives in the bottom tab bar. */}
-        {!isPatientSurface && !isPublicSurface && (
+        {isAdvocateSurface && (
+          <div className="md:hidden border-t overflow-x-auto">
+            <div className="flex gap-1 px-3 py-2 min-w-max">
+              {ADVOCATE_NAV.map((n) => {
+                const Icon = n.icon;
+                return (
+                  <Link
+                    key={n.id}
+                    to={n.to}
+                    hash={n.hash}
+                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px] text-foreground/70 border border-dashed"
+                  >
+                    <Icon className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
+                    {n.label}
+                  </Link>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
+        {!isPatientSurface && !isPublicSurface && !isAdvocateSurface && (
           <div className="md:hidden border-t overflow-x-auto">
             <div className="flex gap-1 px-3 py-2 min-w-max">
               {staffNav.map((n) => {
