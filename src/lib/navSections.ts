@@ -758,22 +758,18 @@ export function isPublicRoute(pathname: string): boolean {
 // strip fell through to PATIENT_NAV — the same missing-branch bug as the
 // earlier staff-surface leak.
 //
-// The advocate workspace is a single route composed of panels, so these
-// entries are real in-page section anchors, not invented destinations. Each
-// hash matches a section actually rendered by `src/routes/advocate.tsx`.
+// §Advocate Access Redesign Phase 2 (final) — REAL destinations, not anchors.
+// The advocate shell is now a layout route (`/advocate`) with real child
+// routes, exactly like the patient shell: clicking a sidebar entry switches
+// the view, it does not scroll a single long page.
 export interface AdvocateNavEntry {
   id: string;
   label: string;
-  to: "/advocate";
-  hash: string;
+  /** A real route path under the `/advocate` layout. */
+  to: string;
   icon: LucideIcon;
-  /**
-   * §Phase 2 — which mode of the advocate workspace this entry lives in.
-   * "dashboard" = what needs my attention; "support" = the record I'm looking
-   * at. The route reads the hash and switches mode, so a nav click always
-   * lands in the right mode as well as the right section.
-   */
-  mode: "dashboard" | "support";
+  /** Which sidebar group this destination belongs to. */
+  group: "advocate" | "support";
 }
 
 export interface AdvocateNavGroup {
@@ -783,47 +779,47 @@ export interface AdvocateNavGroup {
   entries: readonly AdvocateNavEntry[];
 }
 
-/**
- * §Advocate Access Redesign Phase 2 (corrected) — grouped sidebar registry.
- * Group 1 is about the ADVOCATE; group 2 is about the person they support.
- * Rendered by `AdvocateSidebar`, which reuses the patient sidebar pattern.
- */
 export const ADVOCATE_NAV_GROUPS: readonly AdvocateNavGroup[] = [
   {
     key: "advocate",
     label: "Your access",
     entries: [
+      { id: "access", label: "Access", to: "/advocate", icon: ShieldCheck, group: "advocate" },
       {
-        id: "access",
-        label: "Access",
-        to: "/advocate",
-        hash: "advocate-access",
-        icon: ShieldCheck,
-        mode: "dashboard",
-      },
-      {
-        id: "paperwork",
+        id: "next",
         label: "What you need next",
-        to: "/advocate",
-        hash: "advocate-paperwork",
+        to: "/advocate/next",
         icon: ClipboardSignature,
-        mode: "dashboard",
+        group: "advocate",
       },
+      {
+        id: "my-documents",
+        label: "My documents",
+        to: "/advocate/my-documents",
+        icon: FileStack,
+        group: "advocate",
+      },
+      {
+        id: "my-profile",
+        label: "My profile",
+        to: "/advocate/my-profile",
+        icon: UserCog,
+        group: "advocate",
+      },
+      { id: "library", label: "Library", to: "/advocate/library", icon: BookOpen, group: "advocate" },
       {
         id: "selfhelp",
         label: "Self-help progress",
-        to: "/advocate",
-        hash: "advocate-selfhelp",
+        to: "/advocate/self-help",
         icon: HandHeart,
-        mode: "dashboard",
+        group: "advocate",
       },
       {
         id: "selfcare",
         label: "Support for myself",
-        to: "/advocate",
-        hash: "advocate-selfcare",
-        icon: Users,
-        mode: "dashboard",
+        to: "/advocate/support-for-myself",
+        icon: Heart,
+        group: "advocate",
       },
     ],
   },
@@ -834,34 +830,37 @@ export const ADVOCATE_NAV_GROUPS: readonly AdvocateNavGroup[] = [
       {
         id: "appointments",
         label: "Appointments",
-        to: "/advocate",
-        hash: "advocate-appointments",
+        to: "/advocate/appointments",
         icon: Calendar,
-        mode: "support",
+        group: "support",
       },
       {
         id: "coordination",
         label: "Coordination",
-        to: "/advocate",
-        hash: "advocate-coordination",
+        to: "/advocate/coordination",
         icon: Users,
-        mode: "support",
+        group: "support",
       },
       {
         id: "messages",
         label: "Messages",
-        to: "/advocate",
-        hash: "advocate-messages",
+        to: "/advocate/messages",
         icon: MessageSquare,
-        mode: "support",
+        group: "support",
       },
       {
         id: "documents",
         label: "Documents",
-        to: "/advocate",
-        hash: "advocate-documents",
+        to: "/advocate/documents",
         icon: FileText,
-        mode: "support",
+        group: "support",
+      },
+      {
+        id: "resources",
+        label: "Resources",
+        to: "/advocate/resources",
+        icon: Map,
+        group: "support",
       },
     ],
   },
@@ -872,14 +871,9 @@ export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = ADVOCATE_NAV_GROUPS.fla
   (g) => g.entries,
 );
 
-/** Hashes that belong to the person-being-supported group. */
-export const ADVOCATE_SUPPORT_HASHES: readonly string[] = ADVOCATE_NAV.filter(
-  (n) => n.mode === "support",
-).map((n) => n.hash);
-
 /** Routes that render the advocate shell. */
-export const ADVOCATE_ROUTES: readonly string[] = ["/advocate"];
+export const ADVOCATE_ROUTES: readonly string[] = ADVOCATE_NAV.map((n) => n.to);
 
 export function isAdvocateRoute(pathname: string): boolean {
-  return ADVOCATE_ROUTES.includes(pathname);
+  return pathname === "/advocate" || pathname.startsWith("/advocate/");
 }

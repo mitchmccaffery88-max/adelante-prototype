@@ -4018,6 +4018,13 @@ export interface AdvocateLink {
   /** Who the patient designated. Free text supplied by the DESIGNATOR only. */
   advocateName: string;
   relationship?: string;
+  /**
+   * §Advocate Access Redesign Phase 2 (final) — the advocate's OWN profile
+   * fields, editable by them on `/advocate/my-profile`. Contact/display only:
+   * nothing here participates in the authorization decision.
+   */
+  contactPhone?: string;
+  preferredLanguage?: "en" | "es";
   /** Where the invitation was sent — the advocate's own contact, direct. */
   invitationSentTo: string;
   invitationChannel: "email" | "sms";
@@ -12930,6 +12937,41 @@ export const AdelanteEHR = {
     });
     emit();
     return p;
+  },
+
+  /**
+   * §Advocate Access Redesign Phase 2 (final) — the advocate edits their own
+   * contact details. Deliberately cannot touch `authorizationType`,
+   * `documentRequirements`, status, or anything else the access decision
+   * reads: this is a profile edit, not a permission change.
+   */
+  updateAdvocateProfile(
+    linkId: string,
+    input: {
+      advocateName?: string;
+      relationship?: string;
+      contactPhone?: string;
+      preferredLanguage?: "en" | "es";
+    },
+  ) {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link) throw new Error("This connection no longer exists.");
+    const name = input.advocateName?.trim();
+    if (input.advocateName !== undefined && !name) throw new Error("Your name is required.");
+    if (name) link.advocateName = name;
+    if (input.relationship !== undefined) link.relationship = input.relationship.trim();
+    if (input.contactPhone !== undefined) link.contactPhone = input.contactPhone.trim();
+    if (input.preferredLanguage !== undefined) link.preferredLanguage = input.preferredLanguage;
+    appendAudit({
+      category: "advocate",
+      action: "advocate_profile_updated",
+      patientId: link.patientId,
+      actorRole: "advocate",
+      actorId: link.id,
+      detail: { advocateLinkId: link.id, fields: Object.keys(input) },
+    });
+    emit();
+    return { ...link };
   },
 
   declineAdvocateSelfCare(linkId: string) {

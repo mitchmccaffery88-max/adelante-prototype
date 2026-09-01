@@ -5,7 +5,12 @@
 // `STAFF_NAV` and never consults the RBAC matrix. The only way in is an
 // invitation code delivered directly to the advocate. There is deliberately no
 // patient search, no name/DOB entry, and no way to enumerate patients here.
-import { createFileRoute, useRouterState } from "@tanstack/react-router";
+//
+// §Advocate Access Redesign Phase 2 (final) — this file is now the LAYOUT for
+// the advocate shell: session/claim handling, the advocate identity header,
+// and `<Outlet />`. Each sidebar destination is a real child route, so the
+// sidebar switches views instead of scrolling one long page.
+import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -16,29 +21,12 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { ClientDate } from "@/components/ClientDate";
-import {
-  AdvocateTierBadge,
-  AdvocateCoordinationPanel,
-  AdvocateCarePlanParticipationPanel,
-  AdvocateEligibilityPanel,
-  AdvocateClinicalPanel,
-  AdvocateSelfCareCard,
-  AdvocateDocumentsPanel,
-  AdvocateSelfHelpPanel,
-} from "@/components/advocate/AdvocateWorkspace";
-import { AdvocatePoAwarenessPanel } from "@/components/advocate/AdvocatePoAwarenessPanel";
-import { AdvocateIdentityBanner } from "@/components/advocate/AdvocateIdentityBanner";
-import { AdvocateNextStepsPanel } from "@/components/advocate/AdvocateNextStepsPanel";
-import { AdvocateMessagesPanel } from "@/components/advocate/AdvocateMessagesPanel";
-import { AdvocateAppointmentsPanel } from "@/components/advocate/AdvocateAppointmentsPanel";
+import { AdvocateTierBadge } from "@/components/advocate/AdvocateWorkspace";
 import { SelfCareContextSwitch } from "@/components/ContextSwitcher";
-import {
-  AdvocateClaimDocumentChecklist,
-  AdvocateDocumentStatusPanel,
-} from "@/components/advocate/AdvocateDocumentChecklist";
+import { AdvocateSessionProvider } from "@/components/advocate/AdvocateSessionContext";
+import { AdvocateClaimDocumentChecklist } from "@/components/advocate/AdvocateDocumentChecklist";
 import type { AdvocateDocRequirementKey } from "@/lib/advocateDocs";
-import { ShieldCheck, Lock } from "lucide-react";
+import { ShieldCheck } from "lucide-react";
 
 export const Route = createFileRoute("/advocate")({
   // The advocate session (`adelante.advocateLinkId`) is client-only, so the
@@ -63,18 +51,27 @@ export const Route = createFileRoute("/advocate")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: AdvocatePage,
+  component: AdvocateLayout,
 });
 
 const SESSION_KEY = "adelante.advocateLinkId";
 
-function AdvocatePage() {
+function AdvocateLayout() {
   // The "session" for this prototype: the claimed link id only. No patient id
   // is ever stored client-side, so a tampered value can at worst point at
   // another link — which still has to pass the live gate on every read.
   const [linkId, setLinkId] = useState<string | null>(null);
   useEffect(() => {
-    setLinkId(window.localStorage.getItem(SESSION_KEY));
+    const read = () => setLinkId(window.localStorage.getItem(SESSION_KEY));
+    read();
+    // The session can be changed by something outside this tree (the demo
+    // scenario switcher, another tab). Re-read rather than stay stale.
+    window.addEventListener("adelante:advocate-session", read);
+    window.addEventListener("storage", read);
+    return () => {
+      window.removeEventListener("adelante:advocate-session", read);
+      window.removeEventListener("storage", read);
+    };
   }, []);
 
   function connect(id: string) {
@@ -87,21 +84,21 @@ function AdvocatePage() {
   }
 
   return (
-    <div className="mx-auto w-full max-w-2xl space-y-4 p-4 sm:p-6">
-      <header id="advocate-access" className="scroll-mt-24">
-        <h1 className="font-display text-2xl text-navy flex items-center gap-2">
-          <ShieldCheck className="h-6 w-6 text-teal" /> Advocate access
-        </h1>
-        <p className="mt-1 text-sm text-muted-foreground">
-          You can see the upcoming schedule of the person who invited you, and help with
-          coordination — what else you can see depends on the authorization you hold. Every time you
-          open this page it is recorded in their record.
-        </p>
-      </header>
+    <div className="mx-auto w-full max-w-3xl space-y-4 p-4 sm:p-6">
       {linkId ? (
-        <AdvocateScheduleView linkId={linkId} onSignOut={signOut} />
+        <AdvocateShell linkId={linkId} onSignOut={signOut} />
       ) : (
         <>
+          <header>
+            <h1 className="font-display text-2xl text-navy flex items-center gap-2">
+              <ShieldCheck className="h-6 w-6 text-teal" /> Advocate access
+            </h1>
+            <p className="mt-1 text-sm text-muted-foreground">
+              You can see the upcoming schedule of the person who invited you, and help with
+              coordination — what else you can see depends on the authorization you hold. Every
+              time you open this page it is recorded in their record.
+            </p>
+          </header>
           {/* Dual-role: someone who also has their own record can get back to
               it without claiming anything. */}
           <SelfCareContextSwitch />
@@ -109,6 +106,65 @@ function AdvocatePage() {
         </>
       )}
     </div>
+  );
+}
+
+function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () => void }) {
+  // Live-evaluated on every render: a revocation, an expiry, or a withdrawn
+  // ROI stops this view without anything needing to be told to stop.
+  const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
+  const view = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
+  const authLabel = ADVOCATE_AUTHORIZATION_TYPES.find(
+    (a) => a.key === link?.authorizationType,
+  )?.label;
+
+  if (!link) {
+    return (
+      <Card className="space-y-3 p-5">
+        <p className="text-sm text-muted-foreground">This connection no longer exists.</p>
+        <Button variant="outline" onClick={onSignOut}>
+          Start over
+        </Button>
+      </Card>
+    );
+  }
+
+  return (
+    <AdvocateSessionProvider
+      value={{
+        linkId,
+        attestedName: link.authorizationAttestedName ?? link.advocateName,
+        advocateName: link.advocateName,
+        signOut: onSignOut,
+      }}
+    >
+      {/* Advocate identity — provider-of-record style header, kept visually
+          separate from the person's sections below. */}
+      <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+        <div>
+          <p className="font-medium text-navy">{link.advocateName}</p>
+          {/* div, not p: the tier badge renders a block element. */}
+          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+            {authLabel} <AdvocateTierBadge linkId={linkId} />
+          </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge variant={view.allowed ? "default" : "secondary"}>
+            {view.allowed ? "Active" : "No access"}
+          </Badge>
+          <Button size="sm" variant="ghost" onClick={onSignOut}>
+            Sign out
+          </Button>
+        </div>
+      </Card>
+
+      {/* On mobile the sidebar is hidden, so the switch rides here instead. */}
+      <div className="md:hidden">
+        <SelfCareContextSwitch />
+      </div>
+
+      <Outlet />
+    </AdvocateSessionProvider>
   );
 }
 
@@ -207,154 +263,5 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
 
       <Button onClick={claim}>Connect</Button>
     </Card>
-  );
-}
-
-function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut: () => void }) {
-  // Live-evaluated on every render: a revocation, an expiry, or a withdrawn
-  // ROI stops this view without anything needing to be told to stop.
-  const link = useEhr(() => AdelanteEHR.getAdvocateLink(linkId));
-  const view = useEhr(() => AdelanteEHR.advocateSchedule(linkId));
-  const authLabel = ADVOCATE_AUTHORIZATION_TYPES.find(
-    (a) => a.key === link?.authorizationType,
-  )?.label;
-
-  if (!link) {
-    return (
-      <Card className="space-y-3 p-5">
-        <p className="text-sm text-muted-foreground">This connection no longer exists.</p>
-        <Button variant="outline" onClick={onSignOut}>
-          Start over
-        </Button>
-      </Card>
-    );
-  }
-
-  return (
-    <AdvocateWorkspaceModes
-      linkId={linkId}
-      link={link}
-      view={view}
-      authLabel={authLabel}
-      onSignOut={onSignOut}
-    />
-  );
-}
-
-/**
- * §Advocate Access Redesign Phase 2 (corrected) — one scrolling workspace,
- * navigated by the persistent left sidebar (`AdvocateSidebar`), not tabs.
- *
- * Split rule is unchanged: sections about the ADVOCATE (access, paperwork,
- * their own self-help/self-referral) come first, then the sections about the
- * PERSON they support (schedule, coordination, messages, documents).
- */
-function AdvocateWorkspaceModes({
-  linkId,
-  link,
-  view,
-  authLabel,
-  onSignOut,
-}: {
-  linkId: string;
-  link: NonNullable<ReturnType<typeof AdelanteEHR.getAdvocateLink>>;
-  view: ReturnType<typeof AdelanteEHR.advocateSchedule>;
-  authLabel: string | undefined;
-  onSignOut: () => void;
-}) {
-  const identity = useEhr(() => AdelanteEHR.advocatePatientIdentity(linkId));
-  const supportingName = identity.allowed ? identity.firstName : null;
-
-  return (
-    <div className="space-y-4">
-      {/* Advocate identity — provider-of-record style header, kept visually
-          separate from the person's sections below. */}
-      <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
-        <div>
-          <p className="font-medium text-navy">{link.advocateName}</p>
-          {/* div, not p: the tier badge renders a block element. */}
-          <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            {authLabel} <AdvocateTierBadge linkId={linkId} />
-          </div>
-        </div>
-        <div className="flex items-center gap-2">
-          <Badge variant={view.allowed ? "default" : "secondary"}>
-            {view.allowed ? "Active" : "No access"}
-          </Badge>
-          <Button size="sm" variant="ghost" onClick={onSignOut}>
-            Sign out
-          </Button>
-        </div>
-      </Card>
-
-      {/* On mobile the sidebar is hidden, so the switch rides here instead. */}
-      <div className="md:hidden">
-        <SelfCareContextSwitch />
-      </div>
-
-      {/* ---- Group 1: about the advocate ---------------------------------- */}
-      <AdvocateIdentityBanner linkId={linkId} />
-      <AdvocateNextStepsPanel
-        linkId={linkId}
-        attestedName={link.authorizationAttestedName ?? link.advocateName}
-      />
-
-      {/* Paperwork status renders whether or not access is open — missing
-          documentation is usually the REASON access is closed. */}
-      <section id="advocate-paperwork" className="scroll-mt-24">
-        <AdvocateDocumentStatusPanel
-          linkId={linkId}
-          attestedName={link.authorizationAttestedName ?? link.advocateName}
-        />
-      </section>
-
-      {view.allowed && (
-        <section id="advocate-selfhelp" className="scroll-mt-24">
-          <AdvocateSelfHelpPanel linkId={linkId} />
-        </section>
-      )}
-      <section id="advocate-selfcare" className="scroll-mt-24">
-        <AdvocateSelfCareCard linkId={linkId} />
-      </section>
-
-      {/* ---- Group 2: about the person being supported --------------------- */}
-      <section id="advocate-supporting" className="scroll-mt-24">
-        <h2 className="font-display text-lg text-navy">
-          {supportingName ? `Supporting ${supportingName}` : "The person you support"}
-        </h2>
-      </section>
-
-      {!view.allowed ? (
-        <Card className="flex gap-3 p-5 text-sm">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <div>
-            <p className="font-medium text-navy">You don't have access right now</p>
-            <p className="mt-1 text-muted-foreground">{view.reason}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Nothing about this person's care is shown until that is resolved.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <>
-          <section id="advocate-appointments" className="scroll-mt-24">
-            <AdvocateAppointmentsPanel linkId={linkId} />
-          </section>
-          <AdvocatePoAwarenessPanel linkId={linkId} patientId={link.patientId} />
-          <section id="advocate-messages" className="scroll-mt-24">
-            <AdvocateMessagesPanel linkId={linkId} />
-          </section>
-          <section id="advocate-coordination" className="scroll-mt-24 space-y-4">
-            <AdvocateCoordinationPanel linkId={linkId} />
-            <AdvocateCarePlanParticipationPanel linkId={linkId} />
-            <AdvocateEligibilityPanel linkId={linkId} />
-            <AdvocateClinicalPanel linkId={linkId} />
-          </section>
-          <section id="advocate-documents" className="scroll-mt-24">
-            <AdvocateDocumentsPanel linkId={linkId} />
-          </section>
-        </>
-      )}
-    </div>
   );
 }

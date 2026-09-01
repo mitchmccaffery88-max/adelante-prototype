@@ -19,7 +19,6 @@ import { HeartHandshake } from "lucide-react";
  */
 export function AdvocateSidebar() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const hash = useRouterState({ select: (s) => s.location.hash });
   const linkId = useAdvocateSessionId();
   const identity = useEhr(() => (linkId ? AdelanteEHR.advocatePatientIdentity(linkId) : undefined));
   const supportingName = identity?.allowed ? identity.firstName : null;
@@ -52,12 +51,11 @@ export function AdvocateSidebar() {
             </p>
             {g.entries.map((n) => {
               const Icon = n.icon;
-              const active = pathname === n.to && hash === n.hash;
+              const active = pathname === n.to;
               return (
                 <Link
                   key={n.id}
                   to={n.to}
-                  hash={n.hash}
                   className={cn(
                     "flex min-h-11 items-center gap-3 rounded-2xl px-3 py-2.5 text-base font-medium transition-colors",
                     active
