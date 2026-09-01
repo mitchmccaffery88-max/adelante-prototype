@@ -9,26 +9,56 @@ import { isResourceVerified, type CommunityResource } from "@/lib/communityResou
 import { Badge } from "@/components/ui/badge";
 import { isResourceSaved, toggleSavedResource } from "@/lib/selfTracking";
 
+/**
+ * §Phase 3 (Universal Resource Directory) — `surface` only decides which route
+ * the detail link points at. The directory itself is identical everywhere:
+ * same data, same search, same detail view for patients and advocates.
+ */
+export type ResourceSurface = "patient" | "advocate";
+
 export function ResourceCard({
   resource: r,
   patientId,
+  surface = "patient",
 }: {
   resource: CommunityResource;
   patientId: string;
+  surface?: ResourceSurface;
 }) {
+  const params = { categoryId: r.categoryId, orgId: r.id };
+  const linkClass =
+    "group flex items-start gap-1 text-sm font-medium text-foreground hover:underline";
   const saved = isResourceSaved(patientId, r.id);
   return (
     <Card className="space-y-1 p-4">
       <div className="flex items-start justify-between gap-2">
-        <Link
-          to="/resources/$categoryId/$orgId"
-          params={{ categoryId: r.categoryId, orgId: r.id }}
-          className="group flex items-start gap-1 text-sm font-medium text-foreground hover:underline"
-          data-testid={`resource-link-${r.id}`}
-        >
-          {r.name}
-          <ChevronRight className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" aria-hidden="true" />
-        </Link>
+        {surface === "advocate" ? (
+          <Link
+            to="/advocate/resources/$categoryId/$orgId"
+            params={params}
+            className={linkClass}
+            data-testid={`resource-link-${r.id}`}
+          >
+            {r.name}
+            <ChevronRight
+              className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        ) : (
+          <Link
+            to="/resources/$categoryId/$orgId"
+            params={params}
+            className={linkClass}
+            data-testid={`resource-link-${r.id}`}
+          >
+            {r.name}
+            <ChevronRight
+              className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground"
+              aria-hidden="true"
+            />
+          </Link>
+        )}
         <button
           type="button"
           aria-pressed={saved}

@@ -808,13 +808,6 @@ export const ADVOCATE_NAV_GROUPS: readonly AdvocateNavGroup[] = [
       },
       { id: "library", label: "Library", to: "/advocate/library", icon: BookOpen, group: "advocate" },
       {
-        id: "selfhelp",
-        label: "Self-help progress",
-        to: "/advocate/self-help",
-        icon: HandHeart,
-        group: "advocate",
-      },
-      {
         id: "selfcare",
         label: "Support for myself",
         to: "/advocate/support-for-myself",
