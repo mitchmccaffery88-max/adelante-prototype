@@ -231,7 +231,52 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
   }
 
   return (
+    <AdvocateWorkspaceModes
+      linkId={linkId}
+      link={link}
+      view={view}
+      authLabel={authLabel}
+      onSignOut={onSignOut}
+    />
+  );
+}
+
+/**
+ * §Advocate Access Redesign Phase 2 — two modes, one shell.
+ *
+ * Split rule: a panel belongs to the Dashboard when it is about the ADVOCATE
+ * (their access, their outstanding paperwork, their own self-help/self-referral)
+ * and to Supporting-person when it is about the PERSON they support (schedule,
+ * coordination, coverage, documents, clinical context).
+ */
+function AdvocateWorkspaceModes({
+  linkId,
+  link,
+  view,
+  authLabel,
+  onSignOut,
+}: {
+  linkId: string;
+  link: NonNullable<ReturnType<typeof AdelanteEHR.getAdvocateLink>>;
+  view: ReturnType<typeof AdelanteEHR.advocateSchedule>;
+  authLabel: string | undefined;
+  onSignOut: () => void;
+}) {
+  const hash = useRouterState({ select: (s) => s.location.hash });
+  const [mode, setMode] = useState<"dashboard" | "support">("dashboard");
+  // Nav links are hashes into this single route, so the hash — not a separate
+  // destination — is what selects the mode.
+  useEffect(() => {
+    if (!hash) return;
+    setMode(ADVOCATE_SUPPORT_HASHES.includes(hash) ? "support" : "dashboard");
+  }, [hash]);
+
+  const identity = useEhr(() => AdelanteEHR.advocatePatientIdentity(linkId));
+  const supportingName = identity.allowed ? identity.firstName : null;
+
+  return (
     <div className="space-y-4">
+      {/* Advocate identity — persistent across both modes. */}
       <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
         <div>
           <p className="font-medium text-navy">{link.advocateName}</p>
@@ -250,67 +295,125 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
         </div>
       </Card>
 
-      {/* §Build 2 item 1 — identity banner sits above everything and is
-          driven by effective access, not by the link row existing. */}
-      <AdvocateIdentityBanner linkId={linkId} />
-      {/* §Build 3 Part A — what is still outstanding, and who has to move it.
-          Renders directly under the banner and disappears once access is
-          effective with nothing pending. */}
-      <AdvocateNextStepsPanel
-        linkId={linkId}
-        attestedName={link.authorizationAttestedName ?? link.advocateName}
-      />
-      {/* Dual-role: reverse switch back to this person's own care, when they
-          also hold a patient session. */}
-      <SelfCareContextSwitch />
+      <Tabs
+        value={mode}
+        onValueChange={(v) => setMode(v as "dashboard" | "support")}
+        className="w-full"
+      >
+        <div className="sticky top-16 z-20 -mx-1 bg-background/90 px-1 py-2 backdrop-blur">
+          <TabsList className="w-full sm:w-auto">
+            <TabsTrigger value="dashboard" className="flex-1 sm:flex-none">
+              Dashboard
+            </TabsTrigger>
+            <TabsTrigger value="support" className="flex-1 sm:flex-none">
+              {supportingName ? `Supporting ${supportingName}` : "Supporting"}
+            </TabsTrigger>
+          </TabsList>
+        </div>
 
-      {!view.allowed ? (
-        <Card className="flex gap-3 p-5 text-sm">
-          <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
-          <div>
-            <p className="font-medium text-navy">You don't have access right now</p>
-            <p className="mt-1 text-muted-foreground">{view.reason}</p>
-            <p className="mt-2 text-xs text-muted-foreground">
-              Nothing about this person's care is shown until that is resolved.
-            </p>
-          </div>
-        </Card>
-      ) : (
-        <section id="advocate-appointments" className="scroll-mt-24">
-          <AdvocateAppointmentsPanel linkId={linkId} />
-        </section>
-      )}
+        <TabsContent value="dashboard" className="space-y-4">
+          <div id="advocate-dashboard" className="scroll-mt-24" />
+          {/* §Build 2 item 1 — identity banner is driven by effective access,
+              not by the link row existing. */}
+          <AdvocateIdentityBanner linkId={linkId} />
+          {/* §Build 3 Part A — what is still outstanding, and who has to move
+              it. Disappears once access is effective with nothing pending. */}
+          <AdvocateNextStepsPanel
+            linkId={linkId}
+            attestedName={link.authorizationAttestedName ?? link.advocateName}
+          />
 
-      {/* Paperwork status renders whether or not access is open — missing
-          documentation is usually the REASON access is closed, so hiding it
-          behind the gate would hide the fix. */}
-      <section id="advocate-paperwork" className="scroll-mt-24">
-        <AdvocateDocumentStatusPanel
-          linkId={linkId}
-          attestedName={link.authorizationAttestedName ?? link.advocateName}
-        />
-      </section>
-
-      {view.allowed && (
-        <>
-          <AdvocatePoAwarenessPanel linkId={linkId} patientId={link?.patientId} />
-          <section id="advocate-messages" className="scroll-mt-24">
-            <AdvocateMessagesPanel linkId={linkId} />
+          {/* Paperwork status renders whether or not access is open — missing
+              documentation is usually the REASON access is closed, so hiding
+              it behind the gate would hide the fix. */}
+          <section id="advocate-paperwork" className="scroll-mt-24">
+            <AdvocateDocumentStatusPanel
+              linkId={linkId}
+              attestedName={link.authorizationAttestedName ?? link.advocateName}
+            />
           </section>
-          <section id="advocate-coordination" className="scroll-mt-24 space-y-4">
-            <AdvocateCoordinationPanel linkId={linkId} />
-            <AdvocateCarePlanParticipationPanel linkId={linkId} />
-            <AdvocateEligibilityPanel linkId={linkId} />
-          </section>
-          <section id="advocate-documents" className="scroll-mt-24">
-            <AdvocateDocumentsPanel linkId={linkId} />
-          </section>
-          <AdvocateSelfHelpPanel linkId={linkId} />
-          <AdvocateClinicalPanel linkId={linkId} />
-        </>
-      )}
 
-      <AdvocateSelfCareCard linkId={linkId} />
+          {/* The real entry point into the record view. */}
+          <Card className="flex flex-wrap items-center justify-between gap-3 p-4 text-sm">
+            <div>
+              <p className="font-medium text-navy">
+                {supportingName ? `Supporting ${supportingName}` : "The person you support"}
+              </p>
+              <p className="mt-1 text-xs text-muted-foreground">
+                {view.allowed
+                  ? "Appointments, coordination, coverage, and shared documents."
+                  : "Their information opens here once your access is active."}
+              </p>
+            </div>
+            <Button
+              size="sm"
+              variant={view.allowed ? "default" : "outline"}
+              onClick={() => setMode("support")}
+            >
+              Open
+            </Button>
+          </Card>
+
+          {!view.allowed && (
+            <Card className="flex gap-3 p-5 text-sm">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-navy">You don't have access right now</p>
+                <p className="mt-1 text-muted-foreground">{view.reason}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Nothing about this person's care is shown until that is resolved.
+                </p>
+              </div>
+            </Card>
+          )}
+
+          {/* About the advocate, not the record: their own self-help progress
+              and the offer to start their own care. */}
+          {view.allowed && <AdvocateSelfHelpPanel linkId={linkId} />}
+          <AdvocateSelfCareCard linkId={linkId} />
+          {/* Dual-role: reverse switch back to this person's own care, when
+              they also hold a patient session. */}
+          <SelfCareContextSwitch />
+        </TabsContent>
+
+        <TabsContent value="support" className="space-y-4">
+          <div id="advocate-supporting" className="scroll-mt-24" />
+          <AdvocateIdentityBanner linkId={linkId} />
+
+          {!view.allowed ? (
+            <Card className="flex gap-3 p-5 text-sm">
+              <Lock className="mt-0.5 h-4 w-4 shrink-0 text-muted-foreground" />
+              <div>
+                <p className="font-medium text-navy">You don't have access right now</p>
+                <p className="mt-1 text-muted-foreground">{view.reason}</p>
+                <p className="mt-2 text-xs text-muted-foreground">
+                  Nothing about this person's care is shown until that is resolved.
+                </p>
+              </div>
+            </Card>
+          ) : (
+            <>
+              <section id="advocate-appointments" className="scroll-mt-24">
+                <AdvocateAppointmentsPanel linkId={linkId} />
+              </section>
+              <AdvocatePoAwarenessPanel linkId={linkId} patientId={link.patientId} />
+              <section id="advocate-messages" className="scroll-mt-24">
+                <AdvocateMessagesPanel linkId={linkId} />
+              </section>
+              <section id="advocate-coordination" className="scroll-mt-24 space-y-4">
+                <AdvocateCoordinationPanel linkId={linkId} />
+                <AdvocateCarePlanParticipationPanel linkId={linkId} />
+                <AdvocateEligibilityPanel linkId={linkId} />
+                <AdvocateClinicalPanel linkId={linkId} />
+              </section>
+              <section id="advocate-documents" className="scroll-mt-24">
+                <AdvocateDocumentsPanel linkId={linkId} />
+              </section>
+            </>
+          )}
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
+
