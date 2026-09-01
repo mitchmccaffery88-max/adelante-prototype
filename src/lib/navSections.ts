@@ -739,3 +739,66 @@ export const PUBLIC_ROUTES: readonly string[] = ["/", "/auth", "/assisted-signup
 export function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/start");
 }
+
+// §Advocate Access Redesign Phase 1 — advocate surfaces get their own nav
+// registry. Root cause of the leak this fixes: `/advocate` is neither a
+// patient route, a public route, nor a staff route, so the shell's desktop
+// strip fell through to PATIENT_NAV — the same missing-branch bug as the
+// earlier staff-surface leak.
+//
+// The advocate workspace is a single route composed of panels, so these
+// entries are real in-page section anchors, not invented destinations. Each
+// hash matches a section actually rendered by `src/routes/advocate.tsx`.
+export interface AdvocateNavEntry {
+  id: string;
+  label: string;
+  to: "/advocate";
+  hash: string;
+  icon: LucideIcon;
+}
+
+export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
+  { id: "access", label: "Access", to: "/advocate", hash: "advocate-access", icon: ShieldCheck },
+  {
+    id: "appointments",
+    label: "Appointments",
+    to: "/advocate",
+    hash: "advocate-appointments",
+    icon: Calendar,
+  },
+  {
+    id: "paperwork",
+    label: "Paperwork",
+    to: "/advocate",
+    hash: "advocate-paperwork",
+    icon: ClipboardSignature,
+  },
+  {
+    id: "messages",
+    label: "Messages",
+    to: "/advocate",
+    hash: "advocate-messages",
+    icon: MessageSquare,
+  },
+  {
+    id: "coordination",
+    label: "Coordination",
+    to: "/advocate",
+    hash: "advocate-coordination",
+    icon: HandHeart,
+  },
+  {
+    id: "documents",
+    label: "Documents",
+    to: "/advocate",
+    hash: "advocate-documents",
+    icon: FileText,
+  },
+] as const;
+
+/** Routes that render the advocate shell. */
+export const ADVOCATE_ROUTES: readonly string[] = ["/advocate"];
+
+export function isAdvocateRoute(pathname: string): boolean {
+  return ADVOCATE_ROUTES.includes(pathname);
+}
