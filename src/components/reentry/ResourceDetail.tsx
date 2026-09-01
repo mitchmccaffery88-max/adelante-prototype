@@ -30,8 +30,15 @@ import {
   subscribeResources,
 } from "@/lib/communityResources";
 import { isResourceSaved, subscribeSelfTracking, toggleSavedResource } from "@/lib/selfTracking";
+import type { ResourceSurface } from "@/components/reentry/ResourceCard";
 
-export function ResourceDetail({ orgId }: { orgId: string }) {
+export function ResourceDetail({
+  orgId,
+  surface = "patient",
+}: {
+  orgId: string;
+  surface?: ResourceSurface;
+}) {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const snapshot = useSyncExternalStore(
     subscribeResources,
@@ -55,7 +62,11 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
           description="It may have been taken down. Your care team can connect you directly."
         />
         <Button asChild variant="outline" size="patient">
-          <Link to="/resources">Back to resources</Link>
+          {surface === "advocate" ? (
+            <Link to="/advocate/resources">Back to resources</Link>
+          ) : (
+            <Link to="/resources">Back to resources</Link>
+          )}
         </Button>
       </PatientPage>
     );
@@ -81,9 +92,15 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
 
       <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
         {category && <span className="rounded-full bg-secondary px-3 py-1">{category.name}</span>}
-        <Link to="/resources" className="underline">
-          All resources
-        </Link>
+        {surface === "advocate" ? (
+          <Link to="/advocate/resources" className="underline">
+            All resources
+          </Link>
+        ) : (
+          <Link to="/resources" className="underline">
+            All resources
+          </Link>
+        )}
       </div>
 
       <Card className="space-y-3 p-5">
@@ -140,11 +157,13 @@ export function ResourceDetail({ orgId }: { orgId: string }) {
         )}
       </Card>
 
-      <Button asChild variant="outline" size="patient" data-testid="detail-ask-adel">
-        <Link to="/adel" search={{ resource: r.id }}>
-          <Sparkles className="mr-1 h-4 w-4" aria-hidden="true" /> Ask Adel about {r.name}
-        </Link>
-      </Button>
+      {surface === "patient" && (
+        <Button asChild variant="outline" size="patient" data-testid="detail-ask-adel">
+          <Link to="/adel" search={{ resource: r.id }}>
+            <Sparkles className="mr-1 h-4 w-4" aria-hidden="true" /> Ask Adel about {r.name}
+          </Link>
+        </Button>
+      )}
 
       <p className="text-xs text-muted-foreground">
         Someone on our team called this organisation and confirmed the address, phone and hours

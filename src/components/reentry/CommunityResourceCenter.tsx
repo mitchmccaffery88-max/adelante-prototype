@@ -40,7 +40,7 @@ import {
 } from "@/lib/communityResources";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
-import { ResourceCard } from "@/components/reentry/ResourceCard";
+import { ResourceCard, type ResourceSurface } from "@/components/reentry/ResourceCard";
 import { cn } from "@/lib/utils";
 
 // Category tile iconography. Kept local and explicit rather than pulled from
@@ -66,7 +66,11 @@ function placesLabel(n: number): string {
   return `${n} ${n === 1 ? "place" : "places"}`;
 }
 
-export function CommunityResourceCenter() {
+export function CommunityResourceCenter({
+  surface = "patient",
+}: {
+  surface?: ResourceSurface;
+} = {}) {
   const [category, setCategory] = useState<string | null>(null);
   const [query, setQuery] = useState("");
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -98,11 +102,13 @@ export function CommunityResourceCenter() {
         title="Resources near you"
         lede="Housing, food, work, meetings and more. Listings our team has called and confirmed show their details as confirmed; the rest are marked pending verification so you know to call ahead."
         action={
-          <Button asChild variant="outline" size="patient" className="shrink-0">
-            <Link to="/resources/saved" data-testid="saved-resources-link">
-              <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
-            </Link>
-          </Button>
+          surface === "patient" ? (
+            <Button asChild variant="outline" size="patient" className="shrink-0">
+              <Link to="/resources/saved" data-testid="saved-resources-link">
+                <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Saved ({savedCount})
+              </Link>
+            </Button>
+          ) : undefined
         }
       />
 
@@ -156,7 +162,7 @@ export function CommunityResourceCenter() {
         <ul className="space-y-3">
           {resources.map((r) => (
             <li key={r.id}>
-              <ResourceCard resource={r} patientId={patientId} />
+              <ResourceCard resource={r} patientId={patientId} surface={surface} />
             </li>
           ))}
         </ul>
