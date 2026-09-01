@@ -23,6 +23,8 @@ import {
 import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
+import { AdvocateSidebar } from "@/components/AdvocateSidebar";
+
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
@@ -114,7 +116,6 @@ export function AppShell() {
   // full-page chart, which is staff-only too).
   const showStaffShell = isStaffSurface && staffNav.length > 0;
 
-
   return (
     <div className={cn("min-h-dvh flex flex-col", isPatientSurface && "patient-theme")}>
       <RouteAccessGuard />
@@ -144,56 +145,39 @@ export function AppShell() {
           <nav
             className={cn(
               "items-center gap-1 ml-4",
-              isPatientSurface || isStaffSurface ? "hidden" : "hidden md:flex",
+              isPatientSurface || isStaffSurface || isAdvocateSurface ? "hidden" : "hidden md:flex",
             )}
           >
-
-            {isStaffSurface
+            {isStaffSurface || isAdvocateSurface
               ? null
-              : isAdvocateSurface
-              ? ADVOCATE_NAV.map((n) => {
-                  const Icon = n.icon;
-                  return (
+              : isPublicSurface
+                ? PUBLIC_NAV.map((n) => (
                     <Link
                       key={n.id}
                       to={n.to}
                       hash={n.hash}
-                      className="flex items-center gap-1.5 px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
+                      className="px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
                     >
-                      <Icon className="h-4 w-4 text-teal" aria-hidden="true" />
                       {n.label}
                     </Link>
-                  );
-                })
-              : isPublicSurface
-              ? PUBLIC_NAV.map((n) => (
-
-                  <Link
-                    key={n.id}
-                    to={n.to}
-                    hash={n.hash}
-                    className="px-3 py-2 rounded-md text-sm font-medium text-foreground/70 transition-colors hover:text-foreground hover:bg-secondary"
-                  >
-                    {n.label}
-                  </Link>
-                ))
-              : patientNav.map((n) => {
-              const active = pathname === n.to;
-              return (
-                <Link
-                  key={n.id}
-                  to={n.to}
-                  className={cn(
-                    "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                    active
-                      ? "bg-navy text-navy-foreground"
-                      : "text-foreground/70 hover:text-foreground hover:bg-secondary",
-                  )}
-                >
-                  {t(n.labelKey as Parameters<typeof t>[0])}
-                </Link>
-              );
-            })}
+                  ))
+                : patientNav.map((n) => {
+                    const active = pathname === n.to;
+                    return (
+                      <Link
+                        key={n.id}
+                        to={n.to}
+                        className={cn(
+                          "px-3 py-2 rounded-md text-sm font-medium transition-colors",
+                          active
+                            ? "bg-navy text-navy-foreground"
+                            : "text-foreground/70 hover:text-foreground hover:bg-secondary",
+                        )}
+                      >
+                        {t(n.labelKey as Parameters<typeof t>[0])}
+                      </Link>
+                    );
+                  })}
           </nav>
 
           <div className="ml-auto flex items-center gap-2">
@@ -385,6 +369,15 @@ export function AppShell() {
               <div className="px-4 pt-4 sm:px-6 empty:hidden">
                 <AdvocateContextSwitch />
               </div>
+              <Outlet />
+            </div>
+          </div>
+        ) : isAdvocateSurface ? (
+          /* §Phase 2 correction — advocating swaps the rail wholesale: the
+             patient sidebar is never rendered alongside it. */
+          <div className="flex min-h-full">
+            <AdvocateSidebar />
+            <div className="min-w-0 flex-1">
               <Outlet />
             </div>
           </div>
