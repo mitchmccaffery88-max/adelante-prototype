@@ -5,11 +5,13 @@
 // `STAFF_NAV` and never consults the RBAC matrix. The only way in is an
 // invitation code delivered directly to the advocate. There is deliberately no
 // patient search, no name/DOB entry, and no way to enumerate patients here.
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useRouterState } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { ADVOCATE_AUTHORIZATION_TYPES, type AdvocateAuthorizationType } from "@/lib/advocate";
+import { ADVOCATE_SUPPORT_HASHES } from "@/lib/navSections";
+import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
