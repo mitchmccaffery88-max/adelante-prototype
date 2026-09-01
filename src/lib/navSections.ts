@@ -42,7 +42,13 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { canAccess, useActingStaff, type AccessLevel, type RecordClass, type StaffRole } from "./roles";
+import {
+  canAccess,
+  useActingStaff,
+  type AccessLevel,
+  type RecordClass,
+  type StaffRole,
+} from "./roles";
 
 export type NavGroup =
   | "care"
@@ -652,7 +658,13 @@ export const PATIENT_NAV: readonly PatientNavEntry[] = [
     mobile: false,
   },
 
-  { id: "appointments", labelKey: "navAppointments", to: "/schedule", icon: Calendar, mobile: false },
+  {
+    id: "appointments",
+    labelKey: "navAppointments",
+    to: "/schedule",
+    icon: Calendar,
+    mobile: false,
+  },
   // §P1 My Care de-clutter — real destinations, not `/home` anchors. The
   // duplicated tiles were removed from My Care, so an anchor would now scroll
   // to nothing.
@@ -764,81 +776,109 @@ export interface AdvocateNavEntry {
   mode: "dashboard" | "support";
 }
 
-export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
+export interface AdvocateNavGroup {
+  /** Stable key; "support" gets a dynamic label with the person's first name. */
+  key: "advocate" | "support";
+  label: string;
+  entries: readonly AdvocateNavEntry[];
+}
+
+/**
+ * §Advocate Access Redesign Phase 2 (corrected) — grouped sidebar registry.
+ * Group 1 is about the ADVOCATE; group 2 is about the person they support.
+ * Rendered by `AdvocateSidebar`, which reuses the patient sidebar pattern.
+ */
+export const ADVOCATE_NAV_GROUPS: readonly AdvocateNavGroup[] = [
   {
-    id: "dashboard",
-    label: "Dashboard",
-    to: "/advocate",
-    hash: "advocate-dashboard",
-    icon: LayoutDashboard,
-    mode: "dashboard",
+    key: "advocate",
+    label: "Your access",
+    entries: [
+      {
+        id: "access",
+        label: "Access",
+        to: "/advocate",
+        hash: "advocate-access",
+        icon: ShieldCheck,
+        mode: "dashboard",
+      },
+      {
+        id: "paperwork",
+        label: "What you need next",
+        to: "/advocate",
+        hash: "advocate-paperwork",
+        icon: ClipboardSignature,
+        mode: "dashboard",
+      },
+      {
+        id: "selfhelp",
+        label: "Self-help progress",
+        to: "/advocate",
+        hash: "advocate-selfhelp",
+        icon: HandHeart,
+        mode: "dashboard",
+      },
+      {
+        id: "selfcare",
+        label: "Support for myself",
+        to: "/advocate",
+        hash: "advocate-selfcare",
+        icon: Users,
+        mode: "dashboard",
+      },
+    ],
   },
   {
-    id: "access",
-    label: "Access",
-    to: "/advocate",
-    hash: "advocate-access",
-    icon: ShieldCheck,
-    mode: "dashboard",
-  },
-  {
-    id: "paperwork",
-    label: "Paperwork",
-    to: "/advocate",
-    hash: "advocate-paperwork",
-    icon: ClipboardSignature,
-    mode: "dashboard",
-  },
-  {
-    id: "supporting",
+    key: "support",
     label: "Supporting",
-    to: "/advocate",
-    hash: "advocate-supporting",
-    icon: HandHeart,
-    mode: "support",
-  },
-  {
-    id: "appointments",
-    label: "Appointments",
-    to: "/advocate",
-    hash: "advocate-appointments",
-    icon: Calendar,
-    mode: "support",
-  },
-  {
-    id: "messages",
-    label: "Messages",
-    to: "/advocate",
-    hash: "advocate-messages",
-    icon: MessageSquare,
-    mode: "support",
-  },
-  {
-    id: "coordination",
-    label: "Coordination",
-    to: "/advocate",
-    hash: "advocate-coordination",
-    icon: Users,
-    mode: "support",
-  },
-  {
-    id: "documents",
-    label: "Documents",
-    to: "/advocate",
-    hash: "advocate-documents",
-    icon: FileText,
-    mode: "support",
+    entries: [
+      {
+        id: "appointments",
+        label: "Appointments",
+        to: "/advocate",
+        hash: "advocate-appointments",
+        icon: Calendar,
+        mode: "support",
+      },
+      {
+        id: "coordination",
+        label: "Coordination",
+        to: "/advocate",
+        hash: "advocate-coordination",
+        icon: Users,
+        mode: "support",
+      },
+      {
+        id: "messages",
+        label: "Messages",
+        to: "/advocate",
+        hash: "advocate-messages",
+        icon: MessageSquare,
+        mode: "support",
+      },
+      {
+        id: "documents",
+        label: "Documents",
+        to: "/advocate",
+        hash: "advocate-documents",
+        icon: FileText,
+        mode: "support",
+      },
+    ],
   },
 ] as const;
 
-/** Hashes that should open the workspace in Supporting-person mode. */
+/** Flat view of the same registry (mobile strip). Never a separate list. */
+export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = ADVOCATE_NAV_GROUPS.flatMap(
+  (g) => g.entries,
+);
+
+/** Hashes that belong to the person-being-supported group. */
 export const ADVOCATE_SUPPORT_HASHES: readonly string[] = ADVOCATE_NAV.filter(
   (n) => n.mode === "support",
 ).map((n) => n.hash);
 
 /** Routes that render the advocate shell. */
 export const ADVOCATE_ROUTES: readonly string[] = ["/advocate"];
-
 
 export function isAdvocateRoute(pathname: string): boolean {
   return ADVOCATE_ROUTES.includes(pathname);
