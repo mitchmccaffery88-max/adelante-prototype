@@ -88,7 +88,7 @@ function AdvocatePage() {
 
   return (
     <div className="mx-auto w-full max-w-2xl space-y-4 p-4 sm:p-6">
-      <header>
+      <header id="advocate-access" className="scroll-mt-24">
         <h1 className="font-display text-2xl text-navy flex items-center gap-2">
           <ShieldCheck className="h-6 w-6 text-teal" /> Advocate access
         </h1>
@@ -276,25 +276,35 @@ function AdvocateScheduleView({ linkId, onSignOut }: { linkId: string; onSignOut
           </div>
         </Card>
       ) : (
-        <AdvocateAppointmentsPanel linkId={linkId} />
+        <section id="advocate-appointments" className="scroll-mt-24">
+          <AdvocateAppointmentsPanel linkId={linkId} />
+        </section>
       )}
 
       {/* Paperwork status renders whether or not access is open — missing
           documentation is usually the REASON access is closed, so hiding it
           behind the gate would hide the fix. */}
-      <AdvocateDocumentStatusPanel
-        linkId={linkId}
-        attestedName={link.authorizationAttestedName ?? link.advocateName}
-      />
+      <section id="advocate-paperwork" className="scroll-mt-24">
+        <AdvocateDocumentStatusPanel
+          linkId={linkId}
+          attestedName={link.authorizationAttestedName ?? link.advocateName}
+        />
+      </section>
 
       {view.allowed && (
         <>
           <AdvocatePoAwarenessPanel linkId={linkId} patientId={link?.patientId} />
-          <AdvocateMessagesPanel linkId={linkId} />
-          <AdvocateCoordinationPanel linkId={linkId} />
-          <AdvocateCarePlanParticipationPanel linkId={linkId} />
-          <AdvocateEligibilityPanel linkId={linkId} />
-          <AdvocateDocumentsPanel linkId={linkId} />
+          <section id="advocate-messages" className="scroll-mt-24">
+            <AdvocateMessagesPanel linkId={linkId} />
+          </section>
+          <section id="advocate-coordination" className="scroll-mt-24 space-y-4">
+            <AdvocateCoordinationPanel linkId={linkId} />
+            <AdvocateCarePlanParticipationPanel linkId={linkId} />
+            <AdvocateEligibilityPanel linkId={linkId} />
+          </section>
+          <section id="advocate-documents" className="scroll-mt-24">
+            <AdvocateDocumentsPanel linkId={linkId} />
+          </section>
           <AdvocateSelfHelpPanel linkId={linkId} />
           <AdvocateClinicalPanel linkId={linkId} />
         </>
