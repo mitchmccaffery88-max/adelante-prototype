@@ -755,16 +755,31 @@ export interface AdvocateNavEntry {
   to: "/advocate";
   hash: string;
   icon: LucideIcon;
+  /**
+   * §Phase 2 — which mode of the advocate workspace this entry lives in.
+   * "dashboard" = what needs my attention; "support" = the record I'm looking
+   * at. The route reads the hash and switches mode, so a nav click always
+   * lands in the right mode as well as the right section.
+   */
+  mode: "dashboard" | "support";
 }
 
 export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
-  { id: "access", label: "Access", to: "/advocate", hash: "advocate-access", icon: ShieldCheck },
   {
-    id: "appointments",
-    label: "Appointments",
+    id: "dashboard",
+    label: "Dashboard",
     to: "/advocate",
-    hash: "advocate-appointments",
-    icon: Calendar,
+    hash: "advocate-dashboard",
+    icon: LayoutDashboard,
+    mode: "dashboard",
+  },
+  {
+    id: "access",
+    label: "Access",
+    to: "/advocate",
+    hash: "advocate-access",
+    icon: ShieldCheck,
+    mode: "dashboard",
   },
   {
     id: "paperwork",
@@ -772,6 +787,23 @@ export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
     to: "/advocate",
     hash: "advocate-paperwork",
     icon: ClipboardSignature,
+    mode: "dashboard",
+  },
+  {
+    id: "supporting",
+    label: "Supporting",
+    to: "/advocate",
+    hash: "advocate-supporting",
+    icon: HandHeart,
+    mode: "support",
+  },
+  {
+    id: "appointments",
+    label: "Appointments",
+    to: "/advocate",
+    hash: "advocate-appointments",
+    icon: Calendar,
+    mode: "support",
   },
   {
     id: "messages",
@@ -779,13 +811,15 @@ export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
     to: "/advocate",
     hash: "advocate-messages",
     icon: MessageSquare,
+    mode: "support",
   },
   {
     id: "coordination",
     label: "Coordination",
     to: "/advocate",
     hash: "advocate-coordination",
-    icon: HandHeart,
+    icon: Users,
+    mode: "support",
   },
   {
     id: "documents",
@@ -793,11 +827,18 @@ export const ADVOCATE_NAV: readonly AdvocateNavEntry[] = [
     to: "/advocate",
     hash: "advocate-documents",
     icon: FileText,
+    mode: "support",
   },
 ] as const;
 
+/** Hashes that should open the workspace in Supporting-person mode. */
+export const ADVOCATE_SUPPORT_HASHES: readonly string[] = ADVOCATE_NAV.filter(
+  (n) => n.mode === "support",
+).map((n) => n.hash);
+
 /** Routes that render the advocate shell. */
 export const ADVOCATE_ROUTES: readonly string[] = ["/advocate"];
+
 
 export function isAdvocateRoute(pathname: string): boolean {
   return ADVOCATE_ROUTES.includes(pathname);
