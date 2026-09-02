@@ -17,7 +17,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { usePopulation } from "@/components/PopulationGate";
 import { isLibraryItemVisible } from "@/lib/library";
-import { liveLibraryItems, usePublishedContentVersion } from "@/lib/contentCatalog";
+import { livePatientLibraryItems, usePublishedContentVersion } from "@/lib/contentCatalog";
 import {
   patientVisibleResources,
   RESOURCE_CATEGORIES,
@@ -54,7 +54,7 @@ function CheckInSummary({
 
   const lesson = useMemo(() => {
     if (!plan) return undefined;
-    return liveLibraryItems()
+    return livePatientLibraryItems()
       .filter((i) => i.categoryId === plan.libraryCategoryId && isLibraryItemVisible(i, population))
       .sort((a, b) => a.order - b.order)[0];
   }, [plan, population, contentVersion]);

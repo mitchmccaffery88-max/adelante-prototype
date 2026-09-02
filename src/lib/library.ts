@@ -45,8 +45,18 @@ export interface LibraryCategory {
    * this explicitly. Admin-editable through the content-management workspace.
    */
   eyebrow?: string;
+  /**
+   * §Advocate Access Redesign Phase 5 — which shell this category belongs to.
+   * Absent or "patient" (the default for every shipped category) means the
+   * patient Library. "advocate" routes the category to `/advocate/library`
+   * INSTEAD, never to both: an advocate bucket is written for the supporter,
+   * not the person in care. There is no advocate-tier gate on top of this —
+   * the bucket is universal to anyone in an advocate role.
+   */
+  audience?: "patient" | "advocate";
   order: number;
 }
+
 
 /**
  * A lesson. The eight-part instructional sequence is the schema, not a
