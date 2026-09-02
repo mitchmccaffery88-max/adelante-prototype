@@ -12,7 +12,6 @@
 // The name/description below are identifying labels for the bucket, not
 // authored content; the content manager owns their final wording.
 import { seedPublishedContent } from "@/lib/contentPublishing";
-import { liveLibraryCategoryList } from "@/lib/contentTypes";
 
 export const ADVOCATE_LIBRARY_CATEGORY_ID = "advocate-support";
 
@@ -27,7 +26,9 @@ export function seedAdvocateLibraryCategory(): void {
       clinicalTarget: "Pending clinical authoring.",
       icon: "HeartHandshake",
       audience: "advocate",
-      order: (liveLibraryCategoryList().at(-1)?.order ?? 0) + 1,
+      // Sorts after every shipped category; kept dependency-free so this seed
+      // can run before the descriptor module finishes evaluating.
+      order: 99,
     },
     actor: { staffId: "s-cc2", name: "Cathy", role: "clinical_coordinator" },
     atISO: "2026-09-02T00:00:00.000Z",
