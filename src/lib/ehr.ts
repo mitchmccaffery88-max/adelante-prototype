@@ -7495,9 +7495,18 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.resourceReferrals = [
-      { ...r, id: uid(), createdAt: new Date().toISOString(), status: "pending" },
+      {
+        ...r,
+        // Provenance defaults to the real common case: our care team referred
+        // them. Pre-release ingestion passes "pre_release" explicitly.
+        source: r.source ?? "internal",
+        id: uid(),
+        createdAt: new Date().toISOString(),
+        status: "pending",
+      },
       ...(p.resourceReferrals ?? []),
     ];
+
     emit();
   },
   updateCarePlanSummary(patientId: string, summary: string, by?: string) {
