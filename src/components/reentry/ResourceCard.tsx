@@ -59,20 +59,26 @@ export function ResourceCard({
             />
           </Link>
         )}
-        <button
-          type="button"
-          aria-pressed={saved}
-          aria-label={saved ? `Remove ${r.name} from saved` : `Save ${r.name}`}
-          data-testid={`bookmark-${r.id}`}
-          onClick={() => toggleSavedResource(patientId, r.id)}
-          className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border hover:bg-secondary"
-        >
-          {saved ? (
-            <BookmarkCheck className="h-5 w-5 text-primary" aria-hidden="true" />
-          ) : (
-            <Bookmark className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
-          )}
-        </button>
+        {/* Bookmarks are patient-scoped; the advocate surface has no patient
+            of its own and no Saved list, and for a dual-role advocate this
+            would write into their OWN record while browsing for someone
+            else. Patient surface only. */}
+        {surface === "patient" && (
+          <button
+            type="button"
+            aria-pressed={saved}
+            aria-label={saved ? `Remove ${r.name} from saved` : `Save ${r.name}`}
+            data-testid={`bookmark-${r.id}`}
+            onClick={() => toggleSavedResource(patientId, r.id)}
+            className="grid h-11 w-11 shrink-0 place-items-center rounded-2xl border hover:bg-secondary"
+          >
+            {saved ? (
+              <BookmarkCheck className="h-5 w-5 text-primary" aria-hidden="true" />
+            ) : (
+              <Bookmark className="h-5 w-5 text-muted-foreground" aria-hidden="true" />
+            )}
+          </button>
+        )}
       </div>
       {!isResourceVerified(r) && (
         <Badge

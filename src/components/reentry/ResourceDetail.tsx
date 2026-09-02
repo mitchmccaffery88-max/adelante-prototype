@@ -131,24 +131,31 @@ export function ResourceDetail({
               </a>
             </Button>
           )}
-          <Button
-            type="button"
-            size="patient"
-            variant="outline"
-            aria-pressed={saved}
-            data-testid="detail-save"
-            onClick={() => toggleSavedResource(patientId, r.id)}
-          >
-            {saved ? (
-              <>
-                <BookmarkCheck className="mr-1 h-4 w-4" aria-hidden="true" /> Saved
-              </>
-            ) : (
-              <>
-                <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Save
-              </>
-            )}
-          </Button>
+          {/* Saving is patient-scoped (`savedResourceIds(patientId)`), and the
+              advocate surface has no patient of its own — for a dual-role
+              advocate it would silently write into THEIR OWN record while they
+              browse on someone else's behalf, and the Saved list is hidden
+              here anyway. So the action only exists on the patient surface. */}
+          {surface === "patient" && (
+            <Button
+              type="button"
+              size="patient"
+              variant="outline"
+              aria-pressed={saved}
+              data-testid="detail-save"
+              onClick={() => toggleSavedResource(patientId, r.id)}
+            >
+              {saved ? (
+                <>
+                  <BookmarkCheck className="mr-1 h-4 w-4" aria-hidden="true" /> Saved
+                </>
+              ) : (
+                <>
+                  <Bookmark className="mr-1 h-4 w-4" aria-hidden="true" /> Save
+                </>
+              )}
+            </Button>
+          )}
         </div>
         {!directions && (
           <p className="text-xs text-muted-foreground">
