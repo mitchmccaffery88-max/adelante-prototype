@@ -683,9 +683,8 @@ function ResourceReferralCard({
   patientId: string;
   consentSud: boolean;
 }) {
-  const [category, setCategory] = useState<
-    "housing" | "food" | "employment" | "legal" | "benefits" | "transport"
-  >("housing");
+  const [category, setCategory] = useState<ResourceReferralCategory>("housing");
+
   const [provider, setProvider] = useState("");
   return (
     <Card className="p-5">
