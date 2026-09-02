@@ -836,7 +836,15 @@ export const RECOVERY_MODULE_TYPE: ContentTypeDescriptor = {
   },
 };
 
+// Side-effect import: §Advocate Access Redesign Phase 5 — the advocate Library
+// bucket. Seeded here (not only in the catalog) so the admin workspace, which
+// reaches the store through this module, lists it as managed content even when
+// no patient surface has loaded. The seed imports only the publishing store,
+// so there is no cycle back into this module.
+import "@/lib/library.advocateCategory.seed";
+
 export const CONTENT_TYPES: ContentTypeDescriptor[] = [
+
   LIBRARY_LESSON_TYPE,
   RECOVERY_LESSON_TYPE,
   LIBRARY_CATEGORY_TYPE,
