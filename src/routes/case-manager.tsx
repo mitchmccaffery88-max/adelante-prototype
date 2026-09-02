@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type ResourceReferralCategory } from "@/lib/ehr";
+import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -683,9 +684,8 @@ function ResourceReferralCard({
   patientId: string;
   consentSud: boolean;
 }) {
-  const [category, setCategory] = useState<
-    "housing" | "food" | "employment" | "legal" | "benefits" | "transport"
-  >("housing");
+  const [category, setCategory] = useState<ResourceReferralCategory>("housing");
+
   const [provider, setProvider] = useState("");
   return (
     <Card className="p-5">
@@ -698,13 +698,13 @@ function ResourceReferralCard({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="housing">Housing</SelectItem>
-            <SelectItem value="food">Food</SelectItem>
-            <SelectItem value="employment">Employment</SelectItem>
-            <SelectItem value="legal">Legal</SelectItem>
-            <SelectItem value="benefits">Benefits / Medi-Cal</SelectItem>
-            <SelectItem value="transport">Transportation</SelectItem>
+            {RESOURCE_CATEGORIES.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
+
         </Select>
         <Input
           placeholder="Provider name"

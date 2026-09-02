@@ -85,6 +85,7 @@ import {
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
+import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList, Download } from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
@@ -652,12 +653,11 @@ export function ReferralsTab({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="housing">Housing</SelectItem>
-                <SelectItem value="food">Food</SelectItem>
-                <SelectItem value="employment">Employment</SelectItem>
-                <SelectItem value="legal">Legal</SelectItem>
-                <SelectItem value="benefits">Benefits / Medi-Cal</SelectItem>
-                <SelectItem value="transport">Transportation</SelectItem>
+                {RESOURCE_CATEGORIES.map((c) => (
+                  <SelectItem key={c.id} value={c.id}>
+                    {c.name}
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <Input

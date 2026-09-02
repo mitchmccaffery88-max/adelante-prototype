@@ -222,7 +222,7 @@ describe("signed autofill snapshots are frozen", () => {
       { id: "r2", category: "food", provider: "Done Co", status: "completed" },
       {
         id: "r3",
-        category: "benefits",
+        category: "financial",
         provider: "SUD outpatient clinic",
         status: "accepted",
         sudDisclosureConsent: true,
