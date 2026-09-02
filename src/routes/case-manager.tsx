@@ -698,13 +698,13 @@ function ResourceReferralCard({
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            <SelectItem value="housing">Housing</SelectItem>
-            <SelectItem value="food">Food</SelectItem>
-            <SelectItem value="employment">Employment</SelectItem>
-            <SelectItem value="legal">Legal</SelectItem>
-            <SelectItem value="benefits">Benefits / Medi-Cal</SelectItem>
-            <SelectItem value="transport">Transportation</SelectItem>
+            {RESOURCE_CATEGORIES.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
           </SelectContent>
+
         </Select>
         <Input
           placeholder="Provider name"
