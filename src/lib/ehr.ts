@@ -1485,10 +1485,51 @@ export interface CheckIn {
   needsFlagged: { housing?: boolean; food?: boolean; employment?: boolean; transport?: boolean };
 }
 
+/**
+ * §Phase 4 step 1 — the referral category vocabulary IS the real directory
+ * vocabulary. These ids are `RESOURCE_CATEGORIES[].id` from
+ * `communityResources.ts`, verbatim (a test asserts the two stay identical).
+ * Declared literally here so `ehr.ts` stays free of a content-module import.
+ */
+export type ResourceReferralCategory =
+  | "housing"
+  | "emergency_shelter"
+  | "food"
+  | "employment"
+  | "transportation"
+  | "recovery_meetings"
+  | "support_groups"
+  | "family_reunification"
+  | "healthcare"
+  | "education"
+  | "parenting"
+  | "financial"
+  | "legal"
+  | "life_skills";
+
+/** Where a referral came from. Mirrors `CarePlanSdohSlice.source`'s real value. */
+export type ResourceReferralSource = "internal" | "pre_release";
+
 export interface ResourceReferral {
   id: string;
-  category: "housing" | "food" | "employment" | "legal" | "benefits" | "transport";
+  category: ResourceReferralCategory;
+  /**
+   * Free text, always the record of truth for WHO the person was sent to.
+   * For an external referral (out of area, not yet sourced, stale info) this
+   * is the only identification there is — and it keeps working exactly as
+   * before when `resourceId` is absent.
+   */
   provider: string;
+  /**
+   * Optional link to a real directory org (`CommunityResource.id`). When set
+   * the referral is closed-loop against a real listing. It is NEVER cleared
+   * when that listing is later unpublished or removed — see
+   * `resourceLinkState()` in `referralLinks.ts`, which flags the link as no
+   * longer active while the referral record itself stays intact.
+   */
+  resourceId?: string;
+  /** Internal care-team referral vs. one ingested from a release assessment. */
+  source?: ResourceReferralSource;
   status: "pending" | "accepted" | "completed";
   createdAt: string;
   updatedAt?: string;
@@ -1498,6 +1539,7 @@ export interface ResourceReferral {
   // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
   sudDisclosureConsent?: boolean;
 }
+
 
 export type ExternalPartyRole =
   | "probation"
