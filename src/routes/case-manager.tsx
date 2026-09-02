@@ -1,6 +1,7 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type ResourceReferralCategory } from "@/lib/ehr";
+import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
