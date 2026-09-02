@@ -72,6 +72,11 @@ import "@/lib/recovery.becomingSomeoneNew.authored";
 // set Modules 2-5 each shared across all ten of their lessons. MUST stay last —
 // it republishes on top of those modules' authored bodies (Batch 8).
 import "@/lib/recovery.activityChoices.remediation";
+// Side-effect import: §Advocate Access Redesign Phase 5 — the advocate Library
+// category (bucket only, zero lessons), seeded through the same publishing
+// store so it is managed in /admin-content like every other category.
+import "@/lib/library.advocateCategory.seed";
+
 
 export { subscribeContent };
 
@@ -136,9 +141,39 @@ export function liveCategoryProgress(
   };
 }
 
+/**
+ * §Advocate Access Redesign Phase 5 — the PATIENT Library's categories.
+ * Advocate-audience categories live in the same store and the same admin
+ * tooling, but never surface here; `/advocate/library` reads the other side.
+ */
 export function liveLibraryCategories() {
-  return liveLibraryCategoryList();
+  return liveLibraryCategoryList().filter((c) => c.audience !== "advocate");
 }
+
+/** Categories written for the person SUPPORTING someone in care. */
+export function liveAdvocateLibraryCategories() {
+  return liveLibraryCategoryList().filter((c) => c.audience === "advocate");
+}
+
+function advocateCategoryIds(): Set<string> {
+  return new Set(liveAdvocateLibraryCategories().map((c) => c.id));
+}
+
+/** Library lessons a PATIENT surface may show — advocate buckets excluded. */
+export function livePatientLibraryItems(): LibraryItem[] {
+  const advocateCats = advocateCategoryIds();
+  return liveLibraryItems().filter((i) => !advocateCats.has(i.categoryId));
+}
+
+/** Lessons published into advocate buckets. Empty until content is authored. */
+export function liveAdvocateLibraryItems(categoryId?: string): LibraryItem[] {
+  const advocateCats = advocateCategoryIds();
+  return liveLibraryItems()
+    .filter((i) => advocateCats.has(i.categoryId))
+    .filter((i) => !categoryId || i.categoryId === categoryId)
+    .sort((a, b) => a.order - b.order);
+}
+
 
 // ---------------------------------------------------------------------------
 // Recovery modules

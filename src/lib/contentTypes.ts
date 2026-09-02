@@ -693,6 +693,17 @@ const CATEGORY_FIELDS: ContentField[] = [
     help: "What this category is clinically aiming at. Shown to staff, never to patients.",
   },
   {
+    key: "audience",
+    label: "Audience",
+    kind: "select",
+    help: "Which library this category appears in. Advocate categories are written for the person supporting someone in care and never show in the patient Library.",
+    options: [
+      { value: "patient", label: "Patients" },
+      { value: "advocate", label: "Advocates / family members" },
+    ],
+  },
+  {
+
     key: "eyebrow",
     label: "Short eyebrow (patient-facing)",
     kind: "text",

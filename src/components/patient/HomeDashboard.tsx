@@ -47,7 +47,7 @@ import {
 import { isLibraryItemVisible } from "@/lib/library";
 import {
   liveLibraryItem,
-  liveLibraryItems,
+  livePatientLibraryItems,
   usePublishedContentVersion,
 } from "@/lib/contentCatalog";
 import {
@@ -264,7 +264,7 @@ export function HomeDashboard({
   const contentVersion = usePublishedContentVersion();
   const visibleLessons = useMemo(
     () =>
-      liveLibraryItems()
+      livePatientLibraryItems()
         .filter((i) => isLibraryItemVisible(i, population))
         .slice()
         .sort((a, b) => a.order - b.order),
