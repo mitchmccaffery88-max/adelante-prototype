@@ -212,6 +212,7 @@ function CrisisQueuePage() {
                 </Link>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <CrisisRetriggerBadge escalation={escalation} />
+                  <CrisisOverdueBadge escalation={escalation} />
                   <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
                     {timeOpenLabel(escalation.triggeredAt)}
                   </Badge>
