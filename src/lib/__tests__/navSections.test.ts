@@ -8,7 +8,7 @@ import {
   staffNavForRole,
   staffNavGroupsForRole,
 } from "../navSections";
-import { STAFF_ROLES, canAccess, canFlagCrisis } from "../roles";
+import { STAFF_ROLES, canAccess, canFlagCrisis, canWorkSdohCrisisLane } from "../roles";
 
 const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
   staffNavForRole(role).map((e) => e.id);
