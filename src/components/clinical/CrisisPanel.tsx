@@ -380,6 +380,7 @@ export function PatientCrisisPanel({ patientId }: { patientId: string }) {
                   Open
                 </Badge>
                 <CrisisRetriggerBadge escalation={e} />
+                <CrisisOverdueBadge escalation={e} />
                 <span className="capitalize text-muted-foreground">
                   {e.triggerSource.replace("_", " ")}
                 </span>
