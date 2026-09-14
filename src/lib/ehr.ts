@@ -14121,11 +14121,15 @@ export const AdelanteEHR = {
    * top, so a repeat cannot be buried mid-list. Re-triggered rows are
    * themselves oldest-first among each other.
    */
-  listOpenCrisisEscalations(): { patient: Patient; escalation: CrisisEscalation }[] {
+  listOpenCrisisEscalations(opts?: {
+    category?: CrisisCategory;
+  }): { patient: Patient; escalation: CrisisEscalation }[] {
     const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
     for (const p of patients) {
       for (const e of p.crisisEscalations ?? []) {
-        if (e.status === "open") out.push({ patient: p, escalation: e });
+        if (e.status !== "open") continue;
+        if (opts?.category && e.category !== opts.category) continue;
+        out.push({ patient: p, escalation: e });
       }
     }
     return out.sort((a, b) => {
