@@ -6,7 +6,12 @@
 // means the flag and its workflow record can never drift visually.
 import { useState } from "react";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr, type CrisisEscalation } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  CRISIS_CLASSIFICATION_DRAFT_LABEL,
+  useEhr,
+  type CrisisEscalation,
+} from "@/lib/ehr";
 import { canFlagCrisis, useActingStaff } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -23,7 +28,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { Siren } from "lucide-react";
+import { FlaskConical, RefreshCw, Siren } from "lucide-react";
 
 export function timeOpenLabel(iso: string, now: number = Date.now()): string {
   const mins = Math.max(0, Math.round((now - +new Date(iso)) / 60000));
@@ -31,6 +36,99 @@ export function timeOpenLabel(iso: string, now: number = Date.now()): string {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ${mins % 60}m open`;
   return `${Math.floor(hrs / 24)}d ${hrs % 24}h open`;
+}
+
+/**
+ * §Crisis Redesign Phase 1 — draft severity/category, always rendered WITH the
+ * pending-clinical-review caveat so nobody reads these as a settled taxonomy.
+ */
+export function CrisisClassification({ escalation }: { escalation: CrisisEscalation }) {
+  return (
+    <span className="inline-flex flex-wrap items-center gap-1">
+      <Badge variant="outline" className="border-dashed text-[10px] capitalize">
+        {escalation.severity}
+      </Badge>
+      <Badge variant="outline" className="border-dashed text-[10px] capitalize">
+        {escalation.category}
+      </Badge>
+      {escalation.classificationStatus === "draft" && (
+        <span
+          title={CRISIS_CLASSIFICATION_DRAFT_LABEL}
+          className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-900"
+        >
+          <FlaskConical className="h-3 w-3" /> {CRISIS_CLASSIFICATION_DRAFT_LABEL}
+        </span>
+      )}
+    </span>
+  );
+}
+
+/** Visible marker that a further signal arrived while this row sat open. */
+export function CrisisRetriggerBadge({ escalation }: { escalation: CrisisEscalation }) {
+  const n = escalation.retriggers?.length ?? 0;
+  if (n === 0) return null;
+  return (
+    <Badge className="bg-destructive text-destructive-foreground border-0 text-[10px]">
+      <RefreshCw className="mr-1 h-3 w-3" /> Re-triggered ×{n}
+    </Badge>
+  );
+}
+
+/** Claim / unclaim control. Advisory — it never blocks resolution. */
+export function CrisisClaimControl({
+  patientId,
+  escalation,
+}: {
+  patientId: string;
+  escalation: CrisisEscalation;
+}) {
+  const { staffName } = useActingStaff();
+  const mine = escalation.claimedBy === staffName;
+  const act = (fn: () => void, ok: string) => {
+    try {
+      fn();
+      toast.success(ok);
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not update the claim.");
+    }
+  };
+
+  if (!escalation.claimedBy) {
+    return (
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() =>
+          act(
+            () => AdelanteEHR.claimCrisisEscalation(patientId, escalation.id, staffName),
+            "Claimed — other staff can see you have this.",
+          )
+        }
+      >
+        Claim this
+      </Button>
+    );
+  }
+
+  return (
+    <span className="inline-flex items-center gap-2">
+      <Badge variant="secondary" className="text-[10px]">
+        Claimed by {mine ? "you" : escalation.claimedBy}
+      </Badge>
+      <Button
+        size="sm"
+        variant="ghost"
+        onClick={() =>
+          act(
+            () => AdelanteEHR.unclaimCrisisEscalation(patientId, escalation.id, staffName),
+            "Claim released.",
+          )
+        }
+      >
+        {mine ? "Unclaim" : "Release claim"}
+      </Button>
+    </span>
+  );
 }
 
 export function FlagCrisisButton({
@@ -178,6 +276,12 @@ export function ResolveCrisisDialog({
 export function PatientCrisisPanel({ patientId }: { patientId: string }) {
   const rows = useEhr(() => AdelanteEHR.listCrisisEscalations(patientId));
   const open = rows.filter((r) => r.status === "open");
+  // §Crisis Redesign Phase 1 — resolved escalations used to vanish from the
+  // chart face entirely, so continuity of care at the next visit meant digging
+  // through the audit log. They are shown here now, newest first.
+  const resolved = rows
+    .filter((r) => r.status === "resolved")
+    .sort((a, b) => (b.resolvedAt ?? "").localeCompare(a.resolvedAt ?? ""));
   const [resolving, setResolving] = useState<CrisisEscalation | null>(null);
 
   return (
@@ -199,22 +303,81 @@ export function PatientCrisisPanel({ patientId }: { patientId: string }) {
                 <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
                   Open
                 </Badge>
+                <CrisisRetriggerBadge escalation={e} />
                 <span className="capitalize text-muted-foreground">
                   {e.triggerSource.replace("_", " ")}
                 </span>
                 <span className="text-muted-foreground">· {timeOpenLabel(e.triggeredAt)}</span>
               </div>
+              <div className="mt-1">
+                <CrisisClassification escalation={e} />
+              </div>
               <p className="mt-1 text-navy">{e.triggerDetail}</p>
               <p className="text-muted-foreground">
                 Flagged by {e.triggeredBy} · <ClientDate value={e.triggeredAt} />
               </p>
-              <Button size="sm" variant="outline" className="mt-1.5" onClick={() => setResolving(e)}>
-                Resolve
-              </Button>
+              {(e.retriggers?.length ?? 0) > 0 && (
+                <ul className="mt-1 space-y-0.5 border-l-2 border-destructive/40 pl-2">
+                  {e.retriggers!.map((r, i) => (
+                    <li key={i} className="text-muted-foreground">
+                      Further signal <ClientDate value={r.at} /> — {r.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
+              <div className="mt-1.5 flex flex-wrap items-center gap-2">
+                <CrisisClaimControl patientId={patientId} escalation={e} />
+                <Button size="sm" variant="outline" onClick={() => setResolving(e)}>
+                  Resolve
+                </Button>
+              </div>
             </li>
           ))}
         </ul>
       )}
+
+      {resolved.length > 0 && (
+        <div className="space-y-1.5 border-t pt-2">
+          <div className="text-[11px] font-medium text-navy">
+            Resolved history ({resolved.length})
+          </div>
+          <ul className="space-y-1.5">
+            {resolved.map((e) => (
+              <li key={e.id} className="rounded border bg-muted/30 p-2 text-[11px]">
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <Badge variant="secondary" className="text-[10px]">
+                    Resolved
+                  </Badge>
+                  <CrisisRetriggerBadge escalation={e} />
+                  <span className="capitalize text-muted-foreground">
+                    {e.triggerSource.replace("_", " ")}
+                  </span>
+                  {e.resolvedAt && (
+                    <span className="text-muted-foreground">
+                      · <ClientDate value={e.resolvedAt} />
+                    </span>
+                  )}
+                </div>
+                <div className="mt-1">
+                  <CrisisClassification escalation={e} />
+                </div>
+                <p className="mt-1 text-navy">Disposition: {e.disposition}</p>
+                {e.contactedWhom && (
+                  <p className="text-muted-foreground">Contacted: {e.contactedWhom}</p>
+                )}
+                {e.actionsTaken && (
+                  <p className="text-muted-foreground">Actions: {e.actionsTaken}</p>
+                )}
+                <p className="text-muted-foreground">
+                  Resolved by {e.resolvedBy} · flagged by {e.triggeredBy}{" "}
+                  <ClientDate value={e.triggeredAt} />
+                </p>
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+
       <ResolveCrisisDialog
         patientId={patientId}
         escalation={resolving}

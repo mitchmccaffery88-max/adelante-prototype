@@ -52,7 +52,13 @@ export function safeLandingFor(role: StaffRole): string {
 export function resolveNavAccess(role: StaffRole, pathname: string): NavAccess {
   const entry = entryForPath(pathname);
   if (!entry) return { status: "unregistered" };
-  if (canSeeNavEntry(role, entry)) return { status: "allowed", entry };
+  // A path can carry more than one registry entry when a role-scoped variant
+  // exists (§Crisis Redesign Phase 1: "Crises you flagged" is /crisis-queue
+  // for roles with no cross-patient access). Clearing ANY of them grants the
+  // path; the page still renders the narrower, self-scoped view.
+  const variants = STAFF_NAV.filter((e) => e.to === pathname);
+  const cleared = variants.find((e) => canSeeNavEntry(role, e));
+  if (cleared) return { status: "allowed", entry: cleared };
   return {
     status: "denied",
     entry,

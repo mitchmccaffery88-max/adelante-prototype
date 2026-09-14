@@ -95,9 +95,13 @@ export interface CrisisScanOptions {
   /** Where the text came from, e.g. "care message" — goes into the reason. */
   surface: string;
   /**
-   * When true (default) a second match is suppressed while an earlier
-   * message_pattern escalation for this patient is still open, so one distress
-   * conversation does not flood the queue with duplicate rows.
+   * When true (default) a second match while an earlier message_pattern
+   * escalation for this patient is still open does NOT create a second queue
+   * row — but it is no longer DROPPED either. It re-triggers the existing
+   * record: the new detail is appended, `lastTriggeredAt` is bumped, the
+   * coordinator is notified again, and the queue floats the row to the top
+   * with a "re-triggered" indicator. One distress conversation still yields
+   * one row; escalating distress is no longer silently lost.
    */
   dedupeWhileOpen?: boolean;
   /**
@@ -141,19 +145,27 @@ export function scanTextForCrisis(
     return undefined;
   }
 
-  if (opts.dedupeWhileOpen !== false) {
-    const alreadyOpen = AdelanteEHR.listCrisisEscalations(patientId, { status: "open" }).some(
-      (r) => r.triggerSource === "message_pattern",
-    );
-    if (alreadyOpen) return undefined;
-  }
-
   // The raw message body is deliberately NOT copied into the escalation reason:
   // the message itself already lives in the record (and may be Part 2 flagged).
-  return AdelanteEHR.flagCrisis(
-    patientId,
-    CRISIS_TEXT_SCANNER,
-    `Automated flag: crisis language detected in ${opts.surface} (patterns: ${hit.patternIds.join(", ")}). Unvalidated screen — clinician review required.`,
-    { triggerSource: "message_pattern" },
-  );
+  const detail = `Automated flag: crisis language detected in ${opts.surface} (patterns: ${hit.patternIds.join(", ")}). Unvalidated screen — clinician review required.`;
+
+  if (opts.dedupeWhileOpen !== false) {
+    const alreadyOpen = AdelanteEHR.listCrisisEscalations(patientId, { status: "open" }).find(
+      (r) => r.triggerSource === "message_pattern",
+    );
+    // §Crisis Redesign Phase 1 — this used to `return undefined`, silently
+    // discarding the second signal. It now re-triggers the open record so the
+    // repeat is preserved and visibly re-surfaced, without a duplicate row.
+    if (alreadyOpen)
+      return AdelanteEHR.retriggerCrisisEscalation(
+        patientId,
+        alreadyOpen.id,
+        CRISIS_TEXT_SCANNER,
+        detail,
+      );
+  }
+
+  return AdelanteEHR.flagCrisis(patientId, CRISIS_TEXT_SCANNER, detail, {
+    triggerSource: "message_pattern",
+  });
 }

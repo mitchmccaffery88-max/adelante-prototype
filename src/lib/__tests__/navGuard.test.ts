@@ -16,7 +16,12 @@ describe("route-level nav guard", () => {
         // owns the guard decision (see entryForPath).
         if (entry.search) continue;
         const access = resolveNavAccess(role, entry.to);
-        expect(access.status).toBe(canSeeNavEntry(role, entry) ? "allowed" : "denied");
+        // A role-scoped variant on the same path (§Crisis Redesign Phase 1:
+        // "Crises you flagged" → /crisis-queue) also grants the path.
+        const anyVariant = STAFF_NAV.filter((e) => e.to === entry.to).some((e) =>
+          canSeeNavEntry(role, e),
+        );
+        expect(access.status).toBe(anyVariant ? "allowed" : "denied");
       }
     }
   });

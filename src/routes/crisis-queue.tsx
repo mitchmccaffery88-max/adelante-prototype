@@ -7,16 +7,29 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type CrisisEscalation } from "@/lib/ehr";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, canFlagCrisis, useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
-import { ResolveCrisisDialog, timeOpenLabel } from "@/components/clinical/CrisisPanel";
+import {
+  CrisisClaimControl,
+  CrisisClassification,
+  CrisisRetriggerBadge,
+  ResolveCrisisDialog,
+  timeOpenLabel,
+} from "@/components/clinical/CrisisPanel";
 import { ArrowLeft, Lock, Siren, UserX } from "lucide-react";
 
 export const Route = createFileRoute("/crisis-queue")({
+  // §Crisis Redesign Phase 1 — `scope=mine` is the nav destination for
+  // flag-capable roles with no cross-patient queue access. The page already
+  // renders the self-scoped section from the RBAC check; the param only keeps
+  // the two nav destinations distinct.
+  validateSearch: (s: Record<string, unknown>) => ({
+    scope: s["scope"] === "mine" ? ("mine" as const) : undefined,
+  }),
   head: () => ({
     meta: [
       { title: "Crisis queue — Adelante" },
@@ -57,21 +70,28 @@ function CrisisQueuePage() {
       </Button>
       <header>
         <h1 className="font-display text-2xl text-navy flex items-center gap-2">
-          <Siren className="h-5 w-5 text-destructive" /> Crisis queue
+          <Siren className="h-5 w-5 text-destructive" />{" "}
+          {access.locked ? "Crises you flagged" : "Crisis queue"}
         </h1>
         <p className="text-sm text-muted-foreground">
-          Open escalations across the population, longest-open first. Every new escalation also
-          sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio
-          connection and alert numbers are configured; if they are not, this queue is still the
-          only notification.
+          {access.locked
+            ? "You do not have the cross-patient crisis queue. This page shows what came of the escalations you personally raised."
+            : "Open escalations across the population, longest-open first. Every new escalation also sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio connection and alert numbers are configured; if they are not, this queue is still the only notification."}
         </p>
       </header>
 
       {access.locked ? (
-        <Card className="p-6 text-sm text-muted-foreground flex items-center gap-2">
-          <Lock className="h-4 w-4" />
-          Your role does not have access to the cross-patient crisis queue.
-        </Card>
+        <>
+          <Card className="p-6 text-sm text-muted-foreground flex items-center gap-2">
+            <Lock className="h-4 w-4" />
+            Your role does not have access to the cross-patient crisis queue.
+          </Card>
+          {/* §Crisis Redesign Phase 1 — peers (and other flag-capable roles
+              without queue access) could raise a flag and never learn what
+              happened. This is deliberately NOT the queue: it is only the
+              escalations this person personally flagged. */}
+          {canFlagCrisis(role) && <MyFlaggedEscalations />}
+        </>
       ) : rows.length === 0 && anonymous.length === 0 ? (
         <EmptyState icon={Siren} title="No open crisis escalations" />
       ) : (
@@ -122,24 +142,40 @@ function CrisisQueuePage() {
                 >
                   {patient.firstName} {patient.lastName}
                 </Link>
-                <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                  {timeOpenLabel(escalation.triggeredAt)}
-                </Badge>
+                <div className="flex flex-wrap items-center gap-1.5">
+                  <CrisisRetriggerBadge escalation={escalation} />
+                  <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
+                    {timeOpenLabel(escalation.triggeredAt)}
+                  </Badge>
+                </div>
               </div>
+              <CrisisClassification escalation={escalation} />
               <p className="text-navy">{escalation.triggerDetail}</p>
               <p className="text-muted-foreground">
                 <span className="capitalize">{escalation.triggerSource.replace("_", " ")}</span> ·
                 flagged by {escalation.triggeredBy} ·{" "}
                 <ClientDate value={escalation.triggeredAt} />
               </p>
+              {(escalation.retriggers?.length ?? 0) > 0 && (
+                <ul className="space-y-0.5 border-l-2 border-destructive/40 pl-2 text-muted-foreground">
+                  {escalation.retriggers!.map((r, i) => (
+                    <li key={i}>
+                      Further signal <ClientDate value={r.at} /> — {r.detail}
+                    </li>
+                  ))}
+                </ul>
+              )}
               {access.level === "write" && (
-                <Button
-                  size="sm"
-                  variant="outline"
-                  onClick={() => setResolving({ patientId: patient.id, escalation })}
-                >
-                  Resolve
-                </Button>
+                <div className="flex flex-wrap items-center gap-2">
+                  <CrisisClaimControl patientId={patient.id} escalation={escalation} />
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => setResolving({ patientId: patient.id, escalation })}
+                  >
+                    Resolve
+                  </Button>
+                </div>
               )}
             </Card>
           ))}
@@ -153,5 +189,68 @@ function CrisisQueuePage() {
         onClose={() => setResolving(null)}
       />
     </div>
+  );
+}
+
+/**
+ * §Crisis Redesign Phase 1 — "what came of the flag I raised", scoped to the
+ * acting staff member's OWN flags only. Read-only: no claim, no resolve, no
+ * cross-patient list.
+ */
+function MyFlaggedEscalations() {
+  const { staffName } = useActingStaff();
+  const mine = useEhr(() => AdelanteEHR.listCrisisEscalationsFlaggedBy(staffName));
+
+  return (
+    <section className="space-y-2">
+      <h2 className="font-display text-sm text-navy">Crises you flagged</h2>
+      <p className="text-xs text-muted-foreground">
+        Resolution status for the escalations you personally raised. This is not the cross-patient
+        queue — you only see your own flags.
+      </p>
+      {mine.length === 0 ? (
+        <EmptyState icon={Siren} title="You have not flagged any crises" />
+      ) : (
+        <ul className="space-y-2">
+          {mine.map(({ patient, escalation }) => (
+            <Card key={escalation.id} className="space-y-1.5 p-3 text-xs">
+              <div className="flex flex-wrap items-center justify-between gap-2">
+                <span className="font-display text-base text-navy">
+                  {patient.firstName} {patient.lastName}
+                </span>
+                <Badge
+                  className={
+                    escalation.status === "open"
+                      ? "bg-destructive/15 text-destructive border-0 text-[10px]"
+                      : "text-[10px]"
+                  }
+                  variant={escalation.status === "open" ? undefined : "secondary"}
+                >
+                  {escalation.status === "open" ? "Open" : "Resolved"}
+                </Badge>
+              </div>
+              <p className="text-muted-foreground">
+                Flagged <ClientDate value={escalation.triggeredAt} />
+              </p>
+              {escalation.status === "resolved" ? (
+                <p className="text-navy">
+                  Disposition: {escalation.disposition} — resolved by {escalation.resolvedBy}
+                  {escalation.resolvedAt && (
+                    <>
+                      {" "}
+                      <ClientDate value={escalation.resolvedAt} />
+                    </>
+                  )}
+                </p>
+              ) : (
+                <p className="text-muted-foreground">
+                  Still open · {timeOpenLabel(escalation.triggeredAt)}
+                </p>
+              )}
+            </Card>
+          ))}
+        </ul>
+      )}
+    </section>
   );
 }
