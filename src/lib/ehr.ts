@@ -14324,10 +14324,13 @@ export const AdelanteEHR = {
         sourceNoteId: opts?.sourceNoteId ?? null,
       },
     });
-    // §Notification feed — clinical_coordinator owns crisis disposition. This
-    // is the single call site for both manual and screener-triggered flags.
+    // §Notification feed — clinical_coordinator owns clinical crisis
+    // disposition. §Crisis Redesign Phase 2: an SDOH-urgent escalation is
+    // case-management work, not clinical disposition, so it is routed to the
+    // ECM Provider instead. Single call site for every trigger source.
+    const owner: StaffRole = row.category === "sdoh" ? "ecm_provider" : "clinical_coordinator";
     AdelanteEHR.notify({
-      recipientRole: "clinical_coordinator",
+      recipientRole: owner,
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
       body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : row.triggerSource === "patient_request" ? "patient asked for their care team" : "manual"}): ${detail}`,
