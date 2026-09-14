@@ -100,6 +100,8 @@ export type NavGate =
    * `crisis_queue` entry so nobody sees both.
    */
   | { kind: "crisis_flag_only" }
+  /** §Crisis Redesign Phase 2 — the SDOH-urgent lane; see canWorkSdohCrisisLane. */
+  | { kind: "sdoh_crisis_lane" }
   | { kind: "open" };
 
 export interface NavEntry {
