@@ -1862,8 +1862,23 @@ export interface CrisisEscalation {
   retriggers?: CrisisRetrigger[];
   /** Most recent signal on this row — equals `triggeredAt` until a re-trigger. */
   lastTriggeredAt?: string;
+  /**
+   * §Crisis Redesign Phase 2 — aging / SLA. Stamped ONCE, the first time a
+   * sweep observes this row past its DRAFT response threshold (see
+   * `src/lib/crisisPolicy.ts`). Presence of the stamp is what stops the
+   * supervisor re-notification firing on every sweep tick.
+   */
+  slaBreachAt?: string;
   contactedWhom?: string;
   actionsTaken?: string;
+  /**
+   * §Crisis Redesign Phase 2 — structured disposition. `dispositionCode` is
+   * the picked DRAFT category (see CRISIS_DISPOSITIONS in
+   * `src/lib/crisisPolicy.ts`); `disposition` stays the human-readable string
+   * so every existing reader, audit entry and alert-removal reason keeps
+   * working. `other` carries its real free text in `disposition`.
+   */
+  dispositionCode?: string;
   disposition?: string;
   resolvedBy?: string;
   resolvedAt?: string;
