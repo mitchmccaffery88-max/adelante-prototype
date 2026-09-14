@@ -28,8 +28,9 @@ describe("admin quick links vs sidebar Administration group", () => {
   it("never shows a link the role's gate refuses", () => {
     for (const { key: role } of STAFF_ROLES) {
       for (const entry of adminQuickLinks(role)) {
-        if (entry.gate.kind === "open") continue;
-        expect(entry.gate.anyOf.some((cls) => canAccess(role, cls).level !== "none")).toBe(true);
+        const gate = entry.gate;
+        if (gate.kind !== "record_class") continue;
+        expect(gate.anyOf.some((cls) => canAccess(role, cls).level !== "none")).toBe(true);
       }
     }
   });

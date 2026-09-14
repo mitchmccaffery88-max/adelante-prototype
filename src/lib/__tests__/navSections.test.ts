@@ -8,7 +8,7 @@ import {
   staffNavForRole,
   staffNavGroupsForRole,
 } from "../navSections";
-import { STAFF_ROLES, canAccess } from "../roles";
+import { STAFF_ROLES, canAccess, canFlagCrisis } from "../roles";
 
 const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
   staffNavForRole(role).map((e) => e.id);
@@ -108,16 +108,16 @@ describe("gating derives from the RBAC matrix", () => {
   it("matches canAccess() for every role/entry pair", () => {
     for (const { key: role } of STAFF_ROLES) {
       for (const entry of STAFF_NAV) {
+        const gate = entry.gate;
         const expected =
-          entry.gate.kind === "open"
+          gate.kind === "open"
             ? true
-            : entry.gate.anyOf.some((cls) => {
-                const level = canAccess(role, cls).level;
-                if (entry.gate.kind === "open") return false;
-                return entry.gate.minLevel === "write"
-                  ? level === "write"
-                  : level !== "none";
-              });
+            : gate.kind === "crisis_flag_only"
+              ? canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none"
+              : gate.anyOf.some((cls) => {
+                  const level = canAccess(role, cls).level;
+                  return gate.minLevel === "write" ? level === "write" : level !== "none";
+                });
         expect(canSeeNavEntry(role, entry)).toBe(expected);
       }
     }

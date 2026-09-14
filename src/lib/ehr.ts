@@ -1817,6 +1817,36 @@ export interface CrisisEscalation {
   triggeredBy: string;
   triggeredAt: string;
   status: "open" | "resolved";
+  /**
+   * §Crisis Redesign Phase 1 — DRAFT CLASSIFICATION, NOT A CLINICAL TAXONOMY.
+   * Structure only, so severity/category can be reported on and refined once
+   * Christi / Dr. Bagga make the real clinical decision. Every trigger that
+   * exists today writes `critical` / `clinical`, because that is genuinely
+   * what every one of them is right now: `flagCrisis` hardcodes a critical
+   * linked PatientAlert for all sources and there is no SDOH lane at all.
+   * `classificationStatus` is what the UI reads to render the
+   * "draft — pending clinical review" indicator; do NOT promote anything to
+   * "reviewed" in code without that sign-off.
+   */
+  severity: CrisisSeverity;
+  category: CrisisCategory;
+  classificationStatus: "draft" | "reviewed";
+  /**
+   * §Crisis Redesign Phase 1 — claim/assignment. Claiming is advisory, not a
+   * lock: it exists so two responders do not both work the same row. Anyone
+   * with queue write access can still resolve an unclaimed or other-claimed
+   * escalation; nothing is blocked on the claim.
+   */
+  claimedBy?: string;
+  claimedAt?: string;
+  /**
+   * §Crisis Redesign Phase 1 — re-trigger. A second real signal while this row
+   * is still open is NO LONGER DROPPED: it appends here and bumps
+   * `lastTriggeredAt`, so the repeat is visible instead of silent.
+   */
+  retriggers?: CrisisRetrigger[];
+  /** Most recent signal on this row — equals `triggeredAt` until a re-trigger. */
+  lastTriggeredAt?: string;
   contactedWhom?: string;
   actionsTaken?: string;
   disposition?: string;
@@ -1824,6 +1854,25 @@ export interface CrisisEscalation {
   resolvedAt?: string;
   resolutionReason?: string;
 }
+
+/**
+ * DRAFT severity ladder — clearly-labeled placeholder structure, pending real
+ * clinical review. Do not add values or reassign meaning without that review.
+ */
+export type CrisisSeverity = "critical" | "urgent" | "routine";
+
+/** DRAFT category set — same caveat as CrisisSeverity. */
+export type CrisisCategory = "clinical" | "sdoh" | "unclassified";
+
+export interface CrisisRetrigger {
+  at: string;
+  by: string;
+  detail: string;
+}
+
+/** Shown wherever a draft severity/category value is rendered. */
+export const CRISIS_CLASSIFICATION_DRAFT_LABEL =
+  "Draft classification — pending clinical review";
 
 export interface PatientAlert {
   id: string;
@@ -13875,7 +13924,136 @@ export const AdelanteEHR = {
     return opts?.status ? rows.filter((r) => r.status === opts.status) : [...rows];
   },
 
-  /** Cross-patient open queue, oldest-open first (longest open = most urgent). */
+  /**
+   * §Crisis Redesign Phase 1 — narrowly-scoped peer visibility. Peer
+   * specialists (and every other CRISIS_FLAG_ROLES role without
+   * `crisis_queue` access) could raise a flag and then never learn what
+   * happened to it. This returns ONLY escalations that this actor personally
+   * flagged — never the cross-patient queue — so "what came of the flag I
+   * raised" is answerable without granting population-wide visibility.
+   */
+  listCrisisEscalationsFlaggedBy(
+    staffName: string,
+  ): { patient: Patient; escalation: CrisisEscalation }[] {
+    const who = staffName?.trim();
+    if (!who) return [];
+    const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
+    for (const p of patients) {
+      for (const e of p.crisisEscalations ?? []) {
+        if (e.triggeredBy === who) out.push({ patient: p, escalation: e });
+      }
+    }
+    return out.sort(
+      (a, b) => +new Date(b.escalation.triggeredAt) - +new Date(a.escalation.triggeredAt),
+    );
+  },
+
+  /**
+   * §Crisis Redesign Phase 1 — claim. Advisory only: it records who picked the
+   * row up so two responders do not double-work it. It does NOT lock
+   * resolution. Claiming an already-claimed row by someone else is refused so
+   * a claim cannot be silently stolen; unclaim first.
+   */
+  claimCrisisEscalation(patientId: string, id: string, staffName: string): CrisisEscalation {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    if (row.status === "resolved") throw new Error("This escalation is already resolved.");
+    if (row.claimedBy && row.claimedBy !== staffName)
+      throw new Error(`Already claimed by ${row.claimedBy}.`);
+    row.claimedBy = staffName;
+    row.claimedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_claimed",
+      patientId,
+      actorId: staffName,
+      detail: { escalationId: row.id },
+    });
+    emit();
+    return row;
+  },
+
+  /** Release a claim so somebody else can pick the escalation up. */
+  unclaimCrisisEscalation(patientId: string, id: string, staffName: string): CrisisEscalation {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    const previous = row.claimedBy;
+    row.claimedBy = undefined;
+    row.claimedAt = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_unclaimed",
+      patientId,
+      actorId: staffName,
+      detail: { escalationId: row.id, previousClaimedBy: previous ?? null },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * §Crisis Redesign Phase 1 — re-trigger, replacing a silent drop.
+   *
+   * Previously a second crisis signal arriving while an escalation was already
+   * open for that patient was discarded entirely: clinically the WORST case,
+   * because escalating distress is exactly the signal you must not lose. Now
+   * the repeat is appended to the existing record, `lastTriggeredAt` is bumped,
+   * and the queue renders a "re-triggered" indicator. One record, no lost
+   * signal, and no duplicate row flooding the queue either.
+   */
+  retriggerCrisisEscalation(
+    patientId: string,
+    id: string,
+    staffName: string,
+    detail: string,
+  ): CrisisEscalation {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    if (row.status === "resolved") throw new Error("This escalation is already resolved.");
+    const at = new Date().toISOString();
+    row.retriggers = [...(row.retriggers ?? []), { at, by: staffName, detail }];
+    row.lastTriggeredAt = at;
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_retriggered",
+      patientId,
+      actorId: staffName,
+      detail: { escalationId: row.id, triggerDetail: detail, count: row.retriggers.length },
+    });
+    // Same out-of-band push as a fresh flag — a repeat signal is news.
+    AdelanteEHR.notify({
+      recipientRole: "clinical_coordinator",
+      category: "crisis_flagged",
+      subject: `Crisis re-triggered — ${patientLabel(patientId)}`,
+      body: `A further crisis signal arrived on an already-open escalation (${row.retriggers.length} repeat${row.retriggers.length === 1 ? "" : "s"}): ${detail}`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
+    dispatchStaffAlert({
+      kind: "crisis_flagged",
+      recipientRole: "clinical_coordinator",
+      subject: "Adelante: crisis re-triggered",
+      body: "A further crisis signal arrived on an already-open escalation. Open the crisis queue.",
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
+    emit();
+    return row;
+  },
+
+
+
+  /**
+   * Cross-patient open queue. Primary order is unchanged — oldest-open first,
+   * because the longest-open escalation is the most urgent thing on screen.
+   * §Crisis Redesign Phase 1 adds one rule above it: an escalation that has
+   * RE-TRIGGERED (a further signal arrived while it sat open) floats to the
+   * top, so a repeat cannot be buried mid-list. Re-triggered rows are
+   * themselves oldest-first among each other.
+   */
   listOpenCrisisEscalations(): { patient: Patient; escalation: CrisisEscalation }[] {
     const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
     for (const p of patients) {
@@ -13883,9 +14061,12 @@ export const AdelanteEHR = {
         if (e.status === "open") out.push({ patient: p, escalation: e });
       }
     }
-    return out.sort(
-      (a, b) => +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt),
-    );
+    return out.sort((a, b) => {
+      const ar = (a.escalation.retriggers?.length ?? 0) > 0 ? 0 : 1;
+      const br = (b.escalation.retriggers?.length ?? 0) > 0 ? 0 : 1;
+      if (ar !== br) return ar - br;
+      return +new Date(a.escalation.triggeredAt) - +new Date(b.escalation.triggeredAt);
+    });
   },
 
   /** Open (unacknowledged) anonymous front-door crisis alerts, oldest first. */
@@ -14021,7 +14202,12 @@ export const AdelanteEHR = {
     patientId: string,
     staffName: string,
     reason: string,
-    opts?: { triggerSource?: CrisisEscalation["triggerSource"]; sourceNoteId?: string },
+    opts?: {
+      triggerSource?: CrisisEscalation["triggerSource"];
+      sourceNoteId?: string;
+      severity?: CrisisSeverity;
+      category?: CrisisCategory;
+    },
   ): CrisisEscalation {
     const detail = reason?.trim();
     if (!detail || detail.length < 3)
@@ -14034,6 +14220,7 @@ export const AdelanteEHR = {
       notes: detail,
       enteredBy: staffName,
     });
+    const now = new Date().toISOString();
     const row: CrisisEscalation = {
       id: uid(),
       patientId,
@@ -14041,8 +14228,16 @@ export const AdelanteEHR = {
       triggerSource: opts?.triggerSource ?? "manual",
       triggerDetail: detail,
       triggeredBy: staffName,
-      triggeredAt: new Date().toISOString(),
+      triggeredAt: now,
       status: "open",
+      // DRAFT defaults — see the CrisisEscalation doc comment. Every trigger
+      // that exists today genuinely is critical/clinical; callers may pass
+      // drafts explicitly once a real lane exists (Phase 2+).
+      severity: opts?.severity ?? "critical",
+      category: opts?.category ?? "clinical",
+      classificationStatus: "draft",
+      lastTriggeredAt: now,
+      retriggers: [],
     };
     p.crisisEscalations = [row, ...(p.crisisEscalations ?? [])];
     appendAudit({

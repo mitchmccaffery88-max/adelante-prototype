@@ -44,6 +44,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import {
   canAccess,
+  canFlagCrisis,
   useActingStaff,
   type AccessLevel,
   type RecordClass,
@@ -91,6 +92,14 @@ export const NAV_GROUP_ORDER: NavGroup[] = [
  */
 export type NavGate =
   | { kind: "record_class"; anyOf: RecordClass[]; minLevel?: Exclude<AccessLevel, "none"> }
+  /**
+   * §Crisis Redesign Phase 1 — roles that can FLAG a crisis but have no
+   * `crisis_queue` access (peer_specialist, sud_counselor, clinical_trainee).
+   * They get a self-scoped "crises you flagged" destination, never the
+   * cross-patient queue. Deliberately mutually exclusive with the
+   * `crisis_queue` entry so nobody sees both.
+   */
+  | { kind: "crisis_flag_only" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -237,6 +246,16 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/crisis-queue",
     group: "queues",
     gate: { kind: "record_class", anyOf: ["crisis_queue"] },
+  },
+  {
+    id: "crisis-flagged-by-me",
+    label: "Crises you flagged",
+    desc: "Status of escalations you raised",
+    icon: Siren,
+    to: "/crisis-queue",
+    search: { scope: "mine" },
+    group: "queues",
+    gate: { kind: "crisis_flag_only" },
   },
   {
     id: "message-queue",
@@ -496,6 +515,8 @@ export const STAFF_NAV: NavEntry[] = [
 /** True when `role` clears an entry's gate. No role lists live here. */
 export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "open") return true;
+  if (entry.gate.kind === "crisis_flag_only")
+    return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   const min = LEVEL_RANK[entry.gate.minLevel ?? "read"];
   return entry.gate.anyOf.some((cls) => {
     // Patient-less call: `consent_gated` classes resolve to locked, which is
