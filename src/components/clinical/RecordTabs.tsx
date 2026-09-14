@@ -577,6 +577,13 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
             </div>
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
+            {i.urgentFlaggedAt && (
+              <div className="text-[11px] text-destructive">
+                Flagged urgent by {i.urgentFlaggedBy} · <ClientDate value={i.urgentFlaggedAt} /> —
+                open in the urgent social needs lane of the crisis queue.
+              </div>
+            )}
+            {!readOnly && <FlagSdohUrgentControl patientId={patientId} item={i} />}
             {!readOnly && (
               <div className="flex flex-wrap items-center gap-2">
                 <Select
