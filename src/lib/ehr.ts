@@ -388,6 +388,15 @@ export interface SdohPlanItem {
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /**
+   * §Crisis Redesign Phase 2 — SDOH-urgent lane. Set when staff deliberately
+   * escalate this need into the crisis queue as `category: "sdoh"`. Urgency is
+   * NEVER inferred from the need text or status: marking a social need urgent
+   * enough to be worked as a crisis is a human judgement call.
+   */
+  urgentEscalationId?: string;
+  urgentFlaggedBy?: string;
+  urgentFlaggedAt?: string;
 }
 
 export interface SelfHelpModule {
