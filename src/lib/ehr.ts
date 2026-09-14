@@ -14379,6 +14379,7 @@ export const AdelanteEHR = {
     row.contactedWhom = input.contactedWhom?.trim() || undefined;
     row.actionsTaken = input.actionsTaken?.trim() || undefined;
     row.disposition = disposition;
+    row.dispositionCode = input.dispositionCode?.trim() || undefined;
     row.resolutionReason = disposition;
     row.resolvedBy = staffName;
     row.resolvedAt = new Date().toISOString();
