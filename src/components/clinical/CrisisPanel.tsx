@@ -90,6 +90,24 @@ export function CrisisRetriggerBadge({ escalation }: { escalation: CrisisEscalat
   );
 }
 
+/**
+ * §Crisis Redesign Phase 2 — aging / SLA. Visible "overdue" state once an open
+ * row passes its DRAFT response target. Claiming does not exempt a row.
+ */
+export function CrisisOverdueBadge({ escalation }: { escalation: CrisisEscalation }) {
+  const state = crisisSlaState(escalation);
+  if (!state.overdue) return null;
+  return (
+    <Badge
+      className="border-0 bg-amber-500 text-[10px] text-amber-950"
+      title={`${CRISIS_POLICY_DRAFT_LABEL} — draft target ${state.thresholdLabel}`}
+    >
+      <AlarmClock className="mr-1 h-3 w-3" /> Overdue · {overdueByLabel(state.overdueByMs)} (draft{" "}
+      {state.thresholdLabel})
+    </Badge>
+  );
+}
+
 /** Claim / unclaim control. Advisory — it never blocks resolution. */
 export function CrisisClaimControl({
   patientId,
