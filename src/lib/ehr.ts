@@ -8615,6 +8615,43 @@ export const AdelanteEHR = {
     item.updatedAt = new Date().toISOString();
     emit();
   },
+  /**
+   * §Crisis Redesign Phase 2 — SDOH-urgent lane trigger.
+   *
+   * Staff-initiated ONLY. Nothing auto-classifies a social need as urgent:
+   * whether "no housing tonight" is a crisis or a Tuesday is a real judgement
+   * call, so it takes an explicit action with a reason. The escalation is an
+   * ordinary CrisisEscalation with the DRAFT classification
+   * severity: "urgent" / category: "sdoh" so it lands in the SDOH lane of the
+   * crisis queue rather than the clinical one.
+   */
+  flagSdohItemUrgent(
+    patientId: string,
+    itemId: string,
+    staffName: string,
+    reason: string,
+  ): CrisisEscalation {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!p || !item) throw new Error("Social need not found.");
+    const existing = item.urgentEscalationId
+      ? p.crisisEscalations?.find((r) => r.id === item.urgentEscalationId)
+      : undefined;
+    if (existing && existing.status === "open")
+      throw new Error("This need is already flagged urgent and open in the crisis queue.");
+    const detail = `${item.need} — ${reason?.trim() ?? ""}`.trim();
+    const row = AdelanteEHR.flagCrisis(patientId, staffName, detail, {
+      triggerSource: "sdoh_urgent",
+      severity: "urgent",
+      category: "sdoh",
+    });
+    item.urgentEscalationId = row.id;
+    item.urgentFlaggedBy = staffName;
+    item.urgentFlaggedAt = row.triggeredAt;
+    item.updatedAt = row.triggeredAt;
+    emit();
+    return row;
+  },
   removeSdohItem(patientId: string, itemId: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p?.sdohPlan) return;
