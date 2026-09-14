@@ -101,17 +101,52 @@ function CrisisQueuePage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back
         </Link>
       </Button>
-      <header>
+      <header className="space-y-2">
         <h1 className="font-display text-2xl text-navy flex items-center gap-2">
           <Siren className="h-5 w-5 text-destructive" />{" "}
-          {access.locked ? "Crises you flagged" : "Crisis queue"}
+          {access.locked
+            ? "Crises you flagged"
+            : lane === "sdoh"
+              ? "Urgent social needs"
+              : "Crisis queue"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {access.locked
             ? "You do not have the cross-patient crisis queue. This page shows what came of the escalations you personally raised."
-            : "Open escalations across the population, longest-open first. Every new escalation also sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio connection and alert numbers are configured; if they are not, this queue is still the only notification."}
+            : lane === "sdoh"
+              ? "Social needs a staff member judged urgent enough to work as a crisis. These are routed to case management, not the on-call clinical coordinator."
+              : "Open escalations across the population, longest-open first. Every new escalation also sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio connection and alert numbers are configured; if they are not, this queue is still the only notification."}
         </p>
+        {!access.locked && (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  { key: undefined, label: `All open (${allRows.length})` },
+                  {
+                    key: "clinical" as const,
+                    label: `Clinical (${allRows.length - sdohCount})`,
+                  },
+                  { key: "sdoh" as const, label: `Urgent social needs (${sdohCount})` },
+                ] as const
+              ).map((tab) => (
+                <Button
+                  key={tab.label}
+                  asChild
+                  size="sm"
+                  variant={lane === tab.key ? "default" : "outline"}
+                >
+                  <Link to="/crisis-queue" search={{ lane: tab.key }}>
+                    {tab.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+            <p className="text-[11px] text-amber-900">{CRISIS_POLICY_DRAFT_LABEL}</p>
+          </>
+        )}
       </header>
+
 
       {access.locked ? (
         <>
