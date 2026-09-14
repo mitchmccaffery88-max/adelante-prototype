@@ -238,20 +238,33 @@ export function ResolveCrisisDialog({
   const { staffName } = useActingStaff();
   const [contactedWhom, setContactedWhom] = useState("");
   const [actionsTaken, setActionsTaken] = useState("");
-  const [disposition, setDisposition] = useState("");
+  // §Crisis Redesign Phase 2 — structured disposition. The picked DRAFT code
+  // plus free text; `other` (and "Escalated to…") keep the real words so a
+  // disposition that does not fit the draft list is never lost.
+  const [code, setCode] = useState<CrisisDispositionCode | "">("");
+  const [detail, setDetail] = useState("");
+  const picked = CRISIS_DISPOSITIONS.find((d) => d.code === code);
+  const detailRequired = Boolean(picked?.requiresDetail);
+  const canSubmit = Boolean(code) && (!detailRequired || detail.trim().length > 0);
+
+  const reset = () => {
+    setContactedWhom("");
+    setActionsTaken("");
+    setCode("");
+    setDetail("");
+  };
 
   const submit = () => {
-    if (!escalation) return;
+    if (!escalation || !code) return;
     try {
       AdelanteEHR.resolveCrisisEscalation(patientId, escalation.id, staffName, {
         contactedWhom,
         actionsTaken,
-        disposition,
+        dispositionCode: code,
+        disposition: composeDisposition(code, detail),
       });
       toast.success("Escalation resolved — the critical alert has been closed.");
-      setContactedWhom("");
-      setActionsTaken("");
-      setDisposition("");
+      reset();
       onClose();
     } catch (e) {
       toast.error(e instanceof Error ? e.message : "Could not resolve.");
@@ -269,6 +282,44 @@ export function ResolveCrisisDialog({
         </DialogHeader>
         <div className="space-y-2">
           <div className="space-y-1.5">
+            <Label className="text-[11px]">Disposition (required)</Label>
+            <Select value={code} onValueChange={(v) => setCode(v as CrisisDispositionCode)}>
+              <SelectTrigger aria-label="Disposition">
+                <SelectValue placeholder="Choose a disposition" />
+              </SelectTrigger>
+              <SelectContent>
+                {CRISIS_DISPOSITIONS.map((d) => (
+                  <SelectItem key={d.code} value={d.code}>
+                    {d.label}
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+            <p className="inline-flex items-center gap-1 rounded bg-amber-100 px-1.5 py-0.5 text-[10px] text-amber-900">
+              <FlaskConical className="h-3 w-3" /> {CRISIS_DISPOSITION_DRAFT_LABEL}
+            </p>
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-[11px]">
+              {code === "escalated"
+                ? "Escalated to whom (required)"
+                : detailRequired
+                  ? "Describe the disposition (required)"
+                  : "Disposition detail (optional)"}
+            </Label>
+            <Textarea
+              value={detail}
+              onChange={(e) => setDetail(e.target.value)}
+              rows={2}
+              aria-label="Disposition detail"
+              placeholder={
+                code === "other"
+                  ? "What actually happened, in your words."
+                  : "Anything the category does not capture."
+              }
+            />
+          </div>
+          <div className="space-y-1.5">
             <Label className="text-[11px]">Who was contacted</Label>
             <Input
               value={contactedWhom}
@@ -284,21 +335,12 @@ export function ResolveCrisisDialog({
               rows={2}
             />
           </div>
-          <div className="space-y-1.5">
-            <Label className="text-[11px]">Disposition (required)</Label>
-            <Textarea
-              value={disposition}
-              onChange={(e) => setDisposition(e.target.value)}
-              rows={2}
-              aria-label="Disposition"
-            />
-          </div>
         </div>
         <DialogFooter>
           <Button variant="outline" onClick={onClose}>
             Cancel
           </Button>
-          <Button disabled={disposition.trim().length === 0} onClick={submit}>
+          <Button disabled={!canSubmit} onClick={submit}>
             Resolve
           </Button>
         </DialogFooter>
