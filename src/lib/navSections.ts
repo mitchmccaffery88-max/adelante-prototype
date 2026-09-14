@@ -45,6 +45,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   canAccess,
   canFlagCrisis,
+  canWorkSdohCrisisLane,
   useActingStaff,
   type AccessLevel,
   type RecordClass,
