@@ -250,6 +250,19 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["crisis_queue"] },
   },
   {
+    // §Crisis Redesign Phase 2 — the SDOH-urgent lane is the SAME queue page,
+    // pre-filtered to `category: "sdoh"`, so social-need escalations are worked
+    // by case management instead of sitting behind clinical crises.
+    id: "crisis-sdoh-lane",
+    label: "Urgent social needs",
+    desc: "SDOH escalations routed to case management",
+    icon: Siren,
+    to: "/crisis-queue",
+    search: { lane: "sdoh" },
+    group: "queues",
+    gate: { kind: "sdoh_crisis_lane" },
+  },
+  {
     id: "crisis-flagged-by-me",
     label: "Crises you flagged",
     desc: "Status of escalations you raised",
