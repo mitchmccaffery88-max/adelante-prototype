@@ -234,7 +234,7 @@ function CrisisQueuePage() {
                   ))}
                 </ul>
               )}
-              {access.level === "write" && (
+              {canWorkRow(escalation) && (
                 <div className="flex flex-wrap items-center gap-2">
                   <CrisisClaimControl patientId={patient.id} escalation={escalation} />
                   <Button
