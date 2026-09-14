@@ -5,9 +5,10 @@
 // Sorted oldest-open first, because the longest-open escalation is the most
 // urgent thing on the screen.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type CrisisEscalation } from "@/lib/ehr";
-import { canAccess, canFlagCrisis, useActingStaff } from "@/lib/roles";
+import { canAccess, canFlagCrisis, canWorkSdohCrisisLane, useActingStaff } from "@/lib/roles";
+import { CRISIS_POLICY_DRAFT_LABEL, sweepCrisisSla } from "@/lib/crisisPolicy";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -16,6 +17,7 @@ import { EmptyState } from "@/components/EmptyState";
 import {
   CrisisClaimControl,
   CrisisClassification,
+  CrisisOverdueBadge,
   CrisisRetriggerBadge,
   ResolveCrisisDialog,
   timeOpenLabel,
@@ -29,6 +31,14 @@ export const Route = createFileRoute("/crisis-queue")({
   // the two nav destinations distinct.
   validateSearch: (s: Record<string, unknown>) => ({
     scope: s["scope"] === "mine" ? ("mine" as const) : undefined,
+    // §Crisis Redesign Phase 2 — `lane=sdoh` is the case-management view of the
+    // same queue, filtered to social-need escalations.
+    lane:
+      s["lane"] === "sdoh"
+        ? ("sdoh" as const)
+        : s["lane"] === "clinical"
+          ? ("clinical" as const)
+          : undefined,
   }),
   head: () => ({
     meta: [
@@ -52,10 +62,33 @@ export const Route = createFileRoute("/crisis-queue")({
 
 function CrisisQueuePage() {
   const { role } = useActingStaff();
+  const { lane } = Route.useSearch();
   const access = canAccess(role, "crisis_queue");
-  const rows = useEhr(() => AdelanteEHR.listOpenCrisisEscalations());
-  const anonymous = useEhr(() => AdelanteEHR.listAnonymousCrisisAlerts());
+  // §Crisis Redesign Phase 2 — case management owns the SDOH lane. A role with
+  // `sdoh` write and any queue access can claim and resolve SOCIAL-need rows
+  // even when its clinical-queue access is read-only.
+  const sdohWrite = canWorkSdohCrisisLane(role);
+  const allRows = useEhr(() => AdelanteEHR.listOpenCrisisEscalations());
+  const rows = lane
+    ? allRows.filter((r) =>
+        lane === "sdoh" ? r.escalation.category === "sdoh" : r.escalation.category !== "sdoh",
+      )
+    : allRows;
+  const sdohCount = allRows.filter((r) => r.escalation.category === "sdoh").length;
+  const anonymous = useEhr(() =>
+    lane === "sdoh" ? [] : AdelanteEHR.listAnonymousCrisisAlerts(),
+  );
   const { staffName } = useActingStaff();
+  // Draft aging policy — sweep on mount and every minute while the queue is
+  // open. The stamp is written once per escalation, so a supervisor is
+  // re-notified once, not every tick.
+  useEffect(() => {
+    sweepCrisisSla();
+    const t = setInterval(() => sweepCrisisSla(), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const canWorkRow = (e: CrisisEscalation) =>
+    access.level === "write" || (e.category === "sdoh" && sdohWrite);
   const [resolving, setResolving] = useState<{
     patientId: string;
     escalation: CrisisEscalation;
@@ -68,17 +101,52 @@ function CrisisQueuePage() {
           <ArrowLeft className="h-3.5 w-3.5" /> Back
         </Link>
       </Button>
-      <header>
+      <header className="space-y-2">
         <h1 className="font-display text-2xl text-navy flex items-center gap-2">
           <Siren className="h-5 w-5 text-destructive" />{" "}
-          {access.locked ? "Crises you flagged" : "Crisis queue"}
+          {access.locked
+            ? "Crises you flagged"
+            : lane === "sdoh"
+              ? "Urgent social needs"
+              : "Crisis queue"}
         </h1>
         <p className="text-sm text-muted-foreground">
           {access.locked
             ? "You do not have the cross-patient crisis queue. This page shows what came of the escalations you personally raised."
-            : "Open escalations across the population, longest-open first. Every new escalation also sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio connection and alert numbers are configured; if they are not, this queue is still the only notification."}
+            : lane === "sdoh"
+              ? "Social needs a staff member judged urgent enough to work as a crisis. These are routed to case management, not the on-call clinical coordinator."
+              : "Open escalations across the population, longest-open first. Every new escalation also sends an out-of-band SMS to the on-call clinical coordinator number when the Twilio connection and alert numbers are configured; if they are not, this queue is still the only notification."}
         </p>
+        {!access.locked && (
+          <>
+            <div className="flex flex-wrap gap-1.5">
+              {(
+                [
+                  { key: undefined, label: `All open (${allRows.length})` },
+                  {
+                    key: "clinical" as const,
+                    label: `Clinical (${allRows.length - sdohCount})`,
+                  },
+                  { key: "sdoh" as const, label: `Urgent social needs (${sdohCount})` },
+                ] as const
+              ).map((tab) => (
+                <Button
+                  key={tab.label}
+                  asChild
+                  size="sm"
+                  variant={lane === tab.key ? "default" : "outline"}
+                >
+                  <Link to="/crisis-queue" search={{ scope: undefined, lane: tab.key }}>
+                    {tab.label}
+                  </Link>
+                </Button>
+              ))}
+            </div>
+            <p className="text-[11px] text-amber-900">{CRISIS_POLICY_DRAFT_LABEL}</p>
+          </>
+        )}
       </header>
+
 
       {access.locked ? (
         <>
@@ -144,6 +212,7 @@ function CrisisQueuePage() {
                 </Link>
                 <div className="flex flex-wrap items-center gap-1.5">
                   <CrisisRetriggerBadge escalation={escalation} />
+                  <CrisisOverdueBadge escalation={escalation} />
                   <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
                     {timeOpenLabel(escalation.triggeredAt)}
                   </Badge>
@@ -165,7 +234,7 @@ function CrisisQueuePage() {
                   ))}
                 </ul>
               )}
-              {access.level === "write" && (
+              {canWorkRow(escalation) && (
                 <div className="flex flex-wrap items-center gap-2">
                   <CrisisClaimControl patientId={patient.id} escalation={escalation} />
                   <Button

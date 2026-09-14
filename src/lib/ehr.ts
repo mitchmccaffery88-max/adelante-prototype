@@ -388,6 +388,15 @@ export interface SdohPlanItem {
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /**
+   * §Crisis Redesign Phase 2 — SDOH-urgent lane. Set when staff deliberately
+   * escalate this need into the crisis queue as `category: "sdoh"`. Urgency is
+   * NEVER inferred from the need text or status: marking a social need urgent
+   * enough to be worked as a crisis is a human judgement call.
+   */
+  urgentEscalationId?: string;
+  urgentFlaggedBy?: string;
+  urgentFlaggedAt?: string;
 }
 
 export interface SelfHelpModule {
@@ -1811,7 +1820,13 @@ export interface CrisisEscalation {
      * only the attribution differs, so a self-initiated ask stays visibly
      * distinct from a clinician flag or an automated text catch.
      */
-    | "patient_request";
+    | "patient_request"
+    /**
+     * §Crisis Redesign Phase 2 — an SDOH plan item a staff member marked
+     * urgent enough to work as a crisis (housing loss tonight, no meds and no
+     * transport, etc.). Always written with `category: "sdoh"`.
+     */
+    | "sdoh_urgent";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
   triggeredBy: string;
@@ -1847,8 +1862,23 @@ export interface CrisisEscalation {
   retriggers?: CrisisRetrigger[];
   /** Most recent signal on this row — equals `triggeredAt` until a re-trigger. */
   lastTriggeredAt?: string;
+  /**
+   * §Crisis Redesign Phase 2 — aging / SLA. Stamped ONCE, the first time a
+   * sweep observes this row past its DRAFT response threshold (see
+   * `src/lib/crisisPolicy.ts`). Presence of the stamp is what stops the
+   * supervisor re-notification firing on every sweep tick.
+   */
+  slaBreachAt?: string;
   contactedWhom?: string;
   actionsTaken?: string;
+  /**
+   * §Crisis Redesign Phase 2 — structured disposition. `dispositionCode` is
+   * the picked DRAFT category (see CRISIS_DISPOSITIONS in
+   * `src/lib/crisisPolicy.ts`); `disposition` stays the human-readable string
+   * so every existing reader, audit entry and alert-removal reason keeps
+   * working. `other` carries its real free text in `disposition`.
+   */
+  dispositionCode?: string;
   disposition?: string;
   resolvedBy?: string;
   resolvedAt?: string;
@@ -8585,6 +8615,45 @@ export const AdelanteEHR = {
     item.updatedAt = new Date().toISOString();
     emit();
   },
+  /**
+   * §Crisis Redesign Phase 2 — SDOH-urgent lane trigger.
+   *
+   * Staff-initiated ONLY. Nothing auto-classifies a social need as urgent:
+   * whether "no housing tonight" is a crisis or a Tuesday is a real judgement
+   * call, so it takes an explicit action with a reason. The escalation is an
+   * ordinary CrisisEscalation with the DRAFT classification
+   * severity: "urgent" / category: "sdoh" so it lands in the SDOH lane of the
+   * crisis queue rather than the clinical one.
+   */
+  flagSdohItemUrgent(
+    patientId: string,
+    itemId: string,
+    staffName: string,
+    reason: string,
+  ): CrisisEscalation {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!p || !item) throw new Error("Social need not found.");
+    if ((reason ?? "").trim().length < 3)
+      throw new Error("A reason of at least 3 characters is required to flag a need urgent.");
+    const existing = item.urgentEscalationId
+      ? p.crisisEscalations?.find((r) => r.id === item.urgentEscalationId)
+      : undefined;
+    if (existing && existing.status === "open")
+      throw new Error("This need is already flagged urgent and open in the crisis queue.");
+    const detail = `${item.need} — ${reason?.trim() ?? ""}`.trim();
+    const row = AdelanteEHR.flagCrisis(patientId, staffName, detail, {
+      triggerSource: "sdoh_urgent",
+      severity: "urgent",
+      category: "sdoh",
+    });
+    item.urgentEscalationId = row.id;
+    item.urgentFlaggedBy = staffName;
+    item.urgentFlaggedAt = row.triggeredAt;
+    item.updatedAt = row.triggeredAt;
+    emit();
+    return row;
+  },
   removeSdohItem(patientId: string, itemId: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p?.sdohPlan) return;
@@ -14054,11 +14123,15 @@ export const AdelanteEHR = {
    * top, so a repeat cannot be buried mid-list. Re-triggered rows are
    * themselves oldest-first among each other.
    */
-  listOpenCrisisEscalations(): { patient: Patient; escalation: CrisisEscalation }[] {
+  listOpenCrisisEscalations(opts?: {
+    category?: CrisisCategory;
+  }): { patient: Patient; escalation: CrisisEscalation }[] {
     const out: { patient: Patient; escalation: CrisisEscalation }[] = [];
     for (const p of patients) {
       for (const e of p.crisisEscalations ?? []) {
-        if (e.status === "open") out.push({ patient: p, escalation: e });
+        if (e.status !== "open") continue;
+        if (opts?.category && e.category !== opts.category) continue;
+        out.push({ patient: p, escalation: e });
       }
     }
     return out.sort((a, b) => {
@@ -14253,10 +14326,13 @@ export const AdelanteEHR = {
         sourceNoteId: opts?.sourceNoteId ?? null,
       },
     });
-    // §Notification feed — clinical_coordinator owns crisis disposition. This
-    // is the single call site for both manual and screener-triggered flags.
+    // §Notification feed — clinical_coordinator owns clinical crisis
+    // disposition. §Crisis Redesign Phase 2: an SDOH-urgent escalation is
+    // case-management work, not clinical disposition, so it is routed to the
+    // ECM Provider instead. Single call site for every trigger source.
+    const owner: StaffRole = row.category === "sdoh" ? "ecm_provider" : "clinical_coordinator";
     AdelanteEHR.notify({
-      recipientRole: "clinical_coordinator",
+      recipientRole: owner,
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
       body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : row.triggerSource === "patient_request" ? "patient asked for their care team" : "manual"}): ${detail}`,
@@ -14267,7 +14343,7 @@ export const AdelanteEHR = {
     // no longer the only place anyone finds out. Every triggerSource.
     dispatchStaffAlert({
       kind: "crisis_flagged",
-      recipientRole: "clinical_coordinator",
+      recipientRole: owner,
       subject: "Adelante: crisis flagged",
       // No free text from the trigger — SMS is an unsecured channel.
       body: `A crisis was flagged (${row.triggerSource.replace(/_/g, " ")}). Open the crisis queue.`,
@@ -14282,7 +14358,18 @@ export const AdelanteEHR = {
     patientId: string,
     id: string,
     staffName: string,
-    input: { contactedWhom?: string; actionsTaken?: string; disposition: string },
+    input: {
+      contactedWhom?: string;
+      actionsTaken?: string;
+      disposition: string;
+      /**
+       * §Crisis Redesign Phase 2 — DRAFT structured disposition category (see
+       * CRISIS_DISPOSITIONS in `src/lib/crisisPolicy.ts`). Optional at the
+       * model level so every existing caller and test keeps working; the UI
+       * always sends one.
+       */
+      dispositionCode?: string;
+    },
   ): CrisisEscalation {
     const disposition = input.disposition?.trim();
     if (!disposition) throw new Error("A disposition is required to resolve a crisis escalation.");
@@ -14294,6 +14381,7 @@ export const AdelanteEHR = {
     row.contactedWhom = input.contactedWhom?.trim() || undefined;
     row.actionsTaken = input.actionsTaken?.trim() || undefined;
     row.disposition = disposition;
+    row.dispositionCode = input.dispositionCode?.trim() || undefined;
     row.resolutionReason = disposition;
     row.resolvedBy = staffName;
     row.resolvedAt = new Date().toISOString();
@@ -14313,9 +14401,62 @@ export const AdelanteEHR = {
         escalationId: row.id,
         alertId: row.alertId,
         disposition,
+        dispositionCode: row.dispositionCode ?? null,
         contactedWhom: row.contactedWhom ?? null,
         actionsTaken: row.actionsTaken ?? null,
       },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * §Crisis Redesign Phase 2 — aging / SLA breach.
+   *
+   * Called by the sweep in `src/lib/crisisPolicy.ts` (which owns the DRAFT
+   * thresholds) when an OPEN escalation — claimed or not — has sat past its
+   * response threshold. Idempotent: the `slaBreachAt` stamp is written once,
+   * so the supervisor is re-notified once per escalation, not once per tick.
+   * Claiming does NOT exempt a row: a claimed-but-untouched escalation is the
+   * exact failure mode this is meant to catch.
+   */
+  markCrisisSlaBreach(
+    patientId: string,
+    id: string,
+    input: { thresholdLabel: string; supervisorRole: StaffRole },
+  ): CrisisEscalation | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row || row.status !== "open" || row.slaBreachAt) return undefined;
+    row.slaBreachAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_sla_breached",
+      patientId,
+      actorId: "system",
+      detail: {
+        escalationId: row.id,
+        thresholdLabel: input.thresholdLabel,
+        claimedBy: row.claimedBy ?? null,
+        severity: row.severity,
+        category: row.category,
+      },
+    });
+    AdelanteEHR.notify({
+      recipientRole: input.supervisorRole,
+      category: "crisis_flagged",
+      subject: `Crisis overdue — ${patientLabel(patientId)}`,
+      body: `An open escalation has passed its draft ${input.thresholdLabel} response target${row.claimedBy ? ` (claimed by ${row.claimedBy})` : " and is still unclaimed"}. Draft threshold — pending operational policy.`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
+    dispatchStaffAlert({
+      kind: "crisis_flagged",
+      recipientRole: input.supervisorRole,
+      subject: "Adelante: crisis escalation overdue",
+      body: "An open crisis escalation passed its draft response target. Open the crisis queue.",
+      linkRoute: "/crisis-queue",
+      patientId,
     });
     emit();
     return row;

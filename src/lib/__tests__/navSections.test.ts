@@ -8,7 +8,7 @@ import {
   staffNavForRole,
   staffNavGroupsForRole,
 } from "../navSections";
-import { STAFF_ROLES, canAccess, canFlagCrisis } from "../roles";
+import { STAFF_ROLES, canAccess, canFlagCrisis, canWorkSdohCrisisLane } from "../roles";
 
 const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
   staffNavForRole(role).map((e) => e.id);
@@ -114,7 +114,9 @@ describe("gating derives from the RBAC matrix", () => {
             ? true
             : gate.kind === "crisis_flag_only"
               ? canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none"
-              : gate.anyOf.some((cls) => {
+              : gate.kind === "sdoh_crisis_lane"
+                ? canWorkSdohCrisisLane(role)
+                : gate.anyOf.some((cls) => {
                   const level = canAccess(role, cls).level;
                   return gate.minLevel === "write" ? level === "write" : level !== "none";
                 });

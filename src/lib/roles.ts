@@ -781,6 +781,19 @@ export function canFlagCrisis(role: StaffRole): boolean {
 }
 
 /**
+ * §Crisis Redesign Phase 2 — the SDOH-urgent lane. Derived FROM the matrix, not
+ * a second role list: a social-needs crisis belongs to whoever can actually
+ * work social needs (`sdoh` write) AND is allowed inside the crisis queue at
+ * all. That is case management — ECM providers and CF care managers — plus
+ * treating clinicians and coordinators. Peers can flag a need urgent but have
+ * no queue, so they are excluded here exactly as they are from the clinical
+ * lane.
+ */
+export function canWorkSdohCrisisLane(role: StaffRole): boolean {
+  return canAccess(role, "sdoh").level === "write" && canAccess(role, "crisis_queue").level !== "none";
+}
+
+/**
  * §Front-door Phase 3 — Tier 2 gate. Derived FROM the matrix, never a second
  * list: change `assisted_signup` above and this follows automatically.
  */

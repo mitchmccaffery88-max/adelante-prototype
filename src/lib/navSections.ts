@@ -45,6 +45,7 @@ import type { LucideIcon } from "lucide-react";
 import {
   canAccess,
   canFlagCrisis,
+  canWorkSdohCrisisLane,
   useActingStaff,
   type AccessLevel,
   type RecordClass,
@@ -100,6 +101,8 @@ export type NavGate =
    * `crisis_queue` entry so nobody sees both.
    */
   | { kind: "crisis_flag_only" }
+  /** §Crisis Redesign Phase 2 — the SDOH-urgent lane; see canWorkSdohCrisisLane. */
+  | { kind: "sdoh_crisis_lane" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -246,6 +249,19 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/crisis-queue",
     group: "queues",
     gate: { kind: "record_class", anyOf: ["crisis_queue"] },
+  },
+  {
+    // §Crisis Redesign Phase 2 — the SDOH-urgent lane is the SAME queue page,
+    // pre-filtered to `category: "sdoh"`, so social-need escalations are worked
+    // by case management instead of sitting behind clinical crises.
+    id: "crisis-sdoh-lane",
+    label: "Urgent social needs",
+    desc: "SDOH escalations routed to case management",
+    icon: Siren,
+    to: "/crisis-queue",
+    search: { lane: "sdoh" },
+    group: "queues",
+    gate: { kind: "sdoh_crisis_lane" },
   },
   {
     id: "crisis-flagged-by-me",
@@ -517,6 +533,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "open") return true;
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
+  if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
   const min = LEVEL_RANK[entry.gate.minLevel ?? "read"];
   return entry.gate.anyOf.some((cls) => {
     // Patient-less call: `consent_gated` classes resolve to locked, which is
