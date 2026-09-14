@@ -522,6 +522,13 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
     therapist: "read",
     ecm_provider: "read",
+    // §Crisis Redesign Phase 2 follow-up — CF care managers are case
+    // management, same as ecm_provider, and own many real social-need
+    // escalations. Granted the IDENTICAL scope to ecm_provider: `read` on the
+    // queue as a whole (clinical disposition stays with the coordinator) plus
+    // full work rights on the SDOH lane, which canWorkSdohCrisisLane() derives
+    // from `sdoh` write + any queue access. No special case anywhere else.
+    cf_care_manager: "read",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
