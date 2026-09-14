@@ -14341,7 +14341,7 @@ export const AdelanteEHR = {
     // no longer the only place anyone finds out. Every triggerSource.
     dispatchStaffAlert({
       kind: "crisis_flagged",
-      recipientRole: "clinical_coordinator",
+      recipientRole: owner,
       subject: "Adelante: crisis flagged",
       // No free text from the trigger — SMS is an unsecured channel.
       body: `A crisis was flagged (${row.triggerSource.replace(/_/g, " ")}). Open the crisis queue.`,
