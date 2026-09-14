@@ -60,10 +60,33 @@ export const Route = createFileRoute("/crisis-queue")({
 
 function CrisisQueuePage() {
   const { role } = useActingStaff();
+  const { lane } = Route.useSearch();
   const access = canAccess(role, "crisis_queue");
-  const rows = useEhr(() => AdelanteEHR.listOpenCrisisEscalations());
-  const anonymous = useEhr(() => AdelanteEHR.listAnonymousCrisisAlerts());
+  // §Crisis Redesign Phase 2 — case management owns the SDOH lane. A role with
+  // `sdoh` write and any queue access can claim and resolve SOCIAL-need rows
+  // even when its clinical-queue access is read-only.
+  const sdohWrite = canWorkSdohCrisisLane(role);
+  const allRows = useEhr(() => AdelanteEHR.listOpenCrisisEscalations());
+  const rows = lane
+    ? allRows.filter((r) =>
+        lane === "sdoh" ? r.escalation.category === "sdoh" : r.escalation.category !== "sdoh",
+      )
+    : allRows;
+  const sdohCount = allRows.filter((r) => r.escalation.category === "sdoh").length;
+  const anonymous = useEhr(() =>
+    lane === "sdoh" ? [] : AdelanteEHR.listAnonymousCrisisAlerts(),
+  );
   const { staffName } = useActingStaff();
+  // Draft aging policy — sweep on mount and every minute while the queue is
+  // open. The stamp is written once per escalation, so a supervisor is
+  // re-notified once, not every tick.
+  useEffect(() => {
+    sweepCrisisSla();
+    const t = setInterval(() => sweepCrisisSla(), 60_000);
+    return () => clearInterval(t);
+  }, []);
+  const canWorkRow = (e: CrisisEscalation) =>
+    access.level === "write" || (e.category === "sdoh" && sdohWrite);
   const [resolving, setResolving] = useState<{
     patientId: string;
     escalation: CrisisEscalation;
