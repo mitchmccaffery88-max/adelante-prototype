@@ -14399,9 +14399,62 @@ export const AdelanteEHR = {
         escalationId: row.id,
         alertId: row.alertId,
         disposition,
+        dispositionCode: row.dispositionCode ?? null,
         contactedWhom: row.contactedWhom ?? null,
         actionsTaken: row.actionsTaken ?? null,
       },
+    });
+    emit();
+    return row;
+  },
+
+  /**
+   * §Crisis Redesign Phase 2 — aging / SLA breach.
+   *
+   * Called by the sweep in `src/lib/crisisPolicy.ts` (which owns the DRAFT
+   * thresholds) when an OPEN escalation — claimed or not — has sat past its
+   * response threshold. Idempotent: the `slaBreachAt` stamp is written once,
+   * so the supervisor is re-notified once per escalation, not once per tick.
+   * Claiming does NOT exempt a row: a claimed-but-untouched escalation is the
+   * exact failure mode this is meant to catch.
+   */
+  markCrisisSlaBreach(
+    patientId: string,
+    id: string,
+    input: { thresholdLabel: string; supervisorRole: StaffRole },
+  ): CrisisEscalation | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row || row.status !== "open" || row.slaBreachAt) return undefined;
+    row.slaBreachAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "crisis_escalation_sla_breached",
+      patientId,
+      actorId: "system",
+      detail: {
+        escalationId: row.id,
+        thresholdLabel: input.thresholdLabel,
+        claimedBy: row.claimedBy ?? null,
+        severity: row.severity,
+        category: row.category,
+      },
+    });
+    AdelanteEHR.notify({
+      recipientRole: input.supervisorRole,
+      category: "crisis_flagged",
+      subject: `Crisis overdue — ${patientLabel(patientId)}`,
+      body: `An open escalation has passed its draft ${input.thresholdLabel} response target${row.claimedBy ? ` (claimed by ${row.claimedBy})` : " and is still unclaimed"}. Draft threshold — pending operational policy.`,
+      linkRoute: "/crisis-queue",
+      patientId,
+    });
+    dispatchStaffAlert({
+      kind: "crisis_flagged",
+      recipientRole: input.supervisorRole,
+      subject: "Adelante: crisis escalation overdue",
+      body: "An open crisis escalation passed its draft response target. Open the crisis queue.",
+      linkRoute: "/crisis-queue",
+      patientId,
     });
     emit();
     return row;
