@@ -14356,7 +14356,18 @@ export const AdelanteEHR = {
     patientId: string,
     id: string,
     staffName: string,
-    input: { contactedWhom?: string; actionsTaken?: string; disposition: string },
+    input: {
+      contactedWhom?: string;
+      actionsTaken?: string;
+      disposition: string;
+      /**
+       * §Crisis Redesign Phase 2 — DRAFT structured disposition category (see
+       * CRISIS_DISPOSITIONS in `src/lib/crisisPolicy.ts`). Optional at the
+       * model level so every existing caller and test keeps working; the UI
+       * always sends one.
+       */
+      dispositionCode?: string;
+    },
   ): CrisisEscalation {
     const disposition = input.disposition?.trim();
     if (!disposition) throw new Error("A disposition is required to resolve a crisis escalation.");
