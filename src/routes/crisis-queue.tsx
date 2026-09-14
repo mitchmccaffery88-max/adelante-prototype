@@ -29,6 +29,14 @@ export const Route = createFileRoute("/crisis-queue")({
   // the two nav destinations distinct.
   validateSearch: (s: Record<string, unknown>) => ({
     scope: s["scope"] === "mine" ? ("mine" as const) : undefined,
+    // §Crisis Redesign Phase 2 — `lane=sdoh` is the case-management view of the
+    // same queue, filtered to social-need escalations.
+    lane:
+      s["lane"] === "sdoh"
+        ? ("sdoh" as const)
+        : s["lane"] === "clinical"
+          ? ("clinical" as const)
+          : undefined,
   }),
   head: () => ({
     meta: [
