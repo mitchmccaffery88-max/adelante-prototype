@@ -136,7 +136,7 @@ function CrisisQueuePage() {
                   size="sm"
                   variant={lane === tab.key ? "default" : "outline"}
                 >
-                  <Link to="/crisis-queue" search={{ lane: tab.key }}>
+                  <Link to="/crisis-queue" search={{ scope: undefined, lane: tab.key }}>
                     {tab.label}
                   </Link>
                 </Button>
