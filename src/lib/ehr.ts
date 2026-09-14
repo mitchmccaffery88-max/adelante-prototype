@@ -1820,7 +1820,13 @@ export interface CrisisEscalation {
      * only the attribution differs, so a self-initiated ask stays visibly
      * distinct from a clinician flag or an automated text catch.
      */
-    | "patient_request";
+    | "patient_request"
+    /**
+     * §Crisis Redesign Phase 2 — an SDOH plan item a staff member marked
+     * urgent enough to work as a crisis (housing loss tonight, no meds and no
+     * transport, etc.). Always written with `category: "sdoh"`.
+     */
+    | "sdoh_urgent";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
   triggeredBy: string;
