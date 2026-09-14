@@ -8634,6 +8634,8 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
     if (!p || !item) throw new Error("Social need not found.");
+    if ((reason ?? "").trim().length < 3)
+      throw new Error("A reason of at least 3 characters is required to flag a need urgent.");
     const existing = item.urgentEscalationId
       ? p.crisisEscalations?.find((r) => r.id === item.urgentEscalationId)
       : undefined;
