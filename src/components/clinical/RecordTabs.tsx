@@ -515,6 +515,69 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
   );
 }
 
+/**
+ * §Crisis Redesign Phase 2 — the SDOH-urgent trigger.
+ *
+ * Deliberately a manual, reasoned action. Nothing about the need text or its
+ * status decides urgency: whether "no place to sleep tonight" is a crisis is a
+ * human judgement, so a staff member states why and owns it.
+ */
+function FlagSdohUrgentControl({
+  patientId,
+  item,
+}: {
+  patientId: string;
+  item: { id: string; urgentEscalationId?: string; urgentFlaggedAt?: string };
+}) {
+  const { staffName } = useActingStaff();
+  const [open, setOpen] = useState(false);
+  const [reason, setReason] = useState("");
+  if (item.urgentFlaggedAt) return null;
+  if (!open)
+    return (
+      <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
+        <ShieldAlert className="mr-1 h-3.5 w-3.5" /> Flag as urgent
+      </Button>
+    );
+  return (
+    <div className="space-y-2 rounded border border-destructive/40 bg-destructive/5 p-2">
+      <p className="text-[11px] text-muted-foreground">
+        This puts the need in the urgent social needs lane of the crisis queue, routed to case
+        management. Say why it cannot wait.
+      </p>
+      <Textarea
+        rows={2}
+        value={reason}
+        onChange={(e) => setReason(e.target.value)}
+        aria-label="Why this social need is urgent"
+        placeholder="e.g. Loses shelter bed tonight; no other placement."
+      />
+      <div className="flex gap-2">
+        <Button
+          size="sm"
+          variant="destructive"
+          disabled={reason.trim().length < 3}
+          onClick={() => {
+            try {
+              AdelanteEHR.flagSdohItemUrgent(patientId, item.id, staffName, reason);
+              toast.success("Flagged urgent — it is now in the urgent social needs lane.");
+              setOpen(false);
+              setReason("");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Could not flag this need.");
+            }
+          }}
+        >
+          Flag urgent
+        </Button>
+        <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
+          Cancel
+        </Button>
+      </div>
+    </div>
+  );
+}
+
 export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = p?.sdohPlan?.items ?? [];
