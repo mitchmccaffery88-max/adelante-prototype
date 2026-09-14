@@ -74,10 +74,24 @@ describe("new roles are narrower than PMHNP/Therapist", () => {
       "medical_assistant",
     ] as StaffRole[]) {
       expect(canAccess(role, "population_health").level).toBe("none");
-      expect(canAccess(role, "crisis_queue").level).toBe("none");
       expect(canAccess(role, "scheduling_rules").level).toBe("none");
       expect(canAccess(role, "billing").level).toBe("none");
+      // §Crisis Redesign Phase 2 follow-up — cf_care_manager is the one
+      // exception: case management owns the urgent social-needs lane, so it
+      // gets the same read-level queue access ecm_provider already had.
+      expect(canAccess(role, "crisis_queue").level).toBe(
+        role === "cf_care_manager" ? "read" : "none",
+      );
     }
+  });
+
+  it("§Crisis Redesign Phase 2 follow-up — CF care manager mirrors ECM provider", () => {
+    expect(canAccess("cf_care_manager", "crisis_queue").level).toBe(
+      canAccess("ecm_provider", "crisis_queue").level,
+    );
+    expect(canWorkSdohCrisisLane("cf_care_manager")).toBe(true);
+    // Clinical disposition still belongs to the coordinator, not case mgmt.
+    expect(canAccess("cf_care_manager", "crisis_queue").level).not.toBe("write");
   });
 });
 
