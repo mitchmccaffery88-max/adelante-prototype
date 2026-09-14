@@ -6,6 +6,7 @@ import {
   canAccess,
   canProxyForCfCareManager,
   canRecordMatAdministration,
+  canWorkSdohCrisisLane,
   getSupervisor,
   isBillableStaff,
   supervisionStatus,
