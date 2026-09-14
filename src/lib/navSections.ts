@@ -533,6 +533,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "open") return true;
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
+  if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
   const min = LEVEL_RANK[entry.gate.minLevel ?? "read"];
   return entry.gate.anyOf.some((cls) => {
     // Patient-less call: `consent_gated` classes resolve to locked, which is
