@@ -28,7 +28,23 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { FlaskConical, RefreshCw, Siren } from "lucide-react";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import {
+  CRISIS_DISPOSITIONS,
+  CRISIS_DISPOSITION_DRAFT_LABEL,
+  CRISIS_POLICY_DRAFT_LABEL,
+  composeDisposition,
+  crisisSlaState,
+  overdueByLabel,
+  type CrisisDispositionCode,
+} from "@/lib/crisisPolicy";
+import { AlarmClock, FlaskConical, RefreshCw, Siren } from "lucide-react";
 
 export function timeOpenLabel(iso: string, now: number = Date.now()): string {
   const mins = Math.max(0, Math.round((now - +new Date(iso)) / 60000));
