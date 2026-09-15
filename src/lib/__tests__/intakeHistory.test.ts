@@ -68,7 +68,7 @@ describe("discharge summary reads the structured record", () => {
     administrations: [],
     notes: [],
     sudLocked: false,
-  } as const;
+  };
 
   it("points at the structured field when nothing is recorded", () => {
     const out = resolveAutofill(section, { ...base });
