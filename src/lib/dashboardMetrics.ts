@@ -286,7 +286,7 @@ export function computeLiveMetrics(now = new Date(), windowDays = MAR_WINDOW_DAY
       basis:
         mar.denominator === 0
           ? `No doses charted in the last ${windowDays} days`
-          : `${mar.given} given of ${mar.denominator} charted (${windowDays}d)`,
+          : `${mar.given} given of ${mar.denominator} charted`,
     },
     unsigned_notes_count: {
       value: notes.length,
