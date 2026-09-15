@@ -343,7 +343,7 @@ function IntakePage() {
       ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
-    [activeScreeners, askHeardAbout, consentOnFile],
+    [activeScreeners, askHeardAbout, consentOnFile, effectiveSud, coverage.justiceInvolvement],
   );
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
