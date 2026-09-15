@@ -271,6 +271,25 @@ function ReportingHome() {
         </Card>
       </header>
 
+      {/* §Tier 3 — the reflexive-need entry point. Population reporting answers
+          "how is the program doing"; this answers "what is open on me". */}
+      <Card className="flex flex-wrap items-center justify-between gap-3 border-teal/40 bg-teal/5 p-4">
+        <div>
+          <h2 className="font-display text-base text-navy">My work</h2>
+          <p className="max-w-xl text-xs text-muted-foreground">
+            Crisis escalations you claimed, your unsigned notes and overdue tasks, plus re-screens
+            due and caseload patients going quiet.
+          </p>
+        </div>
+        <Button size="sm" asChild>
+          <Link to="/my-work">
+            Open my work <ChevronRight className="ml-1 h-3 w-3" />
+          </Link>
+        </Button>
+      </Card>
+
+
+
       {seesPopulation && metrics && (
         <Area
           id="operational"

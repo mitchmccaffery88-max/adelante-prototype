@@ -37,6 +37,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
+import { myOpenItems } from "@/lib/myWork";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
@@ -635,8 +636,19 @@ function QueueCountRow({ patients }: { patients: ReturnType<typeof AdelanteEHR.l
     () => AdelanteEHR.listCaseTasks().filter((t) => t.status === "open").length,
   );
   const unsigned = unsignedNotes(patients).length;
+  // §Tier 3 — personal rollup count, scoped to the acting staff member.
+  const actor = useActingStaff();
+  const mine = useEhr(
+    () =>
+      myOpenItems({
+        staffId: actor.staffId,
+        staffName: actor.staffName,
+        ...(actor.clinicianId ? { clinicianId: actor.clinicianId } : {}),
+      }).total,
+  );
 
   const items = [
+    { id: "my-work", label: "My work", count: mine, to: "/my-work" as const },
     { id: "crisis", label: "Crisis", count: crisis, to: "/crisis-queue" as const, urgent: true },
     { id: "unsigned", label: "Unsigned notes", count: unsigned, to: "/inbox" as const },
     { id: "cosign", label: "Cosign inbox", count: cosign, to: "/cosign-inbox" as const },
