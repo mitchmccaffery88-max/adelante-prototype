@@ -333,6 +333,13 @@ function IntakePage() {
       { key: "coverage", label: "Coverage" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
+      // §Reporting Tier 2 — structured CalOMS-shaped history. Only asked when
+      // it genuinely applies: substance questions require Part 2 consent
+      // (they are SUD content), justice questions require reported justice
+      // involvement. Both are recorded as the patient's own estimate.
+      ...(effectiveSud === true || coverage.justiceInvolvement === "yes"
+        ? [{ key: "history", label: "History" }]
+        : []),
       ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
