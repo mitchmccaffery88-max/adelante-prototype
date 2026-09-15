@@ -11,6 +11,13 @@
 // Target schema when that gap is closed: `src/lib/labsVitalsScaffold.ts`.
 
 import {
+  DISCHARGE_REASON_LABEL,
+  DISCHARGE_STATUS_LABEL,
+  CALOMS_SOURCE_LABEL,
+  CALOMS_DRAFT_NOTE,
+  type DischargeRecord,
+} from "@/lib/caloms";
+import {
   isProblemClinicallyActive,
   noteStatus,
   type Allergy,
@@ -32,6 +39,11 @@ import {
   type TemplateSchema,
   type TemplateSection,
 } from "@/lib/templateSchema";
+
+/** Where discharge is actually recorded now, said in one place. */
+export const DISCHARGE_RECORD_POINTER =
+  "Discharge status and reason are recorded as structured fields in the patient chart → CalOMS data. They are no longer typed as free text here.";
+
 
 export const PART2_AUTOFILL_NOTICE =
   "Some entries are hidden by the 42 CFR Part 2 consent gate.";
