@@ -213,6 +213,16 @@ function IntakePage() {
   const acting = useActingStaff();
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
+  // §Reporting Tier 2 — patient-estimated history. Every value here is the
+  // person's own recollection; nothing is verified against a facility record.
+  const [history, setHistory] = useState<{
+    substance?: CalomsSubstance;
+    frequency?: CalomsFrequency;
+    priorEpisodes?: PriorEpisodeBucket;
+    arrestsPast12Months: string;
+    timeInCustodyMonths: string;
+    justiceReferralSource?: JusticeReferralSource;
+  }>({ arrestsPast12Months: "", timeInCustodyMonths: "" });
   // P1 — About you. Seeded from the record on the very first render so nobody
   // retypes what sign-up (or a CF Care Manager) already entered.
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
