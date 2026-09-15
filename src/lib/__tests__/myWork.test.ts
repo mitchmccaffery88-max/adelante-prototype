@@ -11,9 +11,10 @@ import {
   staffAliases,
 } from "@/lib/myWork";
 
-const clinician = () => {
-  const p = AdelanteEHR.listPatients().find((x) => x.primaryClinicianId)!;
-  return p.primaryClinicianId!;
+/** The demo store assigns case managers; clinician ids are optional. */
+const owner = () => {
+  const p = AdelanteEHR.listPatients().find((x) => x.caseManagerId ?? x.primaryClinicianId)!;
+  return (p.caseManagerId ?? p.primaryClinicianId)!;
 };
 
 describe("staff scoping", () => {
@@ -25,7 +26,7 @@ describe("staff scoping", () => {
   });
 
   it("caseload is only patients whose clinician or case manager is me", () => {
-    const id = clinician();
+    const id = owner();
     const rows = myCaseload({ staffId: `s-${id}`, staffName: "x", clinicianId: id });
     expect(rows.length).toBeGreaterThan(0);
     for (const p of rows) {
@@ -47,7 +48,7 @@ describe("staff scoping", () => {
 
 describe("open items", () => {
   it("only surfaces crisis escalations claimed by me", () => {
-    const id = clinician();
+    const id = owner();
     const identity = { staffId: `s-${id}`, staffName: "x", clinicianId: id };
     const aliases = staffAliases(identity);
     for (const c of [...myOpenItems(identity).clinicalCrises, ...myOpenItems(identity).sdohCrises]) {
@@ -56,7 +57,7 @@ describe("open items", () => {
   });
 
   it("total equals the sum of its four sources", () => {
-    const id = clinician();
+    const id = owner();
     const o = myOpenItems({ staffId: `s-${id}`, staffName: "x", clinicianId: id });
     expect(o.total).toBe(
       o.clinicalCrises.length + o.sdohCrises.length + o.unsignedNotes.length + o.overdueTasks.length,
