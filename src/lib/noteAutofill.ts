@@ -238,7 +238,30 @@ export function resolveAutofill(
       }));
       break;
     }
+    case "discharge_record": {
+      const current = (ctx.discharges ?? [])[0];
+      if (!current) {
+        notice = `No structured discharge recorded yet. ${DISCHARGE_RECORD_POINTER}`;
+        break;
+      }
+      lines = [
+        {
+          primary: DISCHARGE_STATUS_LABEL[current.status],
+          secondary: `Discharged ${current.dischargedOn} · ${CALOMS_SOURCE_LABEL[current.source]}`,
+        },
+        {
+          primary:
+            current.reason === "other" && current.otherReason
+              ? current.otherReason
+              : DISCHARGE_REASON_LABEL[current.reason],
+          secondary: "Reason for discharge",
+        },
+      ];
+      notice = `${DISCHARGE_RECORD_POINTER} ${CALOMS_DRAFT_NOTE}`;
+      break;
+    }
   }
+
 
   if (cfg.limit && cfg.limit > 0 && lines.length > cfg.limit) {
     lines = lines.slice(0, cfg.limit);
