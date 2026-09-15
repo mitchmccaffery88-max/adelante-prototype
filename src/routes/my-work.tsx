@@ -14,7 +14,6 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   DISENGAGEMENT_DRAFT,
-  MY_WORK_DRAFT_LABEL,
   RESCREEN_CADENCE_DRAFT_NOTE,
   disengagementFlagged,
   disengagementRows,
@@ -384,7 +383,7 @@ function MyWorkPage() {
           count={quiet.length}
         />
         <Card className="bg-warning/10 p-3 text-[11px] leading-snug text-navy">
-          {DISENGAGEMENT_DRAFT.note} {MY_WORK_DRAFT_LABEL}.
+          {DISENGAGEMENT_DRAFT.note}
         </Card>
         {quiet.length === 0 ? (
           <EmptyState
