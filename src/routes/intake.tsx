@@ -1111,6 +1111,136 @@ function IntakePage() {
           </div>
         )}
 
+        {current.key === "history" && (
+          <div className="space-y-4" data-testid="history-step">
+            <p className="text-sm text-muted-foreground">
+              A few optional background questions. Answer only what you want to — your care team
+              records these as your own estimate.
+            </p>
+
+            {effectiveSud === true && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium">Substance use</h3>
+                  <ProvenanceBadge source="self_report" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Main substance</Label>
+                  <Select
+                    value={history.substance ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, substance: v as CalomsSubstance })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_SUBSTANCES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {SUBSTANCE_LABEL[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">How often in the past 30 days</Label>
+                  <Select
+                    value={history.frequency ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, frequency: v as CalomsFrequency })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_FREQUENCIES.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {FREQUENCY_LABEL[f]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Times you&apos;ve been in treatment before</Label>
+                  <Select
+                    value={history.priorEpisodes ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, priorEpisodes: v as PriorEpisodeBucket })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIOR_EPISODE_BUCKETS.map((b) => (
+                        <SelectItem key={b} value={b}>
+                          {PRIOR_EPISODE_LABEL[b]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {coverage.justiceInvolvement === "yes" && (
+              <div className="space-y-3 rounded-lg border border-amber-warm/60 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium">Court or custody history</h3>
+                  <ProvenanceBadge source="self_report" />
+                </div>
+                <p className="text-xs text-muted-foreground">{JUSTICE_SELF_REPORT_NOTE}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs">Arrests in the past 12 months (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.arrestsPast12Months}
+                    onChange={(e) =>
+                      setHistory({ ...history, arrestsPast12Months: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Months in custody (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.timeInCustodyMonths}
+                    onChange={(e) =>
+                      setHistory({ ...history, timeInCustodyMonths: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Who referred you</Label>
+                  <Select
+                    value={history.justiceReferralSource ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, justiceReferralSource: v as JusticeReferralSource })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JUSTICE_REFERRAL_SOURCES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {JUSTICE_REFERRAL_LABEL[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+          </div>
+        )}
+
         {current.key === "source" && (
           <div className="space-y-3" data-testid="heard-about-step">
             <p className="text-sm text-muted-foreground">
