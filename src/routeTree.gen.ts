@@ -51,6 +51,7 @@ import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as MedicationsRouteImport } from './routes/medications'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
+import { Route as MyWorkRouteImport } from './routes/my-work'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
@@ -305,6 +306,11 @@ const MedicationsRoute = MedicationsRouteImport.update({
 const MessageQueueRoute = MessageQueueRouteImport.update({
   id: '/message-queue',
   path: '/message-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyWorkRoute = MyWorkRouteImport.update({
+  id: '/my-work',
+  path: '/my-work',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NaloxoneRoute = NaloxoneRouteImport.update({
@@ -580,6 +586,7 @@ export interface FileRoutesByFullPath {
   '/library': typeof LibraryRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -668,6 +675,7 @@ export interface FileRoutesByTo {
   '/library': typeof LibraryRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -755,6 +763,7 @@ export interface FileRoutesById {
   '/library': typeof LibraryRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
@@ -846,6 +855,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/medications'
     | '/message-queue'
+    | '/my-work'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
@@ -934,6 +944,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/medications'
     | '/message-queue'
+    | '/my-work'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
@@ -1020,6 +1031,7 @@ export interface FileRouteTypes {
     | '/library'
     | '/medications'
     | '/message-queue'
+    | '/my-work'
     | '/naloxone'
     | '/notes-queue'
     | '/patient'
@@ -1110,6 +1122,7 @@ export interface RootRouteChildren {
   LibraryRoute: typeof LibraryRoute
   MedicationsRoute: typeof MedicationsRoute
   MessageQueueRoute: typeof MessageQueueRoute
+  MyWorkRoute: typeof MyWorkRoute
   NaloxoneRoute: typeof NaloxoneRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
@@ -1429,6 +1442,13 @@ declare module '@tanstack/react-router' {
       path: '/message-queue'
       fullPath: '/message-queue'
       preLoaderRoute: typeof MessageQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-work': {
+      id: '/my-work'
+      path: '/my-work'
+      fullPath: '/my-work'
+      preLoaderRoute: typeof MyWorkRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/naloxone': {
@@ -1873,6 +1893,7 @@ const rootRouteChildren: RootRouteChildren = {
   LibraryRoute: LibraryRoute,
   MedicationsRoute: MedicationsRoute,
   MessageQueueRoute: MessageQueueRoute,
+  MyWorkRoute: MyWorkRoute,
   NaloxoneRoute: NaloxoneRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
