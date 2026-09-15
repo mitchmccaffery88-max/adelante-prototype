@@ -206,6 +206,18 @@ export const STAFF_NAV: NavEntry[] = [
 
   // ----- Queues (cross-patient work) -----
   {
+    // §Reporting Tier 3 — the personal rollup. Gated on the record classes it
+    // actually reads, so a role with none of them never sees an empty page.
+    id: "my-work",
+    label: "My work",
+    desc: "Everything open on you, plus caseload early warnings",
+    icon: ListChecks,
+    to: "/my-work",
+    group: "queues",
+    gate: { kind: "record_class", anyOf: ["therapy_notes", "worklist", "crisis_queue"] },
+  },
+  {
+
     id: "worklist",
     label: "Worklist",
     desc: "Cross-facility tasks & rounds",
