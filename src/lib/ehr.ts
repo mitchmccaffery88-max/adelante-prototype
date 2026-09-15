@@ -3020,6 +3020,36 @@ const patients: Patient[] = [
       "gad-7": { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-05-12" },
     },
     needs: { housing: true, food: false, employment: true, transport: true, family: true },
+    // §Reporting Tier 2 — structured CalOMS history, so the reporting area has
+    // real rows instead of an empty demo.
+    calomsProfile: {
+      substanceUse: {
+        entries: [
+          {
+            rank: "primary",
+            substance: "methamphetamine",
+            route: "smoking",
+            frequency: "3_6_per_week",
+            ageAtFirstUse: 19,
+          },
+        ],
+        source: "self_report",
+        recordedAt: "2026-05-12T16:00:00.000Z",
+      },
+      priorTreatment: {
+        priorEpisodes: "two_to_four",
+        lastTreatmentType: "residential",
+        source: "self_report",
+        recordedAt: "2026-05-12T16:02:00.000Z",
+      },
+      justice: {
+        arrestsPast12Months: 2,
+        timeInCustodyMonths: 8,
+        justiceReferralSource: "probation",
+        source: "self_report",
+        recordedAt: "2026-05-12T16:05:00.000Z",
+      },
+    },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
     // §P2 item 3 — the SDOH needs the care manager identified, with the real
     // status the patient surface renders (referred / in-process / receiving).
