@@ -1158,6 +1158,15 @@ function IntakePage() {
               A few optional background questions. Answer only what you want to — your care team
               records these as your own estimate.
             </p>
+            {historyOnFile && (
+              <p
+                className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 text-xs"
+                data-testid="history-prefilled-notice"
+              >
+                Some answers are already on file and shown below. Change anything that&apos;s out of
+                date — what you leave as-is stays as-is.
+              </p>
+            )}
 
             {effectiveSud === true && (
               <div className="space-y-3">
@@ -1186,6 +1195,24 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">How you mainly use it</Label>
+                  <Select
+                    value={history.route ?? ""}
+                    onValueChange={(v) => setHistory({ ...history, route: v as CalomsRoute })}
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_ROUTES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {ROUTE_LABEL[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">How often in the past 30 days</Label>
                   <Select
                     value={history.frequency ?? ""}
@@ -1206,6 +1233,15 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">Age you first used it (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.ageAtFirstUse}
+                    onChange={(e) => setHistory({ ...history, ageAtFirstUse: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">Times you&apos;ve been in treatment before</Label>
                   <Select
                     value={history.priorEpisodes ?? ""}
@@ -1220,6 +1256,26 @@ function IntakePage() {
                       {PRIOR_EPISODE_BUCKETS.map((b) => (
                         <SelectItem key={b} value={b}>
                           {PRIOR_EPISODE_LABEL[b]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Kind of treatment last time</Label>
+                  <Select
+                    value={history.lastTreatmentType ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, lastTreatmentType: v as PriorTreatmentType })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIOR_TREATMENT_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {PRIOR_TREATMENT_TYPE_LABEL[t]}
                         </SelectItem>
                       ))}
                     </SelectContent>
