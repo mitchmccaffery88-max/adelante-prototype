@@ -3235,6 +3235,27 @@ const patients: Patient[] = [
       "phq-9": { key: "phq-9", score: 8, severity: "Mild", completedAt: "2026-05-24" },
     },
     needs: { housing: false, food: true, employment: true, transport: false },
+    calomsProfile: {
+      substanceUse: {
+        entries: [
+          {
+            rank: "primary",
+            substance: "alcohol",
+            route: "oral",
+            frequency: "1_2_per_week",
+            ageAtFirstUse: 16,
+          },
+        ],
+        source: "self_report",
+        recordedAt: "2026-05-24T17:00:00.000Z",
+      },
+      priorTreatment: {
+        priorEpisodes: "one",
+        lastTreatmentType: "outpatient",
+        source: "self_report",
+        recordedAt: "2026-05-24T17:01:00.000Z",
+      },
+    },
     carePlanSummary: "Biweekly check-ins; CalFresh enrollment in progress.",
     coverage: {
       status: "suspended",
