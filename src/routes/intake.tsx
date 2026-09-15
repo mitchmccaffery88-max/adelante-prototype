@@ -44,6 +44,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// §Reporting Tier 2 — structured CalOMS-shaped history captured at intake.
+import {
+  CALOMS_FREQUENCIES,
+  CALOMS_SUBSTANCES,
+  FREQUENCY_LABEL,
+  JUSTICE_REFERRAL_LABEL,
+  JUSTICE_REFERRAL_SOURCES,
+  JUSTICE_SELF_REPORT_NOTE,
+  PRIOR_EPISODE_BUCKETS,
+  PRIOR_EPISODE_LABEL,
+  SUBSTANCE_LABEL,
+  type CalomsFrequency,
+  type CalomsSubstance,
+  type JusticeReferralSource,
+  type PriorEpisodeBucket,
+} from "@/lib/caloms";
+import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
@@ -196,6 +213,16 @@ function IntakePage() {
   const acting = useActingStaff();
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
+  // §Reporting Tier 2 — patient-estimated history. Every value here is the
+  // person's own recollection; nothing is verified against a facility record.
+  const [history, setHistory] = useState<{
+    substance?: CalomsSubstance;
+    frequency?: CalomsFrequency;
+    priorEpisodes?: PriorEpisodeBucket;
+    arrestsPast12Months: string;
+    timeInCustodyMonths: string;
+    justiceReferralSource?: JusticeReferralSource;
+  }>({ arrestsPast12Months: "", timeInCustodyMonths: "" });
   // P1 — About you. Seeded from the record on the very first render so nobody
   // retypes what sign-up (or a CF Care Manager) already entered.
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
@@ -333,10 +360,17 @@ function IntakePage() {
       { key: "coverage", label: "Coverage" },
       ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
       { key: "needs", label: "Needs" },
+      // §Reporting Tier 2 — structured CalOMS-shaped history. Only asked when
+      // it genuinely applies: substance questions require Part 2 consent
+      // (they are SUD content), justice questions require reported justice
+      // involvement. Both are recorded as the patient's own estimate.
+      ...(effectiveSud === true || coverage.justiceInvolvement === "yes"
+        ? [{ key: "history", label: "History" }]
+        : []),
       ...(askHeardAbout ? [{ key: "source", label: "How you found us" }] : []),
       { key: "review", label: "Review" },
     ],
-    [activeScreeners, askHeardAbout, consentOnFile],
+    [activeScreeners, askHeardAbout, consentOnFile, effectiveSud, coverage.justiceInvolvement],
   );
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
@@ -401,6 +435,34 @@ function IntakePage() {
         });
       } catch {
         /* no-op */
+      }
+    }
+    // §Reporting Tier 2 — persist the structured history as the patient's own
+    // estimate. Written through the typed setters so it lands queryable.
+    if (effectiveSud === true && history.substance) {
+      AdelanteEHR.setSubstanceUseProfile(currentId, {
+        entries: [
+          { rank: "primary", substance: history.substance, frequency: history.frequency },
+        ],
+        source: "self_report",
+      });
+    }
+    if (effectiveSud === true && history.priorEpisodes) {
+      AdelanteEHR.setPriorTreatmentHistory(currentId, {
+        priorEpisodes: history.priorEpisodes,
+        source: "self_report",
+      });
+    }
+    if (coverage.justiceInvolvement === "yes") {
+      const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
+      const arrests = toNum(history.arrestsPast12Months);
+      const custody = toNum(history.timeInCustodyMonths);
+      if (arrests !== undefined || custody !== undefined || history.justiceReferralSource) {
+        AdelanteEHR.setJusticeSelfReport(currentId, {
+          arrestsPast12Months: arrests,
+          timeInCustodyMonths: custody,
+          justiceReferralSource: history.justiceReferralSource,
+        });
       }
     }
     if (askHeardAbout && heardAbout) {
@@ -1074,6 +1136,136 @@ function IntakePage() {
                 <span className="text-sm">{l}</span>
               </label>
             ))}
+          </div>
+        )}
+
+        {current.key === "history" && (
+          <div className="space-y-4" data-testid="history-step">
+            <p className="text-sm text-muted-foreground">
+              A few optional background questions. Answer only what you want to — your care team
+              records these as your own estimate.
+            </p>
+
+            {effectiveSud === true && (
+              <div className="space-y-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium">Substance use</h3>
+                  <ProvenanceBadge source="self_report" />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Main substance</Label>
+                  <Select
+                    value={history.substance ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, substance: v as CalomsSubstance })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_SUBSTANCES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {SUBSTANCE_LABEL[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">How often in the past 30 days</Label>
+                  <Select
+                    value={history.frequency ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, frequency: v as CalomsFrequency })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_FREQUENCIES.map((f) => (
+                        <SelectItem key={f} value={f}>
+                          {FREQUENCY_LABEL[f]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Times you&apos;ve been in treatment before</Label>
+                  <Select
+                    value={history.priorEpisodes ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, priorEpisodes: v as PriorEpisodeBucket })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIOR_EPISODE_BUCKETS.map((b) => (
+                        <SelectItem key={b} value={b}>
+                          {PRIOR_EPISODE_LABEL[b]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
+
+            {coverage.justiceInvolvement === "yes" && (
+              <div className="space-y-3 rounded-lg border border-amber-warm/60 p-3">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium">Court or custody history</h3>
+                  <ProvenanceBadge source="self_report" />
+                </div>
+                <p className="text-xs text-muted-foreground">{JUSTICE_SELF_REPORT_NOTE}</p>
+                <div className="space-y-1">
+                  <Label className="text-xs">Arrests in the past 12 months (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.arrestsPast12Months}
+                    onChange={(e) =>
+                      setHistory({ ...history, arrestsPast12Months: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Months in custody (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.timeInCustodyMonths}
+                    onChange={(e) =>
+                      setHistory({ ...history, timeInCustodyMonths: e.target.value })
+                    }
+                  />
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Who referred you</Label>
+                  <Select
+                    value={history.justiceReferralSource ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, justiceReferralSource: v as JusticeReferralSource })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {JUSTICE_REFERRAL_SOURCES.map((s) => (
+                        <SelectItem key={s} value={s}>
+                          {JUSTICE_REFERRAL_LABEL[s]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+            )}
           </div>
         )}
 

@@ -34,6 +34,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { useI18n } from "@/lib/i18n";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
+import { CalomsProfileCard } from "@/components/clinical/CalomsProfileCard";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
@@ -202,6 +203,17 @@ export function useRecordSections(
     icon: ClipboardCheck,
     group: "chart",
     render: (a) => <CarePlanTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  // §Reporting Tier 2 — structured CalOMS history. Gated by `sud_treatment`,
+  // not `demographics`: substance-use and prior-treatment detail is 42 CFR
+  // Part 2 content, so it inherits the same gate as the rest of the SUD record
+  // even though the discharge and justice blocks are less sensitive.
+  add("sud_treatment", {
+    id: "caloms",
+    label: "CalOMS data",
+    icon: ListChecks,
+    group: "chart",
+    render: (a) => <CalomsProfileCard patientId={pid} readOnly={a.level !== "write"} />,
   });
   // §Phase 7 — patient-authored safety plan. Clinical-adjacent, so it lives in
   // the Chart group next to Alerts (where crisis work already happens), gated

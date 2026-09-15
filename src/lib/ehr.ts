@@ -17,6 +17,15 @@ import type {
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 import type { HelperAttribution, SignupCredentialMeta } from "./signup";
+// §Reporting Tier 2 — structured CalOMS history. Type-only: caloms.ts imports
+// types back from here, and an erased import keeps that cycle harmless.
+import type {
+  CalomsProfile,
+  DischargeRecord,
+  JusticeInvolvementSelfReport,
+  PriorTreatmentHistory,
+  SubstanceUseProfile,
+} from "./caloms";
 import { helperAuditDetail } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
@@ -1162,6 +1171,13 @@ export interface Patient {
   releaseDateMeta?: ReleaseDateMeta;
   /** SDOH need → referral → closed-loop status. §3e */
   sdohPlan?: { items: SdohPlanItem[] };
+  /**
+   * §Reporting Tier 2 — structured CalOMS-shaped history (substance use,
+   * prior treatment, discharge) plus the SELF-REPORTED justice-involvement
+   * estimates. See `src/lib/caloms.ts` for why employment and living
+   * arrangement are deliberately NOT duplicated in here.
+   */
+  calomsProfile?: CalomsProfile;
   /** Assigned self-help modules with completion. §3f */
   selfHelpPlan?: { modules: SelfHelpModule[] };
   /** External coordination log (§4-CM). */
@@ -3004,6 +3020,36 @@ const patients: Patient[] = [
       "gad-7": { key: "gad-7", score: 11, severity: "Moderate", completedAt: "2026-05-12" },
     },
     needs: { housing: true, food: false, employment: true, transport: true, family: true },
+    // §Reporting Tier 2 — structured CalOMS history, so the reporting area has
+    // real rows instead of an empty demo.
+    calomsProfile: {
+      substanceUse: {
+        entries: [
+          {
+            rank: "primary",
+            substance: "methamphetamine",
+            route: "smoking",
+            frequency: "3_6_per_week",
+            ageAtFirstUse: 19,
+          },
+        ],
+        source: "self_report",
+        recordedAt: "2026-05-12T16:00:00.000Z",
+      },
+      priorTreatment: {
+        priorEpisodes: "two_to_four",
+        lastTreatmentType: "residential",
+        source: "self_report",
+        recordedAt: "2026-05-12T16:02:00.000Z",
+      },
+      justice: {
+        arrestsPast12Months: 2,
+        timeInCustodyMonths: 8,
+        justiceReferralSource: "probation",
+        source: "self_report",
+        recordedAt: "2026-05-12T16:05:00.000Z",
+      },
+    },
     carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
     // §P2 item 3 — the SDOH needs the care manager identified, with the real
     // status the patient surface renders (referred / in-process / receiving).
@@ -3189,6 +3235,27 @@ const patients: Patient[] = [
       "phq-9": { key: "phq-9", score: 8, severity: "Mild", completedAt: "2026-05-24" },
     },
     needs: { housing: false, food: true, employment: true, transport: false },
+    calomsProfile: {
+      substanceUse: {
+        entries: [
+          {
+            rank: "primary",
+            substance: "alcohol",
+            route: "oral",
+            frequency: "1_2_per_week",
+            ageAtFirstUse: 16,
+          },
+        ],
+        source: "self_report",
+        recordedAt: "2026-05-24T17:00:00.000Z",
+      },
+      priorTreatment: {
+        priorEpisodes: "one",
+        lastTreatmentType: "outpatient",
+        source: "self_report",
+        recordedAt: "2026-05-24T17:01:00.000Z",
+      },
+    },
     carePlanSummary: "Biweekly check-ins; CalFresh enrollment in progress.",
     coverage: {
       status: "suspended",
@@ -8614,6 +8681,81 @@ export const AdelanteEHR = {
     item.visibleToPatient = visible;
     item.updatedAt = new Date().toISOString();
     emit();
+  },
+
+  // ----- §Reporting Tier 2 — structured CalOMS history -----
+  //
+  // Reads live on the patient (`calomsProfile`); every field is typed, so the
+  // reporting helpers in `calomsReporting.ts` can aggregate them without
+  // parsing any narrative text.
+
+  setSubstanceUseProfile(
+    patientId: string,
+    input: Omit<SubstanceUseProfile, "recordedAt">,
+  ): SubstanceUseProfile | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const profile: SubstanceUseProfile = { ...input, recordedAt: new Date().toISOString() };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), substanceUse: profile };
+    emit();
+    return profile;
+  },
+
+  setPriorTreatmentHistory(
+    patientId: string,
+    input: Omit<PriorTreatmentHistory, "recordedAt">,
+  ): PriorTreatmentHistory | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const history: PriorTreatmentHistory = { ...input, recordedAt: new Date().toISOString() };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), priorTreatment: history };
+    emit();
+    return history;
+  },
+
+  /** Append-only: a correction is a new row, never an overwrite. */
+  recordDischarge(
+    patientId: string,
+    input: Omit<DischargeRecord, "id" | "recordedAt">,
+  ): DischargeRecord | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const record: DischargeRecord = { ...input, id: uid(), recordedAt: new Date().toISOString() };
+    p.calomsProfile = {
+      ...(p.calomsProfile ?? {}),
+      discharges: [record, ...(p.calomsProfile?.discharges ?? [])],
+    };
+    emit();
+    return record;
+  },
+
+  /**
+   * Justice-involvement estimates. `source` defaults to "self_report" and can
+   * only ever be "self_report" or "pre_release" — there is no facility feed to
+   * verify against, so nothing here may claim verification.
+   */
+  setJusticeSelfReport(
+    patientId: string,
+    input: Omit<JusticeInvolvementSelfReport, "recordedAt" | "source"> & {
+      source?: JusticeInvolvementSelfReport["source"];
+    },
+  ): JusticeInvolvementSelfReport | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const report: JusticeInvolvementSelfReport = {
+      ...input,
+      source: input.source === "pre_release" ? "pre_release" : "self_report",
+      recordedAt: new Date().toISOString(),
+    };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), justice: report };
+    emit();
+    return report;
+  },
+
+  /** Current (most recent) discharge record, if any. */
+  currentDischarge(patientId: string): DischargeRecord | null {
+    const p = patients.find((x) => x.id === patientId);
+    return p?.calomsProfile?.discharges?.[0] ?? null;
   },
   /**
    * §Crisis Redesign Phase 2 — SDOH-urgent lane trigger.

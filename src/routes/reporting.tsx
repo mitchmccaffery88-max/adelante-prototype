@@ -32,6 +32,18 @@ import {
   periodLabel,
   type ReportingPeriodKey,
 } from "@/lib/reportingPeriods";
+// §Reporting Tier 2 — structured CalOMS capture, aggregated live from the
+// patient record rather than parsed out of note templates.
+import {
+  calomsCompleteness,
+  dischargeStatusBreakdown,
+  justiceSelfReportCoverage,
+  priorTreatmentBreakdown,
+  substanceUseBreakdown,
+  type Breakdown,
+} from "@/lib/calomsReporting";
+import { CALOMS_DRAFT_NOTE, JUSTICE_SELF_REPORT_NOTE } from "@/lib/caloms";
+import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
@@ -137,6 +149,35 @@ function Area({
   );
 }
 
+/** Small distribution list used by the CalOMS area. */
+function BreakdownCard({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: Breakdown<string>[];
+  empty: string;
+}) {
+  return (
+    <Card className="space-y-2 p-4">
+      <h3 className="text-sm font-medium text-navy">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((r) => (
+            <li key={r.key} className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">{r.label}</span>
+              <span className="tabular-nums text-foreground">{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 function pctText(v: number | null): string {
   return v === null ? "No live metric yet" : `${Math.round(v * 10) / 10}%`;
 }
@@ -172,6 +213,15 @@ function ReportingHome() {
   const groupActive = useEhr(() => (seesPopulation ? activeGroupSessions().length : 0));
   const groupEnrolled = useEhr(() => (seesPopulation ? enrolledPatientCount() : 0));
   const claims = useEhrExt(() => (seesBilling ? AdelanteEHRExt.listClaims() : []));
+  // CalOMS capture is a current-state completeness question ("what is on file
+  // right now"), so it deliberately does not respond to the period selector.
+  // These are plain counts over the caseload; the CalOMS Area itself is what
+  // the population-health gate hides.
+  const completeness = useEhr(() => calomsCompleteness());
+  const substanceRows = useEhr(() => substanceUseBreakdown());
+  const priorRows = useEhr(() => priorTreatmentBreakdown());
+  const dischargeRows = useEhr(() => dischargeStatusBreakdown());
+  const justice = useEhr(() => justiceSelfReportCoverage());
 
   if (!seesPopulation && !seesBilling) {
     return (
@@ -310,6 +360,99 @@ function ReportingHome() {
           )}
         </Area>
       )}
+
+      {seesPopulation && (
+        <Area
+          id="caloms"
+          title="CalOMS data capture"
+          purpose="Is the structured CalOMS-shaped intake data actually being captured? Substance use, prior treatment, discharge and self-reported justice involvement."
+          icon={ClipboardList}
+          actions={null}
+        >
+          <Card className="mb-3 space-y-1 p-3">
+            <Badge variant="outline" className="text-[10px]">
+              Draft value sets
+            </Badge>
+            <p className="text-xs text-muted-foreground">{CALOMS_DRAFT_NOTE}</p>
+          </Card>
+          {completeness.total === 0 ? (
+            <Card className="p-4 text-sm text-muted-foreground">
+              No patients in the caseload — nothing to report.
+            </Card>
+          ) : (
+            <div className="space-y-3">
+              <div className="grid gap-3 sm:grid-cols-4">
+                <Stat
+                  label="Substance use recorded"
+                  value={`${completeness.substanceUse} of ${completeness.total}`}
+                  note={`As of now — ${pctText(completeness.substanceUsePct)} of the caseload`}
+                />
+                <Stat
+                  label="Prior treatment recorded"
+                  value={`${completeness.priorTreatment} of ${completeness.total}`}
+                  note={`As of now — ${pctText(completeness.priorTreatmentPct)} of the caseload`}
+                />
+                <Stat
+                  label="Discharge recorded"
+                  value={`${completeness.discharge} of ${completeness.total}`}
+                  note="As of now — most recent discharge per patient"
+                />
+                <Stat
+                  label="Justice estimates reported"
+                  value={`${completeness.justice} of ${completeness.total}`}
+                  note="Self-reported by patients — not verified facility data"
+                />
+              </div>
+              <div className="grid gap-3 md:grid-cols-3">
+                <BreakdownCard
+                  title="Primary substance"
+                  rows={substanceRows}
+                  empty="No primary substance recorded yet."
+                />
+                <BreakdownCard
+                  title="Prior treatment episodes"
+                  rows={priorRows}
+                  empty="No prior treatment history recorded yet."
+                />
+                <BreakdownCard
+                  title="Most recent discharge status"
+                  rows={dischargeRows}
+                  empty="No discharge recorded yet."
+                />
+              </div>
+              <Card className="space-y-2 border-amber-warm/60 p-4">
+                <div className="flex flex-wrap items-center gap-2">
+                  <h3 className="text-sm font-medium text-navy">Justice involvement</h3>
+                  <ProvenanceBadge source="self_report" />
+                </div>
+                <p className="text-xs text-muted-foreground">{JUSTICE_SELF_REPORT_NOTE}</p>
+                <div className="grid gap-3 sm:grid-cols-3">
+                  <Stat
+                    label="Reported any arrest, past 12 months"
+                    value={String(justice.anyArrestPast12Months)}
+                    note="Patient estimate"
+                  />
+                  <Stat
+                    label="Median time in custody"
+                    value={
+                      justice.medianCustodyMonths === null
+                        ? "No live metric yet"
+                        : `${justice.medianCustodyMonths} months`
+                    }
+                    note="Patient estimate"
+                  />
+                  <Stat
+                    label="Referral sources reported"
+                    value={String(justice.referralSources.length)}
+                    note="Self-reported referral source values in use"
+                  />
+                </div>
+              </Card>
+            </div>
+          )}
+        </Area>
+      )}
+
 
       {seesPopulation && engagement && (
         <Area
