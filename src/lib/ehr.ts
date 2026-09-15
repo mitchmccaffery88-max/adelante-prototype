@@ -8631,6 +8631,81 @@ export const AdelanteEHR = {
     item.updatedAt = new Date().toISOString();
     emit();
   },
+
+  // ----- §Reporting Tier 2 — structured CalOMS history -----
+  //
+  // Reads live on the patient (`calomsProfile`); every field is typed, so the
+  // reporting helpers in `calomsReporting.ts` can aggregate them without
+  // parsing any narrative text.
+
+  setSubstanceUseProfile(
+    patientId: string,
+    input: Omit<SubstanceUseProfile, "recordedAt">,
+  ): SubstanceUseProfile | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const profile: SubstanceUseProfile = { ...input, recordedAt: new Date().toISOString() };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), substanceUse: profile };
+    emit();
+    return profile;
+  },
+
+  setPriorTreatmentHistory(
+    patientId: string,
+    input: Omit<PriorTreatmentHistory, "recordedAt">,
+  ): PriorTreatmentHistory | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const history: PriorTreatmentHistory = { ...input, recordedAt: new Date().toISOString() };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), priorTreatment: history };
+    emit();
+    return history;
+  },
+
+  /** Append-only: a correction is a new row, never an overwrite. */
+  recordDischarge(
+    patientId: string,
+    input: Omit<DischargeRecord, "id" | "recordedAt">,
+  ): DischargeRecord | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const record: DischargeRecord = { ...input, id: uid(), recordedAt: new Date().toISOString() };
+    p.calomsProfile = {
+      ...(p.calomsProfile ?? {}),
+      discharges: [record, ...(p.calomsProfile?.discharges ?? [])],
+    };
+    emit();
+    return record;
+  },
+
+  /**
+   * Justice-involvement estimates. `source` defaults to "self_report" and can
+   * only ever be "self_report" or "pre_release" — there is no facility feed to
+   * verify against, so nothing here may claim verification.
+   */
+  setJusticeSelfReport(
+    patientId: string,
+    input: Omit<JusticeInvolvementSelfReport, "recordedAt" | "source"> & {
+      source?: JusticeInvolvementSelfReport["source"];
+    },
+  ): JusticeInvolvementSelfReport | null {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return null;
+    const report: JusticeInvolvementSelfReport = {
+      ...input,
+      source: input.source === "pre_release" ? "pre_release" : "self_report",
+      recordedAt: new Date().toISOString(),
+    };
+    p.calomsProfile = { ...(p.calomsProfile ?? {}), justice: report };
+    emit();
+    return report;
+  },
+
+  /** Current (most recent) discharge record, if any. */
+  currentDischarge(patientId: string): DischargeRecord | null {
+    const p = patients.find((x) => x.id === patientId);
+    return p?.calomsProfile?.discharges?.[0] ?? null;
+  },
   /**
    * §Crisis Redesign Phase 2 — SDOH-urgent lane trigger.
    *
