@@ -44,6 +44,23 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
+// §Reporting Tier 2 — structured CalOMS-shaped history captured at intake.
+import {
+  CALOMS_FREQUENCIES,
+  CALOMS_SUBSTANCES,
+  FREQUENCY_LABEL,
+  JUSTICE_REFERRAL_LABEL,
+  JUSTICE_REFERRAL_SOURCES,
+  JUSTICE_SELF_REPORT_NOTE,
+  PRIOR_EPISODE_BUCKETS,
+  PRIOR_EPISODE_LABEL,
+  SUBSTANCE_LABEL,
+  type CalomsFrequency,
+  type CalomsSubstance,
+  type JusticeReferralSource,
+  type PriorEpisodeBucket,
+} from "@/lib/caloms";
+import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
