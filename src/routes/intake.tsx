@@ -222,14 +222,10 @@ function IntakePage() {
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // §Reporting Tier 2 — patient-estimated history. Every value here is the
   // person's own recollection; nothing is verified against a facility record.
-  const [history, setHistory] = useState<{
-    substance?: CalomsSubstance;
-    frequency?: CalomsFrequency;
-    priorEpisodes?: PriorEpisodeBucket;
-    arrestsPast12Months: string;
-    timeInCustodyMonths: string;
-    justiceReferralSource?: JusticeReferralSource;
-  }>({ arrestsPast12Months: "", timeInCustodyMonths: "" });
+  // Seeded from the structured CalomsProfile already on file, like every other
+  // intake step, so a re-run edits what exists instead of blanking it.
+  const [history, setHistory] = useState<IntakeHistory>(() => seedIntakeHistory(patient));
+  const historyOnFile = hasExistingHistory(patient);
   // P1 — About you. Seeded from the record on the very first render so nobody
   // retypes what sign-up (or a CF Care Manager) already entered.
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
