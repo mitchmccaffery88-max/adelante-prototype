@@ -52,11 +52,13 @@ describe("reporting period vocabulary", () => {
 });
 
 describe("computeLiveMetrics honours the window", () => {
-  it("reports the selected window in the basis of windowed metrics", () => {
-    const short = computeLiveMetrics(new Date(), 7);
-    const long = computeLiveMetrics(new Date(), 90);
-    expect(short.mar_compliance_pct.basis).toContain("7");
-    expect(long.mar_compliance_pct.basis).toContain("90");
+  it("names the window only when there is nothing charted in it", () => {
+    // The period label is rendered by the UI, so the basis stays window-free
+    // when it has real numbers to report and only spells the window out when
+    // it has to explain an empty result.
+    const empty = computeLiveMetrics(new Date("1990-01-01T00:00:00Z"), 7);
+    expect(empty.mar_compliance_pct.basis).toBe("No doses charted in the last 7 days");
+    expect(empty.mar_compliance_pct.value).toBeNull();
   });
 
   it("leaves the point-in-time backlogs identical across windows", () => {
