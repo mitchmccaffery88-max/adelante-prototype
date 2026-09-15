@@ -60,6 +60,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
+import { Route as ReportingRouteImport } from './routes/reporting'
 import { Route as ResourcesRouteImport } from './routes/resources'
 import { Route as SafetyPlanRouteImport } from './routes/safety-plan'
 import { Route as ScheduleRouteImport } from './routes/schedule'
@@ -351,6 +352,11 @@ const ReleasedSearchRoute = ReleasedSearchRouteImport.update({
   path: '/released-search',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ReportingRoute = ReportingRouteImport.update({
+  id: '/reporting',
+  path: '/reporting',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResourcesRoute = ResourcesRouteImport.update({
   id: '/resources',
   path: '/resources',
@@ -583,6 +589,7 @@ export interface FileRoutesByFullPath {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
@@ -670,6 +677,7 @@ export interface FileRoutesByTo {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/reporting': typeof ReportingRoute
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
@@ -756,6 +764,7 @@ export interface FileRoutesById {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/released-search': typeof ReleasedSearchRoute
+  '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
@@ -846,6 +855,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
+    | '/reporting'
     | '/resources'
     | '/safety-plan'
     | '/schedule'
@@ -933,6 +943,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
+    | '/reporting'
     | '/safety-plan'
     | '/schedule'
     | '/shift-count'
@@ -1018,6 +1029,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/released-search'
+    | '/reporting'
     | '/resources'
     | '/safety-plan'
     | '/schedule'
@@ -1107,6 +1119,7 @@ export interface RootRouteChildren {
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
+  ReportingRoute: typeof ReportingRoute
   ResourcesRoute: typeof ResourcesRouteWithChildren
   SafetyPlanRoute: typeof SafetyPlanRoute
   ScheduleRoute: typeof ScheduleRoute
@@ -1479,6 +1492,13 @@ declare module '@tanstack/react-router' {
       path: '/released-search'
       fullPath: '/released-search'
       preLoaderRoute: typeof ReleasedSearchRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/reporting': {
+      id: '/reporting'
+      path: '/reporting'
+      fullPath: '/reporting'
+      preLoaderRoute: typeof ReportingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/resources': {
@@ -1862,6 +1882,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
+  ReportingRoute: ReportingRoute,
   ResourcesRoute: ResourcesRouteWithChildren,
   SafetyPlanRoute: SafetyPlanRoute,
   ScheduleRoute: ScheduleRoute,

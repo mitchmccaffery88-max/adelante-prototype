@@ -283,7 +283,20 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["patient_messaging"] },
   },
 
-  // ----- Population health (outpatient program metrics) -----
+  // ----- Reporting (single entry point, organised by purpose) -----
+  // §Reporting Redesign Tier 1 — /reporting is the home; the surfaces below it
+  // stay reachable directly so existing links and bookmarks keep working.
+  // Gated on either reporting class: a billing-only role still gets the home,
+  // and the page itself renders only the areas that role can see.
+  {
+    id: "reporting",
+    label: "Reporting",
+    desc: "All reporting, by purpose",
+    icon: Gauge,
+    to: "/reporting",
+    group: "population",
+    gate: { kind: "record_class", anyOf: ["population_health", "billing"] },
+  },
   {
     id: "dashboards",
     label: "Population health",
@@ -293,6 +306,7 @@ export const STAFF_NAV: NavEntry[] = [
     group: "population",
     gate: { kind: "record_class", anyOf: ["population_health"] },
   },
+
 
   // ----- Facility & Custody -----
   {

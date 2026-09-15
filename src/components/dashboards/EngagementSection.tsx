@@ -43,9 +43,13 @@ export function EngagementSection({ projection }: { projection: EngagementProjec
     <Card className="space-y-4 p-4">
       <div className="flex flex-wrap items-start justify-between gap-2">
         <div>
-          <h2 className="flex items-center gap-2 font-display text-lg text-navy">
+          <h2
+            id="engagement-heading"
+            className="flex items-center gap-2 font-display text-lg text-navy"
+          >
             <Activity className="h-4 w-4 text-teal" /> Patient engagement
           </h2>
+
           <p className="text-sm text-muted-foreground">
             Self-help and recovery-module activity across the program, broken down by derived
             population track. Activity window: last {windowDays} days.

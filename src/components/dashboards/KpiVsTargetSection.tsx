@@ -1,8 +1,11 @@
 // §Population health — KPI vs Target section.
 //
-// One row per admin-configured target. Rows whose metric has no live source
-// render "No live metric yet" instead of a zero, and are not clickable —
-// there is nothing behind them to drill into.
+// One row per admin-configured target. Two honesty rules hold here:
+//  1. A metric with no live source renders "No live metric yet", never a 0.
+//  2. Every row declares its interactivity explicitly. Rows with record-level
+//     detail get a Details button; rows without get a visible, reasoned
+//     "No record-level detail" state instead of an invisible spacer, so the
+//     difference reads as intentional rather than as a broken button.
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -17,8 +20,15 @@ import {
   type MetricKey,
 } from "@/lib/dashboardMetrics";
 import { METRICS_WITHOUT_SOURCE } from "@/lib/dashboardMetrics";
+import {
+  METRIC_PERIOD_BEHAVIOR,
+  POINT_IN_TIME_REASON,
+  periodNoteFor,
+  DEFAULT_PERIOD,
+  type ReportingPeriodKey,
+} from "@/lib/reportingPeriods";
 import type { KpiTarget } from "@/lib/ehr";
-import { ChevronRight, Target } from "lucide-react";
+import { ChevronRight, Clock, Minus, Target } from "lucide-react";
 
 const STATUS_STYLE: Record<string, string> = {
   met: "bg-emerald-100 text-emerald-800",
@@ -31,10 +41,12 @@ export function KpiVsTargetSection({
   targets,
   metrics,
   onDrillDown,
+  period = DEFAULT_PERIOD,
 }: {
   targets: KpiTarget[];
   metrics: LiveMetricMap;
   onDrillDown: (metricKey: MetricKey) => void;
+  period?: ReportingPeriodKey;
 }) {
   const [showGaps, setShowGaps] = useState(true);
 
@@ -45,6 +57,7 @@ export function KpiVsTargetSection({
       </Card>
     );
   }
+
 
   return (
     <Card className="divide-y p-0">
@@ -64,12 +77,22 @@ export function KpiVsTargetSection({
         const evaluation = evaluateTarget(metric, t.targetValue);
         const drillable = metricSupportsDrillDown(key) && evaluation.status !== "no_metric";
         const gapReason = METRICS_WITHOUT_SOURCE[key];
+        const behavior = METRIC_PERIOD_BEHAVIOR[key];
+        const pointReason = POINT_IN_TIME_REASON[key];
+        // Why this row has no Details button. Always a real reason, never a
+        // silent gap.
+        const noDetailReason =
+          evaluation.status === "no_metric"
+            ? "No source to drill into"
+            : "No record-level detail for this measure";
         return (
           <div
             key={t.id}
             className="flex flex-wrap items-center justify-between gap-3 px-4 py-3"
             data-metric-key={t.metricKey}
             data-metric-status={evaluation.status}
+            data-metric-drillable={drillable ? "yes" : "no"}
+            data-metric-period-behavior={behavior}
           >
             <div className="min-w-[220px]">
               <p className="text-sm font-medium text-navy">
@@ -80,6 +103,13 @@ export function KpiVsTargetSection({
                 {t.source ? ` · ${t.source}` : ""}
                 {t.effectiveMonth ? ` · from ${t.effectiveMonth}` : ""}
               </p>
+              <p className="mt-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground">
+                <Clock className="h-3 w-3" aria-hidden />
+                {periodNoteFor(key, period)}
+              </p>
+              {showGaps && behavior === "point_in_time" && pointReason && (
+                <p className="mt-1 max-w-md text-xs italic text-muted-foreground">{pointReason}</p>
+              )}
               {showGaps && evaluation.status === "no_metric" && gapReason && (
                 <p className="mt-1 max-w-md text-xs italic text-muted-foreground">{gapReason}</p>
               )}
@@ -102,12 +132,20 @@ export function KpiVsTargetSection({
                   Details <ChevronRight className="ml-1 h-3 w-3" />
                 </Button>
               ) : (
-                <span className="w-[86px]" />
+                <span
+                  className="inline-flex w-[132px] items-center justify-center gap-1 rounded-md border border-dashed border-border px-2 py-1 text-center text-[11px] leading-tight text-muted-foreground"
+                  data-testid={`no-detail-${t.metricKey}`}
+                  title={noDetailReason}
+                >
+                  <Minus className="h-3 w-3 shrink-0" aria-hidden />
+                  {noDetailReason}
+                </span>
               )}
             </div>
           </div>
         );
       })}
+
     </Card>
   );
 }

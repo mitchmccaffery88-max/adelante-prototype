@@ -34,11 +34,22 @@ import {
   PatientLink,
   type DrillDownColumn,
 } from "@/components/dashboards/DrillDownDialog";
+import {
+  parsePeriod,
+  periodDays,
+  periodLabel,
+  type ReportingPeriodKey,
+} from "@/lib/reportingPeriods";
+import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ArrowLeft, Lock, Settings2 } from "lucide-react";
 
+
 export const Route = createFileRoute("/dashboards")({
+  validateSearch: (s: Record<string, unknown>): { period?: ReportingPeriodKey } => ({
+    period: s.period === undefined ? undefined : parsePeriod(s.period),
+  }),
   head: () => ({
     meta: [
       { title: "Population health dashboard — Adelante" },
@@ -66,18 +77,24 @@ function DashboardsPage() {
   const { role } = useActingStaff();
   const access = canAccess(role, "population_health");
   const canManage = access.level === "write";
+  const search = Route.useSearch();
+  const navigate = Route.useNavigate();
+  // §Reporting Redesign Tier 1 — the window is a URL param shared with
+  // /reporting, so moving between summary and detail keeps the same period.
+  const period: ReportingPeriodKey = parsePeriod(search.period);
+  const days = periodDays(period);
 
   const targets = useEhr(() => AdelanteEHR.listKpiTargets());
-  const metrics = useEhr(() => computeLiveMetrics());
+  const metrics = useEhr(() => computeLiveMetrics(new Date(), days));
   const qualifyingCodes = useEhr(() => AdelanteEHR.listQualifyingCodes());
   const calaimCaseload = useEhr(() => calaimEligiblePatients());
   const calaimDischarges = useEhr(() => calaimEligibleDischarges());
   const groupActive = useEhr(() => activeGroupSessions().length);
   const groupEnrolled = useEhr(() => enrolledPatientCount());
-  const groupAttendance = useEhr(() => groupAttendanceRate());
+  const groupAttendance = useEhr(() => groupAttendanceRate(new Date(), days));
   // Non-billing engagement rollup for open psychoeducational groups. Kept
   // separate from claims data on purpose — these never produce a claim.
-  const openGroups = useEhr(() => openGroupEngagement());
+  const openGroups = useEhr(() => openGroupEngagement(new Date(), days));
   // §Facility & Custody split — the facility rollup is only COMPUTED for roles
   // that clear `custody_tracking`. Without access the data never reaches the
   // client component at all.
@@ -90,8 +107,9 @@ function DashboardsPage() {
   );
   // §Engagement Build 1 — derived cohorts + engagement projection. Same
   // `population_health` gate as the rest of this page; no new access path.
-  const engagement = useEhr(() => engagementProjection());
+  const engagement = useEhr(() => engagementProjection({ windowDays: days }));
   const [drill, setDrill] = useState<DrillKind>(null);
+
 
   const drillConfig = useMemo(() => {
     if (drill === "unsigned_notes_count") {
@@ -157,10 +175,10 @@ function DashboardsPage() {
         { key: "by", header: "Charted by", render: (r) => r.chartedBy },
       ];
       return {
-        title: "MAR exceptions (30 days)",
+        title: `MAR exceptions (${periodLabel(period).toLowerCase()})`,
         description: "Refused and held doses — the administrations pulling compliance below 100%.",
         columns,
-        loader: () => marExceptions(AdelanteEHR.listPatients()),
+        loader: () => marExceptions(AdelanteEHR.listPatients(), new Date(), days),
         emptyMessage: "No refused or held doses in the window.",
       };
     }
@@ -180,11 +198,11 @@ function DashboardsPage() {
         { key: "status", header: "Status", render: (r) => r.status },
       ];
       return {
-        title: "Group attendance exceptions (30 days)",
+        title: `Group attendance exceptions (${periodLabel(period).toLowerCase()})`,
         description:
           "Absent and late seats in occurrences where the facilitator recorded attendance.",
         columns,
-        loader: () => groupAbsences(),
+        loader: () => groupAbsences(new Date(), days),
         emptyMessage: "Every recorded seat was present.",
       };
     }
@@ -242,7 +260,7 @@ function DashboardsPage() {
       };
     }
     return null;
-  }, [drill]);
+  }, [drill, days, period]);
 
   if (access.level === "none") {
     return (
@@ -260,24 +278,36 @@ function DashboardsPage() {
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
-      <Link to="/home" className="inline-flex items-center gap-1 text-xs text-teal">
-        <ArrowLeft className="h-3 w-3" /> Back
+      <Link
+        to="/reporting"
+        search={{ period }}
+        className="inline-flex items-center gap-1 text-xs text-teal"
+      >
+        <ArrowLeft className="h-3 w-3" /> Reporting home
       </Link>
-      <header className="flex flex-wrap items-end justify-between gap-3">
-        <div>
-          <h1 className="font-display text-2xl text-navy">Population health</h1>
-          <p className="text-sm text-muted-foreground">
-            Outpatient program performance against configured targets. Each measured row drills
-            into the actual records behind the number.
-          </p>
+      <header className="space-y-3">
+        <div className="flex flex-wrap items-end justify-between gap-3">
+          <div>
+            <h1 className="font-display text-2xl text-navy">Operational performance</h1>
+            <p className="max-w-2xl text-sm text-muted-foreground">
+              Population health detail. Outpatient program performance against configured targets —
+              each measured row drills into the actual records behind the number.
+            </p>
+          </div>
+          {canManage && (
+            <Button size="sm" variant="outline" asChild>
+              <Link to="/admin-kpi-targets">
+                <Settings2 className="mr-1 h-4 w-4" /> Manage targets
+              </Link>
+            </Button>
+          )}
         </div>
-        {canManage && (
-          <Button size="sm" variant="outline" asChild>
-            <Link to="/admin-kpi-targets">
-              <Settings2 className="mr-1 h-4 w-4" /> Manage targets
-            </Link>
-          </Button>
-        )}
+        <div className="rounded-lg border border-border/60 bg-card/40 p-3">
+          <PeriodSelector
+            value={period}
+            onChange={(v) => navigate({ search: { period: v }, replace: true })}
+          />
+        </div>
       </header>
 
       <section aria-labelledby="outpatient-heading" className="space-y-5">
@@ -285,10 +315,11 @@ function DashboardsPage() {
           Outpatient program metrics
         </h2>
         <KpiVsTargetSection
-        targets={targets}
-        metrics={metrics}
-        onDrillDown={(key) => setDrill(key)}
-      />
+          targets={targets}
+          metrics={metrics}
+          period={period}
+          onDrillDown={(key) => setDrill(key)}
+        />
 
       <PopulationCarePlanStrip />
 
@@ -301,7 +332,9 @@ function DashboardsPage() {
         metric={metrics.group_attendance_rate_pct}
         onOpenAbsences={() => setDrill("group_attendance_rate_pct")}
         openGroups={openGroups}
+        windowDays={days}
       />
+
 
       <CalAimSection
         codeCount={qualifyingCodes.length}
