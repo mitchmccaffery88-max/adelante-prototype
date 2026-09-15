@@ -149,6 +149,35 @@ function Area({
   );
 }
 
+/** Small distribution list used by the CalOMS area. */
+function BreakdownCard({
+  title,
+  rows,
+  empty,
+}: {
+  title: string;
+  rows: Breakdown<string>[];
+  empty: string;
+}) {
+  return (
+    <Card className="space-y-2 p-4">
+      <h3 className="text-sm font-medium text-navy">{title}</h3>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">{empty}</p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((r) => (
+            <li key={r.key} className="flex items-baseline justify-between gap-3 text-sm">
+              <span className="text-muted-foreground">{r.label}</span>
+              <span className="tabular-nums text-foreground">{r.count}</span>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Card>
+  );
+}
+
 function pctText(v: number | null): string {
   return v === null ? "No live metric yet" : `${Math.round(v * 10) / 10}%`;
 }
@@ -184,6 +213,19 @@ function ReportingHome() {
   const groupActive = useEhr(() => (seesPopulation ? activeGroupSessions().length : 0));
   const groupEnrolled = useEhr(() => (seesPopulation ? enrolledPatientCount() : 0));
   const claims = useEhrExt(() => (seesBilling ? AdelanteEHRExt.listClaims() : []));
+  // CalOMS capture is a current-state completeness question ("what is on file
+  // right now"), so it deliberately does not respond to the period selector.
+  const completeness = useEhr(() =>
+    seesPopulation ? calomsCompleteness() : { total: 0 } as ReturnType<typeof calomsCompleteness>,
+  );
+  const substanceRows = useEhr(() => (seesPopulation ? substanceUseBreakdown() : []));
+  const priorRows = useEhr(() => (seesPopulation ? priorTreatmentBreakdown() : []));
+  const dischargeRows = useEhr(() => (seesPopulation ? dischargeStatusBreakdown() : []));
+  const justice = useEhr(() =>
+    seesPopulation
+      ? justiceSelfReportCoverage()
+      : { reported: 0, anyArrestPast12Months: 0, medianCustodyMonths: null, referralSources: [], allSelfReported: true },
+  );
 
   if (!seesPopulation && !seesBilling) {
     return (
