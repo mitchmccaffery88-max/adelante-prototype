@@ -17,6 +17,15 @@ import type {
 import type { StaffRole } from "./roles";
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 import type { HelperAttribution, SignupCredentialMeta } from "./signup";
+// §Reporting Tier 2 — structured CalOMS history. Type-only: caloms.ts imports
+// types back from here, and an erased import keeps that cycle harmless.
+import type {
+  CalomsProfile,
+  DischargeRecord,
+  JusticeInvolvementSelfReport,
+  PriorTreatmentHistory,
+  SubstanceUseProfile,
+} from "./caloms";
 import { helperAuditDetail } from "./signup";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
