@@ -43,6 +43,7 @@ export function useNoteAutofillSnapshots(
       bookings,
       housingMoves,
       referrals: patient?.resourceReferrals ?? [],
+      discharges: patient?.calomsProfile?.discharges ?? [],
       sudLocked,
       excludeNoteId,
       orderName: (id) => orders.find((o) => o.id === id)?.drugName ?? id,
