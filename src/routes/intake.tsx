@@ -47,6 +47,7 @@ import {
 // §Reporting Tier 2 — structured CalOMS-shaped history captured at intake.
 import {
   CALOMS_FREQUENCIES,
+  CALOMS_ROUTES,
   CALOMS_SUBSTANCES,
   FREQUENCY_LABEL,
   JUSTICE_REFERRAL_LABEL,
@@ -54,12 +55,18 @@ import {
   JUSTICE_SELF_REPORT_NOTE,
   PRIOR_EPISODE_BUCKETS,
   PRIOR_EPISODE_LABEL,
+  PRIOR_TREATMENT_TYPES,
+  PRIOR_TREATMENT_TYPE_LABEL,
+  ROUTE_LABEL,
   SUBSTANCE_LABEL,
   type CalomsFrequency,
+  type CalomsRoute,
   type CalomsSubstance,
   type JusticeReferralSource,
   type PriorEpisodeBucket,
+  type PriorTreatmentType,
 } from "@/lib/caloms";
+import { hasExistingHistory, seedIntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
