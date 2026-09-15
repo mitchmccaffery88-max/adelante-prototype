@@ -204,6 +204,17 @@ export function useRecordSections(
     group: "chart",
     render: (a) => <CarePlanTab patientId={pid} readOnly={a.level === "read"} />,
   });
+  // §Reporting Tier 2 — structured CalOMS history. Gated by `sud_treatment`,
+  // not `demographics`: substance-use and prior-treatment detail is 42 CFR
+  // Part 2 content, so it inherits the same gate as the rest of the SUD record
+  // even though the discharge and justice blocks are less sensitive.
+  add("sud_treatment", {
+    id: "caloms",
+    label: "CalOMS data",
+    icon: ListChecks,
+    group: "chart",
+    render: (a) => <CalomsProfileCard patientId={pid} readOnly={a.level !== "write"} />,
+  });
   // §Phase 7 — patient-authored safety plan. Clinical-adjacent, so it lives in
   // the Chart group next to Alerts (where crisis work already happens), gated
   // by its own `safety_plan` class rather than therapy_notes.
