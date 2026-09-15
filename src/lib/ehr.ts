@@ -1162,6 +1162,13 @@ export interface Patient {
   releaseDateMeta?: ReleaseDateMeta;
   /** SDOH need → referral → closed-loop status. §3e */
   sdohPlan?: { items: SdohPlanItem[] };
+  /**
+   * §Reporting Tier 2 — structured CalOMS-shaped history (substance use,
+   * prior treatment, discharge) plus the SELF-REPORTED justice-involvement
+   * estimates. See `src/lib/caloms.ts` for why employment and living
+   * arrangement are deliberately NOT duplicated in here.
+   */
+  calomsProfile?: CalomsProfile;
   /** Assigned self-help modules with completion. §3f */
   selfHelpPlan?: { modules: SelfHelpModule[] };
   /** External coordination log (§4-CM). */
