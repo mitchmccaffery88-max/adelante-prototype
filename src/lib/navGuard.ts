@@ -15,7 +15,9 @@ const PREFERRED_LANDINGS = [
   "/case-manager",
   "/worklist",
   "/inbox",
+  "/reporting",
   "/dashboards",
+
   "/billing",
   "/clinician-profile",
 ];

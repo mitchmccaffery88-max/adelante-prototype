@@ -264,10 +264,17 @@ const NO_SOURCE = (unit: MetricUnit, higherIsBetter: boolean): LiveMetric => ({
   basis: undefined,
 });
 
-/** Build the full live metric map from the current store contents. */
-export function computeLiveMetrics(now = new Date()): LiveMetricMap {
+/**
+ * Build the full live metric map from the current store contents.
+ *
+ * `windowDays` re-windows the two genuinely windowed measures (MAR compliance
+ * and group attendance), both of which filter timestamped records. The
+ * backlog counts (unsigned notes, overdue tasks) are current-state and are
+ * deliberately NOT re-windowed — see `METRIC_PERIOD_BEHAVIOR`.
+ */
+export function computeLiveMetrics(now = new Date(), windowDays = MAR_WINDOW_DAYS): LiveMetricMap {
   const patients = AdelanteEHR.listPatients();
-  const mar = marCompliance(patients, now);
+  const mar = marCompliance(patients, now, windowDays);
   const notes = unsignedNotes(patients, now);
   const overdue = overdueTasks(AdelanteEHR.listCaseTasks(), patients, now);
 
@@ -278,8 +285,8 @@ export function computeLiveMetrics(now = new Date()): LiveMetricMap {
       higherIsBetter: true,
       basis:
         mar.denominator === 0
-          ? `No doses charted in the last ${MAR_WINDOW_DAYS} days`
-          : `${mar.given} given of ${mar.denominator} charted (${MAR_WINDOW_DAYS}d)`,
+          ? `No doses charted in the last ${windowDays} days`
+          : `${mar.given} given of ${mar.denominator} charted`,
     },
     unsigned_notes_count: {
       value: notes.length,
@@ -294,14 +301,14 @@ export function computeLiveMetrics(now = new Date()): LiveMetricMap {
       basis: "Open case tasks past their due date",
     },
     group_attendance_rate_pct: (() => {
-      const g = groupAttendanceRate(now);
+      const g = groupAttendanceRate(now, windowDays);
       return {
         value: g.pct,
         unit: "percent" as const,
         higherIsBetter: true,
         basis:
           g.denominator === 0
-            ? `No group attendance recorded in the last ${GROUP_WINDOW_DAYS} days`
+            ? `No group attendance recorded in the last ${windowDays} days`
             : `${g.present + g.late} of ${g.denominator} seats attended across ${g.occurrencesRecorded} occurrence(s)`,
       };
     })(),
@@ -313,6 +320,7 @@ export function computeLiveMetrics(now = new Date()): LiveMetricMap {
     ncchc_grievance_response_pct: NO_SOURCE("percent", true),
   };
 }
+
 
 /** Rows behind a metric, for the drill-down dialog. Empty when unsupported. */
 export function metricSupportsDrillDown(key: MetricKey): boolean {

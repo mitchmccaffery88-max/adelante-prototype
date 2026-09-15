@@ -70,6 +70,13 @@ interface Props {
   onOpenAbsences: () => void;
   /** Non-billing open-group engagement rollup. */
   openGroups: OpenGroupEngagement;
+  /**
+   * §Reporting Redesign Tier 1 — the selected reporting window. Attendance and
+   * open-group reach are both computed from timestamped occurrence records, so
+   * they re-window honestly; the caller has already recomputed with this value
+   * and passes it in purely so the labels match the numbers.
+   */
+  windowDays?: number;
 }
 
 export function GroupUtilizationSection({
@@ -79,8 +86,10 @@ export function GroupUtilizationSection({
   metric,
   onOpenAbsences,
   openGroups,
+  windowDays = 30,
 }: Props) {
   const measured = attendance.pct !== null;
+
   return (
     <section className="space-y-3" aria-labelledby="group-util-heading">
       <div>
@@ -121,7 +130,7 @@ export function GroupUtilizationSection({
 
         <Card className="p-4" data-tile="group-attendance">
           <div className="flex items-center gap-2 text-xs text-muted-foreground">
-            <PieChart className="h-4 w-4" /> Attendance rate (30d)
+            <PieChart className="h-4 w-4" /> Attendance rate ({windowDays}d)
           </div>
           {measured ? (
             <>
@@ -135,10 +144,11 @@ export function GroupUtilizationSection({
             </>
           ) : (
             <p className="mt-2 text-sm text-muted-foreground">
-              No live metric yet — no attendance has been recorded in the last 30 days.
+              No live metric yet — no attendance has been recorded in the last {windowDays} days.
             </p>
           )}
         </Card>
+
       </div>
 
       <Card className="p-4" data-tile="open-group-engagement">
@@ -172,11 +182,11 @@ export function GroupUtilizationSection({
               <dd className="font-display text-2xl text-navy">{openGroups.enrolledPatients}</dd>
             </div>
             <div>
-              <dt className="text-[11px] text-muted-foreground">Reached (30d)</dt>
+              <dt className="text-[11px] text-muted-foreground">Reached ({windowDays}d)</dt>
               <dd className="font-display text-2xl text-navy">{openGroups.patientsReached}</dd>
             </div>
             <div>
-              <dt className="text-[11px] text-muted-foreground">Attendance (30d)</dt>
+              <dt className="text-[11px] text-muted-foreground">Attendance ({windowDays}d)</dt>
               <dd className="font-display text-2xl text-navy">
                 {openGroups.attendance.pct === null
                   ? "—"
