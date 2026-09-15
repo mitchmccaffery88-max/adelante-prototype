@@ -65,6 +65,13 @@ export interface AutofillContext {
   /** Patient-scoped resource referrals. */
   referrals?: ResourceReferral[];
   /**
+   * §Reporting Tier 2 follow-up — structured discharge history, newest first
+   * (`patient.calomsProfile.discharges`). The discharge summary template used
+   * to ask for reason/condition as free text; it now reads the one structured
+   * record instead, so there is a single discharge source of truth.
+   */
+  discharges?: DischargeRecord[];
+  /**
    * True when the acting context may NOT see SUD-sensitive content. Same gate
    * (`canAccess(role, "screeners_sud", patient)`) the Notes tab and problem
    * list already use — passed in so there is one decision, made once.
