@@ -47,6 +47,7 @@ import {
 // §Reporting Tier 2 — structured CalOMS-shaped history captured at intake.
 import {
   CALOMS_FREQUENCIES,
+  CALOMS_ROUTES,
   CALOMS_SUBSTANCES,
   FREQUENCY_LABEL,
   JUSTICE_REFERRAL_LABEL,
@@ -54,12 +55,18 @@ import {
   JUSTICE_SELF_REPORT_NOTE,
   PRIOR_EPISODE_BUCKETS,
   PRIOR_EPISODE_LABEL,
+  PRIOR_TREATMENT_TYPES,
+  PRIOR_TREATMENT_TYPE_LABEL,
+  ROUTE_LABEL,
   SUBSTANCE_LABEL,
   type CalomsFrequency,
+  type CalomsRoute,
   type CalomsSubstance,
   type JusticeReferralSource,
   type PriorEpisodeBucket,
+  type PriorTreatmentType,
 } from "@/lib/caloms";
+import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
@@ -215,14 +222,10 @@ function IntakePage() {
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // §Reporting Tier 2 — patient-estimated history. Every value here is the
   // person's own recollection; nothing is verified against a facility record.
-  const [history, setHistory] = useState<{
-    substance?: CalomsSubstance;
-    frequency?: CalomsFrequency;
-    priorEpisodes?: PriorEpisodeBucket;
-    arrestsPast12Months: string;
-    timeInCustodyMonths: string;
-    justiceReferralSource?: JusticeReferralSource;
-  }>({ arrestsPast12Months: "", timeInCustodyMonths: "" });
+  // Seeded from the structured CalomsProfile already on file, like every other
+  // intake step, so a re-run edits what exists instead of blanking it.
+  const [history, setHistory] = useState<IntakeHistory>(() => seedIntakeHistory(patient));
+  const historyOnFile = hasExistingHistory(patient);
   // P1 — About you. Seeded from the record on the very first render so nobody
   // retypes what sign-up (or a CF Care Manager) already entered.
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
@@ -439,10 +442,20 @@ function IntakePage() {
     }
     // §Reporting Tier 2 — persist the structured history as the patient's own
     // estimate. Written through the typed setters so it lands queryable.
+    // Each block is written only when the step actually carries a value, and
+    // the form was seeded from what is already on file, so a re-run is an
+    // explicit edit of visible values rather than a silent blanking.
+    const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
     if (effectiveSud === true && history.substance) {
       AdelanteEHR.setSubstanceUseProfile(currentId, {
         entries: [
-          { rank: "primary", substance: history.substance, frequency: history.frequency },
+          {
+            rank: "primary",
+            substance: history.substance,
+            route: history.route,
+            frequency: history.frequency,
+            ageAtFirstUse: toNum(history.ageAtFirstUse),
+          },
         ],
         source: "self_report",
       });
@@ -450,11 +463,11 @@ function IntakePage() {
     if (effectiveSud === true && history.priorEpisodes) {
       AdelanteEHR.setPriorTreatmentHistory(currentId, {
         priorEpisodes: history.priorEpisodes,
+        lastTreatmentType: history.lastTreatmentType,
         source: "self_report",
       });
     }
     if (coverage.justiceInvolvement === "yes") {
-      const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
       const arrests = toNum(history.arrestsPast12Months);
       const custody = toNum(history.timeInCustodyMonths);
       if (arrests !== undefined || custody !== undefined || history.justiceReferralSource) {
@@ -1145,6 +1158,15 @@ function IntakePage() {
               A few optional background questions. Answer only what you want to — your care team
               records these as your own estimate.
             </p>
+            {historyOnFile && (
+              <p
+                className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 text-xs"
+                data-testid="history-prefilled-notice"
+              >
+                Some answers are already on file and shown below. Change anything that&apos;s out of
+                date — what you leave as-is stays as-is.
+              </p>
+            )}
 
             {effectiveSud === true && (
               <div className="space-y-3">
@@ -1173,6 +1195,24 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">How you mainly use it</Label>
+                  <Select
+                    value={history.route ?? ""}
+                    onValueChange={(v) => setHistory({ ...history, route: v as CalomsRoute })}
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {CALOMS_ROUTES.map((r) => (
+                        <SelectItem key={r} value={r}>
+                          {ROUTE_LABEL[r]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">How often in the past 30 days</Label>
                   <Select
                     value={history.frequency ?? ""}
@@ -1193,6 +1233,15 @@ function IntakePage() {
                   </Select>
                 </div>
                 <div className="space-y-1">
+                  <Label className="text-xs">Age you first used it (your estimate)</Label>
+                  <Input
+                    className="min-h-11"
+                    inputMode="numeric"
+                    value={history.ageAtFirstUse}
+                    onChange={(e) => setHistory({ ...history, ageAtFirstUse: e.target.value })}
+                  />
+                </div>
+                <div className="space-y-1">
                   <Label className="text-xs">Times you&apos;ve been in treatment before</Label>
                   <Select
                     value={history.priorEpisodes ?? ""}
@@ -1207,6 +1256,26 @@ function IntakePage() {
                       {PRIOR_EPISODE_BUCKETS.map((b) => (
                         <SelectItem key={b} value={b}>
                           {PRIOR_EPISODE_LABEL[b]}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Kind of treatment last time</Label>
+                  <Select
+                    value={history.lastTreatmentType ?? ""}
+                    onValueChange={(v) =>
+                      setHistory({ ...history, lastTreatmentType: v as PriorTreatmentType })
+                    }
+                  >
+                    <SelectTrigger className="min-h-11">
+                      <SelectValue placeholder="Select…" />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {PRIOR_TREATMENT_TYPES.map((t) => (
+                        <SelectItem key={t} value={t}>
+                          {PRIOR_TREATMENT_TYPE_LABEL[t]}
                         </SelectItem>
                       ))}
                     </SelectContent>

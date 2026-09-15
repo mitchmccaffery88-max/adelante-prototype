@@ -5085,23 +5085,20 @@ noteTemplates.push({
         autofill: { source: "referrals_open" },
       },
       {
+        // §Reporting Tier 2 follow-up — discharge status/reason used to be two
+        // free-text questions here, disconnected from anything queryable. They
+        // are retired: the structured DischargeRecord is the one source, and
+        // this read-only card shows it (or points at where to record it).
+        id: "ds_discharge",
+        title: "Discharge status and reason",
+        type: "autofill_section",
+        fields: [],
+        autofill: { source: "discharge_record" },
+      },
+      {
         id: "ds_narrative",
         title: "Clinician narrative",
         fields: [
-          {
-            key: "discharge_reason",
-            type: "textarea",
-            label: "Reason for discharge / release",
-            required: true,
-            rows: 3,
-          },
-          {
-            key: "condition_at_discharge",
-            type: "textarea",
-            label: "Condition at discharge",
-            required: true,
-            rows: 3,
-          },
           {
             key: "med_recon_note",
             type: "textarea",

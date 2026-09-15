@@ -11,6 +11,13 @@
 // Target schema when that gap is closed: `src/lib/labsVitalsScaffold.ts`.
 
 import {
+  DISCHARGE_REASON_LABEL,
+  DISCHARGE_STATUS_LABEL,
+  CALOMS_SOURCE_LABEL,
+  CALOMS_DRAFT_NOTE,
+  type DischargeRecord,
+} from "@/lib/caloms";
+import {
   isProblemClinicallyActive,
   noteStatus,
   type Allergy,
@@ -32,6 +39,11 @@ import {
   type TemplateSchema,
   type TemplateSection,
 } from "@/lib/templateSchema";
+
+/** Where discharge is actually recorded now, said in one place. */
+export const DISCHARGE_RECORD_POINTER =
+  "Discharge status and reason are recorded as structured fields in the patient chart → CalOMS data. They are no longer typed as free text here.";
+
 
 export const PART2_AUTOFILL_NOTICE =
   "Some entries are hidden by the 42 CFR Part 2 consent gate.";
@@ -64,6 +76,13 @@ export interface AutofillContext {
   housingMoves?: HousingMove[];
   /** Patient-scoped resource referrals. */
   referrals?: ResourceReferral[];
+  /**
+   * §Reporting Tier 2 follow-up — structured discharge history, newest first
+   * (`patient.calomsProfile.discharges`). The discharge summary template used
+   * to ask for reason/condition as free text; it now reads the one structured
+   * record instead, so there is a single discharge source of truth.
+   */
+  discharges?: DischargeRecord[];
   /**
    * True when the acting context may NOT see SUD-sensitive content. Same gate
    * (`canAccess(role, "screeners_sud", patient)`) the Notes tab and problem
@@ -219,7 +238,30 @@ export function resolveAutofill(
       }));
       break;
     }
+    case "discharge_record": {
+      const current = (ctx.discharges ?? [])[0];
+      if (!current) {
+        notice = `No structured discharge recorded yet. ${DISCHARGE_RECORD_POINTER}`;
+        break;
+      }
+      lines = [
+        {
+          primary: DISCHARGE_STATUS_LABEL[current.status],
+          secondary: `Discharged ${current.dischargedOn} · ${CALOMS_SOURCE_LABEL[current.source]}`,
+        },
+        {
+          primary:
+            current.reason === "other" && current.otherReason
+              ? current.otherReason
+              : DISCHARGE_REASON_LABEL[current.reason],
+          secondary: "Reason for discharge",
+        },
+      ];
+      notice = `${DISCHARGE_RECORD_POINTER} ${CALOMS_DRAFT_NOTE}`;
+      break;
+    }
   }
+
 
   if (cfg.limit && cfg.limit > 0 && lines.length > cfg.limit) {
     lines = lines.slice(0, cfg.limit);

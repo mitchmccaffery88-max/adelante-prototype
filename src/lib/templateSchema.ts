@@ -117,7 +117,10 @@ export type AutofillSource =
   // §Discharge summary — additive Phase 3b sources. Same contract as the five
   // above: computed at render time, snapshotted at signing, SUD-masked.
   | "booking_release_info"
-  | "referrals_open";
+  | "referrals_open"
+  // §Reporting Tier 2 follow-up — the structured DischargeRecord replaces the
+  // old free-text "discharge reason / condition at discharge" questions.
+  | "discharge_record";
 
 export interface AutofillConfig {
   source: AutofillSource;
