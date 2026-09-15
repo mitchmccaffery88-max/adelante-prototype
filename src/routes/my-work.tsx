@@ -226,7 +226,7 @@ function MyWorkPage() {
                     key={c.escalation.id}
                     patientId={c.patientId}
                     name={c.patientName}
-                    section="crisis"
+                    section="alerts"
                     primary={c.escalation.triggerDetail ?? "Crisis escalation"}
                     secondary={
                       <>
@@ -354,7 +354,7 @@ function MyWorkPage() {
                 key={`${r.patientId}-${r.screenerKey}`}
                 patientId={r.patientId}
                 name={r.patientName}
-                section="screeners"
+                section="tracking"
                 primary={`${r.screenerKey.toUpperCase()} — last completed ${r.daysSinceLast} days ago`}
                 secondary={`Past the ${r.cadenceStep}-day draft cadence step`}
                 badge={
