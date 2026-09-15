@@ -215,17 +215,13 @@ function ReportingHome() {
   const claims = useEhrExt(() => (seesBilling ? AdelanteEHRExt.listClaims() : []));
   // CalOMS capture is a current-state completeness question ("what is on file
   // right now"), so it deliberately does not respond to the period selector.
-  const completeness = useEhr(() =>
-    seesPopulation ? calomsCompleteness() : { total: 0 } as ReturnType<typeof calomsCompleteness>,
-  );
-  const substanceRows = useEhr(() => (seesPopulation ? substanceUseBreakdown() : []));
-  const priorRows = useEhr(() => (seesPopulation ? priorTreatmentBreakdown() : []));
-  const dischargeRows = useEhr(() => (seesPopulation ? dischargeStatusBreakdown() : []));
-  const justice = useEhr(() =>
-    seesPopulation
-      ? justiceSelfReportCoverage()
-      : { reported: 0, anyArrestPast12Months: 0, medianCustodyMonths: null, referralSources: [], allSelfReported: true },
-  );
+  // These are plain counts over the caseload; the CalOMS Area itself is what
+  // the population-health gate hides.
+  const completeness = useEhr(() => calomsCompleteness());
+  const substanceRows = useEhr(() => substanceUseBreakdown());
+  const priorRows = useEhr(() => priorTreatmentBreakdown());
+  const dischargeRows = useEhr(() => dischargeStatusBreakdown());
+  const justice = useEhr(() => justiceSelfReportCoverage());
 
   if (!seesPopulation && !seesBilling) {
     return (
