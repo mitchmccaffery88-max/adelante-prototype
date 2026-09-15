@@ -52,7 +52,7 @@ describe("open items", () => {
     const identity = { staffId: `s-${id}`, staffName: "x", clinicianId: id };
     const aliases = staffAliases(identity);
     for (const c of [...myOpenItems(identity).clinicalCrises, ...myOpenItems(identity).sdohCrises]) {
-      expect(aliases.some((a) => c.escalation.claimedBy?.includes(a))).toBe(true);
+      expect([...aliases].some((a) => c.escalation.claimedBy?.includes(a))).toBe(true);
     }
   });
 
