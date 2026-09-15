@@ -442,10 +442,20 @@ function IntakePage() {
     }
     // §Reporting Tier 2 — persist the structured history as the patient's own
     // estimate. Written through the typed setters so it lands queryable.
+    // Each block is written only when the step actually carries a value, and
+    // the form was seeded from what is already on file, so a re-run is an
+    // explicit edit of visible values rather than a silent blanking.
+    const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
     if (effectiveSud === true && history.substance) {
       AdelanteEHR.setSubstanceUseProfile(currentId, {
         entries: [
-          { rank: "primary", substance: history.substance, frequency: history.frequency },
+          {
+            rank: "primary",
+            substance: history.substance,
+            route: history.route,
+            frequency: history.frequency,
+            ageAtFirstUse: toNum(history.ageAtFirstUse),
+          },
         ],
         source: "self_report",
       });
@@ -453,11 +463,11 @@ function IntakePage() {
     if (effectiveSud === true && history.priorEpisodes) {
       AdelanteEHR.setPriorTreatmentHistory(currentId, {
         priorEpisodes: history.priorEpisodes,
+        lastTreatmentType: history.lastTreatmentType,
         source: "self_report",
       });
     }
     if (coverage.justiceInvolvement === "yes") {
-      const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
       const arrests = toNum(history.arrestsPast12Months);
       const custody = toNum(history.timeInCustodyMonths);
       if (arrests !== undefined || custody !== undefined || history.justiceReferralSource) {
