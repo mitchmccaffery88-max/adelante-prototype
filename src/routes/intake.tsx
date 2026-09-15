@@ -437,6 +437,34 @@ function IntakePage() {
         /* no-op */
       }
     }
+    // §Reporting Tier 2 — persist the structured history as the patient's own
+    // estimate. Written through the typed setters so it lands queryable.
+    if (effectiveSud === true && history.substance) {
+      AdelanteEHR.setSubstanceUseProfile(currentId, {
+        entries: [
+          { rank: "primary", substance: history.substance, frequency: history.frequency },
+        ],
+        source: "self_report",
+      });
+    }
+    if (effectiveSud === true && history.priorEpisodes) {
+      AdelanteEHR.setPriorTreatmentHistory(currentId, {
+        priorEpisodes: history.priorEpisodes,
+        source: "self_report",
+      });
+    }
+    if (coverage.justiceInvolvement === "yes") {
+      const toNum = (s: string) => (s.trim() === "" ? undefined : Number(s));
+      const arrests = toNum(history.arrestsPast12Months);
+      const custody = toNum(history.timeInCustodyMonths);
+      if (arrests !== undefined || custody !== undefined || history.justiceReferralSource) {
+        AdelanteEHR.setJusticeSelfReport(currentId, {
+          arrestsPast12Months: arrests,
+          timeInCustodyMonths: custody,
+          justiceReferralSource: history.justiceReferralSource,
+        });
+      }
+    }
     if (askHeardAbout && heardAbout) {
       AdelanteEHR.recordFrontDoorEntry(currentId, { heardAbout });
     }
