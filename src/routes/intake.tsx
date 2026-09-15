@@ -66,7 +66,7 @@ import {
   type PriorEpisodeBucket,
   type PriorTreatmentType,
 } from "@/lib/caloms";
-import { hasExistingHistory, seedIntakeHistory } from "@/lib/intakeHistory";
+import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
 import { Link } from "@tanstack/react-router";
