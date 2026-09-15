@@ -32,6 +32,18 @@ import {
   periodLabel,
   type ReportingPeriodKey,
 } from "@/lib/reportingPeriods";
+// §Reporting Tier 2 — structured CalOMS capture, aggregated live from the
+// patient record rather than parsed out of note templates.
+import {
+  calomsCompleteness,
+  dischargeStatusBreakdown,
+  justiceSelfReportCoverage,
+  priorTreatmentBreakdown,
+  substanceUseBreakdown,
+  type Breakdown,
+} from "@/lib/calomsReporting";
+import { CALOMS_DRAFT_NOTE, JUSTICE_SELF_REPORT_NOTE } from "@/lib/caloms";
+import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
