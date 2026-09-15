@@ -294,8 +294,8 @@ export function disengagementRows(
 
       const lastMsg = AdelanteEHR.listCareMessages(p.id)
         .filter((m) => m.authorType === "patient")
-        .sort((a, b) => +new Date(b.sentAt) - +new Date(a.sentAt))[0];
-      if (lastMsg) signals.push({ at: lastMsg.sentAt, kind: "message" });
+        .sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt))[0];
+      if (lastMsg) signals.push({ at: lastMsg.createdAt, kind: "message" });
 
       const lastEngagement = engagement.get(p.id)?.lastActivityAt;
       if (lastEngagement) signals.push({ at: lastEngagement, kind: "self_help" });
