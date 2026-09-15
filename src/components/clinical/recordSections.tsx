@@ -34,6 +34,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { useI18n } from "@/lib/i18n";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
+import { CalomsProfileCard } from "@/components/clinical/CalomsProfileCard";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
