@@ -41,6 +41,7 @@ import {
   priorTreatmentBreakdown,
   substanceUseBreakdown,
   type Breakdown,
+  type GuardedBreakdown,
 } from "@/lib/calomsReporting";
 import { CALOMS_DRAFT_NOTE, JUSTICE_SELF_REPORT_NOTE } from "@/lib/caloms";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";

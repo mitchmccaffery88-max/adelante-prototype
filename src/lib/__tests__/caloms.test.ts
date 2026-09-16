@@ -21,7 +21,7 @@ describe("CalOMS structured fields", () => {
     const p = AdelanteEHR.getPatient(PID);
     expect(p?.calomsProfile?.substanceUse?.entries[0].substance).toBe("heroin");
     expect(p?.calomsProfile?.substanceUse?.recordedAt).toBeTruthy();
-    const rows = substanceUseBreakdown();
+    const rows = substanceUseBreakdown().rows;
     expect(rows.find((r) => r.key === "heroin")?.count).toBeGreaterThanOrEqual(1);
   });
 
@@ -34,7 +34,7 @@ describe("CalOMS structured fields", () => {
     expect(AdelanteEHR.getPatient(PID)?.calomsProfile?.priorTreatment?.priorEpisodes).toBe(
       "five_plus",
     );
-    expect(priorTreatmentBreakdown().find((r) => r.key === "five_plus")?.count).toBe(1);
+    expect(priorTreatmentBreakdown().rows.find((r) => r.key === "five_plus")?.count).toBe(1);
   });
 
   it("keeps discharges append-only, newest first", () => {
@@ -54,7 +54,7 @@ describe("CalOMS structured fields", () => {
     expect(discharges).toHaveLength(2);
     expect(discharges[0].status).toBe("completed_treatment");
     expect(AdelanteEHR.currentDischarge(PID)?.reason).toBe("goals_met");
-    expect(dischargeStatusBreakdown().find((r) => r.key === "completed_treatment")?.count).toBe(1);
+    expect(dischargeStatusBreakdown().rows.find((r) => r.key === "completed_treatment")?.count).toBe(1);
   });
 
   it("never lets justice estimates claim staff verification", () => {
