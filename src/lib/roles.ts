@@ -164,6 +164,12 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     pmhnp: "read",
     billing: "read",
+    // §Permission fix — identity on records these roles already act on.
+    // clinical_coordinator dispositions crisis-queue entries and sys_admin
+    // corrects consent records; both need to read WHO the patient is. Read
+    // only: neither role edits demographics.
+    clinical_coordinator: "read",
+    sys_admin: "read",
   },
   screeners_mh: {
     ecm_provider: "write",

@@ -416,7 +416,10 @@ export const STAFF_NAV: NavEntry[] = [
     icon: LayoutDashboard,
     to: "/admin",
     group: "administration",
-    gate: { kind: "record_class", anyOf: ["population_health"] },
+    // §Permission fix — was `population_health` (read), which put billing and
+    // billing_coordinator on the admin hub. Same class, write level: program
+    // administration, not revenue reporting.
+    gate: { kind: "record_class", anyOf: ["population_health"], minLevel: "write" },
   },
   {
     id: "admin-coordination",
@@ -481,7 +484,12 @@ export const STAFF_NAV: NavEntry[] = [
     icon: FileSearch,
     to: "/admin-audit",
     group: "administration",
-    gate: { kind: "record_class", anyOf: ["consent_ledger"] },
+    // §Permission fix — was `consent_ledger` (read), which let billing and
+    // peer_specialist reach the whole audit surface. No dedicated audit class
+    // exists; `catalog_governance` at write level is the existing
+    // administration-tier class whose writers (sys_admin, clinical_coordinator)
+    // are the roles that actually administer the platform.
+    gate: { kind: "record_class", anyOf: ["catalog_governance"], minLevel: "write" },
   },
   {
     // §Quality pass Group E — document lifecycle trail. Gated on the
@@ -501,7 +509,12 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ScrollText,
     to: "/admin-credentialing",
     group: "administration",
-    gate: { kind: "open" },
+    // §Permission fix — was `open`, so every role reached licence/DEA records.
+    // Credentialing is workforce configuration, the same tier as supervision
+    // links; gated at `staff_supervision` write because the page performs
+    // primary-source verification (an administrative write), which keeps
+    // trainees / MAs / CHWs (read-level on that class) out.
+    gate: { kind: "record_class", anyOf: ["staff_supervision"], minLevel: "write" },
   },
   {
     // §Quality pass Group A — supervision links for supervised roles. Gated on
@@ -521,7 +534,11 @@ export const STAFF_NAV: NavEntry[] = [
     icon: Settings2,
     to: "/admin-vendors",
     group: "administration",
-    gate: { kind: "open" },
+    // §Permission fix — was `open`. No platform/integration-config class
+    // exists; `catalog_governance` is the closest existing system-configuration
+    // class (sys_admin + clinical_coordinator write, senior clinical read,
+    // peer/billing none), and vendor health is read-level monitoring.
+    gate: { kind: "record_class", anyOf: ["catalog_governance"] },
   },
 
   // ----- My account (personal settings — every staff member has their own) -----

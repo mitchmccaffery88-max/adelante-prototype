@@ -57,15 +57,19 @@ describe("admin quick links vs sidebar Administration group", () => {
 describe("/admin self-gate", () => {
   it("uses the same class the Pilot dashboard nav entry is gated on", () => {
     const entry = staffNavForRole("sys_admin").find((e) => e.to === "/admin");
-    expect(entry?.gate).toMatchObject({ anyOf: ["population_health"] });
+    expect(entry?.gate).toMatchObject({ anyOf: ["population_health"], minLevel: "write" });
   });
 
   it("locks out exactly the roles the nav also hides /admin from", () => {
     for (const { key: role } of STAFF_ROLES) {
-      const locked = canAccess(role, "population_health").level === "none";
+      // §Permission fix — the hub now needs population_health WRITE, so
+      // read-only reporting roles (billing) are hidden from it too.
+      const locked = canAccess(role, "population_health").level !== "write";
       const inNav = staffNavForRole(role).some((e) => e.to === "/admin");
       expect(inNav).toBe(!locked);
     }
     expect(canAccess("peer_specialist", "population_health").level).toBe("none");
+    expect(canAccess("billing", "population_health").level).toBe("read");
+    expect(staffNavForRole("billing").some((e) => e.to === "/admin")).toBe(false);
   });
 });
