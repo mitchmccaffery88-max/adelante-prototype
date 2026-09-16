@@ -484,7 +484,12 @@ export const STAFF_NAV: NavEntry[] = [
     icon: FileSearch,
     to: "/admin-audit",
     group: "administration",
-    gate: { kind: "record_class", anyOf: ["consent_ledger"] },
+    // §Permission fix — was `consent_ledger` (read), which let billing and
+    // peer_specialist reach the whole audit surface. No dedicated audit class
+    // exists; `catalog_governance` at write level is the existing
+    // administration-tier class whose writers (sys_admin, clinical_coordinator)
+    // are the roles that actually administer the platform.
+    gate: { kind: "record_class", anyOf: ["catalog_governance"], minLevel: "write" },
   },
   {
     // §Quality pass Group E — document lifecycle trail. Gated on the
