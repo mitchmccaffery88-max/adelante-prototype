@@ -111,7 +111,11 @@ export function AppShell() {
   const isStaffSurface =
     !isPatientSurface &&
     !isAdvocateSurface &&
-    (STAFF_ROUTES.includes(pathname) || pathname.startsWith("/record/"));
+    (STAFF_ROUTES.includes(pathname) ||
+      pathname.startsWith("/record/") ||
+      // §Agentic Roadmap prototype screens are staff-owned clinical demos.
+      pathname.startsWith("/agentic/"));
+
   // Staff shell = persistent sidebar on any staff-owned route (plus the
   // full-page chart, which is staff-only too).
   const showStaffShell = isStaffSurface && staffNav.length > 0;
