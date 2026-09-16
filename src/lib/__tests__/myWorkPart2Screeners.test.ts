@@ -56,7 +56,7 @@ describe("re-screen list SUD masking", () => {
     const p = subject();
     for (const r of AdelanteEHR.listConsentRecords(p.id)) {
       if (r.status === "active")
-        AdelanteEHR.revokeConsentRecord(r.id, { reason: "test reset", revokedBy: "test" });
+        AdelanteEHR.revokeConsentRecord(r.id, { reason: "test reset", revokedBy: "test", role: "ecm_provider" });
     }
     expect(AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")).toBe(false);
 
