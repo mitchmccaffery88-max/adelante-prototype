@@ -2,7 +2,7 @@
 // carry it exactly the way the engagement rollup does.
 import { describe, expect, it } from "vitest";
 import { MIN_COHORT_SIZE, cohortGuard, belowMinimumCohort } from "@/lib/cohortGuard";
-import { MIN_COHORT_SIZE as SELF_TRACKING_THRESHOLD } from "@/lib/selfTracking";
+import { engagementProjection } from "@/lib/engagementReporting";
 import { AdelanteEHR } from "@/lib/ehr";
 import {
   dischargeStatusBreakdown,
@@ -12,8 +12,8 @@ import {
 } from "@/lib/calomsReporting";
 
 describe("shared cohort guard", () => {
-  it("is a single threshold, re-exported rather than duplicated", () => {
-    expect(SELF_TRACKING_THRESHOLD).toBe(MIN_COHORT_SIZE);
+  it("is the same threshold the engagement rollup publishes", () => {
+    expect(engagementProjection().selfTracking.minimumCohortSize).toBe(MIN_COHORT_SIZE);
   });
 
   it("flags below the threshold and clears at or above it", () => {
