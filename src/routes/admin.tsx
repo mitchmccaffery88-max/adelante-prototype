@@ -71,6 +71,10 @@ function AdminPage() {
   // Same gate the "Pilot dashboard" nav entry promises, so the sidebar never
   // advertises a surface that then refuses to render.
   const access = canAccess(role, "population_health");
+  // §Permission fix — the hub is program ADMINISTRATION, so read-level
+  // reporting roles (billing, billing_coordinator) no longer qualify. Mirrors
+  // the nav entry's `minLevel: "write"` gate.
+  const mayAdminister = access.level === "write";
   // Quick links ARE the sidebar's Administration group — one computation, no
   // second hand-maintained list to drift. `/admin` itself is dropped: this is
   // the page you're on.
@@ -144,7 +148,7 @@ function AdminPage() {
     URL.revokeObjectURL(url);
   };
 
-  if (access.level === "none") {
+  if (!mayAdminister) {
     return (
       <div className="mx-auto max-w-5xl px-4 py-6">
         <EmptyState
