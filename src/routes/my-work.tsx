@@ -157,7 +157,7 @@ function MyWorkPage() {
 
   const open = useEhr(() => myOpenItems(identity));
   const caseload = useEhr(() => myCaseload(identity));
-  const rescreens = useEhr(() => screenerDueRows(myCaseload(identity)));
+  const rescreens = useEhr(() => screenerDueRows(myCaseload(identity), { role: actor.role }));
   const quiet = useEhr(() => disengagementFlagged(disengagementRows(myCaseload(identity))));
   // Referenced so the store subscription covers late-arriving demo data.
   useEhr(() => AdelanteEHR.listPatients().length);
