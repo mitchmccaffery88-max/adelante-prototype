@@ -534,7 +534,11 @@ export const STAFF_NAV: NavEntry[] = [
     icon: Settings2,
     to: "/admin-vendors",
     group: "administration",
-    gate: { kind: "open" },
+    // §Permission fix — was `open`. No platform/integration-config class
+    // exists; `catalog_governance` is the closest existing system-configuration
+    // class (sys_admin + clinical_coordinator write, senior clinical read,
+    // peer/billing none), and vendor health is read-level monitoring.
+    gate: { kind: "record_class", anyOf: ["catalog_governance"] },
   },
 
   // ----- My account (personal settings — every staff member has their own) -----
