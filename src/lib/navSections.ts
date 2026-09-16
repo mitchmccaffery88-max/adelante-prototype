@@ -509,7 +509,12 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ScrollText,
     to: "/admin-credentialing",
     group: "administration",
-    gate: { kind: "open" },
+    // §Permission fix — was `open`, so every role reached licence/DEA records.
+    // Credentialing is workforce configuration, the same tier as supervision
+    // links; gated at `staff_supervision` write because the page performs
+    // primary-source verification (an administrative write), which keeps
+    // trainees / MAs / CHWs (read-level on that class) out.
+    gate: { kind: "record_class", anyOf: ["staff_supervision"], minLevel: "write" },
   },
   {
     // §Quality pass Group A — supervision links for supervised roles. Gated on
