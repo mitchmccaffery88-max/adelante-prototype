@@ -32,6 +32,7 @@ import {
   AlertTriangle,
   UserCog,
   Lock,
+  FlaskConical,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
@@ -870,7 +871,47 @@ function ApptCard({
           </div>
         </div>
         <div className="flex flex-wrap gap-2 w-full sm:w-auto">
+          {/* §Agentic Roadmap prototype — demo entry points off a real
+              appointment. Pre-visit review + live scribe before the visit,
+              post-encounter dictation once it is done. Prototype only. */}
+          {p && isFuture && a.status === "scheduled" && (
+            <>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-11 flex-1 sm:flex-none min-w-[44px]"
+              >
+                <Link to="/agentic/chart-review/$patientId" params={{ patientId: p.id }}>
+                  <FlaskConical className="h-4 w-4 mr-1.5" /> Pre-visit review
+                </Link>
+              </Button>
+              <Button
+                asChild
+                size="sm"
+                variant="outline"
+                className="h-11 flex-1 sm:flex-none min-w-[44px]"
+              >
+                <Link to="/agentic/scribe/$patientId" params={{ patientId: p.id }}>
+                  <FlaskConical className="h-4 w-4 mr-1.5" /> Scribe copilot
+                </Link>
+              </Button>
+            </>
+          )}
+          {p && a.status === "attended" && (
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="h-11 flex-1 sm:flex-none min-w-[44px]"
+            >
+              <Link to="/agentic/dictation/$patientId" params={{ patientId: p.id }}>
+                <FlaskConical className="h-4 w-4 mr-1.5" /> Smart dictation
+              </Link>
+            </Button>
+          )}
           {isFuture && a.status === "scheduled" && (
+
             <>
               <Button
                 asChild
