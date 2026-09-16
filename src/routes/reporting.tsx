@@ -149,16 +149,34 @@ function Area({
   );
 }
 
+/** The same honest below-minimum notice the engagement rollup already shows. */
+function CohortGuardNotice({
+  cohortSize,
+  minimumCohortSize,
+}: {
+  cohortSize: number;
+  minimumCohortSize: number;
+}) {
+  return (
+    <p className="mt-1 rounded-md border border-amber-500/40 bg-amber-500/10 p-2 text-[11px] leading-snug text-amber-900 dark:text-amber-200">
+      Cohort of {cohortSize} is below the {minimumCohortSize}-patient minimum for safe small-cell
+      reporting. At this size these counts are practically re-identifiable by anyone who knows the
+      caseload. Shown for the demo; before production these must be suppressed, not just flagged.
+    </p>
+  );
+}
+
 /** Small distribution list used by the CalOMS area. */
 function BreakdownCard({
   title,
-  rows,
+  breakdown,
   empty,
 }: {
   title: string;
-  rows: Breakdown<string>[];
+  breakdown: GuardedBreakdown<string>;
   empty: string;
 }) {
+  const rows: Breakdown<string>[] = breakdown.rows;
   return (
     <Card className="space-y-2 p-4">
       <h3 className="text-sm font-medium text-navy">{title}</h3>
@@ -173,6 +191,12 @@ function BreakdownCard({
             </li>
           ))}
         </ul>
+      )}
+      {rows.length > 0 && breakdown.belowMinimumCohort && (
+        <CohortGuardNotice
+          cohortSize={breakdown.cohortSize}
+          minimumCohortSize={breakdown.minimumCohortSize}
+        />
       )}
     </Card>
   );
@@ -425,17 +449,17 @@ function ReportingHome() {
               <div className="grid gap-3 md:grid-cols-3">
                 <BreakdownCard
                   title="Primary substance"
-                  rows={substanceRows}
+                  breakdown={substanceRows}
                   empty="No primary substance recorded yet."
                 />
                 <BreakdownCard
                   title="Prior treatment episodes"
-                  rows={priorRows}
+                  breakdown={priorRows}
                   empty="No prior treatment history recorded yet."
                 />
                 <BreakdownCard
                   title="Most recent discharge status"
-                  rows={dischargeRows}
+                  breakdown={dischargeRows}
                   empty="No discharge recorded yet."
                 />
               </div>
@@ -445,6 +469,12 @@ function ReportingHome() {
                   <ProvenanceBadge source="self_report" />
                 </div>
                 <p className="text-xs text-muted-foreground">{JUSTICE_SELF_REPORT_NOTE}</p>
+                {justice.belowMinimumCohort && (
+                  <CohortGuardNotice
+                    cohortSize={justice.cohortSize}
+                    minimumCohortSize={justice.minimumCohortSize}
+                  />
+                )}
                 <div className="grid gap-3 sm:grid-cols-3">
                   <Stat
                     label="Reported any arrest, past 12 months"
