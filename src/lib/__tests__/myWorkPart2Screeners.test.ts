@@ -7,12 +7,31 @@ import { AdelanteEHR } from "@/lib/ehr";
 import { screenerDueRows } from "@/lib/myWork";
 import { isPart2Screener } from "@/lib/screeners";
 
-/** A patient who genuinely has both MH and SUD re-screens prompted. */
+/**
+ * The demo caseload does not happen to have a patient with both kinds of
+ * re-screen prompted, so the test creates that state explicitly: one stale
+ * mental-health screen (PHQ-9) and one stale SUD screen (AUDIT), both well
+ * past the 30-day cadence step.
+ */
+const LONG_AGO = new Date(Date.now() - 200 * 86_400_000).toISOString();
+
 function subject() {
-  const p = AdelanteEHR.listPatients().find((x) => {
-    const due = AdelanteEHR.rescreensDue(x.id);
-    return due.some((d) => isPart2Screener(d.key)) && due.some((d) => !isPart2Screener(d.key));
+  const p = AdelanteEHR.listPatients()[0]!;
+  AdelanteEHR.recordScreener(p.id, {
+    key: "phq-9",
+    score: 8,
+    severity: "mild",
+    completedAt: LONG_AGO,
   });
+  AdelanteEHR.recordScreener(p.id, {
+    key: "audit",
+    score: 6,
+    severity: "low risk",
+    completedAt: LONG_AGO,
+  });
+  const due = AdelanteEHR.rescreensDue(p.id);
+  expect(due.some((d) => isPart2Screener(d.key))).toBe(true);
+  expect(due.some((d) => !isPart2Screener(d.key))).toBe(true);
   return p;
 }
 
@@ -35,7 +54,6 @@ function grantSud(patientId: string) {
 describe("re-screen list SUD masking", () => {
   it("hides SUD instruments from a consent_gated role without consent, keeps MH rows", () => {
     const p = subject();
-    if (!p) return; // no demo patient with both kinds due — nothing to assert
     for (const r of AdelanteEHR.listConsentRecords(p.id)) {
       if (r.status === "active")
         AdelanteEHR.revokeConsentRecord(r.id, { reason: "test reset", revokedBy: "test" });
@@ -54,7 +72,6 @@ describe("re-screen list SUD masking", () => {
 
   it("shows SUD instruments to the same role once consent is on file", () => {
     const p = subject();
-    if (!p) return;
     grantSud(p.id);
     expect(AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment")).toBe(true);
 
