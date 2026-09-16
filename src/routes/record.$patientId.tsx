@@ -20,7 +20,7 @@ import {
   type RecordSectionGroup,
 } from "@/components/clinical/recordSections";
 import { EmptyState } from "@/components/EmptyState";
-import { ArrowLeft, PanelLeft } from "lucide-react";
+import { ArrowLeft, FlaskConical, PanelLeft } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
@@ -157,6 +157,26 @@ function ChartBody({
                   Print record
                 </Link>
               </Button>
+              {/* §Agentic Roadmap prototype — walkthrough demos off the real
+                  chart. Clearly flagged; none of them write to this record. */}
+              <div className="flex flex-wrap justify-end gap-1.5">
+                <Button size="sm" variant="ghost" asChild className="text-xs">
+                  <Link to="/agentic/chart-review/$patientId" params={{ patientId: patient.id }}>
+                    <FlaskConical className="h-3.5 w-3.5" /> Guided chart review
+                  </Link>
+                </Button>
+                <Button size="sm" variant="ghost" asChild className="text-xs">
+                  <Link to="/agentic/scribe/$patientId" params={{ patientId: patient.id }}>
+                    <FlaskConical className="h-3.5 w-3.5" /> Scribe copilot
+                  </Link>
+                </Button>
+                <Button size="sm" variant="ghost" asChild className="text-xs">
+                  <Link to="/agentic/dictation/$patientId" params={{ patientId: patient.id }}>
+                    <FlaskConical className="h-3.5 w-3.5" /> Smart dictation
+                  </Link>
+                </Button>
+              </div>
+
             </div>
           </div>
 

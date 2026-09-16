@@ -94,6 +94,9 @@ import { Route as StartReconnectRouteImport } from './routes/start.reconnect'
 import { Route as StartSignupRouteImport } from './routes/start.signup'
 import { Route as StartSupportRouteImport } from './routes/start.support'
 import { Route as AdvocateResourcesIndexRouteImport } from './routes/advocate.resources.index'
+import { Route as AgenticChartReviewPatientIdRouteImport } from './routes/agentic.chart-review.$patientId'
+import { Route as AgenticDictationPatientIdRouteImport } from './routes/agentic.dictation.$patientId'
+import { Route as AgenticScribePatientIdRouteImport } from './routes/agentic.scribe.$patientId'
 import { Route as PrintPatientRecordsPatientIdRouteImport } from './routes/print.patient-records.$patientId'
 import { Route as ResourcesCategoryIdOrgIdRouteImport } from './routes/resources.$categoryId.$orgId'
 import { Route as AdvocateResourcesCategoryIdOrgIdRouteImport } from './routes/advocate.resources.$categoryId.$orgId'
@@ -524,6 +527,23 @@ const AdvocateResourcesIndexRoute = AdvocateResourcesIndexRouteImport.update({
   path: '/',
   getParentRoute: () => AdvocateResourcesRoute,
 } as any)
+const AgenticChartReviewPatientIdRoute =
+  AgenticChartReviewPatientIdRouteImport.update({
+    id: '/agentic/chart-review/$patientId',
+    path: '/agentic/chart-review/$patientId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AgenticDictationPatientIdRoute =
+  AgenticDictationPatientIdRouteImport.update({
+    id: '/agentic/dictation/$patientId',
+    path: '/agentic/dictation/$patientId',
+    getParentRoute: () => rootRouteImport,
+  } as any)
+const AgenticScribePatientIdRoute = AgenticScribePatientIdRouteImport.update({
+  id: '/agentic/scribe/$patientId',
+  path: '/agentic/scribe/$patientId',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const PrintPatientRecordsPatientIdRoute =
   PrintPatientRecordsPatientIdRouteImport.update({
     id: '/print/patient-records/$patientId',
@@ -628,6 +648,9 @@ export interface FileRoutesByFullPath {
   '/advocate/': typeof AdvocateIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
+  '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
+  '/agentic/dictation/$patientId': typeof AgenticDictationPatientIdRoute
+  '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
   '/advocate/resources/': typeof AdvocateResourcesIndexRoute
@@ -714,6 +737,9 @@ export interface FileRoutesByTo {
   '/advocate': typeof AdvocateIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/start': typeof StartIndexRoute
+  '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
+  '/agentic/dictation/$patientId': typeof AgenticDictationPatientIdRoute
+  '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
   '/advocate/resources': typeof AdvocateResourcesIndexRoute
@@ -805,6 +831,9 @@ export interface FileRoutesById {
   '/advocate/': typeof AdvocateIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
+  '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
+  '/agentic/dictation/$patientId': typeof AgenticDictationPatientIdRoute
+  '/agentic/scribe/$patientId': typeof AgenticScribePatientIdRoute
   '/print/patient-records/$patientId': typeof PrintPatientRecordsPatientIdRoute
   '/resources/$categoryId/$orgId': typeof ResourcesCategoryIdOrgIdRoute
   '/advocate/resources/': typeof AdvocateResourcesIndexRoute
@@ -897,6 +926,9 @@ export interface FileRouteTypes {
     | '/advocate/'
     | '/resources/'
     | '/start/'
+    | '/agentic/chart-review/$patientId'
+    | '/agentic/dictation/$patientId'
+    | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
     | '/advocate/resources/'
@@ -983,6 +1015,9 @@ export interface FileRouteTypes {
     | '/advocate'
     | '/resources'
     | '/start'
+    | '/agentic/chart-review/$patientId'
+    | '/agentic/dictation/$patientId'
+    | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
     | '/advocate/resources'
@@ -1073,6 +1108,9 @@ export interface FileRouteTypes {
     | '/advocate/'
     | '/resources/'
     | '/start/'
+    | '/agentic/chart-review/$patientId'
+    | '/agentic/dictation/$patientId'
+    | '/agentic/scribe/$patientId'
     | '/print/patient-records/$patientId'
     | '/resources/$categoryId/$orgId'
     | '/advocate/resources/'
@@ -1145,6 +1183,9 @@ export interface RootRouteChildren {
   ApiAdelChatRoute: typeof ApiAdelChatRoute
   ApiAdelRecapRoute: typeof ApiAdelRecapRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
+  AgenticChartReviewPatientIdRoute: typeof AgenticChartReviewPatientIdRoute
+  AgenticDictationPatientIdRoute: typeof AgenticDictationPatientIdRoute
+  AgenticScribePatientIdRoute: typeof AgenticScribePatientIdRoute
   PrintPatientRecordsPatientIdRoute: typeof PrintPatientRecordsPatientIdRoute
 }
 
@@ -1745,6 +1786,27 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdvocateResourcesIndexRouteImport
       parentRoute: typeof AdvocateResourcesRoute
     }
+    '/agentic/chart-review/$patientId': {
+      id: '/agentic/chart-review/$patientId'
+      path: '/agentic/chart-review/$patientId'
+      fullPath: '/agentic/chart-review/$patientId'
+      preLoaderRoute: typeof AgenticChartReviewPatientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agentic/dictation/$patientId': {
+      id: '/agentic/dictation/$patientId'
+      path: '/agentic/dictation/$patientId'
+      fullPath: '/agentic/dictation/$patientId'
+      preLoaderRoute: typeof AgenticDictationPatientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/agentic/scribe/$patientId': {
+      id: '/agentic/scribe/$patientId'
+      path: '/agentic/scribe/$patientId'
+      fullPath: '/agentic/scribe/$patientId'
+      preLoaderRoute: typeof AgenticScribePatientIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/print/patient-records/$patientId': {
       id: '/print/patient-records/$patientId'
       path: '/print/patient-records/$patientId'
@@ -1916,6 +1978,9 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdelChatRoute: ApiAdelChatRoute,
   ApiAdelRecapRoute: ApiAdelRecapRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
+  AgenticChartReviewPatientIdRoute: AgenticChartReviewPatientIdRoute,
+  AgenticDictationPatientIdRoute: AgenticDictationPatientIdRoute,
+  AgenticScribePatientIdRoute: AgenticScribePatientIdRoute,
   PrintPatientRecordsPatientIdRoute: PrintPatientRecordsPatientIdRoute,
 }
 export const routeTree = rootRouteImport
