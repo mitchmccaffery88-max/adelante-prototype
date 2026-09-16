@@ -416,7 +416,10 @@ export const STAFF_NAV: NavEntry[] = [
     icon: LayoutDashboard,
     to: "/admin",
     group: "administration",
-    gate: { kind: "record_class", anyOf: ["population_health"] },
+    // §Permission fix — was `population_health` (read), which put billing and
+    // billing_coordinator on the admin hub. Same class, write level: program
+    // administration, not revenue reporting.
+    gate: { kind: "record_class", anyOf: ["population_health"], minLevel: "write" },
   },
   {
     id: "admin-coordination",
