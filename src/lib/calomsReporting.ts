@@ -8,6 +8,7 @@
 //
 // Nothing here is a submission feed. Counts are point-in-time.
 import { AdelanteEHR, type Patient } from "@/lib/ehr";
+import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
 import {
   DISCHARGE_STATUS_LABEL,
   JUSTICE_REFERRAL_LABEL,
@@ -23,6 +24,24 @@ export interface Breakdown<K extends string> {
   key: K;
   label: string;
   count: number;
+}
+
+/**
+ * Every cross-patient CalOMS distribution now carries the SAME small-cohort
+ * guard the engagement rollup already applies (`src/lib/cohortGuard.ts`).
+ * These are counts over a caseload; at demo scale a single-count row is
+ * practically re-identifiable, so the flag travels with the data rather than
+ * being re-decided by each UI surface.
+ */
+export interface GuardedBreakdown<K extends string> extends CohortGuard {
+  rows: Breakdown<K>[];
+}
+
+function guarded<K extends string>(
+  rows: Breakdown<K>[],
+  patients: Patient[],
+): GuardedBreakdown<K> {
+  return { rows, ...cohortGuard(patients.length) };
 }
 
 function sortDesc<K extends string>(rows: Breakdown<K>[]): Breakdown<K>[] {
@@ -56,43 +75,57 @@ export function calomsCompleteness(patients?: Patient[]) {
 }
 
 /** Primary-substance distribution — the query that was impossible before. */
-export function substanceUseBreakdown(patients?: Patient[]): Breakdown<CalomsSubstance>[] {
+export function substanceUseBreakdown(patients?: Patient[]): GuardedBreakdown<CalomsSubstance> {
+  const rows = caseload(patients);
   const tally = new Map<CalomsSubstance, number>();
-  for (const p of caseload(patients)) {
+  for (const p of rows) {
     const primary = p.calomsProfile?.substanceUse?.entries.find((e) => e.rank === "primary");
     if (!primary) continue;
     tally.set(primary.substance, (tally.get(primary.substance) ?? 0) + 1);
   }
-  return sortDesc(
-    [...tally.entries()].map(([key, count]) => ({ key, label: SUBSTANCE_LABEL[key], count })),
+  return guarded(
+    sortDesc([...tally.entries()].map(([key, count]) => ({ key, label: SUBSTANCE_LABEL[key], count }))),
+    rows,
   );
 }
 
-export function priorTreatmentBreakdown(patients?: Patient[]): Breakdown<PriorEpisodeBucket>[] {
+export function priorTreatmentBreakdown(
+  patients?: Patient[],
+): GuardedBreakdown<PriorEpisodeBucket> {
+  const rows = caseload(patients);
   const tally = new Map<PriorEpisodeBucket, number>();
-  for (const p of caseload(patients)) {
+  for (const p of rows) {
     const h = p.calomsProfile?.priorTreatment;
     if (!h) continue;
     tally.set(h.priorEpisodes, (tally.get(h.priorEpisodes) ?? 0) + 1);
   }
-  return sortDesc(
-    [...tally.entries()].map(([key, count]) => ({ key, label: PRIOR_EPISODE_LABEL[key], count })),
+  return guarded(
+    sortDesc(
+      [...tally.entries()].map(([key, count]) => ({ key, label: PRIOR_EPISODE_LABEL[key], count })),
+    ),
+    rows,
   );
 }
 
-export function dischargeStatusBreakdown(patients?: Patient[]): Breakdown<DischargeStatus>[] {
+export function dischargeStatusBreakdown(
+  patients?: Patient[],
+): GuardedBreakdown<DischargeStatus> {
+  const rows = caseload(patients);
   const tally = new Map<DischargeStatus, number>();
-  for (const p of caseload(patients)) {
+  for (const p of rows) {
     const latest = p.calomsProfile?.discharges?.[0];
     if (!latest) continue;
     tally.set(latest.status, (tally.get(latest.status) ?? 0) + 1);
   }
-  return sortDesc(
-    [...tally.entries()].map(([key, count]) => ({
-      key,
-      label: DISCHARGE_STATUS_LABEL[key],
-      count,
-    })),
+  return guarded(
+    sortDesc(
+      [...tally.entries()].map(([key, count]) => ({
+        key,
+        label: DISCHARGE_STATUS_LABEL[key],
+        count,
+      })),
+    ),
+    rows,
   );
 }
 
@@ -102,7 +135,8 @@ export function dischargeStatusBreakdown(patients?: Patient[]): Breakdown<Discha
  * surface can accidentally present them as verified facility data.
  */
 export function justiceSelfReportCoverage(patients?: Patient[]) {
-  const rows = caseload(patients).filter((p) => !!p.calomsProfile?.justice);
+  const all = caseload(patients);
+  const rows = all.filter((p) => !!p.calomsProfile?.justice);
   const reports = rows.map((p) => p.calomsProfile!.justice!);
   const withCustody = reports.filter((r) => typeof r.timeInCustodyMonths === "number");
   const medianCustodyMonths = (() => {
@@ -117,6 +151,8 @@ export function justiceSelfReportCoverage(patients?: Patient[]) {
     tally.set(r.justiceReferralSource, (tally.get(r.justiceReferralSource) ?? 0) + 1);
   }
   return {
+    // Same shared guard as every other cross-patient rollup.
+    ...cohortGuard(all.length),
     reported: reports.length,
     anyArrestPast12Months: reports.filter((r) => (r.arrestsPast12Months ?? 0) > 0).length,
     medianCustodyMonths,

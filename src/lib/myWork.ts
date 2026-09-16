@@ -24,6 +24,8 @@ import {
   type ProgressNote,
 } from "./ehr";
 import { crisisSlaState, type CrisisSlaState } from "./crisisPolicy";
+import { isPart2Screener } from "./screeners";
+import { canAccess, type StaffRole } from "./roles";
 import { engagementRecords } from "./engagement";
 
 // ---------------------------------------------------------------------------
@@ -211,6 +213,11 @@ export function myCaseload(actor: ActingIdentity): Patient[] {
 // 2. Screener due / overdue
 // ---------------------------------------------------------------------------
 
+/** The viewer a screener list is being rendered for, when one is known. */
+export interface ScreenerViewer {
+  role: StaffRole;
+}
+
 export interface ScreenerDueRow {
   patientId: string;
   patientName: string;
@@ -228,11 +235,21 @@ export interface ScreenerDueRow {
  * only scopes it to a caseload, joins patient names, and reports whether the
  * prompt has already been actioned so nobody chases it twice.
  */
-export function screenerDueRows(patients: Patient[]): ScreenerDueRow[] {
+export function screenerDueRows(
+  patients: Patient[],
+  viewer?: ScreenerViewer,
+): ScreenerDueRow[] {
   const out: ScreenerDueRow[] = [];
   for (const p of patients) {
     const openTasks = (p.tasks ?? []).filter((t) => t.kind === "rescreen" && !t.completedAt);
+    // §Part 2 — PER-INSTRUMENT, not per-list. The chart's Tracking tab already
+    // shows mental-health screener trends while masking the SUD instruments
+    // for a viewer whose `screeners_sud` access does not resolve for THIS
+    // patient; the re-screen list follows the same precedent. Gating the whole
+    // list on `screeners_sud` would wrongly hide legitimate MH re-screens.
+    const sudLocked = viewer ? canAccess(viewer.role, "screeners_sud", p).locked : false;
     for (const due of AdelanteEHR.rescreensDue(p.id)) {
+      if (sudLocked && isPart2Screener(due.key)) continue;
       out.push({
         patientId: p.id,
         patientName: `${p.firstName} ${p.lastName}`,

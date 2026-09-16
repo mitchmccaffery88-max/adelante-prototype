@@ -417,13 +417,12 @@ export function setRecoveryStartDate(patientId: string, date: string | null): vo
 // ⚠️ MINIMUM COHORT SIZE — REAL PRODUCTION CONSIDERATION, NOT A DEMO NICETY.
 // At demo scale (10 patients) an aggregate like "3 lapses this week" is
 // practically re-identifiable: staff who know the caseload can often infer
-// who. Small-cell suppression is the standard control. `MIN_COHORT_SIZE`
-// below is the threshold, and `belowMinimumCohort` tells the UI the numbers
-// are NOT safe to publish. For the demo we still compute and display them
-// with that flag surfaced; before production the dev team must decide the
-// real threshold with compliance and switch this to hard suppression
-// (return nulls) rather than an advisory flag.
-export const MIN_COHORT_SIZE = 11;
+// who. Small-cell suppression is the standard control. The threshold now
+// lives in the SHARED guard (`src/lib/cohortGuard.ts`) so the CalOMS
+// breakdowns on the same reporting page use the same number and the same
+// honest labelling; it is re-exported here for existing callers.
+import { belowMinimumCohort } from "./cohortGuard";
+export { MIN_COHORT_SIZE } from "./cohortGuard";
 
 export interface SelfTrackingAggregate {
   /** Patients considered — the denominator, not a list. */
@@ -476,7 +475,7 @@ export function selfTrackingAggregate(
 
   return {
     cohortSize: ids.length,
-    belowMinimumCohort: ids.length < MIN_COHORT_SIZE,
+    belowMinimumCohort: belowMinimumCohort(ids.length),
     cravingLogs,
     cravingLogsWithSurfCompleted,
     lapses,
