@@ -91,6 +91,7 @@ import {
   Building2,
   Plus,
   Trash2,
+  Languages,
 } from "lucide-react";
 
 export const Route = createFileRoute("/intake")({
@@ -645,6 +646,57 @@ function IntakePage() {
               A few quick details so we can reach you the right way. You can skip anything you're
               not ready to share.
             </p>
+
+            {/* Language is promoted above the rest of this step: it drives the
+                app's language, Adel's replies, and — critically — the language
+                of crisis-response messages. Shown bilingually so it reads
+                clearly to both English and Spanish speakers. */}
+            <div className="rounded-lg border-2 border-teal/60 bg-teal/5 p-4 space-y-3">
+              <div className="flex items-start gap-2.5">
+                <Languages className="h-5 w-5 text-teal mt-0.5 shrink-0" />
+                <div className="space-y-1">
+                  <Label className="text-base font-semibold leading-tight">
+                    What language should we use with you?
+                    <span className="block text-muted-foreground font-normal text-sm">
+                      ¿En qué idioma debemos hablarle?
+                    </span>
+                  </Label>
+                  <p className="text-xs text-muted-foreground">
+                    This sets the language of the whole app and any messages we send you — including
+                    urgent support messages. / Esto define el idioma de toda la aplicación y de
+                    cualquier mensaje que le enviemos, incluidos los mensajes urgentes de apoyo.
+                  </p>
+                </div>
+              </div>
+              <div
+                role="radiogroup"
+                aria-label="Preferred language / Idioma preferido"
+                className="grid grid-cols-2 gap-2"
+              >
+                {(
+                  [
+                    { value: "en", label: "English" },
+                    { value: "es", label: "Español" },
+                  ] as const
+                ).map((opt) => (
+                  <Button
+                    key={opt.value}
+                    type="button"
+                    variant={profile.preferredLanguage === opt.value ? "default" : "outline"}
+                    className={
+                      profile.preferredLanguage === opt.value
+                        ? "h-11 text-base font-semibold"
+                        : "h-11 text-base"
+                    }
+                    aria-pressed={profile.preferredLanguage === opt.value}
+                    onClick={() => setProfile({ ...profile, preferredLanguage: opt.value })}
+                  >
+                    {opt.label}
+                  </Button>
+                ))}
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div className="space-y-1.5">
                 <Label className="text-sm">Preferred name</Label>
@@ -661,23 +713,6 @@ function IntakePage() {
                   onChange={(e) => setProfile({ ...profile, pronouns: e.target.value })}
                   placeholder="she/her, he/him, they/them…"
                 />
-              </div>
-              <div className="space-y-1.5">
-                <Label className="text-sm">Preferred language</Label>
-                <Select
-                  value={profile.preferredLanguage}
-                  onValueChange={(v) =>
-                    setProfile({ ...profile, preferredLanguage: v as PreferredLanguage })
-                  }
-                >
-                  <SelectTrigger>
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="en">English</SelectItem>
-                    <SelectItem value="es">Español</SelectItem>
-                  </SelectContent>
-                </Select>
               </div>
               <div className="space-y-1.5">
                 <Label className="text-sm">Phone</Label>
