@@ -151,3 +151,16 @@ describe("directory hygiene", () => {
     expect(listResources("employment").filter((r) => /cset/i.test(r.name))).toHaveLength(1);
   });
 });
+
+// §QA follow-up — the duplicate cleanup also removed three UNIQUE orgs.
+describe("restored unique directory entries", () => {
+  it("keeps the two pantries and the Tulare shelter listing", () => {
+    const ids = listResources().map((r) => r.id);
+    for (const id of [
+      "res_exeter_food_closet",
+      "res_helping_hands_porterville",
+      "res_tulare_emergency_aid_shelter",
+    ])
+      expect(ids).toContain(id);
+  });
+});

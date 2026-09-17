@@ -525,14 +525,22 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
 function FlagSdohUrgentControl({
   patientId,
   item,
+  escalationOpen,
 }: {
   patientId: string;
   item: { id: string; urgentEscalationId?: string; urgentFlaggedAt?: string };
+  /**
+   * True only while the LINKED escalation is still open. A resolved escalation
+   * must not permanently disable re-escalation — the store already allows it
+   * (`flagSdohItemUrgent` throws only on an open escalation), so the UI reads
+   * the live escalation status rather than the historical flag timestamp.
+   */
+  escalationOpen: boolean;
 }) {
   const { staffName } = useActingStaff();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  if (item.urgentFlaggedAt) return null;
+  if (escalationOpen) return null;
   if (!open)
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
@@ -581,6 +589,12 @@ function FlagSdohUrgentControl({
 export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = p?.sdohPlan?.items ?? [];
+  // The flag timestamp is history; the crisis-queue state is the escalation's
+  // own status. Read the live row so a resolved need can be re-escalated.
+  const urgentOpen = (escalationId: string | undefined) =>
+    Boolean(
+      escalationId && p?.crisisEscalations?.find((r) => r.id === escalationId)?.status === "open",
+    );
   const [need, setNeed] = useState("");
   const [note, setNote] = useState("");
   const [visible, setVisible] = useState(true);
@@ -640,13 +654,26 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
             </div>
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
-            {i.urgentFlaggedAt && (
-              <div className="text-[11px] text-destructive">
-                Flagged urgent by {i.urgentFlaggedBy} · <ClientDate value={i.urgentFlaggedAt} /> —
-                open in the urgent social needs lane of the crisis queue.
-              </div>
+            {i.urgentFlaggedAt &&
+              (urgentOpen(i.urgentEscalationId) ? (
+                <div className="text-[11px] text-destructive">
+                  Flagged urgent by {i.urgentFlaggedBy} · <ClientDate value={i.urgentFlaggedAt} /> —
+                  open in the urgent social needs lane of the crisis queue.
+                </div>
+              ) : (
+                <div className="text-[11px] text-muted-foreground">
+                  Previously flagged urgent by {i.urgentFlaggedBy} ·{" "}
+                  <ClientDate value={i.urgentFlaggedAt} /> — that escalation is resolved. Flag again
+                  if it is urgent now.
+                </div>
+              ))}
+            {!readOnly && (
+              <FlagSdohUrgentControl
+                patientId={patientId}
+                item={i}
+                escalationOpen={urgentOpen(i.urgentEscalationId)}
+              />
             )}
-            {!readOnly && <FlagSdohUrgentControl patientId={patientId} item={i} />}
             {!readOnly && (
               <div className="flex flex-wrap items-center gap-2">
                 <Select

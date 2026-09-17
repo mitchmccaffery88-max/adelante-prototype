@@ -95,3 +95,12 @@ describe("demographics grants", () => {
     }
   });
 });
+
+// §QA follow-up — the tightening locked the credentialing coordinator out of
+// its own sign-in landing page (`staffRouteFor` sends the role there).
+describe("credentialing coordinator keeps its own surface", () => {
+  it("has staff_supervision write and reaches /admin-credentialing", () => {
+    expect(canAccess("credentialing_coordinator", "staff_supervision").level).toBe("write");
+    expect(reaches("credentialing_coordinator", "/admin-credentialing")).toBe(true);
+  });
+});

@@ -6,6 +6,47 @@
 import type { CommunityResource } from "@/lib/communityResources";
 
 export const PORTED_RESOURCES: CommunityResource[] = [
+  // §Directory hygiene follow-up — these three are UNIQUE organisations that
+  // were removed alongside the two real CSET/EDD duplicates. Restored: no
+  // equivalent listing exists in SEED_RESOURCES (the food category there holds
+  // only CalFresh, FoodLink, VEAC, Meals on Wheels and 211, and the Tulare
+  // Emergency Aid Council survives only as a `housing` entry).
+  {
+    "id": "res_tulare_emergency_aid_shelter",
+    "categoryId": "emergency_shelter",
+    "name": "Tulare Emergency Aid Council – Shelter Help",
+    "address": "424 North N Street, Tulare, CA 93274",
+    "phone": "(559) 686-3693",
+    "hours": "Mon–Fri (verify hours)",
+    "description": "Emergency shelter assistance and referrals for people in Tulare city who need a bed tonight.",
+    "placeholder": false,
+    "verified": false,
+    "status": "unverified"
+  },
+  {
+    "id": "res_helping_hands_porterville",
+    "categoryId": "food",
+    "name": "Helping Hands of Porterville, Inc.",
+    "address": "245 N. 3rd St, Porterville, CA 93257",
+    "phone": "(559) 783-8870",
+    "hours": "Hot meal served six days a week (verify times)",
+    "description": "Free hot meal six days a week in Porterville. No appointment needed.",
+    "placeholder": false,
+    "verified": false,
+    "status": "unverified"
+  },
+  {
+    "id": "res_exeter_food_closet",
+    "categoryId": "food",
+    "name": "Exeter Food Closet",
+    "address": "200 South E Street, Exeter, CA 93221",
+    "phone": "(559) 802-7883",
+    "hours": "Verify distribution days",
+    "description": "Neighborhood food pantry serving Exeter and nearby communities.",
+    "placeholder": false,
+    "verified": false,
+    "status": "unverified"
+  },
   {
     "id": "res_loop_bus",
     "categoryId": "transportation",
