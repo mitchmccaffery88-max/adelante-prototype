@@ -76,18 +76,22 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
     setError(null);
 
     // ── Real Phase 1 crisis mechanism, ahead of the LLM ────────────────────
-    if (detectCrisisLanguage(text).matched) {
+    const hit = detectCrisisLanguage(text);
+    if (hit.matched) {
       const patientId = AdelanteEHR.getCurrentPatientId();
       scanTextForCrisis(patientId, text, { surface: "a message to Adel" });
+      // The reply is written in the language the MATCH came in — the pattern
+      // ids already carry that, so nothing new detects anything here.
+      const copy = crisisCopy(crisisMatchLanguage(hit.patternIds));
       setTurns((t) => [
         ...t,
         { role: "user", content: text },
         {
           role: "assistant",
           crisis: true,
-          content:
-            "I'm really glad you told me. I want you to talk to a person, not me, right now. Call or text 988 — someone answers any hour, and it's free.",
-          actions: [{ kind: "page", id: "crisis", label: "Get help right now", to: "/crisis" }],
+          crisisLang: crisisMatchLanguage(hit.patternIds),
+          content: copy.adelReply,
+          actions: [{ kind: "page", id: "crisis", label: copy.getHelpNow, to: "/crisis" }],
         },
       ]);
       return;
