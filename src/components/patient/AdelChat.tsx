@@ -16,6 +16,9 @@ import { AdelanteEHR } from "@/lib/ehr";
 import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { buildAdelSystemPrompt, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
+import { crisisMatchLanguage } from "@/lib/crisisTextDetection";
+import { crisisCopy } from "@/lib/crisisCopy";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
@@ -40,6 +43,8 @@ interface Turn {
   content: string;
   actions?: AdelAction[];
   crisis?: boolean;
+  /** Language the crisis match came in — drives this turn's canned copy. */
+  crisisLang?: "en" | "es";
 }
 
 const GREETING =
@@ -64,6 +69,12 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const endRef = useRef<HTMLDivElement>(null);
+  // Chrome around the thread follows the UI language (which now initialises
+  // from the member's real preferredLanguage); a crisis TURN follows the
+  // language its own match came in.
+  const { lang } = useI18n();
+  const uiCrisisLang = lang === "es" ? "es" : "en";
+  const stripCopy = crisisCopy(uiCrisisLang);
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -197,7 +208,8 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
               >
                 {t.crisis && (
                   <div className="mb-1 flex items-center gap-1 text-xs font-medium text-destructive">
-                    <ShieldAlert className="h-3.5 w-3.5" /> Your care team has been alerted
+                    <ShieldAlert className="h-3.5 w-3.5" />{" "}
+                    {crisisCopy(t.crisisLang ?? uiCrisisLang).careTeamAlerted}
                   </div>
                 )}
                 <p className="whitespace-pre-wrap">{t.content}</p>
@@ -243,15 +255,15 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
         className="flex flex-wrap items-center gap-2 rounded-2xl border border-crisis/30 bg-crisis-soft px-3 py-2 text-sm"
       >
         <LifeBuoy className="h-4 w-4 shrink-0 text-crisis" aria-hidden="true" />
-        <span className="text-muted-foreground">Need a person right now?</span>
+        <span className="text-muted-foreground">{stripCopy.stripPrompt}</span>
         <Button asChild size="sm" variant="crisis" className="h-9 rounded-full">
           <a href={`tel:${CRISIS_LIFELINE_NUMBER}`}>
             <Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" />
-            Call {CRISIS_LIFELINE_NUMBER}
+            {stripCopy.stripCall} {CRISIS_LIFELINE_NUMBER}
           </a>
         </Button>
         <Button asChild size="sm" variant="crisisSoft" className="h-9 rounded-full">
-          <Link to="/crisis">Crisis support</Link>
+          <Link to="/crisis">{stripCopy.stripSupport}</Link>
         </Button>
       </div>
 
