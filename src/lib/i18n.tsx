@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import {
+  LANG_STORAGE_KEY,
+  isLang,
+  storedPreferredLanguage,
+  writePreferredLanguage,
+} from "@/lib/languagePreference";
 import {
   recoveryContentEs,
   recoveryModuleEn,
