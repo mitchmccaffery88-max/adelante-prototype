@@ -1,60 +1,59 @@
-# Plan: Agentic Roadmap prototype walkthrough
+# Crisis copy in Spanish + real language preference sync
 
-## Scope
-Build three unmistakably demo-only screens for Dr. Bagga’s platform walkthrough:
+## What I found
 
-1. Guided Chart Review — pre-visit summary using existing patient chart data.
-2. Scribe Copilot — live-encounter prototype with Xaia-inspired parallel panels.
-3. Smart Dictation — post-encounter dictation prototype, visually distinct from live recording.
+**Crisis path (item 1).** Detection already fires before the model call and records which
+patterns matched. Every Spanish pattern id is prefixed `es_` (`crisisTextDetection.ts`), so
+the language signal genuinely already exists at the moment of the match — no new detection
+is needed. What is hardcoded English today:
+- Adel's canned crisis reply and the "Your care team has been alerted" label (`AdelChat.tsx`)
+- Adel's always-visible crisis strip ("Need a person right now?", "Call 988", "Crisis support")
+- The front-door live crisis block on "what brings you here" (`start.other-help.tsx`)
 
-No live AI integration, no transcription, no billing-code engine, no data-model changes, and no changes to real clinical access rules.
+The shared `CrisisNotice` banner is already translated through the dictionary, so it needs
+no work.
 
-## Investigation first
-- Confirm existing chart data sources for medications/MAR, notes, screeners, care plan, alerts, tasks, and appointments.
-- Confirm existing appointment/chart entry points and route patterns.
-- Reuse the app’s existing warning/draft/pending-review visual language for prototype labels and consent caveats.
+**Language preference (item 2).**
+- `Patient.preferredLanguage` is real and stored; `AdelanteEHR.updateProfile` already accepts it.
+- The UI language lives only in `localStorage["adelante.lang"]` and never reads or writes the record.
+- The Profile "My profile" card shows Language as **display-only** text; editing is possible only
+  by opening the staff-style Edit dialog, which already has a working language select.
+- Intake's language question is a plain select in a long form section — I will report on its
+  prominence after looking at it in the browser rather than changing it in this build.
 
-## Build approach
-- Add shared prototype UI helpers for:
-  - “Prototype — not connected to a live AI model” label.
-  - Source-data badge/copy separating real chart facts from sample narrative.
-  - Scribe-only consent-precondition banner.
-- Add three staff-facing routes:
-  - `/agentic/chart-review/$patientId`
-  - `/agentic/scribe/$patientId`
-  - `/agentic/dictation/$patientId`
-- Each route will include its own route metadata and use existing patients via `AdelanteEHR`.
+## What I will build
 
-## Guided Chart Review
-- Pull real data from the existing patient record where available: demographics, appointments, care plan, meds/orders, MAR administrations, notes, screeners, tasks, alerts, referrals/SDOH.
-- Present a pre-visit summary with clear sections:
-  - Real chart facts.
-  - Sample/illustrative synthesis narrative.
-  - Care gaps and flags derived from existing fields when possible.
-- Add a real entry point from the full-page chart header and appointment cards.
+### 1. Language-aware crisis copy
+- `crisisTextDetection.ts`: add a pure `crisisMatchLanguage(patternIds)` returning `"es"` when any
+  matched id is an `es_` pattern, otherwise `"en"`. Detection logic itself is untouched.
+- New `src/lib/crisisCopy.ts`: one EN/ES copy table for the canned crisis reply, the
+  "care team alerted" label, the crisis strip labels, and the front-door crisis block —
+  including 988 wording ("Llama o envía un mensaje de texto al 988").
+- `AdelChat.tsx` and `start.other-help.tsx` select copy by matched language; when nothing matched
+  they fall back to the current UI language. No change to when interception fires.
+- The Spanish copy carries a visible, clearly marked note in the source that it is **pending human
+  clinical/translation review** — see the flag below.
 
-## Scribe Copilot
-- Create a live-encounter demonstration screen modeled on the reference layout language: parallel panels for red flags, chart insights, differential, suggested questions, recommendations, and transcript.
-- Populate all panels with realistic sample content tied to the selected demo patient, clearly labeled as sample.
-- Add a visible top banner: “Recording consent confirmed — prototype only.”
-- Add a sensible real entry point from clinician appointment/session cards and chart header.
+### 2. Real `preferredLanguage` sync
+- On session/patient load, initialize the UI language from the stored `preferredLanguage`
+  (a stored value wins over the default English; an explicit in-session toggle still wins for that session).
+- The header EN/ES toggle writes back to `preferredLanguage` via `AdelanteEHR.updateProfile`
+  for the current patient, so the choice survives a reload.
+- The Profile "My profile" card gets a real inline Language control — this is **new UI wiring, not a
+  new field**: same record field, same helper the header toggle uses, so the two cannot drift.
+- Both paths go through one shared helper so there is a single write site.
 
-## Smart Dictation
-- Create a post-encounter screen with no live-visit framing and no recording-consent banner.
-- Show sample clinician dictation alongside a polished chart-aware note preview.
-- Visually position it as lower-burden post-visit documentation, not patient recording.
-- Add a real entry point from chart header and note/documentation area if feasible without altering workflow.
+### Tests
+- A Spanish-pattern match yields Spanish reply copy; an English match yields English.
+- `crisisMatchLanguage` on mixed/no matches.
+- Toggle and Profile control both write the same `preferredLanguage`; load initializes from it.
 
-## Verification
-- Run typecheck and tests.
-- Use browser verification at 1280px and 390px for all three screens.
-- Confirm prototype labels on all three screens.
-- Confirm the consent banner appears only on Scribe Copilot.
-- Confirm Guided Chart Review displays real patient facts.
-- Confirm entry points exist from clinical surfaces.
-- Confirm no console errors.
+## Flag for you — Spanish crisis copy quality
+I can produce accurate, plain, 5th-grade-level Spanish for this copy, but this is the highest-stakes
+text in the product. I will mark it in the source as **pending review by a bilingual clinician
+(Christi / Dr. Bagga's team)** and will not present it as validated. 988 does answer in Spanish, so
+the number itself is unchanged.
 
-## Interpretation to report
-- How Scribe Copilot is visually distinguished from Smart Dictation.
-- Which real entry points were used for each screen.
-- Any places where sample narrative is used because the real system has no live AI generation.
+## Not in this build
+Library/Recovery/resource translation, Adel's own conversational language, and the English
+ACTION-button labels.
