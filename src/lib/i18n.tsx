@@ -1,4 +1,11 @@
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react";
+import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import {
+  LANG_STORAGE_KEY,
+  isLang,
+  storedPreferredLanguage,
+  writePreferredLanguage,
+} from "@/lib/languagePreference";
 import {
   recoveryContentEs,
   recoveryModuleEn,
@@ -730,16 +737,21 @@ export type Key = keyof typeof dict.en;
 
 const I18nCtx = createContext<{
   lang: Lang;
+  /** An explicit human choice: switches the UI AND writes it to the record. */
   setLang: (l: Lang) => void;
   t: (k: Key) => string;
 }>({ lang: "en", setLang: () => {}, t: (k) => dict.en[k] });
 
 export function I18nProvider({ children }: { children: ReactNode }) {
   const [lang, setLangState] = useState<Lang>("en");
+  // True once the person has chosen a language in this session. A stored
+  // preference must never overwrite a choice they just made.
+  const chosenThisSession = useRef(false);
+
   useEffect(() => {
     try {
-      const saved = localStorage.getItem("adelante.lang");
-      if (saved === "en" || saved === "es") setLangState(saved);
+      const saved = localStorage.getItem(LANG_STORAGE_KEY);
+      if (isLang(saved)) setLangState(saved);
     } catch {
       /* no-op */
     }
@@ -751,16 +763,61 @@ export function I18nProvider({ children }: { children: ReactNode }) {
       document.documentElement.lang = lang;
     }
   }, [lang]);
+
   const setLang = (l: Lang) => {
+    chosenThisSession.current = true;
     setLangState(l);
     try {
-      localStorage.setItem("adelante.lang", l);
+      localStorage.setItem(LANG_STORAGE_KEY, l);
+    } catch {
+      /* no-op */
+    }
+    // The real field, not just chrome state — this is what makes the choice
+    // survive the session. No-op when nobody is signed in.
+    writePreferredLanguage(l);
+  };
+
+  const applyStored = (l: Lang) => {
+    if (chosenThisSession.current) return;
+    setLangState(l);
+    try {
+      localStorage.setItem(LANG_STORAGE_KEY, l);
     } catch {
       /* no-op */
     }
   };
+
   const t = (k: Key) => dict[lang][k] ?? dict.en[k];
-  return <I18nCtx.Provider value={{ lang, setLang, t }}>{children}</I18nCtx.Provider>;
+  return (
+    <I18nCtx.Provider value={{ lang, setLang, t }}>
+      <StoredLanguageSync lang={lang} applyStored={applyStored} />
+      {children}
+    </I18nCtx.Provider>
+  );
+}
+
+/**
+ * Reads the REAL `preferredLanguage` on the acting member's record and adopts
+ * it as the UI language. Runs when a session loads (and when the acting member
+ * changes), which is the moment the old code ignored the stored field
+ * entirely. An in-session toggle always wins.
+ */
+function StoredLanguageSync({
+  lang,
+  applyStored,
+}: {
+  lang: Lang;
+  applyStored: (l: Lang) => void;
+}) {
+  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const stored = useEhr(() => storedPreferredLanguage(patientId));
+  useEffect(() => {
+    if (stored && stored !== lang) applyStored(stored);
+    // `lang` is intentionally omitted: adopting the stored value must not
+    // fight a later toggle, which `chosenThisSession` already guards.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stored, patientId]);
+  return null;
 }
 
 export const useI18n = () => useContext(I18nCtx);

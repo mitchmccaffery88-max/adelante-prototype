@@ -83,6 +83,20 @@ export interface CrisisTextMatch {
   patternIds: string[];
 }
 
+/** Language a canned crisis reply should be written in. */
+export type CrisisLang = "en" | "es";
+
+/**
+ * Which language the MATCH came in — derived from the pattern ids that already
+ * exist, not from a second detector and NOT from the account's display
+ * language. Spanish patterns are the `es_`-prefixed ones. Mixed matches resolve
+ * to Spanish: answering a Spanish speaker in English is the worse failure.
+ * Callers pass `patternIds` from `detectCrisisLanguage`.
+ */
+export function crisisMatchLanguage(patternIds: readonly string[]): CrisisLang {
+  return patternIds.some((id) => id.startsWith("es_")) ? "es" : "en";
+}
+
 /** Pure, side-effect free. Safe to call on every keystroke if ever needed. */
 export function detectCrisisLanguage(text: string | undefined | null): CrisisTextMatch {
   const body = normalize(text ?? "");

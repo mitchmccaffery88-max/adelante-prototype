@@ -14,6 +14,8 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
+import { useI18n } from "@/lib/i18n";
+import { writePreferredLanguage } from "@/lib/languagePreference";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -38,7 +40,6 @@ export function MyProfileCard({ patientId }: { patientId: string }) {
     afternoon: "Afternoons",
     evening: "Evenings",
   };
-  const langLabel: Record<string, string> = { en: "English", es: "Español" };
   return (
     <Card className="p-5" id="my-profile" data-testid="my-profile-card">
       <div className="flex items-center justify-between gap-3">
@@ -67,10 +68,7 @@ export function MyProfileCard({ patientId }: { patientId: string }) {
           )}
         </Row>
         <Row label="Language">
-          <span className="inline-flex items-center gap-1.5">
-            <Globe2 className="h-3.5 w-3.5 text-muted-foreground" />
-            {langLabel[patient.preferredLanguage ?? "en"]}
-          </span>
+          <LanguageChoice patientId={patientId} />
         </Row>
         {patient.contactPrefs && (
           <Row label="Contact">
@@ -91,6 +89,51 @@ export function MyProfileCard({ patientId }: { patientId: string }) {
       </dl>
       <PatientProfileDialog patientId={patientId} open={open} onOpenChange={setOpen} />
     </Card>
+  );
+}
+
+/**
+ * The member's real language control. This is WIRING, not a new field: it
+ * writes `preferredLanguage` through the same `useI18n().setLang` path the
+ * header EN/ES toggle uses, so the header, this card and the record cannot
+ * drift apart.
+ */
+function LanguageChoice({ patientId }: { patientId: string }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { setLang } = useI18n();
+  const current = patient?.preferredLanguage ?? "en";
+  const options: { value: "en" | "es"; label: string }[] = [
+    { value: "en", label: "English" },
+    { value: "es", label: "Español" },
+  ];
+  return (
+    <div className="inline-flex items-center gap-2" data-testid="profile-language">
+      <Globe2 className="h-3.5 w-3.5 text-muted-foreground" aria-hidden="true" />
+      <div className="inline-flex rounded-full bg-secondary p-0.5 text-xs">
+        {options.map((o) => (
+          <button
+            key={o.value}
+            type="button"
+            aria-pressed={current === o.value}
+            data-testid={`profile-language-${o.value}`}
+            onClick={() => {
+              setLang(o.value);
+              // Explicit id: this card can only ever edit the record it is
+              // rendered for, even if the acting member changes underneath.
+              writePreferredLanguage(o.value, patientId);
+              toast.success(o.value === "es" ? "Idioma guardado" : "Language saved");
+            }}
+            className={
+              current === o.value
+                ? "min-h-[36px] rounded-full bg-navy px-3 py-1 text-navy-foreground"
+                : "min-h-[36px] rounded-full px-3 py-1 text-foreground/60"
+            }
+          >
+            {o.label}
+          </button>
+        ))}
+      </div>
+    </div>
   );
 }
 

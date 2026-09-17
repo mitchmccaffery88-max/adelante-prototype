@@ -8,7 +8,12 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { toast } from "sonner";
 import { AdelanteEHR } from "@/lib/ehr";
-import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
+import {
+  crisisMatchLanguage,
+  detectCrisisLanguage,
+  scanTextForCrisis,
+} from "@/lib/crisisTextDetection";
+import { crisisCopy } from "@/lib/crisisCopy";
 import { validateContact } from "@/lib/frontDoor";
 import { Phone, Siren } from "lucide-react";
 
@@ -50,6 +55,9 @@ function OtherHelpPlaceholder() {
   // submit. The staff-alert layer below is additive, not a replacement.
   const crisis = useMemo(() => detectCrisisLanguage(note), [note]);
   const contactCheck = validateContact(contact);
+  // Same rule as Adel: the canned crisis block speaks the language the match
+  // came in, taken from the pattern ids that already fired.
+  const cc = crisisCopy(crisisMatchLanguage(crisis.patternIds));
 
   function submit() {
     if (!contactCheck.valid) {
@@ -100,20 +108,17 @@ function OtherHelpPlaceholder() {
           className="space-y-2 rounded-lg border-2 border-destructive/50 bg-destructive/5 p-4 text-sm"
         >
           <div className="flex items-center gap-2 font-semibold text-destructive">
-            <Siren className="h-4 w-4" /> Help is available right now
+            <Siren className="h-4 w-4" /> {cc.frontDoorHeading}
           </div>
-          <p className="text-muted-foreground">
-            What you wrote sounds heavy. You don&apos;t have to finish this form — talk to a person
-            now. The 988 Suicide &amp; Crisis Lifeline answers any hour, free.
-          </p>
+          <p className="text-muted-foreground">{cc.frontDoorBody}</p>
           <div className="flex flex-wrap gap-2">
             <Button asChild variant="crisis" size="sm">
               <a href="tel:988">
-                <Phone className="h-4 w-4" /> Call 988
+                <Phone className="h-4 w-4" /> {cc.frontDoorCall}
               </a>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <a href="sms:988">Text 988</a>
+              <a href="sms:988">{cc.frontDoorText}</a>
             </Button>
             <Button asChild variant="outline" size="sm">
               <Link to="/crisis">Get help right now</Link>
