@@ -15,6 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useI18n } from "@/lib/i18n";
+import { writePreferredLanguage } from "@/lib/languagePreference";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -103,7 +104,7 @@ function LanguageChoice({ patientId }: { patientId: string }) {
   const current = patient?.preferredLanguage ?? "en";
   const options: { value: "en" | "es"; label: string }[] = [
     { value: "en", label: "English" },
-    { value: "es", label: "Espanol" },
+    { value: "es", label: "Español" },
   ];
   return (
     <div className="inline-flex items-center gap-2" data-testid="profile-language">
@@ -117,6 +118,9 @@ function LanguageChoice({ patientId }: { patientId: string }) {
             data-testid={`profile-language-${o.value}`}
             onClick={() => {
               setLang(o.value);
+              // Explicit id: this card can only ever edit the record it is
+              // rendered for, even if the acting member changes underneath.
+              writePreferredLanguage(o.value, patientId);
               toast.success(o.value === "es" ? "Idioma guardado" : "Language saved");
             }}
             className={
