@@ -525,14 +525,22 @@ export function ProviderHistoryTab({ patientId }: { patientId: string }) {
 function FlagSdohUrgentControl({
   patientId,
   item,
+  escalationOpen,
 }: {
   patientId: string;
   item: { id: string; urgentEscalationId?: string; urgentFlaggedAt?: string };
+  /**
+   * True only while the LINKED escalation is still open. A resolved escalation
+   * must not permanently disable re-escalation — the store already allows it
+   * (`flagSdohItemUrgent` throws only on an open escalation), so the UI reads
+   * the live escalation status rather than the historical flag timestamp.
+   */
+  escalationOpen: boolean;
 }) {
   const { staffName } = useActingStaff();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  if (item.urgentFlaggedAt) return null;
+  if (escalationOpen) return null;
   if (!open)
     return (
       <Button size="sm" variant="outline" onClick={() => setOpen(true)}>
