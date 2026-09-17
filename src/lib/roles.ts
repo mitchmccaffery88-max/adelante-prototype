@@ -669,6 +669,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   staff_supervision: {
     sys_admin: "write",
     clinical_coordinator: "write",
+    // The credentialing coordinator's entire job IS this class: primary-source
+    // licence / DEA / payer-enrollment verification. Omitting them locked the
+    // role out of `/admin-credentialing`, which is also its sign-in landing
+    // page (see staffRouteFor in src/routes/auth.tsx).
+    credentialing_coordinator: "write",
     therapist: "read",
     pmhnp: "read",
     clinical_trainee: "read",
