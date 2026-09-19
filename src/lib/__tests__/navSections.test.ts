@@ -5,6 +5,7 @@ import { describe, expect, it } from "vitest";
 import {
   STAFF_NAV,
   canSeeNavEntry,
+  isPublicRoute,
   staffNavForRole,
   staffNavGroupsForRole,
 } from "../navSections";
@@ -14,6 +15,10 @@ const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
   staffNavForRole(role).map((e) => e.id);
 
 describe("nav registry integrity", () => {
+  it("keeps the referral form on the public surface", () => {
+    expect(isPublicRoute("/referral")).toBe(true);
+  });
+
   it("has unique ids and routes", () => {
     expect(new Set(STAFF_NAV.map((e) => e.id)).size).toBe(STAFF_NAV.length);
     // Destination = path + search: "Facility protocols" is the Worklist

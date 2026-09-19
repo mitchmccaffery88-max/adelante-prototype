@@ -41,6 +41,14 @@ export const Route = createFileRoute("/referral")({
         content:
           "A short, private form to refer a recently released individual to Adelante care. No clinical detail required.",
       },
+      { property: "og:title", content: "Refer someone — Adelante" },
+      {
+        property: "og:description",
+        content:
+          "A short, private form to refer someone to Adelante care. No clinical detail required.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ReferralPage,
