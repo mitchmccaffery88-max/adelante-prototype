@@ -441,9 +441,11 @@ export function AppShell() {
               <span className="h-2 w-2 rounded-full bg-teal" />
               Demo data · no real PHI
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              Demo scenarios · top-right control
-            </span>
+            {!isPublicSurface && (
+              <span className="text-[10px] text-muted-foreground">
+                Demo scenarios · top-right control
+              </span>
+            )}
           </div>
         </div>
       </footer>
