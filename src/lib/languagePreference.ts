@@ -53,7 +53,10 @@ export function writePreferredLanguage(
   lang: PreferredLanguage,
   patientId?: string | undefined,
 ): boolean {
-  const id = patientId ?? AdelanteEHR.getCurrentPatientId();
+  // Never write to a record just because it is open on screen: only an
+  // explicit `patientId` (the member editing their own profile) or a real
+  // signed-in member session may change the stored language.
+  const id = patientId ?? actingMemberId();
   if (!id || !AdelanteEHR.getPatient(id)) return false;
   AdelanteEHR.updateProfile(id, { preferredLanguage: lang });
   return true;
