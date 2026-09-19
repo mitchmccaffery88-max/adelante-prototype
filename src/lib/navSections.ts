@@ -827,7 +827,7 @@ export const PUBLIC_NAV: readonly PublicNavEntry[] = [
 ] as const;
 
 /** Routes that render the public marketing/entry shell. */
-export const PUBLIC_ROUTES: readonly string[] = ["/", "/auth", "/assisted-signup"];
+export const PUBLIC_ROUTES: readonly string[] = ["/", "/auth", "/assisted-signup", "/referral"];
 
 export function isPublicRoute(pathname: string): boolean {
   return PUBLIC_ROUTES.includes(pathname) || pathname.startsWith("/start");

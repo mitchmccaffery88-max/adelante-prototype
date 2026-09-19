@@ -110,6 +110,7 @@ export function AppShell() {
   // surfaces navigate via the left sidebar / Staff dropdown instead.
   const isStaffSurface =
     !isPatientSurface &&
+    !isPublicSurface &&
     !isAdvocateSurface &&
     (STAFF_ROUTES.includes(pathname) ||
       pathname.startsWith("/record/") ||
@@ -122,10 +123,10 @@ export function AppShell() {
 
   return (
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
-      <RouteAccessGuard />
+      {!isPublicSurface && <RouteAccessGuard />}
       {/* Demo scenario control — fixed to the viewport so it is reachable at
           any height, not buried in the footer. */}
-      <DemoStateSwitcher />
+      {!isPublicSurface && <DemoStateSwitcher />}
       {isPatientSurface && <CrisisHeader />}
       <header
         className={cn(
@@ -225,10 +226,10 @@ export function AppShell() {
             {isPatientSurface && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* §Notification feed — operational alerts for the acting staff identity. */}
-            <NotificationBell />
+            {!isPublicSurface && <NotificationBell />}
 
             {/* Staff portal */}
-            <DropdownMenu>
+            {!isPublicSurface && <DropdownMenu>
               <DropdownMenuTrigger className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary">
                 <UserCog className="h-3.5 w-3.5 text-teal" />
                 {t("navStaff")}
@@ -272,7 +273,7 @@ export function AppShell() {
                   ))}
                 </DropdownMenuRadioGroup>
               </DropdownMenuContent>
-            </DropdownMenu>
+            </DropdownMenu>}
 
             {/* Account menu — sign in/out only. Persona switcher moved to footer. */}
             <DropdownMenu>
@@ -440,9 +441,11 @@ export function AppShell() {
               <span className="h-2 w-2 rounded-full bg-teal" />
               Demo data · no real PHI
             </span>
-            <span className="text-[10px] text-muted-foreground">
-              Demo scenarios · top-right control
-            </span>
+            {!isPublicSurface && (
+              <span className="text-[10px] text-muted-foreground">
+                Demo scenarios · top-right control
+              </span>
+            )}
           </div>
         </div>
       </footer>
