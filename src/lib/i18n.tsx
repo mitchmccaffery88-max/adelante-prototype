@@ -2,6 +2,7 @@ import { createContext, useContext, useEffect, useRef, useState, type ReactNode 
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   LANG_STORAGE_KEY,
+  actingMemberId,
   isLang,
   storedPreferredLanguage,
   writePreferredLanguage,
