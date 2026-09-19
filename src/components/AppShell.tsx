@@ -187,7 +187,7 @@ export function AppShell() {
           <div className="ml-auto flex items-center gap-2">
             {isPublicSurface && (
               <Link
-                to="/start"
+                to="/start/signup"
                 className="hidden sm:inline-flex items-center rounded-md bg-navy px-3 py-2 text-sm font-medium text-navy-foreground transition-colors hover:bg-navy/90"
               >
                 Get started
