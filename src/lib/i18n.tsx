@@ -809,7 +809,9 @@ function StoredLanguageSync({
   lang: Lang;
   applyStored: (l: Lang) => void;
 }) {
-  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  // Only a signed-in member's own stored preference may drive the UI; a chart
+  // merely open on a staff screen must not translate the staff interface.
+  const patientId = useEhr(() => actingMemberId());
   const stored = useEhr(() => storedPreferredLanguage(patientId));
   useEffect(() => {
     if (stored && stored !== lang) applyStored(stored);
