@@ -1,7 +1,8 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useEhr } from "@/lib/ehr";
 import {
   LANG_STORAGE_KEY,
+  actingMemberId,
   isLang,
   storedPreferredLanguage,
   writePreferredLanguage,
@@ -809,7 +810,9 @@ function StoredLanguageSync({
   lang: Lang;
   applyStored: (l: Lang) => void;
 }) {
-  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  // Only a signed-in member's own stored preference may drive the UI; a chart
+  // merely open on a staff screen must not translate the staff interface.
+  const patientId = useEhr(() => actingMemberId());
   const stored = useEhr(() => storedPreferredLanguage(patientId));
   useEffect(() => {
     if (stored && stored !== lang) applyStored(stored);
