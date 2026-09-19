@@ -12,11 +12,33 @@ export function isLang(v: unknown): v is PreferredLanguage {
   return v === "en" || v === "es";
 }
 
+/**
+ * The id of the member who is actually USING the app right now.
+ *
+ * `AdelanteEHR.getCurrentPatientId()` is a global "record in focus" value that
+ * staff and advocate flows also set, so it is NOT a proxy for "who is signed
+ * in". Without this gate, a clinician opening a Spanish-speaking member's
+ * chart flipped the whole staff UI to Spanish, and correcting it with the
+ * header toggle rewrote that member's stored language — the field that now
+ * drives their crisis/988 copy.
+ */
+export function actingMemberId(): string | undefined {
+  try {
+    const session =
+      window.localStorage.getItem("adelante.session") ??
+      window.sessionStorage.getItem("adelante.session");
+    if (!session) return undefined;
+  } catch {
+    return undefined;
+  }
+  return AdelanteEHR.getCurrentPatientId() || undefined;
+}
+
 /** The language on file for the acting member, if there is one. */
 export function storedPreferredLanguage(
   patientId?: string | undefined,
 ): PreferredLanguage | undefined {
-  const id = patientId ?? AdelanteEHR.getCurrentPatientId();
+  const id = patientId ?? actingMemberId();
   if (!id) return undefined;
   const p = AdelanteEHR.getPatient(id);
   return isLang(p?.preferredLanguage) ? p.preferredLanguage : undefined;
