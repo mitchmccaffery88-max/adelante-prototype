@@ -68,7 +68,7 @@ export function Landing() {
                 size="lg"
                 className="h-12 px-6 text-base bg-gold text-gold-foreground hover:bg-gold/90"
               >
-                <Link to="/home">
+                <Link to="/start/signup">
                   Get started
                   <ArrowRight className="h-4 w-4" />
                 </Link>
@@ -203,7 +203,7 @@ export function Landing() {
             you belong here.
           </p>
           <Button asChild className="mt-7 h-11 px-5 bg-gold text-gold-foreground hover:bg-gold/90">
-            <Link to="/home">
+            <Link to="/start/signup">
               Get started
               <ArrowRight className="h-4 w-4" />
             </Link>
@@ -268,7 +268,7 @@ export function Landing() {
             size="lg"
             className="mt-8 h-12 px-7 text-base bg-gold text-gold-foreground hover:bg-gold/90"
           >
-            <Link to="/home">
+            <Link to="/start/signup">
               Get started
               <ArrowRight className="h-4 w-4" />
             </Link>
