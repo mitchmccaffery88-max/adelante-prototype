@@ -1,5 +1,5 @@
 import { createContext, useContext, useEffect, useRef, useState, type ReactNode } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useEhr } from "@/lib/ehr";
 import {
   LANG_STORAGE_KEY,
   actingMemberId,
