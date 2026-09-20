@@ -388,9 +388,36 @@ export type SdohStatus =
   | "scheduled"
   | "completed"
   | "not_completed";
+/**
+ * §Intake/SDOH Redesign Phase 2 — provenance on a social-need row.
+ *
+ * Same convention as `ResourceReferralSource` / `CalomsDataSource`: a small
+ * closed string union stored on the record itself, never inferred at read
+ * time. The values name HOW the need was established, because that changes
+ * how much weight it carries:
+ *  - `pre_release_hrsn`   a positive domain on the scored CMS AHC-HRSN tool
+ *  - `intake_self_report` a checkbox the person ticked in their own intake
+ *  - `staff_assessed`     a staff member identified it in the chart
+ *  - `advocate_reported`  raised by a linked advocate through coordination
+ */
+export type SdohItemSource =
+  | "pre_release_hrsn"
+  | "intake_self_report"
+  | "staff_assessed"
+  | "advocate_reported";
+
+export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
+  pre_release_hrsn: "From pre-release screening",
+  intake_self_report: "Self-reported at intake",
+  staff_assessed: "Staff-identified",
+  advocate_reported: "Raised by advocate",
+};
+
 export interface SdohPlanItem {
   id: string;
   need: string;
+  /** How this need was established. Required — see `SdohItemSource`. */
+  source: SdohItemSource;
   referralId?: string;
   status: SdohStatus;
   note?: string;
@@ -3057,6 +3084,7 @@ const patients: Patient[] = [
       items: [
         {
           id: "sdoh1",
+          source: "staff_assessed",
           need: "Transitional housing placement",
           status: "sent",
           note: "Referred to Tulare Reentry Housing Collaborative.",
@@ -3066,6 +3094,7 @@ const patients: Patient[] = [
         },
         {
           id: "sdoh2",
+          source: "staff_assessed",
           need: "Rides to appointments",
           status: "scheduled",
           note: "Medi-Cal transportation set up for therapy days.",
@@ -3075,6 +3104,7 @@ const patients: Patient[] = [
         },
         {
           id: "sdoh3",
+          source: "staff_assessed",
           need: "Job readiness program",
           status: "identified",
           visibleToPatient: true,
@@ -8644,13 +8674,22 @@ export const AdelanteEHR = {
   // ----- SDOH plan items -----
   addSdohItem(
     patientId: string,
-    input: { need: string; note?: string; visibleToPatient?: boolean },
+    input: {
+      need: string;
+      note?: string;
+      visibleToPatient?: boolean;
+      /** §Phase 2 provenance. Defaults to staff-identified, which is what a
+       * chart-side "add need" action really is; every other caller passes
+       * its own real source. */
+      source?: SdohItemSource;
+    },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.need.trim()) return;
     const item: SdohPlanItem = {
       id: uid(),
       need: input.need.trim(),
+      source: input.source ?? "staff_assessed",
       status: "identified",
       note: input.note,
       visibleToPatient: input.visibleToPatient ?? true,
@@ -12406,6 +12445,7 @@ export const AdelanteEHR = {
       };
     AdelanteEHR.addSdohItem(gate.link.patientId, {
       need,
+      source: "advocate_reported",
       note: `${input.note ? `${input.note} ` : ""}(Raised by ${gate.link.advocateName}, advocate)`,
     });
     _advocateAudit(gate.link, "advocate_coordination_added", "care_coordination", { need });
