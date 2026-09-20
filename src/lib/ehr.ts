@@ -388,9 +388,36 @@ export type SdohStatus =
   | "scheduled"
   | "completed"
   | "not_completed";
+/**
+ * §Intake/SDOH Redesign Phase 2 — provenance on a social-need row.
+ *
+ * Same convention as `ResourceReferralSource` / `CalomsDataSource`: a small
+ * closed string union stored on the record itself, never inferred at read
+ * time. The values name HOW the need was established, because that changes
+ * how much weight it carries:
+ *  - `pre_release_hrsn`   a positive domain on the scored CMS AHC-HRSN tool
+ *  - `intake_self_report` a checkbox the person ticked in their own intake
+ *  - `staff_assessed`     a staff member identified it in the chart
+ *  - `advocate_reported`  raised by a linked advocate through coordination
+ */
+export type SdohItemSource =
+  | "pre_release_hrsn"
+  | "intake_self_report"
+  | "staff_assessed"
+  | "advocate_reported";
+
+export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
+  pre_release_hrsn: "From pre-release screening",
+  intake_self_report: "Self-reported at intake",
+  staff_assessed: "Staff-identified",
+  advocate_reported: "Raised by advocate",
+};
+
 export interface SdohPlanItem {
   id: string;
   need: string;
+  /** How this need was established. Required — see `SdohItemSource`. */
+  source: SdohItemSource;
   referralId?: string;
   status: SdohStatus;
   note?: string;
