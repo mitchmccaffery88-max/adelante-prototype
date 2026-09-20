@@ -1547,9 +1547,17 @@ function IntakePage() {
               <div className="flex justify-between pt-2 border-t">
                 <span>Needs flagged</span>
                 <span className="font-medium text-navy">
-                  {Object.values(needs).filter(Boolean).length} of 4
+                  {needsPlan.capture.filter((k) => needs[k]).length +
+                    needsPlan.known.filter((r) => knownAnswers[r.intakeKey] === "yes").length}{" "}
+                  of {needsPlan.capture.length + needsPlan.known.length}
                 </span>
               </div>
+              {needsPlan.onFileOnly.length > 0 && (
+                <div className="flex justify-between">
+                  <span>Also on file from screening</span>
+                  <span className="font-medium text-navy">{needsPlan.onFileOnly.length}</span>
+                </div>
+              )}
             </div>
           </div>
         )}
