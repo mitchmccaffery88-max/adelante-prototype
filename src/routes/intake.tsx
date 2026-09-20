@@ -11,12 +11,16 @@ import { Badge } from "@/components/ui/badge";
 import { SCREENERS, severityFor } from "@/lib/screeners";
 import {
   AdelanteEHR,
+  SDOH_SOURCE_LABEL,
   useEhr,
   type CoverageStatus,
   type ContactChannel,
   type BestTime,
   type PreferredLanguage,
 } from "@/lib/ehr";
+// §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
+import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
+import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
 import {
   cleanEmergencyContacts,
   emptyEmergencyContact,
