@@ -6570,7 +6570,12 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const now = new Date().toISOString();
-    p.needs = payload.needs;
+    // Phase 3: `Patient.needs` stays written for the real consumers that still
+    // read it (`needs.substanceUse` in the care-plan SUD signal, the CalOMS
+    // employment field). MERGED, not replaced — intake only collects four
+    // categories, and a whole-object assignment silently erased flags like
+    // `substanceUse` that intake never asks about.
+    p.needs = { ...(p.needs ?? {}), ...payload.needs };
     // §Consent re-prompt safety — intake is re-enterable (re-screen tasks
     // deep-link back to /intake). A second pass through this flow must never
     // DOWNGRADE a consent that is already on file: an abandoned or skipped
