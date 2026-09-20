@@ -1161,29 +1161,111 @@ function IntakePage() {
         )}
 
         {current.key === "needs" && (
-          <div className="space-y-3">
-            <p className="text-sm text-muted-foreground">
-              Tell us what support you need right now. Select all that apply.
-            </p>
-            {(
-              [
-                ["housing", "Stable housing"],
-                ["food", "Food / CalFresh"],
-                ["employment", "Employment / job training"],
-                ["transport", "Transportation"],
-              ] as const
-            ).map(([k, l]) => (
-              <label
-                key={k}
-                className="flex items-center min-h-11 gap-3 rounded-lg border py-3 px-3 cursor-pointer hover:border-teal"
+          <div className="space-y-5" data-testid="needs-step">
+            {/* §Phase 3 — already-known needs are confirmed, not re-asked. */}
+            {needsPlan.known.length > 0 && (
+              <div className="space-y-3" data-testid="needs-known">
+                <div>
+                  <h3 className="text-sm font-medium">What we already know</h3>
+                  <p className="text-sm text-muted-foreground">
+                    These are already on your record. Tell us whether each one still applies — you
+                    don&apos;t have to answer them again from scratch.
+                  </p>
+                </div>
+                {needsPlan.known.map((row) => (
+                  <div
+                    key={row.intakeKey}
+                    className="rounded-lg border p-3 space-y-2"
+                    data-testid={`needs-known-${row.intakeKey}`}
+                  >
+                    <div className="flex flex-wrap items-center gap-2">
+                      <span className="text-sm font-medium">{row.need}</span>
+                      <Badge variant="outline" className="text-[10px]">
+                        {SDOH_SOURCE_LABEL[row.source]}
+                      </Badge>
+                    </div>
+                    <p className="text-xs text-muted-foreground">{row.evidence}</p>
+                    <div className="flex flex-wrap gap-2">
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={knownAnswers[row.intakeKey] === "yes" ? "default" : "outline"}
+                        data-testid={`needs-known-${row.intakeKey}-yes`}
+                        onClick={() =>
+                          setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "yes" }))
+                        }
+                      >
+                        Still applies
+                      </Button>
+                      <Button
+                        type="button"
+                        size="sm"
+                        variant={knownAnswers[row.intakeKey] === "no" ? "default" : "outline"}
+                        data-testid={`needs-known-${row.intakeKey}-no`}
+                        onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "no" }))}
+                      >
+                        This has changed
+                      </Button>
+                    </div>
+                    {knownAnswers[row.intakeKey] === "no" && (
+                      <p className="text-xs text-muted-foreground">
+                        Thanks — we&apos;ll leave it on your plan for now and someone on your care
+                        team will go over it with you.
+                      </p>
+                    )}
+                  </div>
+                ))}
+              </div>
+            )}
+
+            {/* Positive HRSN domains intake cannot honestly confirm or deny. */}
+            {needsPlan.onFileOnly.length > 0 && (
+              <div
+                className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 space-y-2"
+                data-testid="needs-on-file-only"
               >
-                <Checkbox
-                  checked={needs[k]}
-                  onCheckedChange={(v) => setNeeds({ ...needs, [k]: Boolean(v) })}
-                />
-                <span className="text-sm">{l}</span>
-              </label>
-            ))}
+                <h3 className="text-sm font-medium">Also on file from your earlier screening</h3>
+                <p className="text-xs text-muted-foreground">
+                  Your care team already has these. We&apos;re not asking about them here — they
+                  came from a full screening, and this short form isn&apos;t the right place to
+                  change them. Your care team will follow up with you directly.
+                </p>
+                <ul className="space-y-1">
+                  {needsPlan.onFileOnly.map((d) => (
+                    <li
+                      key={d.domainKey}
+                      className="text-sm"
+                      data-testid={`needs-on-file-${d.domainKey}`}
+                    >
+                      • {d.domainLabel}
+                    </li>
+                  ))}
+                </ul>
+              </div>
+            )}
+
+            {needsPlan.capture.length > 0 && (
+              <div className="space-y-3" data-testid="needs-capture">
+                <p className="text-sm text-muted-foreground">
+                  {needsPlan.known.length > 0 || needsPlan.onFileOnly.length > 0
+                    ? "Anything else you need help with right now? Select all that apply."
+                    : "Tell us what support you need right now. Select all that apply."}
+                </p>
+                {needsPlan.capture.map((k) => (
+                  <label
+                    key={k}
+                    className="flex items-center min-h-11 gap-3 rounded-lg border py-3 px-3 cursor-pointer hover:border-teal"
+                  >
+                    <Checkbox
+                      checked={needs[k]}
+                      data-testid={`needs-capture-${k}`}
+                      onCheckedChange={(v) => setNeeds({ ...needs, [k]: Boolean(v) })}
+                    />
+                    <span className="text-sm">{INTAKE_NEED_LABEL[k]}</span>
+                  </label>
+                ))}
+              </div>
+            )}
           </div>
         )}
 
