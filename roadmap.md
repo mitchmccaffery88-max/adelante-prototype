@@ -1,7 +1,16 @@
 # Roadmap
 
 ## In progress
-- [ ] Investigation: intake↔scheduling coordination (pre-release conflict risk) + intake SDOH fidelity/handoff — investigation only, no code.
+- [ ] Intake/SDOH Redesign Phase 1 — pre-release episode release transition (plan approved).
+
+## Done
+- [x] Investigation: intake↔scheduling coordination + intake SDOH fidelity/handoff (reported).
+- [x] Investigation: pre-release SDOH vs general intake duplication risk (reported).
 
 ## Paused (plan written, not approved)
-- [ ] Staff-initiated patient record creation (no login attached) — plan at `.lovable/plan.md`.
+- [ ] Staff-initiated patient record creation (no login attached).
+
+## Later phases (sequenced, not started)
+- [ ] SDOH prerequisites: intake↔AHC-HRSN need mapping table, `SdohPlanItem` provenance field.
+- [ ] Intake SDOH reconciliation against existing pre-release data.
+- [ ] Scheduling: patient-side conflict checks + appointment provenance.

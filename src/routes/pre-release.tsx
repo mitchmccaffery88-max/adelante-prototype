@@ -25,6 +25,8 @@ import {
 } from "@/lib/ehr";
 import {
   canWritePreReleaseForm,
+  canWritePreReleaseEpisode,
+
   canReadPreRelease,
   getStaffMember,
   staffForRole,
@@ -356,12 +358,199 @@ function useAttribution(episode: PreReleaseEpisode) {
   return { ...result, needsProxy: result.mode === "proxy", subject };
 }
 
+const EPISODE_STATUS_LABEL: Record<PreReleaseEpisode["status"], string> = {
+  open: "Open",
+  released: "Released",
+  closed: "Closed",
+};
+
+/**
+ * §Intake/SDOH Phase 1 — the episode lifecycle control.
+ *
+ * Placed here, beside the timeline card, because the timeline already renders
+ * a DERIVED "Released N days ago" line off the anticipated date while the
+ * record itself still says open — that gap is exactly what this fixes. The
+ * real population track, and with it the patient's Day-0 reentry module, only
+ * moves when a human confirms the person is actually out.
+ */
+function EpisodeLifecycleCard({
+  episode,
+  canWrite,
+  entryOk,
+  entryReason,
+}: {
+  episode: PreReleaseEpisode;
+  canWrite: boolean;
+  entryOk: boolean;
+  entryReason?: string;
+}) {
+  const { role, staffName } = useActingStaff();
+  const [confirmRelease, setConfirmRelease] = useState(false);
+  const [confirmClose, setConfirmClose] = useState(false);
+  const [releasedOn, setReleasedOn] = useState("");
+  const [closeReason, setCloseReason] = useState("");
+  const actionable = canWrite && entryOk;
+
+  const doRelease = () => {
+    try {
+      AdelanteEHR.markPreReleaseEpisodeReleased({
+        episodeId: episode.id,
+        confirmedBy: staffName,
+        actorRole: role,
+        ...(releasedOn ? { releasedOn } : {}),
+      });
+      setConfirmRelease(false);
+      toast.success("Release confirmed", {
+        description: "Continuity moves to the community plan; reentry supports are now open.",
+      });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not confirm release.");
+    }
+  };
+
+  const doClose = () => {
+    try {
+      AdelanteEHR.closePreReleaseEpisode({
+        episodeId: episode.id,
+        reason: closeReason,
+        closedBy: staffName,
+        actorRole: role,
+      });
+      setConfirmClose(false);
+      setCloseReason("");
+      toast.success("Episode closed.");
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not close the episode.");
+    }
+  };
+
+  return (
+    <Card className="p-4" data-testid="episode-lifecycle">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div>
+          <div className="font-medium">Episode status</div>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {episode.status === "open"
+              ? "Still recorded as in custody. Confirm release once the person is actually out — the anticipated date alone does not move it."
+              : episode.status === "released"
+                ? "Released. The reentry care plan, Day-one supports and obligations are open to this person."
+                : `Closed${episode.closedReason ? ` — ${episode.closedReason}` : ""}.`}
+          </p>
+        </div>
+        <div className="flex items-center gap-2">
+          <Badge
+            data-testid="episode-status-badge"
+            variant={episode.status === "open" ? "outline" : "secondary"}
+          >
+            {EPISODE_STATUS_LABEL[episode.status]}
+          </Badge>
+          {actionable && episode.status === "open" && (
+            <Button
+              size="sm"
+              data-testid="confirm-release-btn"
+              onClick={() => setConfirmRelease(true)}
+            >
+              Confirm release
+            </Button>
+          )}
+          {actionable && episode.status === "released" && (
+            <Button
+              size="sm"
+              variant="outline"
+              data-testid="close-episode-btn"
+              onClick={() => setConfirmClose(true)}
+            >
+              Close episode
+            </Button>
+          )}
+        </div>
+      </div>
+      {!actionable && episode.status !== "closed" && (
+        <p className="mt-2 text-xs text-muted-foreground" data-testid="episode-lifecycle-readonly">
+          {canWrite
+            ? entryReason
+            : "Your role can read this episode but cannot move it between open, released and closed."}
+        </p>
+      )}
+
+      <Dialog open={confirmRelease} onOpenChange={setConfirmRelease}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Confirm this person has been released</DialogTitle>
+            <DialogDescription>
+              This changes what they see: reentry supports, day-one planning and their obligations
+              view open up. Only confirm it once you know they are actually out.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="released-on">Actual release date (optional)</Label>
+            <Input
+              id="released-on"
+              type="date"
+              value={releasedOn}
+              onChange={(e) => setReleasedOn(e.target.value)}
+            />
+            <p className="text-xs text-muted-foreground">
+              Leave blank if it matches the anticipated date of{" "}
+              {episode.anticipatedReleaseDate}.
+            </p>
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmRelease(false)}>
+              Cancel
+            </Button>
+            <Button onClick={doRelease} data-testid="confirm-release-submit">
+              Confirm release
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      <Dialog open={confirmClose} onOpenChange={setConfirmClose}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Close this episode</DialogTitle>
+            <DialogDescription>
+              Everything captured here is kept as the handoff record. Closing means the
+              pre-release work is finished, not that support has ended.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-2">
+            <Label htmlFor="close-reason">Reason</Label>
+            <Textarea
+              id="close-reason"
+              value={closeReason}
+              onChange={(e) => setCloseReason(e.target.value)}
+              placeholder="e.g. Handoff to ECM Provider complete"
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="ghost" onClick={() => setConfirmClose(false)}>
+              Cancel
+            </Button>
+            <Button
+              onClick={doClose}
+              disabled={!closeReason.trim()}
+              data-testid="close-episode-submit"
+            >
+              Close episode
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+    </Card>
+  );
+}
+
 function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
+
   const rows = useEhr(() => AdelanteEHR.preReleaseChecklist(episode.id));
   const plan = useEhr(() => AdelanteEHR.getReentryCarePlan(episode.id));
   const capacity = useEhr(() => AdelanteEHR.preReleaseCapacityState(episode.id));
   const patient = useEhr(() => AdelanteEHR.listPatients()).find((p) => p.id === episode.patientId);
   const { needsProxy, subject, ok, reason, attribution } = useAttribution(episode);
+  const { role: actingRole } = useActingStaff();
+
   const [openForm, setOpenForm] = useState<PreReleaseFormDef | null>(null);
   const [openScreener, setOpenScreener] = useState<string | null>(null);
   const [planOpen, setPlanOpen] = useState(false);
@@ -372,6 +561,13 @@ function EpisodePanel({ episode }: { episode: PreReleaseEpisode }) {
   return (
     <div className="space-y-4">
       <PreReleaseTimelineCard episode={episode} />
+      <EpisodeLifecycleCard
+        episode={episode}
+        canWrite={canWritePreReleaseEpisode(actingRole)}
+        entryOk={ok}
+        {...(reason ? { entryReason: reason } : {})}
+      />
+
       <Card className="p-4">
         <div className="flex flex-wrap items-center justify-between gap-2">
           <div>
