@@ -9216,6 +9216,48 @@ export const AdelanteEHR = {
     };
   },
   /**
+   * §Intake/SDOH Phase 1 — the real open → released transition.
+   *
+   * Release is the clinically meaningful event, and it is the ONLY thing that
+   * moves the derived population track off `pre_release_ji` while the episode
+   * is still being worked: `resolvePopulationTrack` checks for an open episode
+   * first, and `dayZeroAvailability` triggers specifically on
+   * `status === "released"`. Closing (below) is the later administrative wrap.
+   *
+   * Deliberately NOT automatic. `anticipatedReleaseDate` is anticipated —
+   * dates slip both ways, and inferring release from a calendar would silently
+   * flip what the patient sees. A human confirms the person is actually out.
+   */
+  markPreReleaseEpisodeReleased(input: {
+    episodeId: string;
+    confirmedBy: string;
+    actorRole: string;
+    /** Actual release date (ISO date), when it differs from the anticipated one. */
+    releasedOn?: string;
+  }): PreReleaseEpisode {
+    const ep = preReleaseEpisodes.find((e) => e.id === input.episodeId);
+    if (!ep) throw new Error("Pre-release episode not found.");
+    if (ep.status !== "open")
+      throw new Error(`This episode is already ${ep.status}; release can only be confirmed once.`);
+    ep.status = "released";
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_episode_released",
+      patientId: ep.patientId,
+      actorId: input.confirmedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        anticipatedReleaseDate: ep.anticipatedReleaseDate,
+        ...(input.releasedOn ? { releasedOn: input.releasedOn } : {}),
+      },
+    });
+    // Continuity moves to the community plan the moment the person is out.
+    _recomputeCarePlan(ep.patientId, "pre_release_episode_released");
+    emit();
+    return ep;
+  },
+  /**
    * Closes an episode (member released, transferred, or opened in error). The
    * episode and its captured forms are retained — they are the hand-off
    * record the ECM Provider reads at D0 — but the patient becomes eligible
@@ -9224,6 +9266,7 @@ export const AdelanteEHR = {
   closePreReleaseEpisode(input: {
     episodeId: string;
     reason: string;
+
     closedBy: string;
     actorRole: string;
   }): PreReleaseEpisode {

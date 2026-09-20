@@ -1257,6 +1257,16 @@ export function canReadPreRelease(role: StaffRole): boolean {
   return canAccess(role, "pre_release").level !== "none";
 }
 
+/**
+ * §Intake/SDOH Phase 1 — episode lifecycle (confirm release, close episode).
+ * Same write authority already required to record task-list and care-plan
+ * activity on the episode; read-only roles see the status but cannot move it.
+ */
+export function canWritePreReleaseEpisode(role: StaffRole): boolean {
+  return canAccess(role, "pre_release").level === "write";
+}
+
+
 let acting: StaffRole = (() => {
   try {
     const v = typeof window !== "undefined" ? window.localStorage.getItem(KEY) : null;
