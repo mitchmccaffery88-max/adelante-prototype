@@ -332,6 +332,16 @@ function IntakePage() {
    * (Track A pre-release) — both surfaced by `hasKnownReferralSource`.
    */
   const knownSource = useEhr(() => AdelanteEHR.hasKnownReferralSource(currentId));
+  // §Phase 3 — what the record already knows about this person's social needs,
+  // so the Needs step confirms rather than blindly re-asks.
+  const needsPlan = useMemo(
+    () =>
+      buildIntakeNeedsPlan({
+        domains: patient?.screeners?.["ahc-hrsn"]?.domains,
+        items: patient?.sdohPlan?.items,
+      }),
+    [patient],
+  );
   const frontDoor = useEhr(() => AdelanteEHR.getFrontDoorEntry(currentId));
   const askHeardAbout = shouldAskHeardAbout({
     // No front-door record (e.g. deep-linked straight into intake) is treated
