@@ -3084,6 +3084,7 @@ const patients: Patient[] = [
       items: [
         {
           id: "sdoh1",
+          source: "staff_assessed",
           need: "Transitional housing placement",
           status: "sent",
           note: "Referred to Tulare Reentry Housing Collaborative.",
@@ -3093,6 +3094,7 @@ const patients: Patient[] = [
         },
         {
           id: "sdoh2",
+          source: "staff_assessed",
           need: "Rides to appointments",
           status: "scheduled",
           note: "Medi-Cal transportation set up for therapy days.",
@@ -3102,6 +3104,7 @@ const patients: Patient[] = [
         },
         {
           id: "sdoh3",
+          source: "staff_assessed",
           need: "Job readiness program",
           status: "identified",
           visibleToPatient: true,
@@ -8671,13 +8674,22 @@ export const AdelanteEHR = {
   // ----- SDOH plan items -----
   addSdohItem(
     patientId: string,
-    input: { need: string; note?: string; visibleToPatient?: boolean },
+    input: {
+      need: string;
+      note?: string;
+      visibleToPatient?: boolean;
+      /** §Phase 2 provenance. Defaults to staff-identified, which is what a
+       * chart-side "add need" action really is; every other caller passes
+       * its own real source. */
+      source?: SdohItemSource;
+    },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.need.trim()) return;
     const item: SdohPlanItem = {
       id: uid(),
       need: input.need.trim(),
+      source: input.source ?? "staff_assessed",
       status: "identified",
       note: input.note,
       visibleToPatient: input.visibleToPatient ?? true,
@@ -12433,6 +12445,7 @@ export const AdelanteEHR = {
       };
     AdelanteEHR.addSdohItem(gate.link.patientId, {
       need,
+      source: "advocate_reported",
       note: `${input.note ? `${input.note} ` : ""}(Raised by ${gate.link.advocateName}, advocate)`,
     });
     _advocateAudit(gate.link, "advocate_coordination_added", "care_coordination", { need });
