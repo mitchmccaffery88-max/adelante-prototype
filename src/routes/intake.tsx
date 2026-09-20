@@ -502,8 +502,34 @@ function IntakePage() {
     if (askHeardAbout && heardAbout) {
       AdelanteEHR.recordFrontDoorEntry(currentId, { heardAbout });
     }
+    // §Phase 3 — real SDOH rows, with honest provenance. Confirmed needs keep
+    // the source they were ESTABLISHED with (a pre-release HRSN finding stays
+    // `pre_release_hrsn`); only genuinely new, self-ticked needs are written as
+    // `intake_self_report`. Needs on file that the person did NOT confirm are
+    // left standing for a human to work — intake cannot resolve them.
+    AdelanteEHR.applyIntakeNeeds(currentId, {
+      confirmed: needsPlan.known
+        .filter((r) => knownAnswers[r.intakeKey] === "yes")
+        .map((r) => ({
+          need: r.need,
+          source: r.source,
+          ...(r.existingItemId ? { existingItemId: r.existingItemId } : {}),
+        })),
+      selfReported: needsPlan.capture
+        .filter((k) => needs[k])
+        .map((k) => ({ need: INTAKE_NEED_LABEL[k] })),
+    });
     AdelanteEHR.completeIntake(currentId, {
-      needs,
+      // Backward compatibility: the four booleans still reflect what intake
+      // learned, including needs confirmed through the "still applies" path.
+      needs: {
+        ...needs,
+        ...Object.fromEntries(
+          needsPlan.known
+            .filter((r) => knownAnswers[r.intakeKey] === "yes")
+            .map((r) => [r.intakeKey, true]),
+        ),
+      },
       hipaa: effectiveHipaa,
       part2Sud: effectiveSud === true,
     });
