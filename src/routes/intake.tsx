@@ -187,6 +187,12 @@ function IntakePage() {
     employment: false,
     transport: false,
   });
+  // §Phase 3 — answers to the "still applies?" confirmation for needs the
+  // record already knows about. Separate from `needs`, which stays the raw
+  // four-checkbox capture for categories with no prior evidence.
+  const [knownAnswers, setKnownAnswers] = useState<
+    Partial<Record<IntakeNeedKey, "yes" | "no">>
+  >({});
   const [coverage, setCoverage] = useState<{
     status: CoverageStatus;
     countyOfRelease: string;
