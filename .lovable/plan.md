@@ -1,89 +1,52 @@
-# Staff-initiated patient record creation (no login attached)
+# Phase 1 — Pre-release episode release transition
 
-## What I found first
+## What I found (and one correction to the brief)
 
-- `AdelanteEHR.createPatient` already supports credential-free creation: `CaseloadUploadDialog`
-  (bulk Track A) and `openPreReleaseEpisodeForNewPatient` (in-custody) both call it with no
-  `signupCredential`. There is no individual staff "create one chart" action anywhere.
-- `openPreReleaseEpisodeForNewPatient` is the precedent for a named wrapper: it calls the real
-  `createPatient`, then writes one audit event (`in_custody_patient_created`). I'll mirror that
-  shape exactly rather than inventing a second creation mechanism.
-- **Important honesty finding:** `redeemEnrollmentCode` does support "record first, login later" —
-  it never creates a patient, it attaches credential metadata to an existing one. But the only
-  place an `EnrollmentCode` is ever issued today is `completeReentryCarePlan`, and the
-  `EnrollmentCode` type *requires* `episodeId` and `carePlanId`. So a walk-in chart created this
-  way has **no real way to get a code today**. I will not fake one. See "What the UI will honestly
-  say" below — this is the main thing needing your call.
+The brief says every `post_release_ji` surface is dead. That is not quite what the code does, and the difference changes the fix:
+
+- **Obligations card** and **PO-disclosure card** both gate on `allow={["pre_release_ji", "post_release_ji"]}`. They were already active for these patients under the stuck `pre_release_ji` track. Not broken.
+- **Day-0 reentry module** is the genuinely broken one, and for a second, separate reason: `dayZeroAvailability` requires `eps.some(e => e.status === "released")` — literally the string `"released"`. Nothing in the app ever sets it.
+
+That second fact settles the status-model question. `closePreReleaseEpisode` sets `"closed"`, which satisfies `resolvePopulationTrack` (it accepts `released` **or** `closed`) but **not** the Day-0 trigger. So closing alone would fix the population track and still leave Day-0 dark.
+
+## Status model decision
+
+Use the existing three-state type unchanged: `"open" | "released" | "closed"`. Do not invent a value.
+
+- `open → released` — the person is out. This is the real clinical event, and the one Day-0 reads.
+- `released → closed` — administrative wrap-up, already implemented and tested as `closePreReleaseEpisode`.
+
+So I add one new transition (`released`), not a replacement. `closePreReleaseEpisode` keeps its current behaviour and its existing tests untouched.
 
 ## Build
 
-### 1. EHR wrapper (`src/lib/ehr.ts`)
+**`src/lib/ehr.ts`** — new `markPreReleaseEpisodeReleased({ episodeId, confirmedBy, actorRole, releasedOn? })`:
+- throws if the episode is missing, or if status is not `open`
+- sets `status = "released"`
+- writes audit `pre_release_episode_released` (same shape as the close audit)
+- calls `_recomputeCarePlan` + `emit()`, mirroring `closePreReleaseEpisode` exactly
 
-`createStaffPatientRecord({ firstName, lastName, dob?, phone?, email?, preferredLanguage?, cin?,
-caseManagerId?, createdByStaffId, createdByStaffName, actorRole })`
+**`src/routes/pre-release.tsx`** — in `EpisodePanel`'s existing header card, beside the proxy badges:
+- a live status badge (Open / Released / Closed)
+- **"Confirm release"** when status is `open`
+- **"Close episode"** when status is `released` (reason required, matching the function's real requirement)
 
-- calls the existing `createPatient` unchanged, with **no** `signupCredential` and no session;
-- optionally calls the existing `assignCaseManager` when a case manager is picked;
-- appends one audit event `staff_created_patient_record` with the creating staff identity and
-  `portalAccess: "none"`.
+Both actions render only when the acting role has `write` on the `pre_release` record class **and** the existing `useAttribution` gate returns `ok` — the same authority already required to record task-list and care-plan activity, so proxy-blocked and read-only roles (therapist, sud_counselor, clinical_coordinator) see the badge but no buttons. Confirmation dialog on each: releasing changes what the patient sees.
 
-No new patient fields, no new flags. "Has no login" stays derived from absent `signupCredential`,
-exactly as it already is for every Track A record.
+Entry point reasoning: the episode panel is where the CF Care Manager already works the timeline, and the timeline card directly above already renders a derived "Released N days ago" line off the anticipated date — which is exactly the misleading part today, since the record still says open. Putting the real action next to that derived claim is the honest placement. `/released-search` is a lookup surface with no episode context; the chart's reentry tab is receiving-side.
 
-### 2. RBAC (`src/lib/roles.ts`)
+## Test
 
-New record class `patient_record_creation` + `canCreatePatientRecord(role)` derived from the
-matrix (same pattern as `assisted_signup` / `canRunAssistedSignup`). Grants, with reasoning:
-
-| Role | Grant | Why |
-|---|---|---|
-| ecm_provider | write | already `demographics: write`; owns D0–90 enrollment |
-| sud_counselor | write | already `demographics: write`; treating provider |
-| therapist, pmhnp | write | the stated case — a clinician opening a chart for a walk-in or an in-facility program patient who will never use the portal |
-| clinical_coordinator | write | owns intake disposition and record correction |
-| sys_admin | write | correction/support, matching `assisted_signup` |
-
-Deliberately excluded: `cf_care_manager` (in-custody creation already has its own purpose-built
-pre-release path; a walk-in is not their lane), `peer_specialist`, `medical_assistant`,
-`clinical_trainee`, `community_health_worker`, `billing*`, `credentialing_coordinator` — all
-read-only on demographics today.
-
-### 3. Entry point
-
-A "New patient chart" button in the `/case-manager` header, immediately beside the existing
-"Upload caseload" button — the individual counterpart of the bulk path, in the one place staff
-already manage caseloads. Rendered only when `canCreatePatientRecord(role)`; the dialog itself
-re-checks the same gate.
-
-New `src/components/NewPatientRecordDialog.tsx`: first/last name (required), DOB, phone, email,
-preferred language, CIN, optional case-manager assignment — plus a plain, permanent notice in the
-dialog that this creates a chart with **no portal login**. On success: toast + navigate to
-`/record/$patientId`.
-
-### 4. Honest chart signalling
-
-New `src/components/clinical/PortalAccessBadge.tsx`, rendered in the `/record/$patientId` header
-(and reused nowhere else for now). For any patient with no `signupCredential`:
-
-> **No portal login** — this chart has no patient account attached. The person can't sign in, see
-> messages, or use the app.
-
-Expanded (tooltip/inline): the one real mechanism that attaches a login to an *existing* chart is
-redeeming an `RE-` enrollment code at sign-up — and those codes are only issued when a reentry
-care plan is completed for someone in a pre-release episode. So the text will say plainly that
-this applies to pre-release records, and that for a directly-created chart there is no
-self-service path yet. No button that does nothing.
-
-### What the UI will honestly say
-
-I'm choosing accurate-but-blunt over a reassuring dead-end. If you'd rather I extend enrollment
-codes so staff can issue one against any chart (making `episodeId`/`carePlanId` optional), say so
-— that's a real change to the code-issuance model and your non-goals said not to touch it, so I'm
-leaving it alone and reporting the gap instead.
+`src/lib/__tests__/preReleaseRelease.test.ts` — end to end:
+- open episode → `resolvePopulation` is `pre_release_ji`, `dayZeroAvailability` unavailable
+- `markPreReleaseEpisodeReleased` → track is `post_release_ji`, Day-0 available with trigger `released_episode`, Obligations + PO-disclosure population checks pass
+- `closePreReleaseEpisode` after release still leaves `post_release_ji`
+- guard: cannot release a non-open episode; audit row written
 
 ## Verification
 
-Typecheck, full Vitest (plus a new unit test for the wrapper: no `signupCredential`, audit written,
-and a roles test for the gate). Browser at 1280px and 390px: create a chart as ECM provider,
-confirm no session/credential, confirm the badge, confirm a peer specialist sees no button and the
-dialog refuses. Zero console errors; caseload upload, signup, and code redemption untouched.
+Typecheck, full suite, build, browser at 1280 and 390 as a CF Care Manager: confirm release, watch the badge flip, then confirm the patient's Day-0 module activates where it previously did not. Zero console errors.
+
+## Non-goals
+
+No SDOH mapping/provenance work, no intake reconciliation, no scheduling changes. No auto-close on date — release stays a human confirmation.
