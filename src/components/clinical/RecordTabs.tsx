@@ -63,6 +63,7 @@ import {
   type TemplateAnswers,
 } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
+import { canCloneTemplate, templatesVisibleTo } from "@/lib/templateScope";
 import {
   useActingRole,
   useActingStaff,
