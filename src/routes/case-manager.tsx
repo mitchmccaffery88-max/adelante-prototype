@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type ResourceReferralCategory } from "@/lib/ehr";
+import { useActingStaff } from "@/lib/roles";
+import {
+  assignmentIdentityFor,
+  hasAssignmentIdentity,
+  scopeCaseload,
+  CASELOAD_SCOPE_NOTE,
+  type CaseloadScope,
+} from "@/lib/caseloadScope";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -102,8 +110,14 @@ export const Route = createFileRoute("/case-manager")({
 
 function CaseManagerPage() {
   const { t } = useI18n();
+  const acting = useActingStaff();
+  const identity = assignmentIdentityFor(acting);
+  const iHaveAssignments = hasAssignmentIdentity(identity);
+  // §EHR audit Phase 1g — the caseload list defaults to "assigned to me".
+  // A VIEW default, not a boundary; see src/lib/caseloadScope.ts.
+  const [scope, setScope] = useState<CaseloadScope>("mine");
   const cms = useEhr(() => AdelanteEHR.listCaseManagers());
-  const [cmId, setCmId] = useState(cms[0]?.id ?? "");
+  const [cmId, setCmId] = useState(identity.caseManagerId ?? cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
   const rawCaseload = useEhr(() => (cmId ? AdelanteEHR.patientsForCaseManager(cmId) : []));
   const allPatients = useEhr(() => AdelanteEHR.listPatients());
@@ -132,6 +146,9 @@ function CaseManagerPage() {
   });
   const [activeId, setActiveId] = useState<string | null>(rawCaseload[0]?.id ?? null);
   const active = useEhr(() => (activeId ? AdelanteEHR.getPatient(activeId) : undefined));
+  const myPatients = scopeCaseload(allPatients, identity, "mine");
+  const myCount = myPatients.length;
+  const scopedPatients = scope === "mine" ? myPatients : allPatients;
   const [profileId, setProfileId] = useState<string | null>(null);
   const [recordId, setRecordId] = useState<string | null>(null);
 
@@ -174,9 +191,46 @@ function CaseManagerPage() {
       </header>
 
       <section className="mb-6 flex flex-col gap-4">
+        <Card className="p-4" data-testid="caseload-scope-card">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-2" role="group" aria-label="Caseload view">
+              <Button
+                size="sm"
+                variant={scope === "mine" ? "default" : "outline"}
+                onClick={() => setScope("mine")}
+                data-testid="caseload-scope-mine"
+              >
+                My caseload ({scopedPatients.length === 0 && scope === "all" ? myCount : scope === "mine" ? scopedPatients.length : myCount})
+              </Button>
+              <Button
+                size="sm"
+                variant={scope === "all" ? "default" : "outline"}
+                onClick={() => setScope("all")}
+                data-testid="caseload-scope-all"
+              >
+                All program patients ({allPatients.length})
+              </Button>
+            </div>
+            <p className="text-xs text-muted-foreground" data-testid="caseload-scope-note">
+              {CASELOAD_SCOPE_NOTE}
+            </p>
+          </div>
+          {scope === "mine" && !iHaveAssignments && (
+            <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-no-identity">
+              No patients are assigned to {acting.staffName}. Your staff profile isn't linked to a
+              caseload or a provider record, so nothing matches "assigned to me". Switch to all
+              program patients to work the full list.
+            </p>
+          )}
+          {scope === "mine" && iHaveAssignments && myCount === 0 && (
+            <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-empty-mine">
+              No patients are currently assigned to {acting.staffName}.
+            </p>
+          )}
+        </Card>
         <CaseloadTable
-          patients={allPatients}
-          title="Program caseload (all clients)"
+          patients={scopedPatients}
+          title={scope === "mine" ? "My assigned caseload" : "Program caseload (all clients)"}
           onOpenPatient={setRecordId}
           showAssignClinician
           exportFilename="cm-caseload"
