@@ -6,18 +6,30 @@
 //   • draft note      — something is written and can be signed
 //   • no note yet     — an attended visit with nothing drafted; there is
 //                       nothing to sign, so the action is "open chart"
+import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+} from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { listUnsignedWork } from "@/lib/unsignedWork";
+import { listUnsignedWork, type UnsignedWorkRow } from "@/lib/unsignedWork";
 import { noteSignAuthorization } from "@/lib/notes";
-import { signUnsignedWorkRow } from "@/lib/noteSignFlow";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { noteAttestationStatement, noteSignBlockers, signUnsignedWorkRow } from "@/lib/noteSignFlow";
+import { emptyAttestationDraft, type AttestationDraft } from "@/lib/attestation";
+import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
+import { SignBlockerList } from "@/components/signature/SignBlockerList";
+import { canAccess, useActingStaff, type StaffRole } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { Lock } from "lucide-react";
+
 
 export const Route = createFileRoute("/notes-queue")({
   head: () => ({
@@ -35,11 +47,74 @@ function ageBadge(days: number) {
   return "bg-destructive/15 text-destructive";
 }
 
+/**
+ * Signing from the queue goes through the same shared attestation capture the
+ * chart uses — a versioned statement plus a drawn mark, with one consolidated
+ * blocker list. Authorization is still `noteSignAuthorization`, unchanged.
+ */
+function QueueSignDialog({
+  row,
+  actor,
+  onClose,
+}: {
+  row: UnsignedWorkRow;
+  actor: { role: StaffRole; staffId: string; staffName: string; clinicianId?: string };
+  onClose: () => void;
+}) {
+  const [draft, setDraft] = useState<AttestationDraft>(emptyAttestationDraft());
+  const auth = row.note ? noteSignAuthorization(row.note, actor) : null;
+  const statement = noteAttestationStatement(Boolean(auth?.asSupervisor));
+  const blockers = noteSignBlockers(row, actor, draft);
+
+  return (
+    <Dialog open onOpenChange={(o) => !o && onClose()}>
+      <DialogContent className="max-w-md">
+        <DialogHeader>
+          <DialogTitle>
+            {auth?.asSupervisor ? "Sign as supervisor" : "Sign note"} —{" "}
+            {row.patient.firstName} {row.patient.lastName}
+          </DialogTitle>
+          <DialogDescription>
+            {auth?.routesToCosign
+              ? "Your role signs with a cosigner — this will route for cosignature."
+              : "Signing releases any linked claim to billing."}
+          </DialogDescription>
+        </DialogHeader>
+        <SignBlockerList blockers={blockers} />
+        <AttestationSignatureBlock statement={statement} draft={draft} onChange={setDraft} />
+        <Button
+          className="w-full"
+          disabled={blockers.length > 0}
+          data-testid="queue-sign-confirm"
+          onClick={() => {
+            const res = signUnsignedWorkRow(row, actor, draft);
+            if (!res.ok) {
+              toast.error(res.error ?? "Could not sign this note.");
+              return;
+            }
+            toast.success(
+              res.routedToCosign
+                ? "Signed · routed for cosignature"
+                : "Note signed · claim released to billing",
+            );
+            onClose();
+          }}
+        >
+          Sign note
+        </Button>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
 function NotesQueuePage() {
   const actor = useActingStaff();
   const access = canAccess(actor.role, "therapy_notes");
   const rows = useEhr(() => listUnsignedWork());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const [signingId, setSigningId] = useState<string | null>(null);
+  const signingRow = rows.find((r) => r.id === signingId);
+
 
   if (access.level === "none") {
     return (
@@ -96,19 +171,11 @@ function NotesQueuePage() {
                   <div className="flex items-center gap-2 shrink-0">
                     <Badge className={ageBadge(row.ageDays)}>{row.ageDays}d</Badge>
                     {row.kind === "draft_note" && auth?.allowed ? (
-                      <Button
-                        size="sm"
-                        onClick={() => {
-                          const res = signUnsignedWorkRow(row, actor);
-                          if (!res.ok) toast.error(res.error ?? "Could not sign this note.");
-                          else if (res.routedToCosign)
-                            toast.success("Signed · routed for cosignature");
-                          else toast.success("Note signed · claim released to billing");
-                        }}
-                      >
+                      <Button size="sm" onClick={() => setSigningId(row.id)}>
                         {auth.asSupervisor ? "Sign as supervisor" : "Sign"}
                       </Button>
                     ) : (
+
                       <Button asChild size="sm" variant="outline">
                         <Link
                           to="/record/$patientId"
@@ -126,6 +193,10 @@ function NotesQueuePage() {
           </ul>
         )}
       </Card>
+      {signingRow && (
+        <QueueSignDialog row={signingRow} actor={actor} onClose={() => setSigningId(null)} />
+      )}
     </div>
+
   );
 }

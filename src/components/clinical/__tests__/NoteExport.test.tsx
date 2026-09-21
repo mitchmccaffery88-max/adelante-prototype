@@ -3,8 +3,10 @@
 // Export affordance rules, exercised through the real Notes tab: draft and
 // unsigned notes get no export action at all, and a SUD note masked on-screen
 // stays masked (no export button, and the builder refuses to render).
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+// jsdom cannot mount the real canvas signature pad; see the stub's comment.
+vi.mock("@/components/clinical/refusal/SignaturePad", () => import("@/test/signaturePadStub"));
 
 const { AdelanteEHR } = await import("@/lib/ehr");
 const { NotesTab } = await import("@/components/clinical/RecordTabs");

@@ -15,6 +15,10 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+// §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
+// primitive is a leaf module and must never pull the store in.
+import type { AttestationRecord } from "./attestation";
+
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 import type { HelperAttribution, SignupCredentialMeta } from "./signup";
 // §Reporting Tier 2 — structured CalOMS history. Type-only: caloms.ts imports
@@ -2045,6 +2049,15 @@ export interface ProgressNote {
   status?: NoteStatus;
   signedBy?: string;
   signedAt?: string;
+  /**
+   * §EHR audit Phase 1d — the persisted attestation + drawn signature, built
+   * by the shared primitive in `attestation.ts`. Carries the frozen wording
+   * the signer actually read (`statementSnapshot` / `statementVersion`), the
+   * same way `RefusalForm` freezes its risk text. Optional: notes signed
+   * before this existed, and non-interactive/test paths, have none.
+   */
+  attestation?: AttestationRecord;
+
   cosignRequired?: boolean;
   /** Roles eligible to cosign. Empty/undefined = any eligible clinical role. */
   cosignRole?: string[];
@@ -7920,6 +7933,15 @@ export const AdelanteEHR = {
        * escalates or records why not. Silence is not a valid outcome.
        */
       crisisDecision?: { kind: "escalate" } | { kind: "not_escalating"; reason: string };
+      /**
+       * §EHR audit Phase 1d — the persisted attestation record from the shared
+       * primitive. Optional here on purpose: the engine's job is to store what
+       * the capture surface produced, and every interactive signing surface
+       * now produces one. Requiring it in the store would break non-interactive
+       * paths (seeds, automations, tests) that have no capture surface at all,
+       * which would be a fake requirement rather than a real one.
+       */
+      attestation?: AttestationRecord;
     },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
@@ -7928,6 +7950,9 @@ export const AdelanteEHR = {
     if (status !== "draft" && status !== "declined")
       throw new Error("Only a draft note can be signed.");
     if (!input.attested) throw new Error("Attestation is required to sign a note.");
+    if (input.attestation && !input.attestation.signatureDataUrl)
+      throw new Error("The attestation record is missing its signature.");
+
     const selfSign = (NOTE_SELF_SIGN_ROLES as readonly string[]).includes(input.role);
     const cosignRequired = input.cosignRequired ?? !selfSign;
     if (!selfSign && !cosignRequired)
@@ -7948,6 +7973,7 @@ export const AdelanteEHR = {
 
     n.signedBy = input.signedBy;
     n.signedAt = new Date().toISOString();
+    if (input.attestation) n.attestation = input.attestation;
     if (input.autofillSnapshots) n.autofillSnapshots = input.autofillSnapshots;
     n.cosignRequired = cosignRequired;
     n.cosignRole = input.cosignRole?.length ? input.cosignRole : undefined;
@@ -7968,8 +7994,15 @@ export const AdelanteEHR = {
         cosignRequired,
         cosignRole: n.cosignRole ?? null,
         authorSource: n.authorSource ?? "human",
+        // Governance: which wording was attested to, and how identity was
+        // (not) established. A later statement edit cannot rewrite this row.
+        attestationStatementId: input.attestation?.statementId ?? null,
+        attestationStatementVersion: input.attestation?.statementVersion ?? null,
+        attestationMethod: input.attestation?.method ?? null,
+        signatureCaptured: Boolean(input.attestation?.signatureDataUrl),
       },
     });
+
     // §Notification feed — cosign routing. No named-cosigner field exists on
     // ProgressNote, so a note routes to its eligible cosign role pool.
     if (cosignRequired) {
