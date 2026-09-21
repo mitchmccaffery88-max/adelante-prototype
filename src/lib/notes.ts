@@ -7,7 +7,8 @@
 // not currently block signing.
 import { NOTE_SELF_SIGN_ROLES, noteStatus, type ProgressNote } from "@/lib/ehr";
 import { witnessCandidates } from "@/lib/mar";
-import type { StaffMember, StaffRole } from "@/lib/roles";
+import { STAFF_ROSTER, supervisionStatus, type StaffMember, type StaffRole } from "@/lib/roles";
+
 
 /** Roles allowed to put a signature (or cosignature) on a clinical note. */
 export function canSignNotes(role: StaffRole): boolean {
