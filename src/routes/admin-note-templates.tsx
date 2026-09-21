@@ -103,11 +103,17 @@ function slug(s: string) {
 }
 
 function AdminNoteTemplatesPage() {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   const access = canAccess(role, "note_templates");
-  const canWrite = access.level === "write";
-  const templates = useEhr(() => AdelanteEHR.listNoteTemplates(true));
+  // §Phase 2b — "write" is now specifically the right to author SHARED tiers
+  // (System / Discipline). Anyone who can read the library may keep their own
+  // personal copies: taking a personal template is documentation, not config.
+  const canAuthorShared = access.level === "write";
+  const actor = { role, staffId };
+  const all = useEhr(() => AdelanteEHR.listNoteTemplates(true));
+  const templates = templatesVisibleTo(all, actor);
 
+  const [tab, setTab] = useState<TemplateScope>("global");
   const [editing, setEditing] = useState<NoteTemplate | null>(null);
   const [creating, setCreating] = useState(false);
   const [deactivating, setDeactivating] = useState<NoteTemplate | null>(null);
@@ -125,6 +131,32 @@ function AdminNoteTemplatesPage() {
     );
   }
 
+  const myDiscipline = disciplineForRole(role);
+  const buckets: Record<TemplateScope, NoteTemplate[]> = {
+    personal: templates.filter((t) => scopeOf(t) === "personal"),
+    department: templates.filter((t) => scopeOf(t) === "department"),
+    global: templates.filter((t) => scopeOf(t) === "global"),
+  };
+  const tabs: { key: TemplateScope; label: string }[] = [
+    { key: "personal", label: `My templates (${buckets.personal.length})` },
+    {
+      key: "department",
+      label: `${myDiscipline?.label ?? "Discipline"} (${buckets.department.length})`,
+    },
+    { key: "global", label: `System (${buckets.global.length})` },
+  ];
+  const shown = buckets[tab];
+
+  const clone = (t: NoteTemplate) => {
+    try {
+      AdelanteEHR.cloneNoteTemplateToPersonal(t.id, { staffId, staffName });
+      toast.success("Saved as your own copy — edit it freely, the original is untouched.");
+      setTab("personal");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+
   return (
     <div className="mx-auto max-w-5xl space-y-6 px-4 py-8">
       <header className="flex flex-wrap items-start justify-between gap-3">
@@ -140,85 +172,149 @@ function AdminNoteTemplatesPage() {
             Structured documentation templates offered when a clinician starts a progress note.
           </p>
         </div>
-        {canWrite && (
-          <Button
-            className="bg-navy text-navy-foreground hover:bg-navy/90"
-            onClick={() => setCreating(true)}
-          >
-            <Plus className="mr-1 h-4 w-4" /> New template
-          </Button>
-        )}
+        <Button
+          className="bg-navy text-navy-foreground hover:bg-navy/90"
+          onClick={() => setCreating(true)}
+        >
+          <Plus className="mr-1 h-4 w-4" />{" "}
+          {canAuthorShared ? "New template" : "New personal template"}
+        </Button>
       </header>
 
-      {templates.length === 0 ? (
+      <div
+        role="tablist"
+        aria-label="Template scope"
+        data-testid="template-scope-tabs"
+        className="flex flex-wrap gap-2"
+      >
+        {tabs.map((t) => (
+          <Button
+            key={t.key}
+            role="tab"
+            aria-selected={tab === t.key}
+            data-testid={`template-tab-${t.key}`}
+            size="sm"
+            variant={tab === t.key ? "default" : "outline"}
+            onClick={() => setTab(t.key)}
+          >
+            {t.label}
+          </Button>
+        ))}
+      </div>
+      {tab === "department" && (
+        <p className="text-muted-foreground text-[11px]">{DEPARTMENT_DERIVATION_NOTE}</p>
+      )}
+
+      {shown.length === 0 ? (
         <EmptyState
           icon={FileText}
-          title="No templates yet"
-          description="Clinicians will use the built-in SOAP structure until a template is published."
+          title={
+            tab === "personal"
+              ? "No personal templates yet"
+              : tab === "department"
+                ? "No templates for your discipline"
+                : "No system templates yet"
+          }
+          description={
+            tab === "personal"
+              ? "Open a system or discipline template and choose “Save as my template” to start your own copy."
+              : "Clinicians will use the built-in SOAP structure until a template is published."
+          }
         />
       ) : (
         <div className="space-y-2">
-          {templates.map((t) => (
-            <Card key={t.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
-              <div>
-                <div className="flex items-center gap-2">
-                  <span className="font-medium text-navy">{t.title}</span>
-                  <Badge variant="outline" className="text-[10px]">
-                    v{t.version}
-                  </Badge>
-                  <Badge variant="outline" className="text-[10px]">
-                    {t.encounterType}
-                  </Badge>
-                  {!t.active && (
-                    <Badge className="border-0 bg-muted text-[10px] text-muted-foreground">
-                      Retired
+          {shown.map((t) => {
+            const mayEdit = canEditTemplate(actor, t);
+            const mayClone = canCloneTemplate(actor, t);
+            return (
+              <Card key={t.id} className="flex flex-wrap items-center justify-between gap-3 p-4">
+                <div>
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="font-medium text-navy">{t.title}</span>
+                    <Badge variant="outline" className="text-[10px]">
+                      v{t.version}
                     </Badge>
-                  )}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  key {t.key} · {t.schema.sections?.length ?? 0} sections ·{" "}
-                  {(t.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0)}{" "}
-                  fields
-                  {t.schema.scoring?.length ? ` · ${t.schema.scoring.length} scoring rule(s)` : ""}
-                </p>
-                {!t.active && t.deactivationReason && (
+                    <Badge variant="outline" className="text-[10px]">
+                      {t.encounterType}
+                    </Badge>
+                    <Badge variant="secondary" className="text-[10px]">
+                      {TEMPLATE_SCOPE_LABEL[scopeOf(t)]}
+                      {scopeOf(t) === "department" ? ` · ${departmentLabel(t.departmentId)}` : ""}
+                    </Badge>
+                    {(t.inheritedLockedKeys?.length ?? 0) > 0 && (
+                      <Badge variant="outline" className="gap-1 text-[10px]">
+                        <Lock className="h-3 w-3" /> {t.inheritedLockedKeys!.length} locked
+                      </Badge>
+                    )}
+                    {!t.active && (
+                      <Badge className="border-0 bg-muted text-[10px] text-muted-foreground">
+                        Retired
+                      </Badge>
+                    )}
+                  </div>
                   <p className="text-[11px] text-muted-foreground">
-                    Retired: {t.deactivationReason} — existing notes keep their content.
+                    key {t.key} · {t.schema.sections?.length ?? 0} sections ·{" "}
+                    {(t.schema.sections ?? []).reduce((n, s) => n + (s.fields?.length ?? 0), 0)}{" "}
+                    fields
+                    {t.schema.scoring?.length ? ` · ${t.schema.scoring.length} scoring rule(s)` : ""}
                   </p>
-                )}
-              </div>
-              {canWrite && (
-                <div className="flex items-center gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setEditing(t)}>
-                    Edit
-                  </Button>
-                  {t.active ? (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        setDeactivating(t);
-                        setReason("");
-                      }}
-                    >
-                      Deactivate
-                    </Button>
-                  ) : (
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      onClick={() => {
-                        AdelanteEHR.setNoteTemplateActive(t.id, true, staffName);
-                        toast.success("Template reactivated");
-                      }}
-                    >
-                      Reactivate
-                    </Button>
+                  {t.clonedFrom && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Copied from “{t.clonedFrom.title}” v{t.clonedFrom.version} — edits here never
+                      touch the original.
+                    </p>
+                  )}
+                  {!t.active && t.deactivationReason && (
+                    <p className="text-[11px] text-muted-foreground">
+                      Retired: {t.deactivationReason} — existing notes keep their content.
+                    </p>
                   )}
                 </div>
-              )}
-            </Card>
-          ))}
+                <div className="flex items-center gap-2">
+                  {mayClone && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      data-testid={`clone-template-${t.key}`}
+                      onClick={() => clone(t)}
+                    >
+                      <Copy className="mr-1 h-3.5 w-3.5" /> Save as my template
+                    </Button>
+                  )}
+                  {mayEdit && (
+                    <>
+                      <Button size="sm" variant="outline" onClick={() => setEditing(t)}>
+                        Edit
+                      </Button>
+                      {t.active ? (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setDeactivating(t);
+                            setReason("");
+                          }}
+                        >
+                          Deactivate
+                        </Button>
+                      ) : (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            AdelanteEHR.setNoteTemplateActive(t.id, true, staffName);
+                            toast.success("Template reactivated");
+                          }}
+                        >
+                          Reactivate
+                        </Button>
+                      )}
+                    </>
+                  )}
+                </div>
+              </Card>
+            );
+          })}
         </div>
       )}
 
@@ -226,12 +322,16 @@ function AdminNoteTemplatesPage() {
         <TemplateBuilderDialog
           template={editing}
           staffName={staffName}
+          staffId={staffId}
+          role={role}
+          canAuthorShared={canAuthorShared}
           onClose={() => {
             setCreating(false);
             setEditing(null);
           }}
         />
       )}
+
 
       <Dialog open={Boolean(deactivating)} onOpenChange={(o) => !o && setDeactivating(null)}>
         <DialogContent>
