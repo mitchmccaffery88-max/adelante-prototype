@@ -8714,7 +8714,9 @@ export const AdelanteEHR = {
     if (!p) return;
     const prev = p.consentState ?? {
       part2Sud: p.consents.part2Sud,
-      ecmShare: Boolean(p.coverage?.ecmEligible),
+      // §Phase 3a fix #1 — see `getConsentState`: eligibility is not consent.
+      ecmShare: false,
+
       sms: p.smsFallback,
     };
     if (purpose !== "hipaa") {
