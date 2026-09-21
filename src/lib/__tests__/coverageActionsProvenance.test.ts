@@ -101,7 +101,8 @@ describe("Phase 3a — Medi-Cal actions provenance", () => {
   });
 
   it("reactivation creates a real staff worklist row when a case manager is assigned", () => {
-    const id = newPatient({ caseManagerId: "cm1" });
+    const id = newPatient();
+    AdelanteEHR.assignCaseManager({ patientId: id, caseManagerId: "cm1" });
     const res = AdelanteEHR.requestReactivation(id, ACTOR);
     expect(res.staffTaskCreated).toBe(true);
     const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === id);
@@ -121,7 +122,8 @@ describe("Phase 3a — Medi-Cal actions provenance", () => {
   });
 
   it("enrollment assistance creates a real staff worklist row", () => {
-    const id = newPatient({ caseManagerId: "cm1" });
+    const id = newPatient();
+    AdelanteEHR.assignCaseManager({ patientId: id, caseManagerId: "cm1" });
     expect(AdelanteEHR.addEnrollmentAssistTask(id, ACTOR).staffTaskCreated).toBe(true);
     const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === id);
     expect(tasks.some((t) => /BenefitsCal/i.test(t.title))).toBe(true);
