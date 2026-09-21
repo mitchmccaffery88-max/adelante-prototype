@@ -46,10 +46,22 @@ export interface CredentialDoc {
   issuedAt?: string;
   expiresAt?: string;
   fileName?: string;
+  /**
+   * §EHR audit Phase 2a — the actual document, stored inline as a base64 data
+   * URL. Same convention as the drawn signatures captured by `SignaturePad`.
+   * Optional on purpose: seeded and historical rows carry only a file NAME,
+   * and those must keep rendering honestly as "no document on file".
+   */
+  fileDataUrl?: string;
+  fileType?: string;
+  fileSize?: number;
+  /** Staff member who attached the document (owner, or an assisting coordinator). */
+  uploadedBy?: string;
   uploadedAt: string;
   verifiedAt?: string;
   verifiedBy?: string;
   verificationMethod?: "primary_source" | "attestation";
+
 }
 
 export type PayerEnrollmentStatus = "enrolled" | "pending" | "not_enrolled" | "terminated";
@@ -417,9 +429,28 @@ export const AdelanteEHRExt = {
     emit();
   },
 
+  /**
+   * §EHR audit Phase 2a — licence expiry reconciliation.
+   * The `license` credential document is the source of truth; the booking
+   * hard-stop field on the clinician record is kept in step with it. When
+   * several licence documents exist, the LATEST expiry wins (a renewal
+   * supersedes the lapsing one). With no licence document on file the field is
+   * left untouched rather than cleared: absence of a scan is not proof that a
+   * licence lapsed, and silently unblocking or blocking booking on that basis
+   * would be wrong.
+   */
+  syncLicenseExpiry(clinicianId: string) {
+    const dates = credentials
+      .filter((c) => c.clinicianId === clinicianId && c.kind === "license" && c.expiresAt)
+      .map((c) => c.expiresAt!)
+      .sort();
+    const latest = dates[dates.length - 1];
+    if (latest) AdelanteEHR.setClinicianLicenseExpiry(clinicianId, latest);
+  },
   addCredential(input: Omit<CredentialDoc, "id" | "uploadedAt">) {
     const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso() };
     credentials.push(c);
+    this.syncLicenseExpiry(c.clinicianId);
     ehrBus.publish({ type: "credential.updated", clinicianId: c.clinicianId });
   },
   verifyCredential(id: string, by: string) {
@@ -435,9 +466,11 @@ export const AdelanteEHRExt = {
     if (i >= 0) {
       const clinicianId = credentials[i].clinicianId;
       credentials.splice(i, 1);
+      this.syncLicenseExpiry(clinicianId);
       ehrBus.publish({ type: "credential.updated", clinicianId });
     }
   },
+
 
   upsertEnrollment(input: Omit<PayerEnrollment, "id"> & { id?: string }) {
     if (input.id) {
@@ -758,6 +791,11 @@ export const AdelanteEHRExt = {
       AdelanteEHRExt.upsertClaimFromEncounter(a.id);
     });
 })();
+
+// §EHR audit Phase 2a — reconcile the seeded licence documents with the
+// booking hard-stop field on startup, so the two dates agree from the first
+// render rather than only after someone uploads.
+["c1", "c2", "c3"].forEach((id) => AdelanteEHRExt.syncLicenseExpiry(id));
 
 // ---------- React hook ----------
 export function useEhrExt<T>(selector: () => T): T {

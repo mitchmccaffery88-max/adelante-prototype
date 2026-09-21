@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
+import { CredentialDocumentViewer } from "@/components/credentials/CredentialDocumentViewer";
 
 export const Route = createFileRoute("/admin-credentialing")({
   head: () => ({
@@ -65,7 +66,7 @@ function CredentialingAdminPage() {
         <div className="overflow-x-auto">
           <table className="w-full text-sm">
             <thead className="text-left text-xs text-muted-foreground">
-              <tr><th className="py-1">Clinician</th><th>Kind</th><th>#</th><th>Expires</th><th>Status</th><th>Verified</th><th></th></tr>
+              <tr><th className="py-1">Clinician</th><th>Kind</th><th>#</th><th>Expires</th><th>Status</th><th>Document</th><th>Verified</th><th></th></tr>
             </thead>
             <tbody className="divide-y">
               {creds.map((c) => {
@@ -77,6 +78,20 @@ function CredentialingAdminPage() {
                     <td>{c.number ?? "—"}</td>
                     <td>{c.expiresAt ?? "—"}</td>
                     <td><Badge className={statusStyle[c.status]}>{c.status}</Badge></td>
+                    <td>
+                      {c.fileDataUrl ? (
+                        <CredentialDocumentViewer
+                          fileName={c.fileName}
+                          fileType={c.fileType}
+                          fileSize={c.fileSize}
+                          fileDataUrl={c.fileDataUrl}
+                        />
+                      ) : (
+                        <span className="text-xs text-muted-foreground">
+                          {c.fileName ? "name only" : "none"}
+                        </span>
+                      )}
+                    </td>
                     <td>{c.verifiedAt ? "✓" : "—"}</td>
                     <td className="text-right">
                       {!c.verifiedAt && (

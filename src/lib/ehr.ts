@@ -11322,7 +11322,25 @@ export const AdelanteEHR = {
     });
     return [header, ...lines].join("\n");
   },
+  /**
+   * §EHR audit Phase 2a — single source of truth for licence expiry.
+   *
+   * `Clinician.licenseExpiresOn` is what `canBook` enforces, but the document
+   * a human actually looks at is the `license` credential in ehr-ext. Those
+   * were two independent dates that could disagree. They are now reconciled in
+   * one direction: the credential DOCUMENT is authoritative and writes this
+   * field, which `canBook` continues to read. Nothing else writes it.
+   */
+  setClinicianLicenseExpiry(clinicianId: string, expiresOn: string | undefined) {
+    const c = clinicians.find((x) => x.id === clinicianId);
+    if (!c) return;
+    if (c.licenseExpiresOn === expiresOn) return;
+    if (expiresOn) c.licenseExpiresOn = expiresOn;
+    else delete c.licenseExpiresOn;
+    emit();
+  },
   /** Credentialing hard-stop: block booking with clinicians whose license expired. */
+
   canBook(clinicianId: string): { ok: true } | { ok: false; reason: string } {
     const c = clinicians.find((x) => x.id === clinicianId);
     if (!c) return { ok: false, reason: "Clinician not found." };
