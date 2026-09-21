@@ -6697,6 +6697,14 @@ export const AdelanteEHR = {
     serviceType?: ServiceType;
     modality?: "video" | "phone" | "in_person";
     locationId?: string;
+    /** How this booking was created. Defaults to `staff_scheduled`. */
+    source?: AppointmentSource;
+    /**
+     * Staff-only escape hatch for a deliberate overlap on the patient's own
+     * calendar (e.g. a correction in progress, or a paired visit a human has
+     * judged to be fine). Never set from patient self-booking.
+     */
+    allowPatientOverlap?: boolean;
   }) {
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
@@ -6719,7 +6727,21 @@ export const AdelanteEHR = {
     if (conflict) {
       throw new Error("That time was just taken. Please pick another slot.");
     }
-    const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
+    // Patient-level conflict: the clinician check above says nothing about the
+    // patient's OWN calendar, so a patient could self-book straight over an
+    // appointment the pre-release team arranged with a different clinician.
+    if (!input.allowPatientOverlap) {
+      const own = _patientOverlap(input.patientId, input.start, input.durationMin);
+      if (own) throw new Error(_patientOverlapMessage(own));
+    }
+    const { allowPatientOverlap: _ignored, ...fields } = input;
+    const a: Appointment = {
+      ...fields,
+      source: input.source ?? "staff_scheduled",
+      id: uid(),
+      status: "scheduled",
+      billingStatus: "draft",
+    };
     appointments.push(a);
     // Detect provider switch vs. patient's last provider (same service type when set).
     const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
