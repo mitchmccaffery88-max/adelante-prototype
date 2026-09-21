@@ -120,6 +120,14 @@ export type RecordClass =
   | "worklist"
   | "note_templates"
   | "catalog_governance"
+  // §EHR audit Phase 1f — PLATFORM administration: the system-wide audit trail
+  // (/admin-audit) and third-party integration health (/admin-vendors). This
+  // closes the swim-lane audit's Tab 7 finding (no dedicated audit /
+  // platform-config class) instead of compounding the documented workaround of
+  // borrowing `catalog_governance`. Deliberately separate from every clinical
+  // config class: the audit trail spans EVERY class (including Part 2 reads),
+  // so it must never be reachable as a side effect of a drug-catalog grant.
+  | "platform_administration"
   | "scheduling_rules"
   // §Group sessions — managing the group itself (schedule, roster, attendance).
   | "group_sessions"
