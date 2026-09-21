@@ -15,7 +15,9 @@ describe("mirrorNoteSignatureToLedger", () => {
   });
 
   it("advances the linked claim documented -> signed", () => {
-    const claim = AdelanteEHRExt.listClaims().find((c) => c.state === "documented");
+    const claim = AdelanteEHRExt.listClaims().find(
+      (c) => c.state === "documented" && !AdelanteEHRExt.isNoteSigned(c.encounterId),
+    );
     expect(claim).toBeTruthy();
     mirrorNoteSignatureToLedger({ appointmentId: claim!.encounterId }, "c1");
     expect(
