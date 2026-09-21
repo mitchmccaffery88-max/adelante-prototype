@@ -22,7 +22,6 @@ import {
 } from "@/lib/ehr";
 import {
   canAccess,
-  canManageProtocol,
   useActingStaff,
   STAFF_ROLES,
   type StaffRole,
@@ -41,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ListChecks, Lock, Play } from "lucide-react";
+import { ArrowLeft, ListChecks, Lock, Workflow } from "lucide-react";
 
 export const Route = createFileRoute("/worklist")({
   // §Facility & Custody — `?view=facility-protocols` is the nav group's
@@ -127,7 +126,6 @@ function WorklistPage() {
   const [forRole, setForRole] = useState(ANY);
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
-  const [running, setRunning] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
   // Driven by the URL so the nav entry, deep links, and the toggle stay in sync.
   const facilityRoundsOnly = view === "facility-protocols";
@@ -213,25 +211,6 @@ function WorklistPage() {
     toast[ok ? "success" : "error"](ok ? "Task claimed." : "Already claimed by someone else.");
   };
 
-  // §Scheduling rules — manual run only, same tier as starting a protocol.
-  const runRules = () => {
-    setRunning(true);
-    try {
-      const { total, results } = AdelanteEHR.runSchedulingRulesNow(staffName, role);
-      const detail = results
-        .filter((r) => r.tasksCreated > 0)
-        .map((r) => `${r.ruleKey}: ${r.tasksCreated}`)
-        .join(", ");
-      toast.success(`${total} task${total === 1 ? "" : "s"} generated`, {
-        description: detail || "Every matching patient already has a task this cycle.",
-      });
-    } catch (e) {
-      toast.error((e as Error).message);
-    } finally {
-      setRunning(false);
-    }
-  };
-
   return (
     <div className="mx-auto max-w-7xl space-y-5 px-4 py-6">
       <Button asChild variant="ghost" size="sm" className="w-fit">
@@ -251,9 +230,13 @@ function WorklistPage() {
               : "Cross-facility operational tasks. Counts below describe the filtered view."}
           </p>
         </div>
-        {canManageProtocol(role) && (
-          <Button variant="outline" size="sm" onClick={runRules} disabled={running}>
-            <Play className="h-3.5 w-3.5" /> {running ? "Running rules…" : "Run rules now"}
+        {/* §EHR audit Phase 1c — authoring AND execution both live behind the
+            `scheduling_rules` write gate on the rules page; this only links out. */}
+        {canAccess(role, "scheduling_rules").level !== "none" && (
+          <Button asChild variant="outline" size="sm">
+            <Link to="/admin-scheduling-rules">
+              <Workflow className="h-3.5 w-3.5" /> Scheduling rules
+            </Link>
           </Button>
         )}
       </header>

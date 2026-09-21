@@ -1,7 +1,7 @@
 // §Scheduling rule engine — admin registry.
 //
-// Rules are MANUALLY run from /worklist ("Run rules now"); nothing here
-// schedules itself. Conditions are two structured AND-matchers over real
+// Rules are authored, previewed and MANUALLY run HERE (one `scheduling_rules`
+// write gate for both); nothing schedules itself. Conditions are two structured AND-matchers over real
 // data (active Problem category, active Order frequency code) — deliberately
 // not a general expression language.
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -41,7 +41,7 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { EmptyState } from "@/components/EmptyState";
-import { ArrowLeft, Ban, Lock, Pencil, Plus, RotateCcw, Workflow } from "lucide-react";
+import { ArrowLeft, Ban, Eye, Lock, Pencil, Play, Plus, RotateCcw, Workflow } from "lucide-react";
 
 export const Route = createFileRoute("/admin-scheduling-rules")({
   head: () => ({
@@ -109,6 +109,8 @@ function SchedulingRulesPage() {
   const [open, setOpen] = useState(false);
   const [deactivating, setDeactivating] = useState<SchedulingRule | null>(null);
   const [reason, setReason] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
 
   if (access.level === "none") {
     return (
@@ -194,16 +196,34 @@ function SchedulingRulesPage() {
             <Workflow className="h-5 w-5 text-teal" /> Scheduling rules
           </h1>
           <p className="text-sm text-muted-foreground">
-            Rules generate worklist tasks when a supervisor runs them from the worklist. Nothing
-            here runs on its own.
+            Rules generate worklist tasks only when someone runs them here. Nothing runs on its own.
           </p>
         </div>
-        {canWrite && (
-          <Button onClick={startNew}>
-            <Plus className="h-4 w-4" /> New rule
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {canWrite && (
+            <Button variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Eye className="h-4 w-4" /> Preview run
+            </Button>
+          )}
+          {canWrite && (
+            <Button onClick={startNew}>
+              <Plus className="h-4 w-4" /> New rule
+            </Button>
+          )}
+        </div>
       </header>
+
+      {canWrite && (
+        <RunPreviewCard
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          staffName={staffName}
+          role={role}
+        />
+      )}
+
+      <RunHistoryCard />
+
 
       <Card className="p-3">
         {rules.length === 0 ? (
@@ -458,5 +478,125 @@ function SchedulingRulesPage() {
         </DialogContent>
       </Dialog>
     </div>
+  );
+}
+
+/**
+ * §EHR audit Phase 1c — dry run then commit, in one place and behind one gate.
+ * The preview reads the same matching + cadence logic the run uses.
+ */
+function RunPreviewCard({
+  open,
+  onOpenChange,
+  staffName,
+  role,
+}: {
+  open: boolean;
+  onOpenChange: (v: boolean) => void;
+  staffName: string;
+  role: StaffRole;
+}) {
+  const preview = useEhr(() => AdelanteEHR.previewSchedulingRules());
+  const [running, setRunning] = useState(false);
+
+  const commit = () => {
+    setRunning(true);
+    try {
+      const { total, results } = AdelanteEHR.runSchedulingRulesNow(staffName, role);
+      const detail = results
+        .filter((r) => r.tasksCreated > 0)
+        .map((r) => `${r.ruleKey}: ${r.tasksCreated}`)
+        .join(", ");
+      toast.success(`${total} task${total === 1 ? "" : "s"} generated`, {
+        description: detail || "Every matching patient already has a task this cycle.",
+      });
+      onOpenChange(false);
+    } catch (e) {
+      toast.error((e as Error).message);
+    } finally {
+      setRunning(false);
+    }
+  };
+
+  return (
+    <Dialog open={open} onOpenChange={onOpenChange}>
+      <DialogContent className="max-h-[80vh] overflow-y-auto sm:max-w-2xl">
+        <DialogHeader>
+          <DialogTitle>Preview run</DialogTitle>
+          <DialogDescription>
+            Nothing is created until you run. {preview.total} task
+            {preview.total === 1 ? "" : "s"} would be generated now.
+          </DialogDescription>
+        </DialogHeader>
+        <div className="space-y-3" data-testid="rule-run-preview">
+          {preview.rules.length === 0 && (
+            <p className="text-sm text-muted-foreground">No active rules.</p>
+          )}
+          {preview.rules.map((r) => (
+            <Card key={r.ruleId} className="p-3">
+              <p className="font-medium text-navy">{r.ruleLabel}</p>
+              <p className="text-xs text-muted-foreground">{r.ruleKey}</p>
+              <p className="mt-2 text-xs font-medium text-navy">
+                Would create {r.wouldCreate.length}
+              </p>
+              <ul className="text-xs text-muted-foreground">
+                {r.wouldCreate.map((p) => (
+                  <li key={p.patientId}>{p.patientName}</li>
+                ))}
+                {r.wouldCreate.length === 0 && <li>No one right now.</li>}
+              </ul>
+              {r.skipped.length > 0 && (
+                <>
+                  <p className="mt-2 text-xs font-medium text-navy">
+                    Skipped {r.skipped.length} — already has a task this cycle
+                  </p>
+                  <ul className="text-xs text-muted-foreground">
+                    {r.skipped.map((p) => (
+                      <li key={p.patientId}>{p.patientName}</li>
+                    ))}
+                  </ul>
+                </>
+              )}
+            </Card>
+          ))}
+        </div>
+        <DialogFooter>
+          <Button variant="ghost" onClick={() => onOpenChange(false)}>
+            Cancel
+          </Button>
+          <Button onClick={commit} disabled={running}>
+            <Play className="h-3.5 w-3.5" /> {running ? "Running…" : "Run now"}
+          </Button>
+        </DialogFooter>
+      </DialogContent>
+    </Dialog>
+  );
+}
+
+/** Run history, reconstructed from the audit trail (summary + per-task rows). */
+function RunHistoryCard() {
+  const runs = useEhr(() => AdelanteEHR.listSchedulingRuleRuns(10));
+  if (runs.length === 0) return null;
+  return (
+    <Card className="p-3" data-testid="rule-run-history">
+      <h2 className="font-display text-lg text-navy">Run history</h2>
+      <ul className="mt-2 space-y-2 text-xs">
+        {runs.map((run) => (
+          <li key={run.runId} className="border-l-2 border-muted pl-2">
+            <p className="text-navy">
+              {run.total} task{run.total === 1 ? "" : "s"} · {run.actorId ?? "unknown"}
+            </p>
+            <p className="text-muted-foreground">{new Date(run.at).toLocaleString()}</p>
+            <ul className="text-muted-foreground">
+              {run.tasks.map((t) => (
+                <li key={t.taskId}>
+                  {t.ruleKey} → {t.taskId}
+                </li>
+              ))}
+            </ul>
+          </li>
+        ))}
+      </ul>
+    </Card>
   );
 }
