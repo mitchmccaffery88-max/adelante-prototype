@@ -1166,8 +1166,13 @@ export interface Patient {
      * "reactivates automatically" messaging must not be shown to this person.
      */
     mediCalReactivationFollowUp?: boolean;
-    /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
-    snapshots?: CoverageSnapshot[];
+    /**
+     * §Phase 3b — dated payer spans, migrated here from the former standalone
+     * `CoverageSpan` store. Newest first. The outer `status`/`verified` stay
+     * the current summary view.
+     */
+    plans?: CoveragePlanSpan[];
+
     /**
      * §Phase 3a — append-only log of human eligibility checks, newest first.
      * `verified` above is the current summary; this is who checked and how.
