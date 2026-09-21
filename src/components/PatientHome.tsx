@@ -188,6 +188,7 @@ export function PatientHome() {
         <p className="text-xs text-muted-foreground mt-1">{t("homeGoalsHelp")}</p>
         <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
+          <NextStepsCard patientId={patient.id} />
           <SupportPlanCard patientId={patient.id} />
           <ReferralsForYouCard patientId={patient.id} />
         </div>
@@ -471,6 +472,31 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
         })}
       </ul>
     </section>
+  );
+}
+
+// §Phase 4 — the way back to the post-intake resources screen once the person
+// has navigated away. Only shown when there is a real, open need to match.
+function NextStepsCard({ patientId }: { patientId: string }) {
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const open = (p?.sdohPlan?.items ?? []).filter(
+    (i) =>
+      i.visibleToPatient !== false && i.status !== "completed" && i.status !== "not_completed",
+  );
+  if (open.length === 0) return null;
+  return (
+    <Card className="p-5" data-testid="next-steps-card">
+      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
+        <HeartPulse className="h-4 w-4" /> Next steps
+      </div>
+      <p className="mt-1 text-sm text-muted-foreground">
+        Local places that match the everyday needs you shared. Looking is not the same as being
+        referred — your team makes that connection.
+      </p>
+      <Button asChild size="sm" className="mt-3">
+        <Link to="/next-steps">See help that matches</Link>
+      </Button>
+    </Card>
   );
 }
 

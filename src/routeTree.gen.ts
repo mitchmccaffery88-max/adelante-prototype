@@ -53,6 +53,7 @@ import { Route as MedicationsRouteImport } from './routes/medications'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
 import { Route as MyWorkRouteImport } from './routes/my-work'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
+import { Route as NextStepsRouteImport } from './routes/next-steps'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PeerRouteImport } from './routes/peer'
@@ -319,6 +320,11 @@ const MyWorkRoute = MyWorkRouteImport.update({
 const NaloxoneRoute = NaloxoneRouteImport.update({
   id: '/naloxone',
   path: '/naloxone',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NextStepsRoute = NextStepsRouteImport.update({
+  id: '/next-steps',
+  path: '/next-steps',
   getParentRoute: () => rootRouteImport,
 } as any)
 const NotesQueueRoute = NotesQueueRouteImport.update({
@@ -608,6 +614,7 @@ export interface FileRoutesByFullPath {
   '/message-queue': typeof MessageQueueRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
+  '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
@@ -700,6 +707,7 @@ export interface FileRoutesByTo {
   '/message-queue': typeof MessageQueueRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
+  '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
@@ -791,6 +799,7 @@ export interface FileRoutesById {
   '/message-queue': typeof MessageQueueRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
+  '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
@@ -886,6 +895,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/my-work'
     | '/naloxone'
+    | '/next-steps'
     | '/notes-queue'
     | '/patient'
     | '/peer'
@@ -978,6 +988,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/my-work'
     | '/naloxone'
+    | '/next-steps'
     | '/notes-queue'
     | '/patient'
     | '/peer'
@@ -1068,6 +1079,7 @@ export interface FileRouteTypes {
     | '/message-queue'
     | '/my-work'
     | '/naloxone'
+    | '/next-steps'
     | '/notes-queue'
     | '/patient'
     | '/peer'
@@ -1162,6 +1174,7 @@ export interface RootRouteChildren {
   MessageQueueRoute: typeof MessageQueueRoute
   MyWorkRoute: typeof MyWorkRoute
   NaloxoneRoute: typeof NaloxoneRoute
+  NextStepsRoute: typeof NextStepsRoute
   NotesQueueRoute: typeof NotesQueueRoute
   PatientRoute: typeof PatientRoute
   PeerRoute: typeof PeerRoute
@@ -1497,6 +1510,13 @@ declare module '@tanstack/react-router' {
       path: '/naloxone'
       fullPath: '/naloxone'
       preLoaderRoute: typeof NaloxoneRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/next-steps': {
+      id: '/next-steps'
+      path: '/next-steps'
+      fullPath: '/next-steps'
+      preLoaderRoute: typeof NextStepsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/notes-queue': {
@@ -1957,6 +1977,7 @@ const rootRouteChildren: RootRouteChildren = {
   MessageQueueRoute: MessageQueueRoute,
   MyWorkRoute: MyWorkRoute,
   NaloxoneRoute: NaloxoneRoute,
+  NextStepsRoute: NextStepsRoute,
   NotesQueueRoute: NotesQueueRoute,
   PatientRoute: PatientRoute,
   PeerRoute: PeerRoute,

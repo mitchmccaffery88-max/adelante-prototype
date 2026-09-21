@@ -556,7 +556,7 @@ function IntakePage() {
     } catch {
       /* no-op */
     }
-    navigate({ to: "/home" });
+    navigate({ to: "/next-steps" });
   };
 
   return (
