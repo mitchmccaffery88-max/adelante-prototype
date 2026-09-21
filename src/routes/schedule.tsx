@@ -239,6 +239,50 @@ function SchedulePage() {
 
       {tab === "groups" && <PatientGroupScheduling patientId={currentId} />}
 
+      {tab === "one_to_one" && !isReschedule && upcomingAppts.length > 0 && (
+        <Card
+          className="mb-4 border-amber-warm bg-amber-warm/10 p-4"
+          data-testid="existing-appointment-notice"
+        >
+          <div className="flex items-start gap-2.5">
+            <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
+            <div className="min-w-0 text-sm">
+              <p className="font-medium text-navy">You already have an appointment booked</p>
+              <ul className="mt-1 space-y-0.5 text-muted-foreground">
+                {upcomingAppts.slice(0, 3).map((a) => {
+                  const c = AdelanteEHR.getClinician(a.clinicianId);
+                  return (
+                    <li key={a.id}>
+                      {new Date(a.start).toLocaleString(undefined, {
+                        weekday: "short",
+                        month: "short",
+                        day: "numeric",
+                        hour: "numeric",
+                        minute: "2-digit",
+                      })}
+                      {c ? ` · ${c.name}` : ""}
+                      {a.source ? ` · ${APPOINTMENT_SOURCE_LABEL[a.source]}` : ""}
+                    </li>
+                  );
+                })}
+              </ul>
+              <p className="mt-1.5 text-muted-foreground">
+                Booking a time that overlaps one of these won't go through. If you need to move a
+                visit, reschedule it instead.
+              </p>
+              <Button
+                variant="outline"
+                size="sm"
+                className="mt-2 min-h-11"
+                onClick={() => setTab("yours")}
+              >
+                See your appointments
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+
       {tab === "one_to_one" && (
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5">
