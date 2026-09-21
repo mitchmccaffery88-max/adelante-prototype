@@ -1229,6 +1229,9 @@ export interface Patient {
   peerNotes?: PeerNote[];
   /** Per-flag context notes for eligibility (source, as-of, why). */
   eligibilityNotes?: Partial<Record<EligibilityFlagKey, EligibilityNote>>;
+  /** §Phase 3a — append-only attribution for every eligibility-flag change. */
+  eligibilityFlagLog?: EligibilityFlagEvent[];
+
   /** Primary/assigned clinician of record (§ProviderSwitch). Optional. */
   primaryClinicianId?: string;
   /** Auto-derived care-plan snapshot; recomputed after clinical writes. */
