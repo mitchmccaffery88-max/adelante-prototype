@@ -10,11 +10,10 @@ import { AdelanteEHR, type CaseTask, type Patient } from "../ehr";
 const NOW = +new Date("2026-09-21T00:00:00.000Z");
 const daysAgo = (d: number) => new Date(NOW - d * 86400000).toISOString();
 
-function patient(over: Partial<Patient> & { id: string }): Patient {
+function patient(over: Partial<Patient> & { id: string; firstName: string }): Patient {
   return {
-    id: over.id,
-    name: over.name ?? `P ${over.id}`,
-    programId: over.programId ?? `PRG-${over.id}`,
+    programId: `PRG-${over.id}`,
+    lastName: "Test",
     ...over,
   } as Patient;
 }
@@ -38,10 +37,10 @@ describe("coverageWorklistRows", () => {
   const rows = () =>
     coverageWorklistRows(
       [
-        patient({ id: "a", name: "Ana", coverage: { status: "active", verified: "pending" } as never }),
+        patient({ id: "a", firstName: "Ana", coverage: { status: "active", verified: "pending" } as never }),
         patient({
           id: "b",
-          name: "Ben",
+          firstName: "Ben",
           coverage: {
             status: "active",
             verified: "verified",
@@ -61,7 +60,7 @@ describe("coverageWorklistRows", () => {
         }),
         patient({
           id: "c",
-          name: "Cruz",
+          firstName: "Cruz",
           coverage: {
             status: "active",
             verified: "verified",

@@ -143,7 +143,7 @@ export function coverageWorklistRows(
     );
     return {
       patientId: p.id,
-      name: p.name ?? "(no name on record)",
+      name: `${p.firstName} ${p.lastName}`.trim(),
       programId: p.programId,
       county: p.coverage?.countyOfRelease,
       coverageStatus: p.coverage?.status ?? "unknown",
@@ -163,7 +163,7 @@ export function coverageWorklistRows(
     const ad = a.daysSinceCheck ?? -1;
     const bd = b.daysSinceCheck ?? -1;
     if (ad !== bd) return bd - ad;
-    return (a.name ?? "").localeCompare(b.name ?? "");
+    return a.name.localeCompare(b.name);
   });
 }
 
