@@ -107,9 +107,10 @@ export const SchedulingConstraints = {
     );
     if (off) blocks.push({ code: "availability_exception_off", message: off.note || "Clinician is off that day.", severity: "block" });
 
-    // Payer enrollment (if patient known and has coverage)
+    // Payer enrollment — reads the one coverage model (§Phase 3b).
     if (input.patientId) {
-      const cov = AdelanteEHRExt.activeCoverageFor(input.patientId, startAt.toISOString());
+      const cov = AdelanteEHR.activeCoveragePlan(input.patientId, startAt.toISOString());
+
       if (cov) {
         const enrolled = AdelanteEHRExt.enrollmentsForClinician(input.clinicianId).some(
           (e) => e.payer === cov.payer && e.status === "enrolled",

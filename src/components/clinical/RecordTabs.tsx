@@ -18,6 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
+import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
+import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
+
 import {
   Select,
   SelectContent,
@@ -922,6 +925,7 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
       <p className="text-xs text-muted-foreground">
         Medi-Cal / CalAIM benefit eligibility. These flags are not patient consent.
       </p>
+      <CalaimEligibilityComparison patientId={patientId} />
       {consentPending && (
         <div
           className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
@@ -931,6 +935,8 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
           client and record their answer on the Consent tab.
         </div>
       )}
+      <CoveragePlansSection patientId={patientId} actor={actor} readOnly={readOnly} />
+
       <ul className="space-y-2">
         {rows.map((r) => {
           const last = log.find((e) => e.key === r.key);

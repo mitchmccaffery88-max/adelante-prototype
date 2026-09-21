@@ -94,16 +94,10 @@ export interface PayerEnrollment {
   effectiveTo?: string;
 }
 
-export interface CoverageSpan {
-  id: string;
-  patientId: string;
-  payer: string;
-  plan?: string;
-  memberId?: string;
-  from: string;
-  to?: string;
-  source: "self_report" | "verified_270_271" | "front_desk";
-}
+// §Phase 3b — `CoverageSpan` was removed. The one coverage model is
+// `Patient.coverage`, with dated payer spans in `coverage.plans`
+// (`CoveragePlanSpan` in `@/lib/ehr`).
+
 
 export type AppointmentModality = "virtual" | "in_person" | "hybrid";
 export interface AvailabilityBlock {
@@ -309,11 +303,11 @@ const payerEnrollments: PayerEnrollment[] = [
   { id: uid(), clinicianId: "c3", payer: "Medi-Cal FFS", billingTin: "84-1234567", status: "enrolled" },
 ];
 
-const coverageSpans: CoverageSpan[] = [
-  { id: uid(), patientId: "p1", payer: "Medi-Cal FFS", memberId: "9CIN0001", from: "2025-01-01", source: "verified_270_271" },
-  { id: uid(), patientId: "p2", payer: "Health Net Medi-Cal", memberId: "9CIN0002", from: "2025-06-01", source: "self_report" },
-  { id: uid(), patientId: "p3", payer: "Tulare County MHP", from: "2025-03-15", source: "front_desk" },
-];
+// §Phase 3b — the `coverageSpans` store that used to live here was a second,
+// disconnected coverage shape. Its rows were migrated onto
+// `Patient.coverage.plans`, which is the single coverage model. Read them with
+// `AdelanteEHR.listCoveragePlans` / `AdelanteEHR.activeCoveragePlan`.
+
 
 const availabilityBlocks: AvailabilityBlock[] = [
   { id: uid(), clinicianId: "c1", weekday: 1, start: "09:00", end: "17:00", modality: "hybrid", locationId: "loc-visalia", careTypes: ["therapy_individual", "intake"] },
@@ -386,12 +380,6 @@ export const AdelanteEHRExt = {
   enrollmentsForClinician: (id: string) => payerEnrollments.filter((e) => e.clinicianId === id),
   listAllEnrollments: () => payerEnrollments,
 
-  coverageForPatient: (pid: string) => coverageSpans.filter((c) => c.patientId === pid),
-  activeCoverageFor(pid: string, at = new Date().toISOString()) {
-    return coverageSpans.find(
-      (c) => c.patientId === pid && +new Date(c.from) <= +new Date(at) && (!c.to || +new Date(c.to) >= +new Date(at)),
-    );
-  },
 
   availabilityBlocksForClinician: (id: string) => availabilityBlocks.filter((b) => b.clinicianId === id),
   availabilityExceptionsForClinician: (id: string) => availabilityExceptions.filter((e) => e.clinicianId === id),

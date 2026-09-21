@@ -9,6 +9,8 @@ import {
   type EligibilityFlagKey,
 } from "@/lib/ehr";
 import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
+import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
+import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
 
 import { useActingStaff } from "@/lib/roles";
 import {
@@ -915,6 +917,8 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
         Nothing here is sent to the county automatically. These actions create real follow-up work
         for staff and tell the client what to expect.
       </p>
+      <CoveragePlansSection patientId={patientId} actor={actor} />
+
       <CoverageCheckDialog
         patientId={patientId}
         open={checkOpen}
@@ -947,6 +951,9 @@ function EligibilityFlagsCard({ patientId }: { patientId: string }) {
       <p className="text-xs text-muted-foreground mt-1">
         Benefit eligibility only. These are not consent, and changing one records who changed it.
       </p>
+      <div className="mt-3">
+        <CalaimEligibilityComparison patientId={patientId} />
+      </div>
       {consentPending && (
         <div
           className="mt-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
@@ -956,6 +963,7 @@ function EligibilityFlagsCard({ patientId }: { patientId: string }) {
           client and record their answer on the Consent tab — eligibility does not grant consent.
         </div>
       )}
+
       <div className="mt-3 space-y-2">
         <FlagRow
           label="ECM eligible"

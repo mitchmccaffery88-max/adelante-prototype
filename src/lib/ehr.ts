@@ -452,11 +452,45 @@ export interface SelfHelpModule {
   completedAt?: string;
 }
 
-export interface CoverageSnapshot {
-  asOf: string;
-  status: CoverageStatus;
-  countyOfResponsibility: string;
+/**
+ * §Phase 3b — how a plan on file got there. There is NO automated eligibility
+ * transaction in this app (no 270/271, no clearinghouse), so no value here may
+ * claim an electronic verification: a staff-recorded check is the strongest
+ * provenance available.
+ */
+export type CoveragePlanSource = "self_report" | "front_desk" | "staff_checked";
+
+export const COVERAGE_PLAN_SOURCE_LABEL: Record<CoveragePlanSource, string> = {
+  self_report: "Client told us",
+  front_desk: "Front desk / paperwork",
+  staff_checked: "Staff checked with the plan or county",
+};
+
+/**
+ * §Phase 3b — a dated payer span on the patient's coverage record. This is the
+ * migrated home of the former `CoverageSpan` in `ehr-ext.ts`, which was a
+ * second, disconnected coverage shape. `Patient.coverage` is the single source
+ * of truth for coverage; this is the "which plan, for what dates" detail it
+ * previously lacked.
+ *
+ * `memberId` is the PLAN-issued member number. It is NOT a CIN — `Patient.cin`
+ * is the one canonical CIN, and nothing here may duplicate it.
+ */
+export interface CoveragePlanSpan {
+  id: string;
+  payer: string;
+  plan?: string;
+  memberId?: string;
+  /** YYYY-MM-DD */
+  from: string;
+  /** YYYY-MM-DD; absent means still current. */
+  to?: string;
+  source: CoveragePlanSource;
+  recordedBy?: string;
+  recordedByRole?: StaffRole;
+  recordedAt?: string;
 }
+
 
 export type ContactChannel = "text" | "call" | "video";
 export type BestTime = "morning" | "afternoon" | "evening";
@@ -1132,8 +1166,13 @@ export interface Patient {
      * "reactivates automatically" messaging must not be shown to this person.
      */
     mediCalReactivationFollowUp?: boolean;
-    /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
-    snapshots?: CoverageSnapshot[];
+    /**
+     * §Phase 3b — dated payer spans, migrated here from the former standalone
+     * `CoverageSpan` store. Newest first. The outer `status`/`verified` stay
+     * the current summary view.
+     */
+    plans?: CoveragePlanSpan[];
+
     /**
      * §Phase 3a — append-only log of human eligibility checks, newest first.
      * `verified` above is the current summary; this is who checked and how.
@@ -3263,6 +3302,18 @@ const patients: Patient[] = [
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
+      // §Phase 3b — migrated from the former standalone CoverageSpan store.
+      // The old seed claimed a 270/271 verification; no such transaction
+      // exists in this app, so it is recorded as a staff check instead.
+      plans: [
+        {
+          id: "covplan-p1-1",
+          payer: "Medi-Cal FFS",
+          from: "2025-01-01",
+          source: "staff_checked",
+        },
+      ],
+
     },
     caseManagerId: "cm1",
     screenerHistory: [
@@ -3435,6 +3486,16 @@ const patients: Patient[] = [
       verified: "pending",
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
+      plans: [
+        {
+          id: "covplan-p2-1",
+          payer: "Health Net Medi-Cal",
+          memberId: "HN-2049881",
+          from: "2025-06-01",
+          source: "self_report",
+        },
+      ],
+
     },
     caseManagerId: "cm1",
     problems: [
@@ -3502,6 +3563,15 @@ const patients: Patient[] = [
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
+      plans: [
+        {
+          id: "covplan-p3-1",
+          payer: "Tulare County MHP",
+          from: "2025-03-15",
+          source: "front_desk",
+        },
+      ],
+
     },
     caseManagerId: "cm2",
     screenerHistory: [
@@ -8958,6 +9028,96 @@ export const AdelanteEHR = {
   listCoverageChecks(patientId: string): CoverageVerificationRecord[] {
     return patients.find((x) => x.id === patientId)?.coverage?.verifications ?? [];
   },
+
+  // ----- §Phase 3b — coverage plan spans (one coverage model) --------------
+  /** Newest-first payer spans on the patient's coverage record. */
+  listCoveragePlans(patientId: string): CoveragePlanSpan[] {
+    return patients.find((x) => x.id === patientId)?.coverage?.plans ?? [];
+  },
+  /** The span covering `at`, if any. Used by scheduling's payer-enrollment check. */
+  activeCoveragePlan(patientId: string, at = new Date().toISOString()): CoveragePlanSpan | undefined {
+    const when = +new Date(at);
+    return AdelanteEHR.listCoveragePlans(patientId).find(
+      (c) => +new Date(c.from) <= when && (!c.to || +new Date(c.to) >= when),
+    );
+  },
+  /**
+   * Record a plan on file. Attributed, like every other Phase 3a/3b coverage
+   * mutation. Adding a plan does NOT change `coverage.status` — knowing which
+   * plan someone named is not the same claim as "this coverage is active".
+   */
+  addCoveragePlan(
+    patientId: string,
+    input: {
+      payer: string;
+      plan?: string;
+      memberId?: string;
+      from: string;
+      to?: string;
+      source: CoveragePlanSource;
+    } & CoverageActor,
+  ): { ok: boolean; error?: string } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ok: false, error: "Patient not found." };
+    const payer = input.payer.trim();
+    if (!payer) return { ok: false, error: "Name the plan or payer." };
+    if (!input.from) return { ok: false, error: "A start date is required." };
+    if (input.to && input.to < input.from) {
+      return { ok: false, error: "The end date is before the start date." };
+    }
+    const span: CoveragePlanSpan = {
+      id: uid(),
+      payer,
+      ...(input.plan?.trim() ? { plan: input.plan.trim() } : {}),
+      ...(input.memberId?.trim() ? { memberId: input.memberId.trim() } : {}),
+      from: input.from,
+      ...(input.to ? { to: input.to } : {}),
+      source: input.source,
+      recordedBy: input.actorId,
+      recordedByRole: input.actorRole,
+      recordedAt: new Date().toISOString(),
+    };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
+    p.coverage = { ...base, plans: [span, ...(base.plans ?? [])] };
+    appendAudit({
+      category: "clinical",
+      action: "coverage_plan_added",
+      patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: { payer: span.payer, from: span.from, to: span.to ?? null, source: span.source },
+    });
+    emit();
+    return { ok: true };
+  },
+  /** Close an open span. Attributed; never deletes history. */
+  endCoveragePlan(
+    patientId: string,
+    planId: string,
+    endDate: string,
+    actor: CoverageActor,
+  ): { ok: boolean; error?: string } {
+    const p = patients.find((x) => x.id === patientId);
+    const span = p?.coverage?.plans?.find((c) => c.id === planId);
+    if (!p || !span) return { ok: false, error: "That plan is not on this record." };
+    if (!endDate) return { ok: false, error: "An end date is required." };
+    if (endDate < span.from) return { ok: false, error: "The end date is before the start date." };
+    span.to = endDate;
+    appendAudit({
+      category: "clinical",
+      action: "coverage_plan_ended",
+      patientId,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { payer: span.payer, to: endDate },
+    });
+    emit();
+    return { ok: true };
+  },
+
   /**
    * §Phase 3a fix #4 — reactivation follow-up.
    *

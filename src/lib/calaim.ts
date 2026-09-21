@@ -157,3 +157,38 @@ export function calaimEligibleDischarges(
 export function distinctPatients(rows: { patientId: string }[]): number {
   return new Set(rows.map((r) => r.patientId)).size;
 }
+
+/**
+ * §Phase 3b — the COMPUTED CalAIM answer for one patient.
+ *
+ * This is deliberately NOT the same thing as the hand-set `ecmEligible` /
+ * `jiReentryFlag` coverage flags, and the two are never derived from each
+ * other:
+ *
+ *  - computed (here) = "this person's active problem list contains a
+ *    diagnosis on the admin-curated CalAIM qualifying-code list". It is a
+ *    clinical read, recomputed every time the problem list changes.
+ *  - hand-set flags   = "a human determined this person's Medi-Cal benefit
+ *    status" — ECM enrollment, the 90-day justice-involved reentry benefit,
+ *    Community Supports. Those depend on the plan, the county and paperwork
+ *    this app never sees.
+ *
+ * They can legitimately disagree in both directions, so the UI shows them
+ * side by side and names the disagreement instead of resolving it.
+ */
+export interface CalaimComputedForPatient {
+  /** False when no qualifying codes are configured — nothing can be computed. */
+  configured: boolean;
+  qualifies: boolean;
+  rows: CalaimCaseloadRow[];
+}
+
+export function calaimComputedForPatient(
+  patient: Patient,
+  codes: CalaimQualifyingCode[] = AdelanteEHR.listQualifyingCodes(),
+): CalaimComputedForPatient {
+  if (codes.length === 0) return { configured: false, qualifies: false, rows: [] };
+  const rows = calaimEligiblePatients([patient], codes);
+  return { configured: true, qualifies: rows.length > 0, rows };
+}
+
