@@ -536,20 +536,49 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing: "none",
   },
 
-  // §Admin governance — frequency catalog + local RxNav suppressions. Same
-  // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
-  // the config, prescribing/administering roles read it (they see WHY a
-  // product is missing from search), billing gets nothing.
+  // §Admin governance — frequency catalog + local RxNav suppressions.
+  // §EHR audit Phase 1f — narrowed to clinical config owners + super admin.
+  // The former `read` grants to pmhnp / therapist / ecm_provider existed so
+  // prescribers could see WHY a product is missing from search; that reason is
+  // already shown inline by CatalogPicker (the "hidden by local suppression"
+  // block reads the suppression list directly, with no `canAccess` gate), so
+  // the read grant bought nothing but reach into an admin configuration
+  // surface. Removed for all three.
   catalog_governance: {
     sys_admin: "write",
     clinical_coordinator: "write",
-    pmhnp: "read",
-    therapist: "read",
-    ecm_provider: "read",
+    pmhnp: "none",
+    therapist: "none",
+    ecm_provider: "none",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
   },
+
+  // §EHR audit Phase 1f — platform administration (audit trail + vendor
+  // integration health). sys_admin administers the platform; the clinical
+  // coordinator reads the audit trail for compliance oversight and reads
+  // vendor health, but does not configure the platform. Every other role —
+  // including prescribers, who previously reached vendor status through the
+  // borrowed `catalog_governance` read — gets nothing: neither surface
+  // supports a clinical action.
+  platform_administration: {
+    sys_admin: "write",
+    clinical_coordinator: "read",
+    pmhnp: "none",
+    therapist: "none",
+    ecm_provider: "none",
+    cf_care_manager: "none",
+    sud_counselor: "none",
+    peer_specialist: "none",
+    community_health_worker: "none",
+    medical_assistant: "none",
+    clinical_trainee: "none",
+    credentialing_coordinator: "none",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+
   // §Crisis escalation queue. Cross-patient, NOT patient-scoped, and more
   // clinically sensitive than population_health with no revenue angle:
   // clinical_coordinator + sys_admin write (they own disposition), the
