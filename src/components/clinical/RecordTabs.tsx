@@ -18,6 +18,9 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
+import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
+import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
+
 import {
   Select,
   SelectContent,
