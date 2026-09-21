@@ -17248,6 +17248,12 @@ export const AdelanteEHR = {
       description?: string;
       encounterType: string;
       schema: TemplateSchema;
+      /** §Phase 2b — omitted means `global`, matching every pre-2b row. */
+      scope?: TemplateScope;
+      departmentId?: string;
+      ownerStaffId?: string;
+      clonedFrom?: NoteTemplate["clonedFrom"];
+      inheritedLockedKeys?: string[];
     },
     staffName: string,
   ): NoteTemplate {
@@ -17257,6 +17263,11 @@ export const AdelanteEHR = {
     if (!title) throw new Error("A template title is required.");
     if (noteTemplates.some((t) => t.key.toLowerCase() === key.toLowerCase()))
       throw new Error(`A template with the key "${key}" already exists.`);
+    const scope: TemplateScope = input.scope ?? "global";
+    if (scope === "department" && !input.departmentId)
+      throw new Error("A discipline is required for a department template.");
+    if (scope === "personal" && !input.ownerStaffId)
+      throw new Error("A personal template needs an owner.");
     const row: NoteTemplate = {
       id: uid(),
       key,
@@ -17268,6 +17279,13 @@ export const AdelanteEHR = {
       active: true,
       createdBy: staffName,
       createdAt: new Date().toISOString(),
+      scope,
+      ...(scope === "department" ? { departmentId: input.departmentId } : {}),
+      ...(scope === "personal" ? { ownerStaffId: input.ownerStaffId } : {}),
+      ...(input.clonedFrom ? { clonedFrom: input.clonedFrom } : {}),
+      ...(input.inheritedLockedKeys?.length
+        ? { inheritedLockedKeys: [...input.inheritedLockedKeys] }
+        : {}),
     };
     noteTemplates.push(row);
     appendAudit({
@@ -17279,11 +17297,76 @@ export const AdelanteEHR = {
         key: row.key,
         version: row.version,
         encounterType: row.encounterType,
+        scope: row.scope,
+        departmentId: row.departmentId ?? null,
+        ownerStaffId: row.ownerStaffId ?? null,
       },
     });
     emit();
     return { ...row };
   },
+
+  /**
+   * §EHR audit Phase 2b — take an independent personal copy of a template.
+   *
+   * The copy is a NEW key at version 1 with its own history: it never appends
+   * to, supersedes, or otherwise touches the source's version chain, so the
+   * existing versioning/snapshot guarantee is untouched. Locked fields ride
+   * along and are recorded in `inheritedLockedKeys`, which `updateNoteTemplate`
+   * enforces on every later edit.
+   */
+  cloneNoteTemplateToPersonal(
+    templateId: string,
+    actor: { staffId: string; staffName: string },
+  ): NoteTemplate {
+    const source = noteTemplates.find((t) => t.id === templateId);
+    if (!source) throw new Error("Template not found.");
+    if ((source.scope ?? "global") === "personal")
+      throw new Error("That is already a personal template.");
+    const clone = buildPersonalClone(
+      { key: source.key, title: source.title, schema: source.schema },
+      { role: "sys_admin", staffId: actor.staffId },
+      noteTemplates.map((t) => t.key),
+    );
+    const locked: string[] = [];
+    for (const section of source.schema?.sections ?? []) {
+      for (const field of section.fields ?? []) if (field.locked) locked.push(field.key);
+    }
+    const row = AdelanteEHR.createNoteTemplate(
+      {
+        key: clone.key,
+        title: clone.title,
+        description: source.description,
+        encounterType: source.encounterType,
+        schema: clone.schema,
+        scope: "personal",
+        ownerStaffId: actor.staffId,
+        clonedFrom: {
+          templateId: source.id,
+          key: source.key,
+          version: source.version,
+          title: source.title,
+        },
+        inheritedLockedKeys: locked,
+      },
+      actor.staffName,
+    );
+    appendAudit({
+      category: "clinical",
+      action: "note_template_cloned_to_personal",
+      actorId: actor.staffName,
+      detail: {
+        templateId: row.id,
+        sourceTemplateId: source.id,
+        sourceKey: source.key,
+        sourceVersion: source.version,
+        lockedFields: locked.length,
+      },
+    });
+    emit();
+    return row;
+  },
+
 
   /**
    * Presentation-only edits (title/description/encounterType) patch the row in
