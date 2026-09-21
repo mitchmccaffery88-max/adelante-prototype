@@ -18,6 +18,11 @@ import type { StaffRole } from "./roles";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
 import type { AttestationRecord } from "./attestation";
+// §EHR audit Phase 2b — template scope tiers. Type-only here; the value
+// helpers (clone/locked-field rules) live in the leaf module and are imported
+// by the write paths below.
+import type { TemplateScope } from "./templateScope";
+import { buildPersonalClone, lockedFieldViolations } from "./templateScope";
 
 import type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 import type { HelperAttribution, SignupCredentialMeta } from "./signup";
