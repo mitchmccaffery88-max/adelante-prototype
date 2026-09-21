@@ -277,12 +277,31 @@ function AdminNoteTemplatesPage() {
 function TemplateBuilderDialog({
   template,
   staffName,
+  staffId,
+  role,
+  canAuthorShared,
   onClose,
 }: {
   template: NoteTemplate | null;
   staffName: string;
+  staffId: string;
+  role: StaffRole;
+  /** True when this person may author Global / Department templates. */
+  canAuthorShared: boolean;
   onClose: () => void;
 }) {
+  // §Phase 2b — scope of the row being authored. A new template defaults to
+  // the widest tier the author may publish to: shared authors get Global,
+  // everyone else can only ever create a Personal template.
+  const [scope, setScope] = useState<TemplateScope>(
+    template?.scope ?? (canAuthorShared ? "global" : "personal"),
+  );
+  const [departmentId, setDepartmentId] = useState(
+    template?.departmentId ?? disciplineForRole(role)?.id ?? TEMPLATE_DEPARTMENTS[0]!.id,
+  );
+  const inheritedLocked = template?.inheritedLockedKeys ?? [];
+  // Locks are set at the tier that owns the structure, never below it.
+  const canSetLocks = canAuthorShared && scope !== "personal";
   const [title, setTitle] = useState(template?.title ?? "");
   const [description, setDescription] = useState(template?.description ?? "");
   const [key, setKey] = useState(template?.key ?? "");
