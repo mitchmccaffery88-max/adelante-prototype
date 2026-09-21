@@ -388,6 +388,19 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["billing"] },
   },
   {
+    // §Phase 3c — program-level Medi-Cal verification worklist. Gated on the
+    // SAME `eligibility` class that already governs per-patient Medi-Cal
+    // Actions, so nobody gains a cross-patient coverage view they could not
+    // already reach one chart at a time.
+    id: "eligibility-worklist",
+    label: "Medi-Cal verification",
+    desc: "Never checked, overdue & follow-ups",
+    icon: ShieldCheck,
+    to: "/eligibility-worklist",
+    group: "revenue",
+    gate: { kind: "record_class", anyOf: ["eligibility"] },
+  },
+  {
     id: "consent",
     label: "Consent",
     desc: "Ledger & disclosures",
