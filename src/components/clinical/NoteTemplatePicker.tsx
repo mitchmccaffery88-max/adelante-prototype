@@ -17,11 +17,16 @@ export function NoteTemplatePicker({
   templates,
   value,
   onChange,
+  canClone,
+  onClone,
 }: {
   templates: NoteTemplate[];
   /** Template id, or "none" for the built-in free-text SOAP editor. */
   value: string;
   onChange: (id: string) => void;
+  /** §Phase 2b — show "Save as my template" for templates this person may copy. */
+  canClone?: (t: NoteTemplate) => boolean;
+  onClone?: (t: NoteTemplate) => void;
 }) {
   // Grouped by encounter type, alphabetical within each group, groups
   // themselves alphabetical. Encounter type is the axis a clinician already
