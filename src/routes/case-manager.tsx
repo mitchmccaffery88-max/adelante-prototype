@@ -219,6 +219,12 @@ function CaseManagerPage() {
               {CASELOAD_SCOPE_NOTE}
             </p>
           </div>
+          {scope === "all" && !iHaveAssignments && (
+            <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-no-identity-all">
+              Showing all program patients: your staff profile isn't linked to a caseload or a
+              provider record yet, so "My caseload" has nothing to show.
+            </p>
+          )}
           {scope === "mine" && !iHaveAssignments && (
             <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-no-identity">
               No patients are assigned to {acting.staffName}. Your staff profile isn't linked to a
