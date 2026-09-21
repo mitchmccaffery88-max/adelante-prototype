@@ -977,18 +977,29 @@ function FlagRow({
   label,
   checked,
   onChange,
+  last,
 }: {
   label: string;
   checked: boolean;
   onChange: (v: boolean) => void;
+  last?: EligibilityFlagEvent;
 }) {
   return (
     <label className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm cursor-pointer">
-      <span>{label}</span>
+      <span>
+        {label}
+        {last && (
+          <span className="block text-[11px] text-muted-foreground">
+            {last.value ? "Set on" : "Turned off"} by {last.actorId} ·{" "}
+            <ClientDate value={last.at} />
+          </span>
+        )}
+      </span>
       <Switch checked={checked} onCheckedChange={onChange} />
     </label>
   );
 }
+
 
 function RecentCheckInsCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
