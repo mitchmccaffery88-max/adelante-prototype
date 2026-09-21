@@ -6570,7 +6570,12 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const now = new Date().toISOString();
-    p.needs = payload.needs;
+    // Phase 3: `Patient.needs` stays written for the real consumers that still
+    // read it (`needs.substanceUse` in the care-plan SUD signal, the CalOMS
+    // employment field). MERGED, not replaced — intake only collects four
+    // categories, and a whole-object assignment silently erased flags like
+    // `substanceUse` that intake never asks about.
+    p.needs = { ...(p.needs ?? {}), ...payload.needs };
     // §Consent re-prompt safety — intake is re-enterable (re-screen tasks
     // deep-link back to /intake). A second pass through this flow must never
     // DOWNGRADE a consent that is already on file: an abandoned or skipped
@@ -8699,6 +8704,90 @@ export const AdelanteEHR = {
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
     _recomputeCarePlan(p.id, "sdoh_added");
     emit();
+  },
+  /**
+   * §Intake/SDOH Redesign Phase 3 — the one write intake uses for social needs.
+   *
+   * `confirmed` are needs the record already had evidence for and the person
+   * has just said still apply. Each carries the provenance it was ESTABLISHED
+   * with, not the screen it was confirmed on: a pre-release AHC-HRSN finding
+   * stays `pre_release_hrsn` after an intake confirmation. An item that already
+   * exists is touched, never duplicated and never re-sourced.
+   *
+   * `selfReported` are needs with no prior evidence that the person ticked in
+   * their own intake — real `SdohPlanItem` rows with `intake_self_report`, not
+   * just a boolean on `Patient.needs`.
+   *
+   * Nothing here CLOSES a need. Intake declining to confirm a staff- or
+   * screening-identified need is not the same as that need being resolved, so
+   * the item stands and a human works it.
+   */
+  applyIntakeNeeds(
+    patientId: string,
+    input: {
+      confirmed: { need: string; source: SdohItemSource; existingItemId?: string }[];
+      selfReported: { need: string }[];
+    },
+  ): { created: number; touched: number } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { created: 0, touched: 0 };
+    const now = new Date().toISOString();
+    let created = 0;
+    let touched = 0;
+    const has = (need: string) =>
+      (p.sdohPlan?.items ?? []).find((i) => i.need.trim().toLowerCase() === need.trim().toLowerCase());
+
+    for (const c of input.confirmed) {
+      if (!c.need.trim()) continue;
+      const existing = (c.existingItemId
+        ? p.sdohPlan?.items.find((i) => i.id === c.existingItemId)
+        : undefined) ?? has(c.need);
+      if (existing) {
+        existing.updatedAt = now;
+        touched++;
+        continue;
+      }
+      p.sdohPlan = {
+        items: [
+          {
+            id: uid(),
+            need: c.need.trim(),
+            source: c.source,
+            status: "identified",
+            visibleToPatient: true,
+            createdAt: now,
+            updatedAt: now,
+          },
+          ...(p.sdohPlan?.items ?? []),
+        ],
+      };
+      created++;
+    }
+
+    for (const s of input.selfReported) {
+      if (!s.need.trim() || has(s.need)) continue;
+      p.sdohPlan = {
+        items: [
+          {
+            id: uid(),
+            need: s.need.trim(),
+            source: "intake_self_report",
+            status: "identified",
+            visibleToPatient: true,
+            createdAt: now,
+            updatedAt: now,
+          },
+          ...(p.sdohPlan?.items ?? []),
+        ],
+      };
+      created++;
+    }
+
+    if (created || touched) {
+      _recomputeCarePlan(p.id, "intake_needs_reconciled");
+      emit();
+    }
+    return { created, touched };
   },
   setSdohStatus(patientId: string, itemId: string, status: SdohStatus, note?: string) {
     const p = patients.find((x) => x.id === patientId);
