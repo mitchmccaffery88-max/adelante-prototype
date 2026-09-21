@@ -8778,16 +8778,75 @@ export const AdelanteEHR = {
   },
 
   // ----- ECM / Community Supports flags -----
-  setEcmEligible(patientId: string, eligible: boolean) {
+  /**
+   * §Phase 3a — append one attributed flag change. Every eligibility flag goes
+   * through here, so "who turned this on and when" is never missing.
+   */
+  _logEligibilityFlag(p: Patient, key: EligibilityFlagKey, value: boolean, actor: CoverageActor) {
+    p.eligibilityFlagLog = [
+      {
+        id: uid(),
+        key,
+        value,
+        at: new Date().toISOString(),
+        actorId: actor.actorId,
+        actorRole: actor.actorRole,
+      },
+      ...(p.eligibilityFlagLog ?? []),
+    ];
+    appendAudit({
+      category: "clinical",
+      action: "eligibility_flag_changed",
+      patientId: p.id,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { key, value },
+    });
+  },
+  /**
+   * True when ECM eligibility is marked but ECM information-sharing consent
+   * has never been captured either way. §Phase 3a: eligibility MUST NOT stand
+   * in for consent — this drives an explicit prompt instead of a silent
+   * default (see `getConsentState`).
+   */
+  ecmConsentCapturePending(patientId: string): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    return Boolean(p.coverage?.ecmEligible) && p.consentState?.ecmShare === undefined;
+  },
+  setEcmEligible(patientId: string, eligible: boolean, actor: CoverageActor) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     p.coverage = {
       ...(p.coverage ?? { status: "none_unsure", verified: "not_found" }),
       ecmEligible: eligible,
     };
+    AdelanteEHR._logEligibilityFlag(p, "ecm", eligible, actor);
+    // §Phase 3a fix #1 — marking someone ECM-eligible used to silently default
+    // their ECM information-sharing consent to granted. It no longer does.
+    // Instead, marking eligibility raises real work: go and ask them.
+    if (eligible && p.consentState?.ecmShare === undefined && p.caseManagerId) {
+      AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: p.caseManagerId,
+        title: "Capture ECM information-sharing consent",
+        detail:
+          "Marked ECM-eligible. Eligibility is not consent — ask the client and record their answer on the Consent tab.",
+        dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+        origin: "manual",
+        taskType: "ecm_consent_capture",
+        priority: "routine",
+        dedupeKey: `ecmconsent:${patientId}`,
+      });
+    }
     emit();
   },
-  setCommunitySupport(patientId: string, key: "housing" | "food" | "transport", on: boolean) {
+  setCommunitySupport(
+    patientId: string,
+    key: "housing" | "food" | "transport",
+    on: boolean,
+    actor: CoverageActor,
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const base = p.coverage ?? {
@@ -8798,9 +8857,10 @@ export const AdelanteEHR = {
       ...base,
       communitySupports: { ...(base.communitySupports ?? {}), [key]: on },
     };
+    AdelanteEHR._logEligibilityFlag(p, `cs_${key}` as EligibilityFlagKey, on, actor);
     emit();
   },
-  setJiReentry(patientId: string, on: boolean) {
+  setJiReentry(patientId: string, on: boolean, actor: CoverageActor) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const base = p.coverage ?? {
@@ -8808,32 +8868,139 @@ export const AdelanteEHR = {
       verified: "not_found" as const,
     };
     p.coverage = { ...base, jiReentryFlag: on };
+    AdelanteEHR._logEligibilityFlag(p, "jiReentry", on, actor);
     emit();
   },
-  markCoverageVerified(patientId: string) {
+  /**
+   * §Phase 3a fix #2 + #3 — record a HUMAN eligibility check.
+   *
+   * This is not an automated verification: nothing in this app queries DHCS
+   * (no 270/271, no clearinghouse). A staff member checked through a real
+   * channel and is recording that they did, with attribution.
+   *
+   * Recording the check NEVER changes `coverage.status` on its own. The
+   * checker may additionally confirm a status, and that is stored as an
+   * explicit, separate field on the same record.
+   */
+  recordCoverageCheck(
+    patientId: string,
+    input: {
+      channel: CoverageCheckChannel;
+      channelNote?: string;
+      result: CoverageCheckResult;
+      /** CIN as read during the check. Written to `Patient.cin` when absent. */
+      cin?: string;
+      /** Only set when the checker actually confirmed a coverage status. */
+      statusConfirmed?: CoverageStatus;
+    } & CoverageActor,
+  ): { ok: boolean; error?: string } {
     const p = patients.find((x) => x.id === patientId);
-    if (!p?.coverage) return;
-    p.coverage = { ...p.coverage, verified: "verified", status: "active" };
+    if (!p) return { ok: false, error: "Patient not found." };
+    const cin = input.cin?.trim().toUpperCase();
+    if (cin && cin.length !== 9) {
+      return { ok: false, error: "A CIN is 9 characters. Check the number and try again." };
+    }
+    // §Phase 3a — Patient.cin is the ONE canonical CIN. Never copied onto the
+    // coverage object; filled here only when the record had none.
+    let cinRecordedNow = false;
+    if (cin && !p.cin) {
+      p.cin = cin;
+      cinRecordedNow = true;
+    }
+    const record: CoverageVerificationRecord = {
+      id: uid(),
+      checkedAt: new Date().toISOString(),
+      checkedBy: input.actorId,
+      checkedByRole: input.actorRole,
+      channel: input.channel,
+      channelNote: input.channelNote?.trim() || undefined,
+      result: input.result,
+      cinOnFile: Boolean(p.cin),
+      ...(cinRecordedNow ? { cinRecordedNow: true } : {}),
+      ...(input.statusConfirmed ? { statusConfirmed: input.statusConfirmed } : {}),
+    };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
+    p.coverage = {
+      ...base,
+      verified: record.result,
+      // Status changes ONLY when the checker explicitly confirmed one.
+      ...(input.statusConfirmed ? { status: input.statusConfirmed } : {}),
+      verifications: [record, ...(base.verifications ?? [])],
+    };
+    appendAudit({
+      category: "clinical",
+      action: "coverage_check_recorded",
+      patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: {
+        channel: record.channel,
+        result: record.result,
+        cinOnFile: record.cinOnFile,
+        cinRecordedNow,
+        statusConfirmed: record.statusConfirmed ?? null,
+      },
+    });
     emit();
+    return { ok: true };
   },
-  requestReactivation(patientId: string) {
+  /** Newest-first log of human eligibility checks. */
+  listCoverageChecks(patientId: string): CoverageVerificationRecord[] {
+    return patients.find((x) => x.id === patientId)?.coverage?.verifications ?? [];
+  },
+  /**
+   * §Phase 3a fix #4 — reactivation follow-up.
+   *
+   * Nothing here reaches a county. The real work is a staff follow-up, so
+   * this creates a REAL worklist row for the assigned case manager; the
+   * client-facing to-do is now honestly worded as "we are working on it"
+   * rather than claiming a request was filed with the county.
+   */
+  requestReactivation(patientId: string, actor: CoverageActor) {
     const p = patients.find((x) => x.id === patientId);
-    if (!p) return;
+    if (!p) return { staffTaskCreated: false };
     p.tasks = [
       {
         id: uid(),
         kind: "reactivation",
-        label: "Medi-Cal reactivation requested with county",
+        label: "Your case manager is following up on your Medi-Cal with the county",
         createdAt: new Date().toISOString(),
       },
       ...(p.tasks ?? []),
     ];
+    let staffTaskCreated = false;
+    if (p.caseManagerId) {
+      AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: p.caseManagerId,
+        title: "Medi-Cal reactivation — follow up with county",
+        detail: `Started by ${actor.actorId}. Call the county eligibility line and record the outcome as a coverage check.`,
+        dueDate: new Date(Date.now() + 3 * 86400000).toISOString().slice(0, 10),
+        origin: "manual",
+        taskType: "medi_cal_reactivation",
+        priority: "urgent",
+        dedupeKey: `medicalreact:${patientId}`,
+      });
+      staffTaskCreated = true;
+    }
     if (p.coverage) p.coverage = { ...p.coverage, verified: "pending" };
+    appendAudit({
+      category: "clinical",
+      action: "medi_cal_reactivation_started",
+      patientId,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { staffTaskCreated },
+    });
     emit();
+    return { staffTaskCreated };
   },
-  addEnrollmentAssistTask(patientId: string) {
+  addEnrollmentAssistTask(patientId: string, actor: CoverageActor) {
     const p = patients.find((x) => x.id === patientId);
-    if (!p) return;
+    if (!p) return { staffTaskCreated: false };
     p.tasks = [
       {
         id: uid(),
@@ -8843,8 +9010,33 @@ export const AdelanteEHR = {
       },
       ...(p.tasks ?? []),
     ];
+    let staffTaskCreated = false;
+    if (p.caseManagerId) {
+      AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: p.caseManagerId,
+        title: "BenefitsCal enrollment assistance",
+        detail: `Started by ${actor.actorId}. Sit with the client and complete a BenefitsCal application.`,
+        dueDate: new Date(Date.now() + 5 * 86400000).toISOString().slice(0, 10),
+        origin: "manual",
+        taskType: "benefitscal_enrollment",
+        priority: "routine",
+        dedupeKey: `benefitscal:${patientId}`,
+      });
+      staffTaskCreated = true;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "enrollment_assist_started",
+      patientId,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { staffTaskCreated },
+    });
     emit();
+    return { staffTaskCreated };
   },
+
 
   // ----- Re-screening cadence -----
   // Returns screener keys due for re-screening based on day 30/60/90 cadence.
