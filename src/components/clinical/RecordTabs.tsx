@@ -1680,7 +1680,13 @@ export function NotesTab({
     category: "none" as "none" | "sud" | "mental_health" | "pregnancy" | "medical",
   });
   // Template layer: "none" keeps the existing free-text SOAP editor untouched.
-  const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  // §EHR audit Phase 2b — the picker was previously unfiltered, which was the
+  // one real inconsistency with the permission-checked admin page. It is now
+  // scoped by USE rights (System + own discipline + own personal templates),
+  // which is deliberately broader than EDIT rights: picking a template is
+  // documentation, authoring one is configuration.
+  const allTemplates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  const templates = templatesVisibleTo(allTemplates, { role, staffId });
   const [templateId, setTemplateId] = useState<string>(
     () =>
       ((initialTemplateKey ?? restrictToTemplateKey)
