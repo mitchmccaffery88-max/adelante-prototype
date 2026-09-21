@@ -1694,6 +1694,10 @@ export function NotesTab({
   // real draft MedOrders from the moment they are created; this only tracks
   // which ones came from the note so they can be stamped with its id.
   const [stagedOrderIds, setStagedOrderIds] = useState<string[]>([]);
+  // §Phase 1e — which attended visit this note documents. `null` means "use
+  // the unambiguous default"; a string is an explicit clinician choice.
+  const [visitChoice, setVisitChoice] = useState<string | null>(null);
+  const appointments = useEhr(() => AdelanteEHR.listAppointments());
   const composeAutofill = useNoteAutofillSnapshots(patientId, activeTemplate?.schema);
   useDraftDirty(
     `notes:${patientId}`,
