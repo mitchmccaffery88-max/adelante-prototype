@@ -2132,6 +2132,23 @@ export interface NoteTemplate {
   updatedBy?: string;
   updatedAt?: string;
   deactivationReason?: string;
+  /**
+   * §EHR audit Phase 2b — scope tier. Absent on every pre-2b row, which means
+   * `global`: those templates were authored by admins and are visible to
+   * everyone today, so that is their honest existing meaning.
+   */
+  scope?: TemplateScope;
+  /** Set when `scope === "department"`. A discipline id from `templateScope.ts`. */
+  departmentId?: string;
+  /** Set when `scope === "personal"`. The owning StaffMember id. */
+  ownerStaffId?: string;
+  /**
+   * Provenance for a personal clone. Recorded for display only — a clone has
+   * its own independent version chain and never touches the source's.
+   */
+  clonedFrom?: { templateId: string; key: string; version: number; title: string };
+  /** Locked field keys inherited from the source at clone time. */
+  inheritedLockedKeys?: string[];
 }
 
 export type NoteAuthorSource = "human" | "ai_draft";
