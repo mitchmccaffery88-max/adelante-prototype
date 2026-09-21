@@ -2168,6 +2168,12 @@ function ProgressNoteCard({
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
 
+      // §Phase 1e — mirror into the encounter signature ledger so a claim
+      // linked to this note's visit advances `documented → signed`, exactly as
+      // the queue path does. Cosign-pending notes are not signed yet.
+      if (!mustCosign)
+        mirrorNoteSignatureToLedger(note, actingClinicianId ?? actingStaffId ?? note.clinicianId);
+
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       // §Phase 3 — a signed CHW service note bills through the same claims
       // pipeline. The hook itself enforces ECM exclusivity, the supervising
