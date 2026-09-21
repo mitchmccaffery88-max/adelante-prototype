@@ -4,9 +4,11 @@
 // receives a template id (or "none") and owns the snapshot/answer/sign flow.
 // This component only changes how a clinician chooses.
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NoteTemplate } from "@/lib/ehr";
 import { requiredFieldSummary } from "@/lib/templateSchema";
+import { scopeOf, TEMPLATE_SCOPE_LABEL } from "@/lib/templateScope";
 
 function encounterLabel(raw: string) {
   const t = (raw || "general").replace(/[_-]+/g, " ").trim();
