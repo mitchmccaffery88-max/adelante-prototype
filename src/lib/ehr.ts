@@ -1674,6 +1674,68 @@ export interface EligibilityNote {
   updatedAt: string;
 }
 
+/**
+ * §Phase 3a — how a human actually checked Medi-Cal eligibility. There is NO
+ * automated eligibility check in this app (no 270/271, no clearinghouse, no
+ * EDI — see the Build 2 note on the admin dashboard). Every value here
+ * describes a channel a staff member used themselves and is recording after
+ * the fact.
+ */
+export type CoverageCheckChannel = "phone_county" | "medi_cal_portal" | "fax" | "in_person" | "other";
+
+export const COVERAGE_CHECK_CHANNEL_LABEL: Record<CoverageCheckChannel, string> = {
+  phone_county: "Phone — county / plan",
+  medi_cal_portal: "Medi-Cal provider portal (checked by hand)",
+  fax: "Fax reply",
+  in_person: "In person — card or paperwork seen",
+  other: "Other channel",
+};
+
+/**
+ * What a human check found. Deliberately SEPARATE from `coverage.status`:
+ * recording that someone looked is not the same claim as "this person is
+ * covered", and the two must never be set by one unattributed click.
+ */
+export type CoverageCheckResult = "verified" | "not_found" | "pending";
+
+export interface CoverageVerificationRecord {
+  id: string;
+  checkedAt: string;
+  checkedBy: string;
+  checkedByRole: StaffRole;
+  channel: CoverageCheckChannel;
+  /** Free text — who was spoken to, reference number, what the portal said. */
+  channelNote?: string;
+  result: CoverageCheckResult;
+  /**
+   * Whether `Patient.cin` was on file at the time of the check. The CIN value
+   * itself is NEVER copied here — `Patient.cin` is the one canonical field
+   * (see the Phase 3a investigation); a second copy could silently disagree.
+   */
+  cinOnFile: boolean;
+  /** True when this check is what first put a CIN on the patient record. */
+  cinRecordedNow?: boolean;
+  /** Coverage status the checker explicitly confirmed, if they confirmed one. */
+  statusConfirmed?: CoverageStatus;
+}
+
+/** §Phase 3a — one attributed change to an eligibility flag. Append-only. */
+export interface EligibilityFlagEvent {
+  id: string;
+  key: EligibilityFlagKey;
+  value: boolean;
+  at: string;
+  actorId: string;
+  actorRole: StaffRole;
+}
+
+/** Who performed a Medi-Cal action. Required on every Phase 3a mutation. */
+export interface CoverageActor {
+  actorId: string;
+  actorRole: StaffRole;
+}
+
+
 export interface CaseManager {
   id: string;
   name: string;
