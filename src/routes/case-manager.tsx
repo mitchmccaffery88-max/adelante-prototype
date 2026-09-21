@@ -9,6 +9,8 @@ import {
   type EligibilityFlagKey,
 } from "@/lib/ehr";
 import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
+import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
+import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
 
 import { useActingStaff } from "@/lib/roles";
 import {
