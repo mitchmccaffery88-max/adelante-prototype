@@ -200,7 +200,7 @@ function CaseManagerPage() {
                 onClick={() => setScope("mine")}
                 data-testid="caseload-scope-mine"
               >
-                My caseload ({scopedPatients.length === 0 && scope === "all" ? myCount : scope === "mine" ? scopedPatients.length : myCount})
+                My caseload ({myCount})
               </Button>
               <Button
                 size="sm"
