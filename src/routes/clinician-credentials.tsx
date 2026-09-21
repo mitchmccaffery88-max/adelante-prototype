@@ -177,6 +177,15 @@ function CredentialsPage() {
                         ? `${c.fileName} — name only, no document stored`
                         : "No document attached"}
                   </div>
+                  {/* §Phase 2b — what credentialing has asked this person to do. */}
+                  {c.followUp && !c.followUp.resolvedAt && (
+                    <p
+                      className="mt-1 rounded bg-gold/15 px-2 py-1 text-xs text-gold-foreground"
+                      data-testid={`credential-followup-${c.id}`}
+                    >
+                      Credentialing asked: {c.followUp.note}
+                    </p>
+                  )}
                 </div>
                 <div className="flex items-center gap-2">
                   <Badge className={statusStyle[c.status]}>{c.status}</Badge>
