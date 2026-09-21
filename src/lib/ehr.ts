@@ -1378,6 +1378,23 @@ export interface Clinician {
   licenseExpiresOn?: string;
 }
 
+/**
+ * How an appointment came to exist. Same convention as `SdohItemSource` /
+ * `CalomsDataSource` / `ResourceReferralSource`: a small string union plus a
+ * `*_SOURCE_LABEL` record for display. No second convention.
+ *
+ *  - `pre_release`     arranged by the pre-release / reentry team on a care plan
+ *  - `self_scheduled`  the patient booked it themselves in the portal
+ *  - `staff_scheduled` a staff member booked it from a staff surface
+ */
+export type AppointmentSource = "pre_release" | "self_scheduled" | "staff_scheduled";
+
+export const APPOINTMENT_SOURCE_LABEL: Record<AppointmentSource, string> = {
+  pre_release: "Arranged before release",
+  self_scheduled: "Booked by patient",
+  staff_scheduled: "Booked by staff",
+};
+
 export interface Appointment {
   id: string;
   patientId: string;
@@ -1385,6 +1402,8 @@ export interface Appointment {
   start: string; // ISO
   durationMin: number;
   status: SessionStatus;
+  /** How this appointment was created. Required — see `AppointmentSource`. */
+  source: AppointmentSource;
   billingStatus: BillingStatus;
   videoUrl?: string;
   fundingLane?: FundingLane;
@@ -3549,6 +3568,7 @@ const appointments: Appointment[] = [
     start: inHours(26),
     durationMin: 50,
     status: "scheduled",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3558,6 +3578,7 @@ const appointments: Appointment[] = [
     start: ago(72),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "submitted",
   },
   {
@@ -3567,6 +3588,7 @@ const appointments: Appointment[] = [
     start: inHours(4),
     durationMin: 50,
     status: "scheduled",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3576,6 +3598,7 @@ const appointments: Appointment[] = [
     start: ago(48),
     durationMin: 50,
     status: "no_show",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3585,6 +3608,7 @@ const appointments: Appointment[] = [
     start: ago(240),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "paid",
   },
   {
@@ -3594,6 +3618,7 @@ const appointments: Appointment[] = [
     start: ago(120),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "denied",
   },
 ];
@@ -5412,6 +5437,46 @@ function _previousProviderFor(patientId: string, serviceType?: ServiceType): str
   return rows[0]?.clinicianId;
 }
 
+/**
+ * The patient's own scheduled appointment that overlaps [start, start+duration),
+ * if any. Real interval overlap, not just an identical start time — a 50-minute
+ * therapy visit and a 30-minute follow-up starting 10 minutes later collide just
+ * as hard as two visits at the same moment.
+ */
+function _patientOverlap(
+  patientId: string,
+  startISO: string,
+  durationMin: number,
+  excludeApptId?: string,
+): Appointment | undefined {
+  const s = new Date(startISO).getTime();
+  if (Number.isNaN(s)) return undefined;
+  const e = s + Math.max(0, durationMin) * 60_000;
+  return appointments.find((x) => {
+    if (x.id === excludeApptId) return false;
+    if (x.patientId !== patientId) return false;
+    if (x.status !== "scheduled") return false;
+    const xs = new Date(x.start).getTime();
+    if (Number.isNaN(xs)) return false;
+    const xe = xs + Math.max(0, x.durationMin) * 60_000;
+    return xs < e && s < xe;
+  });
+}
+
+function _patientOverlapMessage(existing: Appointment): string {
+  const when = new Date(existing.start).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const who = clinicians.find((c) => c.id === existing.clinicianId)?.name;
+  return `You already have an appointment at that time (${when}${who ? ` with ${who}` : ""}). Pick another time, or reschedule that visit instead.`;
+}
+
+
+
 function _flagProviderSwitch(input: {
   patientId: string;
   fromClinicianId?: string;
@@ -6672,6 +6737,14 @@ export const AdelanteEHR = {
     serviceType?: ServiceType;
     modality?: "video" | "phone" | "in_person";
     locationId?: string;
+    /** How this booking was created. Defaults to `staff_scheduled`. */
+    source?: AppointmentSource;
+    /**
+     * Staff-only escape hatch for a deliberate overlap on the patient's own
+     * calendar (e.g. a correction in progress, or a paired visit a human has
+     * judged to be fine). Never set from patient self-booking.
+     */
+    allowPatientOverlap?: boolean;
   }) {
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
@@ -6694,7 +6767,21 @@ export const AdelanteEHR = {
     if (conflict) {
       throw new Error("That time was just taken. Please pick another slot.");
     }
-    const a: Appointment = { ...input, id: uid(), status: "scheduled", billingStatus: "draft" };
+    // Patient-level conflict: the clinician check above says nothing about the
+    // patient's OWN calendar, so a patient could self-book straight over an
+    // appointment the pre-release team arranged with a different clinician.
+    if (!input.allowPatientOverlap) {
+      const own = _patientOverlap(input.patientId, input.start, input.durationMin);
+      if (own) throw new Error(_patientOverlapMessage(own));
+    }
+    const { allowPatientOverlap: _ignored, ...fields } = input;
+    const a: Appointment = {
+      ...fields,
+      source: input.source ?? "staff_scheduled",
+      id: uid(),
+      status: "scheduled",
+      billingStatus: "draft",
+    };
     appointments.push(a);
     // Detect provider switch vs. patient's last provider (same service type when set).
     const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
@@ -6742,6 +6829,15 @@ export const AdelanteEHR = {
     if (conflict) {
       throw new Error("That time was just taken. Please pick another slot.");
     }
+    // Same patient-level guard as booking: moving a visit must not land it on
+    // top of another visit the same patient already has.
+    const ownOverlap = _patientOverlap(
+      a.patientId,
+      newStart,
+      patch?.durationMin ?? a.durationMin,
+      apptId,
+    );
+    if (ownOverlap) throw new Error(_patientOverlapMessage(ownOverlap));
     a.start = newStart;
     if (patch) {
       if (patch.clinicianId !== undefined) a.clinicianId = patch.clinicianId;
