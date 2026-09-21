@@ -43,6 +43,7 @@ import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as DocumentsRouteImport } from './routes/documents'
+import { Route as EligibilityWorklistRouteImport } from './routes/eligibility-worklist'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
 import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
@@ -270,6 +271,11 @@ const DashboardsRoute = DashboardsRouteImport.update({
 const DocumentsRoute = DocumentsRouteImport.update({
   id: '/documents',
   path: '/documents',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const EligibilityWorklistRoute = EligibilityWorklistRouteImport.update({
+  id: '/eligibility-worklist',
+  path: '/eligibility-worklist',
   getParentRoute: () => rootRouteImport,
 } as any)
 const GroupAuditRoute = GroupAuditRouteImport.update({
@@ -604,6 +610,7 @@ export interface FileRoutesByFullPath {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/documents': typeof DocumentsRoute
+  '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -697,6 +704,7 @@ export interface FileRoutesByTo {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/documents': typeof DocumentsRoute
+  '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -789,6 +797,7 @@ export interface FileRoutesById {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/documents': typeof DocumentsRoute
+  '/eligibility-worklist': typeof EligibilityWorklistRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -885,6 +894,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/documents'
+    | '/eligibility-worklist'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -978,6 +988,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/documents'
+    | '/eligibility-worklist'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -1069,6 +1080,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/documents'
+    | '/eligibility-worklist'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -1164,6 +1176,7 @@ export interface RootRouteChildren {
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   DocumentsRoute: typeof DocumentsRoute
+  EligibilityWorklistRoute: typeof EligibilityWorklistRoute
   GroupAuditRoute: typeof GroupAuditRoute
   GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
@@ -1440,6 +1453,13 @@ declare module '@tanstack/react-router' {
       path: '/documents'
       fullPath: '/documents'
       preLoaderRoute: typeof DocumentsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/eligibility-worklist': {
+      id: '/eligibility-worklist'
+      path: '/eligibility-worklist'
+      fullPath: '/eligibility-worklist'
+      preLoaderRoute: typeof EligibilityWorklistRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/group-audit': {
@@ -1967,6 +1987,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   DocumentsRoute: DocumentsRoute,
+  EligibilityWorklistRoute: EligibilityWorklistRoute,
   GroupAuditRoute: GroupAuditRoute,
   GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
