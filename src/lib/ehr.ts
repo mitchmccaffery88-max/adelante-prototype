@@ -6829,6 +6829,15 @@ export const AdelanteEHR = {
     if (conflict) {
       throw new Error("That time was just taken. Please pick another slot.");
     }
+    // Same patient-level guard as booking: moving a visit must not land it on
+    // top of another visit the same patient already has.
+    const ownOverlap = _patientOverlap(
+      a.patientId,
+      newStart,
+      patch?.durationMin ?? a.durationMin,
+      apptId,
+    );
+    if (ownOverlap) throw new Error(_patientOverlapMessage(ownOverlap));
     a.start = newStart;
     if (patch) {
       if (patch.clinicianId !== undefined) a.clinicianId = patch.clinicianId;
