@@ -1768,6 +1768,20 @@ export function NotesTab({
                   setTemplateId(v);
                   setAnswers({});
                 }}
+                canClone={(t) => canCloneTemplate({ role, staffId }, t)}
+                onClone={(t) => {
+                  try {
+                    const copy = AdelanteEHR.cloneNoteTemplateToPersonal(t.id, {
+                      staffId,
+                      staffName,
+                    });
+                    setTemplateId(copy.id);
+                    setAnswers({});
+                    toast.success("Saved as your own copy — the original is untouched.");
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
               />
             </div>
             <div className="space-y-1.5">
