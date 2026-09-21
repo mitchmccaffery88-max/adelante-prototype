@@ -61,7 +61,25 @@ export interface CredentialDoc {
   verifiedAt?: string;
   verifiedBy?: string;
   verificationMethod?: "primary_source" | "attestation";
-
+  /**
+   * §EHR audit Phase 2b — every expiry-date change, with the reason given.
+   * Kept rather than overwritten: an expiry edit can block or unblock booking,
+   * so who moved it and why has to stay answerable.
+   */
+  expiryChanges?: {
+    at: string;
+    by: string;
+    from?: string;
+    to?: string;
+    reason: string;
+  }[];
+  /** §Phase 2b — coordinator asked the clinician to act on this record. */
+  followUp?: {
+    requestedBy: string;
+    requestedAt: string;
+    note: string;
+    resolvedAt?: string;
+  };
 }
 
 export type PayerEnrollmentStatus = "enrolled" | "pending" | "not_enrolled" | "terminated";
@@ -470,6 +488,63 @@ export const AdelanteEHRExt = {
       ehrBus.publish({ type: "credential.updated", clinicianId });
     }
   },
+
+  // ----- §EHR audit Phase 2b — credentialing admin actions ------------------
+  // These are the coordinator-side actions the dashboard was missing. They sit
+  // beside the Phase 2a owner/assist upload path rather than replacing it, and
+  // every expiry change runs back through `syncLicenseExpiry`, so the booking
+  // hard-stop can never drift away from the document on file.
+
+  /**
+   * Edit a credential record. Changing the expiry date is materially different
+   * from fixing a typo — it can block or unblock booking — so it requires a
+   * reason, which is kept on the record.
+   */
+  updateCredential(
+    id: string,
+    patch: Partial<Pick<CredentialDoc, "kind" | "number" | "issuingState" | "issuedAt" | "expiresAt">>,
+    by: string,
+    reason?: string,
+  ) {
+    const c = credentials.find((x) => x.id === id);
+    if (!c) throw new Error("Credential not found.");
+    const expiryChanged = patch.expiresAt !== undefined && patch.expiresAt !== c.expiresAt;
+    if (expiryChanged && !(reason ?? "").trim())
+      throw new Error("A reason is required to change an expiry date.");
+    const before = c.expiresAt;
+    Object.assign(c, patch);
+    if (expiryChanged) {
+      c.expiryChanges = [
+        ...(c.expiryChanges ?? []),
+        { at: iso(), by, from: before, to: patch.expiresAt, reason: reason!.trim() },
+      ];
+      // A changed expiry is a new fact to verify — the old verification
+      // attested to a date that no longer applies.
+      c.verifiedAt = undefined;
+      c.verifiedBy = undefined;
+    }
+    this.syncLicenseExpiry(c.clinicianId);
+    ehrBus.publish({ type: "credential.updated", clinicianId: c.clinicianId });
+    return { ...c };
+  },
+
+  /** Flag a credential as needing the clinician's own attention. */
+  requestCredentialFollowUp(id: string, by: string, note: string) {
+    const c = credentials.find((x) => x.id === id);
+    if (!c) throw new Error("Credential not found.");
+    if (!note.trim()) throw new Error("Say what the clinician needs to do.");
+    c.followUp = { requestedBy: by, requestedAt: iso(), note: note.trim() };
+    ehrBus.publish({ type: "credential.updated", clinicianId: c.clinicianId });
+    return { ...c };
+  },
+
+  clearCredentialFollowUp(id: string) {
+    const c = credentials.find((x) => x.id === id);
+    if (!c?.followUp) return;
+    c.followUp = { ...c.followUp, resolvedAt: iso() };
+    ehrBus.publish({ type: "credential.updated", clinicianId: c.clinicianId });
+  },
+
 
 
   upsertEnrollment(input: Omit<PayerEnrollment, "id"> & { id?: string }) {
