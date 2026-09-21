@@ -1,6 +1,11 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, type ServiceType } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  APPOINTMENT_SOURCE_LABEL,
+  useEhr,
+  type ServiceType,
+} from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
@@ -106,6 +111,13 @@ function SchedulePage() {
           excludeApptId: isReschedule ? existing?.id : undefined,
         })
       : [],
+  );
+
+  // §Scheduling — patient-level awareness: what they already have booked.
+  const upcomingAppts = useEhr(() =>
+    AdelanteEHR.appointmentsForPatient(currentId)
+      .filter((a) => a.status === "scheduled" && +new Date(a.start) > Date.now())
+      .sort((a, b) => +new Date(a.start) - +new Date(b.start)),
   );
 
   const defaultDuration = activeService?.defaultDurationMin ?? existing?.durationMin ?? 50;
