@@ -5437,6 +5437,46 @@ function _previousProviderFor(patientId: string, serviceType?: ServiceType): str
   return rows[0]?.clinicianId;
 }
 
+/**
+ * The patient's own scheduled appointment that overlaps [start, start+duration),
+ * if any. Real interval overlap, not just an identical start time — a 50-minute
+ * therapy visit and a 30-minute follow-up starting 10 minutes later collide just
+ * as hard as two visits at the same moment.
+ */
+function _patientOverlap(
+  patientId: string,
+  startISO: string,
+  durationMin: number,
+  excludeApptId?: string,
+): Appointment | undefined {
+  const s = new Date(startISO).getTime();
+  if (Number.isNaN(s)) return undefined;
+  const e = s + Math.max(0, durationMin) * 60_000;
+  return appointments.find((x) => {
+    if (x.id === excludeApptId) return false;
+    if (x.patientId !== patientId) return false;
+    if (x.status !== "scheduled") return false;
+    const xs = new Date(x.start).getTime();
+    if (Number.isNaN(xs)) return false;
+    const xe = xs + Math.max(0, x.durationMin) * 60_000;
+    return xs < e && s < xe;
+  });
+}
+
+function _patientOverlapMessage(existing: Appointment): string {
+  const when = new Date(existing.start).toLocaleString(undefined, {
+    weekday: "short",
+    month: "short",
+    day: "numeric",
+    hour: "numeric",
+    minute: "2-digit",
+  });
+  const who = clinicians.find((c) => c.id === existing.clinicianId)?.name;
+  return `You already have an appointment at that time (${when}${who ? ` with ${who}` : ""}). Pick another time, or reschedule that visit instead.`;
+}
+
+
+
 function _flagProviderSwitch(input: {
   patientId: string;
   fromClinicianId?: string;
