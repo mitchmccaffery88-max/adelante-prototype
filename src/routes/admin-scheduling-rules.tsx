@@ -109,6 +109,8 @@ function SchedulingRulesPage() {
   const [open, setOpen] = useState(false);
   const [deactivating, setDeactivating] = useState<SchedulingRule | null>(null);
   const [reason, setReason] = useState("");
+  const [previewOpen, setPreviewOpen] = useState(false);
+
 
   if (access.level === "none") {
     return (
