@@ -9028,6 +9028,96 @@ export const AdelanteEHR = {
   listCoverageChecks(patientId: string): CoverageVerificationRecord[] {
     return patients.find((x) => x.id === patientId)?.coverage?.verifications ?? [];
   },
+
+  // ----- §Phase 3b — coverage plan spans (one coverage model) --------------
+  /** Newest-first payer spans on the patient's coverage record. */
+  listCoveragePlans(patientId: string): CoveragePlanSpan[] {
+    return patients.find((x) => x.id === patientId)?.coverage?.plans ?? [];
+  },
+  /** The span covering `at`, if any. Used by scheduling's payer-enrollment check. */
+  activeCoveragePlan(patientId: string, at = new Date().toISOString()): CoveragePlanSpan | undefined {
+    const when = +new Date(at);
+    return AdelanteEHR.listCoveragePlans(patientId).find(
+      (c) => +new Date(c.from) <= when && (!c.to || +new Date(c.to) >= when),
+    );
+  },
+  /**
+   * Record a plan on file. Attributed, like every other Phase 3a/3b coverage
+   * mutation. Adding a plan does NOT change `coverage.status` — knowing which
+   * plan someone named is not the same claim as "this coverage is active".
+   */
+  addCoveragePlan(
+    patientId: string,
+    input: {
+      payer: string;
+      plan?: string;
+      memberId?: string;
+      from: string;
+      to?: string;
+      source: CoveragePlanSource;
+    } & CoverageActor,
+  ): { ok: boolean; error?: string } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ok: false, error: "Patient not found." };
+    const payer = input.payer.trim();
+    if (!payer) return { ok: false, error: "Name the plan or payer." };
+    if (!input.from) return { ok: false, error: "A start date is required." };
+    if (input.to && input.to < input.from) {
+      return { ok: false, error: "The end date is before the start date." };
+    }
+    const span: CoveragePlanSpan = {
+      id: uid(),
+      payer,
+      ...(input.plan?.trim() ? { plan: input.plan.trim() } : {}),
+      ...(input.memberId?.trim() ? { memberId: input.memberId.trim() } : {}),
+      from: input.from,
+      ...(input.to ? { to: input.to } : {}),
+      source: input.source,
+      recordedBy: input.actorId,
+      recordedByRole: input.actorRole,
+      recordedAt: new Date().toISOString(),
+    };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
+    p.coverage = { ...base, plans: [span, ...(base.plans ?? [])] };
+    appendAudit({
+      category: "clinical",
+      action: "coverage_plan_added",
+      patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: { payer: span.payer, from: span.from, to: span.to ?? null, source: span.source },
+    });
+    emit();
+    return { ok: true };
+  },
+  /** Close an open span. Attributed; never deletes history. */
+  endCoveragePlan(
+    patientId: string,
+    planId: string,
+    endDate: string,
+    actor: CoverageActor,
+  ): { ok: boolean; error?: string } {
+    const p = patients.find((x) => x.id === patientId);
+    const span = p?.coverage?.plans?.find((c) => c.id === planId);
+    if (!p || !span) return { ok: false, error: "That plan is not on this record." };
+    if (!endDate) return { ok: false, error: "An end date is required." };
+    if (endDate < span.from) return { ok: false, error: "The end date is before the start date." };
+    span.to = endDate;
+    appendAudit({
+      category: "clinical",
+      action: "coverage_plan_ended",
+      patientId,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { payer: span.payer, to: endDate },
+    });
+    emit();
+    return { ok: true };
+  },
+
   /**
    * §Phase 3a fix #4 — reactivation follow-up.
    *
