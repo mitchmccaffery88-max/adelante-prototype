@@ -484,12 +484,11 @@ export const STAFF_NAV: NavEntry[] = [
     icon: FileSearch,
     to: "/admin-audit",
     group: "administration",
-    // §Permission fix — was `consent_ledger` (read), which let billing and
-    // peer_specialist reach the whole audit surface. No dedicated audit class
-    // exists; `catalog_governance` at write level is the existing
-    // administration-tier class whose writers (sys_admin, clinical_coordinator)
-    // are the roles that actually administer the platform.
-    gate: { kind: "record_class", anyOf: ["catalog_governance"], minLevel: "write" },
+    // §EHR audit Phase 1f — now on the dedicated `platform_administration`
+    // class (Tab 7 finding) instead of borrowing `catalog_governance` at write
+    // level. Same two roles reach it as before: sys_admin (write) and
+    // clinical_coordinator (read, compliance oversight).
+    gate: { kind: "record_class", anyOf: ["platform_administration"] },
   },
   {
     // §Quality pass Group E — document lifecycle trail. Gated on the
@@ -534,11 +533,11 @@ export const STAFF_NAV: NavEntry[] = [
     icon: Settings2,
     to: "/admin-vendors",
     group: "administration",
-    // §Permission fix — was `open`. No platform/integration-config class
-    // exists; `catalog_governance` is the closest existing system-configuration
-    // class (sys_admin + clinical_coordinator write, senior clinical read,
-    // peer/billing none), and vendor health is read-level monitoring.
-    gate: { kind: "record_class", anyOf: ["catalog_governance"] },
+    // §EHR audit Phase 1f — now on the dedicated `platform_administration`
+    // class. Intentional narrowing: pmhnp / therapist / ecm_provider used to
+    // reach vendor health through the borrowed `catalog_governance` read and
+    // no longer do — integration health carries no clinical action.
+    gate: { kind: "record_class", anyOf: ["platform_administration"] },
   },
 
   // ----- My account (personal settings — every staff member has their own) -----
