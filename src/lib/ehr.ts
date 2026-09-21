@@ -8548,7 +8548,12 @@ export const AdelanteEHR = {
     if (!p) return { part2Sud: false, ecmShare: false, sms: true };
     const base = p.consentState ?? {
       part2Sud: p.consents.part2Sud,
-      ecmShare: Boolean(p.coverage?.ecmEligible),
+      // §Phase 3a fix #1 — ECM *eligibility* must never stand in for ECM
+      // information-sharing *consent*. Absent an explicit consent record the
+      // honest answer is "not granted"; `ecmConsentCapturePending` raises the
+      // prompt to go and ask.
+      ecmShare: false,
+
       sms: p.smsFallback,
     };
     // §ASCMI — Part 2 is now DERIVED from the structured record, evaluated
