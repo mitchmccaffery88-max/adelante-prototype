@@ -3568,6 +3568,7 @@ const appointments: Appointment[] = [
     start: inHours(26),
     durationMin: 50,
     status: "scheduled",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3577,6 +3578,7 @@ const appointments: Appointment[] = [
     start: ago(72),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "submitted",
   },
   {
@@ -3586,6 +3588,7 @@ const appointments: Appointment[] = [
     start: inHours(4),
     durationMin: 50,
     status: "scheduled",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3595,6 +3598,7 @@ const appointments: Appointment[] = [
     start: ago(48),
     durationMin: 50,
     status: "no_show",
+    source: "staff_scheduled",
     billingStatus: "draft",
   },
   {
@@ -3604,6 +3608,7 @@ const appointments: Appointment[] = [
     start: ago(240),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "paid",
   },
   {
@@ -3613,6 +3618,7 @@ const appointments: Appointment[] = [
     start: ago(120),
     durationMin: 50,
     status: "attended",
+    source: "staff_scheduled",
     billingStatus: "denied",
   },
 ];
