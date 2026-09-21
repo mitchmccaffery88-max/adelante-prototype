@@ -60,6 +60,13 @@ export interface TemplateField {
    * consumer exists yet — do not build AI-fill UI against this field.
    */
   ai_hint?: string;
+  /**
+   * §EHR audit Phase 2b — a Global/Department author marked this field as
+   * mandatory structure (billing/HIPAA sections and the like). A personal
+   * clone inherits it and cannot delete it, un-require it, or unlock it. See
+   * `lockedFieldViolations` in `templateScope.ts`.
+   */
+  locked?: boolean;
 }
 
 /**

@@ -63,6 +63,7 @@ import {
   type TemplateAnswers,
 } from "@/lib/templateSchema";
 import { NoteTemplatePicker } from "@/components/clinical/NoteTemplatePicker";
+import { canCloneTemplate, templatesVisibleTo } from "@/lib/templateScope";
 import {
   useActingRole,
   useActingStaff,
@@ -1680,7 +1681,13 @@ export function NotesTab({
     category: "none" as "none" | "sud" | "mental_health" | "pregnancy" | "medical",
   });
   // Template layer: "none" keeps the existing free-text SOAP editor untouched.
-  const templates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  // §EHR audit Phase 2b — the picker was previously unfiltered, which was the
+  // one real inconsistency with the permission-checked admin page. It is now
+  // scoped by USE rights (System + own discipline + own personal templates),
+  // which is deliberately broader than EDIT rights: picking a template is
+  // documentation, authoring one is configuration.
+  const allTemplates = useEhr(() => AdelanteEHR.listNoteTemplates());
+  const templates = templatesVisibleTo(allTemplates, { role, staffId });
   const [templateId, setTemplateId] = useState<string>(
     () =>
       ((initialTemplateKey ?? restrictToTemplateKey)
@@ -1760,6 +1767,20 @@ export function NotesTab({
                 onChange={(v) => {
                   setTemplateId(v);
                   setAnswers({});
+                }}
+                canClone={(t) => canCloneTemplate({ role, staffId }, t)}
+                onClone={(t) => {
+                  try {
+                    const copy = AdelanteEHR.cloneNoteTemplateToPersonal(t.id, {
+                      staffId,
+                      staffName,
+                    });
+                    setTemplateId(copy.id);
+                    setAnswers({});
+                    toast.success("Saved as your own copy — the original is untouched.");
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
                 }}
               />
             </div>

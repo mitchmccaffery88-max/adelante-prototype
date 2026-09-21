@@ -492,6 +492,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   // configuration, not patient care: sys_admin + clinical_coordinator write,
   // documenting clinicians read (they pick templates when writing notes),
   // billing gets nothing — template structure is not claim data.
+  // §EHR audit Phase 2b — "write" now means specifically "may author the
+  // SHARED tiers" (System / Discipline). "read" means the library is visible
+  // and the person may keep their own PERSONAL copies, which is documentation
+  // rather than configuration. sud_counselor and clinical_trainee were added
+  // for exactly that reason: they write notes, so they need a personal tier.
   note_templates: {
     sys_admin: "write",
     clinical_coordinator: "write",
@@ -499,6 +504,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     ecm_provider: "read",
     peer_specialist: "read",
+    sud_counselor: "read",
+    clinical_trainee: "read",
   },
   // §Content Management — WHO MAY AUTHOR patient-facing educational content.
   // Deliberately WIDER than note_templates on the author side: the people who

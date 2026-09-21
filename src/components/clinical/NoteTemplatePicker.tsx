@@ -4,9 +4,11 @@
 // receives a template id (or "none") and owns the snapshot/answer/sign flow.
 // This component only changes how a clinician chooses.
 import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
 import type { NoteTemplate } from "@/lib/ehr";
 import { requiredFieldSummary } from "@/lib/templateSchema";
+import { scopeOf, TEMPLATE_SCOPE_LABEL } from "@/lib/templateScope";
 
 function encounterLabel(raw: string) {
   const t = (raw || "general").replace(/[_-]+/g, " ").trim();
@@ -17,11 +19,16 @@ export function NoteTemplatePicker({
   templates,
   value,
   onChange,
+  canClone,
+  onClone,
 }: {
   templates: NoteTemplate[];
   /** Template id, or "none" for the built-in free-text SOAP editor. */
   value: string;
   onChange: (id: string) => void;
+  /** §Phase 2b — show "Save as my template" for templates this person may copy. */
+  canClone?: (t: NoteTemplate) => boolean;
+  onClone?: (t: NoteTemplate) => void;
 }) {
   // Grouped by encounter type, alphabetical within each group, groups
   // themselves alphabetical. Encounter type is the axis a clinician already
@@ -70,36 +77,57 @@ export function NoteTemplatePicker({
           {list.map((t) => {
             const { baseline, conditional } = requiredFieldSummary(t.schema);
             const selected = value === t.id;
+            const cloneable = Boolean(onClone && canClone?.(t));
             return (
-              <button
-                key={t.id}
-                type="button"
-                role="radio"
-                aria-checked={selected}
-                className={optionClass(selected)}
-                onClick={() => onChange(t.id)}
-              >
-                <span className="flex items-start justify-between gap-2">
-                  <span className="text-navy text-sm font-medium">
-                    {t.title}{" "}
-                    <span className="text-muted-foreground font-normal">v{t.version}</span>
+              // The clone action is a sibling, never nested inside the radio —
+              // a button inside a button is invalid markup.
+              <div key={t.id} className="space-y-1">
+                <button
+                  type="button"
+                  role="radio"
+                  aria-checked={selected}
+                  className={optionClass(selected)}
+                  onClick={() => onChange(t.id)}
+                >
+                  <span className="flex items-start justify-between gap-2">
+                    <span className="text-navy text-sm font-medium">
+                      {t.title}{" "}
+                      <span className="text-muted-foreground font-normal">v{t.version}</span>
+                    </span>
+                    <span className="flex shrink-0 items-center gap-1">
+                      <Badge variant="outline" className="text-[10px]">
+                        {TEMPLATE_SCOPE_LABEL[scopeOf(t)]}
+                      </Badge>
+                      <Badge variant="secondary" className="text-[10px]">
+                        {baseline} required
+                      </Badge>
+                    </span>
                   </span>
-                  <Badge variant="secondary" className="shrink-0 text-[10px]">
-                    {baseline} required
-                  </Badge>
-                </span>
-                {t.description && (
-                  <span className="text-muted-foreground mt-0.5 block text-[11px]">
-                    {t.description}
-                  </span>
+                  {t.description && (
+                    <span className="text-muted-foreground mt-0.5 block text-[11px]">
+                      {t.description}
+                    </span>
+                  )}
+                  {conditional > 0 && (
+                    <span className="text-muted-foreground mt-1 block text-[10px]">
+                      +{conditional} more required field{conditional === 1 ? "" : "s"} may appear
+                      depending on answers
+                    </span>
+                  )}
+                </button>
+                {cloneable && (
+                  <Button
+                    type="button"
+                    size="sm"
+                    variant="ghost"
+                    className="h-7 text-[11px]"
+                    data-testid={`picker-clone-${t.key}`}
+                    onClick={() => onClone!(t)}
+                  >
+                    Save as my template
+                  </Button>
                 )}
-                {conditional > 0 && (
-                  <span className="text-muted-foreground mt-1 block text-[10px]">
-                    +{conditional} more required field{conditional === 1 ? "" : "s"} may appear
-                    depending on answers
-                  </span>
-                )}
-              </button>
+              </div>
             );
           })}
         </div>
