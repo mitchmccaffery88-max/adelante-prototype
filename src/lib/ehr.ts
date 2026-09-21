@@ -17415,6 +17415,15 @@ export const AdelanteEHR = {
         deactivationReason: row.deactivationReason,
         createdBy: staffName,
         createdAt: new Date().toISOString(),
+        // §Phase 2b — scope/ownership/locked inheritance are identity, not
+        // content: a new version of a personal clone is still that person's.
+        scope: row.scope,
+        ...(row.departmentId ? { departmentId: row.departmentId } : {}),
+        ...(row.ownerStaffId ? { ownerStaffId: row.ownerStaffId } : {}),
+        ...(row.clonedFrom ? { clonedFrom: row.clonedFrom } : {}),
+        ...(row.inheritedLockedKeys?.length
+          ? { inheritedLockedKeys: [...row.inheritedLockedKeys] }
+          : {}),
       };
       row.supersededBy = next.id;
       row.updatedBy = staffName;
