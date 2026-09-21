@@ -115,7 +115,11 @@ function CaseManagerPage() {
   const iHaveAssignments = hasAssignmentIdentity(identity);
   // §EHR audit Phase 1g — the caseload list defaults to "assigned to me".
   // A VIEW default, not a boundary; see src/lib/caseloadScope.ts.
-  const [scope, setScope] = useState<CaseloadScope>("mine");
+  // Staff whose profile isn't linked to a caseload or provider record open on
+  // the full program list instead: "assigned to me" is empty for them no
+  // matter what, and landing on a blank page with no work visible is worse
+  // than showing the list they saw before. The toggle still explains both.
+  const [scope, setScope] = useState<CaseloadScope>(iHaveAssignments ? "mine" : "all");
   const cms = useEhr(() => AdelanteEHR.listCaseManagers());
   const [cmId, setCmId] = useState(identity.caseManagerId ?? cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
@@ -215,6 +219,12 @@ function CaseManagerPage() {
               {CASELOAD_SCOPE_NOTE}
             </p>
           </div>
+          {scope === "all" && !iHaveAssignments && (
+            <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-no-identity-all">
+              Showing all program patients: your staff profile isn't linked to a caseload or a
+              provider record yet, so "My caseload" has nothing to show.
+            </p>
+          )}
           {scope === "mine" && !iHaveAssignments && (
             <p className="mt-3 text-sm text-muted-foreground" data-testid="caseload-no-identity">
               No patients are assigned to {acting.staffName}. Your staff profile isn't linked to a
