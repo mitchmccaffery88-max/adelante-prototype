@@ -1,6 +1,15 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
-import { AdelanteEHR, useEhr, type ResourceReferralCategory } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  useEhr,
+  COVERAGE_CHECK_CHANNEL_LABEL,
+  type ResourceReferralCategory,
+  type EligibilityFlagEvent,
+  type EligibilityFlagKey,
+} from "@/lib/ehr";
+import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
+
 import { useActingStaff } from "@/lib/roles";
 import {
   assignmentIdentityFor,
