@@ -481,19 +481,25 @@ export const AdelanteEHRExt = {
     ehrBus.publish({ type: "appointment.state", apptId, state: next });
   },
 
-  signNote(encounterId: string, clinicianId: string, method: "human" | "machine_assisted" = "human") {
+  /**
+   * `signerId` is the REAL acting user's token, never the encounter's original
+   * clinician. Callers come through `signUnsignedWorkRow` (noteSignFlow.ts),
+   * which authorizes the actor first.
+   */
+  signNote(encounterId: string, signerId: string, method: "human" | "machine_assisted" = "human") {
     if (this.isNoteSigned(encounterId)) return;
-    noteSignatures.push({ id: uid(), encounterId, clinicianId, signedAt: iso(), method });
-    ehrBus.publish({ type: "note.signed", encounterId, clinicianId });
+    noteSignatures.push({ id: uid(), encounterId, clinicianId: signerId, signedAt: iso(), method });
+    ehrBus.publish({ type: "note.signed", encounterId, clinicianId: signerId });
     // Advance any linked claim
     const claim = claims.find((c) => c.encounterId === encounterId);
     if (claim && claim.state === "documented") {
       claim.state = "signed";
       claim.updatedAt = iso();
-      claim.history.push({ at: iso(), state: "signed", actor: clinicianId });
+      claim.history.push({ at: iso(), state: "signed", actor: signerId });
       ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     }
   },
+
 
   upsertClaimFromEncounter(apptId: string): Claim {
     let claim = claims.find((c) => c.encounterId === apptId);

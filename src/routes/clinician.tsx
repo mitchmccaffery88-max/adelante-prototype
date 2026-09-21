@@ -43,7 +43,7 @@ import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
-import { unsignedNotes } from "@/lib/dashboardMetrics";
+import { listUnsignedWork } from "@/lib/unsignedWork";
 
 
 export const Route = createFileRoute("/clinician")({
@@ -245,7 +245,7 @@ function ClinicianPage() {
         <TabsContent value="dashboard">
           {/* §Queue counts — the one canonical at-a-glance row. Replaces the
               old scattered text links; the sidebar remains canonical nav. */}
-          <QueueCountRow patients={patients} />
+          <QueueCountRow />
 
           {/* §Quality pass Group A — supervised roles see live supervision status. */}
           <SupervisionBanner />
@@ -625,7 +625,7 @@ function ClinicianPage() {
  * to the real queue page; the left sidebar stays the canonical navigation, this
  * is the "what needs me right now" signal.
  */
-function QueueCountRow({ patients }: { patients: ReturnType<typeof AdelanteEHR.listPatients> }) {
+function QueueCountRow() {
   const crisis = useEhr(
     () =>
       AdelanteEHR.listOpenCrisisEscalations().length +
@@ -637,9 +637,14 @@ function QueueCountRow({ patients }: { patients: ReturnType<typeof AdelanteEHR.l
   const worklist = useEhr(
     () => AdelanteEHR.listCaseTasks().filter((t) => t.status === "open").length,
   );
-  const unsigned = unsignedNotes(patients).length;
   // §Tier 3 — personal rollup count, scoped to the acting staff member.
   const actor = useActingStaff();
+  // §EHR audit Phase 1a — identical derivation and scope to the Inbox tab this
+  // tile links to, so the two can never disagree.
+  const unsigned = useEhr(
+    () => listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId }).length,
+  );
+
   const mine = useEhr(
     () =>
       myOpenItems({
