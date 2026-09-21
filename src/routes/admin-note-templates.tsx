@@ -574,6 +574,12 @@ function TemplateBuilderDialog({
                         size="icon"
                         aria-label="Remove field"
                         className="self-end"
+                        disabled={inheritedLocked.includes(field.key)}
+                        title={
+                          inheritedLocked.includes(field.key)
+                            ? "Locked by the source template — can't be removed here."
+                            : undefined
+                        }
                         onClick={() =>
                           updateSection(si, {
                             fields: section.fields.filter((_, j) => j !== fi),
@@ -696,10 +702,29 @@ function TemplateBuilderDialog({
                       <Checkbox
                         checked={Boolean(field.required)}
                         aria-label={`${field.label || "Field"} required`}
+                        disabled={inheritedLocked.includes(field.key) && Boolean(field.required)}
                         onCheckedChange={(v) => updateField(si, fi, { required: Boolean(v) })}
                       />
                       <span>Required — blocks signing while unanswered</span>
                     </label>
+                    {/* §Phase 2b — only a Global/Department author sets locks.
+                        On a personal clone the lock is shown, never editable. */}
+                    {canSetLocks ? (
+                      <label className="flex items-center gap-2 text-[11px] text-muted-foreground">
+                        <Checkbox
+                          checked={Boolean(field.locked)}
+                          aria-label={`${field.label || "Field"} locked`}
+                          onCheckedChange={(v) => updateField(si, fi, { locked: Boolean(v) })}
+                        />
+                        <span>Locked — personal copies can't remove or un-require this</span>
+                      </label>
+                    ) : (
+                      field.locked && (
+                        <p className="flex items-center gap-1.5 text-[11px] text-muted-foreground">
+                          <Lock className="h-3 w-3" /> Locked by the source template.
+                        </p>
+                      )
+                    )}
                   </div>
                 ))}
                 <Button
