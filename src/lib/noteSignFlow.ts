@@ -68,6 +68,20 @@ export function noteSignBlockers(
   return mergeBlockers(domain, attestationBlockers(draft));
 }
 
+/**
+ * §EHR audit Phase 1e — the ONE place a signed chart note is mirrored into the
+ * encounter signature ledger, so a claim linked to the documented visit
+ * advances `documented → signed`. No-ops for a note with no linked visit.
+ * Shared by the notes queue and the chart signing panel.
+ */
+export function mirrorNoteSignatureToLedger(
+  note: { appointmentId?: string },
+  signerId: string,
+): void {
+  if (!note.appointmentId) return;
+  AdelanteEHRExt.signNote(note.appointmentId, signerId);
+}
+
 export function signUnsignedWorkRow(
   row: UnsignedWorkRow,
   actor: NoteSignActor,
@@ -110,9 +124,7 @@ export function signUnsignedWorkRow(
   }
 
   // Mirror into the encounter signature ledger (claims read this).
-  const apptId = row.note.appointmentId;
-  if (apptId && !auth.routesToCosign) {
-    AdelanteEHRExt.signNote(apptId, actor.clinicianId ?? actor.staffId);
-  }
+  if (!auth.routesToCosign)
+    mirrorNoteSignatureToLedger(row.note, actor.clinicianId ?? actor.staffId);
   return { ok: true, routedToCosign: auth.routesToCosign };
 }

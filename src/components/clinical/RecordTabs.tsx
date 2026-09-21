@@ -109,6 +109,7 @@ import {
   type SignBlocker,
 } from "@/lib/attestation";
 import { resolveVisitLink, NO_VISIT } from "@/lib/noteVisitLink";
+import { mirrorNoteSignatureToLedger } from "@/lib/noteSignFlow";
 import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
 import { SignBlockerList } from "@/components/signature/SignBlockerList";
 
