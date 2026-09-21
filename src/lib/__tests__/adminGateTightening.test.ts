@@ -31,19 +31,50 @@ describe("tightened administration gates", () => {
     expect(reaches("clinical_coordinator", "/admin-credentialing")).toBe(true);
   });
 
-  it("vendor status needs catalog_governance", () => {
-    expect(gateOf("admin-vendors")).toMatchObject({ anyOf: ["catalog_governance"] });
-    for (const role of ["peer_specialist", "medical_assistant", "billing"] as const) {
+  // §EHR audit Phase 1f — audit + vendors moved off the borrowed
+  // `catalog_governance` class onto the dedicated `platform_administration`
+  // class, and catalog governance itself narrowed to its intended target.
+  it("vendor status needs platform_administration", () => {
+    expect(gateOf("admin-vendors")).toMatchObject({ anyOf: ["platform_administration"] });
+    for (const role of [
+      "peer_specialist",
+      "medical_assistant",
+      "billing",
+      "pmhnp",
+      "therapist",
+      "ecm_provider",
+    ] as const) {
       expect([role, reaches(role, "/admin-vendors")]).toEqual([role, false]);
     }
     expect(reaches("sys_admin", "/admin-vendors")).toBe(true);
+    expect(reaches("clinical_coordinator", "/admin-vendors")).toBe(true);
+  });
+
+  it("catalog governance is clinical config owners + super admin only", () => {
+    for (const role of STAFF_ROLES.map((r) => r.key)) {
+      const expected = role === "sys_admin" || role === "clinical_coordinator";
+      expect([role, canAccess(role, "catalog_governance").level !== "none"]).toEqual([
+        role,
+        expected,
+      ]);
+      expect([role, reaches(role, "/admin-catalog-governance")]).toEqual([role, expected]);
+    }
+  });
+
+  it("platform administration reaches exactly sys_admin and clinical_coordinator", () => {
+    for (const role of STAFF_ROLES.map((r) => r.key)) {
+      const expected =
+        role === "sys_admin" ? "write" : role === "clinical_coordinator" ? "read" : "none";
+      expect([role, canAccess(role, "platform_administration").level]).toEqual([role, expected]);
+    }
   });
 
   it("audit log is administration-tier, not consent-ledger-tier", () => {
-    expect(gateOf("admin-audit")).toMatchObject({
-      anyOf: ["catalog_governance"],
-      minLevel: "write",
-    });
+    expect(gateOf("admin-audit")).toMatchObject({ anyOf: ["platform_administration"] });
+    for (const role of ["pmhnp", "therapist", "ecm_provider"] as const) {
+      expect([role, reaches(role, "/admin-audit")]).toEqual([role, false]);
+    }
+    expect(reaches("clinical_coordinator", "/admin-audit")).toBe(true);
     expect(reaches("billing", "/admin-audit")).toBe(false);
     expect(reaches("peer_specialist", "/admin-audit")).toBe(false);
     expect(reaches("sys_admin", "/admin-audit")).toBe(true);
