@@ -17383,6 +17383,14 @@ export const AdelanteEHR = {
     if (!row) throw new Error("Template not found.");
     if (row.supersededBy)
       throw new Error("This template version has been superseded. Edit the latest version.");
+    // §Phase 2b — locked structure inherited from a Global/Department source
+    // survives every later edit of a personal clone. Only rows that actually
+    // inherited something are checked; a tier author editing their OWN locked
+    // fields is exactly who is allowed to change them.
+    if (patch.schema && row.inheritedLockedKeys?.length) {
+      const violations = lockedFieldViolations(row.inheritedLockedKeys, row.schema, patch.schema);
+      if (violations.length) throw new Error(violations.map((v) => v.message).join(" "));
+    }
     const nextTitle = patch.title !== undefined ? patch.title.trim() : row.title;
     if (!nextTitle) throw new Error("A template title is required.");
     // `esReviewed` is a translation-review flag, not answer semantics, so it is
