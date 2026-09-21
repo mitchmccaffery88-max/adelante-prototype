@@ -245,7 +245,7 @@ function ClinicianPage() {
         <TabsContent value="dashboard">
           {/* §Queue counts — the one canonical at-a-glance row. Replaces the
               old scattered text links; the sidebar remains canonical nav. */}
-          <QueueCountRow patients={patients} />
+          <QueueCountRow />
 
           {/* §Quality pass Group A — supervised roles see live supervision status. */}
           <SupervisionBanner />
@@ -625,7 +625,7 @@ function ClinicianPage() {
  * to the real queue page; the left sidebar stays the canonical navigation, this
  * is the "what needs me right now" signal.
  */
-function QueueCountRow({ patients }: { patients: ReturnType<typeof AdelanteEHR.listPatients> }) {
+function QueueCountRow() {
   const crisis = useEhr(
     () =>
       AdelanteEHR.listOpenCrisisEscalations().length +
