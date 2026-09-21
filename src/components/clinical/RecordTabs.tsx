@@ -1712,6 +1712,14 @@ export function NotesTab({
   const authorId = clinicianId ?? staffId;
   const canWrite = !readOnly;
   const clinicians = AdelanteEHR.listClinicians();
+  const visitLink = resolveVisitLink(appointments, patient.progressNotes ?? [], {
+    patientId: patient.id,
+    authorId,
+    noteDate: new Date().toISOString(),
+  });
+  const selectedVisitId = visitChoice ?? visitLink.defaultId ?? NO_VISIT;
+  const clinicianLabel = (id: string) =>
+    clinicians.find((c) => c.id === id)?.name ?? getStaffMember(id)?.name ?? id;
   // Same 42 CFR Part 2 gate that hides SUD problem entries — one mechanism.
   const noteGate = (n: ProgressNote) => {
     const cls = noteGateClass(n);
