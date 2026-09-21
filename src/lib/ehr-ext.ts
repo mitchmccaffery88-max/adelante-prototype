@@ -468,6 +468,18 @@ export const AdelanteEHRExt = {
   addCredential(input: Omit<CredentialDoc, "id" | "uploadedAt">) {
     const c: CredentialDoc = { ...input, id: uid(), uploadedAt: iso() };
     credentials.push(c);
+    // §Phase 2b — uploading the thing that was asked for answers the request.
+    credentials
+      .filter(
+        (x) =>
+          x.clinicianId === c.clinicianId &&
+          x.kind === c.kind &&
+          x.followUp &&
+          !x.followUp.resolvedAt,
+      )
+      .forEach((x) => {
+        x.followUp = { ...x.followUp!, resolvedAt: iso() };
+      });
     this.syncLicenseExpiry(c.clinicianId);
     ehrBus.publish({ type: "credential.updated", clinicianId: c.clinicianId });
   },
