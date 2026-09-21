@@ -452,11 +452,45 @@ export interface SelfHelpModule {
   completedAt?: string;
 }
 
-export interface CoverageSnapshot {
-  asOf: string;
-  status: CoverageStatus;
-  countyOfResponsibility: string;
+/**
+ * §Phase 3b — how a plan on file got there. There is NO automated eligibility
+ * transaction in this app (no 270/271, no clearinghouse), so no value here may
+ * claim an electronic verification: a staff-recorded check is the strongest
+ * provenance available.
+ */
+export type CoveragePlanSource = "self_report" | "front_desk" | "staff_checked";
+
+export const COVERAGE_PLAN_SOURCE_LABEL: Record<CoveragePlanSource, string> = {
+  self_report: "Client told us",
+  front_desk: "Front desk / paperwork",
+  staff_checked: "Staff checked with the plan or county",
+};
+
+/**
+ * §Phase 3b — a dated payer span on the patient's coverage record. This is the
+ * migrated home of the former `CoverageSpan` in `ehr-ext.ts`, which was a
+ * second, disconnected coverage shape. `Patient.coverage` is the single source
+ * of truth for coverage; this is the "which plan, for what dates" detail it
+ * previously lacked.
+ *
+ * `memberId` is the PLAN-issued member number. It is NOT a CIN — `Patient.cin`
+ * is the one canonical CIN, and nothing here may duplicate it.
+ */
+export interface CoveragePlanSpan {
+  id: string;
+  payer: string;
+  plan?: string;
+  memberId?: string;
+  /** YYYY-MM-DD */
+  from: string;
+  /** YYYY-MM-DD; absent means still current. */
+  to?: string;
+  source: CoveragePlanSource;
+  recordedBy?: string;
+  recordedByRole?: StaffRole;
+  recordedAt?: string;
 }
+
 
 export type ContactChannel = "text" | "call" | "video";
 export type BestTime = "morning" | "afternoon" | "evening";
