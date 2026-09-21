@@ -108,6 +108,8 @@ import {
   type AttestationDraft,
   type SignBlocker,
 } from "@/lib/attestation";
+import { resolveVisitLink, NO_VISIT } from "@/lib/noteVisitLink";
+import { mirrorNoteSignatureToLedger } from "@/lib/noteSignFlow";
 import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
 import { SignBlockerList } from "@/components/signature/SignBlockerList";
 
@@ -1693,6 +1695,10 @@ export function NotesTab({
   // real draft MedOrders from the moment they are created; this only tracks
   // which ones came from the note so they can be stamped with its id.
   const [stagedOrderIds, setStagedOrderIds] = useState<string[]>([]);
+  // §Phase 1e — which attended visit this note documents. `null` means "use
+  // the unambiguous default"; a string is an explicit clinician choice.
+  const [visitChoice, setVisitChoice] = useState<string | null>(null);
+  const appointments = useEhr(() => AdelanteEHR.listAppointments());
   const composeAutofill = useNoteAutofillSnapshots(patientId, activeTemplate?.schema);
   useDraftDirty(
     `notes:${patientId}`,
@@ -1707,6 +1713,14 @@ export function NotesTab({
   const authorId = clinicianId ?? staffId;
   const canWrite = !readOnly;
   const clinicians = AdelanteEHR.listClinicians();
+  const visitLink = resolveVisitLink(appointments, patient.progressNotes ?? [], {
+    patientId: patient.id,
+    authorId,
+    noteDate: new Date().toISOString(),
+  });
+  const selectedVisitId = visitChoice ?? visitLink.defaultId ?? NO_VISIT;
+  const clinicianLabel = (id: string) =>
+    clinicians.find((c) => c.id === id)?.name ?? getStaffMember(id)?.name ?? id;
   // Same 42 CFR Part 2 gate that hides SUD problem entries — one mechanism.
   const noteGate = (n: ProgressNote) => {
     const cls = noteGateClass(n);
@@ -1821,17 +1835,57 @@ export function NotesTab({
                 />
               </div>
             ))}
+            {/* §Phase 1e — the visit this note documents. Defaults only when
+                exactly one attended, undocumented visit of this author's is on
+                the same day; otherwise the clinician picks. */}
+            <div className="space-y-1.5" data-testid="note-visit-link">
+              <Label className="text-xs">Visit this note documents</Label>
+              <Select
+                value={selectedVisitId}
+                onValueChange={(v) => setVisitChoice(v)}
+              >
+                <SelectTrigger data-testid="note-visit-link-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_VISIT}>No visit — not tied to an appointment</SelectItem>
+                  {visitLink.candidates.map((c) => (
+                    <SelectItem key={c.appointment.id} value={c.appointment.id}>
+                      {new Date(c.appointment.start).toLocaleString()} ·{" "}
+                      {clinicianLabel(c.appointment.clinicianId)}
+                      {c.sameDayOwn ? " · today, your visit" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground" data-testid="note-visit-link-hint">
+                {visitLink.ambiguous && visitChoice === null
+                  ? "More than one attended visit today — choose which one this note documents."
+                  : selectedVisitId === NO_VISIT
+                    ? visitLink.candidates.length === 0
+                      ? "No attended visit is waiting for documentation, so this note is not linked to one."
+                      : "Not linked to a visit. Link it if this note documents one."
+                    : visitChoice === null
+                      ? "Linked automatically to today's attended visit — change it if that's wrong."
+                      : "Linked to the visit you chose."}
+              </p>
+            </div>
             <Button
               className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-              disabled={!authorId}
+              disabled={!authorId || (visitLink.ambiguous && visitChoice === null)}
               onClick={() => {
                 if (!authorId) return;
+                if (visitLink.ambiguous && visitChoice === null) {
+                  toast.error("Choose which visit this note documents");
+                  return;
+                }
                 if (!note.subjective.trim()) {
                   toast.error("Add at least a subjective entry");
                   return;
                 }
                 const saved = AdelanteEHR.addProgressNote(patient.id, {
                   clinicianId: authorId,
+                  ...(selectedVisitId !== NO_VISIT ? { appointmentId: selectedVisitId } : {}),
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
                   subjective: note.subjective,
@@ -1854,6 +1908,7 @@ export function NotesTab({
                 if (saved) AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
                 toast.success("Progress note saved as draft");
                 setStagedOrderIds([]);
+                setVisitChoice(null);
                 setAnswers({});
                 setNote({
                   sessionType: "individual",
@@ -2113,6 +2168,12 @@ function ProgressNoteCard({
         // Freeze what the autofill cards showed at attestation time.
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
+
+      // §Phase 1e — mirror into the encounter signature ledger so a claim
+      // linked to this note's visit advances `documented → signed`, exactly as
+      // the queue path does. Cosign-pending notes are not signed yet.
+      if (!mustCosign)
+        mirrorNoteSignatureToLedger(note, actingClinicianId ?? actingStaffId ?? note.clinicianId);
 
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       // §Phase 3 — a signed CHW service note bills through the same claims
