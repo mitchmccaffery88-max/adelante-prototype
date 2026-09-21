@@ -120,6 +120,14 @@ export type RecordClass =
   | "worklist"
   | "note_templates"
   | "catalog_governance"
+  // §EHR audit Phase 1f — PLATFORM administration: the system-wide audit trail
+  // (/admin-audit) and third-party integration health (/admin-vendors). This
+  // closes the swim-lane audit's Tab 7 finding (no dedicated audit /
+  // platform-config class) instead of compounding the documented workaround of
+  // borrowing `catalog_governance`. Deliberately separate from every clinical
+  // config class: the audit trail spans EVERY class (including Part 2 reads),
+  // so it must never be reachable as a side effect of a drug-catalog grant.
+  | "platform_administration"
   | "scheduling_rules"
   // §Group sessions — managing the group itself (schedule, roster, attendance).
   | "group_sessions"
@@ -528,20 +536,49 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     billing: "none",
   },
 
-  // §Admin governance — frequency catalog + local RxNav suppressions. Same
-  // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
-  // the config, prescribing/administering roles read it (they see WHY a
-  // product is missing from search), billing gets nothing.
+  // §Admin governance — frequency catalog + local RxNav suppressions.
+  // §EHR audit Phase 1f — narrowed to clinical config owners + super admin.
+  // The former `read` grants to pmhnp / therapist / ecm_provider existed so
+  // prescribers could see WHY a product is missing from search; that reason is
+  // already shown inline by CatalogPicker (the "hidden by local suppression"
+  // block reads the suppression list directly, with no `canAccess` gate), so
+  // the read grant bought nothing but reach into an admin configuration
+  // surface. Removed for all three.
   catalog_governance: {
     sys_admin: "write",
     clinical_coordinator: "write",
-    pmhnp: "read",
-    therapist: "read",
-    ecm_provider: "read",
+    pmhnp: "none",
+    therapist: "none",
+    ecm_provider: "none",
     peer_specialist: "none",
     billing: "none",
     billing_coordinator: "none",
   },
+
+  // §EHR audit Phase 1f — platform administration (audit trail + vendor
+  // integration health). sys_admin administers the platform; the clinical
+  // coordinator reads the audit trail for compliance oversight and reads
+  // vendor health, but does not configure the platform. Every other role —
+  // including prescribers, who previously reached vendor status through the
+  // borrowed `catalog_governance` read — gets nothing: neither surface
+  // supports a clinical action.
+  platform_administration: {
+    sys_admin: "write",
+    clinical_coordinator: "read",
+    pmhnp: "none",
+    therapist: "none",
+    ecm_provider: "none",
+    cf_care_manager: "none",
+    sud_counselor: "none",
+    peer_specialist: "none",
+    community_health_worker: "none",
+    medical_assistant: "none",
+    clinical_trainee: "none",
+    credentialing_coordinator: "none",
+    billing: "none",
+    billing_coordinator: "none",
+  },
+
   // §Crisis escalation queue. Cross-patient, NOT patient-scoped, and more
   // clinically sensitive than population_health with no revenue angle:
   // clinical_coordinator + sys_admin write (they own disposition), the
