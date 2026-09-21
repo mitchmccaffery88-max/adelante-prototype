@@ -5,8 +5,10 @@
 // scenario below goes through the real claim hook
 // (`AdelanteEHRExt.upsertClaimFromChwNote` -> `chwBillingDecision` ->
 // `AdelanteEHR.recordCommunityBillingBlocked`); no audit rows are hand-written.
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+// jsdom cannot mount the real canvas signature pad; see the stub's comment.
+vi.mock("@/components/clinical/refusal/SignaturePad", () => import("@/test/signaturePadStub"));
 import { I18nProvider } from "@/lib/i18n";
 import { NotesTab } from "@/components/clinical/RecordTabs";
 import { AdelanteEHR } from "@/lib/ehr";

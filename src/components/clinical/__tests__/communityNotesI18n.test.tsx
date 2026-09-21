@@ -3,8 +3,10 @@
 // §Group C — validates the language toggle actually reaches the newer
 // Peer / CHW documentation surfaces, and that the CHW block banner shows the
 // REAL reason code recorded at block time.
-import { afterEach, beforeEach, describe, expect, it } from "vitest";
+import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { cleanup, render, screen } from "@testing-library/react";
+// jsdom cannot mount the real canvas signature pad; see the stub's comment.
+vi.mock("@/components/clinical/refusal/SignaturePad", () => import("@/test/signaturePadStub"));
 import { I18nProvider } from "@/lib/i18n";
 import { PeerNotesTab, NotesTab } from "@/components/clinical/RecordTabs";
 import { AdelanteEHR } from "@/lib/ehr";

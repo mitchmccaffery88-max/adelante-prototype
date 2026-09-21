@@ -97,6 +97,20 @@ import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/Clin
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { AlertTriangle, HeartPulse } from "lucide-react";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+// §EHR audit Phase 1d — shared attestation + signature primitive.
+import {
+  ATTESTATION_STATEMENTS,
+  attestationBlockers,
+  attestationStatement,
+  buildAttestationRecord,
+  emptyAttestationDraft,
+  mergeBlockers,
+  type AttestationDraft,
+  type SignBlocker,
+} from "@/lib/attestation";
+import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
+import { SignBlockerList } from "@/components/signature/SignBlockerList";
+
 
 export function LockedNote({ reason }: { reason?: string }) {
   return (
@@ -1945,8 +1959,11 @@ export function NoteStatusBadge({ note }: { note: ProgressNote }) {
   return <Badge className={`${tone} border-0 text-[10px]`}>{NOTE_STATUS_LABEL[s]}</Badge>;
 }
 
-const SIGN_ATTESTATION =
-  "I attest that this note is accurate, complete, and reflects care I personally provided or supervised.";
+// §EHR audit Phase 1d — the wording now lives in the versioned statement
+// catalog (`ATTESTATION_STATEMENTS`), so the exact text shown is frozen onto
+// the signed record. This constant is kept only as the legacy alias.
+const SIGN_ATTESTATION = ATTESTATION_STATEMENTS["progress_note_sign"]!.text;
+
 
 /** Read-only trace of the orders that originated from a finalized note. */
 function NoteOrderTrace({ orders, title }: { orders: MedOrder[]; title: string }) {
@@ -1990,7 +2007,7 @@ function ProgressNoteCard({
   // Same language source of truth as the Refusal risk text: the patient record.
   const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
-  const [attested, setAttested] = useState(false);
+  const [signDraft, setSignDraft] = useState<AttestationDraft>(emptyAttestationDraft());
   const [cosignerId, setCosignerId] = useState<string>("");
   // §Crisis escalation — a crisis-band score cannot pass silently. The signer
   // makes an ACTIVE choice, mirroring the Suboxone mouth-check gate.
@@ -2043,25 +2060,48 @@ function ProgressNoteCard({
     (crisisChoice === "" ||
       (crisisChoice === "not_escalating" && crisisReason.trim().length < 3));
 
+  // §EHR audit Phase 1d — ONE ordered list of everything blocking the
+  // signature (domain problems first, ceremony last), the generalized
+  // `refusalFinalizeProblems()` pattern.
+  const signStatement = attestationStatement("progress_note_sign");
+  const domainBlockers: SignBlocker[] = [];
+  for (const m of missing)
+    domainBlockers.push({
+      code: `template_field_${m.key}`,
+      message:
+        m.problem === "invalid"
+          ? `Fix “${m.label}” — ${m.reason}`
+          : `Answer the required field “${m.label}”.`,
+    });
+  if (crisisBlocked)
+    domainBlockers.push({
+      code: "crisis_decision",
+      message:
+        crisisChoice === "not_escalating"
+          ? "Give a reason of at least 3 characters for not escalating."
+          : "Choose whether you are escalating this crisis-band score.",
+    });
+  if (mustCosign && !cosignerId)
+    domainBlockers.push({ code: "cosigner_missing", message: "Choose a cosigner for this note." });
+  const signBlockers = mergeBlockers(domainBlockers, attestationBlockers(signDraft));
+
+
   const sign = () => {
     try {
-      if (missing.length > 0) {
-        const invalid = missing.filter((m) => m.problem === "invalid");
-        toast.error(
-          invalid.length
-            ? `Fix ${invalid.length} invalid template field(s) before signing — ${invalid[0].label}: ${invalid[0].reason}`
-            : `Answer ${missing.length} required template field(s) before signing.`,
-        );
+      if (signBlockers.length > 0) {
+        toast.error(signBlockers[0]!.message);
         return;
       }
-      if (crisisBlocked) {
-        toast.error("Resolve the crisis-band prompt before signing.");
-        return;
-      }
+      const attestation = buildAttestationRecord({
+        statement: signStatement,
+        draft: signDraft,
+        signedBy: staffName,
+      });
       AdelanteEHR.signProgressNote(patientId, note.id, {
         signedBy: staffName,
         role,
-        attested,
+        attested: true,
+        attestation,
         cosignRequired: mustCosign,
         cosignRole: cosigner ? [cosigner.role] : undefined,
         crisisDecision:
@@ -2073,6 +2113,7 @@ function ProgressNoteCard({
         // Freeze what the autofill cards showed at attestation time.
         autofillSnapshots: liveAutofill.length ? liveAutofill : undefined,
       });
+
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       // §Phase 3 — a signed CHW service note bills through the same claims
       // pipeline. The hook itself enforces ECM exclusivity, the supervising
@@ -2093,7 +2134,7 @@ function ProgressNoteCard({
         if (claim) toast.success(`Claim created · ${claim.serviceCode} × ${claim.units}`);
         else toast.error("No CHW claim created — see the reason on the note.");
       }
-      setAttested(false);
+      setSignDraft(emptyAttestationDraft());
       setCrisisChoice("");
       setCrisisReason("");
     } catch (e) {
@@ -2344,29 +2385,21 @@ function ProgressNoteCard({
               </p>
             </div>
           )}
-          {missing.length > 0 && (
-            <p className="rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
-              {missing.length} required template field(s) still unanswered — signing is blocked.
-            </p>
-          )}
-          <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
-            <Checkbox
-              checked={attested}
-              onCheckedChange={(v) => setAttested(Boolean(v))}
-              aria-label="Note attestation"
-            />
-            <span>{SIGN_ATTESTATION}</span>
-          </label>
+          <SignBlockerList blockers={signBlockers} />
+          <AttestationSignatureBlock
+            statement={signStatement}
+            draft={signDraft}
+            onChange={setSignDraft}
+          />
           <Button
             size="sm"
             className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-            disabled={
-              !attested || (mustCosign && !cosignerId) || missing.length > 0 || crisisBlocked
-            }
+            disabled={signBlockers.length > 0}
             onClick={sign}
           >
             Sign note
           </Button>
+
         </div>
       )}
     </Card>

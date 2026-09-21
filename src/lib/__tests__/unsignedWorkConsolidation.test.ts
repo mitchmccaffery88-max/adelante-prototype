@@ -4,6 +4,16 @@ import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { listUnsignedWork } from "@/lib/unsignedWork";
 import { noteSignAuthorization } from "@/lib/notes";
 import { signUnsignedWorkRow } from "@/lib/noteSignFlow";
+import type { AttestationDraft } from "@/lib/attestation";
+
+// §Phase 1d — signing now needs a captured attestation + drawn mark. The
+// SignaturePad is what produces the data URL in the UI; a test stands in for
+// it with a valid-shaped capture.
+const DRAWN: AttestationDraft = {
+  attested: true,
+  signatureDataUrl: "data:image/png;base64,AAA",
+  metrics: { totalLength: 220, strokeCount: 3 },
+};
 import { STAFF_ROSTER, getStaffMember, supervisionStatus } from "@/lib/roles";
 
 const PATIENT = AdelanteEHR.listPatients()[0]!.id;
@@ -74,6 +84,7 @@ describe("unsigned work consolidation", () => {
     const res = signUnsignedWorkRow(
       listUnsignedWork().find((r) => r.id === n.id)!,
       actorFor(therapist.id),
+      DRAWN,
     );
     expect(res.ok).toBe(true);
     expect(listUnsignedWork().some((r) => r.id === n.id)).toBe(false);
@@ -92,6 +103,7 @@ describe("signature attribution", () => {
     const res = signUnsignedWorkRow(
       listUnsignedWork().find((r) => r.id === n.id)!,
       actorFor(signer.id),
+      DRAWN,
     );
     expect(res.ok).toBe(true);
     expect(n.signedBy).toBe(signer.name);
@@ -104,7 +116,7 @@ describe("signature attribution", () => {
     const auth = noteSignAuthorization(n, intruder);
     expect(auth.allowed).toBe(false);
     expect(auth.reason).toMatch(/author or their supervising/i);
-    const res = signUnsignedWorkRow(listUnsignedWork().find((r) => r.id === n.id)!, intruder);
+    const res = signUnsignedWorkRow(listUnsignedWork().find((r) => r.id === n.id)!, intruder, DRAWN);
     expect(res.ok).toBe(false);
     expect(noteStatus(n)).toBe("draft");
   });
@@ -112,7 +124,7 @@ describe("signature attribution", () => {
   it("refuses to sign an encounter that has no note written", () => {
     const row = listUnsignedWork().find((r) => r.kind === "undocumented_encounter");
     if (!row) return;
-    const res = signUnsignedWorkRow(row, actorFor(therapist.id));
+    const res = signUnsignedWorkRow(row, actorFor(therapist.id), DRAWN);
     expect(res.ok).toBe(false);
     expect(res.error).toMatch(/no note/i);
   });
@@ -132,9 +144,41 @@ describe("signature attribution", () => {
     const res = signUnsignedWorkRow(
       listUnsignedWork().find((r) => r.id === n.id)!,
       actorFor(author.id),
+      DRAWN,
     );
     expect(res.ok).toBe(true);
     expect(AdelanteEHRExt.isNoteSigned(appt.id)).toBe(true);
     expect(["signed", "submitted", "paid", "denied"]).toContain(claim.state);
+  });
+});
+
+describe("attestation persistence through the sign flow", () => {
+  it("stores the versioned wording, the drawn mark and the signer on the note", () => {
+    const n = draft(therapist.clinicianId!);
+    const supervisorId = supervisionStatus(therapist.id).supervisor?.id;
+    const signer = supervisorId ? getStaffMember(supervisorId)! : therapist;
+    const res = signUnsignedWorkRow(
+      listUnsignedWork().find((r) => r.id === n.id)!,
+      actorFor(signer.id),
+      DRAWN,
+    );
+    expect(res.ok).toBe(true);
+    const a = n.attestation!;
+    expect(a.statementId).toMatch(/^progress_note_(supervisor_)?sign$/);
+    expect(a.statementVersion).toBeTruthy();
+    expect(a.statementSnapshot).toMatch(/I attest/);
+    expect(a.signatureDataUrl).toBe(DRAWN.signatureDataUrl);
+    expect(a.method).toBe("checkbox_and_drawn_mark");
+    expect(a.signedBy).toBe(signer.name);
+  });
+
+  it("refuses to sign without a captured mark, leaving the note a draft", () => {
+    const n = draft(therapist.clinicianId!);
+    const res = signUnsignedWorkRow(listUnsignedWork().find((r) => r.id === n.id)!, actorFor(therapist.id), {
+      attested: true,
+    });
+    expect(res.ok).toBe(false);
+    expect(res.blockers?.some((b) => b.code === "signature_missing")).toBe(true);
+    expect(noteStatus(n)).toBe("draft");
   });
 });
