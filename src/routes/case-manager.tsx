@@ -115,7 +115,11 @@ function CaseManagerPage() {
   const iHaveAssignments = hasAssignmentIdentity(identity);
   // §EHR audit Phase 1g — the caseload list defaults to "assigned to me".
   // A VIEW default, not a boundary; see src/lib/caseloadScope.ts.
-  const [scope, setScope] = useState<CaseloadScope>("mine");
+  // Staff whose profile isn't linked to a caseload or provider record open on
+  // the full program list instead: "assigned to me" is empty for them no
+  // matter what, and landing on a blank page with no work visible is worse
+  // than showing the list they saw before. The toggle still explains both.
+  const [scope, setScope] = useState<CaseloadScope>(iHaveAssignments ? "mine" : "all");
   const cms = useEhr(() => AdelanteEHR.listCaseManagers());
   const [cmId, setCmId] = useState(identity.caseManagerId ?? cms[0]?.id ?? "");
   const cm = cms.find((c) => c.id === cmId);
