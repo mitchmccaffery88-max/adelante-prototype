@@ -1907,6 +1907,7 @@ export function NotesTab({
                 if (saved) AdelanteEHR.linkOrdersToNote(patient.id, saved.id, stagedOrderIds);
                 toast.success("Progress note saved as draft");
                 setStagedOrderIds([]);
+                setVisitChoice(null);
                 setAnswers({});
                 setNote({
                   sessionType: "individual",
