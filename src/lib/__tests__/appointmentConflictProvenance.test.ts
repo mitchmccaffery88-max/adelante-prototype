@@ -13,7 +13,7 @@ function futureStart(hoursAhead: number) {
 }
 
 function twoClinicians() {
-  const list = AdelanteEHR.listClinicians().filter((c) => c.active !== false);
+  const list = AdelanteEHR.listClinicians();
   expect(list.length).toBeGreaterThan(1);
   return [list[0]!, list[1]!] as const;
 }
