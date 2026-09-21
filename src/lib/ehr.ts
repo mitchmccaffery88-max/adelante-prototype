@@ -10988,31 +10988,70 @@ export const AdelanteEHR = {
   },
 
   /**
+   * §EHR audit Phase 1c — dry run. Same matching AND the same cadence-window
+   * skip logic the real run uses, so the preview cannot drift from the commit:
+   * both read `_ruleCadenceBlocked`.
+   */
+  previewSchedulingRules(): {
+    total: number;
+    rules: {
+      ruleId: string;
+      ruleKey: string;
+      ruleLabel: string;
+      wouldCreate: { patientId: string; patientName: string }[];
+      skipped: { patientId: string; patientName: string; reason: "cadence_window" }[];
+    }[];
+  } {
+    const now = Date.now();
+    let total = 0;
+    const rows = schedulingRules
+      .filter((r) => r.active)
+      .map((rule) => {
+        const wouldCreate: { patientId: string; patientName: string }[] = [];
+        const skipped: { patientId: string; patientName: string; reason: "cadence_window" }[] = [];
+        for (const p of AdelanteEHR.patientsMatchingRule(rule)) {
+          const name = `${p.firstName} ${p.lastName}`.trim();
+          if (_ruleCadenceBlocked(rule, p.id, now))
+            skipped.push({ patientId: p.id, patientName: name, reason: "cadence_window" });
+          else wouldCreate.push({ patientId: p.id, patientName: name });
+        }
+        total += wouldCreate.length;
+        return {
+          ruleId: rule.id,
+          ruleKey: rule.key,
+          ruleLabel: rule.label,
+          wouldCreate,
+          skipped,
+        };
+      });
+    return { total, rules: rows };
+  },
+
+  /**
    * Manually triggered run. For each active rule, each matching patient gets
    * ONE task per cadence window: the run skips a patient when a task with this
    * `sourceRuleId` was created within `cadenceMinutes` — regardless of whether
    * that task is still open, completed, or cancelled. Checking only open tasks
    * would re-spam the moment the first one is worked.
+   *
+   * §EHR audit Phase 1c — execution is gated by the SAME class that authors the
+   * rules (`scheduling_rules` write), not by a second, parallel rule.
    */
   runSchedulingRulesNow(
     staffName: string,
     role?: StaffRole,
-  ): { total: number; results: { ruleKey: string; tasksCreated: number }[] } {
+  ): { runId: string; total: number; results: { ruleKey: string; tasksCreated: number }[] } {
+    if (role && canAccess(role, "scheduling_rules").level !== "write")
+      throw new Error("Your role can't run scheduling rules.");
     const now = Date.now();
+    const runId = `srun_${now.toString(36)}_${Math.random().toString(36).slice(2, 6)}`;
     const results: { ruleKey: string; tasksCreated: number }[] = [];
     let total = 0;
 
     for (const rule of schedulingRules.filter((r) => r.active)) {
-      const windowMs = rule.cadenceMinutes * 60_000;
       let created = 0;
       for (const p of AdelanteEHR.patientsMatchingRule(rule)) {
-        const recent = caseTasks.some(
-          (t) =>
-            t.sourceRuleId === rule.id &&
-            t.patientId === p.id &&
-            now - +new Date(t.createdAt) < windowMs,
-        );
-        if (recent) continue;
+        if (_ruleCadenceBlocked(rule, p.id, now)) continue;
         const made = AdelanteEHR.createCaseTask({
           patientId: p.id,
           assignedTo: p.caseManagerId ?? staffName,
@@ -11026,7 +11065,24 @@ export const AdelanteEHR = {
           source: `rule:${rule.key}`,
           sourceRuleId: rule.id,
         });
-        if (made) created++;
+        if (!made) continue;
+        created++;
+        // Per-task execution log — one auditable row per generated task.
+        appendAudit({
+          category: "clinical",
+          action: "scheduling_rule_task_created",
+          actorId: staffName,
+          actorRole: role,
+          patientId: p.id,
+          detail: {
+            runId,
+            ruleId: rule.id,
+            ruleKey: rule.key,
+            taskId: made.id,
+            taskType: rule.taskType,
+            priority: rule.priority,
+          },
+        });
       }
       results.push({ ruleKey: rule.key, tasksCreated: created });
       total += created;
@@ -11037,11 +11093,57 @@ export const AdelanteEHR = {
       action: "scheduling_rules_run",
       actorId: staffName,
       actorRole: role,
-      detail: { total, results },
+      detail: { runId, total, results },
     });
     emit();
-    return { total, results };
+    return { runId, total, results };
   },
+
+  /** §EHR audit Phase 1c — run history, reconstructed from the audit trail. */
+  listSchedulingRuleRuns(limit = 20): {
+    runId: string;
+    at: string;
+    actorId?: string;
+    actorRole?: StaffRole;
+    total: number;
+    results: { ruleKey: string; tasksCreated: number }[];
+    tasks: { ruleKey: string; taskId: string; patientId: string }[];
+  }[] {
+    const events = AdelanteEHR.listAuditEvents({});
+    const perTask = events.filter((e) => e.action === "scheduling_rule_task_created");
+    return events
+      .filter((e) => e.action === "scheduling_rules_run")
+      .map((e) => {
+        const d = (e.detail ?? {}) as {
+          runId?: string;
+          total?: number;
+          results?: { ruleKey: string; tasksCreated: number }[];
+        };
+        const runId = d.runId ?? e.id;
+        return {
+          runId,
+          at: e.at,
+          actorId: e.actorId,
+          actorRole: e.actorRole as StaffRole | undefined,
+          total: d.total ?? 0,
+          results: d.results ?? [],
+          tasks: perTask
+            .filter((t) => (t.detail as { runId?: string })?.runId === runId)
+            .map((t) => {
+              const td = t.detail as { ruleKey?: string; taskId?: string };
+              return {
+                ruleKey: td?.ruleKey ?? "",
+                taskId: td?.taskId ?? "",
+                patientId: t.patientId ?? "",
+              };
+            }),
+        };
+      })
+      .sort((a, b) => +new Date(b.at) - +new Date(a.at))
+      .slice(0, limit);
+  },
+
+
 
   /**
    * Marks a round done. Completion is derived, not a second lifecycle: when
