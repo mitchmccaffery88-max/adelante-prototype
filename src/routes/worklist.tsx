@@ -22,7 +22,6 @@ import {
 } from "@/lib/ehr";
 import {
   canAccess,
-  canManageProtocol,
   useActingStaff,
   STAFF_ROLES,
   type StaffRole,
@@ -41,7 +40,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { ArrowLeft, ListChecks, Lock, Play } from "lucide-react";
+import { ArrowLeft, ListChecks, Lock, Workflow } from "lucide-react";
 
 export const Route = createFileRoute("/worklist")({
   // §Facility & Custody — `?view=facility-protocols` is the nav group's
@@ -127,7 +126,6 @@ function WorklistPage() {
   const [forRole, setForRole] = useState(ANY);
   const [dueFrom, setDueFrom] = useState("");
   const [dueTo, setDueTo] = useState("");
-  const [running, setRunning] = useState(false);
   const [mineOnly, setMineOnly] = useState(false);
   // Driven by the URL so the nav entry, deep links, and the toggle stay in sync.
   const facilityRoundsOnly = view === "facility-protocols";
