@@ -1134,6 +1134,12 @@ export interface Patient {
     mediCalReactivationFollowUp?: boolean;
     /** Dated eligibility snapshots (§3g). Current view is still the outer object. */
     snapshots?: CoverageSnapshot[];
+    /**
+     * §Phase 3a — append-only log of human eligibility checks, newest first.
+     * `verified` above is the current summary; this is who checked and how.
+     */
+    verifications?: CoverageVerificationRecord[];
+
   };
   // Case Manager workspace
   caseManagerId?: string;
