@@ -279,21 +279,7 @@ export function Landing() {
       {/* Footer */}
       <footer className="bg-background">
         <div className="mx-auto max-w-7xl px-5 sm:px-8 py-10">
-          <div
-            role="region"
-            aria-label="Crisis support"
-            className="rounded-xl border border-destructive/30 bg-destructive/5 px-5 py-4 flex flex-wrap items-center gap-3"
-          >
-            <Phone className="h-5 w-5 text-destructive shrink-0" />
-            <p className="text-sm sm:text-base">
-              <span className="font-semibold text-destructive">In crisis?</span> Call or text{" "}
-              <a href="tel:988" className="underline font-semibold">
-                988
-              </a>{" "}
-              anytime. Spanish-capable.
-            </p>
-          </div>
-          <div className="mt-8 flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
+          <div className="flex flex-wrap items-center justify-between gap-4 text-sm text-muted-foreground">
             <nav className="flex flex-wrap gap-x-5 gap-y-2">
               <a href="#how" className="hover:text-foreground">
                 How it works
