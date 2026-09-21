@@ -1442,6 +1442,7 @@ export function useActingStaff(): {
   staffId: string;
   staffName: string;
   clinicianId?: string;
+  caseManagerId?: string;
   setActingStaff: (id: string) => void;
 } {
   const id = useSyncExternalStore(
@@ -1460,6 +1461,7 @@ export function useActingStaff(): {
     staffId: member.id,
     staffName: member.name,
     clinicianId: member.clinicianId,
+    caseManagerId: member.caseManagerId,
     setActingStaff,
   };
 }
