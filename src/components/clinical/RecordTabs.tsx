@@ -873,9 +873,13 @@ export function ReferralsTab({
 
 export function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const acting = useActingStaff();
   if (!p) return null;
+  const actor = { actorId: acting.staffName, actorRole: acting.role };
   const cov = p.coverage;
   const notes = p.eligibilityNotes ?? {};
+  const log = p.eligibilityFlagLog ?? [];
+  const consentPending = AdelanteEHR.ecmConsentCapturePending(patientId);
   const rows: {
     key: Parameters<typeof AdelanteEHR.setEligibilityNote>[1];
     label: string;
@@ -886,53 +890,81 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
       key: "ecm",
       label: "ECM eligible",
       on: Boolean(cov?.ecmEligible),
-      toggle: (v) => AdelanteEHR.setEcmEligible(patientId, v),
+      toggle: (v) => AdelanteEHR.setEcmEligible(patientId, v, actor),
     },
     {
       key: "jiReentry",
       label: "JI Reentry (90-day)",
       on: Boolean(cov?.jiReentryFlag),
-      toggle: (v) => AdelanteEHR.setJiReentry(patientId, v),
+      toggle: (v) => AdelanteEHR.setJiReentry(patientId, v, actor),
     },
     {
       key: "cs_housing",
       label: "CS: Housing",
       on: Boolean(cov?.communitySupports?.housing),
-      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "housing", v),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "housing", v, actor),
     },
     {
       key: "cs_food",
       label: "CS: Food",
       on: Boolean(cov?.communitySupports?.food),
-      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "food", v),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "food", v, actor),
     },
     {
       key: "cs_transport",
       label: "CS: Transport",
       on: Boolean(cov?.communitySupports?.transport),
-      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "transport", v),
+      toggle: (v) => AdelanteEHR.setCommunitySupport(patientId, "transport", v, actor),
     },
   ];
   return (
-    <ul className="space-y-2">
-      {rows.map((r) => (
-        <li key={r.key} className="rounded border p-3 text-sm space-y-2">
-          <div className="flex items-center justify-between">
-            <span>{r.label}</span>
-            <Switch checked={r.on} onCheckedChange={r.toggle} disabled={readOnly} />
-          </div>
-          {!readOnly && (
-            <NoteInline
-              value={notes[r.key]?.note ?? ""}
-              asOf={notes[r.key]?.asOf}
-              onSave={(note, asOf) => AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)}
-            />
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className="space-y-3">
+      <p className="text-xs text-muted-foreground">
+        Medi-Cal / CalAIM benefit eligibility. These flags are not patient consent.
+      </p>
+      {consentPending && (
+        <div
+          className="rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
+          data-testid="ecm-consent-prompt"
+        >
+          Marked ECM-eligible, but ECM information-sharing consent has never been captured. Ask the
+          client and record their answer on the Consent tab.
+        </div>
+      )}
+      <ul className="space-y-2">
+        {rows.map((r) => {
+          const last = log.find((e) => e.key === r.key);
+          return (
+            <li key={r.key} className="rounded border p-3 text-sm space-y-2">
+              <div className="flex items-center justify-between">
+                <span>
+                  {r.label}
+                  {last && (
+                    <span className="block text-[11px] text-muted-foreground">
+                      {last.value ? "Set on" : "Turned off"} by {last.actorId} ·{" "}
+                      <ClientDate value={last.at} />
+                    </span>
+                  )}
+                </span>
+                <Switch checked={r.on} onCheckedChange={r.toggle} disabled={readOnly} />
+              </div>
+              {!readOnly && (
+                <NoteInline
+                  value={notes[r.key]?.note ?? ""}
+                  asOf={notes[r.key]?.asOf}
+                  onSave={(note, asOf) =>
+                    AdelanteEHR.setEligibilityNote(patientId, r.key, note, asOf)
+                  }
+                />
+              )}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
   );
 }
+
 
 export function NoteInline({
   value,
