@@ -370,7 +370,16 @@ function TemplateBuilderDialog({
         toast.success(schemaChanged ? `Published version ${nextVersion}` : "Template updated");
       } else {
         AdelanteEHR.createNoteTemplate(
-          { key: key.trim() || slug(title), title, description, encounterType, schema },
+          {
+            key: key.trim() || slug(title),
+            title,
+            description,
+            encounterType,
+            schema,
+            scope,
+            ...(scope === "department" ? { departmentId } : {}),
+            ...(scope === "personal" ? { ownerStaffId: staffId } : {}),
+          },
           staffName,
         );
         toast.success("Template created");
