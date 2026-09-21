@@ -1871,9 +1871,13 @@ export function NotesTab({
             </div>
             <Button
               className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-              disabled={!authorId}
+              disabled={!authorId || (visitLink.ambiguous && visitChoice === null)}
               onClick={() => {
                 if (!authorId) return;
+                if (visitLink.ambiguous && visitChoice === null) {
+                  toast.error("Choose which visit this note documents");
+                  return;
+                }
                 if (!note.subjective.trim()) {
                   toast.error("Add at least a subjective entry");
                   return;
