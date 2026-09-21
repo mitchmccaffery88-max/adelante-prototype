@@ -958,6 +958,13 @@ export interface StaffMember {
   /** Links this staff member to a clinical provider record in AdelanteEHR. */
   clinicianId?: string;
   /**
+   * §EHR audit Phase 1g — links this staff member to a `CaseManager` record in
+   * AdelanteEHR (`patient.caseManagerId`). Only the people who actually carry a
+   * non-clinical caseload have one; it is how "assigned to me" on
+   * /case-manager resolves. A VIEW-scoping link, not an access grant.
+   */
+  caseManagerId?: string;
+  /**
    * §v3.0 supervision — id of the LPHA-tier StaffMember who supervises this
    * person. A real, queryable field (not a comment): roles in
    * SUPERVISION_REQUIRED_ROLES are not billable without it, and the
@@ -976,6 +983,24 @@ export interface StaffMember {
 
 export const STAFF_ROSTER: StaffMember[] = [
   { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider", credential: "CCM" },
+  {
+    // §EHR audit Phase 1g — the two people who already hold assigned caseloads
+    // (`CaseManager` cm1 / cm2 in AdelanteEHR) existed only as assignment
+    // records, with no login identity, so "assigned to me" could never resolve
+    // for them. Added here as real roster identities linked to those records.
+    id: "s-cm2",
+    name: "Lupita Sanchez, MSW",
+    role: "ecm_provider",
+    credential: "MSW",
+    caseManagerId: "cm1",
+  },
+  {
+    id: "s-peer2",
+    name: "Trey Wilson",
+    role: "peer_specialist",
+    credential: "Peer Support Specialist",
+    caseManagerId: "cm2",
+  },
   {
     id: "s-cf1",
     name: "Rosa Delgado",
