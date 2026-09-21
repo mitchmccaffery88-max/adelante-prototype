@@ -512,6 +512,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     medical_assistant: "read",
     billing: "none",
   },
+  // §EHR audit Phase 1b — risk-text translation sign-off. Write set is an
+  // exact, deliberate reproduction of the hardcoded expression it replaces
+  // (sys_admin, clinical_coordinator, and the one `meds_erx: write` role,
+  // pmhnp). Read = the meds_erx readers, who could already see the panel
+  // read-only; everyone else defaults to none.
+  clinical_text_governance: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "write",
+    therapist: "read",
+    ecm_provider: "read",
+    medical_assistant: "read",
+    clinical_trainee: "read",
+    billing: "none",
+  },
+
   // §Admin governance — frequency catalog + local RxNav suppressions. Same
   // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
   // the config, prescribing/administering roles read it (they see WHY a
