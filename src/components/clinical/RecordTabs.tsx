@@ -1834,6 +1834,41 @@ export function NotesTab({
                 />
               </div>
             ))}
+            {/* §Phase 1e — the visit this note documents. Defaults only when
+                exactly one attended, undocumented visit of this author's is on
+                the same day; otherwise the clinician picks. */}
+            <div className="space-y-1.5" data-testid="note-visit-link">
+              <Label className="text-xs">Visit this note documents</Label>
+              <Select
+                value={selectedVisitId}
+                onValueChange={(v) => setVisitChoice(v)}
+              >
+                <SelectTrigger data-testid="note-visit-link-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value={NO_VISIT}>No visit — not tied to an appointment</SelectItem>
+                  {visitLink.candidates.map((c) => (
+                    <SelectItem key={c.appointment.id} value={c.appointment.id}>
+                      {new Date(c.appointment.start).toLocaleString()} ·{" "}
+                      {clinicianLabel(c.appointment.clinicianId)}
+                      {c.sameDayOwn ? " · today, your visit" : ""}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-[10px] text-muted-foreground" data-testid="note-visit-link-hint">
+                {visitLink.ambiguous && visitChoice === null
+                  ? "More than one attended visit today — choose which one this note documents."
+                  : selectedVisitId === NO_VISIT
+                    ? visitLink.candidates.length === 0
+                      ? "No attended visit is waiting for documentation, so this note is not linked to one."
+                      : "Not linked to a visit. Link it if this note documents one."
+                    : visitChoice === null
+                      ? "Linked automatically to today's attended visit — change it if that's wrong."
+                      : "Linked to the visit you chose."}
+              </p>
+            </div>
             <Button
               className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
               disabled={!authorId}
@@ -1844,6 +1879,17 @@ export function NotesTab({
                   return;
                 }
                 const saved = AdelanteEHR.addProgressNote(patient.id, {
+                  clinicianId: authorId,
+                  ...(selectedVisitId !== NO_VISIT ? { appointmentId: selectedVisitId } : {}),
+                  date: new Date().toISOString(),
+                  sessionType: note.sessionType,
+                  subjective: note.subjective,
+                  objective: note.objective,
+                  assessment: note.assessment,
+                  plan: note.plan,
+                  category: note.category === "none" ? undefined : note.category,
+                  authorSource: "human",
+                  status: "draft",
                   clinicianId: authorId,
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
