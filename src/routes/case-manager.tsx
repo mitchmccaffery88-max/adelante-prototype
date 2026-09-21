@@ -874,7 +874,12 @@ function CoverageActionsCard({ patientId }: { patientId: string }) {
         </p>
       )}
       <div className="mt-3 grid grid-cols-1 gap-2">
-        <Button size="sm" variant="outline" onClick={() => setCheckOpen(true)}>
+        <Button
+          size="sm"
+          variant="outline"
+          data-testid="coverage-record-check"
+          onClick={() => setCheckOpen(true)}
+        >
           <CheckCircle2 className="h-4 w-4 mr-1.5" /> Record eligibility check
         </Button>
         <Button
