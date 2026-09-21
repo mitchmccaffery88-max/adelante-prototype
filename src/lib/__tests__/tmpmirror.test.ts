@@ -5,8 +5,8 @@ describe("mirror", () => {
   it("advances", () => {
     const before = AdelanteEHRExt.listClaims().map((c) => [c.encounterId, c.state]);
     console.log(before);
-    mirrorNoteSignatureToLedger({ appointmentId: "a5" }, "c1");
+    mirrorNoteSignatureToLedger({ appointmentId: "a6" }, "c1");
     console.log(AdelanteEHRExt.listClaims().map((c) => [c.encounterId, c.state]));
-    expect(AdelanteEHRExt.listClaims().find((c) => c.encounterId === "a5")!.state).toBe("signed");
+    expect(AdelanteEHRExt.listClaims().find((c) => c.encounterId === "a6")!.state).toBe("signed");
   });
 });
