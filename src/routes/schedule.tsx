@@ -159,6 +159,7 @@ function SchedulePage() {
           serviceType: serviceType as ServiceType,
           modality: effectiveModality,
           locationId: effectiveModality === "in_person" ? locationId : undefined,
+          source: "self_scheduled",
         });
         toast.success(t("schRequested"), {
           description:

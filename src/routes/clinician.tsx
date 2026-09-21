@@ -116,6 +116,7 @@ function ClinicianPage() {
         serviceType: book.serviceType,
         modality: book.modality,
         locationId: book.modality === "in_person" ? book.locationId : undefined,
+        source: "staff_scheduled",
       });
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
       setBook({ ...book, start: "" });
