@@ -7,7 +7,19 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type NoteTemplate } from "@/lib/ehr";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, useActingStaff, type StaffRole } from "@/lib/roles";
+import {
+  canCloneTemplate,
+  canEditTemplate,
+  departmentLabel,
+  disciplineForRole,
+  scopeOf,
+  templatesVisibleTo,
+  DEPARTMENT_DERIVATION_NOTE,
+  TEMPLATE_DEPARTMENTS,
+  TEMPLATE_SCOPE_LABEL,
+  type TemplateScope,
+} from "@/lib/templateScope";
 import {
   ES_DRAFT_NOTICE_EN,
   schemaContentEquals,
@@ -55,7 +67,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
-import { ArrowLeft, FileText, Lock, Plus, Trash2 } from "lucide-react";
+import { ArrowLeft, Copy, FileText, Lock, Plus, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
 import { TemplateForm } from "@/components/clinical/TemplateForm";
