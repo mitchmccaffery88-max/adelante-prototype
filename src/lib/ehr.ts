@@ -1986,6 +1986,24 @@ export function isProblemClinicallyActive(problem: Problem): boolean {
   return problem.status === "active" && !problem.deletedAt;
 }
 
+/**
+ * §Scheduling rules — the cadence-window idempotency check, shared by the dry
+ * run and the real run so a preview can never disagree with what commits.
+ * Counts completed and cancelled tasks too: checking only open tasks would
+ * re-spam the moment the first one is worked.
+ */
+function _ruleCadenceBlocked(rule: SchedulingRule, patientId: string, now: number): boolean {
+  const windowMs = rule.cadenceMinutes * 60_000;
+  return caseTasks.some(
+    (t) =>
+      t.sourceRuleId === rule.id &&
+      t.patientId === patientId &&
+      now - +new Date(t.createdAt) < windowMs,
+  );
+}
+
+
+
 export interface ProgressNote {
   id: string;
   appointmentId?: string;
