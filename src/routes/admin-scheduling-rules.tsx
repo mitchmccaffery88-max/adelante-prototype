@@ -194,16 +194,34 @@ function SchedulingRulesPage() {
             <Workflow className="h-5 w-5 text-teal" /> Scheduling rules
           </h1>
           <p className="text-sm text-muted-foreground">
-            Rules generate worklist tasks when a supervisor runs them from the worklist. Nothing
-            here runs on its own.
+            Rules generate worklist tasks only when someone runs them here. Nothing runs on its own.
           </p>
         </div>
-        {canWrite && (
-          <Button onClick={startNew}>
-            <Plus className="h-4 w-4" /> New rule
-          </Button>
-        )}
+        <div className="flex flex-wrap gap-2">
+          {canWrite && (
+            <Button variant="outline" onClick={() => setPreviewOpen(true)}>
+              <Eye className="h-4 w-4" /> Preview run
+            </Button>
+          )}
+          {canWrite && (
+            <Button onClick={startNew}>
+              <Plus className="h-4 w-4" /> New rule
+            </Button>
+          )}
+        </div>
       </header>
+
+      {canWrite && (
+        <RunPreviewCard
+          open={previewOpen}
+          onOpenChange={setPreviewOpen}
+          staffName={staffName}
+          role={role}
+        />
+      )}
+
+      <RunHistoryCard />
+
 
       <Card className="p-3">
         {rules.length === 0 ? (
