@@ -417,6 +417,59 @@ function TemplateBuilderDialog({
           </p>
         )}
 
+        {/* §Phase 2b — scope tier. Scope is identity, not content, so it is
+            fixed once a template exists: moving a template between tiers would
+            silently change who it is visible to. */}
+        <div className="grid gap-3 sm:grid-cols-2">
+          <div className="space-y-1.5">
+            <Label className="text-xs">Visibility</Label>
+            {template ? (
+              <p className="text-muted-foreground rounded-md border p-2 text-xs">
+                {TEMPLATE_SCOPE_LABEL[scope]}
+                {scope === "department" ? ` · ${departmentLabel(departmentId)}` : ""}
+                {scope === "personal" ? " — only you can see this" : ""}
+              </p>
+            ) : (
+              <Select
+                value={scope}
+                onValueChange={(v) => setScope(v as TemplateScope)}
+                disabled={!canAuthorShared}
+              >
+                <SelectTrigger data-testid="template-scope-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {canAuthorShared && (
+                    <SelectItem value="global">System — everyone can use it</SelectItem>
+                  )}
+                  {canAuthorShared && (
+                    <SelectItem value="department">Discipline — one clinical discipline</SelectItem>
+                  )}
+                  <SelectItem value="personal">Mine — private to me</SelectItem>
+                </SelectContent>
+              </Select>
+            )}
+          </div>
+          {!template && scope === "department" && (
+            <div className="space-y-1.5">
+              <Label className="text-xs">Discipline</Label>
+              <Select value={departmentId} onValueChange={setDepartmentId}>
+                <SelectTrigger data-testid="template-department-select">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {TEMPLATE_DEPARTMENTS.filter((d) => d.leadRoles.length > 0).map((d) => (
+                    <SelectItem key={d.id} value={d.id}>
+                      {d.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+              <p className="text-muted-foreground text-[11px]">{DEPARTMENT_DERIVATION_NOTE}</p>
+            </div>
+          )}
+        </div>
+
         <div className="grid gap-3 sm:grid-cols-3">
           <div className="space-y-1.5">
             <Label className="text-xs">Title</Label>
