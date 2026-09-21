@@ -3302,6 +3302,18 @@ const patients: Patient[] = [
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
+      // §Phase 3b — migrated from the former standalone CoverageSpan store.
+      // The old seed claimed a 270/271 verification; no such transaction
+      // exists in this app, so it is recorded as a staff check instead.
+      plans: [
+        {
+          id: "covplan-p1-1",
+          payer: "Medi-Cal FFS",
+          from: "2025-01-01",
+          source: "staff_checked",
+        },
+      ],
+
     },
     caseManagerId: "cm1",
     screenerHistory: [
@@ -3474,6 +3486,16 @@ const patients: Patient[] = [
       verified: "pending",
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
+      plans: [
+        {
+          id: "covplan-p2-1",
+          payer: "Health Net Medi-Cal",
+          memberId: "HN-2049881",
+          from: "2025-06-01",
+          source: "self_report",
+        },
+      ],
+
     },
     caseManagerId: "cm1",
     problems: [
@@ -3541,6 +3563,15 @@ const patients: Patient[] = [
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
+      plans: [
+        {
+          id: "covplan-p3-1",
+          payer: "Tulare County MHP",
+          from: "2025-03-15",
+          source: "front_desk",
+        },
+      ],
+
     },
     caseManagerId: "cm2",
     screenerHistory: [
