@@ -5,8 +5,8 @@ import {
   type CoverageCheckChannel,
   type CoverageCheckResult,
   type CoverageStatus,
-  type StaffRole,
 } from "@/lib/ehr";
+import type { StaffRole } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -39,7 +39,9 @@ const STATUS_OPTIONS: { value: CoverageStatus | "unchanged"; label: string }[] =
   { value: "active", label: "Active Medi-Cal" },
   { value: "suspended", label: "Suspended" },
   { value: "uninsured", label: "Uninsured" },
-  { value: "private", label: "Private insurance" },
+  { value: "private_pay", label: "Private pay" },
+  { value: "none_unsure", label: "None / unsure" },
+  { value: "other", label: "Other" },
 ];
 
 /**
