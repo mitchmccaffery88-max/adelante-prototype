@@ -1378,6 +1378,23 @@ export interface Clinician {
   licenseExpiresOn?: string;
 }
 
+/**
+ * How an appointment came to exist. Same convention as `SdohItemSource` /
+ * `CalomsDataSource` / `ResourceReferralSource`: a small string union plus a
+ * `*_SOURCE_LABEL` record for display. No second convention.
+ *
+ *  - `pre_release`     arranged by the pre-release / reentry team on a care plan
+ *  - `self_scheduled`  the patient booked it themselves in the portal
+ *  - `staff_scheduled` a staff member booked it from a staff surface
+ */
+export type AppointmentSource = "pre_release" | "self_scheduled" | "staff_scheduled";
+
+export const APPOINTMENT_SOURCE_LABEL: Record<AppointmentSource, string> = {
+  pre_release: "Arranged before release",
+  self_scheduled: "Booked by patient",
+  staff_scheduled: "Booked by staff",
+};
+
 export interface Appointment {
   id: string;
   patientId: string;
@@ -1385,6 +1402,8 @@ export interface Appointment {
   start: string; // ISO
   durationMin: number;
   status: SessionStatus;
+  /** How this appointment was created. Required — see `AppointmentSource`. */
+  source: AppointmentSource;
   billingStatus: BillingStatus;
   videoUrl?: string;
   fundingLane?: FundingLane;
