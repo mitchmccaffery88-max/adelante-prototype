@@ -31,10 +31,11 @@ export function RiskTextReviewPanel() {
   const reviews = useEhr(() => AdelanteEHR.listRiskTextReviews());
   const slots = useMemo(() => AdelanteEHR.riskTextReviewerRoles(), []);
 
-  const canReview =
-    role === "sys_admin" ||
-    role === "clinical_coordinator" ||
-    canAccess(role, "meds_erx").level === "write";
+  // §EHR audit Phase 1b — matrix gate, not a hardcoded role expression.
+  const access = canAccess(role, "clinical_text_governance").level;
+  const canReview = access === "write";
+  if (access === "none") return null;
+
 
   return (
     <Card className="p-4 space-y-4">

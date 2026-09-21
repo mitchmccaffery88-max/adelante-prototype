@@ -143,7 +143,17 @@ export type RecordClass =
   // submit a draft; APPROVING and publishing is narrower still and is
   // expressed the way `PROTOCOL_MANAGE_ROLES` already expresses that kind of
   // rule — see CONTENT_APPROVER_ROLES below.
-  | "content_authoring";
+  | "content_authoring"
+  // §EHR audit Phase 1b — clinical sign-off governance for PATIENT-FACING
+  // CLINICAL WORDING that is not a Library lesson: today the translated
+  // medication-refusal risk disclosures reviewed in RiskTextReviewPanel.
+  // Its own class because no existing one fits honestly: `content_authoring`
+  // is deliberately wide (peers, CHWs, care managers author lessons) and must
+  // not confer clinical disclosure sign-off; `meds_erx` is prescribing and
+  // transmission, not wording governance; `catalog_governance` is the drug /
+  // frequency catalog. Same config tier as note_templates.
+  | "clinical_text_governance";
+
 
 export type AccessLevel = "none" | "read" | "write" | "summary" | "consent_gated";
 
@@ -502,6 +512,22 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     medical_assistant: "read",
     billing: "none",
   },
+  // §EHR audit Phase 1b — risk-text translation sign-off. Write set is an
+  // exact, deliberate reproduction of the hardcoded expression it replaces
+  // (sys_admin, clinical_coordinator, and the one `meds_erx: write` role,
+  // pmhnp). Read = the meds_erx readers, who could already see the panel
+  // read-only; everyone else defaults to none.
+  clinical_text_governance: {
+    sys_admin: "write",
+    clinical_coordinator: "write",
+    pmhnp: "write",
+    therapist: "read",
+    ecm_provider: "read",
+    medical_assistant: "read",
+    clinical_trainee: "read",
+    billing: "none",
+  },
+
   // §Admin governance — frequency catalog + local RxNav suppressions. Same
   // tier as note_templates/KPI targets: sys_admin + clinical_coordinator own
   // the config, prescribing/administering roles read it (they see WHY a
