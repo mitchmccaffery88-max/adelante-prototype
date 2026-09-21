@@ -43,7 +43,7 @@ import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
-import { unsignedNotes } from "@/lib/dashboardMetrics";
+import { listUnsignedWork } from "@/lib/unsignedWork";
 
 
 export const Route = createFileRoute("/clinician")({
