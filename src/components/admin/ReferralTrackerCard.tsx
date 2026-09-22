@@ -17,6 +17,7 @@ import {
   ReferralOutreachStatus,
   ReferralProgressStrip,
 } from "@/components/ReferralProgressStrip";
+import { referralDeclineReasonLabel } from "@/lib/referralActions";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
