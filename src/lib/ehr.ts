@@ -10248,7 +10248,9 @@ export const AdelanteEHR = {
       cfCareManagerStaffId: input.cfCareManagerStaffId,
       cfCareManagerName: input.cfCareManagerName,
       ...(input.facilityId ? { facilityId: input.facilityId } : {}),
+      ...(input.facilityName ? { facilityName: input.facilityName } : {}),
       ...(input.bookingId ? { bookingId: input.bookingId } : {}),
+      ...(input.bookingNumber ? { bookingNumber: input.bookingNumber } : {}),
       openedBy: input.openedBy,
       actorRole: input.actorRole,
     });
