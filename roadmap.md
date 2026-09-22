@@ -1,9 +1,10 @@
 # Roadmap
 
 ## In progress
-- [ ] Intake/SDOH Redesign Phase 1 — pre-release episode release transition (plan approved).
+- [ ] Referrals Rework Phase 4b — consolidate duplicate referral tracker cards.
 
 ## Done
+- [x] Referrals Rework Phase 4a — movable referrals, attributed disposition, honest welcome SMS.
 - [x] Investigation: intake↔scheduling coordination + intake SDOH fidelity/handoff (reported).
 - [x] Investigation: pre-release SDOH vs general intake duplication risk (reported).
 
