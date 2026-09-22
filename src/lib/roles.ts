@@ -1361,6 +1361,32 @@ export function canWritePreReleaseEpisode(role: StaffRole): boolean {
   return canAccess(role, "pre_release").level === "write";
 }
 
+/**
+ * §Pre-release pipeline — bulk import of partner-supplied pre-release rosters.
+ *
+ * Deliberately its OWN permission rather than a widening of the `pre_release`
+ * matrix row. Two different things:
+ *  - the matrix row is authority over an individual episode's clinical
+ *    checklist. Widening it to let a clinical coordinator import a roster
+ *    would silently hand them write access to every episode form too.
+ *  - this is bulk administrative intake of identity and logistics data.
+ *
+ * Scope reasoning: the real channel is an EXTERNAL CF Care Manager emailing a
+ * roster to somebody inside Adelante. So it cannot be limited to the roles the
+ * external coordinator might map to — an internal person must always be able
+ * to land the file. CF Care Manager and ECM Provider already hold pre-release
+ * write; the clinical coordinator is the realistic internal point of contact
+ * and is added here for that reason alone; sys_admin for support.
+ */
+export function canImportPreReleaseRoster(role: StaffRole): boolean {
+  return (
+    role === "cf_care_manager" ||
+    role === "ecm_provider" ||
+    role === "clinical_coordinator" ||
+    role === "sys_admin"
+  );
+}
+
 
 let acting: StaffRole = (() => {
   try {
