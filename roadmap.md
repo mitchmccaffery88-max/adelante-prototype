@@ -22,3 +22,9 @@
 - [x] Staleness badge on shared tracker (draft threshold)
 - [x] Segmented referral form (justice-involved yes/no/unsure)
 - [x] Advocate discovery prompt at enrollment
+
+## Referrals Phase 4d
+- [x] Standalone staff referral queue page (/referral-queue)
+- [x] Repoint "Referrals" nav entry to the staff queue
+- [x] Staff "submit on someone's behalf" via shared form in a dialog
+- [x] Dashboard tracker cards kept, with link-through to the queue
