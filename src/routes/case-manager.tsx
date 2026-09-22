@@ -3,16 +3,10 @@ import { useState } from "react";
 import {
   AdelanteEHR,
   useEhr,
-  COVERAGE_CHECK_CHANNEL_LABEL,
   type ResourceReferralCategory,
-  type EligibilityFlagEvent,
-  type EligibilityFlagKey,
 } from "@/lib/ehr";
-import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
-import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
-import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
 
-import { useActingStaff } from "@/lib/roles";
+import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   assignmentIdentityFor,
   hasAssignmentIdentity,
@@ -51,17 +45,12 @@ import {
   HandHeart,
   Lock,
   AlertTriangle,
-  Phone,
   ShieldCheck,
-  CheckCircle2,
-  RotateCw,
-  HelpingHand,
   ClipboardList,
   Plus,
   Clock,
   Filter,
 } from "lucide-react";
-import { Switch } from "@/components/ui/switch";
 import { ClientDate } from "@/components/ClientDate";
 import { useI18n } from "@/lib/i18n";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
@@ -108,12 +97,19 @@ function combineDateTime(date: string, time: string): string | null {
 export const Route = createFileRoute("/case-manager")({
   head: () => ({
     meta: [
-      { title: "ECM Provider — Adelante" },
+      { title: "Care Coordination — Adelante" },
       {
         name: "description",
         content:
-          "Non-clinical caseload, weekly check-ins, resource referrals, and external coordination.",
+          "Assigned and program-wide client coordination with role-gated access to patient records.",
       },
+      { property: "og:title", content: "Care Coordination — Adelante" },
+      {
+        property: "og:description",
+        content: "Assigned and program-wide client coordination with role-gated patient records.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: CaseManagerPage,
@@ -584,14 +580,9 @@ function CaseManagerPage() {
               {cmId && <PatientTasksCard patientId={active.id} cmId={cmId} />}
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
-              <CoverageActionsCard patientId={active.id} />
-              <EligibilityFlagsCard patientId={active.id} />
+              <EligibilitySummaryCard patientId={active.id} />
               <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
               <RecentReferralsCard patientId={active.id} />
-              <CoordinationCard
-                patientName={`${active.firstName} ${active.lastName}`}
-                consentSud={active.consents.part2Sud}
-              />
             </>
           ) : (
             <Card className="p-6 text-sm text-muted-foreground">
@@ -811,214 +802,30 @@ function ResourceReferralCard({
   );
 }
 
-function CoordinationCard({
-  patientName,
-  consentSud,
-}: {
-  patientName: string;
-  consentSud: boolean;
-}) {
-  return (
-    <Card className="p-5">
-      <h3 className="font-display text-lg text-navy flex items-center gap-2">
-        <Phone className="h-4 w-4 text-teal" /> External coordination
-      </h3>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Contact log with probation, parole, housing partners for {patientName}.
-      </p>
-      {!consentSud && (
-        <div className="mt-3 rounded-md border border-destructive/30 bg-destructive/5 p-3 text-xs flex items-start gap-2">
-          <Lock className="h-3.5 w-3.5 text-destructive mt-0.5" />
-          <span>
-            <strong>42 CFR Part 2 guardrail:</strong> SUD-identifying detail cannot be shared with
-            probation/parole without specific patient consent.
-          </span>
-        </div>
-      )}
-      <p className="mt-3 text-xs text-muted-foreground">
-        Logged: <ClientDate value={new Date().toISOString()} /> (demo)
-      </p>
-    </Card>
-  );
-}
-
-function CoverageActionsCard({ patientId }: { patientId: string }) {
+function EligibilitySummaryCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const acting = useActingStaff();
-  const [checkOpen, setCheckOpen] = useState(false);
-  if (!p) return null;
-  const status = p.coverage?.verified ?? "not_found";
-  const actor = { actorId: acting.staffName, actorRole: acting.role };
+  const { role } = useActingStaff();
+  if (!p || canAccess(role, "eligibility").level === "none") return null;
   const lastCheck = (p.coverage?.verifications ?? [])[0];
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">
-        <ShieldCheck className="h-4 w-4 text-teal" /> Medi-Cal actions
+        <ShieldCheck className="h-4 w-4 text-teal" /> Medi-Cal eligibility
       </h3>
-      <div className="mt-2 text-xs text-muted-foreground">
-        Coverage:{" "}
-        <span className="capitalize text-foreground">{p.coverage?.status ?? "unknown"}</span> ·
-        verification:{" "}
-        <Badge variant="outline" className="capitalize text-[10px]">
-          {status}
-        </Badge>
-      </div>
-      {lastCheck ? (
-        <p className="mt-2 text-xs text-muted-foreground" data-testid="coverage-last-check">
-          Last checked by {lastCheck.checkedBy} ·{" "}
-          {COVERAGE_CHECK_CHANNEL_LABEL[lastCheck.channel]} ·{" "}
-          <ClientDate value={lastCheck.checkedAt} />
-          {lastCheck.cinOnFile ? " · CIN on file" : " · no CIN on file"}
-        </p>
-      ) : (
-        <p className="mt-2 text-xs text-muted-foreground" data-testid="coverage-last-check">
-          No eligibility check recorded yet.
-        </p>
-      )}
-      <div className="mt-3 grid grid-cols-1 gap-2">
-        <Button
-          size="sm"
-          variant="outline"
-          data-testid="coverage-record-check"
-          onClick={() => setCheckOpen(true)}
-        >
-          <CheckCircle2 className="h-4 w-4 mr-1.5" /> Record eligibility check
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            const r = AdelanteEHR.requestReactivation(patientId, actor);
-            toast.success(
-              r.staffTaskCreated
-                ? "Reactivation follow-up added to the case manager's worklist"
-                : "Client told we're following up — no case manager assigned, so no staff task was created",
-            );
-          }}
-        >
-          <RotateCw className="h-4 w-4 mr-1.5" /> Start reactivation follow-up
-        </Button>
-        <Button
-          size="sm"
-          variant="outline"
-          onClick={() => {
-            const r = AdelanteEHR.addEnrollmentAssistTask(patientId, actor);
-            toast.success(
-              r.staffTaskCreated
-                ? "Enrollment assistance added to the case manager's worklist"
-                : "Client told we'll help — no case manager assigned, so no staff task was created",
-            );
-          }}
-        >
-          <HelpingHand className="h-4 w-4 mr-1.5" /> Start enrollment assistance
-        </Button>
-      </div>
-      <p className="mt-3 text-xs text-muted-foreground">
-        Nothing here is sent to the county automatically. These actions create real follow-up work
-        for staff and tell the client what to expect.
+      <p className="mt-2 text-xs text-muted-foreground">
+        Coverage {p.coverage?.status ?? "unknown"}. {lastCheck ? "A verification is on file." : "No verification is on file."}
       </p>
-      <CoveragePlansSection patientId={patientId} actor={actor} />
-
-      <CoverageCheckDialog
-        patientId={patientId}
-        open={checkOpen}
-        onOpenChange={setCheckOpen}
-        actor={actor}
-      />
-    </Card>
-  );
-}
-
-function EligibilityFlagsCard({ patientId }: { patientId: string }) {
-  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const acting = useActingStaff();
-  if (!p) return null;
-  const actor = { actorId: acting.staffName, actorRole: acting.role };
-  const ecm = Boolean(p.coverage?.ecmEligible);
-  const ji = Boolean(p.coverage?.jiReentryFlag);
-  const cs = p.coverage?.communitySupports ?? {};
-  const log = p.eligibilityFlagLog ?? [];
-  const lastFor = (key: EligibilityFlagKey) => log.find((e) => e.key === key);
-  const consentPending = AdelanteEHR.ecmConsentCapturePending(patientId);
-  const csRows: { k: "housing" | "food" | "transport"; label: string }[] = [
-    { k: "housing", label: "Housing support" },
-    { k: "food", label: "Food / CalFresh" },
-    { k: "transport", label: "Transportation" },
-  ];
-  return (
-    <Card className="p-5">
-      <h3 className="font-display text-lg text-navy">Eligibility flags</h3>
-      <p className="text-xs text-muted-foreground mt-1">
-        Benefit eligibility only. These are not consent, and changing one records who changed it.
-      </p>
-      <div className="mt-3">
-        <CalaimEligibilityComparison patientId={patientId} />
-      </div>
-      {consentPending && (
-        <div
-          className="mt-3 rounded border border-amber-300 bg-amber-50 p-3 text-xs text-amber-900"
-          data-testid="ecm-consent-prompt"
-        >
-          Marked ECM-eligible, but ECM information-sharing consent has never been captured. Ask the
-          client and record their answer on the Consent tab — eligibility does not grant consent.
-        </div>
-      )}
-
-      <div className="mt-3 space-y-2">
-        <FlagRow
-          label="ECM eligible"
-          checked={ecm}
-          last={lastFor("ecm")}
-          onChange={(v) => AdelanteEHR.setEcmEligible(patientId, v, actor)}
-        />
-        <FlagRow
-          label="JI Reentry (90-day)"
-          checked={ji}
-          last={lastFor("jiReentry")}
-          onChange={(v) => AdelanteEHR.setJiReentry(patientId, v, actor)}
-        />
-        <div className="pt-2 border-t mt-2 text-xs uppercase tracking-wider text-muted-foreground">
-          Community Supports
-        </div>
-        {csRows.map((r) => (
-          <FlagRow
-            key={r.k}
-            label={r.label}
-            checked={Boolean(cs[r.k])}
-            last={lastFor(`cs_${r.k}` as EligibilityFlagKey)}
-            onChange={(v) => AdelanteEHR.setCommunitySupport(patientId, r.k, v, actor)}
-          />
-        ))}
+      <div className="mt-3 flex flex-wrap gap-2">
+        <Button size="sm" variant="outline" asChild>
+          <Link to="/record/$patientId" params={{ patientId }} search={{ section: "eligibility" }}>
+            Review and update client eligibility
+          </Link>
+        </Button>
+        <Button size="sm" variant="ghost" asChild>
+          <Link to="/eligibility-worklist">Open verification worklist</Link>
+        </Button>
       </div>
     </Card>
-  );
-}
-
-
-function FlagRow({
-  label,
-  checked,
-  onChange,
-  last,
-}: {
-  label: string;
-  checked: boolean;
-  onChange: (v: boolean) => void;
-  last?: EligibilityFlagEvent;
-}) {
-  return (
-    <label className="flex items-center justify-between gap-3 rounded-md border p-2.5 text-sm cursor-pointer">
-      <span>
-        {label}
-        {last && (
-          <span className="block text-[11px] text-muted-foreground">
-            {last.value ? "Set on" : "Turned off"} by {last.actorId} ·{" "}
-            <ClientDate value={last.at} />
-          </span>
-        )}
-      </span>
-      <Switch checked={checked} onCheckedChange={onChange} />
-    </label>
   );
 }
 

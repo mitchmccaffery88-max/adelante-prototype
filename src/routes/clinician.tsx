@@ -40,7 +40,6 @@ import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
 import { myOpenItems } from "@/lib/myWork";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
-import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 import { listUnsignedWork } from "@/lib/unsignedWork";
@@ -51,6 +50,13 @@ export const Route = createFileRoute("/clinician")({
     meta: [
       { title: "Clinician Scheduler — Adelante" },
       { name: "description", content: "Caseload, scheduler, video sessions, and billing status." },
+      { property: "og:title", content: "Clinician Workspace — Adelante" },
+      {
+        property: "og:description",
+        content: "Clinical schedule, action queues, patient charts, and appointment management.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClinicianPage,
@@ -97,7 +103,7 @@ function ClinicianPage() {
   );
   const bookConflictPatient = bookConflict && patients.find((p) => p.id === bookConflict.patientId);
   const bookLocations = useEhr(() => AdelanteEHR.locationsForService(book.serviceType));
-  const [selectedPatientId, setSelectedPatientId] = useState(patients[0]?.id ?? "");
+  const [selectedPatientId, setSelectedPatientId] = useState("");
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
@@ -358,7 +364,6 @@ function ClinicianPage() {
               <div id="refill-requests" className="scroll-mt-32">
                 <RefillReviewCard />
               </div>
-              <NurseRefusalWorklistSection />
               <Card className="p-5">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
                 <div className="mt-4 space-y-3">
@@ -502,23 +507,6 @@ function ClinicianPage() {
                 </div>
               </Card>
 
-              <Card className="p-5">
-                <h3 className="font-display text-lg text-navy">{t("clinAvailability")}</h3>
-                <p className="mt-2 text-xs text-muted-foreground">{t("clinAvailHours")}</p>
-                <ul className="mt-3 space-y-1.5 text-sm">
-                  {["Mon", "Tue", "Wed", "Thu", "Fri"].map((d) => (
-                    <li
-                      key={d}
-                      className="flex items-center justify-between border-b last:border-0 py-1.5"
-                    >
-                      <span className="text-foreground/80">{d}</span>
-                      <span className="text-muted-foreground inline-flex items-center gap-1.5">
-                        <Clock className="h-3.5 w-3.5" /> 9:00 — 5:00
-                      </span>
-                    </li>
-                  ))}
-                </ul>
-              </Card>
             </div>
           </div>
         </TabsContent>
@@ -634,11 +622,13 @@ function QueueCountRow() {
   const cosign = useEhr(() => AdelanteEHR.listNotesAwaitingCosign().length);
   const messages = useEhr(() => AdelanteEHR.listUnreadMessageThreads().length);
   const refills = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }).length);
+  const refusals = useEhr(() => AdelanteEHR.listPendingRefusalForms({}).length);
   const worklist = useEhr(
     () => AdelanteEHR.listCaseTasks().filter((t) => t.status === "open").length,
   );
   // §Tier 3 — personal rollup count, scoped to the acting staff member.
   const actor = useActingStaff();
+  const canSeeRefusals = canAccess(actor.role, "meds_erx").level !== "none";
   // §EHR audit Phase 1a — identical derivation and scope to the Inbox tab this
   // tile links to, so the two can never disagree.
   const unsigned = useEhr(
@@ -661,6 +651,9 @@ function QueueCountRow() {
     { id: "cosign", label: "Cosign inbox", count: cosign, to: "/cosign-inbox" as const },
     { id: "messages", label: "Messages", count: messages, to: "/message-queue" as const },
     { id: "worklist", label: "Worklist", count: worklist, to: "/worklist" as const },
+    ...(canSeeRefusals && refusals > 0
+      ? [{ id: "refusals", label: "Refusal documents", count: refusals, to: "/refusal-queue" as const }]
+      : []),
   ];
 
   return (
@@ -1060,18 +1053,6 @@ function RescreenDuePanel({
 
 function RefillReviewCard() {
   return <RefillReviewCardInner />;
-}
-
-/**
- * Nurse worklist for refusal legal documents, RBAC-gated the same way the rest
- * of the clinical surfaces are — the MAR tab list stays, this is a second,
- * cross-patient way in.
- */
-function NurseRefusalWorklistSection() {
-  const { staffName, role } = useActingStaff();
-  const access = canAccess(role, "meds_erx");
-  if (access.level === "none") return null;
-  return <NurseRefusalWorklist staffName={staffName} readOnly={access.level === "read"} />;
 }
 
 /**

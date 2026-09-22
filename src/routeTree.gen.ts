@@ -64,6 +64,7 @@ import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReferralQueueRouteImport } from './routes/referral-queue'
+import { Route as RefusalQueueRouteImport } from './routes/refusal-queue'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ReportingRouteImport } from './routes/reporting'
 import { Route as ResourcesRouteImport } from './routes/resources'
@@ -380,6 +381,11 @@ const ReferralQueueRoute = ReferralQueueRouteImport.update({
   path: '/referral-queue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RefusalQueueRoute = RefusalQueueRouteImport.update({
+  id: '/refusal-queue',
+  path: '/refusal-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ReleasedSearchRoute = ReleasedSearchRouteImport.update({
   id: '/released-search',
   path: '/released-search',
@@ -643,6 +649,7 @@ export interface FileRoutesByFullPath {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
+  '/refusal-queue': typeof RefusalQueueRoute
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
@@ -739,6 +746,7 @@ export interface FileRoutesByTo {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
+  '/refusal-queue': typeof RefusalQueueRoute
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
   '/safety-plan': typeof SafetyPlanRoute
@@ -834,6 +842,7 @@ export interface FileRoutesById {
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
+  '/refusal-queue': typeof RefusalQueueRoute
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
@@ -933,6 +942,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
+    | '/refusal-queue'
     | '/released-search'
     | '/reporting'
     | '/resources'
@@ -1029,6 +1039,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
+    | '/refusal-queue'
     | '/released-search'
     | '/reporting'
     | '/safety-plan'
@@ -1123,6 +1134,7 @@ export interface FileRouteTypes {
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
+    | '/refusal-queue'
     | '/released-search'
     | '/reporting'
     | '/resources'
@@ -1221,6 +1233,7 @@ export interface RootRouteChildren {
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReferralQueueRoute: typeof ReferralQueueRoute
+  RefusalQueueRoute: typeof RefusalQueueRoute
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ReportingRoute: typeof ReportingRoute
   ResourcesRoute: typeof ResourcesRouteWithChildren
@@ -1626,6 +1639,13 @@ declare module '@tanstack/react-router' {
       path: '/referral-queue'
       fullPath: '/referral-queue'
       preLoaderRoute: typeof ReferralQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/refusal-queue': {
+      id: '/refusal-queue'
+      path: '/refusal-queue'
+      fullPath: '/refusal-queue'
+      preLoaderRoute: typeof RefusalQueueRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/released-search': {
@@ -2048,6 +2068,7 @@ const rootRouteChildren: RootRouteChildren = {
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReferralQueueRoute: ReferralQueueRoute,
+  RefusalQueueRoute: RefusalQueueRoute,
   ReleasedSearchRoute: ReleasedSearchRoute,
   ReportingRoute: ReportingRoute,
   ResourcesRoute: ResourcesRouteWithChildren,

@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -16,6 +16,13 @@ export const Route = createFileRoute("/clinician-profile")({
     meta: [
       { title: "My Clinician Profile — Adelante" },
       { name: "description", content: "Clinician self-serve profile, specialty, and languages." },
+      { property: "og:title", content: "My Clinician Profile — Adelante" },
+      {
+        property: "og:description",
+        content: "Clinician self-serve profile, specialty, languages, and scheduling links.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClinicianProfilePage,
@@ -124,8 +131,8 @@ function ClinicianProfilePage() {
 
       <p className="text-xs text-muted-foreground">
         Need to update availability or upload credentials? See{" "}
-        <a className="underline" href="/clinician-availability">Availability</a> ·{" "}
-        <a className="underline" href="/clinician-credentials">Credentials</a>.
+        <Link className="underline" to="/clinician-availability">Availability</Link> ·{" "}
+        <Link className="underline" to="/clinician-credentials">Credentials</Link>.
       </p>
     </div>
   );
