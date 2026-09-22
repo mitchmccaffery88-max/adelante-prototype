@@ -7,6 +7,7 @@ import {
   REFERRAL_DISPOSITION_ROLES,
   referralDeclineReasonLabel,
 } from "@/lib/referralActions";
+import { setActingRole } from "@/lib/roles";
 import { composeReferralWelcome } from "@/lib/referralWelcome.functions";
 
 const base = {
@@ -29,7 +30,7 @@ function makeReferral(extra: Record<string, unknown> = {}) {
 }
 
 beforeEach(() => {
-  AdelanteEHR.setActingRole("ecm_provider");
+  setActingRole("ecm_provider");
 });
 
 describe("referral disposition", () => {
