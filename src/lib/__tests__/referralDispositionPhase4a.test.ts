@@ -93,7 +93,7 @@ describe("referral action permissions", () => {
       expect(canPerformReferralAction(role, "decline")).toBe(true);
     }
     expect(canPerformReferralAction("peer_specialist", "enroll")).toBe(false);
-    expect(canPerformReferralAction("trainee", "decline")).toBe(false);
+    expect(canPerformReferralAction("peer_specialist", "decline")).toBe(false);
   });
 
   it("contact is the wider, care-coordination tier", () => {
