@@ -1,42 +1,45 @@
-# Referrals Phase 4e — real outreach work, attempt trail, referrer fallback
+# Referrals Phase 4f — post-enrollment handoff
 
-## What I found first
+## What I found (verified in code, not assumed)
 
-- `requestManualOutreach` sets `outreachTask: "manual_call"` on the referral and nothing else. Four places read it, all decorative. No task, no owner, no due date.
-- The existing task system (`CaseTask`) is **patient-keyed**: every consumer dereferences `patientId` — the worklist row links to `/record/$patientId`, the personal worklist and CM queue look the patient up by name. A referral has no patient record until enrollment, so a `CaseTask` for a referral would render a nameless row with a dead link on two existing pages.
-- `/referral-queue` (Phase 4d) already exists as the dedicated staff home for referral work, and `REFERRAL_DISPOSITION_ROLES` already names who may act.
-- Referrer phone and email are collected on every referral; phone is used only for outbound status texts, email for nothing at all.
+- **First session** (`ReferralStatusTimeline`) takes the earliest appointment by start time and treats its existence as arrival. `Appointment.status` is a real attendance field (`scheduled | attended | no_show | cancelled`) and is never consulted. Confirmed: a future booking or a no-show marks the milestone reached.
+- **`reassignPrimaryClinician`** sets `primaryClinicianId` and writes only a `provider_switch` audit entry. The timeline searches `category: "assignment"`, so it never matches and falls back to the enrollment date. **`assignCaseManager` already writes the correct `assignment` entry** (`case_manager_assigned` / `case_manager_reassigned`), so finding #2 is real for clinicians only — I will leave the case-manager path alone rather than duplicate a working write.
+- **`enrollReferral`** creates the patient, copies release date/county/CIN, stamps attribution, and stops. No task, no notification.
+- **`referralAging`** returns `closed` for enrolled referrals by design. Nothing measures elapsed time after that.
+- **`/admin-coordination`** already lists "Unassigned primary clinician" across patients — the only existing cross-patient setup surface. It covers one of four steps and has no staleness or intake/session view.
+- `CaseTask` supports an unassigned role pool today (`assignedTo: ""` + `allowedRoles` + claim) — the advocate AHCD-validation tasks already use exactly that shape.
 
-## Interpretation — where outreach work lives
+## Decisions that needed a judgment call
 
-Outreach tasks will be **referral-scoped work items stored on the referral**, surfaced on the referral queue, mirroring `CaseTask` semantics (title, due date, open/done, role pool, claim-by-individual, attribution) rather than reusing the patient-keyed `CaseTask` row. Reason: reusing `CaseTask` means either inventing an empty `patientId` (breaks two existing pages) or reshaping the task model and every consumer. The referral queue is the real, already-built place this work belongs.
+**Task system (build item 3): patient-keyed `CaseTask`.** The Phase 4e referral-scoped pattern existed only because no patient record existed yet. After enrollment one does, so every objection that forced that workaround disappears: the worklist row links to a real chart, the personal worklist resolves a real name. Using `CaseTask` also means the setup work lands in the worklist and personal worklist staff already open daily, with no new surface to learn. One task per enrollment titled "New enrollment — assign care team and book intake", unassigned to a role pool (case-manager and coordinator roles), claimable, deduped on the referral id, due in 3 days.
 
-## Assignee reasoning
+**Staleness thresholds (build item 4) — draft, pending care-operations sign-off**, labelled as such on screen like the Phase 4c aging badge:
 
-Nobody owns a referral before enrollment — there is no case manager or clinician yet. So it is a **role pool with individual claim**, the same shape `CaseTask` already uses (`allowedRoles` + `claimedBy`). Pool = any role with care-coordination write (that is already the "log outreach" tier from Phase 4a — outreach is contacting, not disposition). Claiming records staff id, name, role and time.
+| State | Due | Overdue | Reasoning |
+| --- | --- | --- | --- |
+| No case manager | 3 d | 7 d | Whoever the person calls back needs a named owner; a week without one means nobody is holding the case. |
+| No clinician | 5 d | 10 d | Clinician matching depends on licence, language and caseload — slower than naming a coordinator, but still inside two weeks. |
+| Intake not completed | 7 d | 14 d | Intake needs a scheduled contact with the person, so it trails assignment by about a week. |
+| No attended session | 14 d | 30 d | A first attended visit depends on the person showing up; 30 days is the point where the enrollment is effectively inactive. |
 
-## Fallback-trigger reasoning
+Measured from `enrolledAt` (else `Patient.enrolledAt`), per state, with the earliest unmet step driving the badge. Not ratified by Adelante care operations.
 
-Two triggers, because two different things are true:
-
-- **No phone ever given** — the contact path is absent, not unanswered. Prompt immediately at submission.
-- **Contact path proven dead** — any attempt logged as *wrong number* or *disconnected* proves the number is bad. Prompt immediately.
-- **Unanswered** — *no answer* / *left message* prove nothing on their own. Prompt after **2** such attempts, labelled a draft threshold pending care-operations sign-off, matching the aging-badge honesty pattern. Two attempts is roughly a working day of tries, and the referrer's number is still fresh at that point.
+**Home for the cross-patient view (build item 5): `/admin-coordination`.** It is already the routing home and already carries a narrower version of this list. I will replace its "Unassigned primary clinician" card with a fuller "Needs setup" card built as a shared component, and surface the same component on `/referral-queue` so the staff who enrolled someone see the follow-through without switching pages. No new route, no duplicated logic.
 
 ## Build
 
-1. **`src/lib/referralOutreach.ts`** (new, pure): attempt outcomes (`no_answer`, `left_message`, `wrong_number`, `disconnected`, `reached`), labels, `OUTREACH_FALLBACK_DRAFT` threshold constant + note, `needsReferrerFallback(referral)`, `outreachTaskState(referral)`.
-2. **`src/lib/ehr.ts`**: `Referral` gains `outreach?: { task?: ReferralOutreachTask; attempts: ReferralOutreachAttempt[] }`. `createReferral` creates a real open outreach task whenever a welcome text can't send (no phone, or no consent). New store methods: `claimReferralOutreach`, `logReferralOutreachAttempt` (records outcome, note, actor, time; a `reached` attempt closes the task and stamps `contactedAt`), `completeReferralOutreachTask`. Each writes an audit entry with attribution.
-3. **Drawer (`ReferralTimelineDrawer`)**: an "Outreach" block — task state, claim button, "Log an attempt" form (outcome select + optional note), and the attempt trail newest-first with who and when.
-4. **Referrer fallback prompt**: in the drawer, when `needsReferrerFallback` is true, an explicit card showing the referrer's name, agency, phone and email with a plain instruction to contact them for updated details. Shown only to roles that may log outreach.
-5. **Queue**: `ReferralTrackerCard` gets an "Outreach needed" filter option and a small badge on rows with an open outreach task; the queue page shows an open-outreach count.
-6. **Form copy**: the "no reliable phone" checkbox copy changes from a bare promise to the honest, now-true statement that a care-team member will be given a follow-up task to reach this person; the thank-you screen wording is aligned.
-7. **Tests**: task creation on no-phone/no-consent, attempt logging and attribution, fallback trigger at each of the three conditions, `reached` closing the task.
+1. **`src/lib/postEnrollment.ts`** (new, pure): `PostEnrollmentStep` (`case_manager | clinician | intake | first_session`), `firstAttendedAppointment(patientId)`, `postEnrollmentGaps(patient)`, `POST_ENROLLMENT_STALENESS_DRAFT` thresholds + note, `postEnrollmentStaleness(patient, now)` → `{ step, state: fresh|due|overdue, days }`, `needsSetup(patient)`.
+2. **First session fix** in `ReferralStatusTimeline`: the step reads the earliest appointment with `status === "attended"`; scheduled/cancelled/no-show never mark it reached. A future booked visit shows as "In progress" with its date rather than complete.
+3. **Clinician assignment audit** in `reassignPrimaryClinician`: add an `assignment` audit entry (`primary_clinician_assigned` / `primary_clinician_reassigned`, `from`/`to` detail) alongside the existing provider-switch record, which stays untouched. Timeline picks up the real moment with no change to its search.
+4. **Enrollment task** in `enrollReferral`: create the pooled `CaseTask` described above, audited, deduped by referral id.
+5. **`PostEnrollmentSetupCard`** (new shared component): rows of patients with open gaps, each showing which steps are missing, the honest draft-labelled staleness badge, the assign actions already built (`AssignClinicianButton`, case-manager assign) and a chart link. Mounted on `/admin-coordination` (replacing the narrower card) and `/referral-queue`.
+6. **Journey drawer**: a draft-labelled staleness line under the timeline when the patient has an open gap.
+7. **Tests**: attendance-gated first session, clinician assignment audit entry, enrollment task creation and dedupe, threshold boundaries per state, `needsSetup` filtering.
 
 ## Non-goals
 
-No email field for the referred person, no email transport, no changes to the post-enrollment journey steps (Phase 4f), no changes to Phase 4a–4d actions beyond the additions above.
+No change to Phase 4e referral-side outreach, to claim advancement, or to note signing. No change to `assignCaseManager`, which is already correct. No new route.
 
 ## Verification
 
-Typecheck, full test suite, and a live browser session on desktop and phone width: submit with "no reliable phone" → task appears on the queue and in the drawer; claim it; log a failed attempt; confirm the referrer-fallback card appears at the reasoned trigger with real referrer contact details; zero console errors.
+Typecheck, full test suite, and a live session at desktop and phone width: enroll a referral → task appears in the worklist and the needs-setup card; assign a clinician → the journey shows the real assignment time; a scheduled-only appointment leaves First session unreached and marking it attended completes it; staleness badges show with the draft label; zero console errors and no regressions to Phase 4a–4e.
