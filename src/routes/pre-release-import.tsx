@@ -10,7 +10,7 @@
 // rejected row says exactly why.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
-import { ArrowLeft, Download, Upload } from "lucide-react";
+import { ArrowLeft, Download, Lock, Upload } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
@@ -31,7 +31,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
-import { AccessDenied } from "@/components/AccessDenied";
+import { EmptyState } from "@/components/EmptyState";
 
 export const Route = createFileRoute("/pre-release-import")({
   head: () => ({
@@ -73,7 +73,8 @@ function PreReleaseImportPage() {
   if (!canImportPreReleaseRoster(role)) {
     return (
       <div className="p-6">
-        <AccessDenied
+        <EmptyState
+          icon={Lock}
           title="Roster import is limited"
           description="Uploading a pre-release roster is limited to reentry and coordination staff."
         />
