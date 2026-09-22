@@ -230,6 +230,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   };
 
   return (
+    <>
     <Card className="p-4 space-y-3">
       <h3 className="font-display text-sm text-navy">Move this referral</h3>
       <div className="flex flex-wrap gap-2">
@@ -239,7 +240,11 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
             variant="outline"
             disabled={!mayContact || busy}
             onClick={() =>
-              run(() => AdelanteEHR.markReferralContacted(referral.id), "Marked as contacted")
+              run(
+                () => AdelanteEHR.markReferralContacted(referral.id),
+                "Marked as contacted",
+                "contacted",
+              )
             }
           >
             Mark contacted
@@ -249,9 +254,17 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           size="sm"
           disabled={!mayDispose || busy}
           onClick={() =>
-            run(() => {
-              AdelanteEHR.enrollReferral(referral.id);
-            }, "Enrolled — a client record has been created")
+            run(
+              () => {
+                const pid = AdelanteEHR.enrollReferral(referral.id);
+                if (pid) {
+                  setEnrolledPatientId(pid);
+                  setAdvocateStep("ask");
+                }
+              },
+              "Enrolled — a client record has been created",
+              "enrolled",
+            )
           }
         >
           Enroll
