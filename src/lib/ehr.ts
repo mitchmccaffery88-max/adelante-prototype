@@ -6966,15 +6966,39 @@ export const AdelanteEHR = {
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
     const canSendSms = !requestManualOutreach && !!rest.phone && rest.consentToContact;
+    const now = new Date();
+    // §Phase 4e — when no welcome text can go out, real work is created here,
+    // not just a flag: an open, dated, role-pooled outreach task on the
+    // referral itself. Due tomorrow, matching the promise the form makes.
+    const reason = requestManualOutreach
+      ? "no_phone"
+      : referralNeedsOutreachTask({ phone: rest.phone, consentToContact: rest.consentToContact });
+    const due = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r: Referral = {
       ...rest,
       id: uid(),
       status: "submitted",
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
       // §Phase 4a — NOTHING is stamped as sent here. The caller attempts a
       // real send and writes the real outcome back via
       // `recordReferralWelcomeDelivery`.
       ...(canSendSms ? {} : { outreachTask: "manual_call" as const }),
+      ...(canSendSms || !reason
+        ? {}
+        : {
+            outreach: {
+              attempts: [],
+              task: {
+                reason: reason as "no_phone" | "no_consent",
+                createdAt: now.toISOString(),
+                dueDate: due,
+                status: "open" as const,
+                allowedRoles: STAFF_ROLES.filter(
+                  (role) => canAccess(role, "care_coordination").level === "write",
+                ),
+              },
+            } satisfies ReferralOutreachState,
+          }),
     };
     referrals.unshift(r);
     emit();
