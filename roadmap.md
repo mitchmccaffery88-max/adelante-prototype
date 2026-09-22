@@ -29,6 +29,13 @@
 - [x] Staff "submit on someone's behalf" via shared form in a dialog
 - [x] Dashboard tracker cards kept, with link-through to the queue
 
+## Referrals Phase 4f
+- [x] First session requires a real attended appointment
+- [x] Clinician assignment writes the real assignment audit entry
+- [x] Enrollment creates a pooled care-team/intake setup task
+- [x] Post-enrollment staleness (draft thresholds, per step)
+- [x] Cross-patient "Needs setup" view on coordination + referral queue
+
 ## Referrals Phase 4e
 - [x] Real manual-outreach task created when no welcome text can send
 - [x] Outreach attempt trail with outcomes and attribution
