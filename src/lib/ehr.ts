@@ -10113,7 +10113,11 @@ export const AdelanteEHR = {
     cfCareManagerStaffId: string;
     cfCareManagerName: string;
     facilityId?: string;
+    /** §Pre-release pipeline — partner-supplied facility name when no real `Facility` row matches. */
+    facilityName?: string;
     bookingId?: string;
+    /** §Pre-release pipeline — partner-supplied booking number (free text, not a `Booking` link). */
+    bookingNumber?: string;
     receivingEcmStaffId?: string;
     openedBy: string;
     actorRole: string;
@@ -10130,8 +10134,9 @@ export const AdelanteEHR = {
       id: uid(),
       patientId: input.patientId,
       facilityId: input.facilityId,
-      facilityName: facility?.name,
+      facilityName: facility?.name ?? input.facilityName,
       bookingId: input.bookingId,
+      bookingNumber: input.bookingNumber,
       anticipatedReleaseDate: input.anticipatedReleaseDate,
       cfCareManagerStaffId: input.cfCareManagerStaffId,
       cfCareManagerName: input.cfCareManagerName,
@@ -10207,7 +10212,9 @@ export const AdelanteEHR = {
     cfCareManagerStaffId: string;
     cfCareManagerName: string;
     facilityId?: string;
+    facilityName?: string;
     bookingId?: string;
+    bookingNumber?: string;
     openedBy: string;
     actorRole: string;
   }): { patient: Patient; episode: PreReleaseEpisode } {
