@@ -18,7 +18,7 @@
 - [ ] Scheduling: patient-side conflict checks + appointment provenance.
 
 ## Referrals Phase 4c
-- [ ] Referrer status-change SMS (contact/enroll/decline)
-- [ ] Staleness badge on shared tracker (draft threshold)
-- [ ] Segmented referral form (justice-involved yes/no/unsure)
-- [ ] Advocate discovery prompt at enrollment
+- [x] Referrer status-change SMS (contact/enroll/decline)
+- [x] Staleness badge on shared tracker (draft threshold)
+- [x] Segmented referral form (justice-involved yes/no/unsure)
+- [x] Advocate discovery prompt at enrollment
