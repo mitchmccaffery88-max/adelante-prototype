@@ -61,7 +61,7 @@ const OUTCOME_LABEL: Record<string, string> = {
 };
 
 function PreReleaseImportPage() {
-  const role = useActingRole();
+  const [role] = useActingRole();
   const { staffId, staffName } = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const episodes = useEhr(() => AdelanteEHR.listPreReleaseEpisodes());
