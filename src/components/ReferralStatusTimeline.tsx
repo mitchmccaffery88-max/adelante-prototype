@@ -200,6 +200,20 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
           );
         })}
       </ol>
+
+      {staleness && staleness.state !== "fresh" && (
+        <div
+          className={`mt-3 rounded border p-2 text-[11px] ${
+            staleness.state === "overdue"
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-gold/50 bg-gold/10 text-navy"
+          }`}
+          title={POST_ENROLLMENT_STALENESS_NOTE}
+        >
+          <div className="font-medium">{postEnrollmentStalenessLabel(staleness)}</div>
+          <div className="text-[10px] opacity-80">{POST_ENROLLMENT_STALENESS_LABEL}</div>
+        </div>
+      )}
     </Card>
   );
 }
