@@ -63,7 +63,7 @@ function AssignCaseManagerControl({ patientId }: { patientId: string }) {
           AdelanteEHR.assignCaseManager({
             patientId,
             caseManagerId: pick,
-            actorId: getActingStaff()?.id,
+            actorId: getActingStaff().id,
           });
           toast.success("Case manager assigned.");
           setPick("");
