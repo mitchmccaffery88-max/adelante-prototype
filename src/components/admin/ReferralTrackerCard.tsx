@@ -24,6 +24,7 @@ import {
   referralAging,
   referralAgingLabel,
 } from "@/lib/referralAging";
+import { hasOpenOutreachTask } from "@/lib/referralOutreach";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
@@ -70,7 +71,9 @@ export function ReferralTrackerCard({
 
   const filtered = useMemo(() => {
     return referrals.filter((r) => {
-      if (statusFilter !== "all" && r.status !== statusFilter) return false;
+      if (statusFilter === "outreach_needed") {
+        if (!hasOpenOutreachTask(r)) return false;
+      } else if (statusFilter !== "all" && r.status !== statusFilter) return false;
       const patient = r.enrolledPatientId
         ? AdelanteEHR.getPatient(r.enrolledPatientId)
         : undefined;
@@ -129,6 +132,8 @@ export function ReferralTrackerCard({
             <SelectItem value="contacted">Contacted</SelectItem>
             <SelectItem value="enrolled">Enrolled</SelectItem>
             <SelectItem value="declined">Declined</SelectItem>
+            {/* §Phase 4e — real open manual-outreach work, not a status. */}
+            <SelectItem value="outreach_needed">Outreach needed</SelectItem>
           </SelectContent>
         </Select>
         <Select value={programFilter} onValueChange={setProgramFilter}>
@@ -216,6 +221,9 @@ export function ReferralTrackerCard({
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  {hasOpenOutreachTask(r) && (
+                    <Badge className="bg-warning/20 text-navy border-0">Call needed</Badge>
+                  )}
                   <ReferralStalenessBadge referral={r} />
                   <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
                     {r.status}

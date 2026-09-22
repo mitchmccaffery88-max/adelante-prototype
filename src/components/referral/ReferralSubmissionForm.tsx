@@ -377,8 +377,9 @@ export function ReferralSubmissionForm({
             onCheckedChange={(v) => setForm({ ...form, noPhone: Boolean(v) })}
           />
           <span>
-            <strong>No reliable phone — request manual outreach.</strong> Skip the welcome text and
-            queue a manual call from the care team.
+            <strong>No reliable phone — request manual outreach.</strong> No welcome text is sent.
+            A follow-up task is created for the care team, due the next day, and the team will use
+            your contact details if they can&apos;t reach this person.
           </span>
         </label>
       </section>

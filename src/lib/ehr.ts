@@ -47,6 +47,12 @@ export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
 import { canAccess, getActingRole, getActingStaff, STAFF_ROLES } from "./roles";
+import {
+  referralNeedsOutreachTask,
+  type ReferralOutreachAttempt,
+  type ReferralOutreachOutcome,
+  type ReferralOutreachState,
+} from "./referralOutreach";
 
 /**
  * §Part 2 store gate — WHO is reading. `system` is reserved for internal
@@ -582,6 +588,12 @@ export interface Referral {
   /** Staff-side only — never shown on the public referrer-facing tracker. */
   declineReason?: string;
   declineNote?: string;
+  /**
+   * §Phase 4e — real manual-outreach work and its attempt trail. Before this
+   * existed, `outreachTask: "manual_call"` was a decorative flag: no task, no
+   * owner, no due date, and no record that anyone had tried to call.
+   */
+  outreach?: ReferralOutreachState;
 }
 
 /** Real staff attribution for a referral disposition. */
@@ -6954,15 +6966,39 @@ export const AdelanteEHR = {
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
     const canSendSms = !requestManualOutreach && !!rest.phone && rest.consentToContact;
+    const now = new Date();
+    // §Phase 4e — when no welcome text can go out, real work is created here,
+    // not just a flag: an open, dated, role-pooled outreach task on the
+    // referral itself. Due tomorrow, matching the promise the form makes.
+    const reason = requestManualOutreach
+      ? "no_phone"
+      : referralNeedsOutreachTask({ phone: rest.phone, consentToContact: rest.consentToContact });
+    const due = new Date(now.getTime() + 24 * 3600 * 1000).toISOString().slice(0, 10);
     const r: Referral = {
       ...rest,
       id: uid(),
       status: "submitted",
-      createdAt: new Date().toISOString(),
+      createdAt: now.toISOString(),
       // §Phase 4a — NOTHING is stamped as sent here. The caller attempts a
       // real send and writes the real outcome back via
       // `recordReferralWelcomeDelivery`.
       ...(canSendSms ? {} : { outreachTask: "manual_call" as const }),
+      ...(canSendSms || !reason
+        ? {}
+        : {
+            outreach: {
+              attempts: [],
+              task: {
+                reason: reason as "no_phone" | "no_consent",
+                createdAt: now.toISOString(),
+                dueDate: due,
+                status: "open" as const,
+                allowedRoles: STAFF_ROLES.map((r) => r.key).filter(
+                  (role) => canAccess(role, "care_coordination").level === "write",
+                ),
+              },
+            } satisfies ReferralOutreachState,
+          }),
     };
     referrals.unshift(r);
     emit();
@@ -7005,6 +7041,88 @@ export const AdelanteEHR = {
         ...(result.detail ? { detail: result.detail } : {}),
       },
     ];
+    emit();
+  },
+
+  // ----- §Phase 4e manual outreach ------------------------------------------
+  /** Take ownership of an open outreach task (pool claim, as on `CaseTask`). */
+  claimReferralOutreach(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    const task = r?.outreach?.task;
+    if (!r || !task || task.status !== "open") return;
+    const who = _referralActor();
+    task.claimedBy = who;
+    task.claimedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_claimed",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id },
+    });
+    emit();
+  },
+  /**
+   * Log a real manual outreach attempt. A `reached` outcome closes the task
+   * and marks the referral contacted — that IS the contact, so recording it
+   * twice would be dishonest bookkeeping.
+   */
+  logReferralOutreachAttempt(
+    id: string,
+    input: { outcome: ReferralOutreachOutcome; note?: string },
+  ) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    const who = _referralActor();
+    const at = new Date().toISOString();
+    const attempt: ReferralOutreachAttempt = {
+      id: uid(),
+      at,
+      outcome: input.outcome,
+      by: who,
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
+    r.outreach = {
+      task: r.outreach?.task,
+      attempts: [...(r.outreach?.attempts ?? []), attempt],
+    };
+    if (input.outcome === "reached") {
+      if (r.outreach.task && r.outreach.task.status === "open") {
+        r.outreach.task.status = "done";
+        r.outreach.task.completedAt = at;
+        r.outreach.task.completedBy = who;
+      }
+      if (r.status === "submitted") {
+        r.status = "contacted";
+        r.contactedAt = at;
+        r.contactedBy = who;
+      }
+    }
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_attempt",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id, outcome: input.outcome },
+    });
+    emit();
+  },
+  /** Close the outreach task without a successful contact (e.g. handed off). */
+  completeReferralOutreachTask(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    const task = r?.outreach?.task;
+    if (!r || !task || task.status !== "open") return;
+    const who = _referralActor();
+    task.status = "done";
+    task.completedAt = new Date().toISOString();
+    task.completedBy = who;
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_closed",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id },
+    });
     emit();
   },
 
