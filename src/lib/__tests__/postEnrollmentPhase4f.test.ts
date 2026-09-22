@@ -20,8 +20,10 @@ function newReferral(over: Record<string, unknown> = {}) {
     referrerPhone: "5595550100",
     referrerEmail: "diaz@example.org",
     consentToText: true,
+    consentToContact: true,
+    referralSource: "probation",
     ...over,
-  } as Parameters<typeof AdelanteEHR.createReferral>[0]);
+  } as unknown as Parameters<typeof AdelanteEHR.createReferral>[0]);
 }
 
 describe("first session is an attendance milestone", () => {
@@ -62,14 +64,21 @@ describe("first session is an attendance milestone", () => {
 describe("clinician assignment writes a real assignment audit entry", () => {
   it("reassignPrimaryClinician appends an assignment event the timeline can find", () => {
     const patientId = AdelanteEHR.enrollReferral(newReferral().id)!;
-    const clinician = AdelanteEHR.listClinicians()[0];
-    AdelanteEHR.reassignPrimaryClinician({ patientId, clinicianId: clinician.id });
+    const [first, second] = AdelanteEHR.listClinicians();
+    AdelanteEHR.reassignPrimaryClinician({ patientId, clinicianId: first.id });
     const events = AdelanteEHR.listAuditEvents({ patientId, category: "assignment" });
     expect(events.some((e) => /clinician/i.test(e.action))).toBe(true);
-    // The provider-switch record is untouched and still written.
+    // A real switch (there is now a previous provider) still writes the
+    // continuity-of-care record alongside the new assignment entry.
+    AdelanteEHR.reassignPrimaryClinician({ patientId, clinicianId: second.id });
     expect(
       AdelanteEHR.listAuditEvents({ patientId, category: "provider_switch" }).length,
     ).toBeGreaterThan(0);
+    expect(
+      AdelanteEHR.listAuditEvents({ patientId, category: "assignment" }).filter((e) =>
+        /clinician/i.test(e.action),
+      ).length,
+    ).toBe(2);
   });
 });
 
