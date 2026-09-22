@@ -121,6 +121,11 @@ function ReferralPage() {
       toast.error("Please verify you're not a robot");
       return;
     }
+    if (!form.justiceInvolved) {
+      toast.error("Please answer whether this individual is justice-involved");
+      return;
+    }
+    const ji = form.justiceInvolved === "yes";
     const result = AdelanteEHR.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
