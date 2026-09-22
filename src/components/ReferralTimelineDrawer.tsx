@@ -318,12 +318,16 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
               variant="destructive"
               disabled={!reason || (reason === "other" && !note.trim()) || busy}
               onClick={() =>
-                run(() => {
-                  AdelanteEHR.declineReferral(referral.id, {
-                    reason,
-                    ...(note.trim() ? { note: note.trim() } : {}),
-                  });
-                }, "Referral declined")
+                run(
+                  () => {
+                    AdelanteEHR.declineReferral(referral.id, {
+                      reason,
+                      ...(note.trim() ? { note: note.trim() } : {}),
+                    });
+                  },
+                  "Referral declined",
+                  "declined",
+                )
               }
             >
               Confirm decline
@@ -334,7 +338,37 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           </div>
         </div>
       )}
+      <ReferrerUpdateLog referral={referral} />
     </Card>
+    {advocateBlock}
+    </>
+  );
+}
+
+/**
+ * §Phase 4c — what really happened when we tried to text the referrer. Mirrors
+ * the welcome-text honesty rule: only `sent` claims a message left.
+ */
+function ReferrerUpdateLog({ referral }: { referral: Referral }) {
+  const rows = referral.referrerUpdates ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <div className="border-t pt-2">
+      <p className="text-[11px] font-medium text-navy">Updates to the person who referred them</p>
+      <ul className="mt-1 space-y-0.5">
+        {rows.map((u, i) => (
+          <li key={`${u.event}-${i}`} className="text-[11px] text-muted-foreground">
+            <span className="capitalize">{u.event}</span> ·{" "}
+            {u.status === "sent"
+              ? "text sent"
+              : u.status === "not_configured"
+                ? "not sent — texting isn't connected"
+                : "not sent — delivery failed"}{" "}
+            · <ClientDate value={u.at} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 
