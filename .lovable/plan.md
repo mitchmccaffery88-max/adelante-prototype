@@ -1,32 +1,42 @@
-# Phase 4d — a real staff referral queue with its own nav entry
+# Referrals Phase 4e — real outreach work, attempt trail, referrer fallback
 
-## Confirmed current state
-- The staff nav entry `referral` ("Referrals", Care group, gated on care-coordination) points at `/referral`.
-- `/referral` is in `PUBLIC_ROUTES`, so the shell deliberately strips the staff sidebar, notifications, staff menu and route guard there. Staff clicking "Referrals" therefore leave the EHR entirely and land on the public submission form.
-- The consolidated tracker `ReferralTrackerCard` (filters, staleness badge, drawer actions) exists only as a card inside `/admin` (line 373) and `/case-manager` (line 259). It has no page of its own.
-- Single-purpose staff queues (`/notes-queue`, `/crisis-queue`, `/worklist`) share one shape: a route file with `head()`, an access check that returns a "your role can't view this" card, a centred `max-w-*` container, a header with title + one-line description, and the queue body.
+## What I found first
+
+- `requestManualOutreach` sets `outreachTask: "manual_call"` on the referral and nothing else. Four places read it, all decorative. No task, no owner, no due date.
+- The existing task system (`CaseTask`) is **patient-keyed**: every consumer dereferences `patientId` — the worklist row links to `/record/$patientId`, the personal worklist and CM queue look the patient up by name. A referral has no patient record until enrollment, so a `CaseTask` for a referral would render a nameless row with a dead link on two existing pages.
+- `/referral-queue` (Phase 4d) already exists as the dedicated staff home for referral work, and `REFERRAL_DISPOSITION_ROLES` already names who may act.
+- Referrer phone and email are collected on every referral; phone is used only for outbound status texts, email for nothing at all.
+
+## Interpretation — where outreach work lives
+
+Outreach tasks will be **referral-scoped work items stored on the referral**, surfaced on the referral queue, mirroring `CaseTask` semantics (title, due date, open/done, role pool, claim-by-individual, attribution) rather than reusing the patient-keyed `CaseTask` row. Reason: reusing `CaseTask` means either inventing an empty `patientId` (breaks two existing pages) or reshaping the task model and every consumer. The referral queue is the real, already-built place this work belongs.
+
+## Assignee reasoning
+
+Nobody owns a referral before enrollment — there is no case manager or clinician yet. So it is a **role pool with individual claim**, the same shape `CaseTask` already uses (`allowedRoles` + `claimedBy`). Pool = any role with care-coordination write (that is already the "log outreach" tier from Phase 4a — outreach is contacting, not disposition). Claiming records staff id, name, role and time.
+
+## Fallback-trigger reasoning
+
+Two triggers, because two different things are true:
+
+- **No phone ever given** — the contact path is absent, not unanswered. Prompt immediately at submission.
+- **Contact path proven dead** — any attempt logged as *wrong number* or *disconnected* proves the number is bad. Prompt immediately.
+- **Unanswered** — *no answer* / *left message* prove nothing on their own. Prompt after **2** such attempts, labelled a draft threshold pending care-operations sign-off, matching the aging-badge honesty pattern. Two attempts is roughly a working day of tries, and the referrer's number is still fresh at that point.
 
 ## Build
 
-### 1. New page `/referral-queue`
-New route file following the `/notes-queue` pattern: route-specific `head()`, a care-coordination access check with the same locked-card fallback, a header ("Referrals" / "Everyone referred into Adelante care — contact, enroll or decline from here"), and the existing shared `ReferralTrackerCard` rendered with a large `limit` so it works as a full queue rather than a top-five summary. No changes to the card itself.
+1. **`src/lib/referralOutreach.ts`** (new, pure): attempt outcomes (`no_answer`, `left_message`, `wrong_number`, `disconnected`, `reached`), labels, `OUTREACH_FALLBACK_DRAFT` threshold constant + note, `needsReferrerFallback(referral)`, `outreachTaskState(referral)`.
+2. **`src/lib/ehr.ts`**: `Referral` gains `outreach?: { task?: ReferralOutreachTask; attempts: ReferralOutreachAttempt[] }`. `createReferral` creates a real open outreach task whenever a welcome text can't send (no phone, or no consent). New store methods: `claimReferralOutreach`, `logReferralOutreachAttempt` (records outcome, note, actor, time; a `reached` attempt closes the task and stamps `contactedAt`), `completeReferralOutreachTask`. Each writes an audit entry with attribution.
+3. **Drawer (`ReferralTimelineDrawer`)**: an "Outreach" block — task state, claim button, "Log an attempt" form (outcome select + optional note), and the attempt trail newest-first with who and when.
+4. **Referrer fallback prompt**: in the drawer, when `needsReferrerFallback` is true, an explicit card showing the referrer's name, agency, phone and email with a plain instruction to contact them for updated details. Shown only to roles that may log outreach.
+5. **Queue**: `ReferralTrackerCard` gets an "Outreach needed" filter option and a small badge on rows with an open outreach task; the queue page shows an open-outreach count.
+6. **Form copy**: the "no reliable phone" checkbox copy changes from a bare promise to the honest, now-true statement that a care-team member will be given a follow-up task to reach this person; the thank-you screen wording is aligned.
+7. **Tests**: task creation on no-phone/no-consent, attempt logging and attribution, fallback trigger at each of the three conditions, `reached` closing the task.
 
-### 2. Repoint the nav entry
-`STAFF_NAV` entry `referral` now points at `/referral-queue`, same label, group and gate. `/referral` stays in `PUBLIC_ROUTES` and stays fully public and unauthenticated — it simply stops being a staff nav destination.
+## Non-goals
 
-### 3. "Submit a referral on someone's behalf"
-Extract the existing form body from `src/routes/referral.tsx` into a shared `ReferralSubmissionForm` component, unchanged in fields, validation, duplicate-CIN check, welcome-SMS behaviour and copy. The public route renders it exactly as today; the staff queue page renders the same component inside a dialog opened from a "Submit a referral" button, with a short staff-context line above it naming that the staff member is recording a referral on someone else's behalf.
-
-Reasoning: a separate staff intake action would be a second implementation of a form that already exists and was just hardened in 4c — two places to keep honest. Linking out to `/referral` would drop staff out of the shell again, which is the exact complaint being fixed. One component, two hosts, keeps the public form untouched and the staff path inside the EHR.
-
-Assumption: no prefill of the referrer name/agency from the acting staff member — that would change shared form behaviour, and a staff member recording a referral is often relaying someone else's details. Say the word and I'll add it.
-
-### 4. Dashboard cards stay, with a link through
-Keep the tracker on `/admin` and `/case-manager`, unchanged, and add a "View all referrals" link to the new page. Reasoning: both dashboards are at-a-glance surfaces and referral flow is genuinely part of what each audience watches; the card is already the single shared component, so keeping it costs no duplication. Removing it would trade a real awareness signal for tidiness. The new page becomes the place you go to work the queue; the cards stay the place you notice it needs working.
-
-## Tests
-- Update `src/lib/__tests__/navSections.test.ts`: the `referral` entry now resolves to `/referral-queue`; `/referral` stays public.
-- Add a test asserting the nav registry contains no staff entry pointing at a public route.
+No email field for the referred person, no email transport, no changes to the post-enrollment journey steps (Phase 4f), no changes to Phase 4a–4d actions beyond the additions above.
 
 ## Verification
-Typecheck, full test run, and a live session: "Referrals" in the staff nav keeps the sidebar and shows the tracker; the submit dialog records a real referral; `/referral` still loads with no sign-in and no staff chrome. Desktop and phone widths, zero console errors.
+
+Typecheck, full test suite, and a live browser session on desktop and phone width: submit with "no reliable phone" → task appears on the queue and in the drawer; claim it; log a failed attempt; confirm the referrer-fallback card appears at the reasoned trigger with real referrer contact details; zero console errors.
