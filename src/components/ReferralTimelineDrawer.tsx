@@ -23,7 +23,7 @@ import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type Referral } from "@/li
 import { ClientDate } from "@/components/ClientDate";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { REFERRAL_STATUS_STYLES } from "@/components/ReferralProgressStrip";
-import { getActingRole } from "@/lib/roles";
+import { getActingRole, getActingStaff } from "@/lib/roles";
 import {
   REFERRAL_DECLINE_REASONS,
   canPerformReferralAction,
