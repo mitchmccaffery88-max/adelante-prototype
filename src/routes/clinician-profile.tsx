@@ -1,4 +1,4 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -124,8 +124,8 @@ function ClinicianProfilePage() {
 
       <p className="text-xs text-muted-foreground">
         Need to update availability or upload credentials? See{" "}
-        <a className="underline" href="/clinician-availability">Availability</a> ·{" "}
-        <a className="underline" href="/clinician-credentials">Credentials</a>.
+        <Link className="underline" to="/clinician-availability">Availability</Link> ·{" "}
+        <Link className="underline" to="/clinician-credentials">Credentials</Link>.
       </p>
     </div>
   );

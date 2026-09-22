@@ -101,7 +101,7 @@ const dict = {
     navLibrary: "Library",
     navResources: "Resources",
     navReferrals: "Referrals",
-    navCaseManager: "ECM Provider",
+    navCaseManager: "Care Coordination",
     navClinician: "Clinician",
     navAdmin: "Admin",
     navStaff: "Staff",
@@ -131,8 +131,9 @@ const dict = {
     authNewSignupCaption: "New here? We'll set you up in under a minute.",
     authResetsNote: "Demo: data resets on reload.",
     // Staff surfaces
-    cmTitle: "My caseload",
-    cmSubtitle: "Non-clinical view — no diagnoses, no clinical notes.",
+    cmTitle: "Care Coordination",
+    cmSubtitle:
+      "Review assigned or program-wide clients. Opening a record shows the chart sections available to your role.",
     cmCaseload: "Caseload",
     cmCheckIn: "Weekly check-in",
     cmResource: "Resource referral",
@@ -457,7 +458,7 @@ const dict = {
     navLibrary: "Biblioteca",
     navResources: "Recursos",
     navReferrals: "Referidos",
-    navCaseManager: "Proveedor ECM",
+    navCaseManager: "Coordinación de cuidados",
     navClinician: "Profesional clínico",
     navAdmin: "Administración",
     navStaff: "Equipo",
@@ -487,8 +488,9 @@ const dict = {
     authNewSignupCaption: "¿Eres nuevo? Te registramos en menos de un minuto.",
     authResetsNote: "Demostración: los datos se reinician al recargar.",
     // Staff surfaces
-    cmTitle: "Mis clientes",
-    cmSubtitle: "Vista no clínica — sin diagnósticos ni notas clínicas.",
+    cmTitle: "Coordinación de cuidados",
+    cmSubtitle:
+      "Revisa clientes asignados o de todo el programa. Al abrir un expediente verás las secciones permitidas para tu función.",
     cmCaseload: "Clientes",
     cmCheckIn: "Contacto semanal",
     cmResource: "Referido de recursos",

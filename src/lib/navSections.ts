@@ -15,6 +15,7 @@ import {
   CalendarClock,
   ClipboardList,
   ClipboardSignature,
+  FileSignature,
   FileInput,
   FileSearch,
   FileStack,
@@ -149,7 +150,7 @@ export const STAFF_NAV: NavEntry[] = [
   },
   {
     id: "case-manager",
-    label: "ECM Provider",
+    label: "Care Coordination",
     desc: "Check-ins & resources",
     icon: HandHeart,
     to: "/case-manager",
@@ -246,6 +247,15 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/notes-queue",
     group: "queues",
     gate: { kind: "record_class", anyOf: ["therapy_notes"] },
+  },
+  {
+    id: "refusal-queue",
+    label: "Refusal documents",
+    desc: "Medication refusals awaiting signature",
+    icon: FileSignature,
+    to: "/refusal-queue",
+    group: "queues",
+    gate: { kind: "record_class", anyOf: ["meds_erx"] },
   },
   {
     id: "cosign-inbox",

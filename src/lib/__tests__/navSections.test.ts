@@ -113,12 +113,21 @@ describe("nav registry integrity", () => {
       "/billing",
       "/consent",
       "/notes-queue",
+      "/refusal-queue",
       "/clinician-profile",
       "/clinician-availability",
       "/clinician-credentials",
       "/admin",
     ]) {
       expect(registry.has(route)).toBe(true);
+    }
+  });
+
+  it("gates the refusal-document queue exactly like medication records", () => {
+    for (const role of STAFF_ROLES.map((item) => item.key)) {
+      expect(ids(role).includes("refusal-queue")).toBe(
+        canAccess(role, "meds_erx").level !== "none",
+      );
     }
   });
 });
