@@ -94,6 +94,8 @@ function ReferralPage() {
     dob: "",
     releaseDate: "",
     countyOfRelease: "Tulare",
+    // §Phase 4c — three real states, UNANSWERED by default. Never silently "no".
+    justiceInvolved: "" as "" | "yes" | "no" | "unsure",
     consentToContact: false,
     noPhone: false,
     notARobot: false,
