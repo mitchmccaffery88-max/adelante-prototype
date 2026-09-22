@@ -181,7 +181,11 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
         ) : (
           <AdvocateInviteForm
             patientId={enrolledPatientId}
-            designatedBy="staff"
+            designatedBy={{
+              actor:
+                role === "ecm_provider" || role === "cf_care_manager" ? role : "administrator",
+              name: getActingStaff()?.name ?? "Staff",
+            }}
             title="Invite this person's advocate"
             onInvited={() => setAdvocateStep("none")}
           />
