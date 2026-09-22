@@ -18,6 +18,11 @@ import {
   ReferralProgressStrip,
 } from "@/components/ReferralProgressStrip";
 import { referralDeclineReasonLabel } from "@/lib/referralActions";
+import {
+  REFERRAL_AGING_DRAFT,
+  referralAging,
+  referralAgingLabel,
+} from "@/lib/referralAging";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
