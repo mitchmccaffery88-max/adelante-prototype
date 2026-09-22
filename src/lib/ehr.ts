@@ -10454,6 +10454,22 @@ export const AdelanteEHR = {
    * flip what the patient sees. A human confirms the person is actually out.
    */
   /**
+   * §Pre-release pipeline — county of release, which lives on `coverage`
+   * because that is where the referral path already writes it. A narrow setter
+   * rather than a new field: two sources of truth for county would be worse
+   * than a slightly odd home for one. `updateProfile` does not cover it.
+   */
+  setCountyOfRelease(patientId: string, county: string): void {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !county) return;
+    p.coverage = {
+      ...(p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "pending" as const }),
+      countyOfRelease: county,
+    };
+    emit();
+  },
+
+  /**
    * §Pre-release pipeline — correct the logistics on an OPEN episode from a
    * newer partner roster. Deliberately narrow: release date, facility name and
    * booking number only. Nothing clinical, no status movement.
