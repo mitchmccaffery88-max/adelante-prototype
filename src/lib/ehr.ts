@@ -541,10 +541,37 @@ export interface Referral {
   consentToContact: boolean;
   status: ReferralStatus;
   createdAt: string;
+  /**
+   * ONLY set when a welcome text genuinely left the building. Before Phase 4a
+   * this was stamped at submission time with nothing ever sent.
+   */
   smsSentAt?: string;
+  /** Real, truthful outcome of the welcome-text attempt. */
+  welcomeSms?: {
+    status: "sent" | "not_configured" | "failed";
+    at: string;
+    detail?: string;
+  };
   outreachTask?: "manual_call";
-  // Set when advanceReferral → "enrolled" materializes a Patient row.
+  // Set when enrollReferral materializes a Patient row.
   enrolledPatientId?: string;
+  // ----- §Phase 4a disposition history (who moved this, when, why) ---------
+  contactedAt?: string;
+  contactedBy?: ReferralActor;
+  enrolledAt?: string;
+  enrolledBy?: ReferralActor;
+  declinedAt?: string;
+  declinedBy?: ReferralActor;
+  /** Staff-side only — never shown on the public referrer-facing tracker. */
+  declineReason?: string;
+  declineNote?: string;
+}
+
+/** Real staff attribution for a referral disposition. */
+export interface ReferralActor {
+  staffId: string;
+  name: string;
+  role: string;
 }
 
 /**
