@@ -28,6 +28,7 @@ import {
   canWritePreReleaseEpisode,
 
   canReadPreRelease,
+  canImportPreReleaseRoster,
   getStaffMember,
   staffForRole,
   useActingStaff,
@@ -132,19 +133,24 @@ function PreReleasePage() {
 
   return (
     <div className="space-y-4 p-4 md:p-6">
-      <div className="flex items-center gap-3">
+      <div className="flex flex-wrap items-center gap-3">
         <Button asChild variant="ghost" size="sm">
           <Link to="/">
             <ArrowLeft className="mr-1 h-4 w-4" /> Back
           </Link>
         </Button>
-        <div>
+        <div className="flex-1">
           <h1 className="text-xl font-semibold">Pre-release list</h1>
           <p className="text-sm text-muted-foreground">
             D90 → D0 countdown. Clinical assessment uses real instruments (AUDIT-10, DAST-10,
             AHC-HRSN); the Medi-Cal enrollment field sets are still placeholders.
           </p>
         </div>
+        {canImportPreReleaseRoster(role) && (
+          <Button asChild variant="outline" size="sm" data-testid="roster-import-link">
+            <Link to="/pre-release-import">Import roster (CSV)</Link>
+          </Button>
+        )}
       </div>
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
