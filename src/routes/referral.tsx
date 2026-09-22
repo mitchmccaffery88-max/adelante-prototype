@@ -446,7 +446,7 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
       </div>
       <p className="text-xs text-muted-foreground mt-1">Status only — no clinical detail.</p>
       <ul className="mt-3 space-y-3">
-        {mine.map((r) => {
+        {mine.slice(0, 10).map((r) => {
           return (
             <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
               <div className="flex items-center justify-between">
