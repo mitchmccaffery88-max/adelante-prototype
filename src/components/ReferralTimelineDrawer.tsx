@@ -31,6 +31,14 @@ import {
   referralDeclineReasonLabel,
 } from "@/lib/referralActions";
 import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
+import {
+  OUTREACH_FALLBACK_DRAFT,
+  REFERRAL_OUTREACH_OUTCOMES,
+  canWorkReferralOutreach,
+  needsReferrerFallback,
+  referralOutreachOutcomeLabel,
+  type ReferralOutreachOutcome,
+} from "@/lib/referralOutreach";
 import { AdvocateInviteForm } from "@/components/advocate/AdvocateInviteForm";
 
 interface Props {
@@ -349,6 +357,153 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
     </Card>
     {advocateBlock}
     </>
+  );
+}
+
+/**
+ * §Phase 4e — real manual outreach: the task, the claim, the attempt trail,
+ * and the referrer-fallback prompt. Before this, "no reliable phone" set a
+ * flag that changed wording on four screens and created no work at all.
+ */
+function ReferralOutreachCard({ referral }: { referral: Referral }) {
+  const role = getActingRole();
+  const mayWork = canWorkReferralOutreach(role);
+  const [outcome, setOutcome] = useState<string>("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const task = referral.outreach?.task;
+  const attempts = referral.outreach?.attempts ?? [];
+  const fallback = needsReferrerFallback(referral);
+  if (!task && attempts.length === 0 && !fallback.due) return null;
+
+  const log = () => {
+    setBusy(true);
+    try {
+      AdelanteEHR.logReferralOutreachAttempt(referral.id, {
+        outcome: outcome as ReferralOutreachOutcome,
+        ...(note.trim() ? { note: note.trim() } : {}),
+      });
+      setOutcome("");
+      setNote("");
+      toast.success("Outreach attempt logged");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-4 space-y-3" data-testid="referral-outreach">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-sm text-navy">Manual outreach</h3>
+        {task && (
+          <Badge
+            className={
+              task.status === "open"
+                ? "bg-warning/20 text-navy border-0"
+                : "bg-muted text-muted-foreground border-0"
+            }
+          >
+            {task.status === "open" ? "Open task" : "Task closed"}
+          </Badge>
+        )}
+      </div>
+
+      {task && (
+        <div className="rounded-md border p-3 text-xs space-y-1">
+          <p className="text-navy">
+            {task.reason === "no_phone"
+              ? "No usable phone number was given — this person needs a call from the care team."
+              : "Consent to text wasn't given — reach this person by phone instead."}
+          </p>
+          <p className="text-muted-foreground">
+            Due {task.dueDate} · open to any role with care-coordination access
+            {task.claimedBy ? ` · claimed by ${task.claimedBy.name} (${task.claimedBy.role})` : " · unclaimed"}
+          </p>
+          {task.status === "open" && mayWork && !task.claimedBy && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="mt-1"
+              onClick={() => AdelanteEHR.claimReferralOutreach(referral.id)}
+            >
+              Claim this task
+            </Button>
+          )}
+          {task.status === "done" && task.completedBy && (
+            <p className="text-muted-foreground">
+              Closed by {task.completedBy.name} · <ClientDate value={task.completedAt ?? ""} />
+            </p>
+          )}
+        </div>
+      )}
+
+      {fallback.due && (
+        <div className="rounded-md border border-warning bg-warning/10 p-3 text-xs space-y-1">
+          <p className="font-medium text-navy">Contact the person who referred them</p>
+          <p className="text-muted-foreground">{fallback.explanation}</p>
+          <p className="text-navy">
+            {referral.referrerName}
+            {referral.referringAgency ? ` · ${referral.referringAgency}` : ""}
+          </p>
+          <p className="text-muted-foreground">
+            {referral.referrerPhone ? `Phone: ${referral.referrerPhone}` : "No referrer phone on file"}
+            {" · "}
+            {referral.referrerEmail ? `Email: ${referral.referrerEmail}` : "no referrer email on file"}
+          </p>
+          <p className="text-[10px] text-muted-foreground">{OUTREACH_FALLBACK_DRAFT.label}</p>
+        </div>
+      )}
+
+      {mayWork && referral.status === "submitted" && (
+        <div className="space-y-2">
+          <Label className="text-xs">Log an outreach attempt</Label>
+          <Select value={outcome} onValueChange={setOutcome}>
+            <SelectTrigger className="h-9 text-sm" data-testid="outreach-outcome">
+              <SelectValue placeholder="What happened?" />
+            </SelectTrigger>
+            <SelectContent>
+              {REFERRAL_OUTREACH_OUTCOMES.map((o) => (
+                <SelectItem key={o.key} value={o.key}>
+                  {o.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder="Optional detail"
+            rows={2}
+            className="text-sm"
+          />
+          <Button size="sm" disabled={!outcome || busy} onClick={log}>
+            Log attempt
+          </Button>
+        </div>
+      )}
+      {!mayWork && (
+        <p className="text-[11px] text-muted-foreground">
+          Logging outreach needs care-coordination write access.
+        </p>
+      )}
+
+      {attempts.length > 0 && (
+        <div className="border-t pt-2">
+          <p className="text-[11px] font-medium text-navy">Attempts</p>
+          <ul className="mt-1 space-y-0.5">
+            {[...attempts].reverse().map((a) => (
+              <li key={a.id} className="text-[11px] text-muted-foreground">
+                {referralOutreachOutcomeLabel(a.outcome)} · <ClientDate value={a.at} /> ·{" "}
+                {a.by.name} ({a.by.role})
+                {a.note ? ` — ${a.note}` : ""}
+              </li>
+            ))}
+          </ul>
+        </div>
+      )}
+      <p className="text-[10px] text-muted-foreground">{OUTREACH_FALLBACK_DRAFT.note}</p>
+    </Card>
   );
 }
 
