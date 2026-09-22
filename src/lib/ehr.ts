@@ -283,7 +283,18 @@ export interface CareMessage {
 // Today this is an in-memory mock; swap the in-memory store for a real
 // backend when wiring the native Adelante EHR persistence layer.
 
-export type ReferralStatus = "submitted" | "contacted" | "enrolled";
+/**
+ * §Referrals Rework Phase 4a — `declined` is an ENDED state, not a fourth
+ * step. Anything that renders progress must branch on it rather than index it
+ * into the three-stage order, and anything counting "active" must exclude it.
+ */
+export type ReferralStatus = "submitted" | "contacted" | "enrolled" | "declined";
+export const REFERRAL_PROGRESS_STAGES = ["submitted", "contacted", "enrolled"] as const;
+export type ReferralProgressStage = (typeof REFERRAL_PROGRESS_STAGES)[number];
+/** True for states that are over — no further progress will be made. */
+export function isReferralClosed(s: ReferralStatus): boolean {
+  return s === "declined" || s === "enrolled";
+}
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "ready" | "submitted" | "paid" | "denied" | "write_off";
 export type CoverageStatus =
