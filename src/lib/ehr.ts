@@ -7194,6 +7194,25 @@ export const AdelanteEHR = {
         referrerName: r.referrerName,
       },
     });
+    // §Phase 4f — enrollment used to end here, leaving nobody responsible for
+    // the four setup steps. A real patient row now exists, so this is ordinary
+    // patient-keyed work: unassigned to a role pool, claimable, deduped on the
+    // referral so a re-enroll can never double it.
+    const setupDue = new Date();
+    setupDue.setDate(setupDue.getDate() + 3);
+    AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: "",
+      title: "New enrollment — assign care team and book intake",
+      detail: `${p.firstName} ${p.lastName} enrolled from a referral${r.referringAgency ? ` (${r.referringAgency})` : ""}. Assign a case manager and a primary clinician, then complete intake and book the first session.`,
+      dueDate: setupDue.toISOString().slice(0, 10),
+      origin: "referral_enrollment_setup",
+      taskType: "enrollment_setup",
+      allowedRoles: STAFF_ROLES.map((s) => s.key).filter(
+        (role) => canAccess(role, "care_coordination").level === "write",
+      ),
+      dedupeKey: `enrollment-setup:${r.id}`,
+    });
     emit();
     return p.id;
   },
