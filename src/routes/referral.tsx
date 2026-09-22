@@ -130,9 +130,11 @@ function ReferralPage() {
       firstName: form.firstName,
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
-      cin: form.cin ? normalizeCin(form.cin) : undefined,
+      // Medi-Cal ID writes to the EXISTING `Referral.cin` — no parallel field.
+      cin: ji && form.cin ? normalizeCin(form.cin) : undefined,
       dob: form.dob || undefined,
-      releaseDate: form.releaseDate || undefined,
+      releaseDate: ji ? form.releaseDate || undefined : undefined,
+      justiceInvolved: form.justiceInvolved,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
       referrerEmail: form.referrerEmail || undefined,
