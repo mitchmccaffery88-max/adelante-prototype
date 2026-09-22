@@ -553,6 +553,23 @@ export interface Referral {
     detail?: string;
   };
   outreachTask?: "manual_call";
+  /**
+   * §Phase 4c — how the referrer answered "is this individual
+   * justice-involved?". Deliberately three-state and optional: unanswered on
+   * pre-4c records, and never silently coerced to "no".
+   */
+  justiceInvolved?: "yes" | "no" | "unsure";
+  /**
+   * §Phase 4c — truthful log of status-change texts to the REFERRER. Same
+   * honesty rule as `welcomeSms`: an entry only exists if a send was really
+   * attempted, and only `sent` means a message left the building.
+   */
+  referrerUpdates?: {
+    event: "contacted" | "enrolled" | "declined";
+    status: "sent" | "not_configured" | "failed";
+    at: string;
+    detail?: string;
+  }[];
   // Set when enrollReferral materializes a Patient row.
   enrolledPatientId?: string;
   // ----- §Phase 4a disposition history (who moved this, when, why) ---------
