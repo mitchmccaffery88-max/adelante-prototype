@@ -49,10 +49,13 @@ export function ReferralTrackerCard({
   referrals,
   title = "Referral status",
   limit = 5,
+  showViewAll = false,
 }: {
   referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
   title?: string;
   limit?: number;
+  /** §Phase 4d — dashboards keep the card and link through to the real queue. */
+  showViewAll?: boolean;
 }) {
   const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
   // Live subscribe so timestamps update as intake/assignments advance.
