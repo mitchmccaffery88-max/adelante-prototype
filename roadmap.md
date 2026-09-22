@@ -1,13 +1,10 @@
 # Roadmap
 
 ## In progress
-- [ ] Dashboard Standardization Phase 5a — Care Coordination naming and honest scope copy
-- [ ] Remove placeholder coordination and hardcoded dashboard availability
-- [ ] Dedicated refusal-document queue with conditional dashboard count
-- [ ] Consolidate per-client eligibility actions into the patient record
-- [ ] Clinician Patient chart opens without a preselected patient
+- None.
 
 ## Done
+- [x] Dashboard Standardization Phase 5a — Care Coordination naming, honest scope copy, dashboard cleanup, refusal queue, eligibility consolidation, and blank initial chart.
 - [x] Referrals Rework Phase 4b — consolidated duplicate referral tracker cards.
 - [x] Referrals Rework Phase 4a — movable referrals, attributed disposition, honest welcome SMS.
 - [x] Investigation: intake↔scheduling coordination + intake SDOH fidelity/handoff (reported).

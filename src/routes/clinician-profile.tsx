@@ -16,6 +16,13 @@ export const Route = createFileRoute("/clinician-profile")({
     meta: [
       { title: "My Clinician Profile — Adelante" },
       { name: "description", content: "Clinician self-serve profile, specialty, and languages." },
+      { property: "og:title", content: "My Clinician Profile — Adelante" },
+      {
+        property: "og:description",
+        content: "Clinician self-serve profile, specialty, languages, and scheduling links.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClinicianProfilePage,

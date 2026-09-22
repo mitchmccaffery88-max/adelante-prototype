@@ -804,7 +804,8 @@ function ResourceReferralCard({
 
 function EligibilitySummaryCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
-  if (!p) return null;
+  const { role } = useActingStaff();
+  if (!p || canAccess(role, "eligibility").level === "none") return null;
   const lastCheck = (p.coverage?.verifications ?? [])[0];
   return (
     <Card className="p-5">

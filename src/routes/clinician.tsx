@@ -50,6 +50,13 @@ export const Route = createFileRoute("/clinician")({
     meta: [
       { title: "Clinician Scheduler — Adelante" },
       { name: "description", content: "Caseload, scheduler, video sessions, and billing status." },
+      { property: "og:title", content: "Clinician Workspace — Adelante" },
+      {
+        property: "og:description",
+        content: "Clinical schedule, action queues, patient charts, and appointment management.",
+      },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: ClinicianPage,
