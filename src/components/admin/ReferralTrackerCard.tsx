@@ -18,6 +18,11 @@ import {
   ReferralProgressStrip,
 } from "@/components/ReferralProgressStrip";
 import { referralDeclineReasonLabel } from "@/lib/referralActions";
+import {
+  REFERRAL_AGING_DRAFT,
+  referralAging,
+  referralAgingLabel,
+} from "@/lib/referralAging";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
@@ -200,6 +205,7 @@ export function ReferralTrackerCard({
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <ReferralStalenessBadge referral={r} />
                   <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
                     {r.status}
                   </Badge>
@@ -239,11 +245,41 @@ export function ReferralTrackerCard({
           })}
         </div>
       )}
+      <p className="mt-3 text-[10px] text-muted-foreground">
+        Aging badge — {REFERRAL_AGING_DRAFT.note}
+      </p>
       <ReferralTimelineDrawer
         referralId={openRefId}
         open={!!openRefId}
         onOpenChange={(o: boolean) => !o && setOpenRefId(null)}
       />
     </Card>
+  );
+}
+
+/**
+ * §Phase 4c — computed purely from real timestamps: days since the last real
+ * staff action. Closed referrals never age. The threshold is DRAFT and the
+ * card says so in full underneath.
+ */
+function ReferralStalenessBadge({
+  referral,
+}: {
+  referral: ReturnType<typeof AdelanteEHR.listReferrals>[number];
+}) {
+  const { state, days } = referralAging(referral);
+  if (state === "closed" || state === "fresh") return null;
+  return (
+    <Badge
+      variant="outline"
+      className={
+        state === "overdue"
+          ? "border-destructive/40 bg-destructive/10 text-destructive text-[10px]"
+          : "border-gold/50 bg-gold/10 text-gold-foreground text-[10px]"
+      }
+      title={REFERRAL_AGING_DRAFT.label}
+    >
+      {referralAgingLabel(days)}
+    </Badge>
   );
 }

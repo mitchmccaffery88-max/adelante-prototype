@@ -23,13 +23,15 @@ import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type Referral } from "@/li
 import { ClientDate } from "@/components/ClientDate";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { REFERRAL_STATUS_STYLES } from "@/components/ReferralProgressStrip";
-import { getActingRole } from "@/lib/roles";
+import { getActingRole, getActingStaff } from "@/lib/roles";
 import {
   REFERRAL_DECLINE_REASONS,
   canPerformReferralAction,
   referralActionDeniedReason,
   referralDeclineReasonLabel,
 } from "@/lib/referralActions";
+import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
+import { AdvocateInviteForm } from "@/components/advocate/AdvocateInviteForm";
 
 interface Props {
   referralId: string | null;
@@ -149,29 +151,83 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   const [reason, setReason] = useState<string>("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // §Phase 4c — advocate discovery happens HERE, at enrollment, never on the
+  // public form. "ask" is the prompt; a patient id means the real, existing
+  // invite form is open against the just-created record.
+  const [advocateStep, setAdvocateStep] = useState<"none" | "ask" | "invite">("none");
+  const [enrolledPatientId, setEnrolledPatientId] = useState<string | undefined>();
 
   const mayContact = canPerformReferralAction(role, "contact");
   const mayDispose = canPerformReferralAction(role, "enroll");
   const closed = referral.status === "declined" || referral.status === "enrolled";
 
+  const advocateBlock =
+    advocateStep === "none" || !enrolledPatientId ? null : (
+      <Card className="p-4 space-y-3">
+        <h3 className="font-display text-sm text-navy">Does this person have a known advocate?</h3>
+        <p className="text-xs text-muted-foreground">
+          Court-appointed or named by the person themselves. Optional — an advocate can also be
+          invited later from the client's chart.
+        </p>
+        {advocateStep === "ask" ? (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setAdvocateStep("invite")}>
+              Yes — invite them
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setAdvocateStep("none")}>
+              Skip for now
+            </Button>
+          </div>
+        ) : (
+          <AdvocateInviteForm
+            patientId={enrolledPatientId}
+            designatedBy={{
+              actor:
+                role === "ecm_provider" || role === "cf_care_manager" ? role : "administrator",
+              name: getActingStaff()?.name ?? "Staff",
+            }}
+            title="Invite this person's advocate"
+            onInvited={() => setAdvocateStep("none")}
+          />
+        )}
+      </Card>
+    );
+
   if (closed) {
     return (
-      <Card className="p-4">
-        <h3 className="font-display text-sm text-navy">Disposition</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {referral.status === "enrolled"
-            ? "This referral is enrolled. Further care happens on the client's chart."
-            : "This referral is closed. Reopening isn't available — submit a new referral instead."}
-        </p>
-      </Card>
+      <>
+        <Card className="p-4">
+          <h3 className="font-display text-sm text-navy">Disposition</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {referral.status === "enrolled"
+              ? "This referral is enrolled. Further care happens on the client's chart."
+              : "This referral is closed. Reopening isn't available — submit a new referral instead."}
+          </p>
+          <ReferrerUpdateLog referral={referral} />
+        </Card>
+        {advocateBlock}
+      </>
     );
   }
 
-  const run = (fn: () => void, ok: string) => {
+  /**
+   * §Phase 4c — after a real disposition, attempt a real text to the referrer
+   * and report exactly what happened. Never a silent claim.
+   */
+  const notifyReferrer = async (event: "contacted" | "enrolled" | "declined") => {
+    const outcome = await deliverReferrerUpdate(referral, event);
+    if (outcome === "sent") toast.success("The person who referred them has been texted.");
+    else if (outcome === "no_phone")
+      toast.message("No text to the referrer — no work phone on file for them.");
+    else toast.message("No text was sent to the referrer — texting isn't connected here.");
+  };
+
+  const run = (fn: () => void, ok: string, notify?: "contacted" | "enrolled" | "declined") => {
     setBusy(true);
     try {
       fn();
       toast.success(ok);
+      if (notify) void notifyReferrer(notify);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "That action couldn't be completed");
     } finally {
@@ -180,6 +236,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   };
 
   return (
+    <>
     <Card className="p-4 space-y-3">
       <h3 className="font-display text-sm text-navy">Move this referral</h3>
       <div className="flex flex-wrap gap-2">
@@ -189,7 +246,11 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
             variant="outline"
             disabled={!mayContact || busy}
             onClick={() =>
-              run(() => AdelanteEHR.markReferralContacted(referral.id), "Marked as contacted")
+              run(
+                () => AdelanteEHR.markReferralContacted(referral.id),
+                "Marked as contacted",
+                "contacted",
+              )
             }
           >
             Mark contacted
@@ -199,9 +260,17 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           size="sm"
           disabled={!mayDispose || busy}
           onClick={() =>
-            run(() => {
-              AdelanteEHR.enrollReferral(referral.id);
-            }, "Enrolled — a client record has been created")
+            run(
+              () => {
+                const pid = AdelanteEHR.enrollReferral(referral.id);
+                if (pid) {
+                  setEnrolledPatientId(pid);
+                  setAdvocateStep("ask");
+                }
+              },
+              "Enrolled — a client record has been created",
+              "enrolled",
+            )
           }
         >
           Enroll
@@ -255,12 +324,16 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
               variant="destructive"
               disabled={!reason || (reason === "other" && !note.trim()) || busy}
               onClick={() =>
-                run(() => {
-                  AdelanteEHR.declineReferral(referral.id, {
-                    reason,
-                    ...(note.trim() ? { note: note.trim() } : {}),
-                  });
-                }, "Referral declined")
+                run(
+                  () => {
+                    AdelanteEHR.declineReferral(referral.id, {
+                      reason,
+                      ...(note.trim() ? { note: note.trim() } : {}),
+                    });
+                  },
+                  "Referral declined",
+                  "declined",
+                )
               }
             >
               Confirm decline
@@ -271,7 +344,37 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           </div>
         </div>
       )}
+      <ReferrerUpdateLog referral={referral} />
     </Card>
+    {advocateBlock}
+    </>
+  );
+}
+
+/**
+ * §Phase 4c — what really happened when we tried to text the referrer. Mirrors
+ * the welcome-text honesty rule: only `sent` claims a message left.
+ */
+function ReferrerUpdateLog({ referral }: { referral: Referral }) {
+  const rows = referral.referrerUpdates ?? [];
+  if (rows.length === 0) return null;
+  return (
+    <div className="border-t pt-2">
+      <p className="text-[11px] font-medium text-navy">Updates to the person who referred them</p>
+      <ul className="mt-1 space-y-0.5">
+        {rows.map((u, i) => (
+          <li key={`${u.event}-${i}`} className="text-[11px] text-muted-foreground">
+            <span className="capitalize">{u.event}</span> ·{" "}
+            {u.status === "sent"
+              ? "text sent"
+              : u.status === "not_configured"
+                ? "not sent — texting isn't connected"
+                : "not sent — delivery failed"}{" "}
+            · <ClientDate value={u.at} />
+          </li>
+        ))}
+      </ul>
+    </div>
   );
 }
 

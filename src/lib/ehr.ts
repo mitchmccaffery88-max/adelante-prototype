@@ -553,6 +553,23 @@ export interface Referral {
     detail?: string;
   };
   outreachTask?: "manual_call";
+  /**
+   * §Phase 4c — how the referrer answered "is this individual
+   * justice-involved?". Deliberately three-state and optional: unanswered on
+   * pre-4c records, and never silently coerced to "no".
+   */
+  justiceInvolved?: "yes" | "no" | "unsure";
+  /**
+   * §Phase 4c — truthful log of status-change texts to the REFERRER. Same
+   * honesty rule as `welcomeSms`: an entry only exists if a send was really
+   * attempted, and only `sent` means a message left the building.
+   */
+  referrerUpdates?: {
+    event: "contacted" | "enrolled" | "declined";
+    status: "sent" | "not_configured" | "failed";
+    at: string;
+    detail?: string;
+  }[];
   // Set when enrollReferral materializes a Patient row.
   enrolledPatientId?: string;
   // ----- §Phase 4a disposition history (who moved this, when, why) ---------
@@ -6966,6 +6983,28 @@ export const AdelanteEHR = {
     r.welcomeSms = { status: result.status, at, detail: result.detail };
     // `smsSentAt` means "a message genuinely left" — never set on a failure.
     if (result.status === "sent") r.smsSentAt = at;
+    emit();
+  },
+  /** §Phase 4c — truthful write-back of a referrer status-change text. */
+  recordReferrerUpdateDelivery(
+    id: string,
+    result: {
+      event: "contacted" | "enrolled" | "declined";
+      status: "sent" | "not_configured" | "failed";
+      detail?: string;
+    },
+  ) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    r.referrerUpdates = [
+      ...(r.referrerUpdates ?? []),
+      {
+        event: result.event,
+        status: result.status,
+        at: new Date().toISOString(),
+        ...(result.detail ? { detail: result.detail } : {}),
+      },
+    ];
     emit();
   },
 
