@@ -283,7 +283,18 @@ export interface CareMessage {
 // Today this is an in-memory mock; swap the in-memory store for a real
 // backend when wiring the native Adelante EHR persistence layer.
 
-export type ReferralStatus = "submitted" | "contacted" | "enrolled";
+/**
+ * §Referrals Rework Phase 4a — `declined` is an ENDED state, not a fourth
+ * step. Anything that renders progress must branch on it rather than index it
+ * into the three-stage order, and anything counting "active" must exclude it.
+ */
+export type ReferralStatus = "submitted" | "contacted" | "enrolled" | "declined";
+export const REFERRAL_PROGRESS_STAGES = ["submitted", "contacted", "enrolled"] as const;
+export type ReferralProgressStage = (typeof REFERRAL_PROGRESS_STAGES)[number];
+/** True for states that are over — no further progress will be made. */
+export function isReferralClosed(s: ReferralStatus): boolean {
+  return s === "declined" || s === "enrolled";
+}
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
 export type BillingStatus = "draft" | "ready" | "submitted" | "paid" | "denied" | "write_off";
 export type CoverageStatus =
@@ -530,10 +541,37 @@ export interface Referral {
   consentToContact: boolean;
   status: ReferralStatus;
   createdAt: string;
+  /**
+   * ONLY set when a welcome text genuinely left the building. Before Phase 4a
+   * this was stamped at submission time with nothing ever sent.
+   */
   smsSentAt?: string;
+  /** Real, truthful outcome of the welcome-text attempt. */
+  welcomeSms?: {
+    status: "sent" | "not_configured" | "failed";
+    at: string;
+    detail?: string;
+  };
   outreachTask?: "manual_call";
-  // Set when advanceReferral → "enrolled" materializes a Patient row.
+  // Set when enrollReferral materializes a Patient row.
   enrolledPatientId?: string;
+  // ----- §Phase 4a disposition history (who moved this, when, why) ---------
+  contactedAt?: string;
+  contactedBy?: ReferralActor;
+  enrolledAt?: string;
+  enrolledBy?: ReferralActor;
+  declinedAt?: string;
+  declinedBy?: ReferralActor;
+  /** Staff-side only — never shown on the public referrer-facing tracker. */
+  declineReason?: string;
+  declineNote?: string;
+}
+
+/** Real staff attribution for a referral disposition. */
+export interface ReferralActor {
+  staffId: string;
+  name: string;
+  role: string;
 }
 
 /**
@@ -3833,6 +3871,7 @@ const referrals: Referral[] = [
     status: "enrolled",
     createdAt: ago(72 * 24),
     smsSentAt: ago(72 * 24 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(72 * 24 - 0.05) },
   },
   {
     id: "r2",
@@ -3849,6 +3888,7 @@ const referrals: Referral[] = [
     status: "contacted",
     createdAt: ago(48),
     smsSentAt: ago(48 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(48 - 0.05) },
   },
   {
     id: "r3",
@@ -3865,6 +3905,7 @@ const referrals: Referral[] = [
     status: "submitted",
     createdAt: ago(2),
     smsSentAt: ago(2 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(2 - 0.05) },
   },
 ];
 
@@ -5508,6 +5549,12 @@ export interface CatalogResolutionMetrics {
   manualDoseOrders: number;
   recentManualJustifications: { at: string; drugName: string; justification: string }[];
 }
+/** Real acting-staff attribution for a referral disposition (§Phase 4a). */
+function _referralActor(): ReferralActor {
+  const staff = getActingStaff();
+  return { staffId: staff.id, name: staff.name, role: getActingRole() };
+}
+
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
   const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
@@ -6895,32 +6942,120 @@ export const AdelanteEHR = {
       id: uid(),
       status: "submitted",
       createdAt: new Date().toISOString(),
-      ...(canSendSms
-        ? { smsSentAt: new Date().toISOString() } // SMS webhook in real impl
-        : { outreachTask: "manual_call" as const }),
+      // §Phase 4a — NOTHING is stamped as sent here. The caller attempts a
+      // real send and writes the real outcome back via
+      // `recordReferralWelcomeDelivery`.
+      ...(canSendSms ? {} : { outreachTask: "manual_call" as const }),
     };
     referrals.unshift(r);
     emit();
     return r;
   },
-  advanceReferral(id: string) {
+  /** True when a welcome text should be attempted for this referral. */
+  referralWantsWelcomeSms(r: Referral): boolean {
+    return !r.outreachTask && !!r.phone && r.consentToContact && !r.welcomeSms;
+  },
+  /** Truthful write-back of a real send attempt. */
+  recordReferralWelcomeDelivery(
+    id: string,
+    result: { status: "sent" | "not_configured" | "failed"; detail?: string },
+  ) {
     const r = referrals.find((x) => x.id === id);
     if (!r) return;
-    const nextStatus: ReferralStatus =
-      r.status === "submitted" ? "contacted" : r.status === "contacted" ? "enrolled" : r.status;
-    r.status = nextStatus;
-    // P4 — materialize a Patient row the moment a referral flips to enrolled.
-    if (nextStatus === "enrolled" && !r.enrolledPatientId) {
-      const p = AdelanteEHR.createPatient({
-        firstName: r.firstName,
-        lastName: r.lastName,
-        dob: r.dob,
-        phone: r.phone,
-        referralId: r.id,
-        cin: r.cin,
-      });
-      r.enrolledPatientId = p.id;
+    const at = new Date().toISOString();
+    r.welcomeSms = { status: result.status, at, detail: result.detail };
+    // `smsSentAt` means "a message genuinely left" — never set on a failure.
+    if (result.status === "sent") r.smsSentAt = at;
+    emit();
+  },
+
+  // ----- §Phase 4a referral dispositions ------------------------------------
+  markReferralContacted(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    if (r.status !== "submitted") throw new Error("Only a submitted referral can be marked contacted.");
+    const who = _referralActor();
+    r.status = "contacted";
+    r.contactedAt = new Date().toISOString();
+    r.contactedBy = who;
+    appendAudit({
+      category: "clinical",
+      action: "referral_contacted",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id },
+    });
+    emit();
+  },
+  /**
+   * Materializes the client record. Carries the referral context that used to
+   * be silently dropped, using the fields that already exist on the record —
+   * release date and county of release. Referrer, agency and source are NOT
+   * duplicated: the record links back to the referral, which holds them.
+   *
+   * Deliberately does NOT set `frontDoor.heardAbout`: a justice referral
+   * source there would change the person's resolved population track, which
+   * is a separate concern from recording how they arrived.
+   */
+  enrollReferral(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return undefined;
+    if (r.status === "enrolled") return r.enrolledPatientId;
+    if (r.status === "declined") throw new Error("This referral was declined and cannot be enrolled.");
+    const who = _referralActor();
+    const p = AdelanteEHR.createPatient({
+      firstName: r.firstName,
+      lastName: r.lastName,
+      dob: r.dob,
+      phone: r.phone,
+      referralId: r.id,
+      cin: r.cin,
+    });
+    if (r.releaseDate) p.releaseDate = r.releaseDate;
+    if (r.countyOfRelease) {
+      p.coverage = {
+        ...(p.coverage ?? { status: "none_unsure" as CoverageStatus, verified: "pending" as const }),
+        countyOfRelease: r.countyOfRelease,
+      };
     }
+    r.status = "enrolled";
+    r.enrolledPatientId = p.id;
+    r.enrolledAt = new Date().toISOString();
+    r.enrolledBy = who;
+    appendAudit({
+      category: "clinical",
+      action: "referral_enrolled",
+      patientId: p.id,
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: {
+        referralId: r.id,
+        referralSource: r.referralSource,
+        referringAgency: r.referringAgency,
+        referrerName: r.referrerName,
+      },
+    });
+    emit();
+    return p.id;
+  },
+  declineReferral(id: string, input: { reason: string; note?: string }) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    if (r.status === "enrolled") throw new Error("An enrolled referral cannot be declined.");
+    if (!input.reason) throw new Error("A decline reason is required.");
+    const who = _referralActor();
+    r.status = "declined";
+    r.declinedAt = new Date().toISOString();
+    r.declinedBy = who;
+    r.declineReason = input.reason;
+    if (input.note) r.declineNote = input.note;
+    appendAudit({
+      category: "clinical",
+      action: "referral_declined",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id, reason: input.reason, ...(input.note ? { note: input.note } : {}) },
+    });
     emit();
   },
   bookAppointment(input: {

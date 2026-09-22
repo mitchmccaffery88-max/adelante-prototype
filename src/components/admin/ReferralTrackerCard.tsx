@@ -11,16 +11,17 @@ import {
 } from "@/components/ui/select";
 import { ClientDate } from "@/components/ClientDate";
 import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
-import type { EpisodeType, ReferralStatus } from "@/lib/ehr";
+import type { EpisodeType } from "@/lib/ehr";
+import {
+  REFERRAL_STATUS_STYLES,
+  ReferralOutreachStatus,
+  ReferralProgressStrip,
+} from "@/components/ReferralProgressStrip";
+import { referralDeclineReasonLabel } from "@/lib/referralActions";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
-const trackerStyles: Record<ReferralStatus, string> = {
-  submitted: "bg-gold/30 text-navy",
-  contacted: "bg-teal/20 text-teal",
-  enrolled: "bg-success/20 text-success",
-};
-const trackerOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
+const trackerStyles = REFERRAL_STATUS_STYLES;
 
 const programOptions: { value: EpisodeType | "all"; label: string }[] = [
   { value: "all", label: "All programs" },
@@ -204,17 +205,7 @@ export function ReferralTrackerCard({
                   <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-teal" />
                 </div>
               </div>
-              <div className="mt-2 flex gap-1">
-                {trackerOrder.map((s, i) => {
-                  const reached = trackerOrder.indexOf(r.status) >= i;
-                  return (
-                    <div
-                      key={s}
-                      className={`h-1 flex-1 rounded-full ${reached ? "bg-teal" : "bg-border"}`}
-                    />
-                  );
-                })}
-              </div>
+              <ReferralProgressStrip status={r.status} />
               <div className="mt-1.5 grid grid-cols-3 gap-1 text-[10px]">
                 {stepDates.map((s) => (
                   <div key={s.label} className="min-w-0">
@@ -225,13 +216,13 @@ export function ReferralTrackerCard({
                   </div>
                 ))}
               </div>
-              {r.smsSentAt ? (
-                <div className="mt-1.5 text-[10px] text-success">✓ Welcome SMS sent</div>
-              ) : r.outreachTask === "manual_call" ? (
-                <div className="mt-1.5 text-[10px] text-gold-foreground">
-                  ⚑ Manual outreach queued (no SMS)
+              {r.status === "declined" && (
+                <div className="mt-1.5 text-[10px] text-muted-foreground">
+                  Declined{r.declinedBy ? ` by ${r.declinedBy.name}` : ""} ·{" "}
+                  {referralDeclineReasonLabel(r.declineReason ?? "")}
                 </div>
-              ) : null}
+              )}
+              <ReferralOutreachStatus referral={r} />
               {r.enrolledPatientId &&
                 (() => {
                   const enrolled = AdelanteEHR.getPatient(r.enrolledPatientId);

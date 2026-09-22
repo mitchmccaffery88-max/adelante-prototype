@@ -7,6 +7,9 @@ import {
   type ReferralSource,
   type ReferralStatus,
 } from "@/lib/ehr";
+import { useServerFn } from "@tanstack/react-start";
+import { sendReferralWelcome } from "@/lib/referralWelcome.functions";
+import { ReferralProgressStrip } from "@/components/ReferralProgressStrip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,8 +99,9 @@ function ReferralPage() {
     notARobot: false,
   });
   const [cinDup, setCinDup] = useState<string | null>(null);
+  const sendWelcome = useServerFn(sendReferralWelcome);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.referrerName || !form.referringAgency) {
       toast.error("Please complete the required fields");
@@ -138,12 +142,42 @@ function ReferralPage() {
       /* no-op */
     }
     setReferrerKey(key);
-    toast.success("Referral submitted", {
-      description: result.outreachTask
-        ? "No SMS sent — a care-team member will call within one business day."
-        : "A welcome text will be sent within 2 hours.",
-    });
     setSubmitted(true);
+    // §Phase 4a — actually try to send, then report what really happened.
+    // This used to claim a text had been sent without attempting one.
+    if (AdelanteEHR.referralWantsWelcomeSms(result) && result.phone) {
+      let outcome: { status: "sent" | "not_configured" | "failed"; detail?: string } = {
+        status: "failed",
+        detail: "send did not complete",
+      };
+      try {
+        outcome = await sendWelcome({
+          data: {
+            to: result.phone,
+            firstName: result.firstName,
+            referrerName: result.referrerName,
+            referringAgency: result.referringAgency,
+          },
+        });
+      } catch (err) {
+        outcome = { status: "failed", detail: err instanceof Error ? err.message : "send error" };
+      }
+      AdelanteEHR.recordReferralWelcomeDelivery(result.id, outcome);
+      if (outcome.status === "sent") {
+        toast.success("Referral submitted", {
+          description: "A welcome text has been sent to this person.",
+        });
+      } else {
+        toast.success("Referral submitted", {
+          description:
+            "No text was sent — a care-team member will call within one business day.",
+        });
+      }
+      return;
+    }
+    toast.success("Referral submitted", {
+      description: "No text was sent — a care-team member will call within one business day.",
+    });
   };
 
   if (submitted) {
@@ -379,11 +413,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const stageOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
 const stageLabels: Record<ReferralStatus, string> = {
   submitted: "Received",
   contacted: "Eligibility verified · intake scheduled",
   enrolled: "Enrolled",
+  // Written for an outside referrer's eyes: closed, with no reason and
+  // nothing clinical disclosed.
+  declined: "Closed — we followed up with this person",
+};
+const publicStatusWord: Record<ReferralStatus, string> = {
+  submitted: "submitted",
+  contacted: "contacted",
+  enrolled: "enrolled",
+  declined: "closed",
 };
 
 function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
@@ -406,7 +448,6 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
       <p className="text-xs text-muted-foreground mt-1">Status only — no clinical detail.</p>
       <ul className="mt-3 space-y-3">
         {mine.slice(0, 10).map((r) => {
-          const reachedIdx = stageOrder.indexOf(r.status);
           return (
             <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
               <div className="flex items-center justify-between">
@@ -417,17 +458,10 @@ function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
                   <div className="text-xs text-muted-foreground">{stageLabels[r.status]}</div>
                 </div>
                 <Badge variant="outline" className="capitalize text-[10px]">
-                  {r.status}
+                  {publicStatusWord[r.status]}
                 </Badge>
               </div>
-              <div className="mt-2 flex gap-1">
-                {stageOrder.map((s, i) => (
-                  <div
-                    key={s}
-                    className={`h-1.5 flex-1 rounded-full ${i <= reachedIdx ? "bg-teal" : "bg-border"}`}
-                  />
-                ))}
-              </div>
+              <ReferralProgressStrip status={r.status} />
             </li>
           );
         })}
