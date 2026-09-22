@@ -140,7 +140,7 @@ function ReferralPage() {
       referrerEmail: form.referrerEmail || undefined,
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,
-      countyOfRelease: form.countyOfRelease || undefined,
+      countyOfRelease: ji ? form.countyOfRelease || undefined : undefined,
       consentToContact: form.noPhone ? false : form.consentToContact,
       requestManualOutreach: form.noPhone,
     });
