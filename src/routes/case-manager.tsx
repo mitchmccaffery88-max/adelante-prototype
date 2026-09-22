@@ -256,7 +256,7 @@ function CaseManagerPage() {
           showAssignClinician
           exportFilename="cm-caseload"
         />
-        <ReferralTrackerCard referrals={referrals} title="Referral status" />
+        <ReferralTrackerCard referrals={referrals} title="Referral status" showViewAll />
       </section>
 
       <div className="grid lg:grid-cols-3 gap-6">
