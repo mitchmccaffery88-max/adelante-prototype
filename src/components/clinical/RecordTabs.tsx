@@ -20,6 +20,7 @@ import { Card } from "@/components/ui/card";
 import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
 import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
 import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
+import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
 
 import {
   Select,
@@ -90,7 +91,19 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
-import { Lock, ShieldAlert, Eye, EyeOff, Trash2, Plus, ClipboardList, Download } from "lucide-react";
+import {
+  Lock,
+  ShieldAlert,
+  Eye,
+  EyeOff,
+  Trash2,
+  Plus,
+  ClipboardList,
+  Download,
+  CheckCircle2,
+  RotateCw,
+  HelpingHand,
+} from "lucide-react";
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
@@ -877,6 +890,7 @@ export function ReferralsTab({
 export function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const acting = useActingStaff();
+  const [checkOpen, setCheckOpen] = useState(false);
   if (!p) return null;
   const actor = { actorId: acting.staffName, actorRole: acting.role };
   const cov = p.coverage;
@@ -937,6 +951,49 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
       )}
       <CoveragePlansSection patientId={patientId} actor={actor} readOnly={readOnly} />
 
+      {!readOnly && (
+        <Card className="p-3">
+          <div className="text-xs font-medium uppercase text-muted-foreground">Eligibility actions</div>
+          <div className="mt-3 flex flex-wrap gap-2">
+            <Button size="sm" variant="outline" onClick={() => setCheckOpen(true)}>
+              <CheckCircle2 className="h-4 w-4" /> Record eligibility check
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const result = AdelanteEHR.requestReactivation(patientId, actor);
+                toast.success(
+                  result.staffTaskCreated
+                    ? "Reactivation follow-up added to the case manager's worklist"
+                    : "Client told we're following up — no case manager assigned, so no staff task was created",
+                );
+              }}
+            >
+              <RotateCw className="h-4 w-4" /> Start reactivation follow-up
+            </Button>
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={() => {
+                const result = AdelanteEHR.addEnrollmentAssistTask(patientId, actor);
+                toast.success(
+                  result.staffTaskCreated
+                    ? "Enrollment assistance added to the case manager's worklist"
+                    : "Client told we'll help — no case manager assigned, so no staff task was created",
+                );
+              }}
+            >
+              <HelpingHand className="h-4 w-4" /> Start enrollment assistance
+            </Button>
+          </div>
+          <p className="mt-3 text-xs text-muted-foreground">
+            Nothing is sent to the county automatically. Follow-up actions create real staff work
+            and tell the client what to expect.
+          </p>
+        </Card>
+      )}
+
       <ul className="space-y-2">
         {rows.map((r) => {
           const last = log.find((e) => e.key === r.key);
@@ -967,6 +1024,14 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
           );
         })}
       </ul>
+      {checkOpen && (
+        <CoverageCheckDialog
+          patientId={patientId}
+          open
+          onOpenChange={(open) => !open && setCheckOpen(false)}
+          actor={actor}
+        />
+      )}
     </div>
   );
 }

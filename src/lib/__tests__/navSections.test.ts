@@ -97,6 +97,13 @@ describe("nav registry integrity", () => {
     expect(isPublicRoute("/referral-queue")).toBe(false);
   });
 
+  it("uses one Care Coordination name while preserving the case-manager URL", () => {
+    expect(STAFF_NAV.find((e) => e.id === "case-manager")).toMatchObject({
+      label: "Care Coordination",
+      to: "/case-manager",
+    });
+  });
+
   it("has no staff nav entry pointing at a public route", () => {
     // /assisted-signup is a deliberate staff tool that also renders publicly.
     for (const entry of STAFF_NAV.filter((e) => e.id !== "assisted-signup")) {

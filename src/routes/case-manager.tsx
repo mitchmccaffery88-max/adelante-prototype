@@ -817,7 +817,7 @@ function EligibilitySummaryCard({ patientId }: { patientId: string }) {
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" asChild>
           <Link to="/record/$patientId" params={{ patientId }} search={{ section: "eligibility" }}>
-            Open client eligibility
+            Review and update client eligibility
           </Link>
         </Button>
         <Button size="sm" variant="ghost" asChild>

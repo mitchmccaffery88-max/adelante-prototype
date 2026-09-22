@@ -40,7 +40,6 @@ import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
 import { myOpenItems } from "@/lib/myWork";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
-import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 import { listUnsignedWork } from "@/lib/unsignedWork";
