@@ -97,7 +97,7 @@ function ReferralPage() {
   });
   const [cinDup, setCinDup] = useState<string | null>(null);
 
-  const onSubmit = (e: React.FormEvent) => {
+  const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.referrerName || !form.referringAgency) {
       toast.error("Please complete the required fields");
@@ -138,12 +138,42 @@ function ReferralPage() {
       /* no-op */
     }
     setReferrerKey(key);
-    toast.success("Referral submitted", {
-      description: result.outreachTask
-        ? "No SMS sent — a care-team member will call within one business day."
-        : "A welcome text will be sent within 2 hours.",
-    });
     setSubmitted(true);
+    // §Phase 4a — actually try to send, then report what really happened.
+    // This used to claim a text had been sent without attempting one.
+    if (AdelanteEHR.referralWantsWelcomeSms(result) && result.phone) {
+      let outcome: { status: "sent" | "not_configured" | "failed"; detail?: string } = {
+        status: "failed",
+        detail: "send did not complete",
+      };
+      try {
+        outcome = await sendWelcome({
+          data: {
+            to: result.phone,
+            firstName: result.firstName,
+            referrerName: result.referrerName,
+            referringAgency: result.referringAgency,
+          },
+        });
+      } catch (err) {
+        outcome = { status: "failed", detail: err instanceof Error ? err.message : "send error" };
+      }
+      AdelanteEHR.recordReferralWelcomeDelivery(result.id, outcome);
+      if (outcome.status === "sent") {
+        toast.success("Referral submitted", {
+          description: "A welcome text has been sent to this person.",
+        });
+      } else {
+        toast.success("Referral submitted", {
+          description:
+            "No text was sent — a care-team member will call within one business day.",
+        });
+      }
+      return;
+    }
+    toast.success("Referral submitted", {
+      description: "No text was sent — a care-team member will call within one business day.",
+    });
   };
 
   if (submitted) {
