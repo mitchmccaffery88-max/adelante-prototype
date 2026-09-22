@@ -16,3 +16,9 @@
 - [ ] SDOH prerequisites: intake↔AHC-HRSN need mapping table, `SdohPlanItem` provenance field.
 - [ ] Intake SDOH reconciliation against existing pre-release data.
 - [ ] Scheduling: patient-side conflict checks + appointment provenance.
+
+## Referrals Phase 4c
+- [ ] Referrer status-change SMS (contact/enroll/decline)
+- [ ] Staleness badge on shared tracker (draft threshold)
+- [ ] Segmented referral form (justice-involved yes/no/unsure)
+- [ ] Advocate discovery prompt at enrollment
