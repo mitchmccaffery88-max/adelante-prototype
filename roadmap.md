@@ -1,7 +1,11 @@
 # Roadmap
 
 ## In progress
-- None.
+- [ ] Dashboard Standardization Phase 5a — Care Coordination naming and honest scope copy
+- [ ] Remove placeholder coordination and hardcoded dashboard availability
+- [ ] Dedicated refusal-document queue with conditional dashboard count
+- [ ] Consolidate per-client eligibility actions into the patient record
+- [ ] Clinician Patient chart opens without a preselected patient
 
 ## Done
 - [x] Referrals Rework Phase 4b — consolidated duplicate referral tracker cards.
