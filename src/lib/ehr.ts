@@ -6985,6 +6985,28 @@ export const AdelanteEHR = {
     if (result.status === "sent") r.smsSentAt = at;
     emit();
   },
+  /** §Phase 4c — truthful write-back of a referrer status-change text. */
+  recordReferrerUpdateDelivery(
+    id: string,
+    result: {
+      event: "contacted" | "enrolled" | "declined";
+      status: "sent" | "not_configured" | "failed";
+      detail?: string;
+    },
+  ) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    r.referrerUpdates = [
+      ...(r.referrerUpdates ?? []),
+      {
+        event: result.event,
+        status: result.status,
+        at: new Date().toISOString(),
+        ...(result.detail ? { detail: result.detail } : {}),
+      },
+    ];
+    emit();
+  },
 
   // ----- §Phase 4a referral dispositions ------------------------------------
   markReferralContacted(id: string) {
