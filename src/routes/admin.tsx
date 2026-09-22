@@ -412,12 +412,7 @@ function AdminPage() {
   );
 }
 
-const trackerStyles: Record<ReferralStatus, string> = {
-  submitted: "bg-gold/30 text-navy",
-  contacted: "bg-teal/20 text-teal",
-  enrolled: "bg-success/20 text-success",
-};
-const trackerOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
+const trackerStyles = REFERRAL_STATUS_STYLES;
 
 function ReferralTrackerCard({
   referrals,
@@ -425,12 +420,22 @@ function ReferralTrackerCard({
   referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
 }) {
   const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
+  // §Phase 4a — this card had no click-through at all, so its referrals were
+  // unreachable for action. Minimal addition only: the row opens the SAME
+  // shared drawer the ECM card uses. Display is otherwise unchanged; merging
+  // the two cards is Phase 4b.
+  const [openRefId, setOpenRefId] = useState<string | null>(null);
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy mb-3">Referral status</h3>
       <div className="space-y-3">
         {referrals.slice(0, 5).map((r) => (
-          <div key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
+          <button
+            key={r.id}
+            type="button"
+            onClick={() => setOpenRefId(r.id)}
+            className="group block w-full border-b last:border-0 pb-3 last:pb-0 text-left"
+          >
             <div className="flex items-center justify-between gap-2">
               <div className="text-sm">
                 <div className="font-medium text-navy">
@@ -447,26 +452,21 @@ function ReferralTrackerCard({
                   </div>
                 )}
               </div>
-              <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>{r.status}</Badge>
-            </div>
-            <div className="mt-2 flex gap-1">
-              {trackerOrder.map((s, i) => {
-                const reached = trackerOrder.indexOf(r.status) >= i;
-                return (
-                  <div
-                    key={s}
-                    className={`h-1 flex-1 rounded-full ${reached ? "bg-teal" : "bg-border"}`}
-                  />
-                );
-              })}
-            </div>
-            {r.smsSentAt ? (
-              <div className="mt-1.5 text-[10px] text-success">✓ Welcome SMS sent</div>
-            ) : r.outreachTask === "manual_call" ? (
-              <div className="mt-1.5 text-[10px] text-gold-foreground">
-                ⚑ Manual outreach queued (no SMS)
+              <div className="flex items-center gap-2 shrink-0">
+                <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
+                  {r.status}
+                </Badge>
+                <ChevronRight className="h-4 w-4 text-muted-foreground group-hover:text-teal" />
               </div>
-            ) : null}
+            </div>
+            <ReferralProgressStrip status={r.status} />
+            {r.status === "declined" && (
+              <div className="mt-1.5 text-[10px] text-muted-foreground">
+                Declined{r.declinedBy ? ` by ${r.declinedBy.name}` : ""} ·{" "}
+                {referralDeclineReasonLabel(r.declineReason ?? "")}
+              </div>
+            )}
+            <ReferralOutreachStatus referral={r} />
             {r.enrolledPatientId &&
               (() => {
                 const enrolled = AdelanteEHR.getPatient(r.enrolledPatientId);
@@ -476,9 +476,14 @@ function ReferralTrackerCard({
                   </div>
                 ) : null;
               })()}
-          </div>
+          </button>
         ))}
       </div>
+      <ReferralTimelineDrawer
+        referralId={openRefId}
+        open={!!openRefId}
+        onOpenChange={(o: boolean) => !o && setOpenRefId(null)}
+      />
     </Card>
   );
 }
