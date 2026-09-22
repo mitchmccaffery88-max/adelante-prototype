@@ -412,11 +412,19 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const stageOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
 const stageLabels: Record<ReferralStatus, string> = {
   submitted: "Received",
   contacted: "Eligibility verified · intake scheduled",
   enrolled: "Enrolled",
+  // Written for an outside referrer's eyes: closed, with no reason and
+  // nothing clinical disclosed.
+  declined: "Closed — we followed up with this person",
+};
+const publicStatusWord: Record<ReferralStatus, string> = {
+  submitted: "submitted",
+  contacted: "contacted",
+  enrolled: "enrolled",
+  declined: "closed",
 };
 
 function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
