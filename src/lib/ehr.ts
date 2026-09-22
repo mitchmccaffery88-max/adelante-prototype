@@ -2912,7 +2912,13 @@ export interface PreReleaseEpisode {
    * different facts and both are worth keeping.
    */
   actualReleaseDate?: string;
-
+  /**
+   * §Pre-release pipeline — booking number as supplied by the correctional
+   * partner. A free-text identifier, NOT a link to a `Booking` row: the
+   * pre-release surface never creates one, and inventing a booking from a
+   * spreadsheet cell would make the custody inference elsewhere lie.
+   */
+  bookingNumber?: string;
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
