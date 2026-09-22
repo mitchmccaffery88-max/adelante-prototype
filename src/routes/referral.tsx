@@ -292,37 +292,6 @@ function ReferralPage() {
                   onChange={(e) => setForm({ ...form, lastName: e.target.value })}
                 />
               </Field>
-              <Field label="CIN / Medi-Cal ID (if known)">
-                <Input
-                  placeholder="9 characters — e.g. 90000000A"
-                  maxLength={20}
-                  value={form.cin}
-                  onChange={(e) => setForm({ ...form, cin: normalizeCin(e.target.value) })}
-                  onBlur={() => {
-                    const cin = normalizeCin(form.cin);
-                    if (!cin) return setCinDup(null);
-                    const existingR = AdelanteEHR.listReferrals().find(
-                      (r) => r.cin && normalizeCin(r.cin) === cin,
-                    );
-                    const existingP = AdelanteEHR.listPatients().find(
-                      (p) => p.cin && normalizeCin(p.cin) === cin,
-                    );
-                    if (existingR) {
-                      setCinDup(
-                        `Heads up: a referral already exists for CIN ${maskCin(cin)} — ${existingR.firstName} ${existingR.lastName}.`,
-                      );
-                    } else if (existingP) {
-                      setCinDup(
-                        `Heads up: this CIN ${maskCin(cin)} is already enrolled (${existingP.programId}).`,
-                      );
-                    } else setCinDup(null);
-                  }}
-                />
-                {cinDup && <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Optional. Helps avoid duplicate records when names are similar.
-                </p>
-              </Field>
               <Field label={form.noPhone ? "Phone (skipped)" : "Phone *"}>
                 <Input
                   type="tel"
@@ -339,19 +308,83 @@ function ReferralPage() {
                   onChange={(e) => setForm({ ...form, dob: e.target.value })}
                 />
               </Field>
-              <Field label="Expected release date">
-                <Input
-                  type="date"
-                  value={form.releaseDate}
-                  onChange={(e) => setForm({ ...form, releaseDate: e.target.value })}
-                />
-              </Field>
-              <Field label="County of release">
-                <Input
-                  value={form.countyOfRelease}
-                  onChange={(e) => setForm({ ...form, countyOfRelease: e.target.value })}
-                />
-              </Field>
+            </div>
+
+            {/* §Phase 4c — one form, conditional fields. Unanswered by default:
+                we never assume someone is not justice-involved. */}
+            <div className="rounded-lg border p-4 space-y-3">
+              <Label className="text-sm">Is this individual justice-involved? *</Label>
+              <p className="text-xs text-muted-foreground -mt-1">
+                Currently or recently in custody, on probation or parole, or in a reentry
+                program.
+              </p>
+              <div className="flex flex-wrap gap-2">
+                {(
+                  [
+                    { v: "yes", label: "Yes" },
+                    { v: "no", label: "No" },
+                    { v: "unsure", label: "Unsure" },
+                  ] as const
+                ).map((o) => (
+                  <Button
+                    key={o.v}
+                    type="button"
+                    size="sm"
+                    variant={form.justiceInvolved === o.v ? "default" : "outline"}
+                    onClick={() => setForm({ ...form, justiceInvolved: o.v })}
+                  >
+                    {o.label}
+                  </Button>
+                ))}
+              </div>
+              {form.justiceInvolved === "yes" && (
+                <div className="grid sm:grid-cols-2 gap-4 pt-1">
+                  <Field label="CIN / Medi-Cal ID (if known)">
+                    <Input
+                      placeholder="9 characters — e.g. 90000000A"
+                      maxLength={20}
+                      value={form.cin}
+                      onChange={(e) => setForm({ ...form, cin: normalizeCin(e.target.value) })}
+                      onBlur={() => {
+                        const cin = normalizeCin(form.cin);
+                        if (!cin) return setCinDup(null);
+                        const existingR = AdelanteEHR.listReferrals().find(
+                          (r) => r.cin && normalizeCin(r.cin) === cin,
+                        );
+                        const existingP = AdelanteEHR.listPatients().find(
+                          (p) => p.cin && normalizeCin(p.cin) === cin,
+                        );
+                        if (existingR) {
+                          setCinDup(
+                            `Heads up: a referral already exists for CIN ${maskCin(cin)} — ${existingR.firstName} ${existingR.lastName}.`,
+                          );
+                        } else if (existingP) {
+                          setCinDup(
+                            `Heads up: this CIN ${maskCin(cin)} is already enrolled (${existingP.programId}).`,
+                          );
+                        } else setCinDup(null);
+                      }}
+                    />
+                    {cinDup && <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>}
+                    <p className="text-xs text-muted-foreground mt-1">
+                      Optional. Helps avoid duplicate records when names are similar.
+                    </p>
+                  </Field>
+                  <Field label="Expected release date">
+                    <Input
+                      type="date"
+                      value={form.releaseDate}
+                      onChange={(e) => setForm({ ...form, releaseDate: e.target.value })}
+                    />
+                  </Field>
+                  <Field label="County of release">
+                    <Input
+                      value={form.countyOfRelease}
+                      onChange={(e) => setForm({ ...form, countyOfRelease: e.target.value })}
+                    />
+                  </Field>
+                </div>
+              )}
             </div>
             <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
               <Checkbox
