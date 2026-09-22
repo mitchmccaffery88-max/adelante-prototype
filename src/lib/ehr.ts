@@ -3070,7 +3070,9 @@ export type CaseTaskOrigin =
   /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
   | "advocate_ahcd_validation"
   /** §Phase 7 part 2 — patient reported a medication side effect. */
-  | "med_side_effect";
+  | "med_side_effect"
+  /** §Phase 4f — enrollment from a referral needs a care team and intake. */
+  | "referral_enrollment_setup";
 
 export interface CaseTask {
   id: string;
@@ -7191,6 +7193,25 @@ export const AdelanteEHR = {
         referringAgency: r.referringAgency,
         referrerName: r.referrerName,
       },
+    });
+    // §Phase 4f — enrollment used to end here, leaving nobody responsible for
+    // the four setup steps. A real patient row now exists, so this is ordinary
+    // patient-keyed work: unassigned to a role pool, claimable, deduped on the
+    // referral so a re-enroll can never double it.
+    const setupDue = new Date();
+    setupDue.setDate(setupDue.getDate() + 3);
+    AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: "",
+      title: "New enrollment — assign care team and book intake",
+      detail: `${p.firstName} ${p.lastName} enrolled from a referral${r.referringAgency ? ` (${r.referringAgency})` : ""}. Assign a case manager and a primary clinician, then complete intake and book the first session.`,
+      dueDate: setupDue.toISOString().slice(0, 10),
+      origin: "referral_enrollment_setup",
+      taskType: "enrollment_setup",
+      allowedRoles: STAFF_ROLES.map((s) => s.key).filter(
+        (role) => canAccess(role, "care_coordination").level === "write",
+      ),
+      dedupeKey: `enrollment-setup:${r.id}`,
     });
     emit();
     return p.id;
@@ -15007,6 +15028,16 @@ export const AdelanteEHR = {
       reason: "primary_reassignment",
       context: input.context,
       initiatedBy: input.initiatedBy ?? "admin",
+    });
+    // §Phase 4f — the provider-switch record above is a continuity-of-care
+    // artifact, not an assignment record. The Client Journey timeline reads
+    // `category: "assignment"`, so without this entry the date it shows falls
+    // back to enrollment. Both writes are intentional and independent.
+    appendAudit({
+      category: "assignment",
+      action: prev ? "primary_clinician_reassigned" : "primary_clinician_assigned",
+      patientId: p.id,
+      detail: { from: prev, to: input.clinicianId, ...(input.context ? { context: input.context } : {}) },
     });
     emit();
     return sw;

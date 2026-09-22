@@ -2,6 +2,14 @@ import { Card } from "@/components/ui/card";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
 import { Check } from "lucide-react";
+import {
+  firstAttendedAppointment,
+  nextScheduledAppointment,
+  POST_ENROLLMENT_STALENESS_LABEL,
+  POST_ENROLLMENT_STALENESS_NOTE,
+  postEnrollmentStaleness,
+  postEnrollmentStalenessLabel,
+} from "@/lib/postEnrollment";
 
 interface Step {
   key: string;
@@ -24,10 +32,13 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
   const referral = AdelanteEHR.listReferrals().find(
     (r) => r.enrolledPatientId === patient.id || r.id === patient.referralId,
   );
-  const appts = AdelanteEHR.appointmentsForPatient(patient.id);
-  const firstAppt = appts
-    .slice()
-    .sort((a, b) => +new Date(a.start) - +new Date(b.start))[0];
+  // §Phase 4f — "First session" is an ATTENDANCE milestone. A booked, cancelled
+  // or no-showed appointment does not mean the person was seen, so only an
+  // appointment marked attended can mark this step reached. A future booking is
+  // shown as in progress with its date instead.
+  const firstAttended = firstAttendedAppointment(patient.id);
+  const nextBooked = firstAttended ? undefined : nextScheduledAppointment(patient.id);
+  const staleness = postEnrollmentStaleness(patient);
 
   const outreachAt =
     referral?.smsSentAt ??
@@ -87,8 +98,9 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
     },
     {
       key: "first_session",
-      label: "First session",
-      reachedAt: firstAppt?.start,
+      label: "First session attended",
+      reachedAt: firstAttended?.start,
+      note: nextBooked ? "Booked, not yet attended" : undefined,
     },
   ];
 
@@ -188,6 +200,20 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
           );
         })}
       </ol>
+
+      {staleness && staleness.state !== "fresh" && (
+        <div
+          className={`mt-3 rounded border p-2 text-[11px] ${
+            staleness.state === "overdue"
+              ? "border-destructive/40 bg-destructive/10 text-destructive"
+              : "border-gold/50 bg-gold/10 text-navy"
+          }`}
+          title={POST_ENROLLMENT_STALENESS_NOTE}
+        >
+          <div className="font-medium">{postEnrollmentStalenessLabel(staleness)}</div>
+          <div className="text-[10px] opacity-80">{POST_ENROLLMENT_STALENESS_LABEL}</div>
+        </div>
+      )}
     </Card>
   );
 }

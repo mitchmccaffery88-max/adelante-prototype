@@ -17,6 +17,7 @@ import {
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
+import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
 import { ReferralSubmissionForm } from "@/components/referral/ReferralSubmissionForm";
 import { hasOpenOutreachTask } from "@/lib/referralOutreach";
 import { Lock, Plus } from "lucide-react";
@@ -83,6 +84,10 @@ function ReferralQueuePage() {
       )}
 
       <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} />
+
+      {/* §Phase 4f — follow-through after enrollment, in the same place the
+          enrollment happened. Full list lives on clinical coordination. */}
+      <PostEnrollmentSetupCard limit={5} />
 
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
         <DialogContent className="max-w-3xl max-h-[85vh] overflow-y-auto">
