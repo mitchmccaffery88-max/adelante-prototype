@@ -72,6 +72,13 @@ function ReferralQueuePage() {
         </Button>
       </header>
 
+      {outreachCount > 0 && (
+        <Card className="p-3 text-sm text-navy bg-warning/10 border-warning">
+          {outreachCount} referral{outreachCount === 1 ? "" : "s"} need a phone call — no welcome
+          text could be sent. Filter by &ldquo;Outreach needed&rdquo; to work them.
+        </Card>
+      )}
+
       <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} />
 
       <Dialog open={submitOpen} onOpenChange={setSubmitOpen}>
