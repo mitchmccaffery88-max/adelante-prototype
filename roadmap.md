@@ -41,3 +41,11 @@
 - [x] Outreach attempt trail with outcomes and attribution
 - [x] Referrer-fallback prompt (no phone / dead number / 2 unanswered)
 - [x] Honest form copy for "no reliable phone"
+
+## Pre-Release Pipeline (episode→patient + CSV import)
+- [ ] Anticipated release date + custody state onto patient at episode open
+- [ ] redeemEnrollmentCode copies release date from the episode
+- [ ] markPreReleaseEpisodeReleased persists the confirmed date (episode + patient)
+- [ ] Honest `Patient.custody` field sourced from the episode
+- [ ] Intake/profile pre-fill with provenance + confirm step
+- [ ] /pre-release-import staff CSV upload (preview-first, row reasons, RBAC)

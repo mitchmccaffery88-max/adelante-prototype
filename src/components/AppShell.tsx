@@ -114,6 +114,10 @@ export function AppShell() {
     !isAdvocateSurface &&
     (STAFF_ROUTES.includes(pathname) ||
       pathname.startsWith("/record/") ||
+      // §Pre-release pipeline — the roster import is a staff-owned bulk action
+      // hung off the pre-release page, deliberately not its own nav entry, so
+      // it has to be named here or the shell falls through to patient nav.
+      pathname === "/pre-release-import" ||
       // §Agentic Roadmap prototype screens are staff-owned clinical demos.
       pathname.startsWith("/agentic/"));
 

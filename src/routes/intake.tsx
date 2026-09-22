@@ -73,6 +73,7 @@ import {
 import { hasExistingHistory, seedIntakeHistory, type IntakeHistory } from "@/lib/intakeHistory";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { toast } from "sonner";
+import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
 import {
@@ -810,7 +811,12 @@ function IntakePage() {
                   value={profile.releaseDate ? profile.releaseDate.slice(0, 10) : ""}
                   onChange={(e) => setProfile({ ...profile, releaseDate: e.target.value })}
                 />
+                <ReleaseDateProvenance
+                  patient={patient}
+                  onConfirmed={(date) => setProfile({ ...profile, releaseDate: date })}
+                />
               </div>
+
               <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-sm">Mailing or temporary address</Label>
                 <Input
