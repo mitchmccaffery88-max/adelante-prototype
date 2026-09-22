@@ -112,6 +112,7 @@ export function ReferralTrackerCard({
             <SelectItem value="submitted">Submitted</SelectItem>
             <SelectItem value="contacted">Contacted</SelectItem>
             <SelectItem value="enrolled">Enrolled</SelectItem>
+            <SelectItem value="declined">Declined</SelectItem>
           </SelectContent>
         </Select>
         <Select value={programFilter} onValueChange={setProgramFilter}>
