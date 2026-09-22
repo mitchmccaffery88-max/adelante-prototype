@@ -407,6 +407,25 @@ export interface ReleaseDateMeta {
   history: { date: string; changedAt: string; source: ReleaseSource }[];
 }
 
+/**
+ * §Pre-release pipeline — see `Patient.custody`.
+ *
+ * `source` is a single literal today because the pre-release episode is the
+ * only real producer of this fact. It is a field rather than an assumption so
+ * a second real source (a genuine jail feed) has somewhere honest to land.
+ */
+export interface PatientCustody {
+  state: "in_custody" | "released" | "unknown";
+  source: "pre_release_episode";
+  episodeId: string;
+  facilityName?: string;
+  bookingNumber?: string;
+  anticipatedReleaseDate?: string;
+  confirmedReleaseDate?: string;
+  updatedAt: string;
+}
+
+
 export type SdohStatus =
   | "identified"
   | "sent"
@@ -1317,6 +1336,20 @@ export interface Patient {
   episodes?: Episode[];
   /** Release date provenance. §3c — coexists with the flat `releaseDate` string. */
   releaseDateMeta?: ReleaseDateMeta;
+  /**
+   * §Pre-release pipeline — custody state carried FORWARD from the real
+   * pre-release episode, not inferred.
+   *
+   * Deliberately NOT derived from `Booking`: the pre-release surface never
+   * creates a booking row, so booking-derived custody is silently wrong for
+   * this whole population. The booking-derived checks elsewhere (facility
+   * protocol tagging, facility views) are untouched and keep their own
+   * meaning — this field is the episode's own statement about the person.
+   *
+   * ABSENCE MEANS UNKNOWN, never "not in custody".
+   */
+  custody?: PatientCustody;
+
   /** SDOH need → referral → closed-loop status. §3e */
   sdohPlan?: { items: SdohPlanItem[] };
   /**
@@ -1486,7 +1519,17 @@ export interface ScreenerResult {
    * patient-self and legacy results.
    */
   administeredBy?: CfAttribution;
+  /**
+   * §Pre-release pipeline — how this result got here.
+   *
+   * "imported_roster" means a partner sent domain-level yes/no in a
+   * spreadsheet: no item responses exist and no score was computed, so this
+   * must never be read or displayed as an administered, scored interview.
+   * Absent means the instrument was actually administered in the app.
+   */
+  provenance?: "imported_roster";
 }
+
 
 export interface Clinician {
   id: string;
@@ -2861,6 +2904,15 @@ export interface PreReleaseEpisode {
    * compressed into day one.
    */
   missedHandoff?: boolean;
+  /**
+   * §Pre-release pipeline — the CONFIRMED release date, set when a human
+   * confirms the person is actually out. Before this existed the confirmed
+   * date was written only into an audit detail blob and was unqueryable.
+   * `anticipatedReleaseDate` above stays untouched: anticipated and actual are
+   * different facts and both are worth keeping.
+   */
+  actualReleaseDate?: string;
+
 }
 
 export type PreReleaseFormStatus = "not_started" | "in_progress" | "complete";
@@ -6632,6 +6684,62 @@ function generateEnrollmentCode(): string {
   throw new Error("Could not allocate a unique enrollment code.");
 }
 
+/**
+ * §Pre-release pipeline — carry a real episode release date onto the patient.
+ *
+ * Two confidences, two rules:
+ *  - "estimated" (the ANTICIPATED date): fill-if-empty only. It must never
+ *    overwrite a date a human already confirmed.
+ *  - "confirmed": always wins, because a person actually being out beats any
+ *    earlier projection.
+ * Every change appends to `releaseDateMeta.history`, so the projection that
+ * preceded a confirmation is still readable.
+ */
+function _applyEpisodeReleaseDate(
+  patientId: string,
+  date: string,
+  confidence: "estimated" | "confirmed",
+): boolean {
+  const p = patients.find((x) => x.id === patientId);
+  if (!p || !date) return false;
+  const confirmed = confidence === "confirmed";
+  if (!confirmed && p.releaseDate) return false;
+  if (p.releaseDate === date && p.releaseDateMeta?.confidence === confidence) return false;
+  const source: ReleaseSource = confirmed ? "confirmed" : "custody";
+  const prior = p.releaseDateMeta;
+  p.releaseDate = date;
+  p.releaseDateMeta = {
+    source,
+    confidence,
+    history: [
+      ...(prior?.history ?? []),
+      { date, changedAt: new Date().toISOString(), source },
+    ],
+  };
+  return true;
+}
+
+/** §Pre-release pipeline — mirror the episode's custody statement onto the patient. */
+function _setPatientCustody(ep: PreReleaseEpisode, state: PatientCustody["state"]): void {
+  const p = patients.find((x) => x.id === ep.patientId);
+  if (!p) return;
+  const booking = ep.bookingId ? (p.bookings ?? []).find((b) => b.id === ep.bookingId) : undefined;
+  p.custody = {
+    state,
+    source: "pre_release_episode",
+    episodeId: ep.id,
+    ...(ep.facilityName ? { facilityName: ep.facilityName } : {}),
+    ...(booking?.bookingNumber ? { bookingNumber: booking.bookingNumber } : {}),
+    ...(ep.anticipatedReleaseDate
+      ? { anticipatedReleaseDate: ep.anticipatedReleaseDate }
+      : {}),
+    ...(ep.actualReleaseDate ? { confirmedReleaseDate: ep.actualReleaseDate } : {}),
+    updatedAt: new Date().toISOString(),
+  };
+}
+
+
+
 function _groupOccurrenceKey(sessionId: string, start: string) {
   return `${sessionId}::${start}`;
 }
@@ -6858,7 +6966,43 @@ export const AdelanteEHR = {
     return p;
   },
   // P1 — patch identity / contact-prefs fields.
+  /**
+   * §Pre-release pipeline — a human confirms the release date already on the
+   * record (optionally correcting it). This is the ONLY way an estimated
+   * custody-supplied date becomes "confirmed" from a screen.
+   */
+  confirmReleaseDate(input: {
+    patientId: string;
+    date?: string;
+    actorId: string;
+    actorRole: string;
+  }): void {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return;
+    const date = input.date || p.releaseDate;
+    if (!date) return;
+    const prior = p.releaseDateMeta;
+    p.releaseDate = date;
+    p.releaseDateMeta = {
+      source: "confirmed",
+      confidence: "confirmed",
+      history: [
+        ...(prior?.history ?? []),
+        { date, changedAt: new Date().toISOString(), source: "confirmed" as ReleaseSource },
+      ],
+    };
+    appendAudit({
+      category: "clinical",
+      action: "release_date_confirmed",
+      patientId: p.id,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: { date, priorConfidence: prior?.confidence ?? "unknown" },
+    });
+    emit();
+  },
   updateProfile(
+
     patientId: string,
     patch: Partial<
       Pick<
@@ -6882,7 +7026,28 @@ export const AdelanteEHR = {
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
+    // §Pre-release pipeline — a hand-typed date is a DIFFERENT fact from the
+    // custody-supplied one. Record it as such instead of letting it inherit
+    // the episode's provenance and masquerade as confirmed.
+    if (patch.releaseDate !== undefined && patch.releaseDate !== p.releaseDate) {
+      const prior = p.releaseDateMeta;
+      p.releaseDateMeta = patch.releaseDate
+        ? {
+            source: "self_report",
+            confidence: "self_reported",
+            history: [
+              ...(prior?.history ?? []),
+              {
+                date: patch.releaseDate,
+                changedAt: new Date().toISOString(),
+                source: "self_report" as ReleaseSource,
+              },
+            ],
+          }
+        : prior;
+    }
     Object.assign(p, patch);
+
     // Keep the legacy single field pointing at the primary contact so older
     // read sites (profile dialog, patient home, chart tab) stay correct.
     if (patch.emergencyContacts) {
@@ -10000,6 +10165,11 @@ export const AdelanteEHR = {
         anticipatedReleaseDate: ep.anticipatedReleaseDate,
       },
     });
+    // §Pre-release pipeline — the episode's facts land on the patient record
+    // NOW, not at redemption: the record should be right the whole time the
+    // person is in custody. Anticipated, so fill-if-empty only.
+    _applyEpisodeReleaseDate(ep.patientId, ep.anticipatedReleaseDate, "estimated");
+    _setPatientCustody(ep, "in_custody");
     // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
     _recomputeCarePlan(ep.patientId, "pre_release_episode_opened");
     emit();
@@ -10280,6 +10450,12 @@ export const AdelanteEHR = {
     if (ep.status !== "open")
       throw new Error(`This episode is already ${ep.status}; release can only be confirmed once.`);
     ep.status = "released";
+    // §Pre-release pipeline — the confirmed date is now PERSISTED, not just
+    // audited. Falling back to the anticipated date is honest here: the human
+    // confirming release without correcting the date is asserting it held.
+    ep.actualReleaseDate = input.releasedOn || ep.anticipatedReleaseDate;
+    _applyEpisodeReleaseDate(ep.patientId, ep.actualReleaseDate, "confirmed");
+    _setPatientCustody(ep, "released");
     appendAudit({
       category: "clinical",
       action: "pre_release_episode_released",
@@ -10289,11 +10465,13 @@ export const AdelanteEHR = {
       detail: {
         episodeId: ep.id,
         anticipatedReleaseDate: ep.anticipatedReleaseDate,
+        actualReleaseDate: ep.actualReleaseDate,
         ...(input.releasedOn ? { releasedOn: input.releasedOn } : {}),
       },
     });
     // Continuity moves to the community plan the moment the person is out.
     _recomputeCarePlan(ep.patientId, "pre_release_episode_released");
+
     emit();
     return ep;
   },
@@ -10326,6 +10504,10 @@ export const AdelanteEHR = {
       detail: { episodeId: ep.id, reason: ep.closedReason },
     });
     // §Pre-release build 4 — keep the CalAIM plan live with custody-side work.
+    // §Pre-release pipeline — a closed episode stops asserting custody. If it
+    // was already confirmed released we keep that; otherwise the honest answer
+    // is that we no longer know (transfer, opened in error, lost contact).
+    _setPatientCustody(ep, ep.actualReleaseDate ? "released" : "unknown");
     _recomputeCarePlan(ep.patientId, "pre_release_episode_closed");
     emit();
     return ep;
@@ -10971,6 +11153,25 @@ export const AdelanteEHR = {
     rec.consumedBy = operatorId ?? patient.id;
     patient.signupCredential = input.credential;
     if (input.assistedBy) patient.signupAssistedBy = input.assistedBy;
+    // §Pre-release pipeline — the code already carries `episodeId`, so the
+    // person should never be asked for a date their own episode holds. Newly
+    // opened episodes fill this at open; this repeats it for records created
+    // before that existed, and is fill-if-empty so it cannot clobber a
+    // confirmed date.
+    const redeemEpisode = preReleaseEpisodes.find((e) => e.id === rec.episodeId);
+    const releaseDateCopied = redeemEpisode
+      ? _applyEpisodeReleaseDate(
+          patient.id,
+          redeemEpisode.actualReleaseDate || redeemEpisode.anticipatedReleaseDate,
+          redeemEpisode.actualReleaseDate ? "confirmed" : "estimated",
+        )
+      : false;
+    if (redeemEpisode && !patient.custody)
+      _setPatientCustody(
+        redeemEpisode,
+        redeemEpisode.status === "open" ? "in_custody" : "released",
+      );
+
     appendAudit({
       category: "clinical",
       action: operatorId ? "enrollment_code_redeemed_assisted" : "enrollment_code_redeemed",
@@ -10985,6 +11186,11 @@ export const AdelanteEHR = {
         // Always present: the person the claim was FOR, even when a staff
         // operator is the one recorded in `consumedBy`.
         claimedForPatientId: patient.id,
+        releaseDateCopied,
+        ...(releaseDateCopied
+          ? { releaseDateSource: patient.releaseDateMeta?.confidence }
+          : {}),
+
         ...helperAuditDetail(input.assistedBy),
       },
     });

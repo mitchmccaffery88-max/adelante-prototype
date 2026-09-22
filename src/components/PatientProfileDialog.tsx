@@ -26,6 +26,7 @@ import {
   type PreferredLanguage,
 } from "@/lib/ehr";
 import { toast } from "sonner";
+import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 
 interface Props {
   patientId: string | null;
@@ -166,7 +167,12 @@ export function PatientProfileDialog({ patientId, open, onOpenChange, showAdminM
                 value={form.releaseDate ? form.releaseDate.slice(0, 10) : ""}
                 onChange={(e) => setForm({ ...form, releaseDate: e.target.value })}
               />
+              <ReleaseDateProvenance
+                patient={patient}
+                onConfirmed={(date) => setForm({ ...form, releaseDate: date })}
+              />
             </Field>
+
             <Field label="Phone">
               <Input
                 type="tel"
