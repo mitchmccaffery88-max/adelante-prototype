@@ -7,6 +7,8 @@ import {
   type ReferralSource,
   type ReferralStatus,
 } from "@/lib/ehr";
+import { useServerFn } from "@tanstack/react-start";
+import { sendReferralWelcome } from "@/lib/referralWelcome.functions";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -96,6 +98,7 @@ function ReferralPage() {
     notARobot: false,
   });
   const [cinDup, setCinDup] = useState<string | null>(null);
+  const sendWelcome = useServerFn(sendReferralWelcome);
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
