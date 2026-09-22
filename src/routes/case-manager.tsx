@@ -6,7 +6,7 @@ import {
   type ResourceReferralCategory,
 } from "@/lib/ehr";
 
-import { useActingStaff } from "@/lib/roles";
+import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   assignmentIdentityFor,
   hasAssignmentIdentity,
