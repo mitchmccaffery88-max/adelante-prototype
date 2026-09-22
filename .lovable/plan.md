@@ -1,61 +1,57 @@
-# Phase 2b — Template scope model + credentialing admin actions
+# Referrals Rework, Phase 4a — make referrals movable, fix the false SMS claim
 
 ## What I found first
 
-**Templates.** Confirmed: one flat tier. A template row has key, version, title, encounter type, schema, active flag, created-by name. No owner, no department. Versioning is real and safe (schema edit = new row + supersede; each note keeps its own frozen schema copy). That stays untouched.
+- `advanceReferral` is the only mover and nothing calls it. It steps one stage, and on reaching "enrolled" creates a client record with name / date of birth / phone / CIN only — no audit entry, no referrer, agency, source, county or release date.
+- The detail drawer is already shared and already live-updating. The ECM dashboard card opens it; the pilot dashboard card does **not** (read-only list, no click-through).
+- Three progress strips index into a three-item order list (`submitted → contacted → enrolled`); a fourth state would render as "no progress" unless branched.
+- The pilot dashboard's "Active referrals" tile counts everything that isn't enrolled.
+- On submit, a referral is stamped "welcome SMS sent" and the public tracker shows a green tick. No message is ever attempted.
+- Two honest senders exist to copy: a validated payload, a real Twilio call through the connector, and `sent` / `not_configured` / `failed` written back onto the record.
 
-**No department field exists anywhere** — not on staff, not on templates. Staff have a role (therapist, PMHNP, SUD counselor, ECM provider, peer specialist, care manager…) and a credential string. See "Interpretation" below for how I propose to map "department".
+## Build
 
-**Picker.** The note composer lists every active template with no permission check; the admin page checks the template permission. Two different models today.
+### 1. Actions in the shared drawer
 
-**Credentialing.** The admin page has exactly one action (Verify). Records live on clinician records only; status is computed from expiry (60-day window, 30 for malpractice); Phase 2a added real document storage plus the owner/assist access model and license-date sync. Nothing here changes.
+Add **Mark contacted**, **Enroll**, **Decline** to `ReferralTimelineDrawer` — the single place all actions live. Both tracker cards keep their current display untouched; the pilot dashboard card gains only a minimal way to open the drawer (the row becomes clickable, same as the ECM card).
 
----
+Replace the single-step `advanceReferral` with explicit, attributed actions: `markReferralContacted`, `enrollReferral`, `declineReferral`. Each records who acted, their role, and when. The old one-step function is retired rather than left as a second, unattributed path.
 
-## Interpretation — the two judgement calls
+### 2. Decline as a real ended state
 
-**1. "Department" maps to clinical discipline, derived from role.** No department field exists and inventing an org-chart (with staff assignment UI, leads, transfers) is a much bigger build than this phase. Instead I map each existing staff role to one of a small, real set of disciplines:
+Add `declined` to the referral status type, then handle each consumer:
 
-- Behavioral health therapy — therapist, clinical trainee
-- Psychiatry — PMHNP
-- SUD services — SUD counselor
-- Care management — ECM provider, CF care manager, community health worker
-- Peer support — peer specialist
-- Clinical administration — clinical coordinator, sys admin
+- Progress strips (both cards + the public tracker): a declined referral renders as an explicitly ended state — the strip stops at the stage it reached and is styled as closed, never as "step −1" / empty.
+- Pilot dashboard "Active referrals": excludes declined as well as enrolled.
+- Public referrer-facing tracker: reads **"Closed — we followed up with this person"**, with no reason and nothing clinical. The recorded reason stays staff-side only.
 
-A department-tier template belongs to one discipline. Everyone whose role sits in that discipline can use it; the discipline's lead role can edit it. This is derived, not stored, so it cannot drift out of sync with a second source of truth. I will label it honestly in the UI as discipline-based, and note that a real department directory is a later, separate piece of work.
+### 3. Honest welcome message
 
-**2. Picker permission — your instinct is right, and I'll implement it, but with a scope filter rather than no filter.** Editing a template is configuration; using one is documentation. Any clinical role that writes notes should be able to pick a template. So the picker shows: every Global template, every Department template for the picker's own discipline, and their own Personal templates. It does not show other people's personal templates. That is a real filter where today there is none, and it resolves the inconsistency in one coherent direction: read/use is broad and scope-based, edit is tier-based.
+New server function on the exact advocate-invite pattern: validated payload, connector Twilio call, honest `not_configured` when credentials are absent (they are, in this environment). The result is written back onto the referral — `smsSentAt` is only ever set on a genuine `sent`, and the card/tracker show the real outcome ("not sent — text messaging isn't connected yet") instead of a false tick.
 
----
+Draft copy (names the referrer, offers opt-out, nothing clinical):
 
-## Part 1 — Templates
+> Hi {first name} — {referrer name} at {agency} asked Adelante to reach out to you. We're a community health program and someone will call you soon. Reply STOP to stop these texts.
 
-**Data model** (`NoteTemplate`, additive, all optional so existing rows stay valid):
-- `scope: "global" | "department" | "personal"` — defaults to `global` for all existing rows (they were authored by admins and are visible to everyone today, so that is their honest current meaning).
-- `departmentId?` — required when scope is department.
-- `ownerStaffId?` — required when scope is personal.
-- `clonedFrom?` — source template id + version, recorded for provenance only; the clone is fully independent and never affects the source's version chain.
-- Field-level `locked?: boolean` on `TemplateField`.
+The existing "manual outreach queued" branch is unchanged in behaviour; its wording drops the implication that a task exists.
 
-**New module `src/lib/templateScope.ts`** (pure, testable): discipline map, `disciplineForRole`, `templatesVisibleTo(templates, staff)`, `canEditTemplate(staff, template)`, `cloneToPersonal(template, staff)` (new key, version 1, scope personal, locked fields carried through), `lockedFieldViolations(source, clone)`.
+### 4. Attribution and referral context on enrollment
 
-**Engine** (`ehr.ts`): `createNoteTemplate` accepts scope/owner/department; new `cloneNoteTemplateToPersonal(templateId, staff)`; `updateNoteTemplate` rejects an edit that removes or un-requires a locked field inherited from a global/department source, with a clear message. Audit rows for clone and for a blocked locked-field edit. No change to the supersede path.
+- Every enroll and decline writes a real audit entry (actor, role, referral id, resulting client record).
+- Context carried onto the new record using **existing** fields only: `releaseDate` (a real top-level field, currently left empty) and `coverage.countyOfRelease` (already the field county lives in).
+- **Interpretation to confirm:** referrer, agency and referral source have no existing home on the client record, and the record already links back to the referral, which holds all three. Rather than inventing a parallel structure or duplicating them, the drawer and chart read them through that existing link. If you'd rather they were copied onto the record, say so and I'll add one documented block.
+- **Deliberately not set:** the front-door "how did you hear about us" answer. Writing a justice referral source into it would flip the person's population track — that's a population-resolution change, and this ticket says not to touch it.
 
-**UI**
-- Admin page: tabs My / Department / System over the existing list, each with the same builder. Edit buttons appear only where `canEditTemplate` is true. Locked-field toggle available to global/department authors; shown as a padlock, non-editable, on a personal clone.
-- "Save as my template" button on any template a staff member can see, in both the admin page and the note composer's picker.
-- Picker filtered by `templatesVisibleTo`, with a small tier badge (System / Discipline / Mine).
+### 5. Permission tiers
 
-## Part 2 — Credentialing admin actions
-
-On `/admin-credentialing`, for the three roles that already reach it:
-- **Add credential** — dialog: clinician, kind, number, issuing state, issued/expiry dates, optional document via the existing Phase 2a upload path (same limits, same validation, same viewer).
-- **Edit / change expiry** — edit dialog on each row; an expiry change requires a short reason and writes an audit row. License-date sync to the booking block runs exactly as Phase 2a wired it.
-- **Follow-up request** — flag a credential as needing the clinician's attention with a note; shows as a badge in the admin table and a banner on that person's own credentials page. Cleared when they upload or a coordinator clears it.
-- **Export** — CSV of the credential roster. **Import** — CSV upload with a preview of what will be added/updated and a per-row error list; nothing is written until confirmed.
-
-**Effective-date-by-licensure — my finding.** The current model already carries `issuedAt` + `expiresAt` per credential *record*, and each record is a specific kind (license, DEA, malpractice, CAQH…). So per-license-type dates already exist in substance — a clinician's DEA and malpractice rows hold their own independent dates. What is genuinely missing is per-*state* license tracking for a clinician licensed in more than one state; `issuingState` exists but nothing keys off it. I propose keeping the current model and adding state to the row label and the expiry/status computation grouping, rather than building a new date structure. I will report this rather than expand scope silently.
+- Mark contacted: any role with care-coordination write access.
+- Enroll and decline: ECM provider, reentry/CF care manager, clinical coordinator only. Everyone else sees the drawer read-only with a short note saying why.
+- Decline requires a reason (short picker — unable to reach, declined services, not eligible, referred elsewhere, other + free text) and is recorded with the actor and timestamp.
 
 ## Verification
-Typecheck, full test suite, new unit tests for scope/clone/locked-field rules and for CSV import parsing. Live browser on both viewports: clone a global template to personal, edit it, confirm the source is untouched; attempt to remove a locked field and confirm it is blocked; confirm picker contents differ correctly for a therapist vs. a peer specialist; exercise add/edit/expiry/follow-up/export/import end to end. Zero console errors, no regression to versioning/snapshots or Phase 2a access and document behaviour.
+
+Typecheck, full test run, plus new tests for the three actions, the permission tiers, the decline state and the honest send result. Live browser check on both a wide and a phone-sized screen: contact, enroll and decline a real referral, confirm the created record carries its context and audit, confirm the public tracker never claims a text was sent, and confirm each role tier behaves — zero console errors.
+
+## Not in scope
+
+Merging the two tracker cards (4b). Provisional/staged-visibility records (`86bc3x15b`). Population resolution and reporting.
