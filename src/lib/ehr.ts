@@ -10453,6 +10453,44 @@ export const AdelanteEHR = {
    * dates slip both ways, and inferring release from a calendar would silently
    * flip what the patient sees. A human confirms the person is actually out.
    */
+  /**
+   * §Pre-release pipeline — correct the logistics on an OPEN episode from a
+   * newer partner roster. Deliberately narrow: release date, facility name and
+   * booking number only. Nothing clinical, no status movement.
+   */
+  updatePreReleaseEpisodeDetails(input: {
+    episodeId: string;
+    anticipatedReleaseDate?: string;
+    facilityName?: string;
+    bookingNumber?: string;
+    updatedBy: string;
+    actorRole: string;
+  }): PreReleaseEpisode | undefined {
+    const ep = preReleaseEpisodes.find((e) => e.id === input.episodeId);
+    if (!ep || ep.status !== "open") return undefined;
+    const before = ep.anticipatedReleaseDate;
+    if (input.anticipatedReleaseDate) ep.anticipatedReleaseDate = input.anticipatedReleaseDate;
+    if (input.facilityName) ep.facilityName = input.facilityName;
+    if (input.bookingNumber) ep.bookingNumber = input.bookingNumber;
+    // Same fill-if-empty rule as opening: a confirmed date is never overwritten
+    // by an anticipated one from a spreadsheet.
+    _applyEpisodeReleaseDate(ep.patientId, ep.anticipatedReleaseDate, "estimated");
+    _setPatientCustody(ep, "in_custody");
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_episode_details_updated",
+      patientId: ep.patientId,
+      actorId: input.updatedBy,
+      actorRole: input.actorRole,
+      detail: {
+        episodeId: ep.id,
+        previousAnticipatedReleaseDate: before,
+        anticipatedReleaseDate: ep.anticipatedReleaseDate,
+      },
+    });
+    emit();
+    return ep;
+  },
   markPreReleaseEpisodeReleased(input: {
     episodeId: string;
     confirmedBy: string;
