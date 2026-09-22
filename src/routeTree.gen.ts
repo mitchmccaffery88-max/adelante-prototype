@@ -59,6 +59,7 @@ import { Route as NotesQueueRouteImport } from './routes/notes-queue'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PeerRouteImport } from './routes/peer'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
+import { Route as PreReleaseImportRouteImport } from './routes/pre-release-import'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
@@ -354,6 +355,11 @@ const PreReleaseRoute = PreReleaseRouteImport.update({
   path: '/pre-release',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PreReleaseImportRoute = PreReleaseImportRouteImport.update({
+  id: '/pre-release-import',
+  path: '/pre-release-import',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ProfileRoute = ProfileRouteImport.update({
   id: '/profile',
   path: '/profile',
@@ -632,6 +638,7 @@ export interface FileRoutesByFullPath {
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
+  '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
@@ -727,6 +734,7 @@ export interface FileRoutesByTo {
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
+  '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
@@ -821,6 +829,7 @@ export interface FileRoutesById {
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
+  '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
@@ -919,6 +928,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/peer'
     | '/pre-release'
+    | '/pre-release-import'
     | '/profile'
     | '/recovery-journey'
     | '/referral'
@@ -1014,6 +1024,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/peer'
     | '/pre-release'
+    | '/pre-release-import'
     | '/profile'
     | '/recovery-journey'
     | '/referral'
@@ -1107,6 +1118,7 @@ export interface FileRouteTypes {
     | '/patient'
     | '/peer'
     | '/pre-release'
+    | '/pre-release-import'
     | '/profile'
     | '/recovery-journey'
     | '/referral'
@@ -1204,6 +1216,7 @@ export interface RootRouteChildren {
   PatientRoute: typeof PatientRoute
   PeerRoute: typeof PeerRoute
   PreReleaseRoute: typeof PreReleaseRoute
+  PreReleaseImportRoute: typeof PreReleaseImportRoute
   ProfileRoute: typeof ProfileRoute
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
@@ -1578,6 +1591,13 @@ declare module '@tanstack/react-router' {
       path: '/pre-release'
       fullPath: '/pre-release'
       preLoaderRoute: typeof PreReleaseRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/pre-release-import': {
+      id: '/pre-release-import'
+      path: '/pre-release-import'
+      fullPath: '/pre-release-import'
+      preLoaderRoute: typeof PreReleaseImportRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/profile': {
@@ -2023,6 +2043,7 @@ const rootRouteChildren: RootRouteChildren = {
   PatientRoute: PatientRoute,
   PeerRoute: PeerRoute,
   PreReleaseRoute: PreReleaseRoute,
+  PreReleaseImportRoute: PreReleaseImportRoute,
   ProfileRoute: ProfileRoute,
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
