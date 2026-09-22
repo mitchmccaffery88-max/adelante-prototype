@@ -28,3 +28,9 @@
 - [x] Repoint "Referrals" nav entry to the staff queue
 - [x] Staff "submit on someone's behalf" via shared form in a dialog
 - [x] Dashboard tracker cards kept, with link-through to the queue
+
+## Referrals Phase 4e
+- [x] Real manual-outreach task created when no welcome text can send
+- [x] Outreach attempt trail with outcomes and attribution
+- [x] Referrer-fallback prompt (no phone / dead number / 2 unanswered)
+- [x] Honest form copy for "no reliable phone"
