@@ -135,6 +135,182 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
   );
 }
 
+/**
+ * §Referrals Rework Phase 4a — the only place a referral can actually be
+ * moved. Deliberately here, in the one drawer both tracker cards open, rather
+ * than duplicated on each card: one implementation, one permission surface,
+ * and Phase 4b's consolidation stays a display merge.
+ */
+function ReferralActionsCard({ referral }: { referral: Referral }) {
+  const role = getActingRole();
+  const [declining, setDeclining] = useState(false);
+  const [reason, setReason] = useState<string>("");
+  const [note, setNote] = useState("");
+  const [busy, setBusy] = useState(false);
+
+  const mayContact = canPerformReferralAction(role, "contact");
+  const mayDispose = canPerformReferralAction(role, "enroll");
+  const closed = referral.status === "declined" || referral.status === "enrolled";
+
+  if (closed) {
+    return (
+      <Card className="p-4">
+        <h3 className="font-display text-sm text-navy">Disposition</h3>
+        <p className="mt-1 text-xs text-muted-foreground">
+          {referral.status === "enrolled"
+            ? "This referral is enrolled. Further care happens on the client's chart."
+            : "This referral is closed. Reopening isn't available — submit a new referral instead."}
+        </p>
+      </Card>
+    );
+  }
+
+  const run = (fn: () => void, ok: string) => {
+    setBusy(true);
+    try {
+      fn();
+      toast.success(ok);
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "That action couldn't be completed");
+    } finally {
+      setBusy(false);
+    }
+  };
+
+  return (
+    <Card className="p-4 space-y-3">
+      <h3 className="font-display text-sm text-navy">Move this referral</h3>
+      <div className="flex flex-wrap gap-2">
+        {referral.status === "submitted" && (
+          <Button
+            size="sm"
+            variant="outline"
+            disabled={!mayContact || busy}
+            onClick={() =>
+              run(() => AdelanteEHR.markReferralContacted(referral.id), "Marked as contacted")
+            }
+          >
+            Mark contacted
+          </Button>
+        )}
+        <Button
+          size="sm"
+          disabled={!mayDispose || busy}
+          onClick={() =>
+            run(() => {
+              AdelanteEHR.enrollReferral(referral.id);
+            }, "Enrolled — a client record has been created")
+          }
+        >
+          Enroll
+        </Button>
+        <Button
+          size="sm"
+          variant="outline"
+          disabled={!mayDispose || busy}
+          onClick={() => setDeclining((d) => !d)}
+        >
+          Decline
+        </Button>
+      </div>
+      {!mayContact && (
+        <p className="text-[11px] text-muted-foreground">
+          {referralActionDeniedReason("contact")}
+        </p>
+      )}
+      {!mayDispose && (
+        <p className="text-[11px] text-muted-foreground">{referralActionDeniedReason("enroll")}</p>
+      )}
+      {declining && mayDispose && (
+        <div className="space-y-2 rounded-md border p-3">
+          <Label className="text-xs">Reason for declining (required)</Label>
+          <Select value={reason} onValueChange={setReason}>
+            <SelectTrigger className="h-9 text-sm">
+              <SelectValue placeholder="Choose a reason" />
+            </SelectTrigger>
+            <SelectContent>
+              {REFERRAL_DECLINE_REASONS.map((r) => (
+                <SelectItem key={r.key} value={r.key}>
+                  {r.label}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Textarea
+            value={note}
+            onChange={(e) => setNote(e.target.value)}
+            placeholder={reason === "other" ? "Explain (required)" : "Optional detail"}
+            className="text-sm"
+            rows={2}
+          />
+          <p className="text-[10px] text-muted-foreground">
+            Recorded with your name and the time. The person who made the referral only sees that
+            the referral is closed — never the reason.
+          </p>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              variant="destructive"
+              disabled={!reason || (reason === "other" && !note.trim()) || busy}
+              onClick={() =>
+                run(() => {
+                  AdelanteEHR.declineReferral(referral.id, {
+                    reason,
+                    ...(note.trim() ? { note: note.trim() } : {}),
+                  });
+                }, "Referral declined")
+              }
+            >
+              Confirm decline
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setDeclining(false)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
+    </Card>
+  );
+}
+
+/** Who moved this referral and when — nothing was attributed before Phase 4a. */
+function ReferralDispositionHistory({ referral }: { referral: Referral }) {
+  const rows = [
+    referral.contactedAt
+      ? { label: "Marked contacted", at: referral.contactedAt, by: referral.contactedBy }
+      : null,
+    referral.enrolledAt
+      ? { label: "Enrolled", at: referral.enrolledAt, by: referral.enrolledBy }
+      : null,
+    referral.declinedAt
+      ? {
+          label: `Declined — ${referralDeclineReasonLabel(referral.declineReason ?? "")}`,
+          at: referral.declinedAt,
+          by: referral.declinedBy,
+        }
+      : null,
+  ].filter(Boolean) as { label: string; at: string; by?: { name: string; role: string } }[];
+  if (rows.length === 0) return null;
+  return (
+    <Card className="p-4">
+      <h3 className="font-display text-sm text-navy">Staff actions</h3>
+      <ul className="mt-2 space-y-1.5 text-xs">
+        {rows.map((r) => (
+          <li key={r.label} className="text-muted-foreground">
+            <span className="text-navy">{r.label}</span> · <ClientDate value={r.at} />
+            {r.by ? ` · ${r.by.name} (${r.by.role})` : " · attribution not recorded"}
+          </li>
+        ))}
+        {referral.declineNote && (
+          <li className="text-muted-foreground">Note: {referral.declineNote}</li>
+        )}
+      </ul>
+    </Card>
+  );
+}
+
+
+
 function TimelineRow({
   label,
   iso,
