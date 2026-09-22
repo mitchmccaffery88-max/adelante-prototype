@@ -3070,7 +3070,9 @@ export type CaseTaskOrigin =
   /** §Phase 4.2 (6.5) — AHCD frontline validation checklist item. */
   | "advocate_ahcd_validation"
   /** §Phase 7 part 2 — patient reported a medication side effect. */
-  | "med_side_effect";
+  | "med_side_effect"
+  /** §Phase 4f — enrollment from a referral needs a care team and intake. */
+  | "referral_enrollment_setup";
 
 export interface CaseTask {
   id: string;
@@ -15007,6 +15009,16 @@ export const AdelanteEHR = {
       reason: "primary_reassignment",
       context: input.context,
       initiatedBy: input.initiatedBy ?? "admin",
+    });
+    // §Phase 4f — the provider-switch record above is a continuity-of-care
+    // artifact, not an assignment record. The Client Journey timeline reads
+    // `category: "assignment"`, so without this entry the date it shows falls
+    // back to enrollment. Both writes are intentional and independent.
+    appendAudit({
+      category: "assignment",
+      action: prev ? "primary_clinician_reassigned" : "primary_clinician_assigned",
+      patientId: p.id,
+      detail: { from: prev, to: input.clinicianId, ...(input.context ? { context: input.context } : {}) },
     });
     emit();
     return sw;
