@@ -149,29 +149,79 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   const [reason, setReason] = useState<string>("");
   const [note, setNote] = useState("");
   const [busy, setBusy] = useState(false);
+  // §Phase 4c — advocate discovery happens HERE, at enrollment, never on the
+  // public form. "ask" is the prompt; a patient id means the real, existing
+  // invite form is open against the just-created record.
+  const [advocateStep, setAdvocateStep] = useState<"none" | "ask" | "invite">("none");
+  const [enrolledPatientId, setEnrolledPatientId] = useState<string | undefined>();
 
   const mayContact = canPerformReferralAction(role, "contact");
   const mayDispose = canPerformReferralAction(role, "enroll");
   const closed = referral.status === "declined" || referral.status === "enrolled";
 
+  const advocateBlock =
+    advocateStep === "none" || !enrolledPatientId ? null : (
+      <Card className="p-4 space-y-3">
+        <h3 className="font-display text-sm text-navy">Does this person have a known advocate?</h3>
+        <p className="text-xs text-muted-foreground">
+          Court-appointed or named by the person themselves. Optional — an advocate can also be
+          invited later from the client's chart.
+        </p>
+        {advocateStep === "ask" ? (
+          <div className="flex flex-wrap gap-2">
+            <Button size="sm" onClick={() => setAdvocateStep("invite")}>
+              Yes — invite them
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setAdvocateStep("none")}>
+              Skip for now
+            </Button>
+          </div>
+        ) : (
+          <AdvocateInviteForm
+            patientId={enrolledPatientId}
+            designatedBy="staff"
+            title="Invite this person's advocate"
+            onInvited={() => setAdvocateStep("none")}
+          />
+        )}
+      </Card>
+    );
+
   if (closed) {
     return (
-      <Card className="p-4">
-        <h3 className="font-display text-sm text-navy">Disposition</h3>
-        <p className="mt-1 text-xs text-muted-foreground">
-          {referral.status === "enrolled"
-            ? "This referral is enrolled. Further care happens on the client's chart."
-            : "This referral is closed. Reopening isn't available — submit a new referral instead."}
-        </p>
-      </Card>
+      <>
+        <Card className="p-4">
+          <h3 className="font-display text-sm text-navy">Disposition</h3>
+          <p className="mt-1 text-xs text-muted-foreground">
+            {referral.status === "enrolled"
+              ? "This referral is enrolled. Further care happens on the client's chart."
+              : "This referral is closed. Reopening isn't available — submit a new referral instead."}
+          </p>
+          <ReferrerUpdateLog referral={referral} />
+        </Card>
+        {advocateBlock}
+      </>
     );
   }
 
-  const run = (fn: () => void, ok: string) => {
+  /**
+   * §Phase 4c — after a real disposition, attempt a real text to the referrer
+   * and report exactly what happened. Never a silent claim.
+   */
+  const notifyReferrer = async (event: "contacted" | "enrolled" | "declined") => {
+    const outcome = await deliverReferrerUpdate(referral, event);
+    if (outcome === "sent") toast.success("The person who referred them has been texted.");
+    else if (outcome === "no_phone")
+      toast.message("No text to the referrer — no work phone on file for them.");
+    else toast.message("No text was sent to the referrer — texting isn't connected here.");
+  };
+
+  const run = (fn: () => void, ok: string, notify?: "contacted" | "enrolled" | "declined") => {
     setBusy(true);
     try {
       fn();
       toast.success(ok);
+      if (notify) void notifyReferrer(notify);
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "That action couldn't be completed");
     } finally {
