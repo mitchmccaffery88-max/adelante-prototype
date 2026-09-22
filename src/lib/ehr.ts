@@ -3871,6 +3871,7 @@ const referrals: Referral[] = [
     status: "enrolled",
     createdAt: ago(72 * 24),
     smsSentAt: ago(72 * 24 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(72 * 24 - 0.05) },
   },
   {
     id: "r2",
@@ -3887,6 +3888,7 @@ const referrals: Referral[] = [
     status: "contacted",
     createdAt: ago(48),
     smsSentAt: ago(48 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(48 - 0.05) },
   },
   {
     id: "r3",
@@ -3903,6 +3905,7 @@ const referrals: Referral[] = [
     status: "submitted",
     createdAt: ago(2),
     smsSentAt: ago(2 - 0.05),
+    welcomeSms: { status: "sent" as const, at: ago(2 - 0.05) },
   },
 ];
 
