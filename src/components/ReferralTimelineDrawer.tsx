@@ -75,7 +75,9 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                   </span>
                   {referral.referringAgency ? ` · ${referral.referringAgency}` : ""}
                 </div>
-                <Badge className="bg-teal/20 text-teal border-0 capitalize">
+                <Badge
+                  className={`${REFERRAL_STATUS_STYLES[referral.status]} border-0 capitalize`}
+                >
                   {referral.status}
                 </Badge>
               </div>
@@ -92,6 +94,9 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                 )}
               </div>
             </Card>
+
+            <ReferralActionsCard referral={referral} />
+            <ReferralDispositionHistory referral={referral} />
 
             {patient ? (
               <ReferralStatusTimeline patient={patient} />
