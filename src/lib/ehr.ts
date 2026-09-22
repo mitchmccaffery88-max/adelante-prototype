@@ -5546,6 +5546,12 @@ export interface CatalogResolutionMetrics {
   manualDoseOrders: number;
   recentManualJustifications: { at: string; drugName: string; justification: string }[];
 }
+/** Real acting-staff attribution for a referral disposition (§Phase 4a). */
+function _referralActor(): ReferralActor {
+  const staff = getActingStaff();
+  return { staffId: staff.id, name: staff.name, role: getActingRole() };
+}
+
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
   const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
