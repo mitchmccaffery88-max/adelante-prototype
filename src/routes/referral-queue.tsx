@@ -18,6 +18,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
 import { ReferralSubmissionForm } from "@/components/referral/ReferralSubmissionForm";
+import { hasOpenOutreachTask } from "@/lib/referralOutreach";
 import { Lock, Plus } from "lucide-react";
 
 export const Route = createFileRoute("/referral-queue")({
@@ -46,6 +47,8 @@ function ReferralQueuePage() {
   const access = canAccess(role, "care_coordination");
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const [submitOpen, setSubmitOpen] = useState(false);
+  // §Phase 4e — real open manual-outreach work, counted honestly.
+  const outreachCount = referrals.filter(hasOpenOutreachTask).length;
 
   if (access.level === "none") {
     return (
