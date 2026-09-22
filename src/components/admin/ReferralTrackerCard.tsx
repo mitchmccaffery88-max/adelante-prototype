@@ -11,16 +11,16 @@ import {
 } from "@/components/ui/select";
 import { ClientDate } from "@/components/ClientDate";
 import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
-import type { EpisodeType, ReferralStatus } from "@/lib/ehr";
+import type { EpisodeType } from "@/lib/ehr";
+import {
+  REFERRAL_STATUS_STYLES,
+  ReferralOutreachStatus,
+  ReferralProgressStrip,
+} from "@/components/ReferralProgressStrip";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
-const trackerStyles: Record<ReferralStatus, string> = {
-  submitted: "bg-gold/30 text-navy",
-  contacted: "bg-teal/20 text-teal",
-  enrolled: "bg-success/20 text-success",
-};
-const trackerOrder: ReferralStatus[] = ["submitted", "contacted", "enrolled"];
+const trackerStyles = REFERRAL_STATUS_STYLES;
 
 const programOptions: { value: EpisodeType | "all"; label: string }[] = [
   { value: "all", label: "All programs" },
