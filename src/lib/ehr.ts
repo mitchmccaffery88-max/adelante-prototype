@@ -6993,7 +6993,7 @@ export const AdelanteEHR = {
                 createdAt: now.toISOString(),
                 dueDate: due,
                 status: "open" as const,
-                allowedRoles: STAFF_ROLES.filter(
+                allowedRoles: STAFF_ROLES.map((r) => r.key).filter(
                   (role) => canAccess(role, "care_coordination").level === "write",
                 ),
               },
