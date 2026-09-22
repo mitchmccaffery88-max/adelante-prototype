@@ -9,6 +9,7 @@ import {
 } from "@/lib/ehr";
 import { useServerFn } from "@tanstack/react-start";
 import { sendReferralWelcome } from "@/lib/referralWelcome.functions";
+import { ReferralProgressStrip } from "@/components/ReferralProgressStrip";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
