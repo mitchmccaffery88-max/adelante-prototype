@@ -582,6 +582,12 @@ export interface Referral {
   /** Staff-side only — never shown on the public referrer-facing tracker. */
   declineReason?: string;
   declineNote?: string;
+  /**
+   * §Phase 4e — real manual-outreach work and its attempt trail. Before this
+   * existed, `outreachTask: "manual_call"` was a decorative flag: no task, no
+   * owner, no due date, and no record that anyone had tried to call.
+   */
+  outreach?: ReferralOutreachState;
 }
 
 /** Real staff attribution for a referral disposition. */
