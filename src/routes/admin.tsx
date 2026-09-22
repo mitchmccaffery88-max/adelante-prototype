@@ -230,9 +230,9 @@ function AdminPage() {
         <Kpi
           icon={TrendingUp}
           label="Active referrals"
-          // §Phase 4a — declined referrals are finished, not active. Counting
-          // "anything not enrolled" would leave every decline in this number
-          // for good.
+          {/* §Phase 4a — declined referrals are finished, not active; counting
+              "anything not enrolled" would keep every decline in this number
+              for good. */}
           value={referrals.filter((r) => !isReferralClosed(r.status)).length.toString()}
           accent="teal"
         />
