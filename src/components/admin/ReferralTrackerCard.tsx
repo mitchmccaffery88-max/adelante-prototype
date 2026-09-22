@@ -200,6 +200,7 @@ export function ReferralTrackerCard({
                   )}
                 </div>
                 <div className="flex items-center gap-2 shrink-0">
+                  <ReferralStalenessBadge referral={r} />
                   <Badge className={`${trackerStyles[r.status]} capitalize border-0`}>
                     {r.status}
                   </Badge>
