@@ -90,10 +90,24 @@ describe("nav registry integrity", () => {
     expect(entry.search).toEqual({ view: "facility-protocols" });
   });
 
+  // §Phase 4d — staff "Referrals" points at the staff queue, not the public
+  // submission form; a staff nav entry must never leave the EHR shell.
+  it("routes the staff Referrals entry to the staff queue", () => {
+    expect(STAFF_NAV.find((e) => e.id === "referral")!.to).toBe("/referral-queue");
+    expect(isPublicRoute("/referral-queue")).toBe(false);
+  });
+
+  it("has no staff nav entry pointing at a public route", () => {
+    // /assisted-signup is a deliberate staff tool that also renders publicly.
+    for (const entry of STAFF_NAV.filter((e) => e.id !== "assisted-signup")) {
+      expect([entry.id, isPublicRoute(entry.to)]).toEqual([entry.id, false]);
+    }
+  });
+
   it("keeps every entry from the old flat staff nav", () => {
     const registry = new Set(STAFF_NAV.map((e) => e.to));
     for (const route of [
-      "/referral",
+      "/referral-queue",
       "/case-manager",
       "/clinician",
       "/billing",

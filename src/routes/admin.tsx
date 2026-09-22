@@ -370,7 +370,7 @@ function AdminPage() {
         </Card>
 
         <div className="space-y-4">
-          <ReferralTrackerCard referrals={referrals} />
+          <ReferralTrackerCard referrals={referrals} showViewAll />
           <CredentialingCard />
           <NotificationHealthCard />
           <VendorStatusCard />

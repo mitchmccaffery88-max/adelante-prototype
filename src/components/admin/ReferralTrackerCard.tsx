@@ -1,4 +1,5 @@
 import { useMemo, useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -49,10 +50,13 @@ export function ReferralTrackerCard({
   referrals,
   title = "Referral status",
   limit = 5,
+  showViewAll = false,
 }: {
   referrals: ReturnType<typeof AdelanteEHR.listReferrals>;
   title?: string;
   limit?: number;
+  /** §Phase 4d — dashboards keep the card and link through to the real queue. */
+  showViewAll?: boolean;
 }) {
   const sourceLabels: Record<string, string> = REFERRAL_SOURCE_LABELS;
   // Live subscribe so timestamps update as intake/assignments advance.
@@ -105,9 +109,16 @@ export function ReferralTrackerCard({
     <Card className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h3 className="font-display text-lg text-navy">{title}</h3>
-        <Badge variant="outline" className="text-xs">
-          {filtered.length}/{referrals.length}
-        </Badge>
+        <div className="flex items-center gap-3">
+          {showViewAll && (
+            <Link to="/referral-queue" className="text-xs underline text-muted-foreground">
+              View all referrals
+            </Link>
+          )}
+          <Badge variant="outline" className="text-xs">
+            {filtered.length}/{referrals.length}
+          </Badge>
+        </div>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
