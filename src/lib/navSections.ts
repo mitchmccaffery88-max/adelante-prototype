@@ -136,11 +136,14 @@ const LEVEL_RANK: Record<AccessLevel, number> = {
 export const STAFF_NAV: NavEntry[] = [
   // ----- Care -----
   {
+    // §Phase 4d — points at the STAFF queue, not the public submission form.
+    // The public form stays public at /referral; staff reach it from the
+    // queue's "Submit a referral" action, inside the shell.
     id: "referral",
     label: "Referrals",
-    desc: "Refer a client",
+    desc: "Track & work incoming referrals",
     icon: FileInput,
-    to: "/referral",
+    to: "/referral-queue",
     group: "care",
     gate: { kind: "record_class", anyOf: ["care_coordination"] },
   },
