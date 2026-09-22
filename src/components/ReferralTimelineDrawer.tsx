@@ -105,17 +105,19 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                 <h3 className="font-display text-sm text-navy">Client journey</h3>
                 <ol className="space-y-2">
                   <TimelineRow label="Referral submitted" iso={referral.createdAt} reached />
+                  {/* §Phase 4a — only a genuine send counts as reached. */}
                   <TimelineRow
                     label={
-                      referral.outreachTask === "manual_call"
-                        ? "Manual outreach queued"
-                        : "Welcome outreach"
+                      referral.welcomeSms?.status === "sent"
+                        ? "Welcome text sent"
+                        : referral.welcomeSms
+                          ? "Welcome text not sent"
+                          : referral.outreachTask === "manual_call"
+                            ? "Phone call needed (no text)"
+                            : "Welcome outreach"
                     }
-                    iso={
-                      referral.smsSentAt ??
-                      (referral.outreachTask === "manual_call" ? referral.createdAt : undefined)
-                    }
-                    reached={!!(referral.smsSentAt || referral.outreachTask)}
+                    iso={referral.welcomeSms?.at}
+                    reached={referral.welcomeSms?.status === "sent"}
                   />
                   <TimelineRow label="Enrolled" reached={false} />
                   <TimelineRow label="Case manager assigned" reached={false} />
