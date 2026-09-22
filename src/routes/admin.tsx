@@ -1,6 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
-import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type ReferralStatus } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, isReferralClosed } from "@/lib/ehr";
+import { ChevronRight } from "lucide-react";
+import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
+import {
+  REFERRAL_STATUS_STYLES,
+  ReferralOutreachStatus,
+  ReferralProgressStrip,
+} from "@/components/ReferralProgressStrip";
+import { referralDeclineReasonLabel } from "@/lib/referralActions";
 import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
