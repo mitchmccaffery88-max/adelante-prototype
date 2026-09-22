@@ -7044,6 +7044,88 @@ export const AdelanteEHR = {
     emit();
   },
 
+  // ----- §Phase 4e manual outreach ------------------------------------------
+  /** Take ownership of an open outreach task (pool claim, as on `CaseTask`). */
+  claimReferralOutreach(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    const task = r?.outreach?.task;
+    if (!r || !task || task.status !== "open") return;
+    const who = _referralActor();
+    task.claimedBy = who;
+    task.claimedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_claimed",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id },
+    });
+    emit();
+  },
+  /**
+   * Log a real manual outreach attempt. A `reached` outcome closes the task
+   * and marks the referral contacted — that IS the contact, so recording it
+   * twice would be dishonest bookkeeping.
+   */
+  logReferralOutreachAttempt(
+    id: string,
+    input: { outcome: ReferralOutreachOutcome; note?: string },
+  ) {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) return;
+    const who = _referralActor();
+    const at = new Date().toISOString();
+    const attempt: ReferralOutreachAttempt = {
+      id: uid(),
+      at,
+      outcome: input.outcome,
+      by: who,
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+    };
+    r.outreach = {
+      task: r.outreach?.task,
+      attempts: [...(r.outreach?.attempts ?? []), attempt],
+    };
+    if (input.outcome === "reached") {
+      if (r.outreach.task && r.outreach.task.status === "open") {
+        r.outreach.task.status = "done";
+        r.outreach.task.completedAt = at;
+        r.outreach.task.completedBy = who;
+      }
+      if (r.status === "submitted") {
+        r.status = "contacted";
+        r.contactedAt = at;
+        r.contactedBy = who;
+      }
+    }
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_attempt",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id, outcome: input.outcome },
+    });
+    emit();
+  },
+  /** Close the outreach task without a successful contact (e.g. handed off). */
+  completeReferralOutreachTask(id: string) {
+    const r = referrals.find((x) => x.id === id);
+    const task = r?.outreach?.task;
+    if (!r || !task || task.status !== "open") return;
+    const who = _referralActor();
+    task.status = "done";
+    task.completedAt = new Date().toISOString();
+    task.completedBy = who;
+    appendAudit({
+      category: "clinical",
+      action: "referral_outreach_closed",
+      actorId: who.staffId,
+      actorRole: who.role,
+      detail: { referralId: r.id },
+    });
+    emit();
+  },
+
   // ----- §Phase 4a referral dispositions ------------------------------------
   markReferralContacted(id: string) {
     const r = referrals.find((x) => x.id === id);
