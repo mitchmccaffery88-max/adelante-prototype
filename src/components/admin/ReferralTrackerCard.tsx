@@ -108,9 +108,16 @@ export function ReferralTrackerCard({
     <Card className="p-5">
       <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
         <h3 className="font-display text-lg text-navy">{title}</h3>
-        <Badge variant="outline" className="text-xs">
-          {filtered.length}/{referrals.length}
-        </Badge>
+        <div className="flex items-center gap-3">
+          {showViewAll && (
+            <Link to="/referral-queue" className="text-xs underline text-muted-foreground">
+              View all referrals
+            </Link>
+          )}
+          <Badge variant="outline" className="text-xs">
+            {filtered.length}/{referrals.length}
+          </Badge>
+        </div>
       </div>
       <div className="mb-3 grid grid-cols-2 gap-2 sm:flex sm:flex-wrap">
         <Select value={statusFilter} onValueChange={setStatusFilter}>
