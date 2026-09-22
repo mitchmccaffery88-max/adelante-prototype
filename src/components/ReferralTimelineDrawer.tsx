@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   Sheet,
   SheetContent,
@@ -7,9 +8,28 @@ import {
 } from "@/components/ui/sheet";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
-import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
+import { Button } from "@/components/ui/button";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { toast } from "sonner";
+import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS, type Referral } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
+import { REFERRAL_STATUS_STYLES } from "@/components/ReferralProgressStrip";
+import { getActingRole } from "@/lib/roles";
+import {
+  REFERRAL_DECLINE_REASONS,
+  canPerformReferralAction,
+  referralActionDeniedReason,
+  referralDeclineReasonLabel,
+} from "@/lib/referralActions";
 
 interface Props {
   referralId: string | null;
