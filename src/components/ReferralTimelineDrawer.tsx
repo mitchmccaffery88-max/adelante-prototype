@@ -98,6 +98,7 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
             </Card>
 
             <ReferralActionsCard referral={referral} />
+            <ReferralOutreachCard referral={referral} />
             <ReferralDispositionHistory referral={referral} />
 
             {patient ? (
