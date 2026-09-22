@@ -152,6 +152,6 @@ describe("roster import permission", () => {
     expect(canImportPreReleaseRoster("clinical_coordinator")).toBe(true);
     expect(canImportPreReleaseRoster("sys_admin")).toBe(true);
     expect(canImportPreReleaseRoster("therapist")).toBe(false);
-    expect(canImportPreReleaseRoster("peer_support")).toBe(false);
+    expect(canImportPreReleaseRoster("peer_specialist")).toBe(false);
   });
 });
