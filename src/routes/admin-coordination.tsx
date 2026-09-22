@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { ClientDate } from "@/components/ClientDate";
-import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
 import { ResourceVerificationQueue } from "@/components/admin/ResourceVerificationQueue";
 
 export const Route = createFileRoute("/admin-coordination")({
@@ -30,7 +30,6 @@ function CoordinationPage() {
   const affectedAppts = appts.filter(
     (a) => frozenIds.has(a.clinicianId) && a.status === "scheduled" && +new Date(a.start) > Date.now(),
   );
-  const patientsWithoutPrimary = patients.filter((p) => !p.primaryClinicianId);
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
