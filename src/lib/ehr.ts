@@ -10600,7 +10600,51 @@ export const AdelanteEHR = {
    * `scoreScreener` + `recordScreener` path intake uses — same ScreenerResult,
    * same `screenerHistory`, same crisis handling, same care-plan recompute.
    */
+  /**
+   * §Pre-release pipeline — AHC-HRSN domain results that arrived in a partner
+   * roster spreadsheet, NOT administered in the app.
+   *
+   * Domain positivity only. The item-level answers belong to a real
+   * administered interview and are deliberately not invented from a
+   * spreadsheet, so `responses` is absent and the result is stamped
+   * `provenance: "imported_roster"`. `score` is what it honestly is for this
+   * instrument — the count of positive domains.
+   */
+  recordImportedHrsnDomains(input: {
+    episodeId: string;
+    domains: { key: string; label: string; positive: boolean }[];
+    importedBy: string;
+    actorRole: string;
+  }): ScreenerResult | undefined {
+    const ep = preReleaseEpisodes.find((e) => e.id === input.episodeId);
+    if (!ep || input.domains.length === 0) return undefined;
+    const score = input.domains.filter((d) => d.positive).length;
+    const result: ScreenerResult = {
+      key: "ahc-hrsn",
+      score,
+      severity: score === 0 ? "No identified social needs" : `${score} identified need(s)`,
+      completedAt: new Date().toISOString(),
+      timepoint: "intake",
+      context: "pre_release",
+      episodeId: ep.id,
+      positive: score >= 1,
+      domains: input.domains,
+      provenance: "imported_roster",
+    };
+    AdelanteEHR.recordScreener(ep.patientId, result);
+    appendAudit({
+      category: "clinical",
+      action: "pre_release_hrsn_imported",
+      patientId: ep.patientId,
+      actorId: input.importedBy,
+      actorRole: input.actorRole,
+      detail: { episodeId: ep.id, positiveDomains: score },
+    });
+    emit();
+    return result;
+  },
   recordPreReleaseScreener(input: {
+
     episodeId: string;
     screenerKey: string;
     answers: number[];
