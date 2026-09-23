@@ -1774,7 +1774,17 @@ export interface ResourceReferral {
   resourceId?: string;
   /** Internal care-team referral vs. one ingested from a release assessment. */
   source?: ResourceReferralSource;
-  status: "pending" | "accepted" | "completed";
+  /**
+   * §5d-2 — the real need this referral was made for. A need can hold MANY
+   * referrals over time (first org waitlisted, second connected), so the link
+   * is stored here and only here; `SdohPlanItem` holds no back-pointer and
+   * `referralsForNeed()` is the one lookup.
+   */
+  sdohItemId?: string;
+  status: ResourceReferralOutcome;
+  /** §5d-2 — why the outcome is what it is. Required for any non-pending outcome. */
+  outcomeReason?: string;
+
   createdAt: string;
   updatedAt?: string;
   note?: string;
