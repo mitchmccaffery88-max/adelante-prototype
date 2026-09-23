@@ -108,6 +108,8 @@ import {
 } from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
+import { Building2 } from "lucide-react";
+import type { SdohPlanItem } from "@/lib/ehr";
 import {
   RESOURCE_REFERRAL_OUTCOMES,
   RESOURCE_REFERRAL_OUTCOME_LABEL,

@@ -32,6 +32,7 @@ import { Badge } from "@/components/ui/badge";
 import {
   AdelanteEHR,
   isPart2SensitiveCategory,
+  type ResourceReferralCategory,
   type SdohPlanItem,
 } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -55,7 +56,9 @@ export function ReferForNeedDialog({
   // The need's own category suggestion comes from the same matcher the
   // patient-facing resource list uses, so staff and patient see one taxonomy.
   const suggested = useMemo(() => matchResourcesForNeed(item)?.categoryIds ?? [], [item]);
-  const [category, setCategory] = useState<string>(suggested[0] ?? "housing");
+  const [category, setCategory] = useState<ResourceReferralCategory>(
+    (suggested[0] as ResourceReferralCategory | undefined) ?? "housing",
+  );
   const [choice, setChoice] = useState<string>(OFF_DIRECTORY);
   const [provider, setProvider] = useState("");
   const [note, setNote] = useState("");
@@ -118,7 +121,7 @@ export function ReferForNeedDialog({
             <Select
               value={category}
               onValueChange={(v) => {
-                setCategory(v);
+                setCategory(v as ResourceReferralCategory);
                 setChoice(OFF_DIRECTORY);
               }}
             >
