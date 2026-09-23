@@ -55,6 +55,17 @@ import {
   CONFIDENTIAL_CATEGORY_LABEL,
   SDOH_FUNNEL_ASSOCIATION_NOTE,
 } from "@/lib/sdohReporting";
+// §4g — the referral-to-active-patient funnel.
+import {
+  declinedByReason,
+  referralDropOff,
+  referralFunnel,
+  referralsByJusticeAnswer,
+  referralsBySource,
+  referralsByTrack,
+  REFERRAL_FUNNEL_ASSOCIATION_NOTE,
+  REFERRAL_SOURCE_FOLD_NOTE,
+} from "@/lib/referralFunnel";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
@@ -264,6 +275,13 @@ function ReportingHome() {
   const needProvenance = useEhr(() => needsByProvenance());
   const needTrack = useEhr(() => needsByTrack());
   const barriers = useEhr(() => barrierFrequency());
+  // §4g — windowed on the referral's own `createdAt`, so the selector applies.
+  const refFunnel = useEhr(() => referralFunnel({ sinceDays: days }));
+  const refSource = useEhr(() => referralsBySource({ sinceDays: days }));
+  const refJustice = useEhr(() => referralsByJusticeAnswer({ sinceDays: days }));
+  const refTrack = useEhr(() => referralsByTrack({ sinceDays: days }));
+  const refDeclines = useEhr(() => declinedByReason({ sinceDays: days }));
+  const refDropOff = useEhr(() => referralDropOff({ sinceDays: days }));
 
   if (!seesPopulation && !seesBilling) {
     return (
