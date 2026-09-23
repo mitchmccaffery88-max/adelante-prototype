@@ -329,7 +329,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
           }
           rows.push({
             name: `${p.firstName} ${p.lastName}`,
-            label: sensitive ? "Confidential service" : (r.providerName ?? r.category),
+            label: sensitive ? "Confidential service" : r.provider,
           });
         }
       }
