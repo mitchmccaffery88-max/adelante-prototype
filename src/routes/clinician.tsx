@@ -33,12 +33,21 @@ import {
   UserCog,
   Lock,
   FlaskConical,
+  Users,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
-import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
+import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
+import {
+  assignmentIdentityFor,
+  hasAssignmentIdentity,
+  isAssignedTo,
+  scopeCaseload,
+  CASELOAD_SCOPE_NOTE,
+} from "@/lib/caseloadScope";
+import { TaskQueueCard, type TaskQueueSource } from "@/components/tasks/TaskQueueCard";
 import { myOpenItems } from "@/lib/myWork";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
