@@ -8502,24 +8502,60 @@ export const AdelanteEHR = {
     _recomputeCarePlan(p.id, "check_in");
     emit();
   },
-  addResourceReferral(patientId: string, r: Omit<ResourceReferral, "id" | "createdAt" | "status">) {
+  /**
+   * §5d-1 — the ONE create path for resource referrals, for every caller.
+   *
+   * Two guarantees live here, in the data layer, so no UI can bypass them:
+   *  1. A Part 2 sensitive category (recovery/support groups) is refused
+   *     unless the patient's LIVE structured consent authorizes SUD
+   *     disclosure. It throws — it never creates silently.
+   *  2. `sudDisclosureConsent` is stamped from that same live consent, never
+   *     from whatever the caller believed (the old bug: the record tab passed
+   *     the VIEWER's access gate).
+   */
+  addResourceReferral(
+    patientId: string,
+    r: Omit<ResourceReferral, "id" | "createdAt" | "status" | "sudDisclosureConsent">,
+    actor?: { staffName: string; role: StaffRole },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.resourceReferrals = [
-      {
-        ...r,
-        // Provenance defaults to the real common case: our care team referred
-        // them. Pre-release ingestion passes "pre_release" explicitly.
-        source: r.source ?? "internal",
-        id: uid(),
-        createdAt: new Date().toISOString(),
-        status: "pending",
+    const consentActive = AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    if (isPart2SensitiveCategory(r.category) && !consentActive) {
+      throw new Part2ConsentRequiredError(
+        "42 CFR Part 2 — a recovery or support-group referral discloses SUD treatment status. Capture the patient's Part 2 consent before referring.",
+      );
+    }
+    const now = new Date().toISOString();
+    const row: ResourceReferral = {
+      ...r,
+      // Provenance defaults to the real common case: our care team referred
+      // them. Pre-release ingestion passes "pre_release" explicitly.
+      source: r.source ?? "internal",
+      id: uid(),
+      createdAt: now,
+      status: "pending",
+      sudDisclosureConsent: consentActive,
+      ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
+    };
+    p.resourceReferrals = [row, ...(p.resourceReferrals ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_created",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        referralId: row.id,
+        category: row.category,
+        part2Sensitive: isPart2SensitiveCategory(row.category),
+        sudDisclosureConsent: consentActive,
       },
-      ...(p.resourceReferrals ?? []),
-    ];
-
+    });
     emit();
+    return row;
   },
+
   updateCarePlanSummary(patientId: string, summary: string, by?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
