@@ -7,7 +7,7 @@
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, RESOURCE_REFERRAL_OUTCOME_LABEL } from "@/lib/ehr";
 import type { AdvocateContributionSection } from "@/lib/ehr";
 import { ADVOCATE_TIER_LABEL, advocateTier } from "@/lib/advocate";
 import { Card } from "@/components/ui/card";
@@ -30,6 +30,7 @@ export function AdvocateTierBadge({ linkId }: { linkId: string }) {
 
 export function AdvocateCoordinationPanel({ linkId }: { linkId: string }) {
   const view = useEhr(() => AdelanteEHR.advocateCoordination(linkId));
+  const { t } = useI18n();
   const [need, setNeed] = useState("");
   if (!view.allowed) return null;
 
@@ -56,9 +57,29 @@ export function AdvocateCoordinationPanel({ linkId }: { linkId: string }) {
                 <Badge variant="outline">{i.status.replace(/_/g, " ")}</Badge>
               </span>
               {i.note && <span className="mt-1 block text-xs text-muted-foreground">{i.note}</span>}
+              {/* §5d-4 — the referrals made for this need, within this
+                  advocate's authority. A restricted row names nothing. */}
+              {i.referrals.length > 0 && (
+                <span className="mt-2 block space-y-1">
+                  {i.referrals.map((r) => (
+                    <span key={r.id} className="block text-xs text-muted-foreground">
+                      {r.restricted ? (
+                        <span className="inline-flex items-center gap-1">
+                          <Lock className="h-3 w-3" /> {t("needAdvRestricted")}
+                        </span>
+                      ) : (
+                        <>
+                          {r.provider} — {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
+                        </>
+                      )}
+                    </span>
+                  ))}
+                </span>
+              )}
             </li>
           ))}
         </ul>
+
       )}
       {view.maskedCount > 0 && (
         <p className="mt-3 flex items-center gap-2 text-xs text-muted-foreground">

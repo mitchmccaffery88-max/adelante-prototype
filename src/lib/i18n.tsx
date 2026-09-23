@@ -372,7 +372,37 @@ const dict = {
     docNotificationsTitle: "Document notices",
     docNotificationSimulated: "Text message simulated — no real message is sent",
     docVerifiedNotice: "A document was added to the medical record.",
+
+    // §5d-4 — the unified need thread (patient + advocate facing).
+    needThreadTitle: "Help that matches what you told us",
+    needThreadLede:
+      "Each thing you told us about, and what has happened with it so far. Nothing is sent on your behalf without your care team telling you.",
+    needThreadOpenHeading: "What we're working on with you",
+    needThreadOtherHeading: "Other places we connected you with",
+    needThreadResolvedHeading: "Recently sorted out",
+    needThreadSummaryTitle: "Your everyday needs",
+    needThreadSummaryOne: "1 thing is being worked on with you.",
+    needThreadSummaryMany: "things are being worked on with you.",
+    needThreadSummaryNone: "Nothing is open right now.",
+    needThreadSummaryOpen: "See what's happening",
+    needRefNone: "Your team is looking for a place for this.",
+    needRefPending: "Your team has sent this to",
+    needRefConnected: "We've connected you with",
+    needRefWaitlisted: "You're on a waitlist with",
+    needRefNotEligible: "You weren't eligible at",
+    needRefDeclined: "You told us you didn't want this one:",
+    needRefUnreachable: "We couldn't reach them — your care team is following up:",
+    needRefClosed: "This one is closed:",
+    needRefOrgWithheld: "a local organisation",
+    needRefOrgWithheldNote:
+      "We show the type of help rather than the name here, because some services are confidential under federal rules.",
+    needClosureResolved: "Resolved —",
+    needClosureTail: "Let your care team know if this comes back.",
+    needAdvRestricted: "Restricted referral — consent required to show details.",
+    needAdvReferralHeading: "Referrals",
+    esPendingReviewBadge: "Spanish pending bilingual review",
   },
+
   es: {
     ...recoveryUiEs,
     ...recoveryModuleEs,
@@ -730,7 +760,39 @@ const dict = {
     docNotificationsTitle: "Avisos de documentos",
     docNotificationSimulated: "Mensaje de texto simulado — no se envía ningún mensaje real",
     docVerifiedNotice: "Se agregó un documento al expediente médico.",
+
+    // §5d-4 — hilo unificado de necesidades. Traducción de primer borrador,
+    // pendiente de revisión bilingüe profesional (mismo patrón que la copia de
+    // crisis): el inglés es la fuente revisada.
+    needThreadTitle: "Ayuda que coincide con lo que nos contaste",
+    needThreadLede:
+      "Cada cosa que nos contaste y lo que ha pasado con ella hasta ahora. No se envía nada en tu nombre sin que tu equipo de cuidado te avise.",
+    needThreadOpenHeading: "En lo que estamos trabajando contigo",
+    needThreadOtherHeading: "Otros lugares con los que te conectamos",
+    needThreadResolvedHeading: "Resuelto hace poco",
+    needThreadSummaryTitle: "Tus necesidades del día a día",
+    needThreadSummaryOne: "Se está trabajando en 1 cosa contigo.",
+    needThreadSummaryMany: "cosas se están trabajando contigo.",
+    needThreadSummaryNone: "No hay nada abierto en este momento.",
+    needThreadSummaryOpen: "Ver qué está pasando",
+    needRefNone: "Tu equipo está buscando un lugar para esto.",
+    needRefPending: "Tu equipo envió esto a",
+    needRefConnected: "Te conectamos con",
+    needRefWaitlisted: "Estás en lista de espera con",
+    needRefNotEligible: "No calificaste en",
+    needRefDeclined: "Nos dijiste que no querías esta opción:",
+    needRefUnreachable: "No pudimos comunicarnos con ellos — tu equipo le está dando seguimiento:",
+    needRefClosed: "Esta opción está cerrada:",
+    needRefOrgWithheld: "una organización local",
+    needRefOrgWithheldNote:
+      "Aquí mostramos el tipo de ayuda y no el nombre, porque algunos servicios son confidenciales bajo leyes federales.",
+    needClosureResolved: "Resuelto —",
+    needClosureTail: "Avísale a tu equipo de cuidado si vuelve a pasar.",
+    needAdvRestricted: "Referencia restringida — se necesita consentimiento para mostrar detalles.",
+    needAdvReferralHeading: "Referencias",
+    esPendingReviewBadge: "Español pendiente de revisión bilingüe",
   },
+
 } as const;
 
 export type Key = keyof typeof dict.en;

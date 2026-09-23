@@ -14459,12 +14459,41 @@ export const AdelanteEHR = {
    *
    * PART 2: any item whose need or note text is SUD-identifying is dropped
    * entirely, and only a COUNT is returned — never a description.
+   *
+   * §5d-4 — each need now carries its REFERRALS, so an advocate sees the same
+   * thread staff and patient see, within their own authority:
+   *   - `hipaa_only`   — organisation named only while Part 2 disclosure
+   *                      consent is live (consent-conditional).
+   *   - `authorized_representative` — categorically barred from Part 2; a
+   *                      sensitive referral is always a restricted row.
+   *   - `ahcd_agent` / `conservator` — authority-derived; an AHCD whose Part 2
+   *                      scope is unclear falls back to the consent path.
+   * All four resolve through the ONE existing evaluation
+   * (`_advocatePart2Gates` → `advocateSudAccess`); no tier logic is duplicated
+   * here. A restricted row carries status only — no category, no provider, no
+   * note — because for a Part 2 sensitive referral the CATEGORY is the
+   * sensitive fact. The 5d-3 activity log never crosses this boundary at all.
    */
   advocateCoordination(linkId: string): {
     allowed: boolean;
     reason: string;
     canWrite: boolean;
-    items: { id: string; need: string; status: SdohStatus; note?: string; updatedAt: string }[];
+    items: {
+      id: string;
+      need: string;
+      status: SdohStatus;
+      note?: string;
+      updatedAt: string;
+      referrals: {
+        id: string;
+        status: ResourceReferralOutcome;
+        /** Absent on a restricted row. */
+        category?: ResourceReferralCategory;
+        /** Absent on a restricted row. */
+        provider?: string;
+        restricted: boolean;
+      }[];
+    }[];
     maskedCount: number;
   } {
     const gate = _advocateGate(linkId, "coordination_view", "care_coordination");
@@ -14477,6 +14506,7 @@ export const AdelanteEHR = {
     const visible = all.filter(
       (i) => i.visibleToPatient !== false && !_advocateSudText(`${i.need} ${i.note ?? ""}`),
     );
+    const sudUnmasked = _advocatePart2Gates(gate.link).unmasked;
 
     _advocateAudit(gate.link, "advocate_coordination_viewed", "care_coordination", {
       itemCount: visible.length,
@@ -14492,10 +14522,24 @@ export const AdelanteEHR = {
         status: i.status,
         ...(i.note ? { note: i.note } : {}),
         updatedAt: i.updatedAt,
+        referrals: AdelanteEHR.referralsForNeed(gate.link.patientId, i.id)
+          // A staff-only referral (safety needs default this way) is never
+          // shown to an advocate, exactly like its need.
+          .filter((r) => r.visibleToPatient !== false)
+          .map((r) => {
+            const restricted = isPart2SensitiveCategory(r.category) && !sudUnmasked;
+            return {
+              id: r.id,
+              status: r.status,
+              ...(restricted ? {} : { category: r.category, provider: r.provider }),
+              restricted,
+            };
+          }),
       })),
       maskedCount: all.length - visible.length,
     };
   },
+
 
   /**
    * §P1 My Care de-clutter — PO-sharing AWARENESS for an identified advocate.

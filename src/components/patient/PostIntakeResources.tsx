@@ -23,6 +23,7 @@ import {
   subscribeResources,
 } from "@/lib/communityResources";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
+import { NeedThreadList } from "@/components/patient/NeedThreadList";
 
 const MAX_ORGS_PER_NEED = 3;
 
@@ -57,6 +58,13 @@ export function PostIntakeResources() {
         title="Help that matches what you told us"
         lede="These are local organisations from our community directory. Nothing has been sent on your behalf — looking at a place is not the same as being referred to it. Tell your care team if you want them to make the connection."
       />
+
+      {/* §5d-4 — the unified thread: each need with what actually happened,
+          plus closure messages. It sits ABOVE the directory browse block so
+          the person sees their own situation before a generic list. */}
+      <NeedThreadList patientId={patientId} />
+
+
 
       {needs.length === 0 ? (
         <Card className="p-5" data-testid="post-intake-empty">

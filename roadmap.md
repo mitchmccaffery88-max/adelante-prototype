@@ -79,3 +79,11 @@
 - [x] myWork: sdohAging bucket for the assigned case manager
 - [x] Shared SdohActivityLog component wired into SdohTab + ReferralsTab (Part 2 / safety respected)
 - [x] Tests, typecheck, build, live browser both viewports
+
+## Phase 5d-4 (final) — unified need thread, advocate referrals, reporting funnel
+- [ ] Patient unified need thread on /next-steps (+ home summary card, remove ReferralsForYouCard)
+- [ ] Closure message: "Resolved — {need}. Let your care team know if this comes back."
+- [ ] All new patient/advocate strings via i18n with Spanish marked pending bilingual review
+- [ ] Advocate referral status per tier in advocateCoordination + panel
+- [ ] Reporting funnel (identified → referred → connected → resolved) + barriers, cohort guard
+- [ ] Disengagement link: recommendation only, nothing built
