@@ -1126,29 +1126,153 @@ function ProviderSwitchAlerts({
   );
 }
 
+// §Dashboard Cleanup Phase 6a — refill review, attributed and scoped.
+//
+// THREE REAL FIXES:
+//  1. `reviewRefill` is now called WITH the acting staff member's id, so
+//     `reviewedBy` is recorded and the provider-switch detection already built
+//     into `reviewRefill` can fire from this surface like everywhere else.
+//     Attribution follows the ACTING STAFF, never the clinician chosen in the
+//     page's schedule picker — that dropdown picks whose day you're looking
+//     at, not who you are.
+//  2. The list defaults to refills for patients assigned to the acting
+//     clinician (`isAssignedTo`, the same rule the caseload uses). A refill
+//     row carries no clinician of its own, so patient assignment is the only
+//     honest meaning of "mine". The toggle keeps the whole pending list one
+//     click away for coverage — a default view, not a boundary.
+//  3. Dose/frequency come off the live medication record, requested-by off the
+//     real field, and recently reviewed refills are shown with their reviewer.
+function refillReviewerLabel(
+  reviewedBy: string | undefined,
+  clinicians: { id: string; name: string }[],
+): string {
+  if (!reviewedBy) return "Reviewer not recorded";
+  const c = clinicians.find((x) => x.id === reviewedBy);
+  if (c) return c.name;
+  return getStaffMember(reviewedBy)?.name ?? reviewedBy;
+}
+
 function RefillReviewCardInner() {
-  const pending = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }));
-  const patients = AdelanteEHR.listPatients();
+  const allPending = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }));
+  const allRefills = useEhr(() => AdelanteEHR.listRefillRequests());
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const [role] = useActingRole();
+  const actor = useActingStaff();
+  const identity = assignmentIdentityFor(actor);
+  const iHaveAssignments = hasAssignmentIdentity(identity);
+  const actorId = actor.clinicianId ?? actor.staffId;
   const [openId, setOpenId] = useState<string | null>(null);
   const [reason, setReason] = useState("");
+  const [showHistory, setShowHistory] = useState(false);
+
+  const minePending = allPending.filter((r) => {
+    const p = patients.find((x) => x.id === r.patientId);
+    return p ? isAssignedTo(p, identity) : false;
+  });
+  // Staff with no assignment identity (or nothing assigned) would open on an
+  // empty tile, which hides real work — they start on the full list instead.
+  const canScopeMine = iHaveAssignments && minePending.length > 0;
+  const [scope, setScope] = useState<"mine" | "all">("mine");
+  const effectiveScope = canScopeMine ? scope : "all";
+  const pending = effectiveScope === "mine" ? minePending : allPending;
+
+  const reviewed = allRefills
+    .filter((r) => r.status !== "pending")
+    .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))
+    .slice(0, 5);
+
+  const scopeToggle = (
+    <div className="mt-2 flex flex-wrap items-center gap-2">
+      <div className="flex items-center gap-1.5" role="group" aria-label="Refill list scope">
+        <Button
+          size="sm"
+          variant={effectiveScope === "mine" ? "default" : "outline"}
+          className="h-7 text-[11px]"
+          disabled={!canScopeMine}
+          onClick={() => setScope("mine")}
+          data-testid="refill-scope-mine"
+        >
+          My patients ({minePending.length})
+        </Button>
+        <Button
+          size="sm"
+          variant={effectiveScope === "all" ? "default" : "outline"}
+          className="h-7 text-[11px]"
+          onClick={() => setScope("all")}
+          data-testid="refill-scope-all"
+        >
+          All pending ({allPending.length})
+        </Button>
+      </div>
+      <p className="text-[11px] text-muted-foreground">{CASELOAD_SCOPE_NOTE}</p>
+    </div>
+  );
+
+  const history = reviewed.length > 0 && (
+    <div className="mt-3 border-t pt-3">
+      <Button
+        size="sm"
+        variant="ghost"
+        className="h-7 px-0 text-[11px]"
+        onClick={() => setShowHistory((v) => !v)}
+        data-testid="refill-history-toggle"
+      >
+        {showHistory ? "Hide recently reviewed" : `Recently reviewed (${reviewed.length})`}
+      </Button>
+      {showHistory && (
+        <ul className="mt-2 space-y-2 text-[11px] text-muted-foreground" data-testid="refill-history">
+          {reviewed.map((r) => {
+            const p = patients.find((x) => x.id === r.patientId);
+            return (
+              <li key={r.id}>
+                <span className="text-navy dark:text-foreground">
+                  {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}
+                </span>{" "}
+                — {r.status === "sent_to_pharmacy" ? "approved, sent to pharmacy" : r.status} by{" "}
+                {refillReviewerLabel(r.reviewedBy, clinicians)}
+                {r.reviewedAt && (
+                  <>
+                    {" "}
+                    · <ClientDate value={r.reviewedAt} />
+                  </>
+                )}
+                {r.denyReason && <div className="italic">Reason: {r.denyReason}</div>}
+              </li>
+            );
+          })}
+        </ul>
+      )}
+    </div>
+  );
 
   if (pending.length === 0) {
     return (
-      <Card className="p-5">
+      <Card className="p-5" data-testid="refill-card">
         <h3 className="font-display text-base text-navy flex items-center gap-2">
           <Video className="h-4 w-4" aria-hidden="true" /> Refill requests
         </h3>
-        <p className="mt-2 text-xs text-muted-foreground">No pending refill requests.</p>
+        <p className="mt-2 text-xs text-muted-foreground">
+          {effectiveScope === "mine"
+            ? "No pending refill requests for your assigned patients."
+            : "No pending refill requests."}
+        </p>
+        {scopeToggle}
+        {history}
       </Card>
     );
   }
   return (
-    <Card className="p-5">
+    <Card className="p-5" data-testid="refill-card">
       <h3 className="font-display text-base text-navy">Refill requests</h3>
+      {scopeToggle}
       <ul className="mt-3 space-y-3 text-sm">
         {pending.map((r) => {
           const p = patients.find((x) => x.id === r.patientId);
+          const med = p
+            ? AdelanteEHR.listMedications(p.id).find((m) => m.id === r.medicationId)
+            : undefined;
+          const sig = [med?.dose, med?.frequency].filter(Boolean).join(" · ");
           const canWrite = p ? canAccess(role, "meds_erx", p).level === "write" : false;
           return (
             <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
@@ -1158,7 +1282,11 @@ function RefillReviewCardInner() {
                     {p ? `${p.firstName} ${p.lastName}` : r.patientId}
                   </div>
                   <div className="text-xs text-muted-foreground">
-                    {r.medicationName} · requested <ClientDate value={r.requestedAt} />
+                    {r.medicationName}
+                    {sig && ` · ${sig}`} · requested <ClientDate value={r.requestedAt} />
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Requested by {r.requestedBy === "patient" ? "patient" : "clinician"}
                   </div>
                   {r.pharmacyNote && (
                     <div className="text-[11px] italic text-muted-foreground mt-1">
@@ -1177,7 +1305,11 @@ function RefillReviewCardInner() {
                       size="sm"
                       className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
                       onClick={() => {
-                        AdelanteEHR.reviewRefill({ id: r.id, decision: "approved" });
+                        AdelanteEHR.reviewRefill({
+                          id: r.id,
+                          decision: "approved",
+                          clinicianId: actorId,
+                        });
                         toast.success("Refill approved and sent to pharmacy");
                       }}
                     >
@@ -1223,6 +1355,7 @@ function RefillReviewCardInner() {
                           id: r.id,
                           decision: "denied",
                           denyReason: reason.trim() || "Please schedule a visit",
+                          clinicianId: actorId,
                         });
                         setOpenId(null);
                         setReason("");
@@ -1238,6 +1371,41 @@ function RefillReviewCardInner() {
           );
         })}
       </ul>
+      {history}
+    </Card>
+  );
+}
+
+/**
+ * §Dashboard Cleanup Phase 6a — My caseload, as a count that links across.
+ *
+ * Deliberately NOT a second caseload table: the real one on Care Coordination
+ * has filters, assignment, export and record drawers. This gives the number
+ * and the route, using the same `scopeCaseload(..., "mine")` call that page
+ * uses, so the two always agree.
+ */
+function MyCaseloadCard() {
+  const actor = useActingStaff();
+  const identity = assignmentIdentityFor(actor);
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const mine = scopeCaseload(patients, identity, "mine");
+  return (
+    <Card className="p-5" data-testid="clinician-caseload-card">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h3 className="font-display text-base text-navy flex items-center gap-2">
+          <Users className="h-4 w-4 text-teal" aria-hidden="true" /> My caseload ({mine.length})
+        </h3>
+        <Button asChild size="sm" variant="outline" className="h-7 text-[11px]">
+          <Link to="/case-manager">Open caseload</Link>
+        </Button>
+      </div>
+      <p className="mt-2 text-xs text-muted-foreground">
+        {hasAssignmentIdentity(identity)
+          ? mine.length === 0
+            ? `No patients are currently assigned to ${actor.staffName}.`
+            : "Patients assigned to you. The full list, with filters and assignment, lives on Care Coordination."
+          : "Your staff profile isn't linked to a caseload or a provider record, so nothing matches \u201Cassigned to me\u201D."}
+      </p>
     </Card>
   );
 }
