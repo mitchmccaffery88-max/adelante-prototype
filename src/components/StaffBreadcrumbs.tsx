@@ -88,6 +88,25 @@ export function StaffBreadcrumbs() {
           </span>
         )}
       </div>
+      </div>
+
+      {/* Standardized right-hand controls — role-driven, not page-driven. */}
+      <div className="flex w-full items-center gap-2 lg:w-auto lg:justify-end">
+        <StaffPatientSearch />
+        {canSeeMyWork && (
+          <Link
+            to="/my-work"
+            data-testid="top-bar-my-work"
+            className="inline-flex shrink-0 items-center gap-2 rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 transition-colors hover:bg-secondary"
+          >
+            <ListChecks className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
+            My work
+            <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
+              {myWorkCount}
+            </span>
+          </Link>
+        )}
+      </div>
     </div>
   );
 }
