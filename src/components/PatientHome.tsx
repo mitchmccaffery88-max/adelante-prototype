@@ -1,5 +1,10 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  defaultOccurrenceModality,
+  isVirtualGroupModality,
+  useEhr,
+} from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -454,6 +459,13 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
       <ul className="mt-4 space-y-3">
         {groups.map((g) => {
           const nextForThis = nextOccurrenceForGroup(g.id);
+          // §Phase 6b — join link, shown only when the next meeting is virtual.
+          const virtual = nextForThis
+            ? isVirtualGroupModality(AdelanteEHR.groupOccurrenceModality(g.id, nextForThis))
+            : isVirtualGroupModality(defaultOccurrenceModality(g.modality));
+          const room = virtual
+            ? AdelanteEHR.groupJoinLink(g.id, nextForThis ?? undefined)
+            : undefined;
           return (
             <li key={g.id} className="rounded-lg border bg-card p-3">
               <div className="text-sm font-medium text-navy">{g.topic}</div>
@@ -470,9 +482,29 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
                   <>Next meeting time to be confirmed.</>
                 )}
               </div>
+              {virtual && (
+                <p className="mt-1.5 break-all text-xs text-muted-foreground">
+                  {room ? (
+                    <>
+                      Join by video or phone:{" "}
+                      <a
+                        className="text-teal underline"
+                        href={room.joinUrl}
+                        target="_blank"
+                        rel="noreferrer"
+                      >
+                        {room.joinUrl}
+                      </a>
+                    </>
+                  ) : (
+                    "This group meets online. Your care team will share the join link before it starts."
+                  )}
+                </p>
+              )}
             </li>
           );
         })}
+
       </ul>
     </section>
   );

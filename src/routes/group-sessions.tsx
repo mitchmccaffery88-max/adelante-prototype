@@ -470,7 +470,9 @@ function GroupDetail({
             {location.name} — {formatLocationAddress(location)}
           </p>
         )}
+        <GroupJoinLinkEditor group={group} canWrite={canWrite} actor={actor} />
       </Card>
+
 
       {canWrite && <RecurrenceEditor group={group} actor={actor} />}
 
@@ -853,9 +855,116 @@ function OccurrenceModalityPicker({
           {gate.confidentialityMissing.map((b) => b.name).join(", ")}.
         </p>
       )}
+      {isVirtualGroupModality(modality) && (
+        <GroupJoinLinkEditor
+          group={group}
+          occurrenceStart={occurrenceStart}
+          canWrite
+          actor={actor}
+        />
+      )}
     </div>
   );
 }
+
+// §Phase 6b — virtual room / join link, session-level or overridden for one
+// meeting. Nothing is generated automatically: an empty field says so plainly
+// rather than showing a URL nobody can actually open.
+function GroupJoinLinkEditor({
+  group,
+  occurrenceStart,
+  canWrite,
+  actor,
+}: {
+  group: GroupSession;
+  occurrenceStart?: string;
+  canWrite: boolean;
+  actor: string;
+}) {
+  const room = useEhr(() =>
+    occurrenceStart
+      ? AdelanteEHR.getGroupOccurrence(group.id, occurrenceStart)?.virtualRoom
+      : group.virtualRoom,
+  );
+  const inherited = useEhr(() => AdelanteEHR.groupJoinLink(group.id, occurrenceStart));
+  const [draft, setDraft] = useState("");
+  const [open, setOpen] = useState(false);
+  const scope = occurrenceStart ? "this meeting" : "this group";
+
+  const save = (value: string | undefined) => {
+    try {
+      if (occurrenceStart)
+        AdelanteEHR.setGroupOccurrenceVirtualRoom(group.id, occurrenceStart, value, actor);
+      else AdelanteEHR.setGroupVirtualRoom(group.id, value, actor);
+      setOpen(false);
+      setDraft("");
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : "Could not save the join link.");
+    }
+  };
+
+  return (
+    <div className="space-y-1 text-xs">
+      {room ? (
+        <p className="break-all">
+          <span className="text-muted-foreground">Join link for {scope}: </span>
+          <a className="text-teal underline" href={room.joinUrl} target="_blank" rel="noreferrer">
+            {room.joinUrl}
+          </a>
+        </p>
+      ) : inherited && occurrenceStart ? (
+        <p className="break-all text-muted-foreground">
+          Using the group's standing join link: {inherited.joinUrl}
+        </p>
+      ) : (
+        <p className="text-muted-foreground">No join link has been added for {scope} yet.</p>
+      )}
+      {canWrite &&
+        (open ? (
+          <div className="flex flex-wrap items-center gap-1">
+            <Input
+              value={draft}
+              onChange={(e) => setDraft(e.target.value)}
+              placeholder="https://…"
+              aria-label={`Join link for ${scope}`}
+              className="h-8 max-w-xs text-xs"
+            />
+            <Button size="sm" className="h-8" onClick={() => save(draft)}>
+              Save
+            </Button>
+            <Button size="sm" variant="ghost" className="h-8" onClick={() => setOpen(false)}>
+              Cancel
+            </Button>
+          </div>
+        ) : (
+          <div className="flex gap-1">
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-7 text-xs"
+              onClick={() => {
+                setDraft(room?.joinUrl ?? "");
+                setOpen(true);
+              }}
+            >
+              {room ? "Change join link" : "Add join link"}
+            </Button>
+            {room && (
+              <Button
+                size="sm"
+                variant="ghost"
+                className="h-7 text-xs"
+                onClick={() => save(undefined)}
+              >
+                Remove
+              </Button>
+            )}
+          </div>
+        ))}
+    </div>
+  );
+}
+
 
 // §Group sessions — recurrence editor.
 //
