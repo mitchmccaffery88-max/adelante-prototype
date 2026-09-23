@@ -40,7 +40,9 @@ import {
 } from "@/components/clinical/AutomationTrace";
 import {
   AdelanteEHR,
+  isPart2SensitiveCategory,
   useEhr,
+
   noteStatus,
   type CoordinationChannel,
   type CoordinationDirection,
