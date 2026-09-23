@@ -353,6 +353,11 @@ function ClinicianPage() {
                   ))}
                 </>
               )}
+
+              {/* §Dashboard Cleanup Phase 6a — the clinician's own caseload
+                  and open follow-ups, under the day's appointments. */}
+              <MyCaseloadCard />
+              <TaskQueueCard source={taskSource} onOpenPatient={openChart} />
             </div>
 
             {/* Action items + booking */}
