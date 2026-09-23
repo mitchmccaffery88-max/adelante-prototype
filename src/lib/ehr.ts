@@ -1774,9 +1774,42 @@ export interface ResourceReferral {
   note?: string;
   followUpDate?: string;
   visibleToPatient?: boolean;
-  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
+  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally.
+  // §5d-1: stamped by the data layer from the patient's LIVE consent at creation,
+  // never from the acting viewer's own access level.
   sudDisclosureConsent?: boolean;
+  /** §5d-1 attribution — who created/last changed this referral. */
+  createdBy?: string;
+  createdByRole?: StaffRole;
+  lastUpdatedBy?: string;
+  lastUpdatedByRole?: StaffRole;
 }
+
+/**
+ * §5d-1 — referral categories whose very existence can disclose SUD treatment
+ * status. Same two the patient-facing matcher already refuses to name
+ * (`sdohResourceMatch.ts`), which imports THIS constant so the two sides can
+ * never drift. Other categories (housing, legal, healthcare…) are not
+ * SUD-identifying by category.
+ */
+export const PART2_SENSITIVE_REFERRAL_CATEGORIES: readonly ResourceReferralCategory[] = [
+  "recovery_meetings",
+  "support_groups",
+];
+
+export function isPart2SensitiveCategory(category: string): boolean {
+  return (PART2_SENSITIVE_REFERRAL_CATEGORIES as readonly string[]).includes(category);
+}
+
+/** Thrown when a Part 2 sensitive referral is attempted without patient consent. */
+export class Part2ConsentRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "Part2ConsentRequiredError";
+  }
+}
+
+
 
 
 export type ExternalPartyRole =
