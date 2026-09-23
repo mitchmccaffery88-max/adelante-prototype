@@ -55,13 +55,7 @@ export function TaskQueueCard({
   source: TaskQueueSource;
   onOpenPatient: (id: string) => void;
 }) {
-  const key =
-    source.kind === "case_manager"
-      ? source.cmId
-      : source.kind === "clinician_patients"
-        ? source.patientIds.join(",")
-        : "";
-  const tasks = useEhr(() => tasksFor(source), [source.kind, key]);
+  const tasks = useEhr(() => tasksFor(source));
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const open = tasks.filter((t) => t.status === "open");
   const snoozed = tasks.filter((t) => t.status === "snoozed");
