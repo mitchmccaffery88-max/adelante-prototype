@@ -9978,16 +9978,42 @@ export const AdelanteEHR = {
     }
     return { created, touched };
   },
-  setSdohStatus(patientId: string, itemId: string, status: SdohStatus, note?: string) {
+  setSdohStatus(
+    patientId: string,
+    itemId: string,
+    status: SdohStatus,
+    note?: string,
+    actor?: { staffName: string; role: StaffRole },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
     if (!item) return;
+    const prev = item.status;
+    const prevNote = item.note;
     item.status = status;
     if (note !== undefined) item.note = note;
     item.updatedAt = new Date().toISOString();
+    if (actor) {
+      item.lastUpdatedBy = actor.staffName;
+      item.lastUpdatedByRole = actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_need_status",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        itemId,
+        from: prev,
+        to: status,
+        ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
+      },
+    });
     if (p) _recomputeCarePlan(p.id, "sdoh_status");
     emit();
   },
+
   setSdohVisibility(patientId: string, itemId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
     const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
