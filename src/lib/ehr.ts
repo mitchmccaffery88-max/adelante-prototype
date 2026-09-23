@@ -464,6 +464,97 @@ export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
  */
 export const HRSN_SAFETY_DOMAIN_KEY = "safety";
 
+// ---------------------------------------------------------------------------
+// §5d-3 — the structured activity log carried by BOTH a social need and a
+// resource referral. Append-only and attributed, modelled on `CaseTaskNote`.
+// STAFF-ONLY: no patient-facing or advocate-facing selector reads `log`.
+// ---------------------------------------------------------------------------
+
+export type SdohLogEntryType =
+  | "contact_attempt"
+  | "org_update"
+  | "client_update"
+  | "barrier"
+  | "document"
+  | "next_step";
+
+export const SDOH_LOG_ENTRY_TYPE_LABEL: Record<SdohLogEntryType, string> = {
+  contact_attempt: "Contact attempt",
+  org_update: "Update from organization",
+  client_update: "Update from client",
+  barrier: "Barrier",
+  document: "Document",
+  next_step: "Next step",
+};
+
+export type SdohContactMethod = "phone" | "email" | "in_person" | "portal" | "fax";
+
+export const SDOH_CONTACT_METHOD_LABEL: Record<SdohContactMethod, string> = {
+  phone: "Phone",
+  email: "Email",
+  in_person: "In person",
+  portal: "Portal",
+  fax: "Fax",
+};
+
+/**
+ * DRAFT barrier list. Pending clinical review — labelled as such on screen.
+ * Not a ratified taxonomy; no category is added outside this list.
+ */
+export const SDOH_BARRIERS = [
+  "transportation",
+  "id_documents",
+  "eligibility",
+  "waitlist",
+  "cost",
+  "language",
+  "schedule_conflict",
+  "criminal_record_restriction",
+  "lost_contact",
+  "other",
+] as const;
+
+export type SdohBarrier = (typeof SDOH_BARRIERS)[number];
+
+export const SDOH_BARRIER_LABEL: Record<SdohBarrier, string> = {
+  transportation: "Transportation",
+  id_documents: "ID / documents",
+  eligibility: "Eligibility",
+  waitlist: "Waitlist",
+  cost: "Cost",
+  language: "Language",
+  schedule_conflict: "Schedule / work conflict",
+  criminal_record_restriction: "Criminal-record restriction",
+  lost_contact: "Lost contact",
+  other: "Other",
+};
+
+export const SDOH_BARRIERS_DRAFT_NOTE =
+  "Draft barrier list — pending clinical review. Not a ratified taxonomy.";
+
+export interface SdohLogEntry {
+  id: string;
+  text: string;
+  entryType: SdohLogEntryType;
+  authorName: string;
+  authorRole: StaffRole;
+  at: string;
+  /** Contact detail — who at the organization, how, and what came of it. */
+  contactName?: string;
+  contactMethod?: SdohContactMethod;
+  contactResult?: string;
+  barriers?: SdohBarrier[];
+  documentsNeeded?: string[];
+  documentsCollected?: string[];
+  nextStep?: string;
+  nextStepDueDate?: string;
+  /** Set when this entry produced a real `CaseTask`. */
+  taskId?: string;
+}
+
+/** What a caller may supply; identity and timestamp are stamped here. */
+export type SdohLogEntryInput = Omit<SdohLogEntry, "id" | "authorName" | "authorRole" | "at">;
+
 export interface SdohPlanItem {
 
   id: string;
