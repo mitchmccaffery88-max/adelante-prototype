@@ -1958,6 +1958,7 @@ export function TaskList({
     provider_switch: "Provider switch",
     note_automation: "Note automation",
     med_side_effect: "Side effect reported",
+    sdoh_follow_up: "Social-needs follow-up",
   };
   return (
     <div className="space-y-1.5">
