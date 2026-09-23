@@ -969,7 +969,9 @@ export function ReferralsTab({
   const [category, setCategory] = useState<ResourceReferral["category"]>("housing");
   const [provider, setProvider] = useState("");
   const [note, setNote] = useState("");
-  const statusOpts: ResourceReferral["status"][] = ["pending", "accepted", "completed"];
+  // §5d-2 — a resolve PROMPT, never an auto-close: a human decides whether the
+  // need is met.
+  const [resolvePrompt, setResolvePrompt] = useState<ResourceReferral | null>(null);
   return (
     <div className="space-y-3">
       {!readOnly && (
@@ -1066,14 +1068,33 @@ export function ReferralsTab({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="capitalize text-navy">
-                    {r.category} · {r.provider}
+                    {r.category} · {referralProviderLabel(r)}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
                     Created <ClientDate value={r.createdAt} />
+                    {(() => {
+                      const link = resourceLinkState(r);
+                      if (link.kind === "external") return " · not in the directory";
+                      if (link.kind === "inactive") return " · directory listing not published";
+                      if (link.kind === "missing") return " · no longer in the directory";
+                      return " · directory listing";
+                    })()}
                   </div>
+                  {r.sdohItemId && (
+                    <div className="text-[11px] text-muted-foreground">
+                      For need:{" "}
+                      {(p?.sdohPlan?.items ?? []).find((i) => i.id === r.sdohItemId)?.need ??
+                        "need no longer on file"}
+                    </div>
+                  )}
+                  {r.outcomeReason && (
+                    <div className="text-[11px] text-muted-foreground">
+                      Outcome reason: {r.outcomeReason}
+                    </div>
+                  )}
                 </div>
-                <Badge variant="outline" className="capitalize text-[10px]">
-                  {r.status}
+                <Badge variant="outline" className="text-[10px]">
+                  {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
                 </Badge>
               </div>
               {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
@@ -1087,29 +1108,11 @@ export function ReferralsTab({
                   : {})}
               />
               <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={r.status}
-                  onValueChange={(v) =>
-                    AdelanteEHR.setResourceReferralStatus(
-                      patientId,
-                      r.id,
-                      v as ResourceReferral["status"],
-                      undefined,
-                      { staffName, role },
-                    )
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOpts.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ReferralOutcomeControl
+                  patientId={patientId}
+                  referral={r}
+                  onConnected={() => r.sdohItemId && setResolvePrompt(r)}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1132,7 +1135,128 @@ export function ReferralsTab({
           );
         })}
       </ul>
+      <AlertDialog
+        open={Boolean(resolvePrompt)}
+        onOpenChange={(v) => !v && setResolvePrompt(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark the need resolved?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This referral is connected. That does not automatically mean the need is met — only
+              resolve it if the patient actually has what they needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Leave the need open</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resolvePrompt?.sdohItemId) {
+                  AdelanteEHR.setSdohStatus(
+                    patientId,
+                    resolvePrompt.sdohItemId,
+                    "completed",
+                    undefined,
+                    { staffName, role },
+                  );
+                }
+                setResolvePrompt(null);
+              }}
+            >
+              Resolve the need
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/**
+ * §5d-2 — outcome + reason. Any outcome other than pending needs a reason;
+ * the data layer refuses without one, so this collects it up front.
+ */
+function ReferralOutcomeControl({
+  patientId,
+  referral,
+  onConnected,
+}: {
+  patientId: string;
+  referral: ResourceReferral;
+  onConnected: () => void;
+}) {
+  const { staffName, role } = useActingStaff();
+  const [pendingOutcome, setPendingOutcome] = useState<ResourceReferralOutcome | null>(null);
+  const [reason, setReason] = useState("");
+
+  function apply(outcome: ResourceReferralOutcome, why?: string) {
+    try {
+      AdelanteEHR.setResourceReferralStatus(patientId, referral.id, outcome, undefined, {
+        staffName,
+        role,
+      }, why);
+      setPendingOutcome(null);
+      setReason("");
+      if (outcome === "connected") onConnected();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not record this outcome.");
+    }
+  }
+
+  return (
+    <>
+      <Select
+        value={referral.status}
+        onValueChange={(v) => {
+          const outcome = v as ResourceReferralOutcome;
+          if (outcome === "pending") return apply(outcome);
+          setPendingOutcome(outcome);
+          setReason(referral.outcomeReason ?? "");
+        }}
+      >
+        <SelectTrigger className="h-8 text-xs w-[170px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {RESOURCE_REFERRAL_OUTCOMES.map((o) => (
+            <SelectItem key={o} value={o}>
+              {RESOURCE_REFERRAL_OUTCOME_LABEL[o]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <AlertDialog
+        open={Boolean(pendingOutcome)}
+        onOpenChange={(v) => !v && setPendingOutcome(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingOutcome ? RESOURCE_REFERRAL_OUTCOME_LABEL[pendingOutcome] : ""} — why?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A short reason so the next person picking this up knows what happened.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                if (!reason.trim()) {
+                  e.preventDefault();
+                  toast.error("Give a short reason for this outcome.");
+                  return;
+                }
+                if (pendingOutcome) apply(pendingOutcome, reason.trim());
+              }}
+            >
+              Record outcome
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
