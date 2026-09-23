@@ -10149,15 +10149,36 @@ export const AdelanteEHR = {
     referralId: string,
     status: ResourceReferral["status"],
     note?: string,
+    actor?: { staffName: string; role: StaffRole },
   ) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
     if (!r) return;
+    const prev = r.status;
+    const prevNote = r.note;
     r.status = status;
     if (note !== undefined) r.note = note;
     r.updatedAt = new Date().toISOString();
+    if (actor) {
+      r.lastUpdatedBy = actor.staffName;
+      r.lastUpdatedByRole = actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_status",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        referralId,
+        from: prev,
+        to: status,
+        ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
+      },
+    });
     emit();
   },
+
   setResourceReferralVisibility(patientId: string, referralId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
