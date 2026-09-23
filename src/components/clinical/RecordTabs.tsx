@@ -154,7 +154,7 @@ export function OverviewTab({ patientId }: { patientId: string }) {
   if (!p) return null;
   const lastCheckIn = p.checkIns?.[0];
   const openTasks = (p.tasks ?? []).filter((t) => !t.completedAt).length;
-  const openReferrals = (p.resourceReferrals ?? []).filter((r) => r.status !== "completed").length;
+  const openReferrals = (p.resourceReferrals ?? []).filter((r) => isReferralOpen(r)).length;
   const openSdoh = (p.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length;
   return (
     <div className="space-y-3 text-sm">

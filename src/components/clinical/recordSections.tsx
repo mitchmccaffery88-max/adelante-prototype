@@ -125,7 +125,7 @@ export function useRecordSections(
       severeAllergy: s.severeAllergy,
       criticalAlert: s.criticalAlert,
       tasks: (fresh.tasks ?? []).filter((t) => !t.completedAt).length,
-      referrals: (fresh.resourceReferrals ?? []).filter((r) => r.status !== "completed").length,
+      referrals: (fresh.resourceReferrals ?? []).filter((r) => isReferralOpen(r)).length,
       sdoh: (fresh.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length,
       bookings: (fresh.bookings ?? []).length,
       currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),

@@ -62,9 +62,12 @@ export function isReferralSudSensitive(r: ResourceReferral): boolean {
 }
 
 
-/** Open = anything not yet completed — the same rule the Referrals tab uses. */
+/**
+ * Open = the referral still has live work. §5d-2 widened the outcomes, so this
+ * defers to the shared closed-outcome set rather than testing one value.
+ */
 export function isReferralOpen(r: ResourceReferral): boolean {
-  return r.status !== "completed";
+  return !RESOURCE_REFERRAL_CLOSED_OUTCOMES.includes(r.status);
 }
 
 export interface AutofillContext {

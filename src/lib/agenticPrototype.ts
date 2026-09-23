@@ -98,9 +98,7 @@ export function chartReviewFacts(
   const openGoals = goals.filter((g) => g.status !== "done").length;
   const doneGoals = goals.filter((g) => g.status === "done").length;
   const openTasks = (patient.tasks ?? []).filter((x) => !x.completedAt).length;
-  const openReferrals = (patient.resourceReferrals ?? []).filter(
-    (r) => r.status !== "completed",
-  ).length;
+  const openReferrals = (patient.resourceReferrals ?? []).filter(isReferralOpen).length;
   const openSdoh = (patient.sdohPlan?.items ?? []).filter(
     (i) => i.status !== "completed",
   ).length;
