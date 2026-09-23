@@ -144,7 +144,7 @@ export function ReferForNeedDialog({
 
           <div className="space-y-1">
             <Label>Organization</Label>
-            <Select value={choice} onValueChange={setChoice}>
+            <Select value={choice} onValueChange={setChoicePick}>
               <SelectTrigger>
                 <SelectValue />
               </SelectTrigger>
