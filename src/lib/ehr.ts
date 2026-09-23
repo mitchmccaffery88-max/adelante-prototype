@@ -472,6 +472,14 @@ export interface SdohPlanItem {
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /**
+   * §5d-2 — this need came from the interpersonal-safety domain. It defaults
+   * to staff-only and every patient- or advocate-facing surface must respect
+   * that: someone may be living with the person harming them. Staff can still
+   * choose to share it, after an explicit warning.
+   */
+  safetySensitive?: boolean;
+
   /** §5d-1 attribution — who created/last changed this need. */
   createdBy?: string;
   createdByRole?: StaffRole;
