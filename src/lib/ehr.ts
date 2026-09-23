@@ -14208,7 +14208,13 @@ export const AdelanteEHR = {
     if (!gate.ok)
       return { allowed: false, reason: gate.reason, canWrite: false, items: [], maskedCount: 0 };
     const all = _patient(gate.link.patientId)?.sdohPlan?.items ?? [];
-    const visible = all.filter((i) => !_advocateSudText(`${i.need} ${i.note ?? ""}`));
+    // §5d-2 — staff-only needs (interpersonal safety materializes this way)
+    // are withheld from advocates too. An advocate can be the person the
+    // patient is unsafe with, or close to them. Counted as masked, never shown.
+    const visible = all.filter(
+      (i) => i.visibleToPatient !== false && !_advocateSudText(`${i.need} ${i.note ?? ""}`),
+    );
+
     _advocateAudit(gate.link, "advocate_coordination_viewed", "care_coordination", {
       itemCount: visible.length,
       maskedCount: all.length - visible.length,
