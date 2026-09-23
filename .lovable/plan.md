@@ -1,25 +1,42 @@
-# Dashboard Standardization Phase 5a — honesty, naming, and cleanup
+# Dashboard Standardization — Phase 5b: shared staff top bar
 
-## Current-state findings and decisions
+## What I found in the current code
 
-- **One surface name:** `/case-manager` is the existing working route and remains unchanged, preserving every link and bookmark. Its navigation label, page title/metadata, eyebrow, and H1 become **Care Coordination**. This remains distinct from **Clinical Coordination** at `/admin-coordination`: Care Coordination is the assigned-client workspace; Clinical Coordination is the administrative routing/coverage center. The `care_coordination` record class remains an internal access category and is not renamed.
-- **Honest scope copy:** replace the false “Non-clinical view” subtitle with copy stating that the page lists assigned or program-wide clients and that opening a record shows chart sections allowed for the viewer’s role. Preserve the Phase 1g “assigned to me” default and `CASELOAD_SCOPE_NOTE` exactly.
-- **External Coordination placeholder:** remove the non-functional card and its demo timestamp. Its Part 2 warning is currently the only copy on this page, but the same guardrail remains on the patient record’s real Coordination section, where external contacts and coordination entries are actually recorded. The warning will therefore move with the real workflow rather than disappear from the product.
-- **Eligibility consolidation:** the program worklist can record eligibility checks, and the patient record’s Eligibility section already owns benefit flags, comparisons, plan spans, and notes. The case-management cards are duplicate surfaces, but two follow-up actions exist only there today. Move those follow-up actions and per-client check access into the patient record’s Eligibility section, then replace the two large dashboard cards with one compact status card linking directly to that patient section and to the program worklist. This preserves every capability while establishing the patient record as the single per-client editing surface.
+- `StaffBreadcrumbs` already renders once for every staff page, inside the staff shell in `AppShell` (`<StaffNavSidebar /> + <StaffBreadcrumbs /> + <Outlet />`). It is the only per-page strip that all staff routes share today.
+- The Clinician Workspace header holds only role/credential and the acting-clinician picker. "My work" exists only as one pill in the queue-count row on that single page.
+- The Patient chart tab uses a plain dropdown listing every patient (name + episode day). Care Coordination keeps its own separate caseload list.
+- Patient records carry the four searchable fields already: first/last name, `dob`, `programId` (e.g. ADL-2026-001), and `cin` (optional).
+- `myOpenItems(...).total` is the count the queue pill and `/my-work` both already use.
+- Assignment identity from Phase 1g lives in `caseloadScope.ts` (`caseManagerId` / `clinicianId` on the staff row vs. `caseManagerId` / `primaryClinicianId` on the patient).
+- Permission matrix: `demographics` read-or-write covers ECM Provider, CF Care Manager, SUD Counselor, Clinical Trainee, Medical Assistant, Peer Specialist, CHW, Therapist, PMHNP, Billing coordinator, Clinical coordinator, System admin. It excludes Credentialing coordinator and Billing coordinator (expanded).
 
-## Implementation
+## Plan
 
-1. Update English and Spanish `navCaseManager`, `cmTitle`, and `cmSubtitle`; update `/case-manager` metadata, including complete social metadata. Keep `/case-manager` as the canonical URL.
-2. Remove `CoordinationCard` and its unused imports/props from the Care Coordination page.
-3. Remove the hardcoded Monday–Friday availability card from Clinician Workspace. Keep `/clinician-availability` unchanged in the **My account** navigation and linked from **My profile**.
-4. Add `/refusal-queue` as a staff-only, single-purpose queue page using the existing `NurseRefusalWorklist` unchanged. Gate both navigation and page behavior with the existing `meds_erx` access level, including read-only behavior. Register it in the **Queues** group so the staff shell and breadcrumbs resolve from the shared registry.
-5. Remove the refusal worklist from the Clinician dashboard. Add a **Refusal documents** queue pill only when the acting role can access `meds_erx` and pending refusal forms exist; link it to `/refusal-queue`.
-6. Extend the patient record Eligibility section with the existing record-check dialog plus reactivation and enrollment-assistance actions. Respect its existing read-only mode. Replace `CoverageActionsCard` and `EligibilityFlagsCard` on Care Coordination with one compact summary containing direct links to the selected patient’s Eligibility section and `/eligibility-worklist`.
-7. Initialize the Clinician Workspace chart selection to empty. The Patient chart tab will show a clear choose-a-patient empty state until the picker or an appointment action selects someone; existing appointment “open chart” actions continue selecting the intended patient.
+### 1. Where the bar lives
+Extend the existing shared staff strip rather than adding a second bar: rename the block in `StaffBreadcrumbs.tsx` into a `StaffTopBar` that keeps the current breadcrumb trail on the left and adds the new controls on the right. It already renders once in the staff shell, so every staff route gets the identical bar and there is no new nav-shell path to leak.
 
-## Tests and verification
+### 2. Typed patient search
+New `src/components/StaffPatientSearch.tsx`, plus a pure matcher in `src/lib/patientSearch.ts` (unit-testable):
+- Matches typed text against full name, `dob` (accepting `1990-04-02` and `04/02/1990`), `programId`, and `cin`.
+- Results show name, DOB, and program ID; choosing one navigates to `/record/$patientId`.
+- Keyboard accessible (command-style list, arrow keys + Enter).
+- Rendered only when `canAccess(role, "demographics")` is not `none`.
 
-- Update navigation tests for the Care Coordination label and new refusal queue, including role gating and staff-route ownership.
-- Add focused tests for the refusal queue’s pending-only dashboard pill and blank initial chart state where practical.
-- Run TypeScript checks and the full test suite.
-- Verify live at 1280×1800 and 390×1400: consistent Care Coordination naming and honest subtitle; no placeholder coordination or static availability card; real availability still reachable from My account/profile; refusal queue appears in the staff shell and its dashboard pill appears only with pending work; eligibility checks, flags, plan details, and both follow-up actions remain reachable; Patient chart starts blank; no console errors.
+**Ranking decision:** results rank the viewer's own assigned patients first (same assignment identity as Phase 1g), then everyone else, because a clinician typing three letters almost always means their own client. Assigned rows get a plain "Your caseload" marker. Nothing is filtered out, and the field carries the honest note that search covers all patients and is not an access boundary.
+
+### 3. My Work entry
+A persistent button in the bar showing `myOpenItems(...).total` — the exact same helper the dashboard pill and `/my-work` already call, so the numbers cannot diverge. Shown only when the shared nav registry already grants `/my-work` to the acting role (`canSeeNavEntry`), so it matches the sidebar exactly.
+
+### 4. Chart tab lookup
+Replace the bare dropdown in the Clinician Workspace Patient chart tab with the same search component (in an inline variant that selects into the tab instead of navigating). The tab still opens blank until a patient is chosen.
+
+### 5. Role picture (to be confirmed on screen)
+- Search + My Work: ECM Provider, SUD Counselor, Therapist, PMHNP, Clinical Trainee, Peer Specialist, CHW, Medical Assistant, Clinical coordinator, CF Care Manager, System admin (My Work subject to its existing gate).
+- Search only, no My Work: Billing coordinator.
+- Neither: Credentialing coordinator, Billing coordinator (expanded) — breadcrumbs only.
+
+## Not in this phase
+No agentic button, no My Tasks changes, no Follow-ups move, no Resource Referral changes, no change to record-level access checks, and Care Coordination keeps its own caseload list.
+
+## Verification
+Typecheck, full test run (plus new tests for the matcher and role visibility), and a live browser pass at desktop and phone widths as a clinician, a care-coordination role, and a credentialing coordinator: consistent bar across several staff pages, each search field finding a patient and opening the record, no search for roles without demographics, My Work count equal to `/my-work`, chart tab using the same search, zero console errors.
