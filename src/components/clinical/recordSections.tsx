@@ -211,7 +211,7 @@ export function useRecordSections(
   // even though the discharge and justice blocks are less sensitive.
   add("sud_treatment", {
     id: "caloms",
-    label: "CalOMS data",
+    label: "CalOMS data -Data Collection and Reporting System for SUD",
     icon: ListChecks,
     group: "chart",
     render: (a) => <CalomsProfileCard patientId={pid} readOnly={a.level !== "write"} />,
