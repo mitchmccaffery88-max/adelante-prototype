@@ -111,6 +111,16 @@ export interface MyTaskItem {
   overdueDays: number;
 }
 
+/** §5d-3 — a social need or referral that has gone quiet on my caseload. */
+export interface MySdohAgingItem {
+  patientId: string;
+  patientName: string;
+  kind: "need" | "referral";
+  id: string;
+  label: string;
+  aging: SdohAging;
+}
+
 export interface MyOpenItems {
   /** Crisis-lane escalations this person has claimed. */
   clinicalCrises: MyCrisisItem[];
@@ -120,7 +130,12 @@ export interface MyOpenItems {
   unsignedNotes: MyNoteItem[];
   /** Case tasks assigned to or claimed by them, past due. */
   overdueTasks: MyTaskItem[];
-  /** Total across all four sources. */
+  /**
+   * §5d-3 — needs/referrals past a DRAFT aging threshold on patients this
+   * person is the assigned case manager for.
+   */
+  sdohAging: MySdohAgingItem[];
+  /** Total across all five sources. */
   total: number;
   /** Rows already past their draft crisis response target. */
   overdueCrises: number;
