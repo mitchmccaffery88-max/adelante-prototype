@@ -36,11 +36,23 @@ function ReferralLine({ line }: { line: NeedReferralLine }) {
   );
 }
 
-export function NeedThreadList({ patientId }: { patientId: string }) {
+export function NeedThreadList({
+  patientId,
+  renderMatch,
+}: {
+  patientId: string;
+  /**
+   * The directory suggestion for this need, rendered INSIDE its card. Passing
+   * it in keeps a single list: the page no longer repeats the same needs in a
+   * second block underneath.
+   */
+  renderMatch?: (need: NeedThreadItem) => React.ReactNode;
+}) {
   const { t } = useI18n();
   const threads = patientNeedThreads(patientId);
   const other = unlinkedPatientReferrals(patientId);
   const resolved = recentlyResolvedNeeds(patientId);
+
 
   return (
     <div className="space-y-4">
