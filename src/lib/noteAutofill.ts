@@ -18,7 +18,9 @@ import {
   type DischargeRecord,
 } from "@/lib/caloms";
 import {
+  isPart2SensitiveCategory,
   isProblemClinicallyActive,
+
   noteStatus,
   type Allergy,
   type Booking,
