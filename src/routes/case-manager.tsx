@@ -744,14 +744,9 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
   );
 }
 
-function ResourceReferralCard({
-  patientId,
-  consentSud,
-}: {
-  patientId: string;
-  consentSud: boolean;
-}) {
+function ResourceReferralCard({ patientId }: { patientId: string }) {
   const [category, setCategory] = useState<ResourceReferralCategory>("housing");
+  const { staffName, role } = useActingStaff();
 
   const [provider, setProvider] = useState("");
   return (
@@ -778,30 +773,47 @@ function ResourceReferralCard({
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
         />
+        {isPart2SensitiveCategory(category) && (
+          <div className="text-xs text-muted-foreground flex items-start gap-1.5">
+            <Lock className="h-3 w-3 mt-0.5 text-teal" />
+            This category can disclose SUD treatment status. It needs the client&apos;s 42 CFR Part
+            2 consent on file.
+          </div>
+        )}
         <Button
           className="w-full"
           variant="outline"
           onClick={() => {
             if (!provider) return toast.error("Add a provider name");
-            AdelanteEHR.addResourceReferral(patientId, {
-              category,
-              provider,
-              sudDisclosureConsent: consentSud,
-            });
-            setProvider("");
-            toast.success("Referral created");
+            try {
+              // The data layer stamps the SUD-disclosure flag from the client's
+              // live consent and refuses Part 2 categories without it.
+              AdelanteEHR.addResourceReferral(
+                patientId,
+                { category, provider },
+                { staffName, role },
+              );
+              setProvider("");
+              toast.success("Referral created");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Could not create this referral.", {
+                action: {
+                  label: "Open consents",
+                  onClick: () => {
+                    window.location.assign(`/record/${patientId}?section=consents`);
+                  },
+                },
+              });
+            }
           }}
         >
           Create referral
         </Button>
-        <div className="text-xs text-muted-foreground flex items-start gap-1.5 pt-1">
-          <Lock className="h-3 w-3 mt-0.5 text-teal" />A searchable resource library lands in Build
-          2. For now, log manually.
-        </div>
       </div>
     </Card>
   );
 }
+
 
 function EligibilitySummaryCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
