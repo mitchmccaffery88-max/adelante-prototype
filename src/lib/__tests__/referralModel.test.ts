@@ -29,7 +29,19 @@ beforeEach(() => __resetResources());
 describe("referral categories match the real directory", () => {
   it("every one of the 14 real category ids is a valid referral category", () => {
     const id = patient();
+    // §5d-1 — the two Part 2 sensitive categories require real SUD consent.
+    AdelanteEHR.createConsentRecord({
+      patientId: id,
+      formType: "AB133",
+      source: "test",
+      signedByName: "Referral Model",
+      attested: true,
+      effectiveDate: "2020-01-01",
+      sections: [{ category: "sud_treatment", authorized: true }],
+      capturedBy: { staffName: MANAGER.name, role: MANAGER.role },
+    });
     expect(RESOURCE_CATEGORIES).toHaveLength(14);
+
     for (const c of RESOURCE_CATEGORIES) {
       AdelanteEHR.addResourceReferral(id, {
         category: c.id as ResourceReferralCategory,

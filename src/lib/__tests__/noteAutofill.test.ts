@@ -222,11 +222,14 @@ describe("signed autofill snapshots are frozen", () => {
       { id: "r2", category: "food", provider: "Done Co", status: "completed" },
       {
         id: "r3",
-        category: "financial",
+        // §5d-1 — sensitivity is a property of the CATEGORY, not of the
+        // consent flag (which records that consent was granted).
+        category: "recovery_meetings",
         provider: "SUD outpatient clinic",
         status: "accepted",
         sudDisclosureConsent: true,
       },
+
     ] as never[];
     const all = resolveAutofill(section({ source: "referrals_open" }), ctx({ referrals }));
     expect(all.lines).toHaveLength(2);

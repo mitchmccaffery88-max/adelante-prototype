@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   AdelanteEHR,
+  isPart2SensitiveCategory,
   useEhr,
   type ResourceReferralCategory,
 } from "@/lib/ehr";
+
 
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
@@ -582,7 +584,7 @@ function CaseManagerPage() {
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
               <EligibilitySummaryCard patientId={active.id} />
-              <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
+              <ResourceReferralCard patientId={active.id} />
               <RecentReferralsCard patientId={active.id} />
             </>
           ) : (
@@ -744,14 +746,9 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
   );
 }
 
-function ResourceReferralCard({
-  patientId,
-  consentSud,
-}: {
-  patientId: string;
-  consentSud: boolean;
-}) {
+function ResourceReferralCard({ patientId }: { patientId: string }) {
   const [category, setCategory] = useState<ResourceReferralCategory>("housing");
+  const { staffName, role } = useActingStaff();
 
   const [provider, setProvider] = useState("");
   return (
@@ -778,30 +775,47 @@ function ResourceReferralCard({
           value={provider}
           onChange={(e) => setProvider(e.target.value)}
         />
+        {isPart2SensitiveCategory(category) && (
+          <div className="text-xs text-muted-foreground flex items-start gap-1.5">
+            <Lock className="h-3 w-3 mt-0.5 text-teal" />
+            This category can disclose SUD treatment status. It needs the client&apos;s 42 CFR Part
+            2 consent on file.
+          </div>
+        )}
         <Button
           className="w-full"
           variant="outline"
           onClick={() => {
             if (!provider) return toast.error("Add a provider name");
-            AdelanteEHR.addResourceReferral(patientId, {
-              category,
-              provider,
-              sudDisclosureConsent: consentSud,
-            });
-            setProvider("");
-            toast.success("Referral created");
+            try {
+              // The data layer stamps the SUD-disclosure flag from the client's
+              // live consent and refuses Part 2 categories without it.
+              AdelanteEHR.addResourceReferral(
+                patientId,
+                { category, provider },
+                { staffName, role },
+              );
+              setProvider("");
+              toast.success("Referral created");
+            } catch (e) {
+              toast.error(e instanceof Error ? e.message : "Could not create this referral.", {
+                action: {
+                  label: "Open consents",
+                  onClick: () => {
+                    window.location.assign(`/record/${patientId}?section=consents`);
+                  },
+                },
+              });
+            }
           }}
         >
           Create referral
         </Button>
-        <div className="text-xs text-muted-foreground flex items-start gap-1.5 pt-1">
-          <Lock className="h-3 w-3 mt-0.5 text-teal" />A searchable resource library lands in Build
-          2. For now, log manually.
-        </div>
       </div>
     </Card>
   );
 }
+
 
 function EligibilitySummaryCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
@@ -873,8 +887,12 @@ function RecentCheckInsCard({ patientId }: { patientId: string }) {
 
 function RecentReferralsCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { role } = useActingStaff();
   const items = (p?.resourceReferrals ?? []).slice(0, 5);
   if (items.length === 0) return null;
+  // §5d-1 — for a Part 2 gated viewer the category itself discloses SUD
+  // involvement, so these rows carry no category, provider or styling.
+  const sudGated = p ? canAccess(role, "sud_treatment", p).locked : true;
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">
@@ -886,14 +904,23 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
             key={r.id}
             className="flex items-center justify-between border-b last:border-0 pb-2 last:pb-0"
           >
-            <div>
-              <div className="text-navy capitalize">{r.category}</div>
-              <div className="text-xs text-muted-foreground">{r.provider}</div>
-            </div>
+            {sudGated && isPart2SensitiveCategory(r.category) ? (
+              <div className="text-muted-foreground flex items-start gap-1.5 text-xs">
+                <Lock className="h-3 w-3 mt-0.5" />
+                Restricted referral — 42 CFR Part 2 consent required.
+              </div>
+            ) : (
+              <div>
+                <div className="text-navy capitalize">{r.category}</div>
+                <div className="text-xs text-muted-foreground">{r.provider}</div>
+              </div>
+            )}
             <div className="text-right">
-              <Badge variant="outline" className="capitalize text-[10px]">
-                {r.status}
-              </Badge>
+              {!(sudGated && isPart2SensitiveCategory(r.category)) && (
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {r.status}
+                </Badge>
+              )}
               <div className="text-[10px] text-muted-foreground mt-1">
                 <ClientDate value={r.createdAt} />
               </div>
@@ -904,6 +931,7 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
     </Card>
   );
 }
+
 
 function TaskQueueCard({
   cmId,

@@ -469,6 +469,12 @@ export interface SdohPlanItem {
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /** §5d-1 attribution — who created/last changed this need. */
+  createdBy?: string;
+  createdByRole?: StaffRole;
+  lastUpdatedBy?: string;
+  lastUpdatedByRole?: StaffRole;
+
   /**
    * §Crisis Redesign Phase 2 — SDOH-urgent lane. Set when staff deliberately
    * escalate this need into the crisis queue as `category: "sdoh"`. Urgency is
@@ -1774,9 +1780,42 @@ export interface ResourceReferral {
   note?: string;
   followUpDate?: string;
   visibleToPatient?: boolean;
-  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally
+  // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally.
+  // §5d-1: stamped by the data layer from the patient's LIVE consent at creation,
+  // never from the acting viewer's own access level.
   sudDisclosureConsent?: boolean;
+  /** §5d-1 attribution — who created/last changed this referral. */
+  createdBy?: string;
+  createdByRole?: StaffRole;
+  lastUpdatedBy?: string;
+  lastUpdatedByRole?: StaffRole;
 }
+
+/**
+ * §5d-1 — referral categories whose very existence can disclose SUD treatment
+ * status. Same two the patient-facing matcher already refuses to name
+ * (`sdohResourceMatch.ts`), which imports THIS constant so the two sides can
+ * never drift. Other categories (housing, legal, healthcare…) are not
+ * SUD-identifying by category.
+ */
+export const PART2_SENSITIVE_REFERRAL_CATEGORIES: readonly ResourceReferralCategory[] = [
+  "recovery_meetings",
+  "support_groups",
+];
+
+export function isPart2SensitiveCategory(category: string): boolean {
+  return (PART2_SENSITIVE_REFERRAL_CATEGORIES as readonly string[]).includes(category);
+}
+
+/** Thrown when a Part 2 sensitive referral is attempted without patient consent. */
+export class Part2ConsentRequiredError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "Part2ConsentRequiredError";
+  }
+}
+
+
 
 
 export type ExternalPartyRole =
@@ -8463,24 +8502,60 @@ export const AdelanteEHR = {
     _recomputeCarePlan(p.id, "check_in");
     emit();
   },
-  addResourceReferral(patientId: string, r: Omit<ResourceReferral, "id" | "createdAt" | "status">) {
+  /**
+   * §5d-1 — the ONE create path for resource referrals, for every caller.
+   *
+   * Two guarantees live here, in the data layer, so no UI can bypass them:
+   *  1. A Part 2 sensitive category (recovery/support groups) is refused
+   *     unless the patient's LIVE structured consent authorizes SUD
+   *     disclosure. It throws — it never creates silently.
+   *  2. `sudDisclosureConsent` is stamped from that same live consent, never
+   *     from whatever the caller believed (the old bug: the record tab passed
+   *     the VIEWER's access gate).
+   */
+  addResourceReferral(
+    patientId: string,
+    r: Omit<ResourceReferral, "id" | "createdAt" | "status" | "sudDisclosureConsent">,
+    actor?: { staffName: string; role: StaffRole },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.resourceReferrals = [
-      {
-        ...r,
-        // Provenance defaults to the real common case: our care team referred
-        // them. Pre-release ingestion passes "pre_release" explicitly.
-        source: r.source ?? "internal",
-        id: uid(),
-        createdAt: new Date().toISOString(),
-        status: "pending",
+    const consentActive = AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    if (isPart2SensitiveCategory(r.category) && !consentActive) {
+      throw new Part2ConsentRequiredError(
+        "42 CFR Part 2 — a recovery or support-group referral discloses SUD treatment status. Capture the patient's Part 2 consent before referring.",
+      );
+    }
+    const now = new Date().toISOString();
+    const row: ResourceReferral = {
+      ...r,
+      // Provenance defaults to the real common case: our care team referred
+      // them. Pre-release ingestion passes "pre_release" explicitly.
+      source: r.source ?? "internal",
+      id: uid(),
+      createdAt: now,
+      status: "pending",
+      sudDisclosureConsent: consentActive,
+      ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
+    };
+    p.resourceReferrals = [row, ...(p.resourceReferrals ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_created",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        referralId: row.id,
+        category: row.category,
+        part2Sensitive: isPart2SensitiveCategory(row.category),
+        sudDisclosureConsent: consentActive,
       },
-      ...(p.resourceReferrals ?? []),
-    ];
-
+    });
     emit();
+    return row;
   },
+
   updateCarePlanSummary(patientId: string, summary: string, by?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
@@ -9791,6 +9866,7 @@ export const AdelanteEHR = {
        * its own real source. */
       source?: SdohItemSource;
     },
+    actor?: { staffName: string; role: StaffRole },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.need.trim()) return;
@@ -9803,11 +9879,21 @@ export const AdelanteEHR = {
       visibleToPatient: input.visibleToPatient ?? true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_need_created",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: { itemId: item.id, source: item.source },
+    });
     _recomputeCarePlan(p.id, "sdoh_added");
     emit();
   },
+
   /**
    * §Intake/SDOH Redesign Phase 3 — the one write intake uses for social needs.
    *
@@ -9892,16 +9978,42 @@ export const AdelanteEHR = {
     }
     return { created, touched };
   },
-  setSdohStatus(patientId: string, itemId: string, status: SdohStatus, note?: string) {
+  setSdohStatus(
+    patientId: string,
+    itemId: string,
+    status: SdohStatus,
+    note?: string,
+    actor?: { staffName: string; role: StaffRole },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
     if (!item) return;
+    const prev = item.status;
+    const prevNote = item.note;
     item.status = status;
     if (note !== undefined) item.note = note;
     item.updatedAt = new Date().toISOString();
+    if (actor) {
+      item.lastUpdatedBy = actor.staffName;
+      item.lastUpdatedByRole = actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_need_status",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        itemId,
+        from: prev,
+        to: status,
+        ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
+      },
+    });
     if (p) _recomputeCarePlan(p.id, "sdoh_status");
     emit();
   },
+
   setSdohVisibility(patientId: string, itemId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
     const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
@@ -10037,15 +10149,36 @@ export const AdelanteEHR = {
     referralId: string,
     status: ResourceReferral["status"],
     note?: string,
+    actor?: { staffName: string; role: StaffRole },
   ) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
     if (!r) return;
+    const prev = r.status;
+    const prevNote = r.note;
     r.status = status;
     if (note !== undefined) r.note = note;
     r.updatedAt = new Date().toISOString();
+    if (actor) {
+      r.lastUpdatedBy = actor.staffName;
+      r.lastUpdatedByRole = actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_status",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: {
+        referralId,
+        from: prev,
+        to: status,
+        ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
+      },
+    });
     emit();
   },
+
   setResourceReferralVisibility(patientId: string, referralId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
