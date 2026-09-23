@@ -13,6 +13,7 @@ import { useActingStaff } from "@/lib/roles";
 import { useEhr } from "@/lib/ehr";
 import { myOpenItems } from "@/lib/myWork";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
+import { AskAdelPanel } from "@/components/AskAdelPanel";
 
 /**
  * §Dashboard Standardization Phase 5b — the shared staff top bar.
@@ -93,6 +94,9 @@ export function StaffBreadcrumbs() {
       {/* Standardized right-hand controls — role-driven, not page-driven. */}
       <div className="flex w-full items-center gap-2 lg:w-auto lg:justify-end">
         <StaffPatientSearch />
+        {/* §Phase 5e — prototype assistant entry point; hides itself for a
+            role with no question and no shortcut. */}
+        <AskAdelPanel />
         {canSeeMyWork && (
           <Link
             to="/my-work"

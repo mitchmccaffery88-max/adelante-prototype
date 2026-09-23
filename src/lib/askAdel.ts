@@ -321,7 +321,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
       let restricted = 0;
       for (const p of myCaseload(ctx)) {
         for (const r of (p.resourceReferrals ?? []) as ResourceReferral[]) {
-          if (r.outcome !== "waitlisted") continue;
+          if (r.status !== "waitlisted") continue;
           const sensitive = isPart2SensitiveCategory(r.category);
           if (sensitive && gated) {
             restricted += 1;
