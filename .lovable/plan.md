@@ -1,42 +1,93 @@
-# Dashboard Standardization — Phase 5b: shared staff top bar
+# Phase 5c — My tasks upgrade, per-client follow-ups on the record, demo CINs
 
-## What I found in the current code
+## Part 0 — Demo CINs
 
-- `StaffBreadcrumbs` already renders once for every staff page, inside the staff shell in `AppShell` (`<StaffNavSidebar /> + <StaffBreadcrumbs /> + <Outlet />`). It is the only per-page strip that all staff routes share today.
-- The Clinician Workspace header holds only role/credential and the acting-clinician picker. "My work" exists only as one pill in the queue-count row on that single page.
-- The Patient chart tab uses a plain dropdown listing every patient (name + episode day). Care Coordination keeps its own separate caseload list.
-- Patient records carry the four searchable fields already: first/last name, `dob`, `programId` (e.g. ADL-2026-001), and `cin` (optional).
-- `myOpenItems(...).total` is the count the queue pill and `/my-work` both already use.
-- Assignment identity from Phase 1g lives in `caseloadScope.ts` (`caseManagerId` / `clinicianId` on the staff row vs. `caseManagerId` / `primaryClinicianId` on the patient).
-- Permission matrix: `demographics` read-or-write covers ECM Provider, CF Care Manager, SUD Counselor, Clinical Trainee, Medical Assistant, Peer Specialist, CHW, Therapist, PMHNP, Billing coordinator, Clinical coordinator, System admin. It excludes Credentialing coordinator and Billing coordinator (expanded).
+Findings:
+- `Patient.cin` is the one canonical CIN. The only validation in the system is in
+  `recordEligibilityCheck`: trimmed, upper-cased, must be exactly 9 characters.
+  Real Medi-Cal CINs are 8 digits + 1 letter, and every existing example in the
+  codebase follows that shape (`99887766A`, `98765432A`).
+- No seeded patient and no seeded referral carries a CIN today — the only CIN
+  values in the repo are in tests. So there is nothing to collide with, but I
+  will still pick a distinct block.
 
-## Plan
+Build: add fictional CINs in the `9xxxxxxxA`-style block to four seeded
+patients (Daniel M., Rosa T., Marcus L., Alicia Serrano), each 9 characters,
+each distinct from every test/fixture value already in the repo. Then verify
+live that typing a CIN into the shared top-bar search finds the patient.
 
-### 1. Where the bar lives
-Extend the existing shared staff strip rather than adding a second bar: rename the block in `StaffBreadcrumbs.tsx` into a `StaffTopBar` that keeps the current breadcrumb trail on the left and adds the new controls on the right. It already renders once in the staff shell, so every staff route gets the identical bar and there is no new nav-shell path to leak.
+## Part 1 — My tasks (Care Coordination)
 
-### 2. Typed patient search
-New `src/components/StaffPatientSearch.tsx`, plus a pure matcher in `src/lib/patientSearch.ts` (unit-testable):
-- Matches typed text against full name, `dob` (accepting `1990-04-02` and `04/02/1990`), `programId`, and `cin`.
-- Results show name, DOB, and program ID; choosing one navigates to `/record/$patientId`.
-- Keyboard accessible (command-style list, arrow keys + Enter).
-- Rendered only when `canAccess(role, "demographics")` is not `none`.
+Current: `TaskQueueCard` offers only Snooze 3d / Done / Reopen / Show all.
+The record already carries priority, worklistStatus, claim, type, and
+automation provenance, and `/worklist` already exposes claim/status/filter.
 
-**Ranking decision:** results rank the viewer's own assigned patients first (same assignment identity as Phase 1g), then everyone else, because a clinician typing three letters almost always means their own client. Assigned rows get a plain "Your caseload" marker. Nothing is filtered out, and the field carries the honest note that search covers all patients and is not an access boundary.
+Missing capability in the data layer: there is no way to edit a task's due
+date, priority, or add a note. Everything else already exists.
 
-### 3. My Work entry
-A persistent button in the bar showing `myOpenItems(...).total` — the exact same helper the dashboard pill and `/my-work` already call, so the numbers cannot diverge. Shown only when the shared nav registry already grants `/my-work` to the acting role (`canSeeNavEntry`), so it matches the sidebar exactly.
+Build:
+- `AdelanteEHR.updateCaseTaskFields(id, patch, staffName, role)` in the EHR —
+  patch limited to `title`, `detail`, `dueDate`, `priority`; writes an audit
+  entry (`case_task_updated`) with the changed fields, actor and role, matching
+  the attribution shape `setWorklistStatus` already uses.
+- `AdelanteEHR.addCaseTaskNote(id, text, staffName, role)` — appends to a new
+  optional `notes` array on `CaseTask` (`{ text, authorName, authorRole, at }`),
+  audited the same way. Optional field, so existing rows read fine.
+- `TaskQueueCard` rows become expandable. Collapsed row keeps today's summary.
+  Expanded shows: full detail, type, priority, worklist status, claim state,
+  automation provenance, and the note history.
+- Expanded actions: change status (reusing `setWorklistStatus`), edit due date
+  and priority, add a note, and "Complete and schedule follow-up" which
+  completes the task and opens a small inline form creating the next task via
+  the existing `createCaseTask` path (same patient, same assignee, prefilled
+  title "Follow-up: …").
+- Every change shows who/when inline (last updated by, note authorship).
 
-### 4. Chart tab lookup
-Replace the bare dropdown in the Clinician Workspace Patient chart tab with the same search component (in an inline variant that selects into the tab instead of navigating). The tab still opens blank until a patient is chosen.
+Reassignment: recommend it stays out of this card and off `/worklist` too.
+`assignedTo` is a caseManagerId and reassigning is a caseload decision already
+handled by the real assignment path (`reassignCaseManager` / the profile
+assignment UI), which writes provider-switch and audit records. Adding a
+second, unattributed reassign control in a task card would fork that. The card
+will instead show who the task is assigned to, and the claim state.
 
-### 5. Role picture (to be confirmed on screen)
-- Search + My Work: ECM Provider, SUD Counselor, Therapist, PMHNP, Clinical Trainee, Peer Specialist, CHW, Medical Assistant, Clinical coordinator, CF Care Manager, System admin (My Work subject to its existing gate).
-- Search only, no My Work: Billing coordinator.
-- Neither: Credentialing coordinator, Billing coordinator (expanded) — breadcrumbs only.
+## Part 2 — Per-client follow-ups on the record
 
-## Not in this phase
-No agentic button, no My Tasks changes, no Follow-ups move, no Resource Referral changes, no change to record-level access checks, and Care Coordination keeps its own caseload list.
+Finding: the patient record ALREADY has a Tasks section
+(`recordSections.tsx` → `case` group, id `tasks`, `TasksTab`), reading the same
+`caseTasksForPatient` rows as `PatientTasksCard`, with add + complete. So this
+is a consolidation, not a move.
+
+Build:
+- Remove `PatientTasksCard` from the Care Coordination per-client column.
+- In its place, a compact link card: open-follow-up count plus a link to
+  `/record/$patientId?section=tasks`, so caseload visibility is kept.
+- Bring the richer row UI from Part 1 into `TasksTab` (shared component, used
+  by both card and record section) so due date/priority/status/notes editing
+  exists on the record too.
+
+### Open items rollup
+
+Sources that genuinely exist per patient today:
+- Unsigned notes / undocumented encounters — `listUnsignedWork()` (filterable
+  by patient), links to `/notes-queue` and the record's Notes section.
+- Unresolved SDOH needs — `patient.sdohPlan.items` with status not completed,
+  links to the record's SDOH section.
+- Pending refill requests — `listRefillRequests({ patientId, status: 'pending' })`,
+  links to the record's Orders section.
+
+Sources that do NOT exist: there is no reschedule-request record and no
+group-access-request record anywhere in the model. I will not invent them.
+
+Build a read-only "Open items for this client" block at the top of the record
+Tasks section, listing only the three real sources, each row linking to where
+the work is actually done. No new trackers, no new state.
+
+## Non-goals
+No Resource Referral changes, no agentic entry, no new task types, no change to
+`/worklist` behaviour beyond reusing its helpers.
 
 ## Verification
-Typecheck, full test run (plus new tests for the matcher and role visibility), and a live browser pass at desktop and phone widths as a clinician, a care-coordination role, and a credentialing coordinator: consistent bar across several staff pages, each search field finding a patient and opening the record, no search for roles without demographics, My Work count equal to `/my-work`, chart tab using the same search, zero console errors.
+Typecheck, full test run, plus new unit tests for the task update/note APIs.
+Live browser at 1280 and 390 wide: CIN search finds a patient; My tasks rows
+expand and each edit is attributed; follow-ups add/complete from the record;
+rollup links land in the right sections. Zero console errors.
