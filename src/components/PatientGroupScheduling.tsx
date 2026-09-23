@@ -89,22 +89,50 @@ export function PatientGroupScheduling({ patientId }: { patientId: string }) {
                     <p className="text-xs text-muted-foreground">No meetings scheduled yet.</p>
                   ) : (
                     <ul className="text-xs text-muted-foreground space-y-0.5">
-                      {starts.map((s) => (
-                        <li key={s} className="flex items-center gap-1.5">
-                          <CalendarClock className="h-3.5 w-3.5 text-teal" />
-                          <ClientDate
-                            value={s}
-                            options={{
-                              weekday: "short",
-                              month: "short",
-                              day: "numeric",
-                              hour: "numeric",
-                              minute: "2-digit",
-                            }}
-                          />
-                          <span>· {group.durationMin} min</span>
-                        </li>
-                      ))}
+                      {starts.map((s) => {
+                        // §Phase 6b — join link per meeting, only when virtual.
+                        const virtual = isVirtualGroupModality(
+                          AdelanteEHR.groupOccurrenceModality(group.id, s),
+                        );
+                        const room = virtual
+                          ? AdelanteEHR.groupJoinLink(group.id, s)
+                          : undefined;
+                        return (
+                          <li key={s} className="space-y-0.5">
+                            <span className="flex items-center gap-1.5">
+                              <CalendarClock className="h-3.5 w-3.5 text-teal" />
+                              <ClientDate
+                                value={s}
+                                options={{
+                                  weekday: "short",
+                                  month: "short",
+                                  day: "numeric",
+                                  hour: "numeric",
+                                  minute: "2-digit",
+                                }}
+                              />
+                              <span>· {group.durationMin} min</span>
+                            </span>
+                            {virtual && (
+                              <span className="block break-all pl-5">
+                                {room ? (
+                                  <a
+                                    className="text-teal underline"
+                                    href={room.joinUrl}
+                                    target="_blank"
+                                    rel="noreferrer"
+                                  >
+                                    Join online
+                                  </a>
+                                ) : (
+                                  "Meets online — your care team will share the join link."
+                                )}
+                              </span>
+                            )}
+                          </li>
+                        );
+                      })}
+
                     </ul>
                   )}
                 </li>
