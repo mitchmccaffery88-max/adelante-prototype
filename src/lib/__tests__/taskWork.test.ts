@@ -76,14 +76,13 @@ describe("task notes", () => {
 });
 
 describe("patient open-items rollup", () => {
-  it("includes a pending refill request and drops it once reviewed", () => {
+  it("includes a pending refill request in the rollup", () => {
     const patient = AdelanteEHR.listPatients()[0];
-    const med = patient.medications?.[0];
+    const med = AdelanteEHR.listMedications(patient.id)[0];
     if (!med) return; // seeded data without meds — nothing to assert
-    const req = AdelanteEHR.requestRefill?.({
+    const req = AdelanteEHR.requestRefill({
       patientId: patient.id,
       medicationId: med.id,
-      medicationName: med.name,
       requestedBy: "patient",
     });
     if (!req) return;
