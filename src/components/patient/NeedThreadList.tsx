@@ -12,14 +12,14 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
 import { SDOH_SOURCE_LABEL, type SdohPlanItem } from "@/lib/ehr";
-
-type NeedThreadItem = SdohPlanItem;
 import {
   patientNeedThreads,
   recentlyResolvedNeeds,
   unlinkedPatientReferrals,
   type NeedReferralLine,
 } from "@/lib/patientNeedThread";
+
+type NeedThreadItem = SdohPlanItem;
 
 function ReferralLine({ line }: { line: NeedReferralLine }) {
   const { t } = useI18n();
