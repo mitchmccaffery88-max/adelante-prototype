@@ -385,7 +385,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
         backing: "real",
         lines: tasks.length
           ? [
-              `${plural(tasks.length, "task", "tasks")} assigned to you are past due.`,
+              `${plural(tasks.length, "task", "tasks")} assigned to you ${tasks.length === 1 ? "is" : "are"} past due.`,
               ...tasks.slice(0, 5).map((t) => `${t.patientName} — ${t.task.title}, ${t.overdueDays} days overdue`),
             ]
           : ["Nothing assigned to you is past due."],
@@ -409,7 +409,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
         lines: [
           `${f.submitted} referrals submitted in the last 90 days.`,
           `${f.contacted} reached, ${f.enrolled} enrolled, ${f.firstApptScheduled} with a first appointment booked, ${f.firstApptAttended} who actually attended one.`,
-          f.medianDaysToFirstAttended !== undefined
+          f.medianDaysToFirstAttended !== undefined && f.medianDaysToFirstAttended !== null
             ? `Median ${f.medianDaysToFirstAttended} days from referral to an attended first visit.`
             : "No attended first visit in this window, so there is no median to report.",
         ],
