@@ -255,7 +255,6 @@ const dict = {
     cmCreateReferral: "Create referral",
     cmReferralCreated: "Referral created",
     cmAddProvider: "Add a provider name",
-    cmReferralLibraryNote: "A searchable resource library lands in Build 2. For now, log manually.",
     cmRecentReferrals: "Recent referrals",
     cmNoReferrals: "No resource referrals logged yet.",
     cmCoordHelpPrefix: "Contact log with probation, parole, housing partners for",
@@ -613,8 +612,6 @@ const dict = {
     cmCreateReferral: "Crear referido",
     cmReferralCreated: "Referido creado",
     cmAddProvider: "Agrega el nombre del proveedor",
-    cmReferralLibraryNote:
-      "Una biblioteca de recursos buscable llega en la Versión 2. Por ahora, regístralo manualmente.",
     cmRecentReferrals: "Referidos recientes",
     cmNoReferrals: "Aún no se han registrado referidos.",
     cmCoordHelpPrefix:
