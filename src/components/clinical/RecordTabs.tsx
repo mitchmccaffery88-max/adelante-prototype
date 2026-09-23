@@ -95,6 +95,13 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
 import { resourceLinkState, referralProviderLabel } from "@/lib/referralLinks";
+import { SdohActivityLog } from "@/components/clinical/SdohActivityLog";
+import {
+  SDOH_AGING_DRAFT,
+  referralAgingState,
+  sdohAgingLabel,
+  sdohNeedAging,
+} from "@/lib/sdohAging";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import {
   AlertDialog,
