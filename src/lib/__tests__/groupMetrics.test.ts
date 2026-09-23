@@ -63,7 +63,9 @@ describe("group encounter ids", () => {
 describe("group reporting", () => {
   it("counts rosters, seats, peers and attendance from live records", () => {
     const g = makeGroup();
-    const three = AdelanteEHR.listPatients().slice(0, 3);
+    // Skip p1 — the Phase 6b demo seed already enrolls that patient in a
+    // group of its own, which would own their "next occurrence".
+    const three = AdelanteEHR.listPatients().slice(1, 4);
     for (const p of three)
       enrollEligible(g.id, p.id);
 
