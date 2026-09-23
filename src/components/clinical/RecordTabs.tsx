@@ -732,7 +732,13 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               <div className="flex flex-wrap items-center gap-2">
                 <Select
                   value={i.status}
-                  onValueChange={(v) => AdelanteEHR.setSdohStatus(patientId, i.id, v as SdohStatus)}
+                  onValueChange={(v) =>
+                    AdelanteEHR.setSdohStatus(patientId, i.id, v as SdohStatus, {
+                      staffName,
+                      role,
+                    })
+                  }
+
                 >
                   <SelectTrigger className="h-8 text-xs w-[160px]">
                     <SelectValue />
