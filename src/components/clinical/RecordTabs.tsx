@@ -625,7 +625,9 @@ function FlagSdohUrgentControl({
 
 export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { staffName, role } = useActingStaff();
   const items = p?.sdohPlan?.items ?? [];
+
   // The flag timestamp is history; the crisis-queue state is the escalation's
   // own status. Read the live row so a resolved need can be re-escalated.
   const urgentOpen = (escalationId: string | undefined) =>
