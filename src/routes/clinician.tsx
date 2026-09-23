@@ -769,30 +769,20 @@ function ChartHeader({
 }
 
 
-function PatientPicker({
-  patients,
-  value,
-  onChange,
-}: {
-  patients: { id: string; firstName: string; lastName: string; episodeDay: number }[];
-  value: string;
-  onChange: (v: string) => void;
-}) {
+/**
+ * §Phase 5b — the chart tab uses the SAME lookup component as the shared staff
+ * top bar, so the app has one patient-search pattern. Inline mode selects into
+ * this tab instead of navigating away; the tab still opens blank (Phase 5a).
+ */
+function PatientPicker({ onChange }: { onChange: (v: string) => void }) {
   return (
     <div className="flex items-center gap-2">
       <Label className="text-sm text-muted-foreground">Patient</Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-[280px]">
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {patients.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {p.firstName} {p.lastName} (day {p.episodeDay}/90)
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+      <StaffPatientSearch
+        variant="inline"
+        placeholder="Search name, DOB, program ID, CIN"
+        onSelect={onChange}
+      />
     </div>
   );
 }
