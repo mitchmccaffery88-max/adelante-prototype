@@ -96,7 +96,9 @@ describe("Ask Adel — aggregates and read-only", () => {
   it("carries the shared cohort guard on program-wide aggregates", () => {
     const funnel = answerAskAdel("admin-referral-conversion", ctxFor("sys_admin"));
     expect(funnel?.guard?.minimumCohortSize).toBe(11);
-    const elig = answerAskAdel("admin-eligibility", ctxFor("sys_admin"));
+    // sys_admin is deliberately not granted `eligibility` in the real matrix.
+    expect(answerAskAdel("admin-eligibility", ctxFor("sys_admin"))).toBeUndefined();
+    const elig = answerAskAdel("admin-eligibility", ctxFor("billing"));
     expect(elig?.guard).toBeDefined();
   });
 
