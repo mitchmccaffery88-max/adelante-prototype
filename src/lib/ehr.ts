@@ -578,6 +578,13 @@ export interface SdohPlanItem {
    */
   safetySensitive?: boolean;
 
+  /**
+   * §5d-3 — append-only, attributed activity log. STAFF-ONLY on every need,
+   * regardless of `visibleToPatient`.
+   */
+  log?: SdohLogEntry[];
+
+
   /** §5d-1 attribution — who created/last changed this need. */
   createdBy?: string;
   createdByRole?: StaffRole;
