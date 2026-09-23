@@ -3346,7 +3346,9 @@ export type CaseTaskOrigin =
   /** §Phase 7 part 2 — patient reported a medication side effect. */
   | "med_side_effect"
   /** §Phase 4f — enrollment from a referral needs a care team and intake. */
-  | "referral_enrollment_setup";
+  | "referral_enrollment_setup"
+  /** §5d-3 — a follow-up on a social need or a resource referral. */
+  | "sdoh_follow_up";
 
 export interface CaseTask {
   id: string;
