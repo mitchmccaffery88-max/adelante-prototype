@@ -52,3 +52,9 @@
 - [ ] Honest `Patient.custody` field sourced from the episode
 - [ ] Intake/profile pre-fill with provenance + confirm step
 - [ ] /pre-release-import staff CSV upload (preview-first, row reasons, RBAC)
+
+## SDOH Referral Thread Phase 5d-1 (consent + attribution)
+- [x] Part 2 consent gate in the data layer for both referral creation paths
+- [x] `sudDisclosureConsent` stamped from the patient's live consent (viewer-access bug fixed)
+- [x] Generic restricted row (no category/provider/note) for Part 2 gated viewers
+- [x] Attribution + audit on need and referral create/status changes
