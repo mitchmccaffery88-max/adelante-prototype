@@ -25,7 +25,19 @@ import { StaffPatientSearch } from "@/components/StaffPatientSearch";
  */
 export function StaffBreadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
-  const { role } = useActingStaff();
+  const { role, staffId, staffName, clinicianId } = useActingStaff();
+
+  // My work is shown exactly when the shared nav registry already grants the
+  // page to this role, so the bar and the sidebar can never disagree.
+  const myWorkEntry = STAFF_NAV.find((e) => e.id === "my-work");
+  const canSeeMyWork = Boolean(myWorkEntry && canSeeNavEntry(role, myWorkEntry));
+  // Same helper `/my-work` and the dashboard queue pill call — one count.
+  const myWorkCount = useEhr(() =>
+    canSeeMyWork
+      ? myOpenItems({ staffId, staffName, ...(clinicianId ? { clinicianId } : {}) }).total
+      : 0,
+  );
+
 
   const entry = entryForPath(pathname);
   const visible = entry && canSeeNavEntry(role, entry) ? entry : undefined;
