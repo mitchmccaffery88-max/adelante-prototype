@@ -10220,19 +10220,39 @@ export const AdelanteEHR = {
   },
 
   // ----- Resource referral status/notes -----
+  /**
+   * §5d-2 — read the referrals made for one need. A need can hold many over
+   * time; this is the ONE lookup (there is no back-pointer on the need).
+   */
+  referralsForNeed(patientId: string, itemId: string): ResourceReferral[] {
+    const p = patients.find((x) => x.id === patientId);
+    return (p?.resourceReferrals ?? []).filter((r) => r.sdohItemId === itemId);
+  },
+
+  /**
+   * §5d-2 — record a real outcome. Any outcome other than `pending` needs a
+   * reason: "waitlisted" or "not eligible" with no explanation is not a
+   * record anyone can work from. Nothing here touches the linked need —
+   * resolving a need is a human decision (see the connected prompt in the UI).
+   */
   setResourceReferralStatus(
     patientId: string,
     referralId: string,
-    status: ResourceReferral["status"],
+    status: ResourceReferralOutcome,
     note?: string,
     actor?: { staffName: string; role: StaffRole },
+    outcomeReason?: string,
   ) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
     if (!r) return;
+    if (status !== "pending" && !(outcomeReason ?? r.outcomeReason ?? "").trim()) {
+      throw new Error("Give a short reason for this outcome.");
+    }
     const prev = r.status;
     const prevNote = r.note;
     r.status = status;
+    if (outcomeReason !== undefined) r.outcomeReason = outcomeReason.trim() || undefined;
     if (note !== undefined) r.note = note;
     r.updatedAt = new Date().toISOString();
     if (actor) {
@@ -10249,11 +10269,13 @@ export const AdelanteEHR = {
         referralId,
         from: prev,
         to: status,
+        ...(r.outcomeReason ? { outcomeReason: r.outcomeReason } : {}),
         ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
       },
     });
     emit();
   },
+
 
   setResourceReferralVisibility(patientId: string, referralId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
