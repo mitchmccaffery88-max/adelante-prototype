@@ -1,57 +1,42 @@
-# Phase 5e — "Ask Adel" prototype in the staff top bar
+# Dashboard Cleanup, Phase 6a — refill attribution/scoping + My caseload & My tasks on the Clinician Workspace
 
-A demo-only helper for Dr. Bagga. Read-only, no model call, no writes, no stored transcript.
+## What I found (grounding)
 
-## What I found (real current state)
-
-- The shared staff top bar is `src/components/StaffBreadcrumbs.tsx` (Phase 5b): breadcrumb left, `StaffPatientSearch` + My work right. That is where the entry point belongs — one place, every staff page.
-- The three encounter prototypes exist at `/agentic/chart-review/$patientId`, `/agentic/scribe/$patientId`, `/agentic/dictation/$patientId`. They are not in the nav registry; `AppShell` already treats `/agentic/*` as a staff surface. Chart review reads real chart facts via `chartReviewFacts(patientId, role)` — which already takes the role, so masking is honoured.
-- Honesty chrome already exists: `PrototypeBanner` ("Prototype — not connected to a live AI model"), `SampleBadge`, `RealDataBadge` in `components/agentic/PrototypeChrome.tsx`. I reuse these, not new labels.
-- Real helpers available for answers: `myOpenItems` / `myCaseload` / `screenerDueRows` / `disengagementRows` (myWork.ts), `sdohNeedAging` / `referralAgingState` (sdohAging.ts), `sdohFunnel` (sdohReporting.ts), `referralFunnel` / `referralDropOff` (referralFunnel.ts), `coverageWorklistRows` + `coverageWorklistSummary`, `listUnsignedWork`, `AdelanteEHR.listClaims()`, credential status from `AdelanteEHRExt`, `listPatientOpenItems`.
-- `screenerDueRows(patients, { role })` already drops Part 2 screeners per patient when `screeners_sud` is locked — reused as-is, no second rule.
-- `cohortGuard()` / `MIN_COHORT_SIZE = 11` is the shared guard; `sdohFunnel` / `referralFunnel` already carry it on their results.
-
-## Role groups (per-role picture)
-
-| Group | Roles | Question theme |
-| --- | --- | --- |
-| Clinical | therapist, pmhnp, sud_counselor, clinical_trainee, medical_assistant | care-focused |
-| Care coordination | ecm_provider, cf_care_manager, peer_specialist, community_health_worker | coordination-focused |
-| Administrative | clinical_coordinator, billing, billing_coordinator, credentialing_coordinator, sys_admin | practice management |
-
-Medical assistant sits in the clinical group but only gets questions its access supports (no psychotherapy/SUD content). Credentialing coordinator has no patient access at all: it keeps only the credential-expiry question and gets **no** encounter shortcuts and no patient prompt. No role falls outside the three groups. Every individual question is additionally filtered by a real `canAccess` check, so a role that ends up with zero questions **and** zero shortcuts never sees the button.
+- `RefillRequest` has no clinician field at all — only `patientId`, `medicationId`, `medicationName`, `requestedAt`, `requestedBy` ("patient" | "clinician"), `pharmacyNote`, `status`, `reviewedBy`, `reviewedAt`, `denyReason`. So "my refills" can only honestly mean "refills for patients assigned to me", using the existing `primaryClinicianId` assignment field.
+- Dose/frequency live on the `MedOrder` (`dose`, `frequency`), reachable from the refill's `medicationId`, not on the refill row.
+- `reviewRefill` already accepts `clinicianId` and already does provider-switch detection; the Clinician Workspace is simply not passing it.
+- `CaseTask.assignedTo` is a **caseManagerId**. Most clinicians have no `caseManagerId` on their staff record, so `caseTasksForCM` returns nothing for them. This is the crux of item 4.
+- `TaskQueueCard` is a private function inside `src/routes/case-manager.tsx`; `TaskWorkRow` is already a shared component.
 
 ## Build
 
-1. **`src/lib/askAdel.ts`** (pure, testable) — the whole thing lives here:
-   - `roleGroupFor(role)` → `"clinical" | "coordination" | "admin"`.
-   - `ASK_ADEL_QUESTIONS`: each entry `{ id, group, prompt, requires: RecordClass[], answer(ctx) }`.
-   - `askAdelQuestionsFor(role)` — filters by group and by `canAccess`.
-   - `answerQuestion(id, ctx)` → `{ lines: string[]; link?: { to, label }; backing: "real" | "illustrative"; guard?: CohortGuard; notes?: string[] }`.
-   - `canUseAskAdel(role)` → questions or shortcuts exist.
-2. **`src/components/AskAdelPanel.tsx`** — a Sheet opened from a top-bar "Ask Adel" button. Contains `PrototypeBanner`, the sample-question list for the role, the rendered answer (with link, guard notice, draft-threshold notes), and the three encounter shortcuts. A disabled-looking free-text box states plainly: *"This prototype answers only the sample questions listed above. Free-text questions are not available."* Shortcuts use the patient in context (`/record/$patientId` or an `/agentic/*` route); otherwise the panel shows the shared `StaffPatientSearch` inline to pick one.
-3. **`StaffBreadcrumbs.tsx`** — render the button next to My work, only when `canUseAskAdel(role)`.
+### 1. Refill attribution
+Pass `clinicianId: actor.clinicianId ?? actor.staffId` (the same identity pattern the page already uses for unsigned work) into both the approve and deny `reviewRefill` calls, so `reviewedBy` is recorded and provider-switch detection fires here as it does everywhere else. Attribution follows the **acting staff member**, never the clinician picked in the page's clinician dropdown — the dropdown chooses whose schedule you're looking at, not who you are.
 
-## Questions and their backing
+### 2. Scoping with a real toggle
+Default the tile to refills whose patient is assigned to the acting clinician (`isAssignedTo` from `src/lib/caseloadScope.ts`, reusing the caseload rule rather than a new one). A two-button toggle — "My patients (n)" / "All pending (n)" — keeps the full list one click away for coverage. Same honesty note as the caseload: this changes what's listed, not what you're allowed to open. Staff with no assignment identity, or whose assigned set is empty, open on "All pending" with a one-line explanation rather than a blank tile.
 
-Clinical — real: overdue re-screens on my caseload (`screenerDueRows`, Part 2-masked, draft cadence note, links `/my-work`); my unsigned notes and undocumented visits (`listUnsignedWork`, links `/notes-queue`); what changed for this patient since the last visit (`chartReviewFacts`, links the chart-review prototype). Illustrative: "care gaps before today's appointment" uses the chart-review gap list where real, otherwise labelled illustrative.
+### 3. Richer rows
+Add to each row: dose and frequency from the linked `MedOrder` (omitted silently when the order doesn't carry them — no invented strings), "Requested by patient" / "Requested by clinician" from the real field, and a compact status history section listing recently reviewed refills (approved/sent to pharmacy/denied) with reviewer name, timestamp, and deny reason — collapsed behind a "Recently reviewed" disclosure so the pending queue stays the focus. Rows whose `reviewedBy` was never captured (pre-fix rows) read "Reviewer not recorded" rather than guessing.
 
-Coordination — real: needs/referrals past their draft aging threshold (`myOpenItems().sdohAging`, links `/my-work`); waitlisted referrals on my caseload (referral outcomes, links the record); clients with no contact since enrolment (`disengagementRows`, draft threshold labelled); follow-ups due (`myOpenItems().overdueTasks`).
+### 4. My caseload and My tasks — chosen approach
+**Chosen: a compact "My caseload" summary card that links across, plus a real embedded task list.** Reasoning:
 
-Admin — real: referrals that reached an attended first visit this period (`referralFunnel`, links `/reporting#referral-funnel`); overdue Medi-Cal eligibility checks (`coverageWorklistSummary`, links `/eligibility-worklist`); claims at documented awaiting signature (`listClaims`, links `/admin-claims`); credentials expiring or expired (credential status, links `/admin-credentialing`).
+- *Caseload*: the real caseload surface is a full table with filters, assignment, export and record drawers. Re-rendering it here would be a second copy of a page that already exists. A count card ("My caseload (n)", derived from the same `scopeCaseload(..., "mine")` call Care Coordination uses, with a link to `/case-manager`) gives the clinician the number and the route without duplicating the workspace. A count pill alone in the queue row would have been cheaper, but the queue row is a row of *worklists to clear*, and a caseload is not a queue — mixing them would misrepresent it.
+- *Tasks*: the opposite call. Tasks are work to do right now, and `TaskWorkRow` is already the shared, self-contained row used by both existing surfaces, so embedding it costs nothing in duplication and saves a page hop. I will extract `TaskQueueCard` out of `case-manager.tsx` into `src/components/tasks/TaskQueueCard.tsx` and have both pages render it, so the two can't drift.
 
-## Guardrails applied
+**The honest wrinkle:** tasks are assigned to case managers, and a clinician usually has no case-manager identity. So the card takes an explicit source:
+- Acting staff *has* a `caseManagerId` → "My tasks", tasks assigned to them; identical to Care Coordination.
+- Acting staff has only a `clinicianId` → "Follow-ups on my patients", the real `caseTasksForPatient` rows for patients whose `primaryClinicianId` is theirs, with a one-line note that task assignment is a case-manager field so these are their patients' open follow-ups rather than tasks assigned to them personally.
+- Neither → the card says so plainly and links to `/worklist`.
 
-- Every answer runs the same selectors the real page runs, filtered by `canAccess` — no new data path.
-- Part 2: SUD screener names never appear for a gated viewer (reuses `screenerDueRows` masking); referral answers never name a recovery/support-group category or organisation — those fold into the same "other / confidential" treatment used in reporting, and gated viewers see a restricted count only.
-- Interpersonal-safety needs stay staff-only, exactly as the 5d-2 selectors already return them.
-- Cross-patient aggregates carry `cohortGuard`; a below-threshold count renders the existing guard notice wording. Counts of *my own* caseload are stated as a personal work list, not a published aggregate.
-- Read-only: answers render text and links. No buttons that write.
+No new task model, no new assignment field, no auto-assignment of tasks to clinicians.
+
+## Technical notes
+
+- Files: `src/routes/clinician.tsx` (refill tile, new caseload/tasks cards), new `src/components/tasks/TaskQueueCard.tsx` (extracted, given a `source` prop), `src/routes/case-manager.tsx` (import the extracted card, delete the local copy).
+- No changes to `reviewRefill`, `CaseTask`, `RefillRequest`, `caseloadScope.ts`, or "Book a session".
+- Tests: extend/add a unit test asserting `reviewedBy` is set and a provider switch is raised from a second reviewer, plus a scoping test for the assigned-patient filter.
 
 ## Verification
-
-Tests in `src/lib/__tests__/askAdel.test.ts`: role→group mapping for all 14 roles; question filtering by access; a Part 2-gated role never receives a SUD screener or recovery category in an answer; cohort guard present on aggregate answers; credentialing coordinator gets no shortcut; answers expose no write callable. Then typecheck, full suite, build, and a live browser pass at both viewports as a clinical, a coordination, an admin and a Part 2-gated role.
-
-## Non-goals
-
-No live model call, no transcript storage, no write actions, no changes to the existing `/agentic/*` prototypes.
+Typecheck, full test run, build, and a live browser pass at desktop and phone: refill tile defaults to the acting clinician's own patients with a working "all pending" toggle, approve/deny records the real reviewer and raises a provider switch when the prior reviewer differs, dose/frequency/requested-by/history render, and the caseload count and task rows match `/case-manager`. Zero console errors.
