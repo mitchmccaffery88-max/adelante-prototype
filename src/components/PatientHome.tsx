@@ -543,8 +543,12 @@ function ReferralsForYouCard({ patientId }: { patientId: string }) {
   if (items.length === 0) return null;
   const statusLabel: Record<string, string> = {
     pending: "In progress",
-    accepted: "Partner accepted",
-    completed: "Done",
+    connected: "Connected",
+    waitlisted: "On a waitlist",
+    not_eligible: "Not eligible",
+    declined_by_client: "You declined",
+    unreachable: "Could not reach them",
+    closed: "Closed",
   };
   return (
     <Card className="p-5">

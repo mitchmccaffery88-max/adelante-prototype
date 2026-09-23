@@ -104,7 +104,7 @@ describe("attribution and audit on needs and referrals", () => {
     const id = patient("Audited");
     AdelanteEHR.addResourceReferral(id, { category: "housing", provider: "Shelter" }, ACTOR);
     const r = referrals(id)[0]!;
-    AdelanteEHR.setResourceReferralStatus(id, r.id, "completed", undefined, ACTOR);
+    AdelanteEHR.setResourceReferralStatus(id, r.id, "closed", undefined, ACTOR, "Work finished.");
 
     const created = audits(id, "resource_referral_created");
     const changed = audits(id, "resource_referral_status");

@@ -458,17 +458,35 @@ export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
   advocate_reported: "Raised by advocate",
 };
 
+/**
+ * §5d-2 — the AHC-HRSN domain whose needs are staff-only by default.
+ * Keyed on the real domain key declared in `AHC_HRSN.domains`.
+ */
+export const HRSN_SAFETY_DOMAIN_KEY = "safety";
+
 export interface SdohPlanItem {
+
   id: string;
   need: string;
   /** How this need was established. Required — see `SdohItemSource`. */
   source: SdohItemSource;
-  referralId?: string;
+  // §5d-2 — NO `referralId` back-pointer. A need can hold many referrals; the
+  // link lives on `ResourceReferral.sdohItemId` and is read through
+  // `AdelanteEHR.referralsForNeed()`. One source of truth.
+
   status: SdohStatus;
   note?: string;
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /**
+   * §5d-2 — this need came from the interpersonal-safety domain. It defaults
+   * to staff-only and every patient- or advocate-facing surface must respect
+   * that: someone may be living with the person harming them. Staff can still
+   * choose to share it, after an explicit warning.
+   */
+  safetySensitive?: boolean;
+
   /** §5d-1 attribution — who created/last changed this need. */
   createdBy?: string;
   createdByRole?: StaffRole;
@@ -1754,6 +1772,52 @@ export type ResourceReferralCategory =
 /** Where a referral came from. Mirrors `CarePlanSdohSlice.source`'s real value. */
 export type ResourceReferralSource = "internal" | "pre_release";
 
+/**
+ * §5d-2 — real referral outcomes. The three earlier values map honestly:
+ *  - `pending`   unchanged
+ *  - `accepted`  -> `connected` (a partner accepting the person is the
+ *                  strongest "link made" signal that value ever carried)
+ *  - `completed` -> `closed`    (work finished; it never claimed success, so
+ *                  it must not silently become `connected`)
+ */
+export type ResourceReferralOutcome =
+  | "pending"
+  | "connected"
+  | "waitlisted"
+  | "not_eligible"
+  | "declined_by_client"
+  | "unreachable"
+  | "closed";
+
+export const RESOURCE_REFERRAL_OUTCOMES: ResourceReferralOutcome[] = [
+  "pending",
+  "connected",
+  "waitlisted",
+  "not_eligible",
+  "declined_by_client",
+  "unreachable",
+  "closed",
+];
+
+export const RESOURCE_REFERRAL_OUTCOME_LABEL: Record<ResourceReferralOutcome, string> = {
+  pending: "Pending",
+  connected: "Connected",
+  waitlisted: "Waitlisted",
+  not_eligible: "Not eligible",
+  declined_by_client: "Declined by client",
+  unreachable: "Unreachable",
+  closed: "Closed",
+};
+
+/** Outcomes that end the referral's active work. */
+export const RESOURCE_REFERRAL_CLOSED_OUTCOMES: ResourceReferralOutcome[] = [
+  "not_eligible",
+  "declined_by_client",
+  "unreachable",
+  "closed",
+];
+
+
 export interface ResourceReferral {
   id: string;
   category: ResourceReferralCategory;
@@ -1774,7 +1838,17 @@ export interface ResourceReferral {
   resourceId?: string;
   /** Internal care-team referral vs. one ingested from a release assessment. */
   source?: ResourceReferralSource;
-  status: "pending" | "accepted" | "completed";
+  /**
+   * §5d-2 — the real need this referral was made for. A need can hold MANY
+   * referrals over time (first org waitlisted, second connected), so the link
+   * is stored here and only here; `SdohPlanItem` holds no back-pointer and
+   * `referralsForNeed()` is the one lookup.
+   */
+  sdohItemId?: string;
+  status: ResourceReferralOutcome;
+  /** §5d-2 — why the outcome is what it is. Required for any non-pending outcome. */
+  outcomeReason?: string;
+
   createdAt: string;
   updatedAt?: string;
   note?: string;
@@ -6117,10 +6191,15 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const hrsn = p.screeners["ahc-hrsn"];
   for (const d of hrsn?.domains ?? []) {
     if (!d.positive) continue;
+    // §5d-2 — interpersonal safety is never synthesized into a plan row: its
+    // needs are materialized as real STAFF-ONLY items and a synthesized row
+    // carries no visibility of its own.
+    if (d.key === HRSN_SAFETY_DOMAIN_KEY) continue;
     const label = d.label;
     if (sdohItems.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
     if (sdohOpen.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
     sdohOpen.push({ need: label, status: "identified", source: "pre_release" });
+
   }
 
   const upcoming = appointments
@@ -8527,6 +8606,14 @@ export const AdelanteEHR = {
       );
     }
     const now = new Date().toISOString();
+    // §5d-2 — a referral for a staff-only need (interpersonal safety) inherits
+    // the staff-only default. Someone living with the person harming them must
+    // not find a safety referral on their own phone.
+    const linkedNeed = r.sdohItemId
+      ? p.sdohPlan?.items.find((i) => i.id === r.sdohItemId)
+      : undefined;
+    const inheritedVisibility =
+      r.visibleToPatient ?? (linkedNeed ? linkedNeed.visibleToPatient !== false : undefined);
     const row: ResourceReferral = {
       ...r,
       // Provenance defaults to the real common case: our care team referred
@@ -8536,6 +8623,7 @@ export const AdelanteEHR = {
       createdAt: now,
       status: "pending",
       sudDisclosureConsent: consentActive,
+      ...(inheritedVisibility === undefined ? {} : { visibleToPatient: inheritedVisibility }),
       ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
     p.resourceReferrals = [row, ...(p.resourceReferrals ?? [])];
@@ -8548,10 +8636,18 @@ export const AdelanteEHR = {
       detail: {
         referralId: row.id,
         category: row.category,
+        ...(row.sdohItemId ? { sdohItemId: row.sdohItemId } : {}),
+        ...(row.resourceId ? { resourceId: row.resourceId } : { offDirectory: true }),
         part2Sensitive: isPart2SensitiveCategory(row.category),
         sudDisclosureConsent: consentActive,
       },
     });
+    // §5d-2 — making a referral IS the need moving forward. Only the first
+    // move is automatic: a need already past `identified` keeps its status.
+    if (linkedNeed && linkedNeed.status === "identified") {
+      AdelanteEHR.setSdohStatus(patientId, linkedNeed.id, "sent", undefined, actor);
+    }
+
     emit();
     return row;
   },
@@ -9861,6 +9957,8 @@ export const AdelanteEHR = {
       need: string;
       note?: string;
       visibleToPatient?: boolean;
+      /** §5d-2 — interpersonal-safety need: staff-only unless stated. */
+      safetySensitive?: boolean;
       /** §Phase 2 provenance. Defaults to staff-identified, which is what a
        * chart-side "add need" action really is; every other caller passes
        * its own real source. */
@@ -9876,11 +9974,15 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_assessed",
       status: "identified",
       note: input.note,
-      visibleToPatient: input.visibleToPatient ?? true,
+      // A safety need defaults to staff-only; every other need keeps the
+      // existing patient-visible default.
+      visibleToPatient: input.visibleToPatient ?? (input.safetySensitive ? false : true),
+      ...(input.safetySensitive ? { safetySensitive: true } : {}),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
+
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
     appendAudit({
       category: "clinical",
@@ -9893,6 +9995,63 @@ export const AdelanteEHR = {
     _recomputeCarePlan(p.id, "sdoh_added");
     emit();
   },
+
+  /**
+   * §5d-2 — turn positive AHC-HRSN domains into REAL, workable needs.
+   *
+   * The care plan used to synthesize display-only rows for positive domains
+   * with no `SdohPlanItem`; those rows could not be referred, tracked or
+   * resolved. This creates the real items (provenance `pre_release_hrsn`),
+   * deduped by need label against what is already on file, so nothing is
+   * duplicated and nothing is re-sourced.
+   *
+   * The interpersonal-safety domain materializes STAFF-ONLY. Someone
+   * disclosing safety risk may be living with the person harming them, so a
+   * safety need must never appear on their portal, their phone or an
+   * advocate's view unless a staff member deliberately shares it.
+   */
+  materializeHrsnNeeds(
+    patientId: string,
+    actor?: { staffName: string; role: StaffRole },
+  ): { created: number } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { created: 0 };
+    const domains = p.screeners["ahc-hrsn"]?.domains ?? [];
+    let created = 0;
+    for (const d of domains) {
+      if (!d.positive) continue;
+      const exists = (p.sdohPlan?.items ?? []).some(
+        (i) => i.need.trim().toLowerCase() === d.label.trim().toLowerCase(),
+      );
+      if (exists) continue;
+      AdelanteEHR.addSdohItem(
+        patientId,
+        {
+          need: d.label,
+          source: "pre_release_hrsn",
+          ...(d.key === HRSN_SAFETY_DOMAIN_KEY ? { safetySensitive: true } : {}),
+        },
+        actor,
+      );
+      created++;
+    }
+    return { created };
+  },
+
+  /** Positive AHC-HRSN domains that have no real need row yet. */
+  unmaterializedHrsnDomains(patientId: string): { key: string; label: string }[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const items = p.sdohPlan?.items ?? [];
+    return (p.screeners["ahc-hrsn"]?.domains ?? [])
+      .filter((d) => d.positive)
+      .filter(
+        (d) =>
+          !items.some((i) => i.need.trim().toLowerCase() === d.label.trim().toLowerCase()),
+      )
+      .map((d) => ({ key: d.key, label: d.label }));
+  },
+
 
   /**
    * §Intake/SDOH Redesign Phase 3 — the one write intake uses for social needs.
@@ -10144,19 +10303,39 @@ export const AdelanteEHR = {
   },
 
   // ----- Resource referral status/notes -----
+  /**
+   * §5d-2 — read the referrals made for one need. A need can hold many over
+   * time; this is the ONE lookup (there is no back-pointer on the need).
+   */
+  referralsForNeed(patientId: string, itemId: string): ResourceReferral[] {
+    const p = patients.find((x) => x.id === patientId);
+    return (p?.resourceReferrals ?? []).filter((r) => r.sdohItemId === itemId);
+  },
+
+  /**
+   * §5d-2 — record a real outcome. Any outcome other than `pending` needs a
+   * reason: "waitlisted" or "not eligible" with no explanation is not a
+   * record anyone can work from. Nothing here touches the linked need —
+   * resolving a need is a human decision (see the connected prompt in the UI).
+   */
   setResourceReferralStatus(
     patientId: string,
     referralId: string,
-    status: ResourceReferral["status"],
+    status: ResourceReferralOutcome,
     note?: string,
     actor?: { staffName: string; role: StaffRole },
+    outcomeReason?: string,
   ) {
     const p = patients.find((x) => x.id === patientId);
     const r = p?.resourceReferrals?.find((x) => x.id === referralId);
     if (!r) return;
+    if (status !== "pending" && !(outcomeReason ?? r.outcomeReason ?? "").trim()) {
+      throw new Error("Give a short reason for this outcome.");
+    }
     const prev = r.status;
     const prevNote = r.note;
     r.status = status;
+    if (outcomeReason !== undefined) r.outcomeReason = outcomeReason.trim() || undefined;
     if (note !== undefined) r.note = note;
     r.updatedAt = new Date().toISOString();
     if (actor) {
@@ -10173,11 +10352,13 @@ export const AdelanteEHR = {
         referralId,
         from: prev,
         to: status,
+        ...(r.outcomeReason ? { outcomeReason: r.outcomeReason } : {}),
         ...(note !== undefined && note !== prevNote ? { noteChanged: true } : {}),
       },
     });
     emit();
   },
+
 
   setResourceReferralVisibility(patientId: string, referralId: string, visible: boolean) {
     const p = patients.find((x) => x.id === patientId);
@@ -10854,6 +11035,13 @@ export const AdelanteEHR = {
       provenance: "imported_roster",
     };
     AdelanteEHR.recordScreener(ep.patientId, result);
+    // §5d-2 — positive domains become REAL, referable needs here, not
+    // display-only care-plan rows. Safety materializes staff-only.
+    AdelanteEHR.materializeHrsnNeeds(ep.patientId, {
+      staffName: input.importedBy,
+      role: input.actorRole as StaffRole,
+    });
+
     appendAudit({
       category: "clinical",
       action: "pre_release_hrsn_imported",
@@ -14020,7 +14208,13 @@ export const AdelanteEHR = {
     if (!gate.ok)
       return { allowed: false, reason: gate.reason, canWrite: false, items: [], maskedCount: 0 };
     const all = _patient(gate.link.patientId)?.sdohPlan?.items ?? [];
-    const visible = all.filter((i) => !_advocateSudText(`${i.need} ${i.note ?? ""}`));
+    // §5d-2 — staff-only needs (interpersonal safety materializes this way)
+    // are withheld from advocates too. An advocate can be the person the
+    // patient is unsafe with, or close to them. Counted as masked, never shown.
+    const visible = all.filter(
+      (i) => i.visibleToPatient !== false && !_advocateSudText(`${i.need} ${i.note ?? ""}`),
+    );
+
     _advocateAudit(gate.link, "advocate_coordination_viewed", "care_coordination", {
       itemCount: visible.length,
       maskedCount: all.length - visible.length,

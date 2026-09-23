@@ -20,6 +20,7 @@ import {
 import {
   isPart2SensitiveCategory,
   isProblemClinicallyActive,
+  RESOURCE_REFERRAL_CLOSED_OUTCOMES,
 
   noteStatus,
   type Allergy,
@@ -62,9 +63,15 @@ export function isReferralSudSensitive(r: ResourceReferral): boolean {
 }
 
 
-/** Open = anything not yet completed — the same rule the Referrals tab uses. */
+/**
+ * Open = the referral still has live work. §5d-2 widened the outcomes, so this
+ * defers to the shared closed-outcome set rather than testing one value.
+ */
 export function isReferralOpen(r: ResourceReferral): boolean {
-  return r.status !== "completed";
+  // "completed" is the pre-5d-2 terminal value; records written before the
+  // outcome vocabulary existed still carry it, so it stays closed here.
+  if ((r.status as string) === "completed") return false;
+  return !RESOURCE_REFERRAL_CLOSED_OUTCOMES.includes(r.status);
 }
 
 export interface AutofillContext {

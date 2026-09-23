@@ -58,3 +58,14 @@
 - [x] `sudDisclosureConsent` stamped from the patient's live consent (viewer-access bug fixed)
 - [x] Generic restricted row (no category/provider/note) for Part 2 gated viewers
 - [x] Attribution + audit on need and referral create/status changes
+
+## SDOH Referral Thread Phase 5d-2 (needs <-> referrals, directory, outcomes)
+- [x] `ResourceReferral.sdohItemId`; drop never-written `SdohPlanItem.referralId`
+- [x] Refer action on a need; creating a referral moves the need to sent
+- [x] Real directory picker (`resourceId`) + link state via referralLinks.ts
+- [x] Off-directory referral (name + note), never writes to the directory
+- [x] Seven real outcomes with reason + attribution
+- [x] Connected prompts staff to resolve the need (no auto-close)
+- [x] Materialize positive AHC-HRSN domains as real needs
+- [x] Interpersonal-safety needs + their referrals default staff-only, warn before making visible
+- [x] Remove the stale "Build 2" resource-library string

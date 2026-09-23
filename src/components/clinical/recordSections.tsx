@@ -33,6 +33,7 @@ import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { useI18n } from "@/lib/i18n";
+import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { CalomsProfileCard } from "@/components/clinical/CalomsProfileCard";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
@@ -125,7 +126,7 @@ export function useRecordSections(
       severeAllergy: s.severeAllergy,
       criticalAlert: s.criticalAlert,
       tasks: (fresh.tasks ?? []).filter((t) => !t.completedAt).length,
-      referrals: (fresh.resourceReferrals ?? []).filter((r) => r.status !== "completed").length,
+      referrals: (fresh.resourceReferrals ?? []).filter((r) => isReferralOpen(r)).length,
       sdoh: (fresh.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length,
       bookings: (fresh.bookings ?? []).length,
       currentlyBooked: AdelanteEHR.isCurrentlyBooked(fresh.id),

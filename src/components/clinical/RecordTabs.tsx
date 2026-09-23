@@ -93,8 +93,28 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
+import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
+import { resourceLinkState, referralProviderLabel } from "@/lib/referralLinks";
+import { isReferralOpen } from "@/lib/noteAutofill";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
+import { Building2 } from "lucide-react";
+import type { SdohPlanItem } from "@/lib/ehr";
+import {
+  RESOURCE_REFERRAL_OUTCOMES,
+  RESOURCE_REFERRAL_OUTCOME_LABEL,
+  type ResourceReferralOutcome,
+} from "@/lib/ehr";
 import {
   Lock,
   ShieldAlert,
@@ -154,7 +174,7 @@ export function OverviewTab({ patientId }: { patientId: string }) {
   if (!p) return null;
   const lastCheckIn = p.checkIns?.[0];
   const openTasks = (p.tasks ?? []).filter((t) => !t.completedAt).length;
-  const openReferrals = (p.resourceReferrals ?? []).filter((r) => r.status !== "completed").length;
+  const openReferrals = (p.resourceReferrals ?? []).filter((r) => isReferralOpen(r)).length;
   const openSdoh = (p.sdohPlan?.items ?? []).filter((i) => i.status !== "completed").length;
   return (
     <div className="space-y-3 text-sm">
@@ -637,6 +657,14 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
   const [need, setNeed] = useState("");
   const [note, setNote] = useState("");
   const [visible, setVisible] = useState(true);
+  // §5d-2 — one need at a time gets the Refer dialog; one at a time can be
+  // confirmed for patient visibility when it is safety-sensitive.
+  const [referItem, setReferItem] = useState<SdohPlanItem | null>(null);
+  const [safetyReveal, setSafetyReveal] = useState<SdohPlanItem | null>(null);
+  const unmaterialized = useEhr(() =>
+    JSON.stringify(AdelanteEHR.unmaterializedHrsnDomains(patientId)),
+  );
+  const pendingDomains = JSON.parse(unmaterialized) as { key: string; label: string }[];
   const statusOpts: SdohStatus[] = [
     "identified",
     "sent",
@@ -647,6 +675,31 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
   ];
   return (
     <div className="space-y-3">
+      {!readOnly && pendingDomains.length > 0 && (
+        <Card className="p-3 space-y-2 border-teal/40">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            From the social-needs screening
+          </div>
+          <p className="text-sm text-navy">
+            {pendingDomains.length} positive screening result
+            {pendingDomains.length === 1 ? " has" : "s have"} no trackable need yet:{" "}
+            {pendingDomains.map((d) => d.label).join(", ")}.
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Interpersonal safety is created staff-only — it is never shown to the patient or an
+            advocate unless you choose to share it.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              const res = AdelanteEHR.materializeHrsnNeeds(patientId, { staffName, role });
+              toast.success(`${res.created} need${res.created === 1 ? "" : "s"} created.`);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Create trackable needs from screening
+          </Button>
+        </Card>
+      )}
       {!readOnly && (
         <Card className="p-3 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -692,11 +745,19 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
         {items.map((i) => (
           <li key={i.id} className="rounded border p-3 space-y-2 text-sm">
             <div className="flex items-start justify-between gap-2">
-              <div className="font-medium text-navy">{i.need}</div>
+              <div className="font-medium text-navy">
+                {i.need}
+                {i.visibleToPatient === false && (
+                  <Badge variant="outline" className="ml-2 text-[10px]">
+                    Staff only
+                  </Badge>
+                )}
+              </div>
               <Badge variant="outline" className="capitalize text-[10px]">
                 {i.status.replace("_", " ")}
               </Badge>
             </div>
+            <NeedReferralList patientId={patientId} itemId={i.id} />
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
             <AttributionLine
               {...(i.createdBy ? { createdBy: i.createdBy, createdAt: i.createdAt } : {})}
@@ -730,6 +791,9 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
             )}
             {!readOnly && (
               <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setReferItem(i)}>
+                  <Building2 className="h-3.5 w-3.5 mr-1" /> Refer
+                </Button>
                 <Select
                   value={i.status}
                   onValueChange={(v) =>
@@ -755,9 +819,15 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    AdelanteEHR.setSdohVisibility(patientId, i.id, !i.visibleToPatient)
-                  }
+                  onClick={() => {
+                    // §5d-2 — turning a safety need ON for the patient is a
+                    // risk decision, so it asks first. Turning it off never does.
+                    if (i.safetySensitive && i.visibleToPatient === false) {
+                      setSafetyReveal(i);
+                      return;
+                    }
+                    AdelanteEHR.setSdohVisibility(patientId, i.id, !i.visibleToPatient);
+                  }}
                 >
                   {i.visibleToPatient ? (
                     <>
@@ -781,7 +851,69 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
           </li>
         ))}
       </ul>
+      {referItem && (
+        <ReferForNeedDialog
+          patientId={patientId}
+          item={referItem}
+          open
+          onOpenChange={(v) => !v && setReferItem(null)}
+        />
+      )}
+      <AlertDialog open={Boolean(safetyReveal)} onOpenChange={(v) => !v && setSafetyReveal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Show this safety need to the patient?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Someone who has disclosed interpersonal safety risk may be living with the person
+              harming them. Making this visible puts it on their portal and their phone, and shares
+              it with an authorized advocate. Only do this if you have talked it through with them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep staff only</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (safetyReveal) AdelanteEHR.setSdohVisibility(patientId, safetyReveal.id, true);
+                setSafetyReveal(null);
+              }}
+            >
+              Make visible
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/**
+ * §5d-2 — the referrals made for one need, read through the single lookup.
+ * Directory link state is shown honestly: an org that has been unpublished
+ * still names the referral, flagged as no longer listed.
+ */
+function NeedReferralList({ patientId, itemId }: { patientId: string; itemId: string }) {
+  const json = useEhr(() => JSON.stringify(AdelanteEHR.referralsForNeed(patientId, itemId)));
+  const refs = JSON.parse(json) as ResourceReferral[];
+  if (refs.length === 0) return null;
+  return (
+    <ul className="space-y-1">
+      {refs.map((r) => {
+        const link = resourceLinkState(r);
+        return (
+          <li key={r.id} className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+            <Building2 className="h-3 w-3" />
+            <span className="text-navy">{referralProviderLabel(r)}</span>
+            <Badge variant="outline" className="text-[10px]">
+              {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
+            </Badge>
+            {link.kind === "external" && <span>Not in the directory</span>}
+            {link.kind === "inactive" && <span>Directory listing not published</span>}
+            {link.kind === "missing" && <span>No longer in the directory</span>}
+            {!isReferralOpen(r) && <span>· closed</span>}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
@@ -844,7 +976,9 @@ export function ReferralsTab({
   const [category, setCategory] = useState<ResourceReferral["category"]>("housing");
   const [provider, setProvider] = useState("");
   const [note, setNote] = useState("");
-  const statusOpts: ResourceReferral["status"][] = ["pending", "accepted", "completed"];
+  // §5d-2 — a resolve PROMPT, never an auto-close: a human decides whether the
+  // need is met.
+  const [resolvePrompt, setResolvePrompt] = useState<ResourceReferral | null>(null);
   return (
     <div className="space-y-3">
       {!readOnly && (
@@ -941,14 +1075,33 @@ export function ReferralsTab({
               <div className="flex items-start justify-between gap-2">
                 <div>
                   <div className="capitalize text-navy">
-                    {r.category} · {r.provider}
+                    {r.category} · {referralProviderLabel(r)}
                   </div>
                   <div className="text-[11px] text-muted-foreground">
                     Created <ClientDate value={r.createdAt} />
+                    {(() => {
+                      const link = resourceLinkState(r);
+                      if (link.kind === "external") return " · not in the directory";
+                      if (link.kind === "inactive") return " · directory listing not published";
+                      if (link.kind === "missing") return " · no longer in the directory";
+                      return " · directory listing";
+                    })()}
                   </div>
+                  {r.sdohItemId && (
+                    <div className="text-[11px] text-muted-foreground">
+                      For need:{" "}
+                      {(p?.sdohPlan?.items ?? []).find((i) => i.id === r.sdohItemId)?.need ??
+                        "need no longer on file"}
+                    </div>
+                  )}
+                  {r.outcomeReason && (
+                    <div className="text-[11px] text-muted-foreground">
+                      Outcome reason: {r.outcomeReason}
+                    </div>
+                  )}
                 </div>
-                <Badge variant="outline" className="capitalize text-[10px]">
-                  {r.status}
+                <Badge variant="outline" className="text-[10px]">
+                  {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
                 </Badge>
               </div>
               {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
@@ -962,29 +1115,11 @@ export function ReferralsTab({
                   : {})}
               />
               <div className="flex flex-wrap items-center gap-2">
-                <Select
-                  value={r.status}
-                  onValueChange={(v) =>
-                    AdelanteEHR.setResourceReferralStatus(
-                      patientId,
-                      r.id,
-                      v as ResourceReferral["status"],
-                      undefined,
-                      { staffName, role },
-                    )
-                  }
-                >
-                  <SelectTrigger className="h-8 text-xs w-[140px]">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {statusOpts.map((s) => (
-                      <SelectItem key={s} value={s} className="capitalize">
-                        {s}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
+                <ReferralOutcomeControl
+                  patientId={patientId}
+                  referral={r}
+                  onConnected={() => r.sdohItemId && setResolvePrompt(r)}
+                />
                 <Button
                   size="sm"
                   variant="ghost"
@@ -1007,7 +1142,128 @@ export function ReferralsTab({
           );
         })}
       </ul>
+      <AlertDialog
+        open={Boolean(resolvePrompt)}
+        onOpenChange={(v) => !v && setResolvePrompt(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Mark the need resolved?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This referral is connected. That does not automatically mean the need is met — only
+              resolve it if the patient actually has what they needed.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Leave the need open</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (resolvePrompt?.sdohItemId) {
+                  AdelanteEHR.setSdohStatus(
+                    patientId,
+                    resolvePrompt.sdohItemId,
+                    "completed",
+                    undefined,
+                    { staffName, role },
+                  );
+                }
+                setResolvePrompt(null);
+              }}
+            >
+              Resolve the need
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/**
+ * §5d-2 — outcome + reason. Any outcome other than pending needs a reason;
+ * the data layer refuses without one, so this collects it up front.
+ */
+function ReferralOutcomeControl({
+  patientId,
+  referral,
+  onConnected,
+}: {
+  patientId: string;
+  referral: ResourceReferral;
+  onConnected: () => void;
+}) {
+  const { staffName, role } = useActingStaff();
+  const [pendingOutcome, setPendingOutcome] = useState<ResourceReferralOutcome | null>(null);
+  const [reason, setReason] = useState("");
+
+  function apply(outcome: ResourceReferralOutcome, why?: string) {
+    try {
+      AdelanteEHR.setResourceReferralStatus(patientId, referral.id, outcome, undefined, {
+        staffName,
+        role,
+      }, why);
+      setPendingOutcome(null);
+      setReason("");
+      if (outcome === "connected") onConnected();
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not record this outcome.");
+    }
+  }
+
+  return (
+    <>
+      <Select
+        value={referral.status}
+        onValueChange={(v) => {
+          const outcome = v as ResourceReferralOutcome;
+          if (outcome === "pending") return apply(outcome);
+          setPendingOutcome(outcome);
+          setReason(referral.outcomeReason ?? "");
+        }}
+      >
+        <SelectTrigger className="h-8 text-xs w-[170px]">
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {RESOURCE_REFERRAL_OUTCOMES.map((o) => (
+            <SelectItem key={o} value={o}>
+              {RESOURCE_REFERRAL_OUTCOME_LABEL[o]}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+      <AlertDialog
+        open={Boolean(pendingOutcome)}
+        onOpenChange={(v) => !v && setPendingOutcome(null)}
+      >
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>
+              {pendingOutcome ? RESOURCE_REFERRAL_OUTCOME_LABEL[pendingOutcome] : ""} — why?
+            </AlertDialogTitle>
+            <AlertDialogDescription>
+              A short reason so the next person picking this up knows what happened.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <Textarea rows={2} value={reason} onChange={(e) => setReason(e.target.value)} />
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={(e) => {
+                if (!reason.trim()) {
+                  e.preventDefault();
+                  toast.error("Give a short reason for this outcome.");
+                  return;
+                }
+                if (pendingOutcome) apply(pendingOutcome, reason.trim());
+              }}
+            >
+              Record outcome
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
 
