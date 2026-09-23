@@ -1,82 +1,117 @@
-# Phase 5d-3 — activity log, follow-up tasks, and aging
+# SDOH Referral Thread, Phase 5d-4 (final)
 
-## What I found (current state)
+One picture of each need for the patient and the advocate, and a need-to-resolution
+reporting funnel. Builds on 5d-1 (Part 2 consent gate + attribution), 5d-2 (need↔referral
+link + outcomes), 5d-3 (activity log + aging).
 
-- `SdohPlanItem.note` and `ResourceReferral.note` are single overwritable strings; `setSdohStatus` (ehr.ts:10140) and `setResourceReferralStatus` (ehr.ts:10321) replace them in place. No author, no history.
-- `ResourceReferral.followUpDate` (ehr.ts:1855) exists; nothing reads or writes it.
-- `createCaseTask` is never called from any need/referral path. Tasks reach My Work through `myOpenItems()` (myWork.ts:132), which counts a task when it is assigned to or claimed by the viewer **and past due**.
-- `patientOpenItems.ts` lists unresolved needs with no age and no referrals at all.
-- `referralAging.ts` covers inbound intake referrals only (3 days due / 7 overdue, labelled draft).
-- Patient/advocate surfaces read `visibleToPatient` and a small set of fields; none of them render `note` on a need or referral today (`PatientHome`, `next-steps`, `advocate.coordination`). So the log has no existing leak path — I will keep it that way by not exporting log entries from any patient-facing selector.
+## What I found in the current code
 
-## Build
+- `PostIntakeResources.tsx` (`/next-steps`) reads open, patient-visible needs and renders
+  directory category matches through `matchResourcesForNeed`. It never reads
+  `resourceReferrals`. Resolved needs are filtered out silently.
+- `ReferralsForYouCard` in `PatientHome.tsx` lists referrals in a separate card with their
+  own status labels and no link back to the need they serve.
+- `AdelanteEHR.advocateCoordination(linkId)` returns needs only — id, need, status, note,
+  updatedAt — already filtering `visibleToPatient !== false` and SUD-looking text, with a
+  masked count. No referral ever reaches an advocate.
+- `engagementReporting.ts` and `/reporting` carry no need or referral measure at all.
+- The shared small-cohort guard is `cohortGuard()` / `MIN_COHORT_SIZE = 11` in
+  `src/lib/cohortGuard.ts`; `BreakdownCard` + `CohortGuardNotice` in `reporting.tsx`
+  already render a `GuardedBreakdown`.
 
-### 1. Activity log (`src/lib/ehr.ts`)
+## 1. Unified patient view
 
-New shared type, modelled on `CaseTaskNote`:
+**Where it lives: `/next-steps` only.** That page becomes the one need-centred thread.
+`ReferralsForYouCard` is removed from `PatientHome`, replaced by a small summary card
+("Your everyday needs — N being worked on") linking to `/next-steps`, so there is never a
+second competing list. Any referral with no linked need (older or standalone) is rendered on
+`/next-steps` under an "Other places we connected you with" block so nothing disappears.
 
-```ts
-export type SdohLogEntryType =
-  | "contact_attempt" | "org_update" | "client_update"
-  | "barrier" | "document" | "next_step";
-export type SdohContactMethod = "phone" | "email" | "in_person" | "portal" | "fax";
-export const SDOH_BARRIERS = [...] // draft list from the brief, labelled draft on screen
-export interface SdohLogEntry {
-  id: string; text: string; entryType: SdohLogEntryType;
-  authorName: string; authorRole: StaffRole; at: string;
-  contactName?: string; contactMethod?: SdohContactMethod; contactResult?: string;
-  barriers?: SdohBarrier[];
-  documentsNeeded?: string[]; documentsCollected?: string[];
-  nextStep?: string; nextStepDueDate?: string; taskId?: string;
-}
-```
+New pure module `src/lib/patientNeedThread.ts`:
 
-Added as `log?: SdohLogEntry[]` on both `SdohPlanItem` and `ResourceReferral`. Append-only writers `appendSdohNeedLog(patientId, itemId, entry, actor)` and `appendReferralLog(patientId, referralId, entry, actor)` — no edit, no delete — each writing an audit entry in the existing shape (`sdoh_need_log_added`, `resource_referral_log_added`). Actor is required for a log entry (unlike legacy status writes); unattributed entries are not creatable.
+- `patientNeedThreads(patientId)` → per need: the need, its provenance label, its
+  patient-visible referrals (`referralsForNeed`, filtered `visibleToPatient !== false`), a
+  plain-language status line, and the directory match.
+- Status copy from the real outcome: pending → "Your team has sent this to {org} — waiting to
+  hear back"; connected → "We've connected you with {org}"; waitlisted → "You're on a waitlist
+  with {org}"; unreachable → "We couldn't reach them — your care team is following up";
+  not_eligible → "You weren't eligible there — your team is looking at other options";
+  declined_by_client → "You told us you didn't want this one"; closed → "This one is closed".
+  No referral yet → "Your team is looking for a place for this."
+- `recentlyResolvedNeeds(patientId, days = 14)` → completed/not_completed needs whose
+  `updatedAt` is inside the window, for the closure block: "Sorted — {need}. Tell your team if
+  this comes back." They leave the active list but say goodbye first.
 
-**Pre-existing `note`:** shown above the log as a clearly marked "Earlier note (pre-dates the activity log — no author recorded)" block, not migrated into the log. Migrating would fabricate an author and a timestamp.
+Protections carried unchanged:
+- The thread selector reads only need/referral display fields. `log`, `barriers`, contact
+  fields and staff notes are never included in the returned shape — not filtered in the
+  component, absent from the data.
+- Recovery/support-group organisations stay **category-only**. Decision: keep the existing
+  `sdohResourceMatch.ts` rule. No `CommunityResource` carries a Part 2 classification yet, so
+  naming an org still risks disclosing SUD involvement on a screen a family member can see
+  over a shoulder. Where a staff-created referral to such a category exists, the patient sees
+  the category and status without the organisation name.
+- `visibleToPatient !== false` is applied to needs and referrals independently; safety needs
+  (5d-2 staff-only default) never appear unless staff deliberately made them visible.
 
-**Gating:** the log renders only inside the record's SDOH/Referrals tabs. A Part 2-gated viewer already gets the generic restricted row for SUD-sensitive referrals (5d-1) — the log is inside that row, so it is masked with everything else, and the append form is not rendered. Safety-sensitive needs already carry the staff-only badge; the log is staff-only for every need regardless of `visibleToPatient`, and no patient/advocate selector reads `log`.
+## 2. Advocate view
 
-### 2. Follow-up tasks
+`advocateCoordination` gains `referrals` per item, built with the same restraint:
 
-`followUpDate` gets real UI on the referral row (set/clear, attributed via a log entry). Setting a follow-up date, or an entry with `nextStep` + `nextStepDueDate`, offers "Create a task for this".
+| Tier | Needs | Referral status | Organisation name |
+| --- | --- | --- | --- |
+| HIPAA-only | yes | yes | only when Part 2 consent is live (`advocateSudUnmasked`) and the category is not Part 2 sensitive |
+| Authorized representative | yes | yes | never for Part 2 sensitive categories — AR is categorically barred |
+| AHCD agent | yes | yes | authority-derived; suppressed when `ahcdPart2ScopeUnclear` |
+| Conservator | yes | yes | authority-derived |
 
-Task creation goes through the existing `createCaseTask`:
-- `patientId`, `assignedTo: patient.caseManagerId`, `dueDate` = follow-up/next-step date
-- new origin `"sdoh_follow_up"`, `taskType: "sdoh_follow_up"`
-- `detail` names the need or the provider so the task links back; `dedupeKey` = `sdoh-follow:<needOrReferralId>:<dueDate>`
-- resulting `taskId` stored on the log entry
+Implementation: a referral in `PART2_SENSITIVE_REFERRAL_CATEGORIES` is returned as a
+restricted row (status only, no category, no provider, no note) for any link whose SUD access
+resolves masked — the same shape staff Part 2-gated viewers see. Safety needs remain excluded
+entirely and counted in `maskedCount`. Activity log never crosses the boundary.
+`AdvocateCoordinationPanel` renders the referral lines under each need.
 
-**No case manager assigned:** the control states plainly "No case manager is assigned to this client — a follow-up task cannot be assigned" and does not create anything (Phase 3a pattern). Never a silent no-op.
+## 3. Reporting funnel
 
-**Part 2:** a task for a SUD-sensitive referral carries no category or provider in its title/detail — only "Social-needs follow-up" plus the client, since task titles surface in queues to staff who may be gated.
+New `src/lib/sdohReporting.ts`:
 
-### 3. Aging (`src/lib/sdohAging.ts`, new)
+- `sdohFunnel({ patientIds, windowDays })` → stages **identified → referred → connected →
+  resolved** as counts plus median days between consecutive stages, derived from
+  `createdAt`/`updatedAt`/referral outcome timestamps. Each stage carries `cohortGuard()`.
+- Slices: need category (the `matchResourcesForNeed` primary category), provenance
+  (`SdohItemSource`), and population track via `resolveCohorts()`. Every slice is a
+  `GuardedBreakdown`.
+- `barrierFrequency()` over 5d-3 log entries, carrying `SDOH_BARRIERS_DRAFT_NOTE`.
+- Part 2: recovery/support-group referrals are folded into a single
+  "Other / confidential services" category bucket and are never a slice value of their own, so
+  no breakdown a Part 2-gated reporting viewer sees can isolate them. Cell counts below 11 are
+  flagged by the shared guard exactly as elsewhere.
 
-Draft thresholds, labelled on screen "Draft threshold — pending care-operations sign-off", matching `REFERRAL_AGING_DRAFT`:
+`/reporting` gets a "Social needs" Area between Operational and CalOMS: the four funnel stats
+with median-days notes, three `BreakdownCard`s (category, provenance, track), and the barrier
+table. Copy states association only — e.g. "Needs and engagement shown side by side; this is
+an association, not a cause."
 
-| State | Due | Overdue | Reasoning |
-|---|---|---|---|
-| Need identified, never referred | 5 d | 14 d | A need that's been named but not acted on is the classic dropout point; a working week to act, two weeks is a failure. |
-| Referral sent, no outcome | 7 d | 21 d | Community orgs commonly answer within a week; three weeks with no word means the referral is not going to close itself. |
-| Waitlisted | 30 d | 60 d | A waitlist is a legitimately slow state — clocking it weekly would create noise — but a monthly check-in is real practice. |
+## 4. Disengagement link — recommendation only, nothing built
 
-`sdohLastActionAt()` = the latest of `createdAt`, `updatedAt`, and the newest log entry's `at`, so any real action (including a log entry) resets the clock. Closed outcomes and completed/not-completed needs age out to `closed`.
+Recommendation: **yes, but as its own labelled signal, not merged into the existing one.** An
+unresolved need past its 5d-3 overdue threshold is a strong operational reason to reach out,
+but the current My Work disengagement signal means "the patient went quiet". Folding an
+overdue staff-side referral into it would attribute a staff backlog to the patient. Proposal
+for a later phase: a separate "needs stalled" line in My Work, already partly present as the
+5d-3 `sdohAging` bucket.
 
-Feeds:
-- `patientOpenItems.ts` — adds `kind: "resource_referral"` rows for open referrals, and an age/aging detail on both needs and referrals.
-- `myWork.ts` — a new `sdohAging: MySdohItem[]` bucket for needs/referrals on patients whose `caseManagerId` resolves to the viewer's alias set and whose aging state is `due`/`overdue`, counted into `total`. Existing buckets untouched.
+## Files
 
-### 4. UI
-
-- `RecordTabs.tsx` SdohTab: per-need aging badge, collapsible activity log with the structured append form, "Earlier note" block.
-- `RecordTabs.tsx` ReferralsTab: same log on referrals, plus follow-up date control and aging badge; masked inside the existing restricted row for gated viewers.
-- Shared `src/components/clinical/SdohActivityLog.tsx` so the need and referral versions cannot drift.
+- new: `src/lib/patientNeedThread.ts`, `src/lib/sdohReporting.ts`,
+  `src/components/patient/NeedThreadList.tsx`, tests for both libs + advocate tiers.
+- edit: `PostIntakeResources.tsx`, `PatientHome.tsx`, `src/lib/ehr.ts`
+  (`advocateCoordination`), `AdvocateWorkspace.tsx`, `src/routes/reporting.tsx`.
 
 ## Verification
 
-Typecheck, full suite, plus new tests in `src/lib/__tests__/sdohActivityLog.test.ts`: append-only with attribution; structured fields persist; log never appears in any patient/advocate selector output; Part 2 gating on entries; safety staff-only; follow-up task creation with and without a case manager; aging thresholds and reset on a new log entry; open-items summary includes referrals. Live browser at both viewports including a Part 2-gated role and a patient view.
-
-## Non-goals
-
-No reporting funnel (5d-4), no patient/advocate view changes beyond confirming no leak, no barrier categories beyond the draft list.
+Typecheck, full vitest run. New tests: need↔referral pairing, closure window, safety and
+`visibleToPatient` respected on both patient and advocate paths, per-tier organisation-name
+rules, funnel stage counts and medians, cohort guard on every breakdown, and a no-Part 2-leak
+assertion over the reporting output. Live browser at both viewports as a patient, two advocate
+tiers, and a population-health reporting role; zero console errors.
