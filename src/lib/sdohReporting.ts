@@ -189,7 +189,10 @@ function tally(rows: { key: string; label: string }[], patients: number): Guarde
  */
 export function reportableCategory(rec: NeedRecord): { key: string; label: string } {
   const first = rec.referrals[0];
-  if (!first || isPart2SensitiveCategory(first.category))
+  // A need with no referral has no category at all — saying so is honest, and
+  // keeps the confidential bucket meaning what it says.
+  if (!first) return { key: "not_yet_referred", label: "Not yet referred" };
+  if (isPart2SensitiveCategory(first.category))
     return { key: CONFIDENTIAL_CATEGORY_KEY, label: CONFIDENTIAL_CATEGORY_LABEL };
   return {
     key: first.category,
