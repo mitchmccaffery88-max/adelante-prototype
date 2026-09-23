@@ -458,7 +458,14 @@ export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
   advocate_reported: "Raised by advocate",
 };
 
+/**
+ * §5d-2 — the AHC-HRSN domain whose needs are staff-only by default.
+ * Keyed on the real domain key declared in `AHC_HRSN.domains`.
+ */
+export const HRSN_SAFETY_DOMAIN_KEY = "safety";
+
 export interface SdohPlanItem {
+
   id: string;
   need: string;
   /** How this need was established. Required — see `SdohItemSource`. */
