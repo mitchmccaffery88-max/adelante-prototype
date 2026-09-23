@@ -121,7 +121,7 @@ describe("attribution and audit on needs and referrals", () => {
     AdelanteEHR.addSdohItem(id, { need: "Needs a bus pass" }, ACTOR);
     const item = AdelanteEHR.getPatient(id)!.sdohPlan!.items[0]!;
     expect(item.createdBy).toBe(ACTOR.staffName);
-    AdelanteEHR.setSdohStatus(id, item.id, "resolved", undefined, ACTOR);
+    AdelanteEHR.setSdohStatus(id, item.id, "completed", undefined, ACTOR);
     const after = AdelanteEHR.getPatient(id)!.sdohPlan!.items[0]!;
     expect(after.lastUpdatedBy).toBe(ACTOR.staffName);
     expect(after.lastUpdatedByRole).toBe(ACTOR.role);
