@@ -1136,7 +1136,26 @@ export function ReferralsTab({
                   {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
                 </Badge>
               </div>
-              {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
+              {(() => {
+                const aging = referralAgingState(r);
+                if (aging.state !== "due" && aging.state !== "overdue") return null;
+                return (
+                  <div
+                    className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
+                  </div>
+                );
+              })()}
+              <ReferralFollowUpControl patientId={patientId} referral={r} readOnly={readOnly} />
+              <SdohActivityLog
+                patientId={patientId}
+                target="referral"
+                targetId={r.id}
+                {...(r.log ? { log: r.log } : {})}
+                {...(r.note ? { legacyNote: r.note } : {})}
+                readOnly={readOnly}
+              />
               <AttributionLine
                 {...(r.createdBy ? { createdBy: r.createdBy, createdAt: r.createdAt } : {})}
                 {...(r.lastUpdatedBy
