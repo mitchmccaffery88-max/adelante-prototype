@@ -6702,6 +6702,9 @@ export interface GroupSession {
   serviceType: ServiceType;
   modality: "video" | "phone" | "in_person";
   locationId?: string;
+  /** Standing virtual room for this group. Absent = no link added yet. */
+  virtualRoom?: GroupVirtualRoom;
+
   /**
    * Three categories (DHCS content via Christi). "Pre-authorization" is still
    * read as INTERNAL clinical eligibility/placement approval, not payer-facing
@@ -6792,6 +6795,9 @@ export interface GroupOccurrenceRecord {
   modality?: GroupOccurrenceModality;
   modalitySetAt?: string;
   modalitySetBy?: string;
+  /** One-meeting override of the group's standing virtual room. */
+  virtualRoom?: GroupVirtualRoom;
+
   /**
    * Per-facilitator direct-care minutes for THIS meeting. Absent = not yet
    * documented; readers fall back to `defaultGroupFacilitators(session)`.
