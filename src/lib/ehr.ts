@@ -6191,10 +6191,15 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   const hrsn = p.screeners["ahc-hrsn"];
   for (const d of hrsn?.domains ?? []) {
     if (!d.positive) continue;
+    // §5d-2 — interpersonal safety is never synthesized into a plan row: its
+    // needs are materialized as real STAFF-ONLY items and a synthesized row
+    // carries no visibility of its own.
+    if (d.key === HRSN_SAFETY_DOMAIN_KEY) continue;
     const label = d.label;
     if (sdohItems.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
     if (sdohOpen.some((i) => i.need.toLowerCase() === label.toLowerCase())) continue;
     sdohOpen.push({ need: label, status: "identified", source: "pre_release" });
+
   }
 
   const upcoming = appointments
