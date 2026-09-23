@@ -60,12 +60,12 @@
 - [x] Attribution + audit on need and referral create/status changes
 
 ## SDOH Referral Thread Phase 5d-2 (needs <-> referrals, directory, outcomes)
-- [ ] `ResourceReferral.sdohItemId`; drop never-written `SdohPlanItem.referralId`
-- [ ] Refer action on a need; creating a referral moves the need to sent
-- [ ] Real directory picker (`resourceId`) + link state via referralLinks.ts
-- [ ] Off-directory referral (name + note), never writes to the directory
-- [ ] Seven real outcomes with reason + attribution
-- [ ] Connected prompts staff to resolve the need (no auto-close)
-- [ ] Materialize positive AHC-HRSN domains as real needs
-- [ ] Interpersonal-safety needs + their referrals default staff-only, warn before making visible
-- [ ] Remove the stale "Build 2" resource-library string
+- [x] `ResourceReferral.sdohItemId`; drop never-written `SdohPlanItem.referralId`
+- [x] Refer action on a need; creating a referral moves the need to sent
+- [x] Real directory picker (`resourceId`) + link state via referralLinks.ts
+- [x] Off-directory referral (name + note), never writes to the directory
+- [x] Seven real outcomes with reason + attribution
+- [x] Connected prompts staff to resolve the need (no auto-close)
+- [x] Materialize positive AHC-HRSN domains as real needs
+- [x] Interpersonal-safety needs + their referrals default staff-only, warn before making visible
+- [x] Remove the stale "Build 2" resource-library string
