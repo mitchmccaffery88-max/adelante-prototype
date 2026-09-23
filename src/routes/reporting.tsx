@@ -141,6 +141,7 @@ function Stat({
 function Area({
   id,
   title,
+  eyebrow,
   purpose,
   icon: Icon,
   children,
@@ -148,6 +149,7 @@ function Area({
 }: {
   id: string;
   title: string;
+  eyebrow?: string;
   purpose: string;
   icon: typeof Gauge;
   children: React.ReactNode;
@@ -164,6 +166,11 @@ function Area({
             <Icon className="h-4 w-4 text-teal" aria-hidden />
             {title}
           </h2>
+          {eyebrow && (
+            <p className="max-w-2xl text-xs font-medium text-navy/80 dark:text-navy-foreground/80">
+              {eyebrow}
+            </p>
+          )}
           <p className="max-w-2xl text-xs text-muted-foreground">{purpose}</p>
         </div>
         <div className="flex flex-wrap gap-2">{actions}</div>
@@ -460,11 +467,11 @@ function ReportingHome() {
               note={`Across ${funnel.patients} patient(s)`}
             />
             <Stat
-              label="Referred"
+              label="Referred to a resource"
               value={String(funnel.referred)}
               note={
                 funnel.medianDaysToReferral === null
-                  ? "No referral yet — no elapsed time to report"
+                  ? "Not yet referred to a resource — no elapsed time to report"
                   : `Median ${funnel.medianDaysToReferral} day(s) from identified`
               }
               muted={funnel.referred === 0}
@@ -475,7 +482,7 @@ function ReportingHome() {
               note={
                 funnel.medianDaysToConnected === null
                   ? "No connection recorded yet"
-                  : `Median ${funnel.medianDaysToConnected} day(s) from referral`
+                  : `Median ${funnel.medianDaysToConnected} day(s) from resource referral`
               }
               muted={funnel.connected === 0}
             />
@@ -497,8 +504,8 @@ function ReportingHome() {
             />
           )}
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
-            {SDOH_FUNNEL_ASSOCIATION_NOTE} Recovery and support-group referrals are never a
-            category of their own here — they are counted inside{" "}
+            {SDOH_FUNNEL_ASSOCIATION_NOTE} Recovery and support-group resource referrals are
+            never a category of their own here — they are counted inside{" "}
             {CONFIDENTIAL_CATEGORY_LABEL.toLowerCase()}, because a small category count would
             identify who is in substance-use care.
           </p>
@@ -506,7 +513,7 @@ function ReportingHome() {
             <BreakdownCard
               title="By need category"
               breakdown={needCategory}
-              empty="No needs with a referral category yet."
+              empty="No needs with a resource-referral category yet."
             />
             <BreakdownCard
               title="By how the need was identified"
