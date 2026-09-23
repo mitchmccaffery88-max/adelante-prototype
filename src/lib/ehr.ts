@@ -6599,6 +6599,25 @@ export function defaultOccurrenceModality(
 }
 
 /**
+ * §Group sessions — virtual room / join link.
+ *
+ * Mirrors the 1:1 `TelehealthSession` shape (roomId + join url from the mock
+ * telehealth vendor), but a group is deliberately NOT an Appointment, so it
+ * carries its own field rather than borrowing that record. Two levels, exactly
+ * like modality: a session-level standing room, optionally overridden for one
+ * occurrence. Absent = no link has been added yet — readers say so rather than
+ * inventing a URL.
+ */
+export interface GroupVirtualRoom {
+  roomId: string;
+  joinUrl: string;
+  setAt: string;
+  setBy: string;
+}
+
+
+
+/**
  * County/admin configuration. The group confidentiality acknowledgment is
  * explicitly NOT a DHCS mandate, so it ships OFF and a county can turn it on.
  */
