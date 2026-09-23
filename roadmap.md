@@ -94,3 +94,10 @@
 - Advocate coordination now carries referrals per need, tier-aware Part 2 restricted rows.
 - Social needs funnel + slices + barrier frequency on /reporting, cohort-guarded.
 - Disengagement link: recommendation only (separate "needs stalled" signal), not built.
+
+## Referrals Rework Phase 4g — referral-to-active-patient funnel
+- [x] `src/lib/referralFunnel.ts`: stages submitted → contacted (reached only) → enrolled → first appt scheduled → first appt attended, medians, cohort guard
+- [x] Slices: source (justice sources folded), justice-involved answer, population track
+- [x] Drop-off: declined by reason, outreach attempted-not-reached, overdue before first contact, enrolled never attended
+- [x] Reporting Area beside Social needs, with confidentiality note on the source fold
+- [x] Tests incl. unanswered attempt ≠ contacted; typecheck, suite, build, browser
