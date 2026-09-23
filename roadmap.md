@@ -96,8 +96,8 @@
 - Disengagement link: recommendation only (separate "needs stalled" signal), not built.
 
 ## Referrals Rework Phase 4g — referral-to-active-patient funnel
-- [ ] `src/lib/referralFunnel.ts`: stages submitted → contacted (reached only) → enrolled → first appt scheduled → first appt attended, medians, cohort guard
-- [ ] Slices: source (justice sources folded), justice-involved answer, population track
-- [ ] Drop-off: declined by reason, outreach attempted-not-reached, overdue before first contact, enrolled never attended
-- [ ] Reporting Area beside Social needs, with confidentiality note on the source fold
-- [ ] Tests incl. unanswered attempt ≠ contacted; typecheck, suite, build, browser
+- [x] `src/lib/referralFunnel.ts`: stages submitted → contacted (reached only) → enrolled → first appt scheduled → first appt attended, medians, cohort guard
+- [x] Slices: source (justice sources folded), justice-involved answer, population track
+- [x] Drop-off: declined by reason, outreach attempted-not-reached, overdue before first contact, enrolled never attended
+- [x] Reporting Area beside Social needs, with confidentiality note on the source fold
+- [x] Tests incl. unanswered attempt ≠ contacted; typecheck, suite, build, browser
