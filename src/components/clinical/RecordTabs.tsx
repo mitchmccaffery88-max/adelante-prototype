@@ -698,6 +698,16 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
             </div>
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
+            <AttributionLine
+              {...(i.createdBy ? { createdBy: i.createdBy, createdAt: i.createdAt } : {})}
+              {...(i.lastUpdatedBy
+                ? {
+                    updatedBy: i.lastUpdatedBy,
+                    ...(i.updatedAt ? { updatedAt: i.updatedAt } : {}),
+                  }
+                : {})}
+            />
+
             {i.urgentFlaggedAt &&
               (urgentOpen(i.urgentEscalationId) ? (
                 <div className="text-[11px] text-destructive">
