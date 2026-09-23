@@ -33,6 +33,7 @@ import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { useI18n } from "@/lib/i18n";
+import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
 import { CalomsProfileCard } from "@/components/clinical/CalomsProfileCard";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
