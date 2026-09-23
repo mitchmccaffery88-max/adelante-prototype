@@ -50,7 +50,11 @@ export function StaffBreadcrumbs() {
   const Icon = visible?.icon;
 
   return (
-    <div className="border-b bg-background/60 px-4 py-3 sm:px-6">
+    <div
+      className="border-b bg-background/60 px-4 py-3 sm:px-6 flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between"
+      data-testid="staff-top-bar"
+    >
+      <div className="min-w-0">
       <nav aria-label="Breadcrumb" data-testid="staff-breadcrumbs">
         <ol className="flex flex-wrap items-center gap-1 text-xs text-muted-foreground">
           <li className="flex items-center gap-1">
