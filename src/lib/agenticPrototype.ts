@@ -17,6 +17,7 @@ import {
   type ProgressNote,
   type ScreenerResult,
 } from "@/lib/ehr";
+import { isReferralOpen } from "@/lib/noteAutofill";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
 

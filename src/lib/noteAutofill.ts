@@ -20,6 +20,7 @@ import {
 import {
   isPart2SensitiveCategory,
   isProblemClinicallyActive,
+  RESOURCE_REFERRAL_CLOSED_OUTCOMES,
 
   noteStatus,
   type Allergy,
