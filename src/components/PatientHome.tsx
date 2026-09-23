@@ -15,7 +15,8 @@ import {
   Sparkles,
   Bell,
 } from "lucide-react";
-import { Users, MessageSquare, HandHeart, HeartHandshake } from "lucide-react";
+import { Users, MessageSquare, HeartHandshake } from "lucide-react";
+import { NeedThreadSummaryCard } from "@/components/patient/NeedThreadList";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
@@ -190,7 +191,9 @@ export function PatientHome() {
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
           <NextStepsCard patientId={patient.id} />
           <SupportPlanCard patientId={patient.id} />
-          <ReferralsForYouCard patientId={patient.id} />
+          {/* §5d-4 — a COUNT and a link, not a second list. The full
+              need-by-need thread lives on /next-steps. */}
+          <NeedThreadSummaryCard patientId={patient.id} />
         </div>
       </section>
 
@@ -537,42 +540,8 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
   );
 }
 
-function ReferralsForYouCard({ patientId }: { patientId: string }) {
-  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const items = (p?.resourceReferrals ?? []).filter((r) => r.visibleToPatient !== false);
-  if (items.length === 0) return null;
-  const statusLabel: Record<string, string> = {
-    pending: "In progress",
-    connected: "Connected",
-    waitlisted: "On a waitlist",
-    not_eligible: "Not eligible",
-    declined_by_client: "You declined",
-    unreachable: "Could not reach them",
-    closed: "Closed",
-  };
-  return (
-    <Card className="p-5">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <HandHeart className="h-4 w-4" /> Referrals for you
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">Places your team connected you with.</p>
-      <ul className="mt-3 space-y-2 text-sm">
-        {items.map((r) => (
-          <li key={r.id} className="rounded-md border p-2.5">
-            <div className="flex items-center justify-between gap-2">
-              <div>
-                <div className="text-navy capitalize">
-                  {r.category} — {r.provider}
-                </div>
-                {r.note && <div className="text-xs text-muted-foreground mt-0.5">{r.note}</div>}
-              </div>
-              <Badge variant="outline" className="text-[10px]">
-                {statusLabel[r.status] ?? r.status}
-              </Badge>
-            </div>
-          </li>
-        ))}
-      </ul>
-    </Card>
-  );
-}
+// §5d-4 — `ReferralsForYouCard` was removed here. It listed referrals with no
+// indication of WHICH need each one served, competing with /next-steps. The
+// need-paired thread on /next-steps replaces it; the home screen now carries
+// `NeedThreadSummaryCard` (a count and a link) so there is only one list.
+

@@ -44,6 +44,17 @@ import {
   type GuardedBreakdown,
 } from "@/lib/calomsReporting";
 import { CALOMS_DRAFT_NOTE, JUSTICE_SELF_REPORT_NOTE } from "@/lib/caloms";
+import { SDOH_BARRIERS_DRAFT_NOTE } from "@/lib/ehr";
+// §5d-4 — the social-needs funnel.
+import {
+  barrierFrequency,
+  needsByCategory,
+  needsByProvenance,
+  needsByTrack,
+  sdohFunnel,
+  CONFIDENTIAL_CATEGORY_LABEL,
+  SDOH_FUNNEL_ASSOCIATION_NOTE,
+} from "@/lib/sdohReporting";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
@@ -247,6 +258,12 @@ function ReportingHome() {
   const priorRows = useEhr(() => priorTreatmentBreakdown());
   const dischargeRows = useEhr(() => dischargeStatusBreakdown());
   const justice = useEhr(() => justiceSelfReportCoverage());
+  // §5d-4 — current-state funnel over the live need/referral records.
+  const funnel = useEhr(() => sdohFunnel());
+  const needCategory = useEhr(() => needsByCategory());
+  const needProvenance = useEhr(() => needsByProvenance());
+  const needTrack = useEhr(() => needsByTrack());
+  const barriers = useEhr(() => barrierFrequency());
 
   if (!seesPopulation && !seesBilling) {
     return (
@@ -404,6 +421,118 @@ function ReportingHome() {
           )}
         </Area>
       )}
+
+      {/* §5d-4 — the social-needs funnel: identified → referred → connected →
+          resolved. Part 2 sensitive referral categories are folded into one
+          unspecific bucket inside `sdohReporting.ts`, so no slice here can
+          isolate them. */}
+      {seesPopulation && (
+        <Area
+          id="social-needs"
+          title="Social needs"
+          purpose="From a need being identified to it actually being resolved. Counts and elapsed time only — an association with engagement, never a cause of it."
+          icon={Activity}
+          actions={null}
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+            <Stat
+              label="Needs identified"
+              value={String(funnel.identified)}
+              note={`Across ${funnel.patients} patient(s)`}
+            />
+            <Stat
+              label="Referred"
+              value={String(funnel.referred)}
+              note={
+                funnel.medianDaysToReferral === null
+                  ? "No referral yet — no elapsed time to report"
+                  : `Median ${funnel.medianDaysToReferral} day(s) from identified`
+              }
+              muted={funnel.referred === 0}
+            />
+            <Stat
+              label="Connected"
+              value={String(funnel.connected)}
+              note={
+                funnel.medianDaysToConnected === null
+                  ? "No connection recorded yet"
+                  : `Median ${funnel.medianDaysToConnected} day(s) from referral`
+              }
+              muted={funnel.connected === 0}
+            />
+            <Stat
+              label="Resolved"
+              value={String(funnel.resolved)}
+              note={
+                funnel.medianDaysToResolved === null
+                  ? "No resolved need yet"
+                  : `Median ${funnel.medianDaysToResolved} day(s) from identified`
+              }
+              muted={funnel.resolved === 0}
+            />
+          </div>
+          {funnel.belowMinimumCohort && (
+            <CohortGuardNotice
+              cohortSize={funnel.cohortSize}
+              minimumCohortSize={funnel.minimumCohortSize}
+            />
+          )}
+          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+            {SDOH_FUNNEL_ASSOCIATION_NOTE} Recovery and support-group referrals are never a
+            category of their own here — they are counted inside{" "}
+            {CONFIDENTIAL_CATEGORY_LABEL.toLowerCase()}, because a small category count would
+            identify who is in substance-use care.
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <BreakdownCard
+              title="By need category"
+              breakdown={needCategory}
+              empty="No needs with a referral category yet."
+            />
+            <BreakdownCard
+              title="By how the need was identified"
+              breakdown={needProvenance}
+              empty="No needs recorded yet."
+            />
+            <BreakdownCard
+              title="By population track"
+              breakdown={needTrack}
+              empty="No needs recorded yet."
+            />
+          </div>
+          <Card className="mt-3 space-y-2 p-4">
+            <div className="flex flex-wrap items-center gap-2">
+              <h3 className="text-sm font-medium text-navy">Barriers recorded</h3>
+              <Badge variant="outline" className="text-[10px]">
+                Draft list
+              </Badge>
+            </div>
+            <p className="text-xs text-muted-foreground">{SDOH_BARRIERS_DRAFT_NOTE}</p>
+            {barriers.rows.length === 0 ? (
+              <p className="text-xs text-muted-foreground">
+                No barrier has been recorded on a social-needs activity log yet.
+              </p>
+            ) : (
+              <ul className="space-y-1">
+                {barriers.rows.map((r) => (
+                  <li key={r.key} className="flex items-baseline justify-between gap-3 text-sm">
+                    <span className="text-muted-foreground">{r.label}</span>
+                    <span className="tabular-nums text-foreground">{r.count}</span>
+                  </li>
+                ))}
+              </ul>
+            )}
+            {barriers.rows.length > 0 && barriers.belowMinimumCohort && (
+              <CohortGuardNotice
+                cohortSize={barriers.cohortSize}
+                minimumCohortSize={barriers.minimumCohortSize}
+              />
+            )}
+          </Card>
+        </Area>
+      )}
+
+
 
       {seesPopulation && (
         <Area
