@@ -746,72 +746,64 @@ function CheckInCard({ patientId, cm }: { patientId: string; cm: string }) {
   );
 }
 
+/**
+ * §5d-2 — referrals start from a NEED, not from a blank category box.
+ *
+ * The old tile recorded a category + free-text provider with no link to
+ * anything, so nothing moved and the directory was never used. This lists the
+ * client's real open needs and hands each one to the shared Refer dialog —
+ * the same dialog the record uses. With no open needs there is nothing honest
+ * to refer for, so it links into the record instead.
+ */
 function ResourceReferralCard({ patientId }: { patientId: string }) {
-  const [category, setCategory] = useState<ResourceReferralCategory>("housing");
-  const { staffName, role } = useActingStaff();
-
-  const [provider, setProvider] = useState("");
+  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [referItem, setReferItem] = useState<SdohPlanItem | null>(null);
+  const open = (p?.sdohPlan?.items ?? []).filter(
+    (i) => i.status !== "completed" && i.status !== "not_completed",
+  );
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">
-        <HandHeart className="h-4 w-4 text-teal" /> Resource referral
+        <HandHeart className="h-4 w-4 text-teal" /> Refer for a need
       </h3>
-      <div className="mt-4 space-y-3">
-        <Select value={category} onValueChange={(v) => setCategory(v as typeof category)}>
-          <SelectTrigger>
-            <SelectValue />
-          </SelectTrigger>
-          <SelectContent>
-            {RESOURCE_CATEGORIES.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}
-              </SelectItem>
-            ))}
-          </SelectContent>
-
-        </Select>
-        <Input
-          placeholder="Provider name"
-          value={provider}
-          onChange={(e) => setProvider(e.target.value)}
+      {open.length === 0 ? (
+        <p className="mt-3 text-sm text-muted-foreground">
+          No open social needs on file.{" "}
+          <Link to="/record/$patientId" params={{ patientId }} className="underline">
+            Add one on the client&apos;s record
+          </Link>
+          .
+        </p>
+      ) : (
+        <ul className="mt-3 space-y-2 text-sm">
+          {open.map((i) => (
+            <li key={i.id} className="flex items-center justify-between gap-2 border-b last:border-0 pb-2 last:pb-0">
+              <span className="text-navy">
+                {i.need}
+                {i.visibleToPatient === false && (
+                  <Badge variant="outline" className="ml-2 text-[10px]">
+                    Staff only
+                  </Badge>
+                )}
+                <span className="block text-[11px] text-muted-foreground capitalize">
+                  {i.status.replace("_", " ")}
+                </span>
+              </span>
+              <Button size="sm" variant="outline" onClick={() => setReferItem(i)}>
+                Refer
+              </Button>
+            </li>
+          ))}
+        </ul>
+      )}
+      {referItem && (
+        <ReferForNeedDialog
+          patientId={patientId}
+          item={referItem}
+          open
+          onOpenChange={(v) => !v && setReferItem(null)}
         />
-        {isPart2SensitiveCategory(category) && (
-          <div className="text-xs text-muted-foreground flex items-start gap-1.5">
-            <Lock className="h-3 w-3 mt-0.5 text-teal" />
-            This category can disclose SUD treatment status. It needs the client&apos;s 42 CFR Part
-            2 consent on file.
-          </div>
-        )}
-        <Button
-          className="w-full"
-          variant="outline"
-          onClick={() => {
-            if (!provider) return toast.error("Add a provider name");
-            try {
-              // The data layer stamps the SUD-disclosure flag from the client's
-              // live consent and refuses Part 2 categories without it.
-              AdelanteEHR.addResourceReferral(
-                patientId,
-                { category, provider },
-                { staffName, role },
-              );
-              setProvider("");
-              toast.success("Referral created");
-            } catch (e) {
-              toast.error(e instanceof Error ? e.message : "Could not create this referral.", {
-                action: {
-                  label: "Open consents",
-                  onClick: () => {
-                    window.location.assign(`/record/${patientId}?section=consents`);
-                  },
-                },
-              });
-            }
-          }}
-        >
-          Create referral
-        </Button>
-      </div>
+      )}
     </Card>
   );
 }
@@ -917,8 +909,8 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
             )}
             <div className="text-right">
               {!(sudGated && isPart2SensitiveCategory(r.category)) && (
-                <Badge variant="outline" className="capitalize text-[10px]">
-                  {r.status}
+                <Badge variant="outline" className="text-[10px]">
+                  {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
                 </Badge>
               )}
               <div className="text-[10px] text-muted-foreground mt-1">
