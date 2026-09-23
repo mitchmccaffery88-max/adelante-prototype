@@ -68,6 +68,9 @@ export function isReferralSudSensitive(r: ResourceReferral): boolean {
  * defers to the shared closed-outcome set rather than testing one value.
  */
 export function isReferralOpen(r: ResourceReferral): boolean {
+  // "completed" is the pre-5d-2 terminal value; records written before the
+  // outcome vocabulary existed still carry it, so it stays closed here.
+  if ((r.status as string) === "completed") return false;
   return !RESOURCE_REFERRAL_CLOSED_OUTCOMES.includes(r.status);
 }
 
