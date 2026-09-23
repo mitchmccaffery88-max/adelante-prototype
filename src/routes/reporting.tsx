@@ -66,6 +66,7 @@ import {
   REFERRAL_FUNNEL_ASSOCIATION_NOTE,
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
+import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
