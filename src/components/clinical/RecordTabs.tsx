@@ -109,6 +109,11 @@ import {
 import { toast } from "sonner";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import {
+  RESOURCE_REFERRAL_OUTCOMES,
+  RESOURCE_REFERRAL_OUTCOME_LABEL,
+  type ResourceReferralOutcome,
+} from "@/lib/ehr";
+import {
   Lock,
   ShieldAlert,
   Eye,
