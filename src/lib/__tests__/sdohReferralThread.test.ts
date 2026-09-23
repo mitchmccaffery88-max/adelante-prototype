@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it } from "vitest";
+import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { listResources } from "@/lib/communityResources";
 
@@ -9,8 +9,6 @@ function patient(name: string) {
     firstName: name,
     lastName: "Thread",
     dob: "1990-01-01",
-    phone: "555-0100",
-    language: "en",
   });
   return p.id;
 }
@@ -26,11 +24,6 @@ function need(patientId: string, label: string, safety = false) {
 }
 
 describe("SDOH referral thread (5d-2)", () => {
-  beforeEach(() => {
-    localStorage.clear();
-    AdelanteEHR.reset?.();
-  });
-
   it("links a referral to its need and moves the need to sent", () => {
     const id = patient("Linked");
     const item = need(id, "Housing support");
