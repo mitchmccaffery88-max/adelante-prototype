@@ -9945,6 +9945,8 @@ export const AdelanteEHR = {
       need: string;
       note?: string;
       visibleToPatient?: boolean;
+      /** §5d-2 — interpersonal-safety need: staff-only unless stated. */
+      safetySensitive?: boolean;
       /** §Phase 2 provenance. Defaults to staff-identified, which is what a
        * chart-side "add need" action really is; every other caller passes
        * its own real source. */
@@ -9960,11 +9962,15 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_assessed",
       status: "identified",
       note: input.note,
-      visibleToPatient: input.visibleToPatient ?? true,
+      // A safety need defaults to staff-only; every other need keeps the
+      // existing patient-visible default.
+      visibleToPatient: input.visibleToPatient ?? (input.safetySensitive ? false : true),
+      ...(input.safetySensitive ? { safetySensitive: true } : {}),
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
       ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
+
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
     appendAudit({
       category: "clinical",
