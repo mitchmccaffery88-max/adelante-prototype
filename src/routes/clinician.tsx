@@ -519,8 +519,6 @@ function ClinicianPage() {
             onBack={() => setMode("dashboard")}
             picker={
               <PatientPicker
-                patients={patients}
-                value={selectedPatientId}
                 onChange={(id) => {
                   if (id === selectedPatientId) return;
                   if (!confirmDiscardDrawerEdits()) return;
