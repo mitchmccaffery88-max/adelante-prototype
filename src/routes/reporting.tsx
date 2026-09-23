@@ -456,6 +456,7 @@ function ReportingHome() {
         <Area
           id="social-needs"
           title="Social needs"
+          eyebrow="Existing patients' social needs (housing, food, employment, etc.) and the community-resource referrals made for them."
           purpose="From a need being identified to it actually being resolved. Counts and elapsed time only — an association with engagement, never a cause of it."
           icon={Activity}
           actions={null}
@@ -565,6 +566,7 @@ function ReportingHome() {
         <Area
           id="referral-funnel"
           title="Referral to active patient"
+          eyebrow="How new people referred into Adelante's care (by probation, parole, a community org, or themselves) become active patients."
           purpose="How inbound referrals become active patients. The cohort is referrals submitted in the selected period, followed forward to a first appointment they actually attended."
           icon={ClipboardList}
           actions={
