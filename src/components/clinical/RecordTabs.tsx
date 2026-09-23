@@ -906,6 +906,23 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
  * Directory link state is shown honestly: an org that has been unpublished
  * still names the referral, flagged as no longer listed.
  */
+/**
+ * §5d-3 — draft aging read. Nothing is stamped: this is elapsed time since the
+ * last real action, including an activity-log entry.
+ */
+function NeedAgingLine({ patientId, item }: { patientId: string; item: SdohPlanItem }) {
+  const count = useEhr(() => AdelanteEHR.referralsForNeed(patientId, item.id).length);
+  const aging = sdohNeedAging(item, count);
+  if (aging.state !== "due" && aging.state !== "overdue") return null;
+  return (
+    <div
+      className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+    >
+      {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
+    </div>
+  );
+}
+
 function NeedReferralList({ patientId, itemId }: { patientId: string; itemId: string }) {
   const json = useEhr(() => JSON.stringify(AdelanteEHR.referralsForNeed(patientId, itemId)));
   const refs = JSON.parse(json) as ResourceReferral[];
