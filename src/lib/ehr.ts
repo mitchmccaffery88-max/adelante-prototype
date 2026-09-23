@@ -19863,6 +19863,22 @@ export const AdelanteEHR = {
       if (initiator.actorId !== patientId)
         block("not_self", "You can only book groups for yourself.");
     }
+    // §Phase 6b — telehealth consent moves EARLIER. The documentation-time gate
+    // (`groupOccurrenceConsentGate`) stays exactly as it is; this is a second,
+    // earlier check so nobody is seated in a group they cannot lawfully attend.
+    // It follows what the patient would ACTUALLY be asked to attend, not the
+    // session's default label — see `groupVirtualExposure`.
+    const exposure = AdelanteEHR.groupVirtualExposure(group.id);
+    if (
+      exposure.virtual &&
+      !AdelanteEHR.isConsentCategoryAuthorized(patientId, TELEHEALTH_CONSENT_CATEGORY)
+    )
+      block(
+        "no_telehealth_consent",
+        initiator.kind === "patient"
+          ? "This group meets by video or phone. Before you can join, your care team needs to go through the telehealth consent with you."
+          : "This group has upcoming virtual meetings and this patient has no active telehealth consent on file. Capture telehealth consent before enrolling them.",
+      );
     // Capacity is a real precondition on EVERY path (staff, self-service and
     // later the advocate path), not just the staff write. Someone already on
     // the roster is not "another seat", so they never trip it.
@@ -19879,23 +19895,133 @@ export const AdelanteEHR = {
   },
 
   /**
+   * §Phase 6b — does this group expose the patient to a VIRTUAL meeting?
+   *
+   * Occurrences fall back to the session default, so a virtual-default group is
+   * virtual exposure unless every projected upcoming occurrence has been
+   * explicitly overridden to in person. Past meetings are irrelevant to a new
+   * enrollment and are ignored. This deliberately blocks no more than the real
+   * risk: an in-person-only schedule needs no telehealth consent.
+   */
+  groupVirtualExposure(
+    sessionId: string,
+    now = new Date(),
+  ): { virtual: boolean; firstVirtualStart?: string } {
+    const upcoming = AdelanteEHR.groupOccurrenceStarts(sessionId, 8).filter(
+      (s) => +new Date(s) >= +now,
+    );
+    const starts = upcoming.length
+      ? upcoming
+      : // No upcoming meeting projected (a finished or one-off series): fall back
+        // to the group's own default so the answer is never silently "safe".
+        [];
+    for (const s of starts) {
+      if (isVirtualGroupModality(AdelanteEHR.groupOccurrenceModality(sessionId, s)))
+        return { virtual: true, firstVirtualStart: s };
+    }
+    if (!starts.length) {
+      const g = groupSessions.find((x) => x.id === sessionId);
+      if (g && isVirtualGroupModality(defaultOccurrenceModality(g.modality)))
+        return { virtual: true };
+    }
+    return { virtual: false };
+  },
+
+  /**
+   * §Phase 6b — the standing virtual room for a group. `joinUrl` empty/undefined
+   * clears it; nothing is auto-generated behind the user's back.
+   */
+  setGroupVirtualRoom(
+    sessionId: string,
+    joinUrl: string | undefined,
+    actor: string,
+  ): GroupSession {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const trimmed = joinUrl?.trim();
+    g.virtualRoom = trimmed
+      ? {
+          roomId: `grm_${sessionId}`,
+          joinUrl: trimmed,
+          setAt: new Date().toISOString(),
+          setBy: actor,
+        }
+      : undefined;
+    appendAudit({
+      category: "clinical",
+      action: trimmed ? "group_virtual_room_set" : "group_virtual_room_cleared",
+      actorId: actor,
+      detail: { groupSessionId: sessionId },
+    });
+    emit();
+    return g;
+  },
+
+  /** One-meeting override of the standing room. */
+  setGroupOccurrenceVirtualRoom(
+    sessionId: string,
+    occurrenceStart: string,
+    joinUrl: string | undefined,
+    actor: string,
+  ): GroupOccurrenceRecord {
+    const g = groupSessions.find((x) => x.id === sessionId);
+    if (!g) throw new Error("Group not found.");
+    const row = _ensureGroupOccurrence(sessionId, occurrenceStart);
+    const trimmed = joinUrl?.trim();
+    row.virtualRoom = trimmed
+      ? {
+          roomId: `grm_${sessionId}_${occurrenceStart}`,
+          joinUrl: trimmed,
+          setAt: new Date().toISOString(),
+          setBy: actor,
+        }
+      : undefined;
+    appendAudit({
+      category: "clinical",
+      action: trimmed ? "group_virtual_room_set" : "group_virtual_room_cleared",
+      actorId: actor,
+      detail: { groupSessionId: sessionId, occurrenceStart },
+    });
+    emit();
+    return row;
+  },
+
+  /** Effective join link for one meeting: occurrence override, else the group's. */
+  groupJoinLink(sessionId: string, occurrenceStart?: string): GroupVirtualRoom | undefined {
+    if (occurrenceStart) {
+      const occ = AdelanteEHR.getGroupOccurrence(sessionId, occurrenceStart);
+      if (occ?.virtualRoom) return occ.virtualRoom;
+    }
+    return groupSessions.find((x) => x.id === sessionId)?.virtualRoom;
+  },
+
+  /**
    * Groups this patient may self-book: self-service categories only
    * (`open_psychoeducational` and the billable `skills_education`),
    * eligibility set, not cancelled, not already enrolled, not at capacity.
    * Used by the patient scheduling page — `sud_clinical_preauth` can never
    * appear here.
+   *
+   * §Phase 6b: virtual groups are hidden from a patient without active
+   * telehealth consent, so the page never offers a booking it would then refuse.
    */
   openGroupsForPatient(patientId: string): GroupSession[] {
     if (!AdelanteEHR.isGroupEligible(patientId)) return [];
     const enrolled = new Set(AdelanteEHR.groupsForPatient(patientId).map((g) => g.id));
+    const telehealthOk = AdelanteEHR.isConsentCategoryAuthorized(
+      patientId,
+      TELEHEALTH_CONSENT_CATEGORY,
+    );
     return groupSessions.filter(
       (g) =>
         isSelfServiceGroupCategory(g.category) &&
         g.status !== "cancelled" &&
         !enrolled.has(g.id) &&
+        (telehealthOk || !AdelanteEHR.groupVirtualExposure(g.id).virtual) &&
         AdelanteEHR.listGroupEnrollments(g.id).length < g.capacity,
     );
   },
+
 
   /**
    * Patient self-service enrollment. Self-service categories only — routed
