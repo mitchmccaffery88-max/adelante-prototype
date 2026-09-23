@@ -1,5 +1,10 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  defaultOccurrenceModality,
+  isVirtualGroupModality,
+  useEhr,
+} from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";

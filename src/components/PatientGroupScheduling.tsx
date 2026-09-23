@@ -21,7 +21,13 @@
 import { useMemo } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AdelanteEHR, formatLocationAddress, useEhr } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  defaultOccurrenceModality,
+  formatLocationAddress,
+  isVirtualGroupModality,
+  useEhr,
+} from "@/lib/ehr";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
