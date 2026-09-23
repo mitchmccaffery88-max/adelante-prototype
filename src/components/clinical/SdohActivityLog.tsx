@@ -21,7 +21,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { ClientDate } from "@/components/ClientDate";
-import { useActingStaff } from "@/hooks/useActingStaff";
+import { useActingStaff } from "@/lib/roles";
 import {
   AdelanteEHR,
   SDOH_BARRIERS,
