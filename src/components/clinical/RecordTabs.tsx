@@ -650,6 +650,14 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
   const [need, setNeed] = useState("");
   const [note, setNote] = useState("");
   const [visible, setVisible] = useState(true);
+  // §5d-2 — one need at a time gets the Refer dialog; one at a time can be
+  // confirmed for patient visibility when it is safety-sensitive.
+  const [referItem, setReferItem] = useState<SdohPlanItem | null>(null);
+  const [safetyReveal, setSafetyReveal] = useState<SdohPlanItem | null>(null);
+  const unmaterialized = useEhr(() =>
+    JSON.stringify(AdelanteEHR.unmaterializedHrsnDomains(patientId)),
+  );
+  const pendingDomains = JSON.parse(unmaterialized) as { key: string; label: string }[];
   const statusOpts: SdohStatus[] = [
     "identified",
     "sent",
@@ -660,6 +668,31 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
   ];
   return (
     <div className="space-y-3">
+      {!readOnly && pendingDomains.length > 0 && (
+        <Card className="p-3 space-y-2 border-teal/40">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">
+            From the social-needs screening
+          </div>
+          <p className="text-sm text-navy">
+            {pendingDomains.length} positive screening result
+            {pendingDomains.length === 1 ? " has" : "s have"} no trackable need yet:{" "}
+            {pendingDomains.map((d) => d.label).join(", ")}.
+          </p>
+          <p className="text-[11px] text-muted-foreground">
+            Interpersonal safety is created staff-only — it is never shown to the patient or an
+            advocate unless you choose to share it.
+          </p>
+          <Button
+            size="sm"
+            onClick={() => {
+              const res = AdelanteEHR.materializeHrsnNeeds(patientId, { staffName, role });
+              toast.success(`${res.created} need${res.created === 1 ? "" : "s"} created.`);
+            }}
+          >
+            <Plus className="h-4 w-4 mr-1" /> Create trackable needs from screening
+          </Button>
+        </Card>
+      )}
       {!readOnly && (
         <Card className="p-3 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
@@ -705,11 +738,19 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
         {items.map((i) => (
           <li key={i.id} className="rounded border p-3 space-y-2 text-sm">
             <div className="flex items-start justify-between gap-2">
-              <div className="font-medium text-navy">{i.need}</div>
+              <div className="font-medium text-navy">
+                {i.need}
+                {i.visibleToPatient === false && (
+                  <Badge variant="outline" className="ml-2 text-[10px]">
+                    Staff only
+                  </Badge>
+                )}
+              </div>
               <Badge variant="outline" className="capitalize text-[10px]">
                 {i.status.replace("_", " ")}
               </Badge>
             </div>
+            <NeedReferralList patientId={patientId} itemId={i.id} />
             {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
             <AttributionLine
               {...(i.createdBy ? { createdBy: i.createdBy, createdAt: i.createdAt } : {})}
@@ -743,6 +784,9 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
             )}
             {!readOnly && (
               <div className="flex flex-wrap items-center gap-2">
+                <Button size="sm" variant="outline" onClick={() => setReferItem(i)}>
+                  <Building2 className="h-3.5 w-3.5 mr-1" /> Refer
+                </Button>
                 <Select
                   value={i.status}
                   onValueChange={(v) =>
@@ -768,9 +812,15 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() =>
-                    AdelanteEHR.setSdohVisibility(patientId, i.id, !i.visibleToPatient)
-                  }
+                  onClick={() => {
+                    // §5d-2 — turning a safety need ON for the patient is a
+                    // risk decision, so it asks first. Turning it off never does.
+                    if (i.safetySensitive && i.visibleToPatient === false) {
+                      setSafetyReveal(i);
+                      return;
+                    }
+                    AdelanteEHR.setSdohVisibility(patientId, i.id, !i.visibleToPatient);
+                  }}
                 >
                   {i.visibleToPatient ? (
                     <>
@@ -794,7 +844,69 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
           </li>
         ))}
       </ul>
+      {referItem && (
+        <ReferForNeedDialog
+          patientId={patientId}
+          item={referItem}
+          open
+          onOpenChange={(v) => !v && setReferItem(null)}
+        />
+      )}
+      <AlertDialog open={Boolean(safetyReveal)} onOpenChange={(v) => !v && setSafetyReveal(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Show this safety need to the patient?</AlertDialogTitle>
+            <AlertDialogDescription>
+              Someone who has disclosed interpersonal safety risk may be living with the person
+              harming them. Making this visible puts it on their portal and their phone, and shares
+              it with an authorized advocate. Only do this if you have talked it through with them.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Keep staff only</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (safetyReveal) AdelanteEHR.setSdohVisibility(patientId, safetyReveal.id, true);
+                setSafetyReveal(null);
+              }}
+            >
+              Make visible
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
     </div>
+  );
+}
+
+/**
+ * §5d-2 — the referrals made for one need, read through the single lookup.
+ * Directory link state is shown honestly: an org that has been unpublished
+ * still names the referral, flagged as no longer listed.
+ */
+function NeedReferralList({ patientId, itemId }: { patientId: string; itemId: string }) {
+  const json = useEhr(() => JSON.stringify(AdelanteEHR.referralsForNeed(patientId, itemId)));
+  const refs = JSON.parse(json) as ResourceReferral[];
+  if (refs.length === 0) return null;
+  return (
+    <ul className="space-y-1">
+      {refs.map((r) => {
+        const link = resourceLinkState(r);
+        return (
+          <li key={r.id} className="text-xs text-muted-foreground flex flex-wrap items-center gap-1.5">
+            <Building2 className="h-3 w-3" />
+            <span className="text-navy">{referralProviderLabel(r)}</span>
+            <Badge variant="outline" className="text-[10px]">
+              {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
+            </Badge>
+            {link.kind === "external" && <span>Not in the directory</span>}
+            {link.kind === "inactive" && <span>Directory listing not published</span>}
+            {link.kind === "missing" && <span>No longer in the directory</span>}
+            {!isReferralOpen(r) && <span>· closed</span>}
+          </li>
+        );
+      })}
+    </ul>
   );
 }
 
