@@ -463,7 +463,10 @@ export interface SdohPlanItem {
   need: string;
   /** How this need was established. Required — see `SdohItemSource`. */
   source: SdohItemSource;
-  referralId?: string;
+  // §5d-2 — NO `referralId` back-pointer. A need can hold many referrals; the
+  // link lives on `ResourceReferral.sdohItemId` and is read through
+  // `AdelanteEHR.referralsForNeed()`. One source of truth.
+
   status: SdohStatus;
   note?: string;
   createdAt: string;
