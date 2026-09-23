@@ -1234,6 +1234,74 @@ export function ReferralsTab({
  * §5d-2 — outcome + reason. Any outcome other than pending needs a reason;
  * the data layer refuses without one, so this collects it up front.
  */
+/**
+ * §5d-3 — the referral's follow-up date, which existed on the record but had
+ * no UI. Setting one can create a REAL case task for the patient's case
+ * manager; when there is no case manager the reason is stated, never silent.
+ */
+function ReferralFollowUpControl({
+  patientId,
+  referral,
+  readOnly,
+}: {
+  patientId: string;
+  referral: ResourceReferral;
+  readOnly?: boolean;
+}) {
+  const { staffName, role } = useActingStaff();
+  const [date, setDate] = useState(referral.followUpDate ?? "");
+  if (readOnly) {
+    return referral.followUpDate ? (
+      <div className="text-[11px] text-muted-foreground">
+        Follow up on {referral.followUpDate}
+      </div>
+    ) : null;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+      <span>Follow up</span>
+      <Input
+        type="date"
+        className="h-8 w-40 text-xs"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          AdelanteEHR.setReferralFollowUpDate(patientId, referral.id, date || undefined, {
+            staffName,
+            role,
+          });
+          toast.success(date ? "Follow-up date saved." : "Follow-up date cleared.");
+        }}
+      >
+        Save date
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={!date}
+        onClick={() => {
+          const res = AdelanteEHR.createSdohFollowUpTask({
+            patientId,
+            dueDate: date,
+            referralId: referral.id,
+          });
+          if (!res.created) {
+            toast.error(res.reason);
+            return;
+          }
+          toast.success("Follow-up task created for the case manager.");
+        }}
+      >
+        Create task
+      </Button>
+    </div>
+  );
+}
+
 function ReferralOutcomeControl({
   patientId,
   referral,
