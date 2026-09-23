@@ -17,16 +17,18 @@
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import { INTAKE_NEED_KEYS, itemMatchesIntakeKey } from "@/lib/intakeNeedsReconcile";
 import type { IntakeNeedKey } from "@/lib/sdohMapping";
-import type { SdohPlanItem } from "@/lib/ehr";
+import { PART2_SENSITIVE_REFERRAL_CATEGORIES, type SdohPlanItem } from "@/lib/ehr";
 
 /**
  * Categories that may hold Part 2 sensitive organisations. Category-only
  * display until a real classification exists per organisation.
+ *
+ * §5d-1 — one source of truth: the same list the staff-side referral consent
+ * gate enforces, so patient-facing and staff-facing Part 2 handling can never
+ * drift apart.
  */
-export const PART2_CAUTION_CATEGORY_IDS: readonly string[] = [
-  "recovery_meetings",
-  "support_groups",
-];
+export const PART2_CAUTION_CATEGORY_IDS: readonly string[] = PART2_SENSITIVE_REFERRAL_CATEGORIES;
+
 
 /** Categories we deliberately never name an organisation for at intake. */
 const CATEGORY_ONLY_IDS: readonly string[] = [...PART2_CAUTION_CATEGORY_IDS];
