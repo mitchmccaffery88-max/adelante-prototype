@@ -463,7 +463,9 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
           const virtual = nextForThis
             ? isVirtualGroupModality(AdelanteEHR.groupOccurrenceModality(g.id, nextForThis))
             : isVirtualGroupModality(defaultOccurrenceModality(g.modality));
-          const room = virtual ? AdelanteEHR.groupJoinLink(g.id, nextForThis) : undefined;
+          const room = virtual
+            ? AdelanteEHR.groupJoinLink(g.id, nextForThis ?? undefined)
+            : undefined;
           return (
             <li key={g.id} className="rounded-lg border bg-card p-3">
               <div className="text-sm font-medium text-navy">{g.topic}</div>
