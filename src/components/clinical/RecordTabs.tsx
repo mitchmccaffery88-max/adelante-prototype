@@ -765,7 +765,15 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
             </div>
             <NeedReferralList patientId={patientId} itemId={i.id} />
-            {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
+            <NeedAgingLine patientId={patientId} item={i} />
+            <SdohActivityLog
+              patientId={patientId}
+              target="need"
+              targetId={i.id}
+              {...(i.log ? { log: i.log } : {})}
+              {...(i.note ? { legacyNote: i.note } : {})}
+              readOnly={readOnly}
+            />
             <AttributionLine
               {...(i.createdBy ? { createdBy: i.createdBy, createdAt: i.createdAt } : {})}
               {...(i.lastUpdatedBy
