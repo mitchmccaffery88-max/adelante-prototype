@@ -11030,6 +11030,13 @@ export const AdelanteEHR = {
       provenance: "imported_roster",
     };
     AdelanteEHR.recordScreener(ep.patientId, result);
+    // §5d-2 — positive domains become REAL, referable needs here, not
+    // display-only care-plan rows. Safety materializes staff-only.
+    AdelanteEHR.materializeHrsnNeeds(ep.patientId, {
+      staffName: input.importedBy,
+      role: input.actorRole as StaffRole,
+    });
+
     appendAudit({
       category: "clinical",
       action: "pre_release_hrsn_imported",
