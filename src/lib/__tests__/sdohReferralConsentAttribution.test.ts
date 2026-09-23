@@ -34,8 +34,9 @@ function referrals(id: string) {
   return AdelanteEHR.getPatient(id)?.resourceReferrals ?? [];
 }
 function audits(id: string, action: string) {
-  return AdelanteEHR.listAudit().filter((a) => a.patientId === id && a.action === action);
+  return AdelanteEHR.listAuditEvents({ patientId: id }).filter((a) => a.action === action);
 }
+
 
 describe("Part 2 consent gate on staff resource referrals", () => {
   it("blocks a sensitive-category referral when the patient has no SUD consent", () => {
