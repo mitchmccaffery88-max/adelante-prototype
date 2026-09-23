@@ -759,6 +759,50 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
   );
 }
 
+/**
+ * §5d-1 — attribution line shown inline on needs and referrals.
+ */
+function AttributionLine({
+  createdBy,
+  createdAt,
+  updatedBy,
+  updatedAt,
+}: {
+  createdBy?: string;
+  createdAt?: string;
+  updatedBy?: string;
+  updatedAt?: string;
+}) {
+  if (!createdBy && !updatedBy) return null;
+  return (
+    <div className="text-[11px] text-muted-foreground">
+      {createdBy && (
+        <span>
+          Added by {createdBy}
+          {createdAt && (
+            <>
+              {" · "}
+              <ClientDate value={createdAt} />
+            </>
+          )}
+        </span>
+      )}
+      {createdBy && updatedBy && " — "}
+      {updatedBy && (
+        <span>
+          Updated by {updatedBy}
+          {updatedAt && (
+            <>
+              {" · "}
+              <ClientDate value={updatedAt} />
+            </>
+          )}
+        </span>
+      )}
+    </div>
+  );
+}
+
 export function ReferralsTab({
   patientId,
   sudGated,
@@ -769,6 +813,7 @@ export function ReferralsTab({
   readOnly?: boolean;
 }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { staffName, role } = useActingStaff();
   const items = p?.resourceReferrals ?? [];
   const [category, setCategory] = useState<ResourceReferral["category"]>("housing");
   const [provider, setProvider] = useState("");
@@ -798,6 +843,13 @@ export function ReferralsTab({
               onChange={(e) => setProvider(e.target.value)}
             />
           </div>
+          {isPart2SensitiveCategory(category) && (
+            <div className="text-[11px] text-muted-foreground flex items-start gap-1.5">
+              <Lock className="h-3 w-3 mt-0.5 text-teal" />
+              This category can disclose SUD treatment status. It needs the patient&apos;s 42 CFR
+              Part 2 consent on file.
+            </div>
+          )}
           <Textarea
             rows={2}
             placeholder="Note (optional)"
@@ -808,16 +860,27 @@ export function ReferralsTab({
             size="sm"
             onClick={() => {
               if (!provider.trim()) return toast.error("Add a provider");
-              AdelanteEHR.addResourceReferral(patientId, {
-                category,
-                provider,
-                note,
-                visibleToPatient: true,
-                sudDisclosureConsent: !sudGated,
-              });
-              setProvider("");
-              setNote("");
-              toast.success("Referral created");
+              try {
+                // The data layer stamps `sudDisclosureConsent` from the patient's
+                // live consent and refuses Part 2 categories without it.
+                AdelanteEHR.addResourceReferral(
+                  patientId,
+                  { category, provider, note, visibleToPatient: true },
+                  { staffName, role },
+                );
+                setProvider("");
+                setNote("");
+                toast.success("Referral created");
+              } catch (e) {
+                toast.error(e instanceof Error ? e.message : "Could not create this referral.", {
+                  action: {
+                    label: "Open consents",
+                    onClick: () => {
+                      window.location.assign(`/record/${patientId}?section=consents`);
+                    },
+                  },
+                });
+              }
             }}
           >
             Create referral
@@ -826,68 +889,102 @@ export function ReferralsTab({
       )}
       <ul className="space-y-2">
         {items.length === 0 && <li className="text-xs text-muted-foreground">No referrals yet.</li>}
-        {items.map((r) => (
-          <li key={r.id} className="rounded border p-3 text-sm space-y-2">
-            <div className="flex items-start justify-between gap-2">
-              <div>
-                <div className="capitalize text-navy">
-                  {r.category} · {r.provider}
+        {items.map((r) => {
+          // §5d-1 — for a Part 2 gated viewer the CATEGORY is itself the
+          // sensitive fact, so the row carries no category, provider, note or
+          // category styling: existence and nothing else.
+          const masked = sudGated && isPart2SensitiveCategory(r.category);
+          if (masked) {
+            return (
+              <li
+                key={r.id}
+                className="rounded border border-dashed p-3 text-sm text-muted-foreground flex items-start gap-2"
+              >
+                <Lock className="h-3.5 w-3.5 mt-0.5" />
+                <div>
+                  <div>Restricted referral — 42 CFR Part 2 consent required.</div>
+                  <div className="text-[11px]">
+                    Created <ClientDate value={r.createdAt} />
+                  </div>
                 </div>
-                <div className="text-[11px] text-muted-foreground">
-                  Created <ClientDate value={r.createdAt} />
+              </li>
+            );
+          }
+          return (
+            <li key={r.id} className="rounded border p-3 text-sm space-y-2">
+              <div className="flex items-start justify-between gap-2">
+                <div>
+                  <div className="capitalize text-navy">
+                    {r.category} · {r.provider}
+                  </div>
+                  <div className="text-[11px] text-muted-foreground">
+                    Created <ClientDate value={r.createdAt} />
+                  </div>
                 </div>
+                <Badge variant="outline" className="capitalize text-[10px]">
+                  {r.status}
+                </Badge>
               </div>
-              <Badge variant="outline" className="capitalize text-[10px]">
-                {r.status}
-              </Badge>
-            </div>
-            {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
-            <div className="flex flex-wrap items-center gap-2">
-              <Select
-                value={r.status}
-                onValueChange={(v) =>
-                  AdelanteEHR.setResourceReferralStatus(
-                    patientId,
-                    r.id,
-                    v as ResourceReferral["status"],
-                  )
-                }
-              >
-                <SelectTrigger className="h-8 text-xs w-[140px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {statusOpts.map((s) => (
-                    <SelectItem key={s} value={s} className="capitalize">
-                      {s}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={() =>
-                  AdelanteEHR.setResourceReferralVisibility(patientId, r.id, !r.visibleToPatient)
-                }
-              >
-                {r.visibleToPatient !== false ? (
-                  <>
-                    <Eye className="h-3.5 w-3.5 mr-1" /> Visible
-                  </>
-                ) : (
-                  <>
-                    <EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden
-                  </>
-                )}
-              </Button>
-            </div>
-          </li>
-        ))}
+              {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
+              <AttributionLine
+                {...(r.createdBy ? { createdBy: r.createdBy, createdAt: r.createdAt } : {})}
+                {...(r.lastUpdatedBy
+                  ? {
+                      updatedBy: r.lastUpdatedBy,
+                      ...(r.updatedAt ? { updatedAt: r.updatedAt } : {}),
+                    }
+                  : {})}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Select
+                  value={r.status}
+                  onValueChange={(v) =>
+                    AdelanteEHR.setResourceReferralStatus(
+                      patientId,
+                      r.id,
+                      v as ResourceReferral["status"],
+                      undefined,
+                      { staffName, role },
+                    )
+                  }
+                >
+                  <SelectTrigger className="h-8 text-xs w-[140px]">
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {statusOpts.map((s) => (
+                      <SelectItem key={s} value={s} className="capitalize">
+                        {s}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() =>
+                    AdelanteEHR.setResourceReferralVisibility(patientId, r.id, !r.visibleToPatient)
+                  }
+                >
+                  {r.visibleToPatient !== false ? (
+                    <>
+                      <Eye className="h-3.5 w-3.5 mr-1" /> Visible
+                    </>
+                  ) : (
+                    <>
+                      <EyeOff className="h-3.5 w-3.5 mr-1" /> Hidden
+                    </>
+                  )}
+                </Button>
+              </div>
+            </li>
+          );
+        })}
       </ul>
     </div>
   );
 }
+
 
 export function EligibilityTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
