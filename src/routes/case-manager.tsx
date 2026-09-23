@@ -582,7 +582,7 @@ function CaseManagerPage() {
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
               <EligibilitySummaryCard patientId={active.id} />
-              <ResourceReferralCard patientId={active.id} consentSud={active.consents.part2Sud} />
+              <ResourceReferralCard patientId={active.id} />
               <RecentReferralsCard patientId={active.id} />
             </>
           ) : (
