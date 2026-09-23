@@ -1951,6 +1951,11 @@ export interface ResourceReferral {
   updatedAt?: string;
   note?: string;
   followUpDate?: string;
+  /**
+   * §5d-3 — append-only, attributed activity log. STAFF-ONLY, and masked with
+   * the rest of the row for a Part 2-gated viewer on a SUD-sensitive category.
+   */
+  log?: SdohLogEntry[];
   visibleToPatient?: boolean;
   // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally.
   // §5d-1: stamped by the data layer from the patient's LIVE consent at creation,
