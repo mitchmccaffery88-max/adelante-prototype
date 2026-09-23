@@ -11,7 +11,9 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
-import { SDOH_SOURCE_LABEL } from "@/lib/ehr";
+import { SDOH_SOURCE_LABEL, type SdohPlanItem } from "@/lib/ehr";
+
+type NeedThreadItem = SdohPlanItem;
 import {
   patientNeedThreads,
   recentlyResolvedNeeds,
@@ -91,6 +93,7 @@ export function NeedThreadList({
               ))}
             </ul>
           )}
+          {renderMatch?.(thread.need)}
         </Card>
       ))}
 
