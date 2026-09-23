@@ -29,7 +29,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AutoCreatedFromNote } from "@/components/clinical/AutomationTrace";
-import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
+import { TaskQueueCard } from "@/components/tasks/TaskQueueCard";
 import {
   Select,
   SelectContent,
@@ -264,7 +264,9 @@ function CaseManagerPage() {
 
       <div className="grid lg:grid-cols-3 gap-6">
         <div className="lg:col-span-3">
-          {cmId && <TaskQueueCard cmId={cmId} onOpenPatient={setActiveId} />}
+          {cmId && (
+            <TaskQueueCard source={{ kind: "case_manager", cmId }} onOpenPatient={setActiveId} />
+          )}
         </div>
         <Card className="lg:col-span-2 p-5">
           <div className="flex items-center justify-between mb-3">
@@ -928,75 +930,6 @@ function RecentReferralsCard({ patientId }: { patientId: string }) {
   );
 }
 
-
-function TaskQueueCard({
-  cmId,
-  onOpenPatient,
-}: {
-  cmId: string;
-  onOpenPatient: (id: string) => void;
-}) {
-  const tasks = useEhr(() => AdelanteEHR.caseTasksForCM(cmId));
-  const patients = useEhr(() => AdelanteEHR.listPatients());
-  const open = tasks.filter((t) => t.status === "open");
-  const snoozed = tasks.filter((t) => t.status === "snoozed");
-  const now = Date.now();
-  const overdue = open.filter((t) => +new Date(t.dueDate) < now - 86400000);
-  const dueToday = open.filter(
-    (t) => t.dueDate.slice(0, 10) === new Date().toISOString().slice(0, 10),
-  );
-
-  const [showDone, setShowDone] = useState(false);
-  const list = showDone ? tasks : open;
-
-  return (
-    <Card className="p-5">
-      <div className="flex flex-wrap items-center justify-between gap-3 mb-3">
-        <h2 className="font-display text-lg text-navy flex items-center gap-2">
-          <ClipboardList className="h-4 w-4 text-teal" /> My tasks
-        </h2>
-        <div className="flex items-center gap-2 text-xs">
-          <Badge className="bg-destructive/15 text-destructive border-0">
-            {overdue.length} overdue
-          </Badge>
-          <Badge className="bg-gold/25 text-navy border-0">{dueToday.length} due today</Badge>
-          <Badge variant="outline">{snoozed.length} snoozed</Badge>
-          <Button size="sm" variant="ghost" onClick={() => setShowDone((v) => !v)}>
-            {showDone ? "Hide done" : "Show all"}
-          </Button>
-        </div>
-      </div>
-      {list.length === 0 ? (
-        <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-          Nothing on the queue. New tasks appear here after no-shows, crisis flags, or failed
-          messages.
-        </div>
-      ) : (
-        <ul className="space-y-2">
-          {list.slice(0, 12).map((t) => {
-            const p = patients.find((x) => x.id === t.patientId);
-            return (
-              <TaskWorkRow
-                key={t.id}
-                task={t}
-                patientSlot={
-                  p ? (
-                    <button
-                      className="text-xs underline text-muted-foreground"
-                      onClick={() => onOpenPatient(p.id)}
-                    >
-                      {p.firstName} {p.lastName}
-                    </button>
-                  ) : null
-                }
-              />
-            );
-          })}
-        </ul>
-      )}
-    </Card>
-  );
-}
 
 /**
  * §Dashboard Standardization Phase 5c — per-client follow-ups now live on the
