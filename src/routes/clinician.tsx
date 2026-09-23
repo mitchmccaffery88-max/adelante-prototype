@@ -35,6 +35,7 @@ import {
   FlaskConical,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { useActingRole, useActingStaff, canAccess } from "@/lib/roles";
