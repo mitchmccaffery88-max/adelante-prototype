@@ -197,6 +197,21 @@ function ClinicianPage() {
     setMode("chart");
   };
 
+  // §Dashboard Cleanup Phase 6a — tasks are assigned to a case manager. A
+  // clinician with no case-manager identity sees their patients' open
+  // follow-ups instead, labelled as exactly that.
+  const actingStaff = useActingStaff();
+  const assignmentIdentity = assignmentIdentityFor(actingStaff);
+  const taskSource: TaskQueueSource = actingStaff.caseManagerId
+    ? { kind: "case_manager", cmId: actingStaff.caseManagerId }
+    : actingStaff.clinicianId
+      ? {
+          kind: "clinician_patients",
+          patientIds: scopeCaseload(patients, assignmentIdentity, "mine").map((p) => p.id),
+        }
+      : { kind: "none" };
+
+
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4">
