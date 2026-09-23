@@ -469,6 +469,12 @@ export interface SdohPlanItem {
   createdAt: string;
   updatedAt: string;
   visibleToPatient?: boolean;
+  /** §5d-1 attribution — who created/last changed this need. */
+  createdBy?: string;
+  createdByRole?: StaffRole;
+  lastUpdatedBy?: string;
+  lastUpdatedByRole?: StaffRole;
+
   /**
    * §Crisis Redesign Phase 2 — SDOH-urgent lane. Set when staff deliberately
    * escalate this need into the crisis queue as `category: "sdoh"`. Urgency is
