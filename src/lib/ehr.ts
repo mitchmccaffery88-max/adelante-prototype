@@ -9866,6 +9866,7 @@ export const AdelanteEHR = {
        * its own real source. */
       source?: SdohItemSource;
     },
+    actor?: { staffName: string; role: StaffRole },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !input.need.trim()) return;
@@ -9878,11 +9879,21 @@ export const AdelanteEHR = {
       visibleToPatient: input.visibleToPatient ?? true,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
     p.sdohPlan = { items: [item, ...(p.sdohPlan?.items ?? [])] };
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_need_created",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: { itemId: item.id, source: item.source },
+    });
     _recomputeCarePlan(p.id, "sdoh_added");
     emit();
   },
+
   /**
    * §Intake/SDOH Redesign Phase 3 — the one write intake uses for social needs.
    *
