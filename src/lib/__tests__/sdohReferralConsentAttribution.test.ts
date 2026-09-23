@@ -82,9 +82,12 @@ describe("sensitivity is a property of the category, not the consent flag", () =
       ACTOR,
     );
     AdelanteEHR.addResourceReferral(id, { category: "food", provider: "Food Bank" }, ACTOR);
-    const [sensitive, plain] = referrals(id);
-    expect(isReferralSudSensitive(sensitive!)).toBe(true);
-    expect(isReferralSudSensitive(plain!)).toBe(false);
+    const all = referrals(id);
+    const sensitive = all.find((r) => r.category === "support_groups")!;
+    const plain = all.find((r) => r.category === "food")!;
+    expect(isReferralSudSensitive(sensitive)).toBe(true);
+    expect(isReferralSudSensitive(plain)).toBe(false);
+
   });
 
   it("shares one sensitive-category list with the patient-facing matcher", () => {
