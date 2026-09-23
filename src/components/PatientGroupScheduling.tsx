@@ -219,6 +219,16 @@ export function PatientGroupScheduling({ patientId }: { patientId: string }) {
                       <MapPin className="h-3.5 w-3.5" /> {loc.name} — {formatLocationAddress(loc)}
                     </p>
                   )}
+                  {isVirtualGroupModality(
+                    next
+                      ? AdelanteEHR.groupOccurrenceModality(g.id, next)
+                      : defaultOccurrenceModality(g.modality),
+                  ) && (
+                    <p className="text-xs text-muted-foreground">
+                      Meets online — the join link is shared with you once you're signed up.
+                    </p>
+                  )}
+
                   <Button
                     size="sm"
                     className="bg-navy text-navy-foreground hover:bg-navy/90"
