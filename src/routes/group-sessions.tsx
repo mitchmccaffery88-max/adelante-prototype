@@ -470,7 +470,9 @@ function GroupDetail({
             {location.name} — {formatLocationAddress(location)}
           </p>
         )}
+        <GroupJoinLinkEditor group={group} canWrite={canWrite} actor={actor} />
       </Card>
+
 
       {canWrite && <RecurrenceEditor group={group} actor={actor} />}
 
