@@ -59,7 +59,9 @@ export function ReferForNeedDialog({
   const [category, setCategory] = useState<ResourceReferralCategory>(
     (suggested[0] as ResourceReferralCategory | undefined) ?? "housing",
   );
-  const [choice, setChoice] = useState<string>(OFF_DIRECTORY);
+  // null = untouched, so the first real directory listing is the default and
+  // off-directory is a deliberate choice rather than the path of least effort.
+  const [choicePick, setChoicePick] = useState<string | null>(null);
   const [provider, setProvider] = useState("");
   const [note, setNote] = useState("");
 
@@ -67,6 +69,7 @@ export function ReferForNeedDialog({
   // Unpublished orgs are still selectable — staff often refer to an org that
   // is mid-verification — but the row says so plainly.
   const orgs = useMemo(() => listResources(category), [category]);
+  const choice = choicePick ?? orgs[0]?.id ?? OFF_DIRECTORY;
   const staffOnlyNeed = item.visibleToPatient === false;
 
   function submit() {
@@ -122,7 +125,7 @@ export function ReferForNeedDialog({
               value={category}
               onValueChange={(v) => {
                 setCategory(v as ResourceReferralCategory);
-                setChoice(OFF_DIRECTORY);
+                setChoicePick(null);
               }}
             >
               <SelectTrigger>
