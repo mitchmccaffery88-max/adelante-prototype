@@ -20931,3 +20931,130 @@ export function useEhr<T>(selector: () => T): T {
     /* Seeding is best-effort; never break boot. */
   }
 }
+
+// ---------------------------------------------------------------------------
+// §Phase 6b DEMO SEED — group sessions + a real mix of group-audit events.
+//
+// Built entirely through the real store API (never by pushing rows), so every
+// event on /group-audit is produced exactly the way a clinician would produce
+// it: eligibility set, eligibility later removed, and enrollments genuinely
+// refused by `assertEnrollmentAllowed` for three different real reasons.
+// Remove with the rest of the mock store.
+// ---------------------------------------------------------------------------
+{
+  try {
+    const THERAPIST = "Marisol Vega, LCSW";
+    const facilitator = AdelanteEHR.listClinicians()[0]?.id;
+    if (facilitator) {
+      const soon = (days: number, hour: number) => {
+        const d = new Date();
+        d.setDate(d.getDate() + days);
+        d.setHours(hour, 0, 0, 0);
+        return d.toISOString();
+      };
+
+      const skills = AdelanteEHR.createGroupSession({
+        topic: "Skills for everyday life (placeholder curriculum)",
+        description:
+          "Practical coping and daily-living skills. Curriculum name is a placeholder pending clinical content sign-off.",
+        facilitatorId: facilitator,
+        serviceType: "therapy_group",
+        modality: "in_person",
+        category: "skills_education",
+        start: soon(2, 10),
+        durationMin: 60,
+        capacity: 8,
+        recurrence: { kind: "weekly", daysOfWeek: [new Date(soon(2, 10)).getDay()] },
+        createdBy: THERAPIST,
+      });
+
+      const virtualGroup = AdelanteEHR.createGroupSession({
+        topic: "Recovery check-in — online (placeholder curriculum)",
+        description: "Open check-in group that meets by video.",
+        facilitatorId: facilitator,
+        serviceType: "therapy_group",
+        modality: "video",
+        category: "open_psychoeducational",
+        start: soon(4, 14),
+        durationMin: 45,
+        capacity: 10,
+        recurrence: { kind: "weekly", daysOfWeek: [new Date(soon(4, 14)).getDay()] },
+        createdBy: THERAPIST,
+      });
+      AdelanteEHR.setGroupVirtualRoom(
+        virtualGroup.id,
+        "https://video.adelante.mock/room/recovery-checkin",
+        THERAPIST,
+      );
+
+      const sudGroup = AdelanteEHR.createGroupSession({
+        topic: "SUD group counseling (placeholder curriculum)",
+        facilitatorId: facilitator,
+        serviceType: "therapy_group",
+        modality: "in_person",
+        category: "sud_clinical_preauth",
+        start: soon(3, 13),
+        durationMin: 90,
+        capacity: 8,
+        recurrence: { kind: "weekly", daysOfWeek: [new Date(soon(3, 13)).getDay()] },
+        createdBy: THERAPIST,
+      });
+
+      // Eligibility set — the only path that opens any enrollment at all.
+      AdelanteEHR.setGroupEligibility({
+        patientId: "p1",
+        reason: "Coping-skills goal on the care plan; ready for a group setting.",
+        role: "therapist",
+        actor: THERAPIST,
+      });
+      AdelanteEHR.setGroupEligibility({
+        patientId: "p2",
+        reason: "Considered for skills group during care-plan review.",
+        role: "therapist",
+        actor: THERAPIST,
+      });
+
+      // A real enrollment that succeeds (in-person, no telehealth consent needed).
+      AdelanteEHR.enrollInGroup({ sessionId: skills.id, patientId: "p1", enrolledBy: THERAPIST });
+
+      // Blocked #1 — virtual group, no active telehealth consent (Phase 6b gate).
+      try {
+        AdelanteEHR.enrollInGroup({
+          sessionId: virtualGroup.id,
+          patientId: "p1",
+          enrolledBy: THERAPIST,
+        });
+      } catch {
+        /* expected — the refusal IS the seeded audit event. */
+      }
+
+      // Blocked #2 — patient tries to self-book a staff-only SUD group.
+      try {
+        AdelanteEHR.enrollInGroup({
+          sessionId: sudGroup.id,
+          patientId: "p1",
+          enrolledBy: "p1",
+          initiator: { kind: "patient", actorId: "p1" },
+        });
+      } catch {
+        /* expected */
+      }
+
+      // Blocked #3 — no eligibility flag at all.
+      try {
+        AdelanteEHR.enrollInGroup({ sessionId: skills.id, patientId: "p3", enrolledBy: THERAPIST });
+      } catch {
+        /* expected */
+      }
+
+      // Eligibility removed again after review — the third audit event type.
+      AdelanteEHR.clearGroupEligibility(
+        "p2",
+        "Deferred at care-plan review — individual sessions first.",
+        THERAPIST,
+      );
+    }
+  } catch {
+    /* Seeding is best-effort; never break boot. */
+  }
+}
