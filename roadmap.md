@@ -87,3 +87,10 @@
 - [ ] Advocate referral status per tier in advocateCoordination + panel
 - [ ] Reporting funnel (identified → referred → connected → resolved) + barriers, cohort guard
 - [ ] Disengagement link: recommendation only, nothing built
+
+## Phase 5d-4 (done)
+- Unified patient need thread on /next-steps (one list; directory match inside each need card).
+- Home summary card replaces the separate "Referrals for you" list.
+- Advocate coordination now carries referrals per need, tier-aware Part 2 restricted rows.
+- Social needs funnel + slices + barrier frequency on /reporting, cohort-guarded.
+- Disengagement link: recommendation only (separate "needs stalled" signal), not built.
