@@ -16,7 +16,11 @@ import {
   CASELOAD_SCOPE_NOTE,
   type CaseloadScope,
 } from "@/lib/caseloadScope";
-import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
+import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
+import {
+  RESOURCE_REFERRAL_OUTCOME_LABEL,
+  type SdohPlanItem,
+} from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
