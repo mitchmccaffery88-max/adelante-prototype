@@ -101,3 +101,10 @@
 - [x] Drop-off: declined by reason, outreach attempted-not-reached, overdue before first contact, enrolled never attended
 - [x] Reporting Area beside Social needs, with confidentiality note on the source fold
 - [x] Tests incl. unanswered attempt ≠ contacted; typecheck, suite, build, browser
+
+## Phase 5e — Ask Adel prototype (staff top bar)
+- [ ] src/lib/askAdel.ts — role groups, question library, real answers, cohort guard
+- [ ] src/components/AskAdelPanel.tsx — sheet, sample questions, encounter shortcuts, no free text
+- [ ] StaffBreadcrumbs button, shown only when a question or shortcut applies
+- [ ] Tests: role mapping, access filtering, Part 2 masking, cohort guard, read-only
+- [ ] Typecheck, suite, build, live browser at both viewports incl. Part 2-gated role
