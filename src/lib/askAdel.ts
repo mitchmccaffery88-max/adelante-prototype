@@ -445,7 +445,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
     prompt: "Which claims are stuck at documented, awaiting signature?",
     anyOf: ["billing"],
     answer: () => {
-      const stuck = AdelanteEHR.listClaims().filter((c) => c.state === "documented");
+      const stuck = AdelanteEHRExt.listClaims().filter((c) => c.state === "documented");
       return {
         backing: "real",
         guard: cohortGuard(stuck.length),
