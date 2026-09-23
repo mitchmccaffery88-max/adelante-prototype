@@ -3194,6 +3194,21 @@ export interface CaseTask {
   // ----- §Scheduling rule engine (manual run; absent on every other task) ----
   /** The `SchedulingRule` that generated this row. Also the idempotency key. */
   sourceRuleId?: string;
+  // ----- §Dashboard Standardization Phase 5c (optional; legacy rows read fine) -----
+  /** Attributed free-text notes added while working the task. */
+  notes?: CaseTaskNote[];
+  /** Who last edited title/detail/due/priority, and when. */
+  lastEditedBy?: string;
+  lastEditedAt?: string;
+}
+
+/** An attributed working note on a task. */
+export interface CaseTaskNote {
+  id: string;
+  text: string;
+  authorName: string;
+  authorRole: StaffRole;
+  at: string;
 }
 
 /**
@@ -3345,6 +3360,8 @@ const patients: Patient[] = [
     lastName: "M.",
     dob: "1989-04-12",
     phone: "+15595550101",
+    // Fictional demo CIN. Real Medi-Cal shape: 8 digits + 1 letter (9 chars).
+    cin: "70010001A",
     email: "daniel.m@example.com",
     releaseDate: "2026-05-10",
     enrolledAt: "2026-05-12",
@@ -3577,6 +3594,7 @@ const patients: Patient[] = [
     lastName: "T.",
     dob: "1995-09-03",
     phone: "+15595550102",
+    cin: "70010002B",
     releaseDate: "2026-05-22",
     enrolledAt: "2026-05-24",
     episodeDay: 11,
@@ -3660,6 +3678,7 @@ const patients: Patient[] = [
     lastName: "L.",
     dob: "1978-12-30",
     phone: "+15595550103",
+    cin: "70010003C",
     releaseDate: "2026-04-02",
     enrolledAt: "2026-04-05",
     episodeDay: 60,
@@ -3847,6 +3866,7 @@ patients.push({
   lastName: "Serrano",
   dob: "1991-06-17",
   phone: "+15595550104",
+  cin: "70010004D",
   email: "alicia.r@example.com",
   // No custody history. `releaseDate` is required by the type, so it mirrors
   // her enrollment date and is never surfaced for a general-population track.
@@ -11742,6 +11762,70 @@ export const AdelanteEHR = {
     t.snoozedUntil = until.toISOString();
     emit();
   },
+
+  // ---------- §Dashboard Standardization Phase 5c: attributed task edits ----
+  /**
+   * Edit the small set of task fields a worker legitimately owns. Assignment
+   * is deliberately NOT editable here — reassignment is a caseload decision
+   * handled by the real assignment path, which writes provider-switch records.
+   */
+  updateCaseTaskFields(
+    id: string,
+    patch: { title?: string; detail?: string; dueDate?: string; priority?: TaskPriority },
+    staffName: string,
+    role: StaffRole,
+  ): boolean {
+    const t = caseTasks.find((x) => x.id === id);
+    if (!t) return false;
+    const changed: Record<string, { from: unknown; to: unknown }> = {};
+    const apply = <K extends "title" | "detail" | "dueDate" | "priority">(key: K) => {
+      const next = patch[key];
+      if (next === undefined) return;
+      const value = typeof next === "string" ? next.trim() : next;
+      if (key !== "priority" && !value) return;
+      if (t[key] === value) return;
+      changed[key] = { from: t[key], to: value };
+      (t as unknown as Record<string, unknown>)[key] = value;
+    };
+    apply("title");
+    apply("detail");
+    apply("dueDate");
+    apply("priority");
+    if (!Object.keys(changed).length) return false;
+    t.lastEditedBy = staffName;
+    t.lastEditedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "case_task_updated",
+      patientId: t.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { taskId: t.id, changed },
+    });
+    emit();
+    return true;
+  },
+  /** Append an attributed working note to a task. */
+  addCaseTaskNote(id: string, text: string, staffName: string, role: StaffRole): boolean {
+    const t = caseTasks.find((x) => x.id === id);
+    const body = text.trim();
+    if (!t || !body) return false;
+    t.notes = [
+      ...(t.notes ?? []),
+      { id: uid(), text: body, authorName: staffName, authorRole: role, at: new Date().toISOString() },
+    ];
+    appendAudit({
+      category: "clinical",
+      action: "case_task_note_added",
+      patientId: t.patientId,
+      actorId: staffName,
+      actorRole: role,
+      detail: { taskId: t.id },
+    });
+    emit();
+    return true;
+  },
+
 
   // ---------- §Worklist Phase A: pool claim + status ----------
   /**

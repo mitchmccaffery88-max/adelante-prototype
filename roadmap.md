@@ -1,7 +1,7 @@
 # Roadmap
 
 ## In progress
-- None.
+- [ ] Dashboard Standardization Phase 5c — demo CINs, My tasks upgrade (expand/edit/status/notes/follow-up), per-client follow-ups consolidated onto the patient record with an open-items rollup.
 
 ## Done
 - [x] Dashboard Standardization Phase 5a — Care Coordination naming, honest scope copy, dashboard cleanup, refusal queue, eligibility consolidation, and blank initial chart.
