@@ -93,6 +93,19 @@ import {
   CartesianGrid,
 } from "recharts";
 import { ClientDate } from "@/components/ClientDate";
+import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
+import { resourceLinkState, referralProviderLabel } from "@/lib/referralLinks";
+import { isReferralOpen } from "@/lib/noteAutofill";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { RESOURCE_CATEGORIES } from "@/lib/communityResources";
 import {
