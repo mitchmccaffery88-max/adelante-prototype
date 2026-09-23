@@ -550,6 +550,153 @@ function ReportingHome() {
         </Area>
       )}
 
+      {/* §4g — referral → active patient. The endpoint is an ATTENDED first
+          appointment, never a booking. Justice sources are folded into one
+          bucket inside `referralFunnel.ts` so drug court cannot be isolated. */}
+      {seesPopulation && (
+        <Area
+          id="referral-funnel"
+          title="Referral to active patient"
+          purpose="How inbound referrals become active patients. The cohort is referrals submitted in the selected period, followed forward to a first appointment they actually attended."
+          icon={ClipboardList}
+          actions={
+            <Button asChild size="sm" variant="outline">
+              <Link to="/referral-queue">Referral tracker</Link>
+            </Button>
+          }
+        >
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5">
+            <Stat
+              label="Submitted"
+              value={String(refFunnel.submitted)}
+              note={periodLabel(period)}
+            />
+            <Stat
+              label="Contacted"
+              value={String(refFunnel.contacted)}
+              note={
+                refFunnel.medianDaysToContact === null
+                  ? "Reached in person or by phone — nobody reached yet"
+                  : `Reached — median ${refFunnel.medianDaysToContact} day(s) from submission`
+              }
+              muted={refFunnel.contacted === 0}
+            />
+            <Stat
+              label="Enrolled"
+              value={String(refFunnel.enrolled)}
+              note={
+                refFunnel.medianDaysToEnroll === null
+                  ? "No enrollment in this period"
+                  : `Median ${refFunnel.medianDaysToEnroll} day(s) from contact`
+              }
+              muted={refFunnel.enrolled === 0}
+            />
+            <Stat
+              label="First appointment booked"
+              value={String(refFunnel.firstApptScheduled)}
+              note="A booking only — not counted as reached"
+              muted={refFunnel.firstApptScheduled === 0}
+            />
+            <Stat
+              label="First appointment attended"
+              value={String(refFunnel.firstApptAttended)}
+              note={
+                refFunnel.medianDaysToFirstAttended === null
+                  ? "No attended first session yet"
+                  : `Median ${refFunnel.medianDaysToFirstAttended} day(s) from submission`
+              }
+              muted={refFunnel.firstApptAttended === 0}
+            />
+          </div>
+          {refFunnel.belowMinimumCohort && (
+            <CohortGuardNotice
+              cohortSize={refFunnel.cohortSize}
+              minimumCohortSize={refFunnel.minimumCohortSize}
+            />
+          )}
+          <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
+            {REFERRAL_FUNNEL_ASSOCIATION_NOTE} Contacted means the person was actually reached — an
+            unanswered call, a voicemail or a dead number counts as effort, not contact, and is
+            reported separately below. A cancelled or no-showed visit never counts as attended.{" "}
+            {REFERRAL_SOURCE_FOLD_NOTE}
+          </p>
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-3">
+            <BreakdownCard
+              title="By referral source"
+              breakdown={refSource}
+              empty="No referral in this period."
+            />
+            <BreakdownCard
+              title="By justice-involved answer"
+              breakdown={refJustice}
+              empty="No referral in this period."
+            />
+            <BreakdownCard
+              title="By population track (enrolled only)"
+              breakdown={refTrack}
+              empty="No enrolled referral in this period — an unenrolled referral has no patient record, so it has no track."
+            />
+          </div>
+          <div className="mt-3 grid gap-3 lg:grid-cols-2">
+            <Card className="space-y-2 p-4">
+              <h3 className="text-sm font-medium text-navy">Where referrals drop off</h3>
+              <ul className="space-y-1 text-sm">
+                <li className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">Outreach attempted, not yet reached</span>
+                  <span className="tabular-nums text-foreground">
+                    {refDropOff.outreachAttemptedNotReached}
+                  </span>
+                </li>
+                <li className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">
+                    Overdue before first contact (as of now)
+                  </span>
+                  <span className="tabular-nums text-foreground">
+                    {refDropOff.overdueBeforeFirstContact}
+                  </span>
+                </li>
+                <li className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">
+                    Enrolled, appointment booked but not yet attended
+                  </span>
+                  <span className="tabular-nums text-foreground">
+                    {refDropOff.enrolledAwaitingFirstSession}
+                  </span>
+                </li>
+                <li className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">
+                    Enrolled with nothing on the books
+                  </span>
+                  <span className="tabular-nums text-foreground">
+                    {refDropOff.enrolledNoAppointment}
+                  </span>
+                </li>
+                <li className="flex items-baseline justify-between gap-3">
+                  <span className="text-muted-foreground">Declined</span>
+                  <span className="tabular-nums text-foreground">{refDropOff.declined}</span>
+                </li>
+              </ul>
+              <p className="text-[11px] leading-snug text-muted-foreground">
+                Overdue uses the Phase 4c draft threshold (no staff action for{" "}
+                {REFERRAL_AGING_DRAFT.overdueDays} days), pending care-operations sign-off. It is a
+                current-state count, so it reads "as of now" rather than over the selected period.
+              </p>
+              {refDropOff.belowMinimumCohort && (
+                <CohortGuardNotice
+                  cohortSize={refDropOff.cohortSize}
+                  minimumCohortSize={refDropOff.minimumCohortSize}
+                />
+              )}
+            </Card>
+            <BreakdownCard
+              title="Declined referrals by reason"
+              breakdown={refDeclines}
+              empty="No declined referral in this period."
+            />
+          </div>
+        </Area>
+      )}
+
 
 
       {seesPopulation && (
