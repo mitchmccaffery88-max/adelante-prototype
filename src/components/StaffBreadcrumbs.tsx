@@ -6,11 +6,23 @@
 // generic header. No PHI is placed in the trail (the full-page chart shows
 // "Patient record", not the patient's name).
 import { Link, useRouterState } from "@tanstack/react-router";
-import { ChevronRight, Home } from "lucide-react";
+import { ChevronRight, Home, ListChecks } from "lucide-react";
 import { entryForPath } from "@/lib/navGuard";
-import { NAV_GROUP_LABELS, canSeeNavEntry } from "@/lib/navSections";
+import { NAV_GROUP_LABELS, STAFF_NAV, canSeeNavEntry } from "@/lib/navSections";
 import { useActingStaff } from "@/lib/roles";
+import { useEhr } from "@/lib/ehr";
+import { myOpenItems } from "@/lib/myWork";
+import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 
+/**
+ * §Dashboard Standardization Phase 5b — the shared staff top bar.
+ *
+ * This strip already rendered once for every staff route inside the staff
+ * shell, so the standardized bar is built here rather than per page: the
+ * breadcrumb trail on the left, patient search and My work on the right. Both
+ * controls appear or disappear purely by real role permission — there is no
+ * per-dashboard fork.
+ */
 export function StaffBreadcrumbs() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { role } = useActingStaff();
