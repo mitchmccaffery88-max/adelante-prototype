@@ -95,6 +95,13 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
 import { resourceLinkState, referralProviderLabel } from "@/lib/referralLinks";
+import { SdohActivityLog } from "@/components/clinical/SdohActivityLog";
+import {
+  SDOH_AGING_DRAFT,
+  referralAgingState,
+  sdohAgingLabel,
+  sdohNeedAging,
+} from "@/lib/sdohAging";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import {
   AlertDialog,
@@ -758,7 +765,15 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
               </Badge>
             </div>
             <NeedReferralList patientId={patientId} itemId={i.id} />
-            {i.note && <div className="text-xs text-muted-foreground">{i.note}</div>}
+            <NeedAgingLine patientId={patientId} item={i} />
+            <SdohActivityLog
+              patientId={patientId}
+              target="need"
+              targetId={i.id}
+              {...(i.log ? { log: i.log } : {})}
+              {...(i.note ? { legacyNote: i.note } : {})}
+              readOnly={readOnly}
+            />
             <AttributionLine
               {...(i.createdBy ? { createdBy: i.createdBy, createdAt: i.createdAt } : {})}
               {...(i.lastUpdatedBy
@@ -891,6 +906,23 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
  * Directory link state is shown honestly: an org that has been unpublished
  * still names the referral, flagged as no longer listed.
  */
+/**
+ * §5d-3 — draft aging read. Nothing is stamped: this is elapsed time since the
+ * last real action, including an activity-log entry.
+ */
+function NeedAgingLine({ patientId, item }: { patientId: string; item: SdohPlanItem }) {
+  const count = useEhr(() => AdelanteEHR.referralsForNeed(patientId, item.id).length);
+  const aging = sdohNeedAging(item, count);
+  if (aging.state !== "due" && aging.state !== "overdue") return null;
+  return (
+    <div
+      className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+    >
+      {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
+    </div>
+  );
+}
+
 function NeedReferralList({ patientId, itemId }: { patientId: string; itemId: string }) {
   const json = useEhr(() => JSON.stringify(AdelanteEHR.referralsForNeed(patientId, itemId)));
   const refs = JSON.parse(json) as ResourceReferral[];
@@ -1104,7 +1136,26 @@ export function ReferralsTab({
                   {RESOURCE_REFERRAL_OUTCOME_LABEL[r.status]}
                 </Badge>
               </div>
-              {r.note && <div className="text-xs text-muted-foreground">{r.note}</div>}
+              {(() => {
+                const aging = referralAgingState(r);
+                if (aging.state !== "due" && aging.state !== "overdue") return null;
+                return (
+                  <div
+                    className={`text-[11px] ${aging.state === "overdue" ? "text-destructive" : "text-muted-foreground"}`}
+                  >
+                    {sdohAgingLabel(aging)} · {SDOH_AGING_DRAFT.label}
+                  </div>
+                );
+              })()}
+              <ReferralFollowUpControl patientId={patientId} referral={r} readOnly={readOnly} />
+              <SdohActivityLog
+                patientId={patientId}
+                target="referral"
+                targetId={r.id}
+                {...(r.log ? { log: r.log } : {})}
+                {...(r.note ? { legacyNote: r.note } : {})}
+                readOnly={Boolean(readOnly)}
+              />
               <AttributionLine
                 {...(r.createdBy ? { createdBy: r.createdBy, createdAt: r.createdAt } : {})}
                 {...(r.lastUpdatedBy
@@ -1183,6 +1234,74 @@ export function ReferralsTab({
  * §5d-2 — outcome + reason. Any outcome other than pending needs a reason;
  * the data layer refuses without one, so this collects it up front.
  */
+/**
+ * §5d-3 — the referral's follow-up date, which existed on the record but had
+ * no UI. Setting one can create a REAL case task for the patient's case
+ * manager; when there is no case manager the reason is stated, never silent.
+ */
+function ReferralFollowUpControl({
+  patientId,
+  referral,
+  readOnly,
+}: {
+  patientId: string;
+  referral: ResourceReferral;
+  readOnly?: boolean;
+}) {
+  const { staffName, role } = useActingStaff();
+  const [date, setDate] = useState(referral.followUpDate ?? "");
+  if (readOnly) {
+    return referral.followUpDate ? (
+      <div className="text-[11px] text-muted-foreground">
+        Follow up on {referral.followUpDate}
+      </div>
+    ) : null;
+  }
+  return (
+    <div className="flex flex-wrap items-center gap-2 text-[11px] text-muted-foreground">
+      <span>Follow up</span>
+      <Input
+        type="date"
+        className="h-8 w-40 text-xs"
+        value={date}
+        onChange={(e) => setDate(e.target.value)}
+      />
+      <Button
+        size="sm"
+        variant="outline"
+        onClick={() => {
+          AdelanteEHR.setReferralFollowUpDate(patientId, referral.id, date || undefined, {
+            staffName,
+            role,
+          });
+          toast.success(date ? "Follow-up date saved." : "Follow-up date cleared.");
+        }}
+      >
+        Save date
+      </Button>
+      <Button
+        size="sm"
+        variant="ghost"
+        disabled={!date}
+        onClick={() => {
+          const res = AdelanteEHR.createSdohFollowUpTask({
+            patientId,
+            dueDate: date,
+            referralId: referral.id,
+          });
+          if (!res.created) {
+            toast.error(res.reason);
+            return;
+          }
+          toast.success("Follow-up task created for the case manager.");
+        }}
+      >
+        Create task
+      </Button>
+    </div>
+  );
+}
+
 function ReferralOutcomeControl({
   patientId,
   referral,
@@ -1958,6 +2077,7 @@ export function TaskList({
     provider_switch: "Provider switch",
     note_automation: "Note automation",
     med_side_effect: "Side effect reported",
+    sdoh_follow_up: "Social-needs follow-up",
   };
   return (
     <div className="space-y-1.5">

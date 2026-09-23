@@ -464,6 +464,97 @@ export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
  */
 export const HRSN_SAFETY_DOMAIN_KEY = "safety";
 
+// ---------------------------------------------------------------------------
+// §5d-3 — the structured activity log carried by BOTH a social need and a
+// resource referral. Append-only and attributed, modelled on `CaseTaskNote`.
+// STAFF-ONLY: no patient-facing or advocate-facing selector reads `log`.
+// ---------------------------------------------------------------------------
+
+export type SdohLogEntryType =
+  | "contact_attempt"
+  | "org_update"
+  | "client_update"
+  | "barrier"
+  | "document"
+  | "next_step";
+
+export const SDOH_LOG_ENTRY_TYPE_LABEL: Record<SdohLogEntryType, string> = {
+  contact_attempt: "Contact attempt",
+  org_update: "Update from organization",
+  client_update: "Update from client",
+  barrier: "Barrier",
+  document: "Document",
+  next_step: "Next step",
+};
+
+export type SdohContactMethod = "phone" | "email" | "in_person" | "portal" | "fax";
+
+export const SDOH_CONTACT_METHOD_LABEL: Record<SdohContactMethod, string> = {
+  phone: "Phone",
+  email: "Email",
+  in_person: "In person",
+  portal: "Portal",
+  fax: "Fax",
+};
+
+/**
+ * DRAFT barrier list. Pending clinical review — labelled as such on screen.
+ * Not a ratified taxonomy; no category is added outside this list.
+ */
+export const SDOH_BARRIERS = [
+  "transportation",
+  "id_documents",
+  "eligibility",
+  "waitlist",
+  "cost",
+  "language",
+  "schedule_conflict",
+  "criminal_record_restriction",
+  "lost_contact",
+  "other",
+] as const;
+
+export type SdohBarrier = (typeof SDOH_BARRIERS)[number];
+
+export const SDOH_BARRIER_LABEL: Record<SdohBarrier, string> = {
+  transportation: "Transportation",
+  id_documents: "ID / documents",
+  eligibility: "Eligibility",
+  waitlist: "Waitlist",
+  cost: "Cost",
+  language: "Language",
+  schedule_conflict: "Schedule / work conflict",
+  criminal_record_restriction: "Criminal-record restriction",
+  lost_contact: "Lost contact",
+  other: "Other",
+};
+
+export const SDOH_BARRIERS_DRAFT_NOTE =
+  "Draft barrier list — pending clinical review. Not a ratified taxonomy.";
+
+export interface SdohLogEntry {
+  id: string;
+  text: string;
+  entryType: SdohLogEntryType;
+  authorName: string;
+  authorRole: StaffRole;
+  at: string;
+  /** Contact detail — who at the organization, how, and what came of it. */
+  contactName?: string;
+  contactMethod?: SdohContactMethod;
+  contactResult?: string;
+  barriers?: SdohBarrier[];
+  documentsNeeded?: string[];
+  documentsCollected?: string[];
+  nextStep?: string;
+  nextStepDueDate?: string;
+  /** Set when this entry produced a real `CaseTask`. */
+  taskId?: string;
+}
+
+/** What a caller may supply; identity and timestamp are stamped here. */
+export type SdohLogEntryInput = Omit<SdohLogEntry, "id" | "authorName" | "authorRole" | "at">;
+
 export interface SdohPlanItem {
 
   id: string;
@@ -486,6 +577,13 @@ export interface SdohPlanItem {
    * choose to share it, after an explicit warning.
    */
   safetySensitive?: boolean;
+
+  /**
+   * §5d-3 — append-only, attributed activity log. STAFF-ONLY on every need,
+   * regardless of `visibleToPatient`.
+   */
+  log?: SdohLogEntry[];
+
 
   /** §5d-1 attribution — who created/last changed this need. */
   createdBy?: string;
@@ -1853,6 +1951,11 @@ export interface ResourceReferral {
   updatedAt?: string;
   note?: string;
   followUpDate?: string;
+  /**
+   * §5d-3 — append-only, attributed activity log. STAFF-ONLY, and masked with
+   * the rest of the row for a Part 2-gated viewer on a SUD-sensitive category.
+   */
+  log?: SdohLogEntry[];
   visibleToPatient?: boolean;
   // 42 CFR Part 2 guardrail — must be true to share SUD-identifying detail externally.
   // §5d-1: stamped by the data layer from the patient's LIVE consent at creation,
@@ -3243,7 +3346,9 @@ export type CaseTaskOrigin =
   /** §Phase 7 part 2 — patient reported a medication side effect. */
   | "med_side_effect"
   /** §Phase 4f — enrollment from a referral needs a care team and intake. */
-  | "referral_enrollment_setup";
+  | "referral_enrollment_setup"
+  /** §5d-3 — a follow-up on a social need or a resource referral. */
+  | "sdoh_follow_up";
 
 export interface CaseTask {
   id: string;
@@ -10311,6 +10416,164 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     return (p?.resourceReferrals ?? []).filter((r) => r.sdohItemId === itemId);
   },
+
+  // ----- §5d-3 activity log (append-only, attributed, STAFF-ONLY) -----
+  /**
+   * Append an entry to a social need's activity log. There is deliberately no
+   * edit and no delete: this is a record of what happened, and rewriting it
+   * would make the aging clock and the attribution both lie. An actor is
+   * REQUIRED — unlike legacy status writes, an unattributed log entry cannot
+   * be created at all.
+   */
+  appendSdohNeedLog(
+    patientId: string,
+    itemId: string,
+    input: SdohLogEntryInput,
+    actor: { staffName: string; role: StaffRole },
+  ): SdohLogEntry | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!item || !input.text.trim()) return;
+    const entry: SdohLogEntry = {
+      ...input,
+      text: input.text.trim(),
+      id: uid(),
+      authorName: actor.staffName,
+      authorRole: actor.role,
+      at: new Date().toISOString(),
+    };
+    item.log = [...(item.log ?? []), entry];
+    item.updatedAt = entry.at;
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_need_log_added",
+      patientId,
+      actorId: actor.staffName,
+      actorRole: actor.role,
+      detail: {
+        itemId,
+        entryId: entry.id,
+        entryType: entry.entryType,
+        ...(entry.barriers?.length ? { barriers: entry.barriers } : {}),
+        ...(entry.nextStepDueDate ? { nextStepDueDate: entry.nextStepDueDate } : {}),
+      },
+    });
+    emit();
+    return entry;
+  },
+
+  /** Same contract as `appendSdohNeedLog`, for a resource referral. */
+  appendReferralLog(
+    patientId: string,
+    referralId: string,
+    input: SdohLogEntryInput,
+    actor: { staffName: string; role: StaffRole },
+  ): SdohLogEntry | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const r = p?.resourceReferrals?.find((x) => x.id === referralId);
+    if (!r || !input.text.trim()) return;
+    const entry: SdohLogEntry = {
+      ...input,
+      text: input.text.trim(),
+      id: uid(),
+      authorName: actor.staffName,
+      authorRole: actor.role,
+      at: new Date().toISOString(),
+    };
+    r.log = [...(r.log ?? []), entry];
+    r.updatedAt = entry.at;
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_log_added",
+      patientId,
+      actorId: actor.staffName,
+      actorRole: actor.role,
+      detail: {
+        referralId,
+        entryId: entry.id,
+        entryType: entry.entryType,
+        ...(entry.barriers?.length ? { barriers: entry.barriers } : {}),
+        ...(entry.nextStepDueDate ? { nextStepDueDate: entry.nextStepDueDate } : {}),
+      },
+    });
+    emit();
+    return entry;
+  },
+
+  /** §5d-3 — set or clear a referral's follow-up date, attributed. */
+  setReferralFollowUpDate(
+    patientId: string,
+    referralId: string,
+    followUpDate: string | undefined,
+    actor?: { staffName: string; role: StaffRole },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const r = p?.resourceReferrals?.find((x) => x.id === referralId);
+    if (!r) return;
+    r.followUpDate = followUpDate?.trim() || undefined;
+    r.updatedAt = new Date().toISOString();
+    if (actor) {
+      r.lastUpdatedBy = actor.staffName;
+      r.lastUpdatedByRole = actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "resource_referral_follow_up",
+      patientId,
+      actorId: actor?.staffName ?? "unattributed",
+      ...(actor ? { actorRole: actor.role } : {}),
+      detail: { referralId, followUpDate: r.followUpDate ?? null },
+    });
+    emit();
+  },
+
+  /**
+   * §5d-3 — turn a follow-up date or a logged next step into a REAL case task
+   * on the existing creation path, assigned to the patient's case manager.
+   *
+   * When no case manager is assigned this returns `{ created: false,
+   * reason }` and writes nothing. The caller shows that reason: silently
+   * creating nothing is the failure mode this replaces (Phase 3a pattern).
+   *
+   * 42 CFR Part 2: the task title and detail NEVER name the referral category
+   * or the organization. Task titles surface in shared queues to staff who may
+   * be Part 2-gated, so only "Social-needs follow-up" plus the client appears.
+   */
+  createSdohFollowUpTask(input: {
+    patientId: string;
+    dueDate: string;
+    /** The need this follows up on, when there is one. */
+    sdohItemId?: string;
+    /** The referral this follows up on, when there is one. */
+    referralId?: string;
+    nextStep?: string;
+  }): { created: true; task: CaseTask } | { created: false; reason: string } {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) return { created: false, reason: "Client not found." };
+    if (!p.caseManagerId) {
+      return {
+        created: false,
+        reason:
+          "No case manager is assigned to this client, so a follow-up task cannot be assigned. Assign a case manager first.",
+      };
+    }
+    const anchor = input.referralId ?? input.sdohItemId ?? "unlinked";
+    const task = AdelanteEHR.createCaseTask({
+      patientId: input.patientId,
+      assignedTo: p.caseManagerId,
+      title: "Social-needs follow-up",
+      // Deliberately generic — see the Part 2 note above.
+      detail: input.nextStep?.trim() || "Follow up on an open social-needs item.",
+      dueDate: input.dueDate,
+      origin: "sdoh_follow_up",
+      taskType: "sdoh_follow_up",
+      source: "manual",
+      dedupeKey: `sdoh-follow:${anchor}:${input.dueDate}`,
+    });
+    if (!task) return { created: false, reason: "A follow-up task already exists for that date." };
+    return { created: true, task };
+  },
+
 
   /**
    * §5d-2 — record a real outcome. Any outcome other than `pending` needs a

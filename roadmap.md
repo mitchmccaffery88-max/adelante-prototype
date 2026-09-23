@@ -69,3 +69,13 @@
 - [x] Materialize positive AHC-HRSN domains as real needs
 - [x] Interpersonal-safety needs + their referrals default staff-only, warn before making visible
 - [x] Remove the stale "Build 2" resource-library string
+
+## Phase 5d-3 — SDOH activity log, follow-up tasks, aging
+- [x] SdohLogEntry type + append-only writers on needs and referrals (audited)
+- [x] Pre-existing single `note` shown as unattributed "Earlier note"
+- [x] followUpDate UI + real CaseTask creation (origin sdoh_follow_up), honest no-case-manager message
+- [x] src/lib/sdohAging.ts draft thresholds, last-action includes log entries
+- [x] patientOpenItems: add open referrals + aging detail
+- [x] myWork: sdohAging bucket for the assigned case manager
+- [x] Shared SdohActivityLog component wired into SdohTab + ReferralsTab (Part 2 / safety respected)
+- [x] Tests, typecheck, build, live browser both viewports

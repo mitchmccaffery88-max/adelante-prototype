@@ -27,6 +27,7 @@ import { crisisSlaState, type CrisisSlaState } from "./crisisPolicy";
 import { isPart2Screener } from "./screeners";
 import { canAccess, type StaffRole } from "./roles";
 import { engagementRecords } from "./engagement";
+import { referralAgingState, sdohNeedAging, type SdohAging } from "./sdohAging";
 
 // ---------------------------------------------------------------------------
 // DRAFT policy values — pending real operational sign-off
@@ -111,6 +112,16 @@ export interface MyTaskItem {
   overdueDays: number;
 }
 
+/** §5d-3 — a social need or referral that has gone quiet on my caseload. */
+export interface MySdohAgingItem {
+  patientId: string;
+  patientName: string;
+  kind: "need" | "referral";
+  id: string;
+  label: string;
+  aging: SdohAging;
+}
+
 export interface MyOpenItems {
   /** Crisis-lane escalations this person has claimed. */
   clinicalCrises: MyCrisisItem[];
@@ -120,7 +131,12 @@ export interface MyOpenItems {
   unsignedNotes: MyNoteItem[];
   /** Case tasks assigned to or claimed by them, past due. */
   overdueTasks: MyTaskItem[];
-  /** Total across all four sources. */
+  /**
+   * §5d-3 — needs/referrals past a DRAFT aging threshold on patients this
+   * person is the assigned case manager for.
+   */
+  sdohAging: MySdohAgingItem[];
+  /** Total across all five sources. */
   total: number;
   /** Rows already past their draft crisis response target. */
   overdueCrises: number;
@@ -181,13 +197,55 @@ export function myOpenItems(actor: ActingIdentity, now: Date = new Date()): MyOp
     .filter((c) => c.escalation.category === "sdoh")
     .sort((a, b) => b.sla.ageMs - a.sla.ageMs);
 
+  // §5d-3 — social needs and referrals that have gone quiet, on patients this
+  // person is the assigned case manager for. Read-only: computed from real
+  // timestamps by `sdohAging.ts`, never stamped.
+  const sdohAging: MySdohAgingItem[] = [];
+  for (const p of AdelanteEHR.listPatients()) {
+    if (!owns(aliases, p.caseManagerId)) continue;
+    const patientName = `${p.firstName} ${p.lastName}`;
+    for (const need of p.sdohPlan?.items ?? []) {
+      const referrals = AdelanteEHR.referralsForNeed(p.id, need.id);
+      const aging = sdohNeedAging(need, referrals.length, now);
+      if (aging.state !== "due" && aging.state !== "overdue") continue;
+      sdohAging.push({
+        patientId: p.id,
+        patientName,
+        kind: "need",
+        id: need.id,
+        // Need text is staff-facing already; a referral's provider is not
+        // (42 CFR Part 2), so only the referral row is anonymised below.
+        label: need.need,
+        aging,
+      });
+    }
+    for (const r of p.resourceReferrals ?? []) {
+      const aging = referralAgingState(r, now);
+      if (aging.state !== "due" && aging.state !== "overdue") continue;
+      sdohAging.push({
+        patientId: p.id,
+        patientName,
+        kind: "referral",
+        id: r.id,
+        label: "Open resource referral",
+        aging,
+      });
+    }
+  }
+  sdohAging.sort((a, b) => b.aging.days - a.aging.days);
+
   return {
     clinicalCrises,
     sdohCrises,
     unsignedNotes,
     overdueTasks,
+    sdohAging,
     total:
-      clinicalCrises.length + sdohCrises.length + unsignedNotes.length + overdueTasks.length,
+      clinicalCrises.length +
+      sdohCrises.length +
+      unsignedNotes.length +
+      overdueTasks.length +
+      sdohAging.length,
     overdueCrises: crises.filter((c) => c.sla.overdue).length,
   };
 }

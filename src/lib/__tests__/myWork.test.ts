@@ -56,11 +56,16 @@ describe("open items", () => {
     }
   });
 
-  it("total equals the sum of its four sources", () => {
+  // §5d-3 added a fifth source: aging social needs/referrals on my caseload.
+  it("total equals the sum of its five sources", () => {
     const id = owner();
     const o = myOpenItems({ staffId: `s-${id}`, staffName: "x", clinicianId: id });
     expect(o.total).toBe(
-      o.clinicalCrises.length + o.sdohCrises.length + o.unsignedNotes.length + o.overdueTasks.length,
+      o.clinicalCrises.length +
+        o.sdohCrises.length +
+        o.unsignedNotes.length +
+        o.overdueTasks.length +
+        o.sdohAging.length,
     );
   });
 });
