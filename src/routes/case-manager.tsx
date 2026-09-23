@@ -23,6 +23,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Checkbox } from "@/components/ui/checkbox";
 import { AutoCreatedFromNote } from "@/components/clinical/AutomationTrace";
+import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
 import {
   Select,
   SelectContent,
@@ -577,7 +578,7 @@ function CaseManagerPage() {
                   </Button>
                 </div>
               </Card>
-              {cmId && <PatientTasksCard patientId={active.id} cmId={cmId} />}
+              {cmId && <PatientTasksCard patientId={active.id} />}
               <CheckInCard patientId={active.id} cm={cm?.name ?? ""} />
               <RecentCheckInsCard patientId={active.id} />
               <EligibilitySummaryCard patientId={active.id} />
@@ -950,70 +951,21 @@ function TaskQueueCard({
         <ul className="space-y-2">
           {list.slice(0, 12).map((t) => {
             const p = patients.find((x) => x.id === t.patientId);
-            const overdueTask = t.status === "open" && +new Date(t.dueDate) < now - 86400000;
             return (
-              <li
+              <TaskWorkRow
                 key={t.id}
-                className={`flex flex-col sm:flex-row sm:items-start justify-between gap-3 rounded-lg border p-3 text-sm ${
-                  overdueTask ? "border-destructive/40 bg-destructive/5" : ""
-                }`}
-              >
-                <div className="min-w-0">
-                  <div className="flex items-center gap-2">
-                    <span className="font-medium text-navy">{t.title}</span>
-                    <Badge variant="outline" className="text-[10px] capitalize">
-                      {t.origin.replace("_", " ")}
-                    </Badge>
-                    {t.status !== "open" && (
-                      <Badge variant="outline" className="text-[10px] capitalize">
-                        {t.status}
-                      </Badge>
-                    )}
-                  </div>
-                  {t.detail && (
-                    <div className="text-xs text-muted-foreground mt-0.5">{t.detail}</div>
-                  )}
-                  <div className="text-[11px] text-muted-foreground mt-1 flex items-center gap-2">
-                    {p && (
-                      <button className="underline" onClick={() => onOpenPatient(p.id)}>
-                        {p.firstName} {p.lastName}
-                      </button>
-                    )}
-                    <span className="inline-flex items-center gap-1">
-                      <Clock className="h-3 w-3" /> Due {t.dueDate.slice(0, 10)}
-                    </span>
-                  </div>
-                  <AutoCreatedFromNote task={t} />
-                </div>
-                {t.status === "open" && (
-                  <div className="shrink-0 flex gap-2 w-full sm:w-auto">
-                    <Button
-                      size="sm"
-                      className="h-11 flex-1 sm:flex-none"
-                      variant="outline"
-                      onClick={() => AdelanteEHR.snoozeCaseTask(t.id, 3)}
+                task={t}
+                patientSlot={
+                  p ? (
+                    <button
+                      className="text-xs underline text-muted-foreground"
+                      onClick={() => onOpenPatient(p.id)}
                     >
-                      Snooze 3d
-                    </Button>
-                    <Button
-                      size="sm"
-                      className="h-11 flex-1 sm:flex-none"
-                      onClick={() => AdelanteEHR.completeCaseTask(t.id)}
-                    >
-                      Done
-                    </Button>
-                  </div>
-                )}
-                {t.status !== "open" && (
-                  <Button
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => AdelanteEHR.reopenCaseTask(t.id)}
-                  >
-                    Reopen
-                  </Button>
-                )}
-              </li>
+                      {p.firstName} {p.lastName}
+                    </button>
+                  ) : null
+                }
+              />
             );
           })}
         </ul>
@@ -1022,86 +974,34 @@ function TaskQueueCard({
   );
 }
 
-function PatientTasksCard({ patientId, cmId }: { patientId: string; cmId: string }) {
+/**
+ * §Dashboard Standardization Phase 5c — per-client follow-ups now live on the
+ * patient record's Tasks section (the same `caseTasksForPatient` rows, worked
+ * with the full Phase 5c row). The caseload keeps visibility through this
+ * compact count + link rather than a second editing surface.
+ */
+function PatientTasksCard({ patientId }: { patientId: string }) {
   const tasks = useEhr(() =>
     AdelanteEHR.caseTasksForPatient(patientId).filter((t) => t.status === "open"),
   );
-  const [title, setTitle] = useState("");
-  const [detail, setDetail] = useState("");
-  const [due, setDue] = useState(() => todayLocal());
-
-  function add() {
-    if (!title.trim()) {
-      toast.error("Give the task a short title.");
-      return;
-    }
-    AdelanteEHR.createCaseTask({
-      patientId,
-      assignedTo: cmId,
-      title: title.trim(),
-      detail: detail.trim() || undefined,
-      dueDate: due,
-      origin: "manual",
-    });
-    setTitle("");
-    setDetail("");
-    toast.success("Task added.");
-  }
-
   return (
     <Card className="p-5">
       <h3 className="font-display text-navy flex items-center gap-2">
         <ClipboardList className="h-4 w-4 text-teal" /> Follow-ups for this client
       </h3>
-      {tasks.length === 0 ? (
-        <p className="mt-2 text-xs text-muted-foreground">No open tasks for this client.</p>
-      ) : (
-        <ul className="mt-3 space-y-2 text-sm">
-          {tasks.map((t) => (
-            <li
-              key={t.id}
-              className="flex items-start justify-between gap-2 border-b last:border-0 pb-2 last:pb-0"
-            >
-              <div>
-                <div className="text-navy">{t.title}</div>
-                {t.detail && <div className="text-xs text-muted-foreground">{t.detail}</div>}
-                <div className="text-[10px] text-muted-foreground mt-0.5">
-                  Due {t.dueDate.slice(0, 10)} · {t.origin.replace("_", " ")}
-                </div>
-                <AutoCreatedFromNote task={t} />
-              </div>
-              <Button
-                size="sm"
-                variant="outline"
-                onClick={() => AdelanteEHR.completeCaseTask(t.id)}
-              >
-                Done
-              </Button>
-            </li>
-          ))}
-        </ul>
-      )}
-      <div className="mt-4 space-y-2">
-        <Label className="text-xs text-muted-foreground">Add follow-up</Label>
-        <Input placeholder="Short title" value={title} onChange={(e) => setTitle(e.target.value)} />
-        <Textarea
-          rows={2}
-          placeholder="Details (optional)"
-          value={detail}
-          onChange={(e) => setDetail(e.target.value)}
-        />
-        <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-2">
-          <Input
-            type="date"
-            value={due}
-            onChange={(e) => setDue(e.target.value)}
-            className="w-full sm:w-[160px] h-11"
-          />
-          <Button size="sm" onClick={add} className="h-11 sm:ml-auto">
-            <Plus className="h-3.5 w-3.5" /> Add
-          </Button>
-        </div>
-      </div>
+      <p className="mt-2 text-sm text-foreground">
+        {tasks.length === 0
+          ? "No open follow-ups for this client."
+          : `${tasks.length} open follow-up${tasks.length === 1 ? "" : "s"}.`}
+      </p>
+      <p className="mt-1 text-xs text-muted-foreground">
+        Follow-ups are added and worked on the client's record, alongside their other open items.
+      </p>
+      <Button asChild size="sm" variant="outline" className="mt-3 h-10">
+        <Link to="/record/$patientId" params={{ patientId }} search={{ section: "tasks" }}>
+          Open follow-ups on the record
+        </Link>
+      </Button>
     </Card>
   );
 }

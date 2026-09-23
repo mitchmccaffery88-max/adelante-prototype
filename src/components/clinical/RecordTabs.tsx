@@ -32,6 +32,8 @@ import {
 import { Checkbox } from "@/components/ui/checkbox";
 import { useI18n } from "@/lib/i18n";
 import { eligibleSupervisingProviders } from "@/lib/communityBilling";
+import { TaskWorkRow } from "@/components/tasks/TaskWorkRow";
+import { PatientOpenItemsCard } from "@/components/tasks/PatientOpenItemsCard";
 import {
   AutoCreatedFromNote,
   AutoStartedNoteTrace,
@@ -1522,8 +1524,27 @@ export function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?
           )}
         </Card>
       )}
-      <TaskList label="Open" items={open} showActions={!readOnly} />
-      {snoozed.length > 0 && <TaskList label="Snoozed" items={snoozed} showActions />}
+      <PatientOpenItemsCard patientId={patientId} />
+      {open.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Open</div>
+          <ul className="space-y-2">
+            {open.map((t) => (
+              <TaskWorkRow key={t.id} task={t} canWrite={!readOnly} />
+            ))}
+          </ul>
+        </div>
+      )}
+      {snoozed.length > 0 && (
+        <div className="space-y-1.5">
+          <div className="text-[10px] uppercase tracking-wider text-muted-foreground">Snoozed</div>
+          <ul className="space-y-2">
+            {snoozed.map((t) => (
+              <TaskWorkRow key={t.id} task={t} canWrite={!readOnly} />
+            ))}
+          </ul>
+        </div>
+      )}
       {done.length > 0 && <TaskList label="Completed" items={done.slice(0, 5)} />}
       {tasks.length === 0 && (
         <EmptyState
