@@ -1154,7 +1154,7 @@ export function ReferralsTab({
                 targetId={r.id}
                 {...(r.log ? { log: r.log } : {})}
                 {...(r.note ? { legacyNote: r.note } : {})}
-                readOnly={readOnly}
+                readOnly={Boolean(readOnly)}
               />
               <AttributionLine
                 {...(r.createdBy ? { createdBy: r.createdBy, createdAt: r.createdAt } : {})}
