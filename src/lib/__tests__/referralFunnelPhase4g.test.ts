@@ -34,7 +34,7 @@ function newReferral(over: Record<string, unknown> = {}) {
 describe("contacted means actually reached", () => {
   it("an unanswered attempt alone is effort, never contact", () => {
     const r = newReferral();
-    AdelanteEHR.logReferralOutreachAttempt({ id: r.id, outcome: "no_answer" });
+    AdelanteEHR.logReferralOutreachAttempt(r.id, { outcome: "no_answer" });
     const after = AdelanteEHR.listReferrals().find((x) => x.id === r.id)!;
     expect(wasContacted(after)).toBe(false);
     expect(attemptedNotReached(after)).toBe(true);
@@ -43,13 +43,13 @@ describe("contacted means actually reached", () => {
 
   it("a dead number is also not contact", () => {
     const r = newReferral();
-    AdelanteEHR.logReferralOutreachAttempt({ id: r.id, outcome: "disconnected" });
+    AdelanteEHR.logReferralOutreachAttempt(r.id, { outcome: "disconnected" });
     expect(wasContacted(AdelanteEHR.listReferrals().find((x) => x.id === r.id)!)).toBe(false);
   });
 
   it("a reached attempt counts as contacted", () => {
     const r = newReferral();
-    AdelanteEHR.logReferralOutreachAttempt({ id: r.id, outcome: "reached" });
+    AdelanteEHR.logReferralOutreachAttempt(r.id, { outcome: "reached" });
     const after = AdelanteEHR.listReferrals().find((x) => x.id === r.id)!;
     expect(wasContacted(after)).toBe(true);
     expect(attemptedNotReached(after)).toBe(false);
@@ -143,7 +143,7 @@ describe("slices", () => {
 
   it("declines are aggregated by reason key only", () => {
     const r = newReferral();
-    AdelanteEHR.declineReferral({ id: r.id, reason: "not_eligible", note: "private detail" });
+    AdelanteEHR.declineReferral(r.id, { reason: "not_eligible", note: "private detail" });
     const rows = declinedByReason().rows;
     expect(rows.some((x) => x.key === "not_eligible")).toBe(true);
     expect(rows.every((x) => !/private detail/.test(x.label))).toBe(true);
