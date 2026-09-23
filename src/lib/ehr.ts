@@ -9985,6 +9985,63 @@ export const AdelanteEHR = {
   },
 
   /**
+   * §5d-2 — turn positive AHC-HRSN domains into REAL, workable needs.
+   *
+   * The care plan used to synthesize display-only rows for positive domains
+   * with no `SdohPlanItem`; those rows could not be referred, tracked or
+   * resolved. This creates the real items (provenance `pre_release_hrsn`),
+   * deduped by need label against what is already on file, so nothing is
+   * duplicated and nothing is re-sourced.
+   *
+   * The interpersonal-safety domain materializes STAFF-ONLY. Someone
+   * disclosing safety risk may be living with the person harming them, so a
+   * safety need must never appear on their portal, their phone or an
+   * advocate's view unless a staff member deliberately shares it.
+   */
+  materializeHrsnNeeds(
+    patientId: string,
+    actor?: { staffName: string; role: StaffRole },
+  ): { created: number } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { created: 0 };
+    const domains = p.screeners["ahc-hrsn"]?.domains ?? [];
+    let created = 0;
+    for (const d of domains) {
+      if (!d.positive) continue;
+      const exists = (p.sdohPlan?.items ?? []).some(
+        (i) => i.need.trim().toLowerCase() === d.label.trim().toLowerCase(),
+      );
+      if (exists) continue;
+      AdelanteEHR.addSdohItem(
+        patientId,
+        {
+          need: d.label,
+          source: "pre_release_hrsn",
+          ...(d.key === HRSN_SAFETY_DOMAIN_KEY ? { safetySensitive: true } : {}),
+        },
+        actor,
+      );
+      created++;
+    }
+    return { created };
+  },
+
+  /** Positive AHC-HRSN domains that have no real need row yet. */
+  unmaterializedHrsnDomains(patientId: string): { key: string; label: string }[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const items = p.sdohPlan?.items ?? [];
+    return (p.screeners["ahc-hrsn"]?.domains ?? [])
+      .filter((d) => d.positive)
+      .filter(
+        (d) =>
+          !items.some((i) => i.need.trim().toLowerCase() === d.label.trim().toLowerCase()),
+      )
+      .map((d) => ({ key: d.key, label: d.label }));
+  },
+
+
+  /**
    * §Intake/SDOH Redesign Phase 3 — the one write intake uses for social needs.
    *
    * `confirmed` are needs the record already had evidence for and the person
