@@ -8586,6 +8586,14 @@ export const AdelanteEHR = {
       );
     }
     const now = new Date().toISOString();
+    // §5d-2 — a referral for a staff-only need (interpersonal safety) inherits
+    // the staff-only default. Someone living with the person harming them must
+    // not find a safety referral on their own phone.
+    const linkedNeed = r.sdohItemId
+      ? p.sdohPlan?.items.find((i) => i.id === r.sdohItemId)
+      : undefined;
+    const inheritedVisibility =
+      r.visibleToPatient ?? (linkedNeed ? linkedNeed.visibleToPatient !== false : undefined);
     const row: ResourceReferral = {
       ...r,
       // Provenance defaults to the real common case: our care team referred
@@ -8595,6 +8603,7 @@ export const AdelanteEHR = {
       createdAt: now,
       status: "pending",
       sudDisclosureConsent: consentActive,
+      ...(inheritedVisibility === undefined ? {} : { visibleToPatient: inheritedVisibility }),
       ...(actor ? { createdBy: actor.staffName, createdByRole: actor.role } : {}),
     };
     p.resourceReferrals = [row, ...(p.resourceReferrals ?? [])];
@@ -8607,10 +8616,18 @@ export const AdelanteEHR = {
       detail: {
         referralId: row.id,
         category: row.category,
+        ...(row.sdohItemId ? { sdohItemId: row.sdohItemId } : {}),
+        ...(row.resourceId ? { resourceId: row.resourceId } : { offDirectory: true }),
         part2Sensitive: isPart2SensitiveCategory(row.category),
         sudDisclosureConsent: consentActive,
       },
     });
+    // §5d-2 — making a referral IS the need moving forward. Only the first
+    // move is automatic: a need already past `identified` keeps its status.
+    if (linkedNeed && linkedNeed.status === "identified") {
+      AdelanteEHR.setSdohStatus(patientId, linkedNeed.id, "sent", undefined, actor);
+    }
+
     emit();
     return row;
   },
