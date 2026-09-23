@@ -670,7 +670,12 @@ export function SdohTab({ patientId, readOnly }: { patientId: string; readOnly: 
           <Button
             size="sm"
             onClick={() => {
-              AdelanteEHR.addSdohItem(patientId, { need, note, visibleToPatient: visible });
+              AdelanteEHR.addSdohItem(
+                patientId,
+                { need, note, visibleToPatient: visible },
+                { staffName, role },
+              );
+
               setNeed("");
               setNote("");
               toast.success("SDOH item added");
