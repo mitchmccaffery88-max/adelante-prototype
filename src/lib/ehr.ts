@@ -1754,6 +1754,52 @@ export type ResourceReferralCategory =
 /** Where a referral came from. Mirrors `CarePlanSdohSlice.source`'s real value. */
 export type ResourceReferralSource = "internal" | "pre_release";
 
+/**
+ * §5d-2 — real referral outcomes. The three earlier values map honestly:
+ *  - `pending`   unchanged
+ *  - `accepted`  -> `connected` (a partner accepting the person is the
+ *                  strongest "link made" signal that value ever carried)
+ *  - `completed` -> `closed`    (work finished; it never claimed success, so
+ *                  it must not silently become `connected`)
+ */
+export type ResourceReferralOutcome =
+  | "pending"
+  | "connected"
+  | "waitlisted"
+  | "not_eligible"
+  | "declined_by_client"
+  | "unreachable"
+  | "closed";
+
+export const RESOURCE_REFERRAL_OUTCOMES: ResourceReferralOutcome[] = [
+  "pending",
+  "connected",
+  "waitlisted",
+  "not_eligible",
+  "declined_by_client",
+  "unreachable",
+  "closed",
+];
+
+export const RESOURCE_REFERRAL_OUTCOME_LABEL: Record<ResourceReferralOutcome, string> = {
+  pending: "Pending",
+  connected: "Connected",
+  waitlisted: "Waitlisted",
+  not_eligible: "Not eligible",
+  declined_by_client: "Declined by client",
+  unreachable: "Unreachable",
+  closed: "Closed",
+};
+
+/** Outcomes that end the referral's active work. */
+export const RESOURCE_REFERRAL_CLOSED_OUTCOMES: ResourceReferralOutcome[] = [
+  "not_eligible",
+  "declined_by_client",
+  "unreachable",
+  "closed",
+];
+
+
 export interface ResourceReferral {
   id: string;
   category: ResourceReferralCategory;
