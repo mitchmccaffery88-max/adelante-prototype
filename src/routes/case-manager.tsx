@@ -2,9 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import {
   AdelanteEHR,
+  isPart2SensitiveCategory,
   useEhr,
   type ResourceReferralCategory,
 } from "@/lib/ehr";
+
 
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
