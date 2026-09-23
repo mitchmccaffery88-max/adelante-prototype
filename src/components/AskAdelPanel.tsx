@@ -21,7 +21,6 @@ import { PrototypeBanner } from "@/components/agentic/PrototypeChrome";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useActingStaff } from "@/lib/roles";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { CohortGuardNoticeInline } from "@/components/CohortGuardNoticeInline";
 import {
   ASK_ADEL_FREE_TEXT_NOTE,
   ASK_ADEL_GROUP_LABEL,
@@ -152,9 +151,11 @@ export function AskAdelPanel() {
               ))}
             </ul>
             {answer.guard?.belowMinimumCohort && (
-              <div className="mt-2">
-                <CohortGuardNoticeInline guard={answer.guard} />
-              </div>
+              <p className="mt-2 rounded-md border border-amber-warm/60 bg-amber-warm/10 px-2 py-1.5 text-[11px] leading-snug text-amber-warm-foreground">
+                Fewer than {answer.guard.minimumCohortSize} people in this group
+                ({answer.guard.cohortSize}). Small counts can identify someone — treat this as
+                internal only.
+              </p>
             )}
             {answer.notes?.map((n, i) => (
               <p key={i} className="mt-2 text-[11px] leading-snug text-muted-foreground">
@@ -163,7 +164,7 @@ export function AskAdelPanel() {
             ))}
             {answer.link && (
               <Button asChild size="sm" variant="outline" className="mt-3">
-                <Link to={answer.link.to}>
+                <Link to={answer.link.to as never}>
                   {answer.link.label}
                   <ArrowRight className="ml-1 h-3.5 w-3.5" aria-hidden="true" />
                 </Link>
@@ -196,7 +197,7 @@ export function AskAdelPanel() {
                 <li key={s.id}>
                   {patientId ? (
                     <Link
-                      to={s.path(patientId)}
+                      to={s.path(patientId) as never}
                       onClick={() => setOpen(false)}
                       data-testid={`ask-adel-shortcut-${s.id}`}
                       className="flex items-center justify-between rounded-lg border px-3 py-2 text-sm hover:bg-secondary"
