@@ -104,3 +104,10 @@ badge + peer popover, program IDs only), `activeGroupSessions`/
 health `group_attendance_rate_pct`). Occurrences with no attendance taken are
 EXCLUDED from the rate — missing data, never 0%. No default KPI target is
 seeded for group attendance (would be inventing a regulatory threshold).
+
+**Patient text notifications (Phase 6c).** `src/lib/groupNotifications.ts` (ledger +
+copy) + `groupNotify.functions.ts` (Twilio gateway). Triggered from enroll/end/
+session cancel/occurrence cancel+reschedule via `AdelanteEHR.notifyGroupChange`.
+Generic copy for `sud_clinical_preauth` AND unknown categories (fail closed); never
+a date/time on generic, never a join link/address/roster on any text. `isSmsOn` +
+phone checked first → `skipped`, transport not called. Seed runs suppressed.
