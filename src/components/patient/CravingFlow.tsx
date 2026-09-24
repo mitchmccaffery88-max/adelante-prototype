@@ -19,6 +19,7 @@ import { getExercise } from "@/lib/library";
 import { completeExercise } from "@/lib/engagement";
 import { ExerciseTimer } from "@/components/library/ExercisePlayer";
 import { completeCravingLog, startCravingLog } from "@/lib/selfTracking";
+import { CravingMoreHelp } from "@/components/patient/CravingMoreHelp";
 
 type Step = "arrive" | "before" | "surf" | "after" | "done";
 
@@ -197,6 +198,7 @@ export function CravingFlow() {
           </div>
         </Card>
       )}
+      <CravingMoreHelp />
     </PatientPage>
   );
 }

@@ -11,11 +11,12 @@
 // Christi / Dr. Bagga, not a code decision. Do not add persistence until then.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, Phone, Send, ShieldAlert, Wind } from "lucide-react";
+import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, MessageCircle, MessageSquare, Phone, Send, ShieldAlert, UserRound, Wind } from "lucide-react";
 import { AdelanteEHR } from "@/lib/ehr";
 import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
-import { buildAdelSystemPrompt, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
+import { buildAdelSystemPrompt, resolveAdelAction, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
+import { distressChipCopy, distressChipDecision, isMeetingRequest } from "@/lib/adelDistress";
 import { crisisMatchLanguage } from "@/lib/crisisTextDetection";
 import { crisisCopy } from "@/lib/crisisCopy";
 import { useI18n } from "@/lib/i18n";
@@ -75,6 +76,40 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
   const { lang } = useI18n();
   const uiCrisisLang = lang === "es" ? "es" : "en";
   const stripCopy = crisisCopy(uiCrisisLang);
+  // §Pre-demo E1 — distress chips. Indexes of assistant turns that carry the
+  // inline chip set; `inDistress` keeps a persistent chip row visible.
+  const chipCopy = distressChipCopy(uiCrisisLang);
+  const [chipTurns, setChipTurns] = useState<number[]>([]);
+  const [inDistress, setInDistress] = useState(false);
+  const [teamTold, setTeamTold] = useState(false);
+
+  function keepTalking() {
+    setTurns((t) => [...t, { role: "assistant", content: chipCopy.keepTalkingReply }]);
+  }
+
+  // Uses the EXISTING escalation path (same flagCrisis call as "Tell my care
+  // team" on /crisis, triggerSource "patient_request") — files into the
+  // crisis queue. Not a new path.
+  function talkToSomeone() {
+    const patientId = AdelanteEHR.getCurrentPatientId();
+    if (patientId && !teamTold) {
+      AdelanteEHR.flagCrisis(
+        patientId,
+        "Patient (asked from Adel)",
+        "Patient tapped 'Talk to someone now' in Adel.",
+        { triggerSource: "patient_request" },
+      );
+      setTeamTold(true);
+    }
+    setTurns((t) => [
+      ...t,
+      {
+        role: "assistant",
+        content: chipCopy.teamToldReply,
+        actions: [{ kind: "page", id: "crisis", label: stripCopy.stripSupport, to: "/crisis" }],
+      },
+    ]);
+  }
 
   useEffect(() => {
     endRef.current?.scrollIntoView({ block: "end" });
@@ -105,11 +140,18 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
           actions: [{ kind: "page", id: "crisis", label: copy.getHelpNow, to: "/crisis" }],
         },
       ]);
+      setInDistress(true);
       return;
     }
 
     const history: Turn[] = [...turns, { role: "user", content: text }];
     setTurns([...history, { role: "assistant", content: "" }]);
+    // Distress chips — decided locally from what the member typed; no model call.
+    const decision = distressChipDecision(
+      history.filter((t) => t.role === "user").map((t) => t.content),
+    );
+    if (decision.inDistress) setInDistress(true);
+    if (decision.offerInline) setChipTurns((c) => [...c, history.length]);
     setBusy(true);
 
     try {
@@ -165,6 +207,11 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
       }
 
       const { body, actions } = splitAdelActions(full);
+      // §Pre-demo B3 — "find me a meeting" always offers the FILTERED directory.
+      if (isMeetingRequest(text) && !actions.some((a) => a.kind === "resources" && a.id === "recovery_meetings")) {
+        const a = resolveAdelAction("resources:recovery_meetings");
+        if (a) actions.push(a);
+      }
       setTurns((t) => {
         const next = [...t];
         next[next.length - 1] = {
@@ -236,6 +283,14 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
                     })}
                   </div>
                 )}
+                {chipTurns.includes(i) && t.content && (
+                  <DistressChips
+                    copy={chipCopy}
+                    onKeepTalking={keepTalking}
+                    onTalk={talkToSomeone}
+                    testId={`adel-distress-chips-${i}`}
+                  />
+                )}
               </div>
             </li>
           ))}
@@ -247,6 +302,12 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
         </ul>
         <div ref={endRef} />
       </Card>
+
+      {inDistress && (
+        <div data-testid="adel-distress-row" className="rounded-2xl border bg-card px-3 py-2">
+          <DistressChips copy={chipCopy} onKeepTalking={keepTalking} onTalk={talkToSomeone} />
+        </div>
+      )}
 
       {/* §Small UI gaps batch item 4 — persistent, non-intrusive crisis strip.
           Visible for the whole conversation, not only in a header pill. */}
@@ -296,6 +357,48 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
       <p className="text-xs text-muted-foreground">
         This conversation isn&apos;t saved to your record yet — it clears when you leave the page.
       </p>
+    </div>
+  );
+}
+
+function DistressChips({
+  copy,
+  onKeepTalking,
+  onTalk,
+  testId = "adel-distress-chips",
+}: {
+  copy: ReturnType<typeof distressChipCopy>;
+  onKeepTalking: () => void;
+  onTalk: () => void;
+  testId?: string;
+}) {
+  const chip = "h-9 rounded-full";
+  return (
+    <div className="mt-2 space-y-1.5" data-testid={testId}>
+      <p className="text-xs text-muted-foreground">{copy.heading}</p>
+      <div className="flex flex-wrap gap-2">
+        <Button asChild size="sm" variant="outline" className={cn(chip, "border-teal/40 bg-teal/10 text-teal")}>
+          <Link to="/library" search={{ exercise: "box-breathing" }} data-testid="chip-breathing">
+            <Wind className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> {copy.breathing}
+          </Link>
+        </Button>
+        <Button size="sm" variant="outline" className={chip} onClick={onKeepTalking} data-testid="chip-keep-talking">
+          <MessageCircle className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> {copy.keepTalking}
+        </Button>
+        <Button size="sm" variant="crisisSoft" className={chip} onClick={onTalk} data-testid="chip-talk-now">
+          <UserRound className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> {copy.talkToSomeone}
+        </Button>
+        <Button asChild size="sm" variant="crisis" className={chip}>
+          <a href={`tel:${CRISIS_LIFELINE_NUMBER}`} data-testid="chip-call-988">
+            <Phone className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> {copy.call988}
+          </a>
+        </Button>
+        <Button asChild size="sm" variant="crisis" className={chip}>
+          <a href={`sms:${CRISIS_LIFELINE_NUMBER}`} data-testid="chip-text-988">
+            <MessageSquare className="mr-1.5 h-3.5 w-3.5" aria-hidden="true" /> {copy.text988}
+          </a>
+        </Button>
+      </div>
     </div>
   );
 }

@@ -46,7 +46,7 @@ export function resolveAdelAction(raw: string): AdelAction | undefined {
   if (kind === "resources") {
     const cat = RESOURCE_CATEGORIES.find((c) => c.id === id);
     if (!cat) return undefined;
-    return { kind: "resources", id, label: `${cat.name} resources`, to: "/resources" };
+    return { kind: "resources", id, label: `${cat.name} resources`, to: "/resources", search: { category: id } };
   }
   if (kind === "page") {
     const page = PAGE_ACTIONS[id];

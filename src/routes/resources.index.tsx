@@ -19,5 +19,14 @@ export const Route = createFileRoute("/resources/")({
       { name: "twitter:card", content: "summary" },
     ],
   }),
-  component: CommunityResourceCenter,
+  // §Pre-demo B3 — Adel's "find me a meeting" lands on ?category=recovery_meetings.
+  validateSearch: (search: Record<string, unknown>): { category?: string } =>
+    typeof search.category === "string" ? { category: search.category } : {},
+  component: PatientDirectory,
+
 });
+
+function PatientDirectory() {
+  const { category } = Route.useSearch();
+  return <CommunityResourceCenter key={category ?? "all"} initialCategory={category} />;
+}
