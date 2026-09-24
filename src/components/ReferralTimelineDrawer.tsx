@@ -32,6 +32,7 @@ import {
 } from "@/lib/referralActions";
 import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
 import {
+  NO_REFERRER_CONTACT_NOTE,
   OUTREACH_FALLBACK_DRAFT,
   REFERRAL_OUTREACH_OUTCOMES,
   canWorkReferralOutreach,
@@ -375,7 +376,7 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
   const task = referral.outreach?.task;
   const attempts = referral.outreach?.attempts ?? [];
   const fallback = needsReferrerFallback(referral);
-  if (!task && attempts.length === 0 && !fallback.due) return null;
+  if (!task && attempts.length === 0 && !fallback.due && !fallback.referrerUnreachable) return null;
 
   const log = () => {
     setBusy(true);
@@ -435,6 +436,16 @@ function ReferralOutreachCard({ referral }: { referral: Referral }) {
               Closed by {task.completedBy.name} · <ClientDate value={task.completedAt ?? ""} />
             </p>
           )}
+        </div>
+      )}
+
+      {fallback.referrerUnreachable && (
+        <div
+          className="rounded-md border p-3 text-xs space-y-1"
+          data-testid="referrer-no-contact"
+        >
+          <p className="text-muted-foreground">{fallback.explanation}</p>
+          <p className="font-medium text-navy">{NO_REFERRER_CONTACT_NOTE}</p>
         </div>
       )}
 
