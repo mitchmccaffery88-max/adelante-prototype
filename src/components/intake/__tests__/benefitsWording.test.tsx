@@ -1,9 +1,11 @@
-import { describe, it, expect } from "vitest";
-import { render, screen } from "@testing-library/react";
+// @vitest-environment jsdom
+import { describe, it, expect, afterEach } from "vitest";
+import { render, screen, cleanup } from "@testing-library/react";
 import { BenefitsStep } from "@/components/intake/BenefitsStep";
 import { EMPTY_BENEFITS } from "@/lib/intakeBenefits";
 
 const noop = () => {};
+afterEach(cleanup);
 
 describe("Phase 8b follow-up — benefits wording by audience", () => {
   it("self-service says you", () => {
