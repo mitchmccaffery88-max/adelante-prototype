@@ -58,10 +58,6 @@ export function referralContactProblem(f: {
   if (email && !isValidEmail(email)) return "The person's email doesn't look like a valid email address.";
   return null;
 }
-function maskCin(v?: string) {
-  if (!v) return "";
-  return v.length <= 4 ? v : `••••${v.slice(-4)}`;
-}
 
 const sources: { value: ReferralSource; label: string }[] = (
   [
@@ -384,6 +380,10 @@ export function ReferralSubmissionForm({
               </Field>
             </div>
           )}
+        </div>
+        {/* §Phase 8b — optional: a referrer who doesn't know can skip it. */}
+        <div className="rounded-lg border p-4" data-testid="referral-benefits">
+          <BenefitsStep value={benefits} onChange={setBenefits} optional />
         </div>
         <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
           <Checkbox
