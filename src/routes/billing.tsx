@@ -528,6 +528,7 @@ function BillingPage() {
       )}
 
       {tab === "rates" && <RatesPanel canWrite={canWrite} />}
+      {tab === "rates" && <ManagedCarePlansPanel />}
 
       {tab === "credentials" && (
         <section className="space-y-3">
