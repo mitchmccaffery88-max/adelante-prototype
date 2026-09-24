@@ -2,6 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isReferralClosed } from "@/lib/ehr";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
+import {
+  BillingStatusList,
+  BILLING_STATUS_NOTE,
+  billingStatusCounts,
+} from "@/components/billing/BillingStatusSummary";
 import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
@@ -85,6 +90,8 @@ function AdminPage() {
     [role],
   );
   const stats = useEhr(() => AdelanteEHR.stats());
+  const allAppointments = useEhr(() => AdelanteEHR.listAppointments());
+  const billingCounts = useMemo(() => billingStatusCounts(allAppointments), [allAppointments]);
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
@@ -381,41 +388,11 @@ function AdminPage() {
               <h3 className="font-display text-lg text-navy">Billing status</h3>
               <DollarSign className="h-5 w-5 text-teal" />
             </div>
-            <ul className="space-y-2 text-sm" data-testid="billing-status-card">
-              {(
-                [
-                  ["draft", "Draft", stats.billing.draft, "bg-muted text-muted-foreground"],
-                  ["ready", "Ready", stats.billing.ready, "bg-accent text-accent-foreground"],
-                  ["submitted", "Submitted", stats.billing.submitted, "bg-teal/15 text-teal"],
-                  ["paid", "Paid", stats.billing.paid, "bg-success/20 text-success"],
-                  ["denied", "Denied", stats.billing.denied, "bg-destructive/15 text-destructive"],
-                  ["write_off", "Write-off", stats.billing.write_off, "bg-muted text-muted-foreground"],
-                ] as const
-              ).map(([status, label, n, cls]) => (
-                <li
-                  key={status}
-                  className="flex items-center justify-between border-b last:border-0 py-2"
-                >
-                  {canOpenBilling ? (
-                    <Link
-                      to="/billing"
-                      search={{ status }}
-                      className="underline-offset-2 hover:underline"
-                      data-billing-status-link={status}
-                    >
-                      {label}
-                    </Link>
-                  ) : (
-                    <span>{label}</span>
-                  )}
-                  <Badge className={`${cls} border-0`}>{n}</Badge>
-                </li>
-              ))}
-            </ul>
-            <p className="mt-3 text-xs text-muted-foreground">
-              Counts appointment billing status (the Billing page). Claim records on the Claims
-              worklist are counted separately until the two billing models are unified.
-            </p>
+            <BillingStatusList
+              counts={billingCounts}
+              mode={canOpenBilling ? { kind: "link" } : { kind: "plain" }}
+            />
+            <p className="mt-3 text-xs text-muted-foreground">{BILLING_STATUS_NOTE}</p>
             {canOpenBilling ? (
               <Link to="/admin-claims" className="mt-2 inline-block text-xs text-navy underline">
                 Open the Claims worklist

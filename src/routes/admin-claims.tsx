@@ -4,6 +4,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { canAccess, useActingStaff } from "@/lib/roles";
 import { AdelanteEHRExt, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
 import { groupTopicFor, occurrencePeers, parseGroupEncounterId } from "@/lib/groupMetrics";
@@ -199,6 +200,8 @@ function SortHeader({
 }
 
 function ClaimsPage() {
+  const { role } = useActingStaff();
+  const canWrite = canAccess(role, "billing").level === "write";
   const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
@@ -452,15 +455,21 @@ function ClaimsPage() {
                       <TableCell className="px-2 py-2" data-cell="charge">${(c.chargeCents / 100).toFixed(2)}</TableCell>
                       <TableCell className="px-2 py-2">{c.denialReason ?? "—"}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">
-                        {next && (
-                          <Button size="sm" variant="outline" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, next, "billing_coordinator"); toast.success(`→ ${next}`); }}>
-                            → {next}
-                          </Button>
-                        )}
-                        {(c.state === "submitted" || c.state === "generated") && (
-                          <Button size="sm" variant="ghost" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, "denied", "billing_coordinator", "Auth required"); toast.error("Marked denied"); }}>
-                            Deny
-                          </Button>
+                        {!canWrite ? (
+                          <span className="text-xs text-muted-foreground">View only</span>
+                        ) : (
+                          <>
+                            {next && (
+                              <Button size="sm" variant="outline" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, next, "billing_coordinator"); toast.success(`→ ${next}`); }}>
+                                → {next}
+                              </Button>
+                            )}
+                            {(c.state === "submitted" || c.state === "generated") && (
+                              <Button size="sm" variant="ghost" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, "denied", "billing_coordinator", "Auth required"); toast.error("Marked denied"); }}>
+                                Deny
+                              </Button>
+                            )}
+                          </>
                         )}
                       </TableCell>
                     </TableRow>

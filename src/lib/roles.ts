@@ -313,7 +313,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   },
   // §Phase 7a — billing and billing_coordinator are one billing function
   // (to be merged into a single role); every class grants them the same level.
-  billing: { billing: "write", billing_coordinator: "write" },
+  // sys_admin reads (view-only /billing and /admin-claims); never writes.
+  billing: { billing: "write", billing_coordinator: "write", sys_admin: "read" },
   consent_ledger: {
     // §ASCMI — consent capture must be writable by someone. ecm_provider
     // writes because they are the role that actually sits with the patient
