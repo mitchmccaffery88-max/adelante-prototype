@@ -284,6 +284,7 @@ function IntakePage() {
   // Re-seed if the acting patient changes mid-session (assisted mode).
   useEffect(() => {
     setProfile(seedIntakeProfile(patient));
+    setBenefits(benefitsFormFromPatient(currentId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId]);
 
