@@ -452,7 +452,8 @@ export const COMMUNITY_CODES = new Set(["H0038", "H0025", "G0019", "G0022"]);
 /**
  * Program selection (approved rule, in order):
  *  1. Peer / CHW code → calaim_ecm
- *  2. No Medi-Cal coverage on the service date → non_medi_cal
+ *  2. No Medi-Cal coverage on the service date → the patient's payment
+ *     arrangement (§7d), provisionally self_pay when none is recorded
  *  3. SUD service line → dmc_ods
  *  4. Payer names the county MHP / mental health plan → smhs
  *  5. Any other Medi-Cal payer → medi_cal_managed
@@ -462,10 +463,25 @@ export function selectProgram(input: {
   line: ServiceLine;
   hasMediCal: boolean;
   payer?: string;
+  arrangement?: PaymentArrangement;
 }): PayerProgram {
   if (COMMUNITY_CODES.has(input.code)) return "calaim_ecm";
-  if (!input.hasMediCal) return "non_medi_cal";
+  if (!input.hasMediCal) return input.arrangement ?? "self_pay";
   if (input.line === "sud") return "dmc_ods";
   if (input.payer && /\bMHP\b|mental health/i.test(input.payer)) return "smhs";
   return "medi_cal_managed";
+}
+
+/**
+ * §Phase 7d — general-population program for a visit whose funding lane says
+ * it isn't Medi-Cal. `arrangementMissing` = priced provisionally at self-pay,
+ * must be confirmed before the claim can go Ready.
+ */
+export function generalPopulationProgram(
+  fundingLane: string | undefined,
+  arrangement: PaymentArrangement | undefined,
+): { program: PayerProgram; arrangementMissing: boolean } | undefined {
+  if (fundingLane === "isl_non_medi_cal" || fundingLane === "bhsa") return { program: "grant_isl", arrangementMissing: false };
+  if (fundingLane === "private_pay") return { program: arrangement ?? "self_pay", arrangementMissing: !arrangement };
+  return undefined;
 }
