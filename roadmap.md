@@ -13,12 +13,12 @@
 - [x] Investigation: pre-release SDOH vs general intake duplication risk (reported).
 
 ## Paused (plan written, not approved)
-- [ ] Staff-initiated patient record creation (no login attached).
+- [x] Staff-initiated patient record creation (no login attached).
 
 ## Later phases (sequenced, not started)
-- [ ] SDOH prerequisites: intake↔AHC-HRSN need mapping table, `SdohPlanItem` provenance field.
-- [ ] Intake SDOH reconciliation against existing pre-release data.
-- [ ] Scheduling: patient-side conflict checks + appointment provenance.
+- [x] SDOH prerequisites: intake↔AHC-HRSN need mapping table, `SdohPlanItem` provenance field.
+- [x] Intake SDOH reconciliation against existing pre-release data.
+- [x] Scheduling: patient-side conflict checks + appointment provenance.
 
 ## Referrals Phase 4c
 - [x] Referrer status-change SMS (contact/enroll/decline)
@@ -46,12 +46,12 @@
 - [x] Honest form copy for "no reliable phone"
 
 ## Pre-Release Pipeline (episode→patient + CSV import)
-- [ ] Anticipated release date + custody state onto patient at episode open
-- [ ] redeemEnrollmentCode copies release date from the episode
-- [ ] markPreReleaseEpisodeReleased persists the confirmed date (episode + patient)
-- [ ] Honest `Patient.custody` field sourced from the episode
-- [ ] Intake/profile pre-fill with provenance + confirm step
-- [ ] /pre-release-import staff CSV upload (preview-first, row reasons, RBAC)
+- [x] Anticipated release date + custody state onto patient at episode open
+- [x] redeemEnrollmentCode copies release date from the episode
+- [x] markPreReleaseEpisodeReleased persists the confirmed date (episode + patient)
+- [x] Honest `Patient.custody` field sourced from the episode
+- [x] Intake/profile pre-fill with provenance + confirm step
+- [x] /pre-release-import staff CSV upload (preview-first, row reasons, RBAC)
 
 ## SDOH Referral Thread Phase 5d-1 (consent + attribution)
 - [x] Part 2 consent gate in the data layer for both referral creation paths
@@ -81,12 +81,12 @@
 - [x] Tests, typecheck, build, live browser both viewports
 
 ## Phase 5d-4 (final) — unified need thread, advocate referrals, reporting funnel
-- [ ] Patient unified need thread on /next-steps (+ home summary card, remove ReferralsForYouCard)
-- [ ] Closure message: "Resolved — {need}. Let your care team know if this comes back."
-- [ ] All new patient/advocate strings via i18n with Spanish marked pending bilingual review
-- [ ] Advocate referral status per tier in advocateCoordination + panel
-- [ ] Reporting funnel (identified → referred → connected → resolved) + barriers, cohort guard
-- [ ] Disengagement link: recommendation only, nothing built
+- [x] Patient unified need thread on /next-steps (+ home summary card, remove ReferralsForYouCard)
+- [x] Closure message: "Resolved — {need}. Let your care team know if this comes back."
+- [x] All new patient/advocate strings via i18n with Spanish marked pending bilingual review
+- [x] Advocate referral status per tier in advocateCoordination + panel
+- [x] Reporting funnel (identified → referred → connected → resolved) + barriers, cohort guard
+- [x] Disengagement link: recommendation only, nothing built
 
 ## Phase 5d-4 (done)
 - Unified patient need thread on /next-steps (one list; directory match inside each need card).
@@ -134,6 +134,6 @@
 - [x] Phase 7d follow-ups: payment arrangement on chart (Eligibility section); Lane label derived from claim program / real coverage type
 - [x] Phase 8a: coverage merge (no erase), self-report never verified, Medi-Cal status only for Medi-Cal/dual
 - [x] Phase 8b: intake benefits step (CIN, plan spans, arrangement prompt)
-- [ ] 8b follow-up: craving button stays on /intake, repositioned above Save bar
-- [ ] 8b follow-up: worklist "Not Medi-Cal (reported)" filter, not never-checked
-- [ ] Phase 8c: electronic eligibility infrastructure (approved; electronic counts as verified)
+- [x] 8b follow-up: craving button stays on /intake, repositioned above Save bar
+- [x] 8b follow-up: worklist "Not Medi-Cal (reported)" filter, not never-checked
+- [x] Phase 8c: electronic eligibility infrastructure (approved; electronic counts as verified)
