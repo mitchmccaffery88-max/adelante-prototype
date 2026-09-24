@@ -109,4 +109,4 @@
 - [x] Tests: role mapping, access filtering, Part 2 masking, cohort guard, read-only
 - [x] Typecheck, suite, build, live browser at both viewports incl. Part 2-gated role
 
-- [ ] Phase 7a: Revenue & billing group, Consent & privacy group, billing_coordinator full parity (incl consent_ledger read) + parity test, /billing-calaim-codes, billing status card
+- [x] Phase 7a: Revenue & billing group, Consent & privacy group, billing_coordinator full parity (incl consent_ledger read) + parity test, /billing-calaim-codes, billing status card
