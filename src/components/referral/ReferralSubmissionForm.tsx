@@ -37,6 +37,25 @@ import { useI18n } from "@/lib/i18n";
 export function normalizeCin(v: string) {
   return v.replace(/\s+/g, "").toUpperCase();
 }
+/** Basic name@domain.tld shape. Blank is handled by callers (optional fields). */
+export function isValidEmail(v: string) {
+  return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
+}
+export const REFERRER_CONTACT_REQUIRED_MSG =
+  "Add your work phone or work email so we can reach you if we can't reach this person.";
+/** Returns the first validation problem with contact details, or null. */
+export function referralContactProblem(f: {
+  referrerPhone: string;
+  referrerEmail: string;
+  email: string;
+}): string | null {
+  const rEmail = f.referrerEmail.trim();
+  if (rEmail && !isValidEmail(rEmail)) return "Your work email doesn't look like a valid email address.";
+  if (!f.referrerPhone.trim() && !rEmail) return REFERRER_CONTACT_REQUIRED_MSG;
+  const email = f.email.trim();
+  if (email && !isValidEmail(email)) return "The person's email doesn't look like a valid email address.";
+  return null;
+}
 function maskCin(v?: string) {
   if (!v) return "";
   return v.length <= 4 ? v : `••••${v.slice(-4)}`;
@@ -87,6 +106,7 @@ export function ReferralSubmissionForm({
     firstName: "",
     lastName: "",
     phone: "",
+    email: "",
     cin: "",
     dob: "",
     releaseDate: "",
@@ -104,6 +124,11 @@ export function ReferralSubmissionForm({
     e.preventDefault();
     if (!form.firstName || !form.lastName || !form.referrerName || !form.referringAgency) {
       toast.error("Please complete the required fields");
+      return;
+    }
+    const contactProblem = referralContactProblem(form);
+    if (contactProblem) {
+      toast.error(contactProblem);
       return;
     }
     if (!form.noPhone && !form.phone) {
@@ -127,6 +152,7 @@ export function ReferralSubmissionForm({
       firstName: form.firstName,
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
+      email: form.email.trim().toLowerCase() || undefined,
       // Medi-Cal ID writes to the EXISTING `Referral.cin` — no parallel field.
       cin: ji && form.cin ? normalizeCin(form.cin) : undefined,
       dob: form.dob || undefined,
@@ -285,6 +311,14 @@ export function ReferralSubmissionForm({
               value={form.phone}
               disabled={form.noPhone}
               onChange={(e) => setForm({ ...form, phone: e.target.value })}
+            />
+          </Field>
+          <Field label="Email">
+            <Input
+              type="email"
+              data-testid="referral-person-email"
+              value={form.email}
+              onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </Field>
           <Field label="Date of birth">
