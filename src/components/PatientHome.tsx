@@ -38,6 +38,7 @@ import { CareMessageThread } from "@/components/messages/CareMessageThread";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { useEffect, useRef, useState } from "react";
+import { REASSESS_COPY, rescreenName } from "@/lib/reassessmentCopy";
 import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
@@ -156,21 +157,7 @@ export function PatientHome() {
         }
       />
 
-      <Card
-        className="p-4 flex flex-wrap items-center justify-between gap-3"
-        data-testid="intake-complete-tile"
-      >
-        <div className="flex items-start gap-2">
-          <ClipboardList className="h-5 w-5 text-teal mt-0.5" />
-          <div>
-            <div className="font-medium text-navy">{t("homeIntakeDoneTitle")}</div>
-            <div className="text-xs text-muted-foreground">{t("homeIntakeDoneBody")}</div>
-          </div>
-        </div>
-        <Button asChild size="sm" variant="outline">
-          <Link to="/intake">{t("homeUpdateAnswers")}</Link>
-        </Button>
-      </Card>
+      <ReassessmentOrCompleteTile patientId={patient.id} />
 
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
@@ -321,7 +308,13 @@ function TasksCard({ patientId }: { patientId: string }) {
             <span className="flex-1 text-foreground">{t.label}</span>
             {t.kind === "rescreen" ? (
               <Button asChild size="sm" variant="outline">
-                <Link to="/intake">Start</Link>
+                {t.screenerKey ? (
+                  <Link to="/rescreen/$key" params={{ key: t.screenerKey }} data-testid="task-rescreen-start">
+                    Start
+                  </Link>
+                ) : (
+                  <Link to="/intake">Start</Link>
+                )}
               </Button>
             ) : (
               <Button
@@ -607,3 +600,59 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
 // need-paired thread on /next-steps replaces it; the home screen now carries
 // `NeedThreadSummaryCard` (a count and a link) so there is only one list.
 
+
+// §Phase 9b — the completed-intake tile. Becomes "Reassessment due" when the
+// draft cadence or an open re-screen task says a questionnaire is due; each
+// Start opens ONLY that questionnaire. "Update my answers" stays available.
+function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
+  const { t, lang } = useI18n();
+  const L = lang === "es" ? "es" : "en";
+  const c = REASSESS_COPY[L];
+  const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(patientId)));
+  const due = JSON.parse(dueJson) as { key: string }[];
+  if (due.length === 0) {
+    return (
+      <Card
+        className="p-4 flex flex-wrap items-center justify-between gap-3"
+        data-testid="intake-complete-tile"
+      >
+        <div className="flex items-start gap-2">
+          <ClipboardList className="h-5 w-5 text-teal mt-0.5" />
+          <div>
+            <div className="font-medium text-navy">{t("homeIntakeDoneTitle")}</div>
+            <div className="text-xs text-muted-foreground">{t("homeIntakeDoneBody")}</div>
+          </div>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/intake">{t("homeUpdateAnswers")}</Link>
+        </Button>
+      </Card>
+    );
+  }
+  return (
+    <Card className="p-4 space-y-3 border-teal/40 bg-teal/5" data-testid="reassessment-due-tile">
+      <div className="flex items-start gap-2">
+        <ClipboardList className="h-5 w-5 text-teal mt-0.5" />
+        <div>
+          <div className="font-medium text-navy">{c.tileTitle}</div>
+          <div className="text-xs text-muted-foreground">{c.tileBody}</div>
+        </div>
+      </div>
+      <ul className="space-y-2">
+        {due.map((d) => (
+          <li key={d.key} className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
+            <span className="flex-1">{rescreenName(d.key, L)}</span>
+            <Button asChild size="sm">
+              <Link to="/rescreen/$key" params={{ key: d.key }} data-testid={`reassess-start-${d.key}`}>
+                {c.start}
+              </Link>
+            </Button>
+          </li>
+        ))}
+      </ul>
+      <Button asChild size="sm" variant="outline">
+        <Link to="/intake">{t("homeUpdateAnswers")}</Link>
+      </Button>
+    </Card>
+  );
+}

@@ -1,0 +1,103 @@
+// §Phase 9b — targeted re-screen: ONE questionnaire, not the whole intake.
+// Uses the same instrument definitions (`SCREENERS`) and the same question/
+// option markup as intake's screener step; saving goes through
+// `AdelanteEHR.completeRescreen` → `scoreScreener` + `recordScreener`.
+import { useState } from "react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { ClipboardList } from "lucide-react";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { SCREENERS, optionsForItem } from "@/lib/screeners";
+import { useI18n } from "@/lib/i18n";
+import { REASSESS_COPY, rescreenName } from "@/lib/reassessmentCopy";
+import { Card } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { Label } from "@/components/ui/label";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
+
+export function RescreenForm({ screenerKey }: { screenerKey: string }) {
+  const { lang } = useI18n();
+  const L = lang === "es" ? "es" : "en";
+  const c = REASSESS_COPY[L];
+  const navigate = useNavigate();
+  const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const allowed = useEhr(() =>
+    AdelanteEHR.patientReassessmentDue(patientId).some((d) => d.key === screenerKey) ||
+    // A patient may also re-take a non-SUD instrument voluntarily.
+    !!SCREENERS.find((s) => s.key === screenerKey && !s.isSud) ||
+    (!!SCREENERS.find((s) => s.key === screenerKey && s.isSud) &&
+      AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment")),
+  );
+  const def = SCREENERS.find((s) => s.key === screenerKey);
+  const [answers, setAnswers] = useState<number[]>([]);
+
+  if (!def || !allowed) {
+    return (
+      <PatientPage>
+        <Card className="p-6 text-sm" data-testid="rescreen-unavailable">
+          {c.notAvailable}{" "}
+          <Link to="/home" className="underline">{c.back}</Link>
+        </Card>
+      </PatientPage>
+    );
+  }
+
+  const submit = () => {
+    if (def.questions.some((_, i) => typeof answers[i] !== "number")) {
+      toast.error(c.answerAll);
+      return;
+    }
+    try {
+      AdelanteEHR.completeRescreen(patientId, def.key, answers, {
+        actorId: patientId,
+        actorRole: "patient",
+      });
+      toast.success(c.done);
+      void navigate({ to: "/home" });
+    } catch (e) {
+      toast.error(e instanceof Error ? e.message : "Could not save.");
+    }
+  };
+
+  return (
+    <PatientPage data-testid="rescreen-form">
+      <PatientPageHeader icon={ClipboardList} title={rescreenName(def.key, L)} lede={c.pageLede} />
+      <Card className="space-y-5 p-5">
+        <div>
+          <Badge variant="outline" className="border-teal/40 text-teal">{def.name}</Badge>
+          {def.isSud && <Badge className="ml-2 border-0 bg-teal/15 text-teal">{c.part2}</Badge>}
+          <p className="mt-2 text-sm text-muted-foreground">{def.description}</p>
+        </div>
+        {def.questions.map((q, qi) => (
+          <div key={qi} className="rounded-lg border p-3" data-testid={`rescreen-q-${qi}`}>
+            <Label className="text-sm leading-snug">{qi + 1}. {q}</Label>
+            <RadioGroup
+              className="mt-2 flex flex-wrap gap-2"
+              value={String(answers[qi] ?? "")}
+              onValueChange={(v) => {
+                const next = [...answers];
+                next[qi] = Number(v);
+                setAnswers(next);
+              }}
+            >
+              {optionsForItem(def, qi).map((o) => (
+                <label
+                  key={o.value}
+                  className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 py-2.5 text-xs hover:border-teal"
+                >
+                  <RadioGroupItem value={String(o.value)} />
+                  {o.label}
+                </label>
+              ))}
+            </RadioGroup>
+          </div>
+        ))}
+        <Button size="patient" className="w-full" onClick={submit} data-testid="rescreen-submit">
+          {c.submit}
+        </Button>
+      </Card>
+    </PatientPage>
+  );
+}
