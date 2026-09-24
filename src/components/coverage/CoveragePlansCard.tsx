@@ -102,6 +102,9 @@ export function CoveragePlansSection({
                 <p className="text-[11px] text-muted-foreground">
                   {COVERAGE_PLAN_SOURCE_LABEL[c.source]}
                   {c.recordedBy ? ` · recorded by ${c.recordedBy}` : ""}
+                  {c.aidCode ? ` · aid code ${c.aidCode}` : ""}
+                  {typeof c.shareOfCostCents === "number" ? ` · share of cost $${(c.shareOfCostCents / 100).toFixed(2)}` : ""}
+                  {c.planNotOnList ? " · plan not on plan list" : ""}
                 </p>
                 {!readOnly && current && (
                   <Button
