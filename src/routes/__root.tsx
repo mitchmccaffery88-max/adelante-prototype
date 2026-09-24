@@ -224,6 +224,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => installDevInspect(), []);
 
   // §Message-routing gap #1 — install the real out-of-band SMS transport for
   // staff alerts (crisis flags, unread patient messages). Browser only.
