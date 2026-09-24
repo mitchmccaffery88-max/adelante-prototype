@@ -83,6 +83,8 @@ type OutreachShapedReferral = {
   consentToContact?: boolean;
   status?: string;
   outreach?: ReferralOutreachState;
+  referrerPhone?: string;
+  referrerEmail?: string;
 };
 
 /** Should a real outreach task exist for a referral in this shape? */
@@ -99,13 +101,32 @@ export interface ReferrerFallback {
   due: boolean;
   reason?: "no_phone" | "dead_number" | "unanswered";
   explanation?: string;
+  /**
+   * A fallback WOULD be due, but the referrer has no phone or email on file
+   * (legacy data) — there is no one to fall back on. Never recommend it.
+   */
+  referrerUnreachable?: boolean;
+}
+
+export const NO_REFERRER_CONTACT_NOTE =
+  "No contact details for the referrer are on file — there is no one to fall back on. Continue outreach to the person directly.";
+
+export function referrerHasContact(r: { referrerPhone?: string; referrerEmail?: string }): boolean {
+  return !!(r.referrerPhone?.trim() || r.referrerEmail?.trim());
 }
 
 /**
  * Should staff be pointed at the REFERRER for updated contact details?
- * Closed referrals (enrolled/declined) never prompt.
+ * Closed referrals (enrolled/declined) never prompt. Suppressed (with
+ * `referrerUnreachable`) when the referrer has no contact info on file.
  */
 export function needsReferrerFallback(r: OutreachShapedReferral): ReferrerFallback {
+  const f = fallbackTrigger(r);
+  if (f.due && !referrerHasContact(r)) return { ...f, due: false, referrerUnreachable: true };
+  return f;
+}
+
+function fallbackTrigger(r: OutreachShapedReferral): ReferrerFallback {
   if (r.status === "enrolled" || r.status === "declined") return { due: false };
   const attempts = r.outreach?.attempts ?? [];
   if (attempts.some((a) => a.outcome === "reached")) return { due: false };
