@@ -36,7 +36,22 @@ export const PRE_RELEASE_CSV_COLUMNS = [
   "facility_name",
   "booking_number",
   ...PRE_RELEASE_HRSN_COLUMNS,
+  // §Phase 8b — optional; applied as partner_reported, never verified.
+  "cin",
+  "coverage_type",
 ] as const;
+
+/** §Phase 8b — accepted coverage_type values (the shared step's choices). */
+export const PRE_RELEASE_COVERAGE_TYPES = [
+  "medi_cal",
+  "dual",
+  "medicare",
+  "private_insurance",
+  "no_insurance",
+  "other",
+  "unknown",
+] as const;
+export type PreReleaseCoverageType = (typeof PRE_RELEASE_COVERAGE_TYPES)[number];
 
 /** The only columns a row cannot do without. */
 const REQUIRED_COLUMNS = ["first_name", "last_name", "dob", "anticipated_release_date"] as const;
@@ -65,6 +80,9 @@ export interface RosterCandidate {
   bookingNumber?: string;
   /** Domain positivity as supplied. Absent domains were left blank (not screened). */
   hrsn: { key: string; label: string; positive: boolean }[];
+  /** §Phase 8b — partner-reported benefits (optional columns). */
+  cin?: string;
+  coverageType?: PreReleaseCoverageType;
   outcome: Exclude<RosterOutcome, "rejected">;
   /** Set when the row matched an existing patient. */
   patientId?: string;
@@ -111,7 +129,7 @@ function parseYesNo(raw: string | undefined): boolean | undefined | "invalid" {
 export function preReleaseCsvTemplate(): string {
   return [
     PRE_RELEASE_CSV_COLUMNS.join(","),
-    "Maria,Alvarez,1990-04-12,2026-10-15,Fresno,Fresno County Jail,BK-44821,yes,yes,no,,no",
+    "Maria,Alvarez,1990-04-12,2026-10-15,Fresno,Fresno County Jail,BK-44821,yes,yes,no,,no,91234567A,medi_cal",
   ].join("\n");
 }
 
@@ -130,6 +148,8 @@ export function classifyRosterRow(
     facilityName?: string;
     bookingNumber?: string;
     hrsn: { key: string; label: string; positive: boolean }[];
+    cin?: string;
+    coverageType?: PreReleaseCoverageType;
   },
   known: KnownPatient[],
 ): RosterCandidate | RosterRejection {
@@ -274,6 +294,21 @@ export function previewPreReleaseRoster(
       continue;
     }
 
+    const rawCin = (pick(cells, "cin") ?? "").replace(/\s+/g, "").toUpperCase();
+    if (rawCin && !/^[A-Z0-9]{9}$/.test(rawCin)) {
+      rejections.push({ line, name, reason: `cin "${rawCin}" must be 9 letters or digits, or left blank.` });
+      continue;
+    }
+    const rawType = norm(pick(cells, "coverage_type") ?? "");
+    if (rawType && !(PRE_RELEASE_COVERAGE_TYPES as readonly string[]).includes(rawType)) {
+      rejections.push({
+        line,
+        name,
+        reason: `coverage_type "${rawType}" must be one of ${PRE_RELEASE_COVERAGE_TYPES.join(", ")}, or left blank.`,
+      });
+      continue;
+    }
+
     seen.add(dupeKey);
     const result = classifyRosterRow(
       {
@@ -286,6 +321,8 @@ export function previewPreReleaseRoster(
         ...(pick(cells, "facility_name") ? { facilityName: pick(cells, "facility_name") } : {}),
         ...(pick(cells, "booking_number") ? { bookingNumber: pick(cells, "booking_number") } : {}),
         hrsn,
+        ...(rawCin ? { cin: rawCin } : {}),
+        ...(rawType ? { coverageType: rawType as PreReleaseCoverageType } : {}),
       },
       known,
     );
