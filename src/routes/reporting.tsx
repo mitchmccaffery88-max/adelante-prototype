@@ -414,8 +414,8 @@ function ReportingHome() {
               </Button>
               {canManageTargets && (
                 <Button size="sm" variant="ghost" asChild>
-                  <Link to="/admin-kpi-targets" hash="calaim-codes">
-                    Manage codes
+                  <Link to="/billing-calaim-codes">
+                    Qualifying codes
                   </Link>
                 </Button>
               )}

@@ -46,7 +46,6 @@ import {
 import { ArrowLeft, Lock, Pencil, Plus, Target } from "lucide-react";
 import { toast } from "sonner";
 import { EmptyState } from "@/components/EmptyState";
-import { CalaimCodesSection } from "@/components/admin/CalaimCodesSection";
 
 export const Route = createFileRoute("/admin-kpi-targets")({
   head: () => ({
@@ -345,7 +344,13 @@ function AdminKpiTargetsPage() {
         </Card>
       )}
 
-      <CalaimCodesSection canWrite={canWrite} staffName={staffName} />
+      <Card className="p-4 text-sm text-muted-foreground" data-testid="calaim-codes-moved">
+        CalAIM qualifying codes are now managed by billing —{" "}
+        <Link to="/billing-calaim-codes" className="text-navy underline">
+          Revenue &amp; billing → CalAIM qualifying codes
+        </Link>
+        .
+      </Card>
 
       <Dialog
         open={creating || editing !== null}
