@@ -318,7 +318,9 @@ export type CoverageStatus =
   | "none_unsure"
   | "other"
   | "private_pay"
-  | "uninsured";
+  | "uninsured"
+  /** §Phase 8a — coverage type is not Medi-Cal, so no Medi-Cal status applies. */
+  | "not_applicable";
 export type ReferralSource =
   | "probation"
   | "parole"
@@ -1372,7 +1374,8 @@ export interface Patient {
   // Medi-Cal eligibility & coverage (§4d)
   coverage?: {
     status: CoverageStatus;
-    verified: "verified" | "pending" | "not_found";
+    /** "verified" only with a recorded staff check; patient answers are "self_reported". */
+    verified: "verified" | "pending" | "not_found" | "self_reported";
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
     /**
