@@ -444,17 +444,7 @@ function IntakePage() {
       return;
     }
     // P1 — persist the About-you patch first.
-    AdelanteEHR.updateProfile(currentId, {
-      preferredName: profile.preferredName || undefined,
-      pronouns: profile.pronouns || undefined,
-      preferredLanguage: profile.preferredLanguage,
-      phone: profile.phone || undefined,
-      releaseDate: profile.releaseDate || undefined,
-      contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
-      // Writing the list keeps `emergencyContact` (legacy primary) in sync.
-      emergencyContacts: cleanEmergencyContacts(profile.emergencyContacts),
-      address: profile.address || undefined,
-    });
+    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);

@@ -20,7 +20,12 @@ import type {
   Patient,
   PreferredLanguage,
 } from "@/lib/ehr";
-import { emptyEmergencyContact, readEmergencyContacts } from "@/lib/emergencyContacts";
+import type { AdelanteEHR } from "@/lib/ehr";
+import {
+  cleanEmergencyContacts,
+  emptyEmergencyContact,
+  readEmergencyContacts,
+} from "@/lib/emergencyContacts";
 
 export interface IntakeProfile {
   preferredName: string;
@@ -97,4 +102,24 @@ export function mergeSavedIntakeProfile(
     }
   });
   return out;
+}
+
+/**
+ * The exact `updateProfile` patch intake writes for "About you". Shared by the
+ * form's submit and the Adel-guided path so both save identical fields.
+ */
+export function profilePatch(
+  profile: IntakeProfile,
+): Parameters<typeof AdelanteEHR.updateProfile>[1] {
+  return {
+    preferredName: profile.preferredName || undefined,
+    pronouns: profile.pronouns || undefined,
+    preferredLanguage: profile.preferredLanguage,
+    phone: profile.phone || undefined,
+    releaseDate: profile.releaseDate || undefined,
+    contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
+    // Writing the list keeps `emergencyContact` (legacy primary) in sync.
+    emergencyContacts: cleanEmergencyContacts(profile.emergencyContacts),
+    address: profile.address || undefined,
+  };
 }

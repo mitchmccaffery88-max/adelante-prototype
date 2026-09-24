@@ -10306,13 +10306,34 @@ export const AdelanteEHR = {
    *  - non-Medi-Cal: one "Set payment arrangement" task for billing, deduped
    *    per patient; never sets the arrangement itself.
    */
+  /**
+   * §Adel-guided intake (prototype) — save the "About you" answers the patient
+   * confirmed one by one in the Adel script. Same `updateProfile` write the
+   * form uses; the only addition is the audit row saying it came via Adel.
+   */
+  saveIntakeProfileViaAdel(
+    patientId: string,
+    patch: Parameters<typeof AdelanteEHR.updateProfile>[1],
+    fieldsConfirmed: string[],
+  ): void {
+    AdelanteEHR.updateProfile(patientId, patch);
+    appendAudit({
+      category: "clinical",
+      action: "intake_profile_saved",
+      patientId,
+      actorId: patientId,
+      actorRole: "patient",
+      detail: { via: "adel_guided_intake", fieldsConfirmed },
+    });
+  },
+
   recordIntakeBenefits(
     patientId: string,
     answers: IntakeBenefitsAnswers,
     input: {
       source: ReportedBenefitsSource;
       /** Which screen, for the audit row. */
-      via: "self_service_intake" | "staff_assisted_intake" | "chart" | "referral_conversion" | "pre_release_import";
+      via: "self_service_intake" | "staff_assisted_intake" | "chart" | "referral_conversion" | "pre_release_import" | "adel_guided_intake";
       actorId: string;
       actorName: string;
       actorRole: string;
