@@ -200,12 +200,12 @@ export function AppShell() {
             {isStaffSurface && (
               <div
                 data-testid="acting-role-indicator"
-                className="min-w-0 max-w-[11rem] sm:max-w-xs rounded-full border border-teal/40 bg-teal/10 px-2.5 py-1 text-[11px] leading-tight text-navy"
+                className="hidden sm:block min-w-0 max-w-xs rounded-full border border-teal/40 bg-teal/10 px-2.5 py-1 text-[11px] leading-tight text-navy"
                 title={`Acting as: ${actingRoleLabel} · ${actingStaffName}`}
               >
-                <span className="hidden sm:inline text-muted-foreground">Acting as: </span>
+                <span className="text-muted-foreground">Acting as: </span>
                 <span className="font-semibold">{actingRoleLabel}</span>
-                <span className="block truncate sm:inline"> · {actingStaffName}</span>
+                <span> · {actingStaffName}</span>
               </div>
             )}
             {isPublicSurface && (
@@ -386,6 +386,16 @@ export function AppShell() {
                 );
               })}
             </div>
+          </div>
+        )}
+        {/* B10 — phones: the role gets its own full-width line so it stays readable. */}
+        {isStaffSurface && (
+          <div
+            data-testid="acting-role-indicator-mobile"
+            className="sm:hidden border-t bg-teal/10 px-4 py-1 text-[11px] text-navy truncate"
+          >
+            <span className="text-muted-foreground">Acting as: </span>
+            <span className="font-semibold">{actingRoleLabel}</span> · {actingStaffName}
           </div>
         )}
       </header>
