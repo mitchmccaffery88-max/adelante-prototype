@@ -126,8 +126,8 @@
 - [x] Demo: attended visits waiting for a note (Kayla Nguyen trainee c4 / Rosa T.; Dr. Reyes / Alicia)
 
 ## Phase 7d — General-population billing
-- [ ] Programs self_pay / sliding_fee / grant_isl / commercial (inactive); selection rule; migration
-- [ ] Patient payment arrangement (billing write, audited); unrecorded → flag + blocks Ready; setting re-prices open claims
-- [ ] Optional payerId on rates, payer-specific preferred
-- [ ] Patient responsibility split; manual payments (no overpay, no card numbers, void); audit
-- [ ] Placeholder rates; /billing + /admin-claims UI; tests; browser
+- [x] Programs self_pay / sliding_fee / grant_isl / commercial (inactive); selection rule; migration
+- [x] Patient payment arrangement (billing write, audited); unrecorded → flag + blocks Ready; setting re-prices open claims
+- [x] Optional payerId on rates, payer-specific preferred
+- [x] Patient responsibility split; manual payments (no overpay, no card numbers, void); audit
+- [x] Placeholder rates; /billing + /admin-claims UI; tests; browser
