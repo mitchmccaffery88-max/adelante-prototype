@@ -20,7 +20,7 @@ import type {
   Patient,
   PreferredLanguage,
 } from "@/lib/ehr";
-import type { AdelanteEHR } from "@/lib/ehr";
+import type { IntakeProfilePatch } from "@/lib/ehr";
 import {
   cleanEmergencyContacts,
   emptyEmergencyContact,
@@ -110,7 +110,7 @@ export function mergeSavedIntakeProfile(
  */
 export function profilePatch(
   profile: IntakeProfile,
-): Parameters<typeof AdelanteEHR.updateProfile>[1] {
+): IntakeProfilePatch {
   return {
     preferredName: profile.preferredName || undefined,
     pronouns: profile.pronouns || undefined,

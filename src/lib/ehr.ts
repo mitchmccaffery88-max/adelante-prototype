@@ -7475,7 +7475,7 @@ export const AdelanteEHR = {
   updateProfile(
 
     patientId: string,
-    patch: Partial<
+    patch: IntakeProfilePatch & Partial<
       Pick<
         Patient,
         | "firstName"
@@ -10313,7 +10313,7 @@ export const AdelanteEHR = {
    */
   saveIntakeProfileViaAdel(
     patientId: string,
-    patch: Parameters<typeof AdelanteEHR.updateProfile>[1],
+    patch: IntakeProfilePatch,
     fieldsConfirmed: string[],
   ): void {
     AdelanteEHR.updateProfile(patientId, patch);
@@ -21967,6 +21967,21 @@ withGroupNotificationsSuppressed(() => {
 // be shown without setup. Built only through the real store API (the same
 // calls the pre-release roster import makes). Intake is deliberately left
 // incomplete. Marked by `DEMO_PRE_RELEASE_PERSONA` so the switcher finds it.
+/** Fields intake's "About you" writes through updateProfile. */
+export type IntakeProfilePatch = Partial<
+  Pick<
+    Patient,
+    | "preferredName"
+    | "pronouns"
+    | "preferredLanguage"
+    | "phone"
+    | "releaseDate"
+    | "contactPrefs"
+    | "emergencyContacts"
+    | "address"
+  >
+>;
+
 export const DEMO_PRE_RELEASE_PERSONA = { firstName: "Tomás", lastName: "Reyna" } as const;
 try {
   const exists = patients.some(
