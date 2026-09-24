@@ -1,6 +1,7 @@
 // §Clinical record tab bodies — extracted from ClientRecordDrawer so the
 // quick-peek drawer and the full-page chart render the SAME components.
 // Do not fork a second copy of any tab body here or anywhere else.
+import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { useMemo, useState, useEffect } from "react";
 import {
   Sheet,
@@ -188,7 +189,7 @@ export function OverviewTab({ patientId }: { patientId: string }) {
     <div className="space-y-3 text-sm">
       <div className="grid grid-cols-2 gap-2">
         <StatBox label="Episode day" value={`${p.episodeDay}/90`} />
-        <StatBox label="Coverage" value={p.coverage?.status ?? "unknown"} />
+        <StatBox label="Coverage" value={coverageStatusLabel(p.coverage)} />
         <StatBox label="Open tasks" value={String(openTasks)} />
         <StatBox label="Open referrals" value={String(openReferrals)} />
         <StatBox label="Open SDOH items" value={String(openSdoh)} />

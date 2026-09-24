@@ -36,6 +36,7 @@ import type {
   SubstanceUseProfile,
 } from "./caloms";
 import { helperAuditDetail } from "./signup";
+import { mergeCoverage, type CoveragePatch } from "./coverageStatus";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
@@ -317,7 +318,9 @@ export type CoverageStatus =
   | "none_unsure"
   | "other"
   | "private_pay"
-  | "uninsured";
+  | "uninsured"
+  /** §Phase 8a — coverage type is not Medi-Cal, so no Medi-Cal status applies. */
+  | "not_applicable";
 export type ReferralSource =
   | "probation"
   | "parole"
@@ -1371,7 +1374,8 @@ export interface Patient {
   // Medi-Cal eligibility & coverage (§4d)
   coverage?: {
     status: CoverageStatus;
-    verified: "verified" | "pending" | "not_found";
+    /** "verified" only with a recorded staff check; patient answers are "self_reported". */
+    verified: "verified" | "pending" | "not_found" | "self_reported";
     countyOfRelease?: string;
     jiReentryFlag?: boolean;
     /**
@@ -3692,7 +3696,7 @@ const patients: Patient[] = [
     intakeCompletedAt: "2026-05-12",
     coverage: {
       status: "active",
-      verified: "verified",
+      verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
@@ -3955,7 +3959,7 @@ const patients: Patient[] = [
     intakeCompletedAt: "2026-04-05",
     coverage: {
       status: "active",
-      verified: "verified",
+      verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
@@ -4134,7 +4138,7 @@ patients.push({
   intakeCompletedAt: "2026-03-02",
   coverage: {
     status: "active",
-    verified: "verified",
+    verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
     countyOfRelease: "Tulare",
     justiceInvolvement: "no",
   },
@@ -8286,10 +8290,42 @@ export const AdelanteEHR = {
       })),
     };
   },
-  setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
+  /**
+   * §Phase 8a — MERGES into existing coverage (never replaces). Plans, check
+   * history and flags the patch doesn't mention survive; "verified" without a
+   * recorded check is downgraded to "self_reported". Audited with the list of
+   * changed fields.
+   */
+  setCoverage(
+    patientId: string,
+    patch: CoveragePatch,
+    actor?: { id: string; role: string; source?: string },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.coverage = coverage;
+    const before = p.coverage;
+    const { next, changed } = mergeCoverage(before, patch);
+    p.coverage = next;
+    if (changed.length) {
+      appendAudit({
+        category: "clinical",
+        action: "coverage_updated",
+        actorId: actor?.id ?? "patient_self",
+        actorRole: actor?.role ?? "patient",
+        patientId,
+        detail: {
+          source: actor?.source ?? "intake",
+          changed,
+          statusFrom: before?.status,
+          statusTo: next.status,
+          typeFrom: before?.coverageType,
+          typeTo: next.coverageType,
+          verifiedTo: next.verified,
+          plansKept: next.plans?.length ?? 0,
+          checksKept: next.verifications?.length ?? 0,
+        },
+      });
+    }
     emit();
   },
 

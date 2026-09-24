@@ -31,6 +31,7 @@ import {
   type IntakeProfile,
 } from "@/lib/intakeProfile";
 import { Input } from "@/components/ui/input";
+import { intakeCoveragePatch, mediCalStatusApplies } from "@/lib/coverageStatus";
 import {
   COVERAGE_TYPES,
   HEARD_ABOUT_SOURCES,
@@ -209,15 +210,19 @@ function IntakePage() {
     justiceInvolvement: TriState;
     /** CalAIM ECM follow-up; only asked under Medi-Cal / dual. */
     ecmEligible: boolean;
-  }>({
-    status: "active",
-    countyOfRelease: "Tulare",
-    jiReentryFlag: false,
-    otherPlanName: "",
-    coverageType: "medi_cal",
-    justiceInvolvement: "no",
-    ecmEligible: false,
-  });
+  }>(() => ({
+    // §Phase 8a — seeded from the record on file so a re-run edits, not blanks.
+    status:
+      patient?.coverage && ["active", "suspended", "none_unsure"].includes(patient.coverage.status)
+        ? patient.coverage.status
+        : "active",
+    countyOfRelease: patient?.coverage?.countyOfRelease ?? "Tulare",
+    jiReentryFlag: patient?.coverage?.jiReentryFlag ?? false,
+    otherPlanName: patient?.coverage?.otherPlanName ?? "",
+    coverageType: patient?.coverage?.coverageType ?? "medi_cal",
+    justiceInvolvement: patient?.coverage?.justiceInvolvement ?? "no",
+    ecmEligible: patient?.coverage?.ecmEligible ?? false,
+  }));
   /**
    * §Front-door Phase 2 — safety-net record lookup.
    *
@@ -431,21 +436,22 @@ function IntakePage() {
         crisisFlag: itemFlag,
       });
     });
-    AdelanteEHR.setCoverage(currentId, {
-      status: coverage.status,
-      verified:
-        coverage.status === "active"
-          ? "verified"
-          : coverage.status === "suspended"
-            ? "pending"
-            : "not_found",
-      countyOfRelease: coverage.countyOfRelease,
-      jiReentryFlag: coverage.jiReentryFlag,
-      coverageType: coverage.coverageType,
-      justiceInvolvement: coverage.justiceInvolvement,
-      ecmEligible: ecmQuestionApplies(coverage.coverageType) ? coverage.ecmEligible : false,
-      otherPlanName: coverage.status === "other" ? coverage.otherPlanName : undefined,
-    });
+    // §Phase 8a — merge, never replace; self-report, never "verified".
+    AdelanteEHR.setCoverage(
+      currentId,
+      intakeCoveragePatch(patient?.coverage, {
+        coverageType: coverage.coverageType,
+        mediCalStatus: coverage.status,
+        countyOfRelease: coverage.countyOfRelease,
+        jiReentryFlag: coverage.jiReentryFlag,
+        justiceInvolvement: coverage.justiceInvolvement,
+        ecmEligible: coverage.ecmEligible,
+        otherPlanName: coverage.otherPlanName,
+      }),
+      mode === "assisted" && acting.staffId
+        ? { id: acting.staffId, role: acting.role, source: "intake_staff_assisted" }
+        : { id: currentId, role: "patient", source: "intake_self_service" },
+    );
     // §Front-door Phase 2 — no match on the safety-net lookup means a genuine
     // missed hand-off: generate the CF Care Manager's own pre-release task
     // list, compressed to day one, owned by whoever is running this session.
@@ -1026,8 +1032,9 @@ function IntakePage() {
               </RadioGroup>
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-sm">Medi-Cal record status (if you have one)</Label>
+            {mediCalStatusApplies(coverage.coverageType) && (
+            <div className="space-y-1.5" data-testid="medi-cal-status-question">
+              <Label className="text-sm">What is the status of your Medi-Cal?</Label>
               <Select
                 value={coverage.status}
                 onValueChange={(v) => setCoverage({ ...coverage, status: v as CoverageStatus })}
@@ -1039,10 +1046,10 @@ function IntakePage() {
                   <SelectItem value="active">Yes — it's active</SelectItem>
                   <SelectItem value="suspended">It was paused while I was away</SelectItem>
                   <SelectItem value="none_unsure">No / I'm not sure</SelectItem>
-                  <SelectItem value="other">I have other coverage</SelectItem>
                 </SelectContent>
               </Select>
             </div>
+            )}
 
             {lookupApplies && (
               <div

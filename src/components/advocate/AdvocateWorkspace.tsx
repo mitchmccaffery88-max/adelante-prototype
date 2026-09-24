@@ -4,6 +4,7 @@
 // permission is held; nothing is hidden with CSS and nothing is fetched
 // "just in case". 42 CFR Part 2 content is masked in the data layer
 // (`AdelanteEHR.advocate*`), not here — this file cannot un-mask it.
+import { verifiedLabel } from "@/lib/coverageStatus";
 import { useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { toast } from "sonner";
@@ -217,7 +218,7 @@ export function AdvocateEligibilityPanel({ linkId }: { linkId: string }) {
       {view.coverage ? (
         <p className="mt-3 text-sm">
           Status: <span className="font-medium text-navy">{view.coverage.status}</span> ·{" "}
-          {view.coverage.verified}
+          {verifiedLabel(view.coverage.verified as never)}
           {view.coverage.countyOfRelease ? ` · ${view.coverage.countyOfRelease} County` : ""}
         </p>
       ) : (
