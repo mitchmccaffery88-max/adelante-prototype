@@ -1,68 +1,90 @@
-# Phase 7b — Claim as the single source of billing status
+# Part A findings + Phase 7c: real rate table
 
-## What's there today
+## Part A — does every claim-signing path go through the signature ceremony?
 
-- **Two separate status systems.** Visits carry their own billing status (draft, ready, submitted, paid, denied, write_off), changed through `transitionBilling`. Claims carry a second one (documented, signed, coded, generated, submitted, paid, denied, partial).
-- **Most 1:1 visits never get a claim.** When a visit is marked attended, only the visit's own status flips to `ready`. A 1:1 claim is only created by a seed at boot, and only for 3 visits. Group, peer and CHW claims are created by their own note hooks. So `/billing` and `/admin-claims` are mostly describing different sets of visits, not just labelling them differently.
-- **Amounts** are set in 4 claim-creation paths (fallbacks 12000/12000/6000/5000, and peer/CHW callers can pass their own amount) plus 5 visit-side `chargeCents ?? chargeForService(...)` reads.
-- **No role check at the data layer.** Neither `transitionBilling` nor `advanceClaim` checks role. `/admin-claims` passes the hardcoded actor `"billing_coordinator"`. `signNote` changes claim state directly and doesn't go through `advanceClaim`.
+Short answer: both interactive signing screens require the full ceremony before a claim moves. But the rule lives in the screens, not in the claim code, and there are three gaps.
 
-## 1. Status mapping (needs your sign-off)
+**Paths that move a claim to `signed`**
 
-| Visit status | Claim state | Notes |
-|---|---|---|
-| draft | documented / signed / coded | Before submission. The claim says which of these steps it's at. |
-| ready | generated | Built and ready to send |
-| submitted | submitted | Same |
-| paid | paid | Same |
-| denied | denied | Same, still needs a reason |
-| write_off | **new `written_off` state** | Needed because no current state means this. It ends the claim and needs a reason. |
-| (none) | partial | Stays as is. It has no amount behind it. I won't add payment amounts (that's EDI scope), and I'll note this in the UI. |
+| Path | Ceremony before the claim moves? |
+|---|---|
+| Chart signing panel (`RecordTabs.tsx` ~2786-2821) | Yes. `signBlockers` merges domain and `attestationBlockers(signDraft)`, then `buildAttestationRecord` (which throws on any blocker) runs, then `signProgressNote`, and only then `mirrorNoteSignatureToLedger`. Skipped when the note is routed for cosign. |
+| `/notes-queue` via `signUnsignedWorkRow` (`noteSignFlow.ts:85-129`) | Yes. `noteSignAuthorization`, then `attestationBlockers`, then `buildAttestationRecord`, then `signProgressNote`, then the mirror. Skipped when routed to cosign. |
+| Cosign / supervisor (`cosign-inbox.tsx:188`, `ehr.ts:9082 cosignProgressNote`) | Does not move the claim at all (see Gap 1). |
+| Seed (`ehr-ext.ts:989`) | Writes claim state straight to `signed` and later, tagged actor `"seed"`. Demo data only, and no audit row. |
 
-**Allowed moves:** documented → signed → coded → generated → submitted → paid/denied. Denied → generated (resubmit) or written_off. documented/signed/coded/generated → written_off. The old "back to draft" moves from ready and write_off go away. Undoing a write-off becomes: not allowed. It's final and audited. **This needs your OK.**
+**Gap 1: a cosigned note never advances its claim.** When a note is routed for cosign, both screens skip the mirror, and `cosignProgressNote` never calls it either. The visit's claim stays at `documented` for good, even after a valid cosignature. The cosign screen also takes a checkbox only: no versioned wording, no drawn signature, no attestation record. So a supervisor signature is weaker evidence than the first signature.
 
-**Visits with no claim yet.** On `/billing` they show a plain label, not a fake status. "Scheduled" visits stay off the page, as they are today. Attended visits with no note yet show "Not documented". Cancelled and no-show visits show "No claim — not billable". None of these count in the six-status summary, which lists only claim states.
+**Gap 2: nothing in the data layer enforces the ceremony.** `AdelanteEHRExt.signNote(encounterId, signerId)` and `markClaimSignedFromNote(...)` are public and accept any caller with no attestation, no note and no authorization. `signProgressNote` also treats `attestation` as optional (documented as deliberate, for seeds and automations). Today no screen calls these directly, but any new caller could move a claim to `signed` without the ceremony.
 
-**How claims get created:** marking a 1:1 visit attended creates its claim at `documented` (by moving the existing seeded helper into `updateAppointmentStatus`). This replaces the current flip to `ready`. The label "Not documented" then covers only attended visits whose claim was never created, which should only happen for older data.
+**Gap 3: a billing reviewer can't trace a signed claim back to the note.** The claim history row is `{ state: "signed", actor: signerId, note: "note signed" }`. The `claim_status_changed` audit row has claimId, from/to, actor id, role and `via: "note_signature"`. Neither row records the note id, the attestation statement or version, the signer's name, or the signature time. The only link is indirect: `note.appointmentId === claim.encounterId`. There is also a smaller issue: the signer id is `clinicianId ?? staffId`, but the role is read from `getActingRole()` at mirror time, not taken from the signer.
 
-## 2. One source for all views
+**Did 7b change this flow?** Only the last step. Before 7b, `signNote` changed `claim.state` directly with no audit. Now it calls `markClaimSignedFromNote`, which adds an attributed history row and a `claim_status_changed` audit row, and still only allows `documented → signed`. The ceremony checks, their order, the skip-when-cosign-pending behaviour, and all three gaps were there before 7b.
 
-- `/billing` rows, totals and filters read the claim that matches each visit (`encounterId === appt.id`). Group, peer and CHW claims with no 1:1 visit are listed too, so `/billing` and `/admin-claims` cover the same set.
-- `BillingStatusSummary` counts claims. Its rows become the claim states grouped under the six familiar labels: Draft = documented+signed+coded, Ready = generated, Submitted, Paid, Denied, Write-off = written_off. Partial gets a 7th row.
-- The pilot dashboard card uses the same helper. New honesty note: "Counts claim records — the same ones on the Claims worklist and Billing page."
-- The clinician page's "Billing: {status}" line reads from the claim too.
-- The visit's own `billingStatus`, `submittedAt`, `paidAt` and `denialReason` fields are removed from the type and seed. The 6 seeded visit statuses are turned into matching claims so the demo still shows a spread.
+Suggested follow-up for later, not part of 7c: pass `{ noteId, attestation }` into the mirror and require it there; record note id and attestation version on the claim history and audit row; give cosign the same ceremony and have it advance the claim.
 
-## 3–4. One write path, permission enforced in it
+---
 
-- New function `AdelanteEHRExt.transitionClaim(claimId, to, { denialReason?, note? })`. It:
-  - Works out the actor from the acting staff member (`staffId`, name, role). Callers can't pass an actor string.
-  - Refuses unless `canAccess(role, "billing").level === "write"`. The error says "Your role can view billing but can't change it." and nothing is changed.
-  - Checks the allowed moves above and requires a reason for denied and written_off.
-  - Adds history `{ at, state, actor: staffId, actorName, role, note }` and a `claim_status_changed` audit row with from, to and claimId.
-- `advanceClaim` and `transitionBilling` are removed. Every caller (`/billing` and `/admin-claims`) switches to `transitionClaim`, and the hardcoded `"billing_coordinator"` goes. The page guards stay in place for fast feedback.
+## Part B — Phase 7c plan
 
-## 5. Note signing (Phase 1e)
+### Payer/program set (minimum real set)
 
-Signing moves the claim through a separate, narrow function: `markClaimSignedFromNote(encounterId, signerId)`. It only ever does documented → signed, is attributed to the signer and is audited as `claim_status_changed` with `via: "note_signature"`. It does **not** require billing write access. Reason: signing is the clinician confirming the documentation, not a billing decision, and `signUnsignedWorkRow` already checks that the signer is allowed. Clinicians still can't call `transitionClaim` for anything else.
+Today the coverage plans on a patient record store the payer as free text ("Medi-Cal FFS", "Health Net Medi-Cal", "Tulare County MHP"). Which Medi-Cal program pays depends on the payer and also on the type of service (SUD vs. mental health). Proposed fixed programs:
 
-## 6. One amount function
+- `dmc_ods`: SUD services for Medi-Cal members (county DMC-ODS)
+- `smhs`: specialty mental health, county MHP
+- `medi_cal_managed`: non-specialty mental health, Medi-Cal FFS or managed care plan
+- `calaim_ecm`: CalAIM ECM / Community Supports, CHW and peer-support codes
+- `non_medi_cal`: ISL / self-pay / grant-funded; reportable, not billed to Medi-Cal
 
-`claimChargeCents({ serviceType, apptChargeCents? })` in ehr.ts returns `apptChargeCents ?? chargeForService(serviceType)`. All 4 creation paths use it. The 12000/6000/5000 fallbacks and the caller-passed `chargeCents` on peer/CHW claims are removed. Displays read `claim.chargeCents` only.
+**Needs your confirmation:** these five programs, and the rule for picking one (below).
 
-## Tests
+### Rate table (data layer, `src/lib/rates.ts`)
 
-- Status mapping table and allowed moves.
-- `transitionBilling`/`advanceClaim` no longer exist, and `transitionClaim` is the only mutator (a grep test).
-- Sys Admin refused at the data layer with nothing changed.
-- Billing and Billing Coordinator can write, and history and audit record the real staff member.
-- Note signing still advances documented → signed as a clinician.
-- All amounts come from `claimChargeCents`.
-- An attended visit creates a claim.
-- `/billing` counts, `/admin-claims` and the pilot card agree for the same visit.
-- Existing tests that use the old paths get updated.
+`Rate { id, code, program, amountCents (integer), effectiveFrom (YYYY-MM-DD), effectiveTo? (inclusive; empty means open-ended), placeholder: boolean, createdBy, createdByRole, createdAt, endedBy?, endedAt?, endReason? }`
 
-Live browser at both viewports as Billing, Billing Coordinator, Sys Admin, and a clinician signing a note. Desktop checks wait until the acting role's name shows in the top bar before reading the page.
+- `addRate(input)`: needs billing write (same check and `BILLING_WRITE_REFUSED` message as `transitionClaim`, so Sys Admin is refused and nothing changes). Rejects the amount unless it is a positive integer, rejects bad dates, and rejects any overlap with an existing range for the same code and program. The error names the conflicting rate.
+- `endDateRate(id, effectiveTo, reason)`: billing write only. Sets an end date on an open or later-ending rate. The date can't be before the start and can't shorten a range that claims already priced from (see below). The only field that changes is the end date, plus who ended it and why.
+- No edit and no delete. To change a price: end-date the old rate, then add a new one.
+- Audit: `rate_added` and `rate_end_dated` (actor, role, code, program, dates, amount).
+- `rateFor(code, program, serviceDate)` returns the one matching rate or `undefined`.
+- Seed: one open-ended rate per (code, program) pair used today, starting 2026-01-01, with amounts copied from the current `chargeForService`, peer and CHW prices. Every seeded rate is flagged `placeholder: true` and shows a "Placeholder: enter real fee schedule" tag.
 
-## Non-goals
-No rate table, no EDI or payment-amount fields, no change to who can see which pages.
+### Billing code at claim creation
+
+- 1:1 claims: a new `DEFAULT_CODE_BY_SERVICE` mapping. SUD-flagged service lines get SUD codes: intake H0001, individual counseling H0004, group H0005, case management H0006 (SUD) / T1017. MH lines get H0031 / 90834 / 90853. Med management 99213, peer H0038, care coordination T1017. The code is stored on `Claim.serviceCode` along with `codeSource: "default"`.
+- Group claims keep `groupBillingCode(category)`. When that returns nothing, the group falls back to the default for `therapy_group`.
+- Peer and CHW claims keep their existing codes.
+- Billing can correct the code on a claim that isn't submitted yet (`setClaimCode`, billing write, audited, `codeSource: "billing"`). Correcting the code re-prices the claim.
+
+### Payer/program at claim creation
+
+The program is read from the patient's coverage plan that covers the service date (Phase 3b `coverage.plans`):
+- No active plan, or coverage type is not Medi-Cal: `non_medi_cal`
+- Peer or CHW code: `calaim_ecm`
+- SUD service line: `dmc_ods`
+- Payer text matches "MHP" / county mental health: `smhs`
+- Any other Medi-Cal payer: `medi_cal_managed`
+
+The result is stored as `Claim.program` along with `programSource`. Billing can correct it through the same audited `setClaimProgram`.
+
+### Pricing and the "no rate on file" flag
+
+- `claimChargeCents({ code, program, serviceDate })` looks up `rateFor(...)` and returns `{ cents, rateId }` or `{ noRate: true }`. `chargeForService` and `apptChargeCents` are removed from pricing.
+- A claim with no match gets `amountCents` left empty and `rateStatus: "no_rate"`. Nothing prices it from a fallback. `transitionClaim` refuses `coded → generated` (the move to Ready) while `no_rate` is set, with the message: "No rate on file for H0004 / DMC-ODS on 2026-09-24. Add a rate, then retry."
+- A priced claim stores `rateId`, so later rate changes never re-price it silently. Adding a rate re-checks open `no_rate` claims that haven't reached Ready and prices them, with an audit row.
+- On `/billing` and `/admin-claims`: a "No rate on file" badge, a count in the summary, and a filter.
+
+### UI (`/billing`)
+
+- Remove `RATE_TABLE` and the false versioning footer.
+- New Rates section with a table: code, program, amount, effective dates, placeholder tag, who added it. There is an "Add rate" form, and each row has an "End-date" action. Billing and Billing Coordinator see these controls. Sys Admin sees the table with no controls, and the data layer refuses a Sys Admin change even if one gets through.
+- The phone layout stacks the rows into cards.
+
+### Tests
+
+Effective-date lookup (boundaries, open-ended ranges, gaps); overlap rejection; end-date rules; payer/program selection (each branch); default code mapping and code correction; no-rate flag plus the Ready block; later rate prices the waiting claim; audit rows; Sys Admin refused with nothing changed; placeholder seed. Update the 7b tests that read `chargeForService`.
+
+### Non-goals
+
+No DHCS fee-schedule import, no EDI, no fix to the Part A gaps in this phase, no change to who can see billing pages.
