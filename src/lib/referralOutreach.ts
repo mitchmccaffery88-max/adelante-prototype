@@ -163,3 +163,23 @@ function fallbackTrigger(r: OutreachShapedReferral): ReferrerFallback {
 export function hasOpenOutreachTask(r: OutreachShapedReferral): boolean {
   return r.outreach?.task?.status === "open";
 }
+
+/**
+ * B4 — the most recent logged manual outreach attempt, if any. The queue row
+ * and both Client Journey views read this so a logged call shows up
+ * everywhere, not only inside the outreach card that recorded it.
+ */
+export function latestOutreachAttempt(r: {
+  outreach?: ReferralOutreachState;
+}): ReferralOutreachAttempt | undefined {
+  const attempts = r.outreach?.attempts ?? [];
+  return attempts.reduce<ReferralOutreachAttempt | undefined>(
+    (acc, a) => (!acc || +new Date(a.at) >= +new Date(acc.at) ? a : acc),
+    undefined,
+  );
+}
+
+/** One-line summary of the latest attempt, e.g. "Reached · Luz Herrera". */
+export function outreachAttemptSummary(a: ReferralOutreachAttempt): string {
+  return `${referralOutreachOutcomeLabel(a.outcome)} · ${a.by.name}`;
+}
