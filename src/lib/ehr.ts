@@ -162,6 +162,13 @@ import {
 // §Message-routing gap #1 — out-of-band alert dispatch (SMS via Twilio when
 // configured). Pure transport: no recipient or escalation policy lives there.
 import { dispatchStaffAlert } from "./staffAlerts";
+import {
+  composeGroupNotification,
+  dispatchGroupNotification,
+  withGroupNotificationsSuppressed,
+  type GroupNotificationEvent,
+  type GroupNotificationTrigger,
+} from "./groupNotifications";
 
 // ---------------------------------------------------------------------------
 // §Notification feed, Phase 1 — operational, staff-to-staff, system-generated.
@@ -4244,6 +4251,12 @@ const caseManagers: CaseManager[] = [
 type Listener = () => void;
 const listeners = new Set<Listener>();
 let version = 0;
+function _activeGroupEnrollees(sessionId: string): string[] {
+  return groupEnrollments.filter((e) => e.sessionId === sessionId && !e.endedAt).map((e) => e.patientId);
+}
+function _groupTrigger(actor: string): GroupNotificationTrigger {
+  return { actorId: actor, kind: patients.some((p) => p.id === actor) ? "patient" : "staff" };
+}
 const emit = () => {
   version++;
   listeners.forEach((l) => l());
@@ -19670,6 +19683,12 @@ export const AdelanteEHR = {
       actorId: actor,
       detail: { groupSessionId: id, reason: trimmed },
     });
+    AdelanteEHR.notifyGroupChange({
+      event: "session_cancelled",
+      sessionId: id,
+      patientIds: _activeGroupEnrollees(id),
+      triggeredBy: _groupTrigger(actor),
+    });
     emit();
     return row;
   },
@@ -20082,6 +20101,12 @@ export const AdelanteEHR = {
         initiatedBy: initiator.kind,
       },
     });
+    AdelanteEHR.notifyGroupChange({
+      event: "enrollment_added",
+      sessionId: input.sessionId,
+      patientIds: [input.patientId],
+      triggeredBy: { actorId: initiator.actorId, kind: initiator.kind === "patient" ? "patient" : "staff" },
+    });
     emit();
     return row;
   },
@@ -20099,6 +20124,12 @@ export const AdelanteEHR = {
       patientId: row.patientId,
       actorId: actor,
       detail: { groupSessionId: row.sessionId, enrollmentId, reason: trimmed },
+    });
+    AdelanteEHR.notifyGroupChange({
+      event: "enrollment_ended",
+      sessionId: row.sessionId,
+      patientIds: [row.patientId],
+      triggeredBy: _groupTrigger(actor),
     });
     emit();
     return row;
@@ -20193,6 +20224,13 @@ export const AdelanteEHR = {
       actorId: actor,
       detail: { groupSessionId: sessionId, occurrenceStart, reason: trimmed },
     });
+    AdelanteEHR.notifyGroupChange({
+      event: "occurrence_cancelled",
+      sessionId,
+      patientIds: _activeGroupEnrollees(sessionId),
+      triggeredBy: _groupTrigger(actor),
+      when: occurrenceStart,
+    });
     emit();
     return row;
   },
@@ -20227,8 +20265,75 @@ export const AdelanteEHR = {
       actorId: actor,
       detail: { groupSessionId: sessionId, from: occurrenceStart, to: newStart, reason: trimmed },
     });
+    AdelanteEHR.notifyGroupChange({
+      event: "occurrence_rescheduled",
+      sessionId,
+      patientIds: _activeGroupEnrollees(sessionId),
+      triggeredBy: _groupTrigger(actor),
+      when: occurrenceStart,
+      newWhen: newStart,
+    });
     emit();
     return { from, to };
+  },
+
+  /**
+   * §Phase 6c — patient text notification for a group-access change.
+   * Consent-to-text and phone-on-file are checked FIRST (same `isSmsOn` +
+   * `phone` rule as appointment notifications); without both the attempt is
+   * recorded as skipped and nothing is sent. Copy is Part 2-safe via
+   * `composeGroupNotification`. Each attempt writes an attributed audit row
+   * with no message body.
+   */
+  notifyGroupChange(input: {
+    event: GroupNotificationEvent;
+    sessionId: string;
+    patientIds: string[];
+    triggeredBy: GroupNotificationTrigger;
+    when?: string;
+    newWhen?: string;
+  }) {
+    const g = groupSessions.find((x) => x.id === input.sessionId);
+    if (!g) return;
+    for (const patientId of new Set(input.patientIds)) {
+      const p = patients.find((x) => x.id === patientId);
+      if (!p) continue;
+      const { body, sensitive } = composeGroupNotification({
+        event: input.event,
+        category: g.category,
+        topic: g.topic,
+        when: input.when,
+        newWhen: input.newWhen,
+      });
+      const smsOn = AdelanteEHR.isSmsOn(patientId);
+      const skipReason = !smsOn ? "no_sms_consent" : !p.phone ? "no_phone" : undefined;
+      const rec = dispatchGroupNotification({
+        patientId,
+        sessionId: g.id,
+        event: input.event,
+        sensitive,
+        body,
+        to: skipReason ? undefined : p.phone,
+        triggeredBy: input.triggeredBy,
+        skipReason,
+      });
+      if (!rec) continue;
+      appendAudit({
+        category: "clinical",
+        action: "group_notification_attempted",
+        patientId,
+        actorId: input.triggeredBy.actorId,
+        detail: {
+          groupSessionId: g.id,
+          notificationId: rec.id,
+          event: input.event,
+          sensitive,
+          triggeredByKind: input.triggeredBy.kind,
+          outcome: rec.delivery,
+          ...(skipReason ? { skipReason } : {}),
+        },
+      });
+    }
   },
 
   listGroupOccurrenceRecords: (sessionId: string) =>
@@ -20941,7 +21046,7 @@ export function useEhr<T>(selector: () => T): T {
 // refused by `assertEnrollmentAllowed` for three different real reasons.
 // Remove with the rest of the mock store.
 // ---------------------------------------------------------------------------
-{
+withGroupNotificationsSuppressed(() => {
   try {
     const THERAPIST = "Marisol Vega, LCSW";
     const facilitator = AdelanteEHR.listClinicians()[0]?.id;
@@ -21057,4 +21162,4 @@ export function useEhr<T>(selector: () => T): T {
   } catch {
     /* Seeding is best-effort; never break boot. */
   }
-}
+});

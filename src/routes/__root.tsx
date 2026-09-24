@@ -231,6 +231,9 @@ function RootComponent() {
     import("../lib/staffAlertSms").then((m) => {
       if (!cancelled) m.installSmsStaffAlertTransport();
     });
+    import("../lib/groupNotificationSms").then((m) => {
+      if (!cancelled) m.installGroupNotificationSmsTransport();
+    });
     return () => {
       cancelled = true;
     };

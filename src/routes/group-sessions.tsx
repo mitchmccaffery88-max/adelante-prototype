@@ -10,7 +10,13 @@
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
 import { createFileRoute } from "@tanstack/react-router";
-import { useMemo, useState } from "react";
+import { useMemo, useState, useSyncExternalStore } from "react";
+import {
+  getGroupNotificationsVersion,
+  listGroupNotifications,
+  subscribeGroupNotifications,
+  type GroupNotificationRecord,
+} from "@/lib/groupNotifications";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
@@ -477,6 +483,8 @@ function GroupDetail({
       {canWrite && <RecurrenceEditor group={group} actor={actor} />}
 
       <OccurrenceStatusCard group={group} canWrite={canWrite} actor={actor} />
+
+      <GroupNotificationLog group={group} />
 
       <Card className="p-4 space-y-3">
         <h3 className="font-display text-sm text-navy">Standing roster</h3>
@@ -1222,6 +1230,75 @@ function OccurrenceStatusCard({ group, canWrite, actor }: { group: GroupSession;
         "Complete" uses the same rule documentation enforces: every present or late attendee
         needs their own individualized note.
       </p>
+    </Card>
+  );
+}
+
+// §Phase 6c — honest record of every patient text attempt for this group.
+// Sensitive (Part 2 / unknown category) rows never show the body.
+const NOTIFY_EVENT_LABEL: Record<GroupNotificationRecord["event"], string> = {
+  enrollment_added: "Enrolled",
+  enrollment_ended: "Enrollment ended",
+  session_cancelled: "Group cancelled",
+  occurrence_cancelled: "Meeting cancelled",
+  occurrence_rescheduled: "Meeting moved",
+};
+const NOTIFY_OUTCOME_LABEL: Record<GroupNotificationRecord["delivery"], string> = {
+  pending: "Sending…",
+  sent: "Sent",
+  not_configured: "Not sent — texting isn't set up",
+  failed: "Failed",
+  skipped: "Not attempted",
+};
+
+function GroupNotificationLog({ group }: { group: GroupSession }) {
+  useSyncExternalStore(subscribeGroupNotifications, getGroupNotificationsVersion, () => 0);
+  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const rows = listGroupNotifications({ sessionId: group.id }).slice(0, 20);
+  return (
+    <Card className="p-4 space-y-2" data-testid="group-notification-log">
+      <h3 className="font-display text-sm text-navy">Text notifications</h3>
+      <p className="text-[11px] text-muted-foreground">
+        Patients are texted when their group access changes, only with text consent and a phone
+        on file. Groups with protected SUD content get a generic message that never names the
+        group or the time.
+      </p>
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No text notifications for this group yet.</p>
+      ) : (
+        <ul className="space-y-2 text-xs">
+          {rows.map((r) => {
+            const p = patients.find((x) => x.id === r.patientId);
+            return (
+              <li key={r.id} className="rounded border p-2 space-y-0.5" data-testid="group-notification-row">
+                <div className="flex flex-wrap items-center gap-2">
+                  <span className="font-medium text-navy">
+                    {p ? `${p.firstName} ${p.lastName}` : r.patientId}
+                  </span>
+                  <Badge variant="outline">{NOTIFY_EVENT_LABEL[r.event]}</Badge>
+                  <Badge variant={r.delivery === "sent" ? "secondary" : "outline"}>
+                    {NOTIFY_OUTCOME_LABEL[r.delivery]}
+                  </Badge>
+                </div>
+                <p className="text-muted-foreground">
+                  {r.skipReason === "no_sms_consent"
+                    ? "No text consent on file."
+                    : r.skipReason === "no_phone"
+                      ? "No phone number on file."
+                      : r.sensitive
+                        ? "Generic message (group not named)."
+                        : r.body}
+                </p>
+                <p className="text-muted-foreground">
+                  Triggered by {r.triggeredBy.kind === "patient" ? "the patient" : r.triggeredBy.actorId} ·{" "}
+                  <ClientDate value={r.createdAt} options={{ month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} />
+                  {r.detail && r.delivery !== "sent" ? ` · ${r.detail}` : ""}
+                </p>
+              </li>
+            );
+          })}
+        </ul>
+      )}
     </Card>
   );
 }
