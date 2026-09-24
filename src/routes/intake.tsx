@@ -21,12 +21,10 @@ import {
 // §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
 import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
 import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
-import {
-  cleanEmergencyContacts,
-  emptyEmergencyContact,
-} from "@/lib/emergencyContacts";
+import { emptyEmergencyContact } from "@/lib/emergencyContacts";
 import {
   mergeSavedIntakeProfile,
+  profilePatch,
   seedIntakeProfile,
   type IntakeProfile,
 } from "@/lib/intakeProfile";
