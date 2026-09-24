@@ -58,13 +58,20 @@ describe("Revenue & billing and Consent & privacy groups", () => {
     }
   });
 
-  it("clinical coordinator and sys admin read CalAIM codes but not billing pages", () => {
-    for (const r of ["clinical_coordinator", "sys_admin"] as const) {
-      expect(resolveNavAccess(r, "/billing-calaim-codes").status).toBe("allowed");
-      expect(resolveNavAccess(r, "/billing").status).toBe("denied");
-      expect(canAccess(r, "billing").level).toBe("none");
-    }
+  it("clinical coordinator reads CalAIM codes but not billing pages", () => {
+    expect(resolveNavAccess("clinical_coordinator", "/billing-calaim-codes").status).toBe("allowed");
+    expect(resolveNavAccess("clinical_coordinator", "/billing").status).toBe("denied");
+    expect(resolveNavAccess("clinical_coordinator", "/admin-claims").status).toBe("denied");
+    expect(canAccess("clinical_coordinator", "billing").level).toBe("none");
     // population_health READ alone (pmhnp) does not open the codes page.
     expect(resolveNavAccess("pmhnp", "/billing-calaim-codes").status).toBe("denied");
+  });
+
+  it("sys admin has billing read only — opens billing pages, can never write", () => {
+    expect(canAccess("sys_admin", "billing").level).toBe("read");
+    expect(canAccess("sys_admin", "billing").level).not.toBe("write");
+    for (const to of ["/billing", "/admin-claims", "/billing-calaim-codes"]) {
+      expect([to, resolveNavAccess("sys_admin", to).status]).toEqual([to, "allowed"]);
+    }
   });
 });
