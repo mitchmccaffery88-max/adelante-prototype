@@ -1,27 +1,45 @@
-# Referral form: person's email + referrer must give phone or email
+# Referrals: enforce referrer contact, make it visible, attribute submission
 
-## What changes for people
-- The referral form (public page and the staff "submit on someone's behalf" form) gets an optional **Email** box for the person being referred, next to Phone.
-- The form will not submit unless the referrer gives a **work phone or a work email** (at least one). The message: "Add your work phone or work email so we can reach you if we can't reach this person."
-- When a referral is enrolled, the person's email carries over to their patient record.
-- On a referral's timeline, the "Contact the person who referred them" box only appears when the referrer can actually be reached. For older referrals with no referrer phone or email, it shows a plain note instead: "No contact details for the referrer are on file — there is no one to fall back on. Continue outreach to the person directly."
+## What exists today (verified)
+- `createReferral` (src/lib/ehr.ts ~7413) stores the submission as given — no referrer-contact check, no audit row, no submitter field.
+- The only caller is `ReferralSubmissionForm`, used as `variant="public"` on /referral and `variant="staff"` inside the /referral-queue "Submit on someone's behalf" panel.
+- `ReferralActor { staffId, name, role }` and `_referralActor()` (reads the acting staff member) already back `contactedBy` / `enrolledBy` / `declinedBy`, each with an audit row (`referral_contacted`, `referral_enrolled`, ...).
+- Drawer header shows only "Submitted {date}"; referrer name/phone/email appear only inside the fallback box.
+- 16 existing tests call `createReferral`, several without referrer contact.
 
-## Public vs. staff (item 3)
-Same rule on both. No real reason to differ: the referrer-fallback step and status texts depend on the referrer's contact details in the same way however the referral was entered, and staff entering a referral are relaying someone else's details, so they should capture them too. The staff form already shares every check with the public one, so one rule keeps them from drifting apart.
+## Build
 
-## Interpretation
-- The person's email box is fully optional and does not replace a phone: "No reliable phone" still means manual outreach, the call list stays phone-only, and the "No welcome text is sent" wording is untouched. Nothing is ever emailed.
-- "Standard validation" = trimmed, lowercase, basic `name@domain.tld` shape. It's checked on submit with a clear message, and a blank box is fine. The same check runs on the referrer's email when given, so a malformed referrer email can't satisfy the phone-or-email rule.
-- A phone counts only when it isn't blank (spaces trimmed). There is no phone-format check, to match what happens today.
-- Legacy referrals are shown honestly, never changed.
+### 1. Rule enforced in the data layer
+- In `createReferral`, before anything is stored: if neither `referrerPhone` nor `referrerEmail` is non-blank (trimmed, reusing `referrerHasContact` from referralOutreach.ts), throw an error carrying the same message the form shows (`REFERRER_CONTACT_REQUIRED_MSG`, moved to a shared spot so the form and data layer use one string). Nothing is stored, no task created, no audit row.
+- Blank strings are stored as `undefined`, so a "   " phone can't slip through.
+- Form keeps its own check (fast feedback); the data layer is the real guarantee — same pattern as the Part 2 consent gate.
+- Rule substance unchanged. Legacy records without contact are untouched (still handled by the honest drawer note).
+- Existing tests that create referrals without referrer contact get a `referrerPhone` added; one new test proves the throw.
 
-## Technical details
-- `src/components/referral/ReferralSubmissionForm.tsx`: add `email` to form state; add an Email input in "About the person"; add checks after the required-field check — `referrerPhone.trim() || referrerEmail.trim()` present, and email shape valid where given; pass `email: form.email.trim().toLowerCase() || undefined` to `createReferral` (writes the existing `Referral.email`). Small exported `isValidEmail` helper in the same file.
-- `src/lib/ehr.ts` `enrollReferral`: pass `email: r.email` into `createPatient` (it already accepts and stores `email`).
-- `src/lib/referralOutreach.ts`: add `referrerPhone?`/`referrerEmail?` to `OutreachShapedReferral`, and extend `ReferrerFallback` with `referrerUnreachable?: boolean`. In `needsReferrerFallback`, when a fallback would be due but the referrer has neither contact, return `{ due: false, referrerUnreachable: true, reason, explanation }` so the person-side reason is kept. The trigger conditions themselves (dead number / no phone / 2 unanswered) are unchanged.
-- `src/components/ReferralTimelineDrawer.tsx`: render the honest no-referrer-contact note when `referrerUnreachable`; the existing box otherwise, unchanged.
-- Tests: extend `referralPhase4e.test.ts` (fallback suppressed + `referrerUnreachable` when neither referrer contact exists; still due with only an email or only a phone); new test that enrollment copies email to the patient; form validation test for the phone-or-email rule and email shape.
-- Verification: typecheck, full tests, Playwright at desktop and phone — public form blocked without referrer contact, staff form (referral queue) blocked the same way, email saved on the referral, enrolling copies it to the patient, legacy no-contact referral shows the honest note. Zero console errors.
+### 2. Referrer always visible in the drawer
+- New "Referred by" block near the top of `ReferralTimelineDrawer`, always rendered: name, agency, source label, phone (tel: link), email (mailto: link). Missing values read "No phone on file" / "No email on file" — never hidden, never invented. Legacy with neither shows the existing no-contact note.
+- The fallback box keeps its own prompt but no longer needs to be the only place contact shows.
 
-## Not in scope
-No email sending, welcome email or outcome tracking; no change to manual-outreach/call-list logic or the welcome-text wording.
+**Queue-list question — recommendation: yes, a compact indicator, but agency + name only, not phone/email.**
+Reasoning: the queue is a scan-and-triage surface; knowing "Probation · J. Ortiz" at a glance helps staff prioritise and recognise repeat referrers, while full contact details are only needed once someone opens the referral to act on it. Putting phone numbers and emails in every row adds clutter and widens exposure of third-party contact details on a shared screen for no triage benefit. Row gets one muted line "Referred by {agency} · {name}"; if the referrer has no contact on file (legacy only), a small "No referrer contact" tag so staff know before opening.
+
+### 3. Real submission attribution
+- `Referral.submittedBy?: ReferralSubmitter`, where
+  `ReferralSubmitter = { kind: "staff"; actor: ReferralActor } | { kind: "external" }`.
+  Staff reuses `ReferralActor` exactly; external carries no actor because none exists.
+- `createReferral` takes a required `channel: "staff" | "public"` from the caller. For `"staff"` the data layer resolves the actor itself via `_referralActor()` — the caller cannot pass a name. For `"public"` it records `{ kind: "external" }`.
+  Why the channel comes from the caller: the acting-staff value in browser storage exists even on the public page, so the data layer can't tell a public submission from a staff one on its own. Tying it to which form was used is the honest signal available without new sign-in.
+- Audit row at creation, same shape as other referral actions: `action: "referral_submitted"`, actor = staff id or `"external"`, detail = channel, referrer name + agency, and which contact kinds were provided ("phone", "email", or both) — not the values themselves, keeping third-party contact out of the audit stream as with other rows. Timestamp = `createdAt`.
+- Drawer header: "Submitted {date} by {name} ({role})" for staff; "Submitted {date} through the public referral form — no staff member attached" for external; legacy records with no field: "Submitter not recorded".
+- The referral-queue timeline/activity (if it lists audit actions) gets a label for `referral_submitted`.
+
+## Tests
+- Data-layer throw with neither contact (including whitespace-only); passes with only phone / only email.
+- Staff channel records the acting staff member as `submittedBy`; public records `{ kind: "external" }`.
+- Every successful creation writes exactly one `referral_submitted` audit row; a rejected one writes none.
+
+## Browser check (desktop + phone)
+Data-layer rejection via a direct call in the page; drawer shows referrer block on a referral with no fallback pending; staff-submitted referral names the staff member; public one reads as externally submitted; queue row shows the compact referrer line. Zero console errors.
+
+## Non-goals
+No change to the rule itself, outreach/call-list logic, welcome text, or referral actions. No email sending. No new sign-in.
