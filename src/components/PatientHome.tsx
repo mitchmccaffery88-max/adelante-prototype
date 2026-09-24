@@ -39,6 +39,7 @@ import { InstallAppButton } from "@/components/InstallAppButton";
 import { usePwaInstallPrompt } from "@/hooks/usePwaInstallPrompt";
 import { useEffect, useRef, useState } from "react";
 import { REASSESS_COPY, rescreenName } from "@/lib/reassessmentCopy";
+import { HRSN_DOMAIN_NAME, PHASE9A_COPY } from "@/lib/phase9aCopy";
 import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
@@ -158,6 +159,7 @@ export function PatientHome() {
       />
 
       <ReassessmentOrCompleteTile patientId={patient.id} />
+      <PreReleaseKnownNeedsCard patientId={patient.id} />
 
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
@@ -653,6 +655,45 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
       <Button asChild size="sm" variant="outline">
         <Link to="/intake">{t("homeUpdateAnswers")}</Link>
       </Button>
+    </Card>
+  );
+}
+
+// §Phase 9a — partner-reported pre-release HRSN needs, read-only. Interpersonal
+// safety is staff-only and never listed; a domain whose plan item is marked
+// not visible to the patient is also withheld.
+function PreReleaseKnownNeedsCard({ patientId }: { patientId: string }) {
+  const { lang } = useI18n();
+  const L = lang === "es" ? "es" : "en";
+  const c = PHASE9A_COPY[L];
+  const keysJson = useEhr(() => {
+    const p = AdelanteEHR.getPatient(patientId);
+    const r = p?.screeners?.["ahc-hrsn"];
+    if (!r || r.context !== "pre_release") return "[]";
+    const hidden = (p?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient === false);
+    const keys = (r.domains ?? [])
+      .filter((d) => d.positive && d.key !== "safety" && HRSN_DOMAIN_NAME.en[d.key])
+      .filter((d) => !hidden.some((i) => i.need.trim().toLowerCase() === d.label.trim().toLowerCase()))
+      .map((d) => d.key);
+    return JSON.stringify(keys);
+  });
+  const keys = JSON.parse(keysJson) as string[];
+  if (keys.length === 0) return null;
+  return (
+    <Card className="p-4 space-y-2" data-testid="prerelease-known-needs">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="font-medium text-navy">{c.knownTitle}</div>
+        <Badge variant="outline" className="text-xs">{c.knownBadge}</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">{c.knownBody}</p>
+      <ul className="flex flex-wrap gap-2">
+        {keys.map((k) => (
+          <li key={k} className="rounded-full border bg-secondary/40 px-3 py-1 text-sm">
+            {HRSN_DOMAIN_NAME[L][k]}
+          </li>
+        ))}
+      </ul>
+      <p className="text-xs text-muted-foreground">{c.knownFooter}</p>
     </Card>
   );
 }
