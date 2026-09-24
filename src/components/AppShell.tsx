@@ -75,7 +75,13 @@ export function AppShell() {
     }
     AdelanteEHR.setCurrentPatientId(stored);
   }, []);
-  const { staffId, setActingStaff } = useActingStaff();
+  const {
+    staffId,
+    setActingStaff,
+    role: actingRole,
+    staffName: actingStaffName,
+  } = useActingStaff();
+  const actingRoleLabel = STAFF_ROLES.find((r) => r.key === actingRole)?.label ?? actingRole;
   // §Platform nav — every staff link comes from the RBAC nav engine, so a
   // role that fails a gate never sees the entry (same rule as recordSections).
   const staffNavGroups = useStaffNavGroups();
@@ -189,7 +195,19 @@ export function AppShell() {
                   })}
           </nav>
 
-          <div className="ml-auto flex items-center gap-2">
+          <div className="ml-auto flex items-center gap-2 min-w-0">
+            {/* B10 — who the staff user is acting as, always visible. */}
+            {isStaffSurface && (
+              <div
+                data-testid="acting-role-indicator"
+                className="min-w-0 max-w-[11rem] sm:max-w-xs rounded-full border border-teal/40 bg-teal/10 px-2.5 py-1 text-[11px] leading-tight text-navy"
+                title={`Acting as: ${actingRoleLabel} · ${actingStaffName}`}
+              >
+                <span className="hidden sm:inline text-muted-foreground">Acting as: </span>
+                <span className="font-semibold">{actingRoleLabel}</span>
+                <span className="block truncate sm:inline"> · {actingStaffName}</span>
+              </div>
+            )}
             {isPublicSurface && (
               <Link
                 to="/start/signup"
