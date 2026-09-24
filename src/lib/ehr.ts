@@ -311,7 +311,6 @@ export function isReferralClosed(s: ReferralStatus): boolean {
   return s === "declined" || s === "enrolled";
 }
 export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
-export type BillingStatus = "draft" | "ready" | "submitted" | "paid" | "denied" | "write_off";
 export type CoverageStatus =
   | "active"
   | "suspended"
@@ -1711,7 +1710,6 @@ export interface Appointment {
   status: SessionStatus;
   /** How this appointment was created. Required — see `AppointmentSource`. */
   source: AppointmentSource;
-  billingStatus: BillingStatus;
   videoUrl?: string;
   fundingLane?: FundingLane;
   /** What kind of visit this is (added in scheduling v2). */
@@ -1720,23 +1718,14 @@ export interface Appointment {
   modality?: "video" | "phone" | "in_person";
   /** Required when modality === "in_person". */
   locationId?: string;
-  /** Billing coordinator fields (pass-2 polish). */
+  /**
+   * Optional per-visit charge override. §Phase 7b — billing STATUS lives only
+   * on the Claim (ehr-ext.ts); the amount is read once, at claim creation,
+   * through `claimChargeCents`.
+   */
   chargeCents?: number;
-  denialReason?: string;
-  submittedAt?: string;
-  paidAt?: string;
-  billingHistory?: BillingHistoryEntry[];
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
-}
-
-export interface BillingHistoryEntry {
-  id: string;
-  at: string;
-  actor: string;
-  from: BillingStatus;
-  to: BillingStatus;
-  note?: string;
 }
 
 // ---------- Scheduling: service types + locations ----------
@@ -4146,7 +4135,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "scheduled",
     source: "staff_scheduled",
-    billingStatus: "draft",
   },
   {
     id: "a2",
@@ -4156,7 +4144,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
-    billingStatus: "submitted",
   },
   {
     id: "a3",
@@ -4166,7 +4153,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "scheduled",
     source: "staff_scheduled",
-    billingStatus: "draft",
   },
   {
     id: "a4",
@@ -4176,7 +4162,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "no_show",
     source: "staff_scheduled",
-    billingStatus: "draft",
   },
   {
     id: "a5",
@@ -4186,7 +4171,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
-    billingStatus: "paid",
   },
   {
     id: "a6",
@@ -4196,7 +4180,6 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
-    billingStatus: "denied",
   },
 ];
 
@@ -5901,6 +5884,22 @@ export interface CatalogResolutionMetrics {
   recentManualJustifications: { at: string; drugName: string; justification: string }[];
 }
 /** Real acting-staff attribution for a referral disposition (§Phase 4a). */
+/**
+ * §Phase 7b — ehr-ext owns claims and registers here at load, so ehr.ts can
+ * open a claim when a visit is attended and read billing status for exports
+ * without a circular import.
+ */
+export interface ClaimBridge {
+  onAttended(apptId: string): void;
+  bucketFor(apptId: string): string | undefined;
+  chargeFor(apptId: string): number | undefined;
+  bucketCounts(): Record<string, number>;
+}
+let _claimBridge: ClaimBridge | null = null;
+export function registerClaimBridge(b: ClaimBridge) {
+  _claimBridge = b;
+}
+
 function _referralActor(): ReferralActor {
   const staff = getActingStaff();
   return { staffId: staff.id, name: staff.name, role: getActingRole() };
@@ -7783,7 +7782,6 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_scheduled",
       id: uid(),
       status: "scheduled",
-      billingStatus: "draft",
     };
     appointments.push(a);
     // Detect provider switch vs. patient's last provider (same service type when set).
@@ -8026,9 +8024,9 @@ export const AdelanteEHR = {
     const prev = a.status;
     a.status = status;
     if (status === "attended") {
-      // Attended visits become "ready" claims (require billing coordinator submit).
-      a.billingStatus = "ready";
-      a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
+      // §Phase 7b — an attended visit opens its claim at `documented`. The
+      // claim (not the visit) carries billing status from here on.
+      _claimBridge?.onAttended(a.id);
     }
     // Auto-generate CM follow-up on no_show.
     if (status === "no_show" && prev !== "no_show") {
@@ -10120,14 +10118,7 @@ export const AdelanteEHR = {
     const total = appointments.filter((a) => a.status !== "scheduled").length;
     const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100);
     const intakeVelocityDays = 2.4; // mock: avg referral → first session
-    const billing = {
-      draft: appointments.filter((a) => a.billingStatus === "draft").length,
-      ready: appointments.filter((a) => a.billingStatus === "ready").length,
-      submitted: appointments.filter((a) => a.billingStatus === "submitted").length,
-      paid: appointments.filter((a) => a.billingStatus === "paid").length,
-      denied: appointments.filter((a) => a.billingStatus === "denied").length,
-      write_off: appointments.filter((a) => a.billingStatus === "write_off").length,
-    };
+    const billing = _claimBridge?.bucketCounts() ?? {};
     return { enrolled, completionRate, intakeVelocityDays, billing };
   },
 
@@ -13073,46 +13064,42 @@ export const AdelanteEHR = {
         return 15000;
     }
   },
-  transitionBilling(
-    apptId: string,
-    to: BillingStatus,
-    opts?: { actor?: string; note?: string; denialReason?: string },
-  ): { ok: true } | { ok: false; error: string } {
-    const a = appointments.find((x) => x.id === apptId);
-    if (!a) return { ok: false, error: "Appointment not found." };
-    const from = a.billingStatus;
-    const allowed: Record<BillingStatus, BillingStatus[]> = {
-      draft: ["ready", "write_off"],
-      ready: ["submitted", "write_off", "draft"],
-      submitted: ["paid", "denied"],
-      denied: ["ready", "write_off"],
-      paid: [],
-      write_off: ["draft"],
-    };
-    if (!allowed[from].includes(to)) {
-      return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
-    }
-    if (to === "denied" && !opts?.denialReason) {
-      return { ok: false, error: "Denial reason is required." };
-    }
-    a.billingStatus = to;
-    if (to === "submitted") a.submittedAt = new Date().toISOString();
-    if (to === "paid") a.paidAt = new Date().toISOString();
-    if (to === "denied") a.denialReason = opts?.denialReason;
-    a.chargeCents = a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType);
-    a.billingHistory = [
-      ...(a.billingHistory ?? []),
-      {
-        id: uid(),
-        at: new Date().toISOString(),
-        actor: opts?.actor ?? "billing",
-        from,
-        to,
-        note: opts?.note ?? opts?.denialReason,
+  /**
+   * §Phase 7b — the ONE place a claim amount is decided. Every claim-creation
+   * path in ehr-ext.ts calls this; no path carries its own fallback number.
+   * Next phase swaps `chargeForService` for a real rate table here only.
+   */
+  claimChargeCents(input: { serviceType?: ServiceType; apptChargeCents?: number }): number {
+    return input.apptChargeCents ?? AdelanteEHR.chargeForService(input.serviceType);
+  },
+  /** §Phase 7b — audit row for every claim status move (billing or note signature). */
+  recordClaimStatusChange(input: {
+    claimId: string;
+    patientId: string;
+    from: string;
+    to: string;
+    actorId: string;
+    actorRole: string;
+    actorName?: string;
+    via: "billing" | "note_signature";
+    reason?: string;
+  }) {
+    appendAudit({
+      category: "clinical",
+      action: "claim_status_changed",
+      patientId: input.patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: {
+        claimId: input.claimId,
+        from: input.from,
+        to: input.to,
+        via: input.via,
+        ...(input.actorName ? { actorName: input.actorName } : {}),
+        ...(input.reason ? { reason: input.reason } : {}),
       },
-    ];
+    });
     emit();
-    return { ok: true };
   },
   /** ISL/self-pay export: all appointments on ISL lane in the given range. */
   exportIslReport(range?: { from?: string; to?: string }): string {
@@ -13137,9 +13124,8 @@ export const AdelanteEHR = {
     const lines = rows.map((a) => {
       const p = patients.find((x) => x.id === a.patientId);
       const c = clinicians.find((x) => x.id === a.clinicianId);
-      const charge = ((a.chargeCents ?? AdelanteEHR.chargeForService(a.serviceType)) / 100).toFixed(
-        2,
-      );
+      const claimCents = _claimBridge?.chargeFor(a.id);
+      const charge = ((claimCents ?? AdelanteEHR.claimChargeCents({ serviceType: a.serviceType, apptChargeCents: a.chargeCents })) / 100).toFixed(2);
       return [
         a.id,
         a.start.slice(0, 10),
@@ -13150,7 +13136,7 @@ export const AdelanteEHR = {
         a.durationMin,
         a.fundingLane ?? "",
         a.islReason ?? "",
-        a.billingStatus,
+        _claimBridge?.bucketFor(a.id) ?? "no_claim",
         charge,
       ]
         .map((v) => String(v).replace(/,/g, ";"))

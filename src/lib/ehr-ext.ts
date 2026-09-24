@@ -10,8 +10,10 @@ import {
   GROUP_MIN_BILLABLE_ATTENDEES,
   groupBillingCode,
   isBillableGroupCategory,
+  registerClaimBridge,
   type ServiceType,
 } from "./ehr";
+import { canAccess, getActingRole, getActingStaff } from "./roles";
 import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
 
 // ---------- Types ----------
@@ -164,7 +166,50 @@ export type ClaimState =
   | "submitted"
   | "paid"
   | "denied"
-  | "partial";
+  | "partial"
+  | "written_off";
+
+/**
+ * §Phase 7b — the only allowed claim moves. `transitionClaim` enforces this.
+ * `written_off → generated` is a reversal (late payment / mistaken write-off)
+ * and needs a reason, like the write-off itself.
+ */
+export const CLAIM_TRANSITIONS: Record<ClaimState, ClaimState[]> = {
+  documented: ["signed", "written_off"],
+  signed: ["coded", "written_off"],
+  coded: ["generated", "written_off"],
+  generated: ["submitted", "written_off"],
+  submitted: ["paid", "denied"],
+  denied: ["generated", "written_off"],
+  paid: [],
+  partial: [],
+  written_off: ["generated"],
+};
+
+/** Moves that must carry a reason. */
+export function claimMoveNeedsReason(from: ClaimState, to: ClaimState): boolean {
+  return to === "denied" || to === "written_off" || from === "written_off";
+}
+
+/** The six familiar billing labels (plus partial), each a set of claim states. */
+export type BillingBucket = "draft" | "ready" | "submitted" | "paid" | "denied" | "write_off" | "partial";
+export function claimBillingBucket(state: ClaimState): BillingBucket {
+  switch (state) {
+    case "documented":
+    case "signed":
+    case "coded":
+      return "draft";
+    case "generated":
+      return "ready";
+    case "written_off":
+      return "write_off";
+    default:
+      return state;
+  }
+}
+
+export const BILLING_WRITE_REFUSED = "Your role can view billing but can't change it.";
+
 export interface Claim {
   id: string;
   encounterId: string;
@@ -174,7 +219,15 @@ export interface Claim {
   chargeCents: number;
   denialReason?: string;
   updatedAt: string;
-  history: { at: string; state: ClaimState; actor?: string; note?: string }[];
+  history: {
+    at: string;
+    state: ClaimState;
+    /** Staff id (or "system" for creation). */
+    actor?: string;
+    actorName?: string;
+    role?: string;
+    note?: string;
+  }[];
   /** §Phase 3 — HCPCS/CPT when the generating hook knows it (Peer, CHW). */
   serviceCode?: string;
   units?: number;
@@ -598,14 +651,36 @@ export const AdelanteEHRExt = {
     if (this.isNoteSigned(encounterId)) return;
     noteSignatures.push({ id: uid(), encounterId, clinicianId: signerId, signedAt: iso(), method });
     ehrBus.publish({ type: "note.signed", encounterId, clinicianId: signerId });
-    // Advance any linked claim
+    this.markClaimSignedFromNote(encounterId, signerId);
+  },
+
+  /**
+   * §Phase 7b / Phase 1e — signing is a CLINICAL action: the signer (already
+   * authorized by `signUnsignedWorkRow`) confirms the documentation. It only
+   * ever does documented → signed, so it deliberately does not need billing
+   * write. Attributed to the signer and audited like every other move.
+   */
+  markClaimSignedFromNote(encounterId: string, signerId: string) {
     const claim = claims.find((c) => c.encounterId === encounterId);
-    if (claim && claim.state === "documented") {
-      claim.state = "signed";
-      claim.updatedAt = iso();
-      claim.history.push({ at: iso(), state: "signed", actor: signerId });
-      ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
-    }
+    if (!claim || claim.state !== "documented") return;
+    const at = iso();
+    claim.state = "signed";
+    claim.updatedAt = at;
+    claim.history.push({ at, state: "signed", actor: signerId, note: "note signed" });
+    AdelanteEHR.recordClaimStatusChange({
+      claimId: claim.id,
+      patientId: claim.patientId,
+      from: "documented",
+      to: "signed",
+      actorId: signerId,
+      actorRole: getActingRole(),
+      via: "note_signature",
+    });
+    ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+  },
+
+  claimForEncounter(encounterId: string): Claim | undefined {
+    return claims.find((c) => c.encounterId === encounterId);
   },
 
 
@@ -620,7 +695,10 @@ export const AdelanteEHRExt = {
       patientId: appt.patientId,
       clinicianId: appt.clinicianId,
       state: "documented",
-      chargeCents: appt.chargeCents ?? AdelanteEHR.chargeForService?.(appt.serviceType) ?? 12000,
+      chargeCents: AdelanteEHR.claimChargeCents({
+        ...(appt.serviceType ? { serviceType: appt.serviceType } : {}),
+        ...(appt.chargeCents !== undefined ? { apptChargeCents: appt.chargeCents } : {}),
+      }),
       updatedAt: iso(),
       history: [{ at: iso(), state: "documented", actor: "system" }],
     };
@@ -628,14 +706,60 @@ export const AdelanteEHRExt = {
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
   },
-  advanceClaim(claimId: string, to: ClaimState, actor?: string, denialReason?: string) {
+  /**
+   * §Phase 7b — the ONE write path for billing status. The actor is the real
+   * acting staff member (callers cannot pass one); only roles with `billing`
+   * write may call it — a read-only role is refused here and nothing changes.
+   */
+  transitionClaim(
+    claimId: string,
+    to: ClaimState,
+    opts?: { denialReason?: string; note?: string },
+  ): { ok: true } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
     const c = claims.find((x) => x.id === claimId);
-    if (!c) return;
+    if (!c) return { ok: false, error: "Claim not found." };
+    const from = c.state;
+    if (!CLAIM_TRANSITIONS[from].includes(to))
+      return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    const reason = (opts?.denialReason ?? opts?.note ?? "").trim();
+    if (claimMoveNeedsReason(from, to) && !reason)
+      return {
+        ok: false,
+        error:
+          to === "denied"
+            ? "Denial reason is required."
+            : from === "written_off"
+              ? "A reason is required to reverse a write-off."
+              : "A reason is required to write off a claim.",
+      };
+    const staff = getActingStaff();
+    const at = iso();
     c.state = to;
-    c.updatedAt = iso();
-    if (denialReason) c.denialReason = denialReason;
-    c.history.push({ at: iso(), state: to, actor, note: denialReason });
+    c.updatedAt = at;
+    if (to === "denied") c.denialReason = reason;
+    c.history.push({
+      at,
+      state: to,
+      actor: staff.id,
+      actorName: staff.name,
+      role,
+      ...(reason ? { note: reason } : {}),
+    });
+    AdelanteEHR.recordClaimStatusChange({
+      claimId: c.id,
+      patientId: c.patientId,
+      from,
+      to,
+      actorId: staff.id,
+      actorRole: role,
+      actorName: staff.name,
+      via: "billing",
+      ...(reason ? { reason } : {}),
+    });
     ehrBus.publish({ type: "claim.updated", claimId: c.id, state: to });
+    return { ok: true };
   },
 
   /**
@@ -668,7 +792,6 @@ export const AdelanteEHRExt = {
      */
     renderingProviderId?: string;
     noteId: string;
-    chargeCents?: number;
   }): Claim | null {
     // HARD SPLIT 1 (category): `open_psychoeducational` occurrences never
     // create a claim. Enforced here, at the single write point, so no caller
@@ -703,8 +826,7 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: renderingProviderId || input.facilitatorId,
       state: "documented",
-      chargeCents:
-        input.chargeCents ?? AdelanteEHR.chargeForService?.("therapy_group") ?? 12000,
+      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "therapy_group" }),
       ...(session && groupBillingCode(session.category)
         ? { serviceCode: groupBillingCode(session.category) }
         : {}),
@@ -730,7 +852,6 @@ export const AdelanteEHRExt = {
     clinicianId: string;
     minutes: number;
     mode?: string;
-    chargeCents?: number;
   }): Claim | null {
     const decision = peerBillingDecision({
       staffId: input.staffId,
@@ -758,8 +879,7 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: input.clinicianId,
       state: "documented",
-      chargeCents:
-        input.chargeCents ?? AdelanteEHR.chargeForService?.("peer_support") ?? 6000,
+      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "peer_support" }),
       serviceCode: decision.serviceCode,
       units: decision.units,
       taxonomy: decision.taxonomy,
@@ -788,7 +908,6 @@ export const AdelanteEHRExt = {
     clinicianId: string;
     dateISO: string;
     minutes: number;
-    chargeCents?: number;
     /** Provider picked in the note UI; `null` means "asked, none picked". */
     supervisingStaffId?: string | null;
   }): Claim | null {
@@ -834,8 +953,7 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: input.clinicianId,
       state: "documented",
-      chargeCents:
-        input.chargeCents ?? AdelanteEHR.chargeForService?.("case_management") ?? 5000,
+      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "case_management" }),
       serviceCode: decision.serviceCode,
       units: decision.units,
       supervisingStaffId: decision.supervisingStaffId,
@@ -852,20 +970,56 @@ export const AdelanteEHRExt = {
   subscribe,
 };
 
-// Seed a few completed-but-unsigned encounters for the notes queue demo.
+// §Phase 7b — every attended visit has a claim; claims are the only billing
+// status. Demo spread (was on the visits themselves): a2 submitted, a5 paid,
+// any other attended visit stays documented/unsigned so the notes
+// queue still has work. Seed moves are written directly and marked "seed".
 (() => {
   const appts = AdelanteEHR.listAppointments?.() ?? [];
+  const path: Record<string, ClaimState[]> = {
+    a2: ["signed", "coded", "generated", "submitted"],
+    a5: ["signed", "coded", "generated", "submitted", "paid"],
+  };
   appts
     .filter((a) => a.status === "attended")
-    .slice(0, 3)
-    .forEach((a, i) => {
-      if (i === 0) {
-        // First one is signed to show the mix.
-        noteSignatures.push({ id: uid(), encounterId: a.id, clinicianId: a.clinicianId, signedAt: iso(), method: "human" });
+    .forEach((a) => {
+      const claim = AdelanteEHRExt.upsertClaimFromEncounter(a.id);
+      const steps = path[a.id];
+      if (!steps) return;
+      noteSignatures.push({ id: uid(), encounterId: a.id, clinicianId: a.clinicianId, signedAt: iso(), method: "human" });
+      for (const st of steps) {
+        claim.state = st;
+        claim.history.push({ at: iso(), state: st, actor: "seed" });
       }
-      AdelanteEHRExt.upsertClaimFromEncounter(a.id);
+      if (claim.state === "denied") claim.denialReason = "Auth required";
     });
+  registerClaimBridge({
+    onAttended: (apptId) => {
+      AdelanteEHRExt.upsertClaimFromEncounter(apptId);
+    },
+    bucketFor: (apptId) => {
+      const c = claims.find((x) => x.encounterId === apptId);
+      return c ? claimBillingBucket(c.state) : undefined;
+    },
+    chargeFor: (apptId) => claims.find((x) => x.encounterId === apptId)?.chargeCents,
+    bucketCounts: () => claimBucketCounts(claims),
+  });
 })();
+
+/** Counts claims under the familiar billing labels. Shared by every summary. */
+export function claimBucketCounts(list: Claim[]): Record<BillingBucket, number> {
+  const out: Record<BillingBucket, number> = {
+    draft: 0,
+    ready: 0,
+    submitted: 0,
+    paid: 0,
+    denied: 0,
+    write_off: 0,
+    partial: 0,
+  };
+  for (const c of list) out[claimBillingBucket(c.state)] += 1;
+  return out;
+}
 
 // §EHR audit Phase 2a — reconcile the seeded licence documents with the
 // booking hard-stop field on startup, so the two dates agree from the first

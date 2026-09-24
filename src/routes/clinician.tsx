@@ -1,3 +1,4 @@
+import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
@@ -882,7 +883,11 @@ function ApptCard({
                 {a.status.replace("_", " ")}
               </Badge>
               <Badge variant="outline" className="capitalize">
-                {(t as (k: string) => string)("clinBillingPrefix")}: {a.billingStatus}
+                {(t as (k: string) => string)("clinBillingPrefix")}:{" "}
+                {(() => {
+                  const c = AdelanteEHRExt.claimForEncounter(a.id);
+                  return c ? c.state.replace("_", " ") : "no claim";
+                })()}
               </Badge>
             </div>
           </div>
