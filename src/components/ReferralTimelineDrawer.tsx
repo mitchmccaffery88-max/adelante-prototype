@@ -36,6 +36,8 @@ import {
   OUTREACH_FALLBACK_DRAFT,
   REFERRAL_OUTREACH_OUTCOMES,
   canWorkReferralOutreach,
+  latestOutreachAttempt,
+  outreachAttemptSummary,
   needsReferrerFallback,
   referralOutreachOutcomeLabel,
   type ReferralOutreachOutcome,
@@ -168,6 +170,18 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                     iso={referral.welcomeSms?.at}
                     reached={referral.welcomeSms?.status === "sent"}
                   />
+                  {/* B4 — the latest logged manual attempt; "Contacted" when reached. */}
+                  {(() => {
+                    const last = latestOutreachAttempt(referral);
+                    if (!last) return null;
+                    return (
+                      <TimelineRow
+                        label={`${last.outcome === "reached" ? "Contacted" : "Outreach attempted"} — ${outreachAttemptSummary(last)}`}
+                        iso={last.at}
+                        reached={last.outcome === "reached"}
+                      />
+                    );
+                  })()}
                   <TimelineRow label="Enrolled" reached={false} />
                   <TimelineRow label="Case manager assigned" reached={false} />
                   <TimelineRow label="Clinician assigned" reached={false} />

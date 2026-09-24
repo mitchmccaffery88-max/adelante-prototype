@@ -2,6 +2,7 @@ import { Card } from "@/components/ui/card";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { ClientDate } from "@/components/ClientDate";
 import { Check } from "lucide-react";
+import { latestOutreachAttempt, outreachAttemptSummary } from "@/lib/referralOutreach";
 import {
   firstAttendedAppointment,
   nextScheduledAppointment,
@@ -40,7 +41,10 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
   const nextBooked = firstAttended ? undefined : nextScheduledAppointment(patient.id);
   const staleness = postEnrollmentStaleness(patient);
 
+  // B4 — a logged manual attempt counts as outreach on the journey.
+  const lastAttempt = referral ? latestOutreachAttempt(referral) : undefined;
   const outreachAt =
+    lastAttempt?.at ??
     referral?.smsSentAt ??
     (referral?.outreachTask === "manual_call" ? referral.createdAt : undefined);
   const enrolledAt =
@@ -66,8 +70,15 @@ export function ReferralStatusTimeline({ patient }: { patient: Patient }) {
     },
     {
       key: "outreach",
-      label: referral?.outreachTask === "manual_call" ? "Manual outreach queued" : "Welcome outreach",
+      label: lastAttempt
+        ? lastAttempt.outcome === "reached"
+          ? "Contacted"
+          : "Outreach attempted"
+        : referral?.outreachTask === "manual_call"
+          ? "Manual outreach queued"
+          : "Welcome outreach",
       reachedAt: outreachAt,
+      ...(lastAttempt ? { note: outreachAttemptSummary(lastAttempt) } : {}),
     },
     {
       key: "enrolled",

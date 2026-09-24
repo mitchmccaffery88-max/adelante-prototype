@@ -25,7 +25,7 @@ import {
   referralAging,
   referralAgingLabel,
 } from "@/lib/referralAging";
-import { hasOpenOutreachTask } from "@/lib/referralOutreach";
+import { hasOpenOutreachTask, latestOutreachAttempt } from "@/lib/referralOutreach";
 import { ReferralTimelineDrawer } from "@/components/ReferralTimelineDrawer";
 import { ChevronRight } from "lucide-react";
 
@@ -190,7 +190,9 @@ export function ReferralTrackerCard({
               ? AdelanteEHR.getPatient(r.enrolledPatientId)
               : undefined;
             const outreachAt =
-              r.smsSentAt ?? (r.outreachTask === "manual_call" ? r.createdAt : undefined);
+              latestOutreachAttempt(r)?.at ??
+              r.smsSentAt ??
+              (r.outreachTask === "manual_call" ? r.createdAt : undefined);
             const enrolledAt =
               patient?.enrolledAt ?? (r.status === "enrolled" ? r.createdAt : undefined);
             const stepDates: { label: string; iso?: string }[] = [
