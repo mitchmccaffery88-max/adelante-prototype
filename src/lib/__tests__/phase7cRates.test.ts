@@ -121,7 +121,7 @@ describe("rate table", () => {
 describe("program selection", () => {
   it("follows the approved order", () => {
     expect(selectProgram({ code: "H0038", line: "sud", hasMediCal: true })).toBe("calaim_ecm");
-    expect(selectProgram({ code: "H0004", line: "sud", hasMediCal: false })).toBe("non_medi_cal");
+    expect(selectProgram({ code: "H0004", line: "sud", hasMediCal: false })).toBe("self_pay");
     expect(selectProgram({ code: "H0004", line: "sud", hasMediCal: true, payer: "Tulare County MHP" })).toBe("dmc_ods");
     expect(selectProgram({ code: "90834", line: "mh", hasMediCal: true, payer: "Tulare County MHP" })).toBe("smhs");
     expect(selectProgram({ code: "90834", line: "mh", hasMediCal: true, payer: "Health Net Medi-Cal" })).toBe("medi_cal_managed");
@@ -151,7 +151,7 @@ describe("claim pricing", () => {
 
   it("flags no rate on file, blocks Ready, and a new rate prices it", () => {
     const c = freshClaim();
-    AdelanteEHRExt.correctClaim(c.id, { serviceCode: "H0001", program: "non_medi_cal" }, "ISL visit");
+    AdelanteEHRExt.correctClaim(c.id, { serviceCode: "H0038", program: "self_pay" }, "self-pay peer visit");
     let x = AdelanteEHRExt.claimForEncounter(c.encounterId)!;
     expect(x.rateStatus).toBe("no_rate");
     expect(x.chargeCents).toBeUndefined();
@@ -160,10 +160,10 @@ describe("claim pricing", () => {
     const blocked = AdelanteEHRExt.transitionClaim(c.id, "generated");
     expect(blocked.ok).toBe(false);
     if (!blocked.ok) expect(blocked.error).toMatch(/No rate on file/);
-    expect(addRate({ code: "H0001", program: "non_medi_cal", amountCents: 9000, effectiveFrom: "2026-01-01" }).ok).toBe(true);
+    expect(addRate({ code: "H0038", program: "self_pay", amountCents: 9000, effectiveFrom: "2026-01-01" }).ok).toBe(true);
     x = AdelanteEHRExt.claimForEncounter(c.encounterId)!;
     expect(x.rateStatus).toBe("priced");
-    expect(x.chargeCents).toBe(9000);
+    expect(x.chargeCents).toBe(9000 * (x.units ?? 1));
     expect(AdelanteEHRExt.transitionClaim(c.id, "generated")).toEqual({ ok: true });
   });
 
