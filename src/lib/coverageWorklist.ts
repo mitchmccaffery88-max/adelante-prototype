@@ -53,11 +53,12 @@ export const COVERAGE_STALENESS_DRAFT = {
     "Draft: Medi-Cal eligibility is determined per month of service, so a check older than 30 days is treated as due and older than 60 days as overdue. No automated eligibility transaction exists in this app — every check on this list is a person picking up a phone or a portal.",
 } as const;
 
-export type CoverageCheckState = "never_checked" | "needs_verification" | "overdue" | "due" | "current";
+export type CoverageCheckState = "never_checked" | "needs_verification" | "overdue" | "due" | "current" | "not_medi_cal_reported";
 
 export const COVERAGE_CHECK_STATE_LABEL: Record<CoverageCheckState, string> = {
   never_checked: "Never checked",
   needs_verification: "Needs verification",
+  not_medi_cal_reported: "Not Medi-Cal (reported)",
   overdue: "Overdue",
   due: "Due",
   current: "Current",
@@ -75,7 +76,21 @@ const STATE_RANK: Record<CoverageCheckState, number> = {
   overdue: 2,
   due: 3,
   current: 4,
+  // §8b follow-up — reported as not Medi-Cal and nothing Medi-Cal on file.
+  // Kept visible under its own filter; a later Medi-Cal report or plan span
+  // moves the person straight back into the normal states.
+  not_medi_cal_reported: 5,
 };
+
+function reportedNotMediCal(p: Patient): boolean {
+  const c = p.coverage;
+  const type = c?.coverageType;
+  if (!type || type === "unknown" || type === "medi_cal" || type === "dual") return false;
+  const mediCalSpan = (c?.plans ?? []).some(
+    (s) => !s.to && (s.managedCarePlanId || /medi-?cal/i.test(s.payer)),
+  );
+  return !mediCalSpan;
+}
 
 /** Task types created by Phase 3a's Medi-Cal follow-up actions. */
 export const COVERAGE_FOLLOW_UP_TASK_TYPES = [
@@ -154,7 +169,11 @@ export function coverageWorklistRows(
     const pendingReport =
       newest && newest.reportSource ? (newest as CoverageWorklistRow["pendingReport"]) : undefined;
     const base = coverageCheckState(lastCheck?.checkedAt, now);
-    const { state, days } = pendingReport ? { state: "needs_verification" as const, days: base.days } : base;
+    const { state, days }: { state: CoverageCheckState; days?: number } = pendingReport
+      ? { state: "needs_verification", days: base.days }
+      : !lastCheck && reportedNotMediCal(p)
+        ? { state: "not_medi_cal_reported", days: undefined }
+        : base;
     const plan = (p.coverage?.plans ?? []).find(
       (c) => +new Date(c.from) <= now && (!c.to || +new Date(c.to) >= now),
     );
@@ -189,6 +208,7 @@ export interface CoverageWorklistSummary {
   total: number;
   neverChecked: number;
   needsVerification: number;
+  notMediCalReported: number;
   overdue: number;
   due: number;
   current: number;
@@ -200,6 +220,7 @@ export function coverageWorklistSummary(rows: CoverageWorklistRow[]): CoverageWo
     total: rows.length,
     neverChecked: rows.filter((r) => r.state === "never_checked").length,
     needsVerification: rows.filter((r) => r.state === "needs_verification").length,
+    notMediCalReported: rows.filter((r) => r.state === "not_medi_cal_reported").length,
     overdue: rows.filter((r) => r.state === "overdue").length,
     due: rows.filter((r) => r.state === "due").length,
     current: rows.filter((r) => r.state === "current").length,

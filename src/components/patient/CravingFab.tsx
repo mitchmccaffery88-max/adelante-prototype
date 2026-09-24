@@ -10,18 +10,20 @@ import { useI18n } from "@/lib/i18n";
  */
 /** Surfaces where the FAB would be a dead-end self-link, or would sit on top
  *  of the page's own primary action. Checked against the live pathname. */
-// /intake: its fixed Save & continue bar sits exactly where the FAB would.
-const FAB_SUPPRESSED = ["/craving", "/crisis", "/slip", "/adel", "/intake"];
+const FAB_SUPPRESSED = ["/craving", "/crisis", "/slip", "/adel"];
 
 export function CravingFab() {
   const { t } = useI18n();
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   if (FAB_SUPPRESSED.includes(pathname)) return null;
+  // Intake is where someone may be disclosing distress — the path to help
+  // stays. On phones it lifts above intake's fixed Save & continue bar.
+  const lifted = pathname === "/intake";
   return (
     <Link
       to="/craving"
       data-testid="craving-fab"
-      className="soft-shadow fixed bottom-[calc(env(safe-area-inset-bottom)+76px)] right-4 z-50 inline-flex min-h-14 items-center gap-2 rounded-full bg-primary px-5 py-3 text-base font-semibold text-primary-foreground hover:opacity-95 md:bottom-6 md:right-6"
+      className={`soft-shadow fixed ${lifted ? "bottom-[calc(env(safe-area-inset-bottom)+164px)]" : "bottom-[calc(env(safe-area-inset-bottom)+76px)]"} right-4 z-50 inline-flex min-h-14 items-center gap-2 rounded-full bg-primary px-5 py-3 text-base font-semibold text-primary-foreground hover:opacity-95 md:bottom-6 md:right-6`}
     >
       <Waves className="h-5 w-5" aria-hidden="true" />
       {t("cravingNow")}

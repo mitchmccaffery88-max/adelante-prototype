@@ -24,7 +24,9 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 
-const SOURCES = Object.keys(COVERAGE_PLAN_SOURCE_LABEL) as CoveragePlanSource[];
+// Manual entry offers only manual sources — reported and electronic spans
+// come from their own write paths (8b / 8c).
+const SOURCES: CoveragePlanSource[] = ["self_report", "front_desk", "staff_checked"];
 
 export function CoveragePlansSection({
   patientId,
@@ -102,6 +104,9 @@ export function CoveragePlansSection({
                 <p className="text-[11px] text-muted-foreground">
                   {COVERAGE_PLAN_SOURCE_LABEL[c.source]}
                   {c.recordedBy ? ` · recorded by ${c.recordedBy}` : ""}
+                  {c.aidCode ? ` · aid code ${c.aidCode}` : ""}
+                  {typeof c.shareOfCostCents === "number" ? ` · share of cost $${(c.shareOfCostCents / 100).toFixed(2)}` : ""}
+                  {c.planNotOnList ? " · plan not on plan list" : ""}
                 </p>
                 {!readOnly && current && (
                   <Button

@@ -631,6 +631,8 @@ export type CoveragePlanSource =
   | "self_report"
   | "front_desk"
   | "staff_checked"
+  /** §Phase 8c — created/updated from an electronic 270/271 response. */
+  | "electronic_270_271"
   | ReportedBenefitsSource;
 
 /**
@@ -662,6 +664,7 @@ export const COVERAGE_PLAN_SOURCE_LABEL: Record<CoveragePlanSource, string> = {
   self_report: "Client told us",
   front_desk: "Front desk / paperwork",
   staff_checked: "Staff checked with the plan or county",
+  electronic_270_271: "Electronic eligibility (270/271)",
 };
 
 /**
@@ -690,6 +693,11 @@ export interface CoveragePlanSpan {
   /** §Phase 8b — reference-list plan chosen, with its name at that time. */
   managedCarePlanId?: string;
   managedCarePlanName?: string;
+  /** §Phase 8c — from an electronic response. */
+  aidCode?: string;
+  shareOfCostCents?: number;
+  /** §Phase 8c — plan name from a response that matched nothing on the list. */
+  planNotOnList?: boolean;
 }
 
 
@@ -2115,12 +2123,16 @@ export type CoverageCheckChannel =
   | "in_person"
   | "other"
   /** §Phase 8b — someone REPORTED coverage; nobody checked. Never a staff check. */
-  | "reported";
+  | "reported"
+  /** §Phase 8c — the payer's own electronic answer. Counts as verified; always
+   *  labelled "Electronic". Written only by applyEligibilityResponse. */
+  | "electronic_270_271";
 
 export const COVERAGE_CHECK_CHANNEL_LABEL: Record<CoverageCheckChannel, string> = {
   phone_county: "Phone — county / plan",
   medi_cal_portal: "Medi-Cal provider portal (checked by hand)",
   reported: "Reported — needs staff verification",
+  electronic_270_271: "Electronic eligibility (270/271)",
   fax: "Fax reply",
   in_person: "In person — card or paperwork seen",
   other: "Other channel",
@@ -2157,11 +2169,39 @@ export interface CoverageVerificationRecord {
    * a reportSource is never a staff check, whatever its other fields say.
    */
   reportSource?: ReportedBenefitsSource;
+  /** §Phase 8c — present only on electronic records. */
+  electronic?: ElectronicEligibilityDetail;
 }
 
-/** §Phase 8b — true only for a real human eligibility check. */
+/** §Phase 8c — what an electronic 270/271 response carried. */
+export type ElectronicResponseStatus = "active" | "inactive" | "not_found" | "error";
+export interface ElectronicEligibilityDetail {
+  /** 270 trace / transaction id. */
+  transactionId: string;
+  vendor: string;
+  /** Pointer to the stored raw response — NEVER the payload itself. */
+  rawResponseRef?: string;
+  responseStatus: ElectronicResponseStatus;
+  errorReason?: string;
+  benefits?: {
+    aidCode?: string;
+    shareOfCostCents?: number;
+    managedCarePlan?: { payerName: string; planId?: string; matchedListId?: string; matchedListName?: string };
+    coverageStart?: string;
+    coverageEnd?: string;
+    payerId?: string;
+  };
+}
+
+/**
+ * §Phase 8b/8c — true for a record that COUNTS as a check: a human staff check
+ * or an electronic payer response. Reported records never count.
+ */
 export function isStaffCheck(v: CoverageVerificationRecord): boolean {
   return !v.reportSource;
+}
+export function isElectronicCheck(v: CoverageVerificationRecord): boolean {
+  return v.channel === "electronic_270_271";
 }
 
 /** §Phase 8b — what a non-Medi-Cal person told us about paying. */
@@ -10030,8 +10070,8 @@ export const AdelanteEHR = {
     if (!p) return { ok: false, error: "Patient not found." };
     // §Phase 8b — "reported" is reserved for recordIntakeBenefits; a staff
     // check must name how staff actually checked.
-    if (input.channel === "reported") {
-      return { ok: false, error: "Choose how you checked — a report is not a staff check." };
+    if (input.channel === "reported" || input.channel === "electronic_270_271") {
+      return { ok: false, error: "Choose how you checked — reports and electronic results have their own path." };
     }
     const cin = input.cin?.trim().toUpperCase();
     if (cin && cin.length !== 9) {
@@ -10084,7 +10124,148 @@ export const AdelanteEHR = {
     emit();
     return { ok: true };
   },
-  /** Newest-first log of human eligibility checks. */
+  /**
+   * §Phase 8c — THE one write path for an electronic eligibility response.
+   * Append-only and attributed (the person who asked + the system/vendor).
+   *  - adds a verification record on channel electronic_270_271;
+   *  - active: adds a plan span, or updates the open span with the same payer
+   *    (aid code, share of cost); a payer change closes the old open
+   *    electronic/staff span the day before the new start. Reported spans are
+   *    kept alongside. Nothing is deleted or backdated.
+   *  - not_found / inactive / error: never clears a CIN or closes a span; one
+   *    follow-up task for staff (deduped per patient).
+   *  - the managed care plan is matched to the 8b list by name; unmatched
+   *    names are kept and flagged, the list is never auto-edited.
+   */
+  applyEligibilityResponse(
+    patientId: string,
+    response: ElectronicEligibilityDetail,
+    input: { actorId: string; actorName: string; actorRole: StaffRole; planList?: { id: string; name: string }[] },
+  ): { ok: boolean; error?: string; recordId?: string; spanId?: string; spanAction?: "added" | "updated" | "none"; taskId?: string } {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ok: false, error: "Patient not found." };
+    if (!response.transactionId) return { ok: false, error: "An electronic response needs a transaction id." };
+    const now = new Date().toISOString();
+    const today = now.slice(0, 10);
+    const norm = (x: string) => x.trim().toLowerCase().replace(/\s+/g, " ");
+    const b = response.benefits;
+    let detail = response;
+    if (b?.managedCarePlan) {
+      const hit = (input.planList ?? []).find((pl) => norm(pl.name) === norm(b.managedCarePlan!.payerName));
+      detail = {
+        ...response,
+        benefits: {
+          ...b,
+          managedCarePlan: { ...b.managedCarePlan, ...(hit ? { matchedListId: hit.id, matchedListName: hit.name } : {}) },
+        },
+      };
+    }
+    const status = response.responseStatus;
+    const record: CoverageVerificationRecord = {
+      id: uid(),
+      checkedAt: now,
+      checkedBy: input.actorName,
+      checkedByRole: input.actorRole,
+      channel: "electronic_270_271",
+      channelNote: `${response.vendor} · ${response.transactionId}`,
+      result: status === "active" ? "verified" : status === "not_found" ? "not_found" : "pending",
+      cinOnFile: Boolean(p.cin),
+      electronic: detail,
+    };
+    const base = p.coverage ?? {
+      status: "none_unsure" as CoverageStatus,
+      verified: "not_found" as const,
+    };
+    let plans = [...(base.plans ?? [])];
+    let spanId: string | undefined;
+    let spanAction: "added" | "updated" | "none" = "none";
+    const mcp = detail.benefits?.managedCarePlan;
+    if (status === "active") {
+      const payer = mcp?.matchedListName ?? mcp?.payerName ?? "Medi-Cal FFS";
+      const open = plans.find((sp) => !sp.to && norm(sp.payer) === norm(payer));
+      const fields = {
+        ...(b?.aidCode ? { aidCode: b.aidCode } : {}),
+        ...(typeof b?.shareOfCostCents === "number" ? { shareOfCostCents: b.shareOfCostCents } : {}),
+        ...(mcp?.matchedListId ? { managedCarePlanId: mcp.matchedListId, managedCarePlanName: mcp.matchedListName } : {}),
+        ...(mcp && !mcp.matchedListId ? { planNotOnList: true } : {}),
+      };
+      if (open && open.source !== "patient_reported" && open.source !== "staff_recorded_patient_report" && open.source !== "referrer_reported" && open.source !== "partner_reported") {
+        plans = plans.map((sp) => (sp.id === open.id ? { ...sp, ...fields, ...(b?.coverageEnd ? { to: b.coverageEnd } : {}) } : sp));
+        spanId = open.id;
+        spanAction = "updated";
+      } else {
+        const from = b?.coverageStart ?? today;
+        const dayBefore = new Date(new Date(from + "T00:00:00Z").getTime() - 86400000).toISOString().slice(0, 10);
+        plans = plans.map((sp) =>
+          !sp.to && (sp.source === "electronic_270_271" || sp.source === "staff_checked") && norm(sp.payer) !== norm(payer) && sp.from <= dayBefore
+            ? { ...sp, to: dayBefore }
+            : sp,
+        );
+        const span: CoveragePlanSpan = {
+          id: uid(),
+          payer,
+          from,
+          ...(b?.coverageEnd ? { to: b.coverageEnd } : {}),
+          source: "electronic_270_271",
+          recordedBy: input.actorName,
+          recordedByRole: input.actorRole,
+          recordedAt: now,
+          ...(b?.payerId ? { plan: b.payerId } : {}),
+          ...fields,
+        };
+        plans = [...plans, span];
+        spanId = span.id;
+        spanAction = "added";
+      }
+    }
+    p.coverage = {
+      ...base,
+      verified: status === "active" ? "verified" : base.verified,
+      plans,
+      verifications: [record, ...(base.verifications ?? [])],
+    };
+    let taskId: string | undefined;
+    if (status !== "active") {
+      const t = AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: "",
+        title: "Follow up on electronic eligibility result",
+        detail:
+          status === "error"
+            ? `Electronic check failed (${response.errorReason ?? "no reason given"}). Check by phone or portal.`
+            : `Electronic check returned "${status}". Nothing was changed — confirm with the county or plan.`,
+        dueDate: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+        origin: "manual",
+        source: "electronic_eligibility",
+        taskType: "coverage_follow_up",
+        allowedRoles: STAFF_ROLES.map((r) => r.key).filter((r) => canAccess(r, "eligibility").level === "write"),
+        dedupeKey: `eligibility-electronic:${patientId}`,
+      } as Parameters<typeof AdelanteEHR.createCaseTask>[0]);
+      taskId = (t as { id?: string } | undefined)?.id;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "electronic_eligibility_applied",
+      patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: {
+        vendor: response.vendor,
+        transactionId: response.transactionId,
+        rawResponseRef: response.rawResponseRef ?? null,
+        responseStatus: status,
+        errorReason: response.errorReason ?? null,
+        aidCode: b?.aidCode ?? null,
+        shareOfCostCents: b?.shareOfCostCents ?? null,
+        planMatched: mcp ? Boolean(detail.benefits?.managedCarePlan?.matchedListId) : null,
+        spanAction,
+        followUpTaskId: taskId ?? null,
+        actorName: input.actorName,
+      },
+    });
+    emit();
+    return { ok: true, recordId: record.id, spanId, spanAction, taskId };
+  },
   /**
    * §Phase 8b — the duplicate-CIN warning, shared by every benefits entry
    * point (lifted from the referral form). Warns; never blocks.

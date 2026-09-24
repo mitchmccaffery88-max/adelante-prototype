@@ -20,7 +20,7 @@ import {
   coverageWorklistSummary,
   type CoverageCheckState,
 } from "@/lib/coverageWorklist";
-import { COVERAGE_CHECK_CHANNEL_LABEL, REPORTED_SOURCE_LABEL } from "@/lib/ehr";
+import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -62,6 +62,7 @@ export const Route = createFileRoute("/eligibility-worklist")({
 const STATE_TONE: Record<CoverageCheckState, string> = {
   never_checked: "bg-destructive/15 text-destructive border-0",
   needs_verification: "bg-warning/25 text-navy border-0",
+  not_medi_cal_reported: "bg-secondary text-muted-foreground border-0",
   overdue: "bg-destructive/10 text-destructive border-0",
   due: "bg-warning/20 text-navy border-0",
   current: "bg-muted text-muted-foreground border-0",
@@ -86,7 +87,7 @@ function EligibilityWorklistPage() {
     const needle = q.trim().toLowerCase();
     return allRows.filter((r) => {
       if (county !== "all" && r.county !== county) return false;
-      if (state === "needs_work" && r.state === "current") return false;
+      if (state === "needs_work" && (r.state === "current" || r.state === "not_medi_cal_reported")) return false;
       if (state !== "all" && state !== "needs_work" && r.state !== state) return false;
       if (needle && !`${r.name} ${r.programId}`.toLowerCase().includes(needle)) return false;
       return true;
@@ -127,10 +128,11 @@ function EligibilityWorklistPage() {
         {COVERAGE_STALENESS_DRAFT.note}
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3" data-testid="coverage-summary">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3" data-testid="coverage-summary">
         <Stat label="On this list" value={summary.total} />
         <Stat label="Never checked" value={summary.neverChecked} tone="destructive" />
         <Stat label="Needs verification" value={summary.needsVerification} />
+        <Stat label="Not Medi-Cal (reported)" value={summary.notMediCalReported} />
         <Stat label="Overdue" value={summary.overdue} tone="destructive" />
         <Stat label="Due" value={summary.due} />
         <Stat label="Open follow-ups" value={summary.openFollowUps} />
@@ -178,6 +180,7 @@ function EligibilityWorklistPage() {
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="due">Due</SelectItem>
               <SelectItem value="current">Current</SelectItem>
+              <SelectItem value="not_medi_cal_reported">Not Medi-Cal (reported)</SelectItem>
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
@@ -228,7 +231,7 @@ function EligibilityWorklistPage() {
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {r.pendingReport && (
                       <div className="mb-1 text-foreground" data-testid="pending-report">
-                        {REPORTED_SOURCE_LABEL[r.pendingReport.reportSource]} ·{" "}
+                        <VerificationSourceBadge record={r.pendingReport} />{" "}
                         <ClientDate value={r.pendingReport.checkedAt} /> · by {r.pendingReport.checkedBy} — not verified
                       </div>
                     )}
@@ -237,13 +240,12 @@ function EligibilityWorklistPage() {
                         <ClientDate value={r.lastCheck.checkedAt} />
                         {typeof r.daysSinceCheck === "number" ? ` · ${r.daysSinceCheck}d ago` : ""}
                         <div>
-                          {r.lastCheck.checkedBy} ·{" "}
-                          {COVERAGE_CHECK_CHANNEL_LABEL[r.lastCheck.channel]} · result{" "}
+                          <VerificationSourceBadge record={r.lastCheck} /> {r.lastCheck.checkedBy} · result{" "}
                           {r.lastCheck.result}
                         </div>
                       </>
                     ) : (
-                      "No eligibility check has ever been recorded."
+                      "No staff or electronic check has ever been recorded."
                     )}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
