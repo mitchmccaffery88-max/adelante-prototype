@@ -17,7 +17,13 @@ import {
 import { attestationRecordProblem, type AttestationRecord } from "./attestation";
 import { canAccess, getActingRole, getActingStaff } from "./roles";
 import {
+  INACTIVE_PROGRAMS,
+  PATIENT_PAY_PROGRAMS,
+  PAYMENT_ARRANGEMENTS,
+  PROGRAM_INACTIVE,
   PROGRAM_LABEL,
+  generalPopulationProgram,
+  type PaymentArrangement,
   defaultCodeFor,
   getBillingCode,
   isPayerProgram,
@@ -240,7 +246,7 @@ export interface Claim {
   /** YYYY-MM-DD the service was delivered — what the rate lookup keys on. */
   serviceDate?: string;
   program?: PayerProgram;
-  programSource?: "coverage" | "billing";
+  programSource?: "coverage" | "billing" | "migrated";
   codeSource?: "default" | "hook" | "billing";
   /** Where `units` came from. `schedule` = estimated from the booked length. */
   unitsSource?: "note" | "schedule" | "billing";
@@ -272,6 +278,108 @@ export interface Claim {
   taxonomy?: string;
   /** Enrolled provider the claim is billed through (CHW services). */
   supervisingStaffId?: string;
+  // ---- §Phase 7d general-population billing ----
+  /** Priced provisionally at self-pay: the patient's arrangement isn't recorded. Blocks Ready. */
+  arrangementMissing?: boolean;
+  /** Commercial infrastructure only — payer-specific rate lookup. Unused at launch. */
+  payerId?: string;
+  /** Commercial infrastructure only — unused at launch. */
+  copayCents?: number;
+  deductibleCents?: number;
+  /** Basis points (2000 = 20%). */
+  coinsuranceBps?: number;
+  payerPortionCents?: number;
+  patientPortionCents?: number;
+  patientPaidCents?: number;
+  patientBalanceCents?: number;
+  /** Payments exceed the current patient portion after a re-price — needs review, never auto-refunded. */
+  overpaidReview?: boolean;
+  patientPayments?: PatientPayment[];
+}
+
+export type PaymentMethod = "cash" | "check" | "card_external" | "other";
+export const PAYMENT_METHOD_LABEL: Record<PaymentMethod, string> = {
+  cash: "Cash",
+  check: "Check",
+  card_external: "Card (external terminal)",
+  other: "Other",
+};
+export interface PatientPayment {
+  id: string;
+  amountCents: number;
+  /** YYYY-MM-DD */
+  receivedOn: string;
+  method: PaymentMethod;
+  /** Receipt / check number. Never a card number (refused). */
+  reference?: string;
+  recordedById: string;
+  recordedByName: string;
+  recordedByRole: string;
+  recordedAt: string;
+  voidedAt?: string;
+  voidedById?: string;
+  voidedByName?: string;
+  voidReason?: string;
+}
+export const PAYMENT_EXCEEDS_BALANCE = "That's more than the patient owes on this claim. Overpayments and refunds aren't supported yet.";
+export const ARRANGEMENT_MISSING_MSG =
+  "Payment arrangement not recorded — confirm before billing. Set the patient's payment arrangement, then retry.";
+
+/**
+ * §Phase 7d — who owes what. Self-pay / sliding fee: all patient. Grant/ISL,
+ * Medi-Cal, ECM: all payer/funder. Commercial (infra only): copay, then
+ * deductible, then coinsurance on the remainder, capped at the charge.
+ */
+export function patientResponsibility(
+  program: PayerProgram | undefined,
+  chargeCents: number,
+  terms: { copayCents?: number; deductibleCents?: number; coinsuranceBps?: number } = {},
+): { payerPortionCents: number; patientPortionCents: number } {
+  let patient = 0;
+  if (program && PATIENT_PAY_PROGRAMS.has(program)) patient = chargeCents;
+  else if (program === "commercial") {
+    const copay = terms.copayCents ?? 0;
+    const ded = Math.min(terms.deductibleCents ?? 0, Math.max(0, chargeCents - copay));
+    const rest = Math.max(0, chargeCents - copay - ded);
+    patient = copay + ded + Math.round((rest * (terms.coinsuranceBps ?? 0)) / 10_000);
+  }
+  patient = Math.min(Math.max(0, patient), chargeCents);
+  return { payerPortionCents: chargeCents - patient, patientPortionCents: patient };
+}
+
+function paidCents(c: Claim): number {
+  return (c.patientPayments ?? []).filter((p) => !p.voidedAt).reduce((s, p) => s + p.amountCents, 0);
+}
+function applyResponsibility(c: Claim): void {
+  const charge = c.rateStatus === "priced" ? (c.chargeCents ?? 0) : 0;
+  const split = patientResponsibility(c.program, charge, c);
+  c.payerPortionCents = split.payerPortionCents;
+  c.patientPortionCents = split.patientPortionCents;
+  c.patientPaidCents = paidCents(c);
+  c.patientBalanceCents = Math.max(0, split.patientPortionCents - c.patientPaidCents);
+  if (c.patientPaidCents > split.patientPortionCents) c.overpaidReview = true;
+  else delete c.overpaidReview;
+}
+
+/**
+ * §Phase 7d — program for a new claim. Funding lane first (grant/ISL/private
+ * pay), then the Phase 7c rule with the patient's arrangement in place of the
+ * old single non-Medi-Cal bucket. Unrecorded arrangement → self_pay,
+ * provisionally, flagged.
+ */
+function assignProgram(c: Claim, input: { code: string; line: ServiceLine; fundingLane?: string }): void {
+  const arrangement = AdelanteEHR.getPatient(c.patientId)?.paymentArrangement;
+  const lane = generalPopulationProgram(input.fundingLane, arrangement);
+  if (lane) {
+    c.program = lane.program;
+    c.arrangementMissing = lane.arrangementMissing || undefined;
+  } else {
+    const cov = coverageContext(c.patientId, c.serviceDate ?? iso().slice(0, 10));
+    c.program = selectProgram({ code: input.code, line: input.line, ...cov, ...(arrangement ? { arrangement } : {}) });
+    c.arrangementMissing = (!cov.hasMediCal && !arrangement && c.program === "self_pay") || undefined;
+  }
+  if (!c.arrangementMissing) delete c.arrangementMissing;
+  c.programSource = "coverage";
 }
 
 // ---------- §Phase 7c pricing ----------
@@ -315,18 +423,20 @@ function applyPricing(c: Claim): void {
     delete c.chargeCents;
     delete c.rateId;
     delete c.rateCentsPerUnit;
+    applyResponsibility(c);
   };
   if (!c.serviceCode) return fail("No billing code on this claim.");
   if (!code) return fail(`Billing code ${c.serviceCode} isn't in the code table.`);
   if (!c.program) return fail("No payer program on this claim.");
   const day = c.serviceDate ?? iso().slice(0, 10);
-  const r = rateFor(c.serviceCode, c.program, day);
+  const r = rateFor(c.serviceCode, c.program, day, c.payerId);
   if (!r) return fail(`No rate on file for ${c.serviceCode} / ${PROGRAM_LABEL[c.program]} on ${day}.`);
   c.rateStatus = "priced";
   delete c.noRateReason;
   c.rateId = r.id;
   c.rateCentsPerUnit = r.amountCents;
   c.chargeCents = r.amountCents * (c.units ?? 1);
+  applyResponsibility(c);
 }
 
 /** "4 × 15 min, from note" style label for billing screens. */
@@ -937,11 +1047,8 @@ export const AdelanteEHRExt = {
       claim.serviceDate = serviceDate;
       claim.serviceCode = code;
       claim.codeSource = "default";
-      claim.program =
-        appt.fundingLane === "isl_non_medi_cal" || appt.fundingLane === "private_pay"
-          ? "non_medi_cal"
-          : selectProgram({ code, line, ...cov });
-      claim.programSource = "coverage";
+      void cov;
+      assignProgram(claim, { code, line, fundingLane: appt.fundingLane });
       claim.minutes = noteMin ?? appt.durationMin;
       claim.unitsSource = noteMin !== undefined ? "note" : "schedule";
       applyPricing(claim);
@@ -969,6 +1076,7 @@ export const AdelanteEHRExt = {
       return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
+    if (to === "generated" && c.arrangementMissing) return { ok: false, error: ARRANGEMENT_MISSING_MSG };
     const reason = (opts?.denialReason ?? opts?.note ?? "").trim();
     if (claimMoveNeedsReason(from, to) && !reason)
       return {
@@ -1027,6 +1135,7 @@ export const AdelanteEHRExt = {
     const code = change.serviceCode?.trim().toUpperCase();
     if (code !== undefined && !getBillingCode(code)) return { ok: false, error: `Billing code ${code} isn't in the code table.` };
     if (change.program !== undefined && !isPayerProgram(change.program)) return { ok: false, error: "Unknown payer program." };
+    if (change.program !== undefined && INACTIVE_PROGRAMS.has(change.program as PayerProgram)) return { ok: false, error: PROGRAM_INACTIVE };
     if (change.units !== undefined && (!Number.isInteger(change.units) || change.units < 1))
       return { ok: false, error: "Units must be a whole number of at least 1." };
     const before = { serviceCode: c.serviceCode ?? null, program: c.program ?? null, units: c.units ?? null, chargeCents: c.chargeCents ?? null };
@@ -1037,6 +1146,7 @@ export const AdelanteEHRExt = {
     if (change.program !== undefined) {
       c.program = change.program as PayerProgram;
       c.programSource = "billing";
+      delete c.arrangementMissing;
     }
     if (change.units !== undefined) {
       c.units = change.units;
@@ -1062,6 +1172,136 @@ export const AdelanteEHRExt = {
     });
     ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
     return { ok: true, claim: { ...c } };
+  },
+
+  /**
+   * §Phase 7d — billing records how a general-population patient pays.
+   * Billing write only, audited. Re-prices the patient's open, unsubmitted
+   * claims whose program came from coverage (not a billing correction) and
+   * clears the "arrangement not recorded" flag.
+   */
+  setPaymentArrangement(
+    patientId: string,
+    arrangement: PaymentArrangement,
+  ): { ok: true; repriced: string[] } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
+    if (!PAYMENT_ARRANGEMENTS.some((a) => a.id === arrangement)) return { ok: false, error: "Choose a payment arrangement." };
+    const p = AdelanteEHR.getPatient(patientId);
+    if (!p) return { ok: false, error: "Patient not found." };
+    const before = p.paymentArrangement ?? null;
+    AdelanteEHR._setPaymentArrangement(patientId, arrangement);
+    const staff = getActingStaff();
+    const repriced: string[] = [];
+    for (const c of claims) {
+      if (c.patientId !== patientId || CLAIM_LOCKED.includes(c.state) || c.state === "written_off") continue;
+      if (c.programSource === "billing" && !c.arrangementMissing) continue;
+      if (!(c.arrangementMissing || c.program === "self_pay" || c.program === "sliding_fee" || c.program === "grant_isl")) continue;
+      const appt = AdelanteEHR.listAppointments().find((a) => a.id === c.encounterId);
+      if (appt?.fundingLane === "isl_non_medi_cal" || appt?.fundingLane === "bhsa") continue;
+      const beforeClaim = { program: c.program ?? null, chargeCents: c.chargeCents ?? null, patientPortionCents: c.patientPortionCents ?? null };
+      c.program = arrangement;
+      delete c.arrangementMissing;
+      applyPricing(c);
+      c.updatedAt = iso();
+      c.history.push({ at: c.updatedAt, state: c.state, actor: staff.id, actorName: staff.name, role, via: "billing", note: `payment arrangement set: ${arrangement}` });
+      AdelanteEHR.recordBillingAudit({
+        action: "claim_repriced_for_arrangement",
+        actorId: staff.id,
+        actorRole: role,
+        patientId,
+        detail: { claimId: c.id, before: beforeClaim, after: { program: c.program, chargeCents: c.chargeCents ?? null, patientPortionCents: c.patientPortionCents ?? null }, actorName: staff.name },
+      });
+      repriced.push(c.id);
+      ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+    }
+    AdelanteEHR.recordBillingAudit({
+      action: "payment_arrangement_set",
+      actorId: staff.id,
+      actorRole: role,
+      patientId,
+      detail: { before, after: arrangement, repricedClaims: repriced, actorName: staff.name },
+    });
+    return { ok: true, repriced };
+  },
+
+  /**
+   * §Phase 7d — record a patient payment received outside the app (no card
+   * processing). Billing write only, attributed, audited. Overpayment and
+   * anything resembling a card number are refused.
+   */
+  recordPatientPayment(input: {
+    claimId: string;
+    amountCents: number;
+    receivedOn: string;
+    method: PaymentMethod;
+    reference?: string;
+  }): { ok: true; payment: PatientPayment; claim: Claim } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
+    const c = claims.find((x) => x.id === input.claimId);
+    if (!c) return { ok: false, error: "Claim not found." };
+    if (!Number.isInteger(input.amountCents) || input.amountCents <= 0)
+      return { ok: false, error: "Amount must be a positive whole number of cents." };
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(input.receivedOn)) return { ok: false, error: "Date received must be YYYY-MM-DD." };
+    if (!(input.method in PAYMENT_METHOD_LABEL)) return { ok: false, error: "Choose a payment method." };
+    const ref = input.reference?.trim() || undefined;
+    if (ref && /\d{13,19}/.test(ref.replace(/[\s-]/g, "")))
+      return { ok: false, error: "That looks like a card number. Record a receipt or check number only — never card numbers." };
+    applyResponsibility(c);
+    if ((c.patientBalanceCents ?? 0) <= 0) return { ok: false, error: "The patient owes nothing on this claim." };
+    if (input.amountCents > (c.patientBalanceCents ?? 0)) return { ok: false, error: PAYMENT_EXCEEDS_BALANCE };
+    const staff = getActingStaff();
+    const payment: PatientPayment = {
+      id: `pay_${Math.random().toString(36).slice(2, 10)}`,
+      amountCents: input.amountCents,
+      receivedOn: input.receivedOn,
+      method: input.method,
+      ...(ref ? { reference: ref } : {}),
+      recordedById: staff.id,
+      recordedByName: staff.name,
+      recordedByRole: role,
+      recordedAt: iso(),
+    };
+    c.patientPayments = [...(c.patientPayments ?? []), payment];
+    applyResponsibility(c);
+    c.updatedAt = payment.recordedAt;
+    AdelanteEHR.recordBillingAudit({
+      action: "patient_payment_recorded",
+      actorId: staff.id,
+      actorRole: role,
+      patientId: c.patientId,
+      detail: { claimId: c.id, paymentId: payment.id, amountCents: payment.amountCents, receivedOn: payment.receivedOn, method: payment.method, reference: ref ?? null, balanceAfterCents: c.patientBalanceCents ?? 0, actorName: staff.name },
+    });
+    ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+    return { ok: true, payment: { ...payment }, claim: { ...c } };
+  },
+
+  /** §Phase 7d — void a mistaken payment (never deleted). Billing write, reason required, audited. */
+  voidPatientPayment(claimId: string, paymentId: string, reason: string): { ok: true } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
+    const c = claims.find((x) => x.id === claimId);
+    const p = c?.patientPayments?.find((x) => x.id === paymentId);
+    if (!c || !p) return { ok: false, error: "Payment not found." };
+    if (p.voidedAt) return { ok: false, error: "This payment is already void." };
+    if (!reason.trim()) return { ok: false, error: "A reason is required to void a payment." };
+    const staff = getActingStaff();
+    p.voidedAt = iso();
+    p.voidedById = staff.id;
+    p.voidedByName = staff.name;
+    p.voidReason = reason.trim();
+    applyResponsibility(c);
+    c.updatedAt = p.voidedAt;
+    AdelanteEHR.recordBillingAudit({
+      action: "patient_payment_voided",
+      actorId: staff.id,
+      actorRole: role,
+      patientId: c.patientId,
+      detail: { claimId: c.id, paymentId, amountCents: p.amountCents, reason: p.voidReason, balanceAfterCents: c.patientBalanceCents ?? 0, actorName: staff.name },
+    });
+    ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+    return { ok: true };
   },
 
   /** Latest service date priced from a rate (end-dating can't cut it off). */
@@ -1150,8 +1390,7 @@ export const AdelanteEHRExt = {
       claim.serviceDate = serviceDate;
       claim.serviceCode = code;
       claim.codeSource = hookCode ? "hook" : "default";
-      claim.program = selectProgram({ code, line, ...coverageContext(input.patientId, serviceDate) });
-      claim.programSource = "coverage";
+      assignProgram(claim, { code, line });
       if (fac && fac.minutes > 0) {
         claim.minutes = fac.minutes;
         claim.unitsSource = "note";
@@ -1221,7 +1460,7 @@ export const AdelanteEHRExt = {
         { at: iso(), state: "documented", actor: "system", note: `peer_note:${input.peerNoteId}` },
       ],
     };
-    claim.program = selectProgram({ code: claim.serviceCode ?? "", line: "mh", ...coverageContext(claim.patientId, claim.serviceDate!) });
+    assignProgram(claim, { code: claim.serviceCode ?? "", line: "mh" });
     applyPricing(claim);
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
@@ -1300,7 +1539,7 @@ export const AdelanteEHRExt = {
         { at: iso(), state: "documented", actor: "system", note: `chw_note:${input.noteId}` },
       ],
     };
-    claim.program = selectProgram({ code: claim.serviceCode ?? "", line: "mh", ...coverageContext(claim.patientId, claim.serviceDate!) });
+    assignProgram(claim, { code: claim.serviceCode ?? "", line: "mh" });
     applyPricing(claim);
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
@@ -1367,6 +1606,24 @@ export const AdelanteEHRExt = {
     chargeFor: (apptId) => claims.find((x) => x.encounterId === apptId)?.chargeCents,
     bucketCounts: () => claimBucketCounts(claims),
   });
+
+  // §Phase 7d — any claim still on the retired single non-Medi-Cal program is
+  // re-run through the new rule (safety net; no seeded claim uses it today).
+  for (const c of claims) {
+    if ((c.program as string) !== "non_medi_cal") continue;
+    const appt = AdelanteEHR.listAppointments().find((a) => a.id === c.encounterId);
+    const before = c.program as string;
+    assignProgram(c, { code: c.serviceCode ?? "", line: "mh", fundingLane: appt?.fundingLane });
+    (c as { programSource?: string }).programSource = "migrated";
+    applyPricing(c);
+    AdelanteEHR.recordBillingAudit({
+      action: "claim_program_migrated",
+      actorId: "system",
+      actorRole: "system",
+      patientId: c.patientId,
+      detail: { claimId: c.id, before, after: c.program ?? null, arrangementMissing: Boolean(c.arrangementMissing) },
+    });
+  }
 
   // §Demo — two attended visits still waiting for a note, booked and marked
   // attended through the real store API (claims open at `documented`):
