@@ -64,7 +64,7 @@ const dict = {
     homeYourPace: "Your pace",
     homeYourPaceDesc: "Pause and pick up where you left off.",
     homeRealHelp: "Real help",
-    homeRealHelpDesc: "A case manager can do it with you by phone.",
+    homeRealHelpDesc: "Adel can explain any question as you go.",
     homeStartIntake: "Start my intake",
     homeConsentNote: "Nothing about substance use is collected unless you say yes.",
     needHousing: "Housing",
@@ -403,6 +403,16 @@ const dict = {
     needAdvRestricted: "Restricted referral — consent required to show details.",
     needAdvReferralHeading: "Referrals",
     esPendingReviewBadge: "Spanish pending bilingual review",
+    homeContinueIntake: "Continue my intake",
+    homeContinueNote: "Your answers so far are saved. Pick up where you left off.",
+    homeIntakeDoneTitle: "Intake complete",
+    homeIntakeDoneBody: "Your care team has your answers. You can change them anytime.",
+    homeUpdateAnswers: "Update my answers",
+    askAdelHelpLine: "Questions about any of this?",
+    askAdelHelpLink: "Ask Adel",
+    askAdelHelpNote: "Adel can explain what a question means. You fill in your own answers.",
+    landingConnectBody:
+      "Tell us a little about you. It takes a few minutes, and Adel can explain any question along the way.",
   },
 
   es: {
@@ -451,7 +461,7 @@ const dict = {
     homeYourPace: "Tu ritmo",
     homeYourPaceDesc: "Pausa y continúa donde lo dejaste.",
     homeRealHelp: "Ayuda real",
-    homeRealHelpDesc: "Un coordinador de casos puede ayudarte por teléfono, paso a paso.",
+    homeRealHelpDesc: "Adel puede explicarte cualquier pregunta mientras avanzas.",
     homeStartIntake: "Comenzar mis preguntas",
     homeConsentNote: "No te preguntamos sobre uso de sustancias a menos que tú lo permitas.",
     needHousing: "Vivienda",
@@ -794,6 +804,16 @@ const dict = {
     needAdvRestricted: "Referencia restringida — se necesita consentimiento para mostrar detalles.",
     needAdvReferralHeading: "Referencias",
     esPendingReviewBadge: "Español pendiente de revisión bilingüe",
+    homeContinueIntake: "Continuar mis preguntas",
+    homeContinueNote: "Tus respuestas están guardadas. Continúa donde lo dejaste.",
+    homeIntakeDoneTitle: "Preguntas iniciales completas",
+    homeIntakeDoneBody: "Tu equipo de cuidado tiene tus respuestas. Puedes cambiarlas cuando quieras.",
+    homeUpdateAnswers: "Actualizar mis respuestas",
+    askAdelHelpLine: "¿Tienes preguntas sobre algo de esto?",
+    askAdelHelpLink: "Pregúntale a Adel",
+    askAdelHelpNote: "Adel puede explicarte qué significa una pregunta. Tú llenas tus propias respuestas.",
+    landingConnectBody:
+      "Cuéntanos un poco sobre ti. Toma unos minutos, y Adel puede explicarte cualquier pregunta en el camino.",
   },
 
 } as const;
