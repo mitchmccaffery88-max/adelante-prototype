@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
-import { AdelanteEHRExt, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
+import { AdelanteEHRExt, claimUnitLabel, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
+import { ClaimAmount } from "@/components/billing/RatesPanel";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
 import { groupTopicFor, occurrencePeers, parseGroupEncounterId } from "@/lib/groupMetrics";
 import { useMemo, useState } from "react";
@@ -247,7 +248,7 @@ function ClaimsPage() {
           case "state":
             return c.state;
           case "charge":
-            return c.chargeCents;
+            return c.chargeCents ?? -1;
         }
       }),
     // eslint-disable-next-line react-hooks/exhaustive-deps
@@ -261,6 +262,9 @@ function ClaimsPage() {
       "Program ID",
       "Clinician",
       "State",
+      "Code",
+      "Units",
+      "Unit basis",
       "Charge (USD)",
       "Denial reason",
       "Group-sourced",
@@ -275,7 +279,10 @@ function ClaimsPage() {
         pt?.programId ?? "",
         cl?.name ?? "",
         c.state,
-        (c.chargeCents / 100).toFixed(2),
+        c.serviceCode ?? "",
+        String(c.units ?? ""),
+        claimUnitLabel(c),
+        c.chargeCents === undefined ? "NO RATE ON FILE" : (c.chargeCents / 100).toFixed(2),
         c.denialReason ?? "",
         g ? "Yes" : "No",
         g?.sessionId ?? "",
@@ -441,7 +448,7 @@ function ClaimsPage() {
                                 );
                               })()}
                               <p className="mt-2 text-[10px] italic text-muted-foreground">
-                                Billing code pending — no CPT/H-code is assigned to group services yet.
+                                Billing code {c.serviceCode ?? "not set"} — billing can correct it from the amount column.
                               </p>
                             </PopoverContent>
                           </Popover>
@@ -454,7 +461,7 @@ function ClaimsPage() {
                       </TableCell>
                       <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
                       <TableCell className="px-2 py-2" data-cell="state"><Badge className={stateStyle[c.state]}>{c.state}</Badge></TableCell>
-                      <TableCell className="px-2 py-2" data-cell="charge">${(c.chargeCents / 100).toFixed(2)}</TableCell>
+                      <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
                       <TableCell className="px-2 py-2">{c.denialReason ?? "—"}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">
                         {!canWrite ? (

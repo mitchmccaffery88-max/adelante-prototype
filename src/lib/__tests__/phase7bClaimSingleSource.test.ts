@@ -53,10 +53,11 @@ describe("Phase 7b — claim as the single billing source", () => {
     expect(CLAIM_TRANSITIONS.written_off).toEqual(["generated"]);
   });
 
-  it("an attended visit opens a documented claim priced by claimChargeCents", () => {
+  it("an attended visit opens a documented claim priced from the rate table (7c)", () => {
     const c = freshClaim();
     expect(c.state).toBe("documented");
-    expect(c.chargeCents).toBe(AdelanteEHR.claimChargeCents({}));
+    expect(["priced", "no_rate"]).toContain(c.rateStatus);
+    if (c.rateStatus === "priced") expect(c.chargeCents).toBe((c.rateCentsPerUnit ?? 0) * (c.units ?? 1));
   });
 
   it("refuses Sys Admin at the data layer and changes nothing", () => {
@@ -147,6 +148,6 @@ describe("Phase 7b — claim as the single billing source", () => {
     const all = files.map((f) => readFileSync(f, "utf8")).join("\n");
     expect(all).not.toMatch(/transitionBilling\(|advanceClaim\(|billingStatus:/);
     expect(all).not.toMatch(/\?\? (12000|6000|5000)\b/);
-    expect(all.match(/chargeForService\(/g)?.length).toBeLessThanOrEqual(2);
+    expect(all).not.toMatch(/claimChargeCents\(/);
   });
 });

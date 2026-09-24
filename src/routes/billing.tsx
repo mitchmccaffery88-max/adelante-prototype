@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { ClaimAmount, RatesPanel } from "@/components/billing/RatesPanel";
 import {
   BillingStatusStrip,
   BILLING_STATUS_ROWS,
@@ -78,46 +79,6 @@ const LANES: { key: FundingLane; label: string }[] = [
   { key: "isl_non_medi_cal", label: "ISL (non-Medi-Cal)" },
   { key: "bhsa", label: "BHSA" },
   { key: "non_billable", label: "Non-billable" },
-];
-
-// Tulare-scoped mock rate table (placeholder — real rates come from DHCS + contracts).
-const RATE_TABLE = [
-  { code: "H0031", desc: "MH assessment", medi_cal: "$118.42", dmc_ods: "—", isl: "reportable" },
-  {
-    code: "H0004",
-    desc: "Individual counseling (SUD)",
-    medi_cal: "—",
-    dmc_ods: "$92.10",
-    isl: "reportable",
-  },
-  {
-    code: "90834",
-    desc: "Psychotherapy 45 min",
-    medi_cal: "$96.55",
-    dmc_ods: "—",
-    isl: "reportable",
-  },
-  {
-    code: "90837",
-    desc: "Psychotherapy 60 min",
-    medi_cal: "$142.03",
-    dmc_ods: "—",
-    isl: "reportable",
-  },
-  {
-    code: "T1017",
-    desc: "Targeted case management",
-    medi_cal: "$32.18",
-    dmc_ods: "—",
-    isl: "reportable",
-  },
-  {
-    code: "H2019",
-    desc: "Rehab / recovery services",
-    medi_cal: "—",
-    dmc_ods: "$68.75",
-    isl: "reportable",
-  },
 ];
 
 type Tab = "claims" | "isl" | "rates" | "credentials";
@@ -200,10 +161,13 @@ function BillingPage() {
   const [laneFilter, setLaneFilter] = useState<"all" | FundingLane>("all");
   const initialStatus = Route.useSearch().status;
   const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
+  const [noRateOnly, setNoRateOnly] = useState(false);
+  const noRateCount = claims.filter((c) => c.rateStatus === "no_rate").length;
   const filtered = rows.filter(
     (r) =>
       (laneFilter === "all" || r.lane === laneFilter) &&
-      (statusFilter === "all" || (r.claim && claimBillingBucket(r.claim.state) === statusFilter)),
+      (statusFilter === "all" || (r.claim && claimBillingBucket(r.claim.state) === statusFilter)) &&
+      (!noRateOnly || r.claim?.rateStatus === "no_rate"),
   );
   const islRows = rows.filter((r) => r.lane === "isl_non_medi_cal");
 
@@ -223,9 +187,9 @@ function BillingPage() {
     for (const c of claims) {
       const b = claimBillingBucket(c.state);
       byStatus[b] += 1;
-      if (b === "submitted" || b === "ready") outstandingCents += c.chargeCents;
-      if (b === "paid") paidCents += c.chargeCents;
-      if (b === "denied") deniedCents += c.chargeCents;
+      if (b === "submitted" || b === "ready") outstandingCents += c.chargeCents ?? 0;
+      if (b === "paid") paidCents += c.chargeCents ?? 0;
+      if (b === "denied") deniedCents += c.chargeCents ?? 0;
     }
     return { byStatus, outstandingCents, paidCents, deniedCents };
   }, [claims]);
@@ -414,6 +378,14 @@ function BillingPage() {
                 </option>
               ))}
             </select>
+            <button
+              type="button"
+              data-testid="no-rate-filter"
+              onClick={() => setNoRateOnly((v) => !v)}
+              className={`rounded-full border px-2.5 py-1 text-xs ${noRateOnly ? "border-destructive bg-destructive/10 text-destructive" : "text-muted-foreground"}`}
+            >
+              No rate on file ({noRateCount})
+            </button>
             {filtered.length === 0 && (
               <span className="text-xs text-muted-foreground">No claims match these filters.</span>
             )}
@@ -447,7 +419,9 @@ function BillingPage() {
                           {LANES.find((l) => l.key === lane)?.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs">{claim ? DOLLARS(claim.chargeCents) : "—"}</td>
+                      <td className="px-3 py-2 font-mono text-xs" data-testid="billing-row-charge">
+                        {claim ? <ClaimAmount claim={claim} /> : "—"}
+                      </td>
                       <td className="px-3 py-2" data-testid="billing-row-status">
                         {claim && bucket ? (
                           <>
@@ -538,7 +512,7 @@ function BillingPage() {
                         {appt?.islReason ?? "uninsured"}
                       </td>
                       <td className="px-3 py-2 font-mono text-xs">
-                        {claim ? DOLLARS(claim.chargeCents) : "No claim"}
+                        {claim ? <ClaimAmount claim={claim} /> : "No claim"}
                       </td>
                     </tr>
                   ))}
@@ -549,37 +523,7 @@ function BillingPage() {
         </section>
       )}
 
-      {tab === "rates" && (
-        <section className="rounded-xl border bg-card overflow-hidden">
-          <table className="w-full text-sm">
-            <thead className="bg-secondary/60 text-xs text-muted-foreground">
-              <tr>
-                <th className="text-left px-3 py-2">Code</th>
-                <th className="text-left px-3 py-2">Description</th>
-                <th className="text-left px-3 py-2">Medi-Cal FFS</th>
-                <th className="text-left px-3 py-2">DMC-ODS</th>
-                <th className="text-left px-3 py-2">ISL</th>
-              </tr>
-            </thead>
-            <tbody>
-              {RATE_TABLE.map((r) => (
-                <tr key={r.code} className="border-t">
-                  <td className="px-3 py-2 font-mono text-xs">{r.code}</td>
-                  <td className="px-3 py-2">{r.desc}</td>
-                  <td className="px-3 py-2">{r.medi_cal}</td>
-                  <td className="px-3 py-2">{r.dmc_ods}</td>
-                  <td className="px-3 py-2 text-muted-foreground text-xs">{r.isl}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-          <p className="p-3 text-xs text-muted-foreground">
-            Versioned rate table scoped to Tulare · demo values · billing entity:{" "}
-            {entity === "bagga_npi" ? "Bagga's clinic NPI" : "Adelante"}.
-            {/* TODO(adelante): source rates from DHCS + local contracts */}
-          </p>
-        </section>
-      )}
+      {tab === "rates" && <RatesPanel canWrite={canWrite} />}
 
       {tab === "credentials" && (
         <section className="space-y-3">
