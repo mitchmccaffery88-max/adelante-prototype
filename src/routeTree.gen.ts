@@ -91,6 +91,7 @@ import { Route as AdvocateSupportForMyselfRouteImport } from './routes/advocate.
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
 import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
+import { Route as RescreenKeyRouteImport } from './routes/rescreen.$key'
 import { Route as ResourcesIndexRouteImport } from './routes/resources.index'
 import { Route as ResourcesSavedRouteImport } from './routes/resources.saved'
 import { Route as StartIndexRouteImport } from './routes/start.index'
@@ -518,6 +519,11 @@ const RecordPatientIdRoute = RecordPatientIdRouteImport.update({
   path: '/record/$patientId',
   getParentRoute: () => rootRouteImport,
 } as any)
+const RescreenKeyRoute = RescreenKeyRouteImport.update({
+  id: '/rescreen/$key',
+  path: '/rescreen/$key',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ResourcesIndexRoute = ResourcesIndexRouteImport.update({
   id: '/',
   path: '/',
@@ -681,6 +687,7 @@ export interface FileRoutesByFullPath {
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
@@ -776,6 +783,7 @@ export interface FileRoutesByTo {
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
@@ -876,6 +884,7 @@ export interface FileRoutesById {
   '/api/adel-chat': typeof ApiAdelChatRoute
   '/api/adel-recap': typeof ApiAdelRecapRoute
   '/record/$patientId': typeof RecordPatientIdRoute
+  '/rescreen/$key': typeof RescreenKeyRoute
   '/resources/saved': typeof ResourcesSavedRoute
   '/start/helping': typeof StartHelpingRoute
   '/start/other-help': typeof StartOtherHelpRoute
@@ -977,6 +986,7 @@ export interface FileRouteTypes {
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
+    | '/rescreen/$key'
     | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
@@ -1072,6 +1082,7 @@ export interface FileRouteTypes {
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
+    | '/rescreen/$key'
     | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
@@ -1171,6 +1182,7 @@ export interface FileRouteTypes {
     | '/api/adel-chat'
     | '/api/adel-recap'
     | '/record/$patientId'
+    | '/rescreen/$key'
     | '/resources/saved'
     | '/start/helping'
     | '/start/other-help'
@@ -1261,6 +1273,7 @@ export interface RootRouteChildren {
   ApiAdelChatRoute: typeof ApiAdelChatRoute
   ApiAdelRecapRoute: typeof ApiAdelRecapRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
+  RescreenKeyRoute: typeof RescreenKeyRoute
   AgenticChartReviewPatientIdRoute: typeof AgenticChartReviewPatientIdRoute
   AgenticDictationPatientIdRoute: typeof AgenticDictationPatientIdRoute
   AgenticScribePatientIdRoute: typeof AgenticScribePatientIdRoute
@@ -1843,6 +1856,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RecordPatientIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/rescreen/$key': {
+      id: '/rescreen/$key'
+      path: '/rescreen/$key'
+      fullPath: '/rescreen/$key'
+      preLoaderRoute: typeof RescreenKeyRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/resources/': {
       id: '/resources/'
       path: '/'
@@ -2104,6 +2124,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdelChatRoute: ApiAdelChatRoute,
   ApiAdelRecapRoute: ApiAdelRecapRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
+  RescreenKeyRoute: RescreenKeyRoute,
   AgenticChartReviewPatientIdRoute: AgenticChartReviewPatientIdRoute,
   AgenticDictationPatientIdRoute: AgenticDictationPatientIdRoute,
   AgenticScribePatientIdRoute: AgenticScribePatientIdRoute,

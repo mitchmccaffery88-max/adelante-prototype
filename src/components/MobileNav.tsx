@@ -11,7 +11,7 @@ export function MobileNav() {
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
 
-  if (!PATIENT_ROUTES.includes(pathname as PatientRoute)) {
+  if (!PATIENT_ROUTES.includes(pathname as PatientRoute) && !pathname.startsWith("/rescreen/")) {
     return null;
   }
 

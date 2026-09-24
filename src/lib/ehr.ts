@@ -146,6 +146,7 @@ import {
   shortFormByKey,
   scoreScreener,
   screenerByKey,
+  SCREENERS,
   isPart2Screener,
   type ScreenerDomainResult,
 } from "./screeners";
@@ -10672,6 +10673,83 @@ export const AdelanteEHR = {
       ...(p.tasks ?? []),
     ];
     emit();
+  },
+  /**
+   * §Phase 9b — what a PATIENT is due to re-take. Union of the existing draft
+   * cadence (`rescreensDue`) and any open "rescreen" task, limited to real
+   * full instruments, with SUD instruments (AUDIT, DAST-10) only when the
+   * live `sud_treatment` consent allows — the same rule intake applies.
+   */
+  patientReassessmentDue(patientId: string): { key: string; taskIds: string[]; nextDue?: 30 | 60 | 90 }[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p || !p.intakeCompletedAt) return [];
+    const sudOk = AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    const allowed = (key: string) => {
+      const def = SCREENERS.find((d) => d.key === key);
+      return !!def && (!def.isSud || sudOk);
+    };
+    const out = new Map<string, { key: string; taskIds: string[]; nextDue?: 30 | 60 | 90 }>();
+    for (const d of AdelanteEHR.rescreensDue(patientId)) {
+      if (allowed(d.key)) out.set(d.key, { key: d.key, taskIds: [], nextDue: d.nextDue });
+    }
+    for (const t of p.tasks ?? []) {
+      if (t.kind !== "rescreen" || t.completedAt || !t.screenerKey || !allowed(t.screenerKey)) continue;
+      const row = out.get(t.screenerKey) ?? { key: t.screenerKey, taskIds: [] };
+      row.taskIds.push(t.id);
+      out.set(t.screenerKey, row);
+    }
+    return [...out.values()];
+  },
+  /**
+   * §Phase 9b — the targeted re-screen. Scores through the same
+   * `scoreScreener` + `recordScreener` path intake/pre-release use, closes
+   * every open re-screen task for this instrument, and audits it.
+   */
+  completeRescreen(
+    patientId: string,
+    key: string,
+    answers: number[],
+    actor: { actorId: string; actorRole: string },
+  ): ScreenerResult {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const def = SCREENERS.find((d) => d.key === key);
+    if (!def) throw new Error("Unknown questionnaire.");
+    if (def.isSud && !AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment"))
+      throw new Error("This questionnaire needs substance-use consent on file.");
+    if (answers.length !== def.questions.length || answers.some((a) => typeof a !== "number"))
+      throw new Error(`Please answer all ${def.questions.length} questions.`);
+    const due = AdelanteEHR.rescreensDue(patientId).find((d) => d.key === key);
+    const scored = scoreScreener(def, answers);
+    const result: ScreenerResult = {
+      key,
+      score: scored.score,
+      severity: scored.severity,
+      completedAt: new Date().toISOString(),
+      timepoint: due ? (`day${due.nextDue}` as "day30" | "day60" | "day90") : "adhoc",
+      responses: answers,
+      // Same item-9 rule intake applies.
+      crisisFlag: key === "phq-9" && (answers[8] ?? 0) > 0,
+      ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+    };
+    AdelanteEHR.recordScreener(patientId, result);
+    const closed: string[] = [];
+    for (const t of p.tasks ?? []) {
+      if (t.kind === "rescreen" && !t.completedAt && t.screenerKey === key) {
+        t.completedAt = result.completedAt;
+        closed.push(t.id);
+      }
+    }
+    appendAudit({
+      category: "clinical",
+      action: "rescreen_completed",
+      patientId,
+      actorId: actor.actorId,
+      actorRole: actor.actorRole,
+      detail: { screenerKey: key, closedTaskIds: closed, timepoint: result.timepoint },
+    });
+    emit();
+    return result;
   },
   completeTask(patientId: string, taskId: string) {
     const p = patients.find((x) => x.id === patientId);
