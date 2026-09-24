@@ -97,7 +97,9 @@ export function AppShell() {
   // Surfaces where the patient-facing UI should feel private:
   // hide the staff link strip in the mobile nav (still reachable via the
   // Staff dropdown on desktop).
-  const isPatientSurface = PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]);
+  const isPatientSurface =
+    PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]) ||
+    pathname.startsWith("/rescreen/");
   // §Landing nav — public, pre-sign-in surfaces get their own minimal nav.
   const isPublicSurface = !isPatientSurface && isPublicRoute(pathname);
   // §Advocate Access Redesign Phase 1 — advocate surfaces are their own shell.
