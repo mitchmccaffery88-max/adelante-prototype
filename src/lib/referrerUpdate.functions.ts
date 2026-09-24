@@ -13,7 +13,7 @@
 import { createServerFn } from "@tanstack/react-start";
 import { z } from "zod";
 
-export const REFERRER_UPDATE_EVENTS = ["contacted", "enrolled", "declined"] as const;
+export const REFERRER_UPDATE_EVENTS = ["received", "contacted", "enrolled", "declined"] as const;
 export type ReferrerUpdateEvent = (typeof REFERRER_UPDATE_EVENTS)[number];
 
 const UpdateSchema = z.object({
@@ -29,7 +29,9 @@ export function composeReferrerUpdate(input: {
   const who = input.personLabel;
   const tail = " Reply STOP to stop these texts.";
   const body =
-    input.event === "contacted"
+    input.event === "received"
+      ? `Adelante received your referral for ${who}. Our team will reach out to this person, and we'll text you status updates.`
+      : input.event === "contacted"
       ? `Adelante has made contact with the person you referred (${who}). No action is needed from you.`
       : input.event === "enrolled"
         ? `Update from Adelante: the person you referred (${who}) is now enrolled with us.`
