@@ -5,6 +5,7 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
 import {
@@ -16,6 +17,7 @@ import {
 
 export function ReportedBenefitsCard({ patientId }: { patientId: string }) {
   const acting = useActingStaff();
+  const firstName = useEhr(() => AdelanteEHR.getPatient(patientId)?.firstName);
   const [open, setOpen] = useState(false);
   const [form, setForm] = useState<BenefitsFormState | null>(null);
   if (canAccess(acting.role, "eligibility").level !== "write") return null;
@@ -68,7 +70,7 @@ export function ReportedBenefitsCard({ patientId }: { patientId: string }) {
       </div>
       {open && form && (
         <div className="space-y-3">
-          <BenefitsStep value={form} onChange={setForm} patientId={patientId} showHeading={false} />
+          <BenefitsStep value={form} onChange={setForm} patientId={patientId} showHeading={false} audience="third_party" personName={firstName} />
           <div className="flex justify-end gap-2">
             <Button size="sm" variant="ghost" onClick={() => setOpen(false)}>
               Cancel

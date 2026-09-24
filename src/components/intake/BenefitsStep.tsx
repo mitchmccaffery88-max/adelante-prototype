@@ -47,8 +47,9 @@ export function BenefitsStep({
     if (!third) return tBase(k);
     const k3 = `${k}_3p` as Key;
     const v = tBase(k3);
-    if (v === k3) return tBase(k);
-    return v.replace(/\{name\}/g, personName?.trim() || tBase("benThisPerson"));
+    if (!v || v === k3) return tBase(k);
+    const out = v.replace(/\{name\}/g, personName?.trim() || tBase("benThisPerson"));
+    return out.charAt(0).toUpperCase() + out.slice(1);
   };
   const plans = useEhr(() => listManagedCarePlans());
   const set = (patch: Partial<BenefitsFormState>) => onChange({ ...value, ...patch });

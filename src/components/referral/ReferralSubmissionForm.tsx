@@ -383,7 +383,7 @@ export function ReferralSubmissionForm({
         </div>
         {/* §Phase 8b — optional: a referrer who doesn't know can skip it. */}
         <div className="rounded-lg border p-4" data-testid="referral-benefits">
-          <BenefitsStep value={benefits} onChange={setBenefits} optional />
+          <BenefitsStep value={benefits} onChange={setBenefits} optional audience="third_party" personName={form.firstName} />
         </div>
         <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
           <Checkbox

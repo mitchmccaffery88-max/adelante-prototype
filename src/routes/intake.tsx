@@ -982,7 +982,7 @@ function IntakePage() {
               />
             </div>
 
-            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} />
+            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} audience={mode === "assisted" ? "staff_assisted" : "self"} />
 
             {ecmQuestionApplies(coverage.coverageType) && (
               <label
