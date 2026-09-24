@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 import appCss from "../styles.css?url";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 import { I18nProvider } from "../lib/i18n";
+import { installDevInspect } from "../lib/devInspect";
 import { AppShell } from "../components/AppShell";
 import { Toaster } from "../components/ui/sonner";
 
@@ -223,6 +224,7 @@ function RootShell({ children }: { children: ReactNode }) {
 
 function RootComponent() {
   const { queryClient } = Route.useRouteContext();
+  useEffect(() => installDevInspect(), []);
 
   // §Message-routing gap #1 — install the real out-of-band SMS transport for
   // staff alerts (crisis flags, unread patient messages). Browser only.

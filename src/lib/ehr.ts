@@ -10143,7 +10143,8 @@ export const AdelanteEHR = {
     const now = new Date().toISOString();
 
     if (cin) {
-      res.cinDuplicate = AdelanteEHR.findCinDuplicate(cin, { patientId });
+      // The patient's own originating referral is not a duplicate.
+      res.cinDuplicate = AdelanteEHR.findCinDuplicate(cin, { patientId, referralId: p.referralId });
       if (!p.cin) {
         p.cin = cin;
         res.cinWritten = true;

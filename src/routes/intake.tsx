@@ -284,6 +284,7 @@ function IntakePage() {
   // Re-seed if the acting patient changes mid-session (assisted mode).
   useEffect(() => {
     setProfile(seedIntakeProfile(patient));
+    setBenefits(benefitsFormFromPatient(currentId));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [currentId]);
 
@@ -982,7 +983,7 @@ function IntakePage() {
               />
             </div>
 
-            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} />
+            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} audience={mode === "assisted" ? "staff_assisted" : "self"} />
 
             {ecmQuestionApplies(coverage.coverageType) && (
               <label
@@ -1555,8 +1556,10 @@ function IntakePage() {
       </Card>
 
       {/* Spacer so the fixed mobile action bar doesn't cover content */}
-      <div className="h-20 sm:hidden" aria-hidden />
-      <div className="fixed sm:sticky bottom-0 left-0 right-0 sm:left-auto sm:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t sm:border-0 sm:bg-transparent px-4 sm:px-0 py-3 sm:py-0">
+      {/* Sits ABOVE the patient tab bar (fixed, md:hidden) — it used to sit
+          under it on phones, so "Save & continue" couldn't be tapped. */}
+      <div className="h-40 md:hidden" aria-hidden />
+      <div className="fixed md:sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0">
         <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
           Back
         </Button>
