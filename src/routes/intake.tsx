@@ -31,7 +31,15 @@ import {
   type IntakeProfile,
 } from "@/lib/intakeProfile";
 import { Input } from "@/components/ui/input";
-import { intakeCoveragePatch, mediCalStatusApplies } from "@/lib/coverageStatus";
+import { intakeCoveragePatch } from "@/lib/coverageStatus";
+import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
+import {
+  benefitsAnswers,
+  benefitsFormFromPatient,
+  isMediCalChoice,
+  recordIntakeBenefits,
+  type BenefitsFormState,
+} from "@/lib/intakeBenefits";
 import {
   COVERAGE_TYPES,
   HEARD_ABOUT_SOURCES,
@@ -235,6 +243,20 @@ function IntakePage() {
    */
   const [lookup, setLookup] = useState<(LookupResult & { ran: boolean }) | null>(null);
   const acting = useActingStaff();
+  // §Phase 8b — the shared benefits step's state, seeded from the record.
+  const [benefits, setBenefits] = useState<BenefitsFormState>(() => benefitsFormFromPatient(currentId));
+  const onBenefitsChange = (v: BenefitsFormState) => {
+    setBenefits(v);
+    const a = benefitsAnswers(v);
+    const type = a?.coverageType ?? "unknown";
+    setCoverage((c) => ({
+      ...c,
+      coverageType: type,
+      status: isMediCalChoice(v.choice) ? v.mediCalStatus : c.status,
+      otherPlanName: v.planName,
+      ecmEligible: ecmQuestionApplies(type) ? c.ecmEligible : false,
+    }));
+  };
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // §Reporting Tier 2 — patient-estimated history. Every value here is the
@@ -294,6 +316,7 @@ function IntakePage() {
       if (saved.answers) setAnswers(saved.answers);
       if (saved.needs) setNeeds(saved.needs);
       if (saved.coverage) setCoverage(saved.coverage);
+      if (saved.benefits) setBenefits(saved.benefits);
       // Merge, never overwrite: a blank field in an old draft must not erase
       // something the record actually knows.
       if (saved.profile) {
