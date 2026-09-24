@@ -45,10 +45,10 @@ function group(category: GroupCategory, topic = `Topic ${category}`) {
   });
 }
 
-let transport: ReturnType<typeof vi.fn>;
+let transport: ReturnType<typeof vi.fn<(r: unknown) => void>>;
 beforeEach(() => {
   __resetGroupNotifications();
-  transport = vi.fn();
+  transport = vi.fn<(r: unknown) => void>();
   setGroupNotificationTransport(transport);
 });
 
