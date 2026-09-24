@@ -10,6 +10,7 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
+import { IssueSignInCodeButton } from "@/components/clinical/IssueSignInCodeButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
@@ -142,6 +143,7 @@ function ChartBody({
                 <span className="capitalize">{role.replace("_", " ")}</span>
               </span>
               <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
+              <IssueSignInCodeButton patientId={patient.id} />
               <Button size="sm" variant="outline" asChild>
                 <Link
                   to="/print/patient-records/$patientId"
