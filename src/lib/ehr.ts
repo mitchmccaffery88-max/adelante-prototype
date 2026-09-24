@@ -36,6 +36,7 @@ import type {
   SubstanceUseProfile,
 } from "./caloms";
 import { helperAuditDetail } from "./signup";
+import { mergeCoverage, type CoveragePatch } from "./coverageStatus";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
   matchExistingRecord,
