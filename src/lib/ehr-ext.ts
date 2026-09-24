@@ -1367,6 +1367,34 @@ export const AdelanteEHRExt = {
     chargeFor: (apptId) => claims.find((x) => x.encounterId === apptId)?.chargeCents,
     bucketCounts: () => claimBucketCounts(claims),
   });
+
+  // §Demo — two attended visits still waiting for a note, booked and marked
+  // attended through the real store API (claims open at `documented`):
+  //  - Kayla Nguyen (trainee, c4) with Leah (p2): note → sign → cosign → billing
+  //  - Dr. Marisol Reyes (c1) with Alicia (p4): note → self-sign → billing
+  const demo: { patientId: string; clinicianId: string; hoursAgo: number }[] = [
+    { patientId: "p2", clinicianId: "c4", hoursAgo: 26 },
+    { patientId: "p4", clinicianId: "c1", hoursAgo: 28 },
+  ];
+  for (const d of demo) {
+    try {
+      const start = new Date(Date.now() - d.hoursAgo * 3600_000);
+      start.setMinutes(0, 0, 0);
+      const a = AdelanteEHR.bookAppointment({
+        patientId: d.patientId,
+        clinicianId: d.clinicianId,
+        start: start.toISOString(),
+        durationMin: 50,
+        serviceType: "therapy_individual",
+        modality: "in_person",
+        locationId: "loc-visalia",
+        allowPatientOverlap: true,
+      });
+      AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+    } catch {
+      /* demo seed only */
+    }
+  }
 })();
 
 /** Counts claims under the familiar billing labels. Shared by every summary. */
