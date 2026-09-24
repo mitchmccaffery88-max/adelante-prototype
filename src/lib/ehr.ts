@@ -10028,6 +10028,11 @@ export const AdelanteEHR = {
   ): { ok: boolean; error?: string } {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ok: false, error: "Patient not found." };
+    // §Phase 8b — "reported" is reserved for recordIntakeBenefits; a staff
+    // check must name how staff actually checked.
+    if (input.channel === "reported") {
+      return { ok: false, error: "Choose how you checked — a report is not a staff check." };
+    }
     const cin = input.cin?.trim().toUpperCase();
     if (cin && cin.length !== 9) {
       return { ok: false, error: "A CIN is 9 characters. Check the number and try again." };
