@@ -75,11 +75,17 @@ export function noteSignBlockers(
  * Shared by the notes queue and the chart signing panel.
  */
 export function mirrorNoteSignatureToLedger(
-  note: { appointmentId?: string },
-  signerId: string,
-): void {
-  if (!note.appointmentId) return;
-  AdelanteEHRExt.signNote(note.appointmentId, signerId);
+  patientId: string,
+  noteId: string,
+): { ok: boolean; error?: string } {
+  const { n } = AdelanteEHR._findNote(patientId, noteId);
+  if (!n?.appointmentId) return { ok: true };
+  const r = AdelanteEHRExt.markClaimSignedFromNote({
+    patientId,
+    noteId,
+    attestation: n.status === "cosigned" ? n.cosignAttestation : n.attestation,
+  });
+  return r.ok ? { ok: true } : { ok: false, error: r.error };
 }
 
 export function signUnsignedWorkRow(
@@ -114,6 +120,7 @@ export function signUnsignedWorkRow(
   try {
     AdelanteEHR.signProgressNote(row.patient.id, row.note.id, {
       signedBy: actor.staffName,
+      signedById: actor.clinicianId ?? actor.staffId,
       role: actor.role,
       attested: true,
       attestation,
@@ -124,7 +131,6 @@ export function signUnsignedWorkRow(
   }
 
   // Mirror into the encounter signature ledger (claims read this).
-  if (!auth.routesToCosign)
-    mirrorNoteSignatureToLedger(row.note, actor.clinicianId ?? actor.staffId);
+  if (!auth.routesToCosign) mirrorNoteSignatureToLedger(row.patient.id, row.note.id);
   return { ok: true, routedToCosign: auth.routesToCosign };
 }

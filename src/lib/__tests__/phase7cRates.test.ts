@@ -1,3 +1,4 @@
+import { signClaimViaNote } from "@/test/claimSigning";
 // §Phase 7c — effective-dated rate table, billing code units, claim pricing.
 import { describe, it, expect, beforeEach } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
@@ -154,7 +155,7 @@ describe("claim pricing", () => {
     let x = AdelanteEHRExt.claimForEncounter(c.encounterId)!;
     expect(x.rateStatus).toBe("no_rate");
     expect(x.chargeCents).toBeUndefined();
-    AdelanteEHRExt.markClaimSignedFromNote(c.encounterId, "c1");
+    signClaimViaNote(c);
     AdelanteEHRExt.transitionClaim(c.id, "coded");
     const blocked = AdelanteEHRExt.transitionClaim(c.id, "generated");
     expect(blocked.ok).toBe(false);

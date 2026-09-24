@@ -1,3 +1,4 @@
+import { signClaimViaNote } from "@/test/claimSigning";
 import { describe, it, expect, beforeEach } from "vitest";
 import { readFileSync, readdirSync, statSync } from "node:fs";
 import { join } from "node:path";
@@ -10,7 +11,6 @@ import {
   claimBucketCounts,
 } from "@/lib/ehr-ext";
 import { billingStatusCounts } from "@/components/billing/BillingStatusSummary";
-import { mirrorNoteSignatureToLedger } from "@/lib/noteSignFlow";
 import { setActingRole, setActingStaff, type StaffRole } from "@/lib/roles";
 
 function actAs(role: string, staffId: string) {
@@ -62,7 +62,7 @@ describe("Phase 7b — claim as the single billing source", () => {
 
   it("refuses Sys Admin at the data layer and changes nothing", () => {
     const c = freshClaim();
-    AdelanteEHRExt.markClaimSignedFromNote(c.encounterId, "c1");
+    signClaimViaNote(c);
     actAs("sys_admin", "s-admin1");
     const before = JSON.stringify(c);
     expect(AdelanteEHRExt.transitionClaim(c.id, "coded")).toEqual({ ok: false, error: BILLING_WRITE_REFUSED });
@@ -73,7 +73,7 @@ describe("Phase 7b — claim as the single billing source", () => {
     for (const role of ["billing", "billing_coordinator"]) {
       actAs(role, role === "billing" ? "s-bill1" : "s-bc1");
       const c = freshClaim();
-      AdelanteEHRExt.markClaimSignedFromNote(c.encounterId, "c1");
+      signClaimViaNote(c);
       expect(AdelanteEHRExt.transitionClaim(c.id, "coded")).toEqual({ ok: true });
       const last = c.history.at(-1)!;
       expect(last.role).toBe(role);
@@ -89,7 +89,7 @@ describe("Phase 7b — claim as the single billing source", () => {
   it("rejects illegal moves and denial without reason", () => {
     const c = freshClaim();
     expect(AdelanteEHRExt.transitionClaim(c.id, "paid").ok).toBe(false);
-    AdelanteEHRExt.markClaimSignedFromNote(c.encounterId, "c1");
+    signClaimViaNote(c);
     walkTo(c.id, ["coded", "generated", "submitted"]);
     expect(AdelanteEHRExt.transitionClaim(c.id, "denied").ok).toBe(false);
   });
@@ -97,7 +97,7 @@ describe("Phase 7b — claim as the single billing source", () => {
   it("note signing (clinician) still advances documented -> signed", () => {
     actAs("therapist", "s-th1");
     const c = freshClaim();
-    mirrorNoteSignatureToLedger({ appointmentId: c.encounterId }, "c1");
+    signClaimViaNote(c);
     expect(c.state).toBe("signed");
     // …but a clinician cannot use the billing path.
     expect(AdelanteEHRExt.transitionClaim(c.id, "coded").ok).toBe(false);
@@ -128,7 +128,7 @@ describe("Phase 7b — claim as the single billing source", () => {
     expect(billingStatusCounts(claims)).toEqual(claimBucketCounts(claims));
     expect(AdelanteEHR.stats().billing).toEqual(claimBucketCounts(claims));
     const c = freshClaim();
-    AdelanteEHRExt.markClaimSignedFromNote(c.encounterId, "c1");
+    signClaimViaNote(c);
     walkTo(c.id, ["coded", "generated"]);
     expect(AdelanteEHR.exportIslReport).toBeTypeOf("function");
     expect(claimBillingBucket(AdelanteEHRExt.claimForEncounter(c.encounterId)!.state)).toBe("ready");

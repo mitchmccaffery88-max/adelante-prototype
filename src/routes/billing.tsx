@@ -17,6 +17,7 @@ import {
 import { toast } from "sonner";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
 import { ClaimAmount, RatesPanel } from "@/components/billing/RatesPanel";
 import {
   BillingStatusStrip,
@@ -428,6 +429,7 @@ function BillingPage() {
                             <span className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[bucket]}`}>
                               {BILLING_STATUS_ROWS.find((r) => r.status === bucket)?.label}
                             </span>
+                            <ClaimSignatureLine claim={claim} />
                             {bucket === "draft" && (
                               <span className="ml-1 text-[10px] text-muted-foreground">{claim.state}</span>
                             )}

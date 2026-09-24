@@ -6,6 +6,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { AdelanteEHRExt, claimUnitLabel, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
+import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
 import { ClaimAmount } from "@/components/billing/RatesPanel";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
 import { groupTopicFor, occurrencePeers, parseGroupEncounterId } from "@/lib/groupMetrics";
@@ -460,7 +461,7 @@ function ClaimsPage() {
                         {c.serviceCode ? `${c.serviceCode}${c.units ? ` ×${c.units}` : ""}` : "—"}
                       </TableCell>
                       <TableCell className="px-2 py-2" data-cell="clinician">{cl?.name}</TableCell>
-                      <TableCell className="px-2 py-2" data-cell="state"><Badge className={stateStyle[c.state]}>{c.state}</Badge></TableCell>
+                      <TableCell className="px-2 py-2" data-cell="state"><Badge className={stateStyle[c.state]}>{c.state}</Badge><ClaimSignatureLine claim={c} /></TableCell>
                       <TableCell className="px-2 py-2 font-mono text-xs" data-cell="charge"><ClaimAmount claim={c} /></TableCell>
                       <TableCell className="px-2 py-2">{c.denialReason ?? "—"}</TableCell>
                       <TableCell className="px-2 py-2 text-right space-x-2">

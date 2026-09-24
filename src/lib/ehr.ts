@@ -17,7 +17,7 @@ import type {
 import type { StaffRole } from "./roles";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
-import type { AttestationRecord } from "./attestation";
+import { attestationRecordProblem, type AttestationRecord } from "./attestation";
 // §EHR audit Phase 2b — template scope tiers. Type-only here; the value
 // helpers (clone/locked-field rules) live in the leaf module and are imported
 // by the write paths below.
@@ -2512,6 +2512,13 @@ export interface ProgressNote {
   cosignedBy?: string;
   cosignedAt?: string;
   cosignComment?: string;
+  /** §Phase 7b.1 — signer identity as recorded at signing (not the session). */
+  signedById?: string;
+  signedRole?: string;
+  cosignedById?: string;
+  cosignedRole?: string;
+  /** §Phase 7b.1 — the cosigner's own versioned attestation + drawn mark. */
+  cosignAttestation?: AttestationRecord;
   declineReason?: string;
   declinedBy?: string;
   declinedAt?: string;
@@ -5891,6 +5898,8 @@ export interface CatalogResolutionMetrics {
  */
 export interface ClaimBridge {
   onAttended(apptId: string): void;
+  /** §Phase 7b.1 — a note reached its FINAL signature (sign or cosign). */
+  onNoteFinal(patientId: string, noteId: string): void;
   bucketFor(apptId: string): string | undefined;
   chargeFor(apptId: string): number | undefined;
   bucketCounts(): Record<string, number>;
@@ -8940,6 +8949,8 @@ export const AdelanteEHR = {
     noteId: string,
     input: {
       signedBy: string;
+      /** §Phase 7b.1 — staff/clinician id of the signer, for claim traceability. */
+      signedById?: string;
       role: string;
       attested: boolean;
       cosignRequired?: boolean;
@@ -8995,6 +9006,8 @@ export const AdelanteEHR = {
     }
 
     n.signedBy = input.signedBy;
+    n.signedById = input.signedById ?? input.signedBy;
+    n.signedRole = input.role;
     n.signedAt = new Date().toISOString();
     if (input.attestation) n.attestation = input.attestation;
     if (input.autofillSnapshots) n.autofillSnapshots = input.autofillSnapshots;
@@ -9070,47 +9083,77 @@ export const AdelanteEHR = {
     // §Phase 3c — automations fire on the transition to a FINAL signature.
     // A note routed for cosignature is not final yet, so nothing runs until
     // the cosigner attests (see cosignProgressNote).
-    if (n.status === "signed")
+    if (n.status === "signed") {
       AdelanteEHR.runNoteAutomations(patientId, noteId, {
         actorId: input.signedBy,
         actorRole: input.role,
       });
+      // §Phase 7b.1 — a FINAL signature advances the linked claim (refused
+      // inside the claim path when there is no valid attestation).
+      _claimBridge?.onNoteFinal(patientId, noteId);
+    }
     emit();
     return n;
   },
 
+  /**
+   * §Phase 7b.1 — cosign uses the same Phase 1d ceremony as signing: the
+   * `progress_note_supervisor_sign` statement at its current version plus a
+   * drawn mark (anti-tap checked). Refused otherwise, nothing changes. On
+   * success the note is FINAL, so its linked claim advances documented →
+   * signed, credited to the cosigner (via the claim bridge).
+   */
   cosignProgressNote(
     patientId: string,
     noteId: string,
-    input: { cosignedBy: string; role: string; attested: boolean; comment?: string },
+    input: {
+      cosignedBy: string;
+      cosignedById?: string;
+      role: string;
+      attestation?: AttestationRecord;
+      comment?: string;
+    },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
     if (!n) throw new Error("Note not found.");
     if (noteStatus(n) !== "cosign_pending") throw new Error("This note is not awaiting cosign.");
-    if (!input.attested) throw new Error("Attestation is required to cosign a note.");
     if (!(NOTE_SELF_SIGN_ROLES as readonly string[]).includes(input.role))
       throw new Error("Your role cannot cosign clinical notes.");
     if (n.cosignRole?.length && !n.cosignRole.includes(input.role))
       throw new Error("This note requires a different cosigning role.");
-    if (n.signedBy === input.cosignedBy)
+    if (n.signedBy === input.cosignedBy || (input.cosignedById && n.signedById === input.cosignedById))
       throw new Error("A note cannot be cosigned by its signer.");
+    const problem = attestationRecordProblem(input.attestation, "progress_note_supervisor_sign");
+    if (problem) throw new Error(problem);
 
     n.cosignedBy = input.cosignedBy;
+    n.cosignedById = input.cosignedById ?? input.cosignedBy;
+    n.cosignedRole = input.role;
     n.cosignedAt = new Date().toISOString();
+    n.cosignAttestation = input.attestation;
     n.cosignComment = input.comment?.trim() || undefined;
     n.status = "cosigned";
     appendAudit({
       category: "clinical",
       action: "note_cosigned",
       patientId,
-      actorId: input.cosignedBy,
+      actorId: n.cosignedById,
       actorRole: input.role,
-      detail: { noteId, comment: n.cosignComment ?? null, signedBy: n.signedBy ?? null },
+      detail: {
+        noteId,
+        comment: n.cosignComment ?? null,
+        signedBy: n.signedBy ?? null,
+        attestationStatementId: input.attestation!.statementId,
+        attestationStatementVersion: input.attestation!.statementVersion,
+        attestationMethod: input.attestation!.method,
+        signatureCaptured: true,
+      },
     });
     AdelanteEHR.runNoteAutomations(patientId, noteId, {
       actorId: input.cosignedBy,
       actorRole: input.role,
     });
+    _claimBridge?.onNoteFinal(patientId, noteId);
     emit();
     return n;
   },
@@ -13091,8 +13134,11 @@ export const AdelanteEHR = {
     actorId: string;
     actorRole: string;
     actorName?: string;
-    via: "billing" | "note_signature";
+    via: "billing" | "note_signature" | "seed_data";
     reason?: string;
+    /** §Phase 7b.1 — the signature this move rests on. */
+    signature?: Record<string, unknown>;
+    seed?: boolean;
   }) {
     appendAudit({
       category: "clinical",
@@ -13107,6 +13153,8 @@ export const AdelanteEHR = {
         via: input.via,
         ...(input.actorName ? { actorName: input.actorName } : {}),
         ...(input.reason ? { reason: input.reason } : {}),
+        ...(input.signature ? input.signature : {}),
+        ...(input.seed ? { seed: true } : {}),
       },
     });
     emit();
