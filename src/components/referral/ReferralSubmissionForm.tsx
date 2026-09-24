@@ -41,8 +41,8 @@ export function normalizeCin(v: string) {
 export function isValidEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
-export const REFERRER_CONTACT_REQUIRED_MSG =
-  "Add your work phone or work email so we can reach you if we can't reach this person.";
+import { REFERRER_CONTACT_REQUIRED_MSG } from "@/lib/referralOutreach";
+export { REFERRER_CONTACT_REQUIRED_MSG };
 /** Returns the first validation problem with contact details, or null. */
 export function referralContactProblem(f: {
   referrerPhone: string;
@@ -166,6 +166,7 @@ export function ReferralSubmissionForm({
       countyOfRelease: ji ? form.countyOfRelease || undefined : undefined,
       consentToContact: form.noPhone ? false : form.consentToContact,
       requestManualOutreach: form.noPhone,
+      channel: staff ? "staff" : "public",
     });
     if (!staff) {
       const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();

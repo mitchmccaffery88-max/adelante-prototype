@@ -81,6 +81,8 @@ describe("justice-involved tagging and delivery log", () => {
       referralSource: "parole",
       consentToContact: true,
       justiceInvolved: "yes",
+      referrerPhone: "5555550198",
+      channel: "public",
     });
     expect(created.justiceInvolved).toBe("yes");
     expect(created.cin).toBe("90000000A");
@@ -95,6 +97,8 @@ describe("justice-involved tagging and delivery log", () => {
       referralSource: "community_based_organization",
       consentToContact: false,
       justiceInvolved: "unsure",
+      referrerEmail: "jo@cbo.org",
+      channel: "public",
     });
     AdelanteEHR.recordReferrerUpdateDelivery(created.id, {
       event: "contacted",

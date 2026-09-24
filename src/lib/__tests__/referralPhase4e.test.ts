@@ -16,6 +16,7 @@ const base = {
   referrerPhone: "5105551212",
   referrerEmail: "diaz@county.gov",
   referralSource: "probation" as const,
+  channel: "public" as const,
 };
 
 describe("outreach task creation", () => {

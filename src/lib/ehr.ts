@@ -49,6 +49,8 @@ export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 import { canAccess, getActingRole, getActingStaff, STAFF_ROLES } from "./roles";
 import {
   referralNeedsOutreachTask,
+  referrerHasContact,
+  REFERRER_CONTACT_REQUIRED_MSG,
   type ReferralOutreachAttempt,
   type ReferralOutreachOutcome,
   type ReferralOutreachState,
@@ -729,6 +731,8 @@ export interface Referral {
   // ----- §Phase 4a disposition history (who moved this, when, why) ---------
   contactedAt?: string;
   contactedBy?: ReferralActor;
+  /** Absent on records created before submission attribution existed. */
+  submittedBy?: ReferralSubmitter;
   enrolledAt?: string;
   enrolledBy?: ReferralActor;
   declinedAt?: string;
@@ -750,6 +754,13 @@ export interface ReferralActor {
   name: string;
   role: string;
 }
+
+/**
+ * Who submitted a referral. Public-form submissions have no authenticated
+ * actor, so they are recorded honestly as external — never attributed to
+ * whichever staff identity happens to be in the browser.
+ */
+export type ReferralSubmitter = { kind: "staff"; actor: ReferralActor } | { kind: "external" };
 
 /**
  * Medication order (§Orders — port of BaggaEMR `OrderCart`).
@@ -7411,11 +7422,23 @@ export const AdelanteEHR = {
 
   // Writes (mocked — in production these become native Adelante EHR mutations)
   createReferral(
-    input: Omit<Referral, "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask"> & {
+    input: Omit<
+      Referral,
+      "id" | "status" | "createdAt" | "smsSentAt" | "outreachTask" | "submittedBy"
+    > & {
       requestManualOutreach?: boolean;
+      /** Which form was used. Staff → the acting staff member is resolved here. */
+      channel: "staff" | "public";
     },
   ) {
-    const { requestManualOutreach, ...rest } = input;
+    const { requestManualOutreach, channel, ...rest } = input;
+    // Don't trust the UI alone: the referrer phone-or-email rule is enforced
+    // here too. Blank strings are normalised away so "   " can't satisfy it.
+    rest.referrerPhone = rest.referrerPhone?.trim() || undefined;
+    rest.referrerEmail = rest.referrerEmail?.trim() || undefined;
+    if (!referrerHasContact(rest)) throw new Error(REFERRER_CONTACT_REQUIRED_MSG);
+    const submittedBy: ReferralSubmitter =
+      channel === "staff" ? { kind: "staff", actor: _referralActor() } : { kind: "external" };
     // Fallback: no phone, no contact consent, or referrer explicitly requested
     // manual outreach → skip the Twilio welcome-text trigger and queue a
     // manual-call task for the care team instead.
@@ -7433,6 +7456,7 @@ export const AdelanteEHR = {
       id: uid(),
       status: "submitted",
       createdAt: now.toISOString(),
+      submittedBy,
       // §Phase 4a — NOTHING is stamped as sent here. The caller attempts a
       // real send and writes the real outcome back via
       // `recordReferralWelcomeDelivery`.
@@ -7455,6 +7479,25 @@ export const AdelanteEHR = {
           }),
     };
     referrals.unshift(r);
+    appendAudit({
+      category: "clinical",
+      action: "referral_submitted",
+      at: r.createdAt,
+      actorId: submittedBy.kind === "staff" ? submittedBy.actor.staffId : "external",
+      actorRole: submittedBy.kind === "staff" ? submittedBy.actor.role : undefined,
+      // Which contact kinds were given — never the third-party values themselves.
+      detail: {
+        referralId: r.id,
+        channel,
+        referralSource: r.referralSource,
+        referringAgency: r.referringAgency,
+        referrerName: r.referrerName,
+        referrerContactProvided: [
+          ...(r.referrerPhone ? ["phone"] : []),
+          ...(r.referrerEmail ? ["email"] : []),
+        ],
+      },
+    });
     emit();
     return r;
   },

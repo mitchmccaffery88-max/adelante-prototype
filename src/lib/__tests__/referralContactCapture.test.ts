@@ -14,6 +14,7 @@ const base = {
   referringAgency: "County Probation",
   referrerName: "Officer Diaz",
   referralSource: "probation" as const,
+  channel: "public" as const,
 };
 
 describe("referrer phone-or-email rule", () => {
