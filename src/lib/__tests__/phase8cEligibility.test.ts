@@ -31,7 +31,6 @@ describe("Phase 8c — electronic eligibility", () => {
 
   it("mock active response fills every field end to end and counts as verified", async () => {
     const id = pt();
-    AdelanteEHR.setCin?.(id, "91111111A");
     const r = await apply(id, "active");
     expect(r).toMatchObject({ ok: true, spanAction: "added" });
     const cov = AdelanteEHR.getPatient(id)!.coverage!;
