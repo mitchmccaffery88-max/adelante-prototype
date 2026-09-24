@@ -1215,7 +1215,7 @@ export const AdelanteEHRExt = {
   onRateAdded((r) => {
     for (const c of claims) {
       if (c.rateStatus !== "no_rate" || c.serviceCode !== r.code || c.program !== r.program) continue;
-      if (!["documented", "signed", "coded", "written_off"].includes(c.state)) continue;
+      if (!["documented", "signed", "coded", "generated", "written_off"].includes(c.state)) continue;
       applyPricing(c);
       if ((c.rateStatus as string) === "priced") {
         AdelanteEHR.recordBillingAudit({
