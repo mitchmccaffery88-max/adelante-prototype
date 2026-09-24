@@ -130,7 +130,7 @@ export function PatientHome() {
 
   // First-time experience: intake not yet completed.
   if (!patient.intakeCompletedAt) {
-    return <FirstTimeWelcome firstName={patient.firstName} />;
+    return <FirstTimeWelcome firstName={patient.firstName} patientId={patient.id} />;
   }
 
   // §P1 My Care de-clutter — the appointment and medication lists that used
@@ -155,6 +155,22 @@ export function PatientHome() {
           </div>
         }
       />
+
+      <Card
+        className="p-4 flex flex-wrap items-center justify-between gap-3"
+        data-testid="intake-complete-tile"
+      >
+        <div className="flex items-start gap-2">
+          <ClipboardList className="h-5 w-5 text-teal mt-0.5" />
+          <div>
+            <div className="font-medium text-navy">{t("homeIntakeDoneTitle")}</div>
+            <div className="text-xs text-muted-foreground">{t("homeIntakeDoneBody")}</div>
+          </div>
+        </div>
+        <Button asChild size="sm" variant="outline">
+          <Link to="/intake">{t("homeUpdateAnswers")}</Link>
+        </Button>
+      </Card>
 
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
@@ -219,8 +235,22 @@ export function PatientHome() {
   );
 }
 
-function FirstTimeWelcome({ firstName }: { firstName: string }) {
+/** True when a saved intake draft exists for this patient (intake.tsx P5 key). */
+function useIntakeDraft(patientId: string): boolean {
+  const [has, setHas] = useState(false);
+  useEffect(() => {
+    try {
+      setHas(Boolean(localStorage.getItem(`adelante.intake.${patientId}`)));
+    } catch {
+      setHas(false);
+    }
+  }, [patientId]);
+  return has;
+}
+
+function FirstTimeWelcome({ firstName, patientId }: { firstName: string; patientId: string }) {
   const { t } = useI18n();
+  const hasDraft = useIntakeDraft(patientId);
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10 space-y-6">
       <Card className="p-8 border-2 bg-gradient-to-br from-card via-card to-teal/10 relative overflow-hidden">
@@ -234,7 +264,9 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
         <h1 className="font-display text-3xl sm:text-4xl text-navy mt-4 leading-tight">
           {t("homeHi")} {firstName} — {t("homeSetupCare")}
         </h1>
-        <p className="text-muted-foreground mt-3 max-w-xl">{t("homeIntakeBlurb")}</p>
+        <p className="text-muted-foreground mt-3 max-w-xl">
+          {hasDraft ? t("homeContinueNote") : t("homeIntakeBlurb")}
+        </p>
 
         <ul className="mt-6 grid sm:grid-cols-3 gap-3 text-sm">
           <li className="rounded-lg border bg-card p-3">
@@ -253,13 +285,11 @@ function FirstTimeWelcome({ firstName }: { firstName: string }) {
 
         <div className="mt-7 flex flex-wrap gap-3">
           <Button asChild size="lg" className="bg-navy text-navy-foreground hover:bg-navy/90">
-            {/* First-time entry goes through the front-door sequence, which
-                routes to /intake (or an alternate flow) after three questions.
-                Sign-up (`/start/signup`) now comes first for self-service
-                entrants. The rescreen task below still deep-links to /intake. */}
-            <Link to="/start/signup">
+            {/* The patient already has a record here, so this opens intake for
+                THIS record — never sign-up, which would create a new person. */}
+            <Link to="/intake" data-testid="home-intake-cta">
               <ClipboardList className="mr-2 h-4 w-4" />
-              {t("homeStartIntake")}
+              {hasDraft ? t("homeContinueIntake") : t("homeStartIntake")}
               <ArrowRight className="ml-1.5 h-4 w-4" />
             </Link>
           </Button>
