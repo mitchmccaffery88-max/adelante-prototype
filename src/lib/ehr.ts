@@ -21960,10 +21960,12 @@ try {
       lastName: DEMO_PRE_RELEASE_PERSONA.lastName,
       dob: "1991-03-14",
       anticipatedReleaseDate: release,
-      cfCareManagerStaffId: "s-cf1",
-      cfCareManagerName: "Rosa Delgado",
+      cfCareManagerStaffId: "s-cf2",
+      // Matches the staff directory record for s-cf2 exactly (not s-cf1,
+      // whose name would collide with the Rosa demo persona).
+      cfCareManagerName: "Darnell Pope (facility contract)",
       facilityName: "Tulare County Adult Pre-Trial Facility",
-      openedBy: "s-cf1",
+      openedBy: "s-cf2",
       actorRole: "cf_care_manager",
     });
     AdelanteEHR.recordImportedHrsnDomains({
@@ -21974,7 +21976,7 @@ try {
         { key: "transportation", label: "Transportation", positive: false },
         { key: "safety", label: "Interpersonal safety", positive: true },
       ],
-      importedBy: "s-cf1",
+      importedBy: "s-cf2",
       actorRole: "cf_care_manager",
     });
   }
