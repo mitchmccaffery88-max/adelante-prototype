@@ -126,3 +126,20 @@ export function recordIntakeBenefits(
 ): IntakeBenefitsResult {
   return AdelanteEHR.recordIntakeBenefits(patientId, answers, input);
 }
+
+/**
+ * §Phase 8b — pre-release import row → answers. The partner file only says
+ * a type and maybe a CIN; no Medi-Cal status is invented.
+ */
+export function partnerBenefitsAnswers(
+  coverageType?: Exclude<BenefitsChoice, "prefer_self_pay">,
+  cin?: string,
+): IntakeBenefitsAnswers | undefined {
+  if (!coverageType) return cin ? { cin } : undefined;
+  const m = CHOICE_MAP[coverageType];
+  return {
+    coverageType: m.type,
+    ...(m.report ? { nonMediCalReport: m.report } : {}),
+    ...(cin ? { cin } : {}),
+  };
+}

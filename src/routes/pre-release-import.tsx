@@ -12,6 +12,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { ArrowLeft, Download, Lock, Upload } from "lucide-react";
 import { toast } from "sonner";
+import { partnerBenefitsAnswers, recordIntakeBenefits } from "@/lib/intakeBenefits";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import {
   canImportPreReleaseRoster,
@@ -167,6 +168,19 @@ function PreReleaseImportPage() {
           updated += 1;
         }
         if (patientId && c.county) AdelanteEHR.setCountyOfRelease(patientId, c.county);
+        // §Phase 8b — optional benefits columns, partner-reported, unverified.
+        const reported = partnerBenefitsAnswers(c.coverageType, c.cin);
+        if (patientId && reported) {
+          const r = recordIntakeBenefits(patientId, reported, {
+            source: "partner_reported",
+            via: "pre_release_import",
+            actorId: staffId,
+            actorName: staffName,
+            actorRole: role,
+          });
+          if (!r.ok) toast.error(`Row ${c.line}: ${r.error}`);
+          else if (r.cinMismatch) toast.warning(`Row ${c.line}: a different CIN is already on file — not changed.`);
+        }
         if (episodeId && c.hrsn.length > 0) {
           AdelanteEHR.recordImportedHrsnDomains({
             episodeId,
@@ -260,6 +274,7 @@ function PreReleaseImportPage() {
                   <th className="py-1 pr-3">Name</th>
                   <th className="py-1 pr-3">Release</th>
                   <th className="py-1 pr-3">Needs reported</th>
+                  <th className="py-1 pr-3">Coverage reported</th>
                   <th className="py-1 pr-3">Outcome</th>
                   <th className="py-1">Why</th>
                 </tr>
@@ -278,6 +293,10 @@ function PreReleaseImportPage() {
                         : c.hrsn.filter((d) => d.positive).map((d) => d.label).join(", ") ||
                           "None reported"}
                     </td>
+                    <td className="py-1 pr-3">
+                      {c.coverageType ? c.coverageType.replace(/_/g, " ") : "—"}
+                      {c.cin ? ` · CIN ••••${c.cin.slice(-4)}` : ""}
+                    </td>
                     <td className="py-1 pr-3">{OUTCOME_LABEL[c.outcome]}</td>
                     <td className="py-1 text-muted-foreground">{c.reason}</td>
                   </tr>
@@ -286,6 +305,7 @@ function PreReleaseImportPage() {
                   <tr key={`r-${r.line}`} className="border-t text-destructive">
                     <td className="py-1 pr-3">{r.line}</td>
                     <td className="py-1 pr-3">{r.name}</td>
+                    <td className="py-1 pr-3">—</td>
                     <td className="py-1 pr-3">—</td>
                     <td className="py-1 pr-3">—</td>
                     <td className="py-1 pr-3">Rejected</td>
