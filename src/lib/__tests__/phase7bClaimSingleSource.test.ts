@@ -18,15 +18,17 @@ function actAs(role: string, staffId: string) {
   setActingRole(role as StaffRole);
 }
 
+let slot = 0;
 function freshClaim() {
   const c = AdelanteEHR.listClinicians()[0]!;
-  const a = AdelanteEHR.createAppointment({
-    patientId: "p2",
+  const patientId = AdelanteEHR.listPatients()[0]!.id;
+  slot += 1;
+  const a = AdelanteEHR.bookAppointment({
+    patientId,
     clinicianId: c.id,
-    start: new Date(Date.now() - (Math.random() * 900 + 200) * 3600_000).toISOString(),
-    durationMin: 50,
-    allowPatientOverlap: true,
-  } as never);
+    start: new Date(Date.now() + 86400_000 * (40 + slot)).toISOString(),
+    durationMin: 30,
+  });
   AdelanteEHR.updateAppointmentStatus(a.id, "attended");
   return AdelanteEHRExt.claimForEncounter(a.id)!;
 }
