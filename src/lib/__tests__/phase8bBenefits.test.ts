@@ -17,7 +17,7 @@ const pt = () => AdelanteEHR.createPatient({ firstName: "B", lastName: `Ben${Mat
 const cin = () => `9${Math.random().toString(36).slice(2, 10).toUpperCase().padEnd(8, "0")}`;
 const who = (source: ReportedBenefitsSource) => ({
   source,
-  via: "test",
+  via: "chart" as const,
   actorId: "s1",
   actorName: "Staff One",
   actorRole: "case_manager",
