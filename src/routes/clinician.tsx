@@ -1,4 +1,5 @@
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
+import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
@@ -783,7 +784,7 @@ function ChartHeader({
                       : coverageKind(patient) === "unknown"
                         ? "Coverage type unknown"
                         : "Coverage"}
-                    : {patient.coverage.status}
+                    : {coverageStatusLabel(patient.coverage)} ({verifiedLabel(patient.coverage.verified)})
                   </Badge>
                 )}
               </div>

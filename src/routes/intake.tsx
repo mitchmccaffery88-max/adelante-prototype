@@ -448,7 +448,7 @@ function IntakePage() {
         ecmEligible: coverage.ecmEligible,
         otherPlanName: coverage.otherPlanName,
       }),
-      acting.staffId
+      mode === "assisted" && acting.staffId
         ? { id: acting.staffId, role: acting.role, source: "intake_staff_assisted" }
         : { id: currentId, role: "patient", source: "intake_self_service" },
     );
