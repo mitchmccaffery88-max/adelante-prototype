@@ -5,7 +5,7 @@
 //
 // `variant="public"` is the original page exactly as it shipped.
 // `variant="staff"` is the same form with the marketing header and the
-// referrer-facing "your referrals" list omitted (staff have the real queue).
+// public confirmation screen omitted (staff have the real queue).
 import { useEffect, useState } from "react";
 import {
   AdelanteEHR,
@@ -16,7 +16,7 @@ import {
 } from "@/lib/ehr";
 import { useServerFn } from "@tanstack/react-start";
 import { sendReferralWelcome } from "@/lib/referralWelcome.functions";
-import { ReferralProgressStrip } from "@/components/ReferralProgressStrip";
+import { deliverReferrerUpdate } from "@/lib/referrerUpdateDelivery";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -30,7 +30,7 @@ import {
   SelectValue,
 } from "@/components/ui/select";
 import { toast } from "sonner";
-import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react";
+import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
@@ -83,11 +83,17 @@ export function ReferralSubmissionForm({
   const staff = variant === "staff";
   const { t } = useI18n();
   const [submitted, setSubmitted] = useState(false);
-  const [referrerKey, setReferrerKey] = useState<string>("");
+  // B6 — the public "your referrals" list is gone: it showed referred
+  // people's names to anyone on a shared computer. Clear the storage key that
+  // powered it so nothing lingers from earlier visits.
+  const [confirmation, setConfirmation] = useState<{
+    reference: string;
+    textStatus: "sent" | "not_configured" | "failed" | "no_phone" | "pending";
+  } | null>(null);
   useEffect(() => {
     if (staff) return;
     try {
-      setReferrerKey(localStorage.getItem("adelante.referrerKey") ?? "");
+      localStorage.removeItem("adelante.referrerKey");
     } catch {
       /* no-op */
     }
@@ -175,14 +181,19 @@ export function ReferralSubmissionForm({
       channel: staff ? "staff" : "public",
     });
     if (!staff) {
-      const key = (form.referrerEmail || form.referrerName).trim().toLowerCase();
-      try {
-        localStorage.setItem("adelante.referrerKey", key);
-      } catch {
-        /* no-op */
-      }
-      setReferrerKey(key);
+      setConfirmation({
+        reference: referralReference(result.id),
+        textStatus: result.referrerPhone ? "pending" : "no_phone",
+      });
       setSubmitted(true);
+      // B6 — confirmation text to the referrer, honest outcome recorded on the
+      // referral (sent / not_configured / failed). A confirmation EMAIL
+      // depends on the email transport ticket and is not attempted here.
+      if (result.referrerPhone) {
+        void deliverReferrerUpdate(result, "received").then((status) =>
+          setConfirmation((c) => (c ? { ...c, textStatus: status } : c)),
+        );
+      }
     } else {
       onSubmitted?.(result.id);
     }
@@ -225,22 +236,51 @@ export function ReferralSubmissionForm({
 
   if (submitted && !staff) {
     return (
-      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16 text-center">
-        <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
-        <h1 className="font-display text-3xl text-navy mt-4">Thank you.</h1>
-        <p className="text-muted-foreground mt-2">
-          We'll reach out to this person with a warm welcome and next steps. You'll hear back if we
-          need anything from you.
-        </p>
-        <div className="mt-8 text-left">
-          <ReferrerStatusTracker referrerKey={referrerKey} />
+      <div className="mx-auto max-w-2xl px-4 sm:px-6 py-16" data-testid="referral-confirmation">
+        <div className="text-center">
+          <CheckCircle2 className="h-12 w-12 text-teal mx-auto" />
+          <h1 className="font-display text-3xl text-navy mt-4">Referral received</h1>
+          {confirmation && (
+            <p className="mt-2 text-sm text-muted-foreground">
+              Reference number{" "}
+              <span className="font-mono font-semibold text-navy" data-testid="referral-reference">
+                {confirmation.reference}
+              </span>
+            </p>
+          )}
         </div>
-        <Button
-          className="mt-6 bg-navy text-navy-foreground hover:bg-navy/90"
-          onClick={() => setSubmitted(false)}
-        >
-          Refer someone else
-        </Button>
+        <Card className="mt-8 p-5 text-left space-y-3">
+          <h2 className="font-display text-lg text-navy">What happens next</h2>
+          <ul className="space-y-2 text-sm text-foreground">
+            <li>Our team will reach out to the person you referred with a warm welcome.</li>
+            <li>You'll get status updates as the referral moves forward.</li>
+            <li>Keep the reference number if you need to contact us about this referral.</li>
+          </ul>
+          {confirmation && (
+            <p className="text-xs text-muted-foreground" data-testid="referrer-text-status">
+              {confirmation.textStatus === "sent"
+                ? "We sent a confirmation text to your phone."
+                : confirmation.textStatus === "pending"
+                  ? "Sending a confirmation text to your phone…"
+                  : confirmation.textStatus === "not_configured"
+                    ? "No confirmation text was sent — text messaging isn't connected yet."
+                    : confirmation.textStatus === "failed"
+                      ? "We couldn't send a confirmation text. Your referral was still received."
+                      : "No phone number was given, so no confirmation text was sent."}
+            </p>
+          )}
+        </Card>
+        <div className="text-center">
+          <Button
+            className="mt-6 bg-navy text-navy-foreground hover:bg-navy/90"
+            onClick={() => {
+              setSubmitted(false);
+              setConfirmation(null);
+            }}
+          >
+            Refer someone else
+          </Button>
+        </div>
       </div>
     );
   }
@@ -447,11 +487,6 @@ export function ReferralSubmissionForm({
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-10">
-      {referrerKey && (
-        <div className="mb-6">
-          <ReferrerStatusTracker referrerKey={referrerKey} />
-        </div>
-      )}
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
           {t("navReferrals")}
@@ -474,59 +509,7 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   );
 }
 
-const stageLabels: Record<ReferralStatus, string> = {
-  submitted: "Received",
-  contacted: "Eligibility verified · intake scheduled",
-  enrolled: "Enrolled",
-  // Written for an outside referrer's eyes: closed, with no reason and
-  // nothing clinical disclosed.
-  declined: "Closed — we followed up with this person",
-};
-const publicStatusWord: Record<ReferralStatus, string> = {
-  submitted: "submitted",
-  contacted: "contacted",
-  enrolled: "enrolled",
-  declined: "closed",
-};
-
-function ReferrerStatusTracker({ referrerKey }: { referrerKey: string }) {
-  const { t } = useI18n();
-  const all = useEhr(() => AdelanteEHR.listReferrals());
-  if (!referrerKey) return null;
-  const mine = all.filter((r) => {
-    const k = (r.referrerEmail || r.referrerName).trim().toLowerCase();
-    return k === referrerKey;
-  });
-  if (mine.length === 0) return null;
-  return (
-    <Card className="p-5">
-      <div className="flex items-center justify-between">
-        <h3 className="font-display text-lg text-navy flex items-center gap-2">
-          <ListChecks className="h-4 w-4 text-teal" /> {t("refYourReferrals")}
-        </h3>
-        <Badge variant="outline">{mine.length}</Badge>
-      </div>
-      <p className="text-xs text-muted-foreground mt-1">Status only — no clinical detail.</p>
-      <ul className="mt-3 space-y-3">
-        {mine.slice(0, 10).map((r) => {
-          return (
-            <li key={r.id} className="border-b last:border-0 pb-3 last:pb-0">
-              <div className="flex items-center justify-between">
-                <div className="text-sm">
-                  <div className="font-medium text-navy">
-                    {r.firstName} {r.lastName}
-                  </div>
-                  <div className="text-xs text-muted-foreground">{stageLabels[r.status]}</div>
-                </div>
-                <Badge variant="outline" className="capitalize text-[10px]">
-                  {publicStatusWord[r.status]}
-                </Badge>
-              </div>
-              <ReferralProgressStrip status={r.status} />
-            </li>
-          );
-        })}
-      </ul>
-    </Card>
-  );
+/** Short, shareable reference derived from the referral id (no PII). */
+function referralReference(id: string): string {
+  return `REF-${id.slice(0, 8).toUpperCase()}`;
 }
