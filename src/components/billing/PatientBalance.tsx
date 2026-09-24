@@ -16,7 +16,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 
 const DOLLARS = (c?: number) => (c === undefined ? "—" : `$${(c / 100).toFixed(2)}`);
 const inputCls = "rounded-md border bg-background px-2 py-1 text-xs";
-const LOCKED = ["submitted", "paid", "denied", "partial", "written_off"];
 
 export function PatientBalance({ claim, canWrite }: { claim: Claim; canWrite: boolean }) {
   const arrangement = useEhr(() => AdelanteEHR.getPatient(claim.patientId)?.paymentArrangement);
@@ -61,12 +60,7 @@ export function PatientBalance({ claim, canWrite }: { claim: Claim; canWrite: bo
           ))}
         </ul>
       )}
-      {canWrite && patientPays && (claim.patientBalanceCents ?? 0) > 0 && !LOCKED.includes(claim.state) && (
-        <RecordPayment claim={claim} />
-      )}
-      {canWrite && patientPays && (claim.patientBalanceCents ?? 0) > 0 && LOCKED.includes(claim.state) && (
-        <RecordPayment claim={claim} />
-      )}
+      {canWrite && patientPays && (claim.patientBalanceCents ?? 0) > 0 && <RecordPayment claim={claim} />}
     </div>
   );
 }
