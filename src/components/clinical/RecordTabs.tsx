@@ -23,6 +23,7 @@ import { PaymentArrangementCard } from "@/components/billing/PaymentArrangementC
 import { ReportedBenefitsCard } from "@/components/intake/ReportedBenefitsCard";
 import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
 import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
+import { EligibilityHistoryCard } from "@/components/coverage/EligibilityHistoryCard";
 import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
 
 import {
@@ -1453,6 +1454,7 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
         </div>
       )}
       <CoveragePlansSection patientId={patientId} actor={actor} readOnly={readOnly} />
+      <EligibilityHistoryCard patientId={patientId} canCheck={!readOnly} onRecordManual={() => setCheckOpen(true)} />
       <ReportedBenefitsCard patientId={patientId} />
       <PaymentArrangementCard patientId={patientId} />
 

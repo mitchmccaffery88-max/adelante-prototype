@@ -1,3 +1,4 @@
+import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { useState } from "react";
@@ -828,7 +829,7 @@ function EligibilitySummaryCard({ patientId }: { patientId: string }) {
         <ShieldCheck className="h-4 w-4 text-teal" /> Medi-Cal eligibility
       </h3>
       <p className="mt-2 text-xs text-muted-foreground">
-        Coverage: {coverageStatusLabel(p.coverage)} ({verifiedLabel(p.coverage?.verified)}). {lastCheck ? "A verification is on file." : "No verification is on file."}
+        Coverage: {coverageStatusLabel(p.coverage)} ({verifiedLabel(p.coverage?.verified)}). {lastCheck ? <>Last check: <VerificationSourceBadge record={lastCheck} /></> : "No verification is on file."}
       </p>
       <div className="mt-3 flex flex-wrap gap-2">
         <Button size="sm" variant="outline" asChild>

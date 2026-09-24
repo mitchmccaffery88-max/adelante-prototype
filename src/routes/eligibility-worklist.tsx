@@ -20,7 +20,7 @@ import {
   coverageWorklistSummary,
   type CoverageCheckState,
 } from "@/lib/coverageWorklist";
-import { COVERAGE_CHECK_CHANNEL_LABEL, REPORTED_SOURCE_LABEL } from "@/lib/ehr";
+import { VerificationSourceBadge } from "@/components/coverage/VerificationSourceBadge";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -231,7 +231,7 @@ function EligibilityWorklistPage() {
                   <td className="px-3 py-2 text-xs text-muted-foreground">
                     {r.pendingReport && (
                       <div className="mb-1 text-foreground" data-testid="pending-report">
-                        {REPORTED_SOURCE_LABEL[r.pendingReport.reportSource]} ·{" "}
+                        <VerificationSourceBadge record={r.pendingReport} />{" "}
                         <ClientDate value={r.pendingReport.checkedAt} /> · by {r.pendingReport.checkedBy} — not verified
                       </div>
                     )}
@@ -240,13 +240,12 @@ function EligibilityWorklistPage() {
                         <ClientDate value={r.lastCheck.checkedAt} />
                         {typeof r.daysSinceCheck === "number" ? ` · ${r.daysSinceCheck}d ago` : ""}
                         <div>
-                          {r.lastCheck.checkedBy} ·{" "}
-                          {COVERAGE_CHECK_CHANNEL_LABEL[r.lastCheck.channel]} · result{" "}
+                          <VerificationSourceBadge record={r.lastCheck} /> {r.lastCheck.checkedBy} · result{" "}
                           {r.lastCheck.result}
                         </div>
                       </>
                     ) : (
-                      "No eligibility check has ever been recorded."
+                      "No staff or electronic check has ever been recorded."
                     )}
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
