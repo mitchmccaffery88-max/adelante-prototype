@@ -384,7 +384,7 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["custody_tracking"] },
   },
 
-  // ----- Revenue & consent -----
+  // ----- Revenue & billing -----
   {
     id: "billing",
     label: "Billing",
@@ -417,12 +417,24 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["eligibility"] },
   },
   {
+    // §Phase 7a — CalAIM qualifying codes moved out of KPI targets. Billing
+    // roles edit; population_health writers (clinical coordinator, sys admin)
+    // keep read-only visibility because the codes drive their dashboards.
+    id: "billing-calaim-codes",
+    label: "CalAIM qualifying codes",
+    desc: "ICD-10 codes behind CalAIM eligibility",
+    icon: ListChecks,
+    to: "/billing-calaim-codes",
+    group: "revenue",
+    gate: { kind: "record_class", anyOf: ["billing"] },
+  },
+  {
     id: "consent",
     label: "Consent",
     desc: "Ledger & disclosures",
     icon: ShieldCheck,
     to: "/consent",
-    group: "revenue",
+    group: "consent",
     gate: { kind: "record_class", anyOf: ["consent_ledger"] },
   },
   {
@@ -431,7 +443,7 @@ export const STAFF_NAV: NavEntry[] = [
     desc: "Captures, revocations & disclosures",
     icon: FileSearch,
     to: "/consent-audit",
-    group: "revenue",
+    group: "consent",
     gate: { kind: "record_class", anyOf: ["consent_ledger"] },
   },
 
