@@ -115,9 +115,15 @@ const records: GroupNotificationRecord[] = [];
 let transport: GroupNotificationTransport | undefined;
 let suppressed = false;
 const listeners = new Set<() => void>();
+let version = 0;
 
 function emit() {
+  version++;
   for (const l of listeners) l();
+}
+
+export function getGroupNotificationsVersion(): number {
+  return version;
 }
 
 export function subscribeGroupNotifications(fn: () => void): () => void {
