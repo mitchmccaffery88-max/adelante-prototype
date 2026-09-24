@@ -144,8 +144,7 @@ describe("triggers, consent and attribution", () => {
   });
 
   it("blocked enrollment sends nothing", () => {
-    const p = patient(7);
-    AdelanteEHR.clearGroupEligibility(p.id, "test", STAFF);
+    const p = AdelanteEHR.listPatients().find((x) => !AdelanteEHR.isGroupEligible(x.id))!;
     const g = group("skills_education");
     expect(() =>
       AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: p.id, enrolledBy: STAFF }),
