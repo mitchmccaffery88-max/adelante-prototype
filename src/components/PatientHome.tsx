@@ -132,7 +132,16 @@ export function PatientHome() {
 
   // First-time experience: intake not yet completed.
   if (!patient.intakeCompletedAt) {
-    return <FirstTimeWelcome firstName={patient.firstName} patientId={patient.id} />;
+    return (
+      <>
+        <FirstTimeWelcome firstName={patient.firstName} patientId={patient.id} />
+        {/* Pre-release patients often arrive with screening already on file
+            before they start intake — show what the team knows here too. */}
+        <div className="mx-auto max-w-4xl px-4 sm:px-6 pb-8">
+          <PreReleaseKnownNeedsCard patientId={patient.id} />
+        </div>
+      </>
+    );
   }
 
   // §P1 My Care de-clutter — the appointment and medication lists that used
