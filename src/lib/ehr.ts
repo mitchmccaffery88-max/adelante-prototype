@@ -627,9 +627,38 @@ export interface SelfHelpModule {
  * claim an electronic verification: a staff-recorded check is the strongest
  * provenance available.
  */
-export type CoveragePlanSource = "self_report" | "front_desk" | "staff_checked";
+export type CoveragePlanSource =
+  | "self_report"
+  | "front_desk"
+  | "staff_checked"
+  | ReportedBenefitsSource;
+
+/**
+ * §Phase 8b — WHO reported benefits information. Every value is unverified
+ * and never counts as a staff eligibility check.
+ */
+export type ReportedBenefitsSource =
+  | "patient_reported"
+  | "staff_recorded_patient_report"
+  | "referrer_reported"
+  | "partner_reported";
+
+export const REPORTED_BENEFITS_SOURCES: ReportedBenefitsSource[] = [
+  "patient_reported",
+  "staff_recorded_patient_report",
+  "referrer_reported",
+  "partner_reported",
+];
+
+export const REPORTED_SOURCE_LABEL: Record<ReportedBenefitsSource, string> = {
+  patient_reported: "Patient reported (self-service intake)",
+  staff_recorded_patient_report: "Patient report recorded by staff",
+  referrer_reported: "Referrer reported",
+  partner_reported: "Partner reported (pre-release roster)",
+};
 
 export const COVERAGE_PLAN_SOURCE_LABEL: Record<CoveragePlanSource, string> = {
+  ...REPORTED_SOURCE_LABEL,
   self_report: "Client told us",
   front_desk: "Front desk / paperwork",
   staff_checked: "Staff checked with the plan or county",
@@ -658,6 +687,9 @@ export interface CoveragePlanSpan {
   recordedBy?: string;
   recordedByRole?: StaffRole;
   recordedAt?: string;
+  /** §Phase 8b — reference-list plan chosen, with its name at that time. */
+  managedCarePlanId?: string;
+  managedCarePlanName?: string;
 }
 
 
@@ -1414,7 +1446,8 @@ export interface Patient {
      * `verified` above is the current summary; this is who checked and how.
      */
     verifications?: CoverageVerificationRecord[];
-
+    /** §Phase 8b — non-Medi-Cal answer as the person gave it. */
+    nonMediCalReport?: NonMediCalReport;
   };
   // Case Manager workspace
   caseManagerId?: string;
@@ -2073,11 +2106,19 @@ export interface EligibilityNote {
  * describes a channel a staff member used themselves and is recording after
  * the fact.
  */
-export type CoverageCheckChannel = "phone_county" | "medi_cal_portal" | "fax" | "in_person" | "other";
+export type CoverageCheckChannel =
+  | "phone_county"
+  | "medi_cal_portal"
+  | "fax"
+  | "in_person"
+  | "other"
+  /** §Phase 8b — someone REPORTED coverage; nobody checked. Never a staff check. */
+  | "reported";
 
 export const COVERAGE_CHECK_CHANNEL_LABEL: Record<CoverageCheckChannel, string> = {
   phone_county: "Phone — county / plan",
   medi_cal_portal: "Medi-Cal provider portal (checked by hand)",
+  reported: "Reported — needs staff verification",
   fax: "Fax reply",
   in_person: "In person — card or paperwork seen",
   other: "Other channel",
@@ -2109,6 +2150,53 @@ export interface CoverageVerificationRecord {
   cinRecordedNow?: boolean;
   /** Coverage status the checker explicitly confirmed, if they confirmed one. */
   statusConfirmed?: CoverageStatus;
+  /**
+   * §Phase 8b — present ONLY on reported (not checked) records. A record with
+   * a reportSource is never a staff check, whatever its other fields say.
+   */
+  reportSource?: ReportedBenefitsSource;
+}
+
+/** §Phase 8b — true only for a real human eligibility check. */
+export function isStaffCheck(v: CoverageVerificationRecord): boolean {
+  return !v.reportSource;
+}
+
+/** §Phase 8b — what a non-Medi-Cal person told us about paying. */
+export type NonMediCalReport =
+  | "no_insurance"
+  | "private_insurance"
+  | "prefer_self_pay"
+  | "medicare"
+  | "other"
+  | "unknown";
+
+/** §Phase 8b — answers from the shared benefits step. */
+export interface IntakeBenefitsAnswers {
+  /** Absent = nothing said about coverage type (e.g. a roster row with only a CIN). */
+  coverageType?: CoverageType;
+  nonMediCalReport?: NonMediCalReport;
+  cin?: string;
+  managedCarePlan?: { id: string; name: string; kind: "plan" | "ffs" | "other" | "unknown"; otherName?: string };
+  mediCalStatus?: CoverageStatus;
+  /** Private-insurance plan name, or "other" description. */
+  planName?: string;
+}
+
+export interface IntakeBenefitsResult {
+  ok: boolean;
+  error?: string;
+  cinWritten: boolean;
+  cinMismatch: boolean;
+  cinDuplicate?: string;
+  planSpanAdded: boolean;
+  verificationAdded: boolean;
+  taskId?: string;
+}
+
+export const CIN_RE = /^[A-Z0-9]{9}$/;
+export function normalizeCinValue(v: string): string {
+  return v.replace(/\s+/g, "").toUpperCase();
 }
 
 /** §Phase 3a — one attributed change to an eligibility flag. Append-only. */
