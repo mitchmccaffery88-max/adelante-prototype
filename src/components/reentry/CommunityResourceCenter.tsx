@@ -39,6 +39,7 @@ import {
   subscribeResources,
 } from "@/lib/communityResources";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { PART2_CAUTION_CATEGORY_IDS } from "@/lib/sdohResourceMatch";
 import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
 import { ResourceCard, type ResourceSurface } from "@/components/reentry/ResourceCard";
 import { cn } from "@/lib/utils";
@@ -68,10 +69,16 @@ function placesLabel(n: number): string {
 
 export function CommunityResourceCenter({
   surface = "patient",
+  initialCategory,
 }: {
   surface?: ResourceSurface;
+  initialCategory?: string;
 } = {}) {
-  const [category, setCategory] = useState<string | null>(null);
+  const [category, setCategory] = useState<string | null>(
+    initialCategory && RESOURCE_CATEGORIES.some((c) => c.id === initialCategory)
+      ? initialCategory
+      : null,
+  );
   const [query, setQuery] = useState("");
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const savedCount = useSyncExternalStore(
@@ -84,7 +91,17 @@ export function CommunityResourceCenter({
     () => JSON.stringify(patientBrowsableResources()),
     () => "[]",
   );
-  const all = JSON.parse(allSnapshot) as ReturnType<typeof patientBrowsableResources>;
+  const browsable = JSON.parse(allSnapshot) as ReturnType<typeof patientBrowsableResources>;
+  // §Pre-demo B3 — SELF-SEARCH EXCEPTION, scoped here and only here: the
+  // PATIENT's own directory (/resources) may name recovery / support-group
+  // organisations, because the member is searching for themselves. Every
+  // other surface — including this same component on the advocate surface —
+  // keeps the Part 2 category-only rule (PART2_CAUTION_CATEGORY_IDS).
+  const categoryOnly = surface !== "patient";
+  const all = categoryOnly
+    ? browsable.filter((r) => !PART2_CAUTION_CATEGORY_IDS.includes(r.categoryId))
+    : browsable;
+  const hiddenCategory = categoryOnly && !!category && PART2_CAUTION_CATEGORY_IDS.includes(category);
   // Real, live per-category counts over exactly what the patient can browse
   // (published + pending-verification), not just the verified subset.
   const counts = new Map<string, number>();
@@ -152,7 +169,13 @@ export function CommunityResourceCenter({
         ))}
       </ul>
 
-      {resources.length === 0 ? (
+      {hiddenCategory ? (
+        <Card className="p-6 text-sm text-muted-foreground" data-testid="resources-category-only">
+          We show this category rather than named groups: recovery services can be confidential
+          under federal Part 2 rules. The member can look these up in their own app, or their care
+          team can go through options with them.
+        </Card>
+      ) : resources.length === 0 ? (
         <Card className="p-6 text-sm text-muted-foreground" data-testid="resources-empty">
           {query.trim()
             ? "No listings match that search. Try a shorter word, or clear the category filter."
