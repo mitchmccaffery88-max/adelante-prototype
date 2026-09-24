@@ -39,9 +39,11 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string }> = {
     label: "Front door / no record",
     hint: "State 1 — nobody signed in, no patient record yet",
   },
+  // p1 was released 2026-05-10 and has no open pre-release episode, so the
+  // resolved track is post-release; label and hint both say so.
   ji_post_release: {
-    label: "Daniel M. — Justice-Involved, Pre-Release",
-    hint: "State 2 — completed intake, JI reentry flag, pre-release journey",
+    label: "Daniel M. — Justice-Involved, Post-Release",
+    hint: "State 2 — completed intake, JI reentry flag, released and back in the community",
   },
   advocate: {
     label: "Advocate view (invite-code session)",
