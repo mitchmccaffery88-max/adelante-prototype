@@ -58,6 +58,7 @@ export type NavGroup =
   | "queues"
   | "population"
   | "facility"
+  | "consent"
   | "revenue"
   | "administration"
   | "account";
@@ -67,7 +68,8 @@ export const NAV_GROUP_LABELS: Record<NavGroup, string> = {
   queues: "Queues",
   population: "Population health",
   facility: "Facility & Custody",
-  revenue: "Revenue & consent",
+  consent: "Consent & privacy",
+  revenue: "Revenue & billing",
   administration: "Administration",
   account: "My account",
 };
@@ -77,6 +79,7 @@ export const NAV_GROUP_ORDER: NavGroup[] = [
   "queues",
   "population",
   "facility",
+  "consent",
   "revenue",
   "administration",
   "account",
