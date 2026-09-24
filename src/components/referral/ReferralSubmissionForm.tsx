@@ -402,7 +402,7 @@ export function ReferralSubmissionForm({
           </div>
           {form.justiceInvolved === "yes" && (
             <div className="grid sm:grid-cols-2 gap-4 pt-1">
-              <Field label="Expected release date">
+              <Field label="Release date (Actual or Expected)">
                 <Input
                   type="date"
                   value={form.releaseDate}
