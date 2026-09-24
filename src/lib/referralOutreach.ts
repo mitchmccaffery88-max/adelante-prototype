@@ -111,6 +111,10 @@ export interface ReferrerFallback {
 export const NO_REFERRER_CONTACT_NOTE =
   "No contact details for the referrer are on file — there is no one to fall back on. Continue outreach to the person directly.";
 
+/** Shared by the form and the data layer so the two never drift. */
+export const REFERRER_CONTACT_REQUIRED_MSG =
+  "Add your work phone or work email so we can reach you if we can't reach this person.";
+
 export function referrerHasContact(r: { referrerPhone?: string; referrerEmail?: string }): boolean {
   return !!(r.referrerPhone?.trim() || r.referrerEmail?.trim());
 }

@@ -13,6 +13,7 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { AdelanteEHR, useEhr, REFERRAL_SOURCE_LABELS } from "@/lib/ehr";
 import type { EpisodeType } from "@/lib/ehr";
+import { referrerHasContact } from "@/lib/referralOutreach";
 import {
   REFERRAL_STATUS_STYLES,
   ReferralOutreachStatus,
@@ -211,8 +212,17 @@ export function ReferralTrackerCard({
                   </div>
                   <div className="text-xs text-muted-foreground">
                     {sourceLabels[r.referralSource] ?? r.referralSource}
-                    {r.referringAgency ? ` · ${r.referringAgency}` : ""} ·{" "}
+                    {" · "}
                     <ClientDate value={r.createdAt} />
+                  </div>
+                  <div className="text-xs text-muted-foreground" data-testid="queue-referred-by">
+                    Referred by {r.referringAgency || "agency not given"}
+                    {r.referrerName ? ` · ${r.referrerName}` : ""}
+                    {!referrerHasContact(r) && (
+                      <Badge variant="outline" className="ml-2 text-[10px] py-0">
+                        No referrer contact
+                      </Badge>
+                    )}
                   </div>
                   {r.cin && (
                     <div className="text-[10px] font-mono text-muted-foreground mt-0.5">

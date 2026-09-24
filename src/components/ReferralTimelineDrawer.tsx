@@ -93,7 +93,14 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                 </Badge>
               </div>
               <div className="mt-2 text-[11px] text-muted-foreground">
-                Submitted <ClientDate value={referral.createdAt} />
+                Submitted <ClientDate value={referral.createdAt} />{" "}
+                <span data-testid="referral-submitted-by">
+                  {referral.submittedBy?.kind === "staff"
+                    ? `by ${referral.submittedBy.actor.name} (${referral.submittedBy.actor.role.replace(/_/g, " ")})`
+                    : referral.submittedBy?.kind === "external"
+                      ? "through the public referral form — no staff member attached"
+                      : "· submitter not recorded"}
+                </span>
                 {referral.cin && (
                   <span className="ml-2 font-mono">CIN ••••{referral.cin.slice(-4)}</span>
                 )}
@@ -104,6 +111,36 @@ export function ReferralTimelineDrawer({ referralId, open, onOpenChange }: Props
                   </span>
                 )}
               </div>
+            </Card>
+
+            <Card className="p-4 text-sm" data-testid="referral-referred-by">
+              <div className="font-medium text-navy mb-2">Referred by</div>
+              <dl className="grid grid-cols-[auto_1fr] gap-x-3 gap-y-1 text-xs">
+                <dt className="text-muted-foreground">Name</dt>
+                <dd>{referral.referrerName || "Not given"}</dd>
+                <dt className="text-muted-foreground">Agency</dt>
+                <dd>{referral.referringAgency || "Not given"}</dd>
+                <dt className="text-muted-foreground">Phone</dt>
+                <dd>
+                  {referral.referrerPhone ? (
+                    <a className="text-teal underline" href={`tel:${referral.referrerPhone}`}>
+                      {referral.referrerPhone}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">No phone on file</span>
+                  )}
+                </dd>
+                <dt className="text-muted-foreground">Email</dt>
+                <dd className="break-all">
+                  {referral.referrerEmail ? (
+                    <a className="text-teal underline" href={`mailto:${referral.referrerEmail}`}>
+                      {referral.referrerEmail}
+                    </a>
+                  ) : (
+                    <span className="text-muted-foreground">No email on file</span>
+                  )}
+                </dd>
+              </dl>
             </Card>
 
             <ReferralActionsCard referral={referral} />
