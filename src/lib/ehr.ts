@@ -7475,7 +7475,7 @@ export const AdelanteEHR = {
   updateProfile(
 
     patientId: string,
-    patch: Partial<
+    patch: IntakeProfilePatch & Partial<
       Pick<
         Patient,
         | "firstName"
@@ -10306,13 +10306,34 @@ export const AdelanteEHR = {
    *  - non-Medi-Cal: one "Set payment arrangement" task for billing, deduped
    *    per patient; never sets the arrangement itself.
    */
+  /**
+   * §Adel-guided intake (prototype) — save the "About you" answers the patient
+   * confirmed one by one in the Adel script. Same `updateProfile` write the
+   * form uses; the only addition is the audit row saying it came via Adel.
+   */
+  saveIntakeProfileViaAdel(
+    patientId: string,
+    patch: IntakeProfilePatch,
+    fieldsConfirmed: string[],
+  ): void {
+    AdelanteEHR.updateProfile(patientId, patch);
+    appendAudit({
+      category: "clinical",
+      action: "intake_profile_saved",
+      patientId,
+      actorId: patientId,
+      actorRole: "patient",
+      detail: { via: "adel_guided_intake", fieldsConfirmed },
+    });
+  },
+
   recordIntakeBenefits(
     patientId: string,
     answers: IntakeBenefitsAnswers,
     input: {
       source: ReportedBenefitsSource;
       /** Which screen, for the audit row. */
-      via: "self_service_intake" | "staff_assisted_intake" | "chart" | "referral_conversion" | "pre_release_import";
+      via: "self_service_intake" | "staff_assisted_intake" | "chart" | "referral_conversion" | "pre_release_import" | "adel_guided_intake";
       actorId: string;
       actorName: string;
       actorRole: string;
@@ -21946,6 +21967,21 @@ withGroupNotificationsSuppressed(() => {
 // be shown without setup. Built only through the real store API (the same
 // calls the pre-release roster import makes). Intake is deliberately left
 // incomplete. Marked by `DEMO_PRE_RELEASE_PERSONA` so the switcher finds it.
+/** Fields intake's "About you" writes through updateProfile. */
+export type IntakeProfilePatch = Partial<
+  Pick<
+    Patient,
+    | "preferredName"
+    | "pronouns"
+    | "preferredLanguage"
+    | "phone"
+    | "releaseDate"
+    | "contactPrefs"
+    | "emergencyContacts"
+    | "address"
+  >
+>;
+
 export const DEMO_PRE_RELEASE_PERSONA = { firstName: "Tomás", lastName: "Reyna" } as const;
 try {
   const exists = patients.some(
@@ -21960,10 +21996,12 @@ try {
       lastName: DEMO_PRE_RELEASE_PERSONA.lastName,
       dob: "1991-03-14",
       anticipatedReleaseDate: release,
-      cfCareManagerStaffId: "s-cf1",
-      cfCareManagerName: "Rosa Delgado",
+      cfCareManagerStaffId: "s-cf2",
+      // Matches the staff directory record for s-cf2 exactly (not s-cf1,
+      // whose name would collide with the Rosa demo persona).
+      cfCareManagerName: "Darnell Pope (facility contract)",
       facilityName: "Tulare County Adult Pre-Trial Facility",
-      openedBy: "s-cf1",
+      openedBy: "s-cf2",
       actorRole: "cf_care_manager",
     });
     AdelanteEHR.recordImportedHrsnDomains({
@@ -21974,7 +22012,7 @@ try {
         { key: "transportation", label: "Transportation", positive: false },
         { key: "safety", label: "Interpersonal safety", positive: true },
       ],
-      importedBy: "s-cf1",
+      importedBy: "s-cf2",
       actorRole: "cf_care_manager",
     });
   }

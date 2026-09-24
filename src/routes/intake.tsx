@@ -21,12 +21,10 @@ import {
 // §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
 import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
 import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
-import {
-  cleanEmergencyContacts,
-  emptyEmergencyContact,
-} from "@/lib/emergencyContacts";
+import { emptyEmergencyContact } from "@/lib/emergencyContacts";
 import {
   mergeSavedIntakeProfile,
+  profilePatch,
   seedIntakeProfile,
   type IntakeProfile,
 } from "@/lib/intakeProfile";
@@ -86,6 +84,8 @@ import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
 import { AskAdelHelp } from "@/components/patient/AskAdelHelp";
+import { AdelGuidedIntake } from "@/components/intake/AdelGuidedIntake";
+import { ADEL_COPY } from "@/lib/adelIntakeScript";
 import {
   LOOKUP_DISCLOSURE,
   MEDI_CAL_FOLLOW_UP_MESSAGE,
@@ -192,6 +192,8 @@ function IntakePage() {
   const alreadyComplete = Boolean(patient?.intakeCompletedAt);
   const [mode, setMode] = useState<Mode>("self");
   const [step, setStep] = useState(0);
+  // §Adel-guided intake (prototype) — opt-in; the form stays the default.
+  const [adelMode, setAdelMode] = useState(false);
   const [sudConsent, setSudConsent] = useState<boolean | null>(null);
   const [hipaaConsent, setHipaaConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
@@ -444,17 +446,7 @@ function IntakePage() {
       return;
     }
     // P1 — persist the About-you patch first.
-    AdelanteEHR.updateProfile(currentId, {
-      preferredName: profile.preferredName || undefined,
-      pronouns: profile.pronouns || undefined,
-      preferredLanguage: profile.preferredLanguage,
-      phone: profile.phone || undefined,
-      releaseDate: profile.releaseDate || undefined,
-      contactPrefs: { channel: profile.contactChannel, bestTime: profile.bestTime },
-      // Writing the list keeps `emergencyContact` (legacy primary) in sync.
-      emergencyContacts: cleanEmergencyContacts(profile.emergencyContacts),
-      address: profile.address || undefined,
-    });
+    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
     activeScreeners.forEach((s) => {
       const ans = answers[s.key] ?? [];
       const score = ans.reduce((a, b) => a + (b ?? 0), 0);
@@ -712,7 +704,23 @@ function IntakePage() {
       </header>
 
       <Card className="p-6">
-        {current.key === "welcome" && (
+        {current.key === "welcome" && adelMode && (
+          <AdelGuidedIntake
+            patientId={currentId}
+            profile={profile}
+            benefits={benefits}
+            onProfile={setProfile}
+            onBenefits={onBenefitsChange}
+            consentOnFile={Boolean(consentOnFile)}
+            onExit={() => setAdelMode(false)}
+            onHandoff={() => {
+              setAdelMode(false);
+              const target = steps.findIndex((s) => s.key === (consentOnFile ? "coverage" : "consent"));
+              if (target >= 0) setStep(target);
+            }}
+          />
+        )}
+        {current.key === "welcome" && !adelMode && (
           <div className="space-y-4">
             <p className="text-foreground">
               Welcome. This intake takes about 10–15 minutes. There are no right or wrong answers —
@@ -732,6 +740,21 @@ function IntakePage() {
                 and protected by federal law.
               </li>
             </ul>
+            {mode === "self" && (
+              <div className="rounded-lg border border-dashed p-3 space-y-2">
+                <Button
+                  variant="outline"
+                  className="min-h-11 w-full sm:w-auto"
+                  onClick={() => setAdelMode(true)}
+                  data-testid="intake-start-with-adel"
+                >
+                  {lang9a === "es" ? "Hacerlo con Adel" : "Go through this with Adel"}
+                </Button>
+                <p className="text-xs text-muted-foreground">
+                  {ADEL_COPY[lang9a === "es" ? "es" : "en"].banner}
+                </p>
+              </div>
+            )}
           </div>
         )}
 
@@ -1586,6 +1609,7 @@ function IntakePage() {
       {/* Spacer so the fixed mobile action bar doesn't cover content */}
       {/* Sits ABOVE the patient tab bar (fixed, md:hidden) — it used to sit
           under it on phones, so "Save & continue" couldn't be tapped. */}
+      {!adelMode && (<>
       <div className="h-60 md:hidden" aria-hidden />
       <div className="fixed md:sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0">
         <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
@@ -1608,6 +1632,7 @@ function IntakePage() {
           </Button>
         )}
       </div>
+      </>)}
     </div>
   );
 }
