@@ -131,14 +131,10 @@ function CoverageCallout({
   coverageType,
   justiceInvolvement,
   county,
-  otherPlanName,
-  onOtherPlanChange,
 }: {
   coverageType: CoverageType;
   justiceInvolvement: TriState;
   county: string;
-  otherPlanName: string;
-  onOtherPlanChange: (v: string) => void;
 }) {
   const msg = coverageMessage({ coverageType, justiceInvolvement, county });
   const Icon = msg.tone === "good" ? CheckCircle2 : msg.tone === "info" ? Building2 : HelpingHand;
@@ -169,9 +165,6 @@ function CoverageCallout({
           )}
         </div>
       </div>
-      {/* §Phase 8b — plan name now lives in the shared benefits step. */}
-      {void otherPlanName}
-      {void onOtherPlanChange}
     </div>
   );
 }
@@ -1086,8 +1079,6 @@ function IntakePage() {
               coverageType={coverage.coverageType}
               justiceInvolvement={coverage.justiceInvolvement}
               county={coverage.countyOfRelease}
-              otherPlanName={coverage.otherPlanName ?? ""}
-              onOtherPlanChange={(v) => setCoverage({ ...coverage, otherPlanName: v })}
             />
 
             {coverage.justiceInvolvement !== "no" && (
