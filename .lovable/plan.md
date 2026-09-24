@@ -1,87 +1,37 @@
-# Phase 6b — group enrollment consent, join links, seeded audit demo data
+# Phase 6c — Group-access text notifications to patients
 
-## What I found (confirming the brief)
+## What I found
+- The six group writes (`enrollInGroup`, `endGroupEnrollment`, `cancelGroupSession`, `cancelGroupOccurrence`, `rescheduleGroupOccurrence`, plus self-enrollment, which goes through `enrollInGroup`) write an audit row and call `emit()`. Nothing sends anything.
+- Two real Twilio senders exist: `sendReferralWelcome` and `sendStaffAlertSms`. Both go through the connector gateway and return `sent | not_configured | failed`. `staffAlerts.ts` is a staff-only ledger with a pluggable transport that the app installs from the root route.
+- **Correction to the brief:** appointment texts are not real sends today. `notifyAppointmentChange` checks `isSmsOn(patientId) && p.phone`, then writes a `queued` entry that never leaves the app. The consent and phone check is what 6c reuses. The appointment "transport" is not reused, because it is simulated.
+- Consent to text comes from `isSmsOn()`: `consentState.sms`, falling back to `smsFallback`. The phone number comes from `Patient.phone`. Both are the same sources the appointment flow uses.
 
-- `assertEnrollmentAllowed` (`src/lib/ehr.ts`) checks cancellation, the clinical
-  eligibility flag, self-service category rules, and capacity. No consent check.
-- The only real consent check is `groupOccurrenceConsentGate`, called inside
-  `documentGroupOccurrence` — attendance/documentation time.
-- Modality is two-level: `GroupSession.modality` (`in_person | video | phone`) and an
-  optional per-occurrence override `GroupOccurrenceRecord.modality`
-  (`in_person | video | audio_only`). Readers fall back to the session default.
-- No room/join-link field on the group model. `TelehealthSession` (1:1) has
-  `roomId`, `joinUrlPatient`, `joinUrlClinician`, filled from the mock telehealth vendor.
-- No group sessions, enrollments or eligibility flags are seeded, so `/group-audit` is empty.
+## Part 2 category rule (needs your review)
+Generic copy is used for **`sud_clinical_preauth`** and for **any unknown or missing category**. That second case fails closed, the same way unstamped legacy group notes do in `noteGateClass`.
+Specific copy is used only for `skills_education` and `open_psychoeducational`. These are exactly the two categories `noteGateClass` already treats as non-Part 2. This adds no new classification.
+I derive the rule from one helper, `isGroupNotificationSensitive(category)`, placed next to `noteGateClass`. Masking and texts then can't drift apart.
 
-## The mixed-modality question (interpretation)
-
-The risk being prevented is: a patient is seated in a group they cannot lawfully
-attend virtually. So the gate should follow the modality the patient would actually
-be asked to attend, not the session's default label.
-
-Rule I will implement: **block enrollment only if any projected upcoming occurrence
-resolves to a virtual modality.** Because occurrences fall back to the session
-default, this means:
-
-- Virtual-default group → blocked (every future meeting is virtual).
-- In-person-default group with one virtual occurrence coming up → blocked.
-- Virtual-default group where **every** projected upcoming occurrence has an explicit
-  in-person override → **not** blocked. Consent is still enforced at documentation
-  time if a later meeting turns virtual, so nothing is loosened, only moved earlier.
-
-Past occurrences are ignored. The documentation-time gate stays exactly as-is as the
-backstop — this is a second, earlier check, not a replacement.
+**Interpretations:**
+- Specific copy names the topic, date and time only. It never includes the location address, the join link or the roster. A join link sent by SMS would work as a credential.
+- On sensitive groups, the generic text also leaves out the date and time. When combined with a known clinic schedule, a time slot could identify the group.
+- Specific copy also stays generic when an admin-set topic looks clinical? No. The category is the only signal. I won't guess from free text.
 
 ## Build
+1. **Server sender** `src/lib/groupNotify.functions.ts` → `sendGroupNotificationSms({ to, body })`. It uses the same gateway pattern as `sendReferralWelcome` and returns the honest three outcomes. The body is composed on the client from fixed templates and checked by the validator for length only.
+2. **Ledger** `src/lib/groupNotifications.ts`. It mirrors `staffAlerts.ts` for patients: records `{ id, patientId, sessionId, event, sensitive, body, triggeredBy: { actorId, kind: staff|patient|system }, createdAt, delivery, detail }`, and has `dispatchGroupNotification`, a pluggable transport, and `markGroupNotificationDelivery`. The transport is installed from the root route next to the staff-alert one. In tests it records only, with delivery `pending`.
+3. **Eligibility check before any attempt.** If `isSmsOn(patientId)` is false or there is no phone, the attempt is recorded as `skipped` with a reason (`no_sms_consent` / `no_phone`) and **the transport is never called**. The skip is kept so staff can see why nobody was texted.
+4. **Triggers.** Each of the five writes calls `notifyGroupChange(event, sessionId, patientIds, actor)` after its audit row. Enrollment added and ended text one patient. Session cancelled, occurrence cancelled and occurrence rescheduled text every active enrollee. Failed or blocked enrollments send nothing. The demo seed runs with notifications suppressed, so boot never sends.
+5. **Attribution.** `triggeredBy` records the same actor the audit row records. Each attempt also writes a `group_notification_attempted` audit row that references the ledger id. It contains no message body, so the audit stream holds no copy.
+6. **Visibility.** A compact "Text notifications" list on the group detail card in `/group-sessions` shows event, patient, outcome and who triggered it. It is behind the existing `group_sessions` gate. Sensitive rows show "generic message", not the body.
 
-**1. Enrollment-time telehealth consent gate**
-- New helper `groupVirtualExposure(sessionId)` in `ehr.ts`: returns whether any
-  upcoming projected occurrence is virtual, plus the first such start, using the
-  existing `groupOccurrenceStarts` + `groupOccurrenceModality` helpers.
-- In `assertEnrollmentAllowed`, after the eligibility check, add one branch: if the
-  group has virtual exposure and the patient lacks active `telehealth_services`
-  consent, `block("no_telehealth_consent", …)`. Wording names the real next step
-  (telehealth consent must be captured) and is safe for the patient-facing
-  self-service path. Audited by the same `block()` helper, so it appears on
-  `/group-audit` with no new logging mechanism.
-- `openGroupsForPatient` filters out virtual groups the patient can't consent to, so
-  the patient scheduling tab doesn't offer a group it will then refuse.
-- Staff group roster UI shows the reason inline when enrollment is refused (existing
-  toast path already renders the thrown message).
-
-**2. Virtual room / join link**
-- `GroupSession.virtualRoom?: { roomId; joinUrl; setAt; setBy }`, with an optional
-  per-occurrence override on `GroupOccurrenceRecord` — mirrors the modality
-  two-level pattern already in place.
-- `AdelanteEHR.setGroupVirtualRoom(sessionId, joinUrl|undefined, actor)` and
-  `setGroupOccurrenceVirtualRoom(...)`, audited; `groupJoinLink(sessionId, start)`
-  resolves occurrence → session. Demo seeds use the same mock telehealth vendor URL
-  shape as 1:1 (`https://video.adelante.mock/room/...`).
-- Surfaces (read-only placeholder, shown only for virtual occurrences; when unset it
-  says the link hasn't been added yet rather than inventing one):
-  group detail header + occurrence panel on `/group-sessions`, the patient's
-  "Your groups" card on `/home`, and `PatientGroupScheduling`.
-
-**3. Demo seed for `/group-audit`**
-- A seed block at the bottom of `ehr.ts` in the existing style — built through the
-  real store API, never by pushing rows — producing: two demo groups (one in-person
-  skills/education, one virtual), eligibility set for two demo patients with real
-  clinical reasons, one eligibility later cleared, and three blocked-enrollment
-  attempts covering distinct reason codes (no eligibility, staff-enrolled only,
-  and the new missing-telehealth-consent). That gives `/group-audit` real content on
-  first load across all three of its event types, with filters meaningful.
-
-## Non-goals
-
-No Clinician Workspace changes, no notifications, no change to the
-`sud_clinical_preauth` note-access class or billing codes, no change to the
-documentation-time gate's behaviour.
+## Tests
+- Sensitive vs. non-sensitive vs. unknown category produces the right copy. Generic copy never contains the topic, category or date.
+- No consent or no phone produces `skipped`, and the transport is not called.
+- Each of the five triggers produces one attempt per affected patient, with the correct `triggeredBy`.
+- Blocked enrollment produces no attempt, and the seed produces no attempts.
 
 ## Verification
+Typecheck, the full test suite, then a live browser check at both screen sizes. A skills group enrollment and a cancellation show a tracked attempt; `not_configured` is expected unless Twilio and `TWILIO_FROM_NUMBER` are set. An SUD group shows the generic copy. A patient without SMS consent shows `skipped` with no send. Zero console errors.
 
-Typecheck, full test suite (new tests: enrollment blocked without consent on a
-virtual group; allowed once consent is granted; in-person group unaffected;
-virtual-default group with all-in-person overrides enrollable; join-link
-resolution), build, and a live browser pass at desktop and phone viewports
-covering the blocked enrollment message, an unaffected in-person enrollment, the
-join-link placeholder, and `/group-audit` showing seeded events with working filters.
+## Non-goals
+No email, no changes to 6a/6b behaviour, no change to the appointment notification path, no change to billing or note access.
