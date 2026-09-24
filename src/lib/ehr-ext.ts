@@ -1190,8 +1190,8 @@ export const AdelanteEHRExt = {
     const p = AdelanteEHR.getPatient(patientId);
     if (!p) return { ok: false, error: "Patient not found." };
     const before = p.paymentArrangement ?? null;
-    AdelanteEHR._setPaymentArrangement(patientId, arrangement);
     const staff = getActingStaff();
+    AdelanteEHR._setPaymentArrangement(patientId, arrangement, { id: staff.id, name: staff.name, role, at: iso() });
     const repriced: string[] = [];
     for (const c of claims) {
       if (c.patientId !== patientId || CLAIM_LOCKED.includes(c.state) || c.state === "written_off") continue;

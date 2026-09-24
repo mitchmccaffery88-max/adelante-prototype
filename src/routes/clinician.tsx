@@ -1,4 +1,5 @@
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
+import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
@@ -777,7 +778,12 @@ function ChartHeader({
                         : "bg-gold/30 text-navy border-0"
                     }
                   >
-                    Medi-Cal: {patient.coverage.status}
+                    {coverageKind(patient) === "medi_cal"
+                      ? "Medi-Cal"
+                      : coverageKind(patient) === "unknown"
+                        ? "Coverage type unknown"
+                        : "Coverage"}
+                    : {patient.coverage.status}
                   </Badge>
                 )}
               </div>

@@ -4,7 +4,6 @@ import {
   AdelanteEHR,
   useEhr,
   type Appointment,
-  type FundingLane,
   type Patient,
 } from "@/lib/ehr";
 import {
@@ -15,6 +14,7 @@ import {
   type ClaimState,
 } from "@/lib/ehr-ext";
 import { toast } from "sonner";
+import { LANE_LABEL, LANE_ORDER, laneFor, type LaneKey } from "@/lib/billingLane";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
@@ -62,7 +62,7 @@ interface BillingRow {
   date: string;
   patient?: Patient;
   clinicianId: string;
-  lane: FundingLane;
+  lane: LaneKey;
   appt?: Appointment;
   claim?: Claim;
 }
@@ -72,15 +72,6 @@ export function noClaimLabel(appt: Appointment): string {
   return "No claim — not billable";
 }
 
-const LANES: { key: FundingLane; label: string }[] = [
-  { key: "medi_cal_ffs", label: "Medi-Cal FFS" },
-  { key: "dmc_ods", label: "DMC-ODS" },
-  { key: "ecm", label: "ECM" },
-  { key: "private_pay", label: "Private pay" },
-  { key: "isl_non_medi_cal", label: "ISL (non-Medi-Cal)" },
-  { key: "bhsa", label: "BHSA" },
-  { key: "non_billable", label: "Non-billable" },
-];
 
 type Tab = "claims" | "isl" | "rates" | "credentials";
 
@@ -107,17 +98,6 @@ function BillingPage() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
 
-  // Auto-classify a lane for display if the appointment doesn't carry one yet.
-  const laneFor = (a: Appointment): FundingLane => {
-    if (a.fundingLane) return a.fundingLane;
-    const p = patients.find((x) => x.id === a.patientId);
-    const status = p?.coverage?.status;
-    if (status === "uninsured") return "isl_non_medi_cal";
-    if (status === "private_pay") return "private_pay";
-    if (status === "active") return "medi_cal_ffs";
-    return "non_billable";
-  };
-
   const { role } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
   const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
@@ -130,12 +110,13 @@ function BillingPage() {
       .filter((a) => a.status !== "scheduled")
       .map((a) => {
         const claim = byEncounter.get(a.id);
+        const patient = patients.find((p) => p.id === a.patientId);
         return {
           key: a.id,
           date: a.start,
-          patient: patients.find((p) => p.id === a.patientId),
+          patient,
           clinicianId: a.clinicianId,
-          lane: laneFor(a),
+          lane: laneFor({ claim, appt: a, patient }),
           appt: a,
           ...(claim ? { claim } : {}),
         };
@@ -145,13 +126,12 @@ function BillingPage() {
     for (const c of claims) {
       if (apptIds.has(c.encounterId)) continue;
       const patient = patients.find((p) => p.id === c.patientId);
-      const st = patient?.coverage?.status;
       out.push({
         key: c.id,
         date: c.history[0]?.at ?? c.updatedAt,
         ...(patient ? { patient } : {}),
         clinicianId: c.clinicianId,
-        lane: st === "uninsured" ? "isl_non_medi_cal" : st === "private_pay" ? "private_pay" : st === "active" ? "medi_cal_ffs" : "non_billable",
+        lane: laneFor({ claim: c, patient }),
         claim: c,
       });
     }
@@ -159,7 +139,7 @@ function BillingPage() {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [appointments, patients, claims]);
 
-  const [laneFilter, setLaneFilter] = useState<"all" | FundingLane>("all");
+  const [laneFilter, setLaneFilter] = useState<"all" | LaneKey>("all");
   const initialStatus = Route.useSearch().status;
   const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
   const [noRateOnly, setNoRateOnly] = useState(false);
@@ -176,7 +156,7 @@ function BillingPage() {
       (!arrangementOnly || Boolean(r.claim?.arrangementMissing)) &&
       (!balanceOnly || (r.claim?.patientBalanceCents ?? 0) > 0),
   );
-  const islRows = rows.filter((r) => r.lane === "isl_non_medi_cal");
+  const islRows = rows.filter((r) => r.lane === "grant_isl");
 
   const kpis = useMemo(() => {
     let outstandingCents = 0;
@@ -364,9 +344,9 @@ function BillingPage() {
               className="rounded-md border bg-card px-2 py-1"
             >
               <option value="all">All lanes</option>
-              {LANES.map((l) => (
-                <option key={l.key} value={l.key}>
-                  {l.label}
+              {LANE_ORDER.map((k) => (
+                <option key={k} value={k}>
+                  {LANE_LABEL[k]}
                 </option>
               ))}
             </select>
@@ -438,8 +418,8 @@ function BillingPage() {
                       <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
                       <td className="px-3 py-2">{clinician?.name ?? "—"}</td>
                       <td className="px-3 py-2">
-                        <span className="text-[10px] rounded-full px-2 py-0.5 bg-navy/10 text-navy">
-                          {LANES.find((l) => l.key === lane)?.label}
+                        <span data-testid="billing-row-lane" className={`text-[10px] rounded-full px-2 py-0.5 ${lane === "unknown" ? "bg-gold/20 text-navy" : "bg-navy/10 text-navy"}`}>
+                          {LANE_LABEL[lane]}
                         </span>
                       </td>
                       <td className="px-3 py-2 font-mono text-xs" data-testid="billing-row-charge">
@@ -653,11 +633,12 @@ function ClaimActions({
   onAdvance,
 }: {
   claim: Claim;
-  lane: FundingLane;
+  lane: LaneKey;
   onAdvance: (c: Claim, to: ClaimState) => void;
 }) {
-  // ISL/non-billable encounters have no claim workflow.
-  if (lane === "isl_non_medi_cal" || lane === "non_billable") {
+  // Visits staff marked non-billable have no claim workflow. Grant/ISL claims
+  // still move (reportable to the funder, $0 patient charge).
+  if (lane === "non_billable") {
     return <span className="text-[10px] text-muted-foreground">Non-billable</span>;
   }
   const s = claim.state;
