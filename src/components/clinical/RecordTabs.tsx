@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 import { Card } from "@/components/ui/card";
 import { RecoveryStagePanel } from "@/components/recovery/RecoveryStagePanel";
+import { PaymentArrangementCard } from "@/components/billing/PaymentArrangementCard";
 import { CoveragePlansSection } from "@/components/coverage/CoveragePlansCard";
 import { CalaimEligibilityComparison } from "@/components/coverage/CalaimEligibilityComparison";
 import { CoverageCheckDialog } from "@/components/coverage/CoverageCheckDialog";
@@ -1450,6 +1451,7 @@ export function EligibilityTab({ patientId, readOnly }: { patientId: string; rea
         </div>
       )}
       <CoveragePlansSection patientId={patientId} actor={actor} readOnly={readOnly} />
+      <PaymentArrangementCard patientId={patientId} />
 
       {!readOnly && (
         <Card className="p-3">

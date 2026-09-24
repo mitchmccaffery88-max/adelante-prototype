@@ -1366,6 +1366,8 @@ export interface Patient {
    * (via AdelanteEHRExt.setPaymentArrangement). Unset = not recorded yet.
    */
   paymentArrangement?: "self_pay" | "sliding_fee" | "grant_isl";
+  /** §Phase 7d follow-up — who last set the arrangement, and when. */
+  paymentArrangementSetBy?: { id: string; name: string; role: string; at: string };
   // Medi-Cal eligibility & coverage (§4d)
   coverage?: {
     status: CoverageStatus;
@@ -13125,10 +13127,15 @@ export const AdelanteEHR = {
   },
   /** §Phase 7c — audit row for rate/code-table/claim-pricing changes. */
   /** §Phase 7d — raw write; the billing-write check lives in ehr-ext. */
-  _setPaymentArrangement(patientId: string, value: "self_pay" | "sliding_fee" | "grant_isl") {
+  _setPaymentArrangement(
+    patientId: string,
+    value: "self_pay" | "sliding_fee" | "grant_isl",
+    setBy?: { id: string; name: string; role: string; at: string },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return false;
     p.paymentArrangement = value;
+    if (setBy) p.paymentArrangementSetBy = setBy;
     emit();
     return true;
   },
