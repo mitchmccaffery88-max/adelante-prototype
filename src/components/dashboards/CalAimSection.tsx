@@ -56,8 +56,8 @@ export function CalAimSection({
           )}
           {canManage && (
             <Button size="sm" variant="outline" className="mt-3" asChild>
-              <Link to="/admin-kpi-targets" hash="calaim-codes">
-                {configured ? "Manage codes" : "Configure codes"}
+              <Link to="/billing-calaim-codes">
+                {configured ? "Qualifying codes" : "Qualifying codes (managed by billing)"}
               </Link>
             </Button>
           )}

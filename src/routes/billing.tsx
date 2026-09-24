@@ -26,8 +26,23 @@ export const Route = createFileRoute("/billing")({
       },
     ],
   }),
+  validateSearch: (search: Record<string, unknown>): { status?: BillingStatus } => {
+    const v = search.status;
+    return typeof v === "string" && BILLING_STATUSES.includes(v as BillingStatus)
+      ? { status: v as BillingStatus }
+      : {};
+  },
   component: BillingPage,
 });
+
+const BILLING_STATUSES: BillingStatus[] = [
+  "draft",
+  "ready",
+  "submitted",
+  "paid",
+  "denied",
+  "write_off",
+];
 
 const LANES: { key: FundingLane; label: string }[] = [
   { key: "medi_cal_ffs", label: "Medi-Cal FFS" },
@@ -129,7 +144,8 @@ function BillingPage() {
   );
 
   const [laneFilter, setLaneFilter] = useState<"all" | FundingLane>("all");
-  const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>("all");
+  const initialStatus = Route.useSearch().status;
+  const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
   const filtered = rows.filter(
     (r) =>
       (laneFilter === "all" || r.lane === laneFilter) &&
