@@ -1,73 +1,45 @@
-# Phase 7d — General-population billing
+# Phase 8b — One shared intake benefits step
 
-## Current state (confirmed)
-- `PayerProgram` has five values; everything without Medi-Cal on the service date lands in `non_medi_cal`, which has no seeded rates, so every general-population claim reads "No rate on file".
-- Program selection happens in two places. `upsertClaimFromEncounter` forces `non_medi_cal` when the visit's `fundingLane` is `isl_non_medi_cal` or `private_pay`. Otherwise `selectProgram` rule 2 sends "no Medi-Cal coverage" to `non_medi_cal`.
-- Rates are keyed by code + program. Claims hold `chargeCents` only, with no split between payer and patient and no payments.
-- `FundingLane` already includes `private_pay`, `isl_non_medi_cal` and `bhsa`. No patient-level payment setting exists.
+## What exists today (short)
+- Self-service intake (`intake.tsx`, Coverage step) writes only through the 8a merge: type, Medi-Cal status (Medi-Cal/dual only), county, flags, free-text "other plan". No CIN, no plan span, no check record.
+- Staff-assisted intake = the same `SignupFlow` driven by staff (`assisted-signup.tsx`), then the patient goes on to intake. No coverage questions of its own.
+- Referral form: CIN only when justice-involved, with a live duplicate-CIN warning; copied to `Patient.cin` at conversion.
+- There is no separate "new chart" form in the app; staff create charts through the caseload upload (CIN only). Pre-release CSV has no CIN/coverage.
+- Worklist ranks by the most recent check; a patient with no record is "never checked".
+- Tasks: `CaseTask` already supports role pools (`allowedRoles`, empty `assignedTo`, claim) and `dedupeKey`.
 
-## Build
+## What gets built
 
-### 1. Programs
-`non_medi_cal` is replaced by:
-- `self_pay`: standard fee schedule.
-- `sliding_fee`: the discounted schedule. Tiers are Phase 7e, so for now this uses one placeholder rate row per code.
-- `grant_isl`: covers grant, ISL or BHSA funding. The patient is charged nothing and the claim is reportable to the funder.
-- `commercial`: exists in the model but is inactive at launch. It is labelled "Commercial (inactive at launch)" and refused for new claims and corrections (`PROGRAM_INACTIVE`).
+### 1. One data function: `recordIntakeBenefits(patientId, answers, actor)`
+New file `src/lib/intakeBenefits.ts`. Every path calls this; nothing writes coverage from intake any other way.
+- Always goes through the 8a merge (type, Medi-Cal status only for Medi-Cal/dual, never "verified").
+- **Medi-Cal / dual:**
+  - CIN: validated (9 characters), written to `Patient.cin` only if empty. If a different CIN is already on file, it is not overwritten — the step shows a notice and the audit row records "CIN mismatch, not written". The duplicate-CIN check (another patient or referral holds it) is lifted out of the referral form into a shared helper and shown as the same warning; it warns, it doesn't block (matching today).
+  - Managed care plan: structured list of the Tulare/Kings plans (Anthem Blue Cross, CalViva Health, Kaiser, Medi-Cal FFS / no plan) plus "Other" with a name, plus "I don't know".
+  - Adds a **plan span** (source `self_report`, from today) — only if no open self-report span with the same payer exists, so re-running doesn't duplicate.
+  - Adds a **self-reported verification record**: a new channel value `self_report` and result `pending`. It is labelled "Patient-reported — needs staff verification" and never counts as a staff check (the 8a rule that "verified" needs a real check ignores these). One per intake run at most; a repeat on the same day is skipped.
+- **Non-Medi-Cal:** records what the patient said (no insurance / private insurance with plan name / prefer to pay myself / other). Private insurance with a plan name becomes a self-report plan span (payer name). Then creates one task "Set payment arrangement", open to the Billing and Billing Coordinator pool, `dedupeKey = payment-arrangement:<patientId>`. No task if an arrangement is already set. Intake never sets the arrangement.
+- Everything audited (`intake_benefits_recorded`, with what was written/skipped; no CIN value in the audit).
 
-**Selection rule.** Rules 1 and 3–5 don't change. Rule 2 becomes:
-1. Visit `fundingLane` is `isl_non_medi_cal` or `bhsa` → `grant_isl`.
-2. Visit `fundingLane` is `private_pay` → the patient's payment setting (next item), else `self_pay`.
-3. No Medi-Cal on the service date → the patient's payment setting, else `self_pay`.
+### 2. One component: `<BenefitsStep>`
+`src/components/intake/BenefitsStep.tsx`, coverage type first, then the branch above. Used in:
+- Self-service intake (replaces the current Coverage step body; county/justice/ECM questions stay).
+- Staff-assisted intake (same intake screen, staff acting — actor recorded as the staff member).
+- Referral enrollment: replaces the justice-only CIN box. Since the referral patient doesn't exist yet, the component returns answers that are stored on the referral and applied through `recordIntakeBenefits` at conversion (replacing today's plain CIN copy).
+- Staff chart: shown on the chart's Eligibility section as "Record reported benefits" for staff (no separate new-chart form exists to add it to).
 
-- **Patient payment setting.** A new optional `Patient.selfPayArrangement` takes `"self_pay" | "sliding_fee" | "grant_isl"`. Only billing staff can set it, through the data layer, and every change is audited. When it's unset, the default is `self_pay`, and the claim notes "Payment arrangement not recorded — defaulted to self-pay". Sliding fee is never inferred from income; billing staff pick it on purpose, and tier assignment waits for 7e.
-- **Existing `non_medi_cal` claims.** Each one is re-run through the new rule at load, with `programSource: "migrated"` and one audit row per claim. Today no seeded claim is `non_medi_cal` (all demo visits have Medi-Cal), so this is a safety net, not a data change. The rate end-date guard carries over to the new programs.
-- **Correcting a claim's program.** `correctClaim` can move a claim between the three active programs, with a required reason. The claim is then re-priced.
+### 3. Worklist
+New state **"Needs verification"**: the latest record is a patient self-report and there is no staff check after it. Ranking: **Never checked first, then Needs verification, then Overdue, Due, Current.** Reason: never-checked means we know nothing at all, not even a CIN; a self-report gives staff a CIN and plan to verify against, so it is quicker work but still unverified. Days-since and due dates only count staff checks.
 
-### 2. Optional payer on rates
-- `Rate.payerId?: string`. Without it the rate applies program-wide. With it, the rate applies to that payer only.
-- Lookup takes the payer-specific rate first, then falls back to the program-wide rate, both effective on the service date. The overlap check runs per (code, program, payerId).
-- Claims gain an optional `payerId`. It is only set from the coverage plan when the program is `commercial`, so nothing uses it at launch. There's no payer list or UI; tests prove it works.
+### 4. Recommendations (not built unless you say so)
+- **Pre-release import:** yes, add *optional* `cin` and `coverage_type` columns, applied through `recordIntakeBenefits` as source "front desk / roster", never as verified. Small; I'd do it in 8b if you agree.
+- **Self-service sign-up:** should defer to intake — no coverage questions added there.
 
-### 3. Patient responsibility on the claim
-Each claim gets `payerPortionCents`, `patientPortionCents`, `patientPaidCents`, and `patientBalanceCents` (patient portion minus paid). All are computed in `applyPricing`, the only function that sets amounts:
-- `self_pay` and `sliding_fee`: the patient owes the full amount, the payer $0.
-- `grant_isl`: the funder owes the full amount, the patient $0.
-- Medi-Cal and ECM programs: the payer owes the full amount, the patient $0. This matches today.
-- `commercial`: infrastructure fields `copayCents`, `deductibleCents` and `coinsuranceCents` (all optional) set the split when present. They're unused at launch and only tested.
-
-### 4. Recording a patient payment by hand
-- `recordPatientPayment({ claimId, amountCents, receivedOn, method: "cash" | "check" | "card_external" | "other", reference? })`.
-  - The billing-write check runs in the data layer, so Sys Admin is refused (`BILLING_WRITE_REFUSED`) and nothing changes.
-  - Each payment is stored on `claim.patientPayments[]` with its actor id, name, role and time, plus a `patient_payment_recorded` audit row. The reference is free text, labelled "Receipt / check no. — never a card number". Anything that looks like a card number (13–19 digits) is refused.
-- **Overpayment is refused for now.** A payment larger than the patient balance is rejected (`PAYMENT_EXCEEDS_BALANCE`). Refunds and credits are production scope; a later phase would add a `refund` entry and a negative adjustment.
-- **Reversing a mistaken payment.** `voidPatientPayment` (billing write, reason required, audited) marks the entry void instead of deleting it.
-- If a re-price lowers the patient portion below what has already been paid, the balance stops at $0, and the claim is flagged "Paid more than current charge — review" rather than refunded automatically.
-
-### 5. Placeholder rates
-- `self_pay` rates use the current per-unit amounts. `sliding_fee` rates start at 50% of those as a single placeholder row per code. `grant_isl` gets the self-pay amount as the reportable value.
-- All of them are marked "Placeholder — pending clinic fee policy", like the 7c draft labels.
-
-### UI
-- **`/billing`:**
-  - The program filter lists the new programs, with Commercial shown as inactive.
-  - Claim rows show "Patient owes $X" (or "Funder: grant/ISL") and a Record payment popover (billing write only).
-  - A new "Patient balances" filter.
-  - Sys Admin sees balances with no controls.
-- **`/admin-claims`:** payer and patient portion columns, plus the balance.
-- **Patient chart (billing section):** billing staff can set the payment arrangement. Everyone else sees it read-only.
+### 5. Language
+All patient-facing wording in English and Spanish through the existing i18n file, Spanish tagged pending bilingual review (existing convention).
 
 ## Non-goals
-No card processing, patient statements, commercial EDI, Good Faith Estimates, superbills, or sliding-fee tiers (7e). No change to Medi-Cal pricing.
+No electronic eligibility fields or clearinghouse (8c). No changes to payment-arrangement rules or pricing.
 
 ## Verification
-- Typecheck, plus a new `phase7dGeneralPopulation.test.ts` covering:
-  - program mapping (fundingLane, coverage, arrangement, default, migration);
-  - a payer-specific rate is preferred over the program-wide one;
-  - commercial can't be selected for new claims or corrections;
-  - patient responsibility for each program;
-  - payments reduce the balance, and overpayment and card numbers are refused;
-  - voiding a payment;
-  - Sys Admin is refused and nothing changes.
-- Full suite.
-- Live browser at desktop and phone sizes as Billing, Billing Coordinator and Sys Admin, with desktop readings after the role loads.
+Typecheck; tests: each path calls the shared function; Medi-Cal patient gets one plan span + one self-report record and lands as "Needs verification"; non-Medi-Cal patient gets exactly one billing task; CIN only in `Patient.cin`, never overwritten; re-running creates no duplicate spans, records or tasks; prior plans/checks kept. Browser at both viewports: completed self-service intake, staff-assisted intake, and a referral enrollment. Full test count reported.
