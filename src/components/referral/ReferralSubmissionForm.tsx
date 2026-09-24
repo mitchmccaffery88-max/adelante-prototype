@@ -9,10 +9,8 @@
 import { useEffect, useState } from "react";
 import {
   AdelanteEHR,
-  useEhr,
   REFERRAL_SOURCE_LABELS,
   type ReferralSource,
-  type ReferralStatus,
 } from "@/lib/ehr";
 import { useServerFn } from "@tanstack/react-start";
 import { sendReferralWelcome } from "@/lib/referralWelcome.functions";
@@ -31,7 +29,6 @@ import {
 } from "@/components/ui/select";
 import { toast } from "sonner";
 import { CheckCircle2, Lock, Send, ShieldCheck } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
 import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
 import { EMPTY_BENEFITS, benefitsAnswers, type BenefitsFormState } from "@/lib/intakeBenefits";
