@@ -123,3 +123,11 @@
 - [x] /billing Rates + Codes sections; units shown on /billing and /admin-claims; remove fake table
 - [x] Tests + browser (Billing, Billing Coordinator, Sys Admin)
 - [x] Phase 7b.1: signature-to-claim gaps (cosign ceremony, enforced claim signing, traceability, seed audit)
+- [x] Demo: attended visits waiting for a note (Kayla Nguyen trainee c4 / Rosa T.; Dr. Reyes / Alicia)
+
+## Phase 7d — General-population billing
+- [ ] Programs self_pay / sliding_fee / grant_isl / commercial (inactive); selection rule; migration
+- [ ] Patient payment arrangement (billing write, audited); unrecorded → flag + blocks Ready; setting re-prices open claims
+- [ ] Optional payerId on rates, payer-specific preferred
+- [ ] Patient responsibility split; manual payments (no overpay, no card numbers, void); audit
+- [ ] Placeholder rates; /billing + /admin-claims UI; tests; browser
