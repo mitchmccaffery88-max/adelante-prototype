@@ -820,7 +820,8 @@ function EligibilitySummaryCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { role } = useActingStaff();
   if (!p || canAccess(role, "eligibility").level === "none") return null;
-  const lastCheck = (p.coverage?.verifications ?? [])[0];
+  // §Phase 8b — a report is not a verification.
+  const lastCheck = (p.coverage?.verifications ?? []).find((v) => !v.reportSource);
   return (
     <Card className="p-5">
       <h3 className="font-display text-lg text-navy flex items-center gap-2">

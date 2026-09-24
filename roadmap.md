@@ -133,5 +133,5 @@
 - [x] Placeholder rates; /billing + /admin-claims UI; tests; browser
 - [x] Phase 7d follow-ups: payment arrangement on chart (Eligibility section); Lane label derived from claim program / real coverage type
 - [x] Phase 8a: coverage merge (no erase), self-report never verified, Medi-Cal status only for Medi-Cal/dual
-- [ ] Phase 8b: intake benefits step (CIN, plan spans, arrangement prompt)
+- [x] Phase 8b: intake benefits step (CIN, plan spans, arrangement prompt)
 - [ ] Phase 8c: electronic eligibility response fields

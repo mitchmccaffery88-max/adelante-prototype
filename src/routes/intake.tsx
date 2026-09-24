@@ -31,7 +31,15 @@ import {
   type IntakeProfile,
 } from "@/lib/intakeProfile";
 import { Input } from "@/components/ui/input";
-import { intakeCoveragePatch, mediCalStatusApplies } from "@/lib/coverageStatus";
+import { intakeCoveragePatch } from "@/lib/coverageStatus";
+import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
+import {
+  benefitsAnswers,
+  benefitsFormFromPatient,
+  isMediCalChoice,
+  recordIntakeBenefits,
+  type BenefitsFormState,
+} from "@/lib/intakeBenefits";
 import {
   COVERAGE_TYPES,
   HEARD_ABOUT_SOURCES,
@@ -123,14 +131,10 @@ function CoverageCallout({
   coverageType,
   justiceInvolvement,
   county,
-  otherPlanName,
-  onOtherPlanChange,
 }: {
   coverageType: CoverageType;
   justiceInvolvement: TriState;
   county: string;
-  otherPlanName: string;
-  onOtherPlanChange: (v: string) => void;
 }) {
   const msg = coverageMessage({ coverageType, justiceInvolvement, county });
   const Icon = msg.tone === "good" ? CheckCircle2 : msg.tone === "info" ? Building2 : HelpingHand;
@@ -161,16 +165,6 @@ function CoverageCallout({
           )}
         </div>
       </div>
-      {(coverageType === "private" || coverageType === "medicare") && (
-        <div className="space-y-1.5">
-          <Label className="text-xs text-muted-foreground">Plan name (optional)</Label>
-          <Input
-            value={otherPlanName}
-            onChange={(e) => onOtherPlanChange(e.target.value)}
-            placeholder="e.g. Kaiser, Anthem Blue Cross"
-          />
-        </div>
-      )}
     </div>
   );
 }
@@ -235,6 +229,20 @@ function IntakePage() {
    */
   const [lookup, setLookup] = useState<(LookupResult & { ran: boolean }) | null>(null);
   const acting = useActingStaff();
+  // §Phase 8b — the shared benefits step's state, seeded from the record.
+  const [benefits, setBenefits] = useState<BenefitsFormState>(() => benefitsFormFromPatient(currentId));
+  const onBenefitsChange = (v: BenefitsFormState) => {
+    setBenefits(v);
+    const a = benefitsAnswers(v);
+    const type = a?.coverageType ?? "unknown";
+    setCoverage((c) => ({
+      ...c,
+      coverageType: type,
+      status: isMediCalChoice(v.choice) ? v.mediCalStatus : c.status,
+      otherPlanName: v.planName,
+      ecmEligible: ecmQuestionApplies(type) ? c.ecmEligible : false,
+    }));
+  };
   // Phase 1c — optional, general-population path only.
   const [heardAbout, setHeardAbout] = useState<HeardAboutSource | "">("");
   // §Reporting Tier 2 — patient-estimated history. Every value here is the
@@ -294,6 +302,7 @@ function IntakePage() {
       if (saved.answers) setAnswers(saved.answers);
       if (saved.needs) setNeeds(saved.needs);
       if (saved.coverage) setCoverage(saved.coverage);
+      if (saved.benefits) setBenefits(saved.benefits);
       // Merge, never overwrite: a blank field in an old draft must not erase
       // something the record actually knows.
       if (saved.profile) {
@@ -319,6 +328,7 @@ function IntakePage() {
           answers,
           needs,
           coverage,
+          benefits,
           profile,
           savedAt: at,
         }),
@@ -328,7 +338,7 @@ function IntakePage() {
       /* no-op */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, profile]);
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -410,6 +420,10 @@ function IntakePage() {
   const back = () => setStep((s) => Math.max(s - 1, 0));
 
   const submit = () => {
+    if (benefitsCinProblem(benefits)) {
+      toast.error("The Medi-Cal ID needs 9 letters or numbers — fix it on the Coverage step.");
+      return;
+    }
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, {
       preferredName: profile.preferredName || undefined,
@@ -452,6 +466,15 @@ function IntakePage() {
         ? { id: acting.staffId, role: acting.role, source: "intake_staff_assisted" }
         : { id: currentId, role: "patient", source: "intake_self_service" },
     );
+    // §Phase 8b — the shared benefits write path (CIN, plan span, reported
+    // record, billing prompt). Attributed to who actually entered it.
+    const benefitAnswers = benefitsAnswers(benefits, selectedPlanSnapshot(benefits.planId));
+    if (benefitAnswers) {
+      const assisted = mode === "assisted" && acting.staffId;
+      recordIntakeBenefits(currentId, benefitAnswers, assisted
+        ? { source: "staff_recorded_patient_report", via: "staff_assisted_intake", actorId: acting.staffId, actorName: acting.staffName || acting.staffId, actorRole: acting.role }
+        : { source: "patient_reported", via: "self_service_intake", actorId: currentId, actorName: patient ? `${patient.firstName} ${patient.lastName}` : "Patient", actorRole: "patient" });
+    }
     // §Front-door Phase 2 — no match on the safety-net lookup means a genuine
     // missed hand-off: generate the CF Care Manager's own pre-release task
     // list, compressed to day one, owned by whoever is running this session.
@@ -959,31 +982,7 @@ function IntakePage() {
               />
             </div>
 
-            <div className="space-y-1.5">
-              <Label className="text-sm">What kind of coverage do you have?</Label>
-              <Select
-                value={coverage.coverageType}
-                onValueChange={(v) =>
-                  setCoverage({
-                    ...coverage,
-                    coverageType: v as CoverageType,
-                    // ECM only exists under Medi-Cal / dual — clear it otherwise.
-                    ecmEligible: ecmQuestionApplies(v as CoverageType) ? coverage.ecmEligible : false,
-                  })
-                }
-              >
-                <SelectTrigger aria-label="Coverage type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {COVERAGE_TYPES.map((c) => (
-                    <SelectItem key={c.key} value={c.key}>
-                      {c.label}
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
+            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} />
 
             {ecmQuestionApplies(coverage.coverageType) && (
               <label
@@ -1031,25 +1030,6 @@ function IntakePage() {
                 ))}
               </RadioGroup>
             </div>
-
-            {mediCalStatusApplies(coverage.coverageType) && (
-            <div className="space-y-1.5" data-testid="medi-cal-status-question">
-              <Label className="text-sm">What is the status of your Medi-Cal?</Label>
-              <Select
-                value={coverage.status}
-                onValueChange={(v) => setCoverage({ ...coverage, status: v as CoverageStatus })}
-              >
-                <SelectTrigger>
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="active">Yes — it's active</SelectItem>
-                  <SelectItem value="suspended">It was paused while I was away</SelectItem>
-                  <SelectItem value="none_unsure">No / I'm not sure</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            )}
 
             {lookupApplies && (
               <div
@@ -1099,8 +1079,6 @@ function IntakePage() {
               coverageType={coverage.coverageType}
               justiceInvolvement={coverage.justiceInvolvement}
               county={coverage.countyOfRelease}
-              otherPlanName={coverage.otherPlanName ?? ""}
-              onOtherPlanChange={(v) => setCoverage({ ...coverage, otherPlanName: v })}
             />
 
             {coverage.justiceInvolvement !== "no" && (

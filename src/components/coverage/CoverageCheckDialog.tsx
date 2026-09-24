@@ -132,7 +132,7 @@ export function CoverageCheckDialog({
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {(Object.keys(COVERAGE_CHECK_CHANNEL_LABEL) as CoverageCheckChannel[]).map((c) => (
+                {(Object.keys(COVERAGE_CHECK_CHANNEL_LABEL) as CoverageCheckChannel[]).filter((c) => c !== "reported").map((c) => (
                   <SelectItem key={c} value={c}>
                     {COVERAGE_CHECK_CHANNEL_LABEL[c]}
                   </SelectItem>

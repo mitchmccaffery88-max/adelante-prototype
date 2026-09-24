@@ -1,0 +1,63 @@
+// §Phase 8b — patient-facing wording for the shared benefits step.
+// Spanish is a first pass, pending bilingual review (shown with the badge).
+export const benefitsEn = {
+  benTitle: "How your care gets paid for",
+  benIntro:
+    "Tell us what you know. It's fine to skip anything you're unsure about — our team checks coverage before any bill.",
+  benOptionalNote: "Optional — skip if you don't know.",
+  benTypeLabel: "What kind of coverage do you have?",
+  benChoice_medi_cal: "Medi-Cal",
+  benChoice_dual: "Medi-Cal and Medicare",
+  benChoice_medicare: "Medicare only",
+  benChoice_private_insurance: "Private insurance (through work or bought yourself)",
+  benChoice_no_insurance: "No insurance",
+  benChoice_prefer_self_pay: "I'd rather pay myself",
+  benChoice_other: "Something else",
+  benChoice_unknown: "I don't know",
+  benCinLabel: "Medi-Cal ID (CIN), if you have it",
+  benCinHelp: "9 letters or numbers, printed on the Medi-Cal card.",
+  benCinInvalid: "A Medi-Cal ID is 9 letters or numbers.",
+  benPlanLabel: "Which Medi-Cal plan?",
+  benPlanOtherLabel: "Plan name",
+  benStatusLabel: "Is your Medi-Cal active right now?",
+  benStatus_active: "Yes — it's active",
+  benStatus_suspended: "It was paused while I was away",
+  benStatus_none_unsure: "No / I'm not sure",
+  benPrivatePlanLabel: "Insurance company or plan name (optional)",
+  benOtherLabel: "Tell us a little more (optional)",
+  benMediCalNext: "Our team will confirm this with Medi-Cal. You don't need to do anything else.",
+  benNonMediCalNext:
+    "Our billing team will reach out about payment options, including a sliding fee. Nothing is charged until that's agreed.",
+  benPickPlan: "Choose a plan",
+} as const;
+
+export const benefitsEs: { [K in keyof typeof benefitsEn]: string } = {
+  benTitle: "Cómo se paga tu atención",
+  benIntro:
+    "Cuéntanos lo que sepas. Puedes saltar lo que no sepas — nuestro equipo revisa la cobertura antes de cualquier cobro.",
+  benOptionalNote: "Opcional — sáltalo si no lo sabes.",
+  benTypeLabel: "¿Qué tipo de cobertura tienes?",
+  benChoice_medi_cal: "Medi-Cal",
+  benChoice_dual: "Medi-Cal y Medicare",
+  benChoice_medicare: "Solo Medicare",
+  benChoice_private_insurance: "Seguro privado (del trabajo o comprado por tu cuenta)",
+  benChoice_no_insurance: "No tengo seguro",
+  benChoice_prefer_self_pay: "Prefiero pagar por mi cuenta",
+  benChoice_other: "Otra cosa",
+  benChoice_unknown: "No sé",
+  benCinLabel: "Número de Medi-Cal (CIN), si lo tienes",
+  benCinHelp: "9 letras o números, impresos en la tarjeta de Medi-Cal.",
+  benCinInvalid: "El número de Medi-Cal tiene 9 letras o números.",
+  benPlanLabel: "¿Qué plan de Medi-Cal?",
+  benPlanOtherLabel: "Nombre del plan",
+  benStatusLabel: "¿Tu Medi-Cal está activo ahora?",
+  benStatus_active: "Sí — está activo",
+  benStatus_suspended: "Se pausó mientras estaba fuera",
+  benStatus_none_unsure: "No / No estoy seguro",
+  benPrivatePlanLabel: "Compañía de seguro o nombre del plan (opcional)",
+  benOtherLabel: "Cuéntanos un poco más (opcional)",
+  benMediCalNext: "Nuestro equipo lo confirmará con Medi-Cal. No necesitas hacer nada más.",
+  benNonMediCalNext:
+    "Nuestro equipo de facturación te contactará sobre opciones de pago, incluida una tarifa reducida. No se cobra nada hasta acordarlo.",
+  benPickPlan: "Elige un plan",
+};

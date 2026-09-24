@@ -1,3 +1,4 @@
+import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -528,6 +529,7 @@ function BillingPage() {
       )}
 
       {tab === "rates" && <RatesPanel canWrite={canWrite} />}
+      {tab === "rates" && <ManagedCarePlansPanel />}
 
       {tab === "credentials" && (
         <section className="space-y-3">

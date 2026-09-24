@@ -33,6 +33,8 @@ import { toast } from "sonner";
 import { CheckCircle2, Lock, Send, ShieldCheck, ListChecks } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { useI18n } from "@/lib/i18n";
+import { BenefitsStep, benefitsCinProblem, selectedPlanSnapshot } from "@/components/intake/BenefitsStep";
+import { EMPTY_BENEFITS, benefitsAnswers, type BenefitsFormState } from "@/lib/intakeBenefits";
 
 export function normalizeCin(v: string) {
   return v.replace(/\s+/g, "").toUpperCase();
@@ -55,10 +57,6 @@ export function referralContactProblem(f: {
   const email = f.email.trim();
   if (email && !isValidEmail(email)) return "The person's email doesn't look like a valid email address.";
   return null;
-}
-function maskCin(v?: string) {
-  if (!v) return "";
-  return v.length <= 4 ? v : `••••${v.slice(-4)}`;
 }
 
 const sources: { value: ReferralSource; label: string }[] = (
@@ -117,7 +115,8 @@ export function ReferralSubmissionForm({
     noPhone: false,
     notARobot: false,
   });
-  const [cinDup, setCinDup] = useState<string | null>(null);
+  // §Phase 8b — optional benefits via the shared step (CIN lives here now).
+  const [benefits, setBenefits] = useState<BenefitsFormState>(EMPTY_BENEFITS);
   const sendWelcome = useServerFn(sendReferralWelcome);
 
   const onSubmit = async (e: React.FormEvent) => {
@@ -147,14 +146,21 @@ export function ReferralSubmissionForm({
       toast.error("Please answer whether this individual is justice-involved");
       return;
     }
+    if (benefitsCinProblem(benefits)) {
+      toast.error("The Medi-Cal ID needs 9 letters or numbers, or leave it blank.");
+      return;
+    }
     const ji = form.justiceInvolved === "yes";
+    const reported = benefitsAnswers(benefits, selectedPlanSnapshot(benefits.planId));
+    const { cin: reportedCin, ...reportedRest } = reported ?? {};
     const result = AdelanteEHR.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
       phone: form.noPhone ? undefined : form.phone,
       email: form.email.trim().toLowerCase() || undefined,
       // Medi-Cal ID writes to the EXISTING `Referral.cin` — no parallel field.
-      cin: ji && form.cin ? normalizeCin(form.cin) : undefined,
+      cin: reportedCin ? normalizeCin(reportedCin) : undefined,
+      ...(reportedRest.coverageType ? { reportedBenefits: reportedRest } : {}),
       dob: form.dob || undefined,
       releaseDate: ji ? form.releaseDate || undefined : undefined,
       justiceInvolved: form.justiceInvolved,
@@ -359,37 +365,6 @@ export function ReferralSubmissionForm({
           </div>
           {form.justiceInvolved === "yes" && (
             <div className="grid sm:grid-cols-2 gap-4 pt-1">
-              <Field label="CIN / Medi-Cal ID (if known)">
-                <Input
-                  placeholder="9 characters — e.g. 90000000A"
-                  maxLength={20}
-                  value={form.cin}
-                  onChange={(e) => setForm({ ...form, cin: normalizeCin(e.target.value) })}
-                  onBlur={() => {
-                    const cin = normalizeCin(form.cin);
-                    if (!cin) return setCinDup(null);
-                    const existingR = AdelanteEHR.listReferrals().find(
-                      (r) => r.cin && normalizeCin(r.cin) === cin,
-                    );
-                    const existingP = AdelanteEHR.listPatients().find(
-                      (p) => p.cin && normalizeCin(p.cin) === cin,
-                    );
-                    if (existingR) {
-                      setCinDup(
-                        `Heads up: a referral already exists for CIN ${maskCin(cin)} — ${existingR.firstName} ${existingR.lastName}.`,
-                      );
-                    } else if (existingP) {
-                      setCinDup(
-                        `Heads up: this CIN ${maskCin(cin)} is already enrolled (${existingP.programId}).`,
-                      );
-                    } else setCinDup(null);
-                  }}
-                />
-                {cinDup && <p className="text-xs text-gold-foreground mt-1">{cinDup}</p>}
-                <p className="text-xs text-muted-foreground mt-1">
-                  Optional. Helps avoid duplicate records when names are similar.
-                </p>
-              </Field>
               <Field label="Expected release date">
                 <Input
                   type="date"
@@ -405,6 +380,10 @@ export function ReferralSubmissionForm({
               </Field>
             </div>
           )}
+        </div>
+        {/* §Phase 8b — optional: a referrer who doesn't know can skip it. */}
+        <div className="rounded-lg border p-4" data-testid="referral-benefits">
+          <BenefitsStep value={benefits} onChange={setBenefits} optional />
         </div>
         <label className="flex items-start gap-2 text-sm cursor-pointer pt-1">
           <Checkbox

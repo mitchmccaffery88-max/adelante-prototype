@@ -14,6 +14,7 @@ import {
   recoveryUiEn,
   recoveryUiEs,
 } from "./i18n.recovery";
+import { benefitsEn, benefitsEs } from "./i18n.benefits";
 
 type Lang = "en" | "es";
 
@@ -22,6 +23,7 @@ const dict = {
     // §Phase 5b — Recovery modules. Merged into THE dictionary; same `t()`.
     ...recoveryUiEn,
     ...recoveryModuleEn,
+    ...benefitsEn,
     appName: "Adelante",
     tagline: "Care that meets you where you are.",
     subtagline:
@@ -406,6 +408,7 @@ const dict = {
   es: {
     ...recoveryUiEs,
     ...recoveryModuleEs,
+    ...benefitsEs,
     // ES-only first-pass overrides for Module 1 lesson bodies (pending review).
     ...recoveryContentEs,
     appName: "Adelante",

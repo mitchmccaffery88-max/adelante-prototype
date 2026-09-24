@@ -102,7 +102,8 @@ export function mergeCoverage(
   if (!next.communitySupports) delete next.communitySupports;
   if (!next.plans) delete next.plans;
   if (!next.verifications) delete next.verifications;
-  const hasCheck = (base.verifications ?? []).length > 0;
+  // §Phase 8b — reported records (reportSource set) are never a staff check.
+  const hasCheck = (base.verifications ?? []).some((v) => !v.reportSource);
   if (next.verified === "verified" && !hasCheck) next.verified = "self_reported";
   const changed = Object.keys(next).filter(
     (k) =>
@@ -126,7 +127,7 @@ export function intakeCoveragePatch(
   },
 ): CoveragePatch {
   const applies = mediCalStatusApplies(a.coverageType);
-  const hasCheck = (existing?.verifications ?? []).length > 0;
+  const hasCheck = (existing?.verifications ?? []).some((v) => !v.reportSource);
   return {
     coverageType: a.coverageType,
     // Non-Medi-Cal types: don't set a Medi-Cal status. Keep what's on file;
