@@ -12,7 +12,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr, COLLATERAL_ROI_CATEGORY } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, COLLATERAL_ROI_CATEGORY, DEMO_PRE_RELEASE_PERSONA } from "@/lib/ehr";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -31,6 +31,7 @@ type DemoStateId =
   | "no_record"
   | "ji_post_release"
   | "general_population"
+  | "pre_release"
   | "advocate"
   | "advocate_and_patient";
 
@@ -44,6 +45,10 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string }> = {
   ji_post_release: {
     label: "Daniel M. — Justice-Involved, Post-Release",
     hint: "State 2 — completed intake, JI reentry flag, released and back in the community",
+  },
+  pre_release: {
+    label: "Tomás R. — Pre-Release (in custody)",
+    hint: "State 6 — open pre-release episode, partner-reported needs, intake not started",
   },
   advocate: {
     label: "Advocate view (invite-code session)",
@@ -65,7 +70,16 @@ const ORDER: DemoStateId[] = [
   "advocate",
   "advocate_and_patient",
   "general_population",
+  "pre_release",
 ];
+
+function preReleasePersonaId(): string | undefined {
+  return AdelanteEHR.listPatients().find(
+    (p) =>
+      p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName &&
+      p.lastName === DEMO_PRE_RELEASE_PERSONA.lastName,
+  )?.id;
+}
 
 function clearPatientSession() {
   try {
@@ -162,6 +176,7 @@ export function DemoStateSwitcher() {
     if (!patient) return "no_record";
     if (patient.id === "p1") return "ji_post_release";
     if (patient.id === "p4") return "general_population";
+    if (patient.id === preReleasePersonaId()) return "pre_release";
     return null;
   })();
 
@@ -181,6 +196,15 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(state === "ji_post_release" ? "p1" : "p4");
+          navigate({ to: "/patient" });
+          break;
+        }
+        case "pre_release": {
+          const id = preReleasePersonaId();
+          if (!id) throw new Error("Pre-release demo patient is not available.");
+          clearAdvocateSession();
+          setAdvocateLinkId(null);
+          AdelanteEHR.setCurrentPatientId(id);
           navigate({ to: "/patient" });
           break;
         }
@@ -231,7 +255,7 @@ export function DemoStateSwitcher() {
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
-            Demo scenarios · the five QA states
+            Demo scenarios · QA states
           </DropdownMenuLabel>
           {ORDER.map((id) => (
             <DropdownMenuItem
