@@ -62,6 +62,7 @@ export const Route = createFileRoute("/eligibility-worklist")({
 const STATE_TONE: Record<CoverageCheckState, string> = {
   never_checked: "bg-destructive/15 text-destructive border-0",
   needs_verification: "bg-warning/25 text-navy border-0",
+  not_medi_cal_reported: "bg-secondary text-muted-foreground border-0",
   overdue: "bg-destructive/10 text-destructive border-0",
   due: "bg-warning/20 text-navy border-0",
   current: "bg-muted text-muted-foreground border-0",
@@ -86,7 +87,7 @@ function EligibilityWorklistPage() {
     const needle = q.trim().toLowerCase();
     return allRows.filter((r) => {
       if (county !== "all" && r.county !== county) return false;
-      if (state === "needs_work" && r.state === "current") return false;
+      if (state === "needs_work" && (r.state === "current" || r.state === "not_medi_cal_reported")) return false;
       if (state !== "all" && state !== "needs_work" && r.state !== state) return false;
       if (needle && !`${r.name} ${r.programId}`.toLowerCase().includes(needle)) return false;
       return true;
@@ -127,10 +128,11 @@ function EligibilityWorklistPage() {
         {COVERAGE_STALENESS_DRAFT.note}
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-6 gap-3" data-testid="coverage-summary">
+      <div className="grid grid-cols-2 md:grid-cols-7 gap-3" data-testid="coverage-summary">
         <Stat label="On this list" value={summary.total} />
         <Stat label="Never checked" value={summary.neverChecked} tone="destructive" />
         <Stat label="Needs verification" value={summary.needsVerification} />
+        <Stat label="Not Medi-Cal (reported)" value={summary.notMediCalReported} />
         <Stat label="Overdue" value={summary.overdue} tone="destructive" />
         <Stat label="Due" value={summary.due} />
         <Stat label="Open follow-ups" value={summary.openFollowUps} />
@@ -178,6 +180,7 @@ function EligibilityWorklistPage() {
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="due">Due</SelectItem>
               <SelectItem value="current">Current</SelectItem>
+              <SelectItem value="not_medi_cal_reported">Not Medi-Cal (reported)</SelectItem>
               <SelectItem value="all">All</SelectItem>
             </SelectContent>
           </Select>
