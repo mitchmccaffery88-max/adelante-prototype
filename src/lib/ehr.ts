@@ -3582,6 +3582,17 @@ const clinicians: Clinician[] = [
     locationIds: ["loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
+  {
+    // §Demo — trainee (ASW) supervised by Dr. Reyes; her notes need cosign.
+    id: "c4",
+    name: "Kayla Nguyen",
+    credential: "ASW",
+    mediCalCredentialed: false,
+    mediCalStatus: "pending",
+    services: ["therapy_individual", "case_management"],
+    locationIds: ["loc-visalia"],
+    licenseExpiresOn: "2028-12-31",
+  },
 ];
 
 const patients: Patient[] = [

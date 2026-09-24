@@ -1036,6 +1036,7 @@ export const STAFF_ROSTER: StaffMember[] = [
     role: "clinical_trainee",
     credential: "ASW",
     supervisedBy: "s-th1",
+    clinicianId: "c4",
   },
   {
     id: "s-ma1",
