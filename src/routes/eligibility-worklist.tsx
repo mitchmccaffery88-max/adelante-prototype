@@ -61,6 +61,7 @@ export const Route = createFileRoute("/eligibility-worklist")({
 
 const STATE_TONE: Record<CoverageCheckState, string> = {
   never_checked: "bg-destructive/15 text-destructive border-0",
+  needs_verification: "bg-warning/25 text-navy border-0",
   overdue: "bg-destructive/10 text-destructive border-0",
   due: "bg-warning/20 text-navy border-0",
   current: "bg-muted text-muted-foreground border-0",
@@ -114,7 +115,8 @@ function EligibilityWorklistPage() {
           <ShieldCheck className="h-5 w-5 text-teal" /> Medi-Cal verification worklist
         </h1>
         <p className="text-sm text-muted-foreground mt-1">
-          Everyone in the program, worst first: never checked, then the oldest checks. Built from
+          Everyone in the program, worst first: never checked, then reported but not yet verified,
+          then the oldest checks. Built from
           the eligibility checks staff have actually recorded — there is no automated eligibility
           transaction in this app, so nothing on this list updates itself.
         </p>
@@ -125,9 +127,10 @@ function EligibilityWorklistPage() {
         {COVERAGE_STALENESS_DRAFT.note}
       </Card>
 
-      <div className="grid grid-cols-2 md:grid-cols-5 gap-3" data-testid="coverage-summary">
+      <div className="grid grid-cols-2 md:grid-cols-6 gap-3" data-testid="coverage-summary">
         <Stat label="On this list" value={summary.total} />
         <Stat label="Never checked" value={summary.neverChecked} tone="destructive" />
+        <Stat label="Needs verification" value={summary.needsVerification} />
         <Stat label="Overdue" value={summary.overdue} tone="destructive" />
         <Stat label="Due" value={summary.due} />
         <Stat label="Open follow-ups" value={summary.openFollowUps} />
@@ -171,6 +174,7 @@ function EligibilityWorklistPage() {
             <SelectContent>
               <SelectItem value="needs_work">Needs a check</SelectItem>
               <SelectItem value="never_checked">Never checked</SelectItem>
+              <SelectItem value="needs_verification">Needs verification</SelectItem>
               <SelectItem value="overdue">Overdue</SelectItem>
               <SelectItem value="due">Due</SelectItem>
               <SelectItem value="current">Current</SelectItem>
@@ -222,6 +226,12 @@ function EligibilityWorklistPage() {
                     </Badge>
                   </td>
                   <td className="px-3 py-2 text-xs text-muted-foreground">
+                    {r.pendingReport && (
+                      <div className="mb-1 text-foreground" data-testid="pending-report">
+                        {REPORTED_SOURCE_LABEL[r.pendingReport.reportSource]} ·{" "}
+                        <ClientDate value={r.pendingReport.checkedAt} /> · by {r.pendingReport.checkedBy} — not verified
+                      </div>
+                    )}
                     {r.lastCheck ? (
                       <>
                         <ClientDate value={r.lastCheck.checkedAt} />
