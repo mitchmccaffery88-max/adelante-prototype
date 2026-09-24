@@ -143,7 +143,7 @@ export function CravingMoreHelp() {
                   {r.name}
                 </Link>
                 <p className="text-muted-foreground">{r.description}</p>
-                {r.phone && (
+                {/\d/.test(r.phone ?? "") && (
                   <a href={`tel:${r.phone}`} className="text-primary underline">
                     {r.phone}
                   </a>
