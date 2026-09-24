@@ -116,3 +116,9 @@
 - [x] markClaimSignedFromNote for note signing; claimChargeCents single amount fn
 - [x] Attended visit creates claim; remove appointment billingStatus + transitionBilling/advanceClaim
 - [x] /billing, summary, pilot card, clinician line read claims; tests; browser check
+
+## Phase 7c — rate table + billing units
+- [x] rates.ts: billing code table (unit rules), effective-dated rates, add/end-date, audit, billing-write
+- [x] Claims: code/program/units at creation, rate × units, no-rate flag blocks Ready, corrections
+- [x] /billing Rates + Codes sections; units shown on /billing and /admin-claims; remove fake table
+- [x] Tests + browser (Billing, Billing Coordinator, Sys Admin)

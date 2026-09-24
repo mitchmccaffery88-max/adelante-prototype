@@ -14,6 +14,19 @@ import {
   type ServiceType,
 } from "./ehr";
 import { canAccess, getActingRole, getActingStaff } from "./roles";
+import {
+  PROGRAM_LABEL,
+  defaultCodeFor,
+  getBillingCode,
+  isPayerProgram,
+  onRateAdded,
+  rateFor,
+  selectProgram,
+  unitBasisLabel,
+  unitsFor,
+  type PayerProgram,
+  type ServiceLine,
+} from "./rates";
 import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
 
 // ---------- Types ----------
@@ -208,7 +221,8 @@ export function claimBillingBucket(state: ClaimState): BillingBucket {
   }
 }
 
-export const BILLING_WRITE_REFUSED = "Your role can view billing but can't change it.";
+export { BILLING_WRITE_REFUSED } from "./rates";
+import { BILLING_WRITE_REFUSED } from "./rates";
 
 export interface Claim {
   id: string;
@@ -216,7 +230,25 @@ export interface Claim {
   patientId: string;
   clinicianId: string;
   state: ClaimState;
-  chargeCents: number;
+  /**
+   * §Phase 7c — rate per unit × units, frozen at pricing time. Absent when
+   * `rateStatus === "no_rate"`: never priced from a fallback.
+   */
+  chargeCents?: number;
+  /** YYYY-MM-DD the service was delivered — what the rate lookup keys on. */
+  serviceDate?: string;
+  program?: PayerProgram;
+  programSource?: "coverage" | "billing";
+  codeSource?: "default" | "hook" | "billing";
+  /** Where `units` came from. `schedule` = estimated from the booked length. */
+  unitsSource?: "note" | "schedule" | "billing";
+  /** Minutes the units were computed from, when minutes-based. */
+  minutes?: number;
+  rateId?: string;
+  rateCentsPerUnit?: number;
+  rateStatus?: "priced" | "no_rate";
+  /** Human reason when `no_rate`. */
+  noRateReason?: string;
   denialReason?: string;
   updatedAt: string;
   history: {
@@ -228,13 +260,80 @@ export interface Claim {
     role?: string;
     note?: string;
   }[];
-  /** §Phase 3 — HCPCS/CPT when the generating hook knows it (Peer, CHW). */
+  /** HCPCS/CPT. §Phase 7c — every claim now gets one at creation. */
   serviceCode?: string;
   units?: number;
   taxonomy?: string;
   /** Enrolled provider the claim is billed through (CHW services). */
   supervisingStaffId?: string;
 }
+
+// ---------- §Phase 7c pricing ----------
+
+/** Program + line context for a patient on a service date. */
+function coverageContext(patientId: string, serviceDate: string): { hasMediCal: boolean; payer?: string } {
+  const p = AdelanteEHR.getPatient(patientId);
+  const cov = p?.coverage;
+  const plan = (cov?.plans ?? []).find((x) => x.from <= serviceDate && (!x.to || serviceDate <= x.to));
+  if (plan) return { hasMediCal: /medi-?cal|MHP|DMC|county/i.test(`${plan.payer} ${plan.plan ?? ""}`), payer: plan.payer };
+  const t = cov?.coverageType;
+  return { hasMediCal: t === "medi_cal" || t === "dual" };
+}
+
+function lineFor(fundingLane: string | undefined, serviceType: string | undefined, patientId: string): ServiceLine {
+  if (fundingLane === "dmc_ods") return "sud";
+  if (fundingLane && fundingLane !== "dmc_ods") return "mh";
+  void serviceType;
+  return AdelanteEHR.getPatient(patientId)?.needs?.substanceUse ? "sud" : "mh";
+}
+
+/** Signed-note minutes for a visit, if the note documents them. */
+function noteMinutesForEncounter(patientId: string, apptId: string): number | undefined {
+  const notes = AdelanteEHR.getPatient(patientId)?.progressNotes ?? [];
+  const n = notes.find((x) => x.appointmentId === apptId);
+  const v = Number(n?.templateAnswers?.["service_minutes"] ?? NaN);
+  return Number.isFinite(v) && v > 0 ? v : undefined;
+}
+
+/**
+ * The ONE place a claim amount is decided: code's unit rule × effective rate
+ * for (code, program, service date). No fallback price exists anywhere.
+ */
+function applyPricing(c: Claim): void {
+  const code = c.serviceCode ? getBillingCode(c.serviceCode) : undefined;
+  if (code && c.minutes !== undefined && c.unitsSource !== "billing") c.units = unitsFor(code, c.minutes);
+  if (code && c.units === undefined) c.units = 1;
+  const fail = (why: string) => {
+    c.rateStatus = "no_rate";
+    c.noRateReason = why;
+    delete c.chargeCents;
+    delete c.rateId;
+    delete c.rateCentsPerUnit;
+  };
+  if (!c.serviceCode) return fail("No billing code on this claim.");
+  if (!code) return fail(`Billing code ${c.serviceCode} isn't in the code table.`);
+  if (!c.program) return fail("No payer program on this claim.");
+  const day = c.serviceDate ?? iso().slice(0, 10);
+  const r = rateFor(c.serviceCode, c.program, day);
+  if (!r) return fail(`No rate on file for ${c.serviceCode} / ${PROGRAM_LABEL[c.program]} on ${day}.`);
+  c.rateStatus = "priced";
+  delete c.noRateReason;
+  c.rateId = r.id;
+  c.rateCentsPerUnit = r.amountCents;
+  c.chargeCents = r.amountCents * (c.units ?? 1);
+}
+
+/** "4 × 15 min, from note" style label for billing screens. */
+export function claimUnitLabel(c: Claim): string {
+  if (!c.serviceCode) return "—";
+  const code = getBillingCode(c.serviceCode);
+  const basis = unitBasisLabel(code);
+  const src =
+    c.unitsSource === "schedule" ? "estimated from schedule" : c.unitsSource === "billing" ? "corrected by billing" : "from note";
+  return `${c.units ?? 1} × ${basis}, ${src}`;
+}
+
+const CLAIM_LOCKED: ClaimState[] = ["submitted", "paid", "denied", "partial"];
 
 // ---------- Seed data ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -664,6 +763,15 @@ export const AdelanteEHRExt = {
     const claim = claims.find((c) => c.encounterId === encounterId);
     if (!claim || claim.state !== "documented") return;
     const at = iso();
+    // §Phase 7c — the signed note is where documented minutes come from.
+    if (claim.unitsSource !== "billing") {
+      const m = noteMinutesForEncounter(claim.patientId, encounterId);
+      if (m !== undefined) {
+        claim.minutes = m;
+        claim.unitsSource = "note";
+        applyPricing(claim);
+      }
+    }
     claim.state = "signed";
     claim.updatedAt = at;
     claim.history.push({ at, state: "signed", actor: signerId, note: "note signed" });
@@ -695,13 +803,27 @@ export const AdelanteEHRExt = {
       patientId: appt.patientId,
       clinicianId: appt.clinicianId,
       state: "documented",
-      chargeCents: AdelanteEHR.claimChargeCents({
-        ...(appt.serviceType ? { serviceType: appt.serviceType } : {}),
-        ...(appt.chargeCents !== undefined ? { apptChargeCents: appt.chargeCents } : {}),
-      }),
       updatedAt: iso(),
       history: [{ at: iso(), state: "documented", actor: "system" }],
     };
+    {
+      const serviceDate = appt.start.slice(0, 10);
+      const line = lineFor(appt.fundingLane, appt.serviceType, appt.patientId);
+      const code = defaultCodeFor(appt.serviceType, line);
+      const cov = coverageContext(appt.patientId, serviceDate);
+      const noteMin = noteMinutesForEncounter(appt.patientId, apptId);
+      claim.serviceDate = serviceDate;
+      claim.serviceCode = code;
+      claim.codeSource = "default";
+      claim.program =
+        appt.fundingLane === "isl_non_medi_cal" || appt.fundingLane === "private_pay"
+          ? "non_medi_cal"
+          : selectProgram({ code, line, ...cov });
+      claim.programSource = "coverage";
+      claim.minutes = noteMin ?? appt.durationMin;
+      claim.unitsSource = noteMin !== undefined ? "note" : "schedule";
+      applyPricing(claim);
+    }
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
@@ -723,6 +845,8 @@ export const AdelanteEHRExt = {
     const from = c.state;
     if (!CLAIM_TRANSITIONS[from].includes(to))
       return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    if (to === "generated" && c.rateStatus !== "priced")
+      return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
     const reason = (opts?.denialReason ?? opts?.note ?? "").trim();
     if (claimMoveNeedsReason(from, to) && !reason)
       return {
@@ -760,6 +884,71 @@ export const AdelanteEHRExt = {
     });
     ehrBus.publish({ type: "claim.updated", claimId: c.id, state: to });
     return { ok: true };
+  },
+
+  /**
+   * §Phase 7c — billing corrections to code / program / units. Billing write
+   * only, reason required, blocked once submitted, audited; every correction
+   * re-prices from the rate table.
+   */
+  correctClaim(
+    claimId: string,
+    change: { serviceCode?: string; program?: string; units?: number },
+    reason: string,
+  ): { ok: true; claim: Claim } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
+    const c = claims.find((x) => x.id === claimId);
+    if (!c) return { ok: false, error: "Claim not found." };
+    if (CLAIM_LOCKED.includes(c.state)) return { ok: false, error: "This claim has been submitted and can't be corrected here." };
+    if (!reason.trim()) return { ok: false, error: "A reason is required to correct a claim." };
+    const code = change.serviceCode?.trim().toUpperCase();
+    if (code !== undefined && !getBillingCode(code)) return { ok: false, error: `Billing code ${code} isn't in the code table.` };
+    if (change.program !== undefined && !isPayerProgram(change.program)) return { ok: false, error: "Unknown payer program." };
+    if (change.units !== undefined && (!Number.isInteger(change.units) || change.units < 1))
+      return { ok: false, error: "Units must be a whole number of at least 1." };
+    const before = { serviceCode: c.serviceCode ?? null, program: c.program ?? null, units: c.units ?? null, chargeCents: c.chargeCents ?? null };
+    if (code !== undefined) {
+      c.serviceCode = code;
+      c.codeSource = "billing";
+    }
+    if (change.program !== undefined) {
+      c.program = change.program as PayerProgram;
+      c.programSource = "billing";
+    }
+    if (change.units !== undefined) {
+      c.units = change.units;
+      c.unitsSource = "billing";
+    }
+    applyPricing(c);
+    const staff = getActingStaff();
+    const at = iso();
+    c.updatedAt = at;
+    c.history.push({ at, state: c.state, actor: staff.id, actorName: staff.name, role, note: `corrected: ${reason.trim()}` });
+    AdelanteEHR.recordBillingAudit({
+      action: "claim_corrected",
+      actorId: staff.id,
+      actorRole: role,
+      patientId: c.patientId,
+      detail: {
+        claimId: c.id,
+        before,
+        after: { serviceCode: c.serviceCode ?? null, program: c.program ?? null, units: c.units ?? null, chargeCents: c.chargeCents ?? null },
+        reason: reason.trim(),
+        actorName: staff.name,
+      },
+    });
+    ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+    return { ok: true, claim: { ...c } };
+  },
+
+  /** Latest service date priced from a rate (end-dating can't cut it off). */
+  latestPricedServiceDate(rateId: string): string | undefined {
+    return claims
+      .filter((c) => c.rateId === rateId && c.serviceDate)
+      .map((c) => c.serviceDate!)
+      .sort()
+      .pop();
   },
 
   /**
@@ -826,13 +1015,32 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: renderingProviderId || input.facilitatorId,
       state: "documented",
-      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "therapy_group" }),
-      ...(session && groupBillingCode(session.category)
-        ? { serviceCode: groupBillingCode(session.category) }
-        : {}),
       updatedAt: iso(),
       history: [{ at: iso(), state: "documented", actor: "system", note: `note:${input.noteId}` }],
     };
+    {
+      const serviceDate = input.occurrenceStart.slice(0, 10);
+      const line: ServiceLine = session?.category === "sud_clinical_preauth" ? "sud" : "mh";
+      const hookCode = session ? groupBillingCode(session.category) : undefined;
+      const code = hookCode ?? defaultCodeFor("therapy_group", line);
+      const note = (AdelanteEHR.getPatient(input.patientId)?.progressNotes ?? []).find((n) => n.id === input.noteId);
+      const fac = note?.groupRef?.facilitators?.find((f) => f.staffId === claim!.clinicianId) ?? note?.groupRef?.facilitators?.[0];
+      claim.serviceDate = serviceDate;
+      claim.serviceCode = code;
+      claim.codeSource = hookCode ? "hook" : "default";
+      claim.program = selectProgram({ code, line, ...coverageContext(input.patientId, serviceDate) });
+      claim.programSource = "coverage";
+      if (fac && fac.minutes > 0) {
+        claim.minutes = fac.minutes;
+        claim.unitsSource = "note";
+      } else {
+        const occ = AdelanteEHR.getGroupOccurrence(input.sessionId, input.occurrenceStart) as { durationMin?: number } | undefined;
+        const sess = session as { durationMin?: number } | undefined;
+        claim.minutes = occ?.durationMin ?? sess?.durationMin ?? 60;
+        claim.unitsSource = "schedule";
+      }
+      applyPricing(claim);
+    }
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
@@ -879,15 +1087,20 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: input.clinicianId,
       state: "documented",
-      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "peer_support" }),
       serviceCode: decision.serviceCode,
+      codeSource: "hook",
       units: decision.units,
+      unitsSource: "note",
+      serviceDate: iso().slice(0, 10),
+      programSource: "coverage",
       taxonomy: decision.taxonomy,
       updatedAt: iso(),
       history: [
         { at: iso(), state: "documented", actor: "system", note: `peer_note:${input.peerNoteId}` },
       ],
     };
+    claim.program = selectProgram({ code: claim.serviceCode ?? "", line: "mh", ...coverageContext(claim.patientId, claim.serviceDate!) });
+    applyPricing(claim);
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
@@ -953,15 +1166,20 @@ export const AdelanteEHRExt = {
       patientId: input.patientId,
       clinicianId: input.clinicianId,
       state: "documented",
-      chargeCents: AdelanteEHR.claimChargeCents({ serviceType: "case_management" }),
       serviceCode: decision.serviceCode,
+      codeSource: "hook",
       units: decision.units,
+      unitsSource: "note",
+      serviceDate: (input.dateISO ?? iso()).slice(0, 10),
+      programSource: "coverage",
       supervisingStaffId: decision.supervisingStaffId,
       updatedAt: iso(),
       history: [
         { at: iso(), state: "documented", actor: "system", note: `chw_note:${input.noteId}` },
       ],
     };
+    claim.program = selectProgram({ code: claim.serviceCode ?? "", line: "mh", ...coverageContext(claim.patientId, claim.serviceDate!) });
+    applyPricing(claim);
     claims.push(claim);
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
@@ -993,6 +1211,24 @@ export const AdelanteEHRExt = {
       }
       if (claim.state === "denied") claim.denialReason = "Auth required";
     });
+  // §Phase 7c — a newly added rate prices claims waiting on it (not yet Ready).
+  onRateAdded((r) => {
+    for (const c of claims) {
+      if (c.rateStatus !== "no_rate" || c.serviceCode !== r.code || c.program !== r.program) continue;
+      if (!["documented", "signed", "coded", "generated", "written_off"].includes(c.state)) continue;
+      applyPricing(c);
+      if ((c.rateStatus as string) === "priced") {
+        AdelanteEHR.recordBillingAudit({
+          action: "claim_priced_from_new_rate",
+          actorId: r.createdBy,
+          actorRole: r.createdByRole,
+          patientId: c.patientId,
+          detail: { claimId: c.id, rateId: r.id, units: c.units ?? 1, chargeCents: c.chargeCents ?? 0 },
+        });
+        ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+      }
+    }
+  });
   registerClaimBridge({
     onAttended: (apptId) => {
       AdelanteEHRExt.upsertClaimFromEncounter(apptId);

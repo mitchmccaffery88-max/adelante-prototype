@@ -13064,13 +13064,23 @@ export const AdelanteEHR = {
         return 15000;
     }
   },
-  /**
-   * §Phase 7b — the ONE place a claim amount is decided. Every claim-creation
-   * path in ehr-ext.ts calls this; no path carries its own fallback number.
-   * Next phase swaps `chargeForService` for a real rate table here only.
-   */
-  claimChargeCents(input: { serviceType?: ServiceType; apptChargeCents?: number }): number {
-    return input.apptChargeCents ?? AdelanteEHR.chargeForService(input.serviceType);
+  /** §Phase 7c — audit row for rate/code-table/claim-pricing changes. */
+  recordBillingAudit(input: {
+    action: string;
+    actorId: string;
+    actorRole: string;
+    patientId?: string;
+    detail: Record<string, unknown>;
+  }) {
+    appendAudit({
+      category: "clinical",
+      action: input.action,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      ...(input.patientId ? { patientId: input.patientId } : {}),
+      detail: input.detail,
+    });
+    emit();
   },
   /** §Phase 7b — audit row for every claim status move (billing or note signature). */
   recordClaimStatusChange(input: {
@@ -13125,7 +13135,7 @@ export const AdelanteEHR = {
       const p = patients.find((x) => x.id === a.patientId);
       const c = clinicians.find((x) => x.id === a.clinicianId);
       const claimCents = _claimBridge?.chargeFor(a.id);
-      const charge = ((claimCents ?? AdelanteEHR.claimChargeCents({ serviceType: a.serviceType, apptChargeCents: a.chargeCents })) / 100).toFixed(2);
+      const charge = claimCents === undefined ? "" : (claimCents / 100).toFixed(2);
       return [
         a.id,
         a.start.slice(0, 10),
