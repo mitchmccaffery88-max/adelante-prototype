@@ -164,11 +164,17 @@ function BillingPage() {
   const [statusFilter, setStatusFilter] = useState<"all" | BillingStatus>(initialStatus ?? "all");
   const [noRateOnly, setNoRateOnly] = useState(false);
   const noRateCount = claims.filter((c) => c.rateStatus === "no_rate").length;
+  const [arrangementOnly, setArrangementOnly] = useState(false);
+  const [balanceOnly, setBalanceOnly] = useState(false);
+  const arrangementCount = claims.filter((c) => c.arrangementMissing).length;
+  const balanceCount = claims.filter((c) => (c.patientBalanceCents ?? 0) > 0).length;
   const filtered = rows.filter(
     (r) =>
       (laneFilter === "all" || r.lane === laneFilter) &&
       (statusFilter === "all" || (r.claim && claimBillingBucket(r.claim.state) === statusFilter)) &&
-      (!noRateOnly || r.claim?.rateStatus === "no_rate"),
+      (!noRateOnly || r.claim?.rateStatus === "no_rate") &&
+      (!arrangementOnly || Boolean(r.claim?.arrangementMissing)) &&
+      (!balanceOnly || (r.claim?.patientBalanceCents ?? 0) > 0),
   );
   const islRows = rows.filter((r) => r.lane === "isl_non_medi_cal");
 
@@ -386,6 +392,22 @@ function BillingPage() {
               className={`rounded-full border px-2.5 py-1 text-xs ${noRateOnly ? "border-destructive bg-destructive/10 text-destructive" : "text-muted-foreground"}`}
             >
               No rate on file ({noRateCount})
+            </button>
+            <button
+              type="button"
+              data-testid="arrangement-filter"
+              onClick={() => setArrangementOnly((v) => !v)}
+              className={`rounded-full border px-2.5 py-1 text-xs ${arrangementOnly ? "border-gold bg-gold/20 text-navy" : "text-muted-foreground"}`}
+            >
+              Payment arrangement not recorded ({arrangementCount})
+            </button>
+            <button
+              type="button"
+              data-testid="balance-filter"
+              onClick={() => setBalanceOnly((v) => !v)}
+              className={`rounded-full border px-2.5 py-1 text-xs ${balanceOnly ? "border-navy bg-navy/10 text-navy" : "text-muted-foreground"}`}
+            >
+              Patient balances ({balanceCount})
             </button>
             {filtered.length === 0 && (
               <span className="text-xs text-muted-foreground">No claims match these filters.</span>

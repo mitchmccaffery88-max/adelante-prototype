@@ -1361,6 +1361,11 @@ export interface Patient {
   };
   carePlanSummary: string;
   intakeCompletedAt?: string;
+  /**
+   * §Phase 7d — how a general-population patient pays. Set by billing only
+   * (via AdelanteEHRExt.setPaymentArrangement). Unset = not recorded yet.
+   */
+  paymentArrangement?: "self_pay" | "sliding_fee" | "grant_isl";
   // Medi-Cal eligibility & coverage (§4d)
   coverage?: {
     status: CoverageStatus;
@@ -13119,6 +13124,14 @@ export const AdelanteEHR = {
     }
   },
   /** §Phase 7c — audit row for rate/code-table/claim-pricing changes. */
+  /** §Phase 7d — raw write; the billing-write check lives in ehr-ext. */
+  _setPaymentArrangement(patientId: string, value: "self_pay" | "sliding_fee" | "grant_isl") {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    p.paymentArrangement = value;
+    emit();
+    return true;
+  },
   recordBillingAudit(input: {
     action: string;
     actorId: string;

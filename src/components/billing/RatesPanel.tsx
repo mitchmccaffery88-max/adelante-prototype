@@ -23,6 +23,7 @@ import {
   type UnitType,
 } from "@/lib/rates";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { PatientBalance } from "@/components/billing/PatientBalance";
 
 const DOLLARS = (cents?: number) =>
   cents === undefined ? "—" : `$${(cents / 100).toFixed(2)}`;
@@ -56,6 +57,7 @@ export function ClaimAmount({ claim }: { claim: Claim }) {
         {claim.program ? ` · ${PROGRAM_LABEL[claim.program]}` : ""} · {claimUnitLabel(claim)}
         {claim.rateCentsPerUnit !== undefined ? ` @ ${DOLLARS(claim.rateCentsPerUnit)}` : ""}
       </div>
+      <PatientBalance claim={claim} canWrite={canWrite} />
       {canWrite && !locked && <CorrectClaim claim={claim} />}
     </div>
   );
@@ -102,7 +104,7 @@ function CorrectClaim({ claim }: { claim: Claim }) {
           Program
           <select className={`${inputCls} w-full`} value={program} onChange={(e) => setProgram(e.target.value)}>
             {PAYER_PROGRAMS.map((p) => (
-              <option key={p.id} value={p.id}>
+              <option key={p.id} value={p.id} disabled={p.id === "commercial"}>
                 {p.label}
               </option>
             ))}
