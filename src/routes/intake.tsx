@@ -85,6 +85,7 @@ import { toast } from "sonner";
 import { ReleaseDateProvenance } from "@/components/ReleaseDateProvenance";
 import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
+import { AskAdelHelp } from "@/components/patient/AskAdelHelp";
 import {
   LOOKUP_DISCLOSURE,
   MEDI_CAL_FOLLOW_UP_MESSAGE,
@@ -706,8 +707,8 @@ function IntakePage() {
                 anytime.
               </li>
               <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> A case manager can complete
-                this with you by phone.
+                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" />
+                <AskAdelHelp className="text-sm text-foreground" />
               </li>
               <li className="flex gap-2">
                 <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private

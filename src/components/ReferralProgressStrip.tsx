@@ -10,6 +10,8 @@ import {
   type Referral,
   type ReferralStatus,
 } from "@/lib/ehr";
+import { latestOutreachAttempt, outreachAttemptSummary } from "@/lib/referralOutreach";
+import { ClientDate } from "@/components/ClientDate";
 
 export const REFERRAL_STATUS_STYLES: Record<ReferralStatus, string> = {
   submitted: "bg-gold/30 text-navy",
@@ -50,6 +52,19 @@ export function ReferralProgressStrip({ status }: { status: ReferralStatus }) {
  * with no message ever attempted.
  */
 export function ReferralOutreachStatus({ referral }: { referral: Referral }) {
+  // B4 — a logged manual attempt is the most recent real outreach fact.
+  const last = latestOutreachAttempt(referral);
+  if (last) {
+    return (
+      <div
+        className={`mt-1.5 text-[10px] ${last.outcome === "reached" ? "text-success" : "text-gold-foreground"}`}
+        data-testid="queue-last-attempt"
+      >
+        {last.outcome === "reached" ? "✓ " : "⚑ "}Last outreach: {outreachAttemptSummary(last)} ·{" "}
+        <ClientDate value={last.at} />
+      </div>
+    );
+  }
   const sms = referral.welcomeSms;
   if (sms?.status === "sent") {
     return <div className="mt-1.5 text-[10px] text-success">✓ Welcome text sent</div>;

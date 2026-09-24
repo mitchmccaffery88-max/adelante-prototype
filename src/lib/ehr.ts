@@ -765,7 +765,7 @@ export interface Referral {
    * attempted, and only `sent` means a message left the building.
    */
   referrerUpdates?: {
-    event: "contacted" | "enrolled" | "declined";
+    event: "received" | "contacted" | "enrolled" | "declined";
     status: "sent" | "not_configured" | "failed";
     at: string;
     detail?: string;
@@ -7682,7 +7682,7 @@ export const AdelanteEHR = {
   recordReferrerUpdateDelivery(
     id: string,
     result: {
-      event: "contacted" | "enrolled" | "declined";
+      event: "received" | "contacted" | "enrolled" | "declined";
       status: "sent" | "not_configured" | "failed";
       detail?: string;
     },
