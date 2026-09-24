@@ -11,7 +11,7 @@ const entry = STAFF_NAV.find((e) => e.to === "/consent-audit")!;
 describe("consent audit viewer gating", () => {
   it("is registered in the nav registry", () => {
     expect(entry).toBeTruthy();
-    expect(entry.group).toBe("revenue");
+    expect(entry.group).toBe("consent");
   });
 
   it("is visible exactly to roles with consent_ledger read access", () => {

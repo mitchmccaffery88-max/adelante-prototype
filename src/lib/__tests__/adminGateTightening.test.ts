@@ -117,7 +117,7 @@ describe("demographics grants", () => {
       therapist: "read",
       pmhnp: "read",
       billing: "read",
-      billing_coordinator: "none",
+      billing_coordinator: "read",
       credentialing_coordinator: "none",
     };
     for (const { key } of STAFF_ROLES) {

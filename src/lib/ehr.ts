@@ -10122,9 +10122,11 @@ export const AdelanteEHR = {
     const intakeVelocityDays = 2.4; // mock: avg referral → first session
     const billing = {
       draft: appointments.filter((a) => a.billingStatus === "draft").length,
+      ready: appointments.filter((a) => a.billingStatus === "ready").length,
       submitted: appointments.filter((a) => a.billingStatus === "submitted").length,
       paid: appointments.filter((a) => a.billingStatus === "paid").length,
       denied: appointments.filter((a) => a.billingStatus === "denied").length,
+      write_off: appointments.filter((a) => a.billingStatus === "write_off").length,
     };
     return { enrolled, completionRate, intakeVelocityDays, billing };
   },

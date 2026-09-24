@@ -182,6 +182,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     pmhnp: "read",
     billing: "read",
+    billing_coordinator: "read",
     // §Permission fix — identity on records these roles already act on.
     // clinical_coordinator dispositions crisis-queue entries and sys_admin
     // corrects consent records; both need to read WHO the patient is. Read
@@ -310,7 +311,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     cf_care_manager: "read",
     medical_assistant: "read",
   },
-  billing: { billing: "write" },
+  // §Phase 7a — billing and billing_coordinator are one billing function
+  // (to be merged into a single role); every class grants them the same level.
+  billing: { billing: "write", billing_coordinator: "write" },
   consent_ledger: {
     // §ASCMI — consent capture must be writable by someone. ecm_provider
     // writes because they are the role that actually sits with the patient
@@ -322,6 +325,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "read",
     pmhnp: "read",
     billing: "read",
+    billing_coordinator: "read",
     sys_admin: "write",
     // DMC-ODS consent is captured at intake by the counselor too.
     sud_counselor: "write",
@@ -346,6 +350,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     ecm_provider: "read",
     peer_specialist: "read",
     billing: "read",
+    billing_coordinator: "read",
     clinical_coordinator: "read",
     sud_counselor: "read",
     clinical_trainee: "read",
