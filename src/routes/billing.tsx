@@ -9,6 +9,12 @@ import {
 } from "@/lib/ehr";
 import { toast } from "sonner";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
+import { canAccess, useActingStaff } from "@/lib/roles";
+import {
+  BillingStatusStrip,
+  billableAppointments,
+  billingStatusCounts,
+} from "@/components/billing/BillingStatusSummary";
 
 export const Route = createFileRoute("/billing")({
   head: () => ({
@@ -129,10 +135,13 @@ function BillingPage() {
     return "non_billable";
   };
 
+  const { role } = useActingStaff();
+  const canWrite = canAccess(role, "billing").level === "write";
+  const statusCounts = useMemo(() => billingStatusCounts(appointments), [appointments]);
+
   const rows = useMemo(
     () =>
-      appointments
-        .filter((a) => a.status !== "scheduled")
+      billableAppointments(appointments)
         .map((a) => ({
           appt: a,
           patient: patients.find((p) => p.id === a.patientId),
@@ -178,6 +187,10 @@ function BillingPage() {
   }, [rows]);
 
   function advance(appt: Appointment, to: BillingStatus, opts?: { denialReason?: string }) {
+    if (!canWrite) {
+      toast.error("View only — billing staff change billing status.");
+      return;
+    }
     const res = AdelanteEHR.transitionBilling(appt.id, to, {
       actor: "billing coordinator",
       denialReason: opts?.denialReason,
@@ -223,6 +236,21 @@ function BillingPage() {
           Open claims worklist →
         </Link>
       </header>
+
+      {!canWrite && (
+        <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
+          View only — billing staff change billing status and work claims.
+        </div>
+      )}
+
+      <BillingStatusStrip
+        counts={statusCounts}
+        active={statusFilter}
+        onSelect={(s) => {
+          setStatusFilter(s);
+          setTab("claims");
+        }}
+      />
 
       {/* KPI tiles */}
       <div className="grid grid-cols-2 md:grid-cols-4 gap-3">
@@ -384,12 +412,16 @@ function BillingPage() {
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
-                        <ClaimActions
-                          appt={appt}
-                          lane={lane}
-                          onAdvance={advance}
-                          onDeny={markDenied}
-                        />
+                        {canWrite ? (
+                          <ClaimActions
+                            appt={appt}
+                            lane={lane}
+                            onAdvance={advance}
+                            onDeny={markDenied}
+                          />
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">View only</span>
+                        )}
                       </td>
                     </tr>
                   );

@@ -2,6 +2,11 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isReferralClosed } from "@/lib/ehr";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
+import {
+  BillingStatusList,
+  BILLING_STATUS_NOTE,
+  billingStatusCounts,
+} from "@/components/billing/BillingStatusSummary";
 import { upcomingContacts } from "@/lib/reminders";
 import { runReminderSweep } from "@/hooks/useReminderSweep";
 import { Card } from "@/components/ui/card";
@@ -85,6 +90,8 @@ function AdminPage() {
     [role],
   );
   const stats = useEhr(() => AdelanteEHR.stats());
+  const allAppointments = useEhr(() => AdelanteEHR.listAppointments());
+  const billingCounts = useMemo(() => billingStatusCounts(allAppointments), [allAppointments]);
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
