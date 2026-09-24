@@ -138,9 +138,9 @@ describe("Phase 8b — recordIntakeBenefits", () => {
 
   it("a staff check still outranks reports; staff check can't use the reported channel", () => {
     const id = pt();
-    expect(AdelanteEHR.recordCoverageCheck(id, { channel: "reported", result: "verified", actorId: "x", actorRole: "case_manager" }).ok).toBe(false);
+    expect(AdelanteEHR.recordCoverageCheck(id, { channel: "reported", result: "verified", actorId: "x", actorRole: "ecm_provider" }).ok).toBe(false);
     recordIntakeBenefits(id, mediCal(), who("patient_reported"));
-    AdelanteEHR.recordCoverageCheck(id, { channel: "phone_county", result: "verified", actorId: "x", actorRole: "case_manager" });
+    AdelanteEHR.recordCoverageCheck(id, { channel: "phone_county", result: "verified", actorId: "x", actorRole: "ecm_provider" });
     expect(row(id)?.state).toBe("current");
   });
 });
