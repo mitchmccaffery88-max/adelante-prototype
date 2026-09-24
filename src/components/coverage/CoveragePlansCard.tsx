@@ -24,7 +24,9 @@ import {
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
 
-const SOURCES = Object.keys(COVERAGE_PLAN_SOURCE_LABEL) as CoveragePlanSource[];
+// Manual entry offers only manual sources — reported and electronic spans
+// come from their own write paths (8b / 8c).
+const SOURCES: CoveragePlanSource[] = ["self_report", "front_desk", "staff_checked"];
 
 export function CoveragePlansSection({
   patientId,
