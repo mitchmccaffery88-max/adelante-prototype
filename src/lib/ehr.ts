@@ -3696,7 +3696,7 @@ const patients: Patient[] = [
     intakeCompletedAt: "2026-05-12",
     coverage: {
       status: "active",
-      verified: "verified",
+      verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
@@ -3959,7 +3959,7 @@ const patients: Patient[] = [
     intakeCompletedAt: "2026-04-05",
     coverage: {
       status: "active",
-      verified: "verified",
+      verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
       countyOfRelease: "Tulare",
       jiReentryFlag: true,
       ecmEligible: true,
@@ -4138,7 +4138,7 @@ patients.push({
   intakeCompletedAt: "2026-03-02",
   coverage: {
     status: "active",
-    verified: "verified",
+    verified: "self_reported", // §Phase 8a — no recorded check on file (was "verified")
     countyOfRelease: "Tulare",
     justiceInvolvement: "no",
   },
