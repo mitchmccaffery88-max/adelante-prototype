@@ -122,4 +122,4 @@
 - [x] Claims: code/program/units at creation, rate × units, no-rate flag blocks Ready, corrections
 - [x] /billing Rates + Codes sections; units shown on /billing and /admin-claims; remove fake table
 - [x] Tests + browser (Billing, Billing Coordinator, Sys Admin)
-- [ ] Phase 7b.1: signature-to-claim gaps (cosign ceremony, enforced claim signing, traceability, seed audit)
+- [x] Phase 7b.1: signature-to-claim gaps (cosign ceremony, enforced claim signing, traceability, seed audit)
