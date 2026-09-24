@@ -21940,3 +21940,44 @@ withGroupNotificationsSuppressed(() => {
     /* Seeding is best-effort; never break boot. */
   }
 });
+
+// §Demo persona — pre-release patient with partner-reported social needs, so
+// the "What your care team already knows" card and "justice not re-asked" can
+// be shown without setup. Built only through the real store API (the same
+// calls the pre-release roster import makes). Intake is deliberately left
+// incomplete. Marked by `DEMO_PRE_RELEASE_PERSONA` so the switcher finds it.
+export const DEMO_PRE_RELEASE_PERSONA = { firstName: "Tomás", lastName: "Reyna" } as const;
+try {
+  const exists = patients.some(
+    (p) =>
+      p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName &&
+      p.lastName === DEMO_PRE_RELEASE_PERSONA.lastName,
+  );
+  if (!exists) {
+    const release = new Date(Date.now() + 21 * 86400000).toISOString().slice(0, 10);
+    const { episode } = AdelanteEHR.openPreReleaseEpisodeForNewPatient({
+      firstName: DEMO_PRE_RELEASE_PERSONA.firstName,
+      lastName: DEMO_PRE_RELEASE_PERSONA.lastName,
+      dob: "1991-03-14",
+      anticipatedReleaseDate: release,
+      cfCareManagerStaffId: "s-cf1",
+      cfCareManagerName: "Rosa Delgado",
+      facilityName: "Tulare County Adult Pre-Trial Facility",
+      openedBy: "s-cf1",
+      actorRole: "cf_care_manager",
+    });
+    AdelanteEHR.recordImportedHrsnDomains({
+      episodeId: episode.id,
+      domains: [
+        { key: "housing", label: "Housing instability & quality", positive: true },
+        { key: "food", label: "Food insecurity", positive: true },
+        { key: "transportation", label: "Transportation", positive: false },
+        { key: "safety", label: "Interpersonal safety", positive: true },
+      ],
+      importedBy: "s-cf1",
+      actorRole: "cf_care_manager",
+    });
+  }
+} catch {
+  /* Demo seed is best-effort; never break boot. */
+}
