@@ -722,6 +722,8 @@ export interface Referral {
   releaseDate?: string;
   /** CIN / Medi-Cal ID (9 characters). Optional — helps de-duplicate similar names. */
   cin?: string;
+  /** §Phase 8b — optional benefits the referrer reported; applied at enrollment. */
+  reportedBenefits?: IntakeBenefitsAnswers;
   referringAgency: string;
   referrerName: string;
   referrerEmail?: string;
@@ -7791,6 +7793,14 @@ export const AdelanteEHR = {
         countyOfRelease: r.countyOfRelease,
       };
     }
+    // §Phase 8b — referrer-reported benefits go through the one write path.
+    if (r.reportedBenefits?.coverageType || r.cin) {
+      AdelanteEHR.recordIntakeBenefits(
+        p.id,
+        { ...(r.reportedBenefits ?? {}), ...(r.cin ? { cin: r.cin } : {}) },
+        { source: "referrer_reported", via: "referral_conversion", actorId: who.staffId, actorName: r.referrerName, actorRole: who.role },
+      );
+    }
     r.status = "enrolled";
     r.enrolledPatientId = p.id;
     r.enrolledAt = new Date().toISOString();
@@ -10070,6 +10080,194 @@ export const AdelanteEHR = {
     return { ok: true };
   },
   /** Newest-first log of human eligibility checks. */
+  /**
+   * §Phase 8b — the duplicate-CIN warning, shared by every benefits entry
+   * point (lifted from the referral form). Warns; never blocks.
+   */
+  findCinDuplicate(cin: string, exclude?: { patientId?: string; referralId?: string }): string | undefined {
+    const c = normalizeCinValue(cin);
+    if (!c) return undefined;
+    const mask = `•••••${c.slice(-4)}`;
+    const p = patients.find((x) => x.id !== exclude?.patientId && x.cin && normalizeCinValue(x.cin) === c);
+    if (p) return `Heads up: this CIN ${mask} is already on another record (${p.programId}).`;
+    const r = referrals.find(
+      (x) => x.id !== exclude?.referralId && x.status !== "enrolled" && x.cin && normalizeCinValue(x.cin) === c,
+    );
+    if (r) return `Heads up: a referral already exists for CIN ${mask} — ${r.firstName} ${r.lastName}.`;
+    return undefined;
+  },
+  /**
+   * §Phase 8b — THE one write path for reported benefits (intake, staff-
+   * assisted intake, the chart, referral conversion, pre-release import).
+   *  - merges through the 8a coverage merge; never "verified";
+   *  - CIN only into Patient.cin, only when empty (a different CIN on file is
+   *    left alone and flagged);
+   *  - Medi-Cal/dual: one plan span + one reported verification record,
+   *    tagged with WHO reported it; re-runs don't duplicate;
+   *  - non-Medi-Cal: one "Set payment arrangement" task for billing, deduped
+   *    per patient; never sets the arrangement itself.
+   */
+  recordIntakeBenefits(
+    patientId: string,
+    answers: IntakeBenefitsAnswers,
+    input: {
+      source: ReportedBenefitsSource;
+      /** Which screen, for the audit row. */
+      via: "self_service_intake" | "staff_assisted_intake" | "chart" | "referral_conversion" | "pre_release_import";
+      actorId: string;
+      actorName: string;
+      actorRole: string;
+    },
+  ): IntakeBenefitsResult {
+    const res: IntakeBenefitsResult = {
+      ok: true,
+      cinWritten: false,
+      cinMismatch: false,
+      planSpanAdded: false,
+      verificationAdded: false,
+    };
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return { ...res, ok: false, error: "Patient not found." };
+    const cin = answers.cin ? normalizeCinValue(answers.cin) : "";
+    if (cin && !CIN_RE.test(cin)) {
+      return { ...res, ok: false, error: "A CIN is 9 letters or digits. Check the number and try again." };
+    }
+    const type = answers.coverageType;
+    const mediCal = type === "medi_cal" || type === "dual";
+    const today = new Date().toISOString().slice(0, 10);
+    const now = new Date().toISOString();
+
+    if (cin) {
+      res.cinDuplicate = AdelanteEHR.findCinDuplicate(cin, { patientId });
+      if (!p.cin) {
+        p.cin = cin;
+        res.cinWritten = true;
+      } else if (normalizeCinValue(p.cin) !== cin) {
+        res.cinMismatch = true;
+      }
+    }
+
+    if (type) {
+      const existing = p.coverage;
+      const hasStaffCheck = (existing?.verifications ?? []).some(isStaffCheck);
+      const { next } = mergeCoverage(existing, {
+        coverageType: type,
+        status: mediCal
+          ? (answers.mediCalStatus ?? existing?.status ?? "none_unsure")
+          : existing
+            ? undefined
+            : type === "unknown"
+              ? "none_unsure"
+              : "not_applicable",
+        verified: hasStaffCheck ? undefined : "self_reported",
+        nonMediCalReport: mediCal ? undefined : answers.nonMediCalReport,
+        otherPlanName: !mediCal && answers.planName?.trim() ? answers.planName.trim() : undefined,
+      });
+      p.coverage = next;
+
+      // Plan span.
+      let payer: string | undefined;
+      let planRef: IntakeBenefitsAnswers["managedCarePlan"];
+      if (mediCal) {
+        planRef = answers.managedCarePlan;
+        payer =
+          planRef?.kind === "plan"
+            ? planRef.name
+            : planRef?.kind === "ffs"
+              ? "Medi-Cal FFS"
+              : planRef?.kind === "other" && planRef.otherName?.trim()
+                ? planRef.otherName.trim()
+                : "Medi-Cal (plan not known)";
+      } else if (type === "medicare") {
+        payer = "Medicare";
+      } else if (answers.planName?.trim() && (answers.nonMediCalReport === "private_insurance" || answers.nonMediCalReport === "other")) {
+        payer = answers.planName.trim();
+      }
+      if (payer) {
+        const dupe = (p.coverage.plans ?? []).some(
+          (c) => !c.to && c.payer.trim().toLowerCase() === payer!.toLowerCase(),
+        );
+        if (!dupe) {
+          const span: CoveragePlanSpan = {
+            id: uid(),
+            payer,
+            from: today,
+            source: input.source,
+            recordedBy: input.actorName,
+            recordedByRole: input.actorRole as StaffRole,
+            recordedAt: now,
+            ...(planRef && planRef.kind !== "unknown" ? { managedCarePlanId: planRef.id, managedCarePlanName: planRef.kind === "other" && planRef.otherName ? planRef.otherName : planRef.name } : {}),
+          };
+          p.coverage = { ...p.coverage, plans: [span, ...(p.coverage.plans ?? [])] };
+          res.planSpanAdded = true;
+        }
+      }
+
+      // Reported verification record (Medi-Cal only — it feeds the worklist).
+      if (mediCal) {
+        const checks = p.coverage.verifications ?? [];
+        const awaiting = checks.findIndex((v) => v.reportSource === input.source);
+        const firstStaff = checks.findIndex(isStaffCheck);
+        const stillAwaiting = awaiting >= 0 && (firstStaff < 0 || awaiting < firstStaff);
+        if (!stillAwaiting) {
+          const record: CoverageVerificationRecord = {
+            id: uid(),
+            checkedAt: now,
+            checkedBy: input.actorName,
+            checkedByRole: input.actorRole as StaffRole,
+            channel: "reported",
+            result: "pending",
+            cinOnFile: Boolean(p.cin),
+            ...(res.cinWritten ? { cinRecordedNow: true } : {}),
+            reportSource: input.source,
+          };
+          p.coverage = { ...p.coverage, verifications: [record, ...checks] };
+          res.verificationAdded = true;
+        }
+      } else if (!p.paymentArrangement) {
+        const due = new Date();
+        due.setDate(due.getDate() + 3);
+        const t = AdelanteEHR.createCaseTask({
+          patientId,
+          assignedTo: "",
+          title: "Set payment arrangement",
+          detail: `Reported at intake: ${answers.nonMediCalReport ?? type}. Choose self-pay, sliding fee or grant/ISL on the chart's payment arrangement card. Intake does not set it.`,
+          dueDate: due.toISOString().slice(0, 10),
+          origin: "manual",
+          source: "intake_benefits",
+          taskType: "payment_arrangement",
+          allowedRoles: STAFF_ROLES.map((r) => r.key).filter((r) => canAccess(r, "billing").level === "write"),
+          dedupeKey: `payment-arrangement:${patientId}`,
+        });
+        res.taskId = t?.id;
+      }
+    }
+
+    appendAudit({
+      category: "clinical",
+      action: "intake_benefits_recorded",
+      patientId,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: {
+        source: input.source,
+        via: input.via,
+        actorName: input.actorName,
+        coverageType: type ?? null,
+        nonMediCalReport: answers.nonMediCalReport ?? null,
+        managedCarePlanId: answers.managedCarePlan?.id ?? null,
+        cinProvided: Boolean(cin),
+        cinWritten: res.cinWritten,
+        cinMismatch: res.cinMismatch,
+        cinDuplicateWarned: Boolean(res.cinDuplicate),
+        planSpanAdded: res.planSpanAdded,
+        verificationAdded: res.verificationAdded,
+        paymentArrangementTaskId: res.taskId ?? null,
+      },
+    });
+    emit();
+    return res;
+  },
   listCoverageChecks(patientId: string): CoverageVerificationRecord[] {
     return patients.find((x) => x.id === patientId)?.coverage?.verifications ?? [];
   },
@@ -13260,6 +13458,14 @@ export const AdelanteEHR = {
     if (!p) return false;
     p.paymentArrangement = value;
     if (setBy) p.paymentArrangementSetBy = setBy;
+    // §Phase 8b — the intake prompt is done once billing decides.
+    for (const t of caseTasks) {
+      if (t.dedupeKey === `payment-arrangement:${patientId}` && t.status !== "done") {
+        t.status = "done";
+        t.completedAt = new Date().toISOString();
+        t.worklistStatus = "completed";
+      }
+    }
     emit();
     return true;
   },
