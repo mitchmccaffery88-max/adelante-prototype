@@ -28,14 +28,33 @@ export type PayerProgram =
   | "smhs"
   | "medi_cal_managed"
   | "calaim_ecm"
-  | "non_medi_cal";
+  | "self_pay"
+  | "sliding_fee"
+  | "grant_isl"
+  | "commercial";
+
+/** §Phase 7d — how a general-population patient pays. Set by billing only. */
+export type PaymentArrangement = "self_pay" | "sliding_fee" | "grant_isl";
+export const PAYMENT_ARRANGEMENTS: { id: PaymentArrangement; label: string }[] = [
+  { id: "self_pay", label: "Self-pay (standard fee)" },
+  { id: "sliding_fee", label: "Sliding fee" },
+  { id: "grant_isl", label: "Grant / ISL-funded (no patient charge)" },
+];
+/** Programs that are modelled but can't be chosen for a claim yet. */
+export const INACTIVE_PROGRAMS: ReadonlySet<PayerProgram> = new Set<PayerProgram>(["commercial"]);
+export const PROGRAM_INACTIVE = "Commercial insurance is inactive at launch and can't be used on a claim.";
+/** Programs where the patient owes the whole charge. */
+export const PATIENT_PAY_PROGRAMS: ReadonlySet<PayerProgram> = new Set<PayerProgram>(["self_pay", "sliding_fee"]);
 
 export const PAYER_PROGRAMS: { id: PayerProgram; label: string; helper: string }[] = [
   { id: "dmc_ods", label: "DMC-ODS", helper: "SUD services for Medi-Cal members (county DMC-ODS)" },
   { id: "smhs", label: "Specialty MH (county MHP)", helper: "Specialty mental health through the county MHP" },
   { id: "medi_cal_managed", label: "Medi-Cal (FFS / managed care)", helper: "Non-specialty mental health" },
   { id: "calaim_ecm", label: "CalAIM ECM / Community Supports", helper: "CHW and peer-support codes" },
-  { id: "non_medi_cal", label: "Non-Medi-Cal / ISL", helper: "Self-pay, grant or ISL — reportable, not billed to Medi-Cal" },
+  { id: "self_pay", label: "Self-pay", helper: "Standard fee schedule — the patient pays" },
+  { id: "sliding_fee", label: "Sliding fee", helper: "Discounted schedule — the patient pays (tiers in Phase 7e)" },
+  { id: "grant_isl", label: "Grant / ISL", helper: "Grant or ISL-funded — no patient charge, reportable to the funder" },
+  { id: "commercial", label: "Commercial (inactive at launch)", helper: "Modelled for expansion — not selectable for claims yet" },
 ];
 export const PROGRAM_LABEL: Record<PayerProgram, string> = Object.fromEntries(
   PAYER_PROGRAMS.map((p) => [p.id, p.label]),
@@ -153,6 +172,8 @@ export interface Rate {
   id: string;
   code: string;
   program: PayerProgram;
+  /** §Phase 7d — absent = program-wide; set = only this payer (commercial infra). */
+  payerId?: string;
   /** Per unit, integer cents. */
   amountCents: number;
   /** YYYY-MM-DD, inclusive. */
@@ -160,6 +181,7 @@ export interface Rate {
   /** YYYY-MM-DD, inclusive. Absent = open-ended. */
   effectiveTo?: string;
   placeholder: boolean;
+  placeholderNote?: string;
   createdBy: string;
   createdByRole: string;
   createdAt: string;
@@ -173,7 +195,7 @@ const rates: Rate[] = [];
 let rateSeq = 0;
 const rid = () => `rate_${++rateSeq}`;
 const SEED_FROM = "2026-01-01";
-const seedRate = (code: string, program: PayerProgram, amountCents: number) =>
+const seedRate = (code: string, program: PayerProgram, amountCents: number, placeholderNote?: string) =>
   rates.push({
     id: rid(),
     code,
@@ -181,6 +203,7 @@ const seedRate = (code: string, program: PayerProgram, amountCents: number) =>
     amountCents,
     effectiveFrom: SEED_FROM,
     placeholder: true,
+    ...(placeholderNote ? { placeholderNote } : {}),
     createdBy: SEED_BY,
     createdByRole: "system",
     createdAt: new Date().toISOString(),
@@ -205,8 +228,18 @@ seedRate("H2014", "dmc_ods", 2375);
 seedRate("H0038", "calaim_ecm", 1625); // 6500 / 4 units
 seedRate("G0019", "calaim_ecm", 2500);
 seedRate("G0022", "calaim_ecm", 2500);
-// Nothing seeded for non_medi_cal: those visits are reportable, and pricing
-// them is a billing decision — they correctly surface as "no rate on file".
+// §Phase 7d — general-population placeholders pending the clinic's fee policy.
+// Self-pay = current per-unit amount; sliding fee = 50% (one row, tiers are
+// 7e); grant/ISL = self-pay amount as the reportable value (patient owes $0).
+export const FEE_POLICY_PLACEHOLDER = "Placeholder — pending clinic fee policy";
+for (const [code, cents] of [
+  ["H0001", 22500], ["H0004", 4125], ["H0005", 2375], ["H0006", 2000], ["H0031", 22500],
+  ["90834", 16500], ["90853", 9500], ["99213", 19500], ["T1017", 2000], ["H2014", 2375],
+] as [string, number][]) {
+  seedRate(code, "self_pay", cents, FEE_POLICY_PLACEHOLDER);
+  seedRate(code, "sliding_fee", Math.round(cents / 2), FEE_POLICY_PLACEHOLDER);
+  seedRate(code, "grant_isl", cents, FEE_POLICY_PLACEHOLDER);
+}
 
 export function listRates(): Rate[] {
   return rates
@@ -217,9 +250,13 @@ export function listRates(): Rate[] {
 const inRange = (r: Rate, day: string) =>
   r.effectiveFrom <= day && (!r.effectiveTo || day <= r.effectiveTo);
 
-export function rateFor(code: string, program: PayerProgram, serviceDate: string): Rate | undefined {
+export function rateFor(code: string, program: PayerProgram, serviceDate: string, payerId?: string): Rate | undefined {
   const day = serviceDate.slice(0, 10);
-  const r = rates.find((x) => x.code === code && x.program === program && inRange(x, day));
+  const match = (x: Rate) => x.code === code && x.program === program && inRange(x, day);
+  // Payer-specific first, then program-wide.
+  const r =
+    (payerId ? rates.find((x) => match(x) && x.payerId === payerId) : undefined) ??
+    rates.find((x) => match(x) && !x.payerId);
   return r ? { ...r } : undefined;
 }
 export function getRate(id: string): Rate | undefined {
@@ -253,6 +290,7 @@ export function addRate(input: {
   amountCents: number;
   effectiveFrom: string;
   effectiveTo?: string;
+  payerId?: string;
 }): Result<{ rate: Rate }> {
   const w = writer();
   if (!w.ok) return w;
@@ -266,8 +304,9 @@ export function addRate(input: {
   const to = input.effectiveTo?.trim() || undefined;
   if (to && !validDay(to)) return { ok: false, error: "End date must be YYYY-MM-DD." };
   if (to && to < input.effectiveFrom) return { ok: false, error: "End date can't be before the start date." };
+  const payerId = input.payerId?.trim() || undefined;
   const clash = rates.find(
-    (r) => r.code === code && r.program === input.program && overlaps(r.effectiveFrom, r.effectiveTo, input.effectiveFrom, to),
+    (r) => r.code === code && r.program === input.program && (r.payerId ?? "") === (payerId ?? "") && overlaps(r.effectiveFrom, r.effectiveTo, input.effectiveFrom, to),
   );
   if (clash)
     return {
@@ -278,6 +317,7 @@ export function addRate(input: {
     id: rid(),
     code,
     program: input.program,
+    ...(payerId ? { payerId } : {}),
     amountCents: input.amountCents,
     effectiveFrom: input.effectiveFrom,
     ...(to ? { effectiveTo: to } : {}),
@@ -291,7 +331,7 @@ export function addRate(input: {
     action: "rate_added",
     actorId: w.id,
     actorRole: w.role,
-    detail: { rateId: rate.id, code, program: rate.program, amountCents: rate.amountCents, effectiveFrom: rate.effectiveFrom, effectiveTo: to ?? null, actorName: w.name },
+    detail: { rateId: rate.id, code, program: rate.program, payerId: payerId ?? null, amountCents: rate.amountCents, effectiveFrom: rate.effectiveFrom, effectiveTo: to ?? null, actorName: w.name },
   });
   for (const fn of rateAddedListeners) fn({ ...rate });
   return { ok: true, rate: { ...rate } };
