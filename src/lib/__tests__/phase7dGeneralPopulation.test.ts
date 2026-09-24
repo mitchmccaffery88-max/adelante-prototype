@@ -29,11 +29,8 @@ let slot = 0;
 /** A fresh attended visit for a new patient with no Medi-Cal on file. */
 function uninsuredClaim(opts: { fundingLane?: "private_pay" | "isl_non_medi_cal" | "bhsa" } = {}) {
   slot += 1;
-  const p = AdelanteEHR.listPatients()[0]!;
-  // New demo patient: clone minimal fields, no coverage.
-  const patientId = `p7d-${slot}`;
-  (AdelanteEHR.listPatients() as unknown[]);
-  AdelanteEHR._testAddPatient?.({ ...p, id: patientId, coverage: undefined, paymentArrangement: undefined });
+  // A brand-new patient has no coverage and no payment arrangement on file.
+  const patientId = AdelanteEHR.createPatient({ firstName: "Test", lastName: `7d-${slot}` }).id;
   const a = AdelanteEHR.bookAppointment({
     patientId,
     clinicianId: "c1",
