@@ -27,32 +27,34 @@ const COPY = {
   en: {
     heading: "More help right now",
     call: "Call 988",
+    call911: "Emergency? Call 911",
     text: "Text 988",
     tell: "Tell my care team",
     tellSent: "Your care team got your message. If you can't wait, call or text 988.",
     tellBody: "I'm having a craving right now and could use some support.",
     plan: "Open my safety plan",
-    naloxone: "Naloxone / overdose help near me",
+    naloxone: "Naloxone / overdose help in Tulare",
     naloxoneDemo:
-      "Demo content — our resource directory doesn't list naloxone locations in Tulare County yet. Your care team can get you naloxone. The overdose safety page has the steps and statewide options.",
+      "Demo content — to be confirmed. Our resource directory doesn't list naloxone locations in Tulare County yet. Your care team can get you naloxone. The overdose safety page has the steps and statewide options.",
     naloxoneOpen: "Open overdose safety",
     ride: "Need a ride?",
-    rideEmpty: "Demo content — no transportation listings yet. Ask your care team.",
+    rideEmpty: "Demo content — to be confirmed. No transportation listings yet. Ask your care team.",
   },
   es: {
     heading: "Más ayuda ahora mismo",
     call: "Llamar al 988",
+    call911: "¿Emergencia? Llama al 911",
     text: "Texto al 988",
     tell: "Avisar a mi equipo de cuidado",
     tellSent: "Tu equipo recibió tu mensaje. Si no puedes esperar, llama o envía un texto al 988.",
     tellBody: "Tengo un antojo ahora mismo y me vendría bien un poco de apoyo.",
     plan: "Abrir mi plan de seguridad",
-    naloxone: "Naloxona / ayuda por sobredosis cerca de mí",
+    naloxone: "Naloxona / ayuda por sobredosis en Tulare",
     naloxoneDemo:
-      "Contenido de demostración — nuestro directorio todavía no tiene lugares con naloxona en el condado de Tulare. Tu equipo de cuidado te la puede conseguir. La página de seguridad tiene los pasos y opciones estatales.",
+      "Contenido de demostración — por confirmar. Nuestro directorio todavía no tiene lugares con naloxona en el condado de Tulare. Tu equipo de cuidado te la puede conseguir. La página de seguridad tiene los pasos y opciones estatales.",
     naloxoneOpen: "Abrir seguridad por sobredosis",
     ride: "¿Necesitas transporte?",
-    rideEmpty: "Contenido de demostración — todavía no hay opciones de transporte. Pregunta a tu equipo.",
+    rideEmpty: "Contenido de demostración — por confirmar. Todavía no hay opciones de transporte. Pregunta a tu equipo.",
   },
 } as const;
 
@@ -88,6 +90,11 @@ export function CravingMoreHelp() {
           </a>
         </Button>
       </div>
+      <Button asChild variant="outline" className="min-h-11 w-full rounded-2xl border-destructive/40 text-destructive">
+        <a href="tel:911" data-testid="craving-call-911">
+          <Phone className="mr-1.5 h-4 w-4" aria-hidden="true" /> {c.call911}
+        </a>
+      </Button>
       {sent ? (
         <p className="rounded-2xl bg-secondary p-3 text-sm" data-testid="craving-tell-sent">{c.tellSent}</p>
       ) : (

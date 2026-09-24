@@ -89,7 +89,7 @@ const dict = {
     navMedication: "Medication",
     navProfile: "Profile",
     navDocuments: "Documents",
-    navCrisisSupport: "Crisis support",
+    navCrisisSupport: "I need help now",
     navMore: "More",
     navAdel: "Adel",
     navRecoveryJourney: "Recovery journey",
@@ -486,7 +486,7 @@ const dict = {
     navMedication: "Medicamentos",
     navProfile: "Perfil",
     navDocuments: "Documentos",
-    navCrisisSupport: "Apoyo en crisis",
+    navCrisisSupport: "Necesito ayuda ahora", // pending review
     navAdel: "Adel",
     navRecoveryJourney: "Mi recuperación",
     navWeeklyRecap: "Mi semana",

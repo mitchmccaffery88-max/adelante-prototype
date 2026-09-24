@@ -62,7 +62,7 @@ export interface DistressChipCopy {
 const EN: DistressChipCopy = {
   heading: "Would any of these help right now?",
   breathing: "Breathing exercise",
-  keepTalking: "Keep talking",
+  keepTalking: "Keep venting",
   talkToSomeone: "Talk to someone now",
   call988: "Call 988",
   text988: "Text 988",
@@ -75,7 +75,7 @@ const EN: DistressChipCopy = {
 const ES: DistressChipCopy = {
   heading: "¿Te ayudaría alguna de estas opciones ahora?",
   breathing: "Ejercicio de respiración",
-  keepTalking: "Seguir hablando",
+  keepTalking: "Seguir desahogándome",
   talkToSomeone: "Hablar con alguien ahora",
   call988: "Llamar al 988",
   text988: "Texto al 988",

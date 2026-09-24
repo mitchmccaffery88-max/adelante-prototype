@@ -708,7 +708,7 @@ export function HomeDashboard({
           onClick={() => setHelpOpen(true)}
           className="min-h-[64px] justify-start rounded-2xl bg-primary px-4 text-base text-primary-foreground hover:bg-primary/90"
         >
-          <LifeBuoy className="mr-2 h-5 w-5" aria-hidden="true" /> Get help now
+          <LifeBuoy className="mr-2 h-5 w-5" aria-hidden="true" /> I need help now
         </Button>
 
         <Link

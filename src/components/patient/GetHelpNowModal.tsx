@@ -212,7 +212,7 @@ function HelpList({ onNavigate }: { onNavigate: () => void }) {
   );
 }
 
-const TITLE = "Get help now";
+const TITLE = "I need help now";
 const SUBTITLE = "Pick whatever fits. Nothing here is logged as a crisis unless you say so.";
 
 export function GetHelpNowModal({

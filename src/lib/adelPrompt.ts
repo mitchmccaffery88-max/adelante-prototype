@@ -20,7 +20,7 @@ export interface AdelAction {
 }
 
 const PAGE_ACTIONS: Record<string, { label: string; to: string }> = {
-  crisis: { label: "Get help right now", to: "/crisis" },
+  crisis: { label: "I need help now", to: "/crisis" },
   naloxone: { label: "Naloxone & overdose safety", to: "/naloxone" },
   slip: { label: "I slipped — walk me through it", to: "/slip" },
   craving: { label: "Craving right now", to: "/craving" },
