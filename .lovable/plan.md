@@ -1,51 +1,41 @@
-# Phase 8c — Clearinghouse-ready eligibility infrastructure
+# Part B — Adel-guided intake (demo slice: profile + benefits only)
 
-Scaffolding only. No real clearinghouse connection, no live 270/271 parsing, no vendor choice.
+Part A (seeded pre-release persona "Tomás R.") is already built; this plan covers Part B only.
 
-## 1. Verification record (`CoverageVerificationRecord`, src/lib/ehr.ts)
-- New channel `electronic_270_271`, labelled "Electronic eligibility (270/271)". The staff check form never offers it, and `recordCoverageCheck` refuses it, the same way it already refuses `reported`.
-- New optional `electronic` block, filled only on electronic records:
-  - `transactionId` (the 270 trace number) and `vendor`
-  - `rawResponseRef`: a pointer to where the raw response is stored (e.g. `vault://…`), never the payload itself
-  - `responseStatus`: `active | inactive | not_found | error`, plus `errorReason` when it's an error
-  - `benefits`: `aidCode`, `shareOfCostCents`, `managedCarePlan { payerName, planId? }`, `coverageStart`, `coverageEnd`, `payerId`
-- The existing `result` is still filled in for older screens: active → `verified`, not_found → `not_found`, inactive or error → `pending`.
-- Does an electronic response count as a staff check? Yes for the worklist's "checked" status, but it is labelled "Electronic" everywhere. Please confirm, or tell me it should need a staff sign-off.
+## What the patient sees
+1. Intake Welcome step gets a second button, **"Go through this with Adel"**, beside the existing "Start" (form stays the default) and the existing Ask Adel help link.
+2. Tapping it opens an Adel conversation panel inside the intake page, labelled **Prototype** using the same banner component as Scribe Copilot.
+3. Adel asks one question at a time, in plain words, covering the same fields and allowed answers as the form:
+   - About you: what to call you, pronouns, language, phone, how to reach you, best time, emergency contact, address (and release date only if the form would ask it).
+   - Benefits: the same 8 coverage choices; for Medi-Cal/dual, CIN, plan (from the same plan list, including "I don't know") and Medi-Cal status; for others, plan name.
+   - Tap a choice chip or type. Skippable questions keep the "Skip" option the form has.
+4. If a value is already on file: "Here's what we have: 559-555-0100. Is that still right?" (Yes / Change it).
+5. Every answer gets a confirmation ("You said Medi-Cal — is that right?"). Only "Yes" moves it into the draft; nothing is taken from an unconfirmed or guessed answer.
+6. After benefits, Adel says consent has to be done on the form by the patient, and hands off to the regular **Consent** step (or the next step if consent is already on file). Adel never marks intake complete; the patient finishes with the form.
 
-## 2. Plan spans (`CoveragePlanSpan`)
-- Add `aidCode`, `shareOfCostCents` and source `electronic_270_271`.
-- An active response adds a span, or updates the open span with the same payer. It never deletes or backdates an older span. A change of payer closes the old span the day before the new start date. A reported span is kept as is, with the electronic span added next to it.
-- The managed care plan is matched by name (ignoring case and extra spaces) to the 8b plan list, and the list's id is stored when it matches. If there's no match, only the name is stored, flagged "not on plan list". The plan list itself is never changed automatically.
+## Saving (existing paths only)
+- Confirmed answers go into the same intake draft the form already uses (`adelante.intake.<patientId>`: `profile`, `benefits`, `step`), so switching to the form continues where Adel stopped and the home tile Start/Continue logic is untouched.
+- At the hand-off, Adel commits what was confirmed:
+  - About you: the same `AdelanteEHR.updateProfile` patch the form's submit builds (factored into a small shared helper so both use identical fields), plus one audit entry `intake_profile_saved` with `via: "adel_guided_intake"`.
+  - Benefits: `recordIntakeBenefits(..., { source: "patient_reported", via: "adel_guided_intake", ... })` — adds that one `via` value; plan span source stays `patient_reported`. The form's final submit re-sends the same answers, which the existing dedupe already handles (no duplicate span/task).
+- No change to intake completion, screeners, consent, needs, history, tile states, 9a or 9b.
 
-## 3. Stubbed interface: src/lib/eligibility/
-- `eligibility.ts`: `checkEligibility(patientId)` returns `{ status: "not_connected", detail }`. It writes one `eligibility_check_attempted` audit entry recording who asked and the outcome. It does not write a verification record, because nothing was checked. Same honest pattern as SMS "not configured".
-- `adapter.ts`: an `EligibilityAdapter` interface with `send270(request) → NormalizedEligibilityResponse`. `applyEligibilityResponse(patientId, response, actor)` is the one write path: it records who and what system ran it, writes an audit entry, and only ever appends.
-- Where a real vendor plugs in later: a server-only `*.server.ts` adapter chosen by an environment setting, called from a `createServerFn` in `eligibility.functions.ts`, with credentials kept as secrets. Only the normalized result is passed to `applyEligibilityResponse`. The raw response would be stored server-side, and only its pointer saved on the record.
-- The chart's Eligibility section gets a "Check electronically" button. It shows "Electronic eligibility isn't connected yet — record a manual check instead", with a link to the existing check dialog. It never pretends a check happened.
+## Crisis first
+- Every typed message runs the existing `detectCrisisLanguage` / `scanTextForCrisis` path from Patient Adel before anything else, with the same 988 reply and crisis-queue escalation. A tripped message is not treated as an answer.
+- The "I need help now" / craving button stays visible.
 
-## 4. Test-only mock adapter
-- `src/lib/eligibility/__mocks__/mockAdapter.ts`, headed "MOCK — tests only". Nothing in the app imports it, and a test checks that no route or component file does.
-- Sample responses: active with an HMO plan and share of cost; not found; error. Each is mapped end to end into the record, the span, the audit entry and the worklist state.
+## Assumption to confirm
+- **No AI model call for this slice.** Adel's questions are scripted and typed answers are matched to the allowed choices deterministically (unclear typing gets "I didn't catch that" plus the chips). This keeps saved values exactly within the form's allowed answers and makes "nothing inferred" guaranteed. The Prototype label says so. If you want the model to phrase questions, that can come after the demo.
 
-## 5. Show the source everywhere a verification appears
-One shared `verificationSourceLabel(record)` and a badge, with three kinds:
-- "Reported by patient / by staff for patient / by referrer / by partner — not verified"
-- "Staff check · phone / portal / fax / in person"
-- "Electronic 270/271 · status"
+## Languages
+English and Spanish for all new Adel lines, Spanish marked pending bilingual review.
 
-Used on the chart's check history, the eligibility worklist, the case manager summary card and the check dialog's history.
+## Technical details
+- New `src/lib/adelIntakeScript.ts`: ordered question list (field, prompt EN/ES, choices, parse fn, "show if" rule), pure and unit-tested (parsing, confirmation gating, conditional Medi-Cal questions).
+- New `src/components/intake/AdelGuidedIntake.tsx`: chat UI, receives `profile`/`benefits` and setters from `intake.tsx`, calls `onHandoff()` which sets the step to consent/coverage.
+- `intake.tsx`: welcome-step button, mode state, extract `profilePatch(profile)` helper used by both submit and Adel commit. No other intake logic changes.
+- `IntakeBenefitsInput.via` gains `"adel_guided_intake"`.
+- Tests: script unit tests + a test that the Adel commit writes `patient_reported` and the audit `via`.
 
-## 6. Same rules as everything else
-Every write is attributed (the actor plus the system/vendor name) and audited. It goes through the coverage merge, so earlier records are never erased. An electronic "not found" or "inactive" never clears a CIN or closes a span on its own; it creates a Phase 3a follow-up task for staff.
-
-## Tests
-- Stub returns not_connected and writes no record.
-- Mock active response fills every new field and adds or updates a span with aid code and share of cost.
-- Plan matching: matched id vs name-only.
-- not_found / error: no data loss, follow-up task created.
-- The electronic channel is refused from the manual check form.
-- Source labels for all three kinds.
-- The mock adapter isn't imported anywhere in the app.
-
-## Not in scope
-No real vendor, no X12 parsing, no automatic monthly re-checks, no storing raw responses.
+## Verification
+Typecheck, full suite count, one-tab browser pass desktop + phone: Tomás card (safety hidden) and no justice re-ask; new patient Adel flow → confirmations → saved plan span `patient_reported` → consent hand-off → finish with form; crisis phrase mid-chat fires interception first; Rosa, Daniel, sign-in code flow still work; zero new console errors.
