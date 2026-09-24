@@ -96,7 +96,13 @@ export const NAV_GROUP_ORDER: NavGroup[] = [
  *    these earns a RecordClass, switch the gate here and nothing else changes.
  */
 export type NavGate =
-  | { kind: "record_class"; anyOf: RecordClass[]; minLevel?: Exclude<AccessLevel, "none"> }
+  | {
+      kind: "record_class";
+      anyOf: RecordClass[];
+      minLevel?: Exclude<AccessLevel, "none">;
+      /** Per-class override of `minLevel` (e.g. billing read OR population_health write). */
+      minLevelByClass?: Partial<Record<RecordClass, Exclude<AccessLevel, "none">>>;
+    }
   /**
    * §Crisis Redesign Phase 1 — roles that can FLAG a crisis but have no
    * `crisis_queue` access (peer_specialist, sud_counselor, clinical_trainee).
@@ -426,7 +432,11 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ListChecks,
     to: "/billing-calaim-codes",
     group: "revenue",
-    gate: { kind: "record_class", anyOf: ["billing"] },
+    gate: {
+      kind: "record_class",
+      anyOf: ["billing", "population_health"],
+      minLevelByClass: { population_health: "write" },
+    },
   },
   {
     id: "consent",
@@ -617,8 +627,9 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
-  const min = LEVEL_RANK[entry.gate.minLevel ?? "read"];
-  return entry.gate.anyOf.some((cls) => {
+  const gate = entry.gate;
+  return gate.anyOf.some((cls) => {
+    const min = LEVEL_RANK[gate.minLevelByClass?.[cls] ?? gate.minLevel ?? "read"];
     // Patient-less call: `consent_gated` classes resolve to locked, which is
     // correct for cross-patient nav — the surface itself re-checks per patient.
     const { level } = canAccess(role, cls);

@@ -153,7 +153,8 @@ describe("gating derives from the RBAC matrix", () => {
                 ? canWorkSdohCrisisLane(role)
                 : gate.anyOf.some((cls) => {
                   const level = canAccess(role, cls).level;
-                  return gate.minLevel === "write" ? level === "write" : level !== "none";
+                  const min = gate.minLevelByClass?.[cls] ?? gate.minLevel;
+                  return min === "write" ? level === "write" : level !== "none";
                 });
         expect(canSeeNavEntry(role, entry)).toBe(expected);
       }
