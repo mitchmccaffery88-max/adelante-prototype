@@ -8286,10 +8286,42 @@ export const AdelanteEHR = {
       })),
     };
   },
-  setCoverage(patientId: string, coverage: NonNullable<Patient["coverage"]>) {
+  /**
+   * §Phase 8a — MERGES into existing coverage (never replaces). Plans, check
+   * history and flags the patch doesn't mention survive; "verified" without a
+   * recorded check is downgraded to "self_reported". Audited with the list of
+   * changed fields.
+   */
+  setCoverage(
+    patientId: string,
+    patch: CoveragePatch,
+    actor?: { id: string; role: string; source?: string },
+  ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
-    p.coverage = coverage;
+    const before = p.coverage;
+    const { next, changed } = mergeCoverage(before, patch);
+    p.coverage = next;
+    if (changed.length) {
+      appendAudit({
+        category: "clinical",
+        action: "coverage_updated",
+        actorId: actor?.id ?? "patient_self",
+        actorRole: actor?.role ?? "patient",
+        patientId,
+        detail: {
+          source: actor?.source ?? "intake",
+          changed,
+          statusFrom: before?.status,
+          statusTo: next.status,
+          typeFrom: before?.coverageType,
+          typeTo: next.coverageType,
+          verifiedTo: next.verified,
+          plansKept: next.plans?.length ?? 0,
+          checksKept: next.verifications?.length ?? 0,
+        },
+      });
+    }
     emit();
   },
 
