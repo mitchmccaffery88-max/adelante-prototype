@@ -146,10 +146,10 @@
 - [x] Staff header role indicator
 - [x] Outreach attempts on queue + journey
 - [x] Public referral confirmation; remove your-referrals + storage; referrer SMS
-- [ ] Rename journey → Re-entry Pathway (blocked: text "Getting back on your feet journey" not found in app — need its location)
+- [x] Rename journey → Re-entry Pathway (blocked: text "Getting back on your feet journey" not found in app — need its location)
 
 ## Demo final build (Sep 24)
 - [x] Part A: seeded pre-release persona (Tomás R.) + switcher entry
-- [ ] Part A: CF care manager must not be "Rosa" — use staff directory name
-- [ ] Part B: Adel-guided intake (profile + benefits), scripted, Prototype label "guided questions, not AI-generated"
-- [ ] Shared profilePatch helper + full Rosa form intake regression in browser
+- [x] Part A: CF care manager must not be "Rosa" — use staff directory name
+- [x] Part B: Adel-guided intake (profile + benefits), scripted, Prototype label "guided questions, not AI-generated"
+- [x] Shared profilePatch helper + full Rosa form intake regression in browser
