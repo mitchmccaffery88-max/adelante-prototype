@@ -1370,7 +1370,7 @@ export const AdelanteEHRExt = {
 
   // §Demo — two attended visits still waiting for a note, booked and marked
   // attended through the real store API (claims open at `documented`):
-  //  - Kayla Nguyen (trainee, c4) with Leah (p2): note → sign → cosign → billing
+  //  - Kayla Nguyen (trainee, c4) with Rosa T. (p2): note → sign → cosign → billing
   //  - Dr. Marisol Reyes (c1) with Alicia (p4): note → self-sign → billing
   const demo: { patientId: string; clinicianId: string; hoursAgo: number }[] = [
     { patientId: "p2", clinicianId: "c4", hoursAgo: 26 },
