@@ -109,6 +109,16 @@ import {
   Languages,
 } from "lucide-react";
 
+import { useI18n } from "@/lib/i18n";
+import { PHASE9A_COPY } from "@/lib/phase9aCopy";
+
+/** §Phase 9a — justice involvement is already known from the record. */
+function justiceKnownFor(patientId: string | null | undefined): boolean {
+  if (!patientId) return false;
+  const p = AdelanteEHR.getPatient(patientId);
+  return Boolean(p?.custody) || AdelanteEHR.listPreReleaseEpisodes(patientId).length > 0;
+}
+
 export const Route = createFileRoute("/intake")({
   head: () => ({
     meta: [
@@ -176,6 +186,9 @@ function IntakePage() {
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const justiceKnown = useEhr(() => justiceKnownFor(currentId));
+  const { lang: lang9a } = useI18n();
+  const c9a = PHASE9A_COPY[lang9a === "es" ? "es" : "en"];
   const alreadyComplete = Boolean(patient?.intakeCompletedAt);
   const [mode, setMode] = useState<Mode>("self");
   const [step, setStep] = useState(0);
@@ -215,7 +228,11 @@ function IntakePage() {
     jiReentryFlag: patient?.coverage?.jiReentryFlag ?? false,
     otherPlanName: patient?.coverage?.otherPlanName ?? "",
     coverageType: patient?.coverage?.coverageType ?? "medi_cal",
-    justiceInvolvement: patient?.coverage?.justiceInvolvement ?? "no",
+    // §Phase 9a — a pre-release episode or custody status on file already
+    // answers this; it is shown as known rather than re-asked.
+    justiceInvolvement: justiceKnownFor(patient?.id)
+      ? "yes"
+      : (patient?.coverage?.justiceInvolvement ?? "no"),
     ecmEligible: patient?.coverage?.ecmEligible ?? false,
   }));
   /**
@@ -1002,6 +1019,15 @@ function IntakePage() {
               </label>
             )}
 
+            {justiceKnown ? (
+              <div
+                data-testid="justice-known"
+                className="rounded-lg border bg-secondary/40 p-3 text-sm"
+              >
+                <div className="font-medium text-navy">{c9a.justiceKnownTitle}</div>
+                <p className="mt-1 text-muted-foreground">{c9a.justiceKnownBody}</p>
+              </div>
+            ) : (
             <div className="space-y-1.5">
               <Label className="text-sm">
                 Have you ever been involved with the justice system — jail, prison, probation, or
@@ -1032,6 +1058,7 @@ function IntakePage() {
                 ))}
               </RadioGroup>
             </div>
+            )}
 
             {lookupApplies && (
               <div

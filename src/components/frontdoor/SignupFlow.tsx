@@ -222,7 +222,7 @@ function StaffFallback() {
 }
 
 /** Code-redemption branch — claims an EXISTING patient record, never creates one. */
-function RedeemCodePanel({
+export function RedeemCodePanel({
   operator,
   onComplete,
   onBack,

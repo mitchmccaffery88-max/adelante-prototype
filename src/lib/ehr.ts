@@ -3416,13 +3416,25 @@ export interface ReentryCarePlan {
 export interface EnrollmentCode {
   code: string;
   patientId: string;
-  episodeId: string;
-  carePlanId: string;
+  /** Present for pre-release codes; absent for §9a record-claim codes. */
+  episodeId?: string;
+  carePlanId?: string;
+  /** §Phase 9a — why the code exists. Absent on older rows = pre_release. */
+  purpose?: "pre_release" | "record_claim";
+  /** §Phase 9a — staff id of whoever issued a record-claim code. */
+  issuedBy?: string;
   issuedAt: string;
   expiresAt: string;
   consumedAt?: string;
   consumedBy?: string;
 }
+
+/**
+ * §Phase 9a — roles that may issue a sign-in (record-claim) code. Mirrors who
+ * can issue a pre-release code today: the CF Care Manager (owner) and an ECM
+ * Provider (proxy entry). Nobody else.
+ */
+export const RECORD_CLAIM_CODE_ROLES: readonly string[] = ["cf_care_manager", "ecm_provider"];
 
 export interface PatientTask {
   id: string;
@@ -12543,6 +12555,55 @@ export const AdelanteEHR = {
   },
   listEnrollmentCodes(patientId?: string): EnrollmentCode[] {
     return enrollmentCodes.filter((c) => !patientId || c.patientId === patientId);
+  },
+  /**
+   * §Phase 9a — a sign-in code for a record that has no login (referral
+   * enrollment, caseload upload). SAME mechanism as the pre-release code:
+   * same format, same 90-day expiry, same single-use redemption through
+   * `redeemEnrollmentCode`. If an unused, unexpired code already exists it is
+   * returned rather than minting a second live token for the same person.
+   */
+  issueRecordClaimCode(input: {
+    patientId: string;
+    actorStaffId: string;
+    actorName: string;
+    actorRole: string;
+  }): EnrollmentCode {
+    if (!RECORD_CLAIM_CODE_ROLES.includes(input.actorRole))
+      throw new Error("Only reentry care managers and ECM providers can issue sign-in codes.");
+    const patient = patients.find((p) => p.id === input.patientId);
+    if (!patient) throw new Error("Patient not found.");
+    if (patient.signupCredential) throw new Error("This person already has a sign-in.");
+    const now = new Date();
+    const live = enrollmentCodes.find(
+      (c) => c.patientId === patient.id && !c.consumedAt && +new Date(c.expiresAt) >= +now,
+    );
+    if (live) return live;
+    const code: EnrollmentCode = {
+      code: generateEnrollmentCode(),
+      patientId: patient.id,
+      purpose: "record_claim",
+      issuedBy: input.actorStaffId,
+      issuedAt: now.toISOString(),
+      expiresAt: new Date(now.getTime() + ENROLLMENT_CODE_TTL_DAYS * 86400000).toISOString(),
+    };
+    enrollmentCodes.unshift(code);
+    appendAudit({
+      category: "clinical",
+      action: "record_claim_code_issued",
+      patientId: patient.id,
+      actorId: input.actorName,
+      actorRole: input.actorRole,
+      detail: {
+        // Identity token — audit its existence, never its value.
+        enrollmentCodeIssued: true,
+        enrollmentCodeExpiresAt: code.expiresAt,
+        issuedByStaffId: input.actorStaffId,
+        origin: patient.referralId ? "referral" : "staff_provisioned",
+      },
+    });
+    emit();
+    return code;
   },
   getEnrollmentCode(code: string): EnrollmentCode | undefined {
     return enrollmentCodes.find((c) => c.code === code.trim().toUpperCase());
