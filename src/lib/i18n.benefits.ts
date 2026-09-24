@@ -29,6 +29,21 @@ export const benefitsEn = {
   benNonMediCalNext:
     "Our billing team will reach out about payment options, including a sliding fee. Nothing is charged until that's agreed.",
   benPickPlan: "Choose a plan",
+  // Third-person variants (referrer / staff recording about someone). {name}
+  // = first name when known, else "this person".
+  benTitle_3p: "How {name}'s care gets paid for",
+  benIntro_3p: "Share what you know. Skip anything you're unsure about — our team checks coverage before any bill.",
+  benTypeLabel_3p: "What kind of coverage does {name} have?",
+  benChoice_private_insurance_3p: "Private insurance (through work or bought themselves)",
+  benChoice_prefer_self_pay_3p: "Prefers to pay themselves",
+  benCinLabel_3p: "{name}'s Medi-Cal ID (CIN), if known",
+  benStatusLabel_3p: "Is {name}'s Medi-Cal active right now?",
+  benStatus_active_3p: "Yes — it's active",
+  benStatus_suspended_3p: "It was paused while they were away",
+  benStatus_none_unsure_3p: "No / not sure",
+  benMediCalNext_3p: "Our team will confirm this with Medi-Cal.",
+  benNonMediCalNext_3p: "Our billing team will follow up about payment options, including a sliding fee. Nothing is charged until that's agreed.",
+  benThisPerson: "this person",
 } as const;
 
 export const benefitsEs: { [K in keyof typeof benefitsEn]: string } = {
@@ -60,4 +75,17 @@ export const benefitsEs: { [K in keyof typeof benefitsEn]: string } = {
   benNonMediCalNext:
     "Nuestro equipo de facturación te contactará sobre opciones de pago, incluida una tarifa reducida. No se cobra nada hasta acordarlo.",
   benPickPlan: "Elige un plan",
+  benTitle_3p: "Cómo se paga la atención de {name}",
+  benIntro_3p: "Comparte lo que sepas. Puedes saltar lo que no sepas — nuestro equipo revisa la cobertura antes de cualquier cobro.",
+  benTypeLabel_3p: "¿Qué tipo de cobertura tiene {name}?",
+  benChoice_private_insurance_3p: "Seguro privado (del trabajo o comprado por su cuenta)",
+  benChoice_prefer_self_pay_3p: "Prefiere pagar por su cuenta",
+  benCinLabel_3p: "Número de Medi-Cal (CIN) de {name}, si se sabe",
+  benStatusLabel_3p: "¿El Medi-Cal de {name} está activo ahora?",
+  benStatus_active_3p: "Sí — está activo",
+  benStatus_suspended_3p: "Se pausó mientras estaba fuera",
+  benStatus_none_unsure_3p: "No / no se sabe",
+  benMediCalNext_3p: "Nuestro equipo lo confirmará con Medi-Cal.",
+  benNonMediCalNext_3p: "Nuestro equipo de facturación dará seguimiento sobre opciones de pago, incluida una tarifa reducida. No se cobra nada hasta acordarlo.",
+  benThisPerson: "esta persona",
 };

@@ -26,6 +26,8 @@ export function BenefitsStep({
   referralId,
   optional = false,
   showHeading = true,
+  audience = "self",
+  personName,
 }: {
   value: BenefitsFormState;
   onChange: (v: BenefitsFormState) => void;
@@ -33,8 +35,21 @@ export function BenefitsStep({
   referralId?: string;
   optional?: boolean;
   showHeading?: boolean;
+  /** §8b follow-up — who is answering. "self" and "staff_assisted" (staff
+   * reading questions to the patient) say "you"; "third_party" (referrer,
+   * staff recording on the chart) says the first name or "this person". */
+  audience?: "self" | "staff_assisted" | "third_party";
+  personName?: string;
 }) {
-  const { t, lang } = useI18n();
+  const { t: tBase, lang } = useI18n();
+  const third = audience === "third_party";
+  const t = (k: Key): string => {
+    if (!third) return tBase(k);
+    const k3 = `${k}_3p` as Key;
+    const v = tBase(k3);
+    if (v === k3) return tBase(k);
+    return v.replace(/\{name\}/g, personName?.trim() || tBase("benThisPerson"));
+  };
   const plans = useEhr(() => listManagedCarePlans());
   const set = (patch: Partial<BenefitsFormState>) => onChange({ ...value, ...patch });
   const mediCal = isMediCalChoice(value.choice);
