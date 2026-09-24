@@ -186,3 +186,32 @@ export function attestationStatement(id: string): AttestationStatement {
   if (!s) throw new Error(`Unknown attestation statement: ${id}`);
   return s;
 }
+
+/**
+ * §Phase 7b.1 — data-layer check on a PERSISTED record, for engines that must
+ * refuse a signature no matter what the UI let through. Returns the first
+ * problem, or null when the record is a real, current-wording, drawn mark.
+ * A stored record carries stroke evidence when the capture surface reported
+ * it; when it does, a tap-sized mark is refused here too.
+ */
+export function attestationRecordProblem(
+  rec: AttestationRecord | undefined,
+  expectedStatementId: string,
+): string | null {
+  if (!rec) return "A versioned attestation with a drawn signature is required.";
+  if (rec.statementId !== expectedStatementId)
+    return "The attestation was made against the wrong statement.";
+  const current = ATTESTATION_STATEMENTS[expectedStatementId];
+  if (!current || rec.statementVersion !== current.version)
+    return "The attestation wording is out of date — sign again.";
+  if (rec.attested !== true) return "Confirm the attestation statement.";
+  if (!rec.signatureDataUrl) return "The attestation record is missing its drawn signature.";
+  if (
+    rec.signatureStrokeCount !== undefined &&
+    rec.signatureLength !== undefined &&
+    !isValidSignature({ strokeCount: rec.signatureStrokeCount, totalLength: rec.signatureLength })
+  )
+    return "The mark captured is too small to read as a signature — sign again, larger.";
+  if (!rec.signedBy?.trim()) return "A signer name is required.";
+  return null;
+}

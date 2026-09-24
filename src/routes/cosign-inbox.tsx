@@ -6,6 +6,16 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
+import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
+import { AdelanteEHRExt } from "@/lib/ehr-ext";
+import {
+  attestationBlockers,
+  attestationStatement,
+  buildAttestationRecord,
+  emptyAttestationDraft,
+  mergeBlockers,
+  type AttestationDraft,
+} from "@/lib/attestation";
 import { AdelanteEHR, isNoteSudSensitive, useEhr, type Patient, type ProgressNote } from "@/lib/ehr";
 import { canSignNotes, isMyCosign } from "@/lib/notes";
 import { canAccess, useActingStaff } from "@/lib/roles";
@@ -14,7 +24,6 @@ import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Checkbox } from "@/components/ui/checkbox";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
 import { ArrowLeft, Inbox, Lock } from "lucide-react";
@@ -40,8 +49,6 @@ export const Route = createFileRoute("/cosign-inbox")({
   component: CosignInboxPage,
 });
 
-const COSIGN_ATTESTATION =
-  "I attest that I have reviewed this note in full and that my cosignature reflects my independent clinical judgment.";
 
 function CosignInboxPage() {
   const { role, staffName } = useActingStaff();
@@ -180,20 +187,29 @@ function CosignDetail({
   note: ProgressNote;
   actionable: boolean;
 }) {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId, clinicianId } = useActingStaff();
   const [comment, setComment] = useState("");
-  const [attested, setAttested] = useState(false);
+  const [draft, setDraft] = useState<AttestationDraft>(emptyAttestationDraft());
+  const statement = attestationStatement("progress_note_supervisor_sign");
+  const blockers = mergeBlockers(attestationBlockers(draft));
   const [reason, setReason] = useState("");
 
   const cosign = () => {
     try {
+      const attestation = buildAttestationRecord({ statement, draft, signedBy: staffName });
       AdelanteEHR.cosignProgressNote(patientId, note.id, {
         cosignedBy: staffName,
+        cosignedById: clinicianId ?? staffId,
         role,
-        attested,
+        attestation,
         comment,
       });
-      toast.success("Note cosigned");
+      const claim = note.appointmentId
+        ? AdelanteEHRExt.claimForEncounter(note.appointmentId)
+        : undefined;
+      toast.success("Note cosigned", {
+        ...(claim ? { description: `Claim is now ${claim.state}.` } : {}),
+      });
     } catch (e) {
       toast.error((e as Error).message);
     }
@@ -242,18 +258,23 @@ function CosignDetail({
               onChange={(e) => setComment(e.target.value)}
             />
           </div>
-          <label className="flex items-start gap-2 text-[11px] text-muted-foreground">
-            <Checkbox
-              checked={attested}
-              onCheckedChange={(v) => setAttested(Boolean(v))}
-              aria-label="Cosign attestation"
-            />
-            <span>{COSIGN_ATTESTATION}</span>
-          </label>
+          <AttestationSignatureBlock
+            statement={statement}
+            draft={draft}
+            onChange={setDraft}
+            signatureLabel="Supervisor signature"
+          />
+          {blockers.length > 0 && (
+            <ul className="space-y-0.5 text-[11px] text-muted-foreground" data-testid="cosign-blockers">
+              {blockers.map((b) => (
+                <li key={b.code}>• {b.message}</li>
+              ))}
+            </ul>
+          )}
           <Button
             size="sm"
             className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-            disabled={!attested}
+            disabled={blockers.length > 0}
             onClick={cosign}
           >
             Cosign note

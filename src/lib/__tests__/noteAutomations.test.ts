@@ -1,3 +1,4 @@
+import { attest } from "@/test/claimSigning";
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { plannedAutomations, summarizeAutomation, type Automation, type TemplateAnswers, type TemplateSchema } from "@/lib/templateSchema";
@@ -139,7 +140,7 @@ describe("post-sign automations", () => {
     AdelanteEHR.cosignProgressNote(PATIENT, n.id, {
       cosignedBy: "Christi",
       role: "therapist",
-      attested: true,
+      attestation: attest("progress_note_supervisor_sign", "Christi"),
     });
     expect(AdelanteEHR.listNoteAutomationRuns(n.id)).toHaveLength(1);
   });

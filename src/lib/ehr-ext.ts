@@ -10,9 +10,11 @@ import {
   GROUP_MIN_BILLABLE_ATTENDEES,
   groupBillingCode,
   isBillableGroupCategory,
+  noteStatus,
   registerClaimBridge,
   type ServiceType,
 } from "./ehr";
+import { attestationRecordProblem, type AttestationRecord } from "./attestation";
 import { canAccess, getActingRole, getActingStaff } from "./roles";
 import {
   PROGRAM_LABEL,
@@ -259,6 +261,10 @@ export interface Claim {
     actorName?: string;
     role?: string;
     note?: string;
+    /** §Phase 7b.1 — how this move was justified. */
+    via?: "billing" | "note_signature" | "seed_data";
+    /** §Phase 7b.1 — the note signature a documented → signed move rests on. */
+    signature?: ClaimSignatureTrace;
   }[];
   /** HCPCS/CPT. §Phase 7c — every claim now gets one at creation. */
   serviceCode?: string;
@@ -514,6 +520,49 @@ function computeCredentialStatus(c: CredentialDoc): CredentialStatus {
 }
 
 // ---------- Namespace ----------
+/** §Phase 7b.1 — refusal prefix for the claim-signing path. */
+export const CLAIM_SIGN_REFUSED = "Claim not signed";
+
+/** §Phase 7b.1 — what a billing reviewer needs to trace a signed claim. */
+export interface ClaimSignatureTrace {
+  noteId: string;
+  statementKey: string;
+  statementVersion: string;
+  signerId: string;
+  signerName: string;
+  signerRole: string;
+  signedAt: string;
+  cosign: boolean;
+  /** Original (trainee) author, when the final signature was a cosign. */
+  authorName?: string;
+}
+
+/**
+ * §Phase 7b.1 — the explicit, clearly named SEED path. Demo data only: moves
+ * a claim through `steps` without a note, and writes an audit row per move
+ * marked `seed: true` so it can never pass for a real signature.
+ */
+function seedClaimSteps(claim: Claim, clinicianId: string, steps: ClaimState[], reason: string) {
+  if (!noteSignatures.some((x) => x.encounterId === claim.encounterId))
+    noteSignatures.push({ id: uid(), encounterId: claim.encounterId, clinicianId, signedAt: iso(), method: "human" });
+  for (const st of steps) {
+    const from = claim.state;
+    claim.state = st;
+    claim.history.push({ at: iso(), state: st, actor: "seed", via: "seed_data", note: `seed data: ${reason}` });
+    AdelanteEHR.recordClaimStatusChange({
+      claimId: claim.id,
+      patientId: claim.patientId,
+      from,
+      to: st,
+      actorId: "seed",
+      actorRole: "seed",
+      via: "seed_data",
+      reason: `seed data: ${reason}`,
+      seed: true,
+    });
+  }
+}
+
 export const AdelanteEHRExt = {
   // Reads
   listOrganizations: () => organizations,
@@ -746,22 +795,73 @@ export const AdelanteEHRExt = {
    * clinician. Callers come through `signUnsignedWorkRow` (noteSignFlow.ts),
    * which authorizes the actor first.
    */
+  /**
+   * Encounter signature ledger entry only. §Phase 7b.1 — this no longer moves
+   * the claim; the only claim-signing path is `markClaimSignedFromNote`,
+   * which needs a genuinely final note and its attestation.
+   */
   signNote(encounterId: string, signerId: string, method: "human" | "machine_assisted" = "human") {
     if (this.isNoteSigned(encounterId)) return;
     noteSignatures.push({ id: uid(), encounterId, clinicianId: signerId, signedAt: iso(), method });
     ehrBus.publish({ type: "note.signed", encounterId, clinicianId: signerId });
-    this.markClaimSignedFromNote(encounterId, signerId);
   },
 
   /**
-   * §Phase 7b / Phase 1e — signing is a CLINICAL action: the signer (already
-   * authorized by `signUnsignedWorkRow`) confirms the documentation. It only
-   * ever does documented → signed, so it deliberately does not need billing
-   * write. Attributed to the signer and audited like every other move.
+   * §Phase 7b.1 — THE claim-signing path. Refuses (nothing changes) unless the
+   * note exists, is linked to a visit, is FINAL (signed without cosign, or
+   * cosigned), and `attestation` is the exact record stored for that final
+   * signature and still passes the ceremony check. Signer identity comes from
+   * the note, never from the acting session. Clinical action: no billing write.
    */
-  markClaimSignedFromNote(encounterId: string, signerId: string) {
+  markClaimSignedFromNote(input: {
+    patientId: string;
+    noteId: string;
+    attestation: AttestationRecord | undefined;
+  }): { ok: true; claimId?: string } | { ok: false; error: string } {
+    const { n } = AdelanteEHR._findNote(input.patientId, input.noteId);
+    if (!n) return { ok: false, error: `${CLAIM_SIGN_REFUSED}: note not found.` };
+    if (!n.appointmentId) return { ok: false, error: `${CLAIM_SIGN_REFUSED}: note has no linked visit.` };
+    const status = noteStatus(n);
+    const final = status === "cosigned" || (status === "signed" && !n.cosignRequired);
+    if (!final)
+      return {
+        ok: false,
+        error:
+          status === "cosign_pending"
+            ? `${CLAIM_SIGN_REFUSED}: note is awaiting cosign.`
+            : `${CLAIM_SIGN_REFUSED}: note is not signed.`,
+      };
+    const cosign = status === "cosigned";
+    const stored = cosign ? n.cosignAttestation : n.attestation;
+    const statementId = cosign ? "progress_note_supervisor_sign" : stored?.statementId ?? "progress_note_sign";
+    if (!stored || !input.attestation)
+      return { ok: false, error: `${CLAIM_SIGN_REFUSED}: no attestation on the final signature.` };
+    if (
+      stored.signedAt !== input.attestation.signedAt ||
+      stored.statementId !== input.attestation.statementId ||
+      stored.signatureDataUrl !== input.attestation.signatureDataUrl
+    )
+      return { ok: false, error: `${CLAIM_SIGN_REFUSED}: attestation does not match the note.` };
+    if (!["progress_note_sign", "progress_note_supervisor_sign"].includes(statementId))
+      return { ok: false, error: `${CLAIM_SIGN_REFUSED}: wrong attestation statement.` };
+    const problem = attestationRecordProblem(stored, statementId);
+    if (problem) return { ok: false, error: `${CLAIM_SIGN_REFUSED}: ${problem}` };
+
+    const encounterId = n.appointmentId;
+    const trace: ClaimSignatureTrace = {
+      noteId: n.id,
+      statementKey: stored.statementId,
+      statementVersion: stored.statementVersion,
+      signerId: (cosign ? n.cosignedById ?? n.cosignedBy : n.signedById ?? n.signedBy) ?? "unknown",
+      signerName: (cosign ? n.cosignedBy : n.signedBy) ?? stored.signedBy,
+      signerRole: (cosign ? n.cosignedRole : n.signedRole) ?? "unknown",
+      signedAt: (cosign ? n.cosignedAt : n.signedAt) ?? stored.signedAt,
+      cosign,
+      ...(cosign && n.signedBy ? { authorName: n.signedBy } : {}),
+    };
+    this.signNote(encounterId, trace.signerId);
     const claim = claims.find((c) => c.encounterId === encounterId);
-    if (!claim || claim.state !== "documented") return;
+    if (!claim || claim.state !== "documented") return { ok: true, ...(claim ? { claimId: claim.id } : {}) };
     const at = iso();
     // §Phase 7c — the signed note is where documented minutes come from.
     if (claim.unitsSource !== "billing") {
@@ -774,17 +874,39 @@ export const AdelanteEHRExt = {
     }
     claim.state = "signed";
     claim.updatedAt = at;
-    claim.history.push({ at, state: "signed", actor: signerId, note: "note signed" });
+    claim.history.push({
+      at,
+      state: "signed",
+      actor: trace.signerId,
+      actorName: trace.signerName,
+      role: trace.signerRole,
+      note: cosign ? "note cosigned" : "note signed",
+      via: "note_signature",
+      signature: trace,
+    });
     AdelanteEHR.recordClaimStatusChange({
       claimId: claim.id,
       patientId: claim.patientId,
       from: "documented",
       to: "signed",
-      actorId: signerId,
-      actorRole: getActingRole(),
+      actorId: trace.signerId,
+      actorRole: trace.signerRole,
+      actorName: trace.signerName,
       via: "note_signature",
+      signature: { ...trace },
     });
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+    return { ok: true, claimId: claim.id };
+  },
+
+  /** §Phase 7b.1 — the signature trace behind a claim, if any. */
+  claimSignature(claim: Claim): ClaimSignatureTrace | "seed" | undefined {
+    for (const h of [...claim.history].reverse()) {
+      if (h.state !== "signed") continue;
+      if (h.signature) return h.signature;
+      if (h.via === "seed_data" || h.actor === "seed") return "seed";
+    }
+    return undefined;
   },
 
   claimForEncounter(encounterId: string): Claim | undefined {
@@ -1204,11 +1326,7 @@ export const AdelanteEHRExt = {
       const claim = AdelanteEHRExt.upsertClaimFromEncounter(a.id);
       const steps = path[a.id];
       if (!steps) return;
-      noteSignatures.push({ id: uid(), encounterId: a.id, clinicianId: a.clinicianId, signedAt: iso(), method: "human" });
-      for (const st of steps) {
-        claim.state = st;
-        claim.history.push({ at: iso(), state: st, actor: "seed" });
-      }
+      seedClaimSteps(claim, a.clinicianId, steps, "demo spread");
       if (claim.state === "denied") claim.denialReason = "Auth required";
     });
   // §Phase 7c — a newly added rate prices claims waiting on it (not yet Ready).
@@ -1232,6 +1350,15 @@ export const AdelanteEHRExt = {
   registerClaimBridge({
     onAttended: (apptId) => {
       AdelanteEHRExt.upsertClaimFromEncounter(apptId);
+    },
+    onNoteFinal: (patientId, noteId) => {
+      const { n } = AdelanteEHR._findNote(patientId, noteId);
+      if (!n) return;
+      AdelanteEHRExt.markClaimSignedFromNote({
+        patientId,
+        noteId,
+        attestation: noteStatus(n) === "cosigned" ? n.cosignAttestation : n.attestation,
+      });
     },
     bucketFor: (apptId) => {
       const c = claims.find((x) => x.encounterId === apptId);

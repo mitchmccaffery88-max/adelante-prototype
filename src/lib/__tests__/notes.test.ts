@@ -1,3 +1,4 @@
+import { attest } from "@/test/claimSigning";
 import { describe, expect, it, beforeEach } from "vitest";
 import { AdelanteEHR, noteStatus, isNoteSudSensitive } from "@/lib/ehr";
 import { canSignNotes, cosignerCandidates, isMyCosign, requiresCosign } from "@/lib/notes";
@@ -104,13 +105,13 @@ describe("note lifecycle", () => {
       AdelanteEHR.cosignProgressNote(PATIENT, n.id, {
         cosignedBy: "Dr. Bagga",
         role: "pmhnp",
-        attested: true,
+        attestation: attest("progress_note_supervisor_sign", "Dr. Bagga"),
       }),
     ).toThrow(/different cosigning role/);
     AdelanteEHR.cosignProgressNote(PATIENT, n.id, {
       cosignedBy: "Christi",
       role: "therapist",
-      attested: true,
+      attestation: attest("progress_note_supervisor_sign", "Christi"),
       comment: "ok",
     });
     expect(noteStatus(n)).toBe("cosigned");

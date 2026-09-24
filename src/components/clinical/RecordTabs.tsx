@@ -2799,6 +2799,7 @@ function ProgressNoteCard({
       });
       AdelanteEHR.signProgressNote(patientId, note.id, {
         signedBy: staffName,
+        signedById: actingClinicianId ?? actingStaffId ?? staffName,
         role,
         attested: true,
         attestation,
@@ -2818,7 +2819,7 @@ function ProgressNoteCard({
       // linked to this note's visit advances `documented → signed`, exactly as
       // the queue path does. Cosign-pending notes are not signed yet.
       if (!mustCosign)
-        mirrorNoteSignatureToLedger(note, actingClinicianId ?? actingStaffId ?? note.clinicianId);
+        mirrorNoteSignatureToLedger(patientId, note.id);
 
       toast.success(mustCosign ? "Signed — routed for cosignature" : "Note signed");
       // §Phase 3 — a signed CHW service note bills through the same claims
