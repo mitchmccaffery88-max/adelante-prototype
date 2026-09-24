@@ -10,8 +10,7 @@ import { useI18n } from "@/lib/i18n";
  */
 /** Surfaces where the FAB would be a dead-end self-link, or would sit on top
  *  of the page's own primary action. Checked against the live pathname. */
-// /intake: its fixed Save & continue bar sits exactly where the FAB would.
-const FAB_SUPPRESSED = ["/craving", "/crisis", "/slip", "/adel", "/intake"];
+const FAB_SUPPRESSED = ["/craving", "/crisis", "/slip", "/adel"];
 
 export function CravingFab() {
   const { t } = useI18n();

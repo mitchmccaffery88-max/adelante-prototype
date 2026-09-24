@@ -134,4 +134,6 @@
 - [x] Phase 7d follow-ups: payment arrangement on chart (Eligibility section); Lane label derived from claim program / real coverage type
 - [x] Phase 8a: coverage merge (no erase), self-report never verified, Medi-Cal status only for Medi-Cal/dual
 - [x] Phase 8b: intake benefits step (CIN, plan spans, arrangement prompt)
-- [ ] Phase 8c: electronic eligibility response fields
+- [ ] 8b follow-up: craving button stays on /intake, repositioned above Save bar
+- [ ] 8b follow-up: worklist "Not Medi-Cal (reported)" filter, not never-checked
+- [ ] Phase 8c: electronic eligibility infrastructure (approved; electronic counts as verified)
