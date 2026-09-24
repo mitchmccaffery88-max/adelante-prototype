@@ -76,6 +76,7 @@ function AdminPage() {
   // reporting roles (billing, billing_coordinator) no longer qualify. Mirrors
   // the nav entry's `minLevel: "write"` gate.
   const mayAdminister = access.level === "write";
+  const canOpenBilling = canAccess(role, "billing").level !== "none";
   // Quick links ARE the sidebar's Administration group — one computation, no
   // second hand-maintained list to drift. `/admin` itself is dropped: this is
   // the page you're on.
@@ -380,26 +381,50 @@ function AdminPage() {
               <h3 className="font-display text-lg text-navy">Billing status</h3>
               <DollarSign className="h-5 w-5 text-teal" />
             </div>
-            <ul className="space-y-2 text-sm">
-              {[
-                ["Draft", stats.billing.draft, "bg-muted text-muted-foreground"],
-                ["Submitted", stats.billing.submitted, "bg-teal/15 text-teal"],
-                ["Paid", stats.billing.paid, "bg-success/20 text-success"],
-                ["Denied", stats.billing.denied, "bg-destructive/15 text-destructive"],
-              ].map(([label, n, cls]) => (
+            <ul className="space-y-2 text-sm" data-testid="billing-status-card">
+              {(
+                [
+                  ["draft", "Draft", stats.billing.draft, "bg-muted text-muted-foreground"],
+                  ["ready", "Ready", stats.billing.ready, "bg-accent text-accent-foreground"],
+                  ["submitted", "Submitted", stats.billing.submitted, "bg-teal/15 text-teal"],
+                  ["paid", "Paid", stats.billing.paid, "bg-success/20 text-success"],
+                  ["denied", "Denied", stats.billing.denied, "bg-destructive/15 text-destructive"],
+                  ["write_off", "Write-off", stats.billing.write_off, "bg-muted text-muted-foreground"],
+                ] as const
+              ).map(([status, label, n, cls]) => (
                 <li
-                  key={label as string}
+                  key={status}
                   className="flex items-center justify-between border-b last:border-0 py-2"
                 >
-                  <span>{label}</span>
-                  <Badge className={`${cls as string} border-0`}>{n as number}</Badge>
+                  {canOpenBilling ? (
+                    <Link
+                      to="/billing"
+                      search={{ status }}
+                      className="underline-offset-2 hover:underline"
+                      data-billing-status-link={status}
+                    >
+                      {label}
+                    </Link>
+                  ) : (
+                    <span>{label}</span>
+                  )}
+                  <Badge className={`${cls} border-0`}>{n}</Badge>
                 </li>
               ))}
             </ul>
             <p className="mt-3 text-xs text-muted-foreground">
-              Status display only. Claim filing is tracked here; deeper EDI/clearinghouse
-              integration is in Build 2.
+              Counts appointment billing status (the Billing page). Claim records on the Claims
+              worklist are counted separately until the two billing models are unified.
             </p>
+            {canOpenBilling ? (
+              <Link to="/admin-claims" className="mt-2 inline-block text-xs text-navy underline">
+                Open the Claims worklist
+              </Link>
+            ) : (
+              <p className="mt-2 text-xs text-muted-foreground">
+                Billing staff work these on the Billing page.
+              </p>
+            )}
           </Card>
         </div>
       </div>
