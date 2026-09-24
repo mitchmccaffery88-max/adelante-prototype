@@ -16,6 +16,8 @@ const base = {
   consentToContact: true,
   phone: "+15555550101",
   referralSource: "community_based_organization",
+  referrerPhone: "5555550197",
+  channel: "public",
 } as const;
 
 let n = 0;
