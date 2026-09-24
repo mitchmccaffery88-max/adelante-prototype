@@ -1,45 +1,51 @@
-# Referrals: enforce referrer contact, make it visible, attribute submission
+# Phase 7a — Revenue & billing menu, Billing Coordinator parity, CalAIM codes moved to billing
 
-## What exists today (verified)
-- `createReferral` (src/lib/ehr.ts ~7413) stores the submission as given — no referrer-contact check, no audit row, no submitter field.
-- The only caller is `ReferralSubmissionForm`, used as `variant="public"` on /referral and `variant="staff"` inside the /referral-queue "Submit on someone's behalf" panel.
-- `ReferralActor { staffId, name, role }` and `_referralActor()` (reads the acting staff member) already back `contactedBy` / `enrolledBy` / `declinedBy`, each with an audit row (`referral_contacted`, `referral_enrolled`, ...).
-- Drawer header shows only "Submitted {date}"; referrer name/phone/email appear only inside the fallback box.
-- 16 existing tests call `createReferral`, several without referrer contact.
+## What I found
+
+- **Menu:** the `revenue` group ("Revenue & consent") holds Billing, Claims worklist, Medi-Cal verification, Consent and Consent audit. Consent pages are gated on `consent_ledger`.
+- **Billing vs Billing Coordinator:** I compared the two roles across all 44 record classes. They differ in exactly four:
+
+| Class | billing | billing_coordinator |
+|---|---|---|
+| `billing` | write | none |
+| `problems` | read (claim coding) | none |
+| `demographics` | read | none |
+| `consent_ledger` | read | none |
+
+  Every other class already matches, including `eligibility` write, `population_health` read, `group_sessions` read, and the consent-gated SUD classes.
+- **Pages:** `/billing` and `/admin-claims` are gated only through the nav registry and route guard (`billing` class), so fixing the matrix is enough to open them.
+- **CalAIM codes:** `CalaimCodesSection` is rendered at `admin-kpi-targets.tsx:348` with the page's `population_health`-write `canWrite`. The store methods (`addQualifyingCode` / `deactivateQualifyingCode` / `reactivateQualifyingCode`) record the actor and require a reason to deactivate. They don't check the role themselves; the page does that.
+- **Pilot dashboard card (`admin.tsx:378–402`):** shows Draft/Submitted/Paid/Denied from appointment `billingStatus`, with no Ready or Write-off and no links. Only `population_health` write roles (Clinical Coordinator, Sys Admin) can open `/admin`, and neither can open `/billing`.
 
 ## Build
 
-### 1. Rule enforced in the data layer
-- In `createReferral`, before anything is stored: if neither `referrerPhone` nor `referrerEmail` is non-blank (trimmed, reusing `referrerHasContact` from referralOutreach.ts), throw an error carrying the same message the form shows (`REFERRER_CONTACT_REQUIRED_MSG`, moved to a shared spot so the form and data layer use one string). Nothing is stored, no task created, no audit row.
-- Blank strings are stored as `undefined`, so a "   " phone can't slip through.
-- Form keeps its own check (fast feedback); the data layer is the real guarantee — same pattern as the Part 2 consent gate.
-- Rule substance unchanged. Legacy records without contact are untouched (still handled by the honest drawer note).
-- Existing tests that create referrals without referrer contact get a `referrerPhone` added; one new test proves the throw.
+### 1. Menu groups
+- Rename `revenue` to **"Revenue & billing"**: Billing, Claims worklist, Medi-Cal verification, and a new **CalAIM qualifying codes** entry.
+- **Where consent goes:** a new **"Consent & privacy"** group, placed right after Facility & Custody and before Revenue & billing. It holds Consent and Consent audit, with the same `consent_ledger` gates. It's its own group, not Administration, because most roles that open it are clinical (ECM, therapist, PMHNP, SUD counselor) and wouldn't expect it under Administration.
 
-### 2. Referrer always visible in the drawer
-- New "Referred by" block near the top of `ReferralTimelineDrawer`, always rendered: name, agency, source label, phone (tel: link), email (mailto: link). Missing values read "No phone on file" / "No email on file" — never hidden, never invented. Legacy with neither shows the existing no-contact note.
-- The fallback box keeps its own prompt but no longer needs to be the only place contact shows.
+### 2. Billing Coordinator parity (matrix changes, `roles.ts`)
+- `billing`: add `billing_coordinator: "write"`.
+- `problems`: add `billing_coordinator: "read"` (claim coding, the same reason Billing has it).
+- `demographics`: add `billing_coordinator: "read"` (knowing whose claim it is).
+- **`consent_ledger`: left unchanged (none).** Consent isn't a billing class, and you said not to widen non-billing access. After this change it's the only difference between the two roles. **Decision needed:** confirm now, or when the roles are merged.
+- No other role and no other class changes. I'll update tests that assume Billing Coordinator can't reach billing pages (for example, `navSections.test.ts` and the admin-gate tests).
 
-**Queue-list question — recommendation: yes, a compact indicator, but agency + name only, not phone/email.**
-Reasoning: the queue is a scan-and-triage surface; knowing "Probation · J. Ortiz" at a glance helps staff prioritise and recognise repeat referrers, while full contact details are only needed once someone opens the referral to act on it. Putting phone numbers and emails in every row adds clutter and widens exposure of third-party contact details on a shared screen for no triage benefit. Row gets one muted line "Referred by {agency} · {name}"; if the referrer has no contact on file (legacy only), a small "No referrer contact" tag so staff know before opening.
+### 3. CalAIM codes page: new route `/billing-calaim-codes`
+- Renders `CalaimCodesSection` unchanged, with a page header and its own `head()`.
+- **Opening the page:** allowed with `billing` read **or** `population_health` write. The menu entry uses the same `anyOf` gate.
+- **Editing:** `canWrite` = `billing` write, which after step 2 means Billing and Billing Coordinator.
+- **Clinical Coordinator and Sys Admin keep read-only access:** they can see the full list, including retired codes and reasons, but not add, deactivate or reactivate. That matches your recommendation, since the codes drive their dashboards.
+- Audit and deactivate-with-reason behaviour don't change (same component, same store calls).
+- **KPI Targets:** remove the section and add a one-line pointer: "CalAIM qualifying codes are now managed by billing → CalAIM qualifying codes". It's a link when the viewer can open that page. Links elsewhere that pointed to `/admin-kpi-targets#calaim-codes` (for example the dashboard "manage" link) will be moved to the new page.
 
-### 3. Real submission attribution
-- `Referral.submittedBy?: ReferralSubmitter`, where
-  `ReferralSubmitter = { kind: "staff"; actor: ReferralActor } | { kind: "external" }`.
-  Staff reuses `ReferralActor` exactly; external carries no actor because none exists.
-- `createReferral` takes a required `channel: "staff" | "public"` from the caller. For `"staff"` the data layer resolves the actor itself via `_referralActor()` — the caller cannot pass a name. For `"public"` it records `{ kind: "external" }`.
-  Why the channel comes from the caller: the acting-staff value in browser storage exists even on the public page, so the data layer can't tell a public submission from a staff one on its own. Tying it to which form was used is the honest signal available without new sign-in.
-- Audit row at creation, same shape as other referral actions: `action: "referral_submitted"`, actor = staff id or `"external"`, detail = channel, referrer name + agency, and which contact kinds were provided ("phone", "email", or both) — not the values themselves, keeping third-party contact out of the audit stream as with other rows. Timestamp = `createdAt`.
-- Drawer header: "Submitted {date} by {name} ({role})" for staff; "Submitted {date} through the public referral form — no staff member attached" for external; legacy records with no field: "Submitter not recorded".
-- The referral-queue timeline/activity (if it lists audit actions) gets a label for `referral_submitted`.
-
-## Tests
-- Data-layer throw with neither contact (including whitespace-only); passes with only phone / only email.
-- Staff channel records the acting staff member as `submittedBy`; public records `{ kind: "external" }`.
-- Every successful creation writes exactly one `referral_submitted` audit row; a rejected one writes none.
-
-## Browser check (desktop + phone)
-Data-layer rejection via a direct call in the page; drawer shows referrer block on a referral with no fallback pending; staff-submitted referral names the staff member; public one reads as externally submitted; queue row shows the compact referrer line. Zero console errors.
+### 4. Billing status card (`admin.tsx`)
+- Show all six statuses: Draft, Ready, Submitted, Paid, Denied, Write-off.
+- Each count links to `/billing?status=<status>`. `/billing` gets a small `validateSearch` so the status filter starts from that value (no logic change).
+- The people who see this card (Clinical Coordinator, Sys Admin) can't open `/billing`. For them, counts stay as plain numbers with the note "Billing staff work these on the Billing page." Links show only for roles that pass the `billing` gate, so nobody gets a link that just redirects them away.
+- **Honesty label:** "Counts appointment billing status (the Billing page). Claim records on the Claims worklist are counted separately until the two billing models are unified." Plus a link to the Claims worklist for billing roles.
 
 ## Non-goals
-No change to the rule itself, outreach/call-list logic, welcome text, or referral actions. No email sending. No new sign-in.
+No change to either billing model, no rate table, no change to how CalAIM eligibility is computed, and no consent-access changes.
+
+## Verification
+Typecheck and the full test run, including new tests: the matrix differs only on `consent_ledger`; both billing roles see the Revenue & billing group and can edit codes; Clinical Coordinator and Sys Admin are read-only; consent entries appear under the new group. Browser at desktop and phone as Billing, Billing Coordinator and Clinical Coordinator: menu groups, page access, code editing, status-card links, and no console errors.
