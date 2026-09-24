@@ -1,8 +1,14 @@
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { useState } from "react";
+import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { toast } from "sonner";
+import { AdelanteEHR } from "@/lib/ehr";
+import { useI18n } from "@/lib/i18n";
+import { PHASE9A_COPY } from "@/lib/phase9aCopy";
+import { RedeemCodePanel } from "@/components/frontdoor/SignupFlow";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Phone, Search } from "lucide-react";
+import { Phone, Search, Ticket } from "lucide-react";
 
 export const Route = createFileRoute("/start/reconnect")({
   head: () => ({
@@ -31,11 +37,33 @@ export const Route = createFileRoute("/start/reconnect")({
  * the flow if the person would rather just start.
  */
 function ReconnectPlaceholder() {
+  const navigate = useNavigate();
+  const { lang } = useI18n();
+  const c = PHASE9A_COPY[lang === "es" ? "es" : "en"];
+  const [redeeming, setRedeeming] = useState(false);
+  // §Phase 9a — the same redemption panel as /start/signup: claims the
+  // EXISTING record via redeemEnrollmentCode, never creates one.
+  if (redeeming) {
+    return (
+      <div className="space-y-4">
+        <RedeemCodePanel
+          onBack={() => setRedeeming(false)}
+          onComplete={(patient) => {
+            AdelanteEHR.setCurrentPatientId(patient.id);
+            toast.success(`Welcome back, ${patient.firstName}`, {
+              description: "We found the record your care team set up for you.",
+            });
+            navigate({ to: "/intake" });
+          }}
+        />
+      </div>
+    );
+  }
   return (
     <Card className="space-y-5 p-6">
       <div>
         <Badge variant="outline" className="border-gold/50 text-navy">
-          Coming soon
+          Record lookup coming soon
         </Badge>
         <h1 className="font-display mt-2 flex items-center gap-2 text-2xl text-navy">
           <Search className="h-5 w-5 text-teal" /> We'll help you find your record
@@ -44,6 +72,24 @@ function ReconnectPlaceholder() {
           You told us you already have a care plan or case manager with us. Automatic record lookup
           isn't switched on yet, so a person does this part.
         </p>
+      </div>
+
+      <div className="rounded-lg border-2 border-teal/40 bg-teal/5 p-4 text-sm">
+        <div className="flex items-start gap-3">
+          <Ticket className="mt-0.5 h-5 w-5 shrink-0 text-teal" />
+          <div className="flex-1">
+            <div className="font-medium text-navy">{c.haveCode}</div>
+            <p className="mt-1 text-muted-foreground">{c.haveCodeBody}</p>
+            <Button
+              size="sm"
+              className="mt-3"
+              data-testid="reconnect-have-code"
+              onClick={() => setRedeeming(true)}
+            >
+              {c.haveCode}
+            </Button>
+          </div>
+        </div>
       </div>
 
       <div className="rounded-lg border bg-secondary/40 p-4 text-sm">
