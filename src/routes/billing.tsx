@@ -4,16 +4,24 @@ import {
   AdelanteEHR,
   useEhr,
   type Appointment,
-  type BillingStatus,
   type FundingLane,
+  type Patient,
 } from "@/lib/ehr";
+import {
+  AdelanteEHRExt,
+  claimBillingBucket,
+  useEhrExt,
+  type Claim,
+  type ClaimState,
+} from "@/lib/ehr-ext";
 import { toast } from "sonner";
 import { AlertTriangle, Building2, Check, Download, FileText, ShieldCheck, X } from "lucide-react";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import {
   BillingStatusStrip,
-  billableAppointments,
+  BILLING_STATUS_ROWS,
   billingStatusCounts,
+  type BillingStatus,
 } from "@/components/billing/BillingStatusSummary";
 
 export const Route = createFileRoute("/billing")({
@@ -41,14 +49,26 @@ export const Route = createFileRoute("/billing")({
   component: BillingPage,
 });
 
-const BILLING_STATUSES: BillingStatus[] = [
-  "draft",
-  "ready",
-  "submitted",
-  "paid",
-  "denied",
-  "write_off",
-];
+const BILLING_STATUSES: BillingStatus[] = BILLING_STATUS_ROWS.map((r) => r.status);
+
+/**
+ * §Phase 7b — one row per claim, plus attended/closed visits that have no
+ * claim. A visit without a claim gets a plain label, never a fake status.
+ */
+interface BillingRow {
+  key: string;
+  date: string;
+  patient?: Patient;
+  clinicianId: string;
+  lane: FundingLane;
+  appt?: Appointment;
+  claim?: Claim;
+}
+
+export function noClaimLabel(appt: Appointment): string {
+  if (appt.status === "attended") return "Not documented";
+  return "No claim — not billable";
+}
 
 const LANES: { key: FundingLane; label: string }[] = [
   { key: "medi_cal_ffs", label: "Medi-Cal FFS" },
@@ -115,6 +135,7 @@ const STATUS_STYLE: Record<BillingStatus, string> = {
   paid: "bg-teal/15 text-teal",
   denied: "bg-destructive/10 text-destructive",
   write_off: "bg-muted text-muted-foreground",
+  partial: "bg-gold/20 text-navy",
 };
 
 function BillingPage() {
@@ -137,20 +158,44 @@ function BillingPage() {
 
   const { role } = useActingStaff();
   const canWrite = canAccess(role, "billing").level === "write";
-  const statusCounts = useMemo(() => billingStatusCounts(appointments), [appointments]);
+  const claims = useEhrExt(() => AdelanteEHRExt.listClaims());
+  const statusCounts = useMemo(() => billingStatusCounts(claims), [claims]);
 
-  const rows = useMemo(
-    () =>
-      billableAppointments(appointments)
-        .map((a) => ({
-          appt: a,
+  const rows = useMemo<BillingRow[]>(() => {
+    const byEncounter = new Map(claims.map((c) => [c.encounterId, c]));
+    const apptIds = new Set(appointments.map((a) => a.id));
+    const out: BillingRow[] = appointments
+      .filter((a) => a.status !== "scheduled")
+      .map((a) => {
+        const claim = byEncounter.get(a.id);
+        return {
+          key: a.id,
+          date: a.start,
           patient: patients.find((p) => p.id === a.patientId),
-          clinician: clinicians.find((c) => c.id === a.clinicianId),
+          clinicianId: a.clinicianId,
           lane: laneFor(a),
-        })),
+          appt: a,
+          ...(claim ? { claim } : {}),
+        };
+      });
+    // Group / peer / CHW claims have no 1:1 visit — list them too so this page
+    // and the Claims worklist cover the same claims.
+    for (const c of claims) {
+      if (apptIds.has(c.encounterId)) continue;
+      const patient = patients.find((p) => p.id === c.patientId);
+      const st = patient?.coverage?.status;
+      out.push({
+        key: c.id,
+        date: c.history[0]?.at ?? c.updatedAt,
+        ...(patient ? { patient } : {}),
+        clinicianId: c.clinicianId,
+        lane: st === "uninsured" ? "isl_non_medi_cal" : st === "private_pay" ? "private_pay" : st === "active" ? "medi_cal_ffs" : "non_billable",
+        claim: c,
+      });
+    }
+    return out.sort((a, b) => b.date.localeCompare(a.date));
     // eslint-disable-next-line react-hooks/exhaustive-deps
-    [appointments, patients, clinicians],
-  );
+  }, [appointments, patients, claims]);
 
   const [laneFilter, setLaneFilter] = useState<"all" | FundingLane>("all");
   const initialStatus = Route.useSearch().status;
@@ -158,7 +203,7 @@ function BillingPage() {
   const filtered = rows.filter(
     (r) =>
       (laneFilter === "all" || r.lane === laneFilter) &&
-      (statusFilter === "all" || r.appt.billingStatus === statusFilter),
+      (statusFilter === "all" || (r.claim && claimBillingBucket(r.claim.state) === statusFilter)),
   );
   const islRows = rows.filter((r) => r.lane === "isl_non_medi_cal");
 
@@ -173,39 +218,42 @@ function BillingPage() {
       paid: 0,
       denied: 0,
       write_off: 0,
+      partial: 0,
     };
-    for (const r of rows) {
-      const cents = r.appt.chargeCents ?? AdelanteEHR.chargeForService(r.appt.serviceType);
-      byStatus[r.appt.billingStatus] += 1;
-      if (r.appt.billingStatus === "submitted" || r.appt.billingStatus === "ready") {
-        outstandingCents += cents;
-      }
-      if (r.appt.billingStatus === "paid") paidCents += cents;
-      if (r.appt.billingStatus === "denied") deniedCents += cents;
+    for (const c of claims) {
+      const b = claimBillingBucket(c.state);
+      byStatus[b] += 1;
+      if (b === "submitted" || b === "ready") outstandingCents += c.chargeCents;
+      if (b === "paid") paidCents += c.chargeCents;
+      if (b === "denied") deniedCents += c.chargeCents;
     }
     return { byStatus, outstandingCents, paidCents, deniedCents };
-  }, [rows]);
+  }, [claims]);
 
-  function advance(appt: Appointment, to: BillingStatus, opts?: { denialReason?: string }) {
+  // §Phase 7b — the page guard is fast feedback only; `transitionClaim`
+  // enforces billing write itself and attributes the real acting staff.
+  function advance(claim: Claim, to: ClaimState) {
     if (!canWrite) {
       toast.error("View only — billing staff change billing status.");
       return;
     }
-    const res = AdelanteEHR.transitionBilling(appt.id, to, {
-      actor: "billing coordinator",
-      denialReason: opts?.denialReason,
-    });
+    let reason: string | undefined;
+    if (to === "denied" || to === "written_off" || claim.state === "written_off") {
+      const prompt =
+        to === "denied"
+          ? "Denial reason (required):"
+          : claim.state === "written_off"
+            ? "Why is this write-off being reversed? (required)"
+            : "Write-off reason (required):";
+      reason = window.prompt(prompt) ?? undefined;
+      if (!reason?.trim()) return;
+    }
+    const res = AdelanteEHRExt.transitionClaim(claim.id, to, reason ? { denialReason: reason } : undefined);
     if (!res.ok) {
       toast.error(res.error);
       return;
     }
     toast.success(`Claim moved to ${to.replace("_", " ")}.`);
-  }
-
-  function markDenied(appt: Appointment) {
-    const reason = window.prompt("Denial reason (required):", "Missing prior auth");
-    if (!reason) return;
-    advance(appt, "denied", { denialReason: reason });
   }
 
   function downloadIsl() {
@@ -384,12 +432,13 @@ function BillingPage() {
                 </tr>
               </thead>
               <tbody>
-                {filtered.map(({ appt, patient, clinician, lane }) => {
-                  const cents = appt.chargeCents ?? AdelanteEHR.chargeForService(appt.serviceType);
+                {filtered.map(({ key, date, appt, claim, patient, clinicianId, lane }) => {
+                  const clinician = clinicians.find((c) => c.id === clinicianId);
+                  const bucket = claim ? claimBillingBucket(claim.state) : null;
                   return (
-                    <tr key={appt.id} className="border-t">
+                    <tr key={key} className="border-t" data-testid="billing-row" data-encounter={claim?.encounterId ?? appt?.id}>
                       <td className="px-3 py-2 whitespace-nowrap">
-                        {new Date(appt.start).toLocaleDateString()}
+                        {new Date(date).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
                       <td className="px-3 py-2">{clinician?.name ?? "—"}</td>
@@ -398,27 +447,27 @@ function BillingPage() {
                           {LANES.find((l) => l.key === lane)?.label}
                         </span>
                       </td>
-                      <td className="px-3 py-2 font-mono text-xs">{DOLLARS(cents)}</td>
-                      <td className="px-3 py-2">
-                        <span
-                          className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[appt.billingStatus]}`}
-                        >
-                          {appt.billingStatus.replace("_", " ")}
-                        </span>
-                        {appt.denialReason && (
-                          <div className="text-[10px] text-destructive mt-0.5">
-                            {appt.denialReason}
-                          </div>
+                      <td className="px-3 py-2 font-mono text-xs">{claim ? DOLLARS(claim.chargeCents) : "—"}</td>
+                      <td className="px-3 py-2" data-testid="billing-row-status">
+                        {claim && bucket ? (
+                          <>
+                            <span className={`text-[10px] rounded-full px-2 py-0.5 ${STATUS_STYLE[bucket]}`}>
+                              {BILLING_STATUS_ROWS.find((r) => r.status === bucket)?.label}
+                            </span>
+                            {bucket === "draft" && (
+                              <span className="ml-1 text-[10px] text-muted-foreground">{claim.state}</span>
+                            )}
+                            {claim.state === "denied" && claim.denialReason && (
+                              <div className="text-[10px] text-destructive mt-0.5">{claim.denialReason}</div>
+                            )}
+                          </>
+                        ) : (
+                          <span className="text-[10px] text-muted-foreground">{appt ? noClaimLabel(appt) : "—"}</span>
                         )}
                       </td>
                       <td className="px-3 py-2 text-right">
-                        {canWrite ? (
-                          <ClaimActions
-                            appt={appt}
-                            lane={lane}
-                            onAdvance={advance}
-                            onDeny={markDenied}
-                          />
+                        {!claim ? null : canWrite ? (
+                          <ClaimActions claim={claim} lane={lane} onAdvance={advance} />
                         ) : (
                           <span className="text-[10px] text-muted-foreground">View only</span>
                         )}
@@ -476,22 +525,20 @@ function BillingPage() {
                   </tr>
                 </thead>
                 <tbody>
-                  {islRows.map(({ appt, patient }) => (
-                    <tr key={appt.id} className="border-t">
+                  {islRows.map(({ key, date, appt, claim, patient }) => (
+                    <tr key={key} className="border-t">
                       <td className="px-3 py-2 whitespace-nowrap">
-                        {new Date(appt.start).toLocaleDateString()}
+                        {new Date(date).toLocaleDateString()}
                       </td>
                       <td className="px-3 py-2">{patient?.programId ?? "—"}</td>
                       <td className="px-3 py-2 text-xs">
-                        {appt.serviceType?.replace("_", " ") ?? "—"}
+                        {appt?.serviceType?.replace("_", " ") ?? claim?.serviceCode ?? "—"}
                       </td>
                       <td className="px-3 py-2 text-xs text-muted-foreground">
-                        {appt.islReason ?? "uninsured"}
+                        {appt?.islReason ?? "uninsured"}
                       </td>
                       <td className="px-3 py-2 font-mono text-xs">
-                        {DOLLARS(
-                          appt.chargeCents ?? AdelanteEHR.chargeForService(appt.serviceType),
-                        )}
+                        {claim ? DOLLARS(claim.chargeCents) : "No claim"}
                       </td>
                     </tr>
                   ))}
@@ -633,64 +680,66 @@ function Kpi({
 }
 
 function ClaimActions({
-  appt,
+  claim,
   lane,
   onAdvance,
-  onDeny,
 }: {
-  appt: Appointment;
+  claim: Claim;
   lane: FundingLane;
-  onAdvance: (a: Appointment, to: BillingStatus) => void;
-  onDeny: (a: Appointment) => void;
+  onAdvance: (c: Claim, to: ClaimState) => void;
 }) {
   // ISL/non-billable encounters have no claim workflow.
   if (lane === "isl_non_medi_cal" || lane === "non_billable") {
     return <span className="text-[10px] text-muted-foreground">Non-billable</span>;
   }
-  const s = appt.billingStatus;
+  const s = claim.state;
   const btn =
     "inline-flex items-center gap-1 rounded-md border px-2 py-1 text-xs hover:bg-secondary";
+  const canWriteOff = s === "documented" || s === "signed" || s === "coded" || s === "generated" || s === "denied";
   return (
     <div className="inline-flex flex-wrap gap-1 justify-end">
-      {s === "draft" && (
-        <>
-          <button className={btn} onClick={() => onAdvance(appt, "ready")}>
-            <Check className="h-3 w-3" /> Mark ready
-          </button>
-          <button className={btn} onClick={() => onAdvance(appt, "write_off")}>
-            <X className="h-3 w-3" /> Write off
-          </button>
-        </>
+      {s === "documented" && (
+        <span className="text-[10px] text-muted-foreground">Awaiting note signature</span>
       )}
-      {s === "ready" && (
-        <>
-          <button className={btn} onClick={() => onAdvance(appt, "submitted")}>
-            <FileText className="h-3 w-3" /> Submit
-          </button>
-          <button className={btn} onClick={() => onAdvance(appt, "draft")}>
-            Back to draft
-          </button>
-        </>
+      {s === "signed" && (
+        <button className={btn} onClick={() => onAdvance(claim, "coded")}>
+          <Check className="h-3 w-3" /> Mark coded
+        </button>
+      )}
+      {s === "coded" && (
+        <button className={btn} onClick={() => onAdvance(claim, "generated")}>
+          <Check className="h-3 w-3" /> Mark ready
+        </button>
+      )}
+      {s === "generated" && (
+        <button className={btn} onClick={() => onAdvance(claim, "submitted")}>
+          <FileText className="h-3 w-3" /> Submit
+        </button>
       )}
       {s === "submitted" && (
         <>
-          <button className={btn} onClick={() => onAdvance(appt, "paid")}>
+          <button className={btn} onClick={() => onAdvance(claim, "paid")}>
             <Check className="h-3 w-3" /> Mark paid
           </button>
-          <button className={btn} onClick={() => onDeny(appt)}>
+          <button className={btn} onClick={() => onAdvance(claim, "denied")}>
             <X className="h-3 w-3" /> Deny
           </button>
         </>
       )}
       {s === "denied" && (
-        <button className={btn} onClick={() => onAdvance(appt, "ready")}>
+        <button className={btn} onClick={() => onAdvance(claim, "generated")}>
           Resubmit
         </button>
       )}
-      {s === "paid" && <span className="text-[10px] text-teal">Closed</span>}
-      {s === "write_off" && (
-        <button className={btn} onClick={() => onAdvance(appt, "draft")}>
-          Reopen
+      {canWriteOff && (
+        <button className={btn} onClick={() => onAdvance(claim, "written_off")}>
+          <X className="h-3 w-3" /> Write off
+        </button>
+      )}
+      {(s === "paid" || s === "partial") && <span className="text-[10px] text-teal">Closed</span>}
+      {s === "written_off" && (
+        <button className={btn} data-testid="reverse-write-off" onClick={() => onAdvance(claim, "generated")}>
+          Reverse write-off
         </button>
       )}
     </div>

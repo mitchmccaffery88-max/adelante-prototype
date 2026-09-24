@@ -1,3 +1,4 @@
+import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isReferralClosed } from "@/lib/ehr";
@@ -90,8 +91,9 @@ function AdminPage() {
     [role],
   );
   const stats = useEhr(() => AdelanteEHR.stats());
-  const allAppointments = useEhr(() => AdelanteEHR.listAppointments());
-  const billingCounts = useMemo(() => billingStatusCounts(allAppointments), [allAppointments]);
+  // §Phase 7b — claims, not visit fields: same source as /billing and /admin-claims.
+  const allClaims = useEhrExt(() => AdelanteEHRExt.listClaims());
+  const billingCounts = useMemo(() => billingStatusCounts(allClaims), [allClaims]);
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());

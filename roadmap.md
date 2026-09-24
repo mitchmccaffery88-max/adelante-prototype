@@ -110,3 +110,9 @@
 - [x] Typecheck, suite, build, live browser at both viewports incl. Part 2-gated role
 
 - [x] Phase 7a: Revenue & billing group, Consent & privacy group, billing_coordinator full parity (incl consent_ledger read) + parity test, /billing-calaim-codes, billing status card
+
+## Phase 7b — Claim as single billing source
+- [ ] Claim states + written_off; transitionClaim (billing write enforced, attributed, audited); write-off reversible → generated with reason
+- [ ] markClaimSignedFromNote for note signing; claimChargeCents single amount fn
+- [ ] Attended visit creates claim; remove appointment billingStatus + transitionBilling/advanceClaim
+- [ ] /billing, summary, pilot card, clinician line read claims; tests; browser check

@@ -45,6 +45,7 @@ const flow: Record<ClaimState, ClaimState | null> = {
   paid: null,
   denied: null,
   partial: null,
+  written_off: null,
 };
 
 const stateStyle: Record<ClaimState, string> = {
@@ -56,6 +57,7 @@ const stateStyle: Record<ClaimState, string> = {
   paid: "bg-success/20 text-success",
   denied: "bg-destructive/15 text-destructive",
   partial: "bg-gold/20 text-navy",
+  written_off: "bg-muted text-muted-foreground",
 };
 
 // §Group C — service-line filters read the `serviceCode` the Phase 3 hooks
@@ -460,12 +462,12 @@ function ClaimsPage() {
                         ) : (
                           <>
                             {next && (
-                              <Button size="sm" variant="outline" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, next, "billing_coordinator"); toast.success(`→ ${next}`); }}>
+                              <Button size="sm" variant="outline" onClick={() => { const r = AdelanteEHRExt.transitionClaim(c.id, next); if (r.ok) toast.success(`→ ${next}`); else toast.error(r.error); }}>
                                 → {next}
                               </Button>
                             )}
-                            {(c.state === "submitted" || c.state === "generated") && (
-                              <Button size="sm" variant="ghost" onClick={() => { AdelanteEHRExt.advanceClaim(c.id, "denied", "billing_coordinator", "Auth required"); toast.error("Marked denied"); }}>
+                            {c.state === "submitted" && (
+                              <Button size="sm" variant="ghost" onClick={() => { const reason = window.prompt("Denial reason (required):"); if (!reason?.trim()) return; const r = AdelanteEHRExt.transitionClaim(c.id, "denied", { denialReason: reason }); if (r.ok) toast.error("Marked denied"); else toast.error(r.error); }}>
                                 Deny
                               </Button>
                             )}
