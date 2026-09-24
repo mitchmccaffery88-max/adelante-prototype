@@ -262,18 +262,24 @@ function ReferralQuickPickDialog({
                 toast.error("A first and last name are required.");
                 return;
               }
-              AdelanteEHR.createReferral({
-                firstName: firstName.trim(),
-                lastName: lastName.trim(),
-                referringAgency: quickPick.referringAgency,
-                referrerName: quickPick.referrerName || staffName,
-                referrerEmail: quickPick.referrerEmail,
-                referrerPhone: quickPick.referrerPhone,
-                referralSource: (quickPick.referralSource ?? "self") as ReferralSource,
-                countyOfRelease: quickPick.countyOfRelease,
-                consentToContact: false,
-                requestManualOutreach: true,
-              });
+              try {
+                AdelanteEHR.createReferral({
+                  firstName: firstName.trim(),
+                  lastName: lastName.trim(),
+                  referringAgency: quickPick.referringAgency,
+                  referrerName: quickPick.referrerName || staffName,
+                  referrerEmail: quickPick.referrerEmail,
+                  referrerPhone: quickPick.referrerPhone,
+                  referralSource: (quickPick.referralSource ?? "self") as ReferralSource,
+                  countyOfRelease: quickPick.countyOfRelease,
+                  consentToContact: false,
+                  requestManualOutreach: true,
+                  channel: "staff",
+                });
+              } catch (err) {
+                toast.error(err instanceof Error ? err.message : "Referral could not be created.");
+                return;
+              }
               toast.success("Referral created from note.");
               onClose();
             }}
