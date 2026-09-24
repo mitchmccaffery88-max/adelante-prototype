@@ -22,7 +22,8 @@ describe("Phase 8a — coverage integrity", () => {
     AdelanteEHR.setEcmEligible(id, true, actor);
     AdelanteEHR.setCommunitySupport(id, "housing", true, actor);
     AdelanteEHR.recordCoverageCheck(id, { channel: "phone_county", result: "verified", ...actor });
-    AdelanteEHR.addCoveragePlan?.(id, { payer: "Medi-Cal FFS", from: "2025-01-01", source: "staff_checked" } as never);
+    AdelanteEHR.addCoveragePlan(id, { payer: "Medi-Cal FFS", from: "2025-01-01", source: "staff_checked", ...actor });
+    expect(AdelanteEHR.getPatient(id)!.coverage!.plans?.length).toBe(1);
     const before = AdelanteEHR.getPatient(id)!.coverage!;
     const p = AdelanteEHR.getPatient(id);
     AdelanteEHR.setCoverage(id, intakeCoveragePatch(p?.coverage, answers({ coverageType: "private" })));
@@ -38,8 +39,8 @@ describe("Phase 8a — coverage integrity", () => {
   it("audits what changed", () => {
     const id = pt();
     AdelanteEHR.setCoverage(id, intakeCoveragePatch(undefined, answers()));
-    const ev = AdelanteEHR.listAuditEvents?.().find((e: { action: string; patientId?: string }) => e.action === "coverage_updated" && e.patientId === id);
-    if (AdelanteEHR.listAuditEvents) expect(ev).toBeTruthy();
+    const ev = AdelanteEHR.listAuditEvents({ patientId: id }).find((e) => e.action === "coverage_updated");
+    expect(ev?.detail).toMatchObject({ statusTo: "active", verifiedTo: "self_reported" });
   });
 
   it("self-report is never verified", () => {
