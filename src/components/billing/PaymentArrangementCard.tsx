@@ -56,7 +56,7 @@ export function PaymentArrangementCard({ patientId }: { patientId: string }) {
       )}
       {by ? (
         <p className="text-[11px] text-muted-foreground" data-testid="chart-arrangement-setby">
-          Set by {by.name} ({by.role.replace(/_/g, " ")}) on <ClientDate iso={by.at} />
+          Set by {by.name} ({by.role.replace(/_/g, " ")}) on <ClientDate value={by.at} />
         </p>
       ) : current ? null : (
         <p className="text-[11px] text-muted-foreground">
