@@ -7,6 +7,8 @@ const base = {
   referrerName: "Rosa M.",
   consentToContact: true,
   phone: "+15555550101",
+  referrerPhone: "5555550199",
+  channel: "public" as const,
 };
 
 describe("community referral sources", () => {
