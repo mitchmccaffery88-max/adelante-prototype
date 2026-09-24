@@ -7619,6 +7619,7 @@ export const AdelanteEHR = {
       lastName: r.lastName,
       dob: r.dob,
       phone: r.phone,
+      email: r.email,
       referralId: r.id,
       cin: r.cin,
     });
