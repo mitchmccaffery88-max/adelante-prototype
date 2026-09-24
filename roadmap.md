@@ -118,7 +118,7 @@
 - [x] /billing, summary, pilot card, clinician line read claims; tests; browser check
 
 ## Phase 7c — rate table + billing units
-- [ ] rates.ts: billing code table (unit rules), effective-dated rates, add/end-date, audit, billing-write
-- [ ] Claims: code/program/units at creation, rate × units, no-rate flag blocks Ready, corrections
-- [ ] /billing Rates + Codes sections; units shown on /billing and /admin-claims; remove fake table
-- [ ] Tests + browser (Billing, Billing Coordinator, Sys Admin)
+- [x] rates.ts: billing code table (unit rules), effective-dated rates, add/end-date, audit, billing-write
+- [x] Claims: code/program/units at creation, rate × units, no-rate flag blocks Ready, corrections
+- [x] /billing Rates + Codes sections; units shown on /billing and /admin-claims; remove fake table
+- [x] Tests + browser (Billing, Billing Coordinator, Sys Admin)
