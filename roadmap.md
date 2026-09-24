@@ -137,3 +137,13 @@
 - [x] 8b follow-up: craving button stays on /intake, repositioned above Save bar
 - [x] 8b follow-up: worklist "Not Medi-Cal (reported)" filter, not never-checked
 - [x] Phase 8c: electronic eligibility infrastructure (approved; electronic counts as verified)
+
+## Pre-demo batch
+- [ ] Home Start my intake → /intake; Start/Continue/Completed tile
+- [ ] Sign-up / redemption → /intake
+- [ ] Daniel scenario label
+- [ ] Ask Adel help line (intake + landing), en/es
+- [ ] Staff header role indicator
+- [ ] Outreach attempts on queue + journey
+- [ ] Public referral confirmation; remove your-referrals + storage; referrer SMS
+- [ ] Rename journey → Re-entry Pathway
