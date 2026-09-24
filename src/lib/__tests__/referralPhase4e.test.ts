@@ -76,13 +76,13 @@ describe("attempt logging", () => {
 
 describe("referrer fallback trigger", () => {
   it("fires immediately when no phone was ever given", () => {
-    const f = needsReferrerFallback({ status: "submitted" });
+    const f = needsReferrerFallback({ referrerPhone: "5105551212", status: "submitted" });
     expect(f.due).toBe(true);
     expect(f.reason).toBe("no_phone");
   });
 
   it("fires immediately on a dead number", () => {
-    const f = needsReferrerFallback({
+    const f = needsReferrerFallback({ referrerPhone: "5105551212",
       status: "submitted",
       phone: "5105550000",
       outreach: {
@@ -107,13 +107,13 @@ describe("referrer fallback trigger", () => {
       outcome: "no_answer" as const,
       by: { staffId: "s", name: "S", role: "ecm_provider" },
     });
-    const one = needsReferrerFallback({
+    const one = needsReferrerFallback({ referrerPhone: "5105551212",
       status: "submitted",
       phone: "5105550000",
       outreach: { attempts: [attempt("a")] },
     });
     expect(one.due).toBe(false);
-    const two = needsReferrerFallback({
+    const two = needsReferrerFallback({ referrerPhone: "5105551212",
       status: "submitted",
       phone: "5105550000",
       outreach: { attempts: [attempt("a"), attempt("b")] },
@@ -124,7 +124,7 @@ describe("referrer fallback trigger", () => {
 
   it("never fires once the person was reached or the referral closed", () => {
     expect(
-      needsReferrerFallback({
+      needsReferrerFallback({ referrerPhone: "5105551212",
         status: "submitted",
         outreach: {
           attempts: [
