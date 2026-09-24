@@ -121,7 +121,7 @@ function OtherHelpPlaceholder() {
               <a href="sms:988">{cc.frontDoorText}</a>
             </Button>
             <Button asChild variant="outline" size="sm">
-              <Link to="/crisis">Get help right now</Link>
+              <Link to="/crisis">I need help now</Link>
             </Button>
           </div>
         </div>
