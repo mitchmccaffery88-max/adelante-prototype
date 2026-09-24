@@ -1,4 +1,5 @@
 import { Link } from "@tanstack/react-router";
+import { useI18n } from "@/lib/i18n";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import {
@@ -19,6 +20,7 @@ import {
 import heroImg from "@/assets/hero-sunrise.jpg";
 
 export function Landing() {
+  const { t } = useI18n();
   return (
     <div className="bg-background">
       {/* Hero */}
@@ -103,7 +105,8 @@ export function Landing() {
               n: "1",
               icon: Phone,
               title: "Connect",
-              body: "Tell us a little about you. It takes a few minutes, and we can help you do it by phone.",
+              // E3 — Adel explains questions; it never fills intake in.
+              body: t("landingConnectBody"),
             },
             {
               n: "2",

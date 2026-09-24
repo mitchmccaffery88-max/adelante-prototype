@@ -43,7 +43,9 @@ function SignupPage() {
         } else {
           toast.success("Account created", { description: "Next: a few quick questions." });
         }
-        navigate({ to: "/start" });
+        // Straight to intake for the new (or claimed) record — never back to
+        // the front-door questions, which the person has already answered.
+        navigate({ to: "/intake" });
       }}
     />
   );

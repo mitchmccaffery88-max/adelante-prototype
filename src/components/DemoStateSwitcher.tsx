@@ -40,7 +40,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string }> = {
     hint: "State 1 — nobody signed in, no patient record yet",
   },
   ji_post_release: {
-    label: "Daniel M. — Justice-Involved, Post-Release",
+    label: "Daniel M. — Justice-Involved, Pre-Release",
     hint: "State 2 — completed intake, JI reentry flag, pre-release journey",
   },
   advocate: {
