@@ -20,7 +20,7 @@ import {
   coverageWorklistSummary,
   type CoverageCheckState,
 } from "@/lib/coverageWorklist";
-import { COVERAGE_CHECK_CHANNEL_LABEL } from "@/lib/ehr";
+import { COVERAGE_CHECK_CHANNEL_LABEL, REPORTED_SOURCE_LABEL } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
