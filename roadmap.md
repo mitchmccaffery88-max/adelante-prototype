@@ -131,3 +131,5 @@
 - [x] Optional payerId on rates, payer-specific preferred
 - [x] Patient responsibility split; manual payments (no overpay, no card numbers, void); audit
 - [x] Placeholder rates; /billing + /admin-claims UI; tests; browser
+- [x] Phase 7d follow-ups: payment arrangement on chart (Eligibility section); Lane label derived from claim program / real coverage type
+- [ ] Intake benefits step + eligibility-response structures (Part B investigation delivered; awaiting design direction)
