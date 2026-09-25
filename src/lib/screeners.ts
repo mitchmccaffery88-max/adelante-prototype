@@ -535,10 +535,11 @@ const HITS_OPTIONS = [
   { label: "Frequently", value: 5 },
 ];
 
+// Order as printed on the CMS tool.
 const FOOD_OPTIONS = [
-  { label: "Never true", value: 0 },
-  { label: "Sometimes true", value: 1 },
   { label: "Often true", value: 2 },
+  { label: "Sometimes true", value: 1 },
+  { label: "Never true", value: 0 },
 ];
 
 /** CMS AHC-HRSN core screening tool — verbatim item text. */
@@ -552,11 +553,14 @@ export const AHC_HRSN: DomainScreenerDef = {
   source: "CMS Accountable Health Communities HRSN Screening Tool (core questions).",
   version: "AHC-HRSN core",
   scoringVersion: "domain-count-v1",
-  // Believed verbatim; CMS PDF not re-checked in this environment. Flagged.
-  textVerified: false,
+  // Checked against the CMS PDF (innovation/files/worksheets/ahcm-screeningtool.pdf).
+  // Adaptation: item 2 is "choose all that apply" on paper; here it is one
+  // choice (none / one or more) — the domain result is identical.
+  textVerified: true,
+  verifiedOn: "2026-05",
   questions: [
     "What is your living situation today?",
-    "Think about the place you live. Do you have problems with any of the following? (bug infestation; mold; lead paint or pipes; inadequate heat; oven or stove not working; no or not working smoke detectors; water leaks)",
+    "Think about the place you live. Do you have problems with any of the following? (Pests such as bugs, ants, or mice; Mold; Lead paint or pipes; Lack of heat; Oven or stove not working; Smoke detectors missing or not working; Water leaks)",
     "Within the past 12 months, you worried that your food would run out before you got money to buy more.",
     "Within the past 12 months, the food you bought just didn't last and you didn't have money to get more.",
     "In the past 12 months, has lack of reliable transportation kept you from medical appointments, meetings, work or from getting things needed for daily living?",
@@ -580,13 +584,13 @@ export const AHC_HRSN: DomainScreenerDef = {
       },
       {
         label:
-          "I do not have a steady place to live (temporarily staying with others, in a hotel, in a shelter, living outside, in a car, abandoned building, bus or train station, or in a park)",
+          "I do not have a steady place to live (I am temporarily staying with others, in a hotel, in a shelter, living outside on the street, on a beach, in a car, abandoned building, bus or train station, or in a park)",
         value: 1,
       },
     ],
     1: [
-      { label: "None of the above", value: 0 },
       { label: "One or more of the above", value: 1 },
+      { label: "None of the above", value: 0 },
     ],
     2: FOOD_OPTIONS,
     3: FOOD_OPTIONS,
