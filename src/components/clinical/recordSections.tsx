@@ -43,6 +43,7 @@ import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
 import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
+import { AsamPanel } from "@/components/clinical/AsamPanel";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import { StaffAdvocatesTab } from "@/components/advocate/StaffAdvocatesTab";
 import {
@@ -252,6 +253,16 @@ export function useRecordSections(
     icon: TrendingUp,
     group: "chart",
     render: () => <TrackingTab patientId={pid} />,
+  });
+  // §Phase 10c — ASAM. Part 2 protected: gated by `screeners_sud`, so
+  // advocates and Part 2-restricted staff never see the section at all.
+  add("screeners_sud", {
+    id: "asam",
+    label: "ASAM",
+    icon: ClipboardCheck,
+    group: "chart",
+    count: (patient.asamAssessments ?? []).length,
+    render: () => <AsamPanel patient={patient} />,
   });
   add("meds_erx", {
     id: "orders",

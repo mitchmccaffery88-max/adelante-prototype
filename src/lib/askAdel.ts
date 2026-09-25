@@ -17,7 +17,7 @@
 //   3. No causation, no invented number. Cross-patient aggregates carry the
 //      shared cohort guard; a question with nothing real behind it is marked
 //      `illustrative` and says so on screen.
-import { AdelanteEHR, isPart2SensitiveCategory, type ResourceReferral } from "./ehr";
+import { AdelanteEHR, isPart2SensitiveCategory, type Patient, type ResourceReferral } from "./ehr";
 import { AdelanteEHRExt } from "./ehr-ext";
 import { canAccess, type AccessLevel, type RecordClass, type StaffRole } from "./roles";
 import { cohortGuard, type CohortGuard } from "./cohortGuard";
@@ -173,7 +173,33 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
     },
   },
   {
-    id: "clinical-rescreens",
+    // §Phase 10c — open "ASAM assessment needed" tasks on the caseload.
+    // Part 2 gated: facts only; Adel never suggests or assigns a level.
+    id: "clinical-asam",
+    group: "clinical",
+    prompt: "Who needs an ASAM?",
+    anyOf: ["screeners_sud"],
+    answer: (ctx) => {
+      const rows = myCaseload(ctx)
+        .map((p) => ({ p, task: AdelanteEHR.openAsamTask(p.id) }))
+        .filter((r): r is { p: Patient; task: NonNullable<typeof r.task> } => Boolean(r.task));
+      return {
+        backing: "real",
+        lines: rows.length
+          ? rows.map(
+              (r) =>
+                `${r.p.firstName} ${r.p.lastName} — ASAM assessment needed, due ${r.task.dueDate} (draft)`,
+            )
+          : ["No one on your caseload has an open ASAM assessment task."],
+        notes: [
+          "ASAM due dates, routing and reassessment intervals are drafts pending clinical sign-off. Adel reports the task; the clinician decides the level of care.",
+          ASK_ADEL_CASELOAD_NOTE,
+        ],
+        link: { to: "/my-work", label: "Open My work" },
+      };
+    },
+  },
+  {
     group: "clinical",
     prompt: "Which of my patients have overdue re-screens?",
     anyOf: ["screeners_mh"],

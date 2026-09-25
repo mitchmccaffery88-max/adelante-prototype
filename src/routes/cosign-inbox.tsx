@@ -19,6 +19,8 @@ import {
 import { AdelanteEHR, isNoteSudSensitive, useEhr, type Patient, type ProgressNote } from "@/lib/ehr";
 import { canSignNotes, isMyCosign } from "@/lib/notes";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { ASAM_DRAFT_NOTE, ASAM_SIGN_ROLES, dmcOdsLevelLabel } from "@/lib/asam";
+import { cosignAsamAssessment } from "@/lib/asamFlow";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -108,7 +110,108 @@ function CosignInboxPage() {
         setOpenId={setOpenId}
         actionable={false}
       />
+      <AsamCosignSection />
     </div>
+  );
+}
+
+// §Phase 10c — counselor/trainee-authored ASAM assessments awaiting an LPHA
+// co-signature. Nothing about these assessments is visible to roles outside
+// the LPHA sign list, and no output has fired yet — outputs fire on cosign.
+function AsamCosignSection() {
+  const { role, staffName, staffId, clinicianId } = useActingStaff();
+  const rows = useEhr(() => AdelanteEHR.listAsamAwaitingCosign());
+  const [draft, setDraft] = useState<AttestationDraft>(emptyAttestationDraft());
+  const [reason, setReason] = useState("");
+  const [openId, setOpenId] = useState<string | null>(null);
+  if (!ASAM_SIGN_ROLES.includes(role)) return null;
+
+  const actor = { staffId, name: staffName, role, clinicianId };
+  return (
+    <section className="space-y-2" data-testid="asam-cosign-section">
+      <h2 className="font-display text-sm text-navy">
+        ASAM assessments awaiting LPHA co-signature{" "}
+        <span className="text-muted-foreground">({rows.length})</span>
+      </h2>
+      <p className="text-[11px] text-muted-foreground">
+        {ASAM_DRAFT_NOTE}. Episode, claim, CalOMS prompt and care-plan outputs fire only when you co-sign.
+      </p>
+      {rows.length === 0 && (
+        <Card className="p-3 text-xs text-muted-foreground">No ASAM assessments are waiting.</Card>
+      )}
+      {rows.map(({ patient, asam }) => (
+        <Card key={asam.id} className="p-3" data-testid={`asam-cosign-${asam.id}`}>
+          <button
+            type="button"
+            className="flex w-full items-center justify-between gap-2 text-left"
+            onClick={() => setOpenId(openId === asam.id ? null : asam.id)}
+          >
+            <div className="min-w-0">
+              <div className="truncate text-sm font-medium text-navy">
+                {patient.firstName} {patient.lastName}
+              </div>
+              <div className="text-[11px] text-muted-foreground">
+                ASAM by {asam.authoredBy.name} ({asam.authoredBy.role}) ·{" "}
+                {asam.signedAt ? <ClientDate value={asam.signedAt} /> : "—"}
+              </div>
+            </div>
+            <Badge className="bg-gold/30 text-navy border-0 text-[10px]">Awaiting LPHA cosign</Badge>
+          </button>
+          {openId === asam.id && (
+            <div className="mt-2 space-y-2 border-t border-border pt-2">
+              <p className="text-xs text-muted-foreground">
+                Actual level (clinician-selected): {dmcOdsLevelLabel(asam.actualLevel)} · Diagnoses:{" "}
+                {asam.diagnosisCodes.join(", ") || "—"}
+              </p>
+              <AttestationSignatureBlock
+                statement={attestationStatement("asam_supervisor_sign")}
+                draft={draft}
+                onChange={setDraft}
+              />
+              <div className="flex flex-wrap items-center gap-2">
+                <Button
+                  size="sm"
+                  disabled={attestationBlockers(draft).length > 0}
+                  onClick={() => {
+                    try {
+                      cosignAsamAssessment(patient.id, asam.id, actor, draft);
+                      setDraft(emptyAttestationDraft());
+                      toast.success("ASAM co-signed — outputs fired.");
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : String(e));
+                    }
+                  }}
+                  data-testid="asam-cosign-btn"
+                >
+                  Co-sign (LPHA)
+                </Button>
+                <Textarea
+                  value={reason}
+                  onChange={(e) => setReason(e.target.value)}
+                  placeholder="Decline reason (required to decline)"
+                  className="min-h-8 text-xs"
+                />
+                <Button
+                  size="sm"
+                  variant="outline"
+                  onClick={() => {
+                    try {
+                      AdelanteEHR.declineAsamCosign(patient.id, asam.id, actor, reason);
+                      setReason("");
+                      toast.success("Returned to the author as a draft.");
+                    } catch (e) {
+                      toast.error(e instanceof Error ? e.message : String(e));
+                    }
+                  }}
+                >
+                  Decline
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      ))}
+    </section>
   );
 }
 
