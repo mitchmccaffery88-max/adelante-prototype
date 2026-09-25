@@ -85,7 +85,16 @@ describe("10d-1 amendment reassessment clock", () => {
     );
     expect(open).toHaveLength(1);
   });
-  it("clinical coordinator fails the Part 2 check, so the section is hidden", () => {
-    expect(asamClinicalReport("clinical_coordinator")).toBeNull();
+  it("clinical coordinator gets totals only (draft access rule), never unconsented names", () => {
+    const r = asamClinicalReport("clinical_coordinator")!;
+    expect(r.mode).toBe("totals");
+    const therapist = asamClinicalReport("therapist")!;
+    expect(r.tasks.length).toBe(therapist.tasks.length);
+    const jordan = demoScenarioPatientId("sud_no_consent")!;
+    expect(r.tasks.some((t) => t.patientId === jordan)).toBe(false);
+    for (const t of r.tasks) {
+      if (!t.patientId) continue;
+      expect(AdelanteEHR.isConsentCategoryAuthorized(t.patientId, "sud_treatment")).toBe(true);
+    }
   });
 });
