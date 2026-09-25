@@ -767,6 +767,7 @@ function ReportingHome() {
             <div className="grid gap-3 md:grid-cols-2">
               <Card className="space-y-2 p-4">
                 <h3 className="text-sm font-medium text-navy">Drafts awaiting co-signature</h3>
+                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.cosignCount} in total. Named only where Part 2 consent covers your role.</p>}
                 {asamReport.cosign.length === 0 ? <p className="text-xs text-muted-foreground">None.</p> : (
                   <ul className="space-y-1 text-xs">{asamReport.cosign.map((c) => (
                     <li key={c.asamId}>{c.patientName} — authored by {c.authorName}, waiting {c.ageDays} day{c.ageDays === 1 ? "" : "s"}</li>
@@ -775,6 +776,7 @@ function ReportingHome() {
               </Card>
               <Card className="space-y-2 p-4">
                 <h3 className="text-sm font-medium text-navy">Recommended vs actual level</h3>
+                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.differenceCount} in total. Named only where Part 2 consent covers your role.</p>}
                 {asamReport.differences.length === 0 ? <p className="text-xs text-muted-foreground">No signed assessment with a difference.</p> : (
                   <ul className="space-y-1 text-xs" data-testid="asam-differences">{asamReport.differences.map((d) => (
                     <li key={d.asamId}>{d.patientName} (v{d.version}) — recommended {d.recommended}, actual {d.actual}. Reason: {d.reason}</li>
