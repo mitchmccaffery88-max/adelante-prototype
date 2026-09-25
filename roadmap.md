@@ -163,3 +163,4 @@
 - [ ] B2 My Care tiles: first appointment, needs w/ match counts, recommended
 - [ ] B3(a) matched resources per need
 - [ ] Tests + browser verification
+- [ ] Resume interrupted approved My Care consolidation and deliver one complete verification report covering all eight items and requested browser workflows.
