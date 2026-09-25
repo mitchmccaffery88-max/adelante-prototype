@@ -63,6 +63,22 @@ import {
 } from "./asam";
 const OFFERED_LEVELS_SET = new Set(OFFERED_LEVELS);
 const dmcOdsLevelLabelSafe = dmcOdsLevelLabel;
+
+/**
+ * §Phase 10c — the H0001 claim lives in ehr-ext's private claim store, and
+ * ehr-ext imports this module, so the claim creator is registered by ehr-ext
+ * at module load instead of imported here (which would close a cycle).
+ */
+export interface AsamClaimInput {
+  asamId: string;
+  patientId: string;
+  clinicianId: string;
+  serviceDate: string;
+}
+let _asamClaimCreator: ((input: AsamClaimInput) => string) | undefined;
+export function registerAsamClaimCreator(fn: (input: AsamClaimInput) => string): void {
+  _asamClaimCreator = fn;
+}
 import { mergeCoverage, type CoveragePatch } from "./coverageStatus";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
@@ -8784,13 +8800,21 @@ export const AdelanteEHR = {
    * The H0001 claim is attached by the caller (`asamFlow`) through the
    * existing claim path in ehr-ext — this store never imports ehr-ext.
    */
-  _fireAsamOutputs(p: Patient, a: AsamAssessment): void {
+  _fireAsamOutputs(p: Patient, a: AsamAssessment, actor: { staffId: string; clinicianId?: string }): void {
     const now = new Date().toISOString();
     const today = now.slice(0, 10);
     const outputs: NonNullable<AsamAssessment["outputs"]> = {
       // DRAFT medical-necessity rule: signed + at least one linked diagnosis.
       medicalNecessity: a.diagnosisCodes.length > 0,
     };
+    // H0001 claim through the existing claim path (registered by ehr-ext).
+    const claimId = _asamClaimCreator?.({
+      asamId: a.id,
+      patientId: p.id,
+      clinicianId: actor.clinicianId ?? actor.staffId,
+      serviceDate: today,
+    });
+    if (claimId) outputs.claimId = claimId;
     // DMC-ODS episode: open one, or move the open one to the chosen level.
     let ep = (p.episodes ?? []).find((e) => e.type === "sud_dmc_ods" && !e.closedAt);
     if (!ep) {
