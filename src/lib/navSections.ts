@@ -439,6 +439,15 @@ export const STAFF_NAV: NavEntry[] = [
     },
   },
   {
+    id: "dmc-ods-readiness",
+    label: "DMC-ODS readiness",
+    desc: "CalOMS completeness & export (prototype)",
+    icon: FileSearch,
+    to: "/dmc-ods-readiness",
+    group: "population",
+    gate: { kind: "record_class", anyOf: ["screeners_sud"], minLevel: "read" },
+  },
+  {
     id: "consent",
     label: "Consent",
     desc: "Ledger & disclosures",
