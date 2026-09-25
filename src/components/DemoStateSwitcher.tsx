@@ -3,7 +3,7 @@
 // One control, always reachable: it used to live in the page footer, which is
 // below the fold on any constrained viewport, so a reviewer could not reach it
 // without scrolling past the whole surface. It is now fixed to the top of the
-// viewport and never scrolls away.
+// viewport and never scrolls away with the shared sticky demo bar.
 //
 // It is a DEMO control. Every state it sets up is produced through the real
 // APIs (`setCurrentPatientId`, `createAdvocateInvitation`,
@@ -364,9 +364,7 @@ export function DemoStateSwitcher() {
           <FlaskConical className="h-3.5 w-3.5 text-teal" />
           <span className="max-w-[7.5rem] truncate sm:max-w-[14rem]">
             <span className="text-muted-foreground">QA: </span>
-            {active
-              ? STATE_LABEL[active].label.split(" — ")[0]
-              : (patient ? `${patient.firstName} ${patient.lastName}` : "no record")}
+            {active ? STATE_LABEL[active].label.split(" — ")[0] : "choose a scenario"}
           </span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </DropdownMenuTrigger>
@@ -403,6 +401,7 @@ export function DemoStateSwitcher() {
                   clearAdvocateSession();
                   setAdvocateLinkId(null);
                   AdelanteEHR.setCurrentPatientId(p.id);
+                   navigate({ to: p.intakeCompletedAt ? "/patient" : "/intake" });
                 }}
                 className={cn("text-sm", currentId === p.id && !advocateLinkId && "bg-secondary")}
               >

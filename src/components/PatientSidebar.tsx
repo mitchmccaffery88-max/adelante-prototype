@@ -27,7 +27,7 @@ export function PatientSidebar() {
   return (
     <aside
       aria-label="Patient navigation"
-      className="hidden md:flex sticky top-[65px] h-[calc(100dvh-65px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
+      className="hidden md:flex sticky top-[calc(var(--demo-controls-height,41px)+69px)] h-[calc(100dvh-var(--demo-controls-height,41px)-69px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
     >
       <nav className="flex-1 space-y-1 overflow-y-auto">
         {entries.filter((n) => n.id !== "recovery-journey" || showRecovery).map((n) => {

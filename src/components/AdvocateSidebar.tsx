@@ -27,7 +27,7 @@ export function AdvocateSidebar() {
     <aside
       aria-label="Advocate navigation"
       data-testid="advocate-sidebar"
-      className="hidden md:flex sticky top-[65px] h-[calc(100dvh-65px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
+      className="hidden md:flex sticky top-[calc(var(--demo-controls-height,41px)+69px)] h-[calc(100dvh-var(--demo-controls-height,41px)-69px)] w-64 shrink-0 flex-col gap-1 border-r bg-sidebar px-3 pt-4 pb-6"
     >
       {/* Persistent, prominent context switch — never inside the scroll area. */}
       <div className="shrink-0 space-y-2 pb-3">
