@@ -17,7 +17,7 @@ import type {
 import type { StaffRole } from "./roles";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
-import { attestationRecordProblem, type AttestationRecord } from "./attestation";
+import { attestationRecordProblem, attestationStatement, buildAttestationRecord, type AttestationRecord } from "./attestation";
 // §EHR audit Phase 2b — template scope tiers. Type-only here; the value
 // helpers (clone/locked-field rules) live in the leaf module and are imported
 // by the write paths below.
@@ -50,6 +50,7 @@ import {
 // §Phase 10c — ASAM. Leaf module (type-only back to roles), safe to value-import.
 import {
   ASAM_DEDUPE_PREFIX,
+  ASAM_DIMENSIONS,
   ASAM_REASSESSMENT_DAYS,
   ASAM_SIGN_ROLES,
   ASAM_TASK_ROLES,
@@ -23050,6 +23051,58 @@ try {
         });
     }
   }
+  // §Phase 10c demo seeds — ASAM, all through the real store API.
+  const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
+  const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
+  const VARGAS = { staffId: "s-sudc1", name: "Elena Vargas", role: "sud_counselor" as StaffRole };
+  const seedDims = (text: string) =>
+    ASAM_DIMENSIONS.map((d) => ({ key: d.key, documentation: text, rating: 1 as 0 | 1 | 2 | 3 | 4 }));
+  // Luis C. (2c) — a COMPLETED, signed ASAM (LPHA author signs final).
+  const luisId = demoScenarioPatientId("sud_consented");
+  if (luisId && !(patients.find((p) => p.id === luisId)?.asamAssessments?.length)) {
+    const draft = AdelanteEHR.saveAsamDraft(
+      luisId,
+      {
+        dimensions: seedDims("Demo documentation for this dimension."),
+        recommendedLevel: "intensive_outpatient",
+        actualLevel: "intensive_outpatient",
+        diagnosisCodes: ["F15.20"],
+      },
+      REYES,
+    );
+    AdelanteEHR.signAsam(
+      luisId,
+      draft.id,
+      REYES,
+      buildAttestationRecord({ statement: attestationStatement("asam_sign"), draft: seedAttDraft, signedBy: REYES.name }),
+    );
+  }
+  // Jasmine H. (2d) — counselor-authored draft, signed by the SUD counselor,
+  // awaiting LPHA co-signature (nothing fires until then).
+  const jasmineId = demoScenarioPatientId("combination");
+  if (jasmineId && !(patients.find((p) => p.id === jasmineId)?.asamAssessments?.length)) {
+    const draft = AdelanteEHR.saveAsamDraft(
+      jasmineId,
+      {
+        dimensions: seedDims("Demo documentation for this dimension."),
+        recommendedLevel: "outpatient",
+        actualLevel: "outpatient",
+        diagnosisCodes: ["F12.20"],
+      },
+      VARGAS,
+    );
+    AdelanteEHR.signAsam(
+      jasmineId,
+      draft.id,
+      VARGAS,
+      buildAttestationRecord({ statement: attestationStatement("asam_sign"), draft: seedAttDraft, signedBy: VARGAS.name }),
+    );
+  }
+  // Daniel (p1) — an existing CalOMS SUD record on file: reassessment due.
+  AdelanteEHR.requestAsamAssessment(
+    "p1",
+    "Existing CalOMS substance-use record on file — ASAM reassessment due (draft interval)",
+  );
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] QA scenarios", e);
 }
