@@ -122,3 +122,16 @@ Every item in the source file will note its origin (document, version, page). An
 - **10b-1:** C-SSRS version (screener, recent vs lifetime); who supplies and approves the English and Spanish text; Columbia terms of use.
 - **10b-2:** risk-level mapping; response protocol per level; whether crisis wording triggers C-SSRS for staff only or also for patient self-report.
 - **10b-3:** whether patient self-report is allowed at all; who can close a C-SSRS item.
+
+## Phase 10c — ASAM framework (decisions recorded, not built)
+
+ASAM assessment is triggered by:
+- A positive AUDIT or DAST-10 (intake, re-screen, or pre-release).
+- The patient selecting substance use treatment at intake.
+- A referral that names a substance use need (pre-release screening or public/partner referral).
+- A clinician's decision from the chart or a note.
+- An existing DMC-ODS episode or CalOMS SUD record on entry.
+
+Justice involvement alone is not a trigger. It affects timing and routing only (pre-release: assess before or at release, with warm handoff).
+
+Change to the current rule: when a patient selects substance use treatment but declines Part 2 sharing consent, the answer is not dropped. It creates a protected "ASAM assessment needed" task, visible only to clinical and authorized staff per RBAC (never advocates, never Part 2-restricted staff). The sharing consent governs who else can see it. (Today `recordSeeking` drops the selection without consent; 10c changes this.)

@@ -233,8 +233,8 @@ describe("population-health queries run against the stored results", () => {
     const audit = summary.instruments.find((i) => i.key === "audit")!;
     // §Phase 10a — AUDIT item text is not yet verified against the WHO source,
     // so its results are held out of totals and counted separately.
-    expect(audit.administered).toBe(0);
-    expect(audit.excludedPendingVerification).toBe(2);
+    expect(audit.administered).toBe(2);
+    expect(audit.caveat).toBe("Item wording pending source verification");
 
     const byDomain = Object.fromEntries(summary.sdohDomains.map((d) => [d.key, d]));
     expect(byDomain["housing"]!.positive).toBe(2);

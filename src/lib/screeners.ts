@@ -50,6 +50,8 @@ export interface ScreenerDef extends Partial<InstrumentProvenance> {
   atIntake?: boolean;
   /** §Phase 10a — retired, non-validated form. Kept only to label history. */
   retired?: boolean;
+  /** Zero-based item indexes scored in reverse (yes/no: "No" scores 1). */
+  reverseItems?: number[];
 }
 
 /** The option list to render/score for a given item of any instrument. */
@@ -226,17 +228,18 @@ export const SCREENERS: ScreenerDef[] = [
     positiveCutoff: 3,
     source: "DAST-10, Skinner H.A. (1982); 10-item version as distributed by NIDA.",
     version: "DAST-10",
-    scoringVersion: "sum-v1",
-    // Item wording here is an abbreviated paraphrase; the published items are
-    // full questions ("Have you used drugs other than those required for
-    // medical reasons?") and item 3 ("Are you always able to stop using
-    // drugs when you want to?") is reverse-scored. NOT verified — flagged.
+    // Item wording here is an abbreviated paraphrase of the published
+    // questions, NOT verified against the source — flagged. Item order follows
+    // the standard DAST-10; item 3 ("always able to stop") is reverse-scored:
+    // a "No" answer scores 1.
     textVerified: false,
+    scoringVersion: "sum-v2-item3-reversed",
+    reverseItems: [2],
     questions: [
       "Used drugs other than those required for medical reasons",
-      "Abused prescription drugs",
       "Used more than one drug at a time",
-      "Tried to stop using drugs but couldn't",
+      "Always able to stop using drugs when you want to",
+      "Had blackouts or flashbacks as a result of drug use",
       "Felt bad or guilty about your drug use",
       "Family/partner complained about your drug use",
       "Neglected your family because of your drug use",
@@ -699,7 +702,8 @@ export function scoreScreener(
         ? 0
         : answers.reduce((a, b, i) => (i === def.gate!.itemIndex ? a : a + (Number(b) || 0)), 0);
   } else {
-    score = answers.reduce((a, b) => a + (Number(b) || 0), 0);
+    const rev = new Set(def.reverseItems ?? []);
+    score = answers.reduce((a, b, i) => a + (rev.has(i) ? 1 - (Number(b) || 0) : Number(b) || 0), 0);
   }
   const out: { score: number; severity: string; positive?: boolean } = {
     score,

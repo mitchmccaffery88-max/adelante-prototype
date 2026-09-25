@@ -28,11 +28,14 @@ describe("EngagementSection", () => {
     completeLibraryItem(b!.id, LIBRARY_ITEMS[1]!.id);
     startCravingLog(a!.id, 6);
 
-    render(<EngagementSection projection={engagementProjection()} />);
+    const proj = engagementProjection();
+    render(<EngagementSection projection={proj} />);
     expect(screen.queryByText(/no patient has completed or started/)).toBeNull();
     expect(screen.getByText("Patients ever engaged")).toBeTruthy();
-    // Self-tracking aggregate is present and flagged as small-cohort.
+    // Self-tracking aggregate is present; the small-cohort flag tracks cohort
+    // size (Part B QA seeds grew the demo cohort, so check both directions).
     expect(screen.getByText("Craving logs")).toBeTruthy();
-    expect(screen.getByText(/below the .* minimum for safe small-cell reporting/)).toBeTruthy();
+    const small = proj.selfTracking.cohortSize < proj.selfTracking.minimumCohortSize;
+    expect(Boolean(screen.queryByText(/below the .* minimum for safe small-cell reporting/))).toBe(small);
   });
 });
