@@ -8640,7 +8640,7 @@ export const AdelanteEHR = {
   saveAsamDraft(
     patientId: string,
     input: Partial<Pick<AsamAssessment, "dimensions" | "recommendedLevel" | "actualLevel" | "levelDifferenceReason" | "diagnosisCodes">>,
-    actor: { staffId: string; name: string; role: StaffRole },
+    actor: { staffId: string; name: string; role: StaffRole; clinicianId?: string },
   ): AsamAssessment {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found.");
@@ -8682,7 +8682,7 @@ export const AdelanteEHR = {
   signAsam(
     patientId: string,
     asamId: string,
-    actor: { staffId: string; name: string; role: StaffRole },
+    actor: { staffId: string; name: string; role: StaffRole; clinicianId?: string },
     attestation: AttestationRecord,
   ): AsamAssessment {
     const p = patients.find((x) => x.id === patientId);
@@ -8737,7 +8737,7 @@ export const AdelanteEHR = {
   cosignAsam(
     patientId: string,
     asamId: string,
-    actor: { staffId: string; name: string; role: StaffRole },
+    actor: { staffId: string; name: string; role: StaffRole; clinicianId?: string },
     attestation: AttestationRecord,
   ): AsamAssessment {
     const p = patients.find((x) => x.id === patientId);
@@ -8772,7 +8772,7 @@ export const AdelanteEHR = {
   declineAsamCosign(
     patientId: string,
     asamId: string,
-    actor: { staffId: string; name: string; role: StaffRole },
+    actor: { staffId: string; name: string; role: StaffRole; clinicianId?: string },
     reason: string,
   ): void {
     const p = patients.find((x) => x.id === patientId);
