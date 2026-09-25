@@ -31,6 +31,8 @@ import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { AdvocateContextSwitch } from "@/components/ContextSwitcher";
 import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
+import { OnboardingGuard } from "@/components/OnboardingGuard";
+import { needsFirstIntake, isOnboardingComplete } from "@/lib/onboarding";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
 import {
   DropdownMenu,
@@ -107,6 +109,11 @@ export function AppShell() {
   const isAdvocateSurface = !isPatientSurface && isAdvocateRoute(pathname);
   // The intake route renders its own crisis card; avoid a second 988 banner.
   const showCrisisBanner = pathname !== "/intake" && !isPatientSurface;
+  // §Onboarding rework — before the first intake is submitted the patient
+  // shell is slim: no sidebar, tab bar, staff menu or notifications. Only the
+  // language toggle, the account menu and the 988 path remain.
+  const onboarding = isPatientSurface && needsFirstIntake(patient);
+  const showCraving = isPatientSurface && isOnboardingComplete(patient);
 
   // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
   // it can never drift from the mobile tab bar again.
@@ -136,6 +143,7 @@ export function AppShell() {
   return (
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
       {!isPublicSurface && <RouteAccessGuard />}
+      {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — fixed to the viewport so it is reachable at
           any height, not buried in the footer. */}
       {!isPublicSurface && <DemoStateSwitcher />}
@@ -247,13 +255,13 @@ export function AppShell() {
               </button>
             </div>
 
-            {isPatientSurface && <PatientHelpLink className="hidden sm:inline-flex" />}
+            {isPatientSurface && !onboarding && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* §Notification feed — operational alerts for the acting staff identity. */}
-            {!isPublicSurface && <NotificationBell />}
+            {!isPublicSurface && !onboarding && <NotificationBell />}
 
             {/* Staff portal */}
-            {!isPublicSurface && <DropdownMenu>
+            {!isPublicSurface && !onboarding && <DropdownMenu>
               <DropdownMenuTrigger className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary">
                 <UserCog className="h-3.5 w-3.5 text-teal" />
                 {t("navStaff")}
@@ -402,10 +410,10 @@ export function AppShell() {
         )}
       </header>
 
-      <main className={cn("flex-1", isPatientSurface && "pb-24 md:pb-0")}>
+      <main className={cn("flex-1", isPatientSurface && !onboarding && "pb-24 md:pb-0")}>
         {isPatientSurface ? (
           <div className="flex min-h-full">
-            <PatientSidebar />
+            {!onboarding && <PatientSidebar />}
             <div className="min-w-0 flex-1">
               {/* §Advocate Build 2 item 3 — persistent, visible switch to the
                   advocate shell whenever an advocate session also exists. */}
@@ -484,8 +492,8 @@ export function AppShell() {
         </div>
       </footer>
 
-      {isPatientSurface && <MobileNav />}
-      {isPatientSurface && <CravingFab />}
+      {isPatientSurface && !onboarding && <MobileNav />}
+      {showCraving && <CravingFab />}
     </div>
   );
 }

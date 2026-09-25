@@ -11,7 +11,7 @@ describe("public referral shell", () => {
   it("does not mount staff-only controls on public pages", () => {
     expect(appShell).toContain("{!isPublicSurface && <RouteAccessGuard />}");
     expect(appShell).toContain("{!isPublicSurface && <DemoStateSwitcher />}");
-    expect(appShell).toContain("{!isPublicSurface && <NotificationBell />}");
-    expect(appShell).toContain("{!isPublicSurface && <DropdownMenu>");
+    expect(appShell).toContain("{!isPublicSurface && !onboarding && <NotificationBell />}");
+    expect(appShell).toContain("{!isPublicSurface && !onboarding && <DropdownMenu>");
   });
 });

@@ -168,6 +168,7 @@ export function PatientHome() {
       />
 
       <ReassessmentOrCompleteTile patientId={patient.id} />
+      <NextStepsCard patientId={patient.id} />
       <PreReleaseKnownNeedsCard patientId={patient.id} />
 
       <Card className="p-5" data-testid="episode-progress-card">
@@ -208,7 +209,6 @@ export function PatientHome() {
         <p className="text-xs text-muted-foreground mt-1">{t("homeGoalsHelp")}</p>
         <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
-          <NextStepsCard patientId={patient.id} />
           <SupportPlanCard patientId={patient.id} />
           {/* §5d-4 — a COUNT and a link, not a second list. The full
               need-by-need thread lives on /next-steps. */}
@@ -558,7 +558,15 @@ function NextStepsCard({ patientId }: { patientId: string }) {
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
         <HeartPulse className="h-4 w-4" /> Next steps
       </div>
-      <p className="mt-1 text-sm text-muted-foreground">
+      {/* §Onboarding rework — simple summary of the needs identified. */}
+      <ul className="mt-2 flex flex-wrap gap-2" data-testid="needs-summary">
+        {open.map((i) => (
+          <li key={i.id}>
+            <Badge variant="outline" className="text-xs">{i.need}</Badge>
+          </li>
+        ))}
+      </ul>
+      <p className="mt-2 text-sm text-muted-foreground">
         Local places that match the everyday needs you shared. Looking is not the same as being
         referred — your team makes that connection.
       </p>

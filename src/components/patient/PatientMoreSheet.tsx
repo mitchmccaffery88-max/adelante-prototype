@@ -20,6 +20,8 @@ export function PatientMoreSheet({
   const { t } = useI18n();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(currentId);
+  // §Onboarding rework — after the first intake, "Intake" reads "Re-assess".
+  const intakeDone = useEhr(() => Boolean(AdelanteEHR.getPatient(currentId)?.intakeCompletedAt));
   const entries = patientNavForPopulation(PATIENT_MORE_NAV, population.track);
 
   return (
@@ -55,7 +57,7 @@ export function PatientMoreSheet({
                 className="flex min-h-12 items-center gap-3 rounded-2xl px-3 py-3 text-base font-medium text-foreground/85 hover:bg-secondary"
               >
                 <Icon className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-                {t(n.labelKey as Parameters<typeof t>[0])}
+                {t((n.id === "intake" && intakeDone ? "navReassess" : n.labelKey) as Parameters<typeof t>[0])}
               </Link>
             );
           })}

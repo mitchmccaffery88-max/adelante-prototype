@@ -1,7 +1,9 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useEffect, useMemo, useState } from "react";
 import { Card } from "@/components/ui/card";
-import { AssistedSignupCrisisButton } from "@/components/clinical/AssistedSignupCrisisButton";
+import { Slim988Bar } from "@/components/patient/Slim988Bar";
+import { INTAKE_WELCOME_COPY, REASSESS_START_COPY } from "@/lib/intakeWelcomeCopy";
+import { rescreenName } from "@/lib/reassessmentCopy";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -107,6 +109,8 @@ import {
   Plus,
   Trash2,
   Languages,
+  Clock,
+  ClipboardList,
 } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
@@ -180,8 +184,6 @@ function CoverageCallout({
   );
 }
 
-type Mode = "self" | "assisted";
-
 function IntakePage() {
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -190,7 +192,14 @@ function IntakePage() {
   const { lang: lang9a } = useI18n();
   const c9a = PHASE9A_COPY[lang9a === "es" ? "es" : "en"];
   const alreadyComplete = Boolean(patient?.intakeCompletedAt);
-  const [mode, setMode] = useState<Mode>("self");
+  // §Onboarding rework — re-assess entry for people who already finished
+  // intake: one "anything changed?" question, then what's due.
+  const [reassess, setReassess] = useState<"ask" | "about" | "due" | "full">("ask");
+  const inReassess = alreadyComplete && reassess !== "full";
+  const W = INTAKE_WELCOME_COPY[lang9a === "es" ? "es" : "en"];
+  const R = REASSESS_START_COPY[lang9a === "es" ? "es" : "en"];
+  const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(currentId)));
+  const due = JSON.parse(dueJson) as { key: string }[];
   const [step, setStep] = useState(0);
   // §Adel-guided intake (prototype) — opt-in; the form stays the default.
   const [adelMode, setAdelMode] = useState(false);
@@ -473,18 +482,13 @@ function IntakePage() {
         ecmEligible: coverage.ecmEligible,
         otherPlanName: coverage.otherPlanName,
       }),
-      mode === "assisted" && acting.staffId
-        ? { id: acting.staffId, role: acting.role, source: "intake_staff_assisted" }
-        : { id: currentId, role: "patient", source: "intake_self_service" },
+      { id: currentId, role: "patient", source: "intake_self_service" },
     );
     // §Phase 8b — the shared benefits write path (CIN, plan span, reported
     // record, billing prompt). Attributed to who actually entered it.
     const benefitAnswers = benefitsAnswers(benefits, selectedPlanSnapshot(benefits.planId));
     if (benefitAnswers) {
-      const assisted = mode === "assisted" && acting.staffId;
-      recordIntakeBenefits(currentId, benefitAnswers, assisted
-        ? { source: "staff_recorded_patient_report", via: "staff_assisted_intake", actorId: acting.staffId, actorName: acting.staffName || acting.staffId, actorRole: acting.role }
-        : { source: "patient_reported", via: "self_service_intake", actorId: currentId, actorName: patient ? `${patient.firstName} ${patient.lastName}` : "Patient", actorRole: "patient" });
+      recordIntakeBenefits(currentId, benefitAnswers, { source: "patient_reported", via: "self_service_intake", actorId: currentId, actorName: patient ? `${patient.firstName} ${patient.lastName}` : "Patient", actorRole: "patient" });
     }
     // §Front-door Phase 2 — no match on the safety-net lookup means a genuine
     // missed hand-off: generate the CF Care Manager's own pre-release task
@@ -597,168 +601,11 @@ function IntakePage() {
     } catch {
       /* no-op */
     }
-    navigate({ to: "/next-steps" });
+    // §Onboarding rework — land on My Care; Next Steps stays reachable there.
+    navigate({ to: "/home" });
   };
 
-  return (
-    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      {crisisFlagged && (
-        <Card className="mb-4 p-4 border-2 border-destructive/40 bg-destructive/5">
-          <div className="flex items-start gap-3">
-            <Heart className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
-            <div className="text-sm">
-              <div className="font-semibold text-destructive">
-                It sounds like things are really hard right now.
-              </div>
-              <p className="text-foreground/80 mt-1">
-                You're not alone — and help is here. Please call or text{" "}
-                <a href="tel:988" className="underline font-semibold">
-                  988
-                </a>{" "}
-                anytime to talk to someone. Your care team has also been notified.
-              </p>
-              <Button
-                asChild
-                className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90"
-              >
-                <a href="tel:988">
-                  <Phone className="h-4 w-4 mr-1.5" /> Talk to someone now
-                </a>
-              </Button>
-            </div>
-          </div>
-        </Card>
-      )}
-      {alreadyComplete && (
-        <Card className="mb-4 p-4 bg-teal/10 border-teal/30 flex items-start gap-3">
-          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">You've already completed intake.</div>
-            <div className="text-muted-foreground">
-              You can update your answers below — your care team will be notified of any changes.
-            </div>
-          </div>
-        </Card>
-      )}
-      {consentOnFile && (
-        <Card className="mb-4 p-4 bg-secondary/50 flex items-start gap-3">
-          <ShieldCheck className="h-5 w-5 text-teal mt-0.5" />
-          <div className="text-sm">
-            <div className="font-medium text-navy">
-              Your consent is already on file — we won't ask again.
-            </div>
-            <div className="text-muted-foreground">
-              HIPAA acknowledged, and substance-use sharing is currently{" "}
-              <strong className="text-foreground">
-                {consentOnFile.part2Sud ? "allowed" : "not allowed"}
-              </strong>
-              . Nothing you do here changes that.{" "}
-              <Link to="/consent" className="underline text-teal">
-                Review or change your consent
-              </Link>
-              .
-            </div>
-          </div>
-        </Card>
-      )}
-      <header className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-4 bg-background/95 backdrop-blur border-b">
-        <div className="flex items-center justify-between gap-3 mb-3">
-          <div>
-            <div className="text-xs font-medium uppercase tracking-wider text-teal">
-              Intake & Screening
-            </div>
-            <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">{current.label}</h1>
-          </div>
-          <div className="flex rounded-full bg-secondary p-0.5 text-xs">
-            <button
-              onClick={() => setMode("self")}
-              className={`px-3 py-1.5 rounded-full ${mode === "self" ? "bg-navy text-navy-foreground" : "text-foreground/60"}`}
-            >
-              Self
-            </button>
-            <button
-              onClick={() => setMode("assisted")}
-              className={`px-3 py-1.5 rounded-full inline-flex items-center gap-1 ${mode === "assisted" ? "bg-navy text-navy-foreground" : "text-foreground/60"}`}
-            >
-              <Phone className="h-3 w-3" /> Phone-assisted
-            </button>
-          </div>
-        </div>
-        {/* §Crisis-flag stopgap — always visible in the sticky intake header,
-            at every step, so a helper never has to navigate away. Renders only
-            for staff roles allowed to flag. */}
-        <div className="flex justify-end mb-2">
-          <AssistedSignupCrisisButton patientId={currentId} />
-        </div>
-        <Progress value={pct} className="h-2" />
-        <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
-          <span>
-            Step {step + 1} of {total}
-          </span>
-          {savedAt && (
-            <span className="inline-flex items-center gap-1 text-teal">
-              <Save className="h-3 w-3" /> Saved
-            </span>
-          )}
-        </div>
-      </header>
-
-      <Card className="p-6">
-        {current.key === "welcome" && adelMode && (
-          <AdelGuidedIntake
-            patientId={currentId}
-            profile={profile}
-            benefits={benefits}
-            onProfile={setProfile}
-            onBenefits={onBenefitsChange}
-            consentOnFile={Boolean(consentOnFile)}
-            onExit={() => setAdelMode(false)}
-            onHandoff={() => {
-              setAdelMode(false);
-              const target = steps.findIndex((s) => s.key === (consentOnFile ? "coverage" : "consent"));
-              if (target >= 0) setStep(target);
-            }}
-          />
-        )}
-        {current.key === "welcome" && !adelMode && (
-          <div className="space-y-4">
-            <p className="text-foreground">
-              Welcome. This intake takes about 10–15 minutes. There are no right or wrong answers —
-              your honest responses help us plan care that fits your life right now.
-            </p>
-            <ul className="space-y-2 text-sm text-muted-foreground">
-              <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> You can pause and come back
-                anytime.
-              </li>
-              <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" />
-                <AskAdelHelp className="text-sm text-foreground" />
-              </li>
-              <li className="flex gap-2">
-                <CheckCircle2 className="h-4 w-4 text-teal mt-0.5" /> Your information is private
-                and protected by federal law.
-              </li>
-            </ul>
-            {mode === "self" && (
-              <div className="rounded-lg border border-dashed p-3 space-y-2">
-                <Button
-                  variant="outline"
-                  className="min-h-11 w-full sm:w-auto"
-                  onClick={() => setAdelMode(true)}
-                  data-testid="intake-start-with-adel"
-                >
-                  {lang9a === "es" ? "Hacerlo con Adel" : "Go through this with Adel"}
-                </Button>
-                <p className="text-xs text-muted-foreground">
-                  {ADEL_COPY[lang9a === "es" ? "es" : "en"].banner}
-                </p>
-              </div>
-            )}
-          </div>
-        )}
-
-        {current.key === "about" && (
+  const aboutSection = (
           <div className="space-y-5">
             <p className="text-sm text-muted-foreground">
               A few quick details so we can reach you the right way. You can skip anything you're
@@ -1001,7 +848,254 @@ function IntakePage() {
               </Button>
             </div>
           </div>
+          );
+
+  return (
+    <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
+      {crisisFlagged && (
+        <Card className="mb-4 p-4 border-2 border-destructive/40 bg-destructive/5">
+          <div className="flex items-start gap-3">
+            <Heart className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
+            <div className="text-sm">
+              <div className="font-semibold text-destructive">
+                It sounds like things are really hard right now.
+              </div>
+              <p className="text-foreground/80 mt-1">
+                You're not alone — and help is here. Please call or text{" "}
+                <a href="tel:988" className="underline font-semibold">
+                  988
+                </a>{" "}
+                anytime to talk to someone. Your care team has also been notified.
+              </p>
+              <Button
+                asChild
+                className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90"
+              >
+                <a href="tel:988">
+                  <Phone className="h-4 w-4 mr-1.5" /> Talk to someone now
+                </a>
+              </Button>
+            </div>
+          </div>
+        </Card>
+      )}
+      {alreadyComplete && reassess === "full" && (
+        <Card className="mb-4 p-4 bg-teal/10 border-teal/30 flex items-start gap-3">
+          <CheckCircle2 className="h-5 w-5 text-teal mt-0.5" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">You've already completed intake.</div>
+            <div className="text-muted-foreground">
+              You can update your answers below — your care team will be notified of any changes.
+            </div>
+          </div>
+        </Card>
+      )}
+      {consentOnFile && (
+        <Card className="mb-4 p-4 bg-secondary/50 flex items-start gap-3">
+          <ShieldCheck className="h-5 w-5 text-teal mt-0.5" />
+          <div className="text-sm">
+            <div className="font-medium text-navy">
+              Your consent is already on file — we won't ask again.
+            </div>
+            <div className="text-muted-foreground">
+              HIPAA acknowledged, and substance-use sharing is currently{" "}
+              <strong className="text-foreground">
+                {consentOnFile.part2Sud ? "allowed" : "not allowed"}
+              </strong>
+              . Nothing you do here changes that.{" "}
+              <Link to="/consent" className="underline text-teal">
+                Review or change your consent
+              </Link>
+              .
+            </div>
+          </div>
+        </Card>
+      )}
+      <header className="sticky top-0 z-20 -mx-4 sm:-mx-6 px-4 sm:px-6 py-3 mb-4 bg-background/95 backdrop-blur border-b">
+        <div className="flex items-center justify-between gap-3 mb-3">
+          <div>
+            <div className="text-xs font-medium uppercase tracking-wider text-teal">
+              {alreadyComplete ? R.eyebrow : "Intake & Screening"}
+            </div>
+            <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">
+              {inReassess ? R.title : current.label}
+            </h1>
+          </div>
+          {!inReassess && (
+          <div className="flex rounded-full bg-secondary p-0.5 text-xs" role="group" aria-label={W.toggleLabel}>
+            <button
+              onClick={() => setAdelMode(false)}
+              aria-pressed={!adelMode}
+              data-testid="intake-mode-self"
+              className={`min-h-9 px-3 py-1.5 rounded-full ${!adelMode ? "bg-navy text-navy-foreground" : "text-foreground/60"}`}
+            >
+              {W.toggleSelf}
+            </button>
+            <button
+              onClick={() => {
+                setStep(0);
+                setAdelMode(true);
+              }}
+              aria-pressed={adelMode}
+              data-testid="intake-mode-adel"
+              className={`min-h-9 px-3 py-1.5 rounded-full inline-flex items-center gap-1 ${adelMode ? "bg-navy text-navy-foreground" : "text-foreground/60"}`}
+            >
+              <Sparkles className="h-3 w-3" /> {W.toggleAdel}
+            </button>
+          </div>
+          )}
+        </div>
+        {/* §Onboarding rework — one-tap 988 on every step (replaces the
+            staff-only "Flag crisis now" button). */}
+        <Slim988Bar className="mb-3" />
+        {!inReassess && (<>
+        <Progress value={pct} className="h-2" />
+        <div className="mt-1.5 text-xs text-muted-foreground flex items-center justify-between">
+          <span>
+            Step {step + 1} of {total}
+          </span>
+          {savedAt && (
+            <span className="inline-flex items-center gap-1 text-teal">
+              <Save className="h-3 w-3" /> Saved
+            </span>
+          )}
+        </div>
+        </>)}
+      </header>
+
+      {inReassess && (
+        <Card className="p-6 space-y-5" data-testid="reassess-flow">
+          {reassess === "ask" && (
+            <div className="space-y-4" data-testid="reassess-ask">
+              <p className="text-lg text-foreground">{R.question}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button className="min-h-11" data-testid="reassess-changed-yes" onClick={() => setReassess("about")}>
+                  {R.yes}
+                </Button>
+                <Button variant="outline" className="min-h-11" data-testid="reassess-changed-no" onClick={() => setReassess("due")}>
+                  {R.no}
+                </Button>
+              </div>
+            </div>
+          )}
+          {reassess === "about" && (
+            <div className="space-y-5">
+              {aboutSection}
+              <div className="flex justify-between gap-3">
+                <Button variant="outline" className="min-h-11" onClick={() => setReassess("ask")}>
+                  Back
+                </Button>
+                <Button
+                  className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
+                  data-testid="reassess-save-about"
+                  onClick={() => {
+                    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
+                    toast.success(R.saved);
+                    setReassess("due");
+                  }}
+                >
+                  {R.saveContinue}
+                </Button>
+              </div>
+            </div>
+          )}
+          {reassess === "due" && (
+            <div className="space-y-4" data-testid="reassess-due">
+              {due.length > 0 ? (
+                <>
+                  <p className="text-foreground">{R.dueLede}</p>
+                  <ul className="space-y-2">
+                    {due.map((d) => (
+                      <li key={d.key} className="flex items-center gap-2 rounded-md border bg-card p-3 text-sm">
+                        <span className="flex-1">{rescreenName(d.key, lang9a === "es" ? "es" : "en")}</span>
+                        <Button asChild size="sm">
+                          <Link to="/rescreen/$key" params={{ key: d.key }} data-testid={`reassess-due-start-${d.key}`}>
+                            {R.start}
+                          </Link>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-foreground" data-testid="reassess-nothing-due">{R.nothingDue}</p>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link to="/home">{R.backHome}</Link>
+                </Button>
+                <Button variant="ghost" className="min-h-11" data-testid="reassess-full" onClick={() => { setStep(0); setReassess("full"); }}>
+                  {R.full}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+      {!inReassess && (<>
+      <Card className="p-6">
+        {current.key === "welcome" && adelMode && (
+          <AdelGuidedIntake
+            patientId={currentId}
+            profile={profile}
+            benefits={benefits}
+            onProfile={setProfile}
+            onBenefits={onBenefitsChange}
+            consentOnFile={Boolean(consentOnFile)}
+            onExit={() => setAdelMode(false)}
+            onHandoff={() => {
+              setAdelMode(false);
+              const target = steps.findIndex((s) => s.key === (consentOnFile ? "coverage" : "consent"));
+              if (target >= 0) setStep(target);
+            }}
+          />
         )}
+        {current.key === "welcome" && !adelMode && (
+          <div className="space-y-5" data-testid="intake-welcome">
+            <p className="text-lg text-foreground">{W.lede}</p>
+            <ul className="space-y-3 text-base">
+              <li className="flex gap-3">
+                <Clock className="h-5 w-5 text-teal mt-0.5 shrink-0" aria-hidden="true" />
+                <span>{W.time}</span>
+              </li>
+              <li className="flex gap-3">
+                <Lock className="h-5 w-5 text-teal mt-0.5 shrink-0" aria-hidden="true" />
+                <span>{W.privacy}</span>
+              </li>
+            </ul>
+            <div>
+              <h2 className="font-medium text-navy">{W.choiceTitle}</h2>
+              <div className="mt-3 grid gap-3 sm:grid-cols-2">
+                <button
+                  type="button"
+                  onClick={next}
+                  data-testid="intake-start-self"
+                  className="rounded-xl border-2 bg-card p-4 text-left transition-colors hover:border-teal focus-visible:border-teal"
+                >
+                  <ClipboardList className="h-5 w-5 text-teal" aria-hidden="true" />
+                  <div className="mt-2 font-semibold text-navy">{W.selfTitle}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">{W.selfBody}</p>
+                </button>
+                <button
+                  type="button"
+                  onClick={() => setAdelMode(true)}
+                  data-testid="intake-start-with-adel"
+                  className="rounded-xl border-2 bg-card p-4 text-left transition-colors hover:border-teal focus-visible:border-teal"
+                >
+                  <Sparkles className="h-5 w-5 text-teal" aria-hidden="true" />
+                  <div className="mt-2 font-semibold text-navy">{W.adelTitle}</div>
+                  <p className="mt-1 text-sm text-muted-foreground">{W.adelBody}</p>
+                  <p className="mt-2 text-xs text-muted-foreground">
+                    {ADEL_COPY[lang9a === "es" ? "es" : "en"].banner}
+                  </p>
+                </button>
+              </div>
+            </div>
+            <AskAdelHelp className="text-sm text-foreground" />
+          </div>
+        )}
+
+        {current.key === "about" && aboutSection}
 
         {current.key === "coverage" && (
           <div className="space-y-5">
@@ -1024,23 +1118,7 @@ function IntakePage() {
               />
             </div>
 
-            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} audience={mode === "assisted" ? "staff_assisted" : "self"} />
-
-            {ecmQuestionApplies(coverage.coverageType) && (
-              <label
-                className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3"
-                data-testid="ecm-followup"
-              >
-                <Checkbox
-                  checked={coverage.ecmEligible}
-                  onCheckedChange={(v) => setCoverage({ ...coverage, ecmEligible: Boolean(v) })}
-                />
-                <span>
-                  Do you have ongoing health, housing, or other complex needs? (This may qualify you
-                  for Enhanced Care Management — extra coordination at no cost.)
-                </span>
-              </label>
-            )}
+            <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} audience="self" />
 
             {justiceKnown ? (
               <div
@@ -1133,18 +1211,6 @@ function IntakePage() {
               county={coverage.countyOfRelease}
             />
 
-            {coverage.justiceInvolvement !== "no" && (
-              <label className="flex items-start gap-2 text-sm cursor-pointer rounded-md border bg-secondary/40 p-3">
-                <Checkbox
-                  checked={coverage.jiReentryFlag}
-                  onCheckedChange={(v) => setCoverage({ ...coverage, jiReentryFlag: Boolean(v) })}
-                />
-                <span>
-                  I'm coming home within the next 90 days (Justice-Involved Reentry Initiative —
-                  unlocks pre-release coordination).
-                </span>
-              </label>
-            )}
           </div>
         )}
 
@@ -1611,7 +1677,7 @@ function IntakePage() {
           under it on phones, so "Save & continue" couldn't be tapped. */}
       {!adelMode && (<>
       <div className="h-60 md:hidden" aria-hidden />
-      <div className="fixed md:sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0">
+      <div className={`fixed md:sticky ${alreadyComplete ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))]" : "bottom-[env(safe-area-inset-bottom)]"} md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0`}>
         <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
           Back
         </Button>
@@ -1632,6 +1698,7 @@ function IntakePage() {
           </Button>
         )}
       </div>
+      </>)}
       </>)}
     </div>
   );
