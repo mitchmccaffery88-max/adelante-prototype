@@ -37,8 +37,43 @@ export function roleSeesAsam(role: StaffRole, patient?: Patient): boolean {
   return g.level !== "none" && !g.locked;
 }
 
+/**
+ * §10d-2 coordinator rule — DRAFT pending compliance review.
+ * The clinical coordinator fails the role-level Part 2 check, but may see
+ * ASAM/SUD TOTALS (counts, timeliness, level mix — no names, no drill-down).
+ * Patient-level rows appear for the coordinator only for patients whose
+ * structured Part 2 consent (`sud_treatment`) is on file, via the existing
+ * consent check. No other role is widened.
+ */
+export const ACCESS_RULE_DRAFT_NOTE = "Access rule: draft pending compliance review.";
+export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator"];
+
+export type AsamAccessMode = "full" | "totals";
+
+/** Role-level: "full" (rows + totals), "totals" (aggregate only), or null (hidden). */
+export function asamAccessMode(role: StaffRole): AsamAccessMode | null {
+  if (roleSeesAsam(role)) return "full";
+  if (TOTALS_ONLY_ROLES.includes(role)) return "totals";
+  return null;
+}
+
+/** May this role see a NAMED ASAM row for this patient? */
+export function roleSeesAsamRow(role: StaffRole, patient: Patient): boolean {
+  if (roleSeesAsam(role, patient)) return true;
+  return TOTALS_ONLY_ROLES.includes(role) && AdelanteEHR.isConsentCategoryAuthorized(patient.id, "sud_treatment");
+}
+
+/** Patients whose named rows the role may see. */
 function visiblePatients(role: StaffRole): Patient[] {
-  return AdelanteEHR.listPatients().filter((p) => roleSeesAsam(role, p));
+  return AdelanteEHR.listPatients().filter((p) => roleSeesAsamRow(role, p));
+}
+
+/** Patients counted in aggregates: totals-only roles count everyone (no names leave). */
+export function aggregatePatients(role: StaffRole): Patient[] {
+  const mode = asamAccessMode(role);
+  if (mode === "totals") return AdelanteEHR.listPatients();
+  if (mode === "full") return AdelanteEHR.listPatients().filter((p) => roleSeesAsam(role, p));
+  return [];
 }
 
 const TEAM_BY_ROLE: Partial<Record<StaffRole, string>> = {
@@ -88,8 +123,12 @@ const patientName = (p: Patient) => `${p.firstName} ${p.lastName}`.trim();
 
 /** Every open ASAM task (initial and reassessment) the role may see. `null` = hidden. */
 export function asamTaskRows(role: StaffRole, now: Date = new Date()): AsamTaskRow[] | null {
-  if (!roleSeesAsam(role)) return null;
-  const byId = new Map(visiblePatients(role).map((p) => [p.id, p]));
+  if (!asamAccessMode(role)) return null;
+  return taskRowsOver(visiblePatients(role), now);
+}
+
+function taskRowsOver(patients: Patient[], now: Date): AsamTaskRow[] {
+  const byId = new Map(patients.map((p) => [p.id, p]));
   return AdelanteEHR.listCaseTasks()
     .filter(isAsamTask)
     .filter((t) => byId.has(t.patientId))
@@ -142,9 +181,9 @@ export interface AsamCosignRow {
 }
 
 export function asamCosignRows(role: StaffRole, now: Date = new Date()): AsamCosignRow[] | null {
-  if (!roleSeesAsam(role)) return null;
+  if (!asamAccessMode(role)) return null;
   return AdelanteEHR.listAsamAwaitingCosign()
-    .filter(({ patient }) => roleSeesAsam(role, patient))
+    .filter(({ patient }) => roleSeesAsamRow(role, patient))
     .map(({ patient, asam }) => ({
       patientId: patient.id,
       patientName: patientName(patient),
@@ -169,7 +208,7 @@ export interface AsamLevelDifferenceRow {
 const finalAt = (a: AsamAssessment) => (a.status === "signed" ? a.cosignedAt ?? a.signedAt : undefined);
 
 export function asamLevelDifferences(role: StaffRole): AsamLevelDifferenceRow[] | null {
-  if (!roleSeesAsam(role)) return null;
+  if (!asamAccessMode(role)) return null;
   const out: AsamLevelDifferenceRow[] = [];
   for (const p of visiblePatients(role)) {
     for (const a of p.asamAssessments ?? []) {
@@ -203,7 +242,7 @@ export interface AsamLevelHistoryEntry {
 
 /** Signed versions for one patient, oldest first. `null` when the role can't see ASAM for them. */
 export function asamLevelHistory(role: StaffRole, patient: Patient): AsamLevelHistoryEntry[] | null {
-  if (!roleSeesAsam(role, patient)) return null;
+  if (!roleSeesAsamRow(role, patient)) return null;
   return (patient.asamAssessments ?? [])
     .filter((a) => finalAt(a))
     .map((a) => ({
@@ -245,12 +284,12 @@ function figure(values: number[], windowDays: number): TimelinessFigure {
 
 /** Trigger → first final-signed assessment; signed → first DMC-ODS treatment service (non-H0001 claim). */
 export function asamTimeliness(role: StaffRole): { triggerToAssessment: TimelinessFigure; assessmentToService: TimelinessFigure } | null {
-  if (!roleSeesAsam(role)) return null;
+  if (!asamAccessMode(role)) return null;
   const tasks = AdelanteEHR.listCaseTasks();
   const claims = AdelanteEHRExt.listClaims();
   const t2a: number[] = [];
   const a2s: number[] = [];
-  for (const p of visiblePatients(role)) {
+  for (const p of aggregatePatients(role)) {
     const signed = (p.asamAssessments ?? [])
       .filter((a) => a.version === 1 && finalAt(a))
       .sort((a, b) => finalAt(a)!.localeCompare(finalAt(b)!))[0];
@@ -278,8 +317,12 @@ export function asamTimeliness(role: StaffRole): { triggerToAssessment: Timeline
 }
 
 export interface AsamClinicalReport {
+  mode: AsamAccessMode;
   guard: CohortGuard;
+  /** Aggregate task rows — for COUNTING only; in totals mode names are blanked. */
   tasks: AsamTaskRow[];
+  cosignCount: number;
+  differenceCount: number;
   byClinician: AsamCountRow[];
   byTeam: AsamCountRow[];
   cosign: AsamCosignRow[];
@@ -290,14 +333,29 @@ export interface AsamClinicalReport {
 
 /** The whole "ASAM (clinical)" reporting section. `null` = hidden for this role. */
 export function asamClinicalReport(role: StaffRole, now: Date = new Date()): AsamClinicalReport | null {
-  const tasks = asamTaskRows(role, now);
-  if (!tasks) return null;
-  const withAsam = visiblePatients(role).filter(
-    (p) => (p.asamAssessments?.length ?? 0) > 0 || tasks.some((t) => t.patientId === p.id),
+  const mode = asamAccessMode(role);
+  if (!mode) return null;
+  const agg = aggregatePatients(role);
+  const named = new Set(visiblePatients(role).map((p) => p.id));
+  const tasks = taskRowsOver(agg, now).map((t) =>
+    named.has(t.patientId) ? t : { ...t, patientId: "", patientName: "", reason: "" },
+  );
+  const withAsam = agg.filter(
+    (p) => (p.asamAssessments?.length ?? 0) > 0 || AdelanteEHR.listCaseTasks().some((t) => isAsamTask(t) && t.patientId === p.id),
+  );
+  const aggIds = new Set(agg.map((p) => p.id));
+  const differenceCount = agg.reduce(
+    (n, p) =>
+      n +
+      (p.asamAssessments ?? []).filter((a) => finalAt(a) && a.recommendedLevel && a.recommendedLevel !== a.actualLevel).length,
+    0,
   );
   return {
+    mode,
     guard: cohortGuard(withAsam.length),
     tasks,
+    cosignCount: AdelanteEHR.listAsamAwaitingCosign().filter(({ patient }) => aggIds.has(patient.id)).length,
+    differenceCount,
     byClinician: countBy(tasks, (r) => [r.assigneeId, r.assigneeName]),
     byTeam: countBy(tasks, (r) => [r.team, r.team]),
     cosign: asamCosignRows(role, now) ?? [],
