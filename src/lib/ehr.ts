@@ -8693,6 +8693,8 @@ export const AdelanteEHR = {
       positive: number;
       positiveRate: number;
       restricted?: boolean;
+      /** Retired / unverified-text results left out of the totals above. */
+      excludedPendingVerification?: number;
     }[];
     sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
   } {
@@ -8706,9 +8708,13 @@ export const AdelanteEHR = {
       const readable = part2
         ? cohort.filter((p) => AdelanteEHR.screenerAccess(p.id, key, viewer).allowed)
         : cohort;
-      const results = readable
+      const all = readable
         .map((p) => p.screeners[key])
         .filter((r): r is ScreenerResult => Boolean(r));
+      // §Phase 10a — retired forms and results on unverified / placeholder
+      // item text are excluded from totals and counted separately.
+      const excluded = all.filter((r) => r.retiredForm || r.placeholderText || r.textVerified === false);
+      const results = all.filter((r) => !excluded.includes(r));
       const positive = results.filter(
         (r) =>
           r.positive ?? (def?.positiveCutoff !== undefined ? r.score >= def.positiveCutoff : false),
@@ -8720,6 +8726,7 @@ export const AdelanteEHR = {
         positive: number;
         positiveRate: number;
         restricted?: boolean;
+        excludedPendingVerification?: number;
       } = {
         key,
         name: def?.name ?? key,
@@ -8728,6 +8735,7 @@ export const AdelanteEHR = {
         positiveRate: results.length ? positive / results.length : 0,
       };
       if (part2 && readable.length < cohort.length) row.restricted = true;
+      if (excluded.length) row.excludedPendingVerification = excluded.length;
       return row;
     });
     // Domain prevalence across everyone with a domain instrument on file.
@@ -8735,6 +8743,7 @@ export const AdelanteEHR = {
     for (const p of cohort) {
       for (const r of Object.values(p.screeners ?? {})) {
         if (!r?.domains) continue;
+        if (r.retiredForm || r.placeholderText || r.textVerified === false) continue;
         if (opts.keys && !opts.keys.includes(r.key)) continue;
         for (const d of r.domains) {
           const row = tally.get(d.key) ?? { label: d.label, positive: 0, screened: 0 };
