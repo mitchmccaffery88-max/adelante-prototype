@@ -7,6 +7,7 @@
 import { useSyncExternalStore } from "react";
 import {
   AdelanteEHR,
+  registerAsamClaimCreator,
   GROUP_MIN_BILLABLE_ATTENDEES,
   groupBillingCode,
   isBillableGroupCategory,
@@ -1717,6 +1718,11 @@ export function claimBucketCounts(list: Claim[]): Record<BillingBucket, number> 
 // booking hard-stop field on startup, so the two dates agree from the first
 // render rather than only after someone uploads.
 ["c1", "c2", "c3"].forEach((id) => AdelanteEHRExt.syncLicenseExpiry(id));
+
+// §Phase 10c — register the H0001 claim creator with the EHR store, so a
+// signed ASAM fires its claim through this existing claim path without an
+// ehr → ehr-ext import cycle.
+registerAsamClaimCreator((input) => AdelanteEHRExt.createAsamClaim(input).id);
 
 // ---------- React hook ----------
 export function useEhrExt<T>(selector: () => T): T {
