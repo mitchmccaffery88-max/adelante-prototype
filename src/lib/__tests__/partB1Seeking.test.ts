@@ -1,6 +1,6 @@
 import { describe, expect, it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
-import { SCREENERS } from "@/lib/screeners";
+import { DOMAIN_SCREENERS, SCREENERS } from "@/lib/screeners";
 import { intakeScreeners, recoveryJourneyVisible, visibleSeekingSubstanceUse } from "@/lib/seeking";
 
 function fresh() {
@@ -13,8 +13,12 @@ function fresh() {
 
 describe("Part B1 — looking for", () => {
   it("screener offering is unchanged: depends only on Part 2 consent", () => {
-    const all = SCREENERS.map((s) => s.key);
-    const nonSud = SCREENERS.filter((s) => !s.isSud).map((s) => s.key);
+    // §Phase 10a — deliberate update: intake defaults (PC-PTSD-5 replaces the
+    // retired PCL-5 short; full PCL-5 is staff/triggered) plus AHC-HRSN.
+    const intakeDefaults = [...SCREENERS, ...DOMAIN_SCREENERS].filter((s) => s.atIntake !== false);
+    const all = intakeDefaults.map((s) => s.key);
+    const nonSud = intakeDefaults.filter((s) => !s.isSud).map((s) => s.key);
+    expect(all).toEqual(["phq-9", "gad-7", "audit", "dast-10", "pc-ptsd-5", "ahc-hrsn"]);
     expect(intakeScreeners(true).map((s) => s.key)).toEqual(all);
     expect(intakeScreeners(false).map((s) => s.key)).toEqual(nonSud);
     expect(intakeScreeners(null).map((s) => s.key)).toEqual(nonSud);

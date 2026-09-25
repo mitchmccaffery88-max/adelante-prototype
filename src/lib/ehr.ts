@@ -11091,11 +11091,15 @@ export const AdelanteEHR = {
       const last = sorted[sorted.length - 1];
       const sinceFirst = Math.floor((now - +new Date(first.completedAt)) / DAY);
       const sinceLast = Math.floor((now - +new Date(last.completedAt)) / DAY);
-      const done = new Set(history.map((h) => h.timepoint));
-      const pending = rule.timepoints.find((d) => !done.has(`day${d}`));
-      if (pending !== undefined) {
-        if (sinceFirst >= pending) out.push({ key: rule.key, lastDays: sinceLast, nextDue: pending });
-      } else if (rule.repeatEveryDays && sinceLast >= rule.repeatEveryDays) {
+      // The most recent fixed timepoint already reached. A patient who is
+      // behind is due ONCE (for the latest step), not for every missed step.
+      const reached = [...rule.timepoints].reverse().find((d) => sinceFirst >= d);
+      const lastFixed = rule.timepoints[rule.timepoints.length - 1];
+      if (reached !== undefined && (reached < lastFixed || sinceFirst < lastFixed + (rule.repeatEveryDays ?? Infinity))) {
+        const dueFrom = +new Date(first.completedAt) + reached * DAY;
+        const satisfied = sorted.some((h) => h !== first && +new Date(h.completedAt) >= dueFrom);
+        if (!satisfied) out.push({ key: rule.key, lastDays: sinceLast, nextDue: reached });
+      } else if (reached !== undefined && rule.repeatEveryDays && sinceLast >= rule.repeatEveryDays) {
         out.push({ key: rule.key, lastDays: sinceLast, nextDue: rule.repeatEveryDays });
       }
     }
