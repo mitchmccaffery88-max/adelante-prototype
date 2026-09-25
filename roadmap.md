@@ -3,6 +3,8 @@
 ## In progress
 
 ## Done
+- [x] Patient and advocate navigation correction: persistent desktop sidebars, phone left drawer, no user top-nav strips, and no staff-link leakage.
+- [x] Sticky demo controls with neutral unselected QA label and protected-control spacing.
 - [x] Pre-demo My Care consolidation: folded duplicate needs, appointment, weekly check, recommendations, and advocate status surfaces.
 - [x] Consent-gated advocate invitation delivery with pre-consent privacy test and row-level failure feedback.
 - [x] One positive-signal Recovery Journey rule across navigation, cards, recommendations, and direct route access.
