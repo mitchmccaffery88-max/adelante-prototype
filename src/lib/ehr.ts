@@ -23059,7 +23059,7 @@ try {
   // §Phase 10c demo seeds — ASAM, all through the real store API.
   const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
   const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
-  const VARGAS = { staffId: "s-sudc1", name: "Elena Vargas", role: "sud_counselor" as StaffRole };
+  const VARGAS = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as StaffRole };
   const seedDims = (text: string) =>
     ASAM_DIMENSIONS.map((d) => ({ key: d.key, documentation: text, rating: 1 as 0 | 1 | 2 | 3 | 4 }));
   // Luis C. (2c) — a COMPLETED, signed ASAM (LPHA author signs final).
