@@ -1,10 +1,9 @@
 // §Phase 10c — the ONE orchestration path for ASAM signatures. Mirrors
-// noteSignFlow: the store (`AdelanteEHR.signAsam` / `cosignAsam`) validates
-// and records; this module builds the attestation through the shared
-// primitive and attaches the H0001 claim through the existing claim path in
-// ehr-ext. UI calls these two functions and nothing else.
+// noteSignFlow: the store (`AdelanteEHR.signAsam` / `cosignAsam`) validates,
+// records, and fires outputs (including the H0001 claim, via the creator
+// ehr-ext registers with the store); this module only builds the attestation
+// through the shared primitive. UI calls these two functions and nothing else.
 import { AdelanteEHR } from "@/lib/ehr";
-import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import {
   attestationStatement,
   buildAttestationRecord,
@@ -17,7 +16,7 @@ export interface AsamActor {
   staffId: string;
   name: string;
   role: StaffRole;
-  /** Roster clinicianId (e.g. "c1") — needed for the claim's clinician field. */
+  /** Roster clinicianId (e.g. "c1") — used for the claim's clinician field. */
   clinicianId?: string;
 }
 
@@ -33,9 +32,7 @@ export function signAsamAssessment(
     draft,
     signedBy: actor.name,
   });
-  const signed = AdelanteEHR.signAsam(patientId, asamId, actor, attestation);
-  if (signed.status === "signed") attachAsamClaim(patientId, signed, actor);
-  return signed;
+  return AdelanteEHR.signAsam(patientId, asamId, actor, attestation);
 }
 
 /** LPHA co-signs a counselor/trainee-authored assessment → outputs fire. */
@@ -50,18 +47,5 @@ export function cosignAsamAssessment(
     draft,
     signedBy: actor.name,
   });
-  const signed = AdelanteEHR.cosignAsam(patientId, asamId, actor, attestation);
-  attachAsamClaim(patientId, signed, actor);
-  return signed;
-}
-
-function attachAsamClaim(patientId: string, asam: AsamAssessment, actor: AsamActor): void {
-  if (asam.outputs?.claimId) return;
-  const claim = AdelanteEHRExt.createAsamClaim({
-    asamId: asam.id,
-    patientId,
-    clinicianId: actor.clinicianId ?? actor.staffId,
-    serviceDate: (asam.cosignedAt ?? asam.signedAt ?? new Date().toISOString()).slice(0, 10),
-  });
-  AdelanteEHR.attachAsamClaim(patientId, asam.id, claim.id);
+  return AdelanteEHR.cosignAsam(patientId, asamId, actor, attestation);
 }
