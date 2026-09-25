@@ -67,8 +67,7 @@ import {
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
-import { ACCESS_RULE_DRAFT_NOTE,
-  TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
+import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
