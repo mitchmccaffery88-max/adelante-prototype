@@ -439,6 +439,11 @@ export const SHORT_FORM_SCREENERS: ShortFormScreenerDef[] = [
     description: "Depression quick check — past 2 weeks",
     fullFormKey: "phq-9",
     positiveCutoff: 3,
+    source: PHQ_SOURCE,
+    version: "PHQ-2 (PHQ-9 items 1–2)",
+    scoringVersion: "sum-v1",
+    textVerified: true,
+    verifiedOn: "2026-09-25",
     // Verbatim PHQ-2 items (= PHQ-9 items 1 and 2).
     questions: [
       "Little interest or pleasure in doing things",
@@ -456,6 +461,11 @@ export const SHORT_FORM_SCREENERS: ShortFormScreenerDef[] = [
     description: "Anxiety quick check — past 2 weeks",
     fullFormKey: "gad-7",
     positiveCutoff: 3,
+    source: GAD_SOURCE,
+    version: "GAD-2 (GAD-7 items 1–2)",
+    scoringVersion: "sum-v1",
+    textVerified: true,
+    verifiedOn: "2026-09-25",
     // Verbatim GAD-2 items (= GAD-7 items 1 and 2).
     questions: [
       "Feeling nervous, anxious or on edge",
@@ -538,6 +548,12 @@ export const AHC_HRSN: DomainScreenerDef = {
   description:
     "Health-related social needs — CMS Accountable Health Communities core screening tool (housing, food, transportation, utilities, safety).",
   isSdoh: true,
+  atIntake: true,
+  source: "CMS Accountable Health Communities HRSN Screening Tool (core questions).",
+  version: "AHC-HRSN core",
+  scoringVersion: "domain-count-v1",
+  // Believed verbatim; CMS PDF not re-checked in this environment. Flagged.
+  textVerified: false,
   questions: [
     "What is your living situation today?",
     "Think about the place you live. Do you have problems with any of the following? (bug infestation; mold; lead paint or pipes; inadequate heat; oven or stove not working; no or not working smoke detectors; water leaks)",
@@ -628,8 +644,15 @@ export function screenerByKey(key: string): ScreenerDef | undefined {
   return (
     SCREENERS.find((s) => s.key === key) ??
     SHORT_FORM_SCREENERS.find((s) => s.key === key) ??
-    DOMAIN_SCREENERS.find((s) => s.key === key)
+    DOMAIN_SCREENERS.find((s) => s.key === key) ??
+    RETIRED_SCREENERS.find((s) => s.key === key)
   );
+}
+
+/** §Phase 10a — an instrument that may be administered for NEW results. */
+export function activeScreenerByKey(key: string): ScreenerDef | undefined {
+  const d = screenerByKey(key);
+  return d && !d.retired ? d : undefined;
 }
 
 export interface ScreenerDomainResult {
@@ -662,7 +685,18 @@ export function scoreScreener(
     const score = domains.filter((d) => d.positive).length;
     return { score, severity: severityFor(def, score), positive: score >= 1, domains };
   }
-  const score = answers.reduce((a, b) => a + (Number(b) || 0), 0);
+  if (def.retired) throw new Error(`${def.name} is retired and cannot be scored for new results.`);
+  let score: number;
+  if (def.gate) {
+    // Gate item is never scored; a "stop" answer completes the form at 0.
+    const g = answers[def.gate.itemIndex];
+    score =
+      g === def.gate.stopWhenValue
+        ? 0
+        : answers.reduce((a, b, i) => (i === def.gate!.itemIndex ? a : a + (Number(b) || 0)), 0);
+  } else {
+    score = answers.reduce((a, b) => a + (Number(b) || 0), 0);
+  }
   const out: { score: number; severity: string; positive?: boolean } = {
     score,
     severity: severityFor(def, score),
