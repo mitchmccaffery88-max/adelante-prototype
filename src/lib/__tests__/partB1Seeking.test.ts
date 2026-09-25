@@ -78,7 +78,9 @@ describe("Part B1 — looking for", () => {
     expect(recoveryJourneyVisible({ needs, episodes: [{ id: "mh", type: "mental_health", state: "engaged", openedAt: "2026-01-01" }] })).toBe(false);
     expect(recoveryJourneyVisible({ needs: { ...needs, substanceUse: true } })).toBe(true);
     expect(recoveryJourneyVisible({ needs, episodes: [{ id: "sud", type: "sud_dmc_ods", state: "closed", openedAt: "2025-01-01", closedAt: "2025-02-01" }] })).toBe(true);
-    expect(recoveryJourneyVisible({ needs, calomsProfile: {} })).toBe(true);
+    expect(recoveryJourneyVisible({ needs, calomsProfile: { substanceUse: { entries: [], source: "self_report" } } as never })).toBe(true);
+    // Justice self-report alone lives on calomsProfile.justice — not a SUD signal.
+    expect(recoveryJourneyVisible({ needs, calomsProfile: { justice: {} } as never })).toBe(false);
     expect(recoveryJourneyVisible(AdelanteEHR.getPatient("p1"))).toBe(true);
     expect(recoveryJourneyVisible(AdelanteEHR.getPatient("p4"))).toBe(false);
   });

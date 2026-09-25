@@ -8693,8 +8693,10 @@ export const AdelanteEHR = {
       positive: number;
       positiveRate: number;
       restricted?: boolean;
-      /** Retired / unverified-text results left out of the totals above. */
+      /** Retired-form / placeholder-text results left out of the totals above. */
       excludedPendingVerification?: number;
+      /** Shown wherever the totals appear when counted results use unverified wording. */
+      caveat?: string;
     }[];
     sdohDomains: { key: string; label: string; positive: number; screened: number; rate: number }[];
   } {
@@ -8713,7 +8715,9 @@ export const AdelanteEHR = {
         .filter((r): r is ScreenerResult => Boolean(r));
       // §Phase 10a — retired forms and results on unverified / placeholder
       // item text are excluded from totals and counted separately.
-      const excluded = all.filter((r) => r.retiredForm || r.placeholderText || r.textVerified === false);
+      // Unverified-but-probably-correct wording (AUDIT, DAST-10) IS counted,
+      // with a caveat; only retired forms and placeholder text are held out.
+      const excluded = all.filter((r) => r.retiredForm || r.placeholderText);
       const results = all.filter((r) => !excluded.includes(r));
       const positive = results.filter(
         (r) =>
@@ -8727,6 +8731,7 @@ export const AdelanteEHR = {
         positiveRate: number;
         restricted?: boolean;
         excludedPendingVerification?: number;
+        caveat?: string;
       } = {
         key,
         name: def?.name ?? key,
@@ -8736,6 +8741,8 @@ export const AdelanteEHR = {
       };
       if (part2 && readable.length < cohort.length) row.restricted = true;
       if (excluded.length) row.excludedPendingVerification = excluded.length;
+      if (results.some((r) => r.textVerified === false))
+        row.caveat = SCREENER_WORDING_PENDING_CAVEAT;
       return row;
     });
     // Domain prevalence across everyone with a domain instrument on file.
@@ -8743,7 +8750,7 @@ export const AdelanteEHR = {
     for (const p of cohort) {
       for (const r of Object.values(p.screeners ?? {})) {
         if (!r?.domains) continue;
-        if (r.retiredForm || r.placeholderText || r.textVerified === false) continue;
+        if (r.retiredForm || r.placeholderText) continue;
         if (opts.keys && !opts.keys.includes(r.key)) continue;
         for (const d of r.domains) {
           const row = tally.get(d.key) ?? { label: d.label, positive: 0, screened: 0 };
@@ -22426,6 +22433,7 @@ export type IntakeProfilePatch = Partial<
   >
 >;
 
+export const SCREENER_WORDING_PENDING_CAVEAT = "Item wording pending source verification";
 export const DEMO_PRE_RELEASE_PERSONA = { firstName: "Tomás", lastName: "Reyna" } as const;
 try {
   const exists = patients.some(
@@ -22462,4 +22470,136 @@ try {
   }
 } catch {
   /* Demo seed is best-effort; never break boot. */
+}
+
+// §Part B QA — Tomás's path includes a live enrollment (sign-in) code, issued
+// through the real claim-code API by his reentry care manager.
+try {
+  const tomas = patients.find(
+    (p) => p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName && p.lastName === DEMO_PRE_RELEASE_PERSONA.lastName,
+  );
+  if (tomas && !tomas.signupCredential) {
+    AdelanteEHR.issueRecordClaimCode({
+      patientId: tomas.id,
+      actorStaffId: "s-cf2",
+      actorName: "Darnell Pope (facility contract)",
+      actorRole: "cf_care_manager",
+    });
+  }
+} catch {
+  /* best-effort */
+}
+
+/**
+ * §Part B QA — scenario personas for the demo switcher. Every one is created
+ * through the real store API (createPatient → recordScreener → completeIntake
+ * → recordSeeking / setJusticeSelfReport, or createReferral → outreach →
+ * enrollReferral → issueRecordClaimCode). No rows are pushed directly.
+ */
+export const DEMO_SCENARIO_PERSONAS = {
+  mh_only: { firstName: "Elena", lastName: "Vargas" },
+  medication: { firstName: "Marisol", lastName: "Ortega" },
+  sud_consented: { firstName: "Luis", lastName: "Camacho" },
+  combination: { firstName: "Jasmine", lastName: "Holt" },
+  ji_self_report: { firstName: "Andre", lastName: "Whitfield" },
+  public_referral: { firstName: "Carmen", lastName: "Delgado" },
+} as const;
+
+export function demoScenarioPatientId(key: keyof typeof DEMO_SCENARIO_PERSONAS): string | undefined {
+  const n = DEMO_SCENARIO_PERSONAS[key];
+  return patients.find((p) => p.firstName === n.firstName && p.lastName === n.lastName)?.id;
+}
+
+function _seedScreener(patientId: string, key: string, answers: number[], daysAgo: number) {
+  const def = _defForResult(key);
+  if (!def) return;
+  const scored = scoreScreener(def, answers);
+  AdelanteEHR.recordScreener(patientId, {
+    key,
+    score: scored.score,
+    severity: scored.severity,
+    ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+    ...(scored.domains ? { domains: scored.domains } : {}),
+    responses: answers,
+    completedAt: new Date(Date.now() - daysAgo * 86400000).toISOString(),
+    timepoint: "intake",
+    context: "intake",
+  } as ScreenerResult);
+}
+
+try {
+  const P = DEMO_SCENARIO_PERSONAS;
+  const baseAnswers = {
+    "phq-9": [1, 1, 1, 2, 1, 1, 0, 0, 0],
+    "gad-7": [1, 2, 1, 1, 1, 0, 1],
+    // gate "yes" (1), then two symptoms endorsed
+    "pc-ptsd-5": [1, 1, 1, 0, 0, 0],
+    "ahc-hrsn": [] as number[],
+  };
+  type Spec = {
+    names: { firstName: string; lastName: string };
+    dob: string;
+    seeking: { mentalHealth: boolean; medication: boolean; substanceUse: boolean };
+    sud: boolean;
+    justice?: boolean;
+    needs: Patient["needs"];
+  };
+  const specs: Spec[] = [
+    { names: P.mh_only, dob: "1994-07-02", seeking: { mentalHealth: true, medication: false, substanceUse: false }, sud: false, needs: { housing: false, food: false, employment: false, transport: false } },
+    { names: P.medication, dob: "1987-11-19", seeking: { mentalHealth: false, medication: true, substanceUse: false }, sud: false, needs: { housing: false, food: true, employment: false, transport: false } },
+    { names: P.sud_consented, dob: "1989-04-25", seeking: { mentalHealth: false, medication: false, substanceUse: true }, sud: true, needs: { housing: true, food: false, employment: true, transport: false } },
+    { names: P.combination, dob: "1992-01-08", seeking: { mentalHealth: true, medication: true, substanceUse: true }, sud: true, needs: { housing: true, food: true, employment: false, transport: true } },
+    { names: P.ji_self_report, dob: "1985-09-30", seeking: { mentalHealth: true, medication: false, substanceUse: false }, sud: false, justice: true, needs: { housing: false, food: false, employment: true, transport: true } },
+  ];
+  for (const sp of specs) {
+    if (patients.some((p) => p.firstName === sp.names.firstName && p.lastName === sp.names.lastName)) continue;
+    const p = AdelanteEHR.createPatient({ ...sp.names, dob: sp.dob, preferredLanguage: "en" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+    // Consent first (Part 2 via the intake payload), so SUD screeners are allowed.
+    AdelanteEHR.completeIntake(p.id, { needs: sp.needs, hipaa: true, part2Sud: sp.sud });
+    _seedScreener(p.id, "phq-9", baseAnswers["phq-9"], 3);
+    _seedScreener(p.id, "gad-7", baseAnswers["gad-7"], 3);
+    _seedScreener(p.id, "pc-ptsd-5", baseAnswers["pc-ptsd-5"], 3);
+    const ahc = _defForResult("ahc-hrsn");
+    if (ahc) _seedScreener(p.id, "ahc-hrsn", ahc.questions.map(() => 0), 3);
+    if (sp.sud) {
+      _seedScreener(p.id, "audit", [2, 1, 1, 1, 0, 0, 1, 0, 0, 0], 3);
+      // item 3 "always able to stop" answered Yes (0) → not reversed-positive
+      _seedScreener(p.id, "dast-10", [1, 1, 1, 0, 1, 0, 0, 0, 0, 0], 3);
+    }
+    if (sp.justice) {
+      AdelanteEHR.setCoverage(p.id, { justiceInvolvement: "yes" } as CoveragePatch, { id: p.id, role: "patient", source: "intake_self_service" });
+      AdelanteEHR.setJusticeSelfReport(p.id, { arrestsPast12Months: 0, timeInCustodyMonths: 18, recordedBy: p.id });
+    }
+    AdelanteEHR.recordSeeking(p.id, sp.seeking, { id: p.id, role: "patient" }, { sudConsentGiven: sp.sud });
+  }
+  // Third-party public referral → outreach → enrollment → claim code.
+  if (!patients.some((p) => p.firstName === P.public_referral.firstName && p.lastName === P.public_referral.lastName)) {
+    const ref = AdelanteEHR.createReferral({
+      ...P.public_referral,
+      dob: "1990-06-12",
+      phone: "(559) 555-0148",
+      referringAgency: "Visalia Family Resource Center",
+      referrerName: "Gloria Benítez",
+      referrerPhone: "(559) 555-0190",
+      referralSource: "community_based_organization",
+      consentToContact: true,
+      justiceInvolved: "no",
+      requestManualOutreach: true,
+      channel: "public",
+    } as Parameters<typeof AdelanteEHR.createReferral>[0]);
+    if (ref) {
+      AdelanteEHR.claimReferralOutreach(ref.id);
+      AdelanteEHR.logReferralOutreachAttempt(ref.id, { outcome: "reached", note: "Demo — agreed to enroll." });
+      const pid = AdelanteEHR.enrollReferral(ref.id);
+      if (pid)
+        AdelanteEHR.issueRecordClaimCode({
+          patientId: pid,
+          actorStaffId: "s-cf2",
+          actorName: "Darnell Pope (facility contract)",
+          actorRole: "cf_care_manager",
+        });
+    }
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] QA scenarios", e);
 }

@@ -128,9 +128,10 @@ describe("population health is not a second unprotected path", () => {
       viewer: { kind: "staff", role: "therapist" },
     });
     const audit = s.instruments.find((i) => i.key === "audit")!;
-    // §Phase 10a — readable, but held out of totals until AUDIT text is verified.
-    expect(audit.administered).toBe(0);
-    expect(audit.excludedPendingVerification).toBe(1);
+    // Counted, with the pending-wording caveat.
+    expect(audit.administered).toBe(1);
+    expect(audit.excludedPendingVerification).toBeUndefined();
+    expect(audit.caveat).toBe("Item wording pending source verification");
     expect(audit.restricted).toBeUndefined();
   });
 });

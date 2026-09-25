@@ -49,7 +49,10 @@ export function recoveryJourneyVisible(
   return Boolean(
     p.needs?.substanceUse ||
       p.episodes?.some((episode) => episode.type === "sud_dmc_ods") ||
-      p.calomsProfile,
+      // A CalOMS profile means SUD treatment admission — except a profile
+      // holding ONLY the justice self-report, which `setJusticeSelfReport`
+      // writes there. Justice involvement alone is never a SUD signal.
+      Object.keys(p.calomsProfile ?? {}).some((k) => k !== "justice"),
   );
 }
 

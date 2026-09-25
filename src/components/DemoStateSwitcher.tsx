@@ -12,7 +12,15 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
-import { AdelanteEHR, useEhr, COLLATERAL_ROI_CATEGORY, DEMO_PRE_RELEASE_PERSONA } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  useEhr,
+  COLLATERAL_ROI_CATEGORY,
+  DEMO_PRE_RELEASE_PERSONA,
+  DEMO_SCENARIO_PERSONAS,
+  demoScenarioPatientId,
+} from "@/lib/ehr";
+import { setActingRole } from "@/lib/roles";
 import { cn } from "@/lib/utils";
 import {
   DropdownMenu,
@@ -26,52 +34,122 @@ import { ChevronDown, FlaskConical } from "lucide-react";
 
 const ADVOCATE_SESSION_KEY = "adelante.advocateLinkId";
 
-/** The five states the QA pass is written against. */
+/** QA scenario matrix (Part B). Patient scenarios resolve to real records. */
+type ScenarioKey = keyof typeof DEMO_SCENARIO_PERSONAS;
 type DemoStateId =
   | "no_record"
+  | "mh_only"
+  | "medication"
+  | "sud_consented"
+  | "combination"
+  | "ji_self_report"
+  | "pre_release"
+  | "public_referral"
+  | "advocate"
+  | "advocate_and_patient"
   | "ji_post_release"
   | "general_population"
-  | "pre_release"
-  | "advocate"
-  | "advocate_and_patient";
+  | "rosa"
+  | "marcus"
+  | "kayla";
 
-const STATE_LABEL: Record<DemoStateId, { label: string; hint: string }> = {
+const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: string }> = {
   no_record: {
-    label: "Front door / no record",
-    hint: "State 1 — nobody signed in, no patient record yet",
+    group: "Sign-up",
+    label: "1 · New sign-up, no record",
+    hint: "Front door for the general population — nobody signed in, no record yet",
   },
-  // p1 was released 2026-05-10 and has no open pre-release episode, so the
-  // resolved track is post-release; label and hint both say so.
-  ji_post_release: {
-    label: "Daniel M. — Justice-Involved, Post-Release",
-    hint: "State 2 — completed intake, JI reentry flag, released and back in the community",
+  mh_only: {
+    group: "Intake by need",
+    label: "2a · Elena V. — Mental health only",
+    hint: "Intake done: PHQ-9, GAD-7, PC-PTSD-5, AHC-HRSN. No substance-use tools or Recovery Journey",
+  },
+  medication: {
+    group: "Intake by need",
+    label: "2b · Marisol O. — Medication management",
+    hint: "Intake done, suggested prescriber goal awaiting clinician; no substance-use tools",
+  },
+  sud_consented: {
+    group: "Intake by need",
+    label: "2c · Luis C. — Substance use (Part 2 consent)",
+    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown",
+  },
+  combination: {
+    group: "Intake by need",
+    label: "2d · Jasmine H. — Combination",
+    hint: "Mental health + medication + substance use with consent; all screeners and SUD tools",
+  },
+  ji_self_report: {
+    group: "Justice",
+    label: "3 · Andre W. — Previously justice-involved (self-reported)",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey",
   },
   pre_release: {
-    label: "Tomás R. — Pre-Release (in custody)",
-    hint: "State 6 — open pre-release episode, partner-reported needs, intake not started",
+    group: "Justice",
+    label: "4 · Tomás R. — Pre-release referred",
+    hint: "Pre-populated record, partner-reported needs, live enrollment code, intake not started",
+  },
+  public_referral: {
+    group: "Referral",
+    label: "5 · Carmen D. — Public referral form",
+    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff",
   },
   advocate: {
-    label: "Advocate view (invite-code session)",
-    hint: "State 3 — external advocate for Daniel M., no patient session",
+    group: "Advocates",
+    label: "6a · Advocate only",
+    hint: "External advocate for Daniel M. (invite code + signed ROI), no patient record",
   },
   advocate_and_patient: {
-    label: "Advocate + own patient record",
-    hint: "State 4 — Alicia S. is a patient AND advocate for Daniel M.",
+    group: "Advocates",
+    label: "6b · Advocate who is also a patient",
+    hint: "Alicia S. advocates for Daniel M. and has her own record (Support for myself)",
+  },
+  ji_post_release: {
+    group: "Existing demo records",
+    label: "Daniel M. — Post-release, CalOMS",
+    hint: "EHR: intake done, CalOMS SUD history, PHQ-9/GAD-7 re-screens due day 90",
   },
   general_population: {
-    label: "Alicia S. — General Population",
-    hint: "State 5 — completed intake, no justice signal anywhere",
+    group: "Existing demo records",
+    label: "Alicia S. — General population",
+    hint: "EHR: intake done, no justice or substance-use signal; naloxone and 988 still shown",
+  },
+  rosa: {
+    group: "Existing demo records",
+    label: "Rosa T. — Form intake not started",
+    hint: "EHR: record exists, intake incomplete — walks the full form intake",
+  },
+  marcus: {
+    group: "Existing demo records",
+    label: "Marcus — Legacy AUDIT result",
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90",
+  },
+  kayla: {
+    group: "Existing demo records",
+    label: "Kayla's trainee visit (staff)",
+    hint: "Opens the cosign inbox: trainee note → supervisor cosign → signed claim on Billing",
   },
 };
 
 const ORDER: DemoStateId[] = [
   "no_record",
-  "ji_post_release",
+  "mh_only",
+  "medication",
+  "sud_consented",
+  "combination",
+  "ji_self_report",
+  "pre_release",
+  "public_referral",
   "advocate",
   "advocate_and_patient",
+  "ji_post_release",
   "general_population",
-  "pre_release",
+  "rosa",
+  "marcus",
+  "kayla",
 ];
+
+const SCENARIO_KEYS: ScenarioKey[] = ["mh_only", "medication", "sud_consented", "combination", "ji_self_report"];
 
 function preReleasePersonaId(): string | undefined {
   return AdelanteEHR.listPatients().find(
@@ -176,7 +254,11 @@ export function DemoStateSwitcher() {
     if (!patient) return "no_record";
     if (patient.id === "p1") return "ji_post_release";
     if (patient.id === "p4") return "general_population";
+    if (patient.id === "p2") return "rosa";
+    if (patient.id === "p3") return "marcus";
     if (patient.id === preReleasePersonaId()) return "pre_release";
+    for (const k of [...SCENARIO_KEYS, "public_referral" as const])
+      if (patient.id === demoScenarioPatientId(k)) return k;
     return null;
   })();
 
@@ -197,6 +279,37 @@ export function DemoStateSwitcher() {
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(state === "ji_post_release" ? "p1" : "p4");
           navigate({ to: "/patient" });
+          break;
+        }
+        case "mh_only":
+        case "medication":
+        case "sud_consented":
+        case "combination":
+        case "ji_self_report":
+        case "rosa":
+        case "marcus": {
+          const id =
+            state === "rosa" ? "p2" : state === "marcus" ? "p3" : demoScenarioPatientId(state);
+          if (!id) throw new Error("That demo patient is not available.");
+          clearAdvocateSession();
+          setAdvocateLinkId(null);
+          AdelanteEHR.setCurrentPatientId(id);
+          navigate({ to: "/patient" });
+          break;
+        }
+        case "public_referral": {
+          clearAdvocateSession();
+          setAdvocateLinkId(null);
+          const id = demoScenarioPatientId("public_referral");
+          if (id) AdelanteEHR.setCurrentPatientId(id);
+          setActingRole("cf_care_manager");
+          navigate({ to: "/referral-queue" });
+          break;
+        }
+        case "kayla": {
+          clearAdvocateSession();
+          setAdvocateLinkId(null);
+          navigate({ to: "/cosign-inbox" });
           break;
         }
         case "pre_release": {
@@ -253,11 +366,17 @@ export function DemoStateSwitcher() {
           </span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </DropdownMenuTrigger>
-        <DropdownMenuContent align="end" className="w-80">
+        <DropdownMenuContent align="end" className="w-80 max-h-[75vh] overflow-y-auto">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
             Demo scenarios · QA states
           </DropdownMenuLabel>
-          {ORDER.map((id) => (
+          {ORDER.map((id, i) => (
+            <div key={id}>
+            {(i === 0 || STATE_LABEL[ORDER[i - 1]!].group !== STATE_LABEL[id].group) && (
+              <div className="px-2 pt-2 text-[10px] font-semibold uppercase tracking-wide text-muted-foreground">
+                {STATE_LABEL[id].group}
+              </div>
+            )}
             <DropdownMenuItem
               key={id}
               onClick={() => apply(id)}
@@ -266,6 +385,7 @@ export function DemoStateSwitcher() {
               <span className="text-sm font-medium">{STATE_LABEL[id].label}</span>
               <span className="text-[11px] text-muted-foreground">{STATE_LABEL[id].hint}</span>
             </DropdownMenuItem>
+            </div>
           ))}
           <DropdownMenuSeparator />
           <DropdownMenuLabel className="text-xs text-muted-foreground">
