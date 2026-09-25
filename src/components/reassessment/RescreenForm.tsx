@@ -16,6 +16,7 @@ import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
+import { Slim988Bar } from "@/components/patient/Slim988Bar";
 
 export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   const { lang } = useI18n();
@@ -64,6 +65,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   return (
     <PatientPage data-testid="rescreen-form">
       <PatientPageHeader icon={ClipboardList} title={rescreenName(def.key, L)} lede={c.pageLede} />
+      <Slim988Bar className="mb-4" />
       <Card className="space-y-5 p-5">
         <div>
           <Badge variant="outline" className="border-teal/40 text-teal">{def.name}</Badge>

@@ -18,6 +18,8 @@ export function PatientSidebar() {
   const hash = useRouterState({ select: (s) => s.location.hash });
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(currentId);
+  // §Onboarding rework — after the first intake, "Intake" reads "Re-assess".
+  const intakeDone = useEhr(() => Boolean(AdelanteEHR.getPatient(currentId)?.intakeCompletedAt));
   const entries = patientNavForPopulation(PATIENT_SIDEBAR_NAV, population.track);
 
   return (
@@ -44,7 +46,7 @@ export function PatientSidebar() {
               )}
             >
               <Icon className="h-5 w-5 shrink-0" aria-hidden="true" />
-              <span className="truncate">{t(n.labelKey as Parameters<typeof t>[0])}</span>
+              <span className="truncate">{t((n.id === "intake" && intakeDone ? "navReassess" : n.labelKey) as Parameters<typeof t>[0])}</span>
             </Link>
           );
         })}
