@@ -160,6 +160,7 @@ import {
   SCREENERS,
   isPart2Screener,
   activeScreenerByKey,
+  screenerComplete,
   rescreenRule,
   RESCREEN_SCHEDULE,
   LEGACY_AUDIT_LABEL,
@@ -6530,12 +6531,12 @@ function _recomputeCarePlan(patientId: string, triggeredBy?: string) {
   }
 
   const screenerHighlights: CarePlanScreenerHighlight[] = [];
-  for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"]) {
+  for (const key of ["phq-9", "gad-7", "audit", "dast-10", "pc-ptsd-5", "pcl-5-20", CSSRS_KEY, "pcl-5"]) {
     const r = p.screeners[key];
     if (!r) continue;
     screenerHighlights.push({
       key,
-      name: key.toUpperCase(),
+      name: (_defForResult(key)?.name ?? key.toUpperCase()) + (r.retiredForm ? " — retired form" : ""),
       score: r.score,
       band: r.severity,
       takenAt: r.completedAt,
@@ -8516,8 +8517,8 @@ export const AdelanteEHR = {
       ...(input.mode === "staff"
         ? {
             administeredBy: {
-              enteredBy: { staffName: input.staffName!, role: (input.staffRole ?? "clinician") as never },
-            } as unknown as CfAttribution,
+              enteredBy: { staffName: input.staffName!, role: input.staffRole ?? "clinician" },
+            },
           }
         : {}),
     };
@@ -11070,25 +11071,33 @@ export const AdelanteEHR = {
 
 
   // ----- Re-screening cadence -----
-  // Returns screener keys due for re-screening based on day 30/60/90 cadence.
+  // §Phase 10a — ONE draft rule per instrument (RESCREEN_SCHEDULE). Fixed
+  // timepoints count from the FIRST validated result; after the last fixed
+  // timepoint, `repeatEveryDays` counts from the most recent result. Retired
+  // forms never make anything due. DRAFT pending clinical sign-off.
   rescreensDue(
     patientId: string,
-  ): { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] {
+  ): { key: string; lastDays: number | null; nextDue: number }[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return [];
-    const keys = ["phq-9", "gad-7", "audit", "dast-10", "pcl-5"];
-    const out: { key: string; lastDays: number | null; nextDue: 30 | 60 | 90 }[] = [];
+    const out: { key: string; lastDays: number | null; nextDue: number }[] = [];
     const now = Date.now();
-    for (const key of keys) {
-      const history = (p.screenerHistory ?? []).filter((h) => h.key === key);
+    const DAY = 1000 * 60 * 60 * 24;
+    for (const rule of RESCREEN_SCHEDULE) {
+      const history = (p.screenerHistory ?? []).filter((h) => h.key === rule.key && !h.retiredForm);
       if (history.length === 0) continue;
-      const last = history.reduce((acc, h) =>
-        +new Date(h.completedAt) > +new Date(acc.completedAt) ? h : acc,
-      );
-      const days = Math.floor((now - +new Date(last.completedAt)) / (1000 * 60 * 60 * 24));
-      const intervals: (30 | 60 | 90)[] = [30, 60, 90];
-      const due = intervals.find((d) => days >= d);
-      if (due) out.push({ key, lastDays: days, nextDue: due });
+      const sorted = [...history].sort((x, y) => +new Date(x.completedAt) - +new Date(y.completedAt));
+      const first = sorted[0];
+      const last = sorted[sorted.length - 1];
+      const sinceFirst = Math.floor((now - +new Date(first.completedAt)) / DAY);
+      const sinceLast = Math.floor((now - +new Date(last.completedAt)) / DAY);
+      const done = new Set(history.map((h) => h.timepoint));
+      const pending = rule.timepoints.find((d) => !done.has(`day${d}`));
+      if (pending !== undefined) {
+        if (sinceFirst >= pending) out.push({ key: rule.key, lastDays: sinceLast, nextDue: pending });
+      } else if (rule.repeatEveryDays && sinceLast >= rule.repeatEveryDays) {
+        out.push({ key: rule.key, lastDays: sinceLast, nextDue: rule.repeatEveryDays });
+      }
     }
     return out;
   },
@@ -11113,15 +11122,17 @@ export const AdelanteEHR = {
    * full instruments, with SUD instruments (AUDIT, DAST-10) only when the
    * live `sud_treatment` consent allows — the same rule intake applies.
    */
-  patientReassessmentDue(patientId: string): { key: string; taskIds: string[]; nextDue?: 30 | 60 | 90 }[] {
+  patientReassessmentDue(patientId: string): { key: string; taskIds: string[]; nextDue?: number }[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p || !p.intakeCompletedAt) return [];
     const sudOk = AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
     const allowed = (key: string) => {
-      const def = SCREENERS.find((d) => d.key === key);
-      return !!def && (!def.isSud || sudOk);
+      // §Phase 10a — any active (non-retired) full instrument, incl. AHC-HRSN
+      // and PCL-5; never short forms or C-SSRS (their own paths).
+      const def = activeScreenerByKey(key);
+      return !!def && !!rescreenRule(key) && (!def.isSud || sudOk);
     };
-    const out = new Map<string, { key: string; taskIds: string[]; nextDue?: 30 | 60 | 90 }>();
+    const out = new Map<string, { key: string; taskIds: string[]; nextDue?: number }>();
     for (const d of AdelanteEHR.rescreensDue(patientId)) {
       if (allowed(d.key)) out.set(d.key, { key: d.key, taskIds: [], nextDue: d.nextDue });
     }
@@ -11146,12 +11157,14 @@ export const AdelanteEHR = {
   ): ScreenerResult {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found.");
-    const def = SCREENERS.find((d) => d.key === key);
-    if (!def) throw new Error("Unknown questionnaire.");
+    const def = activeScreenerByKey(key);
+    if (!def || !rescreenRule(key)) throw new Error("Unknown questionnaire.");
     if (def.isSud && !AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment"))
       throw new Error("This questionnaire needs substance-use consent on file.");
-    if (answers.length !== def.questions.length || answers.some((a) => typeof a !== "number"))
+    if (!screenerComplete(def, answers))
       throw new Error(`Please answer all ${def.questions.length} questions.`);
+    // Skipped (gated) items are stored as 0 so answer arrays stay full-length.
+    answers = def.questions.map((_, i) => (typeof answers[i] === "number" ? answers[i] : 0));
     const due = AdelanteEHR.rescreensDue(patientId).find((d) => d.key === key);
     const scored = scoreScreener(def, answers);
     const result: ScreenerResult = {
@@ -11159,8 +11172,10 @@ export const AdelanteEHR = {
       score: scored.score,
       severity: scored.severity,
       completedAt: new Date().toISOString(),
-      timepoint: due ? (`day${due.nextDue}` as "day30" | "day60" | "day90") : "adhoc",
+      timepoint: due ? (`day${due.nextDue}` as const) : "adhoc",
       responses: answers,
+      context: "patient_self",
+      ...(scored.domains ? { domains: scored.domains } : {}),
       // Same item-9 rule intake applies.
       crisisFlag: key === "phq-9" && (answers[8] ?? 0) > 0,
       ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
