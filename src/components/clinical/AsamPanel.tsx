@@ -17,6 +17,7 @@ import {
   type AsamAssessment,
 } from "@/lib/asam";
 import { signAsamAssessment } from "@/lib/asamFlow";
+import { asamLevelHistory } from "@/lib/asamReporting";
 import { attestationStatement, type AttestationDraft } from "@/lib/attestation";
 import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
 import { Button } from "@/components/ui/button";
@@ -51,6 +52,7 @@ export function AsamPanel({ patient }: { patient: Patient }) {
     assessments: AdelanteEHR.listAsamAssessments(patient.id),
     openTask: AdelanteEHR.openAsamTask(patient.id),
   }));
+  const history = useEhr(() => asamLevelHistory(acting.role, patient));
   const draft = assessments.find((a) => a.status === "draft" || a.status === "declined");
   const mine = draft && draft.authoredBy.staffId === acting.staffId;
 
@@ -101,6 +103,25 @@ export function AsamPanel({ patient }: { patient: Patient }) {
         ASAM framework — {ASAM_DRAFT_NOTE}. {ASAM_LICENSED_CONTENT_NOTE} The system never
         calculates or suggests a level of care; the clinician decides.
       </div>
+
+      {history && history.length > 0 && (
+        <div className="rounded-md border border-border p-2 text-xs" data-testid="asam-level-history">
+          <p className="mb-1 font-medium">Level of care over time (clinician-selected)</p>
+          <ol className="space-y-1 border-l border-border pl-3">
+            {history.map((h) => (
+              <li key={h.asamId}>
+                <span className="font-medium">v{h.version}</span> · {h.signedAt.slice(0, 10)} · {h.level}
+                {h.amendsId ? " (amendment)" : ""} — signed by {h.signer}
+                {h.recommended && (
+                  <span className="block text-muted-foreground">
+                    Recommended {h.recommended}; reason for difference: {h.reason}
+                  </span>
+                )}
+              </li>
+            ))}
+          </ol>
+        </div>
+      )}
 
       {openTask && (
         <div className="rounded-md border border-border bg-muted/40 p-2 text-xs" data-testid="asam-open-task">

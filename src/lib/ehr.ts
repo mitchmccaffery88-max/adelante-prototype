@@ -52,6 +52,7 @@ import {
   ASAM_DEDUPE_PREFIX,
   ASAM_DIMENSIONS,
   ASAM_REASSESSMENT_DAYS,
+  ASAM_AUTHOR_ROLES,
   ASAM_SIGN_ROLES,
   ASAM_TASK_ROLES,
   ASAM_TASK_TYPE,
@@ -8562,14 +8563,25 @@ export const AdelanteEHR = {
   requestAsamAssessment(
     patientId: string,
     reason: string,
-    opts?: { clinicianDecision?: boolean },
+    opts?: { clinicianDecision?: boolean; triggeredAt?: string },
   ): CaseTask | undefined {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return undefined;
     const dedupeKey = `${ASAM_DEDUPE_PREFIX}${p.id}`;
+    const triggerDate = opts?.triggeredAt ? new Date(opts.triggeredAt) : new Date();
     const open = caseTasks.find((t) => t.dedupeKey === dedupeKey && t.status !== "done");
     if (open) {
       if (open.detail && !open.detail.includes(reason)) open.detail = `${open.detail} Also: ${reason}.`;
+      // The EARLIEST trigger sets the clock: an older trigger reported later
+      // moves the task's trigger time and draft due date back to it.
+      if (opts?.triggeredAt && +triggerDate < +new Date(open.createdAt)) {
+        open.createdAt = triggerDate.toISOString();
+        open.dueDate = asamDueDate({
+          releaseDate: p.releaseDate,
+          hasDmcOdsEpisode: (p.episodes ?? []).some((e) => e.type === "sud_dmc_ods" && !e.closedAt),
+          now: triggerDate,
+        });
+      }
       emit();
       return open;
     }
@@ -8591,6 +8603,7 @@ export const AdelanteEHR = {
       dueDate: asamDueDate({
         releaseDate: p.releaseDate,
         hasDmcOdsEpisode: (p.episodes ?? []).some((e) => e.type === "sud_dmc_ods" && !e.closedAt),
+        now: triggerDate,
       }),
       origin: "asam_needed",
       dedupeKey,
@@ -8598,6 +8611,8 @@ export const AdelanteEHR = {
       allowedRoles: [...ASAM_TASK_ROLES],
       priority: "routine",
     });
+    // The trigger moment is what timeliness reporting measures from.
+    if (task && opts?.triggeredAt) task.createdAt = triggerDate.toISOString();
     appendAudit({
       category: "clinical",
       action: "asam_requested",
@@ -8801,6 +8816,51 @@ export const AdelanteEHR = {
    * The H0001 claim is attached by the caller (`asamFlow`) through the
    * existing claim path in ehr-ext — this store never imports ehr-ext.
    */
+  /**
+   * Amend a signed ASAM. Signed records stay locked: this opens a NEW draft
+   * version (version + 1, `amendsId` → the previous one) that the author
+   * documents and signs again. The previous version is kept unchanged.
+   */
+  amendAsam(
+    patientId: string,
+    asamId: string,
+    actor: { staffId: string; name: string; role: StaffRole },
+    reason: string,
+  ): AsamAssessment {
+    const p = patients.find((x) => x.id === patientId);
+    const prev = p?.asamAssessments?.find((x) => x.id === asamId);
+    if (!p || !prev) throw new Error("Assessment not found.");
+    if (prev.status !== "signed") throw new Error("Only a signed assessment can be amended.");
+    if (!reason.trim()) throw new Error("An amendment needs a reason.");
+    const gate = canAccess(actor.role, "screeners_sud", p);
+    if (gate.level === "none" || gate.locked)
+      throw new Error("Your role does not have 42 CFR Part 2 access for this patient.");
+    if (!ASAM_AUTHOR_ROLES.includes(actor.role)) throw new Error("Your role cannot author an ASAM.");
+    const next: AsamAssessment = {
+      ...emptyAsamDraft({ staffId: actor.staffId, name: actor.name, role: actor.role }, [
+        `Amendment of version ${prev.version}: ${reason}`,
+      ]),
+      id: uid(),
+      version: prev.version + 1,
+      amendsId: prev.id,
+      dimensions: prev.dimensions.map((d) => ({ ...d })),
+      diagnosisCodes: [...prev.diagnosisCodes],
+      recommendedLevel: prev.recommendedLevel,
+      actualLevel: prev.actualLevel,
+    };
+    p.asamAssessments = [next, ...(p.asamAssessments ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "asam_amendment_started",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { asamId: next.id, amendsId: prev.id, version: next.version },
+    });
+    emit();
+    return next;
+  },
+
   _fireAsamOutputs(p: Patient, a: AsamAssessment, actor: { staffId: string; clinicianId?: string }): void {
     const now = new Date().toISOString();
     const today = now.slice(0, 10);
@@ -8809,7 +8869,9 @@ export const AdelanteEHR = {
       medicalNecessity: a.diagnosisCodes.length > 0,
     };
     // H0001 claim through the existing claim path (registered by ehr-ext).
-    const claimId = _asamClaimCreator?.({
+    // An amendment updates the episode level but does not bill a second
+    // assessment — the H0001 belongs to the original assessment.
+    const claimId = a.amendsId ? undefined : _asamClaimCreator?.({
       asamId: a.id,
       patientId: p.id,
       clinicianId: actor.clinicianId ?? actor.staffId,
@@ -8864,6 +8926,15 @@ export const AdelanteEHR = {
         taskType: "asam_referral_out",
       });
       if (refTask) outputs.referralOutTaskId = refTask.id;
+    }
+    // An amendment replaces the previous version's reassessment clock.
+    if (a.amendsId) {
+      const prevReassess = caseTasks.find((t) => t.dedupeKey === `asam-reassess:${a.amendsId}` && t.status !== "done");
+      if (prevReassess) {
+        prevReassess.status = "done";
+        prevReassess.completedAt = now;
+        prevReassess.worklistStatus = "completed";
+      }
     }
     // Reassessment scheduled (DRAFT: 90 days).
     const reassessTask = AdelanteEHR.createCaseTask({
@@ -22949,11 +23020,11 @@ try {
  */
 export const DEMO_SCENARIO_PERSONAS = {
   mh_only: { firstName: "Elena", lastName: "Vargas" },
-  medication: { firstName: "Marisol", lastName: "Ortega" },
+  medication: { firstName: "Paloma", lastName: "Ortega" },
   sud_consented: { firstName: "Luis", lastName: "Camacho" },
   combination: { firstName: "Jasmine", lastName: "Holt" },
-  ji_self_report: { firstName: "Andre", lastName: "Whitfield" },
-  public_referral: { firstName: "Carmen", lastName: "Delgado" },
+  ji_self_report: { firstName: "Victor", lastName: "Hale" },
+  public_referral: { firstName: "Carmen", lastName: "Ibarra" },
   sud_no_consent: { firstName: "Jordan", lastName: "Vega" },
 } as const;
 
@@ -23103,6 +23174,36 @@ try {
       buildAttestationRecord({ statement: attestationStatement("asam_sign"), draft: seedAttDraft, signedBy: VARGAS.name }),
     );
   }
+  // §10d-1 — Luis: an amendment (v2) where the clinician's recommended level
+  // differs from the actual level ("level not available"). Gives the chart
+  // a real level-history timeline and the reporting a difference row.
+  if (luisId) {
+    const list = patients.find((p) => p.id === luisId)?.asamAssessments ?? [];
+    const v1 = list.find((a) => a.version === 1 && a.status === "signed");
+    if (v1 && !list.some((a) => a.amendsId === v1.id)) {
+      const v2 = AdelanteEHR.amendAsam(luisId, v1.id, REYES, "Increased use reported at follow-up");
+      AdelanteEHR.saveAsamDraft(
+        luisId,
+        {
+          recommendedLevel: "residential",
+          actualLevel: "intensive_outpatient",
+          levelDifferenceReason: "Level not available",
+        },
+        REYES,
+      );
+      AdelanteEHR.signAsam(
+        luisId,
+        v2.id,
+        REYES,
+        buildAttestationRecord({ statement: attestationStatement("asam_sign"), draft: seedAttDraft, signedBy: REYES.name }),
+      );
+    }
+  }
+  // §10d-1 — Marcus (p3): an OVERDUE "ASAM assessment needed" task. Triggered
+  // 12 days ago by his AUDIT on file; the draft 7-day window has passed.
+  AdelanteEHR.requestAsamAssessment("p3", "Positive AUDIT on file (scored before the 0/2/4 fix)", {
+    triggeredAt: new Date(Date.now() - 35 * 86400000).toISOString(),
+  });
   // Daniel (p1) — an existing CalOMS SUD record on file: reassessment due.
   AdelanteEHR.requestAsamAssessment(
     "p1",
