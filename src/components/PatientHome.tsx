@@ -1,4 +1,5 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { FirstAppointmentTile, NeedsTile, RecommendedTile, AdvocatePendingTile } from "@/components/patient/MyCareTiles";
 import {
   AdelanteEHR,
   defaultOccurrenceModality,
@@ -168,7 +169,11 @@ export function PatientHome() {
       />
 
       <ReassessmentOrCompleteTile patientId={patient.id} />
-      <NextStepsCard patientId={patient.id} />
+      {/* §Part B2 — My Care tiles after intake. */}
+      <FirstAppointmentTile patientId={patient.id} />
+      <NeedsTile patientId={patient.id} />
+      <RecommendedTile patientId={patient.id} />
+      <AdvocatePendingTile patientId={patient.id} />
       <PreReleaseKnownNeedsCard patientId={patient.id} />
 
       <Card className="p-5" data-testid="episode-progress-card">

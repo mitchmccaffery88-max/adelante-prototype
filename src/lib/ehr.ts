@@ -1470,6 +1470,18 @@ export interface Patient {
   programId: string;
   // Clinician care plan (editable)
   goals?: Goal[];
+  /**
+   * §Part B1 — "What are you looking for?" (About You). Content, resources and
+   * recommendations only; never changes which screeners are offered. The
+   * substance-use choice is NOT stored here: it is merged into the Part 2
+   * masked `needs.substanceUse`, and only when Part 2 consent is on file.
+   */
+  seeking?: { mentalHealth: boolean; medication: boolean; answeredAt: string };
+  /**
+   * §Part B1 — goals SUGGESTED from the About You answers. They are never on
+   * the care plan until a clinician accepts one (attributed + audited).
+   */
+  suggestedGoals?: SuggestedGoal[];
   progressNotes?: ProgressNote[];
   // Per-purpose consent state (revocable) + append-only audit trail
   consentState?: {
@@ -1754,6 +1766,24 @@ export const APPOINTMENT_SOURCE_LABEL: Record<AppointmentSource, string> = {
   pre_release: "Arranged before release",
   self_scheduled: "Booked by patient",
   staff_scheduled: "Booked by staff",
+};
+
+export interface SuggestedGoal {
+  id: string;
+  text: string;
+  reason: "seeking_medication" | "seeking_mental_health";
+  status: "suggested" | "accepted" | "dismissed";
+  createdAt: string;
+  decidedAt?: string;
+  decidedBy?: string;
+  decidedByRole?: string;
+  /** The Goal created on acceptance. */
+  goalId?: string;
+}
+
+export const SUGGESTED_GOAL_TEXT: Record<SuggestedGoal["reason"], string> = {
+  seeking_medication: "Meet with a prescriber about medication",
+  seeking_mental_health: "Start regular counseling sessions",
 };
 
 export interface Appointment {
@@ -9059,6 +9089,93 @@ export const AdelanteEHR = {
       ? { text: trimmed, setAt: new Date().toISOString(), by }
       : undefined;
     _recomputeCarePlan(p.id, "clinician_summary");
+    emit();
+  },
+  /**
+   * §Part B1 — record the "What are you looking for?" answer. Mental health /
+   * medication go on `seeking` and raise SUGGESTED goals only. Substance use
+   * merges into `needs.substanceUse` (Part 2 masked) and is dropped unless
+   * Part 2 SUD consent is authorized — nothing about substance use is kept
+   * without consent. Screener offerings are not touched.
+   */
+  recordSeeking(
+    patientId: string,
+    answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean },
+    actor: { id: string; role: string },
+    /** Part 2 consent given in this same intake (the ledger may lag). */
+    opts?: { sudConsentGiven?: boolean },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const now = new Date().toISOString();
+    p.seeking = { mentalHealth: answer.mentalHealth, medication: answer.medication, answeredAt: now };
+    const sudAllowed =
+      opts?.sudConsentGiven === true ||
+      AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    const sudKept = answer.substanceUse && sudAllowed;
+    if (sudKept) p.needs = { ...p.needs, substanceUse: true };
+    const want: SuggestedGoal["reason"][] = [
+      ...(answer.medication ? (["seeking_medication"] as const) : []),
+      ...(answer.mentalHealth ? (["seeking_mental_health"] as const) : []),
+    ];
+    const existing = p.suggestedGoals ?? [];
+    const added: SuggestedGoal[] = want
+      .filter((r) => !existing.some((g) => g.reason === r))
+      .map((r) => ({ id: uid(), text: SUGGESTED_GOAL_TEXT[r], reason: r, status: "suggested", createdAt: now }));
+    p.suggestedGoals = [...existing, ...added];
+    appendAudit({
+      category: "care_plan",
+      action: "seeking_recorded",
+      patientId,
+      actorId: actor.id,
+      actorRole: actor.role,
+      // No SUD detail in the audit body — only whether it was kept.
+      detail: {
+        mentalHealth: answer.mentalHealth,
+        medication: answer.medication,
+        sudSelectionKept: sudKept,
+        suggestedGoalsAdded: added.length,
+      },
+    });
+    emit();
+  },
+  /** §Part B1 — clinician accepts a suggested goal → a real Goal, audited. */
+  acceptSuggestedGoal(patientId: string, suggestionId: string, by: { name: string; role: string }) {
+    const p = patients.find((x) => x.id === patientId);
+    const g = p?.suggestedGoals?.find((x) => x.id === suggestionId);
+    if (!p || !g || g.status !== "suggested") return;
+    AdelanteEHR.addGoal(patientId, g.text, by.name);
+    const created = p.goals?.[p.goals.length - 1];
+    Object.assign(g, {
+      status: "accepted",
+      decidedAt: new Date().toISOString(),
+      decidedBy: by.name,
+      decidedByRole: by.role,
+      goalId: created?.id,
+    });
+    appendAudit({
+      category: "care_plan",
+      action: "suggested_goal_accepted",
+      patientId,
+      actorId: by.name,
+      actorRole: by.role,
+      detail: { suggestionId, reason: g.reason, goalId: created?.id },
+    });
+    emit();
+  },
+  dismissSuggestedGoal(patientId: string, suggestionId: string, by: { name: string; role: string }) {
+    const p = patients.find((x) => x.id === patientId);
+    const g = p?.suggestedGoals?.find((x) => x.id === suggestionId);
+    if (!p || !g || g.status !== "suggested") return;
+    Object.assign(g, { status: "dismissed", decidedAt: new Date().toISOString(), decidedBy: by.name, decidedByRole: by.role });
+    appendAudit({
+      category: "care_plan",
+      action: "suggested_goal_dismissed",
+      patientId,
+      actorId: by.name,
+      actorRole: by.role,
+      detail: { suggestionId, reason: g.reason },
+    });
     emit();
   },
   addGoal(patientId: string, text: string, createdBy?: string) {

@@ -2162,6 +2162,42 @@ export function TaskList({
 }
 
 // ---------- Care Plan tab (consolidated from clinician.tsx) ----------
+// §Part B1 — goals SUGGESTED from the patient's "looking for" answers. Nothing
+// reaches the care plan until a clinician accepts; accept/dismiss is audited.
+function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
+  const { staffName, role } = useActingStaff();
+  const json = useEhr(() =>
+    JSON.stringify((AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter((g) => g.status === "suggested")),
+  );
+  const items = JSON.parse(json) as { id: string; text: string; reason: string }[];
+  if (items.length === 0) return null;
+  return (
+    <Card className="p-4 border-dashed" data-testid="suggested-goals">
+      <h4 className="font-display text-sm text-navy">Suggested goals</h4>
+      <p className="text-[11px] text-muted-foreground mt-0.5">
+        From what the patient said they're looking for at intake. Not on the care plan until you accept.
+      </p>
+      <ul className="mt-2 space-y-2">
+        {items.map((g) => (
+          <li key={g.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-sm">
+            <span className="flex-1">{g.text}</span>
+            {!readOnly && (
+              <>
+                <Button size="sm" data-testid={`suggested-accept-${g.id}`} onClick={() => AdelanteEHR.acceptSuggestedGoal(patientId, g.id, { name: staffName, role })}>
+                  Accept
+                </Button>
+                <Button size="sm" variant="outline" onClick={() => AdelanteEHR.dismissSuggestedGoal(patientId, g.id, { name: staffName, role })}>
+                  Dismiss
+                </Button>
+              </>
+            )}
+          </li>
+        ))}
+      </ul>
+    </Card>
+  );
+}
+
 export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { staffName } = useActingStaff();
@@ -2181,6 +2217,7 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   return (
     <div className="space-y-4">
       <CarePlanCard patientId={patient.id} audience="clinician" />
+      <SuggestedGoalsPanel patientId={patient.id} readOnly={readOnly} />
       {/* §5-stage journey — care-team view of the person-set stage. Same
           component the patient sees, so the model can't drift between them. */}
       <Card className="p-4">

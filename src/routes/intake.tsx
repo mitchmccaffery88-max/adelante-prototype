@@ -4,13 +4,16 @@ import { Card } from "@/components/ui/card";
 import { Slim988Bar } from "@/components/patient/Slim988Bar";
 import { INTAKE_WELCOME_COPY, REASSESS_START_COPY } from "@/lib/intakeWelcomeCopy";
 import { rescreenName } from "@/lib/reassessmentCopy";
+import { intakeScreeners } from "@/lib/seeking";
+import { deliverAdvocateInvitation } from "@/lib/advocateInviteDelivery";
+import { BACKGROUND_COPY } from "@/lib/intakeBackgroundCopy";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { SCREENERS, severityFor } from "@/lib/screeners";
+import { severityFor } from "@/lib/screeners";
 import {
   AdelanteEHR,
   SDOH_SOURCE_LABEL,
@@ -284,6 +287,22 @@ function IntakePage() {
   // retypes what sign-up (or a CF Care Manager) already entered.
   const [profile, setProfile] = useState<IntakeProfile>(() => seedIntakeProfile(patient));
   const [savedAt, setSavedAt] = useState<string | null>(null);
+  // §Part B1 — background questions on About You.
+  const [seeking, setSeeking] = useState(() => ({
+    mentalHealth: patient?.seeking?.mentalHealth ?? false,
+    medication: patient?.seeking?.medication ?? false,
+    substanceUse: false,
+  }));
+  /** Index of the emergency contact also invited as advocate, or null. */
+  const [advocateFromContact, setAdvocateFromContact] = useState<number | null>(null);
+  const [advocateOther, setAdvocateOther] = useState({
+    on: false,
+    name: "",
+    relationship: "",
+    contact: "",
+    channel: "sms" as "sms" | "email",
+  });
+  const B = BACKGROUND_COPY[lang9a === "es" ? "es" : "en"];
 
   /**
    * §Consent re-prompt gate.
@@ -333,6 +352,9 @@ function IntakePage() {
       if (saved.needs) setNeeds(saved.needs);
       if (saved.coverage) setCoverage(saved.coverage);
       if (saved.benefits) setBenefits(saved.benefits);
+      if (saved.seeking) setSeeking(saved.seeking);
+      if (saved.advocateFromContact !== undefined) setAdvocateFromContact(saved.advocateFromContact);
+      if (saved.advocateOther) setAdvocateOther(saved.advocateOther);
       // Merge, never overwrite: a blank field in an old draft must not erase
       // something the record actually knows.
       if (saved.profile) {
@@ -360,6 +382,9 @@ function IntakePage() {
           coverage,
           benefits,
           profile,
+          seeking,
+          advocateFromContact,
+          advocateOther,
           savedAt: at,
         }),
       );
@@ -368,7 +393,7 @@ function IntakePage() {
       /* no-op */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile]);
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, advocateFromContact, advocateOther]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -419,7 +444,8 @@ function IntakePage() {
 
   // Build step list: welcome, consent, screeners (filter SUD if no consent), needs, review
   const activeScreeners = useMemo(
-    () => SCREENERS.filter((s) => !s.isSud || effectiveSud === true),
+    // Unchanged screener logic: Part 2 consent only, never the "looking for" answers.
+    () => intakeScreeners(effectiveSud),
     [effectiveSud],
   );
   const steps = useMemo(
@@ -578,6 +604,47 @@ function IntakePage() {
       hipaa: effectiveHipaa,
       part2Sud: effectiveSud === true,
     });
+    // §Part B1 — "looking for": content/recommendations + SUGGESTED goals only.
+    AdelanteEHR.recordSeeking(
+      currentId,
+      seeking,
+      { id: currentId, role: "patient" },
+      { sudConsentGiven: effectiveSud === true },
+    );
+    // §Part B1 — advocate named at intake: a pending INVITATION only, through
+    // the one existing mechanism. No access until the advocate claims and the
+    // patient signs advocate consent; tier rules unchanged.
+    const patientName = patient ? `${patient.firstName} ${patient.lastName}` : "Patient";
+    const invites: { name: string; relationship: string; contact: string; channel: "sms" | "email" }[] = [];
+    if (advocateFromContact !== null) {
+      const c = profile.emergencyContacts[advocateFromContact];
+      if (c?.name.trim() && (c.phone.trim() || c.email?.trim())) {
+        invites.push({
+          name: c.name,
+          relationship: c.relationship,
+          contact: c.phone.trim() || c.email!.trim(),
+          channel: c.phone.trim() ? "sms" : "email",
+        });
+      }
+    }
+    if (advocateOther.on && advocateOther.name.trim() && advocateOther.contact.trim()) {
+      invites.push(advocateOther);
+    }
+    for (const inv of invites) {
+      try {
+        const link = AdelanteEHR.createAdvocateInvitation({
+          patientId: currentId,
+          advocateName: inv.name,
+          relationship: inv.relationship,
+          invitationSentTo: inv.contact,
+          invitationChannel: inv.channel,
+          designatedBy: { actor: "patient", name: patientName },
+        });
+        void deliverAdvocateInvitation(link);
+      } catch {
+        /* no-op — the invite form on My Care remains available */
+      }
+    }
     if (crisisFlagged) {
       // Legacy soft flag — still read by case-manager / caseload / referral filters.
       AdelanteEHR.raiseCrisisFlag(currentId, "phq-9-item-9");
@@ -744,6 +811,66 @@ function IntakePage() {
                 />
               </div>
             </div>
+            {!inReassess && (
+              <div className="space-y-4 rounded-lg border p-4" data-testid="about-background">
+                <div className="text-sm font-medium text-navy">{B.heading}</div>
+                  {justiceKnown ? (
+              <div
+                data-testid="justice-known"
+                className="rounded-lg border bg-secondary/40 p-3 text-sm"
+              >
+                <div className="font-medium text-navy">{c9a.justiceKnownTitle}</div>
+                <p className="mt-1 text-muted-foreground">{c9a.justiceKnownBody}</p>
+              </div>
+            ) : (
+            <div className="space-y-1.5">
+              <Label className="text-sm">
+                Have you ever been involved with the justice system — jail, prison, probation, or
+                parole?
+              </Label>
+              <RadioGroup
+                className="grid gap-2"
+                value={coverage.justiceInvolvement}
+                onValueChange={(v) =>
+                  setCoverage({ ...coverage, justiceInvolvement: v as TriState })
+                }
+              >
+                {(
+                  [
+                    { key: "yes", label: "Yes" },
+                    { key: "no", label: "No" },
+                    { key: "unsure", label: "I'm not sure" },
+                  ] as { key: TriState; label: string }[]
+                ).map((o) => (
+                  <label
+                    key={o.key}
+                    htmlFor={`ji-${o.key}`}
+                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm"
+                  >
+                    <RadioGroupItem id={`ji-${o.key}`} value={o.key} />
+                    <span>{o.label}</span>
+                  </label>
+                ))}
+              </RadioGroup>
+            </div>
+            )}
+
+                <fieldset className="space-y-2" data-testid="seeking-question">
+                  <legend className="text-sm">{B.seekingQ}</legend>
+                  {(["mentalHealth", "medication", "substanceUse"] as const).map((k) => (
+                    <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
+                      <Checkbox
+                        checked={seeking[k]}
+                        data-testid={`seeking-${k}`}
+                        onCheckedChange={(v) => setSeeking({ ...seeking, [k]: Boolean(v) })}
+                      />
+                      <span>{B.seeking[k]}</span>
+                    </label>
+                  ))}
+                  <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
+                </fieldset>
+              </div>
+            )}
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
               <div>
                 <div className="text-sm font-medium text-navy">Emergency contacts</div>
@@ -831,6 +958,16 @@ function IntakePage() {
                       }
                     />
                   </div>
+                  {!inReassess && (
+                    <label className="flex cursor-pointer items-start gap-2 text-sm">
+                      <Checkbox
+                        checked={advocateFromContact === i}
+                        data-testid={`advocate-from-contact-${i}`}
+                        onCheckedChange={(v) => setAdvocateFromContact(v ? i : null)}
+                      />
+                      <span>{B.alsoAdvocate}</span>
+                    </label>
+                  )}
                 </div>
               ))}
               <Button
@@ -846,6 +983,26 @@ function IntakePage() {
               >
                 <Plus className="mr-1.5 h-4 w-4" /> Add another contact
               </Button>
+              {!inReassess && (
+                <div className="space-y-2 rounded-md border bg-card p-3" data-testid="name-advocate">
+                  <label className="flex cursor-pointer items-start gap-2 text-sm">
+                    <Checkbox
+                      checked={advocateOther.on}
+                      data-testid="name-advocate-toggle"
+                      onCheckedChange={(v) => setAdvocateOther({ ...advocateOther, on: Boolean(v) })}
+                    />
+                    <span>{B.nameAdvocate}</span>
+                  </label>
+                  {advocateOther.on && (
+                    <div className="grid grid-cols-1 gap-2 sm:grid-cols-2">
+                      <Input aria-label={B.advName} placeholder={B.advName} value={advocateOther.name} data-testid="name-advocate-name" onChange={(e) => setAdvocateOther({ ...advocateOther, name: e.target.value })} />
+                      <Input aria-label={B.advRel} placeholder={B.advRel} value={advocateOther.relationship} onChange={(e) => setAdvocateOther({ ...advocateOther, relationship: e.target.value })} />
+                      <Input aria-label={B.advContact} placeholder={B.advContact} value={advocateOther.contact} data-testid="name-advocate-contact" onChange={(e) => setAdvocateOther({ ...advocateOther, contact: e.target.value, channel: e.target.value.includes("@") ? "email" : "sms" })} />
+                    </div>
+                  )}
+                  <p className="text-xs text-muted-foreground">{B.advocateNote}</p>
+                </div>
+              )}
             </div>
           </div>
           );
@@ -1119,47 +1276,6 @@ function IntakePage() {
             </div>
 
             <BenefitsStep value={benefits} onChange={onBenefitsChange} patientId={currentId} audience="self" />
-
-            {justiceKnown ? (
-              <div
-                data-testid="justice-known"
-                className="rounded-lg border bg-secondary/40 p-3 text-sm"
-              >
-                <div className="font-medium text-navy">{c9a.justiceKnownTitle}</div>
-                <p className="mt-1 text-muted-foreground">{c9a.justiceKnownBody}</p>
-              </div>
-            ) : (
-            <div className="space-y-1.5">
-              <Label className="text-sm">
-                Have you ever been involved with the justice system — jail, prison, probation, or
-                parole?
-              </Label>
-              <RadioGroup
-                className="grid gap-2"
-                value={coverage.justiceInvolvement}
-                onValueChange={(v) =>
-                  setCoverage({ ...coverage, justiceInvolvement: v as TriState })
-                }
-              >
-                {(
-                  [
-                    { key: "yes", label: "Yes" },
-                    { key: "no", label: "No" },
-                    { key: "unsure", label: "I'm not sure" },
-                  ] as { key: TriState; label: string }[]
-                ).map((o) => (
-                  <label
-                    key={o.key}
-                    htmlFor={`ji-${o.key}`}
-                    className="flex cursor-pointer items-center gap-3 rounded-md border p-3 text-sm"
-                  >
-                    <RadioGroupItem id={`ji-${o.key}`} value={o.key} />
-                    <span>{o.label}</span>
-                  </label>
-                ))}
-              </RadioGroup>
-            </div>
-            )}
 
             {lookupApplies && (
               <div
