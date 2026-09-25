@@ -10,18 +10,18 @@ import { itemVisible, optionsForItem, type ScreenerDef } from "@/lib/screeners";
 export function ScreenerItems({
   def,
   answers,
+  choices = {},
   onChange,
   testIdPrefix = "screener-q",
 }: {
   def: ScreenerDef;
   answers: (number | undefined)[];
+  /** Chosen option index per item (needed where two choices share a score). */
+  choices?: Record<number, number>;
   /** Receives item-score answers plus the chosen option index per item. */
   onChange: (answers: (number | undefined)[], choiceIndex: Record<number, number>) => void;
   testIdPrefix?: string;
 }) {
-  // Choice index is derived for display; for items with duplicate scores the
-  // first matching option would be shown, so we keep a hidden per-item choice.
-  const choices = (answers as unknown as { __choices?: Record<number, number> }).__choices ?? {};
   return (
     <div className="space-y-5">
       {def.questions.map((q, qi) => {
@@ -40,14 +40,13 @@ export function ScreenerItems({
               value={chosen >= 0 ? String(chosen) : ""}
               onValueChange={(v) => {
                 const idx = Number(v);
-                const next = [...answers] as (number | undefined)[] & { __choices?: Record<number, number> };
+                const next = [...answers];
                 next[qi] = opts[idx].value;
                 // Clearing the gate to "stop" drops follow-up answers.
                 if (def.gate && qi === def.gate.itemIndex && opts[idx].value === def.gate.stopWhenValue) {
                   for (let i = 0; i < def.questions.length; i++) if (i !== qi) next[i] = undefined;
                 }
                 const nextChoices = { ...choices, [qi]: idx };
-                Object.defineProperty(next, "__choices", { value: nextChoices, enumerable: false });
                 onChange(next, nextChoices);
               }}
             >

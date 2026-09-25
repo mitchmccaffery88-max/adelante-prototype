@@ -7,7 +7,8 @@ import { Link, useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ClipboardList } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { SCREENERS, optionsForItem } from "@/lib/screeners";
+import { activeScreenerByKey, rescreenRule, screenerComplete } from "@/lib/screeners";
+import { ScreenerItems } from "@/components/screeners/ScreenerItems";
 import { useI18n } from "@/lib/i18n";
 import { REASSESS_COPY, rescreenName } from "@/lib/reassessmentCopy";
 import { Card } from "@/components/ui/card";
@@ -27,12 +28,13 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   const allowed = useEhr(() =>
     AdelanteEHR.patientReassessmentDue(patientId).some((d) => d.key === screenerKey) ||
     // A patient may also re-take a non-SUD instrument voluntarily.
-    !!SCREENERS.find((s) => s.key === screenerKey && !s.isSud) ||
-    (!!SCREENERS.find((s) => s.key === screenerKey && s.isSud) &&
-      AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment")),
+    (!!rescreenRule(screenerKey) && !!activeScreenerByKey(screenerKey) &&
+      (!activeScreenerByKey(screenerKey)!.isSud ||
+        AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment"))),
   );
-  const def = SCREENERS.find((s) => s.key === screenerKey);
-  const [answers, setAnswers] = useState<number[]>([]);
+  const def = rescreenRule(screenerKey) ? activeScreenerByKey(screenerKey) : undefined;
+  const [answers, setAnswers] = useState<(number | undefined)[]>([]);
+  const [choices, setChoices] = useState<Record<number, number>>({});
 
   if (!def || !allowed) {
     return (
@@ -46,12 +48,12 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   }
 
   const submit = () => {
-    if (def.questions.some((_, i) => typeof answers[i] !== "number")) {
+    if (!screenerComplete(def, answers)) {
       toast.error(c.answerAll);
       return;
     }
     try {
-      AdelanteEHR.completeRescreen(patientId, def.key, answers, {
+      AdelanteEHR.completeRescreen(patientId, def.key, answers as number[], {
         actorId: patientId,
         actorRole: "patient",
       });
@@ -72,30 +74,16 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
           {def.isSud && <Badge className="ml-2 border-0 bg-teal/15 text-teal">{c.part2}</Badge>}
           <p className="mt-2 text-sm text-muted-foreground">{def.description}</p>
         </div>
-        {def.questions.map((q, qi) => (
-          <div key={qi} className="rounded-lg border p-3" data-testid={`rescreen-q-${qi}`}>
-            <Label className="text-sm leading-snug">{qi + 1}. {q}</Label>
-            <RadioGroup
-              className="mt-2 flex flex-wrap gap-2"
-              value={String(answers[qi] ?? "")}
-              onValueChange={(v) => {
-                const next = [...answers];
-                next[qi] = Number(v);
-                setAnswers(next);
-              }}
-            >
-              {optionsForItem(def, qi).map((o) => (
-                <label
-                  key={o.value}
-                  className="flex min-h-11 cursor-pointer items-center gap-1.5 rounded-full border bg-card px-3 py-2.5 text-xs hover:border-teal"
-                >
-                  <RadioGroupItem value={String(o.value)} />
-                  {o.label}
-                </label>
-              ))}
-            </RadioGroup>
-          </div>
-        ))}
+        <ScreenerItems
+          def={def}
+          answers={answers}
+          choices={choices}
+          testIdPrefix="rescreen-q"
+          onChange={(next, ch) => {
+            setAnswers(next);
+            setChoices(ch);
+          }}
+        />
         <Button size="patient" className="w-full" onClick={submit} data-testid="rescreen-submit">
           {c.submit}
         </Button>
