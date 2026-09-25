@@ -200,6 +200,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
     },
   },
   {
+    id: "clinical-rescreens",
     group: "clinical",
     prompt: "Which of my patients have overdue re-screens?",
     anyOf: ["screeners_mh"],

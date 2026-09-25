@@ -46,10 +46,15 @@ describe("Part B1 — looking for", () => {
     expect((AdelanteEHR.getPatient(p.id)!.goals ?? []).length).toBe(before + 1);
   });
 
-  it("drops the substance-use selection without Part 2 consent", () => {
+  it("§Phase 10c — keeps the substance-use selection without Part 2 consent (masked, no patient tools)", () => {
     const p = fresh();
     AdelanteEHR.recordSeeking(p.id, { mentalHealth: false, medication: false, substanceUse: true }, { id: p.id, role: "patient" });
-    expect(AdelanteEHR.getPatient(p.id)!.needs.substanceUse).toBeFalsy();
+    const updated = AdelanteEHR.getPatient(p.id)!;
+    // The answer is no longer dropped: it is kept with the consent state at
+    // selection time, and patient-facing SUD tools stay hidden until consent.
+    expect(updated.needs.substanceUse).toBe(true);
+    expect(updated.seeking?.part2ConsentAtSelection).toBe(false);
+    expect(recoveryJourneyVisible(updated)).toBe(false);
   });
 
   it("Part 2 masking: substance use hidden from advocates and gated staff", () => {

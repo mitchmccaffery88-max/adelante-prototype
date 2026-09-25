@@ -2096,6 +2096,7 @@ export function TaskList({
     manual: "Manual",
     missed_appt: "No-show",
     screener_flag: "Screener",
+    asam_needed: "ASAM",
     referral_stale: "Stale referral",
     referral_enrollment_setup: "New enrollment setup",
     advocate_ahcd_validation: "AHCD validation",
