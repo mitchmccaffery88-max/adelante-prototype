@@ -120,6 +120,18 @@ export function chartReviewFacts(
         .join(", ")}.`,
     );
   }
+  // §Phase 10b — C-SSRS: an open request, and the latest risk level (draft mapping).
+  const cssrsOpen = AdelanteEHR.openCssrsRequest(patientId);
+  if (cssrsOpen) careGaps.push("C-SSRS indicated and not yet administered.");
+  const cssrsLast = patient.screeners?.["c-ssrs-screener"];
+  if (cssrsLast?.cssrsRisk && cssrsLast.cssrsRisk !== "none") {
+    careGaps.push(
+      `Latest C-SSRS: ${cssrsLast.severity} (${cssrsLast.context === "patient_self" ? "patient self-report" : "staff-administered"}; risk mapping draft, item text placeholder).`,
+    );
+  }
+  if (allScreeners.some((s) => s.retiredForm)) {
+    careGaps.push("Retired non-validated PTSD short-form results on file — not trended with PC-PTSD-5 / PCL-5.");
+  }
   if (dosesRefusedOrHeld > 0) {
     careGaps.push(
       `${dosesRefusedOrHeld} dose${dosesRefusedOrHeld === 1 ? "" : "s"} refused or held in the last 14 days — worth naming in the visit.`,

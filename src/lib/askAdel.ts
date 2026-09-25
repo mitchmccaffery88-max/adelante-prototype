@@ -151,6 +151,28 @@ const plural = (n: number, one: string, many: string) => `${n} ${n === 1 ? one :
 export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
   // ---- Clinical ----------------------------------------------------------
   {
+    // §Phase 10b — open C-SSRS requests on the caseload.
+    id: "clinical-cssrs",
+    group: "clinical",
+    prompt: "Who on my caseload needs a C-SSRS?",
+    anyOf: ["screeners_mh"],
+    answer: (ctx) => {
+      const ids = new Set(myCaseload(ctx).map((p) => p.id));
+      const rows = AdelanteEHR.patientsWithOpenCssrs().filter((r) => ids.has(r.patientId));
+      return {
+        backing: "real",
+        lines: rows.length
+          ? rows.map((r) => `${r.name} — C-SSRS indicated${r.risk ? ` (last risk: ${r.risk})` : ""}`)
+          : ["No one on your caseload has an open C-SSRS request."],
+        notes: [
+          "C-SSRS item text is a placeholder pending official Columbia wording; risk mapping and response protocol are drafts pending clinical sign-off.",
+          ASK_ADEL_CASELOAD_NOTE,
+        ],
+        link: { to: "/crisis-queue", label: "Open crisis queue" },
+      };
+    },
+  },
+  {
     id: "clinical-rescreens",
     group: "clinical",
     prompt: "Which of my patients have overdue re-screens?",
