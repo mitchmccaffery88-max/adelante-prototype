@@ -190,3 +190,11 @@
 - [ ] asam.test.ts (triggers, masking, cosign, no auto-level, patient view)
 - [ ] Full test run + browser verification (desktop/phone)
 - [ ] Report with the two navigation confirmations
+
+## Phase 10d-1 (building)
+- [x] Rename staff Elena Vargas → Renee Castillo
+- [x] Rename QA patients colliding with staff (2b, 3, 5)
+- [ ] ASAM reporting lib (worklists, differences, timeliness, cohort guard, Part 2)
+- [ ] My Work ASAM group; /reporting "ASAM (clinical)" section; chart level history
+- [ ] Demo: overdue task + recommended≠actual signed record
+- [ ] Tests, typecheck, browser check

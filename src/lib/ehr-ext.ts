@@ -1727,7 +1727,7 @@ registerAsamClaimCreator((input) => AdelanteEHRExt.createAsamClaim(input).id);
 // H0001 claim now, so the demo record is complete from first render.
 for (const p of AdelanteEHR.listPatients()) {
   for (const a of p.asamAssessments ?? []) {
-    if (a.status === "signed" && a.outputs && !a.outputs.claimId) {
+    if (a.status === "signed" && a.outputs && !a.outputs.claimId && !a.amendsId) {
       const claim = AdelanteEHRExt.createAsamClaim({
         asamId: a.id,
         patientId: p.id,

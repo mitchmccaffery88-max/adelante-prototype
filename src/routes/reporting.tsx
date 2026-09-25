@@ -67,6 +67,8 @@ import {
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
+import { ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
+import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
@@ -253,6 +255,8 @@ function ReportingHome() {
   const canManageTargets = population.level === "write";
   const seesAudit = canAccess(role, "consent_ledger").level !== "none";
 
+  // §10d-1 — ASAM (clinical). `null` = role fails the Part 2 check: hidden.
+  const asamReport = useEhr(() => asamClinicalReport(role));
   // Every selector below re-runs when `days` changes, so the windowed numbers
   // genuinely move with the period selector.
   const metrics = useEhr(() => (seesPopulation ? computeLiveMetrics(new Date(), days) : null));
@@ -708,6 +712,84 @@ function ReportingHome() {
       )}
 
 
+
+      {asamReport && (
+        <Area
+          id="asam-clinical"
+          title="ASAM (clinical)"
+          purpose="ASAM assessments needed, due and overdue by clinician and team; drafts awaiting co-signature; recommended vs actual level differences; reassessments due; timeliness. 42 CFR Part 2 protected."
+          icon={ClipboardList}
+          actions={null}
+        >
+          <div className="space-y-3" data-testid="reporting-asam">
+            <Card className="space-y-1 p-3">
+              <Badge variant="outline" className="text-[10px]">Draft values</Badge>
+              <p className="text-xs text-muted-foreground">
+                Due windows, reassessment interval and timeliness windows ({ASAM_TIMELINESS_DRAFT.triggerToAssessmentDays} days
+                trigger → assessment, {ASAM_TIMELINESS_DRAFT.assessmentToFirstServiceDays} days assessment → first DMC-ODS
+                service): {ASAM_DRAFT_NOTE}. {ASAM_REPORTING_ASSOCIATION_NOTE}
+              </p>
+              {asamReport.guard.belowMinimumCohort && (
+                <CohortGuardNotice cohortSize={asamReport.guard.cohortSize} minimumCohortSize={asamReport.guard.minimumCohortSize} />
+              )}
+            </Card>
+            <div className="grid gap-3 sm:grid-cols-4">
+              <Stat label="Needed" value={String(asamReport.tasks.filter((t) => t.state === "needed").length)} />
+              <Stat label="Due (next 7 days)" value={String(asamReport.tasks.filter((t) => t.state === "due").length)} />
+              <Stat label="Overdue" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
+              <Stat label="Awaiting co-signature" value={String(asamReport.cosign.length)} />
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              {([["By clinician", asamReport.byClinician], ["By team", asamReport.byTeam]] as const).map(([title, rows]) => (
+                <Card key={title} className="space-y-2 p-4">
+                  <h3 className="text-sm font-medium text-navy">{title}</h3>
+                  {rows.length === 0 ? (
+                    <p className="text-xs text-muted-foreground">No open ASAM tasks.</p>
+                  ) : (
+                    <table className="w-full text-xs">
+                      <thead className="text-muted-foreground"><tr><th className="text-left font-normal">Name</th><th className="font-normal">Needed</th><th className="font-normal">Due</th><th className="font-normal">Overdue</th></tr></thead>
+                      <tbody>{rows.map((r) => (
+                        <tr key={r.key}><td>{r.label}</td><td className="text-center">{r.needed}</td><td className="text-center">{r.due}</td><td className="text-center">{r.overdue}</td></tr>
+                      ))}</tbody>
+                    </table>
+                  )}
+                </Card>
+              ))}
+            </div>
+            <div className="grid gap-3 md:grid-cols-2">
+              <Card className="space-y-2 p-4">
+                <h3 className="text-sm font-medium text-navy">Drafts awaiting co-signature</h3>
+                {asamReport.cosign.length === 0 ? <p className="text-xs text-muted-foreground">None.</p> : (
+                  <ul className="space-y-1 text-xs">{asamReport.cosign.map((c) => (
+                    <li key={c.asamId}>{c.patientName} — authored by {c.authorName}, waiting {c.ageDays} day{c.ageDays === 1 ? "" : "s"}</li>
+                  ))}</ul>
+                )}
+              </Card>
+              <Card className="space-y-2 p-4">
+                <h3 className="text-sm font-medium text-navy">Recommended vs actual level</h3>
+                {asamReport.differences.length === 0 ? <p className="text-xs text-muted-foreground">No signed assessment with a difference.</p> : (
+                  <ul className="space-y-1 text-xs" data-testid="asam-differences">{asamReport.differences.map((d) => (
+                    <li key={d.asamId}>{d.patientName} (v{d.version}) — recommended {d.recommended}, actual {d.actual}. Reason: {d.reason}</li>
+                  ))}</ul>
+                )}
+              </Card>
+            </div>
+            <div className="grid gap-3 sm:grid-cols-3">
+              <Stat label="Reassessments due (30 days)" value={String(asamReport.reassessmentsDue30.length)} note={`Draft interval — ${ASAM_DRAFT_NOTE}`} />
+              <Stat
+                label="Median days, trigger → signed assessment"
+                value={asamReport.timeliness.triggerToAssessment.medianDays === null ? "—" : String(asamReport.timeliness.triggerToAssessment.medianDays)}
+                note={`${asamReport.timeliness.triggerToAssessment.withinWindow} of ${asamReport.timeliness.triggerToAssessment.cohortSize} within the draft ${asamReport.timeliness.triggerToAssessment.windowDays}-day window`}
+              />
+              <Stat
+                label="Median days, signed → first DMC-ODS service"
+                value={asamReport.timeliness.assessmentToService.medianDays === null ? "—" : String(asamReport.timeliness.assessmentToService.medianDays)}
+                note={asamReport.timeliness.assessmentToService.cohortSize === 0 ? "No DMC-ODS treatment service recorded after a signed assessment yet" : `${asamReport.timeliness.assessmentToService.withinWindow} of ${asamReport.timeliness.assessmentToService.cohortSize} within the draft ${asamReport.timeliness.assessmentToService.windowDays}-day window`}
+              />
+            </div>
+          </div>
+        </Area>
+      )}
 
       {seesPopulation && (
         <Area

@@ -256,7 +256,7 @@ describe("Phase 10c — Ask Adel", () => {
 describe("Phase 10c — demo seeds", () => {
   it("Luis C. has a signed ASAM with outputs; Jasmine H. awaits LPHA cosign; Daniel is due", () => {
     const luisId = demoScenarioPatientId("sud_consented")!;
-    const luis = AdelanteEHR.listAsamAssessments(luisId)[0];
+    const luis = AdelanteEHR.listAsamAssessments(luisId).find((a) => a.version === 1)!;
     expect(luis.status).toBe("signed");
     expect(luis.outputs?.claimId).toBeDefined();
     expect(luis.outputs?.episodeId).toBeDefined();

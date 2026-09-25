@@ -68,7 +68,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   },
   medication: {
     group: "Intake by need",
-    label: "2b · Marisol O. — Medication management",
+    label: "2b · Paloma O. — Medication management",
     hint: "Intake done, suggested prescriber goal awaiting clinician; no substance-use tools",
   },
   sud_consented: {
@@ -83,7 +83,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   },
   ji_self_report: {
     group: "Justice",
-    label: "3 · Andre W. — Previously justice-involved (self-reported)",
+    label: "3 · Victor H. — Previously justice-involved (self-reported)",
     hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey",
   },
   sud_no_consent: {
@@ -98,7 +98,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   },
   public_referral: {
     group: "Referral",
-    label: "5 · Carmen D. — Public referral form",
+    label: "5 · Carmen I. — Public referral form",
     hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff",
   },
   advocate: {

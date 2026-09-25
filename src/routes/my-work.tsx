@@ -23,6 +23,8 @@ import {
   type DisengagementRow,
 } from "@/lib/myWork";
 import { overdueByLabel } from "@/lib/crisisPolicy";
+import { myAsamWork } from "@/lib/asamReporting";
+import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -34,6 +36,7 @@ import {
   ClipboardList,
   FileText,
   Lock,
+  Scale,
   Siren,
   UserMinus,
 } from "lucide-react";
@@ -159,6 +162,10 @@ function MyWorkPage() {
   const caseload = useEhr(() => myCaseload(identity));
   const rescreens = useEhr(() => screenerDueRows(myCaseload(identity), { role: actor.role }));
   const quiet = useEhr(() => disengagementFlagged(disengagementRows(myCaseload(identity))));
+  // §10d-1 — ASAM group. `null` = the role fails the Part 2 check: hidden.
+  const asam = useEhr(() =>
+    myAsamWork({ role: actor.role, staffId: actor.staffId, staffName: actor.staffName, clinicianId: actor.clinicianId }),
+  );
   // Referenced so the store subscription covers late-arriving demo data.
   useEhr(() => AdelanteEHR.listPatients().length);
 
@@ -321,6 +328,68 @@ function MyWorkPage() {
           </div>
         )}
       </section>
+
+      {/* ---------- ASAM (Part 2 — hidden for roles without access) ---------- */}
+      {asam && (
+        <section aria-labelledby="asam-heading" className="space-y-3" data-testid="my-work-asam">
+          <SectionHeading
+            id="asam-heading"
+            icon={Scale}
+            title="ASAM"
+            purpose="ASAM assessments assigned to you (needed, due, overdue), your drafts awaiting co-signature, and co-signatures waiting on you. 42 CFR Part 2 protected."
+            count={asam.tasks.length + asam.myDraftsAwaitingCosign.length + asam.cosignsForMe.length}
+          />
+          <Card className="bg-warning/10 p-3 text-[11px] leading-snug text-navy">
+            Due windows and reassessment interval: {ASAM_DRAFT_NOTE}.
+          </Card>
+          {asam.tasks.length + asam.myDraftsAwaitingCosign.length + asam.cosignsForMe.length === 0 ? (
+            <EmptyState icon={Scale} title="No ASAM work on you" description="Nothing assigned, awaiting co-signature, or waiting on your signature." />
+          ) : (
+            <div className="space-y-2">
+              {asam.tasks.map((t) => (
+                <Row
+                  key={t.taskId}
+                  patientId={t.patientId}
+                  name={t.patientName}
+                  section="asam"
+                  primary={`${t.title} — due ${t.dueDate}`}
+                  secondary={t.reason}
+                  badge={
+                    <Badge
+                      data-testid={`asam-state-${t.state}`}
+                      className={`border-0 text-[10px] ${t.state === "overdue" ? "bg-destructive/15 text-destructive" : t.state === "due" ? "bg-warning/20 text-navy" : "bg-muted text-muted-foreground"}`}
+                    >
+                      {t.state === "overdue" ? "Overdue" : t.state === "due" ? "Due" : "Needed"}
+                    </Badge>
+                  }
+                />
+              ))}
+              {asam.myDraftsAwaitingCosign.map((c) => (
+                <Row
+                  key={c.asamId}
+                  patientId={c.patientId}
+                  name={c.patientName}
+                  section="asam"
+                  primary="Your ASAM draft — awaiting LPHA co-signature"
+                  secondary={`Waiting ${c.ageDays} day${c.ageDays === 1 ? "" : "s"}. No outputs fire until co-signed.`}
+                  badge={<Badge className="bg-muted text-muted-foreground border-0 text-[10px]">Cosign pending</Badge>}
+                />
+              ))}
+              {asam.cosignsForMe.map((c) => (
+                <Row
+                  key={`cs-${c.asamId}`}
+                  patientId={c.patientId}
+                  name={c.patientName}
+                  section="asam"
+                  primary={`Co-sign ASAM authored by ${c.authorName}`}
+                  secondary={<Link to="/cosign-inbox" className="underline">Open the cosign inbox</Link>}
+                  badge={<Badge className="bg-warning/20 text-navy border-0 text-[10px]">Needs your co-signature</Badge>}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ---------- 2. Screeners due ---------- */}
       <section aria-labelledby="rescreen-heading" className="space-y-3">
