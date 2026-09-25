@@ -1,41 +1,73 @@
-# Part B — Adel-guided intake (demo slice: profile + benefits only)
+# Part B: Onboarding and intake follow-ups (plan only)
 
-Part A (seeded pre-release persona "Tomás R.") is already built; this plan covers Part B only.
+Part A is built. This plan covers the seven Part B items, split into phases. Nothing here is built yet.
 
-## What the patient sees
-1. Intake Welcome step gets a second button, **"Go through this with Adel"**, beside the existing "Start" (form stays the default) and the existing Ask Adel help link.
-2. Tapping it opens an Adel conversation panel inside the intake page, labelled **Prototype** using the same banner component as Scribe Copilot.
-3. Adel asks one question at a time, in plain words, covering the same fields and allowed answers as the form:
-   - About you: what to call you, pronouns, language, phone, how to reach you, best time, emergency contact, address (and release date only if the form would ask it).
-   - Benefits: the same 8 coverage choices; for Medi-Cal/dual, CIN, plan (from the same plan list, including "I don't know") and Medi-Cal status; for others, plan name.
-   - Tap a choice chip or type. Skippable questions keep the "Skip" option the form has.
-4. If a value is already on file: "Here's what we have: 559-555-0100. Is that still right?" (Yes / Change it).
-5. Every answer gets a confirmation ("You said Medi-Cal — is that right?"). Only "Yes" moves it into the draft; nothing is taken from an unconfirmed or guessed answer.
-6. After benefits, Adel says consent has to be done on the form by the patient, and hands off to the regular **Consent** step (or the next step if consent is already on file). Adel never marks intake complete; the patient finishes with the form.
+## 1. About You background questions (step 2)
+- Add two questions to About You:
+  - "Are you involved with the justice system? (yes / no / unsure)" — moved here from the Coverage step, which asks it today. It keeps writing `coverage.justiceInvolvement`, so the coverage message, the safety-net lookup, the History step and the Obligations view all keep working.
+  - "What are you looking for? Check all that apply: mental health, medication, substance use services."
+- A pre-release episode or custody record still shows "Already on file" and skips the justice question, as Coverage does today.
+- Where each answer goes:
+  - **Patient profile:** new `Patient.seeking = { mentalHealth, medication, substanceUse }`, plus the justice answer.
+  - **Care profile / care plan:** medication → a medication-management engagement goal; mental health → a therapy goal.
+  - **Screeners offered:** PHQ-9 and GAD-7 for everyone. AUDIT and DAST-10 only when substance use is checked **and** Part 2 consent is on file; the consent gate is unchanged. PCL-5 when justice-involved or mental health is checked.
+  - **Content / Resource Library:** hide Recovery Journey unless substance use is checked. Show post-release modules and Obligations when the person is justice-involved.
+- **Part 2:** a substance-use selection is saved as SUD-category data behind the same mask as `needs.substanceUse` and the SUD screeners. Advocates and Part 2-restricted staff never see it (it goes through the existing `isConsentCategoryAuthorized` and the chart's masking). It is merged into the existing `needs.substanceUse` flag, not kept as a second flag.
 
-## Saving (existing paths only)
-- Confirmed answers go into the same intake draft the form already uses (`adelante.intake.<patientId>`: `profile`, `benefits`, `step`), so switching to the form continues where Adel stopped and the home tile Start/Continue logic is untouched.
-- At the hand-off, Adel commits what was confirmed:
-  - About you: the same `AdelanteEHR.updateProfile` patch the form's submit builds (factored into a small shared helper so both use identical fields), plus one audit entry `intake_profile_saved` with `via: "adel_guided_intake"`.
-  - Benefits: `recordIntakeBenefits(..., { source: "patient_reported", via: "adel_guided_intake", ... })` — adds that one `via` value; plan span source stays `patient_reported`. The form's final submit re-sends the same answers, which the existing dedupe already handles (no duplicate span/task).
-- No change to intake completion, screeners, consent, needs, history, tile states, 9a or 9b.
+## 2. Advocate option with the emergency contact
+- On each emergency contact: "Also make this person my advocate". There is also a separate "Name an advocate" row.
+- On submit, this creates a **pending invitation only**, through the existing advocate designation / `sendAdvocateInvite` path.
+- The person gets no access until the patient signs the advocate consent step. Existing advocate-tier rules apply unchanged.
+- My Care shows "Invitation pending — sign consent to activate".
 
-## Crisis first
-- Every typed message runs the existing `detectCrisisLanguage` / `scanTextForCrisis` path from Patient Adel before anything else, with the same 988 reply and crisis-queue escalation. A tripped message is not treated as an answer.
-- The "I need help now" / craving button stays visible.
+## 3. Benefits verification in the Coverage step
+- Check the Medi-Cal ID format as the person types, and warn when the ID matches another record (both already exist in the data layer).
+- Show "What happens next": reported, then checked by staff or electronically, with the current status label from 8c.
+- Optional photo of the benefits card, stored as a patient document tagged `coverage_card`, which the needs-verification worklist links to.
+- Self-pay / sliding-fee people: one plain sentence about the payment arrangement. It never asks for card numbers.
 
-## Assumption to confirm
-- **No AI model call for this slice.** Adel's questions are scripted and typed answers are matched to the allowed choices deterministically (unclear typing gets "I didn't catch that" plus the chips). This keeps saved values exactly within the form's allowed answers and makes "nothing inferred" guaranteed. The Prototype label says so. If you want the model to phrase questions, that can come after the demo.
+## 4. Expanded needs assessment (standard for everyone)
+- The directory uses 14 categories: housing, emergency_shelter, food, employment, transportation, recovery_meetings, support_groups, family_reunification, healthcare, education, parenting, financial, legal, life_skills.
+- The questions follow the AHC-HRSN structure (core: living situation, food, transportation, utilities, safety; supplemental: employment, family/community support, education, finances, legal, parenting, physical activity/health access).
+- Each answer maps to one or more directory categories (for example, food insecurity → food; housing instability → housing + emergency_shelter).
+- **Wording is marked draft pending Christi's review.**
+- Interpersonal safety stays staff-only by default (never shown to the patient or advocates), as it is today.
+- The existing reconciliation ("still applies?" / "on file") carries over: `buildIntakeNeedsPlan` grows from 4 categories to the full set.
 
-## Languages
-English and Spanish for all new Adel lines, Spanish marked pending bilingual review.
+## 5. Three outcomes after intake
+- **(a) Matched resources:** for each identified need, the top directory matches by category, reusing `sdohResourceMatch` and `/next-steps`.
+- **(b) Appointment requests by service type,** based on what they're looking for (1:1 therapy, medication management, group, care coordination):
+  - Saved as `AppointmentRequest{status:"pending_staff_confirmation"}` and routed to the scheduling queue.
+  - It only becomes a booking if the person picks a real open slot from clinician availability.
+- **(c) Existing records:** before creating a request, check the referral and pre-release episodes for an appointment already scheduled for this person. If one exists, show it ("Already scheduled for you") and create no duplicate.
 
-## Technical details
-- New `src/lib/adelIntakeScript.ts`: ordered question list (field, prompt EN/ES, choices, parse fn, "show if" rule), pure and unit-tested (parsing, confirmation gating, conditional Medi-Cal questions).
-- New `src/components/intake/AdelGuidedIntake.tsx`: chat UI, receives `profile`/`benefits` and setters from `intake.tsx`, calls `onHandoff()` which sets the step to consent/coverage.
-- `intake.tsx`: welcome-step button, mode state, extract `profilePatch(profile)` helper used by both submit and Adel commit. No other intake logic changes.
-- `IntakeBenefitsInput.via` gains `"adel_guided_intake"`.
-- Tests: script unit tests + a test that the Adel commit writes `patient_reported` and the audit `via`.
+## 6. My Care after intake
+The tiles appear in this order:
+1. First appointment — Scheduled / Requested, waiting for confirmation / Not yet scheduled.
+2. Your needs — each need with its matched resources count and a link to Next Steps (grows from the Part A summary tile).
+3. Recommended for you — content chosen from the About You answers.
 
-## Verification
-Typecheck, full suite count, one-tab browser pass desktop + phone: Tomás card (safety hidden) and no justice re-ask; new patient Adel flow → confirmations → saved plan span `patient_reported` → consent hand-off → finish with form; crisis phrase mid-chat fires interception first; Rosa, Daniel, sign-in code flow still work; zero new console errors.
+The persistent Adel chat shows one CTA for the most relevant open item (for example, "Your therapy request is waiting for confirmation — want to see times?"). Crisis interception still comes first.
+
+## 7. Adel-guided full intake including screeners
+- Scripted and deterministic, not a live model. Text/chat can reuse the same script later.
+- PHQ-9, GAD-7, AUDIT, DAST-10 and PCL-5 are read from `SCREENERS` **verbatim**, with their standard answer choices shown as buttons. Adel never paraphrases them; only the short transitions between screeners are written by us.
+- The PHQ-9 item 9 flag calls the same code path as the form (`recordScreener` crisisFlag + `flagCrisis` screener_score), with the same banner.
+- AUDIT and DAST-10 are only offered when Part 2 consent is on file. Adel never takes consent; it hands off to the Consent step, then resumes.
+- Crisis language interception stays unchanged and comes first.
+
+## Phases
+
+| Phase | Scope | Demo-ready tomorrow? |
+|---|---|---|
+| B1 | Item 1 questions + storage + screener gating + Recovery Journey hide; item 2 pending-invite link | Yes — small, reuses existing paths |
+| B2 | Item 6 tiles (appointment status "not yet scheduled / requested", needs tile), Adel CTA | Yes for tiles; Adel CTA risky |
+| B3 | Item 5 (a) matches + (c) duplicate check; (b) requests queue | (a) yes; (b)(c) post-demo |
+| B4 | Item 4 expanded needs assessment | Post-demo (needs Christi's wording review) |
+| B5 | Item 3 benefits improvements | Post-demo |
+| B6 | Item 7 Adel-guided screeners | Post-demo (clinical review of verbatim rendering + item 9 parity tests) |
+
+## Technical notes
+- New fields: `Patient.seeking`, `AppointmentRequest` store with audit, `needsAssessment` v2 answers mapped to `RESOURCE_CATEGORIES`.
+- Every new write goes through the existing AdelanteEHR paths with audit; no second consent or crisis path.
+- Tests: a Part 2 masking test for `seeking.substanceUse`, item 9 parity between the form and Adel, and a test that no duplicate appointment is created when one is already scheduled.
