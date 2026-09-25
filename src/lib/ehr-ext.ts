@@ -13,6 +13,7 @@ import {
   isBillableGroupCategory,
   noteStatus,
   registerClaimBridge,
+  demoScenarioPatientId,
   type ServiceType,
 } from "./ehr";
 import { attestationRecordProblem, type AttestationRecord } from "./attestation";
@@ -36,6 +37,7 @@ import {
   type PayerProgram,
   type ServiceLine,
 } from "./rates";
+import { gateMessageFor } from "./dmcOdsReadiness";
 import { chwBillingDecision, peerBillingDecision } from "./communityBilling";
 
 // ---------- Types ----------
@@ -1122,6 +1124,11 @@ export const AdelanteEHRExt = {
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
     if (to === "generated" && c.arrangementMissing) return { ok: false, error: ARRANGEMENT_MISSING_MSG };
+    // §10d-3 medical necessity gate (draft rule). Billing gets the generic line.
+    if (to === "generated") {
+      const gate = gateMessageFor(role, c);
+      if (gate) return { ok: false, error: gate };
+    }
     const reason = (opts?.denialReason ?? opts?.note ?? "").trim();
     if (claimMoveNeedsReason(from, to) && !reason)
       return {
@@ -1693,6 +1700,41 @@ export const AdelanteEHRExt = {
         allowPatientOverlap: true,
       });
       AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+    } catch {
+      /* demo seed only */
+    }
+  }
+  // §10d-3 demo — one DMC-ODS treatment encounter each for Luis C. (passes the
+  // medical necessity gate) and Jasmine H. (blocked until her counselor-authored
+  // ASAM is co-signed). Booked + attended through the real store API; the
+  // claim is advanced to `coded` only through the explicit seed path.
+  for (const key of ["sud_consented", "combination"] as const) {
+    try {
+      const pid = demoScenarioPatientId(key);
+      if (!pid) continue;
+      const start = new Date(Date.now() - 3 * 3600_000);
+      start.setMinutes(0, 0, 0);
+      const a = AdelanteEHR.bookAppointment({
+        patientId: pid,
+        clinicianId: "c1",
+        start: start.toISOString(),
+        durationMin: 50,
+        serviceType: "therapy_individual",
+        modality: "in_person",
+        locationId: "loc-visalia",
+        allowPatientOverlap: true,
+      });
+      AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+      const c = claims.find((x) => x.encounterId === a.id);
+      if (!c) continue;
+      if (c.program !== "dmc_ods") {
+        // Seed-only: this demo visit is a DMC-ODS treatment service.
+        c.program = "dmc_ods";
+        c.programSource = "coverage";
+        delete c.arrangementMissing;
+        applyPricing(c);
+      }
+      seedClaimSteps(c, "c1", ["signed", "coded"], "10d-3 medical-necessity demo encounter");
     } catch {
       /* demo seed only */
     }
