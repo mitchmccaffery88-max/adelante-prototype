@@ -3,7 +3,7 @@
 // One control, always reachable: it used to live in the page footer, which is
 // below the fold on any constrained viewport, so a reviewer could not reach it
 // without scrolling past the whole surface. It is now fixed to the top of the
-// viewport and never scrolls away.
+// viewport and never scrolls away with the shared sticky demo bar.
 //
 // It is a DEMO control. Every state it sets up is produced through the real
 // APIs (`setCurrentPatientId`, `createAdvocateInvitation`,
@@ -33,6 +33,7 @@ import {
 import { ChevronDown, FlaskConical } from "lucide-react";
 
 const ADVOCATE_SESSION_KEY = "adelante.advocateLinkId";
+const ACTIVE_DEMO_STATE_KEY = "adelante.activeDemoState";
 
 /** QA scenario matrix (Part B). Patient scenarios resolve to real records. */
 type ScenarioKey = keyof typeof DEMO_SCENARIO_PERSONAS;
@@ -241,15 +242,19 @@ export function DemoStateSwitcher() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const [advocateLinkId, setAdvocateLinkId] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState<DemoStateId | null>(null);
   useEffect(() => {
     try {
       setAdvocateLinkId(localStorage.getItem(ADVOCATE_SESSION_KEY));
+      const stored = sessionStorage.getItem(ACTIVE_DEMO_STATE_KEY);
+      setSelectedState(ORDER.includes(stored as DemoStateId) ? (stored as DemoStateId) : null);
     } catch {
       setAdvocateLinkId(null);
+      setSelectedState(null);
     }
   }, [currentId]);
 
-  const active: DemoStateId | null = (() => {
+  const inferredActive: DemoStateId | null = (() => {
     if (advocateLinkId) return patient ? "advocate_and_patient" : "advocate";
     if (!patient) return "no_record";
     if (patient.id === "p1") return "ji_post_release";
@@ -261,9 +266,18 @@ export function DemoStateSwitcher() {
       if (patient.id === demoScenarioPatientId(k)) return k;
     return null;
   })();
+  const active = selectedState === inferredActive ? selectedState : null;
 
   function apply(state: DemoStateId) {
     try {
+      sessionStorage.setItem(ACTIVE_DEMO_STATE_KEY, state);
+      setSelectedState(state);
+      const willUseAdvocateSession = state === "advocate" || state === "advocate_and_patient";
+      if (!willUseAdvocateSession) {
+        clearAdvocateSession();
+        setAdvocateLinkId(null);
+        window.dispatchEvent(new Event("adelante:advocate-session"));
+      }
       switch (state) {
         case "no_record": {
           clearAdvocateSession();
@@ -278,7 +292,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(state === "ji_post_release" ? "p1" : "p4");
-          navigate({ to: "/patient" });
+          navigate({ to: "/home" });
           break;
         }
         case "mh_only":
@@ -294,7 +308,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(id);
-          navigate({ to: "/patient" });
+          navigate({ to: id === "p2" ? "/intake" : "/home" });
           break;
         }
         case "public_referral": {
@@ -318,7 +332,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(id);
-          navigate({ to: "/patient" });
+          navigate({ to: "/intake" });
           break;
         }
         case "advocate": {
@@ -364,9 +378,7 @@ export function DemoStateSwitcher() {
           <FlaskConical className="h-3.5 w-3.5 text-teal" />
           <span className="max-w-[7.5rem] truncate sm:max-w-[14rem]">
             <span className="text-muted-foreground">QA: </span>
-            {active
-              ? STATE_LABEL[active].label.split(" — ")[0]
-              : (patient ? `${patient.firstName} ${patient.lastName}` : "no record")}
+            {active ? STATE_LABEL[active].label.split(" — ")[0] : "choose a scenario"}
           </span>
           <ChevronDown className="h-3 w-3 opacity-60" />
         </DropdownMenuTrigger>
@@ -402,7 +414,10 @@ export function DemoStateSwitcher() {
                 onClick={() => {
                   clearAdvocateSession();
                   setAdvocateLinkId(null);
+                   sessionStorage.removeItem(ACTIVE_DEMO_STATE_KEY);
+                   setSelectedState(null);
                   AdelanteEHR.setCurrentPatientId(p.id);
+                   navigate({ to: p.intakeCompletedAt ? "/home" : "/intake" });
                 }}
                 className={cn("text-sm", currentId === p.id && !advocateLinkId && "bg-secondary")}
               >

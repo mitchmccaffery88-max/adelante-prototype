@@ -2,7 +2,6 @@ import { Link, Outlet, useRouterState, useNavigate } from "@tanstack/react-route
 import { useEffect } from "react";
 import { useI18n } from "@/lib/i18n";
 import { PatientHelpLink } from "@/components/PatientHelpLink";
-import { MobileNav } from "@/components/MobileNav";
 import { InstallAppButton } from "@/components/InstallAppButton";
 import { NotificationBell } from "@/components/NotificationBell";
 import { ShieldCheck, UserCog, ChevronDown, User as UserIcon, Phone, LogOut } from "lucide-react";
@@ -12,18 +11,15 @@ import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import {
   useStaffNavGroups,
   STAFF_ROUTES,
-  PATIENT_NAV,
   PATIENT_ROUTES,
-  patientNavForPopulation,
   PUBLIC_NAV,
   isPublicRoute,
-  ADVOCATE_NAV,
   isAdvocateRoute,
 } from "@/lib/navSections";
-import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { AdvocateSidebar } from "@/components/AdvocateSidebar";
+import { UserNavigationDrawer } from "@/components/UserNavigationDrawer";
 
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
@@ -55,8 +51,6 @@ export function AppShell() {
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
-  const patients = useEhr(() => AdelanteEHR.listPatients());
-  const population = usePopulation(currentId);
   // Restore the acting patient after a hard reload. Only ever accepts an id
   // that still exists (runtime-created demo records do not survive a reload),
   // and runs in an effect so SSR and hydration agree on the first paint.
@@ -97,12 +91,14 @@ export function AppShell() {
     }
   })();
 
-  // Surfaces where the patient-facing UI should feel private:
-  // hide the staff link strip in the mobile nav (still reachable via the
-  // Staff dropdown on desktop).
+  // Patient detail routes inherit the same shell as direct nav destinations.
   const isPatientSurface =
     PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]) ||
-    pathname.startsWith("/rescreen/");
+    pathname.startsWith("/rescreen/") ||
+    pathname.startsWith("/resources/") ||
+    pathname === "/next-steps" ||
+    pathname === "/consent" ||
+    pathname === "/safety-check";
   // §Landing nav — public, pre-sign-in surfaces get their own minimal nav.
   const isPublicSurface = !isPatientSurface && isPublicRoute(pathname);
   // §Advocate Access Redesign Phase 1 — advocate surfaces are their own shell.
@@ -117,14 +113,6 @@ export function AppShell() {
   const showCraving =
     isPatientSurface && isOnboardingComplete(patient) && recoveryJourneyVisible(patient);
 
-  // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
-  // it can never drift from the mobile tab bar again.
-  // Population-gated entries (e.g. Obligations) are omitted for a general
-  // population patient rather than linking into a section that gates itself.
-  const patientNav = patientNavForPopulation(PATIENT_NAV, population.track).filter(
-    // Same central substance-use rule as the mobile tab bar and route guard.
-    (n) => n.id !== "recovery-journey" || recoveryJourneyVisible(patient),
-  );
   // §Staff nav leak fix — a staff-owned route is neither patient nor public,
   // so the desktop strip used to fall through to the PATIENT registry. Staff
   // surfaces navigate via the left sidebar / Staff dropdown instead.
@@ -149,17 +137,23 @@ export function AppShell() {
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
       {!isPublicSurface && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
-      {/* Demo scenario control — fixed to the viewport so it is reachable at
+      {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}
       <DemoControlsBar />
-      {isPatientSurface && <CrisisHeader />}
+      {isPatientSurface && (
+        <div className="sticky top-10 z-50 flex items-center border-b bg-surface-elevated/95 px-3 backdrop-blur md:block md:border-b-0 md:bg-transparent md:px-0">
+          {!onboarding && <UserNavigationDrawer mode="patient" />}
+          <div className="min-w-0 flex-1"><CrisisHeader /></div>
+        </div>
+      )}
       <header
         className={cn(
           "z-30 border-b bg-background/85 backdrop-blur",
-          !isPatientSurface && "sticky top-0",
+          !isPatientSurface && "sticky top-10",
         )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
+          {isAdvocateSurface && <UserNavigationDrawer mode="advocate" />}
           <Link
             to="/"
             className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}
@@ -170,17 +164,15 @@ export function AppShell() {
             <span className="font-display text-xl text-navy">{t("appName")}</span>
           </Link>
 
-          {/* §Patient portal Build 1 — on patient surfaces the top strip is
-              replaced by the persistent left sidebar. */}
+          {/* Public pages keep their informational links. Patient, advocate,
+              and staff navigation live in their own sidebars/drawers. */}
           <nav
             className={cn(
               "items-center gap-1 ml-4",
               isPatientSurface || isStaffSurface || isAdvocateSurface ? "hidden" : "hidden md:flex",
             )}
           >
-            {isStaffSurface || isAdvocateSurface
-              ? null
-              : isPublicSurface
+            {isPublicSurface
                 ? PUBLIC_NAV.map((n) => (
                     <Link
                       key={n.id}
@@ -191,23 +183,7 @@ export function AppShell() {
                       {n.label}
                     </Link>
                   ))
-                : patientNav.map((n) => {
-                    const active = pathname === n.to;
-                    return (
-                      <Link
-                        key={n.id}
-                        to={n.to}
-                        className={cn(
-                          "px-3 py-2 rounded-md text-sm font-medium transition-colors",
-                          active
-                            ? "bg-navy text-navy-foreground"
-                            : "text-foreground/70 hover:text-foreground hover:bg-secondary",
-                        )}
-                      >
-                        {t(n.labelKey as Parameters<typeof t>[0])}
-                      </Link>
-                    );
-                  })}
+                : null}
           </nav>
 
           <div className="ml-auto flex items-center gap-2 min-w-0">
@@ -263,10 +239,10 @@ export function AppShell() {
             {isPatientSurface && !onboarding && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* §Notification feed — operational alerts for the acting staff identity. */}
-            {!isPublicSurface && !onboarding && <NotificationBell />}
+            {(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && <NotificationBell />}
 
-            {/* Staff portal */}
-            {!isPublicSurface && !onboarding && <DropdownMenu>
+            {/* Staff portal belongs only to staff pages. */}
+            {isStaffSurface && <DropdownMenu>
               <DropdownMenuTrigger className="hidden sm:inline-flex items-center gap-1 rounded-md border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary">
                 <UserCog className="h-3.5 w-3.5 text-teal" />
                 {t("navStaff")}
@@ -352,33 +328,7 @@ export function AppShell() {
           </div>
         </div>
 
-        {/* Mobile nav — staff links only; patient nav lives in the bottom tab bar. */}
-        {isAdvocateSurface && (
-          <div className="md:hidden border-t overflow-x-auto">
-            <div className="flex gap-1 px-3 py-2 min-w-max">
-              {ADVOCATE_NAV.map((n) => {
-                const Icon = n.icon;
-                return (
-                  <Link
-                    key={n.id}
-                    to={n.to}
-                    className={cn(
-                      "flex items-center gap-1.5 px-3 py-1.5 rounded-md text-xs whitespace-nowrap min-h-[44px]",
-                      pathname === n.to
-                        ? "bg-sidebar-primary text-sidebar-primary-foreground"
-                        : "text-foreground/70 border border-dashed",
-                    )}
-                  >
-                    <Icon className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
-                    {n.label}
-                  </Link>
-                );
-              })}
-            </div>
-          </div>
-        )}
-
-        {!isPatientSurface && !isPublicSurface && !isAdvocateSurface && (
+        {isStaffSurface && (
           <div className="md:hidden border-t overflow-x-auto">
             <div className="flex gap-1 px-3 py-2 min-w-max">
               {staffNav.map((n) => {
@@ -415,7 +365,7 @@ export function AppShell() {
         )}
       </header>
 
-      <main className={cn("flex-1", isPatientSurface && !onboarding && "pb-24 md:pb-0")}>
+      <main className="flex-1">
         {isPatientSurface ? (
           <div className="flex min-h-full">
             {!onboarding && <PatientSidebar />}
@@ -457,12 +407,7 @@ export function AppShell() {
           aria-label="Crisis support"
           className={cn(
             "sticky z-50 border-t border-destructive/30 bg-destructive/5 backdrop-blur",
-            // On mobile patient surfaces, sit above the fixed bottom tab bar
-            // so the 988 link is never obscured. Reset on md+ where the
-            // MobileNav is hidden.
-            isPatientSurface
-              ? "bottom-[calc(env(safe-area-inset-bottom)+56px)] md:bottom-0"
-              : "bottom-0",
+            "bottom-0",
           )}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">
@@ -479,7 +424,7 @@ export function AppShell() {
         </div>
       )}
 
-      <footer className={cn("border-t bg-secondary/40", isPatientSurface && "pb-20 md:pb-0")}>
+      <footer className="border-t bg-secondary/40">
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-6 text-xs text-muted-foreground flex flex-wrap items-center justify-between gap-3">
           <span>© {new Date().getFullYear()} Adelante&nbsp; · Built with care</span>
           <div className="flex items-center gap-3">
@@ -497,7 +442,6 @@ export function AppShell() {
         </div>
       </footer>
 
-      {isPatientSurface && !onboarding && <MobileNav />}
       {showCraving && <CravingFab />}
     </div>
   );

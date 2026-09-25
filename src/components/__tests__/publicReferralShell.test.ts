@@ -10,8 +10,8 @@ describe("public referral shell", () => {
 
   it("does not mount staff-only controls on public pages", () => {
     expect(appShell).toContain("{!isPublicSurface && <RouteAccessGuard />}");
-    expect(appShell).toContain("{!isPublicSurface && !onboarding && <NotificationBell />}");
-    expect(appShell).toContain("{!isPublicSurface && !onboarding && <DropdownMenu>");
+    expect(appShell).toContain("{(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && <NotificationBell />}");
+    expect(appShell).toContain("{isStaffSurface && <DropdownMenu>");
   });
 
   it("mounts the demo controls bar on every page type, public included (Part C)", () => {

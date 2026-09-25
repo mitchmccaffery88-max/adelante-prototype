@@ -12,7 +12,7 @@ export function CrisisHeader() {
   return (
     <div
       data-testid="patient-crisis-header"
-      className="sticky top-0 z-40 border-b bg-surface-elevated/90 backdrop-blur"
+      className="bg-surface-elevated/90 backdrop-blur"
     >
       <div className="mx-auto flex max-w-7xl items-center gap-3 px-4 py-3 sm:px-6">
         <Link to="/home" className="flex items-center gap-2">
