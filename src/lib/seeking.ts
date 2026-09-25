@@ -4,7 +4,7 @@
 // which screeners are offered (a clinical decision), and it never adds a goal
 // to the care plan (suggestions only, accepted by a clinician).
 import type { Patient } from "@/lib/ehr";
-import { SCREENERS, type ScreenerDef } from "@/lib/screeners";
+import { DOMAIN_SCREENERS, SCREENERS, type ScreenerDef } from "@/lib/screeners";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { advocatePart2Masked } from "@/lib/advocate";
 
@@ -14,7 +14,11 @@ import { advocatePart2Masked } from "@/lib/advocate";
  * input, so screening still catches what people don't volunteer.
  */
 export function intakeScreeners(effectiveSud: boolean | null): ScreenerDef[] {
-  return SCREENERS.filter((s) => !s.isSud || effectiveSud === true);
+  // §Phase 10a — intake default instruments only (PC-PTSD-5, not the full
+  // PCL-5), plus AHC-HRSN. Part 2 consent remains the ONLY filter for SUD.
+  return [...SCREENERS, ...DOMAIN_SCREENERS].filter(
+    (s) => s.atIntake !== false && !s.retired && (!s.isSud || effectiveSud === true),
+  );
 }
 
 export type SeekingViewer = { kind: "staff"; role: StaffRole } | { kind: "advocate" };

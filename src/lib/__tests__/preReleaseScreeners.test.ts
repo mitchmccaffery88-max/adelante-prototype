@@ -231,9 +231,10 @@ describe("population-health queries run against the stored results", () => {
       viewer: { kind: "staff", role: "therapist" },
     });
     const audit = summary.instruments.find((i) => i.key === "audit")!;
-    expect(audit.administered).toBe(2);
-    expect(audit.positive).toBe(1);
-    expect(audit.positiveRate).toBe(0.5);
+    // §Phase 10a — AUDIT item text is not yet verified against the WHO source,
+    // so its results are held out of totals and counted separately.
+    expect(audit.administered).toBe(0);
+    expect(audit.excludedPendingVerification).toBe(2);
 
     const byDomain = Object.fromEntries(summary.sdohDomains.map((d) => [d.key, d]));
     expect(byDomain["housing"]!.positive).toBe(2);

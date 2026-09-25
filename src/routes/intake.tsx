@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Badge } from "@/components/ui/badge";
-import { severityFor } from "@/lib/screeners";
+import { scoreScreener } from "@/lib/screeners";
+import { ScreenerItems } from "@/components/screeners/ScreenerItems";
 import {
   AdelanteEHR,
   SDOH_SOURCE_LABEL,
@@ -208,6 +209,8 @@ function IntakePage() {
   const [sudConsent, setSudConsent] = useState<boolean | null>(null);
   const [hipaaConsent, setHipaaConsent] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
+  // §Phase 10a — chosen option index per item (AHC-HRSN has choices that share a score).
+  const [choices, setChoices] = useState<Record<string, Record<number, number>>>({});
   const [needs, setNeeds] = useState({
     housing: false,
     food: false,
@@ -482,17 +485,24 @@ function IntakePage() {
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, profilePatch(profile));
     activeScreeners.forEach((s) => {
-      const ans = answers[s.key] ?? [];
-      const score = ans.reduce((a, b) => a + (b ?? 0), 0);
+      // §Phase 10a — shared scoring (gate items, domains) and raw answers
+      // stored on the record; still the one `recordScreener` path.
+      const raw = answers[s.key] ?? [];
+      const ans = s.questions.map((_, i) => (typeof raw[i] === "number" ? raw[i] : 0));
+      const scored = scoreScreener(s, ans);
       const isPhq = s.key === "phq-9";
       const itemFlag = isPhq && (ans[8] ?? 0) > 0;
       AdelanteEHR.recordScreener(currentId, {
         key: s.key,
-        score,
-        severity: severityFor(s, score),
+        score: scored.score,
+        severity: scored.severity,
         completedAt: new Date().toISOString(),
         timepoint: "intake",
         crisisFlag: itemFlag,
+        responses: ans,
+        context: "intake",
+        ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+        ...(scored.domains ? { domains: scored.domains } : {}),
       });
     });
     // §Phase 8a — merge, never replace; self-report, never "verified".
@@ -1398,34 +1408,15 @@ function IntakePage() {
                   )}
                   <p className="mt-2 text-sm text-muted-foreground">{s.description}</p>
                 </div>
-                <div className="space-y-5">
-                  {s.questions.map((q, qi) => (
-                    <div key={qi} className="rounded-lg border p-3">
-                      <Label className="text-sm leading-snug">
-                        {qi + 1}. {q}
-                      </Label>
-                      <RadioGroup
-                        className="mt-2 flex flex-wrap gap-2"
-                        value={String(answers[s.key]?.[qi] ?? "")}
-                        onValueChange={(v) => {
-                          const arr = [...(answers[s.key] ?? [])];
-                          arr[qi] = Number(v);
-                          setAnswers({ ...answers, [s.key]: arr });
-                        }}
-                      >
-                        {s.options.map((o) => (
-                          <label
-                            key={o.value}
-                            className="flex items-center min-h-11 gap-1.5 rounded-full border bg-card px-3 py-2.5 text-xs cursor-pointer hover:border-teal"
-                          >
-                            <RadioGroupItem value={String(o.value)} />
-                            {o.label}
-                          </label>
-                        ))}
-                      </RadioGroup>
-                    </div>
-                  ))}
-                </div>
+                <ScreenerItems
+                  def={s}
+                  answers={answers[s.key] ?? []}
+                  choices={choices[s.key]}
+                  onChange={(next, ch) => {
+                    setAnswers({ ...answers, [s.key]: next as number[] });
+                    setChoices({ ...choices, [s.key]: ch });
+                  }}
+                />
               </div>
             ),
         )}
@@ -1757,13 +1748,16 @@ function IntakePage() {
             </p>
             <div className="rounded-lg border bg-secondary/30 p-4 space-y-2 text-sm">
               {activeScreeners.map((s) => {
-                const ans = answers[s.key] ?? [];
-                const score = ans.reduce((a, b) => a + (b ?? 0), 0);
+                const raw = answers[s.key] ?? [];
+                const { score, severity } = scoreScreener(
+                  s,
+                  s.questions.map((_, i) => (typeof raw[i] === "number" ? raw[i] : 0)),
+                );
                 return (
                   <div key={s.key} className="flex justify-between">
                     <span>{s.name}</span>
                     <span className="font-medium text-navy">
-                      {score} · {severityFor(s, score)}
+                      {score} · {severity}
                     </span>
                   </div>
                 );

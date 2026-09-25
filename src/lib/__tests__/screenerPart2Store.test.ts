@@ -128,8 +128,9 @@ describe("population health is not a second unprotected path", () => {
       viewer: { kind: "staff", role: "therapist" },
     });
     const audit = s.instruments.find((i) => i.key === "audit")!;
-    expect(audit.administered).toBe(1);
-    expect(audit.positive).toBe(1);
+    // §Phase 10a — readable, but held out of totals until AUDIT text is verified.
+    expect(audit.administered).toBe(0);
+    expect(audit.excludedPendingVerification).toBe(1);
     expect(audit.restricted).toBeUndefined();
   });
 });

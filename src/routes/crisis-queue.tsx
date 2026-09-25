@@ -23,6 +23,7 @@ import {
   timeOpenLabel,
 } from "@/components/clinical/CrisisPanel";
 import { ArrowLeft, Lock, Siren, UserX } from "lucide-react";
+import { CssrsRiskBadge, CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
 
 export const Route = createFileRoute("/crisis-queue")({
   // §Crisis Redesign Phase 1 — `scope=mine` is the nav destination for
@@ -213,6 +214,7 @@ function CrisisQueuePage() {
                 <div className="flex flex-wrap items-center gap-1.5">
                   <CrisisRetriggerBadge escalation={escalation} />
                   <CrisisOverdueBadge escalation={escalation} />
+                  {!canWorkRow(escalation) && <CssrsRiskBadge risk={escalation.cssrsRisk} />}
                   <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
                     {timeOpenLabel(escalation.triggeredAt)}
                   </Badge>
@@ -244,6 +246,7 @@ function CrisisQueuePage() {
                   >
                     Resolve
                   </Button>
+                  <CssrsStaffControl patientId={patient.id} risk={escalation.cssrsRisk} />
                 </div>
               )}
             </Card>

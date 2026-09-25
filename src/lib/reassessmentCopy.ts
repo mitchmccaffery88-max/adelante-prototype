@@ -7,7 +7,11 @@ const NAMES: Record<string, { en: string; es: string }> = {
   "gad-7": { en: "Worry check-in (GAD-7)", es: "Revisión de preocupación (GAD-7)" },
   audit: { en: "Alcohol check-in (AUDIT)", es: "Revisión sobre alcohol (AUDIT)" },
   "dast-10": { en: "Drug use check-in (DAST-10)", es: "Revisión sobre uso de drogas (DAST-10)" },
-  "pcl-5": { en: "Stress check-in (PCL-5)", es: "Revisión de estrés (PCL-5)" },
+  "pcl-5": { en: "Stress check-in (PCL-5 short — retired)", es: "Revisión de estrés (PCL-5 corto — retirado)" },
+  "pc-ptsd-5": { en: "Stress check-in (PC-PTSD-5)", es: "Revisión de estrés (PC-PTSD-5)" },
+  "pcl-5-20": { en: "Stress check-in (PCL-5)", es: "Revisión de estrés (PCL-5)" },
+  "ahc-hrsn": { en: "Everyday needs check-in (AHC-HRSN)", es: "Revisión de necesidades diarias (AHC-HRSN)" },
+  "c-ssrs-screener": { en: "A few safety questions", es: "Algunas preguntas de seguridad" },
 };
 
 export function rescreenName(key: string, lang: RLang): string {

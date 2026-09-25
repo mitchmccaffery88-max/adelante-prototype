@@ -590,7 +590,9 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
   const c = REASSESS_COPY[L];
   const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(patientId)));
   const due = JSON.parse(dueJson) as { key: string }[];
-  if (due.length === 0) {
+  // §Phase 10b — an open C-SSRS request folds into this same tile.
+  const cssrsOpen = useEhr(() => Boolean(AdelanteEHR.openCssrsRequest(patientId)));
+  if (due.length === 0 && !cssrsOpen) {
     return (
       <Card
         className="p-4 flex flex-wrap items-center justify-between gap-3"
@@ -619,6 +621,16 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
         </div>
       </div>
       <ul className="space-y-2">
+        {cssrsOpen && (
+          <li className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
+            <span className="flex-1">{rescreenName("c-ssrs-screener", L)}</span>
+            <Button asChild size="sm">
+              <Link to="/safety-check" data-testid="reassess-start-cssrs">
+                {c.start}
+              </Link>
+            </Button>
+          </li>
+        )}
         {due.map((d) => (
           <li key={d.key} className="flex items-center gap-2 rounded-md border bg-card p-2.5 text-sm">
             <span className="flex-1">{rescreenName(d.key, L)}</span>
