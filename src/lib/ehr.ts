@@ -36,6 +36,17 @@ import type {
   SubstanceUseProfile,
 } from "./caloms";
 import { helperAuditDetail } from "./signup";
+import {
+  CSSRS_DEF,
+  CSSRS_KEY,
+  CSSRS_TEXT_APPROVED,
+  IS_DEMO_BUILD,
+  cssrsComplete,
+  cssrsRisk as computeCssrsRisk,
+  maxRisk as maxCssrsRisk,
+  type CssrsAnswers,
+  type CssrsRisk,
+} from "./cssrs";
 import { mergeCoverage, type CoveragePatch } from "./coverageStatus";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
@@ -1701,8 +1712,33 @@ export interface ScreenerResult {
   score: number;
   severity: string;
   completedAt: string;
-  timepoint?: "intake" | "day30" | "day60" | "day90" | "adhoc";
+  /**
+   * §Phase 10a — `dayN` = draft cadence timepoint (see RESCREEN_SCHEDULE),
+   * `triggered` = C-SSRS or other trigger-driven administration.
+   */
+  timepoint?: "intake" | "day30" | "day60" | "day90" | `day${number}` | "adhoc" | "triggered";
   crisisFlag?: boolean;
+  /**
+   * §Phase 10a — instrument metadata, stamped by `recordScreener` from the
+   * definition when absent, so every result on the record says which version
+   * of which text and which scoring rule produced it. Ready for 10c/10d
+   * (ASAM / DMC-ODS) to reference by `key` + `instrumentVersion`.
+   */
+  instrumentVersion?: string;
+  scoringVersion?: string;
+  textVerified?: boolean;
+  /** Retired, non-validated form (e.g. the 5-item PCL-5 short). Never trended or reported with validated scores. */
+  retiredForm?: boolean;
+  /** Label for a result scored under an older rule that could not be re-scored (no item answers). */
+  legacyScoring?: string;
+  /** Result produced with placeholder item text (C-SSRS until the official text is approved). */
+  placeholderText?: boolean;
+  /** §Phase 10b — C-SSRS draft risk level. */
+  cssrsRisk?: CssrsRisk;
+  /** §Phase 10b — what prompted a triggered administration. */
+  trigger?: string;
+  /** §Phase 10a — re-scored under a newer scoring rule; prior score kept for audit. */
+  rescoredFrom?: { score: number; severity: string; scoringVersion?: string };
   /**
    * §Pre-release build 2 — population-health fields. All optional, so every
    * result written before this build stays valid.
@@ -2515,6 +2551,9 @@ export interface CrisisEscalation {
     | "sdoh_urgent";
   /** e.g. "PHQ-9 total 22 (severe band)" or the manual reason. */
   triggerDetail?: string;
+  /** §Phase 10b — most recent C-SSRS draft risk level attached to this row. */
+  cssrsRisk?: CssrsRisk;
+  cssrsAt?: string;
   triggeredBy: string;
   triggeredAt: string;
   status: "open" | "resolved";
@@ -3468,7 +3507,7 @@ export const RECORD_CLAIM_CODE_ROLES: readonly string[] = ["cf_care_manager", "e
 
 export interface PatientTask {
   id: string;
-  kind: "rescreen" | "enrollment_assist" | "reactivation";
+  kind: "rescreen" | "enrollment_assist" | "reactivation" | "cssrs";
   label: string;
   screenerKey?: string;
   createdAt: string;
