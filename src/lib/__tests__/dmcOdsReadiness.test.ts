@@ -2,7 +2,11 @@
 import { beforeEach, describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
-import { actAs } from "@/lib/roles";
+import { setActingRole, setActingStaff, type StaffRole } from "@/lib/roles";
+function actAs(role: string, staffId: string) {
+  setActingStaff(staffId);
+  setActingRole(role as StaffRole);
+}
 import {
   GATE_GENERIC_MESSAGE,
   calomsCompletenessFor,
