@@ -283,7 +283,7 @@ export interface ScreenerDueRow {
   /** Days since the last completed screen of this instrument. */
   daysSinceLast: number;
   /** Which draft cadence step has been passed: 30, 60 or 90. */
-  cadenceStep: 30 | 60 | 90;
+  cadenceStep: number;
   /** A re-screen task is already sitting on the patient's list. */
   taskAlreadySent: boolean;
 }
