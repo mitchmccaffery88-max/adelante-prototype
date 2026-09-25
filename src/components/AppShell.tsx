@@ -29,7 +29,7 @@ import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
 import { AdvocateContextSwitch } from "@/components/ContextSwitcher";
-import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
+import { DemoControlsBar } from "@/components/DemoControlsBar";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { needsFirstIntake, isOnboardingComplete } from "@/lib/onboarding";
@@ -151,7 +151,7 @@ export function AppShell() {
       {isPatientSurface && <OnboardingGuard />}
       {/* Demo scenario control — fixed to the viewport so it is reachable at
           any height, not buried in the footer. */}
-      {!isPublicSurface && <DemoStateSwitcher />}
+      <DemoControlsBar />
       {isPatientSurface && <CrisisHeader />}
       <header
         className={cn(
