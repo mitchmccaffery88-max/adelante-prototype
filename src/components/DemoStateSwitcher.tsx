@@ -286,7 +286,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(state === "ji_post_release" ? "p1" : "p4");
-          navigate({ to: "/patient" });
+          navigate({ to: "/home" });
           break;
         }
         case "mh_only":
@@ -302,7 +302,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(id);
-          navigate({ to: "/patient" });
+          navigate({ to: id === "p2" ? "/intake" : "/home" });
           break;
         }
         case "public_referral": {
@@ -326,7 +326,7 @@ export function DemoStateSwitcher() {
           clearAdvocateSession();
           setAdvocateLinkId(null);
           AdelanteEHR.setCurrentPatientId(id);
-          navigate({ to: "/patient" });
+          navigate({ to: "/intake" });
           break;
         }
         case "advocate": {
@@ -411,7 +411,7 @@ export function DemoStateSwitcher() {
                    sessionStorage.removeItem(ACTIVE_DEMO_STATE_KEY);
                    setSelectedState(null);
                   AdelanteEHR.setCurrentPatientId(p.id);
-                   navigate({ to: p.intakeCompletedAt ? "/patient" : "/intake" });
+                   navigate({ to: p.intakeCompletedAt ? "/home" : "/intake" });
                 }}
                 className={cn("text-sm", currentId === p.id && !advocateLinkId && "bg-secondary")}
               >
