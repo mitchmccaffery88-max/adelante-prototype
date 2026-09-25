@@ -1,8 +1,8 @@
 import { it } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
+import { medicalNecessityGate, calomsWorklist, dmcOdsExportRows } from "@/lib/dmcOdsReadiness";
 it("dump", () => {
-  const cl = (AdelanteEHRExt as any).listClaims?.() ?? [];
-  for (const c of cl) { const p = AdelanteEHR.getPatient(c.patientId); if (c.program === "dmc_ods" || c.serviceCode==="H0001") console.log(p?.firstName, c.id, c.encounterId, c.program, c.serviceCode, c.state, c.rateStatus, c.serviceDate, (AdelanteEHRExt as any) && require("@/lib/dmcOdsReadiness").medicalNecessityGate(c)); }
-  console.log("total", cl.length);
+  for (const c of AdelanteEHRExt.listClaims()) { const p = AdelanteEHR.getPatient(c.patientId); console.log(p?.firstName, c.encounterId, c.program, c.serviceCode, c.state, c.rateStatus, JSON.stringify(medicalNecessityGate(c))); }
+  console.log(JSON.stringify(calomsWorklist("therapist")), dmcOdsExportRows("therapist")?.length);
 });
