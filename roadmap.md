@@ -1,7 +1,10 @@
 # Roadmap
 
 ## In progress
-- None.
+- [ ] Pre-demo My Care consolidation: fold duplicate needs, appointment, weekly check, recommendations, and advocate status surfaces.
+- [ ] Consent-gated advocate invitation delivery with pre-consent privacy test and row-level failure feedback.
+- [ ] One positive-signal Recovery Journey rule across navigation, cards, recommendations, and direct route access.
+- [ ] Full typecheck, test suite, persona browser inventory, advocate flow, Kayla billing flow, and referral attempt verification.
 
 ## Done
 - [x] Dashboard Standardization Phase 5c — demo CINs, expandable My tasks rows with attributed edits/notes/follow-up, per-client follow-ups consolidated onto the record with a read-only open-items rollup.

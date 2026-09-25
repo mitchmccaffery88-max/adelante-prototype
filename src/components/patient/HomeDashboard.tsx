@@ -12,7 +12,6 @@ import {
   BookOpen,
   Calendar,
   Check,
-  ClipboardCheck,
   ChevronRight,
   HandHeart,
   HeartPulse,
@@ -72,6 +71,9 @@ import { ADHERENCE_TONE } from "@/lib/medAdherence";
 import { apptPrepTip } from "@/lib/apptPrep";
 import { marRowLabel } from "@/lib/mar";
 import { toast } from "sonner";
+import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
+import { patientBrowsableResources } from "@/lib/communityResources";
+import { recommendationsFor, recoveryJourneyVisible } from "@/lib/seeking";
 
 // ---------------------------------------------------------------------------
 // Small shared pieces
@@ -217,16 +219,6 @@ export function HomeDashboard({
   const medsScheduledToday = doseRows.length;
   const medsUnmarkedToday = doseRows.filter((r) => !r.selfReport).length;
 
-  // §P2 item 2 — real recency of the weekly PHQ-2/GAD-2 check, used for tile
-  // prioritization. Same source the streak already reads.
-  const daysSinceQuickCheck = useMemo(() => {
-    const last = [...quickCheckDates].sort().pop();
-    if (!last) return undefined;
-    return Math.floor((Date.now() - new Date(last).getTime()) / 86_400_000);
-  }, [quickCheckDates]);
-  const weeklyCheckDue = daysSinceQuickCheck === undefined || daysSinceQuickCheck >= 7;
-  const weeklyCheckOverdue = daysSinceQuickCheck !== undefined && daysSinceQuickCheck >= 10;
-
   // §P2 item 3 — real SDOH needs and referrals off the active care plan.
   const sdohItems = (patient?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
   const referralItems = (patient?.resourceReferrals ?? []).filter(
@@ -325,6 +317,19 @@ export function HomeDashboard({
 
   if (!patient) return null;
   const firstName = patient.preferredName || patient.firstName;
+  const showRecoveryJourney = recoveryJourneyVisible(patient);
+  const hasPastAttendedVisit = appts.some((a) => a.status === "attended");
+  const suggestions = [
+    ...(nextLesson
+      ? [{ id: `lesson-${nextLesson.id}`, title: nextLesson.title, body: `${nextLesson.problem} · about ${nextLesson.minutes} min`, to: "/library" as const, search: { item: nextLesson.id } }]
+      : []),
+    ...recommendationsFor(patient)
+      .filter((r) => r.to !== "/recovery-journey" || showRecoveryJourney)
+      .map((r) => ({ ...r, title: r.title.en, body: r.body.en })),
+  ].filter((item, index, all) => {
+    const destination = `${item.to}|${"hash" in item ? item.hash ?? "" : ""}`;
+    return all.findIndex((candidate) => `${candidate.to}|${"hash" in candidate ? candidate.hash ?? "" : ""}` === destination) === index;
+  }).slice(0, 4);
 
   // §P2 item 2 — tiles carry a real priority derived from live state instead
   // of a fixed source order. Higher renders first; ties keep source order.
@@ -333,30 +338,6 @@ export function HomeDashboard({
   // is gone; the picker is the single rendering and now sits at the top of the
   // page (see PatientHome).
   const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
-  tiles.push({
-    key: "weekly-check-in",
-    priority: weeklyCheckOverdue ? 88 : weeklyCheckDue ? 70 : 15,
-    node: (
-      <TileShell icon={ClipboardCheck} title="Weekly check">
-        {weeklyCheckDue && (
-          <Badge className="mb-2" variant="outline" data-testid="weekly-check-in-due">
-            {weeklyCheckOverdue ? "Overdue" : "Due this week"}
-          </Badge>
-        )}
-        <p className="text-sm text-muted-foreground">
-          {daysSinceQuickCheck === undefined
-            ? "The PHQ-2 / GAD-2 check — six questions, once a week."
-            : `Last done ${daysSinceQuickCheck === 0 ? "today" : `${daysSinceQuickCheck} day${daysSinceQuickCheck === 1 ? "" : "s"} ago`}.`}
-        </p>
-        <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-          <Link to="/home" hash="daily-check-in">
-            {weeklyCheckDue ? "Take this week's check" : "Open the weekly check"}
-          </Link>
-        </Button>
-      </TileShell>
-    ),
-  });
-
   // Rough patch — craving tool and slip support, both patient-private
   tiles.push({
     key: "rough-patch",
@@ -457,7 +438,7 @@ export function HomeDashboard({
     key: "next-appointment",
     priority: 50,
     node: (
-          <TileShell icon={Calendar} title="Next appointment">
+          <TileShell icon={Calendar} title={hasPastAttendedVisit ? "Next appointment" : "Your first appointment"}>
             {nextAppt ? (
               <>
                 <p className="text-base">
@@ -489,9 +470,11 @@ export function HomeDashboard({
               </>
             ) : (
               <>
-                <p className="text-sm text-muted-foreground">Nothing scheduled right now.</p>
+                <p className="text-sm text-muted-foreground">
+                  Not yet scheduled — we&apos;ll reach out to set it up.
+                </p>
                 <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-                  <Link to="/schedule">Book a time</Link>
+                  <Link to="/schedule">See appointments</Link>
                 </Button>
               </>
             )}
@@ -559,7 +542,7 @@ export function HomeDashboard({
   });
   // Your journey — the real 5-stage model. The stage is person-set (see
   // `recoveryStages.ts`); this tile never derives one from activity data.
-  tiles.push({
+  if (showRecoveryJourney) tiles.push({
     key: "journey",
     priority: 20,
     node: (
@@ -591,14 +574,27 @@ export function HomeDashboard({
             What your care team is actively working on with you.
           </p>
           <ul className="mt-3 space-y-2" data-testid="sdoh-status-list">
-            {sdohItems.slice(0, 3).map((i) => (
-              <li key={i.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
-                <span className="min-w-0 truncate text-sm">{i.need}</span>
-                <Badge variant="outline" className="shrink-0 text-[10px]">
-                  {SDOH_STATUS_LABEL[i.status] ?? i.status}
-                </Badge>
+            {sdohItems.slice(0, 3).map((i) => {
+              const match = matchResourcesForNeed(i);
+              const count = match?.showOrgs
+                ? new Set(match.categoryIds.flatMap((category) => patientBrowsableResources(category).map((resource) => resource.id))).size
+                : null;
+              return (
+              <li key={i.id} className="rounded-2xl border p-2.5">
+                <div className="flex items-center justify-between gap-2">
+                  <span className="min-w-0 truncate text-sm">{i.need}</span>
+                  <Badge variant="outline" className="shrink-0 text-[10px]">
+                    {SDOH_STATUS_LABEL[i.status] ?? i.status}
+                  </Badge>
+                </div>
+                <p className="mt-1 text-xs text-muted-foreground">
+                  {count !== null
+                    ? count === 1 ? "1 place matches" : `${count} places match`
+                    : match ? "Your team will go over options" : "Your team will follow up"}
+                </p>
               </li>
-            ))}
+              );
+            })}
             {referralItems.slice(0, 2).map((r) => (
               <li key={r.id} className="flex items-center justify-between gap-2 rounded-2xl border p-2.5">
                 <span className="min-w-0 truncate text-sm capitalize">
@@ -611,8 +607,8 @@ export function HomeDashboard({
             ))}
           </ul>
           <Button asChild variant="outline" className="mt-3 min-h-11 w-full rounded-2xl">
-            <Link to="/home" hash="your-care-plan-heading">
-              See the full plan
+            <Link to="/next-steps">
+              See help that matches
             </Link>
           </Button>
         </TileShell>
@@ -773,29 +769,32 @@ export function HomeDashboard({
         </div>
       </Card>
 
-      {/* 7 — hero "Today's Forward Step" -------------------------------------- */}
+      {/* 7 — next unfinished lesson plus distinct seeking/justice suggestions. */}
       <Card
         data-testid="forward-step-card"
         className="border-0 bg-gradient-to-br from-primary to-primary/80 p-6 text-primary-foreground soft-shadow"
       >
         <div className="text-xs font-medium uppercase tracking-wider opacity-90">
-          Today's forward step
+          Suggested for you
         </div>
-        {nextLesson ? (
-          <>
-            <h2 className="mt-2 font-display text-2xl">{nextLesson.title}</h2>
-            <p className="mt-1 text-sm opacity-90">
-              {nextLesson.problem} · about {nextLesson.minutes} min
-            </p>
-            <Button
-              asChild
-              className="mt-4 min-h-11 rounded-2xl bg-primary-foreground text-primary hover:bg-primary-foreground/90"
-            >
-              <Link to="/library" search={{ item: nextLesson.id }}>
-                Start it <ArrowRight className="ml-1 h-4 w-4" />
-              </Link>
-            </Button>
-          </>
+        {suggestions.length > 0 ? (
+          <ul className="mt-3 space-y-2">
+            {suggestions.map((suggestion, index) => (
+              <li key={suggestion.id} className="rounded-2xl bg-primary-foreground/10 p-3">
+                <p className="font-medium">{suggestion.title}</p>
+                <p className="mt-0.5 text-sm opacity-90">{suggestion.body}</p>
+                <Button asChild className="mt-2 min-h-11 rounded-2xl bg-primary-foreground text-primary hover:bg-primary-foreground/90">
+                  <Link
+                    to={suggestion.to}
+                    {...("search" in suggestion ? { search: suggestion.search } : {})}
+                    {...("hash" in suggestion && suggestion.hash ? { hash: suggestion.hash } : {})}
+                  >
+                    {index === 0 ? "Start it" : "Open"} <ArrowRight className="ml-1 h-4 w-4" />
+                  </Link>
+                </Button>
+              </li>
+            ))}
+          </ul>
         ) : (
           <>
             <h2 className="mt-2 font-display text-2xl">You've finished every lesson open to you.</h2>

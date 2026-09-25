@@ -5,7 +5,6 @@ import { Slim988Bar } from "@/components/patient/Slim988Bar";
 import { INTAKE_WELCOME_COPY, REASSESS_START_COPY } from "@/lib/intakeWelcomeCopy";
 import { rescreenName } from "@/lib/reassessmentCopy";
 import { intakeScreeners } from "@/lib/seeking";
-import { deliverAdvocateInvitation } from "@/lib/advocateInviteDelivery";
 import { BACKGROUND_COPY } from "@/lib/intakeBackgroundCopy";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
@@ -632,15 +631,15 @@ function IntakePage() {
     }
     for (const inv of invites) {
       try {
-        const link = AdelanteEHR.createAdvocateInvitation({
+        AdelanteEHR.createAdvocateInvitation({
           patientId: currentId,
           advocateName: inv.name,
           relationship: inv.relationship,
           invitationSentTo: inv.contact,
           invitationChannel: inv.channel,
+          expectedAuthorizationType: "family_participation",
           designatedBy: { actor: "patient", name: patientName },
         });
-        void deliverAdvocateInvitation(link);
       } catch {
         /* no-op — the invite form on My Care remains available */
       }

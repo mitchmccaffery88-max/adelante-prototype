@@ -1,5 +1,7 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { RecoveryModuleBrowser } from "@/components/recovery/RecoveryModuleBrowser";
+import { AdelanteEHR } from "@/lib/ehr";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 /** `?lesson=<id>` deep-links straight into one recovery lesson. */
 function validateSearch(search: Record<string, unknown>): { lesson?: string } {
@@ -12,6 +14,10 @@ function RecoveryJourney() {
 }
 
 export const Route = createFileRoute("/recovery-journey")({
+  beforeLoad: () => {
+    const patient = AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId());
+    if (!recoveryJourneyVisible(patient)) throw redirect({ to: "/home" });
+  },
   head: () => ({
     meta: [
       { title: "Recovery journey — Adelante" },

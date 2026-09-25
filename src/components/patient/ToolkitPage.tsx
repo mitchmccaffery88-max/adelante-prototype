@@ -17,17 +17,20 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { liveRecoveryLesson, usePublishedContentVersion } from "@/lib/contentCatalog";
 import { patientToolkit, type ToolkitPick } from "@/lib/toolkit";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 function PickSection({
   icon: Icon,
   title,
   blurb,
   picks,
+  showRecovery,
 }: {
   icon: LucideIcon;
   title: string;
   blurb: string;
   picks: ToolkitPick[];
+  showRecovery: boolean;
 }) {
   if (picks.length === 0) return null;
   return (
@@ -46,14 +49,18 @@ function PickSection({
             className="rounded-2xl border border-border bg-card p-3"
           >
             <p className="text-sm font-medium text-foreground">{p.value}</p>
-            <Link
-              to="/recovery-journey"
-              search={{ lesson: p.lessonId }}
-              className="text-xs text-primary underline-offset-2 hover:underline"
-            >
-              {p.moduleName ? `${p.moduleName} — ` : ""}
-              {p.lessonTitle}
-            </Link>
+            {showRecovery ? (
+              <Link
+                to="/recovery-journey"
+                search={{ lesson: p.lessonId }}
+                className="text-xs text-primary underline-offset-2 hover:underline"
+              >
+                {p.moduleName ? `${p.moduleName} — ` : ""}
+                {p.lessonTitle}
+              </Link>
+            ) : (
+              <span className="text-xs text-muted-foreground">{p.lessonTitle}</span>
+            )}
           </li>
         ))}
       </ul>
@@ -65,6 +72,7 @@ export function ToolkitPage() {
   usePublishedContentVersion();
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const toolkit = useEhr(() => (patientId ? patientToolkit(patientId) : null));
+  const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(patientId)));
   if (!patientId || !toolkit) return null;
 
   return (
@@ -88,7 +96,7 @@ export function ToolkitPage() {
             "Create my toolkit" — your warning signs, your people, and one action for today.
           </p>
           <Button asChild className="min-h-11 rounded-2xl">
-            <Link to="/recovery-journey">Start a recovery lesson</Link>
+            {showRecovery ? <Link to="/recovery-journey">Start a recovery lesson</Link> : <Link to="/library">Browse the library</Link>}
           </Button>
         </Card>
       ) : (
@@ -98,18 +106,21 @@ export function ToolkitPage() {
             title="My warning signs"
             blurb="What you said tends to show up before things slide."
             picks={toolkit.warningSigns}
+            showRecovery={showRecovery}
           />
           <PickSection
             icon={HeartHandshake}
             title="My people"
             blurb="Who you chose to reach for."
             picks={toolkit.supportPeople}
+            showRecovery={showRecovery}
           />
           <PickSection
             icon={Footprints}
             title="One action for today"
             blurb="The single step you picked at the end of each lesson."
             picks={toolkit.todayActions}
+            showRecovery={showRecovery}
           />
           {toolkit.takeaways.length > 0 && (
             <Card className="space-y-3 p-5">
@@ -135,7 +146,7 @@ export function ToolkitPage() {
                         <Badge variant="outline" className="text-[10px]">
                           {recovery ? "Recovery" : t.from === "exercise" ? "Exercise" : "Library"}
                         </Badge>
-                        {recovery ? (
+                        {recovery && showRecovery ? (
                           <Link
                             to="/recovery-journey"
                             search={{ lesson: t.id }}
@@ -143,6 +154,8 @@ export function ToolkitPage() {
                           >
                             Open the lesson
                           </Link>
+                        ) : recovery ? (
+                          <span className="text-xs text-muted-foreground">Saved</span>
                         ) : (
                           <Link
                             to="/library"
@@ -162,11 +175,13 @@ export function ToolkitPage() {
         </>
       )}
 
-      <Button asChild variant="ghost" className="min-h-11 rounded-2xl">
-        <Link to="/recovery-journey">
-          <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Back to my recovery journey
-        </Link>
-      </Button>
+      {showRecovery && (
+        <Button asChild variant="ghost" className="min-h-11 rounded-2xl">
+          <Link to="/recovery-journey">
+            <ArrowLeft className="mr-1 h-4 w-4" aria-hidden="true" /> Back to my recovery journey
+          </Link>
+        </Button>
+      )}
     </PatientPage>
   );
 }
