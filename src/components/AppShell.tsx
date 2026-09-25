@@ -121,7 +121,10 @@ export function AppShell() {
   // it can never drift from the mobile tab bar again.
   // Population-gated entries (e.g. Obligations) are omitted for a general
   // population patient rather than linking into a section that gates itself.
-  const patientNav = patientNavForPopulation(PATIENT_NAV, population.track);
+  const patientNav = patientNavForPopulation(PATIENT_NAV, population.track).filter(
+    // Same central substance-use rule as the mobile tab bar and route guard.
+    (n) => n.id !== "recovery-journey" || recoveryJourneyVisible(patient),
+  );
   // §Staff nav leak fix — a staff-owned route is neither patient nor public,
   // so the desktop strip used to fall through to the PATIENT registry. Staff
   // surfaces navigate via the left sidebar / Staff dropdown instead.
