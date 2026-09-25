@@ -5,7 +5,7 @@ import { HeartPulse } from "lucide-react";
 import { useEhr } from "@/lib/ehr";
 import type { StaffRole } from "@/lib/roles";
 import {
-  ACCESS_RULE_DRAFT_NOTE,
+  TOTALS_ONLY_NOTE,
   POPULATION_CUTOFF_DRAFT_NOTE,
   POPULATION_HEALTH_ASSOCIATION_NOTE,
   populationHealthReport,
@@ -133,7 +133,7 @@ export function PopulationHealthSection({ role }: { role: StaffRole }) {
         {report.sudMode === "totals" && (
           <p className="text-[11px] text-muted-foreground" data-testid="pop-totals-only">
             <Badge variant="outline" className="mr-1 text-[10px]">Totals only</Badge>
-            Substance-use figures are counts only, with no names. {ACCESS_RULE_DRAFT_NOTE}
+            {TOTALS_ONLY_NOTE}
           </p>
         )}
         {report.sudMode === null && (

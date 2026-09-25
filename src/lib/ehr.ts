@@ -12046,6 +12046,18 @@ export const AdelanteEHR = {
     return record;
   },
 
+  /** §10d-3 — audit a DMC-ODS export: who, when, row count. Never values. */
+  recordDmcOdsExport(input: { actorId: string; actorRole: string; rowCount: number }): void {
+    appendAudit({
+      category: "access",
+      action: "dmc_ods_export_downloaded",
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      detail: { rowCount: input.rowCount, prototype: true },
+    });
+    emit();
+  },
+
   /**
    * Justice-involvement estimates. `source` defaults to "self_report" and can
    * only ever be "self_report" or "pre_release" — there is no facility feed to
@@ -23230,6 +23242,16 @@ try {
   AdelanteEHR.requestAsamAssessment("p3", "Positive AUDIT on file (scored before the 0/2/4 fix)", {
     triggeredAt: new Date(Date.now() - 35 * 86400000).toISOString(),
   });
+  // §10d-3 — Marcus (p3): an INCOMPLETE CalOMS discharge record (reason
+  // "Other" with no reason text) so the completeness worklist has a row.
+  if (!(patients.find((p) => p.id === "p3")?.calomsProfile?.discharges?.length)) {
+    AdelanteEHR.recordDischarge("p3", {
+      status: "left_unsatisfactory",
+      reason: "other",
+      dischargedOn: new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10),
+      source: "internal",
+    });
+  }
   // Daniel (p1) — an existing CalOMS SUD record on file: reassessment due.
   AdelanteEHR.requestAsamAssessment(
     "p1",

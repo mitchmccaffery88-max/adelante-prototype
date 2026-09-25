@@ -33,9 +33,9 @@ import { screenerByKey } from "@/lib/screeners";
 import { CSSRS_KEY, CSSRS_RISK_ORDER, type CssrsRisk } from "@/lib/cssrs";
 import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
 import { dmcOdsLevelLabel, type AsamAssessment } from "@/lib/asam";
-import { ACCESS_RULE_DRAFT_NOTE, aggregatePatients, asamAccessMode, type AsamAccessMode } from "@/lib/asamReporting";
+import { ACCESS_RULE_DRAFT_NOTE, TOTALS_ONLY_NOTE, aggregatePatients, asamAccessMode, type AsamAccessMode } from "@/lib/asamReporting";
 
-export { ACCESS_RULE_DRAFT_NOTE };
+export { ACCESS_RULE_DRAFT_NOTE, TOTALS_ONLY_NOTE };
 
 export const POPULATION_HEALTH_ASSOCIATION_NOTE =
   "These figures describe what was recorded for the people in each group. They show association only — they do not show that a group, program or referral source caused a result.";
