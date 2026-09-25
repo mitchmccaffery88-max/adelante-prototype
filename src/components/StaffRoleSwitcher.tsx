@@ -31,7 +31,17 @@ export function StaffRoleSwitcher() {
     const staysHere =
       pages.some((e) => e.to === pathname) ||
       (pathname.startsWith("/record/") && pages.length > 0);
-    if (!staysHere && pages[0]) navigate({ to: pages[0].to });
+    if (!staysHere) {
+      // Sensible home per role, only among pages that role can already see.
+      const preferred =
+        m.role === "billing" || m.role === "billing_coordinator"
+          ? ["/billing"]
+          : m.role === "sys_admin"
+            ? ["/admin"]
+            : ["/my-work", "/clinician", "/case-manager"];
+      const dest = preferred.find((to) => pages.some((e) => e.to === to)) ?? pages[0]?.to;
+      if (dest) navigate({ to: dest });
+    }
     toast.success(`Role: ${roleLabel(m.role)} · ${m.name}`);
   }
 
