@@ -33,6 +33,7 @@ import {
 import { ChevronDown, FlaskConical } from "lucide-react";
 
 const ADVOCATE_SESSION_KEY = "adelante.advocateLinkId";
+const ACTIVE_DEMO_STATE_KEY = "adelante.activeDemoState";
 
 /** QA scenario matrix (Part B). Patient scenarios resolve to real records. */
 type ScenarioKey = keyof typeof DEMO_SCENARIO_PERSONAS;
@@ -241,15 +242,19 @@ export function DemoStateSwitcher() {
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
   const [advocateLinkId, setAdvocateLinkId] = useState<string | null>(null);
+  const [selectedState, setSelectedState] = useState<DemoStateId | null>(null);
   useEffect(() => {
     try {
       setAdvocateLinkId(localStorage.getItem(ADVOCATE_SESSION_KEY));
+      const stored = sessionStorage.getItem(ACTIVE_DEMO_STATE_KEY);
+      setSelectedState(ORDER.includes(stored as DemoStateId) ? (stored as DemoStateId) : null);
     } catch {
       setAdvocateLinkId(null);
+      setSelectedState(null);
     }
   }, [currentId]);
 
-  const active: DemoStateId | null = (() => {
+  const inferredActive: DemoStateId | null = (() => {
     if (advocateLinkId) return patient ? "advocate_and_patient" : "advocate";
     if (!patient) return "no_record";
     if (patient.id === "p1") return "ji_post_release";
@@ -261,9 +266,12 @@ export function DemoStateSwitcher() {
       if (patient.id === demoScenarioPatientId(k)) return k;
     return null;
   })();
+  const active = selectedState === inferredActive ? selectedState : null;
 
   function apply(state: DemoStateId) {
     try {
+      sessionStorage.setItem(ACTIVE_DEMO_STATE_KEY, state);
+      setSelectedState(state);
       switch (state) {
         case "no_record": {
           clearAdvocateSession();
@@ -400,6 +408,8 @@ export function DemoStateSwitcher() {
                 onClick={() => {
                   clearAdvocateSession();
                   setAdvocateLinkId(null);
+                   sessionStorage.removeItem(ACTIVE_DEMO_STATE_KEY);
+                   setSelectedState(null);
                   AdelanteEHR.setCurrentPatientId(p.id);
                    navigate({ to: p.intakeCompletedAt ? "/patient" : "/intake" });
                 }}
