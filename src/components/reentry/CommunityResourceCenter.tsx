@@ -100,11 +100,17 @@ export function CommunityResourceCenter({
   // other surface — including this same component on the advocate surface —
   // keeps the Part 2 category-only rule (PART2_CAUTION_CATEGORY_IDS).
   const categoryOnly = surface !== "patient";
-  const permittedCategories = categoryOnly || showRecovery
+  const all = categoryOnly
     ? browsable.filter((r) => !PART2_CAUTION_CATEGORY_IDS.includes(r.categoryId))
-    : browsable;
-  const all = surface === "patient" && showRecovery ? browsable : permittedCategories;
-  const hiddenCategory = !!category && PART2_CAUTION_CATEGORY_IDS.includes(category) && (categoryOnly || !showRecovery);
+    : showRecovery
+      ? browsable
+      : browsable.filter((r) => r.categoryId !== "recovery_meetings");
+  const hiddenCategory = Boolean(
+    category &&
+      (categoryOnly
+        ? PART2_CAUTION_CATEGORY_IDS.includes(category)
+        : category === "recovery_meetings" && !showRecovery),
+  );
   // Real, live per-category counts over exactly what the patient can browse
   // (published + pending-verification), not just the verified subset.
   const counts = new Map<string, number>();
