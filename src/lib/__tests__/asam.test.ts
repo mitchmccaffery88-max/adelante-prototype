@@ -15,7 +15,7 @@ import { attestationStatement, buildAttestationRecord } from "@/lib/attestation"
 import { ASK_ADEL_QUESTIONS, part2Gated } from "@/lib/askAdel";
 
 const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as const, clinicianId: "c1" };
-const VARGAS = { staffId: "s-sudc1", name: "Elena Vargas", role: "sud_counselor" as const };
+const VARGAS = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as const };
 const OKAFOR = { staffId: "s-th2", name: "Dr. James Okafor", role: "therapist" as const, clinicianId: "c2" };
 const ATT = { attested: true, signatureDataUrl: "data:image/png;base64,dGVzdA==" };
 const att = (statement: "asam_sign" | "asam_supervisor_sign", signedBy: string) =>
