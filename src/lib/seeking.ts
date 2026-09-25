@@ -29,7 +29,9 @@ export function visibleSeekingSubstanceUse(
   viewer: SeekingViewer,
 ): boolean | undefined {
   if (!patient) return undefined;
-  if (viewer.kind === "advocate") return advocatePart2Masked() ? undefined : undefined;
+  // Advocates: the unconditional Part 2 default is masked.
+  if (viewer.kind === "advocate" && advocatePart2Masked()) return undefined;
+  if (viewer.kind === "advocate") return undefined;
   const gate = canAccess(viewer.role, "screeners_sud", patient);
   if (gate.level === "none" || gate.locked) return undefined;
   return Boolean(patient.needs?.substanceUse);

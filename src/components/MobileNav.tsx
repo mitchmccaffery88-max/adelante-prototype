@@ -5,11 +5,14 @@ import { cn } from "@/lib/utils";
 import { useI18n } from "@/lib/i18n";
 import { PATIENT_MOBILE_NAV, PATIENT_ROUTES, type PatientRoute } from "@/lib/navSections";
 import { PatientMoreSheet } from "@/components/patient/PatientMoreSheet";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 export function MobileNav() {
   const { t } = useI18n();
   const [moreOpen, setMoreOpen] = useState(false);
   const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())));
 
   if (!PATIENT_ROUTES.includes(pathname as PatientRoute) && !pathname.startsWith("/rescreen/")) {
     return null;
@@ -24,7 +27,7 @@ export function MobileNav() {
         className="md:hidden fixed bottom-0 inset-x-0 z-40 border-t bg-card/95 backdrop-blur pb-[env(safe-area-inset-bottom)] shadow-[0_-4px_16px_-8px_rgb(0_0_0/0.15)]"
       >
         <div className="flex items-stretch justify-around gap-1 px-2 py-1">
-          {PATIENT_MOBILE_NAV.map((n) => {
+          {PATIENT_MOBILE_NAV.filter((n) => n.id !== "recovery-journey" || showRecovery).map((n) => {
             const Icon = n.icon;
             const active = pathname === n.to;
             return (

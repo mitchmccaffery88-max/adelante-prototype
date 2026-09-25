@@ -5,6 +5,7 @@ import { useI18n } from "@/lib/i18n";
 import { PATIENT_MORE_NAV, patientNavForPopulation } from "@/lib/navSections";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { usePopulation } from "@/components/PopulationGate";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 /**
  * §Patient portal correction — the real "More" bottom sheet: rounded top,
@@ -21,6 +22,7 @@ export function PatientMoreSheet({
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const population = usePopulation(currentId);
   // §Onboarding rework — after the first intake, "Intake" reads "Re-assess".
+  const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(currentId)));
   const intakeDone = useEhr(() => Boolean(AdelanteEHR.getPatient(currentId)?.intakeCompletedAt));
   const entries = patientNavForPopulation(PATIENT_MORE_NAV, population.track);
 
@@ -46,7 +48,7 @@ export function PatientMoreSheet({
         </div>
 
         <nav className="mt-3 grid max-h-[60vh] gap-1 overflow-y-auto">
-          {entries.map((n) => {
+          {entries.filter((n) => n.id !== "recovery-journey" || showRecovery).map((n) => {
             const Icon = n.icon;
             return (
               <Link
