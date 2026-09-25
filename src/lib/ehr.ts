@@ -159,6 +159,10 @@ import {
   screenerByKey,
   SCREENERS,
   isPart2Screener,
+  activeScreenerByKey,
+  rescreenRule,
+  RESCREEN_SCHEDULE,
+  LEGACY_AUDIT_LABEL,
   type ScreenerDomainResult,
 } from "./screeners";
 export type { LibraryCategory, LibraryItem, Exercise, SavedToolkitItem } from "./library";
@@ -7302,6 +7306,74 @@ function _ensureGroupOccurrence(sessionId: string, occurrenceStart: string) {
   return row;
 }
 
+
+// ---------------------------------------------------------------------------
+// §Phase 10a — instrument metadata on every stored result.
+// ---------------------------------------------------------------------------
+function _defForResult(key: string) {
+  return key === CSSRS_KEY ? CSSRS_DEF : screenerByKey(key);
+}
+
+/**
+ * Stamp version / scoring / verified-text / retired metadata onto a result
+ * from its definition, without overwriting anything already set. For AUDIT
+ * results that carry item answers but were scored under the old flat 0–4
+ * rule, re-score exactly (prior score kept in `rescoredFrom`). AUDIT results
+ * with only a total cannot be re-scored and are labelled instead.
+ */
+function _stampScreenerMeta(r: ScreenerResult): ScreenerResult {
+  const def = _defForResult(r.key);
+  if (!def) return r;
+  if (def.retired) {
+    r.retiredForm = true;
+    r.instrumentVersion ??= def.version;
+    r.scoringVersion ??= def.scoringVersion;
+    r.textVerified ??= false;
+    return r;
+  }
+  if (r.key === "audit" && r.scoringVersion !== def.scoringVersion) {
+    if (r.responses && r.responses.length === def.questions.length && !r.scoringVersion) {
+      // Old flat mapping stored the option INDEX-equivalent value 0–4 for items
+      // 9/10; the validated anchors are 0/2/4 for the three published choices.
+      // Old choices on items 9/10 cannot be mapped 1:1, so re-score only when
+      // items 9/10 hold a value that is valid under the new anchors.
+      const ok = [8, 9].every((i) => [0, 2, 4].includes(r.responses![i]));
+      if (ok) {
+        const scored = scoreScreener(def, r.responses);
+        if (scored.score !== r.score || scored.severity !== r.severity) {
+          r.rescoredFrom = { score: r.score, severity: r.severity };
+          r.score = scored.score;
+          r.severity = scored.severity;
+          if (scored.positive !== undefined) r.positive = scored.positive;
+        }
+        r.scoringVersion = def.scoringVersion;
+      } else {
+        r.legacyScoring = LEGACY_AUDIT_LABEL;
+        r.scoringVersion = "flat-0-4-v1";
+      }
+    } else if (!r.scoringVersion) {
+      r.legacyScoring = LEGACY_AUDIT_LABEL;
+      r.scoringVersion = "flat-0-4-v1";
+    }
+  }
+  r.instrumentVersion ??= def.version;
+  r.scoringVersion ??= def.scoringVersion;
+  r.textVerified ??= def.textVerified ?? false;
+  return r;
+}
+
+/** One-time sweep over statically seeded results (they never went through recordScreener). */
+function _normalizeAllScreenerMeta() {
+  for (const p of patients) {
+    for (const k of Object.keys(p.screeners ?? {})) {
+      const r = p.screeners[k];
+      if (r) _stampScreenerMeta(r);
+    }
+    for (const r of p.screenerHistory ?? []) _stampScreenerMeta(r);
+  }
+}
+_normalizeAllScreenerMeta();
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
@@ -8299,6 +8371,10 @@ export const AdelanteEHR = {
   recordScreener(patientId: string, result: ScreenerResult) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
+    const def = _defForResult(result.key);
+    // §Phase 10a — retired forms can never produce NEW results.
+    if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
+    _stampScreenerMeta(result);
     p.screeners[result.key] = result;
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
     if (result.crisisFlag) {
@@ -8315,8 +8391,176 @@ export const AdelanteEHR = {
         });
       }
     }
+    // §Phase 10a/10b — one audit entry per stored result (score/severity/
+    // version only; item answers are never copied into the audit log).
+    appendAudit({
+      category: "clinical",
+      action: "screener_recorded",
+      patientId,
+      actorId:
+        result.administeredBy?.enteredBy?.staffName ??
+        (result.context === "patient_self" || result.context === "intake" || !result.context
+          ? `patient:${patientId}`
+          : "system"),
+      detail: {
+        screenerKey: result.key,
+        score: result.score,
+        severity: result.severity,
+        timepoint: result.timepoint,
+        context: result.context,
+        instrumentVersion: result.instrumentVersion,
+        scoringVersion: result.scoringVersion,
+        textVerified: result.textVerified,
+        ...(result.cssrsRisk ? { cssrsRisk: result.cssrsRisk } : {}),
+      },
+    });
+    // §Phase 10b — PHQ-9 item 9 > 0 prompts a C-SSRS. Runs AFTER the existing
+    // crisis-flag path above, which is unchanged.
+    if (result.key === "phq-9" && (result.responses?.[8] ?? 0) > 0) {
+      AdelanteEHR.requestCssrs(patientId, "PHQ-9 item 9 > 0");
+    } else if (result.key === "phq-9" && result.crisisFlag && !result.responses) {
+      AdelanteEHR.requestCssrs(patientId, "PHQ-9 item 9 > 0");
+    }
     _recomputeCarePlan(p.id, `screener:${result.key}`);
     emit();
+  },
+
+  // ----- §Phase 10b — C-SSRS -------------------------------------------------
+  /**
+   * Open a C-SSRS request: a staff case task (always) and a patient
+   * self-report offer. Idempotent while a request is open. Never replaces or
+   * delays the crisis response — callers invoke it AFTER the crisis path.
+   */
+  requestCssrs(patientId: string, trigger: string) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const open = (p.tasks ?? []).some((t) => t.kind === "cssrs" && !t.completedAt);
+    if (!open) {
+      p.tasks = [
+        {
+          id: uid(),
+          kind: "cssrs",
+          label: "A few safety questions from your care team",
+          screenerKey: CSSRS_KEY,
+          createdAt: new Date().toISOString(),
+        },
+        ...(p.tasks ?? []),
+      ];
+    }
+    if (p.caseManagerId) {
+      AdelanteEHR.createCaseTask({
+        patientId: p.id,
+        assignedTo: p.caseManagerId,
+        title: "C-SSRS indicated",
+        detail: `Administer the C-SSRS Screener. Trigger: ${trigger}. Response protocol per risk level is a DRAFT pending clinical sign-off.`,
+        dueDate: new Date().toISOString().slice(0, 10),
+        origin: "screener_flag",
+        dedupeKey: `cssrs:${p.id}`,
+      });
+    }
+    appendAudit({
+      category: "clinical",
+      action: "cssrs_requested",
+      patientId,
+      actorId: "system",
+      detail: { trigger },
+    });
+    emit();
+  },
+  /** Open C-SSRS request for this patient, if any. */
+  openCssrsRequest(patientId: string) {
+    const p = patients.find((x) => x.id === patientId);
+    return (p?.tasks ?? []).find((t) => t.kind === "cssrs" && !t.completedAt);
+  },
+  /**
+   * Record a C-SSRS. Staff-administered (`administeredBy` set, context
+   * "clinic") or patient self-report ("patient_self"). A patient's own answers
+   * never LOWER the risk level already on file from staff; only staff close the
+   * request. The result feeds the open crisis-queue row (risk badge), or opens
+   * one for moderate/high risk through the ordinary `flagCrisis` path.
+   */
+  recordCssrs(input: {
+    patientId: string;
+    answers: CssrsAnswers;
+    mode: "staff" | "patient_self";
+    staffName?: string;
+    staffRole?: string;
+    trigger?: string;
+  }): ScreenerResult {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) throw new Error("Patient not found.");
+    if (!CSSRS_TEXT_APPROVED && !IS_DEMO_BUILD)
+      throw new Error("C-SSRS item text has not been approved — the form cannot be used yet.");
+    if (!cssrsComplete(input.answers)) throw new Error("Please answer every question shown.");
+    if (input.mode === "staff" && !input.staffName) throw new Error("Staff administration must be attributed.");
+    const computed = computeCssrsRisk(input.answers);
+    const prior = p.screeners[CSSRS_KEY];
+    const priorStaffRisk =
+      prior && prior.context === "clinic" && prior.cssrsRisk ? prior.cssrsRisk : undefined;
+    const risk =
+      input.mode === "patient_self" && priorStaffRisk ? maxCssrsRisk(priorStaffRisk, computed) : computed;
+    const riskIndex = ["none", "low", "moderate", "high"].indexOf(risk);
+    const now = new Date().toISOString();
+    const result: ScreenerResult = {
+      key: CSSRS_KEY,
+      score: riskIndex,
+      severity: CSSRS_DEF.bands[riskIndex].label,
+      completedAt: now,
+      timepoint: "triggered",
+      responses: input.answers.map((a) => (a === undefined ? -1 : a)),
+      cssrsRisk: risk,
+      positive: risk !== "none",
+      context: input.mode === "staff" ? "clinic" : "patient_self",
+      placeholderText: !CSSRS_TEXT_APPROVED,
+      trigger: input.trigger,
+      ...(input.mode === "staff"
+        ? {
+            administeredBy: {
+              enteredBy: { staffName: input.staffName!, role: (input.staffRole ?? "clinician") as never },
+            } as unknown as CfAttribution,
+          }
+        : {}),
+    };
+    AdelanteEHR.recordScreener(input.patientId, result);
+    // Feed the crisis queue.
+    const openRow = (p.crisisEscalations ?? []).find((e) => e.status === "open");
+    if (openRow) {
+      openRow.cssrsRisk = openRow.cssrsRisk ? maxCssrsRisk(openRow.cssrsRisk, risk) : risk;
+      openRow.cssrsAt = now;
+    } else if (risk === "moderate" || risk === "high") {
+      const row = AdelanteEHR.flagCrisis(
+        input.patientId,
+        input.staffName ?? "Patient self-report",
+        `C-SSRS Screener — ${CSSRS_DEF.bands[riskIndex].label}`,
+        { triggerSource: "screener_score" },
+      );
+      row.cssrsRisk = risk;
+      row.cssrsAt = now;
+    }
+    // Only staff close the request.
+    if (input.mode === "staff") {
+      for (const t of p.tasks ?? []) if (t.kind === "cssrs" && !t.completedAt) t.completedAt = now;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "cssrs_recorded",
+      patientId: input.patientId,
+      actorId: input.mode === "staff" ? input.staffName! : `patient:${input.patientId}`,
+      actorRole: input.staffRole,
+      detail: { risk, mode: input.mode, placeholderText: result.placeholderText },
+    });
+    emit();
+    return result;
+  },
+  /** Patients with an open C-SSRS request or a recent moderate/high result — for staff Ask Adel. */
+  patientsWithOpenCssrs(): { patientId: string; name: string; risk?: CssrsRisk }[] {
+    return patients
+      .filter((p) => (p.tasks ?? []).some((t) => t.kind === "cssrs" && !t.completedAt))
+      .map((p) => ({
+        patientId: p.id,
+        name: `${p.firstName} ${p.lastName}`,
+        risk: p.screeners[CSSRS_KEY]?.cssrsRisk,
+      }));
   },
   raiseCrisisFlag(patientId: string, source: string) {
     // (see screener helpers below)
