@@ -1,7 +1,13 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, redirect } from "@tanstack/react-router";
 import { SlipSupportFlow } from "@/components/patient/SlipSupportFlow";
+import { AdelanteEHR } from "@/lib/ehr";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 export const Route = createFileRoute("/slip")({
+  beforeLoad: () => {
+    const patient = AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId());
+    if (!recoveryJourneyVisible(patient)) throw redirect({ to: "/home" });
+  },
   head: () => ({
     meta: [
       { title: "After a slip — Adelante" },

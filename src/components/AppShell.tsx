@@ -33,6 +33,7 @@ import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
 import { needsFirstIntake, isOnboardingComplete } from "@/lib/onboarding";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 import { useReminderSweep } from "@/hooks/useReminderSweep";
 import {
   DropdownMenu,
@@ -113,7 +114,8 @@ export function AppShell() {
   // shell is slim: no sidebar, tab bar, staff menu or notifications. Only the
   // language toggle, the account menu and the 988 path remain.
   const onboarding = isPatientSurface && needsFirstIntake(patient);
-  const showCraving = isPatientSurface && isOnboardingComplete(patient);
+  const showCraving =
+    isPatientSurface && isOnboardingComplete(patient) && recoveryJourneyVisible(patient);
 
   // §Platform nav Phase 4 — desktop strip reads the shared patient registry so
   // it can never drift from the mobile tab bar again.

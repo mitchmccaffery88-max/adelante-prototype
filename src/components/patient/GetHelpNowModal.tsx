@@ -24,6 +24,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { Sheet, SheetContent, SheetTitle } from "@/components/ui/sheet";
 import { CRISIS_LIFELINE_NUMBER, CRISIS_LIFELINE_NAME } from "@/lib/safetyPlan";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 type HelpDestination =
   | { kind: "tel"; number: string }
@@ -145,7 +147,7 @@ function GapChip({ note }: { note: string }) {
   );
 }
 
-function HelpList({ onNavigate }: { onNavigate: () => void }) {
+function HelpList({ onNavigate, showRecovery }: { onNavigate: () => void; showRecovery: boolean }) {
   const rowClass = (entry: HelpEntry) =>
     [
       "flex w-full items-start gap-3 rounded-2xl border p-3 text-left transition-colors",
@@ -156,7 +158,7 @@ function HelpList({ onNavigate }: { onNavigate: () => void }) {
 
   return (
     <div className="grid gap-2" data-testid="get-help-entries">
-      {HELP_ENTRIES.map((entry) => {
+      {HELP_ENTRIES.filter((entry) => entry.id !== "slip-support" || showRecovery).map((entry) => {
         const inner = (
           <EntryShell entry={entry}>
             {entry.gap ? <GapChip note={entry.gap} /> : null}
@@ -223,6 +225,9 @@ export function GetHelpNowModal({
   onOpenChange: (open: boolean) => void;
 }) {
   const close = () => onOpenChange(false);
+  const showRecovery = useEhr(() =>
+    recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
+  );
 
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
@@ -245,7 +250,7 @@ export function GetHelpNowModal({
         </div>
         <p className="mt-1 text-sm text-muted-foreground">{SUBTITLE}</p>
         <div className="mt-3 max-h-[62vh] overflow-y-auto pb-2">
-          <HelpList onNavigate={close} />
+          <HelpList onNavigate={close} showRecovery={showRecovery} />
         </div>
       </SheetContent>
     </Sheet>
