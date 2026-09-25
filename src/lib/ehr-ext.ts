@@ -1057,6 +1057,50 @@ export const AdelanteEHRExt = {
     ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
     return claim;
   },
+
+  /**
+   * §Phase 10c — the H0001 (alcohol/drug assessment) claim for a SIGNED ASAM.
+   * There is no appointment encounter for an assessment, so the claim keys on
+   * the assessment id (`asam:<id>`) and is created in the `signed` state — the
+   * signature already happened. Created only by `asamFlow` after the final
+   * signature; billing moves it forward through `transitionClaim` as usual.
+   */
+  createAsamClaim(input: {
+    asamId: string;
+    patientId: string;
+    clinicianId: string;
+    serviceDate: string;
+  }): Claim {
+    const encounterId = `asam:${input.asamId}`;
+    const existing = claims.find((c) => c.encounterId === encounterId);
+    if (existing) return existing;
+    const claim: Claim = {
+      id: uid(),
+      encounterId,
+      patientId: input.patientId,
+      clinicianId: input.clinicianId,
+      state: "signed",
+      serviceCode: "H0001",
+      units: 1,
+      codeSource: "default",
+      unitsSource: "billing",
+      serviceDate: input.serviceDate,
+      updatedAt: iso(),
+      history: [
+        {
+          at: iso(),
+          state: "signed",
+          actor: "system",
+          via: "note_signature",
+          note: "H0001 — signed ASAM assessment (Phase 10c)",
+        },
+      ],
+    };
+    applyPricing(claim);
+    claims.push(claim);
+    ehrBus.publish({ type: "claim.updated", claimId: claim.id, state: claim.state });
+    return claim;
+  },
   /**
    * §Phase 7b — the ONE write path for billing status. The actor is the real
    * acting staff member (callers cannot pass one); only roles with `billing`

@@ -132,6 +132,19 @@ export function chartReviewFacts(
   if (allScreeners.some((s) => s.retiredForm)) {
     careGaps.push("Retired non-validated PTSD short-form results on file — not trended with PC-PTSD-5 / PCL-5.");
   }
+  // §Phase 10c — ASAM facts (Part 2 gated; facts only, never a level suggestion).
+  if (!sudLocked) {
+    const asamTask = AdelanteEHR.openAsamTask(patientId);
+    if (asamTask) careGaps.push(`ASAM assessment needed — due ${asamTask.dueDate} (draft due date).`);
+    const pendingCosign = (patient.asamAssessments ?? []).find((a) => a.status === "cosign_pending");
+    if (pendingCosign) careGaps.push("An ASAM assessment is awaiting LPHA co-signature.");
+    const lastSigned = (patient.asamAssessments ?? []).find((a) => a.status === "signed");
+    if (lastSigned) {
+      careGaps.push(
+        `Last signed ASAM: ${lastSigned.signedAt?.slice(0, 10) ?? "—"}, clinician-selected level on file${lastSigned.cosignedBy ? ` (co-signed by ${lastSigned.cosignedBy})` : ""}.`,
+      );
+    }
+  }
   if (dosesRefusedOrHeld > 0) {
     careGaps.push(
       `${dosesRefusedOrHeld} dose${dosesRefusedOrHeld === 1 ? "" : "s"} refused or held in the last 14 days — worth naming in the visit.`,

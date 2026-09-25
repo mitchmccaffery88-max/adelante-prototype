@@ -174,3 +174,11 @@
 - [x] Part B: QA switcher scenario matrix audit + add missing scenarios via store API; report per-record changes (separate message)
 - [x] Part C: persistent top-bar QA + staff role switchers side by side on every page, desktop + phone (separate message)
 - [ ] Verification: typecheck, build, full tests, browser walk per scenario
+## Phase 10c (approved, building now)
+- [ ] ASAM data model (AsamAssessment, task, triggers)
+- [ ] recordSeeking Part 2 change (no-consent masked task)
+- [ ] Roles: SUD counselor authors, LPHA signs/cosigns
+- [ ] Chart UI, My Work, Ask Adel, Guided Chart Review
+- [ ] Outputs on cosign: episode, CALOMS prompt, H0001, care plan suggestion
+- [ ] Demo data: Luis signed, Jasmine counselor-authored pending, Daniel due, no-consent scenario
+- [ ] Tests + typecheck + build + browser verification

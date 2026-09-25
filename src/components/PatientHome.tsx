@@ -550,6 +550,9 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
     completed: "Done",
     not_completed: "Didn't happen",
   };
+  const signedAsam = useEhr(() =>
+    (AdelanteEHR.getPatient(patientId)?.asamAssessments ?? []).find((a) => a.status === "signed"),
+  );
   return (
     <Card className="p-5">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
@@ -558,6 +561,12 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
       <p className="text-xs text-muted-foreground mt-1">
         Everyday needs your team is helping with.
       </p>
+      {signedAsam && (
+        <p className="mt-2 text-xs text-muted-foreground" data-testid="asam-patient-line">
+          Your care team completed a treatment planning assessment with you and will check in on it
+          regularly.
+        </p>
+      )}
       <ul className="mt-3 space-y-2 text-sm">
         {items.map((i) => (
           <li key={i.id} className="rounded-md border p-2.5">

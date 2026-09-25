@@ -179,6 +179,21 @@ export const ATTESTATION_STATEMENTS: Record<string, AttestationStatement> = {
     label: "Supervisor signature",
     text: "I attest, as the supervising clinician of record, that I have reviewed this note in full and that signing it reflects my own clinical judgment.",
   },
+  // §Phase 10c — ASAM. The LPHA sign attests to medical-necessity
+  // determination; the supervisor cosign covers counselor/trainee-authored
+  // assessments before any output fires.
+  asam_sign: {
+    id: "asam_sign",
+    version: "v1",
+    label: "ASAM assessment signature",
+    text: "I attest that this assessment is accurate and complete, that I personally determined the level of care and medical necessity, and that no level was suggested or calculated by the system.",
+  },
+  asam_supervisor_sign: {
+    id: "asam_supervisor_sign",
+    version: "v1",
+    label: "ASAM co-signature (LPHA)",
+    text: "I attest, as the co-signing licensed clinician (LPHA), that I have reviewed this assessment in full and that the level of care and medical necessity determination reflect my own clinical judgment.",
+  },
 };
 
 export function attestationStatement(id: string): AttestationStatement {

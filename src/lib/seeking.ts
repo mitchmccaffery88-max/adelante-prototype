@@ -43,11 +43,15 @@ export function visibleSeekingSubstanceUse(
 
 /** One positive-signal rule for every patient-facing Recovery Journey entry. */
 export function recoveryJourneyVisible(
-  p: Pick<Patient, "needs" | "episodes" | "calomsProfile"> | undefined,
+  p: Pick<Patient, "needs" | "episodes" | "calomsProfile" | "seeking"> | undefined,
 ): boolean {
   if (!p) return false;
   return Boolean(
-    p.needs?.substanceUse ||
+    // §Phase 10c — `needs.substanceUse` set at intake counts toward
+    // patient-facing substance-use tools ONLY when Part 2 sharing consent
+    // existed at selection time. Without consent the answer is kept (for the
+    // masked ASAM pathway) but the patient's own screens stay unchanged.
+    (p.needs?.substanceUse && p.seeking?.part2ConsentAtSelection !== false) ||
       p.episodes?.some((episode) => episode.type === "sud_dmc_ods") ||
       // A CalOMS profile means SUD treatment admission — except a profile
       // holding ONLY the justice self-report, which `setJusticeSelfReport`

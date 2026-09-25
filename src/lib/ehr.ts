@@ -47,6 +47,22 @@ import {
   type CssrsAnswers,
   type CssrsRisk,
 } from "./cssrs";
+// §Phase 10c — ASAM. Leaf module (type-only back to roles), safe to value-import.
+import {
+  ASAM_DEDUPE_PREFIX,
+  ASAM_REASSESSMENT_DAYS,
+  ASAM_SIGN_ROLES,
+  ASAM_TASK_ROLES,
+  ASAM_TASK_TYPE,
+  OFFERED_LEVELS,
+  asamDueDate,
+  asamNeedsCosign,
+  dmcOdsLevelLabel,
+  emptyAsamDraft,
+  type AsamAssessment,
+} from "./asam";
+const OFFERED_LEVELS_SET = new Set(OFFERED_LEVELS);
+const dmcOdsLevelLabelSafe = dmcOdsLevelLabel;
 import { mergeCoverage, type CoveragePatch } from "./coverageStatus";
 import {
   MEDI_CAL_FOLLOW_UP_TASK_TITLE,
@@ -777,6 +793,12 @@ export interface Referral {
    */
   justiceInvolved?: "yes" | "no" | "unsure";
   /**
+   * §Phase 10c — the referral names a substance use need (pre-release
+   * screening or public/partner referral). Triggers an ASAM task at
+   * enrollment. Part 2 protected once enrolled.
+   */
+  substanceUseNeed?: boolean;
+  /**
    * §Phase 4c — truthful log of status-change texts to the REFERRER. Same
    * honesty rule as `welcomeSms`: an entry only exists if a send was really
    * attempted, and only `sent` means a message left the building.
@@ -1488,16 +1510,28 @@ export interface Patient {
   goals?: Goal[];
   /**
    * §Part B1 — "What are you looking for?" (About You). Content, resources and
-   * recommendations only; never changes which screeners are offered. The
-   * substance-use choice is NOT stored here: it is merged into the Part 2
-   * masked `needs.substanceUse`, and only when Part 2 consent is on file.
+   * recommendations only; never changes which screeners are offered.
+   * §Phase 10c — the substance-use choice is ALWAYS recorded here (never
+   * dropped): `substanceUse` is the answer as given, and
+   * `part2ConsentAtSelection` records whether Part 2 sharing consent existed
+   * at selection time. Without consent the answer is still mirrored into the
+   * Part 2-masked `needs.substanceUse`, but patient-facing substance-use tools
+   * stay hidden until consent (see `recoveryJourneyVisible`).
    */
-  seeking?: { mentalHealth: boolean; medication: boolean; answeredAt: string };
+  seeking?: {
+    mentalHealth: boolean;
+    medication: boolean;
+    answeredAt: string;
+    substanceUse?: boolean;
+    part2ConsentAtSelection?: boolean;
+  };
   /**
    * §Part B1 — goals SUGGESTED from the About You answers. They are never on
    * the care plan until a clinician accepts one (attributed + audited).
    */
   suggestedGoals?: SuggestedGoal[];
+  /** §Phase 10c — ASAM assessments (Part 2 protected; see src/lib/asam.ts). */
+  asamAssessments?: AsamAssessment[];
   progressNotes?: ProgressNote[];
   // Per-purpose consent state (revocable) + append-only audit trail
   consentState?: {
@@ -1812,7 +1846,7 @@ export const APPOINTMENT_SOURCE_LABEL: Record<AppointmentSource, string> = {
 export interface SuggestedGoal {
   id: string;
   text: string;
-  reason: "seeking_medication" | "seeking_mental_health";
+  reason: "seeking_medication" | "seeking_mental_health" | "asam_signed";
   status: "suggested" | "accepted" | "dismissed";
   createdAt: string;
   decidedAt?: string;
@@ -1825,6 +1859,7 @@ export interface SuggestedGoal {
 export const SUGGESTED_GOAL_TEXT: Record<SuggestedGoal["reason"], string> = {
   seeking_medication: "Meet with a prescriber about medication",
   seeking_mental_health: "Start regular counseling sessions",
+  asam_signed: "Engage in substance use treatment at the clinician-selected level",
 };
 
 export interface Appointment {
@@ -3590,7 +3625,9 @@ export type CaseTaskOrigin =
   /** §Phase 4f — enrollment from a referral needs a care team and intake. */
   | "referral_enrollment_setup"
   /** §5d-3 — a follow-up on a social need or a resource referral. */
-  | "sdoh_follow_up";
+  | "sdoh_follow_up"
+  /** §Phase 10c — an ASAM assessment is needed (Part 2 protected). */
+  | "asam_needed";
 
 export interface CaseTask {
   id: string;
@@ -8000,6 +8037,14 @@ export const AdelanteEHR = {
     r.enrolledPatientId = p.id;
     r.enrolledAt = new Date().toISOString();
     r.enrolledBy = who;
+    // §Phase 10c — a referral that names a substance use need triggers an
+    // ASAM task at enrollment (Part 2 protected).
+    if (r.substanceUseNeed) {
+      AdelanteEHR.requestAsamAssessment(
+        p.id,
+        `Referral from ${r.referringAgency} names a substance use need`,
+      );
+    }
     appendAudit({
       category: "clinical",
       action: "referral_enrolled",
@@ -8422,6 +8467,20 @@ export const AdelanteEHR = {
     } else if (result.key === "phq-9" && result.crisisFlag && !result.responses) {
       AdelanteEHR.requestCssrs(patientId, "PHQ-9 item 9 > 0");
     }
+    // §Phase 10c — a positive AUDIT or DAST-10 (draft cutoffs) triggers an
+    // ASAM assessment task. Part 2 protected; runs after the crisis path.
+    if ((result.key === "audit" || result.key === "dast-10") && result.positive === true) {
+      const when =
+        result.timepoint === "intake"
+          ? "at intake"
+          : result.context === "pre_release"
+            ? "at pre-release screening"
+            : "at re-screen";
+      AdelanteEHR.requestAsamAssessment(
+        patientId,
+        `Positive ${result.key === "audit" ? "AUDIT" : "DAST-10"} ${when} (score ${result.score})`,
+      );
+    }
     _recomputeCarePlan(p.id, `screener:${result.key}`);
     emit();
   },
@@ -8472,6 +8531,351 @@ export const AdelanteEHR = {
   openCssrsRequest(patientId: string) {
     const p = patients.find((x) => x.id === patientId);
     return (p?.tasks ?? []).find((t) => t.kind === "cssrs" && !t.completedAt);
+  },
+
+  // ----- §Phase 10c — ASAM ---------------------------------------------------
+  /**
+   * Open an "ASAM assessment needed" task. De-duplicated: one open task per
+   * patient; a new trigger appends its reason to the open task. A signed ASAM
+   * inside the draft reassessment window suppresses new tasks UNLESS the
+   * trigger is a clinician decision. Part 2: the task is restricted to
+   * clinical author roles — never advocates, never Part 2-restricted staff.
+   * Routing (draft): assigned treating clinician → SUD counselor → LPHA queue.
+   */
+  requestAsamAssessment(
+    patientId: string,
+    reason: string,
+    opts?: { clinicianDecision?: boolean },
+  ): CaseTask | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return undefined;
+    const dedupeKey = `${ASAM_DEDUPE_PREFIX}${p.id}`;
+    const open = caseTasks.find((t) => t.dedupeKey === dedupeKey && t.status !== "done");
+    if (open) {
+      if (open.detail && !open.detail.includes(reason)) open.detail = `${open.detail} Also: ${reason}.`;
+      emit();
+      return open;
+    }
+    if (!opts?.clinicianDecision) {
+      const recentSigned = (p.asamAssessments ?? []).find(
+        (a) =>
+          a.status === "signed" &&
+          a.signedAt &&
+          Date.now() - +new Date(a.signedAt) < ASAM_REASSESSMENT_DAYS * 86400000,
+      );
+      if (recentSigned) return undefined;
+    }
+    const assignee = p.primaryClinicianId ?? "s-sudc1";
+    const task = AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: assignee,
+      title: "ASAM assessment needed",
+      detail: `${reason}. Due date, routing and reassessment interval are DRAFTS pending clinical sign-off.`,
+      dueDate: asamDueDate({
+        releaseDate: p.releaseDate,
+        hasDmcOdsEpisode: (p.episodes ?? []).some((e) => e.type === "sud_dmc_ods" && !e.closedAt),
+      }),
+      origin: "asam_needed",
+      dedupeKey,
+      taskType: ASAM_TASK_TYPE,
+      allowedRoles: [...ASAM_TASK_ROLES],
+      priority: "routine",
+    });
+    appendAudit({
+      category: "clinical",
+      action: "asam_requested",
+      patientId,
+      actorId: "system",
+      detail: { reason, clinicianDecision: opts?.clinicianDecision === true },
+    });
+    emit();
+    return task;
+  },
+
+  /** The open "ASAM assessment needed" task for this patient, if any. */
+  openAsamTask(patientId: string): CaseTask | undefined {
+    return caseTasks.find(
+      (t) => t.dedupeKey === `${ASAM_DEDUPE_PREFIX}${patientId}` && t.status !== "done",
+    );
+  },
+
+  /** All ASAM assessments for a patient, newest version first. */
+  listAsamAssessments(patientId: string): AsamAssessment[] {
+    const p = patients.find((x) => x.id === patientId);
+    return [...(p?.asamAssessments ?? [])].sort((a, b) => +new Date(b.authoredAt) - +new Date(a.authoredAt));
+  },
+
+  /** ASAM assessments across all patients awaiting an LPHA co-signature. */
+  listAsamAwaitingCosign(): { patient: Patient; asam: AsamAssessment }[] {
+    const out: { patient: Patient; asam: AsamAssessment }[] = [];
+    for (const p of patients) {
+      for (const a of p.asamAssessments ?? []) {
+        if (a.status === "cosign_pending") out.push({ patient: p, asam: a });
+      }
+    }
+    return out.sort((a, b) => +new Date(b.asam.authoredAt) - +new Date(a.asam.authoredAt));
+  },
+
+  /**
+   * Create or update an ASAM draft. Author roles only (therapist, PMHNP, SUD
+   * counselor, trainee — DRAFT list), and the author must pass the Part 2
+   * `screeners_sud` gate for this patient.
+   */
+  saveAsamDraft(
+    patientId: string,
+    input: Partial<Pick<AsamAssessment, "dimensions" | "recommendedLevel" | "actualLevel" | "levelDifferenceReason" | "diagnosisCodes">>,
+    actor: { staffId: string; name: string; role: StaffRole },
+  ): AsamAssessment {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const gate = canAccess(actor.role, "screeners_sud", p);
+    if (gate.level === "none" || gate.locked)
+      throw new Error("Your role does not have 42 CFR Part 2 access for this patient.");
+    let draft = (p.asamAssessments ?? []).find((a) => a.status === "draft" || a.status === "declined");
+    if (draft && draft.authoredBy.staffId !== actor.staffId)
+      throw new Error("Only the author can edit this draft.");
+    if (!draft) {
+      const task = AdelanteEHR.openAsamTask(patientId);
+      const base = emptyAsamDraft(
+        { staffId: actor.staffId, name: actor.name, role: actor.role },
+        task?.detail ? [task.detail] : ["Clinician decision"],
+      );
+      draft = { id: uid(), ...base };
+      p.asamAssessments = [draft, ...(p.asamAssessments ?? [])];
+    }
+    if (draft.status === "declined") draft.status = "draft";
+    Object.assign(draft, input);
+    appendAudit({
+      category: "clinical",
+      action: "asam_draft_saved",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { asamId: draft.id, version: draft.version },
+    });
+    emit();
+    return draft;
+  },
+
+  /**
+   * Author signs their draft (versioned attestation + drawn mark, built by the
+   * caller through the shared primitive). LPHA authors sign final; counselor-
+   * and trainee-authored assessments route to `cosign_pending` and NO output
+   * fires until an LPHA co-signs. Signed records are locked.
+   */
+  signAsam(
+    patientId: string,
+    asamId: string,
+    actor: { staffId: string; name: string; role: StaffRole },
+    attestation: AttestationRecord,
+  ): AsamAssessment {
+    const p = patients.find((x) => x.id === patientId);
+    const a = p?.asamAssessments?.find((x) => x.id === asamId);
+    if (!p || !a) throw new Error("Assessment not found.");
+    if (a.status !== "draft") throw new Error("Only a draft can be signed.");
+    if (a.authoredBy.staffId !== actor.staffId) throw new Error("Only the author can sign this assessment.");
+    const problem = attestationRecordProblem(attestation, "asam_sign");
+    if (problem) throw new Error(problem);
+    // Completeness: every dimension documented and rated; a level chosen by
+    // the clinician; a reason when recommended and actual differ.
+    if (a.dimensions.some((d) => !d.documentation.trim()))
+      throw new Error("Document every dimension before signing.");
+    if (!a.actualLevel) throw new Error("Choose the actual level of care before signing.");
+    if (a.recommendedLevel && a.recommendedLevel !== a.actualLevel && !a.levelDifferenceReason?.trim())
+      throw new Error("Explain why the actual level differs from the recommended level.");
+    a.attestation = attestation;
+    a.signedAt = new Date().toISOString();
+    if (asamNeedsCosign(actor.role)) {
+      a.status = "cosign_pending";
+      appendAudit({
+        category: "clinical",
+        action: "asam_signed_pending_cosign",
+        patientId,
+        actorId: actor.staffId,
+        actorRole: actor.role,
+        detail: { asamId: a.id },
+      });
+    } else {
+      if (!ASAM_SIGN_ROLES.includes(actor.role))
+        throw new Error("Your role cannot final-sign an ASAM assessment.");
+      a.status = "signed";
+      appendAudit({
+        category: "clinical",
+        action: "asam_signed",
+        patientId,
+        actorId: actor.staffId,
+        actorRole: actor.role,
+        detail: { asamId: a.id, actualLevel: a.actualLevel },
+      });
+      AdelanteEHR._fireAsamOutputs(p, a);
+    }
+    emit();
+    return a;
+  },
+
+  /**
+   * LPHA co-signature on a counselor/trainee-authored assessment. This is the
+   * moment outputs fire (episode, CALOMS prompt, claim, care-plan suggestion,
+   * referral-out, reassessment) — never before.
+   */
+  cosignAsam(
+    patientId: string,
+    asamId: string,
+    actor: { staffId: string; name: string; role: StaffRole },
+    attestation: AttestationRecord,
+  ): AsamAssessment {
+    const p = patients.find((x) => x.id === patientId);
+    const a = p?.asamAssessments?.find((x) => x.id === asamId);
+    if (!p || !a) throw new Error("Assessment not found.");
+    if (a.status !== "cosign_pending") throw new Error("This assessment is not awaiting co-signature.");
+    if (!ASAM_SIGN_ROLES.includes(actor.role))
+      throw new Error("Only a licensed clinician (LPHA) can co-sign an ASAM assessment.");
+    if (a.authoredBy.staffId === actor.staffId)
+      throw new Error("The author cannot co-sign their own assessment.");
+    const problem = attestationRecordProblem(attestation, "asam_supervisor_sign");
+    if (problem) throw new Error(problem);
+    a.status = "signed";
+    a.cosignAttestation = attestation;
+    a.cosignedBy = actor.name;
+    a.cosignedById = actor.staffId;
+    a.cosignedAt = new Date().toISOString();
+    appendAudit({
+      category: "clinical",
+      action: "asam_cosigned",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { asamId: a.id, actualLevel: a.actualLevel },
+    });
+    AdelanteEHR._fireAsamOutputs(p, a);
+    emit();
+    return a;
+  },
+
+  /** Decline a pending co-signature: back to draft for the author, reason required. */
+  declineAsamCosign(
+    patientId: string,
+    asamId: string,
+    actor: { staffId: string; name: string; role: StaffRole },
+    reason: string,
+  ): void {
+    const p = patients.find((x) => x.id === patientId);
+    const a = p?.asamAssessments?.find((x) => x.id === asamId);
+    if (!p || !a) throw new Error("Assessment not found.");
+    if (a.status !== "cosign_pending") throw new Error("This assessment is not awaiting co-signature.");
+    if (!ASAM_SIGN_ROLES.includes(actor.role))
+      throw new Error("Only a licensed clinician (LPHA) can decline a co-signature.");
+    if (reason.trim().length < 3) throw new Error("A decline reason is required.");
+    a.status = "declined";
+    appendAudit({
+      category: "clinical",
+      action: "asam_cosign_declined",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { asamId: a.id, reason: reason.trim() },
+    });
+    emit();
+  },
+
+  /**
+   * Outputs of a SIGNED assessment. Everything here is audited; nothing here
+   * runs before the final signature (author sign for LPHA, co-sign otherwise).
+   * The H0001 claim is attached by the caller (`asamFlow`) through the
+   * existing claim path in ehr-ext — this store never imports ehr-ext.
+   */
+  _fireAsamOutputs(p: Patient, a: AsamAssessment): void {
+    const now = new Date().toISOString();
+    const today = now.slice(0, 10);
+    const outputs: NonNullable<AsamAssessment["outputs"]> = {
+      // DRAFT medical-necessity rule: signed + at least one linked diagnosis.
+      medicalNecessity: a.diagnosisCodes.length > 0,
+    };
+    // DMC-ODS episode: open one, or move the open one to the chosen level.
+    let ep = (p.episodes ?? []).find((e) => e.type === "sud_dmc_ods" && !e.closedAt);
+    if (!ep) {
+      ep = { id: uid(), type: "sud_dmc_ods", state: "engaged", openedAt: today } as Episode;
+      p.episodes = [...(p.episodes ?? []), ep];
+    }
+    (ep as Episode & { dmcOdsLevel?: string }).dmcOdsLevel = a.actualLevel;
+    outputs.episodeId = ep.id;
+    // CALOMS admission prompt — a staff task, never auto-submitted.
+    const calomsTask = AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: a.authoredBy.staffId,
+      title: "CALOMS admission prompt",
+      detail: `A signed ASAM (${dmcOdsLevelLabelSafe(a.actualLevel)}) needs a CalOMS admission record. Prompt only — staff complete and submit.`,
+      dueDate: today,
+      origin: "asam_needed",
+      dedupeKey: `asam-caloms:${a.id}`,
+      taskType: "caloms_admission",
+      allowedRoles: [...ASAM_TASK_ROLES],
+    });
+    if (calomsTask) outputs.calomsPromptTaskId = calomsTask.id;
+    // Care plan: a SUGGESTED goal only — a clinician accepts or dismisses it.
+    const goalText = `Engage in ${dmcOdsLevelLabelSafe(a.actualLevel)} substance use treatment`;
+    const existing = p.suggestedGoals ?? [];
+    if (!existing.some((g) => g.text === goalText && g.status === "suggested")) {
+      const sg: SuggestedGoal = {
+        id: uid(),
+        text: goalText,
+        reason: "asam_signed",
+        status: "suggested",
+        createdAt: now,
+      };
+      p.suggestedGoals = [...existing, sg];
+      outputs.suggestedGoalId = sg.id;
+    }
+    // Referral out when the chosen level isn't offered here (DRAFT list).
+    if (a.actualLevel && !OFFERED_LEVELS_SET.has(a.actualLevel)) {
+      const refTask = AdelanteEHR.createCaseTask({
+        patientId: p.id,
+        assignedTo: p.caseManagerId ?? a.authoredBy.staffId,
+        title: "Referral out — level not offered here",
+        detail: `The clinician-selected level (${dmcOdsLevelLabelSafe(a.actualLevel)}) is not offered at Adelante (draft list). Place a referral to a provider that offers it.`,
+        dueDate: today,
+        origin: "asam_needed",
+        dedupeKey: `asam-referral-out:${a.id}`,
+        taskType: "asam_referral_out",
+      });
+      if (refTask) outputs.referralOutTaskId = refTask.id;
+    }
+    // Reassessment scheduled (DRAFT: 90 days).
+    const reassessTask = AdelanteEHR.createCaseTask({
+      patientId: p.id,
+      assignedTo: a.authoredBy.staffId,
+      title: "ASAM reassessment due",
+      detail: `Draft interval: ${ASAM_REASSESSMENT_DAYS} days after the signed assessment.`,
+      dueDate: new Date(Date.now() + ASAM_REASSESSMENT_DAYS * 86400000).toISOString().slice(0, 10),
+      origin: "asam_needed",
+      dedupeKey: `asam-reassess:${a.id}`,
+      taskType: ASAM_TASK_TYPE,
+      allowedRoles: [...ASAM_TASK_ROLES],
+    });
+    if (reassessTask) outputs.reassessmentTaskId = reassessTask.id;
+    // Close the open "ASAM assessment needed" task.
+    const openTask = AdelanteEHR.openAsamTask(p.id);
+    if (openTask) {
+      openTask.status = "done";
+      openTask.completedAt = now;
+      openTask.worklistStatus = "completed";
+    }
+    a.outputs = outputs;
+    appendAudit({
+      category: "clinical",
+      action: "asam_outputs_fired",
+      patientId: p.id,
+      actorId: "system",
+      detail: { asamId: a.id, ...outputs },
+    });
+  },
+
+  /** Attach the H0001 claim id created through the ehr-ext claim path. */
+  attachAsamClaim(patientId: string, asamId: string, claimId: string): void {
+    const a = patients.find((x) => x.id === patientId)?.asamAssessments?.find((x) => x.id === asamId);
+    if (!a?.outputs) return;
+    a.outputs.claimId = claimId;
+    emit();
   },
   /**
    * Record a C-SSRS. Staff-administered (`administeredBy` set, context
@@ -9408,12 +9812,34 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const now = new Date().toISOString();
-    p.seeking = { mentalHealth: answer.mentalHealth, medication: answer.medication, answeredAt: now };
     const sudAllowed =
       opts?.sudConsentGiven === true ||
       AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    // §Phase 10c — the substance-use selection is NEVER dropped. It is always
+    // recorded on `seeking` (with the consent state at selection time) and
+    // mirrored into the Part 2-masked `needs.substanceUse`. Without consent,
+    // patient-facing substance-use tools stay hidden (recoveryJourneyVisible
+    // checks part2ConsentAtSelection) and the ASAM task below is masked to
+    // Part 2-authorized staff only.
+    p.seeking = {
+      mentalHealth: answer.mentalHealth,
+      medication: answer.medication,
+      answeredAt: now,
+      substanceUse: answer.substanceUse,
+      ...(answer.substanceUse ? { part2ConsentAtSelection: sudAllowed } : {}),
+    };
     const sudKept = answer.substanceUse && sudAllowed;
-    if (sudKept) p.needs = { ...p.needs, substanceUse: true };
+    if (answer.substanceUse) p.needs = { ...p.needs, substanceUse: true };
+    // §Phase 10c — selecting substance use treatment triggers an ASAM task,
+    // with or without Part 2 sharing consent.
+    if (answer.substanceUse) {
+      AdelanteEHR.requestAsamAssessment(
+        patientId,
+        sudAllowed
+          ? "Selected substance use treatment at intake"
+          : "Selected substance use treatment at intake (Part 2 sharing consent declined — task visible to clinical staff only)",
+      );
+    }
     const want: SuggestedGoal["reason"][] = [
       ...(answer.medication ? (["seeking_medication"] as const) : []),
       ...(answer.mentalHealth ? (["seeking_mental_health"] as const) : []),
