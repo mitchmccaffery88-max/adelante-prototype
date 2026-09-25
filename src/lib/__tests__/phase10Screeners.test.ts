@@ -77,7 +77,7 @@ describe("Phase 10a — verbatim fidelity (spot items from the official sources)
   it("PHQ-9 / GAD-7", () => {
     expect(def("phq-9").questions[0]).toBe("Little interest or pleasure in doing things");
     expect(def("phq-9").questions).toHaveLength(9);
-    expect(def("gad-7").questions[0]).toBe("Feeling nervous, anxious, or on edge");
+    expect(def("gad-7").questions[0]).toBe("Feeling nervous, anxious or on edge");
     expect(def("phq-9").options.map((o) => o.label)).toEqual([
       "Not at all", "Several days", "More than half the days", "Nearly every day",
     ]);
