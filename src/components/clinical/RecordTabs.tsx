@@ -283,6 +283,22 @@ export function ContactTab({ patientId, readOnly }: { patientId: string; readOnl
           />
           <Input placeholder="Phone" value={ecPhone} onChange={(e) => setEcPhone(e.target.value)} />
         </div>
+        {/* §Onboarding rework item 9 — every contact the patient listed at
+            intake (Patient.emergencyContacts), with all fields, read-only. */}
+        {(p.emergencyContacts?.length ?? 0) > 0 && (
+          <ul className="space-y-1.5 pt-1 text-xs" data-testid="chart-emergency-contacts">
+            {p.emergencyContacts!.map((c, i) => (
+              <li key={i} className="rounded border bg-secondary/40 p-2">
+                <span className="font-medium">{i === 0 ? "Primary: " : `Contact ${i + 1}: `}{c.name}</span>
+                {c.relationship && <span> · {c.relationship}</span>}
+                {c.phone && <span> · {c.phone}</span>}
+                {c.email && <span> · {c.email}</span>}
+                {c.address && <div className="text-muted-foreground">{c.address}</div>}
+                {c.notes && <div className="text-muted-foreground">{c.notes}</div>}
+              </li>
+            ))}
+          </ul>
+        )}
       </div>
       <Button
         className="w-full"
@@ -293,7 +309,8 @@ export function ContactTab({ patientId, readOnly }: { patientId: string; readOnl
             email,
             address,
             contactPrefs: { channel, bestTime },
-            emergencyContact: { name: ecName, relationship: ecRel, phone: ecPhone },
+            // Keep the primary's email/address/notes from intake.
+            emergencyContact: { ...p.emergencyContact, name: ecName, relationship: ecRel, phone: ecPhone },
           });
           toast.success("Contact info updated");
         }}
