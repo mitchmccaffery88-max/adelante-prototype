@@ -135,3 +135,97 @@ ASAM assessment is triggered by:
 Justice involvement alone is not a trigger. It affects timing and routing only (pre-release: assess before or at release, with warm handoff).
 
 Change to the current rule: when a patient selects substance use treatment but declines Part 2 sharing consent, the answer is not dropped. It creates a protected "ASAM assessment needed" task, visible only to clinical and authorized staff per RBAC (never advocates, never Part 2-restricted staff). The sharing consent governs who else can see it. (Today `recordSeeking` drops the selection without consent; 10c changes this.)
+
+### 10c plan (for review, no code yet)
+
+**Ground rules**
+- Licensing: only public elements are used: the six dimension names, a 0–4 risk rating per dimension, and the DMC-ODS level-of-care list (a draft, editable reference list). No ASAM questions, no placement logic. Each dimension has an empty "licensed content" slot (prompts and guidance) that can be filled later under a license.
+- The clinician picks the level of care. The system never calculates, suggests, or pre-fills one.
+- Part 2: every ASAM task, record, and output goes through the same check as AUDIT/DAST-10: `canAccess(role, "screeners_sud", patient)` plus the author exception. It is never shown to advocates or Part 2-restricted staff.
+- Every draft value (due dates, reassessment intervals, who may sign, level list, medical necessity rule) is labelled "Draft — pending clinical sign-off".
+
+**1. Triggers** (one function, `asamTriggers(patient)`, called from each path)
+| Trigger | Where it fires |
+|---|---|
+| Positive AUDIT or DAST-10 (draft cutoffs) | `recordScreener` after scoring (intake, re-screen, pre-release) |
+| Patient selects substance use treatment | `recordSeeking` (with or without Part 2 consent) |
+| Referral names a substance use need | Pre-release import and public/partner referral acceptance |
+| Clinician decision | "Start ASAM" button on the chart, and a note action |
+| Existing DMC-ODS episode or CALOMS SUD record on entry | Enrollment / episode import |
+- Justice involvement is never passed to `asamTriggers`. For pre-release, the task's due date is on or before the release date, and it adds a warm-handoff checklist item.
+
+**2. The Part 2 change**
+- `recordSeeking`: a substance use treatment selection is always saved to `needs.substanceUse` (already Part 2-masked) with a new `part2ConsentAtSelection` flag. It is no longer dropped.
+- Without consent: the patient's own screens are unchanged (no Recovery Journey, no substance-use tools, because the visibility rule still requires consent). The task is created and masked.
+- Masking: no new rule. The task, the record, and every output are marked `part2: true` and read through `canAccess(..., "screeners_sud", ...)`. For consent-gated roles (case manager, peer) the answer is no without consent. Treating clinicians (therapist, PMHNP) can see it. The sharing consent decides who else can see it.
+
+**3. "ASAM assessment needed" task**
+- Goes to: the assigned treating clinician (therapist or PMHNP). If there is none, the clinical supervisor queue. Never case manager or peer unless consent allows it.
+- Draft due date: 7 days after the trigger. Pre-release: by the release date. Existing DMC-ODS episode: 30 days.
+- Reason text lists the facts behind it, e.g. "Positive DAST-10 at intake (6/12/2026)" or "Selected substance use treatment at intake". Never a level.
+- De-duplication: one open task per patient. A new trigger adds its reason to the open task. A signed ASAM within the reassessment window closes the task and stops new ones, except a clinician decision.
+- Shows in: My Work (masked row), the chart (new ASAM section on the Clinical tab), and Ask Adel ("Who needs an ASAM?"), all filtered by the same check.
+
+**4. Assessment record (`AsamAssessment`)**
+- Six dimensions, each with free-text documentation, a 0–4 rating, and the empty licensed-content slot.
+- `recommendedLevel` and `actualLevel`, both chosen by the clinician from the draft list. A reason is required when they differ (e.g. patient preference, level not available).
+- Link to diagnoses (existing problem list ICD-10 codes).
+- Signing uses the existing attestation ceremony (`buildAttestationRecord`, new statement `asam_sign` v1). If the author is a trainee or registered clinician, a co-signature is required (`asam_supervisor_sign`) through the existing cosign inbox. Who may sign is a draft setting.
+- Signed records are locked. Changes are amendments: a new version linked to the previous one, with a reason, signed again. Old versions are kept.
+- Audit entries for create, edit, sign, cosign, amend, and view (redacted by the existing audit rules).
+- Fields `episodeId` and `dmcOdsLevel` are ready for 10d.
+
+**5. Outputs (only after signature, each one audited)**
+- Medical necessity recorded. Draft rule: a signed ASAM plus a linked SUD diagnosis. Labelled draft.
+- DMC-ODS episode opened, or updated to the actual level.
+- CALOMS admission prompt shown to staff (not auto-submitted).
+- H0001 claim created through the existing claim path (same validation and billing lane).
+- Care plan: a suggested goal the clinician can accept or dismiss (same as B2). Problem list: diagnosis linked. Nothing is added automatically.
+- Referral out task if the actual level isn't offered here.
+- Reassessment scheduled (draft: level-dependent, default 90 days) in the same schedule table as the screeners.
+- Patient view: "Your care team completed a treatment planning assessment with you" and next steps. No scores, dimensions, or level numbers.
+
+**6. Where it fits the EHR**
+| Action | Roles (draft) |
+|---|---|
+| Start / edit draft | Therapist, PMHNP, trainee (cosign needed) |
+| Sign | Licensed therapist, PMHNP (LPHA) |
+| Co-sign | Clinical supervisor |
+| View | Anyone who passes `screeners_sud`, plus the author exception |
+- Chart: ASAM section on the Clinical tab (history, versions, status). The task and a summary also show on Tracking.
+- Guided Chart Review: facts only (date, signer, ratings, level chosen by the clinician, differing reason). Part 2 hiding applies.
+- Ask Adel: lists who needs one, who's overdue, and the last signed level as recorded. Adel never suggests or assigns a level. It refuses if asked.
+
+**7. Demo data** (real store API, no pushed rows)
+- Luis C. (2c): a completed, signed ASAM with a DMC-ODS episode and H0001 claim.
+- Jasmine H. (2d): an unsigned draft waiting for cosign (trainee author).
+- Daniel (p1): ASAM reassessment due (from his existing DMC-ODS/CALOMS record).
+- New scenario: a patient who selected substance use treatment without Part 2 consent, to show the masked task (visible to the therapist, hidden from the case manager and advocate).
+- No other personas change. The switcher descriptions get updated.
+
+**8. Model decisions (draft defaults)**
+- Dimension 3 and C-SSRS: show the latest C-SSRS risk level as a read-only reference next to dimension 3. It never sets the rating.
+- Signing an ASAM does not sign its related screeners. It links to them by ID. Screener sign-off stays separate.
+- AUDIT/DAST results get an optional `episodeId`. Results from a DMC-ODS episode are grouped under it, and the results stay on the patient record.
+
+**9. Out of scope**
+- 10d: full DMC-ODS reporting (clinical and population), CALOMS submission, level-of-care utilization reports, and timeliness measures.
+- 10e: Adel/agent integration beyond read-only facts (drafting dimension text, scribe prefill).
+- Not in 10c either: licensed ASAM content, any automated placement, patient self-administered ASAM.
+
+**Tests**
+- Each trigger creates one task. Justice alone creates none. De-duplication works.
+- Declining consent keeps the selection. The task is visible to the therapist and hidden from the case manager, peer, advocate, and billing.
+- The level is never set without a clinician choice. A differing level needs a reason.
+- Nothing is output before signing. Cosign is enforced. An amendment keeps the old version.
+- Adel never outputs a level. The patient view has no numbers.
+- Crisis-first path and existing Part 2 tests unchanged.
+
+**Open decisions for 10c**
+1. Draft AUDIT/DAST-10 positive cutoffs that trigger an ASAM.
+2. Task due dates (7 / by release / 30 days) and who receives it when there is no assigned clinician.
+3. Who may sign and cosign (LPHA list).
+4. DMC-ODS level list wording and which levels Adelante offers.
+5. Medical necessity rule and reassessment intervals per level.
+6. Whether a clinician decision may override the de-duplication window.
+7. Who gets and fills the licensed ASAM content, and when.
