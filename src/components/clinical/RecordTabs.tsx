@@ -1,3 +1,5 @@
+import { CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
+import { CSSRS_KEY } from "@/lib/cssrs";
 // §Clinical record tab bodies — extracted from ClientRecordDrawer so the
 // quick-peek drawer and the full-page chart render the SAME components.
 // Do not fork a second copy of any tab body here or anywhere else.
@@ -3180,40 +3182,82 @@ export function TrackingTab({ patientId }: { patientId: string }) {
   const [role] = useActingRole();
   if (!patient) return null;
   const history = patient.screenerHistory ?? [];
-  const screenerKeys = Array.from(new Set(history.map((h) => h.key)));
+  // §Phase 10a — a retired form is its own series (never mixed with the
+  // validated instrument's trend line); C-SSRS is listed, not charted.
+  const seriesKey = (h: ScreenerResult) => (h.retired ? `${h.key}::retired` : h.key);
+  const screenerKeys = Array.from(
+    new Set(history.filter((h) => h.key !== CSSRS_KEY).map(seriesKey)),
+  );
+  const cssrs = history
+    .filter((h) => h.key === CSSRS_KEY)
+    .sort((a, b) => +new Date(b.completedAt) - +new Date(a.completedAt));
   const sudGate = canAccess(role, "screeners_sud", patient);
-  if (screenerKeys.length === 0) {
-    return <p className="text-sm text-muted-foreground">No screener history yet.</p>;
-  }
   return (
     <div className="space-y-6">
-      {screenerKeys.map((key) => {
-        const def = SCREENERS.find((s) => s.key === key);
+      <div className="rounded-md border p-3 space-y-2" data-testid="tracking-cssrs">
+        <div className="flex flex-wrap items-center gap-2">
+          <h4 className="font-medium text-navy text-sm flex-1">C-SSRS Screener</h4>
+          <CssrsStaffControl patientId={patientId} />
+        </div>
+        {cssrs.length === 0 ? (
+          <p className="text-xs text-muted-foreground">No C-SSRS on file.</p>
+        ) : (
+          <ul className="space-y-1 text-xs">
+            {cssrs.map((h, i) => (
+              <li key={i} className="flex flex-wrap gap-2">
+                <span>{new Date(h.completedAt).toLocaleDateString()}</span>
+                <span className="font-medium">{h.severity}</span>
+                <span className="text-muted-foreground">
+                  {h.context === "patient_self" ? "Patient self-report" : `Staff: ${h.administeredBy ?? "—"}`}
+                  {h.placeholderText ? " · placeholder item text" : ""} · risk mapping draft
+                </span>
+              </li>
+            ))}
+          </ul>
+        )}
+      </div>
+      {screenerKeys.length === 0 && (
+        <p className="text-sm text-muted-foreground">No screener history yet.</p>
+      )}
+      {screenerKeys.map((sk) => {
+        const retired = sk.endsWith("::retired");
+        const key = retired ? sk.replace("::retired", "") : sk;
+        const def = retired ? retiredScreenerByKey(key) : screenerByKey(key);
+        const rows = history.filter((h) => seriesKey(h) === sk);
+        const title = retired
+          ? `${def?.name ?? key} — retired, non-validated form (not trended with validated scores)`
+          : (def?.name ?? key);
         if (def?.isSud && sudGate.locked) {
           return (
-            <div key={key}>
-              <h4 className="font-medium text-navy text-sm">{def?.name ?? key}</h4>
+            <div key={sk}>
+              <h4 className="font-medium text-navy text-sm">{title}</h4>
               <LockedNote reason={sudGate.reason} />
             </div>
           );
         }
-        const data = history
-          .filter((h) => h.key === key)
+        const data = rows
           .sort((a, b) => +new Date(a.completedAt) - +new Date(b.completedAt))
           .map((h) => ({
             date: new Date(h.completedAt).toLocaleDateString(),
             score: h.score,
+            severity: h.severity,
             timepoint: h.timepoint,
           }));
+        const last = rows[rows.length - 1];
         return (
-          <div key={key}>
-            <div className="flex items-baseline justify-between">
-              <h4 className="font-medium text-navy text-sm">{def?.name ?? key}</h4>
+          <div key={sk} data-testid={`tracking-${sk}`}>
+            <div className="flex items-baseline justify-between gap-2">
+              <h4 className="font-medium text-navy text-sm">{title}</h4>
               <span className="text-[11px] text-muted-foreground">
-                Latest: {data[data.length - 1]?.score} ·{" "}
-                {def ? severityFor(def, data[data.length - 1]?.score ?? 0) : ""}
+                Latest: {data[data.length - 1]?.score} · {data[data.length - 1]?.severity}
               </span>
             </div>
+            <p className="text-[11px] text-muted-foreground">
+              {last?.instrumentVersion ? `Version ${last.instrumentVersion}` : ""}
+              {last?.scoringVersion ? ` · scoring ${last.scoringVersion}` : ""}
+              {last && last.textVerified === false ? " · item text pending verification" : ""}
+              {def?.cutoffDraft ? " · cutoff draft pending clinical sign-off" : ""}
+            </p>
             <div className="h-40 mt-2">
               <ResponsiveContainer width="100%" height="100%">
                 <LineChart data={data}>
