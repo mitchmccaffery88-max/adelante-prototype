@@ -44,6 +44,7 @@ type DemoStateId =
   | "sud_consented"
   | "combination"
   | "ji_self_report"
+  | "sud_no_consent"
   | "pre_release"
   | "public_referral"
   | "advocate"
@@ -84,6 +85,11 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
     group: "Justice",
     label: "3 · Andre W. — Previously justice-involved (self-reported)",
     hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey",
+  },
+  sud_no_consent: {
+    group: "Intake by need",
+    label: "7 · Jordan V. — Substance use, no Part 2 consent",
+    hint: "Answer kept; masked ASAM task for clinical staff only; no SUD tools on the patient's own screens",
   },
   pre_release: {
     group: "Justice",
@@ -139,6 +145,7 @@ const ORDER: DemoStateId[] = [
   "sud_consented",
   "combination",
   "ji_self_report",
+  "sud_no_consent",
   "pre_release",
   "public_referral",
   "advocate",
@@ -150,7 +157,7 @@ const ORDER: DemoStateId[] = [
   "kayla",
 ];
 
-const SCENARIO_KEYS: ScenarioKey[] = ["mh_only", "medication", "sud_consented", "combination", "ji_self_report"];
+const SCENARIO_KEYS: ScenarioKey[] = ["mh_only", "medication", "sud_consented", "combination", "ji_self_report", "sud_no_consent"];
 
 function preReleasePersonaId(): string | undefined {
   return AdelanteEHR.listPatients().find(
