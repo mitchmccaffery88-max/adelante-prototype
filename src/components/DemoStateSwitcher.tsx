@@ -272,6 +272,12 @@ export function DemoStateSwitcher() {
     try {
       sessionStorage.setItem(ACTIVE_DEMO_STATE_KEY, state);
       setSelectedState(state);
+      const willUseAdvocateSession = state === "advocate" || state === "advocate_and_patient";
+      if (!willUseAdvocateSession) {
+        clearAdvocateSession();
+        setAdvocateLinkId(null);
+        window.dispatchEvent(new Event("adelante:advocate-session"));
+      }
       switch (state) {
         case "no_record": {
           clearAdvocateSession();
