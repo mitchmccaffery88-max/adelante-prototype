@@ -34,7 +34,7 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
         <CalendarCheck className="h-4 w-4" /> {c.apptTitle}
       </div>
       {nextIso ? (
-        <p className="mt-2 text-sm" data-testid="first-appointment-scheduled">
+        <div className="mt-2 text-sm" data-testid="first-appointment-scheduled">
           <Badge className="mr-2 border-0 bg-teal/15 text-teal">{c.scheduled}</Badge>
           {new Date(nextIso).toLocaleString(L === "es" ? "es-US" : "en-US", {
             weekday: "short",
@@ -43,12 +43,12 @@ export function FirstAppointmentTile({ patientId }: { patientId: string }) {
             hour: "numeric",
             minute: "2-digit",
           })}
-        </p>
+        </div>
       ) : (
-        <p className="mt-2 text-sm" data-testid="first-appointment-none">
+        <div className="mt-2 text-sm" data-testid="first-appointment-none">
           <Badge variant="outline" className="mr-2">{c.notScheduled}</Badge>
           {c.notScheduledBody}
-        </p>
+        </div>
       )}
       <Button asChild size="sm" variant="outline" className="mt-3">
         <Link to="/schedule">{c.apptLink}</Link>
