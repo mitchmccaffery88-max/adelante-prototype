@@ -165,4 +165,4 @@
 - [ ] B3(a) matched resources per need
 - [ ] Tests + browser verification
 - [ ] Resume interrupted approved My Care consolidation and deliver one complete verification report covering all eight items and requested browser workflows.
-- [ ] Final pre-demo freeze: add CALOMS to the shared substance-use signal, remove Alicia's seeded signal, gate all SUD-specific tools, preserve universal crisis/overdose access, and complete persona regression verification.
+- [x] Final pre-demo freeze: add CALOMS to the shared substance-use signal, remove Alicia's seeded signal, gate all SUD-specific tools, preserve universal crisis/overdose access, and complete persona regression verification.
