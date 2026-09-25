@@ -1,12 +1,13 @@
 # Roadmap
 
 ## In progress
-- [ ] Pre-demo My Care consolidation: fold duplicate needs, appointment, weekly check, recommendations, and advocate status surfaces.
-- [ ] Consent-gated advocate invitation delivery with pre-consent privacy test and row-level failure feedback.
-- [ ] One positive-signal Recovery Journey rule across navigation, cards, recommendations, and direct route access.
-- [ ] Full typecheck, test suite, persona browser inventory, advocate flow, Kayla billing flow, and referral attempt verification.
 
 ## Done
+- [x] Pre-demo My Care consolidation: folded duplicate needs, appointment, weekly check, recommendations, and advocate status surfaces.
+- [x] Consent-gated advocate invitation delivery with pre-consent privacy test and row-level failure feedback.
+- [x] One positive-signal Recovery Journey rule across navigation, cards, recommendations, and direct route access.
+- [x] Full typecheck, 1,696-test suite, persona browser inventory, advocate flow, Kayla billing flow, and referral attempt verification.
+
 - [x] Dashboard Standardization Phase 5c — demo CINs, expandable My tasks rows with attributed edits/notes/follow-up, per-client follow-ups consolidated onto the record with a read-only open-items rollup.
 - [x] Dashboard Standardization Phase 5a — Care Coordination naming, honest scope copy, dashboard cleanup, refusal queue, eligibility consolidation, and blank initial chart.
 - [x] Dashboard Standardization Phase 5b — shared staff top bar with typed patient search (name/DOB/program ID/CIN) and persistent My Work count; chart tab reuses the same search.
@@ -163,3 +164,4 @@
 - [ ] B2 My Care tiles: first appointment, needs w/ match counts, recommended
 - [ ] B3(a) matched resources per need
 - [ ] Tests + browser verification
+- [ ] Resume interrupted approved My Care consolidation and deliver one complete verification report covering all eight items and requested browser workflows.
