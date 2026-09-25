@@ -4472,6 +4472,11 @@ const appointments: Appointment[] = [
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
+    // Marcus's paid demo claim is his depression therapy (Tulare County MHP →
+    // SMHS), not a DMC-ODS service — he has no signed ASAM, so a paid DMC-ODS
+    // claim would contradict the 10d-3 medical-necessity gate.
+    fundingLane: "medi_cal_ffs",
+    serviceType: "therapy_individual",
   },
   {
     id: "a6",
