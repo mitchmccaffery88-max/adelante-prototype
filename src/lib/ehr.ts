@@ -18001,6 +18001,12 @@ export const AdelanteEHR = {
       linkRoute: "/crisis-queue",
       patientId,
     });
+    // §Phase 10b — crisis text detected: the crisis path above has already run
+    // in full (alert, queue row, notifications). Only THEN is a C-SSRS offered
+    // to staff as the next step. Never replaces or delays the response.
+    if (row.triggerSource === "message_pattern") {
+      AdelanteEHR.requestCssrs(patientId, "Crisis language detected in free text");
+    }
     emit();
     return row;
   },
