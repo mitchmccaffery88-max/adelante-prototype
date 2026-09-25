@@ -9102,12 +9102,16 @@ export const AdelanteEHR = {
     patientId: string,
     answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean },
     actor: { id: string; role: string },
+    /** Part 2 consent given in this same intake (the ledger may lag). */
+    opts?: { sudConsentGiven?: boolean },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
     const now = new Date().toISOString();
     p.seeking = { mentalHealth: answer.mentalHealth, medication: answer.medication, answeredAt: now };
-    const sudAllowed = AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
+    const sudAllowed =
+      opts?.sudConsentGiven === true ||
+      AdelanteEHR.isConsentCategoryAuthorized(patientId, "sud_treatment");
     const sudKept = answer.substanceUse && sudAllowed;
     if (sudKept) p.needs = { ...p.needs, substanceUse: true };
     const want: SuggestedGoal["reason"][] = [
