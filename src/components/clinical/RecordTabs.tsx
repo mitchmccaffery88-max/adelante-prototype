@@ -87,7 +87,7 @@ import {
   noteGateClass,
 } from "@/lib/roles";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
-import { SCREENERS, severityFor } from "@/lib/screeners";
+import { SCREENERS, severityFor, screenerByKey } from "@/lib/screeners";
 import {
   LineChart,
   Line,
@@ -3184,7 +3184,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
   const history = patient.screenerHistory ?? [];
   // §Phase 10a — a retired form is its own series (never mixed with the
   // validated instrument's trend line); C-SSRS is listed, not charted.
-  const seriesKey = (h: ScreenerResult) => (h.retired ? `${h.key}::retired` : h.key);
+  const seriesKey = (h: { key: string; retiredForm?: boolean }) => (h.retiredForm ? `${h.key}::retired` : h.key);
   const screenerKeys = Array.from(
     new Set(history.filter((h) => h.key !== CSSRS_KEY).map(seriesKey)),
   );
@@ -3208,7 +3208,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
                 <span>{new Date(h.completedAt).toLocaleDateString()}</span>
                 <span className="font-medium">{h.severity}</span>
                 <span className="text-muted-foreground">
-                  {h.context === "patient_self" ? "Patient self-report" : `Staff: ${h.administeredBy ?? "—"}`}
+                  {h.context === "patient_self" ? "Patient self-report" : `Staff: ${h.administeredBy?.enteredBy.staffName ?? "—"}`}
                   {h.placeholderText ? " · placeholder item text" : ""} · risk mapping draft
                 </span>
               </li>
@@ -3222,7 +3222,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
       {screenerKeys.map((sk) => {
         const retired = sk.endsWith("::retired");
         const key = retired ? sk.replace("::retired", "") : sk;
-        const def = retired ? retiredScreenerByKey(key) : screenerByKey(key);
+        const def = screenerByKey(key);
         const rows = history.filter((h) => seriesKey(h) === sk);
         const title = retired
           ? `${def?.name ?? key} — retired, non-validated form (not trended with validated scores)`
