@@ -19,10 +19,17 @@
 //   (draft pending compliance review); every other role gets no SUD tile.
 // • Justice self-report is a SLICE only. It never feeds any substance-use
 //   figure — nothing here reads `calomsProfile.justice` at all.
-import { AdelanteEHR, HRSN_SAFETY_DOMAIN_KEY, REFERRAL_SOURCE_LABELS, type Patient, type ScreenerResult } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  HRSN_SAFETY_DOMAIN_KEY,
+  REFERRAL_SOURCE_LABELS,
+  SCREENER_WORDING_PENDING_CAVEAT,
+  type Patient,
+  type ScreenerResult,
+} from "@/lib/ehr";
 import type { StaffRole } from "@/lib/roles";
 import { resolvePopulation } from "@/lib/population";
-import { screenerByKey, SCREENER_WORDING_PENDING_CAVEAT } from "@/lib/screeners";
+import { screenerByKey } from "@/lib/screeners";
 import { CSSRS_KEY, CSSRS_RISK_ORDER, type CssrsRisk } from "@/lib/cssrs";
 import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
 import { dmcOdsLevelLabel, type AsamAssessment } from "@/lib/asam";

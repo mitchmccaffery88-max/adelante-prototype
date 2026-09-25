@@ -23099,6 +23099,32 @@ try {
     }
     AdelanteEHR.recordSeeking(p.id, sp.seeking, { id: p.id, role: "patient" }, { sudConsentGiven: sp.sud });
   }
+  // §Phase 10d-2 — a SECOND timepoint for two personas so "change over time"
+  // has values. Through the real recordScreener path (non-SUD instruments only,
+  // so no ASAM trigger is touched).
+  const _seedFollowUp = (pid: string | undefined, key: string, answers: number[]) => {
+    const def = _defForResult(key);
+    const pp = patients.find((x) => x.id === pid);
+    if (!def || !pp) return;
+    if ((pp.screenerHistory ?? []).filter((h) => h.key === key).length >= 2) return;
+    const scored = scoreScreener(def, answers);
+    AdelanteEHR.recordScreener(pp.id, {
+      key,
+      score: scored.score,
+      severity: scored.severity,
+      ...(scored.positive !== undefined ? { positive: scored.positive } : {}),
+      responses: answers,
+      completedAt: new Date(Date.now() - 1 * 86400000).toISOString(),
+      timepoint: "adhoc",
+      context: "clinic",
+    } as ScreenerResult);
+  };
+  // Elena (2a): PHQ-9 and GAD-7 lower at follow-up.
+  _seedFollowUp(demoScenarioPatientId("mh_only"), "phq-9", [0, 1, 0, 1, 0, 0, 0, 0, 0]);
+  _seedFollowUp(demoScenarioPatientId("mh_only"), "gad-7", [0, 1, 0, 1, 0, 0, 0]);
+  // Luis (2c): PHQ-9 higher at follow-up, GAD-7 unchanged.
+  _seedFollowUp(demoScenarioPatientId("sud_consented"), "phq-9", [2, 2, 1, 2, 1, 1, 1, 0, 0]);
+  _seedFollowUp(demoScenarioPatientId("sud_consented"), "gad-7", [1, 2, 1, 1, 1, 0, 1]);
   // Third-party public referral → outreach → enrollment → claim code.
   if (!patients.some((p) => p.firstName === P.public_referral.firstName && p.lastName === P.public_referral.lastName)) {
     const ref = AdelanteEHR.createReferral({
