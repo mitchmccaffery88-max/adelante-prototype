@@ -4,7 +4,7 @@
 // which screeners are offered (a clinical decision), and it never adds a goal
 // to the care plan (suggestions only, accepted by a clinician).
 import type { Patient } from "@/lib/ehr";
-import { SCREENERS, type ScreenerDef } from "@/lib/screeners";
+import { DOMAIN_SCREENERS, SCREENERS, type ScreenerDef } from "@/lib/screeners";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { advocatePart2Masked } from "@/lib/advocate";
 
