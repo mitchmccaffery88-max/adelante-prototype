@@ -8723,7 +8723,7 @@ export const AdelanteEHR = {
         actorRole: actor.role,
         detail: { asamId: a.id, actualLevel: a.actualLevel },
       });
-      AdelanteEHR._fireAsamOutputs(p, a);
+      AdelanteEHR._fireAsamOutputs(p, a, actor);
     }
     emit();
     return a;
@@ -8763,7 +8763,7 @@ export const AdelanteEHR = {
       actorRole: actor.role,
       detail: { asamId: a.id, actualLevel: a.actualLevel },
     });
-    AdelanteEHR._fireAsamOutputs(p, a);
+    AdelanteEHR._fireAsamOutputs(p, a, actor);
     emit();
     return a;
   },
