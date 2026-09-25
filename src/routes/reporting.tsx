@@ -67,7 +67,8 @@ import {
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
-import { ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
+import { ACCESS_RULE_DRAFT_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
+import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
@@ -732,12 +733,19 @@ function ReportingHome() {
               {asamReport.guard.belowMinimumCohort && (
                 <CohortGuardNotice cohortSize={asamReport.guard.cohortSize} minimumCohortSize={asamReport.guard.minimumCohortSize} />
               )}
+              {asamReport.mode === "totals" && (
+                <p className="text-[11px] text-muted-foreground" data-testid="asam-totals-only">
+                  <Badge variant="outline" className="mr-1 text-[10px]">Totals only</Badge>
+                  Your role sees counts and timeliness only. Named rows appear only for people whose
+                  42 CFR Part 2 consent covers your role. {ACCESS_RULE_DRAFT_NOTE}
+                </p>
+              )}
             </Card>
             <div className="grid gap-3 sm:grid-cols-4">
               <Stat label="Needed" value={String(asamReport.tasks.filter((t) => t.state === "needed").length)} />
               <Stat label="Due (next 7 days)" value={String(asamReport.tasks.filter((t) => t.state === "due").length)} />
               <Stat label="Overdue" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
-              <Stat label="Awaiting co-signature" value={String(asamReport.cosign.length)} />
+              <Stat label="Awaiting co-signature" value={String(asamReport.cosignCount)} />
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {([["By clinician", asamReport.byClinician], ["By team", asamReport.byTeam]] as const).map(([title, rows]) => (
@@ -790,6 +798,8 @@ function ReportingHome() {
           </div>
         </Area>
       )}
+
+      <PopulationHealthSection role={role} />
 
       {seesPopulation && (
         <Area
