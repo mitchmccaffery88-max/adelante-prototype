@@ -310,3 +310,9 @@ Rules for all three builds:
 3. Whether to switch cohort guard to hard suppression before any pilot.
 4. CALOMS required-field lists (admission and discharge).
 5. Which treatment service codes the medical necessity gate applies to.
+
+### 10d decisions recorded (defaults)
+- Billing and a blocked DMC-ODS claim: billing sees only "Blocked: clinical documentation incomplete" — never ASAM or substance-use detail.
+- Cohort guard stays in caveat mode for the prototype. Hard suppression is required before any real pilot data.
+- Timeliness windows (draft: 7 days trigger → assessment, 14 days assessment → first DMC-ODS service), CALOMS required fields, and the service codes the gate covers are draft defaults labelled "Draft — pending clinical sign-off".
+- 10d-1 built: clinical coordinator has no Part 2 access, so the ASAM reporting section is hidden for that role (open decision).

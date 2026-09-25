@@ -191,10 +191,12 @@
 - [ ] Full test run + browser verification (desktop/phone)
 - [ ] Report with the two navigation confirmations
 
-## Phase 10d-1 (building)
+## Phase 10d-1 (done)
+- [ ] Decision: should clinical coordinator see ASAM reporting? (currently hidden — no Part 2 access)
+## Next: 10d-2, 10d-3 (separate messages)
 - [x] Rename staff Elena Vargas → Renee Castillo
 - [x] Rename QA patients colliding with staff (2b, 3, 5)
-- [ ] ASAM reporting lib (worklists, differences, timeliness, cohort guard, Part 2)
-- [ ] My Work ASAM group; /reporting "ASAM (clinical)" section; chart level history
-- [ ] Demo: overdue task + recommended≠actual signed record
-- [ ] Tests, typecheck, browser check
+- [x] ASAM reporting lib (worklists, differences, timeliness, cohort guard, Part 2)
+- [x] My Work ASAM group; /reporting "ASAM (clinical)" section; chart level history
+- [x] Demo: overdue task + recommended≠actual signed record
+- [x] Tests, typecheck, browser check
