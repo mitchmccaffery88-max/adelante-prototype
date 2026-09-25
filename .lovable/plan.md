@@ -229,3 +229,84 @@ Change to the current rule: when a patient selects substance use treatment but d
 5. Medical necessity rule and reassessment intervals per level.
 6. Whether a clinician decision may override the de-duplication window.
 7. Who gets and fills the licensed ASAM content, and when.
+
+## Phase 10d — DMC-ODS reporting and readiness (plan only, three builds)
+
+Rules for all three builds:
+- Every draft value (cutoffs, due windows, medical necessity rule, level list, completeness rules) is labelled "Draft — pending clinical sign-off".
+- Part 2: every ASAM, AUDIT, DAST-10, SUD episode and CALOMS value is read through `canAccess(role, "screeners_sud", patient)` (plus author exception). Aggregates containing SUD data are hidden entirely from roles that fail the check, not zeroed.
+- Every aggregate uses the shared `cohortGuard` (11) and shows the below-minimum caveat. Wording is association-only ("seen alongside", "among patients with"), never causal.
+- No new write paths. All builds read existing store data; 10d-3 adds one validation hook on the existing claim path.
+
+### 10d-1 — ASAM clinical worklists and reporting (staff)
+
+**Data sources:** `asamAssessments` (status, versions, levels, reason, signer, cosigner, timestamps), `asam_needed` CaseTasks (trigger reasons, due date), DMC-ODS episodes, encounters/claims with DMC-ODS service codes, staff roster and team assignment.
+
+**Screens:**
+- My Work: "ASAM" group — needed / due / overdue for me; drafts I authored awaiting cosign; cosigns waiting on me (LPHA).
+- New reporting section "ASAM (clinical)" on `/reporting`, staff-only: needed/due/overdue by clinician and team; drafts awaiting cosign with age; recommended vs actual differences with reasons (count by reason, drill to patient list for authorized roles); reassessments due next 30 days.
+- Timeliness (draft windows): median days trigger → signed assessment; signed assessment → first DMC-ODS treatment service. Cohort-guarded.
+- Chart ASAM section: level history timeline per patient (each signed version, level, date, signer).
+
+**Role visibility:** therapist, PMHNP, SUD counselor, clinical supervisor, clinical coordinator see patient-level rows within caseload scope. Program leadership sees aggregates only. Case manager, peer, advocate, billing: nothing unless Part 2 consent grants the role.
+
+**Tests:** counts match seeded state; overdue math with fixed clock; masked roles see no row and no aggregate; cohort caveat appears below 11; level history keeps amended versions in order; timeliness excludes unsigned drafts.
+
+**Demo data:** existing Luis (signed), Jasmine (cosign pending), Daniel (due), Jordan (masked). Add one overdue task and one recommended≠actual signed record (reason "level not available") through the real store API.
+
+**Risks:** caseload scoping for counselors vs therapists; demo cohort is under 11, so every aggregate shows the caveat.
+
+**Depends on open decisions:** 10c-2 (due dates), 10c-3 (LPHA list), 10c-5 (reassessment intervals), 10c-6 (dedupe override).
+
+### 10d-2 — Population health reporting
+
+**Data sources:** screener results (instrument, version, scoring version, verified flag, retired flag, timepoint), C-SSRS risk levels, AHC-HRSN domains, signed ASAM actual levels, patient population track, referral source, program/episode.
+
+**Screens:** `/reporting` "Population health" section, behind the existing PopulationGate:
+- Level-of-care mix (signed actual levels only).
+- Screener positivity and change over time for PHQ-9, GAD-7, PC-PTSD-5, AUDIT, DAST-10, and C-SSRS risk levels (intake vs latest re-screen).
+- Social needs by AHC-HRSN domain (interpersonal safety stays staff-only per existing rule).
+- Slices: population track (general, justice-involved self-report, pre-release referred), referral source, program.
+
+**Rules applied:**
+- AUDIT and DAST-10: counted, with the "Item wording pending source verification" caveat on every tile they feed.
+- Retired PCL-5 short form: excluded from totals and trends.
+- C-SSRS collected with placeholder text: excluded; tile states how many were left out.
+- Draft cutoffs labelled on every positivity figure.
+- Each slice is cohort-guarded separately (small slices show the caveat, not the number, once hard suppression is enabled).
+
+**Role visibility:** leadership, clinical coordinator, quality roles. SUD tiles (AUDIT, DAST-10, levels) only for roles passing the Part 2 check; others see the non-SUD tiles.
+
+**Tests:** exclusion rules (retired, placeholder C-SSRS) and inclusion-with-caveat (AUDIT/DAST); slice totals add up; masked role sees no SUD tile; association-only wording check on generated labels; cohort caveat per slice.
+
+**Demo data:** existing personas cover all three tracks; add a second timepoint for two personas so "change over time" has values.
+
+**Risks:** justice self-report currently lives in `calomsProfile.justice` — slicing must read it without treating it as a SUD signal; small-cell re-identification in narrow slices.
+
+**Depends on:** 10a-1, 10a-2 (cutoffs), 10a-5 (source sign-off), 10b-2 (risk mapping), 10c-1 (positive cutoffs).
+
+### 10d-3 — DMC-ODS operational readiness (prototype)
+
+**Data sources:** claims (existing lane and transitions), signed ASAM + linked diagnoses, DMC-ODS episodes, CALOMS profiles (admission/discharge fields).
+
+**Screens and rules:**
+- Medical necessity gate (draft rule): a DMC-ODS treatment claim cannot move to Ready without a signed (and cosigned where required) ASAM in the episode window and a linked SUD ICD-10 diagnosis. Blocked claims show the reason in the claims worklist. H0001 itself is exempt.
+- CALOMS completeness checks: admission and discharge required-field lists (draft), shown per patient in the chart and as a worklist of incomplete records.
+- Export-ready view: per-episode table of ASAM and CALOMS fields a county/DHCS submission would need, downloadable as CSV, banner "Prototype — not submitted anywhere".
+
+**Role visibility:** billing and billing coordinator see gate status and blocking reason only (no ASAM content) — requires a Part 2 decision; clinical roles see details; export view limited to authorized compliance/admin roles passing the Part 2 check.
+
+**Tests:** claim without signed ASAM stays blocked; with ASAM but no SUD diagnosis stays blocked; both present moves to Ready; H0001 unaffected; non-DMC claims unaffected; completeness list flags missing fields; export contains no data for masked roles and is audited.
+
+**Demo data:** one Luis treatment encounter that passes the gate; one Jasmine encounter blocked until cosign; one incomplete CALOMS discharge record.
+
+**Risks:** existing seeded DMC-ODS claims (Daniel) may become blocked — the build report will list any; billing seeing a "blocked for medical necessity" reason may itself disclose Part 2 information.
+
+**Depends on:** 10c-4 (level list), 10c-5 (medical necessity rule), plus new decisions below.
+
+### Open decisions for 10d
+1. Timeliness windows (trigger → assessment, assessment → first service).
+2. Which roles see population SUD tiles, and whether billing may see a "medical necessity" blocking reason.
+3. Whether to switch cohort guard to hard suppression before any pilot.
+4. CALOMS required-field lists (admission and discharge).
+5. Which treatment service codes the medical necessity gate applies to.
