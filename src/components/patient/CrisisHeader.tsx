@@ -35,7 +35,7 @@ export function CrisisHeader() {
           className="ml-auto inline-flex min-h-11 items-center gap-2 rounded-full border border-crisis/30 bg-crisis-soft px-4 py-2 text-sm font-semibold text-crisis hover:bg-crisis/10"
         >
           <LifeBuoy className="h-4 w-4" aria-hidden="true" />
-          {t("navCrisisSupport")}
+          {t("navCrisisSupport")} · 988
         </Link>
       </div>
     </div>
