@@ -182,3 +182,11 @@
 - [ ] Outputs on cosign: episode, CALOMS prompt, H0001, care plan suggestion
 - [ ] Demo data: Luis signed, Jasmine counselor-authored pending, Daniel due, no-consent scenario
 - [ ] Tests + typecheck + build + browser verification
+
+## Phase 10c — ASAM (in progress)
+- [x] asam.ts model, triggers, store methods, chart panel, cosign inbox, Ask Adel, chart review facts, H0001 claim hook
+- [x] Demo seeds (Luis signed, Jasmine counselor-authored pending cosign, Daniel due, Jordan Vega no-consent) + switcher entry
+- [ ] Typecheck/build clean
+- [ ] asam.test.ts (triggers, masking, cosign, no auto-level, patient view)
+- [ ] Full test run + browser verification (desktop/phone)
+- [ ] Report with the two navigation confirmations
