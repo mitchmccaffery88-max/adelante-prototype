@@ -67,7 +67,8 @@ import {
   REFERRAL_SOURCE_FOLD_NOTE,
 } from "@/lib/referralFunnel";
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
-import { ACCESS_RULE_DRAFT_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
+import { ACCESS_RULE_DRAFT_NOTE,
+  TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
@@ -736,8 +737,7 @@ function ReportingHome() {
               {asamReport.mode === "totals" && (
                 <p className="text-[11px] text-muted-foreground" data-testid="asam-totals-only">
                   <Badge variant="outline" className="mr-1 text-[10px]">Totals only</Badge>
-                  Your role sees counts and timeliness only. Named rows appear only for people whose
-                  42 CFR Part 2 consent covers your role. {ACCESS_RULE_DRAFT_NOTE}
+                  {TOTALS_ONLY_NOTE}
                 </p>
               )}
             </Card>
@@ -767,7 +767,7 @@ function ReportingHome() {
             <div className="grid gap-3 md:grid-cols-2">
               <Card className="space-y-2 p-4">
                 <h3 className="text-sm font-medium text-navy">Drafts awaiting co-signature</h3>
-                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.cosignCount} in total. Named only where Part 2 consent covers your role.</p>}
+                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.cosignCount} in total. No names shown for your role.</p>}
                 {asamReport.cosign.length === 0 ? <p className="text-xs text-muted-foreground">None.</p> : (
                   <ul className="space-y-1 text-xs">{asamReport.cosign.map((c) => (
                     <li key={c.asamId}>{c.patientName} — authored by {c.authorName}, waiting {c.ageDays} day{c.ageDays === 1 ? "" : "s"}</li>
@@ -776,7 +776,7 @@ function ReportingHome() {
               </Card>
               <Card className="space-y-2 p-4">
                 <h3 className="text-sm font-medium text-navy">Recommended vs actual level</h3>
-                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.differenceCount} in total. Named only where Part 2 consent covers your role.</p>}
+                {asamReport.mode === "totals" && <p className="text-[11px] text-muted-foreground">{asamReport.differenceCount} in total. No names shown for your role.</p>}
                 {asamReport.differences.length === 0 ? <p className="text-xs text-muted-foreground">No signed assessment with a difference.</p> : (
                   <ul className="space-y-1 text-xs" data-testid="asam-differences">{asamReport.differences.map((d) => (
                     <li key={d.asamId}>{d.patientName} (v{d.version}) — recommended {d.recommended}, actual {d.actual}. Reason: {d.reason}</li>

@@ -92,9 +92,12 @@ describe("10d-1 amendment reassessment clock", () => {
     expect(r.tasks.length).toBe(therapist.tasks.length);
     const jordan = demoScenarioPatientId("sud_no_consent")!;
     expect(r.tasks.some((t) => t.patientId === jordan)).toBe(false);
+    expect(r.tasks.length).toBeGreaterThan(0);
     for (const t of r.tasks) {
-      if (!t.patientId) continue;
-      expect(AdelanteEHR.isConsentCategoryAuthorized(t.patientId, "sud_treatment")).toBe(true);
+      expect(t.patientId).toBe("");
+      expect(t.patientName).toBe("");
     }
+    expect(r.differences).toHaveLength(0);
+    expect(r.cosign).toHaveLength(0);
   });
 });

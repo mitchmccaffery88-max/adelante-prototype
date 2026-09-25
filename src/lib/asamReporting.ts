@@ -41,11 +41,12 @@ export function roleSeesAsam(role: StaffRole, patient?: Patient): boolean {
  * §10d-2 coordinator rule — DRAFT pending compliance review.
  * The clinical coordinator fails the role-level Part 2 check, but may see
  * ASAM/SUD TOTALS (counts, timeliness, level mix — no names, no drill-down).
- * Patient-level rows appear for the coordinator only for patients whose
- * structured Part 2 consent (`sud_treatment`) is on file, via the existing
- * consent check. No other role is widened.
+ * No patient names at all until consents can name recipient roles.
+ * No other role is widened.
  */
 export const ACCESS_RULE_DRAFT_NOTE = "Access rule: draft pending compliance review.";
+export const TOTALS_ONLY_NOTE =
+  "Totals only. Named rows need a consent that names your role, not yet supported. Access rule: draft pending compliance review.";
 export const TOTALS_ONLY_ROLES: StaffRole[] = ["clinical_coordinator"];
 
 export type AsamAccessMode = "full" | "totals";
@@ -59,8 +60,9 @@ export function asamAccessMode(role: StaffRole): AsamAccessMode | null {
 
 /** May this role see a NAMED ASAM row for this patient? */
 export function roleSeesAsamRow(role: StaffRole, patient: Patient): boolean {
-  if (roleSeesAsam(role, patient)) return true;
-  return TOTALS_ONLY_ROLES.includes(role) && AdelanteEHR.isConsentCategoryAuthorized(patient.id, "sud_treatment");
+  // Totals-only roles never see names: the consent model cannot yet record
+  // which roles a Part 2 consent covers (draft pending compliance review).
+  return roleSeesAsam(role, patient);
 }
 
 /** Patients whose named rows the role may see. */
