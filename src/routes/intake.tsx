@@ -109,6 +109,8 @@ import {
   Plus,
   Trash2,
   Languages,
+  Clock,
+  ClipboardList,
 } from "lucide-react";
 
 import { useI18n } from "@/lib/i18n";
@@ -961,6 +963,76 @@ function IntakePage() {
         </>)}
       </header>
 
+      {inReassess && (
+        <Card className="p-6 space-y-5" data-testid="reassess-flow">
+          {reassess === "ask" && (
+            <div className="space-y-4" data-testid="reassess-ask">
+              <p className="text-lg text-foreground">{R.question}</p>
+              <div className="grid gap-3 sm:grid-cols-2">
+                <Button className="min-h-11" data-testid="reassess-changed-yes" onClick={() => setReassess("about")}>
+                  {R.yes}
+                </Button>
+                <Button variant="outline" className="min-h-11" data-testid="reassess-changed-no" onClick={() => setReassess("due")}>
+                  {R.no}
+                </Button>
+              </div>
+            </div>
+          )}
+          {reassess === "about" && (
+            <div className="space-y-5">
+              {aboutSection}
+              <div className="flex justify-between gap-3">
+                <Button variant="outline" className="min-h-11" onClick={() => setReassess("ask")}>
+                  Back
+                </Button>
+                <Button
+                  className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
+                  data-testid="reassess-save-about"
+                  onClick={() => {
+                    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
+                    toast.success(R.saved);
+                    setReassess("due");
+                  }}
+                >
+                  {R.saveContinue}
+                </Button>
+              </div>
+            </div>
+          )}
+          {reassess === "due" && (
+            <div className="space-y-4" data-testid="reassess-due">
+              {due.length > 0 ? (
+                <>
+                  <p className="text-foreground">{R.dueLede}</p>
+                  <ul className="space-y-2">
+                    {due.map((d) => (
+                      <li key={d.key} className="flex items-center gap-2 rounded-md border bg-card p-3 text-sm">
+                        <span className="flex-1">{rescreenName(d.key, lang9a === "es" ? "es" : "en")}</span>
+                        <Button asChild size="sm">
+                          <Link to="/rescreen/$key" params={{ key: d.key }} data-testid={`reassess-due-start-${d.key}`}>
+                            {R.start}
+                          </Link>
+                        </Button>
+                      </li>
+                    ))}
+                  </ul>
+                </>
+              ) : (
+                <p className="text-foreground" data-testid="reassess-nothing-due">{R.nothingDue}</p>
+              )}
+              <div className="flex flex-wrap gap-3">
+                <Button asChild variant="outline" className="min-h-11">
+                  <Link to="/home">{R.backHome}</Link>
+                </Button>
+                <Button variant="ghost" className="min-h-11" data-testid="reassess-full" onClick={() => { setStep(0); setReassess("full"); }}>
+                  {R.full}
+                </Button>
+              </div>
+            </div>
+          )}
+        </Card>
+      )}
+      {!inReassess && (<>
       <Card className="p-6">
         {current.key === "welcome" && adelMode && (
           <AdelGuidedIntake
@@ -1605,7 +1677,7 @@ function IntakePage() {
           under it on phones, so "Save & continue" couldn't be tapped. */}
       {!adelMode && (<>
       <div className="h-60 md:hidden" aria-hidden />
-      <div className="fixed md:sticky bottom-[calc(5.25rem+env(safe-area-inset-bottom))] md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0">
+      <div className={`fixed md:sticky ${alreadyComplete ? "bottom-[calc(5.25rem+env(safe-area-inset-bottom))]" : "bottom-[env(safe-area-inset-bottom)]"} md:bottom-0 left-0 right-0 md:left-auto md:right-auto z-30 mt-5 flex justify-between gap-3 bg-background/95 backdrop-blur border-t md:border-0 md:bg-transparent px-4 md:px-0 py-3 md:py-0`}>
         <Button variant="outline" className="min-h-11" onClick={back} disabled={step === 0}>
           Back
         </Button>
@@ -1626,6 +1698,7 @@ function IntakePage() {
           </Button>
         )}
       </div>
+      </>)}
       </>)}
     </div>
   );
