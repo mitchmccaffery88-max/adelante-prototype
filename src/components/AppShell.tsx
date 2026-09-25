@@ -11,14 +11,11 @@ import { STAFF_ROSTER, STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import {
   useStaffNavGroups,
   STAFF_ROUTES,
-  PATIENT_NAV,
   PATIENT_ROUTES,
-  patientNavForPopulation,
   PUBLIC_NAV,
   isPublicRoute,
   isAdvocateRoute,
 } from "@/lib/navSections";
-import { usePopulation } from "@/components/PopulationGate";
 import { StaffNavSidebar } from "@/components/StaffNavSidebar";
 import { PatientSidebar } from "@/components/PatientSidebar";
 import { AdvocateSidebar } from "@/components/AdvocateSidebar";
@@ -54,8 +51,6 @@ export function AppShell() {
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
-  const patients = useEhr(() => AdelanteEHR.listPatients());
-  const population = usePopulation(currentId);
   // Restore the acting patient after a hard reload. Only ever accepts an id
   // that still exists (runtime-created demo records do not survive a reload),
   // and runs in an effect so SSR and hydration agree on the first paint.
@@ -96,12 +91,14 @@ export function AppShell() {
     }
   })();
 
-  // Surfaces where the patient-facing UI should feel private:
-  // hide the staff link strip in the mobile nav (still reachable via the
-  // Staff dropdown on desktop).
+  // Patient detail routes inherit the same shell as direct nav destinations.
   const isPatientSurface =
     PATIENT_ROUTES.includes(pathname as (typeof PATIENT_ROUTES)[number]) ||
-    pathname.startsWith("/rescreen/");
+    pathname.startsWith("/rescreen/") ||
+    pathname.startsWith("/resources/") ||
+    pathname === "/next-steps" ||
+    pathname === "/consent" ||
+    pathname === "/safety-check";
   // §Landing nav — public, pre-sign-in surfaces get their own minimal nav.
   const isPublicSurface = !isPatientSurface && isPublicRoute(pathname);
   // §Advocate Access Redesign Phase 1 — advocate surfaces are their own shell.
@@ -140,11 +137,11 @@ export function AppShell() {
     <div className={cn("min-h-dvh flex flex-col", (isPatientSurface || isAdvocateSurface) && "patient-theme")}>
       {!isPublicSurface && <RouteAccessGuard />}
       {isPatientSurface && <OnboardingGuard />}
-      {/* Demo scenario control — fixed to the viewport so it is reachable at
+      {/* Demo scenario control — sticky at the viewport top so it is reachable at
           any height, not buried in the footer. */}
       <DemoControlsBar />
       {isPatientSurface && (
-        <div className="sticky top-[41px] z-50 flex items-center border-b bg-surface-elevated/95 px-3 backdrop-blur md:block md:border-b-0 md:bg-transparent md:px-0">
+        <div className="sticky top-10 z-50 flex items-center border-b bg-surface-elevated/95 px-3 backdrop-blur md:block md:border-b-0 md:bg-transparent md:px-0">
           {!onboarding && <UserNavigationDrawer mode="patient" />}
           <div className="min-w-0 flex-1"><CrisisHeader /></div>
         </div>
@@ -152,10 +149,11 @@ export function AppShell() {
       <header
         className={cn(
           "z-30 border-b bg-background/85 backdrop-blur",
-          !isPatientSurface && "sticky top-[41px]",
+          !isPatientSurface && "sticky top-10",
         )}
       >
         <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
+          {isAdvocateSurface && <UserNavigationDrawer mode="advocate" />}
           <Link
             to="/"
             className={cn("flex items-center gap-2 group", isPatientSurface && "hidden")}
@@ -241,7 +239,7 @@ export function AppShell() {
             {isPatientSurface && !onboarding && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* §Notification feed — operational alerts for the acting staff identity. */}
-            {!isPublicSurface && !onboarding && <NotificationBell />}
+            {(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && <NotificationBell />}
 
             {/* Staff portal belongs only to staff pages. */}
             {isStaffSurface && <DropdownMenu>
@@ -330,7 +328,7 @@ export function AppShell() {
           </div>
         </div>
 
-        {!isPatientSurface && !isPublicSurface && !isAdvocateSurface && (
+        {isStaffSurface && (
           <div className="md:hidden border-t overflow-x-auto">
             <div className="flex gap-1 px-3 py-2 min-w-max">
               {staffNav.map((n) => {
@@ -409,12 +407,7 @@ export function AppShell() {
           aria-label="Crisis support"
           className={cn(
             "sticky z-50 border-t border-destructive/30 bg-destructive/5 backdrop-blur",
-            // On mobile patient surfaces, sit above the fixed bottom tab bar
-            // so the 988 link is never obscured. Reset on md+ where the
-            // MobileNav is hidden.
-            isPatientSurface
-              ? "bottom-[calc(env(safe-area-inset-bottom)+56px)] md:bottom-0"
-              : "bottom-0",
+            "bottom-0",
           )}
         >
           <div className="mx-auto max-w-7xl px-4 sm:px-6 py-2 flex items-center gap-2 text-xs sm:text-sm">

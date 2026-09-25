@@ -158,11 +158,6 @@ function AdvocateShell({ linkId, onSignOut }: { linkId: string; onSignOut: () =>
         </div>
       </Card>
 
-      {/* On mobile the sidebar is hidden, so the switch rides here instead. */}
-      <div className="md:hidden">
-        <SelfCareContextSwitch />
-      </div>
-
       <Outlet />
     </AdvocateSessionProvider>
   );
