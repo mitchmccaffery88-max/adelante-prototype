@@ -153,3 +153,10 @@
 - [x] Part A: CF care manager must not be "Rosa" — use staff directory name
 - [x] Part B: Adel-guided intake (profile + benefits), scripted, Prototype label "guided questions, not AI-generated"
 - [x] Shared profilePatch helper + full Rosa form intake regression in browser
+
+## Part B pre-demo (approved narrow scope)
+- [ ] B1 About You: justice question moved, "looking for" → Patient.seeking (SUD merged into needs.substanceUse), content gating, advocate pending invite
+- [ ] B1 suggested goals (clinician accept/dismiss, audited) — no auto goals; screeners unchanged
+- [ ] B2 My Care tiles: first appointment, needs w/ match counts, recommended
+- [ ] B3(a) matched resources per need
+- [ ] Tests + browser verification
