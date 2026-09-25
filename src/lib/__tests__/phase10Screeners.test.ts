@@ -126,8 +126,8 @@ describe("Phase 10a/10b — EHR record metadata and audit", () => {
     expect(r.instrumentVersion).toBeTruthy();
     expect(r.scoringVersion).toBeTruthy();
     expect(r.textVerified).toBe(true);
-    const audit = AdelanteEHR.listAudit?.({ patientId: p.id }) ?? [];
-    if (Array.isArray(audit)) expect(audit.some((a: { action: string }) => a.action === "screener_recorded")).toBe(true);
+    const audit = AdelanteEHR.listAuditEvents({ patientId: p.id });
+    expect(audit.some((a) => a.action === "screener_recorded")).toBe(true);
   });
   it("retired forms are refused for new results", () => {
     const p = fresh();
