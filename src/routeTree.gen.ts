@@ -69,6 +69,7 @@ import { Route as RefusalQueueRouteImport } from './routes/refusal-queue'
 import { Route as ReleasedSearchRouteImport } from './routes/released-search'
 import { Route as ReportingRouteImport } from './routes/reporting'
 import { Route as ResourcesRouteImport } from './routes/resources'
+import { Route as SafetyCheckRouteImport } from './routes/safety-check'
 import { Route as SafetyPlanRouteImport } from './routes/safety-plan'
 import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
@@ -408,6 +409,11 @@ const ResourcesRoute = ResourcesRouteImport.update({
   path: '/resources',
   getParentRoute: () => rootRouteImport,
 } as any)
+const SafetyCheckRoute = SafetyCheckRouteImport.update({
+  id: '/safety-check',
+  path: '/safety-check',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const SafetyPlanRoute = SafetyPlanRouteImport.update({
   id: '/safety-plan',
   path: '/safety-plan',
@@ -666,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
+  '/safety-check': typeof SafetyCheckRoute
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
@@ -764,6 +771,7 @@ export interface FileRoutesByTo {
   '/refusal-queue': typeof RefusalQueueRoute
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
+  '/safety-check': typeof SafetyCheckRoute
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
@@ -863,6 +871,7 @@ export interface FileRoutesById {
   '/released-search': typeof ReleasedSearchRoute
   '/reporting': typeof ReportingRoute
   '/resources': typeof ResourcesRouteWithChildren
+  '/safety-check': typeof SafetyCheckRoute
   '/safety-plan': typeof SafetyPlanRoute
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
@@ -965,6 +974,7 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/reporting'
     | '/resources'
+    | '/safety-check'
     | '/safety-plan'
     | '/schedule'
     | '/shift-count'
@@ -1063,6 +1073,7 @@ export interface FileRouteTypes {
     | '/refusal-queue'
     | '/released-search'
     | '/reporting'
+    | '/safety-check'
     | '/safety-plan'
     | '/schedule'
     | '/shift-count'
@@ -1161,6 +1172,7 @@ export interface FileRouteTypes {
     | '/released-search'
     | '/reporting'
     | '/resources'
+    | '/safety-check'
     | '/safety-plan'
     | '/schedule'
     | '/shift-count'
@@ -1262,6 +1274,7 @@ export interface RootRouteChildren {
   ReleasedSearchRoute: typeof ReleasedSearchRoute
   ReportingRoute: typeof ReportingRoute
   ResourcesRoute: typeof ResourcesRouteWithChildren
+  SafetyCheckRoute: typeof SafetyCheckRoute
   SafetyPlanRoute: typeof SafetyPlanRoute
   ScheduleRoute: typeof ScheduleRoute
   ShiftCountRoute: typeof ShiftCountRoute
@@ -1702,6 +1715,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ResourcesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/safety-check': {
+      id: '/safety-check'
+      path: '/safety-check'
+      fullPath: '/safety-check'
+      preLoaderRoute: typeof SafetyCheckRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/safety-plan': {
       id: '/safety-plan'
       path: '/safety-plan'
@@ -2113,6 +2133,7 @@ const rootRouteChildren: RootRouteChildren = {
   ReleasedSearchRoute: ReleasedSearchRoute,
   ReportingRoute: ReportingRoute,
   ResourcesRoute: ResourcesRouteWithChildren,
+  SafetyCheckRoute: SafetyCheckRoute,
   SafetyPlanRoute: SafetyPlanRoute,
   ScheduleRoute: ScheduleRoute,
   ShiftCountRoute: ShiftCountRoute,

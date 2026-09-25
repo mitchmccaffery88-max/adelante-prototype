@@ -1,6 +1,5 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { AdelanteEHR } from "@/lib/ehr";
-import { useEhr } from "@/lib/useEhr";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
