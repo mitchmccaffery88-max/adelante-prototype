@@ -18,6 +18,8 @@ import {
 } from "@/lib/asam";
 import { signAsamAssessment } from "@/lib/asamFlow";
 import { asamLevelHistory } from "@/lib/asamReporting";
+import { calomsCompletenessFor, gateApplies, gateMessageFor, DMC_ODS_DRAFT_NOTE } from "@/lib/dmcOdsReadiness";
+import { AdelanteEHRExt, claimBillingBucket, useEhrExt } from "@/lib/ehr-ext";
 import { attestationStatement, type AttestationDraft } from "@/lib/attestation";
 import { AttestationSignatureBlock } from "@/components/signature/AttestationSignatureBlock";
 import { Button } from "@/components/ui/button";
@@ -53,6 +55,12 @@ export function AsamPanel({ patient }: { patient: Patient }) {
     openTask: AdelanteEHR.openAsamTask(patient.id),
   }));
   const history = useEhr(() => asamLevelHistory(acting.role, patient));
+  const readiness = useEhrExt(() =>
+    AdelanteEHRExt.listClaims()
+      .filter((c) => c.patientId === patient.id && gateApplies(c))
+      .map((c) => ({ c, msg: gateMessageFor(acting.role, c) })),
+  );
+  const caloms = useEhr(() => calomsCompletenessFor(patient));
   const draft = assessments.find((a) => a.status === "draft" || a.status === "declined");
   const mine = draft && draft.authoredBy.staffId === acting.staffId;
 
@@ -103,6 +111,24 @@ export function AsamPanel({ patient }: { patient: Patient }) {
         ASAM framework — {ASAM_DRAFT_NOTE}. {ASAM_LICENSED_CONTENT_NOTE} The system never
         calculates or suggests a level of care; the clinician decides.
       </div>
+
+      {(readiness.length > 0 || caloms.inScope) && (
+        <div className="space-y-1 rounded-md border border-border p-2 text-xs" data-testid="dmc-ods-readiness-chart">
+          <p className="font-medium">DMC-ODS readiness <span className="font-normal text-muted-foreground">({DMC_ODS_DRAFT_NOTE})</span></p>
+          {readiness.map(({ c, msg }) => (
+            <p key={c.id} data-testid={msg ? "chart-claim-blocked" : "chart-claim-ok"}>
+              {c.serviceCode} on {c.serviceDate} ({claimBillingBucket(c.state)}):{" "}
+              {msg ? <span className="text-destructive">{msg}</span> : <span className="text-teal">Medical necessity documented</span>}
+            </p>
+          ))}
+          {caloms.inScope && (
+            <p className="text-muted-foreground">
+              CalOMS admission: {caloms.admissionMissing.length ? `missing ${caloms.admissionMissing.join(", ")}` : "complete"}
+              {caloms.dischargeMissing && ` · Discharge: ${caloms.dischargeMissing.length ? `missing ${caloms.dischargeMissing.join(", ")}` : "complete"}`}
+            </p>
+          )}
+        </div>
+      )}
 
       {history && history.length > 0 && (
         <div className="rounded-md border border-border p-2 text-xs" data-testid="asam-level-history">

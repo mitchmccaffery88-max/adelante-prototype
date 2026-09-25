@@ -6,7 +6,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { gateMessageFor } from "@/lib/dmcOdsReadiness";
-import { AdelanteEHRExt, claimUnitLabel, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
+import { AdelanteEHRExt, claimUnitLabel, claimBillingBucket, useEhrExt, type ClaimState } from "@/lib/ehr-ext";
 import { ClaimSignatureLine } from "@/components/billing/ClaimSignatureLine";
 import { ClaimAmount } from "@/components/billing/RatesPanel";
 import { CHW_CODES, PEER_CODES } from "@/lib/communityBilling";
