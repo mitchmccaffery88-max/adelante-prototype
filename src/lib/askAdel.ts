@@ -17,7 +17,7 @@
 //   3. No causation, no invented number. Cross-patient aggregates carry the
 //      shared cohort guard; a question with nothing real behind it is marked
 //      `illustrative` and says so on screen.
-import { isPart2SensitiveCategory, type ResourceReferral } from "./ehr";
+import { AdelanteEHR, isPart2SensitiveCategory, type ResourceReferral } from "./ehr";
 import { AdelanteEHRExt } from "./ehr-ext";
 import { canAccess, type AccessLevel, type RecordClass, type StaffRole } from "./roles";
 import { cohortGuard, type CohortGuard } from "./cohortGuard";
