@@ -14,7 +14,11 @@ import { advocatePart2Masked } from "@/lib/advocate";
  * input, so screening still catches what people don't volunteer.
  */
 export function intakeScreeners(effectiveSud: boolean | null): ScreenerDef[] {
-  return SCREENERS.filter((s) => !s.isSud || effectiveSud === true);
+  // §Phase 10a — intake default instruments only (PC-PTSD-5, not the full
+  // PCL-5), plus AHC-HRSN. Part 2 consent remains the ONLY filter for SUD.
+  return [...SCREENERS, ...DOMAIN_SCREENERS].filter(
+    (s) => s.atIntake !== false && !s.retired && (!s.isSud || effectiveSud === true),
+  );
 }
 
 export type SeekingViewer = { kind: "staff"; role: StaffRole } | { kind: "advocate" };

@@ -14,8 +14,6 @@ import { REASSESS_COPY, rescreenName } from "@/lib/reassessmentCopy";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Label } from "@/components/ui/label";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { Slim988Bar } from "@/components/patient/Slim988Bar";
 
