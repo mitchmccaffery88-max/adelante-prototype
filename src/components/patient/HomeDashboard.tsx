@@ -338,8 +338,9 @@ export function HomeDashboard({
   // is gone; the picker is the single rendering and now sits at the top of the
   // page (see PatientHome).
   const tiles: { key: string; priority: number; node: React.ReactNode }[] = [];
-  // Rough patch — craving tool and slip support, both patient-private
-  tiles.push({
+  // Rough patch — craving tool and slip support, both patient-private and
+  // shown only under the shared substance-use signal rule.
+  if (showRecoveryJourney) tiles.push({
     key: "rough-patch",
     priority: 60,
     node: (
@@ -721,19 +722,21 @@ export function HomeDashboard({
           </span>
         </Link>
 
-        <Link
-          to="/schedule"
-          search={{ tab: "groups" }}
-          className="flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card px-4 text-base font-medium soft-shadow hover:bg-secondary"
-        >
-          <Users className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
-          <span>
-            Find a meeting
-            <span className="block text-xs font-normal text-muted-foreground">
-              Browse and join open group sessions
+        {showRecoveryJourney && (
+          <Link
+            to="/schedule"
+            search={{ tab: "groups" }}
+            className="flex min-h-[64px] items-center gap-3 rounded-2xl border bg-card px-4 text-base font-medium soft-shadow hover:bg-secondary"
+          >
+            <Users className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
+            <span>
+              Find a meeting
+              <span className="block text-xs font-normal text-muted-foreground">
+                Browse and join open group sessions
+              </span>
             </span>
-          </span>
-        </Link>
+          </Link>
+        )}
       </div>
 
       {/* 6 — Adel entry card -------------------------------------------------- */}

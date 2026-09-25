@@ -39,12 +39,13 @@ export function visibleSeekingSubstanceUse(
 
 /** One positive-signal rule for every patient-facing Recovery Journey entry. */
 export function recoveryJourneyVisible(
-  p: Pick<Patient, "needs" | "episodes"> | undefined,
+  p: Pick<Patient, "needs" | "episodes" | "calomsProfile"> | undefined,
 ): boolean {
   if (!p) return false;
   return Boolean(
     p.needs?.substanceUse ||
-      p.episodes?.some((episode) => episode.type === "sud_dmc_ods"),
+      p.episodes?.some((episode) => episode.type === "sud_dmc_ods") ||
+      p.calomsProfile,
   );
 }
 

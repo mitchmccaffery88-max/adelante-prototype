@@ -43,6 +43,7 @@ import { PART2_CAUTION_CATEGORY_IDS } from "@/lib/sdohResourceMatch";
 import { savedResourceIds, subscribeSelfTracking } from "@/lib/selfTracking";
 import { ResourceCard, type ResourceSurface } from "@/components/reentry/ResourceCard";
 import { cn } from "@/lib/utils";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 // Category tile iconography. Kept local and explicit rather than pulled from
 // lucide's full map, so the patient bundle only carries these fourteen.
@@ -81,6 +82,7 @@ export function CommunityResourceCenter({
   );
   const [query, setQuery] = useState("");
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
+  const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(patientId)));
   const savedCount = useSyncExternalStore(
     subscribeSelfTracking,
     () => String(savedResourceIds(patientId).length),
@@ -98,10 +100,11 @@ export function CommunityResourceCenter({
   // other surface — including this same component on the advocate surface —
   // keeps the Part 2 category-only rule (PART2_CAUTION_CATEGORY_IDS).
   const categoryOnly = surface !== "patient";
-  const all = categoryOnly
+  const permittedCategories = categoryOnly || showRecovery
     ? browsable.filter((r) => !PART2_CAUTION_CATEGORY_IDS.includes(r.categoryId))
     : browsable;
-  const hiddenCategory = categoryOnly && !!category && PART2_CAUTION_CATEGORY_IDS.includes(category);
+  const all = surface === "patient" && showRecovery ? browsable : permittedCategories;
+  const hiddenCategory = !!category && PART2_CAUTION_CATEGORY_IDS.includes(category) && (categoryOnly || !showRecovery);
   // Real, live per-category counts over exactly what the patient can browse
   // (published + pending-verification), not just the verified subset.
   const counts = new Map<string, number>();
@@ -155,7 +158,7 @@ export function CommunityResourceCenter({
             testId="category-tile-all"
           />
         </li>
-        {RESOURCE_CATEGORIES.map((c) => (
+        {RESOURCE_CATEGORIES.filter((c) => c.id !== "recovery_meetings" || surface !== "patient" || showRecovery).map((c) => (
           <li key={c.id}>
             <CategoryTile
               icon={CATEGORY_ICONS[c.id] ?? MapPinned}

@@ -74,5 +74,8 @@ describe("Part B1 — looking for", () => {
     expect(recoveryJourneyVisible({ needs, episodes: [{ id: "mh", type: "mental_health", state: "engaged", openedAt: "2026-01-01" }] })).toBe(false);
     expect(recoveryJourneyVisible({ needs: { ...needs, substanceUse: true } })).toBe(true);
     expect(recoveryJourneyVisible({ needs, episodes: [{ id: "sud", type: "sud_dmc_ods", state: "closed", openedAt: "2025-01-01", closedAt: "2025-02-01" }] })).toBe(true);
+    expect(recoveryJourneyVisible({ needs, calomsProfile: {} })).toBe(true);
+    expect(recoveryJourneyVisible(AdelanteEHR.getPatient("p1"))).toBe(true);
+    expect(recoveryJourneyVisible(AdelanteEHR.getPatient("p4"))).toBe(false);
   });
 });

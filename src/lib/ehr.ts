@@ -4306,7 +4306,7 @@ patients.push({
     "phq-9": { key: "phq-9", score: 9, severity: "Mild", completedAt: "2026-03-02" },
     "gad-7": { key: "gad-7", score: 7, severity: "Mild", completedAt: "2026-03-02" },
   },
-  needs: { housing: false, food: false, employment: true, transport: false, substanceUse: true },
+  needs: { housing: false, food: false, employment: true, transport: false },
   carePlanSummary: "Outpatient SUD counseling + weekly peer group; self-referred.",
   intakeCompletedAt: "2026-03-02",
   coverage: {

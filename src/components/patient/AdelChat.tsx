@@ -12,7 +12,7 @@
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, MessageCircle, MessageSquare, Phone, Send, ShieldAlert, UserRound, Wind } from "lucide-react";
-import { AdelanteEHR } from "@/lib/ehr";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { patientVisibleResource } from "@/lib/communityResources";
 import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { buildAdelSystemPrompt, resolveAdelAction, splitAdelActions, type AdelAction } from "@/lib/adelPrompt";
@@ -25,6 +25,7 @@ import { Card } from "@/components/ui/card";
 import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 // §Small UI gaps batch item 4 — chip rendering is differentiated BY KIND only.
 // Destinations still come from the real `resolveAdelAction` resolver; nothing
@@ -52,6 +53,9 @@ const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
 export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
+  const showRecovery = useEhr(() =>
+    recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
+  );
   // A resource-contextual open: Adel starts on that organisation instead of a
   // cold greeting, and the patient's first message is pre-written for them.
   const contextResource = resourceId ? patientVisibleResource(resourceId) : undefined;
@@ -208,9 +212,12 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
 
       const { body, actions } = splitAdelActions(full);
       // §Pre-demo B3 — "find me a meeting" always offers the FILTERED directory.
-      if (isMeetingRequest(text) && !actions.some((a) => a.kind === "resources" && a.id === "recovery_meetings")) {
+      if (showRecovery && isMeetingRequest(text) && !actions.some((a) => a.kind === "resources" && a.id === "recovery_meetings")) {
         const a = resolveAdelAction("resources:recovery_meetings");
         if (a) actions.push(a);
+      }
+      if (!showRecovery) {
+        actions.splice(0, actions.length, ...actions.filter((a) => !(a.kind === "resources" && a.id === "recovery_meetings")));
       }
       setTurns((t) => {
         const next = [...t];

@@ -15,6 +15,8 @@ import {
   liveNaloxoneAccessPoints,
   subscribeNaloxoneAccess,
 } from "@/lib/safetyContent";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 function ReviewPendingBanner() {
   if (!SAFETY_CONTENT_REVIEW.pending) return null;
@@ -61,6 +63,9 @@ function AccessVerifiedBanner() {
 }
 
 function NaloxonePage() {
+  const showRecovery = useEhr(() =>
+    recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
+  );
   // Access points are managed content now: whatever the content manager has
   // published is what a patient sees, live.
   const accessJson = useSyncExternalStore(
@@ -177,16 +182,20 @@ function NaloxonePage() {
             <LifeBuoy className="h-5 w-5" aria-hidden="true" /> I need help now
           </Link>
         </Button>
-        <Button asChild variant="outline" size="patient" className="w-full">
-          <Link to="/craving" data-testid="naloxone-craving-link">
-            <Waves className="h-5 w-5" aria-hidden="true" /> I'm craving right now
-          </Link>
-        </Button>
-        <Button asChild variant="outline" size="patient" className="w-full">
-          <Link to="/slip" data-testid="naloxone-slip-link">
-            <HeartHandshake className="h-5 w-5" aria-hidden="true" /> I already used
-          </Link>
-        </Button>
+        {showRecovery && (
+          <>
+            <Button asChild variant="outline" size="patient" className="w-full">
+              <Link to="/craving" data-testid="naloxone-craving-link">
+                <Waves className="h-5 w-5" aria-hidden="true" /> I'm craving right now
+              </Link>
+            </Button>
+            <Button asChild variant="outline" size="patient" className="w-full">
+              <Link to="/slip" data-testid="naloxone-slip-link">
+                <HeartHandshake className="h-5 w-5" aria-hidden="true" /> I already used
+              </Link>
+            </Button>
+          </>
+        )}
       </div>
     </PatientPage>
   );
