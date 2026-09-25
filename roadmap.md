@@ -168,7 +168,7 @@
 - [x] Final pre-demo freeze: add CALOMS to the shared substance-use signal, remove Alicia's seeded signal, gate all SUD-specific tools, preserve universal crisis/overdose access, and complete persona regression verification.
 
 ## Phase 10a + 10b (approved Sep 25)
-- [ ] Part A: 10a screener fixes (AUDIT 0/2/4, PC-PTSD-5 + PCL-5-20, retired short form, AHC intake options, cadence table, verbatim tests) + 10b C-SSRS (placeholder text, triggers, crisis queue risk, staff/self paths); result metadata on EHR record; draft labels; 10c/10d-ready model
-- [ ] Part B: QA switcher scenario matrix audit + add missing scenarios via store API; report per-record changes
-- [ ] Part C: persistent top-bar QA + staff role switchers side by side on every page, desktop + phone
+- [x] Part A: 10a screener fixes (AUDIT 0/2/4, PC-PTSD-5 + PCL-5-20, retired short form, AHC intake options, cadence table, verbatim tests) + 10b C-SSRS (placeholder text, triggers, crisis queue risk, staff/self paths); result metadata on EHR record; draft labels; 10c/10d-ready model
+- [ ] Part B: QA switcher scenario matrix audit + add missing scenarios via store API; report per-record changes (separate message)
+- [ ] Part C: persistent top-bar QA + staff role switchers side by side on every page, desktop + phone (separate message)
 - [ ] Verification: typecheck, build, full tests, browser walk per scenario
