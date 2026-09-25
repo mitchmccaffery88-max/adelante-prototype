@@ -23,6 +23,7 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { deliverConsentedAdvocateInvitations } from "@/lib/advocateInviteDelivery";
 import {
   Select,
   SelectContent,
@@ -84,6 +85,9 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
         })),
         capturedBy: { staffId, staffName, role },
       });
+      if (sections.roi_collateral || sections.advocate_sud_disclosure) {
+        void deliverConsentedAdvocateInvitations(patient.id);
+      }
       toast.success("Consent record captured");
       reset();
       setOpen(false);

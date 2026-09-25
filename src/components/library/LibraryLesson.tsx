@@ -16,6 +16,7 @@ import { hasIfThen } from "@/lib/lessonAuthoring";
 import { resolveLearnStages } from "@/lib/lessonLearn";
 
 import { toast } from "sonner";
+import { recoveryJourneyVisible } from "@/lib/seeking";
 
 export function LibraryLesson({
   item,
@@ -44,7 +45,10 @@ export function LibraryLesson({
     beforeMovingOn: t("modLearnBeforeMovingOn"),
   });
   const ifThen = hasIfThen(item.ifThenPractice) ? item.ifThenPractice : undefined;
-  const recommends = recommendsForLibraryItem(item);
+  const showRecovery = useEhr(() => recoveryJourneyVisible(AdelanteEHR.getPatient(patientId)));
+  const recommends = recommendsForLibraryItem(item).filter(
+    (recommendation) => recommendation.to !== "/recovery-journey" || showRecovery,
+  );
 
 
   function complete() {

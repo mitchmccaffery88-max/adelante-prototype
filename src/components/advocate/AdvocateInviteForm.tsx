@@ -14,7 +14,10 @@ import { toast } from "sonner";
 import { AdelanteEHR, type AdvocateLink } from "@/lib/ehr";
 import { ADVOCATE_AUTHORIZATION_TYPES, type AdvocateAuthorizationType } from "@/lib/advocate";
 import { requirementsForType } from "@/lib/advocateDocs";
-import { deliverAdvocateInvitation } from "@/lib/advocateInviteDelivery";
+import {
+  advocateInvitationConsentActive,
+  deliverAdvocateInvitation,
+} from "@/lib/advocateInviteDelivery";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -89,12 +92,13 @@ export function AdvocateInviteForm({
       setRelationship("");
       setContact("");
       onInvited?.(link);
-      // Real transport, honest fallback: the 14-day window only starts when
-      // this reports a genuine send.
-      await deliverAdvocateInvitation(link);
+      const consentActive = advocateInvitationConsentActive(link.patientId);
+      if (consentActive) await deliverAdvocateInvitation(link);
       const after = AdelanteEHR.getAdvocateLink(link.id);
       if (after?.notificationDelivery?.status === "sent") {
         toast.success(`Invitation sent directly to ${link.invitationSentTo}.`);
+      } else if (!consentActive) {
+        toast.success("Invitation saved as a draft. Nothing will be sent until advocate consent is signed.");
       } else {
         toast.warning(
           "Invitation created, but no delivery transport is connected yet — nothing was actually sent.",

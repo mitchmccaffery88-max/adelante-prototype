@@ -18,6 +18,10 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
   const pending = useEhr(() => AdelanteEHR.pendingFullScreeners(patientId));
   const [open, setOpen] = useState(false);
   const [answers, setAnswers] = useState<Record<string, number[]>>({});
+  const daysSince = lastAt
+    ? Math.floor((Date.now() - new Date(lastAt).getTime()) / 86_400_000)
+    : undefined;
+  const overdue = daysSince !== undefined && daysSince >= 10;
 
   const set = (key: string, idx: number, value: number) =>
     setAnswers((prev) => {
@@ -53,7 +57,9 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
           <HeartPulse className="h-4 w-4 text-teal" /> Weekly check-in
         </h3>
         {due ? (
-          <Badge className="bg-teal/15 text-teal border-0 text-[10px]">Ready for you</Badge>
+          <Badge className="bg-teal/15 text-teal border-0 text-[10px]" data-testid="weekly-check-in-due">
+            {overdue ? "Overdue" : "Due this week"}
+          </Badge>
         ) : (
           <Badge variant="outline" className="text-[10px]">
             Done this week
@@ -84,7 +90,9 @@ export function QuickCheckCard({ patientId }: { patientId: string }) {
       {!open ? (
         <div className="flex items-center justify-between gap-2">
           <span className="text-[11px] text-muted-foreground">
-            {lastAt ? `Last check-in ${new Date(lastAt).toLocaleDateString()}` : "Not done yet"}
+            {daysSince === undefined
+              ? "Not done yet"
+              : `Last done ${daysSince === 0 ? "today" : `${daysSince} day${daysSince === 1 ? "" : "s"} ago`}`}
           </span>
           <Button
             size="sm"

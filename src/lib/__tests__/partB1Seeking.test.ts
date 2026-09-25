@@ -68,9 +68,11 @@ describe("Part B1 — looking for", () => {
     expect(JSON.stringify(ev?.detail ?? {})).not.toMatch(/substanceUse/);
   });
 
-  it("Recovery Journey hidden only when answered without substance use", () => {
-    expect(recoveryJourneyVisible({ needs: { housing: false, food: false, employment: false, transport: false } })).toBe(true);
-    expect(recoveryJourneyVisible({ seeking: { mentalHealth: true, medication: false, answeredAt: "x" }, needs: { housing: false, food: false, employment: false, transport: false } })).toBe(false);
-    expect(recoveryJourneyVisible({ seeking: { mentalHealth: false, medication: false, answeredAt: "x" }, needs: { housing: false, food: false, employment: false, transport: false, substanceUse: true } })).toBe(true);
+  it("Recovery Journey requires a positive SUD signal", () => {
+    const needs = { housing: false, food: false, employment: false, transport: false };
+    expect(recoveryJourneyVisible({ needs })).toBe(false);
+    expect(recoveryJourneyVisible({ needs, episodes: [{ id: "mh", type: "mental_health", state: "engaged", openedAt: "2026-01-01" }] })).toBe(false);
+    expect(recoveryJourneyVisible({ needs: { ...needs, substanceUse: true } })).toBe(true);
+    expect(recoveryJourneyVisible({ needs, episodes: [{ id: "sud", type: "sud_dmc_ods", state: "closed", openedAt: "2025-01-01", closedAt: "2025-02-01" }] })).toBe(true);
   });
 });

@@ -1,5 +1,4 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
-import { FirstAppointmentTile, NeedsTile, RecommendedTile, AdvocatePendingTile } from "@/components/patient/MyCareTiles";
 import {
   AdelanteEHR,
   defaultOccurrenceModality,
@@ -22,7 +21,6 @@ import {
   Bell,
 } from "lucide-react";
 import { Users, MessageSquare, HeartHandshake } from "lucide-react";
-import { NeedThreadSummaryCard } from "@/components/patient/NeedThreadList";
 import { toast } from "sonner";
 import { ClientDate } from "@/components/ClientDate";
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
@@ -169,12 +167,6 @@ export function PatientHome() {
       />
 
       <ReassessmentOrCompleteTile patientId={patient.id} />
-      {/* §Part B2 — My Care tiles after intake. */}
-      <FirstAppointmentTile patientId={patient.id} />
-      <NeedsTile patientId={patient.id} />
-      <RecommendedTile patientId={patient.id} />
-      <AdvocatePendingTile patientId={patient.id} />
-      <PreReleaseKnownNeedsCard patientId={patient.id} />
 
       <Card className="p-5" data-testid="episode-progress-card">
         <div className="flex items-center justify-between gap-3">
@@ -215,9 +207,6 @@ export function PatientHome() {
         <div className="mt-4 divide-y divide-border/60 space-y-4 [&>*+*]:pt-4">
           <CarePlanCard patientId={patient.id} audience="patient" className="bg-card" />
           <SupportPlanCard patientId={patient.id} />
-          {/* §5d-4 — a COUNT and a link, not a second list. The full
-              need-by-need thread lives on /next-steps. */}
-          <NeedThreadSummaryCard patientId={patient.id} />
         </div>
       </section>
 
@@ -549,39 +538,6 @@ function YourGroupsSection({ patientId }: { patientId: string }) {
   );
 }
 
-// §Phase 4 — the way back to the post-intake resources screen once the person
-// has navigated away. Only shown when there is a real, open need to match.
-function NextStepsCard({ patientId }: { patientId: string }) {
-  const p = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const open = (p?.sdohPlan?.items ?? []).filter(
-    (i) =>
-      i.visibleToPatient !== false && i.status !== "completed" && i.status !== "not_completed",
-  );
-  if (open.length === 0) return null;
-  return (
-    <Card className="p-5" data-testid="next-steps-card">
-      <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-teal">
-        <HeartPulse className="h-4 w-4" /> Next steps
-      </div>
-      {/* §Onboarding rework — simple summary of the needs identified. */}
-      <ul className="mt-2 flex flex-wrap gap-2" data-testid="needs-summary">
-        {open.map((i) => (
-          <li key={i.id}>
-            <Badge variant="outline" className="text-xs">{i.need}</Badge>
-          </li>
-        ))}
-      </ul>
-      <p className="mt-2 text-sm text-muted-foreground">
-        Local places that match the everyday needs you shared. Looking is not the same as being
-        referred — your team makes that connection.
-      </p>
-      <Button asChild size="sm" className="mt-3">
-        <Link to="/next-steps">See help that matches</Link>
-      </Button>
-    </Card>
-  );
-}
-
 function SupportPlanCard({ patientId }: { patientId: string }) {
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   const items = (p?.sdohPlan?.items ?? []).filter((i) => i.visibleToPatient !== false);
@@ -621,8 +577,8 @@ function SupportPlanCard({ patientId }: { patientId: string }) {
 
 // §5d-4 — `ReferralsForYouCard` was removed here. It listed referrals with no
 // indication of WHICH need each one served, competing with /next-steps. The
-// need-paired thread on /next-steps replaces it; the home screen now carries
-// `NeedThreadSummaryCard` (a count and a link) so there is only one list.
+// need-paired thread on /next-steps replaces it; the dashboard's support-needs
+// tile is the single summary and links to that detail page.
 
 
 // §Phase 9b — the completed-intake tile. Becomes "Reassessment due" when the

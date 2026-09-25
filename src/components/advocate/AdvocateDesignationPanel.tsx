@@ -13,6 +13,7 @@ import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
 import { ShieldCheck } from "lucide-react";
+import { Link } from "@tanstack/react-router";
 import { AhcdValidationChecklist } from "./AhcdValidationChecklist";
 import { AdvocateInviteForm } from "./AdvocateInviteForm";
 
@@ -71,8 +72,23 @@ export function AdvocateDesignationPanel({
                   : "Authorization not confirmed yet — no access."}
               </p>
               <p className="text-xs text-muted-foreground">
-                Invited <ClientDate value={l.designatedAt} /> · sent to {l.invitationSentTo}
+                Named <ClientDate value={l.designatedAt} /> · {l.notificationSentAt ? `sent to ${l.invitationSentTo}` : `will be sent to ${l.invitationSentTo} after consent`}
               </p>
+              {l.status === "invited" && !l.notificationSentAt && l.notificationDelivery?.status !== "failed" && l.notificationDelivery?.status !== "not_configured" && (
+                <p className="text-xs text-muted-foreground">
+                  Invitation pending — sign consent to activate. {" "}
+                  <Link to="/consent" className="text-teal underline underline-offset-2">
+                    Review consent
+                  </Link>
+                </p>
+              )}
+              {(l.notificationDelivery?.status === "failed" || l.notificationDelivery?.status === "not_configured") && (
+                <p className="text-xs text-destructive" role="alert">
+                  {l.notificationDelivery.status === "not_configured"
+                    ? "We couldn't send this invitation because messaging is not connected. Your care team can help."
+                    : "We couldn't send this invitation. Your care team can help confirm the contact method and try again."}
+                </p>
+              )}
               {l.status !== "revoked" && (
                 <Button size="sm" variant="ghost" onClick={() => revoke(l)}>
                   Remove access

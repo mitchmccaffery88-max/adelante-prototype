@@ -37,13 +37,15 @@ export function visibleSeekingSubstanceUse(
   return Boolean(patient.needs?.substanceUse);
 }
 
-/**
- * Recovery Journey is shown unless the person answered "looking for" without
- * substance use. Records that never answered keep today's behaviour.
- */
-export function recoveryJourneyVisible(p: Pick<Patient, "seeking" | "needs"> | undefined): boolean {
-  if (!p?.seeking) return true;
-  return Boolean(p.needs?.substanceUse);
+/** One positive-signal rule for every patient-facing Recovery Journey entry. */
+export function recoveryJourneyVisible(
+  p: Pick<Patient, "needs" | "episodes"> | undefined,
+): boolean {
+  if (!p) return false;
+  return Boolean(
+    p.needs?.substanceUse ||
+      p.episodes?.some((episode) => episode.type === "sud_dmc_ods"),
+  );
 }
 
 export interface Recommendation {
@@ -75,7 +77,7 @@ export function recommendationsFor(p: Patient | undefined): Recommendation[] {
       to: "/medications",
     });
   }
-  if (recoveryJourneyVisible(p) && p.seeking && p.needs?.substanceUse) {
+  if (recoveryJourneyVisible(p)) {
     out.push({
       id: "recovery",
       title: { en: "Recovery journey", es: "Camino de recuperación" },
@@ -84,12 +86,14 @@ export function recommendationsFor(p: Patient | undefined): Recommendation[] {
     });
   }
   if (ji) {
+    if (recoveryJourneyVisible(p)) {
     out.push({
       id: "first-days-out",
       title: { en: "My First Days Out", es: "Mis primeros días afuera" },
       body: { en: "Getting a floor under you after release.", es: "Cómo estabilizarse después de salir." },
       to: "/recovery-journey",
     });
+    }
     out.push({
       id: "obligations",
       title: { en: "Your obligations", es: "Sus obligaciones" },

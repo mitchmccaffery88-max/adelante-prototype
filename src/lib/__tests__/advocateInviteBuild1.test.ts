@@ -1,8 +1,13 @@
 // §Advocate build 1 — invite actors, documentation requirements, the
 // delivery-based 14-day window, the staff resend, and the demo bypass.
-import { describe, it, expect, beforeEach, afterEach } from "vitest";
+import { describe, it, expect, beforeEach, afterEach, vi } from "vitest";
 import { AdelanteEHR } from "@/lib/ehr";
 import { setAdvocateDemoClaim, resetAdvocateDemoClaim } from "@/lib/advocateDemo";
+import {
+  deliverAdvocateInvitation,
+  deliverConsentedAdvocateInvitations,
+} from "@/lib/advocateInviteDelivery";
+import * as deliveryFunctions from "@/lib/advocateInvite.functions";
 
 function patientId(): string {
   return AdelanteEHR.listPatients()[0]!.id;
@@ -84,6 +89,42 @@ describe("advocate build 1 — invite actors and documentation", () => {
     expect(
       Math.round((+new Date(after.invitationExpiresAt) - +new Date(after.notificationSentAt!)) / 86400_000),
     ).toBe(14);
+  });
+
+  it("sends no advocate message before consent and sends after consent", async () => {
+    const send = vi.spyOn(deliveryFunctions, "sendAdvocateInvite").mockResolvedValue({ status: "sent", detail: "Sent to test." });
+    const patient = AdelanteEHR.createPatient({
+      firstName: "Consent",
+      lastName: `Gate${Math.random().toString(36).slice(2, 6)}`,
+      dob: "1990-01-01",
+    } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+    const link = AdelanteEHR.createAdvocateInvitation({
+      patientId: patient.id,
+      advocateName: "Draft Advocate",
+      invitationSentTo: "+15595550199",
+      invitationChannel: "sms",
+      expectedAuthorizationType: "hipaa_authorization",
+      designatedBy: { actor: "patient", name: "Consent Gate" },
+    });
+
+    await deliverAdvocateInvitation(link);
+    expect(send).not.toHaveBeenCalled();
+    expect(AdelanteEHR.getAdvocateLink(link.id)!.notificationSentAt).toBeUndefined();
+
+    AdelanteEHR.createConsentRecord({
+      patientId: link.patientId,
+      formType: "AB133",
+      source: "test",
+      signedByName: "Consent Gate",
+      attested: true,
+      effectiveDate: new Date().toISOString().slice(0, 10),
+      sections: [{ category: "roi_collateral", authorized: true }],
+      capturedBy: { staffId: "test", staffName: "Test Staff", role: "administrator" },
+    });
+    await deliverConsentedAdvocateInvitations(link.patientId);
+    expect(send).toHaveBeenCalledTimes(1);
+    expect(AdelanteEHR.getAdvocateLink(link.id)!.notificationSentAt).toBeTruthy();
+    send.mockRestore();
   });
 
   it("lets staff re-request a missing document without a new invite cycle", () => {

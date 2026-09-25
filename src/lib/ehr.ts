@@ -14310,6 +14310,16 @@ export const AdelanteEHR = {
   // §Advocate build 1 — delivery + consent-documentation trail.
   // ---------------------------------------------------------------------
 
+  markAdvocateInvitationDeliveryPending(linkId: string): AdvocateLink | undefined {
+    const link = advocateLinks.find((l) => l.id === linkId);
+    if (!link || link.notificationSentAt || link.notificationDelivery?.status === "pending") {
+      return link ? { ...link } : undefined;
+    }
+    link.notificationDelivery = { status: "pending", at: new Date().toISOString() };
+    emit();
+    return { ...link };
+  },
+
   /**
    * Record the outcome of an invitation send and START the 14-day window.
    *
