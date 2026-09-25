@@ -1723,6 +1723,21 @@ export function claimBucketCounts(list: Claim[]): Record<BillingBucket, number> 
 // signed ASAM fires its claim through this existing claim path without an
 // ehr → ehr-ext import cycle.
 registerAsamClaimCreator((input) => AdelanteEHRExt.createAsamClaim(input).id);
+// Backfill: ASAMs seeded (or signed) before this module loaded get their
+// H0001 claim now, so the demo record is complete from first render.
+for (const p of AdelanteEHR.listPatients()) {
+  for (const a of p.asamAssessments ?? []) {
+    if (a.status === "signed" && a.outputs && !a.outputs.claimId) {
+      const claim = AdelanteEHRExt.createAsamClaim({
+        asamId: a.id,
+        patientId: p.id,
+        clinicianId: a.cosignedById ?? a.authoredBy.staffId,
+        serviceDate: (a.cosignedAt ?? a.signedAt ?? new Date().toISOString()).slice(0, 10),
+      });
+      AdelanteEHR.attachAsamClaim(p.id, a.id, claim.id);
+    }
+  }
+}
 
 // ---------- React hook ----------
 export function useEhrExt<T>(selector: () => T): T {

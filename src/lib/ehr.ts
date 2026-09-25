@@ -22954,6 +22954,7 @@ export const DEMO_SCENARIO_PERSONAS = {
   combination: { firstName: "Jasmine", lastName: "Holt" },
   ji_self_report: { firstName: "Andre", lastName: "Whitfield" },
   public_referral: { firstName: "Carmen", lastName: "Delgado" },
+  sud_no_consent: { firstName: "Jordan", lastName: "Vega" },
 } as const;
 
 export function demoScenarioPatientId(key: keyof typeof DEMO_SCENARIO_PERSONAS): string | undefined {
@@ -23001,6 +23002,10 @@ try {
     { names: P.sud_consented, dob: "1989-04-25", seeking: { mentalHealth: false, medication: false, substanceUse: true }, sud: true, needs: { housing: true, food: false, employment: true, transport: false } },
     { names: P.combination, dob: "1992-01-08", seeking: { mentalHealth: true, medication: true, substanceUse: true }, sud: true, needs: { housing: true, food: true, employment: false, transport: true } },
     { names: P.ji_self_report, dob: "1985-09-30", seeking: { mentalHealth: true, medication: false, substanceUse: false }, sud: false, justice: true, needs: { housing: false, food: false, employment: true, transport: true } },
+    // §Phase 10c — selected substance use treatment but DECLINED Part 2
+    // sharing consent: the answer is kept, the ASAM task is masked to
+    // clinical staff, and the patient's own screens show no SUD tools.
+    { names: P.sud_no_consent, dob: "1996-03-14", seeking: { mentalHealth: false, medication: false, substanceUse: true }, sud: false, needs: { housing: true, food: false, employment: false, transport: false } },
   ];
   for (const sp of specs) {
     if (patients.some((p) => p.firstName === sp.names.firstName && p.lastName === sp.names.lastName)) continue;
