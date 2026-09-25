@@ -5,24 +5,22 @@ import { PATIENT_NAV, PATIENT_MOBILE_NAV, PATIENT_MORE_NAV } from "@/lib/navSect
 // Identity-based parity (same pattern as adminNavParity): both shells must map
 // over the SAME registry object, not a copy of its contents.
 const appShell = readFileSync("src/components/AppShell.tsx", "utf8");
-const mobileNav = readFileSync("src/components/MobileNav.tsx", "utf8");
-const moreSheet = readFileSync("src/components/patient/PatientMoreSheet.tsx", "utf8");
+const userDrawer = readFileSync("src/components/UserNavigationDrawer.tsx", "utf8");
+const patientSidebar = readFileSync("src/components/PatientSidebar.tsx", "utf8");
 
-describe("desktop and mobile patient nav parity", () => {
+describe("desktop sidebar and phone drawer patient nav parity", () => {
   it("both shells read PATIENT_NAV from the registry", () => {
-    // Both shells still read the one registry; the desktop strip and the More
-    // sheet now run it through the population filter first.
-    expect(appShell).toMatch(/patientNavForPopulation\(PATIENT_NAV/);
-    expect(mobileNav).toContain('PATIENT_MOBILE_NAV.filter(');
-    expect(moreSheet).toMatch(/patientNavForPopulation\(PATIENT_MORE_NAV/);
+    expect(patientSidebar).toMatch(/patientNavForPopulation\(PATIENT_SIDEBAR_NAV/);
+    expect(userDrawer).toMatch(/patientNavForPopulation\(PATIENT_SIDEBAR_NAV/);
     expect(PATIENT_MOBILE_NAV.length).toBe(5);
     expect(PATIENT_MORE_NAV.length).toBeGreaterThan(0);
   });
 
   it("neither shell hardcodes a patient route list", () => {
-    for (const src of [appShell, mobileNav, moreSheet]) {
+    for (const src of [patientSidebar, userDrawer]) {
       expect(src).not.toMatch(/\{ to: "\/home"/);
     }
+    expect(appShell).not.toContain("<MobileNav />");
   });
 
   it("registry entries are complete", () => {
