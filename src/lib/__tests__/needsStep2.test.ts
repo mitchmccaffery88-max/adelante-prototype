@@ -66,12 +66,12 @@ describe("same-day tasks (draft rule)", () => {
   });
   it("safety positive → staff-only tasks to case manager and clinician; never crisis queue", () => {
     const pid = newPatient("cm1");
-    const before = AdelanteEHR.listCrisisQueue?.().length ?? 0;
+    const before = AdelanteEHR.listCrisisEscalations(pid).length;
     need(pid, { need: "Interpersonal safety", safetySensitive: true });
     const tasks = AdelanteEHR.raiseNeedUrgencyTasks(pid);
     expect(tasks).toHaveLength(2);
     expect(tasks.every((t) => t.taskType === "sdoh_safety_same_day")).toBe(true);
-    expect(AdelanteEHR.listCrisisQueue?.().length ?? 0).toBe(before);
+    expect(AdelanteEHR.listCrisisEscalations(pid).length).toBe(before);
   });
   it("seeded Victor has a same-day task for cm1", () => {
     const v = AdelanteEHR.listPatients().find((p) => p.firstName === "Victor" && p.lastName === "Hale")!;
