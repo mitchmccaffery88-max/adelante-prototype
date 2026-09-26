@@ -4629,6 +4629,44 @@ const referrals: Referral[] = [
   },
 ];
 
+/**
+ * §Needs step 3 — a booking closes the matching open appointment request:
+ * explicitly when booked FROM a request, otherwise the first open request
+ * whose kind the booked service type satisfies. SUD requests close only
+ * explicitly (no dedicated ASAM service type).
+ */
+function _closeRequestsOnBooking(
+  a: Appointment,
+  requestId: string | undefined,
+  by: { id: string; role: string } | undefined,
+) {
+  const p = patients.find((x) => x.id === a.patientId);
+  const open = (p?.appointmentRequests ?? []).filter((r) => r.status === "requested");
+  const req = requestId
+    ? open.find((r) => r.id === requestId)
+    : a.serviceType
+      ? open.find((r) => APPT_REQUEST_SERVICE_TYPES[r.kind].includes(a.serviceType!))
+      : undefined;
+  if (!p || !req) return;
+  Object.assign(req, {
+    status: "booked",
+    closedAt: new Date().toISOString(),
+    closedBy: by?.id ?? (a.source === "self_scheduled" ? p.id : "staff"),
+    closedByRole: by?.role ?? (a.source === "self_scheduled" ? "patient" : undefined),
+    bookedApptId: a.id,
+  });
+  if (req.taskId) AdelanteEHR.completeCaseTask(req.taskId);
+  appendAudit({
+    category: "clinical",
+    action: "appointment_request_booked",
+    patientId: p.id,
+    actorId: req.closedBy!,
+    ...(req.closedByRole && req.closedByRole !== "patient" ? { actorRole: req.closedByRole as StaffRole } : {}),
+    // Kind withheld for SUD so the audit body carries no Part 2 detail.
+    detail: { requestId: req.id, apptId: a.id, protected: req.kind === "sud_assessment" },
+  });
+}
+
 function _careCoordinationWriteRoles(): StaffRole[] {
   return STAFF_ROLES.map((s) => s.key).filter(
     (role) => canAccess(role, "care_coordination").level === "write",
