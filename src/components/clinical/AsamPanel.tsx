@@ -52,9 +52,10 @@ export function AsamPanel({ patient }: { patient: Patient }) {
   const [err, setErr] = useState<string | null>(null);
   const [sigDraft, setSigDraft] = useState<AttestationDraft>({ attested: false });
 
-  const { assessments, openTask } = useEhr(() => ({
+  const { assessments, openTask, workTask } = useEhr(() => ({
     assessments: AdelanteEHR.listAsamAssessments(patient.id),
     openTask: AdelanteEHR.openAsamTask(patient.id),
+    workTask: AdelanteEHR.openAsamWorkTask(patient.id),
   }));
   const history = useEhr(() => asamLevelHistory(acting.role, patient));
   const readiness = useEhrExt(() =>
@@ -156,6 +157,13 @@ export function AsamPanel({ patient }: { patient: Patient }) {
           <span className="font-medium">ASAM assessment needed</span> — {asamTaskDueLabel(openTask.dueDate)}.
           <span className="block text-muted-foreground">{openTask.detail}</span>
           <AsamTaskWorkItem patient={patient} task={openTask} />
+        </div>
+      )}
+
+      {!openTask && workTask && (
+        <div className="rounded-md border border-border bg-muted/40 p-2 text-xs" data-testid="asam-open-reassess-task">
+          <span className="font-medium">{workTask.title}</span> — {asamTaskDueLabel(workTask.dueDate)}.
+          <AsamTaskWorkItem patient={patient} task={workTask} />
         </div>
       )}
 

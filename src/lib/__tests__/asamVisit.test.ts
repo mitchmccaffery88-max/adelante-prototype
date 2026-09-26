@@ -1,7 +1,7 @@
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR, demoScenarioPatientId, type AsamAssessment } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import "@/lib/ehr-ext";
-import { ASAM_DIMENSIONS } from "@/lib/asam";
+import { ASAM_DIMENSIONS, type AsamAssessment } from "@/lib/asam";
 import { attestationStatement, buildAttestationRecord } from "@/lib/attestation";
 import { asamClinicalReport } from "@/lib/asamReporting";
 import { patientFirstVisit } from "@/lib/apptRequestStatus";
@@ -125,7 +125,7 @@ describe("ASAM task — the single work item for the substance-use path", () => 
 
   it("seeded demo: Luis visit scheduled + linked; Jordan not yet scheduled; roles", () => {
     const luisId = demoScenarioPatientId("sud_consented")!;
-    const lt = AdelanteEHR.openAsamTask(luisId)!;
+    const lt = AdelanteEHR.openAsamWorkTask(luisId)!;
     expect(AdelanteEHR.asamVisitState(lt.id).state).toBe("scheduled");
     expect(patientFirstVisit(lt, AdelanteEHR.asamVisitState(lt.id))?.state).toBe("scheduled");
     const jordanId = demoScenarioPatientId("sud_no_consent");

@@ -8877,6 +8877,19 @@ export const AdelanteEHR = {
     return AdelanteEHR.isConsentCategoryAuthorized(patientId, LEGAL_DISCLOSURE_CONSENT_CATEGORY);
   },
 
+  /**
+   * §ASAM visit — the patient's current ASAM work item: the open "ASAM
+   * assessment needed" task, else the open "ASAM reassessment due" task.
+   */
+  openAsamWorkTask(patientId: string): CaseTask | undefined {
+    return (
+      AdelanteEHR.openAsamTask(patientId) ??
+      caseTasks.find(
+        (t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done",
+      )
+    );
+  },
+
   /** The open "ASAM assessment needed" task for this patient, if any. */
   openAsamTask(patientId: string): CaseTask | undefined {
     return caseTasks.find(
@@ -24005,7 +24018,7 @@ try {
   // 2c Luis — assessment visit scheduled from his ASAM task (linked, task
   // stays open until the ASAM is signed). Booked by Dr. Reyes.
   const luisId = demoScenarioPatientId("sud_consented");
-  const luisTask = luisId ? AdelanteEHR.openAsamTask(luisId) : undefined;
+  const luisTask = luisId ? AdelanteEHR.openAsamWorkTask(luisId) : undefined;
   if (luisId && luisTask && therapist) {
     AdelanteEHR.bookAppointment({ patientId: luisId, clinicianId: therapist.id, start: slot(6, 10), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: "Dr. Marisol Reyes", role: "therapist" } });
   }

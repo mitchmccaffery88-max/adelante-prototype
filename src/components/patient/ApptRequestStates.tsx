@@ -14,7 +14,7 @@ export function ApptRequestStates({ patientId }: { patientId: string }) {
   const rows = patientApptStates(patient, appts);
   // Generic first visit (the ASAM task, never named): Part 2-safe wording.
   const first = useEhr(() => {
-    const t = AdelanteEHR.openAsamTask(patientId);
+    const t = AdelanteEHR.openAsamWorkTask(patientId);
     return patientFirstVisit(t, t ? AdelanteEHR.asamVisitState(t.id) : undefined);
   });
   if (rows.length === 0 && !first) return null;
