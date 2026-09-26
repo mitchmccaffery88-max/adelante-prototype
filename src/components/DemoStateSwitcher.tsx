@@ -129,7 +129,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90",
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only)",
   },
   kayla: {
     group: "Existing demo records",
