@@ -453,7 +453,7 @@ function ReportingHome() {
         </Area>
       )}
 
-      {/* §5d-4 — the social-needs funnel: identified → referred → connected →
+      {/* §5d-4 — the social-needs funnel: identified → connect requested → referred → connected →
           resolved. Part 2 sensitive referral categories are folded into one
           unspecific bucket inside `sdohReporting.ts`, so no slice here can
           isolate them. */}
@@ -466,11 +466,17 @@ function ReportingHome() {
           icon={Activity}
           actions={null}
         >
-          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-4">
+          <div className="grid gap-3 sm:grid-cols-2 lg:grid-cols-5" data-testid="sdoh-funnel-stats">
             <Stat
               label="Needs identified"
               value={String(funnel.identified)}
               note={`Across ${funnel.patients} patient(s)`}
+            />
+            <Stat
+              label="Connect requested"
+              value={String(funnel.connectRequested)}
+              note="Patient asked the care team to connect them"
+              muted={funnel.connectRequested === 0}
             />
             <Stat
               label="Referred to a resource"

@@ -122,6 +122,8 @@ Every item in the source file will note its origin (document, version, page). An
 - **10b-1:** C-SSRS version (screener, recent vs lifetime); who supplies and approves the English and Spanish text; Columbia terms of use.
 - **10b-2:** risk-level mapping; response protocol per level; whether crisis wording triggers C-SSRS for staff only or also for patient self-report.
 - **10b-3:** whether patient self-report is allowed at all; who can close a C-SSRS item.
+- **Needs-1 (directory mapping gap):** "Phone or internet" and "Clothing and hygiene" have no directory category and are linked to Life Skills for now; "Family and social support" is linked to Family & Reunification. Directory unchanged pending decision.
+- **Needs-2 (same-day rule, draft):** "Today" optional topic, AHC-HRSN "no steady place to live", and interpersonal-safety positives raise same-day tasks (case manager or pooled care-coordination queue; safety also to the treating clinician, staff only). None route to the crisis queue automatically — decision for Christi.
 
 ## Phase 10c — ASAM framework (decisions recorded, not built)
 

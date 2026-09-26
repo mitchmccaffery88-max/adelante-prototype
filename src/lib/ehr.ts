@@ -670,6 +670,11 @@ export interface SdohPlanItem {
   categoryId?: string;
   /** §Needs step 1 — patient-reported "how soon" (draft wording). */
   urgency?: "today" | "this_week" | "later";
+  /** §Needs step 2 — the patient asked the care team to connect them. */
+  connectRequestedAt?: string;
+  connectRequestTaskId?: string;
+  /** Set when a staff referral on this need closed the connect request. */
+  connectRequestClosedAt?: string;
 }
 
 export interface SelfHelpModule {
@@ -4552,6 +4557,12 @@ const referrals: Referral[] = [
     welcomeSms: { status: "sent" as const, at: ago(2 - 0.05) },
   },
 ];
+
+function _careCoordinationWriteRoles(): StaffRole[] {
+  return STAFF_ROLES.map((s) => s.key).filter(
+    (role) => canAccess(role, "care_coordination").level === "write",
+  );
+}
 
 const caseManagers: CaseManager[] = [
   { id: "cm1", name: "Lupita Sanchez, MSW", role: "ecm_provider" },
@@ -9895,6 +9906,19 @@ export const AdelanteEHR = {
     if (linkedNeed && linkedNeed.status === "identified") {
       AdelanteEHR.setSdohStatus(patientId, linkedNeed.id, "sent", undefined, actor);
     }
+    // §Needs step 2 — a referral on a need closes its open connect request.
+    if (linkedNeed?.connectRequestTaskId && !linkedNeed.connectRequestClosedAt) {
+      AdelanteEHR.completeCaseTask(linkedNeed.connectRequestTaskId);
+      linkedNeed.connectRequestClosedAt = now;
+      appendAudit({
+        category: "clinical",
+        action: "sdoh_connect_request_closed",
+        patientId,
+        actorId: actor?.staffName ?? "unattributed",
+        ...(actor ? { actorRole: actor.role } : {}),
+        detail: { itemId: linkedNeed.id, referralId: row.id, taskId: linkedNeed.connectRequestTaskId },
+      });
+    }
 
     emit();
     return row;
@@ -11992,6 +12016,127 @@ export const AdelanteEHR = {
     }
     return { created, touched };
   },
+  /**
+   * §Needs step 2 — "Want your care team to connect you?" One request per
+   * need (deduped on the need id). Goes to the assigned case manager, or to
+   * the pooled care-coordination queue when none is assigned — never dropped.
+   * The request does NOT refer anyone: a case manager makes the referral with
+   * the existing Refer action, which closes this request.
+   */
+  requestNeedConnect(
+    patientId: string,
+    itemId: string,
+    actor: { id: string; role: "patient" | StaffRole },
+  ): CaseTask | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const item = p?.sdohPlan?.items.find((i) => i.id === itemId);
+    if (!p || !item) return undefined;
+    if (actor.role === "patient" && item.visibleToPatient === false) return undefined;
+    if (item.connectRequestedAt && !item.connectRequestClosedAt && item.connectRequestTaskId) {
+      return caseTasks.find((t) => t.id === item.connectRequestTaskId);
+    }
+    const task = AdelanteEHR.createCaseTask({
+      patientId,
+      assignedTo: p.caseManagerId ?? "",
+      title: `Connect request — ${item.need}`,
+      detail: `${p.firstName} asked the care team to help connect them for "${item.need}". Use Refer on this need; making the referral closes this request.`,
+      dueDate: new Date(Date.now() + 2 * 86400000).toISOString().slice(0, 10),
+      origin: "sdoh_follow_up",
+      taskType: "sdoh_connect_request",
+      dedupeKey: `sdoh-connect:${item.id}`,
+      ...(p.caseManagerId ? {} : { allowedRoles: _careCoordinationWriteRoles() }),
+      priority: "routine",
+    });
+    if (!task) return undefined;
+    item.connectRequestedAt = new Date().toISOString();
+    item.connectRequestTaskId = task.id;
+    item.connectRequestClosedAt = undefined;
+    appendAudit({
+      category: "clinical",
+      action: "sdoh_connect_requested",
+      patientId,
+      actorId: actor.id,
+      ...(actor.role !== "patient" ? { actorRole: actor.role } : {}),
+      detail: { itemId: item.id, taskId: task.id, pooled: !p.caseManagerId },
+    });
+    emit();
+    return task;
+  },
+
+  /**
+   * §Needs step 2 — same-day tasks (DRAFT rule, pending clinical review):
+   *  - an optional topic marked "today", or AHC-HRSN "no steady place to live"
+   *    → same-day task to the case manager (or pooled queue);
+   *  - an interpersonal-safety positive → same-day STAFF-ONLY tasks to the
+   *    case manager (or pool) and the treating clinician (or clinical pool).
+   * Nothing is routed to the crisis queue (decision pending — Christi).
+   * Idempotent via dedupe keys.
+   */
+  raiseNeedUrgencyTasks(
+    patientId: string,
+    opts: { housingUnstable?: boolean } = {},
+  ): CaseTask[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const today = new Date().toISOString().slice(0, 10);
+    const cm = p.caseManagerId ?? "";
+    const pool = cm ? {} : { allowedRoles: _careCoordinationWriteRoles() };
+    const out: CaseTask[] = [];
+    const push = (t: CaseTask | undefined) => { if (t) out.push(t); };
+    for (const item of p.sdohPlan?.items ?? []) {
+      if (item.status === "completed" || item.status === "not_completed") continue;
+      if (item.safetySensitive) {
+        const base = {
+          patientId,
+          title: "Same-day safety follow-up (staff only)",
+          detail: "Safety screening answers were positive. Follow up privately today. Do not share with advocates or discuss where others may hear. Draft rule — pending clinical review.",
+          dueDate: today,
+          origin: "sdoh_follow_up" as const,
+          taskType: "sdoh_safety_same_day",
+          priority: "urgent" as const,
+        };
+        push(AdelanteEHR.createCaseTask({ ...base, assignedTo: cm, ...pool, dedupeKey: `sdoh-safety-cm:${item.id}` }));
+        push(AdelanteEHR.createCaseTask({
+          ...base,
+          assignedTo: p.primaryClinicianId ?? "",
+          ...(p.primaryClinicianId ? {} : { allowedRoles: ["therapist", "pmhnp"] as StaffRole[] }),
+          dedupeKey: `sdoh-safety-clin:${item.id}`,
+        }));
+        continue;
+      }
+      const isHousing = /housing|living situation/i.test(item.need) || item.categoryId === "housing";
+      const reason =
+        item.urgency === "today"
+          ? `Patient said they need help with "${item.need}" today.`
+          : opts.housingUnstable && isHousing
+            ? "AHC-HRSN answer: no steady place to live."
+            : null;
+      if (!reason) continue;
+      push(AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: cm,
+        ...pool,
+        title: `Same-day — ${item.need}`,
+        detail: `${reason} Draft rule — pending clinical review.`,
+        dueDate: today,
+        origin: "sdoh_follow_up",
+        taskType: "sdoh_same_day",
+        priority: "urgent",
+        dedupeKey: `sdoh-sameday:${item.id}`,
+      }));
+    }
+    if (out.length) {
+      appendAudit({
+        category: "clinical",
+        action: "sdoh_same_day_tasks",
+        patientId,
+        actorId: "system",
+        detail: { count: out.length },
+      });
+    }
+    return out;
+  },
+
   setSdohStatus(
     patientId: string,
     itemId: string,
@@ -23439,6 +23584,26 @@ try {
       confirmed: [],
       selfReported: [{ need: "ID and documents", categoryId: "life_skills", urgency: "today" }],
     });
+  }
+  // §Needs step 2 — Victor's "today" topic raises a same-day task (draft rule).
+  if (victor) {
+    if (!patients.find((p) => p.id === victor)?.caseManagerId) AdelanteEHR.assignCaseManager({ patientId: victor, caseManagerId: "cm1", actorId: "demo seed" });
+    AdelanteEHR.raiseNeedUrgencyTasks(victor);
+  }
+  // §Needs step 2 — Paloma tapped "connect me" on a need; pending with her
+  // case manager (assigned through the normal assignment function).
+  const palomaId = demoScenarioPatientId("medication");
+  const palomaP = patients.find((p) => p.id === palomaId);
+  if (palomaP) {
+    if (!palomaP.caseManagerId) AdelanteEHR.assignCaseManager({ patientId: palomaP.id, caseManagerId: "cm1", actorId: "demo seed" });
+    if (!palomaP.sdohPlan?.items.some((i) => i.need === "Work or job training")) {
+      AdelanteEHR.applyIntakeNeeds(palomaP.id, {
+        confirmed: [],
+        selfReported: [{ need: "Work or job training", categoryId: "employment", urgency: "this_week" }],
+      });
+    }
+    const work = palomaP.sdohPlan?.items.find((i) => i.need === "Work or job training");
+    if (work && !work.connectRequestedAt) AdelanteEHR.requestNeedConnect(palomaP.id, work.id, { id: palomaP.id, role: "patient" });
   }
   // 4 Tomás — release bridge prescription (short supply to first visit).
   const tomas = byName(DEMO_PRE_RELEASE_PERSONA.firstName, DEMO_PRE_RELEASE_PERSONA.lastName);
