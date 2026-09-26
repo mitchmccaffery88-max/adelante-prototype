@@ -23882,3 +23882,39 @@ try {
   if (typeof console !== "undefined") console.warn("[demo seed] outpatient meds", e);
 }
 
+
+// §Needs step 3 — appointment request demo data, through the real store API.
+try {
+  const SYS = { id: "demo-seed", role: "patient" };
+  const therapist = AdelanteEHR.listClinicians().find(
+    (c) => (!c.services || c.services.includes("therapy_individual")) && AdelanteEHR.canBook(c.id).ok,
+  );
+  const slot = (daysAhead: number, hour: number) => {
+    const d = new Date(Date.now() + daysAhead * 86400000);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+  // 2a Elena — a pending 1:1 therapy request.
+  const elenaId = demoScenarioPatientId("mh_only");
+  if (elenaId) AdelanteEHR.createAppointmentRequests(elenaId, { mentalHealth: true }, SYS, { days: "Tue, Thu", modality: "video" });
+  // 5 Carmen — referred; staff already booked her therapy intake from the
+  // referral, so her "counseling" selection shows "Already scheduled".
+  const carmenId = demoScenarioPatientId("public_referral");
+  if (carmenId && therapist) {
+    AdelanteEHR.bookAppointment({ patientId: carmenId, clinicianId: therapist.id, start: slot(9, 11), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled" });
+    AdelanteEHR.recordSeeking(carmenId, { mentalHealth: true, medication: false, substanceUse: false }, { id: carmenId, role: "patient" });
+    AdelanteEHR.createAppointmentRequests(carmenId, { mentalHealth: true }, { id: carmenId, role: "patient" });
+  }
+  // 4 Tomás — pre-release team arranged his first counseling visit; when he
+  // completes intake and picks counseling, no new request is created.
+  const tomasP = patients.find((p) => p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName && p.lastName === DEMO_PRE_RELEASE_PERSONA.lastName);
+  if (tomasP && therapist) {
+    AdelanteEHR.bookAppointment({ patientId: tomasP.id, clinicianId: therapist.id, start: slot(12, 14), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "pre_release" });
+  }
+  // 2c Luis — SUD assessment request linked to his ASAM task (no parallel task).
+  const luisId = demoScenarioPatientId("sud_consented");
+  if (luisId) AdelanteEHR.createAppointmentRequests(luisId, { substanceUse: true }, { id: luisId, role: "patient" });
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
+}
