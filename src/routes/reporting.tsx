@@ -651,7 +651,7 @@ function ReportingHome() {
             <CohortGuardNotice cohortSize={reqBooked.cohortSize} minimumCohortSize={reqBooked.minimumCohortSize} />
           )}
           <p className="mt-1 text-[11px] text-muted-foreground">
-            Association only. Substance-use assessment requests are not counted here (Part 2); they are tracked in the ASAM section.
+            Association only. Substance use is not an appointment request — the ASAM task and its assessment visit are tracked in the ASAM section.
           </p>
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
             {REFERRAL_FUNNEL_ASSOCIATION_NOTE} Contacted means the person was actually reached — an
@@ -769,6 +769,19 @@ function ReportingHome() {
               <Stat label="Due (next 7 days)" value={String(asamReport.tasks.filter((t) => t.state === "due").length)} />
               <Stat label="Overdue" value={String(asamReport.tasks.filter((t) => t.state === "overdue").length)} />
               <Stat label="Awaiting co-signature" value={String(asamReport.cosignCount)} />
+              <Stat label="Assessment visit scheduled" value={String(asamReport.visitScheduled)} />
+              <Stat label="Assessment visit not yet scheduled" value={String(asamReport.visitNotScheduled)} />
+            </div>
+            <div className="space-y-1" data-testid="asam-by-reason">
+              <p className="text-xs font-medium">Open ASAM tasks by reason for assessment</p>
+              <ul className="grid gap-1 text-xs sm:grid-cols-2">
+                {asamReport.byReason.map((r) => (
+                  <li key={r.key} className="flex justify-between gap-2 rounded border px-2 py-1">
+                    <span className="min-w-0 truncate">{r.label}</span>
+                    <span className="shrink-0 font-medium">{r.count}</span>
+                  </li>
+                ))}
+              </ul>
             </div>
             <div className="grid gap-3 md:grid-cols-2">
               {([["By clinician", asamReport.byClinician], ["By team", asamReport.byTeam]] as const).map(([title, rows]) => (

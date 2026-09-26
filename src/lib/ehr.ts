@@ -1922,6 +1922,12 @@ export interface Appointment {
   chargeCents?: number;
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
+  /**
+   * §ASAM visit — structured link to the ASAM task this visit serves. Never
+   * rendered to roles failing the ASAM Part 2 check; to them this is a
+   * generic intake visit with no reason shown.
+   */
+  asamTaskId?: string;
 }
 
 // ---------- §Needs step 3 — appointment requests (NOT bookings) ----------
@@ -1930,7 +1936,26 @@ export interface Appointment {
  * staff confirm it by booking a real slot through the existing booking flow
  * (which closes it) or mark it "contacted, not booked" with a reason.
  */
-export type AppointmentRequestKind = "therapy" | "medication" | "sud_assessment" | "help_choose";
+export type AppointmentRequestKind = "therapy" | "medication" | "help_choose";
+
+/**
+ * §ASAM reason — why the assessment is being done. Structured field on the
+ * ASAM task, set by ASAM-authorized roles. NEVER written into task text.
+ * Justice involvement alone never sets "legal".
+ */
+export type AsamReason = "self_family" | "legal" | "insurance_auth" | "clinician_identified";
+export const ASAM_REASON_LABEL: Record<AsamReason, string> = {
+  self_family: "Self or family referral",
+  legal: "Legal (court, attorney, DMV, probation)",
+  insurance_auth: "Insurance authorization",
+  clinician_identified: "Clinician-identified",
+};
+export const LEGAL_DISCLOSURE_CONSENT_CATEGORY = "legal_part2_disclosure" as const;
+
+/** Assessment visit state for an ASAM task — derived from linked appointments. */
+export type AsamVisitState =
+  | { state: "not_scheduled"; missedOn?: string }
+  | { state: "scheduled"; start: string; apptId: string };
 export type AppointmentRequestStatus = "requested" | "booked" | "contacted_not_booked";
 
 export interface AppointmentRequest {
@@ -1943,7 +1968,6 @@ export interface AppointmentRequest {
   preferences?: { days?: string; times?: string; modality?: "in_person" | "video" };
   /** Queue task (non-SUD). SUD requests link to the ASAM task instead. */
   taskId?: string;
-  linkedAsamTaskId?: string;
   closedAt?: string;
   closedBy?: string;
   closedByRole?: string;
@@ -1955,8 +1979,6 @@ export interface AppointmentRequest {
 export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
   therapy: ["therapy_individual", "intake"],
   medication: ["med_management"],
-  // No dedicated ASAM service type: closes only when booked FROM the request.
-  sud_assessment: [],
   help_choose: ["care_coordination", "case_management"],
 };
 
@@ -1964,7 +1986,6 @@ export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceT
 export const APPT_REQUEST_BOOK_AS: Record<AppointmentRequestKind, ServiceType> = {
   therapy: "therapy_individual",
   medication: "med_management",
-  sud_assessment: "intake",
   help_choose: "care_coordination",
 };
 
@@ -1972,7 +1993,6 @@ export const APPT_REQUEST_BOOK_AS: Record<AppointmentRequestKind, ServiceType> =
 export const APPT_REQUEST_STAFF_LABEL: Record<AppointmentRequestKind, string> = {
   therapy: "1:1 therapy intake appointment",
   medication: "Medication management (prescriber) appointment",
-  sud_assessment: "SUD assessment (ASAM) — first appointment",
   help_choose: "Help me choose (care coordination)",
 };
 
@@ -3061,7 +3081,11 @@ export type ConsentCategory =
   // sharing with a probation/parole officer. Legally MANDATED PO disclosure
   // deliberately has NO category here: it is not consent-based and must never
   // be representable as a revocable authorization. See src/lib/poDisclosure.ts.
-  | "po_voluntary_coordination";
+  | "po_voluntary_coordination"
+  // §ASAM reason — 42 CFR Part 2 authorization for a SPECIFIC disclosure of
+  // assessment results to a court, attorney, DMV or probation. PLACEHOLDER key
+  // and label (draft — pending compliance review). No disclosure workflow.
+  | "legal_part2_disclosure";
 
 // §Adelante Journey Phase 3 — the category the PO two-tier split
 // needs. It covers ONLY voluntary, patient-controlled care-coordination
@@ -3102,6 +3126,10 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
     key: "po_voluntary_coordination",
     label:
       "Voluntary care-coordination sharing with probation/parole — patient-controlled, revocable (placeholder)",
+  },
+  {
+    key: "legal_part2_disclosure",
+    label: "Part 2 disclosure of assessment results to court / attorney / DMV / probation (placeholder)",
   },
 ];
 
@@ -3808,6 +3836,9 @@ export interface CaseTask {
   /** Who last edited title/detail/due/priority, and when. */
   lastEditedBy?: string;
   lastEditedAt?: string;
+  /** §ASAM reason — structured only; never copied into title/detail. */
+  asamReason?: AsamReason;
+  asamReasonSetBy?: { name: string; role: StaffRole | "system"; at: string };
 }
 
 /** An attributed working note on a task. */
@@ -4670,7 +4701,7 @@ function _closeRequestsOnBooking(
     actorId: req.closedBy!,
     ...(req.closedByRole && req.closedByRole !== "patient" ? { actorRole: req.closedByRole as StaffRole } : {}),
     // Kind withheld for SUD so the audit body carries no Part 2 detail.
-    detail: { requestId: req.id, apptId: a.id, protected: req.kind === "sud_assessment" },
+    detail: { requestId: req.id, apptId: a.id },
   });
 }
 
@@ -8284,7 +8315,19 @@ export const AdelanteEHR = {
     requestId?: string;
     /** Who booked (for request-close attribution). */
     bookedBy?: { id: string; role: string };
+    /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
+    asamTaskId?: string;
   }) {
+    if (input.asamTaskId) {
+      const t = caseTasks.find((x) => x.id === input.asamTaskId);
+      if (!t || t.patientId !== input.patientId || t.taskType !== ASAM_TASK_TYPE || t.status === "done")
+        throw new Error("That ASAM task is not open for this patient.");
+      const role = input.bookedBy?.role as StaffRole | undefined;
+      const p0 = patients.find((x) => x.id === input.patientId);
+      const g = role ? canAccess(role, "screeners_sud", p0) : undefined;
+      if (!role || !ASAM_TASK_ROLES.includes(role) || !g || g.level === "none" || g.locked)
+        throw new Error("Your role does not have 42 CFR Part 2 access for this patient.");
+    }
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
     if (input.modality === "in_person" && !input.locationId) {
@@ -8321,7 +8364,18 @@ export const AdelanteEHR = {
       status: "scheduled",
     };
     appointments.push(a);
-    _closeRequestsOnBooking(a, requestId, bookedBy);
+    // An ASAM visit is a generic intake visit to everyone else — it must not
+    // auto-close an unrelated therapy request that "intake" would satisfy.
+    if (!a.asamTaskId) _closeRequestsOnBooking(a, requestId, bookedBy);
+    else
+      appendAudit({
+        category: "clinical",
+        action: "asam_visit_scheduled",
+        patientId: a.patientId,
+        actorId: bookedBy?.id ?? "staff",
+        ...(bookedBy?.role ? { actorRole: bookedBy.role as StaffRole } : {}),
+        detail: { apptId: a.id, protected: true },
+      });
     // Detect provider switch vs. patient's last provider (same service type when set).
     const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
     if (prevProvider && prevProvider !== a.clinicianId) {
@@ -8714,7 +8768,7 @@ export const AdelanteEHR = {
   requestAsamAssessment(
     patientId: string,
     reason: string,
-    opts?: { clinicianDecision?: boolean; triggeredAt?: string },
+    opts?: { clinicianDecision?: boolean; triggeredAt?: string; asamReason?: AsamReason },
   ): CaseTask | undefined {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return undefined;
@@ -8764,6 +8818,9 @@ export const AdelanteEHR = {
     });
     // The trigger moment is what timeliness reporting measures from.
     if (task && opts?.triggeredAt) task.createdAt = triggerDate.toISOString();
+    // Pre-fill the reason only where the trigger makes it clear.
+    const pre = opts?.asamReason ?? (opts?.clinicianDecision ? "clinician_identified" : undefined);
+    if (task && pre) task.asamReason = pre, task.asamReasonSetBy = { name: "Trigger", role: "system", at: new Date().toISOString() };
     appendAudit({
       category: "clinical",
       action: "asam_requested",
@@ -8773,6 +8830,64 @@ export const AdelanteEHR = {
     });
     emit();
     return task;
+  },
+
+  /**
+   * §ASAM reason — set by ASAM-authorized roles passing the Part 2 check.
+   * Structured field only; task text is never changed.
+   */
+  setAsamReason(taskId: string, reason: AsamReason, actor: { name: string; role: StaffRole; id?: string }) {
+    const t = caseTasks.find((x) => x.id === taskId && x.taskType === ASAM_TASK_TYPE);
+    if (!t) throw new Error("ASAM task not found.");
+    const p = patients.find((x) => x.id === t.patientId);
+    const g = canAccess(actor.role, "screeners_sud", p);
+    if (!ASAM_TASK_ROLES.includes(actor.role) || g.level === "none" || g.locked)
+      throw new Error("Your role does not have 42 CFR Part 2 access for this patient.");
+    t.asamReason = reason;
+    t.asamReasonSetBy = { name: actor.name, role: actor.role, at: new Date().toISOString() };
+    appendAudit({
+      category: "clinical",
+      action: "asam_reason_set",
+      patientId: t.patientId,
+      actorId: actor.id ?? actor.name,
+      actorRole: actor.role,
+      detail: { taskId, protected: true },
+    });
+    emit();
+  },
+
+  /**
+   * §ASAM visit — derived, so a no-show or cancellation automatically puts
+   * the task back to "not yet scheduled". Booking never closes the task.
+   */
+  asamVisitState(taskId: string, now = Date.now()): AsamVisitState {
+    const linked = appointments.filter((a) => a.asamTaskId === taskId);
+    const next = linked
+      .filter((a) => a.status === "scheduled" && +new Date(a.start) > now)
+      .sort((x, y) => +new Date(x.start) - +new Date(y.start))[0];
+    if (next) return { state: "scheduled", start: next.start, apptId: next.id };
+    const missed = linked
+      .filter((a) => a.status === "no_show")
+      .sort((x, y) => +new Date(y.start) - +new Date(x.start))[0];
+    return missed ? { state: "not_scheduled", missedOn: missed.start } : { state: "not_scheduled" };
+  },
+
+  /** True when the patient's consent record authorizes a legal Part 2 disclosure. */
+  hasLegalDisclosureConsent(patientId: string): boolean {
+    return AdelanteEHR.isConsentCategoryAuthorized(patientId, LEGAL_DISCLOSURE_CONSENT_CATEGORY);
+  },
+
+  /**
+   * §ASAM visit — the patient's current ASAM work item: the open "ASAM
+   * assessment needed" task, else the open "ASAM reassessment due" task.
+   */
+  openAsamWorkTask(patientId: string): CaseTask | undefined {
+    return (
+      AdelanteEHR.openAsamTask(patientId) ??
+      caseTasks.find(
+        (t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done",
+      )
+    );
   },
 
   /** The open "ASAM assessment needed" task for this patient, if any. */
@@ -10099,6 +10214,7 @@ export const AdelanteEHR = {
         sudAllowed
           ? "Selected substance use treatment at intake"
           : "Selected substance use treatment at intake (Part 2 sharing consent declined — task visible to clinical staff only)",
+        { asamReason: "self_family" },
       );
     }
     const want: SuggestedGoal["reason"][] = [
@@ -12278,7 +12394,8 @@ export const AdelanteEHR = {
       : [
           ...(sel.mentalHealth ? (["therapy"] as const) : []),
           ...(sel.medication ? (["medication"] as const) : []),
-          ...(sel.substanceUse ? (["sud_assessment"] as const) : []),
+          // Substance use is NOT an appointment request: it creates only the
+          // protected "ASAM assessment needed" task (Phase 10c triggers).
         ];
     const now = Date.now();
     const out: AppointmentRequestOutcome[] = [];
@@ -12288,6 +12405,7 @@ export const AdelanteEHR = {
         .filter(
           (a) =>
             a.patientId === patientId &&
+            !a.asamTaskId &&
             a.status === "scheduled" &&
             +new Date(a.start) > now &&
             a.serviceType &&
@@ -12311,31 +12429,19 @@ export const AdelanteEHR = {
         requestedBy: actor,
         ...(preferences && Object.values(preferences).some(Boolean) ? { preferences } : {}),
       };
-      if (kind === "sud_assessment") {
-        // Linked to the ONE "ASAM assessment needed" task (or the open ASAM
-        // reassessment task) — never a second parallel task.
-        const asam =
-          AdelanteEHR.openAsamTask(patientId) ??
-          caseTasks.find((t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done");
-        // Link lives on the request only. The ASAM task text is NOT changed:
-        // roles that see the task but fail the request's Part 2 check must
-        // learn nothing about the appointment request.
-        if (asam) req.linkedAsamTaskId = asam.id;
-      } else {
-        const t = AdelanteEHR.createCaseTask({
-          patientId,
-          assignedTo: "",
-          allowedRoles: kind === "help_choose" ? _careCoordinationWriteRoles() : [...APPT_REQUEST_BOOKING_ROLES],
-          title: `Appointment request — ${APPT_REQUEST_STAFF_LABEL[kind]}`,
-          detail: `Requested at intake — waiting for staff confirmation. Book a real slot through the booking flow (closes this request) or mark "contacted, not booked".`,
-          dueDate: new Date(now + 3 * 86400000).toISOString().slice(0, 10),
-          origin: "manual",
-          taskType: "appointment_request",
-          dedupeKey: `appt-request:${req.id}`,
-          priority: "routine",
-        });
-        if (t) req.taskId = t.id;
-      }
+      const t = AdelanteEHR.createCaseTask({
+        patientId,
+        assignedTo: "",
+        allowedRoles: kind === "help_choose" ? _careCoordinationWriteRoles() : [...APPT_REQUEST_BOOKING_ROLES],
+        title: `Appointment request — ${APPT_REQUEST_STAFF_LABEL[kind]}`,
+        detail: `Requested at intake — waiting for staff confirmation. Book a real slot through the booking flow (closes this request) or mark "contacted, not booked".`,
+        dueDate: new Date(now + 3 * 86400000).toISOString().slice(0, 10),
+        origin: "manual",
+        taskType: "appointment_request",
+        dedupeKey: `appt-request:${req.id}`,
+        priority: "routine",
+      });
+      if (t) req.taskId = t.id;
       p.appointmentRequests = [...(p.appointmentRequests ?? []), req];
       out.push({ kind, outcome: "requested", request: req });
     }
@@ -12393,7 +12499,7 @@ export const AdelanteEHR = {
       patientId,
       actorId: by.id,
       actorRole: by.role,
-      detail: { requestId, protected: req.kind === "sud_assessment" },
+      detail: { requestId },
     });
     emit();
   },
@@ -23909,9 +24015,17 @@ try {
   if (tomasP && therapist) {
     AdelanteEHR.bookAppointment({ patientId: tomasP.id, clinicianId: therapist.id, start: slot(12, 14), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "pre_release" });
   }
-  // 2c Luis — SUD assessment request linked to his ASAM task (no parallel task).
+  // 2c Luis — assessment visit scheduled from his ASAM task (linked, task
+  // stays open until the ASAM is signed). Booked by Dr. Reyes.
   const luisId = demoScenarioPatientId("sud_consented");
-  if (luisId) AdelanteEHR.createAppointmentRequests(luisId, { substanceUse: true }, { id: luisId, role: "patient" });
+  const luisTask = luisId ? AdelanteEHR.openAsamWorkTask(luisId) : undefined;
+  if (luisId && luisTask && therapist) {
+    AdelanteEHR.bookAppointment({ patientId: luisId, clinicianId: therapist.id, start: slot(6, 10), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: "Dr. Marisol Reyes", role: "therapist" } });
+  }
+  // Marcus (p3) — overdue ASAM task with reason LEGAL (set by a clinician;
+  // not derived from justice involvement). No legal-disclosure consent on file.
+  const marcusTask = AdelanteEHR.openAsamTask("p3");
+  if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Dr. Marisol Reyes", role: "therapist", id: "s-th1" });
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
 }

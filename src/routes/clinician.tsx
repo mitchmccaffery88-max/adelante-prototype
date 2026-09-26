@@ -5,6 +5,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
+import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
+import { useNavigate } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -61,6 +63,10 @@ import { listUnsignedWork } from "@/lib/unsignedWork";
 
 
 export const Route = createFileRoute("/clinician")({
+  // §ASAM visit — "Schedule assessment visit" on the ASAM task opens this
+  // booking flow prefilled (intake type) and linked to the task.
+  validateSearch: (s: Record<string, unknown>): { asamTask?: string } =>
+    typeof s.asamTask === "string" ? { asamTask: s.asamTask } : {},
   head: () => ({
     meta: [
       { title: "Clinician Scheduler — Adelante" },
@@ -113,6 +119,29 @@ function ClinicianPage() {
   const [bookRole] = useActingRole();
   const bookActor = useActingStaff();
   const [bookRequestId, setBookRequestId] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
+  const { asamTask: asamTaskParam } = Route.useSearch();
+  const asamTask = useEhr(() =>
+    asamTaskParam ? AdelanteEHR.listCaseTasks().find((t) => t.id === asamTaskParam && t.status !== "done") : undefined,
+  );
+  const asamTaskPatient = useEhr(() => (asamTask ? AdelanteEHR.getPatient(asamTask.patientId) : undefined));
+  // Only roles passing the ASAM Part 2 check may book against the task.
+  const bookAsamTaskId = asamTask && roleWorksAsamTask(bookRole, asamTaskPatient) ? asamTask.id : undefined;
+  useEffect(() => {
+    if (!bookAsamTaskId || !asamTask) return;
+    const svc = serviceTypes.find((x) => x.id === "intake");
+    setBook((b) => ({
+      ...b,
+      patientId: asamTask.patientId,
+      serviceType: "intake",
+      durationMin: svc?.defaultDurationMin ?? b.durationMin,
+      modality: svc && !svc.allowedModalities.includes(b.modality) ? (svc.allowedModalities[0] ?? "video") : b.modality,
+      locationId: "",
+    }));
+    setBookRequestId(undefined);
+    document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [bookAsamTaskId]);
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
   const bookConflict = useEhr(() =>
     book.start && clinicianId
@@ -142,9 +171,11 @@ function ClinicianPage() {
         locationId: book.modality === "in_person" ? book.locationId : undefined,
         source: "staff_scheduled",
         ...(bookRequestId ? { requestId: bookRequestId } : {}),
+        ...(bookAsamTaskId && book.patientId === asamTask?.patientId ? { asamTaskId: bookAsamTaskId } : {}),
         bookedBy: { id: bookActor.staffName, role: bookRole },
       });
       setBookRequestId(undefined);
+      if (bookAsamTaskId) navigate({ to: "/clinician", search: {} });
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
       setBook({ ...book, start: "" });
     } catch (err) {
@@ -422,6 +453,12 @@ function ClinicianPage() {
               />
               <Card className="p-5" id="book-session">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
+                {bookAsamTaskId && book.patientId === asamTask?.patientId && (
+                  <p className="mt-1 text-xs text-teal" data-testid="booking-from-asam-task">
+                    Scheduling the assessment visit for {asamTaskPatient?.firstName}'s ASAM task — linked to the task.
+                    Booking does not close the task; signing the ASAM does.
+                  </p>
+                )}
                 {bookRequestId && (
                   <p className="mt-1 text-xs text-teal" data-testid="booking-from-request">
                     Booking from an appointment request — booking closes it.

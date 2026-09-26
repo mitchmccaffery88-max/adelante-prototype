@@ -1,8 +1,7 @@
 // §Needs step 3 — appointment requests queue (staff). Requests are NOT
 // bookings: staff confirm by booking a real slot through the existing booking
 // flow (closes the request) or mark "contacted, not booked" with a reason.
-// SUD assessment requests are Part 2 protected: shown only to ASAM task roles
-// that pass the existing screeners_sud check for that patient.
+// Substance use is never a request here — it is the protected ASAM task.
 import { useState } from "react";
 import {
   AdelanteEHR,
@@ -13,8 +12,6 @@ import {
   type AppointmentRequestKind,
   type Patient,
 } from "@/lib/ehr";
-import { ASAM_TASK_ROLES } from "@/lib/asam";
-import { roleSeesAsam } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, type StaffRole } from "@/lib/roles";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -25,7 +22,6 @@ import { toast } from "sonner";
 
 export function roleSeesApptRequest(role: StaffRole, patient: Patient, req: AppointmentRequest): boolean {
   if (!APPT_REQUEST_BOOKING_ROLES.includes(role) && req.kind !== "help_choose") return false;
-  if (req.kind === "sud_assessment") return ASAM_TASK_ROLES.includes(role) && roleSeesAsam(role, patient);
   return true;
 }
 
@@ -76,7 +72,6 @@ export function AppointmentRequestsCard({
               {r.preferences?.times ? ` · times: ${r.preferences.times}` : ""}
               {r.preferences?.modality ? ` · prefers ${r.preferences.modality === "video" ? "video" : "in person"}` : ""}
               {r.preferences ? " (draft)" : ""}
-              {r.linkedAsamTaskId ? " · linked to the ASAM assessment task" : ""}
             </div>
             <div className="mt-2 flex flex-wrap gap-2">
               {onBook && (

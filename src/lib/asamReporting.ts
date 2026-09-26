@@ -107,6 +107,7 @@ export function resolveStaff(assignee: string | undefined): { id: string; name: 
   return { id: m.id, name: m.name, team: TEAM_BY_ROLE[m.role] ?? "Other clinical" };
 }
 
+import { ASAM_REASON_LABEL, type AsamReason } from "@/lib/ehr";
 const isAsamTask = (t: CaseTask) =>
   t.origin === "asam_needed" && (t.taskType === "asam_assessment") && t.status !== "done";
 
@@ -125,6 +126,9 @@ export interface AsamTaskRow {
   assigneeName: string;
   team: string;
   reason: string;
+  /** §ASAM reason — structured category (not text). */
+  asamReason?: AsamReason;
+  visitScheduled: boolean;
 }
 
 const taskState = (dueDate: string, now: Date): AsamTaskState => asamTaskState(dueDate, now);
@@ -157,6 +161,8 @@ function taskRowsOver(patients: Patient[], now: Date): AsamTaskRow[] {
         assigneeName: s.name,
         team: s.team,
         reason: (t.detail ?? "").split(". Due date")[0] ?? "",
+        ...(t.asamReason ? { asamReason: t.asamReason } : {}),
+        visitScheduled: AdelanteEHR.asamVisitState(t.id, now.getTime()).state === "scheduled",
       };
     })
     .sort((a, b) => a.dueDate.localeCompare(b.dueDate));
@@ -338,6 +344,10 @@ export interface AsamClinicalReport {
   cosign: AsamCosignRow[];
   differences: AsamLevelDifferenceRow[];
   reassessmentsDue30: AsamTaskRow[];
+  /** §ASAM reason — open tasks by reason (counts only). */
+  byReason: { key: AsamReason | "unset"; label: string; count: number }[];
+  visitScheduled: number;
+  visitNotScheduled: number;
   timeliness: NonNullable<ReturnType<typeof asamTimeliness>>;
 }
 
@@ -373,6 +383,13 @@ export function asamClinicalReport(role: StaffRole, now: Date = new Date()): Asa
     reassessmentsDue30: tasks.filter(
       (t) => t.kind === "reassessment" && +new Date(t.dueDate) - now.getTime() <= 30 * DAY,
     ),
+    byReason: [...(Object.keys(ASAM_REASON_LABEL) as AsamReason[]), "unset" as const].map((key) => ({
+      key,
+      label: key === "unset" ? "Not set" : ASAM_REASON_LABEL[key],
+      count: tasks.filter((t) => (t.asamReason ?? "unset") === key).length,
+    })),
+    visitScheduled: tasks.filter((t) => t.visitScheduled).length,
+    visitNotScheduled: tasks.filter((t) => !t.visitScheduled).length,
     timeliness: asamTimeliness(role)!,
   };
 }

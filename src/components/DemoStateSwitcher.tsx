@@ -74,7 +74,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_consented: {
     group: "Intake by need",
     label: "2c · Luis C. — Substance use (Part 2 consent)",
-    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; SUD assessment appointment request linked to his ASAM task (clinical roles only)",
+    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; assessment visit scheduled from his ASAM task (linked; task stays open until signed). My Care: \"First visit scheduled\"",
   },
   combination: {
     group: "Intake by need",
@@ -89,7 +89,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_no_consent: {
     group: "Intake by need",
     label: "7 · Jordan V. — Substance use, no Part 2 consent",
-    hint: "Answer kept; masked ASAM task for clinical staff only; no SUD tools on the patient's own screens",
+    hint: "Answer kept; masked ASAM task for clinical staff only, assessment visit not yet scheduled (try \"Schedule assessment visit\" as Dr. Reyes); no SUD tools on the patient's own screens",
   },
   pre_release: {
     group: "Justice",
@@ -129,7 +129,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90",
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only)",
   },
   kayla: {
     group: "Existing demo records",
