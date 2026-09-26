@@ -92,7 +92,17 @@ import {
 export type { CoverageType, HeardAboutSource, TriState } from "./frontDoor";
 // Value import of the shared consent gate. Only ever called inside methods,
 // so the roles<->ehr module cycle resolves before any call happens.
-import { canAccess, getActingRole, getActingStaff, STAFF_ROLES } from "./roles";
+import {
+  canAccess,
+  getActingRole,
+  getActingStaff,
+  getStaffMember,
+  LPHA_SUPERVISOR_ROLES,
+  requiresSupervision,
+  STAFF_ROLES,
+  STAFF_ROSTER,
+  supervisionStatus,
+} from "./roles";
 import {
   referralNeedsOutreachTask,
   referrerHasContact,
@@ -998,6 +1008,12 @@ export interface MedOrder {
    * lifecycle, validation and attestation as one staged from the Orders tab.
    */
   sourceNoteId?: string;
+  /**
+   * §Cosign routing — set when the source note's cosign was DECLINED while
+   * this order was already active. The order is flagged for prescriber
+   * review, never silently stopped. (Draft orders from that note are removed.)
+   */
+  sourceNoteDeclined?: { at: string; by: string; reason: string };
   // ----- Attribution (required only for non-prescribers ordering on a prescriber's behalf) -----
   orderingProviderId?: string;
   /**
@@ -2891,6 +2907,14 @@ export interface ProgressNote {
   cosignRequired?: boolean;
   /** Roles eligible to cosign. Empty/undefined = any eligible clinical role. */
   cosignRole?: string[];
+  /**
+   * §Cosign routing — coordinator override: the staff id who now owns this
+   * pending cosign. Absent = the author's live assigned supervisor owns it
+   * (for supervised roles), so cosign ownership always agrees with the
+   * billable banner.
+   */
+  cosignOwnerOverrideId?: string;
+  cosignReassignments?: CosignReassignment[];
   cosignedBy?: string;
   cosignedAt?: string;
   cosignComment?: string;
@@ -2993,6 +3017,99 @@ export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "d
 
 /** Roles that may sign a note at all, and that may sign without a cosigner. */
 export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "therapist"] as const;
+
+// ----- §Cosign routing to the assigned supervisor ---------------------------
+//
+// A supervised author's (trainee / MA / CHW) cosign is owned by the supervisor
+// assigned in /admin-supervision — the SAME link that makes them billable, read
+// live. Only that person may cosign or decline. With no valid supervisor the
+// item sits in "needs a supervisor" for the clinical coordinator, never routed
+// to anyone. A coordinator/admin override (reason required) reassigns it.
+// Authors whose role carries no supervision link (ECM provider, peer, SUD
+// counselor) keep the existing role-pool routing.
+
+export interface CosignReassignment {
+  at: string;
+  byId: string;
+  byName: string;
+  byRole: string;
+  fromId?: string;
+  toId: string;
+  reason: string;
+}
+
+export type CosignOwnership =
+  | { kind: "pool" }
+  | { kind: "owner"; staffId: string; name: string; via: "supervisor" | "override" }
+  | { kind: "needs_supervisor"; authorName: string; reason: string };
+
+/** Roles that may reassign a pending cosign (override). */
+export const COSIGN_ROUTING_ROLES: StaffRole[] = ["clinical_coordinator", "sys_admin"];
+
+export function cosignOwnershipFor(
+  authorToken: string | undefined,
+  overrideId?: string,
+): CosignOwnership {
+  if (overrideId) {
+    const s = getStaffMember(overrideId);
+    if (s) return { kind: "owner", staffId: s.id, name: s.name, via: "override" };
+  }
+  const t = (authorToken ?? "").trim();
+  const author = t ? STAFF_ROSTER.find((m) => m.id === t || m.clinicianId === t) : undefined;
+  if (!author || !requiresSupervision(author.role)) return { kind: "pool" };
+  const st = supervisionStatus(author.id);
+  if (st.satisfied && st.supervisor)
+    return { kind: "owner", staffId: st.supervisor.id, name: st.supervisor.name, via: "supervisor" };
+  return {
+    kind: "needs_supervisor",
+    authorName: author.name,
+    reason: `${author.name} has no assigned LPHA supervisor — a clinical coordinator must assign one before this can be cosigned.`,
+  };
+}
+
+export function asamCosignOwnership(a: AsamAssessment): CosignOwnership {
+  return cosignOwnershipFor(a.authoredBy.staffId, a.cosignOwnerOverrideId);
+}
+
+export function noteCosignOwnership(n: ProgressNote): CosignOwnership {
+  return cosignOwnershipFor(n.signedById ?? n.clinicianId, n.cosignOwnerOverrideId);
+}
+
+/** Does one of the actor's identity tokens match the owning staff member? */
+export function isCosignOwner(own: CosignOwnership, ids: (string | undefined)[]): boolean {
+  if (own.kind !== "owner") return false;
+  const s = getStaffMember(own.staffId);
+  const tokens = [own.staffId, s?.clinicianId].filter(Boolean);
+  return ids.some((i) => !!i && tokens.includes(i));
+}
+
+/** Store-side refusal for a cosign/decline by the wrong person, or null. */
+export function cosignOwnerRefusal(
+  own: CosignOwnership,
+  ids: (string | undefined)[],
+): string | null {
+  if (own.kind === "pool") return null;
+  if (own.kind === "needs_supervisor") return own.reason;
+  if (isCosignOwner(own, ids)) return null;
+  return `Only ${own.name}, the ${own.via === "override" ? "reassigned cosigner" : "assigned supervisor"}, can cosign or decline this.`;
+}
+
+function validateCosignReassign(
+  toStaffId: string,
+  actor: { staffId: string; name: string; role: string },
+  reason: string,
+  authorIds: (string | undefined)[],
+) {
+  if (!(COSIGN_ROUTING_ROLES as string[]).includes(actor.role))
+    throw new Error("Only a clinical coordinator or admin can reassign a cosign.");
+  const to = getStaffMember(toStaffId);
+  if (!to || !LPHA_SUPERVISOR_ROLES.includes(to.role))
+    throw new Error("Choose an LPHA-tier supervisor (Therapist or PMHNP).");
+  if (authorIds.some((i) => !!i && (i === to.id || i === to.clinicianId || i === to.name)))
+    throw new Error("The author cannot cosign their own work.");
+  if ((reason ?? "").trim().length < 3) throw new Error("A reason is required to reassign a cosign.");
+  return to;
+}
 
 /** A note is masked exactly like a SUD problem entry — one gate, one rule. */
 export function isNoteSudSensitive(note: ProgressNote): boolean {
@@ -8903,6 +9020,43 @@ export const AdelanteEHR = {
     return [...(p?.asamAssessments ?? [])].sort((a, b) => +new Date(b.authoredAt) - +new Date(a.authoredAt));
   },
 
+  /** §Cosign routing — coordinator/admin reassigns a pending ASAM co-signature. */
+  reassignAsamCosign(
+    patientId: string,
+    asamId: string,
+    toStaffId: string,
+    actor: { staffId: string; name: string; role: string },
+    reason: string,
+  ): AsamAssessment {
+    const p = patients.find((x) => x.id === patientId);
+    const a = p?.asamAssessments?.find((x) => x.id === asamId);
+    if (!p || !a) throw new Error("Assessment not found.");
+    if (a.status !== "cosign_pending") throw new Error("This assessment is not awaiting co-signature.");
+    const to = validateCosignReassign(toStaffId, actor, reason, [a.authoredBy.staffId, a.authoredBy.name]);
+    const before = asamCosignOwnership(a);
+    const entry: CosignReassignment = {
+      at: new Date().toISOString(),
+      byId: actor.staffId,
+      byName: actor.name,
+      byRole: actor.role,
+      ...(before.kind === "owner" ? { fromId: before.staffId } : {}),
+      toId: to.id,
+      reason: reason.trim(),
+    };
+    a.cosignOwnerOverrideId = to.id;
+    a.cosignReassignments = [...(a.cosignReassignments ?? []), entry];
+    appendAudit({
+      category: "clinical",
+      action: "asam_cosign_reassigned",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { asamId, fromId: entry.fromId ?? null, fromState: before.kind, toId: to.id, reason: entry.reason },
+    });
+    emit();
+    return a;
+  },
+
   /** ASAM assessments across all patients awaiting an LPHA co-signature. */
   listAsamAwaitingCosign(): { patient: Patient; asam: AsamAssessment }[] {
     const out: { patient: Patient; asam: AsamAssessment }[] = [];
@@ -9030,6 +9184,8 @@ export const AdelanteEHR = {
       throw new Error("Only a licensed clinician (LPHA) can co-sign an ASAM assessment.");
     if (a.authoredBy.staffId === actor.staffId)
       throw new Error("The author cannot co-sign their own assessment.");
+    const ownRefusal = cosignOwnerRefusal(asamCosignOwnership(a), [actor.staffId, actor.clinicianId]);
+    if (ownRefusal) throw new Error(ownRefusal);
     const problem = attestationRecordProblem(attestation, "asam_supervisor_sign");
     if (problem) throw new Error(problem);
     a.status = "signed";
@@ -9064,6 +9220,8 @@ export const AdelanteEHR = {
     if (!ASAM_SIGN_ROLES.includes(actor.role))
       throw new Error("Only a licensed clinician (LPHA) can decline a co-signature.");
     if (reason.trim().length < 3) throw new Error("A decline reason is required.");
+    const ownRefusal = cosignOwnerRefusal(asamCosignOwnership(a), [actor.staffId, actor.clinicianId]);
+    if (ownRefusal) throw new Error(ownRefusal);
     a.status = "declined";
     appendAudit({
       category: "clinical",
@@ -10466,7 +10624,27 @@ export const AdelanteEHR = {
 
     // §Notification feed — cosign routing. No named-cosigner field exists on
     // ProgressNote, so a note routes to its eligible cosign role pool.
-    if (cosignRequired) {
+    const cosignOwn = cosignRequired ? noteCosignOwnership(n) : { kind: "pool" as const };
+    if (cosignRequired && cosignOwn.kind === "owner") {
+      AdelanteEHR.notify({
+        recipientStaffId: cosignOwn.staffId,
+        category: "cosign_request",
+        subject: `Cosignature needed — ${n.templateTitle ?? "progress note"}`,
+        body: `${input.signedBy} (you supervise) signed a note for ${patientLabel(patientId)} that requires your cosignature.`,
+        linkRoute: "/cosign-inbox",
+        patientId,
+      });
+    } else if (cosignRequired && cosignOwn.kind === "needs_supervisor") {
+      for (const r of COSIGN_ROUTING_ROLES)
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "cosign_request",
+          subject: "Cosign needs a supervisor",
+          body: `${input.signedBy} has no assigned supervisor — assign one or reassign this cosign.`,
+          linkRoute: "/cosign-inbox",
+          patientId,
+        });
+    } else if (cosignRequired) {
       const roles = (
         n.cosignRole?.length ? n.cosignRole : (NOTE_SELF_SIGN_ROLES as readonly string[])
       ) as StaffRole[];
@@ -10548,6 +10726,8 @@ export const AdelanteEHR = {
       throw new Error("This note requires a different cosigning role.");
     if (n.signedBy === input.cosignedBy || (input.cosignedById && n.signedById === input.cosignedById))
       throw new Error("A note cannot be cosigned by its signer.");
+    const ownRefusal = cosignOwnerRefusal(noteCosignOwnership(n), [input.cosignedById]);
+    if (ownRefusal) throw new Error(ownRefusal);
     const problem = attestationRecordProblem(input.attestation, "progress_note_supervisor_sign");
     if (problem) throw new Error(problem);
 
@@ -10755,7 +10935,7 @@ export const AdelanteEHR = {
   declineProgressNoteCosign(
     patientId: string,
     noteId: string,
-    input: { declinedBy: string; role: string; reason: string },
+    input: { declinedBy: string; declinedById?: string; role: string; reason: string },
   ): ProgressNote {
     const { n } = AdelanteEHR._findNote(patientId, noteId);
     if (!n) throw new Error("Note not found.");
@@ -10763,6 +10943,39 @@ export const AdelanteEHR = {
     const reason = (input.reason ?? "").trim();
     if (reason.length < 3)
       throw new Error("A decline reason of at least 3 characters is required.");
+    const ownRefusal = cosignOwnerRefusal(noteCosignOwnership(n), [input.declinedById]);
+    if (ownRefusal) throw new Error(ownRefusal);
+
+    // §Cosign routing — orders created from this visit. Drafts are removed
+    // (they were never active); signed/held orders are FLAGGED for prescriber
+    // review, not stopped, since stopping an active med is a clinical call.
+    const pt = patients.find((x) => x.id === patientId);
+    const removedDrafts: string[] = [];
+    const flaggedOrders: string[] = [];
+    const declinedAt = new Date().toISOString();
+    if (pt?.orders?.length) {
+      pt.orders = pt.orders.filter((o) => {
+        if (o.sourceNoteId !== noteId) return true;
+        if (o.status === "draft") {
+          removedDrafts.push(o.id);
+          return false;
+        }
+        if (o.status === "signed" || o.status === "held") {
+          o.sourceNoteDeclined = { at: declinedAt, by: input.declinedBy, reason };
+          flaggedOrders.push(o.id);
+        }
+        return true;
+      });
+    }
+    if (flaggedOrders.length)
+      AdelanteEHR.notify({
+        recipientRole: "pmhnp",
+        category: "cosign_request",
+        subject: "Order flagged — source note cosign declined",
+        body: `${flaggedOrders.length} active order(s) for ${patientLabel(patientId)} came from a note whose cosign was declined. Review them.`,
+        linkRoute: `/record/${patientId}`,
+        patientId,
+      });
 
     n.declineReason = reason;
     n.declinedBy = input.declinedBy;
@@ -10783,9 +10996,55 @@ export const AdelanteEHR = {
         noteId,
         reason,
         returnedTo: "draft",
-        ordersVoided: 0,
-        orderCascade: "unavailable_no_note_order_link",
+        ordersVoided: removedDrafts.length,
+        draftOrdersRemoved: removedDrafts,
+        activeOrdersFlagged: flaggedOrders,
+        orderCascade: "drafts_removed_active_flagged",
       },
+    });
+    emit();
+    return n;
+  },
+
+  /** §Cosign routing — coordinator/admin reassigns a pending note cosign. */
+  reassignNoteCosign(
+    patientId: string,
+    noteId: string,
+    toStaffId: string,
+    actor: { staffId: string; name: string; role: string },
+    reason: string,
+  ): ProgressNote {
+    const { n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!n) throw new Error("Note not found.");
+    if (noteStatus(n) !== "cosign_pending") throw new Error("This note is not awaiting cosign.");
+    const to = validateCosignReassign(toStaffId, actor, reason, [n.signedById, n.clinicianId, n.signedBy]);
+    const before = noteCosignOwnership(n);
+    const entry: CosignReassignment = {
+      at: new Date().toISOString(),
+      byId: actor.staffId,
+      byName: actor.name,
+      byRole: actor.role,
+      ...(before.kind === "owner" ? { fromId: before.staffId } : {}),
+      toId: to.id,
+      reason: reason.trim(),
+    };
+    n.cosignOwnerOverrideId = to.id;
+    n.cosignReassignments = [...(n.cosignReassignments ?? []), entry];
+    appendAudit({
+      category: "clinical",
+      action: "note_cosign_reassigned",
+      patientId,
+      actorId: actor.staffId,
+      actorRole: actor.role,
+      detail: { noteId, fromId: entry.fromId ?? null, fromState: before.kind, toId: to.id, reason: entry.reason },
+    });
+    AdelanteEHR.notify({
+      recipientStaffId: to.id,
+      category: "cosign_request",
+      subject: "Cosign reassigned to you",
+      body: `${actor.name} reassigned a pending cosign for ${patientLabel(patientId)} to you.`,
+      linkRoute: "/cosign-inbox",
+      patientId,
     });
     emit();
     return n;
@@ -23744,6 +24003,37 @@ try {
           actorRole: "cf_care_manager",
         });
     }
+  }
+  // §Cosign routing demo seeds — real store API. Kayla (supervised by Dr.
+  // Reyes) has a pending cosign only Reyes owns; Owen (no supervisor) has one
+  // in "needs a supervisor".
+  {
+    const seedCosign = (scenario: keyof typeof DEMO_SCENARIO_PERSONAS, author: { token: string; name: string }, text: string) => {
+      const pid = demoScenarioPatientId(scenario);
+      const pt = patients.find((x) => x.id === pid);
+      if (!pid || !pt || pt.progressNotes?.some((n) => n.clinicianId === author.token && n.status === "cosign_pending")) return;
+      const n = AdelanteEHR.addProgressNote(pid, {
+        clinicianId: author.token,
+        date: new Date(Date.now() - 86_400_000).toISOString(),
+        sessionType: "individual",
+        subjective: text,
+        objective: "Engaged, oriented, cooperative.",
+        assessment: "Progressing toward treatment-plan goals.",
+        plan: "Continue weekly sessions.",
+        authorSource: "human",
+        status: "draft",
+      });
+      if (!n) return;
+      AdelanteEHR.signProgressNote(pid, n.id, {
+        signedBy: author.name,
+        signedById: author.token,
+        role: "clinical_trainee",
+        attested: true,
+        cosignRequired: true,
+      });
+    };
+    seedCosign("mh_only", { token: "c4", name: "Kayla Nguyen" }, "Reports better sleep this week; practiced grounding skills.");
+    seedCosign("medication", { token: "s-tr2", name: "Owen Tran" }, "Discussed coping with work stress; mood stable.");
   }
   // §Phase 10c demo seeds — ASAM, all through the real store API.
   const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };

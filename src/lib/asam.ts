@@ -162,6 +162,9 @@ export interface AsamAssessment {
   cosignedBy?: string;
   cosignedById?: string;
   cosignedAt?: string;
+  /** §Cosign routing — coordinator override owner (staff id). */
+  cosignOwnerOverrideId?: string;
+  cosignReassignments?: import("@/lib/ehr").CosignReassignment[];
   signedAt?: string;
   /** Amendment chain — previous version id. */
   amendsId?: string;
