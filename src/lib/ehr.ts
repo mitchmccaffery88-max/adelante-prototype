@@ -6245,7 +6245,11 @@ export interface RecoveryStageEntry {
 }
 const recoveryStageEntries: RecoveryStageEntry[] = [];
 
-export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy";
+export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy" | "needs_appointment";
+/** True for medications used to treat opioid/alcohol use disorder (Part 2 protected). */
+export function isSudMedicationName(name: string): boolean {
+  return /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol|sublocade/i.test(name);
+}
 export interface RefillRequest {
   id: string;
   patientId: string;
@@ -14947,6 +14951,19 @@ export const AdelanteEHR = {
   listMedications(patientId: string) {
     return _vendors.erx.listActiveMedications(patientId);
   },
+  /** PROTOTYPE — records a prescription in the mock eRx. No real e-prescribing. */
+  prescribeMedication(input: Parameters<typeof _vendors.erx.addMedication>[0]) {
+    const med = _vendors.erx.addMedication(input);
+    appendAudit({
+      category: "rx",
+      action: "prescription_recorded",
+      patientId: input.patientId,
+      detail: { medicationId: med.id, prototype: true, demo: Boolean(input.demo) },
+    });
+    _recomputeCarePlan(input.patientId, "prescription_recorded");
+    emit();
+    return med;
+  },
   telehealthJoinUrl(appointmentId: string, role: "patient" | "clinician") {
     return _vendors.telehealth.getJoinUrl(appointmentId, role);
   },
@@ -17552,6 +17569,8 @@ export const AdelanteEHR = {
     medicationId: string;
     pharmacyNote?: string;
     requestedBy?: "patient" | "clinician";
+    /** Demo seed only — backdates the request. */
+    requestedAt?: string;
   }): RefillRequest | undefined {
     const meds = _vendors.erx.listActiveMedications(input.patientId);
     const med = meds.find((m) => m.id === input.medicationId);
@@ -17569,7 +17588,7 @@ export const AdelanteEHR = {
       patientId: input.patientId,
       medicationId: input.medicationId,
       medicationName: med.name,
-      requestedAt: new Date().toISOString(),
+      requestedAt: input.requestedAt ?? new Date().toISOString(),
       requestedBy: input.requestedBy ?? "patient",
       pharmacyNote: input.pharmacyNote,
       status: "pending",
@@ -17589,10 +17608,15 @@ export const AdelanteEHR = {
     (this as typeof AdelanteEHR).createCaseTask({
       patientId: input.patientId,
       assignedTo: patient?.caseManagerId ?? "",
-      title: `Refill request: ${med.name} ${med.dose}`,
-      detail:
-        `${med.frequency} · prescriber ${med.prescriber}` +
-        (input.pharmacyNote ? ` · note: ${input.pharmacyNote}` : ""),
+      // Part 2: the task is assigned to the case manager, who may not pass
+      // the substance-use check — never name an OUD/AUD medication here.
+      title: isSudMedicationName(med.name)
+        ? "Refill request: protected medication (clinical staff only)"
+        : `Refill request: ${med.name} ${med.dose}`,
+      detail: isSudMedicationName(med.name)
+        ? "Details are visible to clinical staff in the refill tile."
+        : `${med.frequency} · prescriber ${med.prescriber}` +
+          (input.pharmacyNote ? ` · note: ${input.pharmacyNote}` : ""),
       dueDate,
       origin: "manual",
       dedupeKey: `refill:${req.id}`,
@@ -17603,7 +17627,7 @@ export const AdelanteEHR = {
   },
   reviewRefill(input: {
     id: string;
-    decision: "approved" | "denied";
+    decision: "approved" | "denied" | "needs_appointment";
     denyReason?: string;
     clinicianId?: string;
   }): RefillRequest | undefined {
@@ -17620,10 +17644,15 @@ export const AdelanteEHR = {
           r.reviewedBy,
       )
       .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]?.reviewedBy;
-    req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
+    req.status =
+      input.decision === "approved"
+        ? "sent_to_pharmacy"
+        : input.decision === "needs_appointment"
+          ? "needs_appointment"
+          : "denied";
     req.reviewedBy = input.clinicianId;
     req.reviewedAt = new Date().toISOString();
-    if (input.decision === "denied") req.denyReason = input.denyReason;
+    if (input.decision !== "approved") req.denyReason = input.denyReason;
     if (
       input.decision === "approved" &&
       priorReviewer &&
@@ -17642,7 +17671,12 @@ export const AdelanteEHR = {
     }
     appendAudit({
       category: "rx",
-      action: input.decision === "approved" ? "refill_approved" : "refill_denied",
+      action:
+        input.decision === "approved"
+          ? "refill_approved"
+          : input.decision === "needs_appointment"
+            ? "refill_needs_appointment"
+            : "refill_denied",
       patientId: req.patientId,
       actorId: input.clinicianId,
       detail: {
@@ -23265,3 +23299,121 @@ try {
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] QA scenarios", e);
 }
+// §Outpatient meds — DEMO DATA. Prototype prescriptions and refill requests
+// for outpatient medication management, recorded through the normal store
+// functions (prescribeMedication → requestRefill → reviewRefill). No real
+// e-prescribing. OUD/AUD medications are Part 2 protected by name
+// (isSudMedicationName) everywhere they render.
+try {
+  const PRESCRIBER = "Dr. R. Bagga, PMHNP-BC";
+  const PRESCRIBER_ID = "s-np1";
+  const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
+  const byName = (f: string, l: string) =>
+    patients.find((p) => p.firstName === f && p.lastName === l)?.id;
+  type Rx = { name: string; dose: string; frequency: string; indication: string; started: number; refills: number; pharmacy: string };
+  const rx = (patientId: string | undefined, r: Rx) =>
+    patientId
+      ? AdelanteEHR.prescribeMedication({
+          patientId,
+          name: r.name,
+          dose: r.dose,
+          route: "oral",
+          frequency: r.frequency,
+          prescriber: PRESCRIBER,
+          startedOn: daysAgo(r.started),
+          refillsRemaining: r.refills,
+          pharmacy: r.pharmacy,
+          indication: r.indication,
+          demo: true,
+        })
+      : undefined;
+  const refill = (
+    med: { id: string; patientId: string } | undefined,
+    opts: { by?: "patient" | "clinician"; ago: number; note?: string; review?: "approved" | "denied" | "needs_appointment"; reason?: string },
+  ) => {
+    if (!med) return;
+    const req = AdelanteEHR.requestRefill({
+      patientId: med.patientId,
+      medicationId: med.id,
+      requestedBy: opts.by ?? "patient",
+      pharmacyNote: opts.note,
+      requestedAt: daysAgo(opts.ago),
+    });
+    if (req && opts.review)
+      AdelanteEHR.reviewRefill({ id: req.id, decision: opts.review, denyReason: opts.reason, clinicianId: PRESCRIBER_ID });
+  };
+  const CVS = "CVS Pharmacy — Mooney Blvd, Visalia";
+  const WAL = "Walgreens — Main St, Visalia";
+  const RITE = "Rite Aid — Tulare";
+  const already = (id?: string) =>
+    !id || _vendors.erx.listActiveMedications(id).some((m) => m.demo);
+
+  // Daniel (p1) — SUD treatment history: naltrexone (Part 2) alongside the existing sertraline.
+  if (!already("p1")) {
+    const n = rx("p1", { name: "Naltrexone", dose: "50 mg", frequency: "once daily", indication: "alcohol use", started: 60, refills: 2, pharmacy: CVS });
+    refill(n, { ago: 20, review: "approved" });
+  }
+  // Rosa (p2) — sleep.
+  if (!already("p2")) {
+    const t = rx("p2", { name: "Trazodone", dose: "50 mg", frequency: "at bedtime", indication: "sleep", started: 45, refills: 1, pharmacy: WAL });
+    refill(t, { ago: 1, note: "Walgreens on Main" });
+  }
+  // Marcus (p3) — depression, co-occurring SUD (no MOUD: his ASAM is still overdue).
+  if (!already("p3")) {
+    const b = rx("p3", { name: "Bupropion XL", dose: "150 mg", frequency: "once daily (morning)", indication: "depression", started: 120, refills: 0, pharmacy: CVS });
+    refill(b, { ago: 4, review: "needs_appointment", reason: "Needs an appointment first — no refills left and not seen in 90 days." });
+  }
+  // Alicia (p4, also 6b advocate-patient) — anxiety.
+  if (!already("p4")) {
+    const e = rx("p4", { name: "Escitalopram", dose: "10 mg", frequency: "once daily", indication: "anxiety", started: 90, refills: 3, pharmacy: RITE });
+    refill(e, { ago: 12, review: "approved" });
+  }
+  // 2a Elena — mental health only: one SSRI.
+  const elena = demoScenarioPatientId("mh_only");
+  if (!already(elena)) rx(elena, { name: "Sertraline", dose: "50 mg", frequency: "once daily", indication: "depression", started: 21, refills: 5, pharmacy: WAL });
+  // 2b Paloma — medication management: the richest example.
+  const paloma = demoScenarioPatientId("medication");
+  if (!already(paloma)) {
+    const f = rx(paloma, { name: "Fluoxetine", dose: "40 mg", frequency: "once daily", indication: "depression and anxiety", started: 150, refills: 0, pharmacy: CVS });
+    const pz = rx(paloma, { name: "Prazosin", dose: "2 mg", frequency: "at bedtime", indication: "trauma-related nightmares", started: 75, refills: 2, pharmacy: CVS });
+    const m = rx(paloma, { name: "Mirtazapine", dose: "15 mg", frequency: "at bedtime", indication: "sleep", started: 60, refills: 1, pharmacy: CVS });
+    const hz = rx(paloma, { name: "Hydroxyzine", dose: "25 mg", frequency: "as needed for anxiety, up to 3 times daily", indication: "anxiety", started: 40, refills: 1, pharmacy: CVS });
+    refill(pz, { ago: 30, review: "approved" });
+    refill(hz, { ago: 9, review: "denied", reason: "Using more often than prescribed — let's talk at your next visit." });
+    refill(m, { ago: 6, by: "clinician", review: "approved" });
+    refill(f, { ago: 0, note: "Running out Friday — CVS on Mooney" });
+  }
+  // 2c Luis — substance use: buprenorphine-naloxone (Part 2).
+  const luis = demoScenarioPatientId("sud_consented");
+  if (!already(luis)) {
+    const bn = rx(luis, { name: "Buprenorphine-naloxone", dose: "8 mg/2 mg film", frequency: "once daily, under the tongue", indication: "opioid use", started: 40, refills: 0, pharmacy: WAL });
+    refill(bn, { ago: 7, review: "approved" });
+    refill(bn, { ago: 1, note: "Weekly pickup" });
+  }
+  // 2d Jasmine — combination: SSRI + naltrexone (Part 2).
+  const jasmine = demoScenarioPatientId("combination");
+  if (!already(jasmine)) {
+    const s2 = rx(jasmine, { name: "Sertraline", dose: "100 mg", frequency: "once daily", indication: "depression", started: 100, refills: 2, pharmacy: RITE });
+    const nx = rx(jasmine, { name: "Naltrexone", dose: "50 mg", frequency: "once daily", indication: "alcohol use", started: 30, refills: 1, pharmacy: RITE });
+    refill(s2, { ago: 15, review: "approved" });
+    refill(nx, { ago: 2, by: "clinician" });
+  }
+  // 3 Victor — previously justice-involved, self-reported: sleep.
+  const victor = demoScenarioPatientId("ji_self_report");
+  if (!already(victor)) {
+    const t2 = rx(victor, { name: "Trazodone", dose: "100 mg", frequency: "at bedtime", indication: "sleep", started: 50, refills: 0, pharmacy: CVS });
+    refill(t2, { ago: 5, review: "denied", reason: "Prescribed by an outside clinic — please ask that prescriber." });
+  }
+  // 4 Tomás — release bridge prescription (short supply to first visit).
+  const tomas = byName(DEMO_PRE_RELEASE_PERSONA.firstName, DEMO_PRE_RELEASE_PERSONA.lastName);
+  if (!already(tomas)) rx(tomas, { name: "Sertraline", dose: "50 mg", frequency: "once daily (14-day release bridge)", indication: "depression", started: 2, refills: 0, pharmacy: WAL });
+  // 5 Carmen — referred via the public form: one SSRI, refill pending staff.
+  const carmen = demoScenarioPatientId("public_referral");
+  if (!already(carmen)) {
+    const c = rx(carmen, { name: "Citalopram", dose: "20 mg", frequency: "once daily", indication: "depression", started: 35, refills: 1, pharmacy: WAL });
+    refill(c, { ago: 3, by: "clinician", note: "Called in by care manager" });
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] outpatient meds", e);
+}
+

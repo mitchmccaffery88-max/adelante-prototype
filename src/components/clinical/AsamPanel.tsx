@@ -1,3 +1,4 @@
+import { asamTaskDueLabel } from "@/lib/asam";
 // §Phase 10c — the chart's ASAM section. Part 2 protected: the section itself
 // is registered under the `screeners_sud` record class in recordSections.tsx,
 // so advocates and Part 2-restricted staff never see it. All draft values
@@ -151,7 +152,7 @@ export function AsamPanel({ patient }: { patient: Patient }) {
 
       {openTask && (
         <div className="rounded-md border border-border bg-muted/40 p-2 text-xs" data-testid="asam-open-task">
-          <span className="font-medium">ASAM assessment needed</span> — due {openTask.dueDate} (draft).
+          <span className="font-medium">ASAM assessment needed</span> — {asamTaskDueLabel(openTask.dueDate)}.
           <span className="block text-muted-foreground">{openTask.detail}</span>
         </div>
       )}

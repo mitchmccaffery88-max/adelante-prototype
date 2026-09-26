@@ -1,3 +1,4 @@
+import { asamTaskDueLabel } from "@/lib/asam";
 // §Agentic Roadmap prototype — data layer for the three walkthrough screens.
 //
 // HARD RULE: the FACTS on these screens come out of the existing patient
@@ -135,7 +136,7 @@ export function chartReviewFacts(
   // §Phase 10c — ASAM facts (Part 2 gated; facts only, never a level suggestion).
   if (!sudLocked) {
     const asamTask = AdelanteEHR.openAsamTask(patientId);
-    if (asamTask) careGaps.push(`ASAM assessment needed — due ${asamTask.dueDate} (draft due date).`);
+    if (asamTask) careGaps.push(`ASAM assessment needed — ${asamTaskDueLabel(asamTask.dueDate)}.`);
     const pendingCosign = (patient.asamAssessments ?? []).find((a) => a.status === "cosign_pending");
     if (pendingCosign) careGaps.push("An ASAM assessment is awaiting LPHA co-signature.");
     const lastSigned = (patient.asamAssessments ?? []).find((a) => a.status === "signed");

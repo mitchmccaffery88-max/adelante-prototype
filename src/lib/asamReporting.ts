@@ -96,7 +96,8 @@ export function resolveStaff(assignee: string | undefined): { id: string; name: 
 const isAsamTask = (t: CaseTask) =>
   t.origin === "asam_needed" && (t.taskType === "asam_assessment") && t.status !== "done";
 
-export type AsamTaskState = "needed" | "due" | "overdue";
+import { asamTaskState, type AsamTaskState } from "@/lib/asam";
+export type { AsamTaskState };
 
 export interface AsamTaskRow {
   patientId: string;
@@ -112,14 +113,7 @@ export interface AsamTaskRow {
   reason: string;
 }
 
-/** DRAFT: "due" = within the next 7 days; "overdue" = past the due date. */
-function taskState(dueDate: string, now: Date): AsamTaskState {
-  const due = new Date(dueDate).getTime();
-  const today = new Date(now.toISOString().slice(0, 10)).getTime();
-  if (due < today) return "overdue";
-  if (due - today <= 7 * DAY) return "due";
-  return "needed";
-}
+const taskState = (dueDate: string, now: Date): AsamTaskState => asamTaskState(dueDate, now);
 
 const patientName = (p: Patient) => `${p.firstName} ${p.lastName}`.trim();
 

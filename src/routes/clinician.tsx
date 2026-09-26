@@ -3,7 +3,7 @@ import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -42,6 +42,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { roleSeesAsam } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
 import {
   assignmentIdentityFor,
@@ -1207,7 +1208,15 @@ function RefillReviewCardInner() {
   const [reason, setReason] = useState("");
   const [showHistory, setShowHistory] = useState(false);
 
-  const minePending = allPending.filter((r) => {
+  // Part 2: OUD/AUD medication refills show only to roles that pass the
+  // substance-use check for that patient (existing rule; no permission change).
+  const partTwoOk = (r: { patientId: string; medicationName: string }) => {
+    if (!isSudMedicationName(r.medicationName)) return true;
+    const p = patients.find((x) => x.id === r.patientId);
+    return p ? roleSeesAsam(role, p) : false;
+  };
+  const visiblePending = allPending.filter(partTwoOk);
+  const minePending = visiblePending.filter((r) => {
     const p = patients.find((x) => x.id === r.patientId);
     return p ? isAssignedTo(p, identity) : false;
   });
@@ -1216,10 +1225,10 @@ function RefillReviewCardInner() {
   const canScopeMine = iHaveAssignments && minePending.length > 0;
   const [scope, setScope] = useState<"mine" | "all">("mine");
   const effectiveScope = canScopeMine ? scope : "all";
-  const pending = effectiveScope === "mine" ? minePending : allPending;
+  const pending = effectiveScope === "mine" ? minePending : visiblePending;
 
   const reviewed = allRefills
-    .filter((r) => r.status !== "pending")
+    .filter((r) => r.status !== "pending" && partTwoOk(r))
     .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))
     .slice(0, 5);
 
@@ -1270,7 +1279,12 @@ function RefillReviewCardInner() {
                 <span className="text-navy dark:text-foreground">
                   {p ? `${p.firstName} ${p.lastName}` : r.patientId} · {r.medicationName}
                 </span>{" "}
-                — {r.status === "sent_to_pharmacy" ? "approved, sent to pharmacy" : r.status} by{" "}
+                — {r.status === "sent_to_pharmacy"
+                  ? "approved, sent to pharmacy"
+                  : r.status === "needs_appointment"
+                    ? "needs an appointment first"
+                    : r.status}{" "}
+                by{" "}
                 {refillReviewerLabel(r.reviewedBy, clinicians)}
                 {r.reviewedAt && (
                   <>

@@ -1,3 +1,4 @@
+import { asamTaskDueLabel } from "@/lib/asam";
 // §Dashboard Standardization Phase 5e — "Ask Adel", a WALKTHROUGH PROTOTYPE.
 //
 // This is a demo entry point, not a feature. Nothing here calls a model,
@@ -188,7 +189,7 @@ export const ASK_ADEL_QUESTIONS: AskAdelQuestion[] = [
         lines: rows.length
           ? rows.map(
               (r) =>
-                `${r.p.firstName} ${r.p.lastName} — ASAM assessment needed, due ${r.task.dueDate} (draft)`,
+                `${r.p.firstName} ${r.p.lastName} — ASAM assessment needed, ${asamTaskDueLabel(r.task.dueDate)}`,
             )
           : ["No one on your caseload has an open ASAM assessment task."],
         notes: [
