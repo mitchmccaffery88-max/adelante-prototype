@@ -1563,6 +1563,8 @@ export interface Patient {
    * the care plan until a clinician accepts one (attributed + audited).
    */
   suggestedGoals?: SuggestedGoal[];
+  /** §Needs step 3 — appointment requests waiting for staff confirmation. */
+  appointmentRequests?: AppointmentRequest[];
   /** §Phase 10c — ASAM assessments (Part 2 protected; see src/lib/asam.ts). */
   asamAssessments?: AsamAssessment[];
   progressNotes?: ProgressNote[];
@@ -1921,6 +1923,75 @@ export interface Appointment {
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
 }
+
+// ---------- §Needs step 3 — appointment requests (NOT bookings) ----------
+/**
+ * One per "Care you're looking for" selection. A request is never a booking:
+ * staff confirm it by booking a real slot through the existing booking flow
+ * (which closes it) or mark it "contacted, not booked" with a reason.
+ */
+export type AppointmentRequestKind = "therapy" | "medication" | "sud_assessment" | "help_choose";
+export type AppointmentRequestStatus = "requested" | "booked" | "contacted_not_booked";
+
+export interface AppointmentRequest {
+  id: string;
+  kind: AppointmentRequestKind;
+  status: AppointmentRequestStatus;
+  createdAt: string;
+  requestedBy: { id: string; role: string };
+  /** Draft, optional patient preferences. */
+  preferences?: { days?: string; times?: string; modality?: "in_person" | "video" };
+  /** Queue task (non-SUD). SUD requests link to the ASAM task instead. */
+  taskId?: string;
+  linkedAsamTaskId?: string;
+  closedAt?: string;
+  closedBy?: string;
+  closedByRole?: string;
+  bookedApptId?: string;
+  notBookedReason?: string;
+}
+
+/** Service types that satisfy each request kind (duplicate check + auto-close). */
+export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
+  therapy: ["therapy_individual", "intake"],
+  medication: ["med_management"],
+  // No dedicated ASAM service type: closes only when booked FROM the request.
+  sud_assessment: [],
+  help_choose: ["care_coordination", "case_management"],
+};
+
+/** Booking target when staff book from a request. */
+export const APPT_REQUEST_BOOK_AS: Record<AppointmentRequestKind, ServiceType> = {
+  therapy: "therapy_individual",
+  medication: "med_management",
+  sud_assessment: "intake",
+  help_choose: "care_coordination",
+};
+
+/** Staff-facing labels. SUD label is only rendered for Part 2-authorized roles. */
+export const APPT_REQUEST_STAFF_LABEL: Record<AppointmentRequestKind, string> = {
+  therapy: "1:1 therapy intake appointment",
+  medication: "Medication management (prescriber) appointment",
+  sud_assessment: "SUD assessment (ASAM) — first appointment",
+  help_choose: "Help me choose (care coordination)",
+};
+
+/** Masked title for anyone who fails the Part 2 check. */
+export const APPT_REQUEST_MASKED_LABEL = "Protected appointment request";
+
+/**
+ * Roles that book appointments today: the roles that can open the clinician
+ * workspace booking card (/clinician). SUD requests are further limited to
+ * the ASAM task roles AND the Part 2 check at render time.
+ */
+export const APPT_REQUEST_BOOKING_ROLES: StaffRole[] = [
+  "therapist",
+  "pmhnp",
+  "sud_counselor",
+  "clinical_trainee",
+  "ecm_provider",
+  "peer_specialist",
+];
 
 // ---------- Scheduling: service types + locations ----------
 
