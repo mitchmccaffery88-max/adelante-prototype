@@ -1976,6 +1976,13 @@ export const APPT_REQUEST_STAFF_LABEL: Record<AppointmentRequestKind, string> = 
   help_choose: "Help me choose (care coordination)",
 };
 
+export interface AppointmentRequestOutcome {
+  kind: AppointmentRequestKind;
+  outcome: "requested" | "already_scheduled" | "already_requested";
+  appt?: Appointment;
+  request?: AppointmentRequest;
+}
+
 /** Masked title for anyone who fails the Part 2 check. */
 export const APPT_REQUEST_MASKED_LABEL = "Protected appointment request";
 
@@ -12263,7 +12270,7 @@ export const AdelanteEHR = {
     sel: { mentalHealth?: boolean; medication?: boolean; substanceUse?: boolean; notSure?: boolean },
     actor: { id: string; role: string },
     preferences?: AppointmentRequest["preferences"],
-  ): { kind: AppointmentRequestKind; outcome: "requested" | "already_scheduled" | "already_requested"; appt?: Appointment; request?: AppointmentRequest }[] {
+  ): AppointmentRequestOutcome[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return [];
     const kinds: AppointmentRequestKind[] = sel.notSure
@@ -12274,7 +12281,7 @@ export const AdelanteEHR = {
           ...(sel.substanceUse ? (["sud_assessment"] as const) : []),
         ];
     const now = Date.now();
-    const out: ReturnType<typeof AdelanteEHR.createAppointmentRequests> = [];
+    const out: AppointmentRequestOutcome[] = [];
     for (const kind of kinds) {
       const types = APPT_REQUEST_SERVICE_TYPES[kind];
       const appt = appointments
