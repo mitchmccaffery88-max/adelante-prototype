@@ -66,7 +66,9 @@ export function TaskQueueCard({
   );
 
   const [showDone, setShowDone] = useState(false);
-  const list = showDone ? tasks : open;
+  // §Needs step 2 — same-day (stat/urgent) work sits at the top.
+  const rank = (t: CaseTask) => (t.priority === "stat" ? 0 : t.priority === "urgent" ? 1 : 2);
+  const list = [...(showDone ? tasks : open)].sort((a, b) => rank(a) - rank(b));
   const title = source.kind === "clinician_patients" ? "Follow-ups on my patients" : "My tasks";
 
   return (
