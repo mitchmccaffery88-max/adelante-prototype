@@ -38,6 +38,20 @@ export function roleSeesAsam(role: StaffRole, patient?: Patient): boolean {
 }
 
 /**
+ * §Protected medications — DRAFT pending compliance review. Until consents can
+ * name which roles/recipients they cover, these roles never see OUD/AUD
+ * medications or their refill rows, even with a substance-use consent on file.
+ * Same rule as the clinical coordinator. No other role changes.
+ */
+export const SUD_MED_WITHHELD_ROLES: readonly StaffRole[] = ["ecm_provider", "clinical_coordinator"];
+export const SUD_MED_ACCESS_NOTE =
+  "Protected medications hidden for your role until consents can name roles. Access rule: draft pending compliance review.";
+export function roleSeesSudMedication(role: StaffRole, patient?: Patient): boolean {
+  if (SUD_MED_WITHHELD_ROLES.includes(role)) return false;
+  return roleSeesAsam(role, patient);
+}
+
+/**
  * §10d-2 coordinator rule — DRAFT pending compliance review.
  * The clinical coordinator fails the role-level Part 2 check, but may see
  * ASAM/SUD TOTALS (counts, timeliness, level mix — no names, no drill-down).

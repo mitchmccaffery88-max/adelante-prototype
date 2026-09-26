@@ -42,7 +42,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
-import { roleSeesAsam } from "@/lib/asamReporting";
+import { roleSeesAsam, roleSeesSudMedication } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
 import {
   assignmentIdentityFor,
@@ -1209,11 +1209,12 @@ function RefillReviewCardInner() {
   const [showHistory, setShowHistory] = useState(false);
 
   // Part 2: OUD/AUD medication refills show only to roles that pass the
-  // substance-use check for that patient (existing rule; no permission change).
+  // substance-use check for that patient; ECM case manager and coordinator are
+  // withheld (Access rule: draft pending compliance review).
   const partTwoOk = (r: { patientId: string; medicationName: string }) => {
     if (!isSudMedicationName(r.medicationName)) return true;
     const p = patients.find((x) => x.id === r.patientId);
-    return p ? roleSeesAsam(role, p) : false;
+    return p ? roleSeesSudMedication(role, p) : false;
   };
   const visiblePending = allPending.filter(partTwoOk);
   const minePending = visiblePending.filter((r) => {
