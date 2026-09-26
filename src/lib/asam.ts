@@ -216,3 +216,30 @@ export function asamDueDate(input: {
 
 /** DRAFT reassessment interval: 90 days after a signed ASAM. */
 export const ASAM_REASSESSMENT_DAYS = 90;
+
+// ---------------------------------------------------------------------------
+// Shared due/overdue wording for "ASAM assessment needed" tasks. One rule for
+// My Work, the chart, Ask Adel, Guided Chart Review and ASAM reporting.
+// DRAFT: "due" = within the next 7 days; "overdue" = past the due date.
+// ---------------------------------------------------------------------------
+export type AsamTaskState = "needed" | "due" | "overdue";
+const ASAM_DAY = 86_400_000;
+
+export function asamTaskState(dueDate: string, now: Date = new Date()): AsamTaskState {
+  const due = new Date(dueDate.slice(0, 10)).getTime();
+  const today = new Date(now.toISOString().slice(0, 10)).getTime();
+  if (due < today) return "overdue";
+  if (due - today <= 7 * ASAM_DAY) return "due";
+  return "needed";
+}
+
+/** e.g. "overdue by 5 days (was due 2026-09-20, draft)" / "due 2026-10-01 (draft)". */
+export function asamTaskDueLabel(dueDate: string, now: Date = new Date()): string {
+  const day = dueDate.slice(0, 10);
+  if (asamTaskState(dueDate, now) === "overdue") {
+    const today = new Date(now.toISOString().slice(0, 10)).getTime();
+    const n = Math.round((today - new Date(day).getTime()) / ASAM_DAY);
+    return `overdue by ${n} day${n === 1 ? "" : "s"} (was due ${day}, draft)`;
+  }
+  return `due ${day} (draft)`;
+}
