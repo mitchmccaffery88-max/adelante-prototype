@@ -150,6 +150,7 @@ function ActiveSession({
 }) {
   const { staffName } = useActingStaff();
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
+  const sudOk = useSudMedFilter();
   const unreviewed = items.filter(
     (i) => i.source === "active_order" && i.decision === "not_reviewed",
   );
@@ -486,6 +487,7 @@ function HistoryRow({
   onToggle: () => void;
 }) {
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
+  const sudOk = useSudMedFilter();
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const i of items) c[i.decision] = (c[i.decision] ?? 0) + 1;
