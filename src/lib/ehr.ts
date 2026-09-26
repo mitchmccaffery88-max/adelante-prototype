@@ -23586,7 +23586,10 @@ try {
     });
   }
   // §Needs step 2 — Victor's "today" topic raises a same-day task (draft rule).
-  if (victor) AdelanteEHR.raiseNeedUrgencyTasks(victor);
+  if (victor) {
+    if (!patients.find((p) => p.id === victor)?.caseManagerId) AdelanteEHR.assignCaseManager({ patientId: victor, caseManagerId: "cm1", actorId: "demo seed" });
+    AdelanteEHR.raiseNeedUrgencyTasks(victor);
+  }
   // §Needs step 2 — Paloma tapped "connect me" on a need; pending with her
   // case manager (assigned through the normal assignment function).
   const palomaId = demoScenarioPatientId("medication");
