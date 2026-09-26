@@ -134,7 +134,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   kayla: {
     group: "Existing demo records",
     label: "Kayla's trainee visit (staff)",
-    hint: "Opens the cosign inbox: trainee note → supervisor cosign → signed claim on Billing",
+    hint: "Opens the cosign inbox: Kayla's note for Elena is owned by her supervisor Dr. Reyes only (other clinicians can't see it); Owen Tran's note for Paloma needs a supervisor (coordinator view)",
   },
 };
 
