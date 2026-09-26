@@ -5,6 +5,7 @@
 // inventing a stand-in — see the "Not built yet" chips and the gap list in the
 // build notes. Nothing here changes a data model, a gate, or an access check:
 // gated data is read through exactly the same call the detail surface uses.
+import { categoryName, provenanceFor, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import { Link } from "@tanstack/react-router";
 import {
@@ -588,6 +589,9 @@ export function HomeDashboard({
                     {SDOH_STATUS_LABEL[i.status] ?? i.status}
                   </Badge>
                 </div>
+                <p className="mt-1 text-[11px] text-muted-foreground" data-testid="sdoh-need-meta">
+                  {[categoryName(i.categoryId ?? match?.categoryIds[0]), `From ${provenanceFor(i.source)}`, i.urgency ? `Help needed: ${URGENCY_LABEL.en[i.urgency].toLowerCase()}` : null].filter(Boolean).join(" · ")}
+                </p>
                 <p className="mt-1 text-xs text-muted-foreground">
                   {count !== null
                     ? count === 1 ? "1 place matches" : `${count} places match`
