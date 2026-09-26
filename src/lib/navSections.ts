@@ -273,7 +273,7 @@ export const STAFF_NAV: NavEntry[] = [
     icon: ClipboardSignature,
     to: "/cosign-inbox",
     group: "queues",
-    gate: { kind: "record_class", anyOf: ["therapy_notes"] },
+    gate: { kind: "record_class", anyOf: ["therapy_notes", "staff_supervision"] },
   },
   {
     id: "crisis-queue",
