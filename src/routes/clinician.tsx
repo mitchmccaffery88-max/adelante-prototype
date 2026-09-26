@@ -42,7 +42,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
-import { roleSeesAsam, roleSeesSudMedication } from "@/lib/asamReporting";
+import { roleSeesAsam, roleSeesSudMedication, SUD_MED_WITHHELD_ROLES, SUD_MED_ACCESS_NOTE } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
 import {
   assignmentIdentityFor,
@@ -1253,10 +1253,15 @@ function RefillReviewCardInner() {
           onClick={() => setScope("all")}
           data-testid="refill-scope-all"
         >
-          All pending ({allPending.length})
+          All pending ({visiblePending.length})
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground">{CASELOAD_SCOPE_NOTE}</p>
+      {SUD_MED_WITHHELD_ROLES.includes(role) && (
+        <p className="text-[11px] text-muted-foreground" data-testid="refill-sud-withheld-note">
+          {SUD_MED_ACCESS_NOTE}
+        </p>
+      )}
     </div>
   );
 
