@@ -310,6 +310,12 @@ function IntakePage() {
     substanceUse: false,
     notSure: patient?.seeking?.notSure ?? false,
   }));
+  // §Needs step 3 — optional, draft appointment preferences.
+  const [apptPrefs, setApptPrefs] = useState<{ days: string; times: string; modality: "" | "in_person" | "video" }>({
+    days: "",
+    times: "",
+    modality: "",
+  });
   // §Needs step 1 — optional topics with one "how soon" follow-up each.
   const [topics, setTopics] = useState<Partial<Record<OptionalTopicKey, NeedUrgency | "">>>({});
   // Core AHC-HRSN questions are skipped (confirm instead) when the record
@@ -674,6 +680,20 @@ function IntakePage() {
       { id: currentId, role: "patient" },
       { sudConsentGiven: effectiveSud === true },
     );
+    // §Needs step 3 — one appointment REQUEST per selection (never a booking),
+    // de-duplicated against existing appointments and pending requests.
+    if (!inReassess) {
+      AdelanteEHR.createAppointmentRequests(
+        currentId,
+        seeking,
+        { id: currentId, role: "patient" },
+        {
+          ...(apptPrefs.days.trim() ? { days: apptPrefs.days.trim() } : {}),
+          ...(apptPrefs.times.trim() ? { times: apptPrefs.times.trim() } : {}),
+          ...(apptPrefs.modality ? { modality: apptPrefs.modality } : {}),
+        },
+      );
+    }
     // §Part B1 — advocate named at intake: a pending INVITATION only, through
     // the one existing mechanism. No access until the advocate claims and the
     // patient signs advocate consent; tier rules unchanged.
@@ -1498,6 +1518,44 @@ function IntakePage() {
                   <span>{H.notSure}</span>
                 </label>
                 <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
+                {(seeking.mentalHealth || seeking.medication || seeking.substanceUse || seeking.notSure) && (
+                  <div className="mt-2 space-y-2 rounded-md border border-dashed p-3" data-testid="appt-prefs">
+                    <p className="text-sm">
+                      {langKey === "es"
+                        ? "Pediremos una cita por ti. El equipo la confirmará. (Opcional)"
+                        : "We'll request an appointment for you — staff will confirm it. (Optional)"}
+                    </p>
+                    <Input
+                      placeholder={langKey === "es" ? "Días que te funcionan (ej. lunes, miércoles)" : "Days that work (e.g. Mon, Wed)"}
+                      value={apptPrefs.days}
+                      onChange={(e) => setApptPrefs({ ...apptPrefs, days: e.target.value })}
+                      data-testid="appt-pref-days"
+                    />
+                    <Input
+                      placeholder={langKey === "es" ? "Horas que te funcionan (ej. mañanas)" : "Times that work (e.g. mornings)"}
+                      value={apptPrefs.times}
+                      onChange={(e) => setApptPrefs({ ...apptPrefs, times: e.target.value })}
+                    />
+                    <div className="flex gap-2">
+                      {(["in_person", "video"] as const).map((m) => (
+                        <Button
+                          key={m}
+                          type="button"
+                          size="sm"
+                          variant={apptPrefs.modality === m ? "default" : "outline"}
+                          onClick={() => setApptPrefs({ ...apptPrefs, modality: apptPrefs.modality === m ? "" : m })}
+                        >
+                          {m === "video" ? "Video" : langKey === "es" ? "En persona" : "In person"}
+                        </Button>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      {langKey === "es"
+                        ? "Borrador — pendiente de revisión clínica. Traducción pendiente de revisión bilingüe."
+                        : "Draft — pending clinical review."}
+                    </p>
+                  </div>
+                )}
               </fieldset>
             )}
 

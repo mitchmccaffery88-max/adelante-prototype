@@ -1563,6 +1563,8 @@ export interface Patient {
    * the care plan until a clinician accepts one (attributed + audited).
    */
   suggestedGoals?: SuggestedGoal[];
+  /** §Needs step 3 — appointment requests waiting for staff confirmation. */
+  appointmentRequests?: AppointmentRequest[];
   /** §Phase 10c — ASAM assessments (Part 2 protected; see src/lib/asam.ts). */
   asamAssessments?: AsamAssessment[];
   progressNotes?: ProgressNote[];
@@ -1921,6 +1923,82 @@ export interface Appointment {
   /** When funding lane is ISL, why this encounter fell into ISL. */
   islReason?: "uninsured" | "benefit_exhausted" | "restricted_setting";
 }
+
+// ---------- §Needs step 3 — appointment requests (NOT bookings) ----------
+/**
+ * One per "Care you're looking for" selection. A request is never a booking:
+ * staff confirm it by booking a real slot through the existing booking flow
+ * (which closes it) or mark it "contacted, not booked" with a reason.
+ */
+export type AppointmentRequestKind = "therapy" | "medication" | "sud_assessment" | "help_choose";
+export type AppointmentRequestStatus = "requested" | "booked" | "contacted_not_booked";
+
+export interface AppointmentRequest {
+  id: string;
+  kind: AppointmentRequestKind;
+  status: AppointmentRequestStatus;
+  createdAt: string;
+  requestedBy: { id: string; role: string };
+  /** Draft, optional patient preferences. */
+  preferences?: { days?: string; times?: string; modality?: "in_person" | "video" };
+  /** Queue task (non-SUD). SUD requests link to the ASAM task instead. */
+  taskId?: string;
+  linkedAsamTaskId?: string;
+  closedAt?: string;
+  closedBy?: string;
+  closedByRole?: string;
+  bookedApptId?: string;
+  notBookedReason?: string;
+}
+
+/** Service types that satisfy each request kind (duplicate check + auto-close). */
+export const APPT_REQUEST_SERVICE_TYPES: Record<AppointmentRequestKind, ServiceType[]> = {
+  therapy: ["therapy_individual", "intake"],
+  medication: ["med_management"],
+  // No dedicated ASAM service type: closes only when booked FROM the request.
+  sud_assessment: [],
+  help_choose: ["care_coordination", "case_management"],
+};
+
+/** Booking target when staff book from a request. */
+export const APPT_REQUEST_BOOK_AS: Record<AppointmentRequestKind, ServiceType> = {
+  therapy: "therapy_individual",
+  medication: "med_management",
+  sud_assessment: "intake",
+  help_choose: "care_coordination",
+};
+
+/** Staff-facing labels. SUD label is only rendered for Part 2-authorized roles. */
+export const APPT_REQUEST_STAFF_LABEL: Record<AppointmentRequestKind, string> = {
+  therapy: "1:1 therapy intake appointment",
+  medication: "Medication management (prescriber) appointment",
+  sud_assessment: "SUD assessment (ASAM) — first appointment",
+  help_choose: "Help me choose (care coordination)",
+};
+
+export interface AppointmentRequestOutcome {
+  kind: AppointmentRequestKind;
+  outcome: "requested" | "already_scheduled" | "already_requested";
+  appt?: Appointment;
+  request?: AppointmentRequest;
+}
+
+/** Masked title for anyone who fails the Part 2 check. */
+export const APPT_REQUEST_MASKED_LABEL = "Protected appointment request";
+
+/**
+ * Roles that book appointments today: the roles that can open the clinician
+ * workspace booking card (/clinician). SUD requests are further limited to
+ * the ASAM task roles AND the Part 2 check at render time.
+ */
+export const APPT_REQUEST_BOOKING_ROLES: StaffRole[] = [
+  "therapist",
+  "pmhnp",
+  "sud_counselor",
+  "clinical_trainee",
+  "ecm_provider",
+  "peer_specialist",
+];
 
 // ---------- Scheduling: service types + locations ----------
 
@@ -4557,6 +4635,44 @@ const referrals: Referral[] = [
     welcomeSms: { status: "sent" as const, at: ago(2 - 0.05) },
   },
 ];
+
+/**
+ * §Needs step 3 — a booking closes the matching open appointment request:
+ * explicitly when booked FROM a request, otherwise the first open request
+ * whose kind the booked service type satisfies. SUD requests close only
+ * explicitly (no dedicated ASAM service type).
+ */
+function _closeRequestsOnBooking(
+  a: Appointment,
+  requestId: string | undefined,
+  by: { id: string; role: string } | undefined,
+) {
+  const p = patients.find((x) => x.id === a.patientId);
+  const open = (p?.appointmentRequests ?? []).filter((r) => r.status === "requested");
+  const req = requestId
+    ? open.find((r) => r.id === requestId)
+    : a.serviceType
+      ? open.find((r) => APPT_REQUEST_SERVICE_TYPES[r.kind].includes(a.serviceType!))
+      : undefined;
+  if (!p || !req) return;
+  Object.assign(req, {
+    status: "booked",
+    closedAt: new Date().toISOString(),
+    closedBy: by?.id ?? (a.source === "self_scheduled" ? p.id : "staff"),
+    closedByRole: by?.role ?? (a.source === "self_scheduled" ? "patient" : undefined),
+    bookedApptId: a.id,
+  });
+  if (req.taskId) AdelanteEHR.completeCaseTask(req.taskId);
+  appendAudit({
+    category: "clinical",
+    action: "appointment_request_booked",
+    patientId: p.id,
+    actorId: req.closedBy!,
+    ...(req.closedByRole && req.closedByRole !== "patient" ? { actorRole: req.closedByRole as StaffRole } : {}),
+    // Kind withheld for SUD so the audit body carries no Part 2 detail.
+    detail: { requestId: req.id, apptId: a.id, protected: req.kind === "sud_assessment" },
+  });
+}
 
 function _careCoordinationWriteRoles(): StaffRole[] {
   return STAFF_ROLES.map((s) => s.key).filter(
@@ -8164,6 +8280,10 @@ export const AdelanteEHR = {
      * judged to be fine). Never set from patient self-booking.
      */
     allowPatientOverlap?: boolean;
+    /** §Needs step 3 — booking FROM an appointment request closes it. */
+    requestId?: string;
+    /** Who booked (for request-close attribution). */
+    bookedBy?: { id: string; role: string };
   }) {
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
@@ -8193,7 +8313,7 @@ export const AdelanteEHR = {
       const own = _patientOverlap(input.patientId, input.start, input.durationMin);
       if (own) throw new Error(_patientOverlapMessage(own));
     }
-    const { allowPatientOverlap: _ignored, ...fields } = input;
+    const { allowPatientOverlap: _ignored, requestId, bookedBy, ...fields } = input;
     const a: Appointment = {
       ...fields,
       source: input.source ?? "staff_scheduled",
@@ -8201,6 +8321,7 @@ export const AdelanteEHR = {
       status: "scheduled",
     };
     appointments.push(a);
+    _closeRequestsOnBooking(a, requestId, bookedBy);
     // Detect provider switch vs. patient's last provider (same service type when set).
     const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
     if (prevProvider && prevProvider !== a.clinicianId) {
@@ -12136,6 +12257,149 @@ export const AdelanteEHR = {
     }
     return out;
   },
+
+  /**
+   * §Needs step 3 — one appointment request per "Care you're looking for"
+   * selection, de-duplicated against (a) an existing scheduled appointment of
+   * that service type and (b) an existing pending request of that kind. A
+   * duplicate creates NOTHING and is reported back so the UI can say
+   * "Already scheduled for you" / "Already requested".
+   */
+  createAppointmentRequests(
+    patientId: string,
+    sel: { mentalHealth?: boolean; medication?: boolean; substanceUse?: boolean; notSure?: boolean },
+    actor: { id: string; role: string },
+    preferences?: AppointmentRequest["preferences"],
+  ): AppointmentRequestOutcome[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const kinds: AppointmentRequestKind[] = sel.notSure
+      ? ["help_choose"]
+      : [
+          ...(sel.mentalHealth ? (["therapy"] as const) : []),
+          ...(sel.medication ? (["medication"] as const) : []),
+          ...(sel.substanceUse ? (["sud_assessment"] as const) : []),
+        ];
+    const now = Date.now();
+    const out: AppointmentRequestOutcome[] = [];
+    for (const kind of kinds) {
+      const types = APPT_REQUEST_SERVICE_TYPES[kind];
+      const appt = appointments
+        .filter(
+          (a) =>
+            a.patientId === patientId &&
+            a.status === "scheduled" &&
+            +new Date(a.start) > now &&
+            a.serviceType &&
+            types.includes(a.serviceType),
+        )
+        .sort((x, y) => +new Date(x.start) - +new Date(y.start))[0];
+      if (appt) {
+        out.push({ kind, outcome: "already_scheduled", appt });
+        continue;
+      }
+      const pending = (p.appointmentRequests ?? []).find((r) => r.kind === kind && r.status === "requested");
+      if (pending) {
+        out.push({ kind, outcome: "already_requested", request: pending });
+        continue;
+      }
+      const req: AppointmentRequest = {
+        id: uid(),
+        kind,
+        status: "requested",
+        createdAt: new Date().toISOString(),
+        requestedBy: actor,
+        ...(preferences && Object.values(preferences).some(Boolean) ? { preferences } : {}),
+      };
+      if (kind === "sud_assessment") {
+        // Linked to the ONE "ASAM assessment needed" task (or the open ASAM
+        // reassessment task) — never a second parallel task.
+        const asam =
+          AdelanteEHR.openAsamTask(patientId) ??
+          caseTasks.find((t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done");
+        if (asam) {
+          req.linkedAsamTaskId = asam.id;
+          if (asam.detail && !asam.detail.includes("appointment requested")) {
+            asam.detail = `${asam.detail} First appointment requested by the patient — book it from the scheduling queue.`;
+          }
+        }
+      } else {
+        const t = AdelanteEHR.createCaseTask({
+          patientId,
+          assignedTo: "",
+          allowedRoles: kind === "help_choose" ? _careCoordinationWriteRoles() : [...APPT_REQUEST_BOOKING_ROLES],
+          title: `Appointment request — ${APPT_REQUEST_STAFF_LABEL[kind]}`,
+          detail: `Requested at intake — waiting for staff confirmation. Book a real slot through the booking flow (closes this request) or mark "contacted, not booked".`,
+          dueDate: new Date(now + 3 * 86400000).toISOString().slice(0, 10),
+          origin: "manual",
+          taskType: "appointment_request",
+          dedupeKey: `appt-request:${req.id}`,
+          priority: "routine",
+        });
+        if (t) req.taskId = t.id;
+      }
+      p.appointmentRequests = [...(p.appointmentRequests ?? []), req];
+      out.push({ kind, outcome: "requested", request: req });
+    }
+    if (out.length) {
+      appendAudit({
+        category: "clinical",
+        action: "appointment_requests_created",
+        patientId,
+        actorId: actor.id,
+        ...(actor.role !== "patient" ? { actorRole: actor.role as StaffRole } : {}),
+        // Counts only; the SUD kind is never named in the audit body.
+        detail: {
+          requested: out.filter((o) => o.outcome === "requested").length,
+          duplicatesSkipped: out.filter((o) => o.outcome !== "requested").length,
+        },
+      });
+      emit();
+    }
+    return out;
+  },
+
+  listAppointmentRequests(patientId: string): AppointmentRequest[] {
+    return patients.find((x) => x.id === patientId)?.appointmentRequests ?? [];
+  },
+
+  /** Every open request across patients (scheduling queue). Filter by role in the UI. */
+  listOpenAppointmentRequests(): { patient: Patient; request: AppointmentRequest }[] {
+    return patients.flatMap((p) =>
+      (p.appointmentRequests ?? []).filter((r) => r.status === "requested").map((request) => ({ patient: p, request })),
+    );
+  },
+
+  /** Staff: "contacted, not booked" with a reason. Attributed + audited. */
+  markAppointmentRequestNotBooked(
+    patientId: string,
+    requestId: string,
+    reason: string,
+    by: { id: string; name: string; role: StaffRole },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const req = p?.appointmentRequests?.find((r) => r.id === requestId && r.status === "requested");
+    if (!p || !req) return;
+    if (!reason.trim()) throw new Error("Add a reason.");
+    Object.assign(req, {
+      status: "contacted_not_booked",
+      closedAt: new Date().toISOString(),
+      closedBy: by.name,
+      closedByRole: by.role,
+      notBookedReason: reason.trim(),
+    });
+    if (req.taskId) AdelanteEHR.completeCaseTask(req.taskId);
+    appendAudit({
+      category: "clinical",
+      action: "appointment_request_not_booked",
+      patientId,
+      actorId: by.id,
+      actorRole: by.role,
+      detail: { requestId, protected: req.kind === "sud_assessment" },
+    });
+    emit();
+  },
+
 
   setSdohStatus(
     patientId: string,
@@ -23618,3 +23882,38 @@ try {
   if (typeof console !== "undefined") console.warn("[demo seed] outpatient meds", e);
 }
 
+
+// §Needs step 3 — appointment request demo data, through the real store API.
+try {
+  const SYS = { id: "demo-seed", role: "patient" };
+  const therapist = AdelanteEHR.listClinicians().find(
+    (c) => (!c.services || c.services.includes("therapy_individual")) && AdelanteEHR.canBook(c.id).ok,
+  );
+  const slot = (daysAhead: number, hour: number) => {
+    const d = new Date(Date.now() + daysAhead * 86400000);
+    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
+    d.setHours(hour, 0, 0, 0);
+    return d.toISOString();
+  };
+  // 2a Elena — a pending 1:1 therapy request.
+  const elenaId = demoScenarioPatientId("mh_only");
+  if (elenaId) AdelanteEHR.createAppointmentRequests(elenaId, { mentalHealth: true }, SYS, { days: "Tue, Thu", modality: "video" });
+  // 5 Carmen — referred; staff already booked her therapy intake from the
+  // referral. When she completes intake and picks counseling, no request is
+  // created and My Care shows "Already scheduled for you".
+  const carmenId = demoScenarioPatientId("public_referral");
+  if (carmenId && therapist) {
+    AdelanteEHR.bookAppointment({ patientId: carmenId, clinicianId: therapist.id, start: slot(9, 11), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled" });
+  }
+  // 4 Tomás — pre-release team arranged his first counseling visit; when he
+  // completes intake and picks counseling, no new request is created.
+  const tomasP = patients.find((p) => p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName && p.lastName === DEMO_PRE_RELEASE_PERSONA.lastName);
+  if (tomasP && therapist) {
+    AdelanteEHR.bookAppointment({ patientId: tomasP.id, clinicianId: therapist.id, start: slot(12, 14), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "pre_release" });
+  }
+  // 2c Luis — SUD assessment request linked to his ASAM task (no parallel task).
+  const luisId = demoScenarioPatientId("sud_consented");
+  if (luisId) AdelanteEHR.createAppointmentRequests(luisId, { substanceUse: true }, { id: luisId, role: "patient" });
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
+}

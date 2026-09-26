@@ -1,3 +1,4 @@
+import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
 // §Clinical record — single source of truth for chart sections.
 // Both the quick-peek drawer and the full-page chart derive their navigation,
 // gating and content from this registry, so neither can drift from the other.
@@ -372,7 +373,12 @@ export function useRecordSections(
     group: "case",
     alwaysVisible: true,
     count: counts.tasks,
-    render: () => <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />,
+    render: () => (
+      <div className="space-y-4">
+        <AppointmentRequestsCard patientId={pid} />
+        <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />
+      </div>
+    ),
   });
   add("peer_notes", {
     id: "peer",

@@ -64,7 +64,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   mh_only: {
     group: "Intake by need",
     label: "2a · Elena V. — Mental health only",
-    hint: "Intake done: PHQ-9, GAD-7, PC-PTSD-5, AHC-HRSN. No substance-use tools or Recovery Journey",
+    hint: "Intake done: PHQ-9, GAD-7, PC-PTSD-5, AHC-HRSN. No substance-use tools or Recovery Journey; therapy appointment request pending staff confirmation",
   },
   medication: {
     group: "Intake by need",
@@ -74,7 +74,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_consented: {
     group: "Intake by need",
     label: "2c · Luis C. — Substance use (Part 2 consent)",
-    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown",
+    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; SUD assessment appointment request linked to his ASAM task (clinical roles only)",
   },
   combination: {
     group: "Intake by need",
@@ -94,12 +94,12 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   pre_release: {
     group: "Justice",
     label: "4 · Tomás R. — Pre-release referred",
-    hint: "Pre-populated record, live enrollment code, intake not started; intake shows pre-release needs as \"already knows about\" to confirm, not re-asked",
+    hint: "Pre-populated record, live enrollment code, intake not started; intake shows pre-release needs as \"already knows about\" to confirm, not re-asked; pre-release team already booked his first counseling visit, so picking counseling makes no new request",
   },
   public_referral: {
     group: "Referral",
     label: "5 · Carmen I. — Public referral form",
-    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff",
+    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"",
   },
   advocate: {
     group: "Advocates",
