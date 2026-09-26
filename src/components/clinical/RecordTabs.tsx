@@ -1,7 +1,7 @@
 import { categoryName, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { SDOH_SOURCE_LABEL as _SRC } from "@/lib/ehr";
-{ CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
+import { CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
 import { CSSRS_KEY } from "@/lib/cssrs";
 // §Clinical record tab bodies — extracted from ClientRecordDrawer so the
 // quick-peek drawer and the full-page chart render the SAME components.
