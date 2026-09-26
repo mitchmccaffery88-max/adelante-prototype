@@ -12251,6 +12251,149 @@ export const AdelanteEHR = {
     return out;
   },
 
+  /**
+   * §Needs step 3 — one appointment request per "Care you're looking for"
+   * selection, de-duplicated against (a) an existing scheduled appointment of
+   * that service type and (b) an existing pending request of that kind. A
+   * duplicate creates NOTHING and is reported back so the UI can say
+   * "Already scheduled for you" / "Already requested".
+   */
+  createAppointmentRequests(
+    patientId: string,
+    sel: { mentalHealth?: boolean; medication?: boolean; substanceUse?: boolean; notSure?: boolean },
+    actor: { id: string; role: string },
+    preferences?: AppointmentRequest["preferences"],
+  ): { kind: AppointmentRequestKind; outcome: "requested" | "already_scheduled" | "already_requested"; appt?: Appointment; request?: AppointmentRequest }[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const kinds: AppointmentRequestKind[] = sel.notSure
+      ? ["help_choose"]
+      : [
+          ...(sel.mentalHealth ? (["therapy"] as const) : []),
+          ...(sel.medication ? (["medication"] as const) : []),
+          ...(sel.substanceUse ? (["sud_assessment"] as const) : []),
+        ];
+    const now = Date.now();
+    const out: ReturnType<typeof AdelanteEHR.createAppointmentRequests> = [];
+    for (const kind of kinds) {
+      const types = APPT_REQUEST_SERVICE_TYPES[kind];
+      const appt = appointments
+        .filter(
+          (a) =>
+            a.patientId === patientId &&
+            a.status === "scheduled" &&
+            +new Date(a.start) > now &&
+            a.serviceType &&
+            types.includes(a.serviceType),
+        )
+        .sort((x, y) => +new Date(x.start) - +new Date(y.start))[0];
+      if (appt) {
+        out.push({ kind, outcome: "already_scheduled", appt });
+        continue;
+      }
+      const pending = (p.appointmentRequests ?? []).find((r) => r.kind === kind && r.status === "requested");
+      if (pending) {
+        out.push({ kind, outcome: "already_requested", request: pending });
+        continue;
+      }
+      const req: AppointmentRequest = {
+        id: uid(),
+        kind,
+        status: "requested",
+        createdAt: new Date().toISOString(),
+        requestedBy: actor,
+        ...(preferences && Object.values(preferences).some(Boolean) ? { preferences } : {}),
+      };
+      if (kind === "sud_assessment") {
+        // Linked to the ONE "ASAM assessment needed" task (or the open ASAM
+        // reassessment task) — never a second parallel task.
+        const asam =
+          AdelanteEHR.openAsamTask(patientId) ??
+          caseTasks.find((t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done");
+        if (asam) {
+          req.linkedAsamTaskId = asam.id;
+          if (asam.detail && !asam.detail.includes("appointment requested")) {
+            asam.detail = `${asam.detail} First appointment requested by the patient — book it from the scheduling queue.`;
+          }
+        }
+      } else {
+        const t = AdelanteEHR.createCaseTask({
+          patientId,
+          assignedTo: "",
+          allowedRoles: kind === "help_choose" ? _careCoordinationWriteRoles() : [...APPT_REQUEST_BOOKING_ROLES],
+          title: `Appointment request — ${APPT_REQUEST_STAFF_LABEL[kind]}`,
+          detail: `Requested at intake — waiting for staff confirmation. Book a real slot through the booking flow (closes this request) or mark "contacted, not booked".`,
+          dueDate: new Date(now + 3 * 86400000).toISOString().slice(0, 10),
+          origin: "manual",
+          taskType: "appointment_request",
+          dedupeKey: `appt-request:${req.id}`,
+          priority: "routine",
+        });
+        if (t) req.taskId = t.id;
+      }
+      p.appointmentRequests = [...(p.appointmentRequests ?? []), req];
+      out.push({ kind, outcome: "requested", request: req });
+    }
+    if (out.length) {
+      appendAudit({
+        category: "clinical",
+        action: "appointment_requests_created",
+        patientId,
+        actorId: actor.id,
+        ...(actor.role !== "patient" ? { actorRole: actor.role as StaffRole } : {}),
+        // Counts only; the SUD kind is never named in the audit body.
+        detail: {
+          requested: out.filter((o) => o.outcome === "requested").length,
+          duplicatesSkipped: out.filter((o) => o.outcome !== "requested").length,
+        },
+      });
+      emit();
+    }
+    return out;
+  },
+
+  listAppointmentRequests(patientId: string): AppointmentRequest[] {
+    return patients.find((x) => x.id === patientId)?.appointmentRequests ?? [];
+  },
+
+  /** Every open request across patients (scheduling queue). Filter by role in the UI. */
+  listOpenAppointmentRequests(): { patient: Patient; request: AppointmentRequest }[] {
+    return patients.flatMap((p) =>
+      (p.appointmentRequests ?? []).filter((r) => r.status === "requested").map((request) => ({ patient: p, request })),
+    );
+  },
+
+  /** Staff: "contacted, not booked" with a reason. Attributed + audited. */
+  markAppointmentRequestNotBooked(
+    patientId: string,
+    requestId: string,
+    reason: string,
+    by: { id: string; name: string; role: StaffRole },
+  ) {
+    const p = patients.find((x) => x.id === patientId);
+    const req = p?.appointmentRequests?.find((r) => r.id === requestId && r.status === "requested");
+    if (!p || !req) return;
+    if (!reason.trim()) throw new Error("Add a reason.");
+    Object.assign(req, {
+      status: "contacted_not_booked",
+      closedAt: new Date().toISOString(),
+      closedBy: by.name,
+      closedByRole: by.role,
+      notBookedReason: reason.trim(),
+    });
+    if (req.taskId) AdelanteEHR.completeCaseTask(req.taskId);
+    appendAudit({
+      category: "clinical",
+      action: "appointment_request_not_booked",
+      patientId,
+      actorId: by.id,
+      actorRole: by.role,
+      detail: { requestId, protected: req.kind === "sud_assessment" },
+    });
+    emit();
+  },
+
+
   setSdohStatus(
     patientId: string,
     itemId: string,
