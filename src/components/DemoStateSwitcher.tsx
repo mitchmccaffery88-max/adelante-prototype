@@ -380,14 +380,14 @@ export function DemoStateSwitcher() {
         <DropdownMenuTrigger
           data-testid="demo-state-switcher"
           aria-label="Demo control: QA scenario"
-          className="inline-flex min-h-[32px] items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur hover:bg-secondary"
+          className="inline-flex w-full min-h-[32px] min-w-0 items-center gap-1.5 rounded-full sm:w-auto border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm backdrop-blur hover:bg-secondary"
         >
-          <FlaskConical className="h-3.5 w-3.5 text-teal" />
-          <span className="max-w-[7.5rem] truncate sm:max-w-[14rem]">
+          <FlaskConical className="h-3.5 w-3.5 shrink-0 text-teal" />
+          <span className="min-w-0 flex-1 truncate text-left sm:max-w-[14rem]">
             <span className="text-muted-foreground">QA: </span>
             {active ? STATE_LABEL[active].label.split(" — ")[0] : "choose a scenario"}
           </span>
-          <ChevronDown className="h-3 w-3 opacity-60" />
+          <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
         </DropdownMenuTrigger>
         <DropdownMenuContent align="end" className="w-80 max-h-[75vh] overflow-y-auto">
           <DropdownMenuLabel className="text-xs text-muted-foreground">
