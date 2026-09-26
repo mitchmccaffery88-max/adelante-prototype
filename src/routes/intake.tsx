@@ -25,6 +25,7 @@ import {
 } from "@/lib/ehr";
 // §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
 import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
+import { IntakeMatchPreview } from "@/components/patient/NeedConnect";
 import {
   OPTIONAL_TOPICS,
   URGENCIES,
@@ -645,6 +646,11 @@ function IntakePage() {
           ...(topics[t.key] ? { urgency: topics[t.key] as NeedUrgency } : {}),
         })),
       ],
+    });
+    // §Needs step 2 — same-day tasks (draft rule): a "today" topic, no steady
+    // place to live, or an interpersonal-safety positive (staff only).
+    AdelanteEHR.raiseNeedUrgencyTasks(currentId, {
+      housingUnstable: askCore && choices["ahc-hrsn"]?.[0] === 2,
     });
     AdelanteEHR.completeIntake(currentId, {
       // Backward compatibility: the four booleans still reflect what intake
@@ -1635,6 +1641,12 @@ function IntakePage() {
                   );
                 })}
               </div>
+              <IntakeMatchPreview
+                categoryIds={[
+                  ...OPTIONAL_TOPICS.filter((t) => topics[t.key] !== undefined).map((t) => t.categoryId),
+                ]}
+                lang={langKey}
+              />
             </section>
           </div>
         )}

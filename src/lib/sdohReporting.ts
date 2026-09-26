@@ -51,6 +51,8 @@ export interface GuardedFunnelBreakdown extends CohortGuard {
 export interface SdohFunnel extends CohortGuard {
   /** Every need on the cohort's records. */
   identified: number;
+  /** §Needs step 2 — needs where the patient asked to be connected. */
+  connectRequested: number;
   /** Needs with at least one referral. */
   referred: number;
   /** Needs with at least one referral whose outcome is `connected`. */
