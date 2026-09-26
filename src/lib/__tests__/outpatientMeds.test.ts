@@ -38,7 +38,7 @@ describe("outpatient medication demo seed", () => {
     expect(isSudMedicationName(bn.name)).toBe(true);
     const p = AdelanteEHR.getPatient(id)!;
     expect(roleSeesAsam("therapist", p)).toBe(true);
-    expect(roleSeesAsam("case_manager", p)).toBe(false);
+    expect(roleSeesAsam("ecm_provider", p)).toBe(false);
     const tasks = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === id && t.title.startsWith("Refill"));
     expect(tasks.length).toBeGreaterThan(0);
     expect(tasks.every((t) => !/buprenorphine/i.test(t.title + (t.detail ?? "")))).toBe(true);
