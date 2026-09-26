@@ -9919,7 +9919,7 @@ export const AdelanteEHR = {
    */
   recordSeeking(
     patientId: string,
-    answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean },
+    answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean; notSure?: boolean },
     actor: { id: string; role: string },
     /** Part 2 consent given in this same intake (the ledger may lag). */
     opts?: { sudConsentGiven?: boolean },
@@ -9942,6 +9942,7 @@ export const AdelanteEHR = {
       answeredAt: now,
       substanceUse: answer.substanceUse,
       ...(answer.substanceUse ? { part2ConsentAtSelection: sudAllowed } : {}),
+      ...(answer.notSure ? { notSure: true } : {}),
     };
     const sudKept = answer.substanceUse && sudAllowed;
     if (answer.substanceUse) p.needs = { ...p.needs, substanceUse: true };

@@ -115,6 +115,8 @@ function finalize(ids: string[], categoryOnly: boolean, reason?: string): NeedRe
  * than guessing.
  */
 export function matchResourcesForNeed(item: SdohPlanItem): NeedResourceMatch | null {
+  // §Needs step 1 — a structured category wins; safety stays category-only.
+  if (item.categoryId && !item.safetySensitive) return finalize([item.categoryId], false);
   for (const key of INTAKE_NEED_KEYS) {
     if (itemMatchesIntakeKey(item, key)) return finalize(INTAKE_KEY_CATEGORIES[key], false);
   }
