@@ -70,6 +70,7 @@ import {
 } from "@/lib/reentryDayZero";
 import { ADHERENCE_TONE } from "@/lib/medAdherence";
 import { apptPrepTip } from "@/lib/apptPrep";
+import { ApptRequestStates } from "@/components/patient/ApptRequestStates";
 import { marRowLabel } from "@/lib/mar";
 import { toast } from "sonner";
 import { ConnectMeButton } from "@/components/patient/NeedConnect";
@@ -481,6 +482,7 @@ export function HomeDashboard({
                 </Button>
               </>
             )}
+            <ApptRequestStates patientId={patientId} />
           </TileShell>
     ),
   });
