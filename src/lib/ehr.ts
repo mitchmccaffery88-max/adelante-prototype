@@ -24008,7 +24008,7 @@ try {
   // Reyes) has a pending cosign only Reyes owns; Owen (no supervisor) has one
   // in "needs a supervisor".
   {
-    const seedCosign = (scenario: DemoScenarioKey, author: { token: string; name: string }, text: string) => {
+    const seedCosign = (scenario: keyof typeof DEMO_SCENARIO_PERSONAS, author: { token: string; name: string }, text: string) => {
       const pid = demoScenarioPatientId(scenario);
       const pt = patients.find((x) => x.id === pid);
       if (!pid || !pt || pt.progressNotes?.some((n) => n.clinicianId === author.token && n.status === "cosign_pending")) return;
