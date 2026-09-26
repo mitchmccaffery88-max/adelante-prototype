@@ -16,9 +16,27 @@ import {
   mergeBlockers,
   type AttestationDraft,
 } from "@/lib/attestation";
-import { AdelanteEHR, isNoteSudSensitive, useEhr, type Patient, type ProgressNote } from "@/lib/ehr";
+import {
+  AdelanteEHR,
+  COSIGN_ROUTING_ROLES,
+  asamCosignOwnership,
+  isCosignOwner,
+  isNoteSudSensitive,
+  noteCosignOwnership,
+  useEhr,
+  type CosignOwnership,
+  type Patient,
+  type ProgressNote,
+} from "@/lib/ehr";
 import { canSignNotes, isMyCosign } from "@/lib/notes";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, supervisorCandidates, useActingStaff, useSupervisionStatus } from "@/lib/roles";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
 import { ASAM_DRAFT_NOTE, ASAM_SIGN_ROLES, dmcOdsLevelLabel } from "@/lib/asam";
 import { cosignAsamAssessment } from "@/lib/asamFlow";
 import { Badge } from "@/components/ui/badge";
@@ -53,8 +71,11 @@ export const Route = createFileRoute("/cosign-inbox")({
 
 
 function CosignInboxPage() {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId, clinicianId } = useActingStaff();
   const access = canAccess(role, "therapy_notes");
+  const isRouter = COSIGN_ROUTING_ROLES.includes(role);
+  // Ownership follows the live supervision link; re-render when it changes.
+  useSupervisionStatus(staffId);
   const pending = useEhr(() => AdelanteEHR.listNotesAwaitingCosign());
   const [openId, setOpenId] = useState<string | null>(null);
 
@@ -62,10 +83,30 @@ function CosignInboxPage() {
     const mine: typeof pending = [];
     const others: typeof pending = [];
     for (const row of pending) {
-      (isMyCosign(row.note, { role, staffName }) ? mine : others).push(row);
+      if (isMyCosign(row.note, { role, staffName, staffId, clinicianId })) mine.push(row);
+      // Supervisor-owned and "needs a supervisor" notes are never shown to
+      // other clinicians — only pool-routed notes appear for coordination.
+      else if (noteCosignOwnership(row.note).kind === "pool") others.push(row);
     }
     return { mine, others };
-  }, [pending, role, staffName]);
+  }, [pending, role, staffName, staffId, clinicianId]);
+
+  if (isRouter && access.level === "none") {
+    return (
+      <div className="mx-auto max-w-4xl space-y-5 px-4 py-6">
+        <header>
+          <h1 className="font-display text-2xl text-navy flex items-center gap-2">
+            <Inbox className="h-5 w-5 text-teal" /> Cosign routing
+          </h1>
+          <p className="text-sm text-muted-foreground">
+            Who owns each pending cosign. Note content is not shown to your role. Reassigning
+            requires a reason and is audited.
+          </p>
+        </header>
+        <CosignRoutingSection />
+      </div>
+    );
+  }
 
   if (access.level === "none") {
     return (
@@ -125,21 +166,25 @@ function AsamCosignSection() {
   const [reason, setReason] = useState("");
   const [openId, setOpenId] = useState<string | null>(null);
   if (!ASAM_SIGN_ROLES.includes(role)) return null;
+  const visible = rows.filter(({ asam }) => {
+    const own = asamCosignOwnership(asam);
+    return own.kind === "pool" || isCosignOwner(own, [staffId, clinicianId]);
+  });
 
   const actor = { staffId, name: staffName, role, clinicianId };
   return (
     <section className="space-y-2" data-testid="asam-cosign-section">
       <h2 className="font-display text-sm text-navy">
         ASAM assessments awaiting LPHA co-signature{" "}
-        <span className="text-muted-foreground">({rows.length})</span>
+        <span className="text-muted-foreground">({visible.length})</span>
       </h2>
       <p className="text-[11px] text-muted-foreground">
         {ASAM_DRAFT_NOTE}. Episode, claim, CalOMS prompt and care-plan outputs fire only when you co-sign.
       </p>
-      {rows.length === 0 && (
+      {visible.length === 0 && (
         <Card className="p-3 text-xs text-muted-foreground">No ASAM assessments are waiting.</Card>
       )}
-      {rows.map(({ patient, asam }) => (
+      {visible.map(({ patient, asam }) => (
         <Card key={asam.id} className="p-3" data-testid={`asam-cosign-${asam.id}`}>
           <button
             type="button"
@@ -322,11 +367,12 @@ function CosignDetail({
     try {
       AdelanteEHR.declineProgressNoteCosign(patientId, note.id, {
         declinedBy: staffName,
+        declinedById: clinicianId ?? staffId,
         role,
         reason,
       });
       toast.success("Cosign declined — note returned to draft", {
-        description: "No orders were voided: Adelante has no note-to-order link yet.",
+        description: "Draft orders from this visit were removed; active ones are flagged for review.",
       });
     } catch (e) {
       toast.error((e as Error).message);
@@ -403,8 +449,8 @@ function CosignDetail({
               Decline & return to draft
             </Button>
             <p className="text-[10px] text-muted-foreground">
-              Known gap: the reference EMR also voids orders signed in the same encounter. Adelante
-              has no note-to-order link, so no orders are voided here.
+              Declining removes draft orders created from this visit and flags any active ones
+              for prescriber review.
             </p>
           </div>
         </div>
@@ -414,5 +460,138 @@ function CosignDetail({
         </p>
       )}
     </div>
+  );
+}
+// §Cosign routing — coordinator/admin view: owner of every pending cosign,
+// the "needs a supervisor" state, and the audited reassign override. Shows
+// metadata only (patient, author, owner) — never note content.
+function ownerLabel(own: CosignOwnership): string {
+  if (own.kind === "owner")
+    return own.via === "override" ? `${own.name} (reassigned)` : `${own.name} (assigned supervisor)`;
+  if (own.kind === "needs_supervisor") return "Needs a supervisor";
+  return "Any eligible clinician";
+}
+
+function CosignRoutingSection() {
+  const notes = useEhr(() => AdelanteEHR.listNotesAwaitingCosign());
+  const asams = useEhr(() => AdelanteEHR.listAsamAwaitingCosign());
+  const rows = [
+    ...notes.map(({ patient, note }) => ({
+      key: note.id,
+      kind: "note" as const,
+      patient,
+      id: note.id,
+      author: note.signedBy ?? "—",
+      label: note.templateTitle ?? "Progress note",
+      own: noteCosignOwnership(note),
+    })),
+    ...asams.map(({ patient, asam }) => ({
+      key: asam.id,
+      kind: "asam" as const,
+      patient,
+      id: asam.id,
+      author: asam.authoredBy.name,
+      label: "ASAM assessment",
+      own: asamCosignOwnership(asam),
+    })),
+  ].sort((a, b) => Number(b.own.kind === "needs_supervisor") - Number(a.own.kind === "needs_supervisor"));
+  const needs = rows.filter((r) => r.own.kind === "needs_supervisor").length;
+  return (
+    <section className="space-y-2" data-testid="cosign-routing">
+      <h2 className="font-display text-sm text-navy">
+        Pending cosigns <span className="text-muted-foreground">({rows.length})</span>
+        {needs > 0 && (
+          <Badge variant="destructive" className="ml-2 text-[10px]">
+            {needs} need a supervisor
+          </Badge>
+        )}
+      </h2>
+      {rows.length === 0 && <Card className="p-3 text-xs text-muted-foreground">Nothing pending.</Card>}
+      {rows.map((r) => (
+        <RoutingRow key={r.key} row={r} />
+      ))}
+    </section>
+  );
+}
+
+function RoutingRow({
+  row,
+}: {
+  row: {
+    kind: "note" | "asam";
+    patient: Patient;
+    id: string;
+    author: string;
+    label: string;
+    own: CosignOwnership;
+  };
+}) {
+  const { role, staffId, staffName } = useActingStaff();
+  const [to, setTo] = useState("");
+  const [reason, setReason] = useState("");
+  const candidates = supervisorCandidates().filter((c) => c.name !== row.author);
+  const reassign = () => {
+    try {
+      const actor = { staffId, name: staffName, role };
+      if (row.kind === "note") AdelanteEHR.reassignNoteCosign(row.patient.id, row.id, to, actor, reason);
+      else AdelanteEHR.reassignAsamCosign(row.patient.id, row.id, to, actor, reason);
+      setTo("");
+      setReason("");
+      toast.success("Cosign reassigned.");
+    } catch (e) {
+      toast.error((e as Error).message);
+    }
+  };
+  const needs = row.own.kind === "needs_supervisor";
+  return (
+    <Card className={`space-y-2 p-3 ${needs ? "border-destructive/50" : ""}`} data-testid={`routing-row-${row.id}`}>
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <div className="min-w-0">
+          <div className="truncate text-sm font-medium text-navy">
+            {row.patient.firstName} {row.patient.lastName}
+            <span className="ml-2 text-[11px] font-normal text-muted-foreground">{row.label}</span>
+          </div>
+          <div className="text-[11px] text-muted-foreground">
+            Author: {row.author} · Owner: {ownerLabel(row.own)}
+          </div>
+        </div>
+        {needs ? (
+          <Badge variant="destructive" className="text-[10px]">Needs a supervisor · not billable</Badge>
+        ) : null}
+      </div>
+      {needs && row.own.kind === "needs_supervisor" && (
+        <p className="text-[11px] text-muted-foreground">
+          {row.own.reason}{" "}
+          <Link to="/admin-supervision" className="text-teal underline">
+            Supervision admin
+          </Link>
+        </p>
+      )}
+      <div className="flex flex-col gap-2 sm:flex-row">
+        <Select value={to} onValueChange={setTo}>
+          <SelectTrigger className="sm:w-56" aria-label={`Reassign cosign for ${row.patient.firstName}`}>
+            <SelectValue placeholder="Reassign to…" />
+          </SelectTrigger>
+          <SelectContent>
+            {candidates.map((c) => (
+              <SelectItem key={c.id} value={c.id}>
+                {c.name}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Textarea
+          rows={1}
+          className="min-h-9 text-xs"
+          placeholder="Reason (required)"
+          aria-label="Reassign reason"
+          value={reason}
+          onChange={(e) => setReason(e.target.value)}
+        />
+        <Button size="sm" disabled={!to || reason.trim().length < 3} onClick={reassign}>
+          Reassign
+        </Button>
+      </div>
+    </Card>
   );
 }
