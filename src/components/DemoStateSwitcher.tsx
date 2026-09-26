@@ -69,7 +69,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   medication: {
     group: "Intake by need",
     label: "2b · Paloma O. — Medication management",
-    hint: "Intake done, suggested prescriber goal awaiting clinician; no substance-use tools",
+    hint: "Intake done, suggested prescriber goal awaiting clinician; tapped \"connect me\" on Work or job training — pending with case manager Lupita Sanchez; no substance-use tools",
   },
   sud_consented: {
     group: "Intake by need",
@@ -84,7 +84,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   ji_self_report: {
     group: "Justice",
     label: "3 · Victor H. — Previously justice-involved (self-reported)",
-    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez",
   },
   sud_no_consent: {
     group: "Intake by need",
