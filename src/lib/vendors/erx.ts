@@ -13,6 +13,14 @@ export interface Medication {
   endedOn?: string;
   status: "active" | "discontinued";
   source: "escribe" | "manual";
+  /** Refills left on the prescription (prototype eRx data). */
+  refillsRemaining?: number;
+  /** Dispensing pharmacy (prototype eRx data). */
+  pharmacy?: string;
+  /** Plain-language reason, e.g. "depression", shown to the patient. */
+  indication?: string;
+  /** Demo seed data — never a real prescription. */
+  demo?: boolean;
 }
 
 export type RxEventKind = "sso_launch" | "refill_requested" | "discontinued";
@@ -30,6 +38,8 @@ export interface ErxAdapter {
   ssoLaunchUrl(clinicianId: string, patientId: string): string;
   listActiveMedications(patientId: string): Medication[];
   listRecentRx(patientId: string, limit?: number): Medication[];
+  /** Prototype only — records a prescription in the mock; no real e-prescribing. */
+  addMedication(input: Omit<Medication, "id" | "status" | "source"> & { source?: Medication["source"] }): Medication;
   pushDemographics(patient: { id: string; firstName: string; lastName: string }): Promise<void>;
   ping(): Promise<{ ok: boolean; at: string }>;
 }
@@ -74,6 +84,12 @@ export const MockEscribeAdapter: ErxAdapter = {
     return [...seedFor(patientId)]
       .sort((a, b) => +new Date(b.startedOn) - +new Date(a.startedOn))
       .slice(0, limit);
+  },
+  addMedication(input) {
+    const list = seedFor(input.patientId);
+    const med: Medication = { ...input, id: mid(), status: "active", source: input.source ?? "escribe" };
+    list.push(med);
+    return med;
   },
   async pushDemographics() {
     /* no-op in mock */

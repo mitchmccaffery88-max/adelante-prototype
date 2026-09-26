@@ -6245,7 +6245,11 @@ export interface RecoveryStageEntry {
 }
 const recoveryStageEntries: RecoveryStageEntry[] = [];
 
-export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy";
+export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy" | "needs_appointment";
+/** True for medications used to treat opioid/alcohol use disorder (Part 2 protected). */
+export function isSudMedicationName(name: string): boolean {
+  return /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol|sublocade/i.test(name);
+}
 export interface RefillRequest {
   id: string;
   patientId: string;
@@ -14947,6 +14951,19 @@ export const AdelanteEHR = {
   listMedications(patientId: string) {
     return _vendors.erx.listActiveMedications(patientId);
   },
+  /** PROTOTYPE — records a prescription in the mock eRx. No real e-prescribing. */
+  prescribeMedication(input: Parameters<typeof _vendors.erx.addMedication>[0]) {
+    const med = _vendors.erx.addMedication(input);
+    appendAudit({
+      category: "rx",
+      action: "prescription_recorded",
+      patientId: input.patientId,
+      detail: { medicationId: med.id, prototype: true, demo: Boolean(input.demo) },
+    });
+    _recomputeCarePlan(input.patientId, "prescription_recorded");
+    emit();
+    return med;
+  },
   telehealthJoinUrl(appointmentId: string, role: "patient" | "clinician") {
     return _vendors.telehealth.getJoinUrl(appointmentId, role);
   },
@@ -17552,6 +17569,8 @@ export const AdelanteEHR = {
     medicationId: string;
     pharmacyNote?: string;
     requestedBy?: "patient" | "clinician";
+    /** Demo seed only — backdates the request. */
+    requestedAt?: string;
   }): RefillRequest | undefined {
     const meds = _vendors.erx.listActiveMedications(input.patientId);
     const med = meds.find((m) => m.id === input.medicationId);
@@ -17569,7 +17588,7 @@ export const AdelanteEHR = {
       patientId: input.patientId,
       medicationId: input.medicationId,
       medicationName: med.name,
-      requestedAt: new Date().toISOString(),
+      requestedAt: input.requestedAt ?? new Date().toISOString(),
       requestedBy: input.requestedBy ?? "patient",
       pharmacyNote: input.pharmacyNote,
       status: "pending",
@@ -17589,10 +17608,15 @@ export const AdelanteEHR = {
     (this as typeof AdelanteEHR).createCaseTask({
       patientId: input.patientId,
       assignedTo: patient?.caseManagerId ?? "",
-      title: `Refill request: ${med.name} ${med.dose}`,
-      detail:
-        `${med.frequency} · prescriber ${med.prescriber}` +
-        (input.pharmacyNote ? ` · note: ${input.pharmacyNote}` : ""),
+      // Part 2: the task is assigned to the case manager, who may not pass
+      // the substance-use check — never name an OUD/AUD medication here.
+      title: isSudMedicationName(med.name)
+        ? "Refill request: protected medication (clinical staff only)"
+        : `Refill request: ${med.name} ${med.dose}`,
+      detail: isSudMedicationName(med.name)
+        ? "Details are visible to clinical staff in the refill tile."
+        : `${med.frequency} · prescriber ${med.prescriber}` +
+          (input.pharmacyNote ? ` · note: ${input.pharmacyNote}` : ""),
       dueDate,
       origin: "manual",
       dedupeKey: `refill:${req.id}`,
@@ -17603,7 +17627,7 @@ export const AdelanteEHR = {
   },
   reviewRefill(input: {
     id: string;
-    decision: "approved" | "denied";
+    decision: "approved" | "denied" | "needs_appointment";
     denyReason?: string;
     clinicianId?: string;
   }): RefillRequest | undefined {
@@ -17620,10 +17644,15 @@ export const AdelanteEHR = {
           r.reviewedBy,
       )
       .sort((a, b) => +new Date(b.reviewedAt ?? 0) - +new Date(a.reviewedAt ?? 0))[0]?.reviewedBy;
-    req.status = input.decision === "approved" ? "sent_to_pharmacy" : "denied";
+    req.status =
+      input.decision === "approved"
+        ? "sent_to_pharmacy"
+        : input.decision === "needs_appointment"
+          ? "needs_appointment"
+          : "denied";
     req.reviewedBy = input.clinicianId;
     req.reviewedAt = new Date().toISOString();
-    if (input.decision === "denied") req.denyReason = input.denyReason;
+    if (input.decision !== "approved") req.denyReason = input.denyReason;
     if (
       input.decision === "approved" &&
       priorReviewer &&
@@ -17642,7 +17671,12 @@ export const AdelanteEHR = {
     }
     appendAudit({
       category: "rx",
-      action: input.decision === "approved" ? "refill_approved" : "refill_denied",
+      action:
+        input.decision === "approved"
+          ? "refill_approved"
+          : input.decision === "needs_appointment"
+            ? "refill_needs_appointment"
+            : "refill_denied",
       patientId: req.patientId,
       actorId: input.clinicianId,
       detail: {
