@@ -5,7 +5,13 @@
 // credentialing-to-signing integration (licenses live in
 // /admin-credentialing but are not consulted here), so a license expiry does
 // not currently block signing.
-import { NOTE_SELF_SIGN_ROLES, noteStatus, type ProgressNote } from "@/lib/ehr";
+import {
+  NOTE_SELF_SIGN_ROLES,
+  isCosignOwner,
+  noteCosignOwnership,
+  noteStatus,
+  type ProgressNote,
+} from "@/lib/ehr";
 import { witnessCandidates } from "@/lib/mar";
 import { STAFF_ROSTER, supervisionStatus, type StaffMember, type StaffRole } from "@/lib/roles";
 
@@ -31,10 +37,14 @@ export function cosignerCandidates(excludeName?: string): StaffMember[] {
 /** Is this pending note in the acting person's own cosign queue? */
 export function isMyCosign(
   note: ProgressNote,
-  actor: { role: StaffRole; staffName: string },
+  actor: { role: StaffRole; staffName: string; staffId?: string; clinicianId?: string },
 ): boolean {
   if (noteStatus(note) !== "cosign_pending") return false;
   if (!canSignNotes(actor.role)) return false;
+  // §Cosign routing — a supervised author's note belongs to ONE person.
+  const own = noteCosignOwnership(note);
+  if (own.kind === "needs_supervisor") return false;
+  if (own.kind === "owner") return isCosignOwner(own, [actor.staffId, actor.clinicianId]);
   if (note.signedBy === actor.staffName) return false;
   // Empty/undefined cosignRole = any eligible clinical role.
   if (!note.cosignRole?.length) return true;
