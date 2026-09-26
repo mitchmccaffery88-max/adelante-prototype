@@ -23432,6 +23432,14 @@ try {
     const t2 = rx(victor, { name: "Trazodone", dose: "100 mg", frequency: "at bedtime", indication: "sleep", started: 50, refills: 0, pharmacy: CVS });
     refill(t2, { ago: 5, review: "denied", reason: "Prescribed by an outside clinic — please ask that prescriber." });
   }
+  // §Needs step 1 — Victor's optional topic with "today" urgency, through
+  // the normal intake needs path (applyIntakeNeeds).
+  if (victor && !patients.find((p) => p.id === victor)?.sdohPlan?.items.some((i) => i.need === "ID and documents")) {
+    AdelanteEHR.applyIntakeNeeds(victor, {
+      confirmed: [],
+      selfReported: [{ need: "ID and documents", categoryId: "life_skills", urgency: "today" }],
+    });
+  }
   // 4 Tomás — release bridge prescription (short supply to first visit).
   const tomas = byName(DEMO_PRE_RELEASE_PERSONA.firstName, DEMO_PRE_RELEASE_PERSONA.lastName);
   if (!already(tomas)) rx(tomas, { name: "Sertraline", dose: "50 mg", frequency: "once daily (14-day release bridge)", indication: "depression", started: 2, refills: 0, pharmacy: WAL });

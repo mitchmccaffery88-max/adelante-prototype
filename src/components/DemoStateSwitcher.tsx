@@ -84,7 +84,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   ji_self_report: {
     group: "Justice",
     label: "3 · Victor H. — Previously justice-involved (self-reported)",
-    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today",
   },
   sud_no_consent: {
     group: "Intake by need",
@@ -94,7 +94,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   pre_release: {
     group: "Justice",
     label: "4 · Tomás R. — Pre-release referred",
-    hint: "Pre-populated record, partner-reported needs, live enrollment code, intake not started",
+    hint: "Pre-populated record, live enrollment code, intake not started; intake shows pre-release needs as \"already knows about\" to confirm, not re-asked",
   },
   public_referral: {
     group: "Referral",
