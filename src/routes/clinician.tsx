@@ -110,6 +110,8 @@ function ClinicianPage() {
     modality: "video",
     locationId: "",
   });
+  const [bookRole] = useActingRole();
+  const bookActor = useActingStaff();
   const [bookRequestId, setBookRequestId] = useState<string | undefined>(undefined);
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
   const bookConflict = useEhr(() =>
@@ -140,7 +142,7 @@ function ClinicianPage() {
         locationId: book.modality === "in_person" ? book.locationId : undefined,
         source: "staff_scheduled",
         ...(bookRequestId ? { requestId: bookRequestId } : {}),
-        bookedBy: { id: actingStaff?.id ?? actingRole, role: actingRole },
+        bookedBy: { id: bookActor?.id ?? bookRole, role: bookRole },
       });
       setBookRequestId(undefined);
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });

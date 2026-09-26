@@ -36,7 +36,7 @@ export function AppointmentRequestsCard({
   patientId?: string;
   onBook?: (patientId: string, kind: AppointmentRequestKind, requestId: string) => void;
 }) {
-  const role = useActingRole();
+  const [role] = useActingRole();
   const staff = useActingStaff();
   const rows = useEhr(() =>
     AdelanteEHR.listOpenAppointmentRequests().filter((r) => !patientId || r.patient.id === patientId),
