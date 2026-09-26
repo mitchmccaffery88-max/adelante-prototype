@@ -93,8 +93,8 @@ export function AppointmentRequestsCard({
                   onClick={() => {
                     try {
                       AdelanteEHR.markAppointmentRequestNotBooked(p.id, r.id, reason, {
-                        id: staff?.id ?? role,
-                        name: staff?.name ?? role,
+                        id: staff.staffId,
+                        name: staff.staffName,
                         role,
                       });
                       setReasonFor(null);

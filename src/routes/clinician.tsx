@@ -142,7 +142,7 @@ function ClinicianPage() {
         locationId: book.modality === "in_person" ? book.locationId : undefined,
         source: "staff_scheduled",
         ...(bookRequestId ? { requestId: bookRequestId } : {}),
-        bookedBy: { id: bookActor?.id ?? bookRole, role: bookRole },
+        bookedBy: { id: bookActor.staffName, role: bookRole },
       });
       setBookRequestId(undefined);
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
