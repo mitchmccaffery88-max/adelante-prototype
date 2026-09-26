@@ -57,3 +57,35 @@ export function patientApptStates(
   }
   return out;
 }
+
+// ---------------------------------------------------------------------------
+// §Needs step 3 — reporting: request → booked (count + median days).
+// Substance-use assessment requests are excluded here (Part 2); they are
+// tracked through the ASAM section. Cohort-guarded; association only.
+// ---------------------------------------------------------------------------
+import { cohortGuard, type CohortGuard } from "@/lib/cohortGuard";
+
+export interface RequestToBooked extends CohortGuard {
+  requested: number;
+  booked: number;
+  contactedNotBooked: number;
+  medianDaysToBooked: number | null;
+}
+
+export function requestToBooked(patients: Patient[], sinceDays?: number, now = Date.now()): RequestToBooked {
+  const since = sinceDays ? now - sinceDays * 86400000 : -Infinity;
+  const reqs = patients.flatMap((p) => p.appointmentRequests ?? [])
+    .filter((r) => r.kind !== "sud_assessment" && +new Date(r.createdAt) >= since);
+  const booked = reqs.filter((r) => r.status === "booked" && r.closedAt);
+  const days = booked.map((r) => (+new Date(r.closedAt!) - +new Date(r.createdAt)) / 86400000).sort((a, b) => a - b);
+  const median = days.length
+    ? Math.round((days.length % 2 ? days[(days.length - 1) / 2]! : (days[days.length / 2 - 1]! + days[days.length / 2]!) / 2) * 10) / 10
+    : null;
+  return {
+    requested: reqs.length,
+    booked: booked.length,
+    contactedNotBooked: reqs.filter((r) => r.status === "contacted_not_booked").length,
+    medianDaysToBooked: median,
+    ...cohortGuard(reqs.length),
+  };
+}

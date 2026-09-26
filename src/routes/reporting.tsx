@@ -19,6 +19,7 @@
 // a measure that cannot be re-windowed declares itself point-in-time instead
 // of silently ignoring the period selector.
 import { createFileRoute, Link } from "@tanstack/react-router";
+import { requestToBooked } from "@/lib/apptRequestStatus";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { canAccess, useActingStaff } from "@/lib/roles";
@@ -290,6 +291,7 @@ function ReportingHome() {
   const barriers = useEhr(() => barrierFrequency());
   // §4g — windowed on the referral's own `createdAt`, so the selector applies.
   const refFunnel = useEhr(() => referralFunnel({ sinceDays: days }));
+  const reqBooked = useEhr(() => requestToBooked(AdelanteEHR.listPatients(), days));
   const refSource = useEhr(() => referralsBySource({ sinceDays: days }));
   const refJustice = useEhr(() => referralsByJusticeAnswer({ sinceDays: days }));
   const refTrack = useEhr(() => referralsByTrack({ sinceDays: days }));
@@ -635,6 +637,22 @@ function ReportingHome() {
               minimumCohortSize={refFunnel.minimumCohortSize}
             />
           )}
+          <div className="mt-3 grid gap-3 sm:grid-cols-3" data-testid="request-to-booked">
+            <Stat label="Appointment requests" value={String(reqBooked.requested)} note="Made at intake — waiting for or given staff confirmation" />
+            <Stat
+              label="Request → booked"
+              value={String(reqBooked.booked)}
+              note={reqBooked.medianDaysToBooked === null ? "None booked yet" : `Median ${reqBooked.medianDaysToBooked} day(s) from request`}
+              muted={reqBooked.booked === 0}
+            />
+            <Stat label="Contacted, not booked" value={String(reqBooked.contactedNotBooked)} note="Closed with a reason" muted={reqBooked.contactedNotBooked === 0} />
+          </div>
+          {reqBooked.belowMinimumCohort && (
+            <CohortGuardNotice cohortSize={reqBooked.cohortSize} minimumCohortSize={reqBooked.minimumCohortSize} />
+          )}
+          <p className="mt-1 text-[11px] text-muted-foreground">
+            Association only. Substance-use assessment requests are not counted here (Part 2); they are tracked in the ASAM section.
+          </p>
           <p className="mt-2 text-[11px] leading-snug text-muted-foreground">
             {REFERRAL_FUNNEL_ASSOCIATION_NOTE} Contacted means the person was actually reached — an
             unanswered call, a voicemail or a dead number counts as effort, not contact, and is
