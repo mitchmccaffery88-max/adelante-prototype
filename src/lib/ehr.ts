@@ -24006,7 +24006,7 @@ try {
   const luisId = demoScenarioPatientId("sud_consented");
   const luisTask = luisId ? AdelanteEHR.openAsamTask(luisId) : undefined;
   if (luisId && luisTask && therapist) {
-    AdelanteEHR.bookAppointment({ patientId: luisId, clinicianId: therapist.id, start: slot(6, 10), durationMin: 60, serviceType: "intake", modality: "in_person", locationId: AdelanteEHR.locationsForService("intake")[0]?.id, source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: "Dr. Marisol Reyes", role: "therapist" } });
+    AdelanteEHR.bookAppointment({ patientId: luisId, clinicianId: therapist.id, start: slot(6, 10), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: "Dr. Marisol Reyes", role: "therapist" } });
   }
   // Marcus (p3) — overdue ASAM task with reason LEGAL (set by a clinician;
   // not derived from justice involvement). No legal-disclosure consent on file.
