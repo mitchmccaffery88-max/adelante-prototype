@@ -23899,12 +23899,11 @@ try {
   const elenaId = demoScenarioPatientId("mh_only");
   if (elenaId) AdelanteEHR.createAppointmentRequests(elenaId, { mentalHealth: true }, SYS, { days: "Tue, Thu", modality: "video" });
   // 5 Carmen — referred; staff already booked her therapy intake from the
-  // referral, so her "counseling" selection shows "Already scheduled".
+  // referral. When she completes intake and picks counseling, no request is
+  // created and My Care shows "Already scheduled for you".
   const carmenId = demoScenarioPatientId("public_referral");
   if (carmenId && therapist) {
     AdelanteEHR.bookAppointment({ patientId: carmenId, clinicianId: therapist.id, start: slot(9, 11), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled" });
-    AdelanteEHR.recordSeeking(carmenId, { mentalHealth: true, medication: false, substanceUse: false }, { id: carmenId, role: "patient" });
-    AdelanteEHR.createAppointmentRequests(carmenId, { mentalHealth: true }, { id: carmenId, role: "patient" });
   }
   // 4 Tomás — pre-release team arranged his first counseling visit; when he
   // completes intake and picks counseling, no new request is created.

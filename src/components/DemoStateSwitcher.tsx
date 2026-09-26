@@ -99,7 +99,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   public_referral: {
     group: "Referral",
     label: "5 · Carmen I. — Public referral form",
-    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral, so My Care shows \"Already scheduled for you\"",
+    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"",
   },
   advocate: {
     group: "Advocates",

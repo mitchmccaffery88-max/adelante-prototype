@@ -76,8 +76,10 @@ describe("needs step 3 — appointment requests", () => {
     const elena = AdelanteEHR.getPatient(demoScenarioPatientId("mh_only")!)!;
     expect(patientApptStates(elena, AdelanteEHR.appointmentsForPatient(elena.id))[0]?.state).toBe("requested");
     const carmen = AdelanteEHR.getPatient(demoScenarioPatientId("public_referral")!)!;
-    expect(patientApptStates(carmen, AdelanteEHR.appointmentsForPatient(carmen.id))[0]?.state).toBe("already_scheduled");
+    expect(AdelanteEHR.createAppointmentRequests(carmen.id, { mentalHealth: true }, PAT(carmen.id))[0]!.outcome).toBe("already_scheduled");
     expect(AdelanteEHR.listAppointmentRequests(carmen.id)).toHaveLength(0);
+    const withSeeking = { ...carmen, seeking: { mentalHealth: true, medication: false, answeredAt: "" } };
+    expect(patientApptStates(withSeeking, AdelanteEHR.appointmentsForPatient(carmen.id))[0]?.state).toBe("already_scheduled");
     const tomas = AdelanteEHR.listPatients().find((p) => p.firstName === DEMO_PRE_RELEASE_PERSONA.firstName)!;
     expect(AdelanteEHR.createAppointmentRequests(tomas.id, { mentalHealth: true }, PAT(tomas.id))[0]!.outcome).toBe("already_scheduled");
   });
