@@ -12392,6 +12392,7 @@ export const AdelanteEHR = {
         .filter(
           (a) =>
             a.patientId === patientId &&
+            !a.asamTaskId &&
             a.status === "scheduled" &&
             +new Date(a.start) > now &&
             a.serviceType &&
