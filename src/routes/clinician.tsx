@@ -3,7 +3,8 @@ import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
+import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -109,6 +110,7 @@ function ClinicianPage() {
     modality: "video",
     locationId: "",
   });
+  const [bookRequestId, setBookRequestId] = useState<string | undefined>(undefined);
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
   const bookConflict = useEhr(() =>
     book.start && clinicianId
@@ -137,7 +139,10 @@ function ClinicianPage() {
         modality: book.modality,
         locationId: book.modality === "in_person" ? book.locationId : undefined,
         source: "staff_scheduled",
+        ...(bookRequestId ? { requestId: bookRequestId } : {}),
+        bookedBy: { id: actingStaff?.id ?? actingRole, role: actingRole },
       });
+      setBookRequestId(undefined);
       toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
       setBook({ ...book, start: "" });
     } catch (err) {
@@ -398,8 +403,28 @@ function ClinicianPage() {
               <div id="refill-requests" className="scroll-mt-32">
                 <RefillReviewCard />
               </div>
-              <Card className="p-5">
+              <AppointmentRequestsCard
+                onBook={(pid, kind, requestId) => {
+                  const svc = serviceTypes.find((x) => x.id === APPT_REQUEST_BOOK_AS[kind]);
+                  setBook({
+                    ...book,
+                    patientId: pid,
+                    serviceType: APPT_REQUEST_BOOK_AS[kind],
+                    durationMin: svc?.defaultDurationMin ?? book.durationMin,
+                    modality: svc && !svc.allowedModalities.includes(book.modality) ? (svc.allowedModalities[0] ?? "video") : book.modality,
+                    locationId: "",
+                  });
+                  setBookRequestId(requestId);
+                  document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+                }}
+              />
+              <Card className="p-5" id="book-session">
                 <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
+                {bookRequestId && (
+                  <p className="mt-1 text-xs text-teal" data-testid="booking-from-request">
+                    Booking from an appointment request — booking closes it.
+                  </p>
+                )}
                 <div className="mt-4 space-y-3">
                   <div className="space-y-1.5">
                     <Label className="text-sm">{t("clinPatient")}</Label>
