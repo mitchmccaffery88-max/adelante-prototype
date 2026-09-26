@@ -3,7 +3,7 @@ import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
-import { AdelanteEHR, useEhr, type SessionStatus } from "@/lib/ehr";
+import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -43,7 +43,6 @@ import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
 import { roleSeesAsam } from "@/lib/asamReporting";
-import { isSudMedicationName } from "@/lib/ehr";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
 import {
   assignmentIdentityFor,
