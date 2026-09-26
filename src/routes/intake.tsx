@@ -478,6 +478,7 @@ function IntakePage() {
     () => intakeScreeners(effectiveSud),
     [effectiveSud],
   );
+  const hrsnDef = activeScreeners.find((s) => s.key === "ahc-hrsn");
   const steps = useMemo(
     () => [
       { key: "welcome", label: "Welcome" },
@@ -1455,111 +1456,186 @@ function IntakePage() {
         )}
 
         {current.key === "needs" && (
-          <div className="space-y-5" data-testid="needs-step">
-            {/* §Phase 3 — already-known needs are confirmed, not re-asked. */}
-            {needsPlan.known.length > 0 && (
-              <div className="space-y-3" data-testid="needs-known">
-                <div>
-                  <h3 className="text-sm font-medium">What we already know</h3>
-                  <p className="text-sm text-muted-foreground">
-                    These are already on your record. Tell us whether each one still applies — you
-                    don&apos;t have to answer them again from scratch.
-                  </p>
-                </div>
-                {needsPlan.known.map((row) => (
-                  <div
-                    key={row.intakeKey}
-                    className="rounded-lg border p-3 space-y-2"
-                    data-testid={`needs-known-${row.intakeKey}`}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium">{row.need}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {SDOH_SOURCE_LABEL[row.source]}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{row.evidence}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={knownAnswers[row.intakeKey] === "yes" ? "default" : "outline"}
-                        data-testid={`needs-known-${row.intakeKey}-yes`}
-                        onClick={() =>
-                          setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "yes" }))
-                        }
-                      >
-                        Still applies
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={knownAnswers[row.intakeKey] === "no" ? "default" : "outline"}
-                        data-testid={`needs-known-${row.intakeKey}-no`}
-                        onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "no" }))}
-                      >
-                        This has changed
-                      </Button>
-                    </div>
-                    {knownAnswers[row.intakeKey] === "no" && (
-                      <p className="text-xs text-muted-foreground">
-                        Thanks — we&apos;ll leave it on your plan for now and someone on your care
-                        team will go over it with you.
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="space-y-6" data-testid="needs-step">
+            <h2 className="font-display text-xl text-navy">{H.title}</h2>
+            {langKey === "es" && H.esPending && (
+              <p className="text-xs text-muted-foreground" data-testid="needs-es-pending">{H.esPending}</p>
             )}
 
-            {/* Positive HRSN domains intake cannot honestly confirm or deny. */}
-            {needsPlan.onFileOnly.length > 0 && (
-              <div
-                className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 space-y-2"
-                data-testid="needs-on-file-only"
-              >
-                <h3 className="text-sm font-medium">Also on file from your earlier screening</h3>
-                <p className="text-xs text-muted-foreground">
-                  Your care team already has these. We&apos;re not asking about them here — they
-                  came from a full screening, and this short form isn&apos;t the right place to
-                  change them. Your care team will follow up with you directly.
-                </p>
-                <ul className="space-y-1">
-                  {needsPlan.onFileOnly.map((d) => (
-                    <li
-                      key={d.domainKey}
-                      className="text-sm"
-                      data-testid={`needs-on-file-${d.domainKey}`}
-                    >
-                      • {d.domainLabel}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {needsPlan.capture.length > 0 && (
-              <div className="space-y-3" data-testid="needs-capture">
-                <p className="text-sm text-muted-foreground">
-                  {needsPlan.known.length > 0 || needsPlan.onFileOnly.length > 0
-                    ? "Anything else you need help with right now? Select all that apply."
-                    : "Tell us what support you need right now. Select all that apply."}
-                </p>
-                {needsPlan.capture.map((k) => (
-                  <label
-                    key={k}
-                    className="flex items-center min-h-11 gap-3 rounded-lg border py-3 px-3 cursor-pointer hover:border-teal"
-                  >
+            {/* Section A — care you're looking for (existing question + "Not sure yet"). */}
+            {!inReassess && (
+              <fieldset className="space-y-2 rounded-lg border p-4" data-testid="seeking-question">
+                <legend className="px-1 text-sm font-medium text-navy">{H.sectionA}</legend>
+                <p className="text-sm">{B.seekingQ}</p>
+                {(["mentalHealth", "medication", "substanceUse"] as const).map((k) => (
+                  <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
                     <Checkbox
-                      checked={needs[k]}
-                      data-testid={`needs-capture-${k}`}
-                      onCheckedChange={(v) => setNeeds({ ...needs, [k]: Boolean(v) })}
+                      checked={seeking[k]}
+                      data-testid={`seeking-${k}`}
+                      onCheckedChange={(v) => setSeeking({ ...seeking, [k]: Boolean(v), notSure: false })}
                     />
-                    <span className="text-sm">{INTAKE_NEED_LABEL[k]}</span>
+                    <span>{B.seeking[k]}</span>
                   </label>
                 ))}
-              </div>
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
+                  <Checkbox
+                    checked={seeking.notSure}
+                    data-testid="seeking-notSure"
+                    onCheckedChange={(v) =>
+                      setSeeking(
+                        v
+                          ? { mentalHealth: false, medication: false, substanceUse: false, notSure: true }
+                          : { ...seeking, notSure: false },
+                      )
+                    }
+                  />
+                  <span>{H.notSure}</span>
+                </label>
+                <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
+              </fieldset>
             )}
+
+            {/* Section B — everyday needs. */}
+            <section className="space-y-4 rounded-lg border p-4" data-testid="everyday-needs">
+              <h3 className="text-sm font-medium text-navy">{H.sectionB}</h3>
+
+              {skipCore && (
+                <div className="space-y-3 rounded-lg border bg-secondary/40 p-3" data-testid="needs-already-knows">
+                  <div className="text-sm font-medium">{H.alreadyKnows}</div>
+                  {(() => {
+                    const names = new Map<string, string>();
+                    for (const r of needsPlan.known) names.set(r.need.toLowerCase(), `${r.need} — ${provenanceFor(r.source)}`);
+                    for (const i of outsideNeeds) {
+                      const label = patientSafeNeedLabel(i);
+                      if (label && !names.has(label.toLowerCase())) names.set(label.toLowerCase(), `${label} — ${provenanceFor(i.source)}`);
+                    }
+                    for (const d of needsPlan.onFileOnly) {
+                      if (d.domainKey === "safety") continue;
+                      if (!names.has(d.domainLabel.toLowerCase())) names.set(d.domainLabel.toLowerCase(), d.domainLabel);
+                    }
+                    const hiddenSafety =
+                      outsideNeeds.some((i) => !patientSafeNeedLabel(i)) ||
+                      needsPlan.onFileOnly.some((d) => d.domainKey === "safety");
+                    return (
+                      <ul className="space-y-1 text-sm">
+                        {[...names.values()].map((n) => (
+                          <li key={n} data-testid="needs-already-knows-item">• {n}</li>
+                        ))}
+                        {hiddenSafety && <li className="text-muted-foreground">• {H.otherPrivate}</li>}
+                      </ul>
+                    );
+                  })()}
+                  <p className="text-xs text-muted-foreground">{H.alreadyKnowsNote}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-11"
+                      variant={coreChoice === "confirm" ? "default" : "outline"}
+                      data-testid="needs-already-confirm"
+                      onClick={() => {
+                        setCoreChoice("confirm");
+                        setKnownAnswers(Object.fromEntries(needsPlan.known.map((r) => [r.intakeKey, "yes"])));
+                      }}
+                    >
+                      {H.confirm}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-11"
+                      variant={coreChoice === "update" ? "default" : "outline"}
+                      data-testid="needs-already-update"
+                      onClick={() => {
+                        setCoreChoice("update");
+                        setKnownAnswers(Object.fromEntries(needsPlan.known.map((r) => [r.intakeKey, "yes"])));
+                      }}
+                    >
+                      {H.update}
+                    </Button>
+                  </div>
+                  {coreChoice === "update" && <p className="text-xs text-muted-foreground">{H.updateNote}</p>}
+                </div>
+              )}
+
+              {askCore && hrsnDef && (
+                <div className="space-y-3" data-testid="needs-core-questions">
+                  <div>
+                    <Badge variant="outline" className="border-teal/40 text-teal">{hrsnDef.name}</Badge>
+                    <p className="mt-2 text-xs text-muted-foreground">{H.coreIntro}</p>
+                  </div>
+                  <ScreenerItems
+                    def={hrsnDef}
+                    answers={answers["ahc-hrsn"] ?? []}
+                    choices={choices["ahc-hrsn"]}
+                    onChange={(nextA, ch) => {
+                      setAnswers({ ...answers, "ahc-hrsn": nextA as number[] });
+                      setChoices({ ...choices, "ahc-hrsn": ch });
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Staff- or advocate-identified needs still get "still applies?" when the core is asked. */}
+              {!skipCore && needsPlan.known.length > 0 && (
+                <div className="space-y-2" data-testid="needs-known">
+                  {needsPlan.known.map((row) => (
+                    <div key={row.intakeKey} className="flex flex-wrap items-center gap-2 rounded-lg border p-3" data-testid={`needs-known-${row.intakeKey}`}>
+                      <span className="text-sm font-medium">{row.need}</span>
+                      <Badge variant="outline" className="text-[10px]">{SDOH_SOURCE_LABEL[row.source]}</Badge>
+                      <Button type="button" size="sm" variant={knownAnswers[row.intakeKey] === "yes" ? "default" : "outline"} data-testid={`needs-known-${row.intakeKey}-yes`} onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "yes" }))}>{H.confirm}</Button>
+                      <Button type="button" size="sm" variant={knownAnswers[row.intakeKey] === "no" ? "default" : "outline"} data-testid={`needs-known-${row.intakeKey}-no`} onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "no" }))}>{H.update}</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Optional topics — directory categories the core does not cover. */}
+              <div className="space-y-2" data-testid="needs-optional-topics">
+                <p className="text-sm">{H.topicsQ}</p>
+                <p className="text-[11px] text-muted-foreground">{H.draft}</p>
+                {OPTIONAL_TOPICS.map((t) => {
+                  const on = topics[t.key] !== undefined;
+                  return (
+                    <div key={t.key} className="rounded-md border p-3">
+                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+                        <Checkbox
+                          checked={on}
+                          data-testid={`topic-${t.key}`}
+                          onCheckedChange={(v) => {
+                            const nextT = { ...topics };
+                            if (v) nextT[t.key] = "";
+                            else delete nextT[t.key];
+                            setTopics(nextT);
+                          }}
+                        />
+                        <span>{t[langKey]}</span>
+                      </label>
+                      {on && (
+                        <div className="mt-2 space-y-1 pl-7">
+                          <div className="text-xs text-muted-foreground">{H.howSoon}</div>
+                          <div className="flex flex-wrap gap-2" role="group" aria-label={H.howSoon}>
+                            {URGENCIES.map((u) => (
+                              <Button
+                                key={u}
+                                type="button"
+                                size="sm"
+                                className="min-h-11"
+                                variant={topics[t.key] === u ? "default" : "outline"}
+                                data-testid={`topic-${t.key}-${u}`}
+                                onClick={() => setTopics({ ...topics, [t.key]: u })}
+                              >
+                                {URGENCY_LABEL[langKey][u]}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
         )}
 
