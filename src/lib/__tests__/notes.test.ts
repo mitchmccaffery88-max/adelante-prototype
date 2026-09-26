@@ -144,7 +144,7 @@ describe("note lifecycle", () => {
     expect(AdelanteEHR.listNotesAwaitingCosign().some((r) => r.note.id === n.id)).toBe(false);
   });
 
-  it("records the absent order cascade in the audit log", () => {
+  it("records the order cascade in the audit log", () => {
     const n = draft();
     AdelanteEHR.signProgressNote(PATIENT, n.id, {
       signedBy: "Maria CM",
@@ -162,7 +162,7 @@ describe("note lifecycle", () => {
       .at(-1);
     expect(entry?.detail).toMatchObject({
       ordersVoided: 0,
-      orderCascade: "unavailable_no_note_order_link",
+      orderCascade: "drafts_removed_active_flagged",
     });
   });
 });
