@@ -92,7 +92,7 @@ export function StaffBreadcrumbs() {
       </div>
 
       {/* Standardized right-hand controls — role-driven, not page-driven. */}
-      <div className="flex w-full items-center gap-2 lg:w-auto lg:justify-end">
+      <div className="flex w-full min-w-0 flex-wrap items-center gap-2 lg:w-auto lg:flex-nowrap lg:justify-end">
         <StaffPatientSearch />
         {/* §Phase 5e — prototype assistant entry point; hides itself for a
             role with no question and no shortcut. */}

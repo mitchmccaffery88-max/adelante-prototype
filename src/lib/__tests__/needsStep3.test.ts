@@ -72,6 +72,14 @@ describe("needs step 3 — appointment requests", () => {
     expect(roleSeesApptRequest("cf_care_manager", luis, req)).toBe(false);
   });
 
+  it("SUD request leaves the linked ASAM task text untouched (no leak to roles that see the task)", () => {
+    const luisId = demoScenarioPatientId("sud_consented")!;
+    const req = AdelanteEHR.listAppointmentRequests(luisId).find((r) => r.kind === "sud_assessment")!;
+    const task = AdelanteEHR.listCaseTasks().find((t) => t.id === req.linkedAsamTaskId);
+    expect(task).toBeTruthy();
+    expect(`${task!.title} ${task!.detail ?? ""}`.toLowerCase()).not.toContain("appointment");
+  });
+
   it("seeded demo: Elena pending therapy; Carmen already scheduled; Tomás has an arranged visit", () => {
     const elena = AdelanteEHR.getPatient(demoScenarioPatientId("mh_only")!)!;
     expect(patientApptStates(elena, AdelanteEHR.appointmentsForPatient(elena.id))[0]?.state).toBe("requested");

@@ -12317,12 +12317,10 @@ export const AdelanteEHR = {
         const asam =
           AdelanteEHR.openAsamTask(patientId) ??
           caseTasks.find((t) => t.patientId === patientId && t.dedupeKey?.startsWith("asam-reassess:") && t.status !== "done");
-        if (asam) {
-          req.linkedAsamTaskId = asam.id;
-          if (asam.detail && !asam.detail.includes("appointment requested")) {
-            asam.detail = `${asam.detail} First appointment requested by the patient — book it from the scheduling queue.`;
-          }
-        }
+        // Link lives on the request only. The ASAM task text is NOT changed:
+        // roles that see the task but fail the request's Part 2 check must
+        // learn nothing about the appointment request.
+        if (asam) req.linkedAsamTaskId = asam.id;
       } else {
         const t = AdelanteEHR.createCaseTask({
           patientId,

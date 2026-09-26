@@ -48,7 +48,10 @@ export function AppointmentRequestsCard({
   const [reasonFor, setReasonFor] = useState<string | null>(null);
   const [reason, setReason] = useState("");
 
-  if (rows.length === 0 && history.length === 0 && !patientId) return null;
+  const visibleHistory = patient ? history.filter((r) => roleSeesApptRequest(role, patient, r)) : [];
+  // Nothing this role may see → render nothing (queue and chart alike), so an
+  // empty card never hints that a protected request exists.
+  if (rows.length === 0 && visibleHistory.length === 0) return null;
 
   return (
     <Card className="p-5" data-testid="appt-requests-card">

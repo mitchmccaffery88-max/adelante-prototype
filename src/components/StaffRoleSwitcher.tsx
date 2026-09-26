@@ -50,10 +50,10 @@ export function StaffRoleSwitcher() {
       <DropdownMenuTrigger
         data-testid="staff-role-switcher"
         aria-label="Demo control: staff role"
-        className="inline-flex min-h-[32px] min-w-0 items-center gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm hover:bg-secondary"
+        className="inline-flex w-full min-h-[32px] min-w-0 items-center sm:w-auto gap-1.5 rounded-full border bg-card/95 px-2.5 py-1 text-[11px] font-medium text-foreground/80 shadow-sm hover:bg-secondary"
       >
         <UserCog className="h-3.5 w-3.5 shrink-0 text-teal" />
-        <span className="max-w-[7.5rem] truncate sm:max-w-[16rem]">
+        <span className="min-w-0 flex-1 truncate text-left sm:max-w-[16rem]">
           <span className="text-muted-foreground">Role: </span>
           {roleLabel(role)} · {staffName}
         </span>

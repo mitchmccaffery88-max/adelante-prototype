@@ -19,7 +19,7 @@ export function DemoControlsBar() {
           <span className="hidden sm:inline">Demo controls</span>
           <span className="sm:hidden">Demo</span>
         </span>
-        <div className="ml-auto flex min-w-0 items-center gap-1">
+        <div className="ml-auto grid min-w-0 flex-1 grid-cols-2 items-center gap-1 sm:flex sm:flex-none">
           <DemoStateSwitcher />
           <StaffRoleSwitcher />
         </div>
