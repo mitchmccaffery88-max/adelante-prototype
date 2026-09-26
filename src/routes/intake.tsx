@@ -25,6 +25,19 @@ import {
 } from "@/lib/ehr";
 // §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
 import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
+import {
+  OPTIONAL_TOPICS,
+  URGENCIES,
+  URGENCY_LABEL,
+  WHAT_HELPS_COPY,
+  HRSN_DOMAIN_CATEGORY,
+  outsideKnownNeeds,
+  shouldSkipCoreQuestions,
+  patientSafeNeedLabel,
+  provenanceFor,
+  type NeedUrgency,
+  type OptionalTopicKey,
+} from "@/lib/whatWouldHelp";
 import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
 import { emptyEmergencyContact } from "@/lib/emergencyContacts";
 import {
@@ -294,7 +307,13 @@ function IntakePage() {
     mentalHealth: patient?.seeking?.mentalHealth ?? false,
     medication: patient?.seeking?.medication ?? false,
     substanceUse: false,
+    notSure: patient?.seeking?.notSure ?? false,
   }));
+  // §Needs step 1 — optional topics with one "how soon" follow-up each.
+  const [topics, setTopics] = useState<Partial<Record<OptionalTopicKey, NeedUrgency | "">>>({});
+  // Core AHC-HRSN questions are skipped (confirm instead) when the record
+  // already knows — recent result or outside-sourced needs.
+  const [coreChoice, setCoreChoice] = useState<"confirm" | "update" | null>(null);
   /** Index of the emergency contact also invited as advocate, or null. */
   const [advocateFromContact, setAdvocateFromContact] = useState<number | null>(null);
   const [advocateOther, setAdvocateOther] = useState({
@@ -305,6 +324,11 @@ function IntakePage() {
     channel: "sms" as "sms" | "email",
   });
   const B = BACKGROUND_COPY[lang9a === "es" ? "es" : "en"];
+  const H = WHAT_HELPS_COPY[lang9a === "es" ? "es" : "en"];
+  const langKey: "en" | "es" = lang9a === "es" ? "es" : "en";
+  const skipCore = useMemo(() => shouldSkipCoreQuestions(patient), [patient]);
+  const askCore = !skipCore || coreChoice === "update";
+  const outsideNeeds = useMemo(() => outsideKnownNeeds(patient?.sdohPlan?.items), [patient]);
 
   /**
    * §Consent re-prompt gate.
@@ -355,6 +379,8 @@ function IntakePage() {
       if (saved.coverage) setCoverage(saved.coverage);
       if (saved.benefits) setBenefits(saved.benefits);
       if (saved.seeking) setSeeking(saved.seeking);
+      if (saved.topics) setTopics(saved.topics);
+      if (saved.coreChoice !== undefined) setCoreChoice(saved.coreChoice);
       if (saved.advocateFromContact !== undefined) setAdvocateFromContact(saved.advocateFromContact);
       if (saved.advocateOther) setAdvocateOther(saved.advocateOther);
       // Merge, never overwrite: a blank field in an old draft must not erase
@@ -385,6 +411,8 @@ function IntakePage() {
           benefits,
           profile,
           seeking,
+          topics,
+          coreChoice,
           advocateFromContact,
           advocateOther,
           savedAt: at,
@@ -395,7 +423,7 @@ function IntakePage() {
       /* no-op */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, advocateFromContact, advocateOther]);
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, topics, coreChoice, advocateFromContact, advocateOther]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -456,8 +484,9 @@ function IntakePage() {
       { key: "about", label: "About you" },
       ...(consentOnFile ? [] : [{ key: "consent", label: "Consent" }]),
       { key: "coverage", label: "Coverage" },
-      ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
-      { key: "needs", label: "Needs" },
+      // AHC-HRSN core is asked inside "What would help you", not as its own step.
+      ...activeScreeners.filter((s) => s.key !== "ahc-hrsn").map((s) => ({ key: s.key, label: s.name })),
+      { key: "needs", label: "What would help you" },
       // §Reporting Tier 2 — structured CalOMS-shaped history. Only asked when
       // it genuinely applies: substance questions require Part 2 consent
       // (they are SUD content), justice questions require reported justice
@@ -485,6 +514,8 @@ function IntakePage() {
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, profilePatch(profile));
     activeScreeners.forEach((s) => {
+      // §Needs step 1 — AHC-HRSN only saved when it was actually asked.
+      if (s.key === "ahc-hrsn" && !askCore) return;
       // §Phase 10a — shared scoring (gate items, domains) and raw answers
       // stored on the record; still the one `recordScreener` path.
       const raw = answers[s.key] ?? [];
@@ -595,15 +626,31 @@ function IntakePage() {
           source: r.source,
           ...(r.existingItemId ? { existingItemId: r.existingItemId } : {}),
         })),
-      selfReported: needsPlan.capture
-        .filter((k) => needs[k])
-        .map((k) => ({ need: INTAKE_NEED_LABEL[k] })),
+      selfReported: [
+        // Positive AHC-HRSN domains from the core questions just asked.
+        ...(askCore && hrsnDef
+          ? (scoreScreener(hrsnDef, hrsnDef.questions.map((_, i) => answers["ahc-hrsn"]?.[i] ?? 0)).domains ?? [])
+              .filter((d) => d.positive)
+              .map((d) => ({
+                need: d.label,
+                categoryId: HRSN_DOMAIN_CATEGORY[d.key],
+                ...(d.key === "safety" ? { safetySensitive: true } : {}),
+              }))
+          : []),
+        // Optional topics, each with its "how soon".
+        ...OPTIONAL_TOPICS.filter((t) => topics[t.key] !== undefined).map((t) => ({
+          need: t.need,
+          categoryId: t.categoryId,
+          ...(topics[t.key] ? { urgency: topics[t.key] as NeedUrgency } : {}),
+        })),
+      ],
     });
     AdelanteEHR.completeIntake(currentId, {
       // Backward compatibility: the four booleans still reflect what intake
       // learned, including needs confirmed through the "still applies" path.
       needs: {
         ...needs,
+        ...(topics.work !== undefined ? { employment: true } : {}),
         ...Object.fromEntries(
           needsPlan.known
             .filter((r) => knownAnswers[r.intakeKey] === "yes")
@@ -616,7 +663,7 @@ function IntakePage() {
     // §Part B1 — "looking for": content/recommendations + SUGGESTED goals only.
     AdelanteEHR.recordSeeking(
       currentId,
-      seeking,
+      seeking.notSure ? { mentalHealth: false, medication: false, substanceUse: false, notSure: true } : seeking,
       { id: currentId, role: "patient" },
       { sudConsentGiven: effectiveSud === true },
     );
@@ -864,20 +911,6 @@ function IntakePage() {
             </div>
             )}
 
-                <fieldset className="space-y-2" data-testid="seeking-question">
-                  <legend className="text-sm">{B.seekingQ}</legend>
-                  {(["mentalHealth", "medication", "substanceUse"] as const).map((k) => (
-                    <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
-                      <Checkbox
-                        checked={seeking[k]}
-                        data-testid={`seeking-${k}`}
-                        onCheckedChange={(v) => setSeeking({ ...seeking, [k]: Boolean(v) })}
-                      />
-                      <span>{B.seeking[k]}</span>
-                    </label>
-                  ))}
-                  <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
-                </fieldset>
               </div>
             )}
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
