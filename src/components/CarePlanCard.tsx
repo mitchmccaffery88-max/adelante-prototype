@@ -2,6 +2,7 @@ import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toast } from "sonner";
+import { roleSeesSudMedication } from "@/lib/asamReporting";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
