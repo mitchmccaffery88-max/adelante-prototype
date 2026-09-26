@@ -154,6 +154,7 @@ export function sdohFunnel(opts: { patientIds?: string[] } = {}): SdohFunnel {
 
   return {
     identified: records.length,
+    connectRequested: records.filter((r) => !!r.item.connectRequestedAt).length,
     referred: referredRecords.length,
     connected: connectedRecords.length,
     resolved: resolvedRecords.length,
