@@ -5,6 +5,8 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
+import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
+import { useNavigate } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -117,6 +119,7 @@ function ClinicianPage() {
   const [bookRole] = useActingRole();
   const bookActor = useActingStaff();
   const [bookRequestId, setBookRequestId] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
   const { asamTask: asamTaskParam } = Route.useSearch();
   const asamTask = useEhr(() =>
     asamTaskParam ? AdelanteEHR.listCaseTasks().find((t) => t.id === asamTaskParam && t.status !== "done") : undefined,
