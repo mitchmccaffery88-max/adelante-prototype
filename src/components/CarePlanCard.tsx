@@ -91,7 +91,9 @@ export function CarePlanCard({
   const filteredScreeners = plan.screenerHighlights.filter((s) =>
     s.sensitive ? sudUnlocked : true,
   );
-  const filteredMeds = medsUnlocked ? plan.medications : [];
+  const filteredMeds = medsUnlocked
+    ? plan.medications.filter((m) => (m.sensitive ? sudUnlocked : true))
+    : [];
   const hasHiddenSud = plan.focusAreas.some((f) => f.sensitive) && !sudUnlocked;
   const hasHiddenMeds = plan.medications.length > 0 && !medsUnlocked;
 

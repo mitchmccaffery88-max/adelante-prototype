@@ -44,7 +44,9 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
       ? { label: "Refill pending", cls: "bg-gold/30 text-navy" }
       : latest.status === "sent_to_pharmacy" || latest.status === "approved"
         ? { label: "Refill approved", cls: "bg-success/20 text-success" }
-        : { label: "Refill denied", cls: "bg-destructive/15 text-destructive" }
+        : latest.status === "needs_appointment"
+          ? { label: "Appointment needed first", cls: "bg-gold/30 text-navy" }
+          : { label: "Refill denied", cls: "bg-destructive/15 text-destructive" }
     : null;
 
   return (
@@ -56,7 +58,16 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
           </div>
           <div className="text-[11px] text-muted-foreground">
             {med.frequency} · {med.prescriber}
+            {med.indication ? ` · for ${med.indication}` : ""}
           </div>
+          {(med.refillsRemaining !== undefined || med.pharmacy) && (
+            <div className="text-[11px] text-muted-foreground">
+              {med.refillsRemaining !== undefined &&
+                `${med.refillsRemaining} refill${med.refillsRemaining === 1 ? "" : "s"} left`}
+              {med.refillsRemaining !== undefined && med.pharmacy ? " · " : ""}
+              {med.pharmacy}
+            </div>
+          )}
         </div>
         <div className="flex shrink-0 items-center gap-2">
           {statusBadge ? (
@@ -71,7 +82,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
               active
             </Badge>
           )}
-          {(!latest || latest.status === "denied") && (
+          {(!latest || latest.status !== "pending") && (
             <Button
               size="sm"
               variant="outline"
@@ -110,7 +121,7 @@ function MedRow({ med, patientId }: { med: Medication; patientId: string }) {
           </div>
         </div>
       )}
-      {latest?.denyReason && latest.status === "denied" && (
+      {latest?.denyReason && (latest.status === "denied" || latest.status === "needs_appointment") && (
         <div className="mt-1 text-[10px] text-destructive">
           Prescriber note: {latest.denyReason}
         </div>
@@ -129,6 +140,11 @@ export function MyMedicationsCard({ patientId }: { patientId: string }) {
       <p className="mt-1 text-xs text-muted-foreground">
         Managed with your care team through eScribe.
       </p>
+      {meds.some((m) => m.demo) && (
+        <p className="mt-1 text-[10px] text-muted-foreground" data-testid="meds-demo-label">
+          Demo data · prototype prescriptions — no real e-prescribing.
+        </p>
+      )}
       {meds.length === 0 ? (
         <p className="mt-3 rounded-md border border-dashed p-3 text-sm text-muted-foreground">
           Nothing prescribed through Adelante right now.
