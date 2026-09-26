@@ -8235,6 +8235,10 @@ export const AdelanteEHR = {
      * judged to be fine). Never set from patient self-booking.
      */
     allowPatientOverlap?: boolean;
+    /** §Needs step 3 — booking FROM an appointment request closes it. */
+    requestId?: string;
+    /** Who booked (for request-close attribution). */
+    bookedBy?: { id: string; role: string };
   }) {
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
@@ -8264,7 +8268,7 @@ export const AdelanteEHR = {
       const own = _patientOverlap(input.patientId, input.start, input.durationMin);
       if (own) throw new Error(_patientOverlapMessage(own));
     }
-    const { allowPatientOverlap: _ignored, ...fields } = input;
+    const { allowPatientOverlap: _ignored, requestId, bookedBy, ...fields } = input;
     const a: Appointment = {
       ...fields,
       source: input.source ?? "staff_scheduled",
@@ -8272,6 +8276,7 @@ export const AdelanteEHR = {
       status: "scheduled",
     };
     appointments.push(a);
+    _closeRequestsOnBooking(a, requestId, bookedBy);
     // Detect provider switch vs. patient's last provider (same service type when set).
     const prevProvider = _previousProviderFor(a.patientId, a.serviceType);
     if (prevProvider && prevProvider !== a.clinicianId) {
