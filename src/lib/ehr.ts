@@ -11960,10 +11960,10 @@ export const AdelanteEHR = {
       const dup = has(s.need);
       if (dup) {
         // 8a merge: never erase — only fill what is missing.
-        if (s.urgency && !dup.urgency) dup.urgency = s.urgency;
-        if (s.categoryId && !dup.categoryId) dup.categoryId = s.categoryId;
-        dup.updatedAt = now;
-        touched++;
+        let filled = false;
+        if (s.urgency && !dup.urgency) { dup.urgency = s.urgency; filled = true; }
+        if (s.categoryId && !dup.categoryId) { dup.categoryId = s.categoryId; filled = true; }
+        if (filled) { dup.updatedAt = now; touched++; }
         continue;
       }
       p.sdohPlan = {
