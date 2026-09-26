@@ -22,6 +22,7 @@ import {
   subscribeResources,
 } from "@/lib/communityResources";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
+import { ConnectMeButton } from "@/components/patient/NeedConnect";
 import { NeedThreadList } from "@/components/patient/NeedThreadList";
 
 const MAX_ORGS_PER_NEED = 3;
@@ -49,11 +50,13 @@ function NeedMatch({
   directory: ReturnType<typeof patientBrowsableResources>;
 }) {
   const match = matchResourcesForNeed(need);
+  const connect = <ConnectMeButton patientId={patientId} itemId={need.id} />;
   if (!match)
     return (
       <p className="mt-2 text-sm text-muted-foreground" data-testid="need-no-match">
         We don&apos;t have a directory category that matches this one. Your care team will follow
         up with you directly.
+        {connect}
       </p>
     );
   if (!match.showOrgs)
@@ -70,10 +73,12 @@ function NeedMatch({
             </Button>
           ))}
         </div>
+        {connect}
       </div>
     );
   return (
     <div className="mt-3 space-y-3">
+      {connect}
       {match.categoryIds.map((cid) => {
         const orgs = directory.filter((r) => r.categoryId === cid).slice(0, MAX_ORGS_PER_NEED);
         if (orgs.length === 0) return null;

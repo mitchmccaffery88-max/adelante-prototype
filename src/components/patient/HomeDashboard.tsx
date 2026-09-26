@@ -72,6 +72,7 @@ import { ADHERENCE_TONE } from "@/lib/medAdherence";
 import { apptPrepTip } from "@/lib/apptPrep";
 import { marRowLabel } from "@/lib/mar";
 import { toast } from "sonner";
+import { ConnectMeButton } from "@/components/patient/NeedConnect";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { patientBrowsableResources } from "@/lib/communityResources";
 import { recommendationsFor, recoveryJourneyVisible } from "@/lib/seeking";
@@ -597,6 +598,7 @@ export function HomeDashboard({
                     ? count === 1 ? "1 place matches" : `${count} places match`
                     : match ? "Your team will go over options" : "Your team will follow up"}
                 </p>
+                <ConnectMeButton patientId={patientId} itemId={i.id} />
               </li>
               );
             })}
