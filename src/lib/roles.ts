@@ -1047,6 +1047,14 @@ export const STAFF_ROSTER: StaffMember[] = [
   },
   { id: "s-peer1", name: "Andre Willis", role: "peer_specialist", credential: "CPSS" },
   {
+    // §Cosign routing demo — a trainee with NO supervisor assigned yet, so his
+    // routed notes sit in "needs a supervisor" and he is not billable.
+    id: "s-tr2",
+    name: "Owen Tran",
+    role: "clinical_trainee",
+    credential: "AMFT",
+  },
+  {
     // §Phase 3 — CHW services are billed through an ENROLLED supervising
     // provider, so the supervision link is not optional paperwork: without it
     // `isBillableStaff` is false and no CHW claim can be created.

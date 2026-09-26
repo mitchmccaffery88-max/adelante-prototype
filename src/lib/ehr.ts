@@ -24004,6 +24004,37 @@ try {
         });
     }
   }
+  // §Cosign routing demo seeds — real store API. Kayla (supervised by Dr.
+  // Reyes) has a pending cosign only Reyes owns; Owen (no supervisor) has one
+  // in "needs a supervisor".
+  {
+    const seedCosign = (scenario: DemoScenarioKey, author: { token: string; name: string }, text: string) => {
+      const pid = demoScenarioPatientId(scenario);
+      const pt = patients.find((x) => x.id === pid);
+      if (!pid || !pt || pt.progressNotes?.some((n) => n.clinicianId === author.token && n.status === "cosign_pending")) return;
+      const n = AdelanteEHR.addProgressNote(pid, {
+        clinicianId: author.token,
+        date: new Date(Date.now() - 86_400_000).toISOString(),
+        sessionType: "individual",
+        subjective: text,
+        objective: "Engaged, oriented, cooperative.",
+        assessment: "Progressing toward treatment-plan goals.",
+        plan: "Continue weekly sessions.",
+        authorSource: "human",
+        status: "draft",
+      });
+      if (!n) return;
+      AdelanteEHR.signProgressNote(pid, n.id, {
+        signedBy: author.name,
+        signedById: author.token,
+        role: "clinical_trainee",
+        attested: true,
+        cosignRequired: true,
+      });
+    };
+    seedCosign("mh_only", { token: "c4", name: "Kayla Nguyen" }, "Reports better sleep this week; practiced grounding skills.");
+    seedCosign("medication", { token: "s-tr2", name: "Owen Tran" }, "Discussed coping with work stress; mood stable.");
+  }
   // §Phase 10c demo seeds — ASAM, all through the real store API.
   const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
   const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
