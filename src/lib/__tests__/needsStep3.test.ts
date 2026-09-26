@@ -60,24 +60,13 @@ describe("needs step 3 — appointment requests", () => {
     expect(out.map((o) => o.kind)).toEqual(["help_choose"]);
   });
 
-  it("SUD request links to the ASAM task, creates no parallel task, and is hidden from case manager", () => {
+  it("substance use never creates an appointment request", () => {
+    const p = AdelanteEHR.createPatient({ firstName: "Req", lastName: "Sud" });
+    const out = AdelanteEHR.createAppointmentRequests(p.id, { substanceUse: true }, PAT(p.id));
+    expect(out).toHaveLength(0);
+    expect(AdelanteEHR.listAppointmentRequests(p.id)).toHaveLength(0);
     const luisId = demoScenarioPatientId("sud_consented")!;
-    const req = AdelanteEHR.listAppointmentRequests(luisId).find((r) => r.kind === "sud_assessment")!;
-    expect(req).toBeTruthy();
-    expect(req.taskId).toBeUndefined();
-    expect(req.linkedAsamTaskId).toBeTruthy();
-    const luis = AdelanteEHR.getPatient(luisId)!;
-    expect(roleSeesApptRequest("therapist", luis, req)).toBe(true);
-    expect(roleSeesApptRequest("ecm_provider", luis, req)).toBe(false);
-    expect(roleSeesApptRequest("cf_care_manager", luis, req)).toBe(false);
-  });
-
-  it("SUD request leaves the linked ASAM task text untouched (no leak to roles that see the task)", () => {
-    const luisId = demoScenarioPatientId("sud_consented")!;
-    const req = AdelanteEHR.listAppointmentRequests(luisId).find((r) => r.kind === "sud_assessment")!;
-    const task = AdelanteEHR.listCaseTasks().find((t) => t.id === req.linkedAsamTaskId);
-    expect(task).toBeTruthy();
-    expect(`${task!.title} ${task!.detail ?? ""}`.toLowerCase()).not.toContain("appointment");
+    expect(AdelanteEHR.listAppointmentRequests(luisId)).toHaveLength(0);
   });
 
   it("seeded demo: Elena pending therapy; Carmen already scheduled; Tomás has an arranged visit", () => {
