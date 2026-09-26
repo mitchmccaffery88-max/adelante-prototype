@@ -2,6 +2,7 @@ import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
 import { useI18n, type Key } from "@/lib/i18n";
 import { toast } from "sonner";
+import { roleSeesSudMedication } from "@/lib/asamReporting";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
@@ -91,8 +92,10 @@ export function CarePlanCard({
   const filteredScreeners = plan.screenerHighlights.filter((s) =>
     s.sensitive ? sudUnlocked : true,
   );
+  const sudMedsVisible =
+    audience === "patient" ? true : staffRole ? sudUnlocked && roleSeesSudMedication(staffRole, patient) : false;
   const filteredMeds = medsUnlocked
-    ? plan.medications.filter((m) => (m.sensitive ? sudUnlocked : true))
+    ? plan.medications.filter((m) => (m.sensitive ? sudMedsVisible : true))
     : [];
   const hasHiddenSud = plan.focusAreas.some((f) => f.sensitive) && !sudUnlocked;
   const hasHiddenMeds = plan.medications.length > 0 && !medsUnlocked;

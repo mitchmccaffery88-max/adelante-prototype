@@ -25,6 +25,19 @@ import {
 } from "@/lib/ehr";
 // §Intake/SDOH Redesign Phase 3 — reconcile against real prior SDOH data.
 import { buildIntakeNeedsPlan } from "@/lib/intakeNeedsReconcile";
+import {
+  OPTIONAL_TOPICS,
+  URGENCIES,
+  URGENCY_LABEL,
+  WHAT_HELPS_COPY,
+  HRSN_DOMAIN_CATEGORY,
+  outsideKnownNeeds,
+  shouldSkipCoreQuestions,
+  patientSafeNeedLabel,
+  provenanceFor,
+  type NeedUrgency,
+  type OptionalTopicKey,
+} from "@/lib/whatWouldHelp";
 import { INTAKE_NEED_LABEL, type IntakeNeedKey } from "@/lib/sdohMapping";
 import { emptyEmergencyContact } from "@/lib/emergencyContacts";
 import {
@@ -294,7 +307,13 @@ function IntakePage() {
     mentalHealth: patient?.seeking?.mentalHealth ?? false,
     medication: patient?.seeking?.medication ?? false,
     substanceUse: false,
+    notSure: patient?.seeking?.notSure ?? false,
   }));
+  // §Needs step 1 — optional topics with one "how soon" follow-up each.
+  const [topics, setTopics] = useState<Partial<Record<OptionalTopicKey, NeedUrgency | "">>>({});
+  // Core AHC-HRSN questions are skipped (confirm instead) when the record
+  // already knows — recent result or outside-sourced needs.
+  const [coreChoice, setCoreChoice] = useState<"confirm" | "update" | null>(null);
   /** Index of the emergency contact also invited as advocate, or null. */
   const [advocateFromContact, setAdvocateFromContact] = useState<number | null>(null);
   const [advocateOther, setAdvocateOther] = useState({
@@ -305,6 +324,11 @@ function IntakePage() {
     channel: "sms" as "sms" | "email",
   });
   const B = BACKGROUND_COPY[lang9a === "es" ? "es" : "en"];
+  const H = WHAT_HELPS_COPY[lang9a === "es" ? "es" : "en"];
+  const langKey: "en" | "es" = lang9a === "es" ? "es" : "en";
+  const skipCore = useMemo(() => shouldSkipCoreQuestions(patient), [patient]);
+  const askCore = !skipCore || coreChoice === "update";
+  const outsideNeeds = useMemo(() => outsideKnownNeeds(patient?.sdohPlan?.items), [patient]);
 
   /**
    * §Consent re-prompt gate.
@@ -355,6 +379,8 @@ function IntakePage() {
       if (saved.coverage) setCoverage(saved.coverage);
       if (saved.benefits) setBenefits(saved.benefits);
       if (saved.seeking) setSeeking(saved.seeking);
+      if (saved.topics) setTopics(saved.topics);
+      if (saved.coreChoice !== undefined) setCoreChoice(saved.coreChoice);
       if (saved.advocateFromContact !== undefined) setAdvocateFromContact(saved.advocateFromContact);
       if (saved.advocateOther) setAdvocateOther(saved.advocateOther);
       // Merge, never overwrite: a blank field in an old draft must not erase
@@ -385,6 +411,8 @@ function IntakePage() {
           benefits,
           profile,
           seeking,
+          topics,
+          coreChoice,
           advocateFromContact,
           advocateOther,
           savedAt: at,
@@ -395,7 +423,7 @@ function IntakePage() {
       /* no-op */
     }
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, advocateFromContact, advocateOther]);
+  }, [step, sudConsent, hipaaConsent, answers, needs, coverage, benefits, profile, seeking, topics, coreChoice, advocateFromContact, advocateOther]);
 
   // Crisis signal — PHQ-9 item 9 (self-harm thoughts) > 0
   const phqItem9 = answers["phq-9"]?.[8] ?? 0;
@@ -450,14 +478,16 @@ function IntakePage() {
     () => intakeScreeners(effectiveSud),
     [effectiveSud],
   );
+  const hrsnDef = activeScreeners.find((s) => s.key === "ahc-hrsn");
   const steps = useMemo(
     () => [
       { key: "welcome", label: "Welcome" },
       { key: "about", label: "About you" },
       ...(consentOnFile ? [] : [{ key: "consent", label: "Consent" }]),
       { key: "coverage", label: "Coverage" },
-      ...activeScreeners.map((s) => ({ key: s.key, label: s.name })),
-      { key: "needs", label: "Needs" },
+      // AHC-HRSN core is asked inside "What would help you", not as its own step.
+      ...activeScreeners.filter((s) => s.key !== "ahc-hrsn").map((s) => ({ key: s.key, label: s.name })),
+      { key: "needs", label: "What would help you" },
       // §Reporting Tier 2 — structured CalOMS-shaped history. Only asked when
       // it genuinely applies: substance questions require Part 2 consent
       // (they are SUD content), justice questions require reported justice
@@ -485,6 +515,8 @@ function IntakePage() {
     // P1 — persist the About-you patch first.
     AdelanteEHR.updateProfile(currentId, profilePatch(profile));
     activeScreeners.forEach((s) => {
+      // §Needs step 1 — AHC-HRSN only saved when it was actually asked.
+      if (s.key === "ahc-hrsn" && !askCore) return;
       // §Phase 10a — shared scoring (gate items, domains) and raw answers
       // stored on the record; still the one `recordScreener` path.
       const raw = answers[s.key] ?? [];
@@ -595,15 +627,31 @@ function IntakePage() {
           source: r.source,
           ...(r.existingItemId ? { existingItemId: r.existingItemId } : {}),
         })),
-      selfReported: needsPlan.capture
-        .filter((k) => needs[k])
-        .map((k) => ({ need: INTAKE_NEED_LABEL[k] })),
+      selfReported: [
+        // Positive AHC-HRSN domains from the core questions just asked.
+        ...(askCore && hrsnDef
+          ? (scoreScreener(hrsnDef, hrsnDef.questions.map((_, i) => answers["ahc-hrsn"]?.[i] ?? 0)).domains ?? [])
+              .filter((d) => d.positive)
+              .map((d) => ({
+                need: d.label,
+                categoryId: HRSN_DOMAIN_CATEGORY[d.key],
+                ...(d.key === "safety" ? { safetySensitive: true } : {}),
+              }))
+          : []),
+        // Optional topics, each with its "how soon".
+        ...OPTIONAL_TOPICS.filter((t) => topics[t.key] !== undefined).map((t) => ({
+          need: t.need,
+          categoryId: t.categoryId,
+          ...(topics[t.key] ? { urgency: topics[t.key] as NeedUrgency } : {}),
+        })),
+      ],
     });
     AdelanteEHR.completeIntake(currentId, {
       // Backward compatibility: the four booleans still reflect what intake
       // learned, including needs confirmed through the "still applies" path.
       needs: {
         ...needs,
+        ...(topics.work !== undefined ? { employment: true } : {}),
         ...Object.fromEntries(
           needsPlan.known
             .filter((r) => knownAnswers[r.intakeKey] === "yes")
@@ -616,7 +664,7 @@ function IntakePage() {
     // §Part B1 — "looking for": content/recommendations + SUGGESTED goals only.
     AdelanteEHR.recordSeeking(
       currentId,
-      seeking,
+      seeking.notSure ? { mentalHealth: false, medication: false, substanceUse: false, notSure: true } : seeking,
       { id: currentId, role: "patient" },
       { sudConsentGiven: effectiveSud === true },
     );
@@ -864,20 +912,6 @@ function IntakePage() {
             </div>
             )}
 
-                <fieldset className="space-y-2" data-testid="seeking-question">
-                  <legend className="text-sm">{B.seekingQ}</legend>
-                  {(["mentalHealth", "medication", "substanceUse"] as const).map((k) => (
-                    <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
-                      <Checkbox
-                        checked={seeking[k]}
-                        data-testid={`seeking-${k}`}
-                        onCheckedChange={(v) => setSeeking({ ...seeking, [k]: Boolean(v) })}
-                      />
-                      <span>{B.seeking[k]}</span>
-                    </label>
-                  ))}
-                  <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
-                </fieldset>
               </div>
             )}
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
@@ -1422,111 +1456,186 @@ function IntakePage() {
         )}
 
         {current.key === "needs" && (
-          <div className="space-y-5" data-testid="needs-step">
-            {/* §Phase 3 — already-known needs are confirmed, not re-asked. */}
-            {needsPlan.known.length > 0 && (
-              <div className="space-y-3" data-testid="needs-known">
-                <div>
-                  <h3 className="text-sm font-medium">What we already know</h3>
-                  <p className="text-sm text-muted-foreground">
-                    These are already on your record. Tell us whether each one still applies — you
-                    don&apos;t have to answer them again from scratch.
-                  </p>
-                </div>
-                {needsPlan.known.map((row) => (
-                  <div
-                    key={row.intakeKey}
-                    className="rounded-lg border p-3 space-y-2"
-                    data-testid={`needs-known-${row.intakeKey}`}
-                  >
-                    <div className="flex flex-wrap items-center gap-2">
-                      <span className="text-sm font-medium">{row.need}</span>
-                      <Badge variant="outline" className="text-[10px]">
-                        {SDOH_SOURCE_LABEL[row.source]}
-                      </Badge>
-                    </div>
-                    <p className="text-xs text-muted-foreground">{row.evidence}</p>
-                    <div className="flex flex-wrap gap-2">
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={knownAnswers[row.intakeKey] === "yes" ? "default" : "outline"}
-                        data-testid={`needs-known-${row.intakeKey}-yes`}
-                        onClick={() =>
-                          setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "yes" }))
-                        }
-                      >
-                        Still applies
-                      </Button>
-                      <Button
-                        type="button"
-                        size="sm"
-                        variant={knownAnswers[row.intakeKey] === "no" ? "default" : "outline"}
-                        data-testid={`needs-known-${row.intakeKey}-no`}
-                        onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "no" }))}
-                      >
-                        This has changed
-                      </Button>
-                    </div>
-                    {knownAnswers[row.intakeKey] === "no" && (
-                      <p className="text-xs text-muted-foreground">
-                        Thanks — we&apos;ll leave it on your plan for now and someone on your care
-                        team will go over it with you.
-                      </p>
-                    )}
-                  </div>
-                ))}
-              </div>
+          <div className="space-y-6" data-testid="needs-step">
+            <h2 className="font-display text-xl text-navy">{H.title}</h2>
+            {langKey === "es" && H.esPending && (
+              <p className="text-xs text-muted-foreground" data-testid="needs-es-pending">{H.esPending}</p>
             )}
 
-            {/* Positive HRSN domains intake cannot honestly confirm or deny. */}
-            {needsPlan.onFileOnly.length > 0 && (
-              <div
-                className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 space-y-2"
-                data-testid="needs-on-file-only"
-              >
-                <h3 className="text-sm font-medium">Also on file from your earlier screening</h3>
-                <p className="text-xs text-muted-foreground">
-                  Your care team already has these. We&apos;re not asking about them here — they
-                  came from a full screening, and this short form isn&apos;t the right place to
-                  change them. Your care team will follow up with you directly.
-                </p>
-                <ul className="space-y-1">
-                  {needsPlan.onFileOnly.map((d) => (
-                    <li
-                      key={d.domainKey}
-                      className="text-sm"
-                      data-testid={`needs-on-file-${d.domainKey}`}
-                    >
-                      • {d.domainLabel}
-                    </li>
-                  ))}
-                </ul>
-              </div>
-            )}
-
-            {needsPlan.capture.length > 0 && (
-              <div className="space-y-3" data-testid="needs-capture">
-                <p className="text-sm text-muted-foreground">
-                  {needsPlan.known.length > 0 || needsPlan.onFileOnly.length > 0
-                    ? "Anything else you need help with right now? Select all that apply."
-                    : "Tell us what support you need right now. Select all that apply."}
-                </p>
-                {needsPlan.capture.map((k) => (
-                  <label
-                    key={k}
-                    className="flex items-center min-h-11 gap-3 rounded-lg border py-3 px-3 cursor-pointer hover:border-teal"
-                  >
+            {/* Section A — care you're looking for (existing question + "Not sure yet"). */}
+            {!inReassess && (
+              <fieldset className="space-y-2 rounded-lg border p-4" data-testid="seeking-question">
+                <legend className="px-1 text-sm font-medium text-navy">{H.sectionA}</legend>
+                <p className="text-sm">{B.seekingQ}</p>
+                {(["mentalHealth", "medication", "substanceUse"] as const).map((k) => (
+                  <label key={k} className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
                     <Checkbox
-                      checked={needs[k]}
-                      data-testid={`needs-capture-${k}`}
-                      onCheckedChange={(v) => setNeeds({ ...needs, [k]: Boolean(v) })}
+                      checked={seeking[k]}
+                      data-testid={`seeking-${k}`}
+                      onCheckedChange={(v) => setSeeking({ ...seeking, [k]: Boolean(v), notSure: false })}
                     />
-                    <span className="text-sm">{INTAKE_NEED_LABEL[k]}</span>
+                    <span>{B.seeking[k]}</span>
                   </label>
                 ))}
-              </div>
+                <label className="flex min-h-11 cursor-pointer items-center gap-3 rounded-md border p-3 text-sm">
+                  <Checkbox
+                    checked={seeking.notSure}
+                    data-testid="seeking-notSure"
+                    onCheckedChange={(v) =>
+                      setSeeking(
+                        v
+                          ? { mentalHealth: false, medication: false, substanceUse: false, notSure: true }
+                          : { ...seeking, notSure: false },
+                      )
+                    }
+                  />
+                  <span>{H.notSure}</span>
+                </label>
+                <p className="text-xs text-muted-foreground">{B.seekingNote}</p>
+              </fieldset>
             )}
+
+            {/* Section B — everyday needs. */}
+            <section className="space-y-4 rounded-lg border p-4" data-testid="everyday-needs">
+              <h3 className="text-sm font-medium text-navy">{H.sectionB}</h3>
+
+              {skipCore && (
+                <div className="space-y-3 rounded-lg border bg-secondary/40 p-3" data-testid="needs-already-knows">
+                  <div className="text-sm font-medium">{H.alreadyKnows}</div>
+                  {(() => {
+                    const names = new Map<string, string>();
+                    for (const r of needsPlan.known) names.set(r.need.toLowerCase(), `${r.need} — ${provenanceFor(r.source)}`);
+                    for (const i of outsideNeeds) {
+                      const label = patientSafeNeedLabel(i);
+                      if (label && !names.has(label.toLowerCase())) names.set(label.toLowerCase(), `${label} — ${provenanceFor(i.source)}`);
+                    }
+                    for (const d of needsPlan.onFileOnly) {
+                      if (d.domainKey === "safety") continue;
+                      if (!names.has(d.domainLabel.toLowerCase())) names.set(d.domainLabel.toLowerCase(), d.domainLabel);
+                    }
+                    const hiddenSafety =
+                      outsideNeeds.some((i) => !patientSafeNeedLabel(i)) ||
+                      needsPlan.onFileOnly.some((d) => d.domainKey === "safety");
+                    return (
+                      <ul className="space-y-1 text-sm">
+                        {[...names.values()].map((n) => (
+                          <li key={n} data-testid="needs-already-knows-item">• {n}</li>
+                        ))}
+                        {hiddenSafety && <li className="text-muted-foreground">• {H.otherPrivate}</li>}
+                      </ul>
+                    );
+                  })()}
+                  <p className="text-xs text-muted-foreground">{H.alreadyKnowsNote}</p>
+                  <div className="flex flex-wrap gap-2">
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-11"
+                      variant={coreChoice === "confirm" ? "default" : "outline"}
+                      data-testid="needs-already-confirm"
+                      onClick={() => {
+                        setCoreChoice("confirm");
+                        setKnownAnswers(Object.fromEntries(needsPlan.known.map((r) => [r.intakeKey, "yes"])));
+                      }}
+                    >
+                      {H.confirm}
+                    </Button>
+                    <Button
+                      type="button"
+                      size="sm"
+                      className="min-h-11"
+                      variant={coreChoice === "update" ? "default" : "outline"}
+                      data-testid="needs-already-update"
+                      onClick={() => {
+                        setCoreChoice("update");
+                        setKnownAnswers(Object.fromEntries(needsPlan.known.map((r) => [r.intakeKey, "yes"])));
+                      }}
+                    >
+                      {H.update}
+                    </Button>
+                  </div>
+                  {coreChoice === "update" && <p className="text-xs text-muted-foreground">{H.updateNote}</p>}
+                </div>
+              )}
+
+              {askCore && hrsnDef && (
+                <div className="space-y-3" data-testid="needs-core-questions">
+                  <div>
+                    <Badge variant="outline" className="border-teal/40 text-teal">{hrsnDef.name}</Badge>
+                    <p className="mt-2 text-xs text-muted-foreground">{H.coreIntro}</p>
+                  </div>
+                  <ScreenerItems
+                    def={hrsnDef}
+                    answers={answers["ahc-hrsn"] ?? []}
+                    choices={choices["ahc-hrsn"]}
+                    onChange={(nextA, ch) => {
+                      setAnswers({ ...answers, "ahc-hrsn": nextA as number[] });
+                      setChoices({ ...choices, "ahc-hrsn": ch });
+                    }}
+                  />
+                </div>
+              )}
+
+              {/* Staff- or advocate-identified needs still get "still applies?" when the core is asked. */}
+              {!skipCore && needsPlan.known.length > 0 && (
+                <div className="space-y-2" data-testid="needs-known">
+                  {needsPlan.known.map((row) => (
+                    <div key={row.intakeKey} className="flex flex-wrap items-center gap-2 rounded-lg border p-3" data-testid={`needs-known-${row.intakeKey}`}>
+                      <span className="text-sm font-medium">{row.need}</span>
+                      <Badge variant="outline" className="text-[10px]">{SDOH_SOURCE_LABEL[row.source]}</Badge>
+                      <Button type="button" size="sm" variant={knownAnswers[row.intakeKey] === "yes" ? "default" : "outline"} data-testid={`needs-known-${row.intakeKey}-yes`} onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "yes" }))}>{H.confirm}</Button>
+                      <Button type="button" size="sm" variant={knownAnswers[row.intakeKey] === "no" ? "default" : "outline"} data-testid={`needs-known-${row.intakeKey}-no`} onClick={() => setKnownAnswers((s) => ({ ...s, [row.intakeKey]: "no" }))}>{H.update}</Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {/* Optional topics — directory categories the core does not cover. */}
+              <div className="space-y-2" data-testid="needs-optional-topics">
+                <p className="text-sm">{H.topicsQ}</p>
+                <p className="text-[11px] text-muted-foreground">{H.draft}</p>
+                {OPTIONAL_TOPICS.map((t) => {
+                  const on = topics[t.key] !== undefined;
+                  return (
+                    <div key={t.key} className="rounded-md border p-3">
+                      <label className="flex min-h-11 cursor-pointer items-center gap-3 text-sm">
+                        <Checkbox
+                          checked={on}
+                          data-testid={`topic-${t.key}`}
+                          onCheckedChange={(v) => {
+                            const nextT = { ...topics };
+                            if (v) nextT[t.key] = "";
+                            else delete nextT[t.key];
+                            setTopics(nextT);
+                          }}
+                        />
+                        <span>{t[langKey]}</span>
+                      </label>
+                      {on && (
+                        <div className="mt-2 space-y-1 pl-7">
+                          <div className="text-xs text-muted-foreground">{H.howSoon}</div>
+                          <div className="flex flex-wrap gap-2" role="group" aria-label={H.howSoon}>
+                            {URGENCIES.map((u) => (
+                              <Button
+                                key={u}
+                                type="button"
+                                size="sm"
+                                className="min-h-11"
+                                variant={topics[t.key] === u ? "default" : "outline"}
+                                data-testid={`topic-${t.key}-${u}`}
+                                onClick={() => setTopics({ ...topics, [t.key]: u })}
+                              >
+                                {URGENCY_LABEL[langKey][u]}
+                              </Button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </section>
           </div>
         )}
 

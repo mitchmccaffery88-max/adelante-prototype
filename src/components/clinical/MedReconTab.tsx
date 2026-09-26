@@ -16,7 +16,15 @@ import {
   type MedReconItem,
   type MedReconciliation,
 } from "@/lib/ehr";
-import { useActingStaff } from "@/lib/roles";
+import { useActingStaff, useActingRole } from "@/lib/roles";
+import { isSudMedicationName } from "@/lib/ehr";
+import { roleSeesSudMedication } from "@/lib/asamReporting";
+
+/** Protected OUD/AUD meds are withheld for ECM case manager / coordinator (draft rule). */
+function useSudMedFilter() {
+  const [role] = useActingRole();
+  return (name: string) => !isSudMedicationName(name) || roleSeesSudMedication(role);
+}
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
@@ -142,6 +150,7 @@ function ActiveSession({
 }) {
   const { staffName } = useActingStaff();
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
+  const sudOk = useSudMedFilter();
   const unreviewed = items.filter(
     (i) => i.source === "active_order" && i.decision === "not_reviewed",
   );
@@ -253,7 +262,7 @@ function ActiveSession({
             No active orders were found to seed. Add home / prior medications below.
           </p>
         )}
-        {items.map((item) => (
+        {items.filter((it) => sudOk(it.drugName)).map((item) => (
           <div key={item.id} className="rounded border p-3">
             <div className="flex flex-wrap items-center justify-between gap-2">
               <div>
@@ -478,6 +487,7 @@ function HistoryRow({
   onToggle: () => void;
 }) {
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
+  const sudOk = useSudMedFilter();
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const i of items) c[i.decision] = (c[i.decision] ?? 0) + 1;
@@ -510,7 +520,7 @@ function HistoryRow({
       </button>
       {open && (
         <ul className="mt-3 divide-y text-sm">
-          {items.map((i) => (
+          {items.filter((it) => sudOk(it.drugName)).map((i) => (
             <li key={i.id} className="py-2">
               <div className="flex flex-wrap items-center gap-2">
                 <span className="font-medium">{i.drugName}</span>

@@ -42,7 +42,7 @@ import { ClientDate } from "@/components/ClientDate";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { useI18n } from "@/lib/i18n";
 import { CarePlanCard } from "@/components/CarePlanCard";
-import { roleSeesAsam } from "@/lib/asamReporting";
+import { roleSeesAsam, roleSeesSudMedication, SUD_MED_WITHHELD_ROLES, SUD_MED_ACCESS_NOTE } from "@/lib/asamReporting";
 import { useActingRole, useActingStaff, canAccess, getStaffMember } from "@/lib/roles";
 import {
   assignmentIdentityFor,
@@ -1209,11 +1209,12 @@ function RefillReviewCardInner() {
   const [showHistory, setShowHistory] = useState(false);
 
   // Part 2: OUD/AUD medication refills show only to roles that pass the
-  // substance-use check for that patient (existing rule; no permission change).
+  // substance-use check for that patient; ECM case manager and coordinator are
+  // withheld (Access rule: draft pending compliance review).
   const partTwoOk = (r: { patientId: string; medicationName: string }) => {
     if (!isSudMedicationName(r.medicationName)) return true;
     const p = patients.find((x) => x.id === r.patientId);
-    return p ? roleSeesAsam(role, p) : false;
+    return p ? roleSeesSudMedication(role, p) : false;
   };
   const visiblePending = allPending.filter(partTwoOk);
   const minePending = visiblePending.filter((r) => {
@@ -1252,10 +1253,15 @@ function RefillReviewCardInner() {
           onClick={() => setScope("all")}
           data-testid="refill-scope-all"
         >
-          All pending ({allPending.length})
+          All pending ({visiblePending.length})
         </Button>
       </div>
       <p className="text-[11px] text-muted-foreground">{CASELOAD_SCOPE_NOTE}</p>
+      {SUD_MED_WITHHELD_ROLES.includes(role) && (
+        <p className="text-[11px] text-muted-foreground" data-testid="refill-sud-withheld-note">
+          {SUD_MED_ACCESS_NOTE}
+        </p>
+      )}
     </div>
   );
 

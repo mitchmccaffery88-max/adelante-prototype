@@ -511,13 +511,17 @@ export type SdohItemSource =
   | "pre_release_hrsn"
   | "intake_self_report"
   | "staff_assessed"
-  | "advocate_reported";
+  | "advocate_reported"
+  | "partner_import"
+  | "referral";
 
 export const SDOH_SOURCE_LABEL: Record<SdohItemSource, string> = {
   pre_release_hrsn: "From pre-release screening",
   intake_self_report: "Self-reported at intake",
   staff_assessed: "Staff-identified",
   advocate_reported: "Raised by advocate",
+  partner_import: "From partner organization",
+  referral: "From referral",
 };
 
 /**
@@ -662,6 +666,10 @@ export interface SdohPlanItem {
   urgentEscalationId?: string;
   urgentFlaggedBy?: string;
   urgentFlaggedAt?: string;
+  /** §Needs step 1 — directory category (RESOURCE_CATEGORIES id). */
+  categoryId?: string;
+  /** §Needs step 1 — patient-reported "how soon" (draft wording). */
+  urgency?: "today" | "this_week" | "later";
 }
 
 export interface SelfHelpModule {
@@ -1542,6 +1550,8 @@ export interface Patient {
     answeredAt: string;
     substanceUse?: boolean;
     part2ConsentAtSelection?: boolean;
+    /** §Needs step 1 — "Not sure yet". */
+    notSure?: boolean;
   };
   /**
    * §Part B1 — goals SUGGESTED from the About You answers. They are never on
@@ -9909,7 +9919,7 @@ export const AdelanteEHR = {
    */
   recordSeeking(
     patientId: string,
-    answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean },
+    answer: { mentalHealth: boolean; medication: boolean; substanceUse: boolean; notSure?: boolean },
     actor: { id: string; role: string },
     /** Part 2 consent given in this same intake (the ledger may lag). */
     opts?: { sudConsentGiven?: boolean },
@@ -9932,6 +9942,7 @@ export const AdelanteEHR = {
       answeredAt: now,
       substanceUse: answer.substanceUse,
       ...(answer.substanceUse ? { part2ConsentAtSelection: sudAllowed } : {}),
+      ...(answer.notSure ? { notSure: true } : {}),
     };
     const sudKept = answer.substanceUse && sudAllowed;
     if (answer.substanceUse) p.needs = { ...p.needs, substanceUse: true };
@@ -11901,7 +11912,12 @@ export const AdelanteEHR = {
     patientId: string,
     input: {
       confirmed: { need: string; source: SdohItemSource; existingItemId?: string }[];
-      selfReported: { need: string }[];
+      selfReported: {
+        need: string;
+        categoryId?: string;
+        urgency?: "today" | "this_week" | "later";
+        safetySensitive?: boolean;
+      }[];
     },
   ): { created: number; touched: number } {
     const p = patients.find((x) => x.id === patientId);
@@ -11940,7 +11956,16 @@ export const AdelanteEHR = {
     }
 
     for (const s of input.selfReported) {
-      if (!s.need.trim() || has(s.need)) continue;
+      if (!s.need.trim()) continue;
+      const dup = has(s.need);
+      if (dup) {
+        // 8a merge: never erase — only fill what is missing.
+        let filled = false;
+        if (s.urgency && !dup.urgency) { dup.urgency = s.urgency; filled = true; }
+        if (s.categoryId && !dup.categoryId) { dup.categoryId = s.categoryId; filled = true; }
+        if (filled) { dup.updatedAt = now; touched++; }
+        continue;
+      }
       p.sdohPlan = {
         items: [
           {
@@ -11948,7 +11973,10 @@ export const AdelanteEHR = {
             need: s.need.trim(),
             source: "intake_self_report",
             status: "identified",
-            visibleToPatient: true,
+            visibleToPatient: !s.safetySensitive,
+            ...(s.safetySensitive ? { safetySensitive: true } : {}),
+            ...(s.categoryId ? { categoryId: s.categoryId } : {}),
+            ...(s.urgency ? { urgency: s.urgency } : {}),
             createdAt: now,
             updatedAt: now,
           },
@@ -23403,6 +23431,14 @@ try {
   if (!already(victor)) {
     const t2 = rx(victor, { name: "Trazodone", dose: "100 mg", frequency: "at bedtime", indication: "sleep", started: 50, refills: 0, pharmacy: CVS });
     refill(t2, { ago: 5, review: "denied", reason: "Prescribed by an outside clinic — please ask that prescriber." });
+  }
+  // §Needs step 1 — Victor's optional topic with "today" urgency, through
+  // the normal intake needs path (applyIntakeNeeds).
+  if (victor && !patients.find((p) => p.id === victor)?.sdohPlan?.items.some((i) => i.need === "ID and documents")) {
+    AdelanteEHR.applyIntakeNeeds(victor, {
+      confirmed: [],
+      selfReported: [{ need: "ID and documents", categoryId: "life_skills", urgency: "today" }],
+    });
   }
   // 4 Tomás — release bridge prescription (short supply to first visit).
   const tomas = byName(DEMO_PRE_RELEASE_PERSONA.firstName, DEMO_PRE_RELEASE_PERSONA.lastName);

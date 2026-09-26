@@ -48,3 +48,17 @@ describe("outpatient medication demo seed", () => {
     if (p) expect(AdelanteEHR.listMedications((p as { id: string }).id)).toHaveLength(0);
   });
 });
+
+describe("ECM case manager and protected medications (draft pending compliance review)", () => {
+  it("Luz Herrera (ECM) can't see Luis's buprenorphine-naloxone; Dr. Bagga (PMHNP) still can", async () => {
+    const { roleSeesSudMedication, SUD_MED_ACCESS_NOTE } = await import("@/lib/asamReporting");
+    const id = demoScenarioPatientId("sud_consented")!;
+    const p = AdelanteEHR.getPatient(id)!;
+    const bn = AdelanteEHR.listMedications(id).find((m) => /buprenorphine/i.test(m.name))!;
+    expect(isSudMedicationName(bn.name)).toBe(true);
+    expect(roleSeesAsam("ecm_provider", p)).toBe(true); // consent on file…
+    expect(roleSeesSudMedication("ecm_provider", p)).toBe(false); // …still withheld
+    expect(roleSeesSudMedication("pmhnp", p)).toBe(true);
+    expect(SUD_MED_ACCESS_NOTE).toContain("Access rule: draft pending compliance review.");
+  });
+});
