@@ -20,8 +20,8 @@ function timeAgo(iso: string): string {
 
 export function NotificationBell({ className }: { className?: string }) {
   const navigate = useNavigate();
-  const { staffName, role } = useActingStaff();
-  const rows = useEhr(() => AdelanteEHR.listNotificationsFor(staffName, role));
+  const { staffName, role, staffId } = useActingStaff();
+  const rows = useEhr(() => AdelanteEHR.listNotificationsFor(staffName, role, staffId));
   const unread = rows.filter((n) => !n.readAt).length;
 
   const open = (n: AppNotification) => {
@@ -63,7 +63,7 @@ export function NotificationBell({ className }: { className?: string }) {
             size="sm"
             className="h-7 text-xs"
             disabled={unread === 0}
-            onClick={() => AdelanteEHR.markAllNotificationsRead(staffName, role)}
+            onClick={() => AdelanteEHR.markAllNotificationsRead(staffName, role, staffId)}
           >
             Mark all read
           </Button>

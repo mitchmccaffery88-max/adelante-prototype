@@ -248,7 +248,15 @@ export type NotificationCategory =
   // whoever asked for it.
   | "provider_request_completed"
   // §Notification feed Phase 2 — patient<->clinician messaging.
-  | "patient_message";
+  | "patient_message"
+  // §Demo inbox seed — operational categories used by seeded + future feeds.
+  | "refill_request"
+  | "appointment_request"
+  | "appointment_rescheduled"
+  | "connect_request"
+  | "needs_task"
+  | "protected_task"
+  | "claim_blocked";
 
 export interface AppNotification {
   id: string;
@@ -14548,12 +14556,14 @@ export const AdelanteEHR = {
    * display name — both are used as identity tokens across this build) or
    * broadcast to their role. Newest first.
    */
-  listNotificationsFor(staffName: string, role?: StaffRole): AppNotification[] {
+  listNotificationsFor(staffName: string, role?: StaffRole, staffId?: string): AppNotification[] {
     const me = (staffName ?? "").trim();
+    const myId = (staffId ?? "").trim();
     return notifications
       .filter(
         (n) =>
           (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
+          (!!n.recipientStaffId && !!myId && n.recipientStaffId === myId) ||
           (!!n.recipientRole && !!role && n.recipientRole === role),
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
@@ -14571,8 +14581,8 @@ export const AdelanteEHR = {
     });
     emit();
   },
-  markAllNotificationsRead(staffName: string, role?: StaffRole): void {
-    const rows = AdelanteEHR.listNotificationsFor(staffName, role).filter((n) => !n.readAt);
+  markAllNotificationsRead(staffName: string, role?: StaffRole, staffId?: string): void {
+    const rows = AdelanteEHR.listNotificationsFor(staffName, role, staffId).filter((n) => !n.readAt);
     if (!rows.length) return;
     const now = new Date().toISOString();
     for (const r of rows) r.readAt = now;
