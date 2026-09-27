@@ -14,7 +14,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { ADVOCATE_AUTHORIZATION_TYPES, type AdvocateAuthorizationType } from "@/lib/advocate";
+import { ADVOCATE_AUTHORIZATION_TYPES, ADVOCATE_PLAIN_LABEL, ADVOCATE_PLAIN_LABEL_ES, type AdvocateAuthorizationType } from "@/lib/advocate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -236,7 +236,12 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
               <RadioGroupItem id={`auth-${a.key}`} value={a.key} className="mt-1" />
               <span>
                 <span className="font-medium text-navy">{a.label}</span>
-                <span className="block text-xs text-muted-foreground">{a.summary}</span>
+                <span className="block text-sm text-foreground" data-testid="advocate-type-plain">
+                  {advLang === "es" ? a.plain.es : a.plain.en}
+                </span>
+                <span className="block text-[11px] text-muted-foreground">
+                  {advLang === "es" ? ADVOCATE_PLAIN_LABEL_ES : ADVOCATE_PLAIN_LABEL}
+                </span>
               </span>
             </label>
           ))}
