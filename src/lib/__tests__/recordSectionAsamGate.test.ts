@@ -7,8 +7,8 @@ import { recordSectionVisible } from "@/lib/recordSectionGate";
 import { roleSeesAsam } from "@/lib/asamReporting";
 
 describe("ASAM chart section gate", () => {
-  const jordan = AdelanteEHR.getPatient(demoScenarioPatientId("sud_no_consent"))!;
-  const luis = AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented"))!;
+  const jordan = AdelanteEHR.getPatient(demoScenarioPatientId("sud_no_consent")!)!;
+  const luis = AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented")!)!;
 
   it("hides ASAM from ECM and care manager when they fail the check", () => {
     for (const role of ["ecm_provider", "cf_care_manager", "medical_assistant"] as const) {
