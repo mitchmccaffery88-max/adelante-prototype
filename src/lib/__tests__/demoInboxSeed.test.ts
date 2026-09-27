@@ -24,7 +24,7 @@ describe("demo inbox seed — real store functions", () => {
     }
     const billing = AdelanteEHR.listNotificationsFor("Tonya Price", "billing").filter((n) => n.subject.includes("DMC-ODS"));
     expect(billing.every((n) => n.body.startsWith("Blocked: clinical documentation incomplete"))).toBe(true);
-    const asam = AdelanteEHR.listNotifications().filter((n) => n.category === "asam_task");
+    const asam = AdelanteEHR.listNotifications().filter((n) => n.category === "protected_task");
     expect(asam.every((n) => !/substance|alcohol|drug|asam/i.test(n.subject + n.body))).toBe(true);
     expect(canAccess).toBeTruthy();
   });

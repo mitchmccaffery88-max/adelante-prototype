@@ -136,8 +136,8 @@ export function seedDemoInbox(): void {
   if (victor)
     n({ recipientRole: "ecm_provider", category: "needs_task", subject: "Same-day task — Victor H.", body: "Needs a replacement ID today (same-day need from intake).", linkRoute: "/my-work", ...pl(victor) });
   // ASAM task — masked: no reason, no substance-use wording.
-  n({ recipientRole: "sud_counselor", category: "asam_task", subject: "Protected assessment task due", body: "A protected assessment task is assigned to your team. Open My Work to view.", linkRoute: "/my-work" });
-  n({ recipientRole: "therapist", category: "asam_task", subject: "Protected assessment task due", body: "A protected assessment task needs an assessment visit scheduled.", linkRoute: "/my-work" });
+  n({ recipientRole: "sud_counselor", category: "protected_task", subject: "Protected assessment task due", body: "A protected assessment task is assigned to your team. Open My Work to view.", linkRoute: "/my-work" });
+  n({ recipientRole: "therapist", category: "protected_task", subject: "Protected assessment task due", body: "A protected assessment task needs an assessment visit scheduled.", linkRoute: "/my-work" });
   // Billing — DMC-ODS blocks show only the generic reason.
   n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim blocked — DMC-ODS", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
   n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim denied — Medi-Cal (90834)", body: "Denied: eligibility not active on date of service. Verify coverage and resubmit.", linkRoute: "/admin-claims" });

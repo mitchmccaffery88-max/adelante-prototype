@@ -255,7 +255,7 @@ export type NotificationCategory =
   | "appointment_rescheduled"
   | "connect_request"
   | "needs_task"
-  | "asam_task"
+  | "protected_task"
   | "claim_blocked";
 
 export interface AppNotification {
