@@ -1,0 +1,56 @@
+import { describe, expect, it } from "vitest";
+import { AdelanteEHR } from "../ehr";
+import { AdelanteEHRExt } from "../ehr-ext";
+import { STAFF_ROLES } from "../roles";
+import { resolveNavAccess } from "../navGuard";
+import {
+  canActOnCoordination,
+  eligibleReassignTargets,
+  formatClinicianName,
+  listCoordinationAudit,
+  listUnassignedPatients,
+  reassignCoverage,
+  seedCoordinationDemo,
+} from "../coordination";
+import { stripTaskPrefix } from "../inboxActions";
+
+describe("clinical coordination (item 6)", () => {
+  it("only clinical_coordinator and sys_admin reach the page", () => {
+    for (const { key } of STAFF_ROLES) {
+      const ok = key === "clinical_coordinator" || key === "sys_admin";
+      expect([key, canActOnCoordination(key)]).toEqual([key, ok]);
+      expect([key, resolveNavAccess(key, "/admin-coordination").status]).toEqual([key, ok ? "allowed" : "denied"]);
+    }
+  });
+
+  it("seeds Kayla, a frozen provider, one reassigned + one pending patient", () => {
+    seedCoordinationDemo();
+    expect(AdelanteEHRExt.getClinicianProfile("c4")?.active).toBe(true);
+    expect(AdelanteEHRExt.getClinicianProfile("c2")?.active).toBe(false);
+    const audit = listCoordinationAudit();
+    const re = audit.find((e) => e.action === "coordination_reassign");
+    expect(re?.detail?.reason).toBe("provider_frozen");
+    expect(re?.actorRole).toBe("clinical_coordinator");
+    expect(listUnassignedPatients().some((u) => u.why === "Primary clinician frozen")).toBe(true);
+  });
+
+  it("reassign needs a coordinator, an eligible clinician and a reason; trainee shows supervisor", () => {
+    const pending = AdelanteEHR.listAppointments().find(
+      (a) => a.clinicianId === "c2" && a.status === "scheduled" && +new Date(a.start) > Date.now(),
+    )!;
+    const opts = eligibleReassignTargets(pending);
+    expect(opts.some((o) => o.clinicianId === "c2")).toBe(false);
+    const kayla = opts.find((o) => o.clinicianId === "c4");
+    expect(kayla?.supervisorName).toBe("Dr. Marisol Reyes");
+    const actor = { name: "Dr. Marisol Reyes", role: "therapist" as const };
+    expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "provider_frozen", actor })).toThrow();
+    const priya = { name: "Priya Raman", role: "clinical_coordinator" as const };
+    expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "other", actor: priya })).toThrow(/Other/);
+  });
+
+  it("formats export names and strips doubled task prefixes", () => {
+    expect(formatClinicianName("Dr. Marisol Reyes", "LCSW")).toBe("Marisol Reyes, LCSW");
+    expect(stripTaskPrefix("Task assigned — Coverage needed")).toBe("Coverage needed");
+    expect(stripTaskPrefix("Follow up — Task assigned — X")).toBe("X");
+  });
+});

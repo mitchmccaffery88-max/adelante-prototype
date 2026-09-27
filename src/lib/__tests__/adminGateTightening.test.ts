@@ -15,7 +15,9 @@ const reaches = (role: StaffRole, to: string) =>
 describe("tightened administration gates", () => {
   it("no administration surface is `open` any more", () => {
     for (const entry of STAFF_NAV.filter((e) => e.group === "administration")) {
-      expect([entry.id, entry.gate.kind]).toEqual([entry.id, "record_class"]);
+      // §Item 6 — Clinical Coordination is a named-role desk, not open.
+      const expected = entry.id === "admin-coordination" ? "coordination_desk" : "record_class";
+      expect([entry.id, entry.gate.kind]).toEqual([entry.id, expected]);
     }
   });
 
