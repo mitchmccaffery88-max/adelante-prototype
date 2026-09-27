@@ -24,6 +24,10 @@ export const Route = createFileRoute("/consent")({
       },
     ],
   }),
+  validateSearch: (s: Record<string, unknown>): { patientId?: string; category?: string } => ({
+    patientId: typeof s.patientId === "string" ? s.patientId : undefined,
+    category: typeof s.category === "string" ? s.category : undefined,
+  }),
   component: ConsentPage,
 });
 
@@ -62,7 +66,8 @@ const PURPOSES: { key: ExtendedConsentPurpose; label: string; note: string }[] =
 function ConsentPage() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const events = useEhr(() => AdelanteEHR.listAllConsentEvents());
-  const [selected, setSelected] = useState<string>(patients[0]?.id ?? "");
+  const search = Route.useSearch();
+  const [selected, setSelected] = useState<string>(search.patientId ?? patients[0]?.id ?? "");
   const patient = useEhr(() => AdelanteEHR.getPatient(selected));
   const state = useEhr(() => (patient ? AdelanteEHR.getConsentState(patient.id) : null));
 
@@ -105,6 +110,12 @@ function ConsentPage() {
         </Select>
       </div>
 
+      {search.category === "telehealth" && patient && (
+        <p role="status" className="rounded-md border border-teal/40 bg-teal/5 p-3 text-sm text-navy" data-testid="consent-focus">
+          Telehealth consent is needed before this patient can join a group with online meetings.
+          Record it below under Telehealth.
+        </p>
+      )}
       {patient && state ? (
         <ConsentRecordsPanel patient={patient} />
       ) : null}
@@ -118,7 +129,7 @@ function ConsentPage() {
                 : ((state as Record<string, boolean | undefined>)[p.key] ?? false);
             const isCore = ["part2Sud", "ecmShare", "sms"].includes(p.key);
             return (
-              <div key={p.key} className="rounded-xl border bg-card p-4">
+              <div key={p.key} id={`consent-${p.key}`} className={`rounded-xl border bg-card p-4 ${search.category === p.key ? "ring-2 ring-teal" : ""}`}>
                 <div className="flex items-start justify-between gap-3">
                   <div>
                     <div className="font-medium text-sm">{p.label}</div>

@@ -1,5 +1,6 @@
 // §Group join requests — staff queue (therapist, PMHNP, ECM provider).
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type GroupJoinRequest } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -88,6 +89,13 @@ function RequestRow({ r }: { r: GroupJoinRequest }) {
       {blocked && (
         <p role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-2 text-xs text-destructive" data-testid="group-join-blocked">
           {blocked}
+          {/telehealth/i.test(blocked) && (
+            <Button asChild size="sm" variant="outline" className="mt-2 min-h-11 flex w-fit">
+              <Link to="/consent" search={{ patientId: r.patientId, category: "telehealth" }}>
+                Open telehealth consent
+              </Link>
+            </Button>
+          )}
         </p>
       )}
       {declining ? (
