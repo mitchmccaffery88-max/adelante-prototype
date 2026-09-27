@@ -24239,6 +24239,32 @@ withGroupNotificationsSuppressed(() => {
         "Deferred at care-plan review — individual sessions first.",
         THERAPIST,
       );
+
+      // §Group join requests demo — all through the real request/review API.
+      const REVIEWER = { name: THERAPIST, role: "therapist" as const };
+      // Pending (non-SUD group).
+      AdelanteEHR.requestJoinGroup({
+        sessionId: skills.id,
+        patientId: "p2",
+        note: "I'd like to try a group — mornings work best for me.",
+      });
+      // Approved → eligibility set + enrolled (in-person, no telehealth needed).
+      const ok = AdelanteEHR.requestJoinGroup({ sessionId: skills.id, patientId: "p3" });
+      AdelanteEHR.approveGroupJoinRequest(ok.id, REVIEWER);
+      // Declined with a reason.
+      const no = AdelanteEHR.requestJoinGroup({ sessionId: virtualGroup.id, patientId: "p2" });
+      AdelanteEHR.declineGroupJoinRequest(
+        no.id,
+        "Starting with individual sessions first; we'll revisit groups next month.",
+        REVIEWER,
+      );
+      // Blocked approval — virtual group, no telehealth consent. Stays pending.
+      const blocked = AdelanteEHR.requestJoinGroup({ sessionId: virtualGroup.id, patientId: "p1" });
+      try {
+        AdelanteEHR.approveGroupJoinRequest(blocked.id, REVIEWER);
+      } catch {
+        /* expected — the refusal IS the seeded audit event. */
+      }
     }
   } catch {
     /* Seeding is best-effort; never break boot. */
