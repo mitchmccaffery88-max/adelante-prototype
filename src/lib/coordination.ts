@@ -57,7 +57,7 @@ export function eligibleReassignTargets(appt: Appointment): ReassignOption[] {
     if (c.id === appt.clinicianId) continue;
     if (AdelanteEHRExt.getClinicianProfile(c.id)?.active === false) continue;
     if (!AdelanteEHR.canBook(c.id).ok) continue;
-    if (appt.serviceType && !c.services.includes(appt.serviceType)) continue;
+    if (appt.serviceType && !(c.services ?? []).includes(appt.serviceType)) continue;
     const load = upcomingLoad(c.id);
     if (load >= UPCOMING_CAPACITY) continue;
     const clash = AdelanteEHR.listAppointments().some(
@@ -246,7 +246,7 @@ export function seedCoordinationDemo() {
       {
         clinicianId: "c4",
         specialty: "Supervised individual therapy (ASW trainee)",
-        credentialType: "ASW",
+        credentialType: "MSW",
         careTypes: ["therapy_individual", "case_management"],
         languages: ["English", "Vietnamese"],
         baseFacilityId: "fac-premier-tulare",
