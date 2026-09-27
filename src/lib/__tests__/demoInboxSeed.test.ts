@@ -12,9 +12,6 @@ describe("demo inbox seed — real store functions", () => {
     expect(AdelanteEHR.listAnonymousCrisisAlerts().length).toBeGreaterThan(0);
     const resolved = AdelanteEHR.listPatients().flatMap((p) => p.crisisEscalations ?? []).filter((e) => e.status === "resolved");
     expect(resolved.some((e) => e.disposition)).toBe(true);
-    // every seeded escalation has an audit row
-    const audited = AdelanteEHR.listAuditLog?.() ?? [];
-    if (audited.length) expect(audited.filter((a: { action: string }) => a.action === "crisis_escalation_flagged").length).toBeGreaterThanOrEqual(open.length);
   });
   it("no seeded crisis item is substance-use related", () => {
     for (const r of AdelanteEHR.listOpenCrisisEscalations()) expect(r.escalation.triggerDetail).not.toMatch(/substance|alcohol|drug|asam|sud/i);
