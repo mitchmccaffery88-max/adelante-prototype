@@ -22,7 +22,6 @@ import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import {
   AdelanteEHR,
-  defaultOccurrenceModality,
   formatLocationAddress,
   isVirtualGroupModality,
   useEhr,
@@ -30,7 +29,6 @@ import {
 import { nextOccurrenceForGroup } from "@/lib/groupMetrics";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
 import { Users, CalendarClock, MapPin } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";

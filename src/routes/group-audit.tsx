@@ -23,6 +23,7 @@ import {
 import { EyeOff, Users } from "lucide-react";
 import { useActingRole } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
+import { roleSeesGroupJoinRequest } from "@/lib/groupJoinView";
 import { ClientDate } from "@/components/ClientDate";
 
 export const Route = createFileRoute("/group-audit")({
@@ -49,6 +50,10 @@ export const GROUP_AUDIT_ACTIONS = [
   { value: "group_eligibility_set", label: "Eligibility set" },
   { value: "group_eligibility_cleared", label: "Eligibility removed" },
   { value: "group_enrollment_blocked", label: "Enrollment blocked" },
+  { value: "group_join_requested", label: "Join requested" },
+  { value: "group_join_approved", label: "Join approved" },
+  { value: "group_join_declined", label: "Join declined" },
+  { value: "group_join_approval_blocked", label: "Join approval blocked" },
 ] as const;
 
 const CATEGORY_LABEL = new Map(GROUP_CATEGORIES.map((c) => [c.key, c.label]));
@@ -65,7 +70,7 @@ function GroupAuditPage() {
 
   const patients = useEhr(() => AdelanteEHR.listPatients());
 
-  const rows = useEhr(() => {
+  const view = useEhr(() => {
     const events = AdelanteEHR.listAuditEvents({
       category: "clinical",
       patientId: patientId === "all" ? undefined : patientId,
@@ -74,9 +79,17 @@ function GroupAuditPage() {
     })
       .filter((e) => ACTION_SET.has(e.action))
       .filter((e) => action === "all" || e.action === action);
-    return redactAuditEvents(events, role);
+    // §Part 2 — protected (SUD group) join entries are hidden from roles
+    // failing the check on that patient; only a count remains.
+    const visible = events.filter(
+      (e) =>
+        !(e.detail as Record<string, unknown> | undefined)?.protected ||
+        roleSeesGroupJoinRequest(role, { protected: true, patientId: e.patientId ?? "" }),
+    );
+    return { list: redactAuditEvents(visible, role), hidden: events.length - visible.length };
   });
 
+  const rows = view.list;
   return (
     <div className="mx-auto max-w-6xl px-4 sm:px-6 py-8 space-y-6">
       <header className="flex items-start gap-3">
@@ -165,6 +178,11 @@ function GroupAuditPage() {
         </Button>
       )}
 
+      {view.hidden > 0 && (
+        <p className="text-xs text-muted-foreground" data-testid="group-audit-hidden">
+          {view.hidden} protected entr{view.hidden === 1 ? "y" : "ies"} not shown for your role.
+        </p>
+      )}
       <Card className="overflow-hidden p-0">
         {rows.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">
@@ -195,7 +213,7 @@ function GroupAuditPage() {
                       <td className="p-3 text-xs">{r.subjectLabel}</td>
                       <td className="p-3 text-xs">
                         <Badge
-                          variant={r.event.action === "group_enrollment_blocked" ? "destructive" : "outline"}
+                          variant={r.event.action === "group_enrollment_blocked" || r.event.action === "group_join_approval_blocked" ? "destructive" : "outline"}
                           className="text-[10px]"
                         >
                           {ACTION_LABEL.get(r.event.action as never) ?? r.event.action.replace(/_/g, " ")}
