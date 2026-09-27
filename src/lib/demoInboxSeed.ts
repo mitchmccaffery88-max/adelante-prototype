@@ -174,9 +174,9 @@ export function seedDemoInbox(): void {
     const last = rows[rows.length - 1];
     if (last) AdelanteEHR.markNotificationRead(last.id, name);
   };
-  readOne("Anita Brooks", "therapist");
-  readOne("Tonya Price", "billing");
   readOne("Luz Herrera", "ecm_provider");
+  readOne("Priya Raman", "clinical_coordinator");
+  readOne("Dr. R. Bagga", "pmhnp");
 }
 
 seedDemoInbox();
