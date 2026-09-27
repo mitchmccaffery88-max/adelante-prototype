@@ -34,6 +34,7 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
+import { recordSectionVisible } from "@/lib/recordSectionGate";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
@@ -158,7 +159,7 @@ export function useRecordSections(
     },
   ) => {
     const access = gate(cls);
-    if (!def.alwaysVisible && access.level === "none") return;
+    if (!recordSectionVisible(cls, access, def.alwaysVisible)) return;
     const { render, alwaysVisible: _av, ...rest } = def;
     sections.push({
       ...rest,
