@@ -265,7 +265,9 @@ export type NotificationCategory =
   | "protected_task"
   | "claim_blocked"
   // §Inbox actions — billing feed: a claim moved status (billing-safe wording).
-  | "claim_status";
+  | "claim_status"
+  // §E10 — a patient withdrew a sharing consent (generic copy, never names SUD).
+  | "consent_changed";
 
 export interface AppNotification {
   id: string;
@@ -11636,6 +11638,39 @@ export const AdelanteEHR = {
     });
   },
 
+  /**
+   * §E10 — patient turns OFF a sharing consent after the confirm sheet.
+   * Part 2 disclosure consent needs a typed/tapped second confirmation.
+   * Audited; the care team gets a generic notice that never names SUD.
+   */
+  patientWithdrawConsent(input: { patientId: string; purpose: "part2Sud" | "ecmShare" | "sms"; secondConfirm?: boolean }) {
+    const p = patients.find((x) => x.id === input.patientId);
+    if (!p) throw new Error("Patient not found.");
+    if (input.purpose === "part2Sud" && !input.secondConfirm)
+      throw new Error("Please confirm a second time to turn this off.");
+    AdelanteEHR.setConsent(p.id, input.purpose, false, "patient withdrew after confirm");
+    appendAudit({
+      category: "consent",
+      action: "consent_withdrawal_confirmed",
+      patientId: p.id,
+      actorRole: "patient",
+      detail: { purpose: input.purpose, secondConfirm: !!input.secondConfirm },
+    });
+    const who = `${p.firstName} ${p.lastName.slice(0, 1)}.`;
+    const note = {
+      category: "consent_changed" as const,
+      subject: `Sharing preference changed — ${who}`,
+      body: `${who} changed a sharing preference. Open the consent screen before sharing records.`,
+      linkRoute: "/consent",
+      linkParams: { patientId: p.id },
+      patientId: p.id,
+    };
+    if (p.primaryClinicianId) {
+      const cl = clinicians.find((c) => c.id === p.primaryClinicianId);
+      if (cl) AdelanteEHR.notify({ ...note, recipientStaffId: cl.name });
+    }
+    AdelanteEHR.notify({ ...note, recipientRole: "ecm_provider" });
+  },
   setConsent(patientId: string, purpose: ConsentPurpose, granted: boolean, note?: string) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
