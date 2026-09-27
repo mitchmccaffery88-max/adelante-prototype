@@ -9,6 +9,7 @@
 //   open_psychoeducational — eligible patients self-book, never billed.
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
+import { GroupJoinRequestsQueue } from "@/components/groups/GroupJoinRequestsQueue";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -110,6 +111,8 @@ function GroupSessionsPage() {
           the 2–12 roster range are DHCS content.
         </p>
       </header>
+
+      <GroupJoinRequestsQueue />
 
       {access.level === "write" && <CreateGroupCard actor={staffName || role} />}
 
