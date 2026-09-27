@@ -5,7 +5,7 @@ import { AdelanteEHRExt, type ClinicianProfileExt } from "@/lib/ehr-ext";
 import { STAFF_ROSTER, getSupervisor, requiresSupervision, type StaffRole } from "@/lib/roles";
 
 import { canActOnCoordination } from "@/lib/coordinationRoles";
-export { COORDINATION_ROLES, canActOnCoordination } from "@/lib/coordinationRoles";
+export { COORDINATION_ROLES, COORDINATION_VIEW_ROLES, canActOnCoordination, canViewCoordination } from "@/lib/coordinationRoles";
 
 export interface CoordActor {
   name: string;

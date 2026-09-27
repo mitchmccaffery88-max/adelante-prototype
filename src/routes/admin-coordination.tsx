@@ -15,6 +15,7 @@ import {
   COORDINATION_ACTION_LABEL,
   REASSIGN_REASONS,
   canActOnCoordination,
+  canViewCoordination,
   coordinationCancel,
   eligibleReassignTargets,
   listCoordinationAudit,
@@ -48,10 +49,11 @@ function CoordinationPage() {
   const audit = useEhr(() => listCoordinationAudit());
   const unassigned = useEhr(() => listUnassignedPatients());
 
-  if (!canActOnCoordination(actor.role))
+  const canAct = canActOnCoordination(actor.role);
+  if (!canViewCoordination(actor.role))
     return (
       <div className="mx-auto max-w-3xl px-4 py-8" data-testid="coordination-blocked">
-        <Card className="p-4 text-sm">Clinical Coordination is for clinical coordinators and system administrators.</Card>
+        <Card className="p-4 text-sm">Clinical Coordination is for clinical coordinators, system administrators, and (view only) therapists, PMHNPs and ECM providers.</Card>
       </div>
     );
 
@@ -65,7 +67,14 @@ function CoordinationPage() {
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
       <header className="flex flex-wrap items-center justify-between gap-2">
         <div>
-          <h1 className="font-display text-2xl text-navy">Clinical coordination center</h1>
+          <h1 className="font-display text-2xl text-navy">
+            Clinical coordination center
+            {!canAct && (
+              <Badge variant="outline" className="ml-2 align-middle" data-testid="view-only">
+                View only
+              </Badge>
+            )}
+          </h1>
           <p className="text-sm text-muted-foreground">
             Cover deactivated providers, route unassigned patients, and confirm bookings.
           </p>
@@ -73,7 +82,7 @@ function CoordinationPage() {
         <Link to="/admin" className="text-sm underline">← Admin</Link>
       </header>
 
-      <ResourceVerificationQueue />
+      {canAct && <ResourceVerificationQueue />}
 
       <Card className="p-4" data-testid="coverage-list">
         <h2 className="font-semibold mb-2">Frozen clinicians · appointments needing coverage ({affectedAppts.length})</h2>
@@ -89,6 +98,7 @@ function CoordinationPage() {
                   appt={a}
                   label={`${pt?.firstName ?? ""} ${pt?.lastName ?? ""}`}
                   clinicianName={nameOf(a.clinicianId)}
+                  canAct={canAct}
                 />
               );
             })}
@@ -118,7 +128,7 @@ function CoordinationPage() {
         )}
       </Card>
 
-      <PostEnrollmentSetupCard />
+      {canAct && <PostEnrollmentSetupCard />}
 
       <Card className="p-4">
         <h2 className="font-semibold mb-2">Clinician status</h2>
@@ -148,6 +158,7 @@ function CoordinationPage() {
         </ul>
       </Card>
 
+      {canAct && (
       <Card className="p-4" data-testid="coordination-audit">
         <h2 className="font-semibold mb-2">Coordinator decisions ({audit.length})</h2>
         {audit.length === 0 ? (
@@ -178,11 +189,12 @@ function CoordinationPage() {
           </ul>
         )}
       </Card>
+      )}
     </div>
   );
 }
 
-function CoverageRow({ appt, label, clinicianName }: { appt: Appointment; label: string; clinicianName: string }) {
+function CoverageRow({ appt, label, clinicianName, canAct }: { appt: Appointment; label: string; clinicianName: string; canAct: boolean }) {
   const actor = useActingStaff();
   const who = { name: actor.staffName, role: actor.role, id: actor.staffId };
   const [mode, setMode] = useState<"" | "reassign" | "cancel">("");
@@ -212,15 +224,15 @@ function CoverageRow({ appt, label, clinicianName }: { appt: Appointment; label:
         <span>
           <b>{label}</b> · <ClientDate value={appt.start} /> with {clinicianName}
         </span>
-        <div className="flex flex-wrap gap-2">
+        {canAct && <div className="flex flex-wrap gap-2">
           <Button size="sm" onClick={() => setMode(mode === "reassign" ? "" : "reassign")}>Reassign to…</Button>
           <Button size="sm" variant="outline" onClick={() => setMode(mode === "cancel" ? "" : "cancel")}>Cancel visit</Button>
           <Link to="/schedule" className="text-xs underline self-center" onClick={() => recordManualRebook(appt.id, who)}>
             Rebook manually
           </Link>
-        </div>
+        </div>}
       </div>
-      {mode === "reassign" && (
+      {canAct && mode === "reassign" && (
         <div className="rounded border p-3 space-y-2">
           <label className="block text-xs">
             Clinician (eligible only)
@@ -254,7 +266,7 @@ function CoverageRow({ appt, label, clinicianName }: { appt: Appointment; label:
           </div>
         </div>
       )}
-      {mode === "cancel" && (
+      {canAct && mode === "cancel" && (
         <div className="rounded border p-3 space-y-2">
           <label className="block text-xs">
             Reason (required)

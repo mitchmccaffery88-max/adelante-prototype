@@ -1,4 +1,4 @@
-import { canActOnCoordination } from "@/lib/coordinationRoles";
+import { canViewCoordination } from "@/lib/coordinationRoles";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
@@ -652,7 +652,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
-  if (entry.gate.kind === "coordination_desk") return canActOnCoordination(role);
+  if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {
