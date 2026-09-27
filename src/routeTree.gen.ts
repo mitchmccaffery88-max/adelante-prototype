@@ -31,6 +31,7 @@ import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as BillingCalaimCodesRouteImport } from './routes/billing-calaim-codes'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
+import { Route as CaseloadReviewRouteImport } from './routes/caseload-review'
 import { Route as CheckinRouteImport } from './routes/checkin'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
@@ -218,6 +219,11 @@ const BillingCalaimCodesRoute = BillingCalaimCodesRouteImport.update({
 const CaseManagerRoute = CaseManagerRouteImport.update({
   id: '/case-manager',
   path: '/case-manager',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CaseloadReviewRoute = CaseloadReviewRouteImport.update({
+  id: '/caseload-review',
+  path: '/caseload-review',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CheckinRoute = CheckinRouteImport.update({
@@ -640,6 +646,7 @@ export interface FileRoutesByFullPath {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/case-manager': typeof CaseManagerRoute
+  '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
@@ -741,6 +748,7 @@ export interface FileRoutesByTo {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/case-manager': typeof CaseManagerRoute
+  '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
@@ -841,6 +849,7 @@ export interface FileRoutesById {
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
   '/case-manager': typeof CaseManagerRoute
+  '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
@@ -945,6 +954,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/case-manager'
+    | '/caseload-review'
     | '/checkin'
     | '/clinician'
     | '/clinician-availability'
@@ -1046,6 +1056,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/case-manager'
+    | '/caseload-review'
     | '/checkin'
     | '/clinician'
     | '/clinician-availability'
@@ -1145,6 +1156,7 @@ export interface FileRouteTypes {
     | '/billing'
     | '/billing-calaim-codes'
     | '/case-manager'
+    | '/caseload-review'
     | '/checkin'
     | '/clinician'
     | '/clinician-availability'
@@ -1248,6 +1260,7 @@ export interface RootRouteChildren {
   BillingRoute: typeof BillingRoute
   BillingCalaimCodesRoute: typeof BillingCalaimCodesRoute
   CaseManagerRoute: typeof CaseManagerRoute
+  CaseloadReviewRoute: typeof CaseloadReviewRoute
   CheckinRoute: typeof CheckinRoute
   ClinicianRoute: typeof ClinicianRoute
   ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
@@ -1460,6 +1473,13 @@ declare module '@tanstack/react-router' {
       path: '/case-manager'
       fullPath: '/case-manager'
       preLoaderRoute: typeof CaseManagerRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/caseload-review': {
+      id: '/caseload-review'
+      path: '/caseload-review'
+      fullPath: '/caseload-review'
+      preLoaderRoute: typeof CaseloadReviewRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/checkin': {
@@ -2115,6 +2135,7 @@ const rootRouteChildren: RootRouteChildren = {
   BillingRoute: BillingRoute,
   BillingCalaimCodesRoute: BillingCalaimCodesRoute,
   CaseManagerRoute: CaseManagerRoute,
+  CaseloadReviewRoute: CaseloadReviewRoute,
   CheckinRoute: CheckinRoute,
   ClinicianRoute: ClinicianRoute,
   ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,

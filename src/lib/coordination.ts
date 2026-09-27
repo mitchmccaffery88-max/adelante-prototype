@@ -214,12 +214,27 @@ export function reasonLabel(e: { action: string; detail?: Record<string, unknown
 }
 
 /** Patients with no active primary clinician (none set, or the primary is frozen). */
+export type UnassignedCause = "lost" | "never";
 export function listUnassignedPatients() {
   const profiles = AdelanteEHRExt.listClinicianProfiles();
   const frozen = new Set(profiles.filter((p) => !p.active).map((p) => p.clinicianId));
+  // A patient "lost" a clinician when their primary is frozen, or a
+  // coordinator reassignment moved a visit away from them and left none.
+  const hadCoverage = new Set(
+    listCoordinationAudit()
+      .map((e) => e.patientId)
+      .filter((x): x is string => !!x),
+  );
   return AdelanteEHR.listPatients()
     .filter((p) => !p.primaryClinicianId || frozen.has(p.primaryClinicianId))
-    .map((p) => ({ patient: p, why: p.primaryClinicianId ? "Primary clinician frozen" : "No primary clinician" }));
+    .map((p) => {
+      const cause: UnassignedCause = p.primaryClinicianId || hadCoverage.has(p.id) ? "lost" : "never";
+      return {
+        patient: p,
+        cause,
+        why: p.primaryClinicianId ? "Primary clinician frozen" : cause === "lost" ? "Reassigned away" : "No primary clinician",
+      };
+    });
 }
 
 /** "First Last, Credential" — the one name format for credential exports. */
