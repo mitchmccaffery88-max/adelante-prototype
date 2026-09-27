@@ -152,7 +152,7 @@ describe("gating derives from the RBAC matrix", () => {
               : gate.kind === "sdoh_crisis_lane"
                 ? canWorkSdohCrisisLane(role)
                 : gate.kind === "coordination_desk"
-                ? ["clinical_coordinator", "sys_admin"].includes(role)
+                ? ["clinical_coordinator", "sys_admin", "therapist", "pmhnp", "ecm_provider"].includes(role)
                 : gate.kind === "caseload_review"
                 ? ["ecm_provider", "cf_care_manager", "clinical_coordinator", "sys_admin"].includes(role)
                 : gate.anyOf.some((cls) => {
