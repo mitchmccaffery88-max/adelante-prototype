@@ -3,6 +3,8 @@
 ## In progress
 
 ## Done
+- [x] Section 6 item 3: cancel requests (patient/advocate), staff cancel with reason, no-show, late-cancel label (draft), ASAM task reopening, claim guard, reporting, demo data.
+- [x] Advocate demo thread via upload → staff verification of a two-way HIPAA release.
 - [x] Patient and advocate navigation correction: persistent desktop sidebars, phone left drawer, no user top-nav strips, and no staff-link leakage.
 - [x] Sticky demo controls with neutral unselected QA label and protected-control spacing.
 - [x] Pre-demo My Care consolidation: folded duplicate needs, appointment, weekly check, recommendations, and advocate status surfaces.
