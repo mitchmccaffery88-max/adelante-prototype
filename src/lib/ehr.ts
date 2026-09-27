@@ -258,6 +258,8 @@ export type NotificationCategory =
   // §Cancel/no-show — patient/advocate cancel request, staff cancel, no-show.
   | "appointment_cancel_request"
   | "appointment_cancelled"
+  // §Group join requests — a patient asked to join a group.
+  | "group_join_request"
   | "connect_request"
   | "needs_task"
   | "protected_task"
@@ -23020,7 +23022,7 @@ export const AdelanteEHR = {
     // Staff alert — never names a SUD group, never carries the patient's note.
     // SUD requests only go to roles that can review them.
     const common = {
-      category: "task_assigned" as const,
+      category: "group_join_request" as const,
       subject: `Group join request — ${patientLabel(input.patientId)}`,
       body: isProtected
         ? "The patient asked to join a group. Review it in Group sessions."
