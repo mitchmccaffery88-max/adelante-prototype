@@ -132,6 +132,9 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
         </p>
         <p className="text-sm" data-testid="checkin-summary">
           Check-ins this week: {s.daysThisWeek} of 7 days · Trend: {s.trend}
+          <span className="block" data-testid="mood-count">
+            Mood check-ins this week: {s.moodDaysThisWeek} of 7 days
+          </span>
           {s.followUpSuggested && (
             <Badge variant="destructive" className="ml-2">
               Clinical follow-up suggested

@@ -723,9 +723,9 @@ export function HomeDashboard({
         >
           <HandHeart className="h-5 w-5 shrink-0 text-primary" aria-hidden="true" />
           <span>
-            Peer specialist
+            My care team
             <span className="block text-xs font-normal text-muted-foreground">
-              Through your care-team thread
+              Peer specialist, therapist, case manager
             </span>
           </span>
         </Link>

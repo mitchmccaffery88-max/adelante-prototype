@@ -43,7 +43,7 @@ import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
-import { DailyCheckInSummaryCard } from "@/components/patient/DailyCheckInSummaryCard";
+import { AdelGreetingCheckIn } from "@/components/patient/AdelGreetingCheckIn";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
@@ -161,7 +161,7 @@ export function PatientHome() {
              at /checkin; /home keeps ONE real entry point (status + streak)
              directly under the greeting. Still a single implementation. */
           <div id="daily-mood-check-in" className="scroll-mt-24">
-            <DailyCheckInSummaryCard patientId={patient.id} />
+            <AdelGreetingCheckIn patientId={patient.id} />
           </div>
         }
       />
@@ -395,17 +395,6 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
           crisis detection, unread state and the staff queue. `/peer` is a
           focused VIEW of this same thread, not another one. */}
       <p className="mt-1 text-xs text-muted-foreground">{t("msgPeerNote")}</p>
-      <Button
-        asChild
-        variant="outline"
-        size="sm"
-        className="mt-2 min-h-11 rounded-2xl"
-        data-testid="peer-chat-entry"
-      >
-        <Link to="/peer">
-          <HeartHandshake className="mr-1 h-4 w-4" aria-hidden="true" /> Talk with a peer specialist
-        </Link>
-      </Button>
 
       <div className="mt-3">
         <CareMessageThread

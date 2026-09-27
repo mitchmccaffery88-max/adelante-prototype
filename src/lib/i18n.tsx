@@ -327,7 +327,7 @@ const dict = {
     plainCarePeriod: "care period",
     plainHowYouMeet: "how you meet",
     // Messages (patient <-> care team)
-    msgTitle: "Messages",
+    msgTitle: "My care team",
     msgSubtitle: "Message your care team. Replies usually take 1–2 business days.",
     msgNoneYet: "No messages yet. Send the first one below.",
     msgYou: "You",
@@ -728,7 +728,7 @@ const dict = {
     plainCarePeriod: "periodo de cuidado",
     plainHowYouMeet: "cómo prefieres reunirte",
     // Mensajes (paciente <-> equipo de cuidado)
-    msgTitle: "Mensajes",
+    msgTitle: "Mi equipo de cuidado",
     msgSubtitle:
       "Envía un mensaje a tu equipo de cuidado. Las respuestas suelen tardar 1–2 días hábiles.",
     msgNoneYet: "Aún no hay mensajes. Envía el primero abajo.",

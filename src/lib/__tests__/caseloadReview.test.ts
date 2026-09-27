@@ -51,7 +51,7 @@ describe("item 7 caseload review", () => {
     AdelanteEHR.recordQuickCheck(pid, { "phq-2": [3, 3] });
     const p = AdelanteEHR.getPatient(pid)!;
     const s = checkInSummary(p, "cf_care_manager");
-    expect(Object.keys(s).sort()).toEqual(["daysThisWeek", "followUpSuggested", "trend"]);
+    expect(Object.keys(s).sort()).toEqual(["daysThisWeek", "followUpSuggested", "moodDaysThisWeek", "trend"]);
     expect(s.trend).toBe("worse");
     expect(s.daysThisWeek).toBeGreaterThanOrEqual(1);
     expect(s.followUpSuggested).toBe(true);
