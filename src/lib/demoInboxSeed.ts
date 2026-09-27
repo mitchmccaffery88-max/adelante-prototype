@@ -6,6 +6,7 @@
 import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
+import { seedInboxActionsDemo } from "@/lib/inboxActions";
 
 let seeded = false;
 
@@ -246,6 +247,14 @@ export function seedDemoInbox(): void {
     safe(() => {
       AdelanteEHR.bookAppointment({ patientId: marcus, clinicianId: clin.id, start: past(1), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: marcusTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
     });
+
+  // §Inbox actions — a claim status move raised by the real audit hook, then
+  // claim / assign / done / make-a-task through the inbox action functions.
+  if (marcus)
+    safe(() =>
+      AdelanteEHR.recordClaimStatusChange({ claimId: "demo-claim-90834", patientId: marcus, from: "submitted", to: "paid", actorId: "Deneen Ford", actorRole: "billing_coordinator", via: "billing" }),
+    );
+  safe(() => seedInboxActionsDemo());
 
   // A few read, most unread.
   const readOne = (name: string, role: Parameters<typeof AdelanteEHR.listNotificationsFor>[1]) => {
