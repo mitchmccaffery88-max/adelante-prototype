@@ -132,12 +132,18 @@ export const ADVOCATE_SUD_MODE_BY_TIER: Record<AdvocateTier, AdvocateSudAccessMo
   conservator: "authority_derived",
 };
 
+/** §E11 — plain-language (about 3rd–5th grade) one-liners. Must match TIER_PERMISSIONS. */
+export const ADVOCATE_PLAIN_LABEL = "Draft — pending clinical sign-off";
+export const ADVOCATE_PLAIN_LABEL_ES = "Borrador — pendiente de aprobación clínica";
+
 export const ADVOCATE_AUTHORIZATION_TYPES: {
   key: AdvocateAuthorizationType;
   label: string;
   tier: AdvocateTier;
   /** Patient-safe one-liner shown at claim time. Placeholder wording. */
   summary: string;
+  /** §E11 plain-language line, EN / ES (Spanish pending bilingual review). */
+  plain: { en: string; es: string };
 }[] = [
   {
     key: "ahcd",
@@ -145,12 +151,20 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
     tier: "ahcd_agent",
     summary:
       "Medical power of attorney and living will. Decision-making authority activates only when a physician determines the patient cannot communicate or decide.",
+    plain: {
+      en: "A person you picked in writing to make health choices for you. They can help only after a doctor says you can’t decide for yourself. Then they can see your visits and care plan, and add papers.",
+      es: "Una persona que usted eligió por escrito para tomar decisiones de salud por usted. Solo puede ayudar después de que un médico diga que usted no puede decidir. Entonces puede ver sus citas y su plan de cuidado, y subir papeles.",
+    },
   },
   {
     key: "conservatorship",
     label: "Conservatorship",
     tier: "conservator",
     summary: "Court-ordered authority, used when the patient lacks capacity and has no AHCD.",
+    plain: {
+      en: "A person a judge picked to help make choices for you. They can see your visits and care plan, add papers, and help with your Medi-Cal.",
+      es: "Una persona que un juez eligió para ayudarle a tomar decisiones. Puede ver sus citas y su plan de cuidado, subir papeles y ayudar con su Medi-Cal.",
+    },
   },
   {
     key: "hipaa_authorization",
@@ -158,6 +172,10 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
     tier: "hipaa_only",
     summary:
       "Permission to speak with providers, review shared information and help coordinate. No decision-making authority.",
+    plain: {
+      en: "Someone you said can talk with your care team. They can see your visits and shared papers. They can’t make choices for you.",
+      es: "Alguien que usted permitió hablar con su equipo de cuidado. Puede ver sus citas y papeles compartidos. No puede tomar decisiones por usted.",
+    },
   },
   {
     key: "dhcs_authorized_representative",
@@ -165,6 +183,10 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
     tier: "authorized_representative",
     summary:
       "CalAIM / Medi-Cal eligibility and enrollment support, including acting on the member's behalf on an application. (Placeholder — pending DHCS AR form content.)",
+    plain: {
+      en: "Someone who helps with your Medi-Cal forms and can sign them for you. They can see your visits, but not your health care plan.",
+      es: "Alguien que le ayuda con sus formularios de Medi-Cal y puede firmarlos por usted. Puede ver sus citas, pero no su plan de salud.",
+    },
   },
   {
     key: "family_participation",
@@ -172,6 +194,10 @@ export const ADVOCATE_AUTHORIZATION_TYPES: {
     tier: "hipaa_only",
     summary:
       "A family member or support person participating in care coordination. Requires a signed Release of Information before any access is granted. (Placeholder — exact participation scope pending Christi's form content.)",
+    plain: {
+      en: "A family member or friend who helps with your care. You must sign a release first. They can see your visits and shared papers. They can’t make choices for you.",
+      es: "Un familiar o amigo que le ayuda con su cuidado. Primero usted debe firmar un permiso. Puede ver sus citas y papeles compartidos. No puede tomar decisiones por usted.",
+    },
   },
 ];
 

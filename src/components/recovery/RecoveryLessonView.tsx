@@ -2,6 +2,8 @@
 // `LibraryLesson`: it maps `RecoveryLesson` onto the SHARED `ModuleTemplate`.
 // The three extra steps (7–9) are the real tool flow, rendered by the shared
 // `select` step kind — structured selections, not free text.
+import { RecoveryCheckInNote } from "@/components/recovery/RecoveryCheckInNote";
+import { RECOVERY_NOTE_LESSONS } from "@/lib/recoveryCheckInNotes";
 import { useState } from "react";
 import { CheckCircle2, Lightbulb, Sparkles, Wrench } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -188,7 +190,18 @@ export function RecoveryLessonView({
 
   const steps: ModuleStep[] = [
     { kind: "text", label: t("recStepProblem"), body: rt(`rec.${id}.problem`, lesson.problem) },
-    { kind: "text", label: t("recStepCheckIn"), body: checkInText || t("libCheckInFallback") },
+    RECOVERY_NOTE_LESSONS.includes(lesson.id)
+      ? {
+          kind: "custom" as const,
+          label: t("recStepCheckIn"),
+          content: (
+            <div>
+              <p className="text-base">{checkInText || t("libCheckInFallback")}</p>
+              <RecoveryCheckInNote patientId={patientId} lessonId={lesson.id} />
+            </div>
+          ),
+        }
+      : { kind: "text" as const, label: t("recStepCheckIn"), body: checkInText || t("libCheckInFallback") },
 
     // §Phase C — "before" ratings.
     { kind: "rating", label: t("modRateBeforeLabel"), phase: "before", dimensions },

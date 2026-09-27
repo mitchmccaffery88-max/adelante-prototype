@@ -6,3 +6,9 @@ export const COORDINATION_ROLES: StaffRole[] = ["clinical_coordinator", "sys_adm
 export function canActOnCoordination(role: StaffRole): boolean {
   return COORDINATION_ROLES.includes(role);
 }
+
+/** Read-only viewers (product owner approved): status, coverage, Unassigned. No actions, no audit list. */
+export const COORDINATION_VIEW_ROLES: StaffRole[] = ["therapist", "pmhnp", "ecm_provider"];
+export function canViewCoordination(role: StaffRole): boolean {
+  return canActOnCoordination(role) || COORDINATION_VIEW_ROLES.includes(role);
+}
