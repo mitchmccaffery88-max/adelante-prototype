@@ -1,320 +1,80 @@
-# Phase 10a + 10b — Screener accuracy and C-SSRS (plan only)
-
-Build frozen for the demo. Nothing below changes until approved after the demo.
-
-## Where instrument text will come from
-
-| Instrument | Source | Confidence today |
-|---|---|---|
-| PHQ-9 / PHQ-2 | Pfizer PHQ Screeners site (public, no permission needed) | Current text looks verbatim; confirm against the source PDF |
-| GAD-7 / GAD-2 | Same source | Same as above |
-| AUDIT | WHO AUDIT manual, 2nd ed. (2001), Box 4 | Items look verbatim; items 9/10 anchors are wrong (simplified) |
-| DAST-10 | Skinner (1982), 10-item version, via NIDA | Confirm wording and reverse-scored item 3 |
-| PC-PTSD-5 | National Center for PTSD (public domain) | Not written yet; copy from the NCPTSD PDF, not from memory |
-| PCL-5 (20 items) | National Center for PTSD (public domain) | Not written yet; copy from the NCPTSD PDF |
-| AHC-HRSN core | CMS AHC HRSN Screening Tool PDF | Current text believed verbatim; confirm per-item options |
-| C-SSRS Screener | Columbia Lighthouse Project (official site) | **Will not be written from memory.** Placeholder slots until clinical staff supply and confirm the text |
-| Spanish (all) | Official Spanish versions where they exist (PHQ/GAD from Pfizer, C-SSRS from Columbia, AHC from CMS) | None in the app yet; all flagged pending bilingual review |
-
-Every item in the source file will note its origin (document, version, page). Anything not yet checked against the source is labelled "Unverified text" in code and in the staff view.
-
-## Phase 10a — Screener accuracy fixes
-
-### 1. AUDIT items 9 and 10
-- Items 9 and 10 get their own three answer choices, scored 0 / 2 / 4, per WHO. Items 1–8 unchanged.
-- Re-scoring: results with stored answers are recalculated. Results without stored answers (imported or seeded with a score only) keep their score and are labelled "Scored before 0/2/4 fix".
-- **Marcus (p3), AUDIT 16:** the build step will report his old and new score and band. If his seed has item-level answers, the new score comes from them. If it only has a total, it stays 16 with the label above. No other persona has an AUDIT result.
-- Tests with fixed answer sets: all zeros = 0; all maximum = 40; item 9/10 at the middle choice = 2 each; boundary totals at 7/8, 15/16, 19/20.
-
-### 2. PTSD screening
-- Retire the 5-item "PCL-5 short" for new use.
-- Draft default (pending clinical decision): **PC-PTSD-5** at intake and re-screen. Draft positive cutoff 4 (NCPTSD's suggested value), labelled draft.
-- **Full PCL-5 (20 items, 0–80)** available to staff and offered after a positive PC-PTSD-5. Draft cutoff 31–33 band, labelled draft.
-- Past short-form results stay in the record, labelled "Retired form — not validated". They never appear on the same trend line as PC-PTSD-5 or PCL-5, and are left out of reporting totals.
-
-### 3. AHC-HRSN at intake
-- The intake form uses each question's own answer choices, the same way re-screen and pre-release already do.
-- Test: every AHC question at intake shows exactly the choices in its definition.
-
-### 4. Re-screen timing (one draft rule per instrument)
-| Instrument | Draft rule |
-|---|---|
-| PHQ-9, GAD-7 | Intake, then day 30 / 60 / 90 |
-| PHQ-2 / GAD-2 | Weekly quick check (unchanged) |
-| AUDIT, DAST-10 | Intake, then day 90; also when staff ask (needs Part 2 consent) |
-| PC-PTSD-5 | Intake, then day 90 |
-| PCL-5 | When PC-PTSD-5 is positive or staff ask; repeat at day 30 if started |
-| AHC-HRSN | Intake, then every 6 months or at a big life change |
-| C-SSRS | Triggered only (see 10b) |
-- One table in code holds this. Every place that shows "due" reads from it. Staff and patient views show "Draft schedule — pending clinical sign-off".
-
-### 5. Word-for-word tests
-- One test per instrument checks item count, each item's text, each option's label and value, cutoffs, and bands against a frozen copy of the source text.
-- Checks that Part 2 protection still applies only to AUDIT and DAST-10.
-- Checks that screener choices at intake still don't change based on "looking for" answers.
-
-## Phase 10b — C-SSRS
-
-### 1. Content
-- Draft default: C-SSRS **Screener** (recent version). Structure is built first: the question list, yes/no answers, and the skip rules (some questions are only asked depending on earlier answers).
-- Item wording goes in **placeholder slots** labelled "Awaiting official Columbia text — clinical staff to supply and confirm". The form cannot be used for real patients until every slot is filled and approved. It can be shown in demo mode with a visible placeholder banner.
-- Official Spanish version goes in the same slots, flagged pending bilingual review.
-- Check Columbia's terms of use before shipping. Using it for clinical care is usually free, but it should be confirmed.
-
-### 2. What starts a C-SSRS
-- PHQ-9 item 9 above 0 (intake, re-screen, or staff) → a C-SSRS task, plus the existing crisis flag, which is unchanged.
-- Crisis wording detected in Adel or messages → the existing crisis step runs first, unchanged (988, crisis queue). A C-SSRS is then offered to staff as the next step. It never replaces or delays the crisis response.
-- The result adds a risk level (Low / Moderate / High, draft mapping) to the existing crisis queue item.
-- What staff must do at each risk level is a **draft setting pending clinical sign-off**, shown as such on the queue.
-
-### 3. Who can give it, and where results show
-- **Staff-given:** from the chart and the crisis queue. Records who gave it and is audited.
-- **Patient self-report:** only offered after a trigger, with 988 and "I need help now" kept on screen. A patient's own answers never lower an existing risk level. Only staff can close the item.
-- Shown in: chart (Tracking tab and a crisis/safety section), Guided Chart Review (facts only), crisis queue (risk badge), and staff Ask Adel ("who has an open C-SSRS"). Patients see "Your care team will follow up", never a score or risk label.
-
-## Data changes (both phases)
-- Screener results gain: instrument version, scoring version, a "retired form" flag, and a "text verified" flag.
-- New instrument definitions: PC-PTSD-5, PCL-5-20, C-SSRS Screener (with skip rules).
-- AUDIT items 9/10 get their own answer choices.
-- Crisis queue items gain an optional C-SSRS link and risk level.
-- New draft settings: re-screen schedule table and a C-SSRS response protocol for each risk level.
-- Nothing is deleted. Old results are relabelled, not rewritten, unless item-level answers make exact re-scoring possible (logged in the audit trail).
-
-## Every place affected
-- **Intake:** AHC choices fixed; PC-PTSD-5 replaces the short form; item 9 triggers a C-SSRS task.
-- **Re-screen:** new schedule table; PC-PTSD-5; retired form not offered.
-- **Adel-guided intake:** no change. It still doesn't give screeners, and crisis handling comes first.
-- **Chart / Tracking:** version labels, separate trend line for the retired form, C-SSRS results.
-- **Care plan:** staff highlights show new instruments. No automatic goals.
-- **Guided Chart Review:** new instruments and C-SSRS facts. Part 2 hiding unchanged.
-- **Ask Adel (staff):** overdue re-screens use the new schedule; open C-SSRS list.
-- **Reporting:** population summary leaves out retired and unverified forms. No new reports in 10a/b.
-- **Patient view:** due dates follow the new schedule. No C-SSRS scores shown.
-- **Pre-release:** AUDIT re-scoring applies. Otherwise unchanged.
-
-## Moving existing demo data
-- Marcus AUDIT: re-score or relabel as described above. Report the before and after.
-- Any seeded PCL-5-short result: relabel as retired.
-- Daniel, Rosa, Alicia, Tomás: PHQ/GAD results unchanged. Due dates may move under the new schedule. The build report will list them.
-
-## Test plan
-- Known-answer tests for AUDIT; word-for-word tests for every instrument.
-- The retired form never appears on a validated trend line.
-- Item 9 > 0 creates a C-SSRS task and the crisis flag, unchanged.
-- Crisis wording still sends to 988 and the crisis queue first.
-- C-SSRS cannot be used for real patients while placeholder text is present.
-- A patient's self-report never lowers a staff-set risk level.
-- Part 2 hiding is unchanged.
-- Full suite, then a browser check of Rosa intake, Daniel reassessment, Tomás pre-release, Kayla note → cosign → billing.
-
-## Risks to demo personas
-- Marcus's AUDIT band may change (16 is at the High risk boundary).
-- Re-screen due dates and "Things to do" counts may change for Daniel, Rosa, and Alicia.
-- Any persona whose PHQ-9 item 9 is above 0 would get a new C-SSRS task. This will be checked before the build.
-- A new PTSD question set at intake changes Rosa's intake walkthrough.
-
-## Open clinical decisions
-- **10a-1:** confirm the WHO AUDIT source edition. Decide whether seeded totals without item answers should be re-scored or relabelled.
-- **10a-2:** PC-PTSD-5 vs other PTSD screener; PC-PTSD-5 and PCL-5 cutoffs; when to offer the full PCL-5.
-- **10a-3:** none (bug fix). Confirm AHC option text against the CMS PDF.
-- **10a-4:** re-screen schedule for every instrument.
-- **10a-5:** who signs off each verbatim source.
-- **10b-1:** C-SSRS version (screener, recent vs lifetime); who supplies and approves the English and Spanish text; Columbia terms of use.
-- **10b-2:** risk-level mapping; response protocol per level; whether crisis wording triggers C-SSRS for staff only or also for patient self-report.
-- **10b-3:** whether patient self-report is allowed at all; who can close a C-SSRS item.
-- **Needs-1 (directory mapping gap):** "Phone or internet" and "Clothing and hygiene" have no directory category and are linked to Life Skills for now; "Family and social support" is linked to Family & Reunification. Directory unchanged pending decision.
-- **Needs-2 (same-day rule, draft):** "Today" optional topic, AHC-HRSN "no steady place to live", and interpersonal-safety positives raise same-day tasks (case manager or pooled care-coordination queue; safety also to the treating clinician, staff only). None route to the crisis queue automatically — decision for Christi.
-
-## Phase 10c — ASAM framework (decisions recorded, not built)
-
-ASAM assessment is triggered by:
-- A positive AUDIT or DAST-10 (intake, re-screen, or pre-release).
-- The patient selecting substance use treatment at intake.
-- A referral that names a substance use need (pre-release screening or public/partner referral).
-- A clinician's decision from the chart or a note.
-- An existing DMC-ODS episode or CalOMS SUD record on entry.
-
-Justice involvement alone is not a trigger. It affects timing and routing only (pre-release: assess before or at release, with warm handoff).
-
-Change to the current rule: when a patient selects substance use treatment but declines Part 2 sharing consent, the answer is not dropped. It creates a protected "ASAM assessment needed" task, visible only to clinical and authorized staff per RBAC (never advocates, never Part 2-restricted staff). The sharing consent governs who else can see it. (Today `recordSeeking` drops the selection without consent; 10c changes this.)
-
-### 10c plan (for review, no code yet)
-
-**Ground rules**
-- Licensing: only public elements are used: the six dimension names, a 0–4 risk rating per dimension, and the DMC-ODS level-of-care list (a draft, editable reference list). No ASAM questions, no placement logic. Each dimension has an empty "licensed content" slot (prompts and guidance) that can be filled later under a license.
-- The clinician picks the level of care. The system never calculates, suggests, or pre-fills one.
-- Part 2: every ASAM task, record, and output goes through the same check as AUDIT/DAST-10: `canAccess(role, "screeners_sud", patient)` plus the author exception. It is never shown to advocates or Part 2-restricted staff.
-- Every draft value (due dates, reassessment intervals, who may sign, level list, medical necessity rule) is labelled "Draft — pending clinical sign-off".
-
-**1. Triggers** (one function, `asamTriggers(patient)`, called from each path)
-| Trigger | Where it fires |
-|---|---|
-| Positive AUDIT or DAST-10 (draft cutoffs) | `recordScreener` after scoring (intake, re-screen, pre-release) |
-| Patient selects substance use treatment | `recordSeeking` (with or without Part 2 consent) |
-| Referral names a substance use need | Pre-release import and public/partner referral acceptance |
-| Clinician decision | "Start ASAM" button on the chart, and a note action |
-| Existing DMC-ODS episode or CALOMS SUD record on entry | Enrollment / episode import |
-- Justice involvement is never passed to `asamTriggers`. For pre-release, the task's due date is on or before the release date, and it adds a warm-handoff checklist item.
-
-**2. The Part 2 change**
-- `recordSeeking`: a substance use treatment selection is always saved to `needs.substanceUse` (already Part 2-masked) with a new `part2ConsentAtSelection` flag. It is no longer dropped.
-- Without consent: the patient's own screens are unchanged (no Recovery Journey, no substance-use tools, because the visibility rule still requires consent). The task is created and masked.
-- Masking: no new rule. The task, the record, and every output are marked `part2: true` and read through `canAccess(..., "screeners_sud", ...)`. For consent-gated roles (case manager, peer) the answer is no without consent. Treating clinicians (therapist, PMHNP) can see it. The sharing consent decides who else can see it.
-
-**3. "ASAM assessment needed" task**
-- Goes to: the assigned treating clinician (therapist or PMHNP). If there is none, the clinical supervisor queue. Never case manager or peer unless consent allows it.
-- Draft due date: 7 days after the trigger. Pre-release: by the release date. Existing DMC-ODS episode: 30 days.
-- Reason text lists the facts behind it, e.g. "Positive DAST-10 at intake (6/12/2026)" or "Selected substance use treatment at intake". Never a level.
-- De-duplication: one open task per patient. A new trigger adds its reason to the open task. A signed ASAM within the reassessment window closes the task and stops new ones, except a clinician decision.
-- Shows in: My Work (masked row), the chart (new ASAM section on the Clinical tab), and Ask Adel ("Who needs an ASAM?"), all filtered by the same check.
-
-**4. Assessment record (`AsamAssessment`)**
-- Six dimensions, each with free-text documentation, a 0–4 rating, and the empty licensed-content slot.
-- `recommendedLevel` and `actualLevel`, both chosen by the clinician from the draft list. A reason is required when they differ (e.g. patient preference, level not available).
-- Link to diagnoses (existing problem list ICD-10 codes).
-- Signing uses the existing attestation ceremony (`buildAttestationRecord`, new statement `asam_sign` v1). If the author is a trainee or registered clinician, a co-signature is required (`asam_supervisor_sign`) through the existing cosign inbox. Who may sign is a draft setting.
-- Signed records are locked. Changes are amendments: a new version linked to the previous one, with a reason, signed again. Old versions are kept.
-- Audit entries for create, edit, sign, cosign, amend, and view (redacted by the existing audit rules).
-- Fields `episodeId` and `dmcOdsLevel` are ready for 10d.
-
-**5. Outputs (only after signature, each one audited)**
-- Medical necessity recorded. Draft rule: a signed ASAM plus a linked SUD diagnosis. Labelled draft.
-- DMC-ODS episode opened, or updated to the actual level.
-- CALOMS admission prompt shown to staff (not auto-submitted).
-- H0001 claim created through the existing claim path (same validation and billing lane).
-- Care plan: a suggested goal the clinician can accept or dismiss (same as B2). Problem list: diagnosis linked. Nothing is added automatically.
-- Referral out task if the actual level isn't offered here.
-- Reassessment scheduled (draft: level-dependent, default 90 days) in the same schedule table as the screeners.
-- Patient view: "Your care team completed a treatment planning assessment with you" and next steps. No scores, dimensions, or level numbers.
-
-**6. Where it fits the EHR**
-| Action | Roles (draft) |
-|---|---|
-| Start / edit draft | Therapist, PMHNP, trainee (cosign needed) |
-| Sign | Licensed therapist, PMHNP (LPHA) |
-| Co-sign | Clinical supervisor |
-| View | Anyone who passes `screeners_sud`, plus the author exception |
-- Chart: ASAM section on the Clinical tab (history, versions, status). The task and a summary also show on Tracking.
-- Guided Chart Review: facts only (date, signer, ratings, level chosen by the clinician, differing reason). Part 2 hiding applies.
-- Ask Adel: lists who needs one, who's overdue, and the last signed level as recorded. Adel never suggests or assigns a level. It refuses if asked.
-
-**7. Demo data** (real store API, no pushed rows)
-- Luis C. (2c): a completed, signed ASAM with a DMC-ODS episode and H0001 claim.
-- Jasmine H. (2d): an unsigned draft waiting for cosign (trainee author).
-- Daniel (p1): ASAM reassessment due (from his existing DMC-ODS/CALOMS record).
-- New scenario: a patient who selected substance use treatment without Part 2 consent, to show the masked task (visible to the therapist, hidden from the case manager and advocate).
-- No other personas change. The switcher descriptions get updated.
-
-**8. Model decisions (draft defaults)**
-- Dimension 3 and C-SSRS: show the latest C-SSRS risk level as a read-only reference next to dimension 3. It never sets the rating.
-- Signing an ASAM does not sign its related screeners. It links to them by ID. Screener sign-off stays separate.
-- AUDIT/DAST results get an optional `episodeId`. Results from a DMC-ODS episode are grouped under it, and the results stay on the patient record.
-
-**9. Out of scope**
-- 10d: full DMC-ODS reporting (clinical and population), CALOMS submission, level-of-care utilization reports, and timeliness measures.
-- 10e: Adel/agent integration beyond read-only facts (drafting dimension text, scribe prefill).
-- Not in 10c either: licensed ASAM content, any automated placement, patient self-administered ASAM.
-
-**Tests**
-- Each trigger creates one task. Justice alone creates none. De-duplication works.
-- Declining consent keeps the selection. The task is visible to the therapist and hidden from the case manager, peer, advocate, and billing.
-- The level is never set without a clinician choice. A differing level needs a reason.
-- Nothing is output before signing. Cosign is enforced. An amendment keeps the old version.
-- Adel never outputs a level. The patient view has no numbers.
-- Crisis-first path and existing Part 2 tests unchanged.
-
-**Open decisions for 10c**
-1. Draft AUDIT/DAST-10 positive cutoffs that trigger an ASAM.
-2. Task due dates (7 / by release / 30 days) and who receives it when there is no assigned clinician.
-3. Who may sign and cosign (LPHA list).
-4. DMC-ODS level list wording and which levels Adelante offers.
-5. Medical necessity rule and reassessment intervals per level.
-6. Whether a clinician decision may override the de-duplication window.
-7. Who gets and fills the licensed ASAM content, and when.
-
-## Phase 10d — DMC-ODS reporting and readiness (plan only, three builds)
-
-Rules for all three builds:
-- Every draft value (cutoffs, due windows, medical necessity rule, level list, completeness rules) is labelled "Draft — pending clinical sign-off".
-- Part 2: every ASAM, AUDIT, DAST-10, SUD episode and CALOMS value is read through `canAccess(role, "screeners_sud", patient)` (plus author exception). Aggregates containing SUD data are hidden entirely from roles that fail the check, not zeroed.
-- Every aggregate uses the shared `cohortGuard` (11) and shows the below-minimum caveat. Wording is association-only ("seen alongside", "among patients with"), never causal.
-- No new write paths. All builds read existing store data; 10d-3 adds one validation hook on the existing claim path.
-
-### 10d-1 — ASAM clinical worklists and reporting (staff)
-
-**Data sources:** `asamAssessments` (status, versions, levels, reason, signer, cosigner, timestamps), `asam_needed` CaseTasks (trigger reasons, due date), DMC-ODS episodes, encounters/claims with DMC-ODS service codes, staff roster and team assignment.
-
-**Screens:**
-- My Work: "ASAM" group — needed / due / overdue for me; drafts I authored awaiting cosign; cosigns waiting on me (LPHA).
-- New reporting section "ASAM (clinical)" on `/reporting`, staff-only: needed/due/overdue by clinician and team; drafts awaiting cosign with age; recommended vs actual differences with reasons (count by reason, drill to patient list for authorized roles); reassessments due next 30 days.
-- Timeliness (draft windows): median days trigger → signed assessment; signed assessment → first DMC-ODS treatment service. Cohort-guarded.
-- Chart ASAM section: level history timeline per patient (each signed version, level, date, signer).
-
-**Role visibility:** therapist, PMHNP, SUD counselor, clinical supervisor, clinical coordinator see patient-level rows within caseload scope. Program leadership sees aggregates only. Case manager, peer, advocate, billing: nothing unless Part 2 consent grants the role.
-
-**Tests:** counts match seeded state; overdue math with fixed clock; masked roles see no row and no aggregate; cohort caveat appears below 11; level history keeps amended versions in order; timeliness excludes unsigned drafts.
-
-**Demo data:** existing Luis (signed), Jasmine (cosign pending), Daniel (due), Jordan (masked). Add one overdue task and one recommended≠actual signed record (reason "level not available") through the real store API.
-
-**Risks:** caseload scoping for counselors vs therapists; demo cohort is under 11, so every aggregate shows the caveat.
-
-**Depends on open decisions:** 10c-2 (due dates), 10c-3 (LPHA list), 10c-5 (reassessment intervals), 10c-6 (dedupe override).
-
-### 10d-2 — Population health reporting
-
-**Data sources:** screener results (instrument, version, scoring version, verified flag, retired flag, timepoint), C-SSRS risk levels, AHC-HRSN domains, signed ASAM actual levels, patient population track, referral source, program/episode.
-
-**Screens:** `/reporting` "Population health" section, behind the existing PopulationGate:
-- Level-of-care mix (signed actual levels only).
-- Screener positivity and change over time for PHQ-9, GAD-7, PC-PTSD-5, AUDIT, DAST-10, and C-SSRS risk levels (intake vs latest re-screen).
-- Social needs by AHC-HRSN domain (interpersonal safety stays staff-only per existing rule).
-- Slices: population track (general, justice-involved self-report, pre-release referred), referral source, program.
-
-**Rules applied:**
-- AUDIT and DAST-10: counted, with the "Item wording pending source verification" caveat on every tile they feed.
-- Retired PCL-5 short form: excluded from totals and trends.
-- C-SSRS collected with placeholder text: excluded; tile states how many were left out.
-- Draft cutoffs labelled on every positivity figure.
-- Each slice is cohort-guarded separately (small slices show the caveat, not the number, once hard suppression is enabled).
-
-**Role visibility:** leadership, clinical coordinator, quality roles. SUD tiles (AUDIT, DAST-10, levels) only for roles passing the Part 2 check; others see the non-SUD tiles.
-
-**Tests:** exclusion rules (retired, placeholder C-SSRS) and inclusion-with-caveat (AUDIT/DAST); slice totals add up; masked role sees no SUD tile; association-only wording check on generated labels; cohort caveat per slice.
-
-**Demo data:** existing personas cover all three tracks; add a second timepoint for two personas so "change over time" has values.
-
-**Risks:** justice self-report currently lives in `calomsProfile.justice` — slicing must read it without treating it as a SUD signal; small-cell re-identification in narrow slices.
-
-**Depends on:** 10a-1, 10a-2 (cutoffs), 10a-5 (source sign-off), 10b-2 (risk mapping), 10c-1 (positive cutoffs).
-
-### 10d-3 — DMC-ODS operational readiness (prototype)
-
-**Data sources:** claims (existing lane and transitions), signed ASAM + linked diagnoses, DMC-ODS episodes, CALOMS profiles (admission/discharge fields).
-
-**Screens and rules:**
-- Medical necessity gate (draft rule): a DMC-ODS treatment claim cannot move to Ready without a signed (and cosigned where required) ASAM in the episode window and a linked SUD ICD-10 diagnosis. Blocked claims show the reason in the claims worklist. H0001 itself is exempt.
-- CALOMS completeness checks: admission and discharge required-field lists (draft), shown per patient in the chart and as a worklist of incomplete records.
-- Export-ready view: per-episode table of ASAM and CALOMS fields a county/DHCS submission would need, downloadable as CSV, banner "Prototype — not submitted anywhere".
-
-**Role visibility:** billing and billing coordinator see gate status and blocking reason only (no ASAM content) — requires a Part 2 decision; clinical roles see details; export view limited to authorized compliance/admin roles passing the Part 2 check.
-
-**Tests:** claim without signed ASAM stays blocked; with ASAM but no SUD diagnosis stays blocked; both present moves to Ready; H0001 unaffected; non-DMC claims unaffected; completeness list flags missing fields; export contains no data for masked roles and is audited.
-
-**Demo data:** one Luis treatment encounter that passes the gate; one Jasmine encounter blocked until cosign; one incomplete CALOMS discharge record.
-
-**Risks:** existing seeded DMC-ODS claims (Daniel) may become blocked — the build report will list any; billing seeing a "blocked for medical necessity" reason may itself disclose Part 2 information.
-
-**Depends on:** 10c-4 (level list), 10c-5 (medical necessity rule), plus new decisions below.
-
-### Open decisions for 10d
-1. Timeliness windows (trigger → assessment, assessment → first service).
-2. Which roles see population SUD tiles, and whether billing may see a "medical necessity" blocking reason.
-3. Whether to switch cohort guard to hard suppression before any pilot.
-4. CALOMS required-field lists (admission and discharge).
-5. Which treatment service codes the medical necessity gate applies to.
-
-### 10d decisions recorded (defaults)
-- Billing and a blocked DMC-ODS claim: billing sees only "Blocked: clinical documentation incomplete" — never ASAM or substance-use detail.
-- Cohort guard stays in caveat mode for the prototype. Hard suppression is required before any real pilot data.
-- Timeliness windows (draft: 7 days trigger → assessment, 14 days assessment → first DMC-ODS service), CALOMS required fields, and the service codes the gate covers are draft defaults labelled "Draft — pending clinical sign-off".
-- 10d-1 built: clinical coordinator has no Part 2 access, so the ASAM reporting section is hidden for that role (open decision).
+# Investigation report: clinician functions, escalation, meds, Adel (no code changes)
+
+Source: a read of the store's method list in `src/lib/ehr.ts` plus targeted searches. I did not use the browser. **(I)** = inferred from a name or comment and not traced end to end. Role details come from earlier sessions unless marked.
+
+## 1. Patients and sessions
+
+| Function | Who | Where / store fn | Status | Notes |
+|---|---|---|---|---|
+| Create patient (staff) | intake / assisted signup | `createPatient`, `/assisted-signup` | works | |
+| Edit demographics / identifiers | — | no `updatePatient` found | missing | Nothing in `components/` or `routes/` edits these |
+| Insurance / coverage | billing / eligibility | `setCoverage`, `addCoveragePlan`, `endCoveragePlan`, `recordCoverageCheck` | works | |
+| Outpatient episodes (open/close/discharge/readmit) | — | only `openPreReleaseEpisode`/`closePreReleaseEpisode` (in-facility); `recordDischarge`/`currentDischarge` **(I)** in-facility | missing (outpatient) | |
+| Primary clinician / care team | coordinator | `reassignPrimaryClinician`, `assignCaseManager` | partial | No care-team roster editor |
+| Flags | clinicians | `raiseCrisisFlag`, `flagCrisis`, `flagMessageAsSud` | partial | No general SUD or high-risk patient flag |
+| Schedule | booking staff | `bookAppointment`, `rescheduleAppointment`, `staffCancelAppointment`, `markAppointmentNoShow` | works | |
+| Start telehealth / in-person | clinician | `vendors/telehealth.ts` (mock), `updateAppointmentStatus` | placeholder | |
+| Document | clinician | `addProgressNote`, note templates (versioned), `noteAutofill` | works | |
+| Sign / cosign | clinician / supervisor | `signProgressNote`, `cosignProgressNote`, `declineProgressNoteCosign`, `reassignNoteCosign` | works | Supervisor routing is enforced in the store |
+| Amend / addendum after signing | — | only `amendAsam` (ASAM) | missing for notes | No addendum, version history or audit of changes to signed notes |
+| Lock, late entry, void/delete note | — | none found (`voidBatch` is claims **(I)**) | missing | |
+| Visit → note → claim | automatic | `onNoteFinal`, `noteVisitLink.ts`, `/notes-queue` | works | Cancelled or no-show visits never create a claim |
+
+**Edit rules:** Only drafts can be edited **(I)**. After signing, a note is effectively frozen because no edit path exists. That is safe but not compliant: there's no addendum or amendment path. "Who can edit whose notes" isn't coded beyond author drafts **(I)**.
+
+## 2. Escalation
+
+| Path | Trigger | Lands | Reason required | Audited | Part 2-safe |
+|---|---|---|---|---|---|
+| Crisis queue | auto (`scanTextForCrisis`) plus manual (`flagCrisis`/`raiseCrisisFlag`) | `/crisis-queue` (claim, resolve, re-trigger, SLA) | resolve: yes **(I)** | yes | yes |
+| Safety plan | manual | `/safety-plan`, `markSafetyPlanReviewed` | no | yes **(I)** | yes |
+| C-SSRS | manual request; score-driven alert **(I)** | `requestCssrs`/`recordCssrs` feed the crisis queue **(I)** | n/a | yes | yes |
+| Level-of-care change / ASAM re-assessment | manual | `requestAsamAssessment`, `patientReassessmentDue` | ASAM reason | yes | gated by `roleSeesAsamSection` |
+| Supervisor / cosign | automatic | cosign inbox, override reason | override: yes | yes | yes |
+| Referral to a higher level of care | — | `createReferral`/`addResourceReferral` handle intake and community resources only | missing | — | — |
+| 911/988 guidance | static | `/crisis` (`crisisCopy.ts`, EN/ES) | n/a | n/a | yes |
+| Notify care team | manual / automatic | messages, `advocateNudgeCareTeam`, staff SMS alerts | no | yes | masked |
+
+## 3. Outpatient medications
+
+| Function | Who | Where | Status | Notes |
+|---|---|---|---|---|
+| Med list / reconciliation | PMHNP, nurse **(I)** | `MedReconTab`, `start/completeMedReconciliation` | works | |
+| Prescribing | PMHNP (`meds_erx` write); others need attribution | `orders.ts`, `signOrders`, `prescribeMedication` | partial | Real drug data comes from RxNav and DailyMed. Pharmacy sending is only a flag; eRx is a mock (`vendors/erx.ts`) |
+| Refills | patient → staff | `requestRefill`, `reviewRefill` | works **(I)** | Not traced on screen |
+| MOUD/MAT | PMHNP | `MatOrderCard` (pre-release only) | partial | No outpatient buprenorphine/naltrexone workflow; no methadone referral |
+| Controlled meds / CURES | — | `isControlled`, `daysSupply`, DEA schedule | partial | **No CURES/PDMP check anywhere** |
+| Allergies / interactions | clinicians | `addAllergy`, `softDeleteAllergy` | partial | No allergy cross-check at order time; interactions are a name-overlap duplicate warning only |
+| Adherence / side effects | patient reports, staff acknowledge | `medAdherence.ts`, `reportMedSideEffect`, `acknowledgeMedSideEffect` | works | |
+| Part 2 masking of SUD meds | — | no SUD-med flag found in `orders.ts` | missing **(I)** | Buprenorphine can show to restricted roles **(I)** |
+| Demo data | — | `outpatientMeds` seed | works | |
+| Medication-round tests | — | `mar.test.ts` has 19 `it(` | in-facility only **(I)** | |
+
+## 4. Adel / AI on the clinical side
+
+| Feature | Kind | Reads | Writes | Human sign-off | Audited | Part 2 / roles |
+|---|---|---|---|---|---|---|
+| Chart review (`/agentic/chart-review`) | facts from the record; sample summary text | record | nothing | n/a | no | `canAccess`, Part 2 screener filter |
+| Scribe | static sample | record | nothing | n/a | no | same |
+| Dictation | static sample | — | nothing | n/a | no | same |
+| Note autofill / automations | rule-based | record | draft note fields, `listNoteAutomationRuns` | yes, clinician signs | yes | yes **(I)** |
+| Crisis scanner | rule-based | patient text | crisis queue, alert | staff resolve | yes | yes |
+| Adel intake (`saveIntakeProfileViaAdel`) | rule-based script | patient answers | intake profile (no consent) | patient confirms | yes **(I)** | yes |
+| Adel chat / recap | live AI (Lovable AI) | prompt only | nothing saved (transcript on hold) | n/a | no | crisis messages never reach the AI |
+| Missed-handoff catch-up | rule-based | tasks/alerts | summary **(I)** | n/a | **(I)** | **(I)** |
+
+**Possible Adel add-ons (none exist; each would keep a human decision):** a draft note from the visit and scribe that the clinician signs; draft addenda; suggested medication reconciliation changes; a pre-filled refill decision the PMHNP approves; a drafted crisis or escalation summary that staff edit and send; a drafted referral packet for a higher level of care; a suggested ASAM re-assessment when quick checks worsen; a drafted CURES summary once CURES is connected.
+
+## Top gaps (by clinical and compliance risk)
+1. There is no CURES/PDMP check for controlled or MOUD prescribing.
+2. There is no way to add an addendum to or amend a signed progress note, and no version history.
+3. SUD medications have no Part 2 masking **(I, verify first)**.
+4. Orders have no allergy cross-check, and there is no interaction engine.
+5. There is no workflow for referral to a higher level of care.
+6. There are no outpatient episodes of care (open, discharge, readmit).
+7. Demographics and identifiers can't be edited.
+8. There is no void, lock or late-entry path for notes.
+9. The outpatient MOUD workflow is missing (only pre-release MAT exists).
+10. The three AI screens are sample content with no audit trail.
+
+**Separate: in-facility items.** Medication rounds (`mar.ts`, 19 tests), shift count, pre-release episodes, MAT orders and discharge.
