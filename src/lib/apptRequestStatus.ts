@@ -98,3 +98,31 @@ export function patientFirstVisit(
   if (!task) return null;
   return visit?.state === "scheduled" ? { state: "scheduled", start: visit.start } : { state: "pending" };
 }
+
+// ---------------------------------------------------------------------------
+// §Cancel/no-show — appointment outcome counts for the reporting window.
+// Cohort-guarded on the number of visits in the window. Late cancel is a
+// DRAFT label (24-hour check), no fee logic.
+// ---------------------------------------------------------------------------
+export interface AppointmentOutcomes extends CohortGuard {
+  visits: number;
+  attended: number;
+  noShows: number;
+  cancellations: number;
+  lateCancels: number;
+  pendingCancelRequests: number;
+}
+
+export function appointmentOutcomes(appts: Appointment[], sinceDays?: number, now = Date.now()): AppointmentOutcomes {
+  const since = sinceDays ? now - sinceDays * 86400000 : -Infinity;
+  const rows = appts.filter((a) => +new Date(a.start) >= since && +new Date(a.start) <= now + 366 * 86400000);
+  return {
+    visits: rows.length,
+    attended: rows.filter((a) => a.status === "attended").length,
+    noShows: rows.filter((a) => a.status === "no_show").length,
+    cancellations: rows.filter((a) => a.status === "cancelled").length,
+    lateCancels: rows.filter((a) => a.status === "cancelled" && a.cancellation?.lateCancel).length,
+    pendingCancelRequests: rows.filter((a) => a.status === "scheduled" && a.cancelRequest?.status === "pending").length,
+    ...cohortGuard(rows.length),
+  };
+}

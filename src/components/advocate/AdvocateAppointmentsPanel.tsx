@@ -19,6 +19,8 @@ import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { PART2_DISCLOSED_BADGE_LABEL, PART2_DISCLOSED_MESSAGE } from "@/lib/documents";
 
+import { CancelRequestControl } from "@/components/scheduling/VisitActions";
+
 function Part2Notice() {
   return (
     <div className="mt-3 space-y-2" data-testid="advocate-part2-disclosed">
@@ -176,6 +178,7 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
                 >
                   <RsvpControl linkId={linkId} apptId={item.id} />
                   <RescheduleControl linkId={linkId} apptId={item.id} />
+                  <AdvocateCancel linkId={linkId} apptId={item.id} />
                 </div>
               )}
             </li>
@@ -223,5 +226,16 @@ export function AdvocateAppointmentsPanel({ linkId }: { linkId: string }) {
           " Your authorization is view-only, so appointments can't be changed from here — ask the care team."}
       </p>
     </Card>
+  );
+}
+
+function AdvocateCancel({ linkId, apptId }: { linkId: string; apptId: string }) {
+  const appt = useEhr(() => AdelanteEHR.listAppointments().find((a) => a.id === apptId));
+  if (!appt) return null;
+  return (
+    <CancelRequestControl
+      appt={appt}
+      onRequest={(r) => AdelanteEHR.advocateRequestCancel(linkId, apptId, r)}
+    />
   );
 }

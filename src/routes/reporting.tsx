@@ -19,7 +19,7 @@
 // a measure that cannot be re-windowed declares itself point-in-time instead
 // of silently ignoring the period selector.
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { requestToBooked } from "@/lib/apptRequestStatus";
+import { requestToBooked, appointmentOutcomes } from "@/lib/apptRequestStatus";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { canAccess, useActingStaff } from "@/lib/roles";
@@ -292,6 +292,7 @@ function ReportingHome() {
   // §4g — windowed on the referral's own `createdAt`, so the selector applies.
   const refFunnel = useEhr(() => referralFunnel({ sinceDays: days }));
   const reqBooked = useEhr(() => requestToBooked(AdelanteEHR.listPatients(), days));
+  const apptOut = useEhr(() => appointmentOutcomes(AdelanteEHR.listAppointments(), days));
   const refSource = useEhr(() => referralsBySource({ sinceDays: days }));
   const refJustice = useEhr(() => referralsByJusticeAnswer({ sinceDays: days }));
   const refTrack = useEhr(() => referralsByTrack({ sinceDays: days }));
@@ -649,6 +650,15 @@ function ReportingHome() {
           </div>
           {reqBooked.belowMinimumCohort && (
             <CohortGuardNotice cohortSize={reqBooked.cohortSize} minimumCohortSize={reqBooked.minimumCohortSize} />
+          )}
+          <div className="mt-3 grid gap-3 sm:grid-cols-2 lg:grid-cols-4" data-testid="appointment-outcomes">
+            <Stat label="No-shows" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.noShows)} note={`Of ${apptOut.belowMinimumCohort ? "—" : apptOut.visits} visits in the period`} />
+            <Stat label="Cancellations" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.cancellations)} note="Staff-cancelled, including confirmed patient requests" />
+            <Stat label="Late cancels (draft)" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.lateCancels)} note="Cancelled inside 24 hours — label only, no fee" />
+            <Stat label="Cancel requests waiting" value={apptOut.belowMinimumCohort ? "—" : String(apptOut.pendingCancelRequests)} note="Patient or advocate asked; staff to confirm" />
+          </div>
+          {apptOut.belowMinimumCohort && (
+            <CohortGuardNotice cohortSize={apptOut.cohortSize} minimumCohortSize={apptOut.minimumCohortSize} />
           )}
           <p className="mt-1 text-[11px] text-muted-foreground">
             Association only. Substance use is not an appointment request — the ASAM task and its assessment visit are tracked in the ASAM section.

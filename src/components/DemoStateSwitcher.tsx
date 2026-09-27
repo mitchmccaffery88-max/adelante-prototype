@@ -12,6 +12,7 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
 import { toast } from "sonner";
+import { ensureAdvocateMessagingDemo } from "@/lib/demoInboxSeed";
 import {
   AdelanteEHR,
   useEhr,
@@ -74,7 +75,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_consented: {
     group: "Intake by need",
     label: "2c · Luis C. — Substance use (Part 2 consent)",
-    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; assessment visit scheduled from his ASAM task (linked; task stays open until signed). My Care: \"First visit scheduled\"",
+    hint: "Adds AUDIT + DAST-10 (Part 2-masked). Recovery Journey, craving and meetings shown; his ASAM-linked assessment visit two days ago was marked a no-show, so the task is back to \"not yet scheduled · missed <date>\"; My Care shows a generic first visit still to schedule",
   },
   combination: {
     group: "Intake by need",
@@ -99,17 +100,17 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   public_referral: {
     group: "Referral",
     label: "5 · Carmen I. — Public referral form",
-    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"; crisis queue: staff-flagged urgent social need (safe place tonight) in the social-needs lane",
+    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"; crisis queue: staff-flagged urgent social need (safe place tonight) in the social-needs lane; pending patient cancel request on her therapy visit",
   },
   advocate: {
     group: "Advocates",
     label: "6a · Advocate only",
-    hint: "External advocate for Daniel M. (invite code + signed ROI), no patient record",
+    hint: "External advocate (invite code + signed ROI), no patient record; verified two-way HIPAA release on file (uploaded, then verified by Luz Herrera) and one advocate message in the care-team thread — advocate screen still shows the pending clinical review notice",
   },
   advocate_and_patient: {
     group: "Advocates",
     label: "6b · Advocate who is also a patient",
-    hint: "Alicia S. advocates for Daniel M. and has her own record (Support for myself)",
+    hint: "Alicia S. advocates and has her own record (Support for myself); same verified messaging document and seeded advocate message",
   },
   ji_post_release: {
     group: "Existing demo records",
@@ -129,7 +130,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call)",
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call); an assessment visit yesterday is still unmarked — mark it No-show as Dr. Reyes in the chart's Tasks tab"
   },
   kayla: {
     group: "Existing demo records",
@@ -197,6 +198,7 @@ function ensureAdvocateLinkId(patientId: string, advocateName: string): string {
   );
   if (existing) {
     ensureCollateralRoi(patientId);
+    ensureAdvocateMessagingDemo(existing.id);
     return existing.id;
   }
   const invite = AdelanteEHR.createAdvocateInvitation({
@@ -213,6 +215,7 @@ function ensureAdvocateLinkId(patientId: string, advocateName: string): string {
     attestedName: advocateName,
   });
   ensureCollateralRoi(patientId);
+  ensureAdvocateMessagingDemo(claimed.id);
   return claimed.id;
 }
 

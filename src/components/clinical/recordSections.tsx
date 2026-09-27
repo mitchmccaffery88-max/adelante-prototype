@@ -1,3 +1,4 @@
+import { PatientVisitsCard } from "@/components/scheduling/VisitActions";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
 // §Clinical record — single source of truth for chart sections.
 // Both the quick-peek drawer and the full-page chart derive their navigation,
@@ -376,6 +377,7 @@ export function useRecordSections(
     render: () => (
       <div className="space-y-4">
         <AppointmentRequestsCard patientId={pid} />
+        <PatientVisitsCard patientId={pid} />
         <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />
       </div>
     ),
