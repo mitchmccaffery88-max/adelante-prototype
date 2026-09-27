@@ -229,6 +229,7 @@ import {
 import { dispatchStaffAlert } from "./staffAlerts";
 import {
   composeGroupNotification,
+  isGroupNotificationSensitive,
   dispatchGroupNotification,
   withGroupNotificationsSuppressed,
   type GroupNotificationEvent,
@@ -257,6 +258,8 @@ export type NotificationCategory =
   // §Cancel/no-show — patient/advocate cancel request, staff cancel, no-show.
   | "appointment_cancel_request"
   | "appointment_cancelled"
+  // §Group join requests — a patient asked to join a group.
+  | "group_join_request"
   | "connect_request"
   | "needs_task"
   | "protected_task"
@@ -7602,6 +7605,28 @@ export function normalizeGroupFacilitators(
 
 const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
+
+// §Group join requests — patient "Ask to join"; staff approve/decline.
+export type GroupJoinRequestStatus = "pending" | "approved" | "declined";
+export interface GroupJoinRequest {
+  id: string;
+  sessionId: string;
+  patientId: string;
+  note?: string;
+  createdAt: string;
+  status: GroupJoinRequestStatus;
+  /** True for Part 2 (SUD) groups — masked for roles failing the check. */
+  protected: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolvedByRole?: StaffRole;
+  declineReason?: string;
+  /** Last blocked approval attempt (e.g. missing telehealth consent). */
+  lastBlocked?: { at: string; by: string; reason: string };
+}
+const groupJoinRequests: GroupJoinRequest[] = [];
+/** Roles that may approve a Part 2 (SUD) group request without a consent lookup. */
+export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp"];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
 
 // §v3.0 Phase 2 — pre-release episode stores.
@@ -7773,6 +7798,16 @@ function _normalizeAllScreenerMeta() {
   }
 }
 _normalizeAllScreenerMeta();
+
+// §Group join requests — reviewer rule. Same roles that set eligibility; a
+// Part 2 (SUD) group request is reviewable only by SUD_GROUP_APPROVER_ROLES.
+function _assertGroupJoinReviewer(r: GroupJoinRequest, actor: { name: string; role: StaffRole }) {
+  if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
+  if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))
+    throw new Error("Only a therapist, PMHNP or case manager can review group requests.");
+  if (r.protected && !SUD_GROUP_APPROVER_ROLES.includes(actor.role))
+    throw new Error("Your role can't review this request.");
+}
 
 // §Cancel/no-show helpers.
 function _assertApptActor(actor: { name: string; role: StaffRole }) {
@@ -22913,6 +22948,197 @@ export const AdelanteEHR = {
     });
   },
 
+  // ---------- §Group join requests ----------
+  /**
+   * Groups a patient may ask to join: not cancelled, not already on it, no
+   * pending request, not full. SUD groups only for patients seeking SUD care
+   * (they see category-only wording in the UI).
+   */
+  requestableGroupsForPatient(patientId: string): GroupSession[] {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return [];
+    const enrolled = new Set(AdelanteEHR.groupsForPatient(patientId).map((g) => g.id));
+    const pending = new Set(
+      groupJoinRequests
+        .filter((r) => r.patientId === patientId && r.status === "pending")
+        .map((r) => r.sessionId),
+    );
+    const sudOk = Boolean(p.seeking?.substanceUse);
+    return groupSessions.filter(
+      (g) =>
+        g.status !== "cancelled" &&
+        !enrolled.has(g.id) &&
+        !pending.has(g.id) &&
+        (sudOk || !isGroupNotificationSensitive(g.category) || isSelfServiceGroupCategory(g.category)) &&
+        AdelanteEHR.listGroupEnrollments(g.id).length < g.capacity,
+    );
+  },
+
+  listGroupJoinRequests(filter?: { patientId?: string; status?: GroupJoinRequestStatus }): GroupJoinRequest[] {
+    return groupJoinRequests
+      .filter(
+        (r) =>
+          (!filter?.patientId || r.patientId === filter.patientId) &&
+          (!filter?.status || r.status === filter.status),
+      )
+      .slice()
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+
+  /** Patient asks to join a group. Optional note. Staff review. */
+  requestJoinGroup(input: { sessionId: string; patientId: string; note?: string; now?: string }): GroupJoinRequest {
+    const g = groupSessions.find((x) => x.id === input.sessionId);
+    if (!g) throw new Error("Group not found.");
+    if (g.status === "cancelled") throw new Error("That group is cancelled.");
+    if (AdelanteEHR.groupsForPatient(input.patientId).some((x) => x.id === g.id))
+      throw new Error("You're already in this group.");
+    const existing = groupJoinRequests.find(
+      (r) => r.sessionId === g.id && r.patientId === input.patientId && r.status === "pending",
+    );
+    if (existing) return existing;
+    const isProtected = isGroupNotificationSensitive(g.category);
+    const row: GroupJoinRequest = {
+      id: `gjr_${uid()}`,
+      sessionId: g.id,
+      patientId: input.patientId,
+      ...(input.note?.trim() ? { note: input.note.trim().slice(0, 500) } : {}),
+      createdAt: input.now ?? new Date().toISOString(),
+      status: "pending",
+      protected: isProtected,
+    };
+    groupJoinRequests.push(row);
+    appendAudit({
+      category: "clinical",
+      action: "group_join_requested",
+      patientId: input.patientId,
+      actorRole: "patient",
+      actorId: `patient:${input.patientId}`,
+      detail: {
+        groupSessionId: g.id,
+        requestId: row.id,
+        ...(isProtected ? { protected: true } : { topic: g.topic, category: g.category }),
+      },
+    });
+    // Staff alert — never names a SUD group, never carries the patient's note.
+    // SUD requests only go to roles that can review them.
+    const common = {
+      category: "group_join_request" as const,
+      subject: `Group join request — ${patientLabel(input.patientId)}`,
+      body: isProtected
+        ? "The patient asked to join a group. Review it in Group sessions."
+        : `The patient asked to join "${g.topic}". Review it in Group sessions.`,
+      linkRoute: "/group-sessions",
+      patientId: input.patientId,
+    };
+    const roles = isProtected ? SUD_GROUP_APPROVER_ROLES : GROUP_ELIGIBILITY_ROLES;
+    for (const role of roles) AdelanteEHR.notify({ recipientRole: role as StaffRole, ...common });
+    emit();
+    return row;
+  },
+
+  /**
+   * Staff approve: telehealth consent is checked FIRST for groups with
+   * virtual meetings (Phase 6b); a miss is audited and refused. Then sets
+   * eligibility if missing and enrolls through the normal enrollment write.
+   */
+  approveGroupJoinRequest(
+    requestId: string,
+    actor: { name: string; role: StaffRole; id?: string },
+  ): GroupJoinRequest {
+    const r = groupJoinRequests.find((x) => x.id === requestId);
+    if (!r || r.status !== "pending") throw new Error("No pending request to approve.");
+    _assertGroupJoinReviewer(r, actor);
+    const g = groupSessions.find((x) => x.id === r.sessionId);
+    if (!g) throw new Error("Group not found.");
+    const detailBase = {
+      groupSessionId: g.id,
+      requestId: r.id,
+      role: actor.role,
+      ...(r.protected ? { protected: true } : { topic: g.topic, category: g.category }),
+    };
+    if (
+      AdelanteEHR.groupVirtualExposure(g.id).virtual &&
+      !AdelanteEHR.isConsentCategoryAuthorized(r.patientId, TELEHEALTH_CONSENT_CATEGORY)
+    ) {
+      const reason =
+        "This group meets by video or phone and the patient has no telehealth consent on file. Get telehealth consent first, then approve.";
+      r.lastBlocked = { at: new Date().toISOString(), by: actor.name, reason };
+      appendAudit({
+        category: "clinical",
+        action: "group_join_approval_blocked",
+        patientId: r.patientId,
+        actorId: actor.name,
+        actorRole: actor.role,
+        detail: { ...detailBase, reasonCode: "no_telehealth_consent", reason },
+      });
+      emit();
+      throw new Error(reason);
+    }
+    if (!AdelanteEHR.isGroupEligible(r.patientId))
+      AdelanteEHR.setGroupEligibility({
+        patientId: r.patientId,
+        reason: "Approved the patient's request to join a group.",
+        role: actor.role,
+        actor: actor.name,
+      });
+    AdelanteEHR.enrollInGroup({ sessionId: g.id, patientId: r.patientId, enrolledBy: actor.name });
+    r.status = "approved";
+    r.resolvedAt = new Date().toISOString();
+    r.resolvedBy = actor.name;
+    r.resolvedByRole = actor.role;
+    appendAudit({
+      category: "clinical",
+      action: "group_join_approved",
+      patientId: r.patientId,
+      actorId: actor.name,
+      actorRole: actor.role,
+      detail: detailBase,
+    });
+    emit();
+    return r;
+  },
+
+  /** Staff decline — reason required. Patient notified (Part 2-safe copy). */
+  declineGroupJoinRequest(
+    requestId: string,
+    reason: string,
+    actor: { name: string; role: StaffRole; id?: string },
+  ): GroupJoinRequest {
+    const r = groupJoinRequests.find((x) => x.id === requestId);
+    if (!r || r.status !== "pending") throw new Error("No pending request to decline.");
+    _assertGroupJoinReviewer(r, actor);
+    const trimmed = reason.trim();
+    if (!trimmed) throw new Error("A reason is required to decline.");
+    const g = groupSessions.find((x) => x.id === r.sessionId);
+    r.status = "declined";
+    r.resolvedAt = new Date().toISOString();
+    r.resolvedBy = actor.name;
+    r.resolvedByRole = actor.role;
+    r.declineReason = trimmed.slice(0, 500);
+    appendAudit({
+      category: "clinical",
+      action: "group_join_declined",
+      patientId: r.patientId,
+      actorId: actor.name,
+      actorRole: actor.role,
+      detail: {
+        groupSessionId: r.sessionId,
+        requestId: r.id,
+        role: actor.role,
+        reason: r.declineReason,
+        ...(r.protected || !g ? { protected: true } : { topic: g.topic, category: g.category }),
+      },
+    });
+    AdelanteEHR.notifyGroupChange({
+      event: "join_request_declined",
+      sessionId: r.sessionId,
+      patientIds: [r.patientId],
+      triggeredBy: { actorId: actor.name, kind: "staff" },
+    });
+    emit();
+    return r;
+  },
+
   /**
    * Enrollment write. Defaults to a staff initiator; patient self-service
    * comes through `selfEnrollInGroup`. Every path is gated by
@@ -24015,6 +24241,32 @@ withGroupNotificationsSuppressed(() => {
         "Deferred at care-plan review — individual sessions first.",
         THERAPIST,
       );
+
+      // §Group join requests demo — all through the real request/review API.
+      const REVIEWER = { name: THERAPIST, role: "therapist" as const };
+      // Pending (non-SUD group).
+      AdelanteEHR.requestJoinGroup({
+        sessionId: skills.id,
+        patientId: "p2",
+        note: "I'd like to try a group — mornings work best for me.",
+      });
+      // Approved → eligibility set + enrolled (in-person, no telehealth needed).
+      const ok = AdelanteEHR.requestJoinGroup({ sessionId: skills.id, patientId: "p3" });
+      AdelanteEHR.approveGroupJoinRequest(ok.id, REVIEWER);
+      // Declined with a reason.
+      const no = AdelanteEHR.requestJoinGroup({ sessionId: virtualGroup.id, patientId: "p2" });
+      AdelanteEHR.declineGroupJoinRequest(
+        no.id,
+        "Starting with individual sessions first; we'll revisit groups next month.",
+        REVIEWER,
+      );
+      // Blocked approval — virtual group, no telehealth consent. Stays pending.
+      const blocked = AdelanteEHR.requestJoinGroup({ sessionId: virtualGroup.id, patientId: "p1" });
+      try {
+        AdelanteEHR.approveGroupJoinRequest(blocked.id, REVIEWER);
+      } catch {
+        /* expected — the refusal IS the seeded audit event. */
+      }
     }
   } catch {
     /* Seeding is best-effort; never break boot. */

@@ -9,6 +9,7 @@
 //   open_psychoeducational — eligible patients self-book, never billed.
 // BOTH require the care-plan group-eligibility flag first; the store refuses
 // any enrollment without it.
+import { GroupJoinRequestsQueue } from "@/components/groups/GroupJoinRequestsQueue";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState, useSyncExternalStore } from "react";
 import {
@@ -110,6 +111,8 @@ function GroupSessionsPage() {
           the 2–12 roster range are DHCS content.
         </p>
       </header>
+
+      <GroupJoinRequestsQueue />
 
       {access.level === "write" && <CreateGroupCard actor={staffName || role} />}
 
@@ -1242,6 +1245,7 @@ const NOTIFY_EVENT_LABEL: Record<GroupNotificationRecord["event"], string> = {
   session_cancelled: "Group cancelled",
   occurrence_cancelled: "Meeting cancelled",
   occurrence_rescheduled: "Meeting moved",
+  join_request_declined: "Join request declined",
 };
 const NOTIFY_OUTCOME_LABEL: Record<GroupNotificationRecord["delivery"], string> = {
   pending: "Sending…",

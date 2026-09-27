@@ -34,6 +34,8 @@ import {
 import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
+import { recordSectionVisible } from "@/lib/recordSectionGate";
+import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
@@ -158,7 +160,7 @@ export function useRecordSections(
     },
   ) => {
     const access = gate(cls);
-    if (!def.alwaysVisible && access.level === "none") return;
+    if (!recordSectionVisible(cls, access, def.alwaysVisible)) return;
     const { render, alwaysVisible: _av, ...rest } = def;
     sections.push({
       ...rest,
@@ -258,7 +260,7 @@ export function useRecordSections(
   });
   // §Phase 10c — ASAM. Part 2 protected: gated by `screeners_sud`, so
   // advocates and Part 2-restricted staff never see the section at all.
-  add("screeners_sud", {
+  if (roleSeesAsamSection(role, patient)) add("screeners_sud", {
     id: "asam",
     label: "ASAM",
     icon: ClipboardCheck,
