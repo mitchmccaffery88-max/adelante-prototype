@@ -335,3 +335,13 @@ export function seedInboxActionsDemo() {
   const bill = listInboxRows(deneen, { billingOnly: true });
   if (bill[0]) safe(() => void claimInboxItem(bill[0].key, deneen));
 }
+
+/** Drop a leading "Follow up —" / "Task assigned —" so titles never double up. */
+export function stripTaskPrefix(subject: string): string {
+  let s = subject.trim();
+  for (;;) {
+    const next = s.replace(/^(follow up|task assigned)\s*[—–:-]\s*/i, "");
+    if (next === s) return s;
+    s = next.trim();
+  }
+}
