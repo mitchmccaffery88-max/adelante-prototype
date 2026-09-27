@@ -1,3 +1,4 @@
+import { formatClinicianName } from "@/lib/coordination";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -468,7 +469,10 @@ function CredentialingAdminPage() {
       creds.map((c) => ({
         id: c.id,
         clinicianId: c.clinicianId,
-        clinicianName: clinicians.find((x) => x.id === c.clinicianId)?.name ?? "",
+        clinicianName: (() => {
+          const cl = clinicians.find((x) => x.id === c.clinicianId);
+          return cl ? formatClinicianName(cl.name, cl.credential) : "";
+        })(),
         kind: c.kind,
         number: c.number,
         issuingState: c.issuingState,
