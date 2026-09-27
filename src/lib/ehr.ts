@@ -7602,6 +7602,28 @@ export function normalizeGroupFacilitators(
 
 const groupSessions: GroupSession[] = [];
 const groupEnrollments: GroupSessionEnrollment[] = [];
+
+// §Group join requests — patient "Ask to join"; staff approve/decline.
+export type GroupJoinRequestStatus = "pending" | "approved" | "declined";
+export interface GroupJoinRequest {
+  id: string;
+  sessionId: string;
+  patientId: string;
+  note?: string;
+  createdAt: string;
+  status: GroupJoinRequestStatus;
+  /** True for Part 2 (SUD) groups — masked for roles failing the check. */
+  protected: boolean;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolvedByRole?: StaffRole;
+  declineReason?: string;
+  /** Last blocked approval attempt (e.g. missing telehealth consent). */
+  lastBlocked?: { at: string; by: string; reason: string };
+}
+const groupJoinRequests: GroupJoinRequest[] = [];
+/** Roles that may approve a Part 2 (SUD) group request without a consent lookup. */
+export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp"];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
 
 // §v3.0 Phase 2 — pre-release episode stores.
