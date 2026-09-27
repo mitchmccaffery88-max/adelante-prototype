@@ -152,7 +152,7 @@ export function AppShell() {
           !isPatientSurface && "sticky top-10",
         )}
       >
-        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-4">
+        <div className="mx-auto max-w-7xl px-4 sm:px-6 py-3 flex items-center gap-2 sm:gap-4">
           {isAdvocateSurface && <UserNavigationDrawer mode="advocate" />}
           <Link
             to="/"
@@ -161,7 +161,7 @@ export function AppShell() {
             <span className="h-8 w-8 rounded-lg bg-navy text-navy-foreground grid place-items-center font-display text-lg leading-none">
               A
             </span>
-            <span className="font-display text-xl text-navy">{t("appName")}</span>
+            <span className="font-display text-xl text-navy max-[420px]:sr-only">{t("appName")}</span>
           </Link>
 
           {/* Public pages keep their informational links. Patient, advocate,
