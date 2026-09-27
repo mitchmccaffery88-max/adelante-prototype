@@ -214,7 +214,9 @@ export function useRecordSections(
   // not `demographics`: substance-use and prior-treatment detail is 42 CFR
   // Part 2 content, so it inherits the same gate as the rest of the SUD record
   // even though the discharge and justice blocks are less sensitive.
-  add("sud_treatment", {
+  // §Part 2 — same check as the ASAM section: hidden (menu + ?section= URL)
+  // for any role failing roleSeesAsamSection.
+  if (roleSeesAsamSection(role, patient)) add("sud_treatment", {
     id: "caloms",
     label: "CalOMS data -Data Collection and Reporting System for SUD",
     icon: ListChecks,

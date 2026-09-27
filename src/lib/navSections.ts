@@ -242,11 +242,12 @@ export const STAFF_NAV: NavEntry[] = [
   {
     id: "inbox",
     label: "Inbox",
-    desc: "Unsigned notes & provider requests",
+    desc: "Unsigned notes, provider requests & billing feed",
     icon: Inbox,
     to: "/inbox",
     group: "queues",
-    gate: { kind: "record_class", anyOf: ["provider_requests", "therapy_notes"] },
+    // §Inbox actions — billing roles reach their billing notifications feed here.
+    gate: { kind: "record_class", anyOf: ["provider_requests", "therapy_notes", "billing"] },
   },
   {
     id: "notes-queue",

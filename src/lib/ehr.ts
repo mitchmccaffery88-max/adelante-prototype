@@ -263,7 +263,9 @@ export type NotificationCategory =
   | "connect_request"
   | "needs_task"
   | "protected_task"
-  | "claim_blocked";
+  | "claim_blocked"
+  // §Inbox actions — billing feed: a claim moved status (billing-safe wording).
+  | "claim_status";
 
 export interface AppNotification {
   id: string;
@@ -15881,6 +15883,24 @@ export const AdelanteEHR = {
     });
     emit();
   },
+  /** §Inbox actions — claim/assign/done/reopen/make-a-task audit rows. */
+  recordInboxAudit(input: {
+    action: string;
+    actorId: string;
+    actorRole: string;
+    patientId?: string;
+    detail: Record<string, unknown>;
+  }) {
+    appendAudit({
+      category: "access",
+      action: input.action,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      ...(input.patientId ? { patientId: input.patientId } : {}),
+      detail: input.detail,
+    });
+    emit();
+  },
   /** §Phase 7b — audit row for every claim status move (billing or note signature). */
   recordClaimStatusChange(input: {
     claimId: string;
@@ -15913,6 +15933,19 @@ export const AdelanteEHR = {
         ...(input.seed ? { seed: true } : {}),
       },
     });
+    // §Inbox actions — billing feed. Billing-safe wording only: the status
+    // move, never the clinical reason text.
+    if (!input.seed && input.via !== "seed_data" && input.from !== input.to) {
+      for (const role of ["billing", "billing_coordinator"] as const)
+        AdelanteEHR.notify({
+          recipientRole: role,
+          category: "claim_status",
+          subject: `Claim status: ${input.from} → ${input.to}`,
+          body: input.to === "blocked" || input.to === "denied" ? `${input.to === "blocked" ? "Blocked" : "Denied"}: see the claims worklist for the billing reason.` : `Claim moved from ${input.from} to ${input.to}.`,
+          linkRoute: "/admin-claims",
+          patientId: input.patientId,
+        });
+    }
     emit();
   },
   /** ISL/self-pay export: all appointments on ISL lane in the given range. */

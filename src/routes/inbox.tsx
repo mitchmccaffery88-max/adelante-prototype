@@ -11,7 +11,7 @@
 // target schema in `src/lib/labsVitalsScaffold.ts` for the handoff starting
 // point (NOT IMPLEMENTED — no runtime consumers).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -20,6 +20,8 @@ import { ProviderRequestQueue } from "@/components/inbox/ProviderRequestQueue";
 import { DocumentVerifyQueue } from "@/components/documents/DocumentVerifyQueue";
 import { AdvocateReviewQueue } from "@/components/inbox/AdvocateReviewQueue";
 import { CommunityInquiryQueue } from "@/components/inbox/CommunityInquiryQueue";
+import { InboxActionQueue } from "@/components/inbox/InboxActionQueue";
+import { BILLING_ROLES } from "@/lib/inboxActions";
 import { ArrowLeft, ClipboardList, FileSignature, Inbox as InboxIcon, Lock } from "lucide-react";
 import { Button } from "@/components/ui/button";
 
@@ -49,7 +51,11 @@ function InboxPage() {
   const notes = canAccess(role, "therapy_notes");
   const requests = canAccess(role, "provider_requests");
   const inquiries = canAccess(role, "community_inquiries");
-  const [tab, setTab] = useState(notes.level === "none" ? "requests" : "unsigned");
+  const isBilling = BILLING_ROLES.includes(role);
+  const [tab, setTab] = useState(isBilling ? "billing" : "queue");
+  useEffect(() => {
+    setTab(isBilling ? "billing" : "queue");
+  }, [isBilling]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
@@ -79,13 +85,24 @@ function InboxPage() {
       </Card>
 
       <Tabs value={tab} onValueChange={setTab}>
-        <TabsList>
+        <TabsList className="flex h-auto flex-wrap">
+          <TabsTrigger value="queue">Queue</TabsTrigger>
+          {isBilling && <TabsTrigger value="billing">Billing</TabsTrigger>}
           <TabsTrigger value="unsigned">Unsigned</TabsTrigger>
           <TabsTrigger value="requests">Requests</TabsTrigger>
           <TabsTrigger value="documents">Documents</TabsTrigger>
           <TabsTrigger value="advocate">Advocate</TabsTrigger>
           <TabsTrigger value="inquiries">Community</TabsTrigger>
         </TabsList>
+        {/* §Inbox actions — claim / assign / done / make-a-task. */}
+        <TabsContent value="queue" className="pt-3">
+          <InboxActionQueue />
+        </TabsContent>
+        {isBilling && (
+          <TabsContent value="billing" className="pt-3">
+            <InboxActionQueue billing />
+          </TabsContent>
+        )}
         <TabsContent value="unsigned" className="pt-3">
           {notes.level === "none" ? (
             <Card className="p-6 text-sm text-muted-foreground flex items-center gap-2">

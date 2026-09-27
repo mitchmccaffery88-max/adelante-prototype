@@ -1,3 +1,4 @@
+import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
 import { useI18n, type Key } from "@/lib/i18n";
@@ -63,7 +64,9 @@ export function CarePlanCard({
     audience === "patient"
       ? true
       : staffRole
-        ? !canAccess(staffRole, "sud_treatment", patient).locked
+        ? !canAccess(staffRole, "sud_treatment", patient).locked &&
+          // §Part 2 — same check as the chart's ASAM/CalOMS sections.
+          roleSeesAsamSection(staffRole, patient)
         : false;
   const medsUnlocked =
     audience === "patient"
@@ -201,8 +204,7 @@ export function CarePlanCard({
           {audience !== "patient" && (plan.hiddenSudProblems ?? 0) > 0 && (
             <div className="mt-1 text-[11px] text-muted-foreground inline-flex items-center gap-1">
               <Lock className="h-3 w-3" />
-              {plan.hiddenSudProblems} additional SUD problem
-              {plan.hiddenSudProblems === 1 ? "" : "s"} hidden — 42 CFR Part 2 consent required.
+              Some problems are not shown for your role.
             </div>
           )}
         </div>
@@ -225,7 +227,7 @@ export function CarePlanCard({
         <div className="mt-3 flex items-start gap-2 rounded-md border border-dashed border-muted-foreground/30 bg-muted/40 p-2 text-xs text-muted-foreground">
           <Lock className="h-3.5 w-3.5 mt-0.5" />
           <span>
-            {hasHiddenSud && "Substance-use details are hidden — 42 CFR Part 2 consent required. "}
+            {hasHiddenSud && "Some details are not shown for your role. "}
             {hasHiddenMeds && "Medication details are restricted for your role."}
           </span>
         </div>
