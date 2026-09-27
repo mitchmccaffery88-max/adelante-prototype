@@ -4,10 +4,8 @@ import { AdelanteEHR, STAFF_CANCEL_REASON_LABEL, type Appointment, type StaffCan
 import { AdelanteEHRExt, type ClinicianProfileExt } from "@/lib/ehr-ext";
 import { STAFF_ROSTER, getSupervisor, requiresSupervision, type StaffRole } from "@/lib/roles";
 
-export const COORDINATION_ROLES: StaffRole[] = ["clinical_coordinator", "sys_admin"];
-export function canActOnCoordination(role: StaffRole): boolean {
-  return COORDINATION_ROLES.includes(role);
-}
+import { canActOnCoordination } from "@/lib/coordinationRoles";
+export { COORDINATION_ROLES, canActOnCoordination } from "@/lib/coordinationRoles";
 
 export interface CoordActor {
   name: string;

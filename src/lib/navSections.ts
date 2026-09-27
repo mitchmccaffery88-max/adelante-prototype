@@ -1,4 +1,4 @@
-import { canActOnCoordination } from "@/lib/coordination";
+import { canActOnCoordination } from "@/lib/coordinationRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
 // This is the cross-patient sibling of `recordSections.tsx`: one registry, one
