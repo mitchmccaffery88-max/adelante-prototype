@@ -147,6 +147,8 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/lib/moodCheckInCount.ts",
   // §E7 — patient home: Adel's greeting offers the daily check-in.
   "src/components/patient/AdelGreetingCheckIn.tsx",
+  // Test that proves mood content never reaches the staff summary.
+  "src/lib/__tests__/section4part2.test.ts",
   "src/lib/__tests__/engagementReporting.test.ts",
   // Renders the population-level dashboard section; seeds aggregate data only.
   "src/components/dashboards/__tests__/engagementSection.test.tsx",
