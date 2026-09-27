@@ -3,7 +3,7 @@
 // scanner, notify, message send) so every row carries the same audit trail and
 // attribution a real one would. Lives outside ehr.ts because the crisis-text
 // scanner imports the store. Idempotent: runs once per store instance.
-import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, COLLATERAL_ROI_CATEGORY, demoScenarioPatientId, type Patient } from "@/lib/ehr";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 
