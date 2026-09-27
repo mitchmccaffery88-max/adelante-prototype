@@ -205,3 +205,5 @@
 ## Item 6 — Clinical Coordination (done)
 - [x] Carry-overs: advocate cancel seed + check, telehealth button check, task title fix
 - [x] Kayla profile, role gate, reassign with reason, audit, unassigned list, export names, demo
+## Section 4 part 2 (done)
+- [x] Advocate page phone width; mood count for case managers; B8 merged care-team thread; E7 Adel greeting check-in
