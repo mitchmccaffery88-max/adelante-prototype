@@ -56,9 +56,15 @@ export function CareMessageThread({
                 mine ? "bg-teal/10 border-teal/30" : "bg-muted/40",
               )}
             >
-              <div className="text-[10px] uppercase tracking-wide text-muted-foreground">
-                {mine ? youLabel : them} · {m.authorName}
-                {staffRoleLabel(m) ? ` (${staffRoleLabel(m)})` : ""} ·{" "}
+              <div className="text-[10px] uppercase tracking-wide text-muted-foreground" data-testid="msg-sender">
+                {mine
+                  ? youLabel
+                  : side === "patient"
+                    ? // §B8 — one merged care-team thread: every reply names
+                      // the person and their role (Peer specialist, Therapist…).
+                      `${m.authorName} · ${staffRoleLabel(m) ?? them}`
+                    : `${them} · ${m.authorName}${staffRoleLabel(m) ? ` (${staffRoleLabel(m)})` : ""}`}{" "}
+                ·{" "}
                 <ClientDate value={m.createdAt} />
               </div>
               {/* The flag itself is always visible, even when the body is not:

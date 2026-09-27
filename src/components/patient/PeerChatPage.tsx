@@ -13,7 +13,7 @@
 // A permanent banner + a link to the full thread keep that honest.
 import { useMemo, useState } from "react";
 import { Link } from "@tanstack/react-router";
-import { ArrowLeft, HeartHandshake, MessagesSquare } from "lucide-react";
+import { ArrowLeft, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type CareMessage } from "@/lib/ehr";
 import { STAFF_ROSTER } from "@/lib/roles";
@@ -42,8 +42,8 @@ export function PeerChatPage() {
   const messages = useEhr(() => (patientId ? AdelanteEHR.listCareMessages(patientId) : []));
   const [draft, setDraft] = useState("");
 
-  const strand = useMemo(() => peerStrand(messages), [messages]);
-  const peerReplies = strand.filter((m) => m.authorType === "staff").length;
+  // §B8 — merged: the whole care-team thread, peer replies included.
+  const strand = useMemo(() => messages, [messages]);
 
   if (!patientId) return null;
 
@@ -61,41 +61,27 @@ export function PeerChatPage() {
     <PatientPage data-testid="peer-chat-page">
       <PatientPageHeader
         icon={HeartHandshake}
-        eyebrow="Peer support"
-        title={PEER ? `Talk with ${PEER.name}` : "Talk with a peer specialist"}
+        eyebrow="Messages"
+        title={t("msgTitle")}
         lede={
           <>
-            {PEER ? `${PEER.name}, ${PEER.credential} — someone` : "Someone"} with lived recovery
-            experience. Write whenever you want; replies are not instant.
+            One conversation with everyone on your care team
+            {PEER ? `, including ${PEER.name}, your peer specialist` : ""}. Each reply shows who
+            sent it and their role.
           </>
         }
       />
 
-      <Card className="border-primary/30 bg-secondary/40 p-4 text-sm text-muted-foreground">
-        <p className="flex items-start gap-2">
-          <MessagesSquare className="mt-0.5 h-4 w-4 shrink-0 text-primary" aria-hidden="true" />
-          <span>
-            This is the same conversation as your care-team messages — just the peer part of it.
-            Anything you send here goes to your care team too.{" "}
-            <Link to="/home" hash="care-messages" className="font-medium text-primary underline">
-              See the whole conversation
-            </Link>
-            .
-          </span>
-        </p>
-      </Card>
 
       <Card className="p-5" data-testid="peer-thread">
         <CareMessageThread
           messages={strand}
           side="patient"
           emptyLabel={
-            peerReplies === 0 && strand.length === 0
-              ? "Nothing here yet. Send the first message below."
-              : "Nothing here yet."
+t("msgNoneYet")
           }
           youLabel={t("msgYou")}
-          themLabel={(m) => m.authorName}
+          themLabel={t("msgCareTeam")}
         />
         <div className="mt-3 space-y-2">
           <Textarea

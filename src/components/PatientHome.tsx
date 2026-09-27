@@ -395,17 +395,6 @@ function MessagesCard({ patientId, prefill }: { patientId: string; prefill?: str
           crisis detection, unread state and the staff queue. `/peer` is a
           focused VIEW of this same thread, not another one. */}
       <p className="mt-1 text-xs text-muted-foreground">{t("msgPeerNote")}</p>
-      <Button
-        asChild
-        variant="outline"
-        size="sm"
-        className="mt-2 min-h-11 rounded-2xl"
-        data-testid="peer-chat-entry"
-      >
-        <Link to="/peer">
-          <HeartHandshake className="mr-1 h-4 w-4" aria-hidden="true" /> Talk with a peer specialist
-        </Link>
-      </Button>
 
       <div className="mt-3">
         <CareMessageThread

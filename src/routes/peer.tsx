@@ -7,13 +7,13 @@ export const Route = createFileRoute("/peer")({
   ssr: false,
   head: () => ({
     meta: [
-      { title: "Talk with a peer specialist — Adelante" },
+      { title: "My care team — Adelante" },
       {
         name: "description",
         content:
           "Message a certified peer specialist with lived recovery experience. Part of your one care-team conversation, not a separate channel.",
       },
-      { property: "og:title", content: "Talk with a peer specialist — Adelante" },
+      { property: "og:title", content: "My care team — Adelante" },
       {
         property: "og:description",
         content: "Peer support you can write to any time — answered by someone who has been there.",
