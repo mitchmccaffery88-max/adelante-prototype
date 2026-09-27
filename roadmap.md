@@ -202,3 +202,6 @@
 - [x] My Work ASAM group; /reporting "ASAM (clinical)" section; chart level history
 - [x] Demo: overdue task + recommended≠actual signed record
 - [x] Tests, typecheck, browser check
+## Item 6 — Clinical Coordination (done)
+- [x] Carry-overs: advocate cancel seed + check, telehealth button check, task title fix
+- [x] Kayla profile, role gate, reassign with reason, audit, unassigned list, export names, demo

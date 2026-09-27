@@ -1,3 +1,4 @@
+import { canActOnCoordination } from "@/lib/coordinationRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
 // This is the cross-patient sibling of `recordSections.tsx`: one registry, one
@@ -113,6 +114,8 @@ export type NavGate =
   | { kind: "crisis_flag_only" }
   /** §Crisis Redesign Phase 2 — the SDOH-urgent lane; see canWorkSdohCrisisLane. */
   | { kind: "sdoh_crisis_lane" }
+  /** §Item 6 — Clinical Coordination desk; see canActOnCoordination. */
+  | { kind: "coordination_desk" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -489,7 +492,7 @@ export const STAFF_NAV: NavEntry[] = [
     icon: Users,
     to: "/admin-coordination",
     group: "administration",
-    gate: { kind: "record_class", anyOf: ["care_coordination"] },
+    gate: { kind: "coordination_desk" },
   },
   {
     id: "admin-kpi-targets",
@@ -637,6 +640,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
+  if (entry.gate.kind === "coordination_desk") return canActOnCoordination(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {
     const min = LEVEL_RANK[gate.minLevelByClass?.[cls] ?? gate.minLevel ?? "read"];

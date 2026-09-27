@@ -220,7 +220,7 @@ export function makeTaskFromInboxItem(
     ? PROTECTED_TASK_TITLE
     : r.kind === "message"
       ? `Follow up — reply to ${r.patient?.firstName ?? "patient"}'s message`
-      : `Follow up — ${n?.subject ?? "inbox item"}`;
+      : `Follow up — ${stripTaskPrefix(n?.subject ?? "") || "inbox item"}`;
   const detail = r.protected
     ? "Open the Inbox to view this item (access-checked)."
     : r.kind === "message"
@@ -334,4 +334,14 @@ export function seedInboxActionsDemo() {
   // Billing feed: claim one, the other stays open.
   const bill = listInboxRows(deneen, { billingOnly: true });
   if (bill[0]) safe(() => void claimInboxItem(bill[0].key, deneen));
+}
+
+/** Drop a leading "Follow up —" / "Task assigned —" so titles never double up. */
+export function stripTaskPrefix(subject: string): string {
+  let s = subject.trim();
+  for (;;) {
+    const next = s.replace(/^(follow up|task assigned)\s*[—–:-]\s*/i, "");
+    if (next === s) return s;
+    s = next.trim();
+  }
 }

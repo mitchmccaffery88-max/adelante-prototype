@@ -15884,6 +15884,24 @@ export const AdelanteEHR = {
     emit();
   },
   /** §Inbox actions — claim/assign/done/reopen/make-a-task audit rows. */
+  /** §Coordination — every coordinator decision (reassign, cancel, rebook, profile). */
+  recordCoordinationAudit(input: {
+    action: string;
+    actorId: string;
+    actorRole: string;
+    patientId?: string;
+    detail: Record<string, unknown>;
+  }) {
+    appendAudit({
+      category: "assignment",
+      action: input.action,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      ...(input.patientId ? { patientId: input.patientId } : {}),
+      detail: input.detail,
+    });
+    emit();
+  },
   recordInboxAudit(input: {
     action: string;
     actorId: string;

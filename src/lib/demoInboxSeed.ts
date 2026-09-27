@@ -7,6 +7,7 @@ import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 import { seedInboxActionsDemo } from "@/lib/inboxActions";
+import { seedCoordinationDemo } from "@/lib/coordination";
 
 let seeded = false;
 
@@ -247,6 +248,20 @@ export function seedDemoInbox(): void {
     safe(() => {
       AdelanteEHR.bookAppointment({ patientId: marcus, clinicianId: clin.id, start: past(1), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: marcusTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
     });
+
+  // §Item 6 carry-over — an advocate whose release includes scheduling
+  // (conservatorship, court documents verified by staff) and an upcoming 1:1
+  // visit for their patient, so the advocate Cancel request can be shown.
+  if (victor && clin)
+    safe(() => {
+      const link = AdelanteEHR.createAdvocateInvitation({ patientId: victor, advocateName: "Teresa Salinas", relationship: "Sister (conservator)", invitationSentTo: "+15595550188", invitationChannel: "sms", designatedBy: { actor: "ecm_provider", name: "Luz Herrera" }, expectedAuthorizationType: "conservatorship" });
+      AdelanteEHR.claimAdvocateInvitation({ code: link.invitationCode!, authorizationType: "conservatorship", attestedName: "Teresa Salinas" });
+      AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, { verifiedBy: "Luz Herrera", courtOrderRef: "TUL-PR-2026-0412" });
+      const d = new Date(Date.now() + 5 * 86400000);
+      d.setHours(11, 0, 0, 0);
+      AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
+    });
+  safe(() => seedCoordinationDemo());
 
   // §Inbox actions — a claim status move raised by the real audit hook, then
   // claim / assign / done / make-a-task through the inbox action functions.
