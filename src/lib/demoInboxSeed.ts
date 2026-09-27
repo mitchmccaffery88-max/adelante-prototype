@@ -54,7 +54,7 @@ export function seedDemoInbox(): void {
         contactedWhom: "Patient and his sister (by phone)",
         actionsTaken: "Reviewed safety plan together; confirmed he is staying with family this week.",
         disposition: "Safety plan reviewed; safe with family. Follow-up visit booked.",
-        dispositionCode: "safety_plan",
+        dispositionCode: "safety_plan_reviewed",
       });
     });
   // C-SSRS reached from PHQ-9 item 9 (placeholder C-SSRS text stays labelled).
@@ -105,7 +105,7 @@ export function seedDemoInbox(): void {
     safe(() => {
       const item = AdelanteEHR.addSdohItem(
         carmen,
-        { need: "Safe place to stay tonight", note: "Demo", source: "staff_identified" as never },
+        { need: "Safe place to stay tonight", note: "Demo" },
         { staffName: "Luz Herrera", role: "ecm_provider" },
       ) as { id: string } | undefined;
       const id =
