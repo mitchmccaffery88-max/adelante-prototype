@@ -73,6 +73,15 @@ export function asamAccessMode(role: StaffRole): AsamAccessMode | null {
 }
 
 /** May this role see a NAMED ASAM row for this patient? */
+/**
+ * §Part 2 — chart ASAM section (menu + ?section=asam). Same line as the
+ * ASAM task gate: roles whose SUD detail is withheld pending compliance
+ * review (ECM provider, clinical coordinator) never see it, even with consent.
+ */
+export function roleSeesAsamSection(role: StaffRole, patient?: Patient): boolean {
+  return roleSeesAsam(role, patient) && !SUD_MED_WITHHELD_ROLES.includes(role);
+}
+
 export function roleSeesAsamRow(role: StaffRole, patient: Patient): boolean {
   // Totals-only roles never see names: the consent model cannot yet record
   // which roles a Part 2 consent covers (draft pending compliance review).

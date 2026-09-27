@@ -4,7 +4,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { canAccess } from "@/lib/roles";
 import { recordSectionVisible } from "@/lib/recordSectionGate";
-import { roleSeesAsam } from "@/lib/asamReporting";
+import { roleSeesAsam, roleSeesAsamSection } from "@/lib/asamReporting";
 
 describe("ASAM chart section gate", () => {
   const jordan = AdelanteEHR.getPatient(demoScenarioPatientId("sud_no_consent")!)!;
@@ -26,6 +26,16 @@ describe("ASAM chart section gate", () => {
         );
       }
     }
+  });
+
+  it("ECM and care manager never get the ASAM section, even with consent (Luis, Marcus)", () => {
+    const marcus = AdelanteEHR.getPatient("p3")!;
+    for (const p of [luis, marcus, jordan]) {
+      expect(roleSeesAsamSection("ecm_provider", p)).toBe(false);
+      expect(roleSeesAsamSection("cf_care_manager", p)).toBe(false);
+      expect(roleSeesAsamSection("clinical_coordinator", p)).toBe(false);
+    }
+    expect(roleSeesAsamSection("therapist", luis)).toBe(true);
   });
 
   it("non-Part 2 locked sections still list (locked note)", () => {
