@@ -1,4 +1,5 @@
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
+import { staffVisibleRecoveryNotes } from "@/lib/recoveryCheckInNotes";
 import { categoryName, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { SDOH_SOURCE_LABEL as _SRC } from "@/lib/ehr";
@@ -354,8 +355,18 @@ export function CheckInsTab({ patientId, readOnly }: { patientId: string; readOn
   const [dateError, setDateError] = useState<string | undefined>();
   const [timeError, setTimeError] = useState<string | undefined>();
   const items = p?.checkIns ?? [];
+  const { role: viewerRole } = useActingStaff();
+  const sharedRecovery = p ? staffVisibleRecoveryNotes(p, viewerRole) : [];
   return (
     <div className="space-y-3">
+      {sharedRecovery.length > 0 && (
+        <Card className="p-3 space-y-1" data-testid="shared-recovery-notes">
+          <div className="text-xs uppercase tracking-wider text-muted-foreground">Shared by patient · protected</div>
+          {sharedRecovery.map((r) => (
+            <p key={r.id} className="text-sm">{r.text}</p>
+          ))}
+        </Card>
+      )}
       {!readOnly && (
         <Card className="p-3 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">
