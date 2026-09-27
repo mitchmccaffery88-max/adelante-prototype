@@ -20,8 +20,8 @@ function timeAgo(iso: string): string {
 
 export function NotificationBell({ className }: { className?: string }) {
   const navigate = useNavigate();
-  const { staffName, role } = useActingStaff();
-  const rows = useEhr(() => AdelanteEHR.listNotificationsFor(staffName, role));
+  const { staffName, role, staffId } = useActingStaff();
+  const rows = useEhr(() => AdelanteEHR.listNotificationsFor(staffName, role, staffId));
   const unread = rows.filter((n) => !n.readAt).length;
 
   const open = (n: AppNotification) => {
