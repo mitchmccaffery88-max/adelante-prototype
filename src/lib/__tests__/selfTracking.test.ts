@@ -143,6 +143,8 @@ const PATIENT_PRIVATE_CALLERS = [
   // `selfTrackingAggregate` / `MIN_COHORT_SIZE` exports; the assertion below
   // enforces that it never reaches a per-patient read.
   "src/lib/engagementReporting.ts",
+  // §4 (d) — narrow count-only reader for the caseload review (approved).
+  "src/lib/moodCheckInCount.ts",
   "src/lib/__tests__/engagementReporting.test.ts",
   // Renders the population-level dashboard section; seeds aggregate data only.
   "src/components/dashboards/__tests__/engagementSection.test.tsx",

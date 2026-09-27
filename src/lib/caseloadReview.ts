@@ -1,6 +1,7 @@
 // §Item 7 — Case manager weekly caseload review.
 // One place for the draft contact cadence, contact logging, the Part 2-safe
 // check-in summary, week sign-off and the coordinator roll-up.
+import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
 import { AdelanteEHR, type Patient } from "@/lib/ehr";
 import { STAFF_ROSTER, canAccess, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -181,6 +182,8 @@ export interface CheckInSummary {
   daysThisWeek: number;
   trend: Trend;
   followUpSuggested: boolean;
+  /** Days with a patient mood check-in this week — a count only. */
+  moodDaysThisWeek: number;
 }
 
 /**
@@ -207,7 +210,7 @@ export function checkInSummary(patient: Patient, _viewerRole: StaffRole, now: Da
     const def = shortFormByKey(h.key)!;
     return +new Date(h.completedAt) >= since && isShortFormPositive(def, h.score);
   });
-  return { daysThisWeek: days.size, trend, followUpSuggested };
+  return { daysThisWeek: days.size, trend, followUpSuggested, moodDaysThisWeek: moodCheckInDayCount(patient.id, ws, ymd(now)) };
 }
 
 // ---------------------------------------------------------------- review
