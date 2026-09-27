@@ -220,7 +220,7 @@ export function makeTaskFromInboxItem(
     ? PROTECTED_TASK_TITLE
     : r.kind === "message"
       ? `Follow up — reply to ${r.patient?.firstName ?? "patient"}'s message`
-      : `Follow up — ${n?.subject ?? "inbox item"}`;
+      : `Follow up — ${stripTaskPrefix(n?.subject ?? "") || "inbox item"}`;
   const detail = r.protected
     ? "Open the Inbox to view this item (access-checked)."
     : r.kind === "message"
