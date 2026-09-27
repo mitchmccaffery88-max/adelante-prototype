@@ -194,10 +194,9 @@ export function checkInSummary(patient: Patient, _viewerRole: StaffRole, now: Da
   const ws = ymd(weekStart(now));
   const quick = (patient.screenerHistory ?? []).filter((h) => shortFormByKey(h.key));
   const days = new Set(quick.map((h) => h.completedAt.slice(0, 10)).filter((d) => d >= ws && d <= ymd(now)));
-  // One total per completion instant (PHQ-2 + GAD-2 together).
-  const byTime = new Map<string, number>();
-  for (const h of quick) byTime.set(h.completedAt, (byTime.get(h.completedAt) ?? 0) + h.score);
-  const series = [...byTime.entries()].sort((a, b) => a[0].localeCompare(b[0])).map(([, v]) => v);
+  // PHQ-2 series (GAD-2 as fallback), oldest → newest; scores stay internal.
+  const pick = (k: string) => quick.filter((h) => h.key === k).map((h) => h.score);
+  const series = pick("phq-2").length >= 2 ? pick("phq-2") : pick("gad-2");
   let trend: Trend = "not enough check-ins";
   if (series.length >= 2) {
     const d = series[series.length - 1] - series[series.length - 2];
@@ -301,7 +300,7 @@ export function seedCaseloadDemo(now: Date = new Date()) {
   const quick = (id: string, phq: number[], gad: number[]) =>
     AdelanteEHR.recordQuickCheck(id, { "phq-2": phq, "gad-2": gad }, { actorRole: "patient" });
   if (luis) {
-    quick(luis.id, [2, 1], [1, 1]);
+    quick(luis.id, [1, 1], [1, 1]);
     quick(luis.id, [1, 0], [1, 0]); // improving
   }
   if (jordan) {
