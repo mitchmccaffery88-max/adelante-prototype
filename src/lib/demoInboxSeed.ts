@@ -3,7 +3,7 @@
 // scanner, notify, message send) so every row carries the same audit trail and
 // attribution a real one would. Lives outside ehr.ts because the crisis-text
 // scanner imports the store. Idempotent: runs once per store instance.
-import { AdelanteEHR, COLLATERAL_ROI_CATEGORY, demoScenarioPatientId, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 
@@ -158,53 +158,8 @@ export function seedDemoInbox(): void {
     safe(() => {
       AdelanteEHR.sendPatientMessage(victor, "I got the letter about my ID appointment. Do I need proof of address?");
     });
-  // Advocate thread within their release — the same invite → claim → signed
-  // collateral ROI the QA switcher runs for "Rosa T. (advocate)", so the
-  // switcher reuses this link.
-  safe(() => {
-    const pid = "p1";
-    const name = "Rosa T. (advocate)";
-    let link = AdelanteEHR.listAdvocateLinks(pid).find((l) => l.advocateName === name && l.status === "active");
-    if (!link) {
-      const invite = AdelanteEHR.createAdvocateInvitation({
-        patientId: pid,
-        advocateName: name,
-        relationship: "Family",
-        invitationSentTo: "advocate@example.com",
-        invitationChannel: "email",
-        designatedBy: { actor: "patient", name: "Demo setup" },
-      });
-      link = AdelanteEHR.claimAdvocateInvitation({
-        code: invite.invitationCode,
-        authorizationType: "family_participation",
-        attestedName: name,
-      });
-    }
-    if (!AdelanteEHR.isConsentCategoryAuthorized(pid, COLLATERAL_ROI_CATEGORY)) {
-      const prior = AdelanteEHR.activeConsentRecord(pid);
-      AdelanteEHR.createConsentRecord({
-        patientId: pid,
-        formType: "NonAB133",
-        source: "Demo setup — advocate scenario",
-        signedByName: "Demo Patient",
-        relationship: "patient",
-        attested: true,
-        effectiveDate: new Date().toISOString().slice(0, 10),
-        sections: [
-          ...(prior?.sections ?? []).filter((x) => x.category !== COLLATERAL_ROI_CATEGORY),
-          { category: COLLATERAL_ROI_CATEGORY, authorized: true },
-        ],
-        capturedBy: { staffName: "Demo setup", role: "cf_care_manager" },
-        ...(prior ? { supersedesId: prior.id } : {}),
-      });
-    }
-    if (link)
-      AdelanteEHR.advocateSendMessage(
-        link.id,
-        "Hello, I can drive to next week's visit. What time should we arrive?",
-        { allowPendingReview: true },
-      );
-  });
+  // Advocate thread: not seeded — no demo advocate has a verified document
+  // granting communication rights, and seeding one would bypass that rule.
   // Provider requests beyond the existing two.
   if (elena)
     AdelanteEHR.createProviderRequest({ patientId: elena, requestType: "question", context: "Can we add a letter for her employer about weekly visits?", requestedBy: "Luz Herrera", requestedByRole: "ecm_provider" });

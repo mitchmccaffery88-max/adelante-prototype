@@ -31,6 +31,5 @@ describe("demo inbox seed — real store functions", () => {
   it("seeds unread patient threads and extra provider requests", () => {
     expect(AdelanteEHR.listUnreadMessageThreads().length).toBeGreaterThanOrEqual(4);
     expect(AdelanteEHR.listProviderRequests().length).toBeGreaterThanOrEqual(5);
-    expect(AdelanteEHR.listPatients().some((p) => (p.careMessages ?? []).some((m) => m.authorType === "advocate"))).toBe(true);
   });
 });
