@@ -63,7 +63,7 @@ export function NotificationBell({ className }: { className?: string }) {
             size="sm"
             className="h-7 text-xs"
             disabled={unread === 0}
-            onClick={() => AdelanteEHR.markAllNotificationsRead(staffName, role)}
+            onClick={() => AdelanteEHR.markAllNotificationsRead(staffName, role, staffId)}
           >
             Mark all read
           </Button>

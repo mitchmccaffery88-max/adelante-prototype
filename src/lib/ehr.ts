@@ -14581,8 +14581,8 @@ export const AdelanteEHR = {
     });
     emit();
   },
-  markAllNotificationsRead(staffName: string, role?: StaffRole): void {
-    const rows = AdelanteEHR.listNotificationsFor(staffName, role).filter((n) => !n.readAt);
+  markAllNotificationsRead(staffName: string, role?: StaffRole, staffId?: string): void {
+    const rows = AdelanteEHR.listNotificationsFor(staffName, role, staffId).filter((n) => !n.readAt);
     if (!rows.length) return;
     const now = new Date().toISOString();
     for (const r of rows) r.readAt = now;
