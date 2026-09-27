@@ -14,6 +14,7 @@ import { createFileRoute, Outlet } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { useI18n } from "@/lib/i18n";
 import { ADVOCATE_AUTHORIZATION_TYPES, ADVOCATE_PLAIN_LABEL, ADVOCATE_PLAIN_LABEL_ES, type AdvocateAuthorizationType } from "@/lib/advocate";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -168,6 +169,7 @@ function ClaimForm({ onClaimed }: { onClaimed: (linkId: string) => void }) {
   const [authType, setAuthType] = useState<AdvocateAuthorizationType | "">("");
   const [attested, setAttested] = useState("");
   const [docs, setDocs] = useState<AdvocateDocRequirementKey[]>([]);
+  const { lang: advLang } = useI18n();
 
   // Deep link from the invitation notification: /advocate?code=ADV-...
   useEffect(() => {
