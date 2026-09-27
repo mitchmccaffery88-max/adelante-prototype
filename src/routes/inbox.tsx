@@ -11,7 +11,7 @@
 // target schema in `src/lib/labsVitalsScaffold.ts` for the handoff starting
 // point (NOT IMPLEMENTED — no runtime consumers).
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -53,6 +53,9 @@ function InboxPage() {
   const inquiries = canAccess(role, "community_inquiries");
   const isBilling = BILLING_ROLES.includes(role);
   const [tab, setTab] = useState(isBilling ? "billing" : "queue");
+  useEffect(() => {
+    setTab(isBilling ? "billing" : "queue");
+  }, [isBilling]);
 
   return (
     <div className="mx-auto max-w-5xl space-y-5 px-4 py-6">
