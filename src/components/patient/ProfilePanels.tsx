@@ -16,6 +16,7 @@ import { Switch } from "@/components/ui/switch";
 import { PatientProfileDialog } from "@/components/PatientProfileDialog";
 import { useI18n } from "@/lib/i18n";
 import { writePreferredLanguage } from "@/lib/languagePreference";
+import { ConsentWithdrawSheet, type WithdrawPurpose } from "@/components/patient/ConsentWithdrawSheet";
 
 function Row({ label, children }: { label: string; children: React.ReactNode }) {
   return (
@@ -139,6 +140,8 @@ function LanguageChoice({ patientId }: { patientId: string }) {
 
 export function PrivacyConsentCard({ patientId }: { patientId: string }) {
   const consent = useEhr(() => AdelanteEHR.getConsentState(patientId));
+  const { lang } = useI18n();
+  const [pending, setPending] = useState<WithdrawPurpose | null>(null);
   const rows: { key: "part2Sud" | "ecmShare" | "sms"; label: string; help: string }[] = [
     {
       key: "part2Sud",
@@ -169,9 +172,14 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
           <li key={r.key} className="flex items-start gap-3 rounded-md border p-3">
             <Switch
               checked={consent[r.key]}
+              aria-label={r.label}
               onCheckedChange={(v) => {
+                if (!v) {
+                  setPending(r.key);
+                  return;
+                }
                 AdelanteEHR.setConsent(patientId, r.key, v);
-                toast.success(v ? "Consent granted" : "Consent withdrawn");
+                toast.success(lang === "es" ? "Consentimiento otorgado" : "Consent granted");
               }}
             />
             <div className="flex-1 text-sm">
@@ -181,6 +189,20 @@ export function PrivacyConsentCard({ patientId }: { patientId: string }) {
           </li>
         ))}
       </ul>
+      <ConsentWithdrawSheet
+        purpose={pending}
+        lang={lang === "es" ? "es" : "en"}
+        onKeep={() => setPending(null)}
+        onConfirm={(second) => {
+          try {
+            AdelanteEHR.patientWithdrawConsent({ patientId, purpose: pending!, secondConfirm: second });
+            toast.success(lang === "es" ? "Se dejó de compartir" : "Sharing turned off");
+          } catch (e) {
+            toast.error((e as Error).message);
+          }
+          setPending(null);
+        }}
+      />
     </Card>
   );
 }
