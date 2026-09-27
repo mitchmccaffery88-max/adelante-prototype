@@ -1032,6 +1032,9 @@ export const AdelanteEHRExt = {
     if (claim) return claim;
     const appt = AdelanteEHR.listAppointments().find((a) => a.id === apptId);
     if (!appt) throw new Error("Appt not found");
+    // §Cancel/no-show — a cancelled or missed visit never opens a claim.
+    if (appt.status === "cancelled" || appt.status === "no_show")
+      throw new Error("A cancelled or missed visit cannot create a claim.");
     claim = {
       id: uid(),
       encounterId: apptId,

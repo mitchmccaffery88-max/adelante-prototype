@@ -9,6 +9,42 @@ import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 
 let seeded = false;
 
+/**
+ * §Advocate thread — give a QA advocate link a verified communication-rights
+ * document through the NORMAL steps: advocate uploads the file (malware scan,
+ * unverified), staff verify it into the chart, staff request the specific
+ * communication-rights row, the advocate attests, staff verify the row
+ * against the uploaded document. Then one advocate message is seeded. The
+ * send uses the demo-harness `allowPendingReview` path: the clinical review
+ * gate stays ON, so the live advocate screen still shows the pending notice.
+ * Idempotent per link.
+ */
+export function ensureAdvocateMessagingDemo(linkId: string): void {
+  const link = AdelanteEHR.listAdvocateLinks().find((l) => l.id === linkId);
+  if (!link) return;
+  const has = link.documentRequirements?.some((r) => r.key === "hipaa_roi_communication" && r.status === "verified");
+  if (has) return;
+  const verifier = { staffId: "s-cm1", staffName: "Luz Herrera", role: "ecm_provider" as const };
+  const up = AdelanteEHR.uploadPatientDocument({
+    patientId: link.patientId,
+    file: { fileName: "HIPAA-release-two-way-communication.pdf", mimeType: "application/pdf", sizeBytes: 184_000 },
+    uploader: { kind: "advocate", name: link.advocateName, advocateLinkId: link.id },
+    isPart2: false,
+    docType: "HIPAA release (two-way communication)",
+    note: "Demo document",
+  });
+  if (!up.ok) return;
+  AdelanteEHR.verifyPatientDocument(up.document.id, verifier);
+  AdelanteEHR.requestAdvocateDocument({ linkId, key: "hipaa_roi_communication", requestedBy: verifier.staffName });
+  AdelanteEHR.attestAdvocateDocumentRequirement({ linkId, key: "hipaa_roi_communication", attestedName: link.advocateName.replace(/\s*\(advocate\)$/, "") });
+  AdelanteEHR.verifyAdvocateDocumentRequirement({ linkId, key: "hipaa_roi_communication", verifiedBy: verifier.staffName, verificationRef: up.document.id });
+  AdelanteEHR.advocateSendMessage(
+    linkId,
+    "Hi, this is the family member on file. Is there anything we should bring to Thursday's visit?",
+    { allowPendingReview: true },
+  );
+}
+
 function byFirst(first: string, last?: string): Patient | undefined {
   return AdelanteEHR.listPatients().find(
     (p) => p.firstName === first && (!last || p.lastName === last),
@@ -167,6 +203,49 @@ export function seedDemoInbox(): void {
     AdelanteEHR.createProviderRequest({ patientId: paloma, requestType: "order_entry", context: "Please review a medication refill; she runs out Friday.", requestedBy: "Lupita Sanchez, MSW", requestedByRole: "ecm_provider" });
   if (rosa)
     AdelanteEHR.createProviderRequest({ patientId: rosa, requestType: "question", context: "Patient asks whether video visits are okay while she starts a new job.", requestedBy: "Andre Willis", requestedByRole: "peer_specialist" });
+
+  // ---- 4. Cancels and no-shows (real store functions) ----
+  const reyes = { name: "Dr. Marisol Reyes", role: "therapist" as const, id: "s-th1" };
+  const upcoming = (pid?: string) =>
+    pid
+      ? AdelanteEHR.appointmentsForPatient(pid)
+          .filter((a) => a.status === "scheduled" && +new Date(a.start) > Date.now() && !a.asamTaskId)
+          .sort((a, b) => +new Date(a.start) - +new Date(b.start))
+      : [];
+  // Pending patient cancel request — Carmen's staff-booked therapy visit.
+  const carmenNext = upcoming(carmen)[0];
+  if (carmen && carmenNext)
+    safe(() => void AdelanteEHR.patientRequestCancel(carmen, carmenNext.id, "My daughter's school event moved to that day."));
+  // Staff-cancelled, LATE (inside 24 hours) — a visit for Rosa tomorrow morning.
+  const clin = AdelanteEHR.listClinicians().find((c) => AdelanteEHR.canBook(c.id).ok);
+  if (rosa && clin)
+    safe(() => {
+      const soon = new Date(Date.now() + 20 * 3600000);
+      soon.setMinutes(0, 0, 0);
+      const a = AdelanteEHR.bookAppointment({ patientId: rosa, clinicianId: clin.id, start: soon.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
+      AdelanteEHR.staffCancelAppointment(a.id, { reason: "clinician_unavailable", actor: { name: "Priya Raman", role: "clinical_coordinator", id: "s-cc1" } });
+    });
+  // Luis — his ASAM-linked assessment visit was two days ago and he did not
+  // come: marked no-show, so the task returns to "not yet scheduled".
+  const luis = demoScenarioPatientId("sud_consented");
+  const luisTask = luis ? AdelanteEHR.openAsamWorkTask(luis) : undefined;
+  const past = (daysAgo: number) => {
+    const d = new Date(Date.now() - daysAgo * 86400000);
+    d.setHours(10, 0, 0, 0);
+    return d.toISOString();
+  };
+  if (luis && luisTask && clin)
+    safe(() => {
+      const a = AdelanteEHR.bookAppointment({ patientId: luis, clinicianId: clin.id, start: past(2), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
+      AdelanteEHR.markAppointmentNoShow(a.id, reyes);
+    });
+  // Marcus — an ASAM-linked visit yesterday, still unmarked: staff can mark
+  // it a no-show on screen and watch the task return to "not yet scheduled".
+  const marcusTask = marcus ? AdelanteEHR.openAsamWorkTask(marcus) : undefined;
+  if (marcus && marcusTask && clin)
+    safe(() => {
+      AdelanteEHR.bookAppointment({ patientId: marcus, clinicianId: clin.id, start: past(1), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: marcusTask.id, bookedBy: { id: reyes.name, role: "therapist" }, allowPatientOverlap: true });
+    });
 
   // A few read, most unread.
   const readOne = (name: string, role: Parameters<typeof AdelanteEHR.listNotificationsFor>[1]) => {

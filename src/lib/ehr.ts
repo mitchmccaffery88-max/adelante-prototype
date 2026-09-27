@@ -15,6 +15,7 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
 import { attestationRecordProblem, attestationStatement, buildAttestationRecord, type AttestationRecord } from "./attestation";
@@ -253,6 +254,9 @@ export type NotificationCategory =
   | "refill_request"
   | "appointment_request"
   | "appointment_rescheduled"
+  // §Cancel/no-show — patient/advocate cancel request, staff cancel, no-show.
+  | "appointment_cancel_request"
+  | "appointment_cancelled"
   | "connect_request"
   | "needs_task"
   | "protected_task"
@@ -1952,6 +1956,42 @@ export interface Appointment {
    * generic intake visit with no reason shown.
    */
   asamTaskId?: string;
+  /** §Cancel/no-show — a patient/advocate ask; staff confirm or decline. */
+  cancelRequest?: AppointmentCancelRequest;
+  /** §Cancel/no-show — set when staff cancel (directly or by confirming a request). */
+  cancellation?: AppointmentCancellation;
+  /** §Cancel/no-show — who marked the no-show and when. */
+  noShow?: { at: string; byName: string; byRole: StaffRole; byId?: string };
+}
+
+export type StaffCancelReason = "patient_request" | "clinician_unavailable" | "other";
+export const STAFF_CANCEL_REASON_LABEL: Record<StaffCancelReason, string> = {
+  patient_request: "Patient request",
+  clinician_unavailable: "Clinician unavailable",
+  other: "Other",
+};
+export interface AppointmentCancelRequest {
+  status: "pending" | "confirmed" | "declined";
+  requestedAt: string;
+  byKind: "patient" | "advocate";
+  byName: string;
+  advocateLinkId?: string;
+  reason?: string;
+  resolvedAt?: string;
+  resolvedBy?: string;
+  resolvedByRole?: StaffRole;
+  declineNote?: string;
+}
+export interface AppointmentCancellation {
+  at: string;
+  byName: string;
+  byRole: StaffRole;
+  byId?: string;
+  reason: StaffCancelReason;
+  note?: string;
+  /** Inside 24 hours of the visit start (label only — draft, no fee logic). */
+  lateCancel: boolean;
+  fromRequest: boolean;
 }
 
 // ---------- §Needs step 3 — appointment requests (NOT bookings) ----------
@@ -3822,6 +3862,8 @@ export type ApptNotificationKind =
   | "booked"
   | "rescheduled"
   | "cancelled"
+  /** §Cancel/no-show — staff marked a past visit as missed. */
+  | "no_show"
   | "confirmed"
   /** Pre-visit reminder for any upcoming contact (1:1 appointment or group occurrence). */
   | "reminder"
@@ -7732,6 +7774,55 @@ function _normalizeAllScreenerMeta() {
 }
 _normalizeAllScreenerMeta();
 
+// §Cancel/no-show helpers.
+function _assertApptActor(actor: { name: string; role: StaffRole }) {
+  if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
+  if (![...APPT_REQUEST_BOOKING_ROLES, "clinical_coordinator"].includes(actor.role))
+    throw new Error("Your role does not book or cancel visits.");
+}
+function _requestCancel(
+  a: Appointment,
+  by: { kind: "patient" | "advocate"; name: string; advocateLinkId?: string },
+  reason?: string,
+) {
+  if (a.status !== "scheduled" || +new Date(a.start) <= Date.now())
+    throw new Error("Only an upcoming visit can be cancelled.");
+  if (a.cancelRequest?.status === "pending") return a;
+  a.cancelRequest = {
+    status: "pending",
+    requestedAt: new Date().toISOString(),
+    byKind: by.kind,
+    byName: by.name,
+    ...(by.advocateLinkId ? { advocateLinkId: by.advocateLinkId } : {}),
+    ...(reason?.trim() ? { reason: reason.trim().slice(0, 500) } : {}),
+  };
+  appendAudit({
+    category: "clinical",
+    action: "appointment_cancel_requested",
+    patientId: a.patientId,
+    actorRole: by.kind === "advocate" ? "advocate" : "patient",
+    actorId: by.advocateLinkId ?? `patient:${a.patientId}`,
+    detail: { apptId: a.id, byKind: by.kind, ...(a.asamTaskId ? { protected: true } : {}) },
+  });
+  // Generic wording only — never the visit type (an ASAM visit must read as a
+  // plain visit to everyone), and never the patient's free-text reason.
+  const subject = `Cancel request — ${patientLabel(a.patientId)}`;
+  const body = `${by.kind === "advocate" ? "Their advocate" : "The patient"} asked to cancel the visit on ${new Date(a.start).toLocaleString()}. Confirm or decline in the chart.`;
+  const staff = STAFF_ROSTER.find((m) => m.clinicianId === a.clinicianId);
+  const common = {
+    category: "appointment_cancel_request" as const,
+    subject,
+    body,
+    linkRoute: "/record/$patientId",
+    linkParams: { patientId: a.patientId, section: "tasks" },
+    patientId: a.patientId,
+  };
+  if (staff) AdelanteEHR.notify({ recipientStaffId: staff.id, ...common });
+  AdelanteEHR.notify({ recipientRole: "clinical_coordinator", ...common });
+  emit();
+  return a;
+}
+
 export const AdelanteEHR = {
   subscribe(l: Listener) {
     listeners.add(l);
@@ -8739,6 +8830,11 @@ export const AdelanteEHR = {
     const a = appointments.find((x) => x.id === id);
     if (!a) return;
     const prev = a.status;
+    // §Cancel/no-show — a cancelled or missed visit must never carry a claim.
+    // Claims open only on "attended"; once one exists, the visit cannot be
+    // flipped to cancelled/no-show here — billing must correct the claim.
+    if ((status === "cancelled" || status === "no_show") && prev !== status && _claimBridge?.bucketFor(a.id))
+      throw new Error("A claim already exists for this visit. Correct it in Claims before marking it cancelled or missed.");
     a.status = status;
     if (status === "attended") {
       // §Phase 7b — an attended visit opens its claim at `documented`. The
@@ -8761,6 +8857,135 @@ export const AdelanteEHR = {
       }
     }
     emit();
+  },
+  // ---------- §Cancel/no-show ----------
+  /** Roles that book (and so cancel / confirm cancels) for a clinician. */
+  appointmentActionRoles(): StaffRole[] {
+    return [...APPT_REQUEST_BOOKING_ROLES, "clinical_coordinator"];
+  },
+  /** Patient asks to cancel an upcoming visit. Staff confirm. Optional reason. */
+  patientRequestCancel(patientId: string, apptId: string, reason?: string) {
+    const a = appointments.find((x) => x.id === apptId && x.patientId === patientId);
+    if (!a) throw new Error("That visit is not available.");
+    const p = patients.find((x) => x.id === patientId);
+    return _requestCancel(a, { kind: "patient", name: p ? `${p.firstName} ${p.lastName}` : "Patient" }, reason);
+  },
+  /** Advocate cancel request — only when their release allows scheduling. */
+  advocateRequestCancel(linkId: string, apptId: string, reason?: string) {
+    const gate = _advocateGate(linkId, "care_plan_participation_write", "appointment_reschedule");
+    if (!gate.ok) throw new Error(gate.reason);
+    const a = appointments.find((x) => x.id === apptId && x.patientId === gate.link.patientId);
+    if (!a) throw new Error("That appointment is not available.");
+    const r = _requestCancel(a, { kind: "advocate", name: gate.link.advocateName, advocateLinkId: gate.link.id }, reason);
+    _advocateAudit(gate.link, "advocate_appointment_cancel_requested", "appointment_reschedule", { apptId });
+    return r;
+  },
+  /** Staff confirm (→ cancels, reason "patient request") or decline a pending ask. */
+  resolveCancelRequest(
+    apptId: string,
+    decision: "confirm" | "decline",
+    actor: { name: string; role: StaffRole; id?: string },
+    note?: string,
+  ) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a?.cancelRequest || a.cancelRequest.status !== "pending") throw new Error("No pending cancel request for this visit.");
+    _assertApptActor(actor);
+    if (decision === "confirm") {
+      AdelanteEHR.staffCancelAppointment(apptId, { reason: "patient_request", actor, note: a.cancelRequest.reason, fromRequest: true });
+      return;
+    }
+    a.cancelRequest.status = "declined";
+    a.cancelRequest.resolvedAt = new Date().toISOString();
+    a.cancelRequest.resolvedBy = actor.name;
+    a.cancelRequest.resolvedByRole = actor.role;
+    if (note?.trim()) a.cancelRequest.declineNote = note.trim();
+    appendAudit({
+      category: "clinical",
+      action: "appointment_cancel_request_declined",
+      patientId: a.patientId,
+      actorId: actor.id ?? actor.name,
+      actorRole: actor.role,
+      detail: { apptId, ...(a.asamTaskId ? { protected: true } : {}) },
+    });
+    emit();
+  },
+  /** Staff cancel a 1:1 visit. Reason required; "other" needs a note. */
+  staffCancelAppointment(
+    apptId: string,
+    input: { reason: StaffCancelReason; note?: string; actor: { name: string; role: StaffRole; id?: string }; fromRequest?: boolean; now?: string },
+  ) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    _assertApptActor(input.actor);
+    if (a.status !== "scheduled") throw new Error("Only a scheduled visit can be cancelled.");
+    if (!input.reason || !STAFF_CANCEL_REASON_LABEL[input.reason]) throw new Error("Pick a reason for cancelling.");
+    if (input.reason === "other" && !input.note?.trim()) throw new Error("Describe the reason when you pick Other.");
+    const at = input.now ?? new Date().toISOString();
+    const late = isLateCancelWindow(a.start, at);
+    AdelanteEHR.updateAppointmentStatus(a.id, "cancelled");
+    a.cancellation = {
+      at,
+      byName: input.actor.name,
+      byRole: input.actor.role,
+      ...(input.actor.id ? { byId: input.actor.id } : {}),
+      reason: input.reason,
+      ...(input.note?.trim() ? { note: input.note.trim() } : {}),
+      lateCancel: late,
+      fromRequest: Boolean(input.fromRequest),
+    };
+    if (a.cancelRequest?.status === "pending") {
+      a.cancelRequest.status = "confirmed";
+      a.cancelRequest.resolvedAt = at;
+      a.cancelRequest.resolvedBy = input.actor.name;
+      a.cancelRequest.resolvedByRole = input.actor.role;
+    }
+    appendAudit({
+      category: "clinical",
+      action: "appointment_cancelled",
+      patientId: a.patientId,
+      actorId: input.actor.id ?? input.actor.name,
+      actorRole: input.actor.role,
+      detail: { apptId, reason: input.reason, lateCancel: late, fromRequest: Boolean(input.fromRequest), ...(a.asamTaskId ? { protected: true } : {}) },
+    });
+    AdelanteEHR.notifyAppointmentChange({ patientId: a.patientId, apptId: a.id, kind: "cancelled" });
+    const staff = STAFF_ROSTER.find((m) => m.clinicianId === a.clinicianId);
+    if (staff && staff.id !== input.actor.id && staff.name !== input.actor.name)
+      AdelanteEHR.notify({
+        recipientStaffId: staff.id,
+        category: "appointment_cancelled",
+        subject: `Visit cancelled — ${patientLabel(a.patientId)}`,
+        body: `${new Date(a.start).toLocaleString()} · ${STAFF_CANCEL_REASON_LABEL[input.reason]}${late ? " · Late cancel" : ""} · by ${input.actor.name}`,
+        linkRoute: "/record/$patientId",
+        linkParams: { patientId: a.patientId, section: "tasks" },
+        patientId: a.patientId,
+      });
+    emit();
+    return a;
+  },
+  /** "No-show" on a past, unattended visit. */
+  markAppointmentNoShow(apptId: string, actor: { name: string; role: StaffRole; id?: string }, now = Date.now()) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    _assertApptActor(actor);
+    if (a.status !== "scheduled") throw new Error("Only a scheduled, unattended visit can be marked a no-show.");
+    if (+new Date(a.start) > now) throw new Error("A visit can be marked a no-show only after its start time.");
+    AdelanteEHR.updateAppointmentStatus(a.id, "no_show");
+    a.noShow = { at: new Date(now).toISOString(), byName: actor.name, byRole: actor.role, ...(actor.id ? { byId: actor.id } : {}) };
+    appendAudit({
+      category: "clinical",
+      action: "appointment_no_show",
+      patientId: a.patientId,
+      actorId: actor.id ?? actor.name,
+      actorRole: actor.role,
+      detail: { apptId, ...(a.asamTaskId ? { protected: true } : {}) },
+    });
+    AdelanteEHR.notifyAppointmentChange({ patientId: a.patientId, apptId: a.id, kind: "no_show" });
+    emit();
+    return a;
+  },
+  /** Pending patient/advocate cancel requests (staff queue). */
+  listPendingCancelRequests(): Appointment[] {
+    return appointments.filter((a) => a.cancelRequest?.status === "pending" && a.status === "scheduled");
   },
   recordScreener(patientId: string, result: ScreenerResult) {
     const p = patients.find((x) => x.id === patientId);
@@ -8992,7 +9217,7 @@ export const AdelanteEHR = {
       .sort((x, y) => +new Date(x.start) - +new Date(y.start))[0];
     if (next) return { state: "scheduled", start: next.start, apptId: next.id };
     const missed = linked
-      .filter((a) => a.status === "no_show")
+      .filter((a) => a.status === "no_show" || a.status === "cancelled")
       .sort((x, y) => +new Date(y.start) - +new Date(x.start))[0];
     return missed ? { state: "not_scheduled", missedOn: missed.start } : { state: "not_scheduled" };
   },
@@ -24319,9 +24544,9 @@ try {
   // stays open until the ASAM is signed). Booked by Dr. Reyes.
   const luisId = demoScenarioPatientId("sud_consented");
   const luisTask = luisId ? AdelanteEHR.openAsamWorkTask(luisId) : undefined;
-  if (luisId && luisTask && therapist) {
-    AdelanteEHR.bookAppointment({ patientId: luisId, clinicianId: therapist.id, start: slot(6, 10), durationMin: 60, serviceType: "intake", modality: "video", source: "staff_scheduled", asamTaskId: luisTask.id, bookedBy: { id: "Dr. Marisol Reyes", role: "therapist" } });
-  }
+  // (The linked visit is seeded in demoInboxSeed as a past no-show, so the
+  // task shows "not yet scheduled · missed <date>".)
+  void luisTask;
   // Marcus (p3) — overdue ASAM task with reason LEGAL (set by a clinician;
   // not derived from justice involvement). No legal-disclosure consent on file.
   const marcusTask = AdelanteEHR.openAsamTask("p3");

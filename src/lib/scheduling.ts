@@ -2,6 +2,7 @@
 // Additive: does not replace existing findApptConflict, wraps richer reasons.
 import { AdelanteEHR, type Appointment, type ServiceType } from "./ehr";
 import { AdelanteEHRExt } from "./ehr-ext";
+import { isLateCancelWindow } from "./lateCancel";
 
 export type ConstraintReasonCode =
   | "clinician_inactive"
@@ -135,8 +136,6 @@ export const SchedulingConstraints = {
     return { ok: blocks.length === 0, blocks, warnings };
   },
   isLateCancel(startISO: string, nowISO = new Date().toISOString()): boolean {
-    const start = +new Date(startISO);
-    const now = +new Date(nowISO);
-    return start - now < 24 * 60 * 60 * 1000 && start - now > 0;
+    return isLateCancelWindow(startISO, nowISO);
   },
 };

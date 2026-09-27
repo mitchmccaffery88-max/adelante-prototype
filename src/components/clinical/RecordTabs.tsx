@@ -1,3 +1,4 @@
+import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { categoryName, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { SDOH_SOURCE_LABEL as _SRC } from "@/lib/ehr";
@@ -2001,8 +2002,16 @@ export function PeerNotesTab({ patientId, canWrite }: { patientId: string; canWr
 }
 
 export function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
-  const tasks = useEhr(() => AdelanteEHR.caseTasksForPatient(patientId));
+  const allTasks = useEhr(() => AdelanteEHR.caseTasksForPatient(patientId));
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const tasksActor = useActingStaff();
+  // §Part 2 — ASAM tasks (assessment + reassessment) are hidden from roles
+  // failing the ASAM Part 2 check; they see only a generic count.
+  const isAsam = (t: (typeof allTasks)[number]) =>
+    t.taskType === "asam_assessment" || Boolean(t.dedupeKey?.startsWith("asam-reassess:"));
+  const seesAsam = roleWorksAsamTask(tasksActor.role, patient);
+  const tasks = seesAsam ? allTasks : allTasks.filter((t) => !isAsam(t));
+  const hiddenProtected = seesAsam ? 0 : allTasks.filter((t) => isAsam(t) && t.status !== "done").length;
   const [title, setTitle] = useState("");
   const [detail, setDetail] = useState("");
   const [dueDate, setDueDate] = useState(() => new Date().toISOString().slice(0, 10));
@@ -2012,6 +2021,11 @@ export function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?
   const cmId = patient?.caseManagerId;
   return (
     <div className="space-y-3">
+      {hiddenProtected > 0 && (
+        <p className="text-xs text-muted-foreground" data-testid="protected-task-hidden">
+          {hiddenProtected} protected task{hiddenProtected > 1 ? "s" : ""} not shown for your role.
+        </p>
+      )}
       {!readOnly && (
         <Card className="p-3 space-y-2">
           <div className="text-xs uppercase tracking-wider text-muted-foreground">

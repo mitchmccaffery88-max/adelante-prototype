@@ -914,6 +914,7 @@ function ApptCard({
 }) {
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
+  const noShowActor = useActingStaff();
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -1055,7 +1056,13 @@ function ApptCard({
                 size="sm"
                 variant="outline"
                 className="h-11 flex-1 sm:flex-none min-w-[44px]"
-                onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "no_show")}
+                onClick={() => {
+                  try {
+                    AdelanteEHR.markAppointmentNoShow(a.id, { name: noShowActor.staffName, role: noShowActor.role, id: noShowActor.staffId });
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
               >
                 <XCircle className="h-4 w-4 mr-1.5" /> {(t as (k: string) => string)("clinNoShow")}
               </Button>

@@ -123,11 +123,12 @@ describe("ASAM task — the single work item for the substance-use path", () => 
     expect(AdelanteEHR.hasLegalDisclosureConsent("p3")).toBe(false);
   });
 
-  it("seeded demo: Luis visit scheduled + linked; Jordan not yet scheduled; roles", () => {
+  it("seeded demo: Luis visit missed (no-show seed) → not yet scheduled; Jordan not yet scheduled; roles", () => {
     const luisId = demoScenarioPatientId("sud_consented")!;
     const lt = AdelanteEHR.openAsamWorkTask(luisId)!;
-    expect(AdelanteEHR.asamVisitState(lt.id).state).toBe("scheduled");
-    expect(patientFirstVisit(lt, AdelanteEHR.asamVisitState(lt.id))?.state).toBe("scheduled");
+    // §Cancel/no-show — Luis's linked visit is now seeded as a past no-show.
+    expect(AdelanteEHR.asamVisitState(lt.id).state).toBe("not_scheduled");
+    expect(patientFirstVisit(lt, AdelanteEHR.asamVisitState(lt.id))?.state).toBe("pending");
     const jordanId = demoScenarioPatientId("sud_no_consent");
     if (jordanId) {
       const jt = AdelanteEHR.openAsamTask(jordanId)!;

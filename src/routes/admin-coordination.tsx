@@ -1,3 +1,4 @@
+import { StaffVisitActions } from "@/components/scheduling/VisitActions";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -61,9 +62,7 @@ function CoordinationPage() {
                     <b>{pt?.firstName} {pt?.lastName}</b> · <ClientDate value={a.start} /> with {cl?.name}
                   </span>
                   <div className="flex gap-2">
-                    <Button size="sm" variant="outline" onClick={() => { AdelanteEHR.updateAppointmentStatus(a.id, "cancelled"); toast.success("Cancelled — notify patient to rebook."); }}>
-                      Cancel
-                    </Button>
+                    <StaffVisitActions appt={a} />
                     <Link to="/schedule" className="text-xs underline self-center">Reassign</Link>
                   </div>
                 </li>

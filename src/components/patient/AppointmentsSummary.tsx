@@ -18,6 +18,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
+import { CancelRequestControl, LateCancelBadge } from "@/components/scheduling/VisitActions";
 import {
   apptJoinUrl,
   apptPrepTip,
@@ -93,7 +94,11 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
               </a>
             </Button>
           )}
-          {!past && appt.status !== "cancelled" && (
+          {past && <LateCancelBadge appt={appt} />}
+          {!past && appt.status === "scheduled" && (
+            <CancelRequestControl appt={appt} onRequest={(r) => AdelanteEHR.patientRequestCancel(appt.patientId, appt.id, r)} />
+          )}
+          {!past && appt.status !== "cancelled" && appt.cancelRequest?.status !== "pending" && (
             <Button asChild size="sm" variant="outline" className="min-h-11">
               <Link to="/schedule" search={{ reschedule: appt.id }}>
                 <CalendarClock className="mr-1.5 h-4 w-4" /> Reschedule
@@ -156,10 +161,10 @@ export function AppointmentsSummary({ patientId }: { patientId: string }) {
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(patientId));
   const now = Date.now();
   const upcoming = [...appts]
-    .filter((a) => new Date(a.start).getTime() > now)
+    .filter((a) => new Date(a.start).getTime() > now && a.status !== "cancelled")
     .sort((a, b) => +new Date(a.start) - +new Date(b.start));
   const past = [...appts]
-    .filter((a) => new Date(a.start).getTime() <= now)
+    .filter((a) => new Date(a.start).getTime() <= now || a.status === "cancelled")
     .sort((a, b) => +new Date(b.start) - +new Date(a.start))
     .slice(0, 8);
 
