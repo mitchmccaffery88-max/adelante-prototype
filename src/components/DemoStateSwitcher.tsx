@@ -64,12 +64,12 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   mh_only: {
     group: "Intake by need",
     label: "2a · Elena V. — Mental health only",
-    hint: "Intake done: PHQ-9, GAD-7, PC-PTSD-5, AHC-HRSN. No substance-use tools or Recovery Journey; therapy appointment request pending staff confirmation",
+    hint: "Intake done: PHQ-9, GAD-7, PC-PTSD-5, AHC-HRSN. No substance-use tools or Recovery Journey; therapy appointment request pending staff confirmation; crisis queue: C-SSRS moderate reached from PHQ-9 item 9; unread message to care team",
   },
   medication: {
     group: "Intake by need",
     label: "2b · Paloma O. — Medication management",
-    hint: "Intake done, suggested prescriber goal awaiting clinician; tapped \"connect me\" on Work or job training — pending with case manager Lupita Sanchez; no substance-use tools",
+    hint: "Intake done, suggested prescriber goal awaiting clinician; tapped \"connect me\" on Work or job training — pending with case manager Lupita Sanchez; no substance-use tools; crisis queue: flagged by the message crisis-language scanner; refill request in the prescriber bell",
   },
   sud_consented: {
     group: "Intake by need",
@@ -84,7 +84,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   ji_self_report: {
     group: "Justice",
     label: "3 · Victor H. — Previously justice-involved (self-reported)",
-    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez; crisis queue: \"I need help now\" request; same-day ID task in the case manager bell",
   },
   sud_no_consent: {
     group: "Intake by need",
@@ -99,7 +99,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   public_referral: {
     group: "Referral",
     label: "5 · Carmen I. — Public referral form",
-    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"",
+    hint: "Referral → outreach logged → enrolled → claim code; opens the referral queue as staff; staff booked her therapy from the referral; completing intake with counseling makes no new request and My Care shows \"Already scheduled for you\"; crisis queue: staff-flagged urgent social need (safe place tonight) in the social-needs lane",
   },
   advocate: {
     group: "Advocates",
@@ -129,7 +129,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only)",
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call)",
   },
   kayla: {
     group: "Existing demo records",
