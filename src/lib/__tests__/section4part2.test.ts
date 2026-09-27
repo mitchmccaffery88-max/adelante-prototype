@@ -38,6 +38,8 @@ describe("B8 merged care-team thread", () => {
     expect(thread.some((m) => m.authorRole === "peer_specialist")).toBe(true);
     expect(thread.some((m) => m.authorRole === "therapist")).toBe(true);
     expect(isMessageBodyMasked(sud, "cf_care_manager", p)).toBe(true);
+    expect(isMessageBodyMasked(sud, "ecm_provider", p)).toBe(true);
+    expect(isMessageBodyMasked(sud, "billing_coordinator", p)).toBe(true);
   });
   it("patient home no longer links to a separate peer chat", () => {
     expect(readFileSync("src/components/PatientHome.tsx", "utf8")).not.toContain("peer-chat-entry");

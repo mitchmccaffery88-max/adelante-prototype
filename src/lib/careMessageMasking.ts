@@ -12,7 +12,10 @@ import { canAccess, type StaffRole } from "./roles";
 export const MASKED_MESSAGE_BODY = "Sensitive message — 42 CFR Part 2 consent required";
 
 export function messageSudLocked(role: StaffRole, patient?: Patient): boolean {
-  return canAccess(role, "screeners_sud", patient).locked;
+  // §B8 — a role with NO Part 2 access at all ("none", e.g. the facility care
+  // manager) must be masked too, not only consent-gated roles that are locked.
+  const g = canAccess(role, "screeners_sud", patient);
+  return g.locked || g.level === "none";
 }
 
 /** True when THIS message's body must be hidden from THIS staff viewer. */
