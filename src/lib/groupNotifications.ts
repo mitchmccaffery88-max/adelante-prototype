@@ -15,7 +15,8 @@ export type GroupNotificationEvent =
   | "enrollment_ended"
   | "session_cancelled"
   | "occurrence_cancelled"
-  | "occurrence_rescheduled";
+  | "occurrence_rescheduled"
+  | "join_request_declined";
 
 export type GroupNotificationDelivery =
   | "pending"
@@ -106,6 +107,9 @@ export function composeGroupNotification(input: {
       break;
     case "occurrence_rescheduled":
       lead = `The "${t}" group meeting${when ? ` on ${when}` : ""} has moved${newWhen ? ` to ${newWhen}` : ""}.`;
+      break;
+    case "join_request_declined":
+      lead = `Your request to join the group "${t}" wasn't approved this time. Your care team can tell you more.`;
       break;
   }
   return { body: `Adelante: ${lead}${tail}`.slice(0, 320), sensitive };

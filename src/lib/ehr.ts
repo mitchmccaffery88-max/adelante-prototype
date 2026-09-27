@@ -7797,6 +7797,16 @@ function _normalizeAllScreenerMeta() {
 }
 _normalizeAllScreenerMeta();
 
+// §Group join requests — reviewer rule. Same roles that set eligibility; a
+// Part 2 (SUD) group request is reviewable only by SUD_GROUP_APPROVER_ROLES.
+function _assertGroupJoinReviewer(r: GroupJoinRequest, actor: { name: string; role: StaffRole }) {
+  if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
+  if (!(GROUP_ELIGIBILITY_ROLES as readonly string[]).includes(actor.role))
+    throw new Error("Only a therapist, PMHNP or case manager can review group requests.");
+  if (r.protected && !SUD_GROUP_APPROVER_ROLES.includes(actor.role))
+    throw new Error("Your role can't review this request.");
+}
+
 // §Cancel/no-show helpers.
 function _assertApptActor(actor: { name: string; role: StaffRole }) {
   if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
