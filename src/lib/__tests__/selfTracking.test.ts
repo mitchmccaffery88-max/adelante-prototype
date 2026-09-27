@@ -145,6 +145,8 @@ const PATIENT_PRIVATE_CALLERS = [
   "src/lib/engagementReporting.ts",
   // §4 (d) — narrow count-only reader for the caseload review (approved).
   "src/lib/moodCheckInCount.ts",
+  // §E7 — patient home: Adel's greeting offers the daily check-in.
+  "src/components/patient/AdelGreetingCheckIn.tsx",
   "src/lib/__tests__/engagementReporting.test.ts",
   // Renders the population-level dashboard section; seeds aggregate data only.
   "src/components/dashboards/__tests__/engagementSection.test.tsx",

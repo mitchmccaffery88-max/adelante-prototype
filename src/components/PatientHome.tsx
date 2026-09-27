@@ -43,7 +43,7 @@ import { X } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
 import { HomeDashboard } from "@/components/patient/HomeDashboard";
 import { AdvocateNoPatientPrompt } from "@/components/advocate/AdvocateNoPatientPrompt";
-import { DailyCheckInSummaryCard } from "@/components/patient/DailyCheckInSummaryCard";
+import { AdelGreetingCheckIn } from "@/components/patient/AdelGreetingCheckIn";
 import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 
 const HOME_SCREEN_NUDGE_KEY = "adelante.homeScreenNudgeDismissed";
@@ -161,7 +161,7 @@ export function PatientHome() {
              at /checkin; /home keeps ONE real entry point (status + streak)
              directly under the greeting. Still a single implementation. */
           <div id="daily-mood-check-in" className="scroll-mt-24">
-            <DailyCheckInSummaryCard patientId={patient.id} />
+            <AdelGreetingCheckIn patientId={patient.id} />
           </div>
         }
       />
