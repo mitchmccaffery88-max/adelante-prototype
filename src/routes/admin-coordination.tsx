@@ -101,17 +101,20 @@ function CoordinationPage() {
         {unassigned.length === 0 ? (
           <p className="text-sm text-muted-foreground">Every patient has an active primary clinician.</p>
         ) : (
-          <ul className="divide-y">
-            {unassigned.map(({ patient, why }) => (
-              <li key={patient.id} className="py-2 text-sm flex flex-wrap items-center justify-between gap-2">
-                <span>
-                  <b>{patient.firstName} {patient.lastName}</b>
-                  {patient.primaryClinicianId ? ` · was ${nameOf(patient.primaryClinicianId)}` : ""}
-                </span>
-                <Badge variant="outline">Unassigned · {why}</Badge>
-              </li>
-            ))}
-          </ul>
+          <>
+            <details open data-testid="unassigned-lost">
+              <summary className="cursor-pointer text-sm font-medium py-1">
+                Lost clinician (frozen / reassigned away) ({unassigned.filter((u) => u.cause === "lost").length})
+              </summary>
+              <UnassignedRows rows={unassigned.filter((u) => u.cause === "lost")} nameOf={nameOf} />
+            </details>
+            <details data-testid="unassigned-never">
+              <summary className="cursor-pointer text-sm font-medium py-1">
+                Never assigned ({unassigned.filter((u) => u.cause === "never").length})
+              </summary>
+              <UnassignedRows rows={unassigned.filter((u) => u.cause === "never")} nameOf={nameOf} />
+            </details>
+          </>
         )}
       </Card>
 
@@ -270,5 +273,28 @@ function CoverageRow({ appt, label, clinicianName }: { appt: Appointment; label:
         </div>
       )}
     </li>
+  );
+}
+
+function UnassignedRows({
+  rows,
+  nameOf,
+}: {
+  rows: ReturnType<typeof listUnassignedPatients>;
+  nameOf: (id?: unknown) => string;
+}) {
+  if (rows.length === 0) return <p className="text-sm text-muted-foreground py-1">None.</p>;
+  return (
+    <ul className="divide-y">
+      {rows.map(({ patient, why }) => (
+        <li key={patient.id} className="py-2 text-sm flex flex-wrap items-center justify-between gap-2">
+          <span>
+            <b>{patient.firstName} {patient.lastName}</b>
+            {patient.primaryClinicianId ? ` · was ${nameOf(patient.primaryClinicianId)}` : ""}
+          </span>
+          <Badge variant="outline">Unassigned · {why}</Badge>
+        </li>
+      ))}
+    </ul>
   );
 }

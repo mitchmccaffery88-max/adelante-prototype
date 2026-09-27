@@ -8,6 +8,7 @@ import { scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { GATE_GENERIC_MESSAGE } from "@/lib/dmcOdsReadiness";
 import { seedInboxActionsDemo } from "@/lib/inboxActions";
 import { seedCoordinationDemo } from "@/lib/coordination";
+import { seedCaseloadDemo } from "@/lib/caseloadReview";
 
 let seeded = false;
 
@@ -262,6 +263,7 @@ export function seedDemoInbox(): void {
       AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
     });
   safe(() => seedCoordinationDemo());
+  safe(() => seedCaseloadDemo());
 
   // §Inbox actions — a claim status move raised by the real audit hook, then
   // claim / assign / done / make-a-task through the inbox action functions.

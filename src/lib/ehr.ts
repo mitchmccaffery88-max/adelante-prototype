@@ -2568,7 +2568,7 @@ export interface CoverageActor {
 export interface CaseManager {
   id: string;
   name: string;
-  role: "ecm_provider" | "peer_support";
+  role: "ecm_provider" | "peer_support" | "care_manager";
 }
 
 export interface Goal {
@@ -15901,6 +15901,32 @@ export const AdelanteEHR = {
       detail: input.detail,
     });
     emit();
+  },
+  /** §Item 7 — caseload review actions (log contact, mark week reviewed). */
+  recordCaseloadAudit(input: {
+    action: string;
+    actorId: string;
+    actorRole: string;
+    patientId?: string;
+    detail: Record<string, unknown>;
+  }) {
+    appendAudit({
+      category: "assignment",
+      action: input.action,
+      actorId: input.actorId,
+      actorRole: input.actorRole,
+      ...(input.patientId ? { patientId: input.patientId } : {}),
+      detail: input.detail,
+    });
+    emit();
+  },
+  /** §Item 7 — give an existing staff identity a caseload record (idempotent). */
+  registerCaseManager(cm: CaseManager): CaseManager {
+    const existing = caseManagers.find((c) => c.id === cm.id);
+    if (existing) return existing;
+    caseManagers.push(cm);
+    emit();
+    return cm;
   },
   recordInboxAudit(input: {
     action: string;
