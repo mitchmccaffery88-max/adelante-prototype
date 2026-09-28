@@ -5,7 +5,7 @@ import { describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId, refillNeedsCures, type Patient } from "@/lib/ehr";
 import { STAFF_ROLES, canAccess, canFlagCrisis, CRISIS_FLAG_ROLES, type StaffRole } from "@/lib/roles";
 import { CHART_ACTIONS, chartActionState } from "@/lib/chartActions";
-import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { roleSeesAsamSection, SUD_MED_WITHHELD_ROLES } from "@/lib/asamReporting";
 import { addStructuredGoal } from "@/lib/structuredCarePlan";
 import { createHlocReferral, dischargeEpisode } from "@/lib/outpatientCare";
 import { logContact } from "@/lib/caseloadReview";
@@ -95,6 +95,9 @@ describe("chart action registry ↔ store consistency", () => {
     const p = luis();
     for (const role of ROLES) {
       const a = canAccess(role, "screeners_sud", p);
+      // ECM / coordinator / billing are withheld on top of the matrix (kept
+      // consent_gated for Part 2 message masking — earlier product decision).
+      if (SUD_MED_WITHHELD_ROLES.includes(role)) continue;
       if (a.level !== "none" && !a.locked) expect({ role, sees: roleSeesAsamSection(role, p) }).toEqual({ role, sees: true });
     }
   });

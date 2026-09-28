@@ -205,9 +205,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
   },
   screeners_sud: {
-    // §Chart registry — ECM provider never sees SUD screeners/ASAM, even with
-    // consent (SUD_MED_WITHHELD_ROLES / roleSeesAsamSection).
-    ecm_provider: "none",
+    // Kept consent_gated: the Part 2 message-masking/flag model (earlier
+    // product decision) keys on this. The ASAM section/action additionally
+    // applies SUD_MED_WITHHELD_ROLES via roleSeesAsamSection, so ECM never
+    // sees ASAM even with consent.
+    ecm_provider: "consent_gated",
     peer_specialist: "consent_gated",
     // DMC-ODS: the SUD counselor IS the treating provider for this material,
     // so they sit with therapist/pmhnp, not with coordination roles.
