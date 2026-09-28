@@ -206,6 +206,20 @@ export function ChartTabPanel({ tab, patientId, focus }: { tab: ReturnType<typeo
   const single = tab.subs.length === 1;
   return (
     <div className="space-y-3" data-testid={`chart-panel-${tab.id}`}>
+      {!single && (
+        <nav aria-label={`${tab.label} sections`} data-testid="chart-subnav" className="sticky top-[var(--chart-sticky-offset,9rem)] z-10 -mx-1 flex gap-1 overflow-x-auto bg-background/95 px-1 py-1.5 backdrop-blur">
+          {tab.subs.map((s) => (
+            <button
+              key={s.id}
+              type="button"
+              onClick={() => { setOpen((o) => new Set([...o, s.id])); requestAnimationFrame(() => document.getElementById(`sub-${s.id}`)?.scrollIntoView({ block: "start", behavior: "smooth" })); }}
+              className="shrink-0 rounded-full border border-border px-2.5 py-1 text-xs text-navy hover:bg-secondary"
+            >
+              {s.label}
+            </button>
+          ))}
+        </nav>
+      )}
       {tab.subs.map((s) => {
         const isOpen = single || open.has(s.id);
         const Icon = s.icon;
