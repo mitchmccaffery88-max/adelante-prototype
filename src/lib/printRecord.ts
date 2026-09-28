@@ -26,6 +26,7 @@ import {
 import { facilityDateKey } from "./facilityTime";
 import { buildNoteDocumentModel, noteExportGate, type NoteDocBlock } from "./notePdf";
 import { canAccess, type StaffRole } from "./roles";
+import { filterSudMedsForRole } from "./asamReporting";
 
 export type NotesScope = "current" | "range" | "all";
 
@@ -159,16 +160,17 @@ export function buildPrintRecordDocument(args: {
   };
 
   if (flags.meds && gate("meds")) {
-    const orders = AdelanteEHR.listOrders(patient.id)
-      .filter((o) => o.status !== "draft")
+    const orders = filterSudMedsForRole(AdelanteEHR.listOrders(patient.id), role, patient)
+      .visible.filter((o) => o.status !== "draft")
       .sort((a, b) => (b.startDate ?? "").localeCompare(a.startDate ?? ""));
     sections.push({ key: "meds", label: PRINT_SECTION_LABEL.meds, orders });
   }
 
   if (flags.mar && gate("mar")) {
     const month = flags.marMonth ?? facilityDateKey(now, tz).slice(0, 7);
-    const orders = AdelanteEHR.listOrders(patient.id);
+    const orders = filterSudMedsForRole(AdelanteEHR.listOrders(patient.id), role, patient).visible;
     const rows = AdelanteEHR.listAdministrations(patient.id)
+      .filter((a) => orders.some((o) => o.id === a.orderId))
       .filter((a) => monthKey(a.scheduledAt, tz) === month)
       .sort((a, b) => a.scheduledAt.localeCompare(b.scheduledAt))
       .map((administration) => ({
