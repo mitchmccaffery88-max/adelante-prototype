@@ -1,3 +1,4 @@
+import { DemographicsCard } from "@/components/clinical/DemographicsCard";
 import { PatientVisitsCard } from "@/components/scheduling/VisitActions";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
 // §Clinical record — single source of truth for chart sections.
@@ -175,7 +176,12 @@ export function useRecordSections(
     icon: LayoutDashboard,
     group: "chart",
     alwaysVisible: true,
-    render: () => <OverviewTab patientId={pid} />,
+    render: () => (
+      <>
+        <DemographicsCard patientId={pid} />
+        <OverviewTab patientId={pid} />
+      </>
+    ),
   });
   add("problems", {
     id: "problems",
