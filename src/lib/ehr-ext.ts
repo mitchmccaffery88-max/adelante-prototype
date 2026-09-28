@@ -234,6 +234,7 @@ export function claimBillingBucket(state: ClaimState): BillingBucket {
 
 export { BILLING_WRITE_REFUSED } from "./rates";
 import { BILLING_WRITE_REFUSED } from "./rates";
+import { CLAIM_BLOCKED_VOIDED, CLAIM_REVIEW_CORRECTED } from "./noteRevisions";
 
 export interface Claim {
   id: string;

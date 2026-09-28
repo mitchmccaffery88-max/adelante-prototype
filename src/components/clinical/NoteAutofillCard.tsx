@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import {
   resolveAutofillSections,
   type AutofillContext,
