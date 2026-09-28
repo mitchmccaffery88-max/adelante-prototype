@@ -114,7 +114,7 @@ function ChartBody({
   if (canAccess(role, "meds_erx", patient).level !== "none" || canOrderLabs(role))
     extra.push({ id: "labs", label: "Lab orders & results", icon: FlaskConical, group: "chart", render: () => <LabsAndMeasuresTracking patientId={patient.id} role={role} /> });
   if (canOpenCaseloadReview(role))
-    extra.push({ id: "contacts", label: "Contact log & weekly review", icon: PhoneCall, group: "case", render: () => <PatientContactLog patientId={patient.id} /> });
+    extra.push({ id: "contacts", label: "Contact log", icon: PhoneCall, group: "case", render: () => <PatientContactLog patientId={patient.id} /> });
   if (canSeeWeeklyReview(role))
     extra.push({ id: "weekly-review", label: "Weekly review", icon: CalendarCheck, group: "case", render: () => <ChartWeeklyReview patientId={patient.id} /> });
   if (canSeeChartConsents(role, patient))
