@@ -4224,7 +4224,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const clinicians: Clinician[] = [
   {
     id: "c1",
-    name: "Dr. Marisol Reyes",
+    name: "Marisol Reyes",
     credential: "LCSW",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -4240,7 +4240,7 @@ const clinicians: Clinician[] = [
   },
   {
     id: "c2",
-    name: "Dr. James Okafor",
+    name: "James Okafor",
     credential: "PsyD",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -4259,7 +4259,7 @@ const clinicians: Clinician[] = [
     licenseExpiresOn: "2028-12-31",
   },
   {
-    // §Demo — trainee (ASW) supervised by Dr. Reyes; her notes need cosign.
+    // §Demo — trainee (ASW) supervised by Marisol Reyes; her notes need cosign.
     id: "c4",
     name: "Kayla Nguyen",
     credential: "ASW",
@@ -4322,7 +4322,7 @@ const patients: Patient[] = [
         recordedAt: "2026-05-12T16:05:00.000Z",
       },
     },
-    carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
+    carePlanSummary: "Weekly therapy with Marisol Reyes; housing navigator referral pending.",
     // §P2 item 3 — the SDOH needs the care manager identified, with the real
     // status the patient surface renders (referred / in-process / receiving).
     sdohPlan: {
@@ -5157,7 +5157,7 @@ if (patients[1]) {
     patientId: patients[1].id,
     requestType: "question",
     context: "Is the patient cleared to restart group therapy this week?",
-    requestedBy: "Dr. R. Bagga",
+    requestedBy: "Dr. M. Bagga",
     requestedByRole: "pmhnp",
     status: "open",
     createdAt: ago(90),
@@ -5408,9 +5408,9 @@ import {
     indicationText: "Major depressive disorder",
     startDate,
     status: "signed",
-    attestedBy: "Dr. James Okafor",
+    attestedBy: "James Okafor",
     attestedAt: facilityDayAt(9, 6),
-    createdBy: "Dr. James Okafor",
+    createdBy: "James Okafor",
     createdAt: facilityDayAt(9, 6),
   };
   const refusedDose: DoseAdministration = {
@@ -24388,7 +24388,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -24473,7 +24473,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed-es";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -24567,7 +24567,7 @@ export function useEhr<T>(selector: () => T): T {
 // ---------------------------------------------------------------------------
 {
   const CM = "Luz Herrera";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const iso = (d: Date) => d.toISOString();
   const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
@@ -25138,7 +25138,7 @@ try {
   }
   // §Phase 10c demo seeds — ASAM, all through the real store API.
   const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
-  const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
+  const REYES = { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
   const VARGAS = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as StaffRole };
   const seedDims = (text: string) =>
     ASAM_DIMENSIONS.map((d) => ({ key: d.key, documentation: text, rating: 1 as 0 | 1 | 2 | 3 | 4 }));
@@ -25237,7 +25237,7 @@ try {
 // e-prescribing. OUD/AUD medications are Part 2 protected by name
 // (isSudMedicationName) everywhere they render.
 try {
-  const PRESCRIBER = "Dr. R. Bagga, PMHNP-BC";
+  const PRESCRIBER = "Dr. M. Bagga, M.D.";
   const PRESCRIBER_ID = "s-np1";
   const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const byName = (f: string, l: string) =>
@@ -25410,7 +25410,7 @@ try {
     AdelanteEHR.bookAppointment({ patientId: tomasP.id, clinicianId: therapist.id, start: slot(12, 14), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "pre_release" });
   }
   // 2c Luis — assessment visit scheduled from his ASAM task (linked, task
-  // stays open until the ASAM is signed). Booked by Dr. Reyes.
+  // stays open until the ASAM is signed). Booked by Marisol Reyes.
   const luisId = demoScenarioPatientId("sud_consented");
   const luisTask = luisId ? AdelanteEHR.openAsamWorkTask(luisId) : undefined;
   // (The linked visit is seeded in demoInboxSeed as a past no-show, so the
@@ -25419,7 +25419,7 @@ try {
   // Marcus (p3) — overdue ASAM task with reason LEGAL (set by a clinician;
   // not derived from justice involvement). No legal-disclosure consent on file.
   const marcusTask = AdelanteEHR.openAsamTask("p3");
-  if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Dr. Marisol Reyes", role: "therapist", id: "s-th1" });
+  if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Marisol Reyes", role: "therapist", id: "s-th1" });
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
 }
@@ -25430,7 +25430,7 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
   const p = patients.find((x) => x.id === patientId);
   if (!p) return;
   if ((p.orders ?? []).some((o) => /buprenorphine/i.test(o.drugName) && o.curesCheck)) return;
-  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. R. Bagga");
+  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. M. Bagga");
   const draft = AdelanteEHR.addDraftOrder(patientId, {
     drugName: "Buprenorphine-naloxone",
     productName: "Buprenorphine 8 MG / Naloxone 2 MG Sublingual Film",
@@ -25451,8 +25451,8 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
     checkedAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
     result: "no_concerns",
     note: "Demo — placeholder, no live query.",
-    by: "Dr. R. Bagga",
-    role: "pmhnp",
+    by: "Dr. M. Bagga",
+    role: "physician",
   });
-  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Bagga");
+  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
 }

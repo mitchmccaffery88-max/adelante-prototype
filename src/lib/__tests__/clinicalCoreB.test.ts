@@ -15,7 +15,7 @@ import {
   visibleHlocReferrals,
 } from "@/lib/outpatientCare";
 
-const TH = { name: "Dr. Marisol Reyes", role: "therapist" };
+const TH = { name: "Marisol Reyes", role: "therapist" };
 let n = 0;
 const fresh = () => AdelanteEHR.createPatient({ firstName: "B", lastName: `T${++n}`, dob: "1990-01-01" } as never);
 
@@ -29,16 +29,16 @@ describe("turn B", () => {
   it("signing blocks: no allergies → NKDA; allergy match → override; CURES for CIV/MOUD", () => {
     const p = fresh();
     const o = AdelanteEHR.addDraftOrder(p.id, { drugName: "Lorazepam 0.5 MG", ingredientNames: ["lorazepam"] } as never);
-    const sign = () => AdelanteEHR.signOrders(p.id, [o.id], "Dr. R. Bagga", { actorRole: "pmhnp" });
+    const sign = () => AdelanteEHR.signOrders(p.id, [o.id], "Dr. M. Bagga", { actorRole: "pmhnp" });
     expect(sign).toThrow(/Allergies not recorded/);
     AdelanteEHR.addAllergy(p.id, { substance: "Benzodiazepines", severity: "moderate", enteredBy: "t" });
     expect(sign).toThrow(/Allergy warning/);
     expect(() => AdelanteEHR.overrideOrderAllergy(p.id, o.id, { reason: "", by: "x", role: "pmhnp" })).toThrow(/reason/);
-    AdelanteEHR.overrideOrderAllergy(p.id, o.id, { reason: "Benefit outweighs risk", by: "Dr. R. Bagga", role: "pmhnp" });
+    AdelanteEHR.overrideOrderAllergy(p.id, o.id, { reason: "Benefit outweighs risk", by: "Dr. M. Bagga", role: "pmhnp" });
     expect(sign).toThrow(/CURES/);
     expect(() => AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "no_concerns", by: "t", role: "therapist" })).toThrow(/prescriber/);
     expect(() => AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "unable_to_access", by: "b", role: "pmhnp" })).toThrow(/reason/);
-    AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "no_concerns", by: "Dr. R. Bagga", role: "pmhnp" });
+    AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "no_concerns", by: "Dr. M. Bagga", role: "pmhnp" });
     expect(sign()).toHaveLength(1);
     expect(requiresCuresCheck({ drugName: "Naltrexone 50 MG" })).toBe(true);
     const log = AdelanteEHR.listAuditEvents?.() ?? [];

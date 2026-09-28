@@ -31,7 +31,7 @@ describe("B8 merged care-team thread", () => {
     const p = AdelanteEHR.listPatients()[2];
     AdelanteEHR.setConsent(p.id, "part2Sud", false);
     AdelanteEHR.sendStaffMessage(p.id, "Andre", "Checking in from peer support.", "peer_specialist");
-    AdelanteEHR.sendStaffMessage(p.id, "Dr. Reyes", "See you Thursday.", "therapist");
+    AdelanteEHR.sendStaffMessage(p.id, "Marisol Reyes", "See you Thursday.", "therapist");
     const sud = AdelanteEHR.sendPatientMessage(p.id, "private recovery question", true)!;
     const thread = AdelanteEHR.listCareMessages(p.id);
     expect(new Set(thread.map((m) => m.threadPatientId))).toEqual(new Set([p.id]));

@@ -4,8 +4,8 @@ import { AdelanteEHR, noteCosignOwnership, asamCosignOwnership, demoScenarioPati
 import { assignSupervisor } from "@/lib/roles";
 import { isMyCosign } from "@/lib/notes";
 
-const REYES = { cosignedBy: "Dr. Marisol Reyes", cosignedById: "c1", role: "therapist" };
-const OKAFOR = { cosignedBy: "Dr. James Okafor", cosignedById: "c2", role: "therapist" };
+const REYES = { cosignedBy: "Marisol Reyes", cosignedById: "c1", role: "therapist" };
+const OKAFOR = { cosignedBy: "James Okafor", cosignedById: "c2", role: "therapist" };
 const CC = { staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" };
 
 function kaylaNote(pid: string) {
@@ -29,14 +29,14 @@ describe("cosign routed to the assigned supervisor", () => {
     const n = kaylaNote(PID);
     const own = noteCosignOwnership(n);
     expect(own).toMatchObject({ kind: "owner", staffId: "s-th1" });
-    expect(isMyCosign(n, { role: "therapist", staffName: "Dr. James Okafor", staffId: "s-th2", clinicianId: "c2" })).toBe(false);
-    expect(isMyCosign(n, { role: "therapist", staffName: "Dr. Marisol Reyes", staffId: "s-th1", clinicianId: "c1" })).toBe(true);
+    expect(isMyCosign(n, { role: "therapist", staffName: "James Okafor", staffId: "s-th2", clinicianId: "c2" })).toBe(false);
+    expect(isMyCosign(n, { role: "therapist", staffName: "Marisol Reyes", staffId: "s-th1", clinicianId: "c1" })).toBe(true);
     expect(() =>
       AdelanteEHR.cosignProgressNote(PID, n.id, { ...OKAFOR, attestation: attest("progress_note_supervisor_sign", OKAFOR.cosignedBy) }),
-    ).toThrow(/Only Dr. Marisol Reyes/);
+    ).toThrow(/Only Marisol Reyes/);
     expect(() =>
       AdelanteEHR.declineProgressNoteCosign(PID, n.id, { declinedBy: OKAFOR.cosignedBy, declinedById: "c2", role: "therapist", reason: "nope nope" }),
-    ).toThrow(/Only Dr. Marisol Reyes/);
+    ).toThrow(/Only Marisol Reyes/);
     AdelanteEHR.cosignProgressNote(PID, n.id, { ...REYES, attestation: attest("progress_note_supervisor_sign", REYES.cosignedBy) });
     expect(noteStatus(n)).toBe("cosigned");
   });
@@ -45,15 +45,15 @@ describe("cosign routed to the assigned supervisor", () => {
     const n = kaylaNote(PID);
     expect(() => AdelanteEHR.reassignNoteCosign(PID, n.id, "s-th2", CC, "")).toThrow(/reason/);
     expect(() =>
-      AdelanteEHR.reassignNoteCosign(PID, n.id, "s-th2", { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" }, "on leave"),
+      AdelanteEHR.reassignNoteCosign(PID, n.id, "s-th2", { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" }, "on leave"),
     ).toThrow(/coordinator/);
-    AdelanteEHR.reassignNoteCosign(PID, n.id, "s-th2", CC, "Dr. Reyes on leave");
+    AdelanteEHR.reassignNoteCosign(PID, n.id, "s-th2", CC, "Marisol Reyes on leave");
     expect(noteCosignOwnership(n)).toMatchObject({ kind: "owner", staffId: "s-th2", via: "override" });
     expect(() =>
       AdelanteEHR.cosignProgressNote(PID, n.id, { ...REYES, attestation: attest("progress_note_supervisor_sign", REYES.cosignedBy) }),
-    ).toThrow(/Only Dr. James Okafor/);
+    ).toThrow(/Only James Okafor/);
     const audit = AdelanteEHR.listAuditEvents({ patientId: PID }).filter((e) => e.action === "note_cosign_reassigned").at(-1);
-    expect(audit?.detail).toMatchObject({ toId: "s-th2", reason: "Dr. Reyes on leave", fromId: "s-th1" });
+    expect(audit?.detail).toMatchObject({ toId: "s-th2", reason: "Marisol Reyes on leave", fromId: "s-th1" });
     AdelanteEHR.cosignProgressNote(PID, n.id, { ...OKAFOR, attestation: attest("progress_note_supervisor_sign", OKAFOR.cosignedBy) });
     expect(noteStatus(n)).toBe("cosigned");
   });
@@ -62,7 +62,7 @@ describe("cosign routed to the assigned supervisor", () => {
     assignSupervisor("s-tr1", null);
     const n = kaylaNote(PID);
     expect(noteCosignOwnership(n).kind).toBe("needs_supervisor");
-    expect(isMyCosign(n, { role: "therapist", staffName: "Dr. Marisol Reyes", staffId: "s-th1", clinicianId: "c1" })).toBe(false);
+    expect(isMyCosign(n, { role: "therapist", staffName: "Marisol Reyes", staffId: "s-th1", clinicianId: "c1" })).toBe(false);
     expect(() =>
       AdelanteEHR.cosignProgressNote(PID, n.id, { ...REYES, attestation: attest("progress_note_supervisor_sign", REYES.cosignedBy) }),
     ).toThrow(/no assigned LPHA supervisor/);
@@ -88,7 +88,7 @@ describe("cosign routed to the assigned supervisor", () => {
       { id: "o-draft-x", patientId: PID, drugName: "Test A", status: "draft", sourceNoteId: n.id } as never,
       { id: "o-live-x", patientId: PID, drugName: "Test B", status: "signed", sourceNoteId: n.id } as never,
     ];
-    AdelanteEHR.declineProgressNoteCosign(PID, n.id, { declinedBy: "Dr. Marisol Reyes", declinedById: "s-th1", role: "therapist", reason: "Plan incomplete" });
+    AdelanteEHR.declineProgressNoteCosign(PID, n.id, { declinedBy: "Marisol Reyes", declinedById: "s-th1", role: "therapist", reason: "Plan incomplete" });
     const after = AdelanteEHR.listPatients().find((x) => x.id === PID)!.orders ?? [];
     expect(after.find((o) => o.id === "o-draft-x")).toBeUndefined();
     expect(after.find((o) => o.id === "o-live-x")?.sourceNoteDeclined?.reason).toBe("Plan incomplete");
@@ -105,8 +105,8 @@ describe("ASAM co-sign follows the same rule", () => {
     const p = AdelanteEHR.listPatients().find((x) => x.id === PID)!;
     p.asamAssessments = [...(p.asamAssessments ?? []), asam];
     expect(asamCosignOwnership(asam)).toMatchObject({ kind: "owner", staffId: "s-th1" });
-    const OK = { staffId: "s-th2", name: "Dr. James Okafor", role: "therapist" as const, clinicianId: "c2" };
-    expect(() => AdelanteEHR.cosignAsam(PID, "a-x", OK, attest("asam_supervisor_sign", OK.name))).toThrow(/Only Dr. Marisol Reyes/);
+    const OK = { staffId: "s-th2", name: "James Okafor", role: "therapist" as const, clinicianId: "c2" };
+    expect(() => AdelanteEHR.cosignAsam(PID, "a-x", OK, attest("asam_supervisor_sign", OK.name))).toThrow(/Only Marisol Reyes/);
     AdelanteEHR.reassignAsamCosign(PID, "a-x", "s-th2", CC, "Coverage this week");
     expect(asamCosignOwnership(asam)).toMatchObject({ staffId: "s-th2", via: "override" });
   });

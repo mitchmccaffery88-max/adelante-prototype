@@ -52,15 +52,15 @@ describe("clinical coordination (item 6)", () => {
     const opts = eligibleReassignTargets(pending);
     expect(opts.some((o) => o.clinicianId === "c2")).toBe(false);
     const kayla = opts.find((o) => o.clinicianId === "c4");
-    expect(kayla?.supervisorName).toBe("Dr. Marisol Reyes");
-    const actor = { name: "Dr. Marisol Reyes", role: "therapist" as const };
+    expect(kayla?.supervisorName).toBe("Marisol Reyes");
+    const actor = { name: "Marisol Reyes", role: "therapist" as const };
     expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "provider_frozen", actor })).toThrow();
     const priya = { name: "Priya Raman", role: "clinical_coordinator" as const };
     expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "other", actor: priya })).toThrow(/Other/);
   });
 
   it("formats export names and strips doubled task prefixes", () => {
-    expect(formatClinicianName("Dr. Marisol Reyes", "LCSW")).toBe("Marisol Reyes, LCSW");
+    expect(formatClinicianName("Marisol Reyes", "LCSW")).toBe("Marisol Reyes, LCSW");
     expect(stripTaskPrefix("Task assigned — Coverage needed")).toBe("Coverage needed");
     expect(stripTaskPrefix("Follow up — Task assigned — X")).toBe("X");
   });

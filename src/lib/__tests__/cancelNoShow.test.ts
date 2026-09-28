@@ -6,7 +6,7 @@ import { appointmentOutcomes } from "@/lib/apptRequestStatus";
 import { isLateCancelWindow } from "@/lib/lateCancel";
 import { SchedulingConstraints } from "@/lib/scheduling";
 
-const reyes = { name: "Dr. Marisol Reyes", role: "therapist" as const, id: "s-th1" };
+const reyes = { name: "Marisol Reyes", role: "therapist" as const, id: "s-th1" };
 const clin = () => AdelanteEHR.listClinicians().find((c) => AdelanteEHR.canBook(c.id).ok)!;
 const book = (pid: string, hoursFromNow: number, extra: Record<string, unknown> = {}) => {
   const d = new Date(Date.now() + hoursFromNow * 3600000);

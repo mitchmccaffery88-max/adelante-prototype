@@ -16,7 +16,7 @@ import {
 } from "@/lib/inboxActions";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 
-const reyes = { id: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as const };
+const reyes = { id: "s-th1", name: "Marisol Reyes", role: "therapist" as const };
 const luz = { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider" as const };
 const deneen = { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" as const };
 

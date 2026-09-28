@@ -9,7 +9,7 @@ import { getStaffMember } from "@/lib/roles";
 
 const CF = "s-cf1";
 const cf = () => getStaffMember(CF)!;
-const PRESCRIBER = { staffId: "s-np1", staffName: "Dr. R. Bagga", role: "pmhnp" as const };
+const PRESCRIBER = { staffId: "s-np1", staffName: "Dr. M. Bagga", role: "pmhnp" as const };
 
 const opened: string[] = [];
 afterEach(() => {

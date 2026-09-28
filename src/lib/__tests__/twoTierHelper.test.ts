@@ -68,7 +68,7 @@ function issueCode(patientId: string) {
       {
         kind: "mental_health",
         start: "2026-09-03T15:00:00.000Z",
-        providerName: "Dr. Marisol Reyes",
+        providerName: "Marisol Reyes",
         location: "Adelante Fresno",
         modality: "in_person",
       },

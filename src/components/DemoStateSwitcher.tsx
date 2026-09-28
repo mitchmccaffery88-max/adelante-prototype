@@ -90,7 +90,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   sud_no_consent: {
     group: "Intake by need",
     label: "7 · Jordan V. — Substance use, no Part 2 consent",
-    hint: "Answer kept; masked ASAM task for clinical staff only, assessment visit not yet scheduled (try \"Schedule assessment visit\" as Dr. Reyes); no SUD tools on the patient's own screens",
+    hint: "Answer kept; masked ASAM task for clinical staff only, assessment visit not yet scheduled (try \"Schedule assessment visit\" as Marisol Reyes); no SUD tools on the patient's own screens",
   },
   pre_release: {
     group: "Justice",
@@ -130,12 +130,12 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   marcus: {
     group: "Existing demo records",
     label: "Marcus — Legacy AUDIT result",
-    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call); an assessment visit yesterday is still unmarked — mark it No-show as Dr. Reyes in the chart's Tasks tab"
+    hint: "EHR: AUDIT 16 labelled 'Scored before 0/2/4 fix', PHQ-9 re-screen due day 90; overdue ASAM task with reason \"Legal\" and \"Consent needed before sharing\" (clinical roles only); crisis queue: manual staff flag (welfare call); an assessment visit yesterday is still unmarked — mark it No-show as Marisol Reyes in the chart's Tasks tab"
   },
   kayla: {
     group: "Existing demo records",
     label: "Kayla's trainee visit (staff)",
-    hint: "Opens the cosign inbox: Kayla's note for Elena is owned by her supervisor Dr. Reyes only (other clinicians can't see it); Owen Tran's note for Paloma needs a supervisor (coordinator view)",
+    hint: "Opens the cosign inbox: Kayla's note for Elena is owned by her supervisor Marisol Reyes only (other clinicians can't see it); Owen Tran's note for Paloma needs a supervisor (coordinator view)",
   },
 };
 

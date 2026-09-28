@@ -271,14 +271,14 @@ describe("care message Part 2 flagging", () => {
     expect(canAccess("pmhnp", "screeners_sud", gated).locked).toBe(false);
 
     // Flagged by a therapist → backstop must fall through to pmhnp.
-    const m1 = AdelanteEHR.sendStaffMessage(gated.id, "Dr. Marisol Reyes", "note a")!;
+    const m1 = AdelanteEHR.sendStaffMessage(gated.id, "Marisol Reyes", "note a")!;
     const thBefore = AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
       (n) => n.patientId === gated.id,
     ).length;
     const npBefore = AdelanteEHR.listNotificationsFor("nobody", "pmhnp").filter(
       (n) => n.patientId === gated.id,
     ).length;
-    AdelanteEHR.flagMessageAsSud(gated.id, m1.id, "Dr. Marisol Reyes", "therapist");
+    AdelanteEHR.flagMessageAsSud(gated.id, m1.id, "Marisol Reyes", "therapist");
     expect(
       AdelanteEHR.listNotificationsFor("nobody", "therapist").filter(
         (n) => n.patientId === gated.id,

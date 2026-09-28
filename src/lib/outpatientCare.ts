@@ -287,7 +287,7 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
 
 /** B1/B2 demo: an allergy override on Daniel, a CURES check on Luis's buprenorphine. */
 export function seedOrderSafetyDemo(): void {
-  const BAGGA = { by: "Dr. R. Bagga", role: "pmhnp" };
+  const BAGGA = { by: "Dr. M. Bagga", role: "physician" };
   try {
     const daniel = AdelanteEHR.listPatients().find((p) => p.firstName === "Daniel");
     if (daniel) {
@@ -318,7 +318,7 @@ export function seedOutpatientCareDemo(): void {
       if (typeof console !== "undefined") console.warn("[demo seed] outpatient care", e);
     }
   };
-  const REYES = { name: "Dr. Marisol Reyes", role: "therapist", staffId: "s-th1" };
+  const REYES = { name: "Marisol Reyes", role: "therapist", staffId: "s-th1" };
   const find = (first: string) => AdelanteEHR.listPatients().find((p) => p.firstName === first);
   const programFor: Record<string, EpisodeProgram> = { Luis: "outpatient_sud", Jordan: "outpatient_sud", Marcus: "outpatient_sud", Carmen: "ecm" };
   for (const first of ["Rosa", "Daniel", "Luis", "Alicia", "Marcus", "Jordan", "Carmen"]) {

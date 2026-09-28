@@ -48,7 +48,7 @@ describe("note PDF export affordance", () => {
     setActingRole("therapist");
     addNote({
       status: "signed",
-      signedBy: "Dr. Marisol Reyes",
+      signedBy: "Marisol Reyes",
       signedAt: new Date().toISOString(),
     });
     render(<NotesTab patientId={patient.id} />);
@@ -73,7 +73,7 @@ describe("note PDF export affordance", () => {
       plan: "",
       category: "sud",
       status: "signed",
-      signedBy: "Dr. Marisol Reyes",
+      signedBy: "Marisol Reyes",
       signedAt: new Date().toISOString(),
     } as never) as unknown as { id: string };
     render(<NotesTab patientId={sudPatient.id} />);

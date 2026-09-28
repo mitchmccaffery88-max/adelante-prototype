@@ -313,7 +313,7 @@ let seeded = false;
 export function seedInboxActionsDemo() {
   if (seeded) return;
   seeded = true;
-  const reyes: InboxActor = { id: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" };
+  const reyes: InboxActor = { id: "s-th1", name: "Marisol Reyes", role: "therapist" };
   const deneen: InboxActor = { id: "s-bc1", name: "Deneen Ford", role: "billing_coordinator" };
   const safe = (fn: () => void) => {
     try {

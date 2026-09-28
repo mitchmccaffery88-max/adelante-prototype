@@ -25,7 +25,7 @@ const base: ProgressNote = {
   assessment: "Stable.",
   plan: "Continue weekly therapy.",
   status: "signed",
-  signedBy: "Dr. Marisol Reyes",
+  signedBy: "Marisol Reyes",
   signedAt: "2026-07-20T16:00:00.000Z",
 };
 
@@ -84,7 +84,7 @@ describe("note PDF builder", () => {
       note: base,
       patient,
       role: "therapist",
-      authorLabel: "Dr. Marisol Reyes",
+      authorLabel: "Marisol Reyes",
     });
     const text = doc.output("datauristring");
     expect(text.startsWith("data:application/pdf")).toBe(true);
@@ -116,7 +116,7 @@ describe("note PDF builder", () => {
     const note: ProgressNote = {
       ...base,
       status: "cosigned",
-      cosignedBy: "Dr. R. Bagga",
+      cosignedBy: "Dr. M. Bagga",
       cosignedAt: "2026-07-21T09:00:00.000Z",
       templateKey: "bh-intake",
       templateTitle: "Behavioral health intake",
@@ -135,8 +135,8 @@ describe("note PDF builder", () => {
     // Hidden-by-show_if fields must not leak into the legal record.
     expect(value("Only if risk")).toBeUndefined();
     expect(value("PHQ total")).toBe("3 — Minimal");
-    expect(value("Signed by")).toBe("Dr. Marisol Reyes");
-    expect(value("Cosigned by")).toBe("Dr. R. Bagga");
+    expect(value("Signed by")).toBe("Marisol Reyes");
+    expect(value("Cosigned by")).toBe("Dr. M. Bagga");
     expect(value("Status")).toBe("cosigned");
     expect(buildProgressNotePdf({ note, patient, role: "pmhnp" }).getNumberOfPages()).toBe(1);
   });
@@ -146,14 +146,14 @@ describe("note PDF builder", () => {
       note: base,
       patient,
       role: "therapist",
-      authorLabel: "Dr. Marisol Reyes",
-      exportedBy: "Dr. Marisol Reyes",
+      authorLabel: "Marisol Reyes",
+      exportedBy: "Marisol Reyes",
     });
     const paragraphs = blocks.filter((b) => b.kind === "paragraph").map((b) => b.text);
     expect(paragraphs).toContain("Reports improved sleep.");
     expect(paragraphs).toContain("Continue weekly therapy.");
     const fields = blocks.filter((b) => b.kind === "field");
-    expect(fields.find((f) => f.label === "Author")?.value).toBe("Dr. Marisol Reyes");
+    expect(fields.find((f) => f.label === "Author")?.value).toBe("Marisol Reyes");
     expect(fields.find((f) => f.label === "Status")?.value).toBe("signed");
   });
 

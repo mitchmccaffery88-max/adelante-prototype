@@ -157,7 +157,7 @@ function AttributionSection({
   blocked: Set<OrderFieldKey>;
   onPatch: (patch: Partial<MedOrder>) => void;
 }) {
-  const prescribers = staffForRole("pmhnp");
+  const prescribers = [...staffForRole("physician"), ...staffForRole("pmhnp")];
   const needsReadBack = order.orderSource === "verbal" || order.orderSource === "telephone";
   return (
     <div className="rounded-lg border border-border bg-muted/40 p-3">

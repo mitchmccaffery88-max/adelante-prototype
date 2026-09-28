@@ -9,7 +9,7 @@ import { AdelanteEHR, type CfAttribution } from "@/lib/ehr";
 import { getStaffMember } from "@/lib/roles";
 
 const cf = () => getStaffMember("s-cf1")!;
-const PRESCRIBER = { staffId: "s-np1", staffName: "Dr. R. Bagga", role: "pmhnp" as const };
+const PRESCRIBER = { staffId: "s-np1", staffName: "Dr. M. Bagga", role: "pmhnp" as const };
 const attribution = (): CfAttribution => ({
   enteredBy: { staffId: cf().id, staffName: cf().name, role: "cf_care_manager" },
 });

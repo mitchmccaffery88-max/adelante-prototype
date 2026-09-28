@@ -99,6 +99,7 @@ function AuthPage() {
   const staffRouteFor = (role: StaffRole) => {
     switch (role) {
       case "therapist":
+      case "physician":
       case "pmhnp":
         return "/clinician" as const;
       case "ecm_provider":
@@ -119,7 +120,7 @@ function AuthPage() {
 
   const handleStaffSignIn = (e: React.FormEvent) => {
     e.preventDefault();
-    const needsClinician = staffRole === "therapist" || staffRole === "pmhnp";
+    const needsClinician = staffRole === "therapist" || staffRole === "pmhnp" || staffRole === "physician";
     if (needsClinician && !staffClinicianId) {
       toast.error("Pick a clinician identity to continue");
       return;
@@ -321,7 +322,7 @@ function AuthPage() {
               </p>
             </div>
 
-            {(staffRole === "therapist" || staffRole === "pmhnp") && (
+            {(staffRole === "therapist" || staffRole === "pmhnp" || staffRole === "physician") && (
               <div className="space-y-1.5">
                 <Label className="text-sm">Clinician identity</Label>
                 <Select value={staffClinicianId} onValueChange={setStaffClinicianId}>

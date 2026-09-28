@@ -14,9 +14,9 @@ import { LPHA_SUPERVISOR_ROLES } from "@/lib/roles";
 import { attestationStatement, buildAttestationRecord } from "@/lib/attestation";
 import { ASK_ADEL_QUESTIONS, part2Gated } from "@/lib/askAdel";
 
-const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as const, clinicianId: "c1" };
+const REYES = { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" as const, clinicianId: "c1" };
 const VARGAS = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as const };
-const OKAFOR = { staffId: "s-th2", name: "Dr. James Okafor", role: "therapist" as const, clinicianId: "c2" };
+const OKAFOR = { staffId: "s-th2", name: "James Okafor", role: "therapist" as const, clinicianId: "c2" };
 const ATT = { attested: true, signatureDataUrl: "data:image/png;base64,dGVzdA==" };
 const att = (statement: "asam_sign" | "asam_supervisor_sign", signedBy: string) =>
   buildAttestationRecord({ statement: attestationStatement(statement), draft: ATT, signedBy });
@@ -246,7 +246,7 @@ describe("Phase 10c — Ask Adel", () => {
     // Roles without Part 2 access never see the question.
     expect(part2Gated("ecm_provider")).toBe(true);
     expect(part2Gated("peer_specialist")).toBe(true);
-    const answer = q.answer({ role: "therapist", staffId: "s-th1", staffName: "Dr. Marisol Reyes", clinicianId: "c1" } as Parameters<typeof q.answer>[0]);
+    const answer = q.answer({ role: "therapist", staffId: "s-th1", staffName: "Marisol Reyes", clinicianId: "c1" } as Parameters<typeof q.answer>[0]);
     const text = answer.lines.join(" ");
     expect(text).not.toMatch(/level of care: \w/i);
     expect(answer.notes!.join(" ")).toContain("clinician decides the level of care");

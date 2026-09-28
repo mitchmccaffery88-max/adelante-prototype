@@ -274,7 +274,7 @@ export const NOT_INDICATED_REASON = "Not indicated";
 /** Staff who may witness a Schedule II administration: clinical/prescriber roles only. */
 export function witnessCandidates(exclude?: string): StaffMember[] {
   return STAFF_ROSTER.filter(
-    (s) => (s.role === "pmhnp" || s.role === "therapist") && s.name !== exclude,
+    (s) => (s.role === "pmhnp" || s.role === "physician" || s.role === "therapist") && s.name !== exclude,
   );
 }
 
