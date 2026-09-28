@@ -41,6 +41,7 @@ import { recordSectionVisible } from "@/lib/recordSectionGate";
 import { sectionHasAction } from "@/lib/chartActions";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { ChartDocumentsList, visibleChartDocuments } from "@/components/chart/ChartDocumentsList";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
@@ -206,6 +207,14 @@ export function useRecordSections(
         <HieTimelineStrip patientId={pid} />
       </>
     ),
+  });
+  // §Chart redesign turn 5 — uploaded documents (Part 2 docs hidden for restricted roles).
+  add("documents", {
+    id: "documents",
+    label: "Documents",
+    icon: FileText,
+    group: "chart",
+    render: () => <ChartDocumentsList patientId={pid} />,
   });
   // §HIE — simulated outside records; SUD rows Part 2-gated inside the panel.
   add("demographics", {
