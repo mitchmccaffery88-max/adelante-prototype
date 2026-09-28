@@ -272,7 +272,9 @@ export type NotificationCategory =
   // §Signed-note revisions — a note void awaits supervisor/coordinator approval.
   | "note_void_request"
   // §Demographics — identity details changed (generic copy for billing).
-  | "demographics_changed";
+  | "demographics_changed"
+  | "episode_changed"
+  | "hloc_referral";
 
 export interface NoteAddendum {
   id: string;
@@ -20406,6 +20408,15 @@ export const AdelanteEHR = {
     if (requiresCuresCheck(o) && !o.curesCheck)
       return `${o.drugName} needs a CURES check before signing (or an emergency override with a reason).`;
     return undefined;
+  },
+
+  /** For sibling store modules (outpatientCare.ts): write an audit row and re-render. */
+  _recordAudit(evt: { category: string; action: string; patientId?: string; actorId?: string; actorRole?: string; detail?: Record<string, unknown> }): void {
+    appendAudit(evt as never);
+    emit();
+  },
+  _emit(): void {
+    emit();
   },
 
   /** §B1 — record NKDA as the patient's allergy status. */
