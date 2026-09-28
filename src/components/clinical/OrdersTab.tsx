@@ -54,6 +54,7 @@ import { MedicationDoseSection } from "@/components/orders/MedicationDoseSection
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
+import { OrderSafetyPanel } from "./OrderSafetyPanel";
 import { AlertTriangle, ClipboardList, Info, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -350,6 +351,8 @@ export function DraftOrderCard({
         SUD-related (42 CFR Part 2 — hidden from roles without substance-use access)
       </label>
 
+      <OrderSafetyPanel order={order} patientId={patientId} />
+
       {duplicate && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500 bg-amber-50/60 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
           <AlertTriangle className="mt-0.5 h-3.5 w-3.5 shrink-0" />
@@ -610,7 +613,11 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   );
   const allIssues = drafts.flatMap((o) => validateOrder(o, { needsAttribution }));
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
-  const canSign = !viewOnly && gatePasses && attested;
+  // §B1/B2 — same blockers the store enforces in signOrders.
+  const safetyBlockers = drafts
+    .map((d) => AdelanteEHR.orderSigningBlocker(patientId, d))
+    .filter((x): x is string => !!x);
+  const canSign = !viewOnly && gatePasses && attested && safetyBlockers.length === 0;
 
   const renderReleasedOrder = (o: MedOrder) => (
             <Card key={o.id} className="p-3 text-sm">
@@ -662,6 +669,16 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                     (o.orderSource ? ` (${o.orderSource})` : "")
                   : ""}
               </div>
+              {o.curesCheck && ["pmhnp", "therapist", "sud_counselor", "sys_admin", "clinical_trainee"].includes(role) && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  CURES check (placeholder — no live query):{" "}
+                  {o.curesCheck.emergencyOverride ? "Emergency override" : o.curesCheck.result.replace(/_/g, " ")} ·{" "}
+                  {o.curesCheck.checkedAt.replace("T", " ")} · {o.curesCheck.by}
+                </div>
+              )}
+              {o.allergyOverride && (
+                <div className="mt-1 text-xs text-destructive">Allergy override: {o.allergyOverride.reason}</div>
+              )}
               {o.status !== "signed" && o.statusChangedBy && (
                 <div className="mt-1 text-xs text-muted-foreground">
                   {ORDER_STATUS_LABEL[o.status]} by {o.statusChangedBy}
@@ -752,12 +769,16 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
     const strengthProvenance = Object.fromEntries(
       drafts.map((d) => [d.id, strengthProvenanceFor(d)]),
     );
-    const n = AdelanteEHR.signOrders(
-      patientId,
-      drafts.map((d) => d.id),
-      staffName,
-      { strengthProvenance },
-    ).length;
+    let n = 0;
+    try {
+      n = AdelanteEHR.signOrders(patientId, drafts.map((d) => d.id), staffName, {
+        strengthProvenance,
+        actorRole: role,
+      }).length;
+    } catch (e) {
+      toast.error((e as Error).message);
+      return;
+    }
     setAttested(false);
     setShowIssues(false);
     toast.success(`${n} order${n === 1 ? "" : "s"} signed.`);
@@ -799,6 +820,13 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
       {!viewOnly && drafts.length > 0 && (
         <div className="space-y-3">
+          {safetyBlockers.length > 0 && (
+            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive">
+              {safetyBlockers.map((b) => (
+                <li key={b}>Can&apos;t sign yet: {b}</li>
+              ))}
+            </ul>
+          )}
           <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
           <Button className="w-full" disabled={!canSign} onClick={sign}>
             Sign {drafts.length} order{drafts.length === 1 ? "" : "s"}

@@ -1,3 +1,4 @@
+import { seedOrderSafetyDemo, seedOutpatientCareDemo } from "./outpatientCare";
 // §Demo inbox seed (item 2 of 7) — crisis queue, notifications and messages
 // for the demo, created ONLY through real store functions (flag, screener,
 // scanner, notify, message send) so every row carries the same audit trail and
@@ -178,9 +179,9 @@ export function seedDemoInbox(): void {
   n({ recipientRole: "sud_counselor", category: "protected_task", subject: "Protected assessment task due", body: "A protected assessment task is assigned to your team. Open My Work to view.", linkRoute: "/my-work" });
   n({ recipientRole: "therapist", category: "protected_task", subject: "Protected assessment task due", body: "A protected assessment task needs an assessment visit scheduled.", linkRoute: "/my-work" });
   // Billing — DMC-ODS blocks show only the generic reason.
-  n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim blocked — DMC-ODS", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
+  n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim blocked", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
   n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim denied — Medi-Cal (90834)", body: "Denied: eligibility not active on date of service. Verify coverage and resubmit.", linkRoute: "/admin-claims" });
-  n({ recipientRole: "billing_coordinator", category: "claim_blocked", subject: "Claim blocked — DMC-ODS", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
+  n({ recipientRole: "billing_coordinator", category: "claim_blocked", subject: "Claim blocked", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
   n({ recipientRole: "clinical_coordinator", category: "task_assigned", subject: "Coverage needed — Friday clinic", body: "Dr. Okafor is out Friday; 3 visits need a covering clinician.", linkRoute: "/admin-coordination" });
 
   // ---- 3. Messages ----
@@ -262,8 +263,17 @@ export function seedDemoInbox(): void {
       d.setHours(11, 0, 0, 0);
       AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
     });
+  // Core demo patients get a primary clinician through the normal reassign
+  // path (Rosa/Daniel are then moved to Dr. Okafor by the coordination demo).
+  for (const first of ["Rosa", "Daniel", "Luis", "Alicia", "Marcus", "Jordan", "Carmen"]) {
+    const pt = AdelanteEHR.listPatients().find((x) => x.firstName === first);
+    if (pt && !pt.primaryClinicianId)
+      safe(() => AdelanteEHR.reassignPrimaryClinician({ patientId: pt.id, clinicianId: "c1", initiatedBy: "admin", context: "Demo setup — primary clinician" }));
+  }
   safe(() => seedCoordinationDemo());
   safe(() => seedCaseloadDemo());
+  safe(() => seedOutpatientCareDemo());
+  safe(() => seedOrderSafetyDemo());
 
   // §Inbox actions — a claim status move raised by the real audit hook, then
   // claim / assign / done / make-a-task through the inbox action functions.

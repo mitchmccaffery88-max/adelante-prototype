@@ -1,4 +1,5 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
+import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
   crisisTriggeringScores,
   describeCrisisScore,
@@ -271,7 +272,9 @@ export type NotificationCategory =
   // §Signed-note revisions — a note void awaits supervisor/coordinator approval.
   | "note_void_request"
   // §Demographics — identity details changed (generic copy for billing).
-  | "demographics_changed";
+  | "demographics_changed"
+  | "episode_changed"
+  | "hloc_referral";
 
 export interface NoteAddendum {
   id: string;
@@ -1048,6 +1051,18 @@ export interface MedOrder {
    * witness anyway.
    */
   deaSchedule?: "CII" | "CIII" | "CIV" | "CV";
+  /** §B1 — clinician override of an allergy match; reason required, audited. */
+  allergyOverride?: { reason: string; by: string; at: string; substances: string[] };
+  /** §B2 — CURES/PDMP check (placeholder — no live query). Part 2-masked with SUD meds. */
+  curesCheck?: {
+    checkedAt: string;
+    result: "no_concerns" | "concerns_reviewed" | "unable_to_access";
+    reason?: string;
+    note?: string;
+    by: string;
+    recordedAt: string;
+    emergencyOverride?: boolean;
+  };
   /** STAT orders skip the duration requirement (single immediate administration). */
   isStat?: boolean;
   /**
@@ -11291,12 +11306,14 @@ export const AdelanteEHR = {
     });
     // Generic copy — never the note content or the reason.
     const own = cosignOwnershipFor(n.signedById ?? n.clinicianId);
-    const subject = "Note void needs approval";
-    const body = `${input.byName} asked to void a note for ${patientLabel(patientId)} as entered in error.`;
+    const vp = patients.find((x) => x.id === patientId);
+    const vInit = vp ? `${vp.firstName?.[0] ?? ""}.${vp.lastName?.[0] ?? ""}.` : "patient";
+    const subject = `Void request — progress note — ${vInit}`;
+    const body = `${input.byName} asked to void a progress note as entered in error. Open the inbox to approve or reject.`;
     if (own.kind === "owner")
       AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
     for (const r of VOID_APPROVER_ROLES)
-      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
+      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/inbox", patientId });
     emit();
     return n;
   },
@@ -11310,6 +11327,31 @@ export const AdelanteEHR = {
     return isCosignOwner(cosignOwnershipFor(n.signedById ?? n.clinicianId), ids);
   },
 
+  /**
+   * Pending void requests this actor may decide — METADATA ONLY (patient
+   * initials, note date, session type, author, author's void reason). Never
+   * the note body, so a coordinator can approve a SUD-protected note's void
+   * without seeing its content.
+   */
+  listPendingNoteVoids(actor: { staffId?: string; clinicianId?: string; name: string; role: string }): Array<{
+    patientId: string; noteId: string; initials: string; noteDate: string; sessionType?: string;
+    authorName: string; requestedAt: string; reason: string; title: string;
+  }> {
+    const out: ReturnType<typeof AdelanteEHR.listPendingNoteVoids> = [];
+    for (const p of patients) {
+      for (const n of p.progressNotes ?? []) {
+        if (!n.voidRequest || !AdelanteEHR.canApproveNoteVoid(n, actor)) continue;
+        const initials = `${p.firstName?.[0] ?? ""}.${p.lastName?.[0] ?? ""}.`;
+        out.push({
+          patientId: p.id, noteId: n.id, initials, noteDate: n.date, sessionType: n.sessionType,
+          authorName: n.voidRequest.byName, requestedAt: n.voidRequest.at, reason: n.voidRequest.reason,
+          title: `Void request — progress note — ${initials}`,
+        });
+      }
+    }
+    return out;
+  },
+
   decideNoteVoid(
     patientId: string,
     noteId: string,
@@ -11319,6 +11361,8 @@ export const AdelanteEHR = {
     if (!n?.voidRequest) throw new Error("There is no void request on this note.");
     if (!AdelanteEHR.canApproveNoteVoid(n, input))
       throw new Error("Only the author's supervisor or a clinical coordinator can decide a void — and never the author.");
+    if (!input.approve && (input.comment ?? "").trim().length < 3)
+      throw new Error("A reason is required to reject a void request.");
     const req = n.voidRequest;
     n.voidRequest = undefined;
     if (!input.approve) {
@@ -20349,6 +20393,80 @@ export const AdelanteEHR = {
    * gate (`validateOrder`) and captured attestation first — this method trusts
    * the caller, matching the reference EMR where the cart owns the gate.
    */
+  /**
+   * §B1/B2 — why this draft can't be signed yet, or undefined. Enforced in
+   * `signOrders`, not just the UI.
+   */
+  orderSigningBlocker(patientId: string, o: MedOrder): string | undefined {
+    const p = patients.find((x) => x.id === patientId);
+    const allergies = p?.allergies ?? [];
+    if (allergiesNotRecorded(allergies))
+      return "Allergies not recorded — confirm NKDA or add allergies before signing.";
+    const hits = findAllergyMatches(o, allergies);
+    if (hits.length && !o.allergyOverride)
+      return `Allergy warning for ${o.drugName}: matches ${hits.map((h) => h.substance).join(", ")}. Override with a reason to continue.`;
+    if (requiresCuresCheck(o) && !o.curesCheck)
+      return `${o.drugName} needs a CURES check before signing (or an emergency override with a reason).`;
+    return undefined;
+  },
+
+  /** For sibling store modules (outpatientCare.ts): write an audit row and re-render. */
+  _recordAudit(evt: { category: string; action: string; patientId?: string; actorId?: string; actorRole?: string; detail?: Record<string, unknown> }): void {
+    appendAudit(evt as never);
+    emit();
+  },
+  _emit(): void {
+    emit();
+  },
+
+  /** §B1 — record NKDA as the patient's allergy status. */
+  confirmNkda(patientId: string, by: string): void {
+    AdelanteEHR.addAllergy(patientId, { substance: "No known drug allergies (NKDA)", severity: "mild", enteredBy: by });
+  },
+
+  /** §B1 — override an allergy match on a draft order (reason required, audited). */
+  overrideOrderAllergy(patientId: string, orderId: string, input: { reason: string; by: string; role: string }): MedOrder {
+    const p = patients.find((x) => x.id === patientId);
+    const o = p?.orders?.find((x) => x.id === orderId && x.status === "draft");
+    if (!p || !o) throw new Error("Draft order not found.");
+    if ((input.reason ?? "").trim().length < 3) throw new Error("A reason is required to override an allergy warning.");
+    const hits = findAllergyMatches(o, p.allergies ?? []);
+    o.allergyOverride = { reason: input.reason.trim(), by: input.by, at: new Date().toISOString(), substances: hits.map((h) => h.substance) };
+    appendAudit({
+      category: "clinical", action: "order_allergy_override", patientId, actorId: input.by,
+      detail: { orderId, role: input.role, reason: input.reason.trim(), matches: hits.map((h) => `${h.kind}:${h.substance}`), sudProtected: _isSudMed(o) },
+    });
+    emit();
+    return o;
+  },
+
+  /** §B2 — record the CURES check (placeholder — no live query). Audited. */
+  recordCuresCheck(
+    patientId: string,
+    orderId: string,
+    input: { checkedAt: string; result: "no_concerns" | "concerns_reviewed" | "unable_to_access"; reason?: string; note?: string; emergencyOverride?: boolean; by: string; role: string },
+  ): MedOrder {
+    const p = patients.find((x) => x.id === patientId);
+    const o = p?.orders?.find((x) => x.id === orderId);
+    if (!p || !o) throw new Error("Order not found.");
+    if (!["pmhnp", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
+      throw new Error("Only a prescriber can record a CURES check.");
+    if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
+      throw new Error("A reason is required when CURES can't be checked or for an emergency override.");
+    if (!input.checkedAt) throw new Error("Enter the date and time CURES was checked.");
+    o.curesCheck = {
+      checkedAt: input.checkedAt, result: input.result, reason: input.reason?.trim() || undefined,
+      note: input.note?.trim() || undefined, by: input.by, recordedAt: new Date().toISOString(),
+      emergencyOverride: input.emergencyOverride || undefined,
+    };
+    appendAudit({
+      category: "clinical", action: input.emergencyOverride ? "cures_emergency_override" : "cures_check_recorded", patientId, actorId: input.by,
+      detail: { orderId, role: input.role, result: input.result, placeholder: true, sudProtected: _isSudMed(o) },
+    });
+    emit();
+    return o;
+  },
+
   signOrders(
     patientId: string,
     orderIds: string[],
@@ -20360,12 +20478,24 @@ export const AdelanteEHR = {
        * kept out of the store to avoid an ehr <-> roles import cycle.
        */
       strengthProvenance?: Record<string, unknown[]>;
+      /**
+       * §B1/B2 — the signing clinician's role. Every staff UI passes it, which
+       * turns on the allergy / NKDA / CURES blockers. Module-load demo seeds
+       * and legacy fixtures omit it.
+       */
+      actorRole?: string;
     },
   ): MedOrder[] {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found");
     const at = new Date().toISOString();
     const signed: MedOrder[] = [];
+    for (const id of orderIds) {
+      const row = p.orders?.find((o) => o.id === id && o.status === "draft");
+      if (!row) continue;
+      const blocker = opts?.actorRole ? AdelanteEHR.orderSigningBlocker(patientId, row) : undefined;
+      if (blocker) throw new Error(blocker);
+    }
     for (const id of orderIds) {
       const row = p.orders?.find((o) => o.id === id && o.status === "draft");
       if (!row) continue;

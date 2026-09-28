@@ -108,12 +108,16 @@ export function NoteOrdersSection({
     const strengthProvenance = Object.fromEntries(
       drafts.map((d) => [d.id, strengthProvenanceFor(d)]),
     );
-    const n = AdelanteEHR.signOrders(
-      patientId,
-      drafts.map((d) => d.id),
-      staffName,
-      { strengthProvenance },
-    ).length;
+    let n = 0;
+    try {
+      n = AdelanteEHR.signOrders(patientId, drafts.map((d) => d.id), staffName, {
+        strengthProvenance,
+        actorRole: role,
+      }).length;
+    } catch (e) {
+      toast.error((e as Error).message);
+      return;
+    }
     setAttested(false);
     setShowIssues(false);
     toast.success(`${n} order${n === 1 ? "" : "s"} signed from this note.`);

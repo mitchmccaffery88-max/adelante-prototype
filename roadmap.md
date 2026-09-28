@@ -212,4 +212,5 @@
 - [x] A2 Note addendum / correction / void / late entry / version history
 - [x] A3 Demographics & identifiers edit with reason + history
 ## Clinical core — turn B (next message)
-- [ ] Turn B scope from the medical lead
+- [x] A-finish: void approval inbox, primary clinicians, browser checks
+- [x] B1 allergy cross-check  - [x] B2 CURES placeholder step  - [x] B3 outpatient episodes  - [x] B4 higher-level referrals

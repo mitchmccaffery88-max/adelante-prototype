@@ -2,6 +2,7 @@
 // Path is /record/$patientId so it can never collide with the patient-facing
 // self-service view at /patient.
 import { useState } from "react";
+import { EpisodeHeaderBadge } from "@/components/clinical/EpisodeHeaderBadge";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -136,6 +137,7 @@ function ChartBody({
                 {patient.cin ? ` · CIN ••••${patient.cin.slice(-4)}` : ""}
                 {patient.dob ? ` · DOB ${patient.dob}` : ""}
               </p>
+              <EpisodeHeaderBadge patientId={patient.id} />
             </div>
             <div className="flex shrink-0 flex-col items-end gap-2">
               <span className="text-xs text-muted-foreground">

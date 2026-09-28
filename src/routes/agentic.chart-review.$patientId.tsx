@@ -215,9 +215,8 @@ function GuidedChartReview() {
             )}
             {facts.hiddenScreenerCount > 0 && (
               <p className="mt-2 text-xs text-muted-foreground">
-                {facts.hiddenScreenerCount} substance-use result
-                {facts.hiddenScreenerCount === 1 ? "" : "s"} hidden — 42 CFR Part 2 consent
-                required for your role.
+                {facts.hiddenScreenerCount} protected result
+                {facts.hiddenScreenerCount === 1 ? "" : "s"} not shown for your role.
               </p>
             )}
           </PrototypePanel>

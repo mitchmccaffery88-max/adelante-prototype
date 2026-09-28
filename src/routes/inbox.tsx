@@ -20,6 +20,7 @@ import { ProviderRequestQueue } from "@/components/inbox/ProviderRequestQueue";
 import { DocumentVerifyQueue } from "@/components/documents/DocumentVerifyQueue";
 import { AdvocateReviewQueue } from "@/components/inbox/AdvocateReviewQueue";
 import { CommunityInquiryQueue } from "@/components/inbox/CommunityInquiryQueue";
+import { VoidRequestQueue } from "@/components/inbox/VoidRequestQueue";
 import { InboxActionQueue } from "@/components/inbox/InboxActionQueue";
 import { BILLING_ROLES } from "@/lib/inboxActions";
 import { ArrowLeft, ClipboardList, FileSignature, Inbox as InboxIcon, Lock } from "lucide-react";
@@ -83,6 +84,8 @@ function InboxPage() {
           <Link to="/cosign-inbox">Open cosign inbox</Link>
         </Button>
       </Card>
+
+      <VoidRequestQueue />
 
       <Tabs value={tab} onValueChange={setTab}>
         <TabsList className="flex h-auto flex-wrap">

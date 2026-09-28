@@ -21,7 +21,7 @@ import {
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
-import { filterSudMedsForRole } from "@/lib/asamReporting";
+import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 
 export interface ChartReviewFacts {
   patient: Patient;
@@ -90,7 +90,9 @@ export function chartReviewFacts(
 
   // §Part 2 — per-instrument, the same precedent the chart's Tracking tab and
   // the /my-work re-screen list already follow.
-  const sudLocked = canAccess(viewerRole, "screeners_sud", patient).locked;
+  // §Part 2 — same check as the chart ASAM/CalOMS sections.
+  const sudLocked =
+    canAccess(viewerRole, "screeners_sud", patient).locked || !roleSeesAsamSection(viewerRole, patient);
   const allScreeners = [...(patient.screenerHistory ?? [])].sort(
     (a, b) => +new Date(b.completedAt) - +new Date(a.completedAt),
   );
