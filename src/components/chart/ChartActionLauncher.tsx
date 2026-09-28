@@ -151,7 +151,7 @@ export function ChartActionLauncher({
         <PopoverTrigger asChild>
           <Button
             data-testid="chart-new-button"
-            className="fixed bottom-6 right-6 z-50 h-12 rounded-full px-5 shadow-lg print:hidden"
+            className="fixed bottom-16 right-6 z-50 h-12 rounded-full px-5 shadow-lg print:hidden"
             aria-label="New — add to this chart"
           >
             <Plus className="h-5 w-5" /> New
@@ -218,7 +218,7 @@ export function ChartActionLauncher({
 
       <Popover open={helpOpen} onOpenChange={setHelpOpen}>
         <PopoverTrigger asChild>
-          <span className="fixed bottom-20 right-6 h-0 w-0" aria-hidden />
+          <span className="fixed bottom-32 right-6 h-0 w-0" aria-hidden />
         </PopoverTrigger>
         <PopoverContent align="end" side="top" className="w-64 text-sm" data-testid="chart-shortcut-help">
           <p className="mb-2 font-medium text-navy">Keyboard shortcuts</p>
