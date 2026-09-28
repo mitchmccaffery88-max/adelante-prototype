@@ -1624,7 +1624,7 @@ export interface Patient {
      * reentry safety-net messaging (never the coverage type — see
      * `coverageMessage` in src/lib/frontDoor.ts).
      */
-    justiceInvolvement?: TriState;
+    justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer;
     ecmEligible?: boolean;
     otherPlanName?: string;
     communitySupports?: {

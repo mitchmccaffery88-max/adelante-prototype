@@ -6,6 +6,7 @@
 // problem (and anything assigned under it) is `sud` and hidden from roles
 // failing roleSeesAsamSection. Thresholds, Z-codes and patient wording are
 // "Draft — pending clinical sign-off". Spanish pending bilingual review.
+import { isJusticeInvolved } from "./justiceInvolvement";
 import { AdelanteEHR, type Patient, type SdohStatus } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
@@ -196,6 +197,7 @@ export function buildPlanProblems(patient: Patient, now = new Date()): PlanProbl
 }
 /** Release date, or the onset of an active Z65.2 (release from prison) problem. */
 export function inReentryWindow(patient: Patient, now = new Date(), days = 90): boolean {
+  if (!isJusticeInvolved(patient)) return false;
   const z = (patient.problems ?? []).find((x) => x.status === "active" && x.icd10Code === "Z65.2");
   const when = patient.releaseDate || z?.onsetDate || (z ? z.createdAt : undefined);
   if (!when) return false;

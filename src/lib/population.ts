@@ -46,7 +46,7 @@ const JUSTICE_HEARD_ABOUT: HeardAboutSource[] = [
 export interface PopulationFacts {
   /** Every pre-release episode for this patient, any status. */
   preReleaseEpisodes: { status: "open" | "released" | "closed"; missedHandoff?: boolean }[];
-  justiceInvolvement?: TriState;
+  justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer;
   heardAbout?: HeardAboutSource;
   hasReferralRecord: boolean;
   hasMissedPreReleaseFlag: boolean;
