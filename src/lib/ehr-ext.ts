@@ -1888,8 +1888,8 @@ function seedNoteRevisionDemo() {
     if (typeof console !== "undefined") console.warn(`[demo seed] ${k}`, e);
   };
   try {
-    const add = visitNote("p5", 5, "Reports better sleep this week.");
-    AdelanteEHR.addNoteAddendum("p5", add, {
+    const add = visitNote("p1", 5, "Reports better sleep this week.");
+    AdelanteEHR.addNoteAddendum("p1", add, {
       ...REYES,
       text: "Patient called after the session to confirm next week's time. (Demo addendum)",
     });
@@ -1897,8 +1897,8 @@ function seedNoteRevisionDemo() {
     warn("addendum", e);
   }
   try {
-    const am = visitNote("p6", 6, "Discussed job search stress.");
-    AdelanteEHR.amendProgressNote("p6", am, {
+    const am = visitNote("p2", 6, "Discussed job search stress.");
+    AdelanteEHR.amendProgressNote("p2", am, {
       ...REYES,
       changes: { plan: "Continue weekly sessions; referral to employment services placed." },
       reason: "Plan omitted the employment referral made in session (demo)",
@@ -1907,9 +1907,9 @@ function seedNoteRevisionDemo() {
     warn("amend", e);
   }
   try {
-    const v = visitNote("p7", 7, "Wrong-chart entry.");
-    AdelanteEHR.requestNoteVoid("p7", v, { ...REYES, reason: "Documented on the wrong patient's chart (demo)" });
-    AdelanteEHR.decideNoteVoid("p7", v, { approve: true, staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" });
+    const v = visitNote("p3", 7, "Wrong-chart entry.");
+    AdelanteEHR.requestNoteVoid("p3", v, { ...REYES, reason: "Documented on the wrong patient's chart (demo)" });
+    AdelanteEHR.decideNoteVoid("p3", v, { approve: true, staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" });
   } catch (e) {
     warn("void", e);
   }
