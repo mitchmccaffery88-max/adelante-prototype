@@ -37,8 +37,8 @@ export function VoidRequestQueue() {
         <div key={r.noteId} className="rounded-md border p-3 space-y-2 text-sm">
           <div className="font-medium text-navy">{r.title}</div>
           <div className="text-xs text-muted-foreground">
-            Visit <ClientDate iso={r.noteDate} /> · {r.sessionType ?? "session"} · requested by {r.authorName}{" "}
-            on <ClientDate iso={r.requestedAt} />
+            Visit <ClientDate value={r.noteDate} /> · {r.sessionType ?? "session"} · requested by {r.authorName}{" "}
+            on <ClientDate value={r.requestedAt} />
           </div>
           <div className="text-xs">
             <span className="font-medium">Author&apos;s reason:</span> {r.reason}
