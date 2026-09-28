@@ -16,6 +16,7 @@ import {
 import { ShieldCheck, Undo2 } from "lucide-react";
 import { toast } from "sonner";
 import { ConsentRecordsPanel } from "@/components/consent/ConsentRecordsPanel";
+import { AdvocateConsentCard } from "@/components/consent/AdvocateConsentCard";
 
 export const Route = createFileRoute("/consent")({
   head: () => ({
@@ -124,6 +125,7 @@ function ConsentPage() {
       {patient && state ? (
         <ConsentRecordsPanel patient={patient} />
       ) : null}
+      {patient ? <AdvocateConsentCard patientId={patient.id} /> : null}
       {patient ? <LegalDisclosureCard patientId={patient.id} focused={search.category === "legal_part2_disclosure"} /> : null}
 
       {patient && state ? (
