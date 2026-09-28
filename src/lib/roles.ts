@@ -28,6 +28,9 @@ export type StaffRole =
   | "community_health_worker"
   | "therapist"
   | "pmhnp"
+  // Physician (psychiatrist / medical director). Holds every clinical
+  // permission the PMHNP holds — resolved through `permissionRole()`.
+  | "physician"
   | "billing"
   | "clinical_coordinator"
   | "credentialing_coordinator"
@@ -43,6 +46,7 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "peer_specialist", label: "Peer specialist" },
   { key: "community_health_worker", label: "Community Health Worker" },
   { key: "therapist", label: "Therapist" },
+  { key: "physician", label: "Physician (psychiatrist / medical director)" },
   { key: "pmhnp", label: "PMHNP" },
   { key: "billing", label: "Billing coordinator" },
   { key: "clinical_coordinator", label: "Clinical coordinator" },
@@ -831,12 +835,24 @@ export function noteGateClass(
   return undefined;
 }
 
+/**
+ * The physician carries every PMHNP grant; the matrix stores it once under
+ * `pmhnp` so the two can never drift apart.
+ */
+export function permissionRole(role: StaffRole): StaffRole {
+  return role === "physician" ? "pmhnp" : role;
+}
+
+/** Prescribers: may sign orders, approve refills and record CURES. */
+export const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp"];
+export const isPrescriberRole = (r: string) => (PRESCRIBER_ROLES as string[]).includes(r);
+
 export function canAccess(
   role: StaffRole,
   cls: RecordClass,
   patient?: Patient,
 ): { level: AccessLevel; locked: boolean; reason?: string } {
-  const level = MATRIX[cls]?.[role] ?? "none";
+  const level = MATRIX[cls]?.[permissionRole(role)] ?? "none";
   if (level === "consent_gated") {
     // LIVE check against the structured ConsentRecord — never cached. Expiry
     // and revocation therefore stop access at the next call, with no other
@@ -992,6 +1008,8 @@ export interface StaffMember {
    * Only meaningful for `cf_care_manager`.
    */
   accessMode?: "direct" | "proxy";
+  /** Long display form, e.g. "Dr. Mandeep Bagga, M.D." (header). */
+  fullName?: string;
 }
 
 export const STAFF_ROSTER: StaffMember[] = [
@@ -1066,20 +1084,28 @@ export const STAFF_ROSTER: StaffMember[] = [
   },
   {
     id: "s-th1",
-    name: "Dr. Marisol Reyes",
+    name: "Marisol Reyes",
     role: "therapist",
     credential: "LCSW",
     clinicianId: "c1",
   },
   {
     id: "s-th2",
-    name: "Dr. James Okafor",
+    name: "James Okafor",
     role: "therapist",
     credential: "PsyD",
     clinicianId: "c2",
   },
-  { id: "s-th3", name: "Anita Brooks", role: "therapist", credential: "LMFT", clinicianId: "c3" },
-  { id: "s-np1", name: "Dr. R. Bagga", role: "pmhnp", credential: "PMHNP-BC" },
+  // Converted from therapist to PMHNP (product owner decision, demo).
+  { id: "s-th3", name: "Anita Brooks", role: "pmhnp", credential: "PMHNP-BC", clinicianId: "c3" },
+  // The only physician on staff; the only person who carries "Dr.".
+  {
+    id: "s-np1",
+    name: "Dr. M. Bagga",
+    fullName: "Dr. Mandeep Bagga, M.D.",
+    role: "physician",
+    credential: "M.D.",
+  },
   { id: "s-bill1", name: "Tonya Price", role: "billing" },
   { id: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
   {
@@ -1190,7 +1216,7 @@ export function isBillableStaff(staffId: string | null | undefined): boolean {
 export function canRecordMatAdministration(staffId: string | null | undefined): boolean {
   const member = getStaffMember(staffId);
   if (!member) return false;
-  if (member.role === "pmhnp" || member.role === "therapist") return true;
+  if (member.role === "pmhnp" || member.role === "physician" || member.role === "therapist") return true;
   if (member.role !== "medical_assistant") return false;
   return supervisionStatus(member.id).satisfied;
 }
