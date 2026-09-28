@@ -28,6 +28,8 @@ import { isPart2Screener } from "./screeners";
 import { canAccess, type StaffRole } from "./roles";
 import { engagementRecords } from "./engagement";
 import { referralAgingState, sdohNeedAging, type SdohAging } from "./sdohAging";
+import { caseManagerIdFor, caseloadFor, patientStatus } from "./caseloadReview";
+import { isPrescriberRole } from "./roles";
 
 // ---------------------------------------------------------------------------
 // DRAFT policy values — pending real operational sign-off
@@ -82,6 +84,8 @@ export function staffAliases(actor: ActingIdentity): Set<string> {
   add(actor.staffId.replace(/^s-/, ""));
   add(actor.staffName);
   add(actor.clinicianId);
+  // Same case-manager identity the weekly caseload review uses (Luz, Darnell).
+  add(caseManagerIdFor(actor.staffId));
   return set;
 }
 
@@ -268,6 +272,70 @@ export function myCaseload(actor: ActingIdentity): Patient[] {
       owns(aliases, p.caseManagerId) ||
       owns(aliases, p.prescriberStaffId),
   );
+}
+
+// ---------------------------------------------------------------------------
+// Start-of-day: visits, refills, caseload crises, contacts
+// ---------------------------------------------------------------------------
+
+const sameLocalDay = (a: Date, b: Date) =>
+  a.getFullYear() === b.getFullYear() && a.getMonth() === b.getMonth() && a.getDate() === b.getDate();
+
+/** Due-date label: "Due today" instead of "0d overdue". */
+export function dueLabel(dueDate: string, now: Date = new Date()): string {
+  const n = days(dueDate, now.getTime());
+  return n <= 0 || dueDate.slice(0, 10) === now.toISOString().slice(0, 10) ? "Due today" : `${n}d overdue`;
+}
+
+export function myTodayVisits(actor: ActingIdentity, now: Date = new Date()) {
+  const aliases = staffAliases(actor);
+  const byId = new Map(AdelanteEHR.listPatients().map((p) => [p.id, p]));
+  return AdelanteEHR.listAppointments()
+    .filter(
+      (a) =>
+        owns(aliases, a.clinicianId) &&
+        sameLocalDay(new Date(a.start), now) &&
+        a.status !== "cancelled" &&
+        a.status !== "no_show",
+    )
+    .sort((a, b) => a.start.localeCompare(b.start))
+    .map((a) => {
+      const p = byId.get(a.patientId);
+      return { appointment: a, patientId: a.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Unknown patient" };
+    });
+}
+
+/** Pending refills on the prescriber's own patients. Prescribers only. */
+export function myPendingRefills(actor: ActingIdentity & { role: StaffRole }) {
+  if (!isPrescriberRole(actor.role)) return [];
+  const mine = new Map(myCaseload(actor).map((p) => [p.id, p]));
+  return AdelanteEHR.listRefillRequests({ status: "pending" })
+    .filter((r) => mine.has(r.patientId))
+    .map((r) => {
+      const p = mine.get(r.patientId)!;
+      return { refill: r, patientId: p.id, patientName: `${p.firstName} ${p.lastName}` };
+    });
+}
+
+/** Open crisis items (claimed or not) on the acting person's caseload. */
+export function caseloadCrises(actor: ActingIdentity, role: StaffRole, now: Date = new Date()) {
+  if (canAccess(role, "crisis_queue").level === "none") return [];
+  const ids = new Set(myCaseload(actor).map((p) => p.id));
+  return AdelanteEHR.listOpenCrisisEscalations()
+    .filter(({ patient }) => ids.has(patient.id))
+    .map(({ patient, escalation }) => ({
+      patientId: patient.id,
+      patientName: `${patient.firstName} ${patient.lastName}`,
+      escalation,
+      sla: crisisSlaState(escalation, now.getTime()),
+    }));
+}
+
+/** Contacts due / overdue — the same cadence and caseload as the weekly review. */
+export function myContactsDue(staffId: string, now: Date = new Date()) {
+  return caseloadFor(staffId)
+    .map((p) => patientStatus(p, staffId, now))
+    .filter((r) => r.status !== "on_track");
 }
 
 // ---------------------------------------------------------------------------

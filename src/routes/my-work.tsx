@@ -11,18 +11,28 @@
 // already use.
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { canAccess, isPrescriberRole, useActingStaff } from "@/lib/roles";
 import {
   DISENGAGEMENT_DRAFT,
   RESCREEN_CADENCE_DRAFT_NOTE,
   disengagementFlagged,
   disengagementRows,
+  caseloadCrises,
+  dueLabel,
   myCaseload,
+  myContactsDue,
   myOpenItems,
+  myPendingRefills,
+  myTodayVisits,
   screenerDueRows,
   type DisengagementRow,
 } from "@/lib/myWork";
 import { overdueByLabel } from "@/lib/crisisPolicy";
+import { asamCosignOwnership, noteCosignOwnership } from "@/lib/ehr";
+import { canSignNotes, isMyCosign } from "@/lib/notes";
+import { canUseCaseloadReview } from "@/lib/caseloadRoles";
+import { COORDINATION_ROLES } from "@/lib/coordinationRoles";
+import { listUnassignedPatients } from "@/lib/coordination";
 import { myAsamWork } from "@/lib/asamReporting";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { Card } from "@/components/ui/card";
@@ -166,6 +176,31 @@ function MyWorkPage() {
   const asam = useEhr(() =>
     myAsamWork({ role: actor.role, staffId: actor.staffId, staffName: actor.staffName, clinicianId: actor.clinicianId }),
   );
+  const visits = useEhr(() => myTodayVisits(identity));
+  const noteCosigns = useEhr(() =>
+    canSignNotes(actor.role)
+      ? AdelanteEHR.listNotesAwaitingCosign().filter(({ note }) =>
+          isMyCosign(note, { role: actor.role, staffName: actor.staffName, staffId: actor.staffId, clinicianId: actor.clinicianId }),
+        )
+      : [],
+  );
+  const refills = useEhr(() => myPendingRefills({ ...identity, role: actor.role }));
+  const myCrises = useEhr(() => caseloadCrises(identity, actor.role));
+  const contactsDue = useEhr(() => (canUseCaseloadReview(actor.role) ? myContactsDue(actor.staffId) : []));
+  const isCoordinator = COORDINATION_ROLES.includes(actor.role);
+  const coord = useEhr(() => {
+    if (!isCoordinator) return null;
+    const needsSupervisor =
+      AdelanteEHR.listNotesAwaitingCosign().filter(({ note }) => noteCosignOwnership(note).kind === "needs_supervisor").length +
+      AdelanteEHR.listAsamAwaitingCosign().filter(({ asam }) => asamCosignOwnership(asam).kind === "needs_supervisor").length;
+    return {
+      voids: AdelanteEHR.listPendingNoteVoids({ staffId: actor.staffId, name: actor.staffName, role: actor.role }),
+      lost: listUnassignedPatients().filter((u) => u.cause === "lost"),
+      crises: AdelanteEHR.listOpenCrisisEscalations().length,
+      needsSupervisor,
+    };
+  });
+  const asamCosignCount = asam?.cosignsForMe.length ?? 0;
   // Referenced so the store subscription covers late-arriving demo data.
   useEhr(() => AdelanteEHR.listPatients().length);
 
@@ -197,6 +232,174 @@ function MyWorkPage() {
           is shared work — every row is claimed by, assigned to, or authored by you.
         </p>
       </header>
+
+      {/* ---------- Start of day ---------- */}
+      <section aria-labelledby="today-heading" className="space-y-3" data-testid="my-work-today">
+        <SectionHeading
+          id="today-heading"
+          icon={CalendarClock}
+          title="Today's visits"
+          purpose="Your visits scheduled for today."
+          count={visits.length}
+        />
+        {visits.length === 0 ? (
+          <Card className="p-3 text-xs text-muted-foreground">No visits on your schedule today.</Card>
+        ) : (
+          <div className="space-y-2">
+            {visits.map((v) => (
+              <Row
+                key={v.appointment.id}
+                patientId={v.patientId}
+                name={v.patientName}
+                primary={`${new Date(v.appointment.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${(v.appointment.serviceType ?? "visit").replace(/_/g, " ")}`}
+                secondary={`${v.appointment.durationMin} min · ${v.appointment.modality ?? "video"}`}
+              />
+            ))}
+          </div>
+        )}
+      </section>
+
+      {(canSignNotes(actor.role) || asam) && (
+        <section aria-labelledby="cosign-heading" className="space-y-3" data-testid="my-work-cosigns">
+          <SectionHeading
+            id="cosign-heading"
+            icon={FileText}
+            title="Cosigns owed"
+            purpose="Progress notes and ASAM assessments waiting on your cosignature — the same count as the Cosign inbox."
+            count={noteCosigns.length + asamCosignCount}
+          />
+          {noteCosigns.length + asamCosignCount === 0 ? (
+            <Card className="p-3 text-xs text-muted-foreground">Nothing waiting on your cosignature.</Card>
+          ) : (
+            <div className="space-y-2">
+              {noteCosigns.map(({ patient, note }) => (
+                <Row
+                  key={note.id}
+                  patientId={patient.id}
+                  name={`${patient.firstName} ${patient.lastName}`}
+                  section="notes"
+                  primary={`Cosign ${note.templateTitle ?? "progress note"} by ${note.signedBy ?? "author"}`}
+                  secondary={<Link to="/cosign-inbox" className="underline">Open the cosign inbox</Link>}
+                />
+              ))}
+              {asamCosignCount > 0 && (
+                <p className="text-xs text-muted-foreground">
+                  Plus {asamCosignCount} ASAM co-signature{asamCosignCount === 1 ? "" : "s"} — listed under ASAM below.
+                </p>
+              )}
+            </div>
+          )}
+        </section>
+      )}
+
+      {isPrescriberRole(actor.role) && (
+        <section aria-labelledby="refill-heading" className="space-y-3" data-testid="my-work-refills">
+          <SectionHeading
+            id="refill-heading"
+            icon={ClipboardList}
+            title="Refill requests"
+            purpose="Pending refills for patients you prescribe for."
+            count={refills.length}
+          />
+          {refills.length === 0 ? (
+            <Card className="p-3 text-xs text-muted-foreground">No pending refills for your patients.</Card>
+          ) : (
+            <div className="space-y-2">
+              {refills.map((r) => (
+                <Row
+                  key={r.refill.id}
+                  patientId={r.patientId}
+                  name={r.patientName}
+                  primary={r.refill.medicationName}
+                  secondary={<Link to="/clinician" className="underline">Review on the refill card</Link>}
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {crisis.level !== "none" && (
+        <section aria-labelledby="mycrisis-heading" className="space-y-3" data-testid="my-work-crises">
+          <SectionHeading
+            id="mycrisis-heading"
+            icon={Siren}
+            title="Crisis items for my patients"
+            purpose="Open crisis items on your caseload, claimed or not."
+            count={myCrises.length}
+          />
+          {myCrises.length === 0 ? (
+            <Card className="p-3 text-xs text-muted-foreground">No open crisis items for your patients.</Card>
+          ) : (
+            <div className="space-y-2">
+              {myCrises.map((c) => (
+                <Row
+                  key={c.escalation.id}
+                  patientId={c.patientId}
+                  name={c.patientName}
+                  primary={c.escalation.category === "sdoh" ? "Open urgent social need" : "Open crisis item"}
+                  secondary={<Link to="/crisis-queue" search={{ scope: undefined, lane: undefined }} className="underline">{c.escalation.claimedBy ? `Claimed by ${c.escalation.claimedBy}` : "Unclaimed"} · open the crisis queue</Link>}
+                  badge={
+                    <Badge className={`border-0 text-[10px] ${c.sla.overdue ? "bg-destructive/15 text-destructive" : "bg-muted text-muted-foreground"}`}>
+                      {c.escalation.severity}
+                    </Badge>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
+
+      {coord && (
+        <section aria-labelledby="coord-heading" className="space-y-3" data-testid="my-work-coordinator">
+          <SectionHeading
+            id="coord-heading"
+            icon={ClipboardList}
+            title="Coordinator queue"
+            purpose="Void approvals, patients who lost their clinician, open crisis items and cosigns that need a supervisor."
+            count={coord.voids.length + coord.lost.length + coord.crises + coord.needsSupervisor}
+          />
+          <div className="grid gap-2 sm:grid-cols-2">
+            <Card className="p-3 text-xs"><Link to="/inbox" className="underline">Void approvals pending</Link>: {coord.voids.length}</Card>
+            <Card className="p-3 text-xs"><Link to="/admin-coordination" className="underline">Unassigned — lost clinician</Link>: {coord.lost.length}</Card>
+            <Card className="p-3 text-xs"><Link to="/crisis-queue" search={{ scope: undefined, lane: undefined }} className="underline">Open crisis items</Link>: {coord.crises}</Card>
+            <Card className="p-3 text-xs"><Link to="/cosign-inbox" className="underline">Cosigns needing a supervisor</Link>: {coord.needsSupervisor}</Card>
+          </div>
+        </section>
+      )}
+
+      {canUseCaseloadReview(actor.role) && (
+        <section aria-labelledby="contacts-heading" className="space-y-3" data-testid="my-work-contacts">
+          <SectionHeading
+            id="contacts-heading"
+            icon={UserMinus}
+            title="Contacts due"
+            purpose="Caseload patients due or overdue for a contact, on the same draft cadence as the weekly caseload review."
+            count={contactsDue.length}
+          />
+          {contactsDue.length === 0 ? (
+            <Card className="p-3 text-xs text-muted-foreground">Everyone on your caseload is on track.</Card>
+          ) : (
+            <div className="space-y-2">
+              {contactsDue.map((r) => (
+                <Row
+                  key={r.patient.id}
+                  patientId={r.patient.id}
+                  name={`${r.patient.firstName} ${r.patient.lastName}`}
+                  primary={r.lastContact ? `Last contact ${r.lastContact}` : "No contact logged yet"}
+                  secondary={<Link to="/caseload-review" className="underline">Open the weekly caseload review</Link>}
+                  badge={
+                    <Badge className={`border-0 text-[10px] ${r.status === "overdue" ? "bg-destructive/15 text-destructive" : "bg-warning/20 text-navy"}`}>
+                      {r.status === "overdue" ? "Overdue" : "Due"}
+                    </Badge>
+                  }
+                />
+              ))}
+            </div>
+          )}
+        </section>
+      )}
 
       {/* ---------- 1. My open items ---------- */}
       <section aria-labelledby="open-items-heading" className="space-y-3">
@@ -318,7 +521,7 @@ function MyWorkPage() {
                     secondary={<>Due {t.task.dueDate.slice(0, 10)} · {t.task.origin}</>}
                     badge={
                       <Badge className="bg-destructive/15 text-destructive border-0 text-[10px]">
-                        {t.overdueDays}d overdue
+                        {dueLabel(t.task.dueDate)}
                       </Badge>
                     }
                   />
@@ -359,7 +562,7 @@ function MyWorkPage() {
                       data-testid={`asam-state-${t.state}`}
                       className={`border-0 text-[10px] ${t.state === "overdue" ? "bg-destructive/15 text-destructive" : t.state === "due" ? "bg-warning/20 text-navy" : "bg-muted text-muted-foreground"}`}
                     >
-                      {t.state === "overdue" ? "Overdue" : t.state === "due" ? "Due" : "Needed"}
+                      {t.state === "overdue" ? "Overdue" : t.state === "due" ? "Needed now" : `Due ${new Date(`${t.dueDate}T12:00:00`).toLocaleDateString([], { month: "short", day: "numeric" })}`}
                     </Badge>
                   }
                 />

@@ -3192,7 +3192,7 @@ export interface CosignReassignment {
 
 export type CosignOwnership =
   | { kind: "pool" }
-  | { kind: "owner"; staffId: string; name: string; via: "supervisor" | "override" }
+  | { kind: "owner"; staffId: string; name: string; via: "supervisor" | "override" | "prescriber" }
   | { kind: "needs_supervisor"; authorName: string; reason: string };
 
 /** Roles that may reassign a pending cosign (override). */
@@ -3220,7 +3220,15 @@ export function cosignOwnershipFor(
 }
 
 export function asamCosignOwnership(a: AsamAssessment): CosignOwnership {
-  return cosignOwnershipFor(a.authoredBy.staffId, a.cosignOwnerOverrideId);
+  const own = cosignOwnershipFor(a.authoredBy.staffId, a.cosignOwnerOverrideId);
+  if (own.kind !== "pool") return own;
+  // Pool-routed ASAM (author has no supervision link): owned by the patient's
+  // prescriber of record when that person is LPHA tier — never a default doc.
+  const p = patients.find((x) => (x.asamAssessments ?? []).some((y) => y.id === a.id));
+  const rx = p?.prescriberStaffId ? getStaffMember(p.prescriberStaffId) : undefined;
+  if (rx && LPHA_SUPERVISOR_ROLES.includes(rx.role) && rx.id !== a.authoredBy.staffId)
+    return { kind: "owner", staffId: rx.id, name: rx.name, via: "prescriber" };
+  return own;
 }
 
 export function noteCosignOwnership(n: ProgressNote): CosignOwnership {
@@ -3243,7 +3251,7 @@ export function cosignOwnerRefusal(
   if (own.kind === "pool") return null;
   if (own.kind === "needs_supervisor") return own.reason;
   if (isCosignOwner(own, ids)) return null;
-  return `Only ${own.name}, the ${own.via === "override" ? "reassigned cosigner" : "assigned supervisor"}, can cosign or decline this.`;
+  return `Only ${own.name}, the ${own.via === "override" ? "reassigned cosigner" : own.via === "prescriber" ? "prescriber of record" : "assigned supervisor"}, can cosign or decline this.`;
 }
 
 function validateCosignReassign(
@@ -4268,6 +4276,27 @@ const clinicians: Clinician[] = [
     mediCalCredentialed: false,
     mediCalStatus: "pending",
     services: ["therapy_individual", "case_management"],
+    locationIds: ["loc-visalia"],
+    licenseExpiresOn: "2028-12-31",
+  },
+  {
+    id: "c5",
+    name: "Dr. M. Bagga",
+    credential: "M.D.",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["med_management", "intake"],
+    locationIds: ["loc-visalia", "loc-porterville"],
+    licenseExpiresOn: "2028-12-31",
+  },
+  {
+    // §Demo — trainee (AMFT) with no supervisor yet; notes need a supervisor.
+    id: "c6",
+    name: "Owen Tran",
+    credential: "AMFT",
+    mediCalCredentialed: false,
+    mediCalStatus: "pending",
+    services: ["therapy_individual"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
   },
@@ -15591,6 +15620,20 @@ export const AdelanteEHR = {
       );
       if (existing) return existing;
     }
+    // Idempotent: an open provider-switch task (same patient, assignee, title)
+    // or CalOMS admission prompt is never created twice.
+    if (input.origin === "provider_switch" || input.taskType === "caloms_admission") {
+      const dup = caseTasks.find(
+        (t) =>
+          t.status !== "done" &&
+          !t.completedAt &&
+          t.patientId === input.patientId &&
+          t.assignedTo === input.assignedTo &&
+          (input.taskType === "caloms_admission" ? t.taskType === "caloms_admission" : t.title === input.title) &&
+          t.origin === (input.origin ?? "manual"),
+      );
+      if (dup) return dup;
+    }
     const task: CaseTask = {
       id: uid(),
       patientId: input.patientId,
@@ -25534,4 +25577,66 @@ try {
   }
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] prescribers", e);
+}
+
+// Demo — today's visits for the prescribers and the main therapist, plus a
+// small trainee caseload, all through the normal booking / assignment calls.
+try {
+  const at = (mins: number) => {
+    const d = new Date(Date.now() + mins * 60000);
+    d.setSeconds(0, 0);
+    d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15);
+    return d.toISOString();
+  };
+  const book = (patientId: string | undefined, clinicianId: string, mins: number, serviceType: ServiceType) => {
+    if (!patientId) return;
+    try {
+      AdelanteEHR.bookAppointment({ patientId, clinicianId, start: at(mins), durationMin: 30, serviceType, modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
+    } catch (e) {
+      if (typeof console !== "undefined") console.warn("[demo seed] visit", e);
+    }
+  };
+  book(demoScenarioPatientId("sud_consented"), "c5", 60, "med_management");
+  book("p1", "c5", 150, "med_management");
+  book(demoScenarioPatientId("public_referral"), "c3", 90, "med_management");
+  book(demoScenarioPatientId("combination"), "c3", 180, "med_management");
+  book("p3", "c1", 120, "therapy_individual");
+  const core = new Set<string>(["p1", "p2", "p3", "p4"]);
+  for (const k of ["sud_consented", "sud_no_consent", "combination", "public_referral", "medication", "mh_only", "ji_self_report"] as const) {
+    const id = demoScenarioPatientId(k);
+    if (id) core.add(id);
+  }
+  const open = AdelanteEHR.listPatients()
+    .filter((p) => !p.primaryClinicianId && !p.prescriberStaffId && !core.has(p.id) && p.firstName !== "Tomás")
+    .slice(0, 3);
+  open.slice(0, 2).forEach((p) => AdelanteEHR.reassignPrimaryClinician({ patientId: p.id, clinicianId: "c4", context: "Demo — trainee caseload under supervision" }));
+  if (open[2]) AdelanteEHR.reassignPrimaryClinician({ patientId: open[2].id, clinicianId: "c6", context: "Demo — trainee caseload" });
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] visits/trainees", e);
+}
+
+// Demo — Rosa's PHQ-9 history, so Tracking and the care plan read the same
+// source (screenerHistory). Latest stays 8 (mild), matching her care plan.
+try {
+  const rosa = patients.find((x) => x.id === "p2");
+  const def = _defForResult("phq-9");
+  if (rosa && def && !(rosa.screenerHistory ?? []).some((h) => h.key === "phq-9")) {
+    for (const [answers, daysAgo] of [
+      [[2, 2, 1, 1, 1, 1, 1, 2, 0], 45],
+      [[1, 1, 1, 1, 1, 1, 1, 1, 0], 14],
+    ] as [number[], number][]) {
+      const scored = scoreScreener(def, answers);
+      AdelanteEHR.recordScreener(rosa.id, {
+        key: "phq-9",
+        score: scored.score,
+        severity: scored.severity,
+        responses: answers,
+        completedAt: new Date(Date.now() - daysAgo * 86400000).toISOString(),
+        timepoint: "adhoc",
+        context: "clinic",
+      } as ScreenerResult);
+    }
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] rosa phq-9", e);
 }
