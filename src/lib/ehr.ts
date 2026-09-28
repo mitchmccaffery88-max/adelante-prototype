@@ -20423,7 +20423,7 @@ export const AdelanteEHR = {
     o.allergyOverride = { reason: input.reason.trim(), by: input.by, at: new Date().toISOString(), substances: hits.map((h) => h.substance) };
     appendAudit({
       category: "clinical", action: "order_allergy_override", patientId, actorId: input.by,
-      detail: { orderId, role: input.role, reason: input.reason.trim(), matches: hits.map((h) => `${h.kind}:${h.substance}`), sudProtected: isSudMedication(o) },
+      detail: { orderId, role: input.role, reason: input.reason.trim(), matches: hits.map((h) => `${h.kind}:${h.substance}`), sudProtected: _isSudMed(o) },
     });
     emit();
     return o;
@@ -20450,7 +20450,7 @@ export const AdelanteEHR = {
     };
     appendAudit({
       category: "clinical", action: input.emergencyOverride ? "cures_emergency_override" : "cures_check_recorded", patientId, actorId: input.by,
-      detail: { orderId, role: input.role, result: input.result, placeholder: true, sudProtected: isSudMedication(o) },
+      detail: { orderId, role: input.role, result: input.result, placeholder: true, sudProtected: _isSudMed(o) },
     });
     emit();
     return o;
