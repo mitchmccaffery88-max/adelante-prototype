@@ -77,7 +77,7 @@ export function AdvocateDesignationPanel({
               {l.status === "invited" && !l.notificationSentAt && l.notificationDelivery?.status !== "failed" && l.notificationDelivery?.status !== "not_configured" && (
                 <p className="text-xs text-muted-foreground">
                   Invitation pending — sign consent to activate. {" "}
-                  <Link to="/consent" className="text-teal underline underline-offset-2">
+                  <Link to="/consent" search={{ patientId: l.patientId }} className="text-teal underline underline-offset-2">
                     Review consent
                   </Link>
                 </p>
