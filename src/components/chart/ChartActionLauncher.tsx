@@ -27,6 +27,7 @@ import {
 import { LabOrderForm, MetabolicForm, ScreenerRequestForm, type FormDone } from "@/components/chart/LabsAndMeasures";
 import { ContactLogForm, DocumentUploadForm } from "@/components/chart/DrawerForms";
 import { CHART_ACTION_EVENT } from "@/lib/chartActionBus";
+import { NoteDraftPanel, OutreachDraftPanel, RefillDecisionPanel } from "@/components/chart/AdelDrafts";
 
 const GROUPS: { id: ChartActionGroup; label: string }[] = [
   { id: "document", label: "Document" },
@@ -160,6 +161,15 @@ export function ChartActionLauncher({
         return <ContactLogForm patientId={patientId} onDone={done} />;
     }
     const sec = sections.find((s) => s.id === a.action.sectionId);
+    // §Turn 5 — "Draft with Adel" sits above the existing form.
+    if (a.action.id === "refill_decision") return <RefillDecisionPanel patientId={patientId} />;
+    if (a.action.id === "progress_note" || a.action.id === "message_patient")
+      return (
+        <div className="space-y-4">
+          {a.action.id === "progress_note" ? <NoteDraftPanel patientId={patientId} /> : <OutreachDraftPanel patientId={patientId} />}
+          {sec?.render()}
+        </div>
+      );
     if (sec) return sec.render();
     return (
       <div className="space-y-2 text-sm text-muted-foreground">

@@ -1,4 +1,5 @@
 import { canDoChartAction } from "@/lib/chartActions";
+import { ReferralPacketDraft } from "@/components/chart/AdelDrafts";
 // §B3/B4 — outpatient episodes of care + higher-level-of-care referrals on the chart.
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -185,6 +186,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
               </li>
             ))}
           </ol>
+          {canCreate && r.status !== "closed" && <ReferralPacketDraft referral={r} />}
           {blockFor === r.id && (
             <div role="alert" className="rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive space-y-2">
               <p>{hlocSendBlocker(r) ?? "Consent now on file — try sending again."}</p>
