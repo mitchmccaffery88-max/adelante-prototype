@@ -13,7 +13,6 @@ import {
   ASAM_DIMENSIONS,
   ASAM_DRAFT_NOTE,
   ASAM_LICENSED_CONTENT_NOTE,
-  ASAM_AUTHOR_ROLES,
   DMC_ODS_LEVELS,
   dmcOdsLevelLabel,
   type AsamAssessment,

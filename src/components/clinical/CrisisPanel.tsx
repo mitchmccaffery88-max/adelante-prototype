@@ -13,7 +13,7 @@ import {
   useEhr,
   type CrisisEscalation,
 } from "@/lib/ehr";
-import { canFlagCrisis, useActingStaff } from "@/lib/roles";
+import { useActingStaff } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
