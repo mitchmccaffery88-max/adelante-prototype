@@ -215,7 +215,7 @@
 - [x] A-finish: void approval inbox, primary clinicians, browser checks
 - [x] B1 allergy cross-check  - [x] B2 CURES placeholder step  - [x] B3 outpatient episodes  - [x] B4 higher-level referrals
 ## Carry-overs + E5 Phase A (voice intake)
-- [ ] (a) Referral list in staff menu (clinical roles)
-- [ ] (b) Legal / Part 2 disclosure card on consent screen
-- [ ] (c) Safety panel on note orders
-- [ ] E5A useAdelVoice layer, plain-language intake, tap-only sensitive items, crisis scan, admin guardrail notice, remove homepage placeholder
+- [x] (a) Referral list in staff menu (clinical roles)
+- [x] (b) Legal / Part 2 disclosure card on consent screen
+- [x] (c) Safety panel on note orders
+- [x] E5A useAdelVoice layer, plain-language intake, tap-only sensitive items, crisis scan, admin guardrail notice, remove homepage placeholder
