@@ -72,3 +72,13 @@ describe("structured care plan", () => {
     expect(needStep("completed")).toBe("Completed");
   });
 });
+
+describe("ASAM-derived goals stay Part 2", () => {
+  it("a migrated goal accepted from an ASAM suggestion is hidden from Luz's role", () => {
+    const p = find("Carmen");
+    AdelanteEHR.addGoal(p.id, "ASAM-derived goal", "test");
+    const g = AdelanteEHR.getPatient(p.id)!.goals!.at(-1)!;
+    (AdelanteEHR.getPatient(p.id)!.suggestedGoals ??= []).push({ id: "sgx", text: g.text, reason: "asam_signed", status: "accepted", createdAt: g.createdAt, goalId: g.id });
+    expect(staffPlanView(p.id, "ecm_provider").goals.some((x) => x.legacyGoalId === g.id)).toBe(false);
+  });
+});

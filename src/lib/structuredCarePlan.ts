@@ -168,7 +168,8 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
       clinicalText: g.text,
       patientText: { en: g.text, es: g.text },
       status: g.status === "done" ? "met" : "active",
-      sud: false,
+      // A goal accepted from an ASAM-signed suggestion is Part 2 content.
+      sud: (p?.suggestedGoals ?? []).some((sg) => sg.goalId === g.id && sg.reason === "asam_signed"),
       createdAt: g.createdAt,
       createdBy: g.createdBy ?? "Migrated goal",
       legacyGoalId: g.id,

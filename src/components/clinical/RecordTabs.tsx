@@ -2218,7 +2218,12 @@ export function TaskList({
 function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const { staffName, role } = useActingStaff();
   const json = useEhr(() =>
-    JSON.stringify((AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter((g) => g.status === "suggested")),
+    JSON.stringify(
+      (AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter(
+        // §Part 2 — ASAM-derived goal suggestions are SUD content.
+        (g) => g.status === "suggested" && (g.reason !== "asam_signed" || roleSeesAsamSection(role, AdelanteEHR.getPatient(patientId))),
+      ),
+    ),
   );
   const items = JSON.parse(json) as { id: string; text: string; reason: string }[];
   if (items.length === 0) return null;
