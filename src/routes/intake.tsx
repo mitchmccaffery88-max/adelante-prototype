@@ -172,7 +172,7 @@ function CoverageCallout({
   county,
 }: {
   coverageType: CoverageType;
-  justiceInvolvement: TriState;
+  justiceInvolvement: JusticeAnswer;
   county: string;
 }) {
   const msg = coverageMessage({ coverageType, justiceInvolvement, county });

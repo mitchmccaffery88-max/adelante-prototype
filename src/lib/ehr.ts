@@ -10579,7 +10579,7 @@ export const AdelanteEHR = {
    */
   runSafetyNetRecordLookup(
     patientId: string,
-    input: { justiceInvolvement?: TriState } = {},
+    input: { justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer } = {},
   ): LookupResult & { ran: boolean } {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ran: false, status: "none", candidateIds: [] };

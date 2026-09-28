@@ -17,7 +17,7 @@ import type { TriState } from "./frontDoor";
  */
 export function shouldRunSafetyNetLookup(input: {
   recordLookupPending?: boolean;
-  justiceInvolvement?: TriState;
+  justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer;
   /** True once a plan/record for this person is already known. */
   existingPlanFound?: boolean;
 }): boolean {

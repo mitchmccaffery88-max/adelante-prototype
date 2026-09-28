@@ -79,7 +79,7 @@ export interface CoverageMessage {
 
 export function coverageMessage(input: {
   coverageType: CoverageType;
-  justiceInvolvement: TriState;
+  justiceInvolvement: import("./justiceInvolvement").JusticeAnswer;
   county?: string;
 }): CoverageMessage {
   const { coverageType, justiceInvolvement, county } = input;
