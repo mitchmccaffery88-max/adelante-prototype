@@ -89,7 +89,8 @@ export interface RecordSection {
 }
 
 /** Old section ids that were merged into another section. */
-export const SECTION_ALIASES: Record<string, string> = { referrals: "episodes", providers: "coord" };
+import { SECTION_ALIASES } from "@/lib/chartSectionAliases";
+export { SECTION_ALIASES };
 export const resolveSectionId = (id?: string) => (id ? (SECTION_ALIASES[id] ?? id) : id);
 
 export const GROUP_LABELS: Record<RecordSectionGroup, string> = {
