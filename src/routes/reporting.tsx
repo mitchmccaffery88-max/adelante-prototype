@@ -75,6 +75,7 @@ import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
 import { EmptyState } from "@/components/EmptyState";
 import { Card } from "@/components/ui/card";
+import { HieUtilizationTile } from "@/components/hie/OutsideRecords";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import {
@@ -346,6 +347,8 @@ function ReportingHome() {
           </p>
         </Card>
       </header>
+
+      <HieUtilizationTile />
 
       {/* §Tier 3 — the reflexive-need entry point. Population reporting answers
           "how is the program doing"; this answers "what is open on me". */}

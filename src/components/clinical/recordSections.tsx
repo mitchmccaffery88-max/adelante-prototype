@@ -44,6 +44,7 @@ import { CalomsProfileCard } from "@/components/clinical/CalomsProfileCard";
 import { OrdersTab } from "@/components/clinical/OrdersTab";
 import { MarTab } from "@/components/clinical/MarTab";
 import { MedReconTab } from "@/components/clinical/MedReconTab";
+import { OutsideRecordsPanel, HieTimelineStrip } from "@/components/hie/OutsideRecords";
 import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
@@ -181,8 +182,17 @@ export function useRecordSections(
       <>
         <DemographicsCard patientId={pid} />
         <OverviewTab patientId={pid} />
+        <HieTimelineStrip patientId={pid} />
       </>
     ),
+  });
+  // §HIE — simulated outside records; SUD rows Part 2-gated inside the panel.
+  add("demographics", {
+    id: "outside-records",
+    label: "Outside records (HIE)",
+    icon: Repeat2,
+    group: "chart",
+    render: () => <OutsideRecordsPanel patientId={pid} />,
   });
   add("problems", {
     id: "problems",

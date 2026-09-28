@@ -58,6 +58,8 @@ function fallbackReason(decision: "stop" | "modify") {
   return `${decision === "stop" ? "Stopped" : "Modified"} via medication reconciliation`;
 }
 
+import { HieMedsPanel } from "@/components/hie/OutsideRecords";
+
 export function MedReconTab({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const active = useEhr(() => AdelanteEHR.activeMedReconciliation(patientId));
   const history = useEhr(() => AdelanteEHR.listMedReconciliations(patientId));
@@ -65,6 +67,7 @@ export function MedReconTab({ patientId, readOnly }: { patientId: string; readOn
 
   return (
     <div className="space-y-6">
+      <HieMedsPanel patientId={patientId} readOnly={readOnly} />
       {active ? (
         <ActiveSession patientId={patientId} recon={active} readOnly={readOnly} />
       ) : (
