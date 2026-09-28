@@ -32,3 +32,13 @@ describe("justice-involvement gate", () => {
     expect(recommendationsFor(rec).some((r) => r.id === "obligations")).toBe(true);
   });
 });
+
+describe("population follows the justice rule", () => {
+  it("an active Z65.2 reentry problem puts the patient on the reentry track", () => {
+    const p = AdelanteEHR.createPatient({ firstName: "Gate", lastName: "Problem" });
+    const rec = AdelanteEHR.getPatient(p.id)!;
+    (rec as { problems?: unknown[] }).problems = [{ id: "z", status: "active", icd10Code: "Z65.2", description: "Reentry" }];
+    expect(isJusticeInvolved(rec)).toBe(true);
+    expect(resolvePopulation(p.id).track).toBe("post_release_ji");
+  });
+});

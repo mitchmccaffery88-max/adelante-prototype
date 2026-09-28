@@ -18,6 +18,7 @@
 // advocate into the patient's own track.
 import { AdelanteEHR } from "@/lib/ehr";
 import type { HeardAboutSource, TriState } from "@/lib/frontDoor";
+import { isJusticeInvolved } from "@/lib/justiceInvolvement";
 
 export type PopulationTrack =
   /** Track A — in custody, coordination happening before release. */
