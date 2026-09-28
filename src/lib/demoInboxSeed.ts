@@ -262,6 +262,13 @@ export function seedDemoInbox(): void {
       d.setHours(11, 0, 0, 0);
       AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
     });
+  // Core demo patients get a primary clinician through the normal reassign
+  // path (Rosa/Daniel are then moved to Dr. Okafor by the coordination demo).
+  for (const first of ["Rosa", "Daniel", "Luis", "Alicia", "Marcus", "Jordan", "Carmen"]) {
+    const pt = AdelanteEHR.listPatients().find((x) => x.firstName === first);
+    if (pt && !pt.primaryClinicianId)
+      safe(() => AdelanteEHR.reassignPrimaryClinician({ patientId: pt.id, clinicianId: "c1", initiatedBy: "admin", context: "Demo setup — primary clinician" }));
+  }
   safe(() => seedCoordinationDemo());
   safe(() => seedCaseloadDemo());
 
