@@ -309,6 +309,14 @@ import {
   isLateEntry,
   type NoteRevisionAction,
 } from "@/lib/noteRevisions";
+import {
+  DEMOGRAPHIC_LABEL,
+  ELIGIBILITY_FIELDS,
+  REASON_REQUIRED_FIELDS,
+  editableDemographicFields,
+  type DemographicField,
+  type DemographicsChange,
+} from "@/lib/demographics";
 
 export interface AppNotification {
   id: string;
@@ -11049,6 +11057,84 @@ export const AdelanteEHR = {
     }
     emit();
     return n;
+  },
+
+  // ----- §Demographics & identifiers ---------------------------------------
+  updatePatientDemographics(
+    patientId: string,
+    patch: Partial<Record<DemographicField, string>>,
+    actor: { staffId?: string; clinicianId?: string; name: string; role: StaffRole },
+    reason?: string,
+  ): DemographicsChange {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const isPrimary =
+      !!p.primaryClinicianId && [actor.clinicianId, actor.staffId].includes(p.primaryClinicianId);
+    const allowed = editableDemographicFields(actor.role, isPrimary);
+    const read = (f: DemographicField): string => {
+      if (f === "emergencyContactName") return p.emergencyContact?.name ?? "";
+      if (f === "emergencyContactPhone") return p.emergencyContact?.phone ?? "";
+      return String((p as unknown as Record<string, unknown>)[f] ?? "");
+    };
+    const changes = (Object.keys(patch) as DemographicField[])
+      .map((field) => ({ field, before: read(field), after: (patch[field] ?? "").trim() }))
+      .filter((c) => c.before !== c.after);
+    if (changes.length === 0) throw new Error("Nothing changed.");
+    const refused = changes.filter((c) => !allowed.includes(c.field));
+    if (refused.length)
+      throw new Error(
+        allowed.length
+          ? `Your role can edit contact info only (not ${refused.map((c) => DEMOGRAPHIC_LABEL[c.field]).join(", ")}).`
+          : "Your role can't edit this patient's details.",
+      );
+    const needsReason = changes.some((c) => REASON_REQUIRED_FIELDS.includes(c.field));
+    if (needsReason && (reason ?? "").trim().length < 3)
+      throw new Error("A reason is required to change legal name, date of birth or CIN.");
+    for (const c of changes) {
+      if (c.field === "emergencyContactName" || c.field === "emergencyContactPhone") {
+        const ec = p.emergencyContact ?? { name: "", relationship: "", phone: "" };
+        p.emergencyContact = { ...ec, [c.field === "emergencyContactName" ? "name" : "phone"]: c.after };
+      } else if (c.field === "preferredLanguage") {
+        p.preferredLanguage = (c.after === "es" ? "es" : "en") as PreferredLanguage;
+      } else {
+        (p as unknown as Record<string, unknown>)[c.field] = c.after || undefined;
+        if (c.field === "firstName" || c.field === "lastName" || c.field === "dob" || c.field === "phone")
+          (p as unknown as Record<string, unknown>)[c.field] = c.after;
+      }
+    }
+    const row: DemographicsChange = {
+      id: uid(),
+      at: new Date().toISOString(),
+      byName: actor.name,
+      role: actor.role,
+      reason: reason?.trim() || undefined,
+      changes,
+    };
+    p.demographicsHistory = [...(p.demographicsHistory ?? []), row];
+    // Audit carries field names only — prior values live on the record's history.
+    appendAudit({
+      category: "clinical",
+      action: "demographics_updated",
+      patientId,
+      actorId: actor.name,
+      actorRole: actor.role,
+      detail: { fields: changes.map((c) => c.field), reason: row.reason ?? null },
+    });
+    const eligFields = changes.filter((c) => ELIGIBILITY_FIELDS.includes(c.field)).map((c) => c.field);
+    if (eligFields.length) {
+      p.eligibilityRecheck = { at: row.at, fields: eligFields };
+      for (const r of ["billing", "billing_coordinator"] as const)
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "demographics_changed",
+          subject: "Eligibility re-check needed",
+          body: `Identity details changed for ${patientLabel(patientId)}. Re-check eligibility; open claims may need review.`,
+          linkRoute: "/eligibility-worklist",
+          patientId,
+        });
+    }
+    emit();
+    return row;
   },
 
   // ----- §Signed-note revisions: addendum, amendment, void -----------------
