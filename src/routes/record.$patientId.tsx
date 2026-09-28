@@ -111,7 +111,7 @@ function ChartBody({
   // sub-sections (labs, contact log) reuse existing components and gates.
   const extra: RecordSection[] = [];
   if (canAccess(role, "meds_erx", patient).level !== "none" || canOrderLabs(role))
-    extra.push({ id: "labs", label: "Lab orders & results", icon: FlaskConical, group: "chart", render: () => <LabsAndMeasuresTracking patientId={patient.id} /> });
+    extra.push({ id: "labs", label: "Lab orders & results", icon: FlaskConical, group: "chart", render: () => <LabsAndMeasuresTracking patientId={patient.id} role={role} /> });
   if (canOpenCaseloadReview(role))
     extra.push({ id: "contacts", label: "Contact log & weekly review", icon: PhoneCall, group: "case", render: () => <PatientContactLog patientId={patient.id} /> });
   const allSections: RecordSection[] = [
