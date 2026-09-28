@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { HLOC_TARGET_LABEL, hiddenHlocCount, visibleHlocReferrals } from "@/lib/outpatientCare";
+import { CLINICAL_REFERRAL_ROLES } from "@/lib/navSections";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
@@ -24,6 +25,8 @@ function ReferralList() {
   const { role } = useActingStaff();
   const rows = useEhr(() => visibleHlocReferrals(role));
   const hidden = hiddenHlocCount(role);
+  if (!CLINICAL_REFERRAL_ROLES.has(role))
+    return <p className="mx-auto max-w-4xl px-4 py-6 text-sm text-muted-foreground" data-testid="referrals-blocked">This list is for clinical staff.</p>;
   return (
     <div className="mx-auto max-w-4xl space-y-4 px-4 py-6">
       <h1 className="font-display text-2xl text-navy">Referrals to a higher level of care</h1>
