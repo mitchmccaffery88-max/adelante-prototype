@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import {
+  recordLegalDisclosureConsent,
   DISCHARGE_REASON_LABEL,
   EPISODE_PROGRAM_LABEL,
   HLOC_NEXT,
@@ -187,9 +188,12 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
           {blockFor === r.id && (
             <div role="alert" className="rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive space-y-2">
               <p>{hlocSendBlocker(r) ?? "Consent now on file — try sending again."}</p>
-              <Button size="sm" variant="outline" asChild>
-                <Link to="/consent" search={{ patientId, category: "legal_part2_disclosure" } as never}>Open Part 2 disclosure consent</Link>
-              </Button>
+              <div className="flex flex-wrap gap-2">
+                <Button size="sm" variant="outline" asChild>
+                  <Link to="/consent" search={{ patientId, category: "legal_part2_disclosure" } as never}>Open consent screen</Link>
+                </Button>
+              </div>
+              <ConsentCapture patientId={patientId} />
             </div>
           )}
           {canCreate && HLOC_NEXT[r.status].length > 0 && (
@@ -265,5 +269,32 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
         </div>
       )}
     </Card>
+  );
+}
+
+/** Staff capture of the signed 42 CFR Part 2 disclosure form (typed signer + attestation). */
+function ConsentCapture({ patientId }: { patientId: string }) {
+  const { role, staffName, staffId } = useActingStaff();
+  const [name, setName] = useState("");
+  const [att, setAtt] = useState(false);
+  return (
+    <div className="space-y-1 text-navy">
+      <Label htmlFor="p2-signer" className="text-xs">Patient&apos;s typed signature on the Part 2 disclosure form</Label>
+      <Input id="p2-signer" className="h-8" value={name} onChange={(e) => setName(e.target.value)} />
+      <label className="flex items-center gap-2">
+        <input type="checkbox" checked={att} onChange={(e) => setAtt(e.target.checked)} /> I witnessed the patient sign this disclosure consent
+      </label>
+      <Button size="sm" onClick={() => {
+        try {
+          if (!att) throw new Error("Confirm you witnessed the signature.");
+          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name);
+          toast.success("Part 2 disclosure consent recorded");
+        } catch (e) {
+          toast.error((e as Error).message);
+        }
+      }}>
+        Record disclosure consent
+      </Button>
+    </div>
   );
 }
