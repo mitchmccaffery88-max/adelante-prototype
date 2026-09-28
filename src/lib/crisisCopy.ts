@@ -36,6 +36,11 @@ export interface CrisisCopy {
   frontDoorBody: string;
   frontDoorCall: string;
   frontDoorText: string;
+  /** Intake crisis card (screener trigger or crisis words in an answer). */
+  intakeHeading: string;
+  intakeBefore988: string;
+  intakeAfter988: string;
+  intakeCall: string;
 }
 
 const EN: CrisisCopy = {
@@ -51,6 +56,10 @@ const EN: CrisisCopy = {
     "What you wrote sounds heavy. You don't have to finish this form — talk to a person now. The 988 Suicide & Crisis Lifeline answers any hour, free.",
   frontDoorCall: "Call 988",
   frontDoorText: "Text 988",
+  intakeHeading: "It sounds like things are really hard right now.",
+  intakeBefore988: "You're not alone — and help is here. Please call or text",
+  intakeAfter988: "anytime to talk to someone. Your care team has also been notified.",
+  intakeCall: "Talk to someone now",
 };
 
 /** PENDING bilingual clinical review — see the header note. */
@@ -67,6 +76,10 @@ const ES: CrisisCopy = {
     "Lo que escribiste suena muy pesado. No tienes que terminar este formulario — habla con una persona ahora. La Línea 988 de Suicidio y Crisis contesta a cualquier hora, gratis, y en español.",
   frontDoorCall: "Llama al 988",
   frontDoorText: "Envía un texto al 988",
+  intakeHeading: "Parece que las cosas están muy difíciles ahora.",
+  intakeBefore988: "No estás solo — hay ayuda. Llama o envía un texto al",
+  intakeAfter988: "a cualquier hora para hablar con alguien. Tu equipo de cuidado también fue avisado.",
+  intakeCall: "Hablar con alguien ahora",
 };
 
 const TABLE: Record<CrisisLang, CrisisCopy> = { en: EN, es: ES };

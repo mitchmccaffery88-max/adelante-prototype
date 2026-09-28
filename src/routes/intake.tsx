@@ -108,7 +108,8 @@ import { useAdelVoice } from "@/hooks/useAdelVoice";
 import { VoiceAnswer, VoiceBar, VoiceOptIn } from "@/components/voice/AdelVoice";
 import { INTAKE_VOICE_COPY } from "@/lib/intakeVoiceCopy";
 import { isTapOnlyStep, isValidatedScreener } from "@/lib/adelVoice";
-import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
+import { crisisMatchLanguage, detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
+import { crisisCopy } from "@/lib/crisisCopy";
 import { ADEL_COPY } from "@/lib/adelIntakeScript";
 import {
   LOOKUP_DISCLOSURE,
@@ -225,6 +226,9 @@ function IntakePage() {
   const [step, setStep] = useState(0);
   // §E5 Phase A — reusable voice layer (off until the patient opts in).
   const voiceLang = lang9a === "es" ? "es" : "en";
+  // Crisis card follows the page language, or Spanish when the crisis words were Spanish.
+  const [crisisEs, setCrisisEs] = useState(false);
+  const CX = crisisCopy(voiceLang === "es" || crisisEs ? "es" : "en");
   const voice = useAdelVoice(voiceLang);
   const VC = INTAKE_VOICE_COPY[voiceLang];
   const [intakeNote, setIntakeNote] = useState("");
@@ -1102,22 +1106,20 @@ function IntakePage() {
           <div className="flex items-start gap-3">
             <Heart className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
             <div className="text-sm">
-              <div className="font-semibold text-destructive">
-                It sounds like things are really hard right now.
-              </div>
+              <div className="font-semibold text-destructive">{CX.intakeHeading}</div>
               <p className="text-foreground/80 mt-1">
-                You're not alone — and help is here. Please call or text{" "}
+                {CX.intakeBefore988}{" "}
                 <a href="tel:988" className="underline font-semibold">
                   988
                 </a>{" "}
-                anytime to talk to someone. Your care team has also been notified.
+                {CX.intakeAfter988}
               </p>
               <Button
                 asChild
                 className="mt-3 bg-destructive text-destructive-foreground hover:bg-destructive/90"
               >
                 <a href="tel:988">
-                  <Phone className="h-4 w-4 mr-1.5" /> Talk to someone now
+                  <Phone className="h-4 w-4 mr-1.5" /> {CX.intakeCall}
                 </a>
               </Button>
             </div>
@@ -1516,7 +1518,11 @@ function IntakePage() {
                 setIntakeNote(t);
                 // Same crisis scanner as typed text; a match opens the crisis path.
                 scanTextForCrisis(currentId, t, { surface: "an intake answer" });
-                if (detectCrisisLanguage(t).matched) setVoiceCrisis(true);
+                const hit = detectCrisisLanguage(t);
+                if (hit.matched) {
+                  setVoiceCrisis(true);
+                  setCrisisEs(crisisMatchLanguage(hit.patternIds) === "es");
+                }
               }} />
 
             {/* Section A — care you're looking for (existing question + "Not sure yet"). */}
