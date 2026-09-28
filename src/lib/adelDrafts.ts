@@ -83,13 +83,17 @@ export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): N
   for (const a of headerAlerts(p, role, sections, now)) if (a.id !== "cssrs") risk.push(a.label);
 
   const plan: string[] = [];
+  const lastSigned = (p.progressNotes ?? []).filter((n) => n.signedAt && !n.voidedAt).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
+  if (lastSigned?.plan) plan.push(`Last note's plan (${d(lastSigned.signedAt!)}): ${lastSigned.plan.split("\n")[0]}`);
+  // Today's check-in: participation only (mood content stays patient-private).
+  const checkedToday = (p.checkIns ?? []).some((c) => new Date(c.date).toDateString() === now.toDateString());
   const next = appts.find((a) => a.status === "scheduled" && +new Date(a.start) > +now);
   plan.push(next ? `Next visit ${d(next.start)}.` : "Schedule next visit.");
   for (const l of listLabOrders(p.id, role).filter((l) => l.status === "pending")) plan.push(`Follow up pending ${labTest(l.testId)?.label} (due ${d(l.dueAt)}).`);
   for (const r of openReferrals(p, role)) plan.push(`Open referral: ${r.label} — ${r.status}.`);
 
   return {
-    subjective: `Visit reason: ${reason}.\n[Clinician: add the patient's own report.]`,
+    subjective: `Visit reason: ${reason}.${checkedToday ? " Patient completed a check-in today." : ""}\n[Clinician: add the patient's own report.]`,
     objective: changes.length ? `Changes since last note (${d(since)}):\n- ${changes.join("\n- ")}` : `No new scores, medication changes or outside events since ${d(since)}.`,
     assessment: `Current risk:\n- ${risk.join("\n- ")}\n[Clinician: add your assessment.]`,
     plan: plan.join("\n"),
