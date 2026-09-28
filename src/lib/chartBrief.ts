@@ -297,7 +297,11 @@ export function adelBrief(p: Patient, role: StaffRole, staffId: string, episodeL
   if (listScreenerRequests(p.id, role).some((r) => screenerRequestStatus(r, now) === "overdue") || (phq && +now - +new Date(phq.date) > 30 * DAY)) add("screener_request", "Request a PHQ-9");
   if (planReviewDue(p.id, now)) add("care_plan_goal", "Review the care plan");
   if (needs) add("sdoh_referral", "Make an SDOH referral");
-  add("progress_note", "Write a progress note");
+  if (isPrescriberRole(role) && AdelanteEHR.listRefillRequests({ patientId: p.id, status: "pending" }).length) add("refill_decision", "Review refill — Adel summary ready");
+  const missedOrOutside = rows.some((r) => r.id.startsWith("h-")) || AdelanteEHR.listAppointments().some((a) => a.patientId === p.id && a.status === "no_show" && +now - +new Date(a.start) <= 30 * DAY);
+  if (missedOrOutside) add("message_patient", "Draft outreach with Adel");
+  if (listHlocReferrals(p.id).some((r) => r.status === "drafted" && (roleSeesAsamSection(role, p) || !r.sudRelated))) add("hloc_referral", "Draft referral packet with Adel");
+  add("progress_note", "Draft a progress note with Adel");
   add("message_patient", "Message the patient");
   return { bullets: bullets.slice(0, 5), changed, since, actions: actions.slice(0, 4) };
 }
