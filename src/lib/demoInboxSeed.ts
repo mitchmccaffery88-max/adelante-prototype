@@ -279,7 +279,38 @@ export function seedDemoInbox(): void {
   safe(() => seedOrderSafetyDemo());
   safe(() => seedStructuredCarePlanDemo());
   safe(() => runSimulatedHieSync());
+  // Demo: Luis gets a (clearly fake) Medi-Cal CIN through the normal
+  // demographics path so the HIE match reads "same CIN".
+  const luisPt = luis ? AdelanteEHR.getPatient?.(luis) : undefined;
+  if (luis && luisPt && !luisPt.cin)
+    safe(() =>
+      void AdelanteEHR.updatePatientDemographics(
+        luis,
+        { cin: "90000000A" },
+        { staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
+        "Demo setup — CIN from Medi-Cal card",
+      ),
+    );
   safe(() => seedDataExchangeDemo());
+  // Demo: sign Daniel's draft note by Marisol Reyes and add one addendum.
+  if (daniel)
+    safe(() => {
+      const pt = AdelanteEHR.getPatient?.(daniel);
+      const draft = pt?.progressNotes?.find((x) => (!x.status || x.status === "draft") && x.clinicianId === "c1");
+      if (!draft) return;
+      AdelanteEHR.signProgressNote(daniel, draft.id, {
+        signedBy: "Marisol Reyes",
+        signedById: "c1",
+        role: "therapist",
+        attested: true,
+      });
+      AdelanteEHR.addNoteAddendum(daniel, draft.id, {
+        text: "Called patient the next day; he confirmed he is using the coping plan we made.",
+        byId: "c1",
+        byName: "Marisol Reyes",
+        role: "therapist",
+      });
+    });
 
   // §Inbox actions — a claim status move raised by the real audit hook, then
   // claim / assign / done / make-a-task through the inbox action functions.
