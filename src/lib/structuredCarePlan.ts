@@ -152,7 +152,12 @@ export function getStructuredPlan(patientId: string): StructuredPlan {
   }
   const p = AdelanteEHR.getPatient(patientId);
   for (const g of p?.goals ?? []) {
-    if (plan.goals.some((x) => x.legacyGoalId === g.id)) continue;
+    const existing = plan.goals.find((x) => x.legacyGoalId === g.id);
+    if (existing) {
+      // Old goal list stays the source of truth for migrated goal status.
+      if (existing.status !== "closed") existing.status = g.status === "done" ? "met" : "active";
+      continue;
+    }
     plan.goals.push({
       id: `lg-${g.id}`,
       patientId,

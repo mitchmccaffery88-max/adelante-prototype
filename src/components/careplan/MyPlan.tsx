@@ -82,7 +82,7 @@ export function MyPlan({ patientId }: { patientId: string }) {
       .sort((a, b) => a.start.localeCompare(b.start))
       .slice(0, 3),
   );
-  const goals = plan.goals.filter((g) => g.status === "active");
+  const goals = plan.goals.filter((g) => g.status === "active" || (g.status === "met" && g.legacyGoalId));
   const week = plan.assignments.filter((a) => a.active && a.kind === "activity");
   const r = plan.review;
   const acked = r.acknowledgedAt && r.acknowledgedVersion === r.version;
@@ -97,8 +97,22 @@ export function MyPlan({ patientId }: { patientId: string }) {
           {goals.map((g) => {
             const pct = goalProgress(patientId, g.id);
             return (
-              <li key={g.id} className="rounded-lg border p-3 text-sm">
-                <p>{g.patientText[L]}</p>
+              <li
+                key={g.id}
+                className={`rounded-lg border p-3 text-sm ${g.legacyGoalId ? "cursor-pointer hover:border-teal" : ""}`}
+                {...(g.legacyGoalId
+                  ? {
+                      role: "button",
+                      "aria-label": `Update goal: ${g.clinicalText}`,
+                      onClick: () => {
+                        const cur = patient?.goals?.find((x) => x.id === g.legacyGoalId)?.status ?? "open";
+                        const next = cur === "open" ? "in_progress" : cur === "in_progress" ? "done" : "open";
+                        AdelanteEHR.setGoalStatus(patientId, g.legacyGoalId!, next, who.name, "patient");
+                      },
+                    }
+                  : {})}
+              >
+                <p className={g.status === "met" ? "line-through text-muted-foreground" : undefined}>{g.patientText[L]}</p>
                 <Progress value={pct} className="mt-2 h-1.5" aria-label={`${pct}%`} />
               </li>
             );
