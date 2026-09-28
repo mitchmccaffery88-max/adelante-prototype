@@ -30,7 +30,7 @@ describe("notification audience guard", () => {
 describe("void request notifications", () => {
   it("a decided void no longer shows its request notification", () => {
     const k = (id: string, at: string) => `void:${id}:${at}`;
-    const staff = () => AdelanteEHR.listNotificationsFor("Admin", "sys_admin", "s-admin").filter((n) => n.category === "note_void_request");
+    const staff = () => AdelanteEHR.listNotificationsFor("Admin", "sys_admin", "s-admin").filter((n) => n.subject.startsWith("Void request —"));
     // The module seed requests two voids and approves one; only the open one remains.
     const open = AdelanteEHR.listPendingNoteVoids({ name: "Admin", role: "sys_admin", staffId: "s-admin" });
     const keys = new Set(open.map((v) => k(v.noteId, v.requestedAt)));
