@@ -45,6 +45,7 @@ import { Route as CravingRouteImport } from './routes/craving'
 import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
+import { Route as DataExchangeRouteImport } from './routes/data-exchange'
 import { Route as DmcOdsReadinessRouteImport } from './routes/dmc-ods-readiness'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as EligibilityWorklistRouteImport } from './routes/eligibility-worklist'
@@ -290,6 +291,11 @@ const CrisisQueueRoute = CrisisQueueRouteImport.update({
 const DashboardsRoute = DashboardsRouteImport.update({
   id: '/dashboards',
   path: '/dashboards',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DataExchangeRoute = DataExchangeRouteImport.update({
+  id: '/data-exchange',
+  path: '/data-exchange',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DmcOdsReadinessRoute = DmcOdsReadinessRouteImport.update({
@@ -666,6 +672,7 @@ export interface FileRoutesByFullPath {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/data-exchange': typeof DataExchangeRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -769,6 +776,7 @@ export interface FileRoutesByTo {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/data-exchange': typeof DataExchangeRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -871,6 +879,7 @@ export interface FileRoutesById {
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
+  '/data-exchange': typeof DataExchangeRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -977,6 +986,7 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/data-exchange'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1080,6 +1090,7 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/data-exchange'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1181,6 +1192,7 @@ export interface FileRouteTypes {
     | '/crisis'
     | '/crisis-queue'
     | '/dashboards'
+    | '/data-exchange'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1286,6 +1298,7 @@ export interface RootRouteChildren {
   CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
+  DataExchangeRoute: typeof DataExchangeRoute
   DmcOdsReadinessRoute: typeof DmcOdsReadinessRoute
   DocumentsRoute: typeof DocumentsRoute
   EligibilityWorklistRoute: typeof EligibilityWorklistRoute
@@ -1584,6 +1597,13 @@ declare module '@tanstack/react-router' {
       path: '/dashboards'
       fullPath: '/dashboards'
       preLoaderRoute: typeof DashboardsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/data-exchange': {
+      id: '/data-exchange'
+      path: '/data-exchange'
+      fullPath: '/data-exchange'
+      preLoaderRoute: typeof DataExchangeRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dmc-ods-readiness': {
@@ -2169,6 +2189,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
+  DataExchangeRoute: DataExchangeRoute,
   DmcOdsReadinessRoute: DmcOdsReadinessRoute,
   DocumentsRoute: DocumentsRoute,
   EligibilityWorklistRoute: EligibilityWorklistRoute,

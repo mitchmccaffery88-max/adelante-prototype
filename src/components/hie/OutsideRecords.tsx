@@ -1,5 +1,6 @@
 // §HIE — every surface here shows HIE_LABEL. Staff-only.
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -191,6 +192,7 @@ export function HieStatusCard() {
       >
         Run simulated sync
       </Button>
+      <Link to="/data-exchange" className="block text-xs text-navy underline">Open Data exchange</Link>
     </Card>
   );
 }

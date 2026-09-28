@@ -12198,6 +12198,12 @@ export const AdelanteEHR = {
         active.revokedAt = new Date().toISOString();
         active.revokedBy = "legacy consent toggle";
         active.revocationReason = note ?? "Part 2 consent toggled off";
+      } else if (granted && active) {
+        // An active record that doesn't yet authorize SUD treatment would
+        // otherwise leave the toggle reading "Granted" while nothing unlocks.
+        const sec = active.sections.find((s) => s.category === "sud_treatment");
+        if (sec) sec.authorized = true;
+        else active.sections.push({ category: "sud_treatment", authorized: true } as ConsentRecordSection);
       } else if (granted && !active) {
         consentRecords.unshift({
           id: uid(),
