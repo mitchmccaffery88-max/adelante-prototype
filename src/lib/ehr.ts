@@ -11471,6 +11471,10 @@ export const AdelanteEHR = {
       throw new Error("A reason is required to reject a void request.");
     const req = n.voidRequest;
     n.voidRequest = undefined;
+    // The request is decided — its "please decide" notifications go away, so
+    // the bell holds one row per OPEN void request.
+    const vKey = `void:${noteId}:${req.at}`;
+    for (let i = notifications.length - 1; i >= 0; i--) if (notifications[i]!.dedupeKey === vKey) notifications.splice(i, 1);
     if (!input.approve) {
       AdelanteEHR._logRevision(patientId, n, { action: "void_declined", byName: input.name, role: input.role, reason: input.comment?.trim() || undefined });
       emit();
