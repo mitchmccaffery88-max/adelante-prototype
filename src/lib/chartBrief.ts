@@ -86,8 +86,10 @@ export interface TeamChip {
 }
 export function careTeam(p: Patient): TeamChip[] {
   const out: TeamChip[] = [];
-  const orderPeople = new Set((p.orders ?? []).flatMap((o: MedOrder) => [o.chartedBy, o.createdBy].filter(Boolean) as string[]));
-  const presc = STAFF_ROSTER.find((s) => isPrescriberRole(s.role) && [...orderPeople].some((n) => n.includes(s.name) || s.name.includes(n)));
+  const orderPeople = new Set((p.orders ?? []).flatMap((o: MedOrder) => [o.attestedBy, o.createdBy].filter(Boolean) as string[]));
+  const presc =
+    STAFF_ROSTER.find((s) => s.id === p.prescriberStaffId) ??
+    STAFF_ROSTER.find((s) => isPrescriberRole(s.role) && [...orderPeople].some((n) => n.includes(s.name) || s.name.includes(n)));
   if (presc) out.push({ role: "prescriber", label: "Prescriber", name: presc.name });
   const clin = p.primaryClinicianId ? AdelanteEHR.getClinician(p.primaryClinicianId) : undefined;
   if (clin) out.push({ role: "therapist", label: "Therapist", name: clin.name });
@@ -157,8 +159,8 @@ export function headerAlerts(p: Patient, role: StaffRole, visibleSections: strin
   if (sp && (!sp.lastReviewedAt || +now - +new Date(sp.lastReviewedAt) > 90 * DAY))
     out.push({ id: "safety", label: "Safety plan due for review", sectionId: "safety-plan", tone: "amber" });
   if (canAccess(role, "alerts", p).level !== "none")
-    for (const a of (p.alerts ?? []).filter((x) => !x.removedAt))
-      out.push({ id: `al-${a.id}`, label: a.title ?? "Clinical alert", sectionId: "alerts", tone: a.severity === "critical" ? "red" : "amber" });
+    for (const a of (p.alerts ?? []).filter((x) => !x.removedAt && x.active !== false))
+      out.push({ id: `al-${a.id}`, label: a.label, sectionId: "alerts", tone: a.severity === "critical" ? "red" : "amber" });
   return out.filter((a) => visibleSections.includes(a.sectionId));
 }
 
