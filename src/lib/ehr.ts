@@ -25721,7 +25721,11 @@ try {
       const top = def.bands[def.bands.length - 1].max;
       for (let i = hist.length; i < 3; i++) {
         const k = i - hist.length + 1;
-        const when = oldest + ((newest - oldest) * k) / (need + (times.length > 1 ? 1 : 0));
+        // Luis: spread back-dated points every 3 weeks so his trend reads well.
+        const when =
+          n === "Luis"
+            ? Date.now() - ((need - k + 1) * 21 + 3) * DAY
+            : oldest + ((newest - oldest) * k) / (need + (times.length > 1 ? 1 : 0));
         const score = Math.max(0, Math.round(top * (0.25 + 0.12 * (i + 1))));
         AdelanteEHR.recordHistoricalScreener(p.id, {
           key,

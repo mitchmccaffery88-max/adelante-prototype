@@ -6,7 +6,8 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { NotifyCareTeamCard } from "@/components/patient/NotifyCareTeamCard";
 import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 import { useI18n } from "@/lib/i18n";
-import { OUTSIDE_CRISIS_COPY, COUNTY_CRISIS_LINE } from "@/lib/outsideCrisisResources";
+import { OUTSIDE_CRISIS_COPY, countyCrisisLines } from "@/lib/outsideCrisisResources";
+import { AdelanteEHR, useEhr } from "@/lib/ehr";
 
 /**
  * §Patient portal Tier 1 Build A — the real crisis landing page.
@@ -18,7 +19,13 @@ import { OUTSIDE_CRISIS_COPY, COUNTY_CRISIS_LINE } from "@/lib/outsideCrisisReso
  */
 function CrisisPage() {
   const { lang } = useI18n();
-  const c = OUTSIDE_CRISIS_COPY[lang === "es" ? "es" : "en"];
+  const L = lang === "es" ? "es" : "en";
+  const c = OUTSIDE_CRISIS_COPY[L];
+  const county = useEhr(() => {
+    const p = AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId());
+    return p?.coverage?.countyOfRelease ?? null;
+  });
+  const lines = countyCrisisLines(county);
   return (
     <PatientPage data-testid="crisis-page">
       <PatientPageHeader
@@ -56,15 +63,17 @@ function CrisisPage() {
             {c.call911}
           </a>
         </Button>
-        <Button asChild variant="outline" size="patientLg" className="w-full">
-          <a href={`tel:${COUNTY_CRISIS_LINE.number}`} data-testid="crisis-county-line">
-            <Phone className="h-5 w-5" aria-hidden="true" />
-            <span>
-              {c.county}
-              <span className="block text-xs font-normal text-muted-foreground">{c.countyPlaceholder}</span>
-            </span>
-          </a>
-        </Button>
+        {lines.map((ln) => (
+          <Button key={ln.number} asChild variant="outline" size="patientLg" className="h-auto w-full whitespace-normal py-3">
+            <a href={`tel:${ln.number}`} data-testid="crisis-county-line">
+              <Phone className="h-5 w-5 shrink-0" aria-hidden="true" />
+              <span className="text-left">
+                {ln.label[L]}
+                <span className="block text-sm font-normal text-muted-foreground">{ln.display}</span>
+              </span>
+            </a>
+          </Button>
+        ))}
       </div>
       <p className="px-1 text-sm text-muted-foreground" data-testid="crisis-outside-note">{c.outsideNote}</p>
 

@@ -24,6 +24,7 @@ import {
   myOpenItems,
   myPendingRefills,
   myTodayVisits,
+  myPlanReviewsDue,
   screenerDueRows,
   type DisengagementRow,
 } from "@/lib/myWork";
@@ -184,6 +185,7 @@ function MyWorkPage() {
         )
       : [],
   );
+  const planReviews = useEhr(() => myPlanReviewsDue(identity));
   const refills = useEhr(() => myPendingRefills({ ...identity, role: actor.role }));
   const myCrises = useEhr(() => caseloadCrises(identity, actor.role));
   const contactsDue = useEhr(() => (canUseCaseloadReview(actor.role) ? myContactsDue(actor.staffId) : []));
@@ -258,6 +260,30 @@ function MyWorkPage() {
           </div>
         )}
       </section>
+
+      {planReviews.length > 0 && (
+        <section aria-labelledby="plan-review-heading" className="space-y-3" data-testid="my-work-plan-reviews">
+          <SectionHeading
+            id="plan-review-heading"
+            icon={CalendarClock}
+            title="Plan review due"
+            purpose="Care plans on your caseload whose review date is today or earlier."
+            count={planReviews.length}
+          />
+          <div className="space-y-2">
+            {planReviews.map((r) => (
+              <Row
+                key={r.patientId}
+                patientId={r.patientId}
+                name={r.patientName}
+                section="care-plan"
+                primary="Care plan review"
+                secondary={dueLabel(r.dueAt)}
+              />
+            ))}
+          </div>
+        </section>
+      )}
 
       {(canSignNotes(actor.role) || asam) && (
         <section aria-labelledby="cosign-heading" className="space-y-3" data-testid="my-work-cosigns">

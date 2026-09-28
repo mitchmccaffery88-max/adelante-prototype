@@ -1,3 +1,4 @@
+import { roleSeesAsamSection as roleSeesAsamSectionForGoals } from "@/lib/asamReporting";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { buildTrackingRows, filterTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
 import type { Patient } from "@/lib/ehr";
@@ -154,6 +155,7 @@ import {
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { CarePlanEditor } from "@/components/careplan/CarePlanEditor";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { useDraftDirty } from "@/lib/drawer-drafts";
@@ -2217,7 +2219,12 @@ export function TaskList({
 function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readOnly?: boolean }) {
   const { staffName, role } = useActingStaff();
   const json = useEhr(() =>
-    JSON.stringify((AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter((g) => g.status === "suggested")),
+    JSON.stringify(
+      (AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter(
+        // §Part 2 — ASAM-derived goal suggestions are SUD content.
+        (g) => g.status === "suggested" && (g.reason !== "asam_signed" || roleSeesAsamSectionForGoals(role, AdelanteEHR.getPatient(patientId))),
+      ),
+    ),
   );
   const items = JSON.parse(json) as { id: string; text: string; reason: string }[];
   if (items.length === 0) return null;
@@ -2267,6 +2274,7 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   return (
     <div className="space-y-4">
       <CarePlanCard patientId={patient.id} audience="clinician" />
+      <CarePlanEditor patientId={patient.id} readOnly={readOnly} />
       <SuggestedGoalsPanel patientId={patient.id} readOnly={readOnly} />
       {/* §5-stage journey — care-team view of the person-set stage. Same
           component the patient sees, so the model can't drift between them. */}
