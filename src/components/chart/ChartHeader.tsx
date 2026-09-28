@@ -28,13 +28,13 @@ export function ChartHeader({
   visibleSections,
   onSelectSection,
   more,
-  sectionsButton,
+  tabBar,
 }: {
   patientId: string;
   visibleSections: string[];
   onSelectSection: (id: string) => void;
   more: ReactNode;
-  sectionsButton: ReactNode;
+  tabBar?: ReactNode;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId))!;
   const { role, staffId, staffName } = useActingStaff();
@@ -135,7 +135,6 @@ export function ChartHeader({
             <StickyNoteButton patientId={patientId} canEdit={canEditSticky(role)} canRead={canReadSticky(role, patient)} actor={{ name: staffName, role }} />
             <RecentActivity patientId={patientId} onSelectSection={onSelectSection} />
             {more}
-            {sectionsButton}
           </div>
         </div>
 
@@ -185,6 +184,7 @@ export function ChartHeader({
           </div>
         )}
       </div>
+      {tabBar && <div className="mx-auto max-w-[1600px] px-4">{tabBar}</div>}
       <AdelBriefPanel open={briefOpen} onOpenChange={setBriefOpen} patientId={patientId} episode={episode} onSelectSection={onSelectSection} />
     </header>
   );

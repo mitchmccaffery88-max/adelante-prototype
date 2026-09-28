@@ -14,16 +14,17 @@ import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/s
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { IssueSignInCodeButton } from "@/components/clinical/IssueSignInCodeButton";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
-import {
-  GROUP_LABELS,
-  resolveSectionId,
-  useRecordSections,
-  type RecordSection,
-  type RecordSectionGroup,
-} from "@/components/clinical/recordSections";
+import { resolveSectionId, useRecordSections, type RecordSection } from "@/components/clinical/recordSections";
+import { ChartTabBar, ChartTabPanel, tabsWithSections } from "@/components/chart/ChartTabView";
+import { resolveChartLocation, tabBadges } from "@/lib/chartTabs";
+import { canAccess } from "@/lib/roles";
+import { canOrderLabs } from "@/lib/chartOrders";
+import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
+import { listContacts, canSeeContactNote, CONTACT_TYPE_LABEL } from "@/lib/caseloadReview";
+import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
 import { EmptyState } from "@/components/EmptyState";
 import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
-import { ArrowLeft, FlaskConical, MoreHorizontal, PanelLeft, Zap } from "lucide-react";
+import { ArrowLeft, FlaskConical, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
@@ -56,7 +57,6 @@ export const Route = createFileRoute("/record/$patientId")({
   component: RecordChartPage,
 });
 
-const GROUP_ORDER: RecordSectionGroup[] = ["chart", "case", "coordination"];
 
 function RecordChartPage() {
   const { patientId } = Route.useParams();
@@ -90,22 +90,30 @@ function ChartBody({
   patientId,
   section,
   templateKey,
-  navOpen,
-  setNavOpen,
   onSelect,
 }: {
   patientId: string;
   section?: string;
   templateKey?: string;
-  navOpen: boolean;
-  setNavOpen: (v: boolean) => void;
+  navOpen?: boolean;
+  setNavOpen?: (v: boolean) => void;
   onSelect: (id: string) => void;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { role, staffName } = useActingStaff();
+  const { role } = useActingStaff();
   const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
+  const badgesJson = useEhr(() => {
+    const p = AdelanteEHR.getPatient(patientId);
+    return p ? JSON.stringify(tabBadges(p, role)) : "{}";
+  });
   if (!patient) return null;
-  // §Chart redesign turn 3 — "Brief" is the landing tab (Overview stays).
+  // §Chart redesign turn 4 — sections arranged into 8 tabs. Extra
+  // sub-sections (labs, contact log) reuse existing components and gates.
+  const extra: RecordSection[] = [];
+  if (canAccess(role, "meds_erx", patient).level !== "none" || canOrderLabs(role))
+    extra.push({ id: "labs", label: "Lab orders & results", icon: FlaskConical, group: "chart", render: () => <LabsAndMeasuresTracking patientId={patient.id} /> });
+  if (canOpenCaseloadReview(role))
+    extra.push({ id: "contacts", label: "Contact log & weekly review", icon: PhoneCall, group: "case", render: () => <PatientContactLog patientId={patient.id} /> });
   const allSections: RecordSection[] = [
     {
       id: "brief",
@@ -113,23 +121,22 @@ function ChartBody({
       icon: Zap,
       group: "chart",
       render: () => (
-        <BriefTab patientId={patient.id} visibleSections={["brief", ...sections.map((x) => x.id)]} onSelectSection={onSelect} />
+        <BriefTab patientId={patient.id} visibleSections={["brief", ...sections.map((x) => x.id), ...extra.map((x) => x.id)]} onSelectSection={onSelect} />
       ),
     },
     ...sections,
+    ...extra,
   ];
-  const active = allSections.find((s) => s.id === resolveSectionId(section)) ?? allSections[0];
-
-  const nav = (
-    <ChartNav
-      sections={allSections}
-      activeId={active?.id}
-      onSelect={(id) => {
-        onSelect(id);
-        setNavOpen(false);
-      }}
-    />
-  );
+  const tabs = tabsWithSections(allSections);
+  const loc = resolveChartLocation(resolveSectionId(section));
+  const activeTab = tabs.find((t) => t.id === loc.tab) ?? tabs[0]!;
+  const badges = JSON.parse(badgesJson) as ReturnType<typeof tabBadges>;
+  const searchable = allSections
+    .filter((x) => tabs.some((t) => t.subs.includes(x)))
+    .map((x) => {
+      const t = tabs.find((tt) => tt.subs.includes(x))!;
+      return t.id === "brief" || t.subs.length === 1 ? { ...x, label: t.label } : { ...x, label: `${t.label} › ${x.label}` };
+    });
 
   return (
     <div className="min-h-screen bg-background">
@@ -138,96 +145,39 @@ function ChartBody({
         visibleSections={allSections.map((x) => x.id)}
         onSelectSection={onSelect}
         more={<ChartMoreMenu patientId={patient.id} />}
-        sectionsButton={
-          <div className="lg:hidden">
-            <Sheet open={navOpen} onOpenChange={setNavOpen}>
-              <SheetTrigger asChild>
-                <Button size="sm" variant="outline">
-                  <PanelLeft className="h-4 w-4" /> Sections
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="left" className="w-72 overflow-y-auto">
-                <SheetTitle className="text-base text-navy">Chart sections</SheetTitle>
-                <div className="mt-4">{nav}</div>
-              </SheetContent>
-            </Sheet>
-          </div>
-        }
+        tabBar={<ChartTabBar tabs={tabs} active={activeTab.id} badges={badges} onSelect={(id) => onSelect(id)} />}
       />
 
-      <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6">
-        <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-40 max-h-[calc(100vh-11rem)] overflow-y-auto">{nav}</div>
-        </aside>
-        <main className="min-w-0 flex-1">
-          {/* §Quality pass Group A — live supervision status for supervised roles. */}
-          <SupervisionBanner />
-          <div className="mb-3 flex items-center gap-2">
-            {active?.icon && <active.icon className="h-4 w-4 text-teal" />}
-            <h2 className="font-display text-lg text-navy">{active?.label}</h2>
-          </div>
-          {/* Full width: wide sections (Orders' dose axes, off-catalog panel)
-              lay out as multi-column forms instead of a squeezed stack. */}
-          <Card className="chart-pane p-4 pb-20">{active?.render()}</Card>
-        </main>
-      </div>
-      <ChartActionLauncher patientId={patient.id} sections={allSections} onSelectSection={onSelect} />
+      <main className="mx-auto min-w-0 max-w-[1600px] px-4 py-5 pb-24">
+        {/* §Quality pass Group A — live supervision status for supervised roles. */}
+        <SupervisionBanner />
+        <ChartTabPanel key={activeTab.id} tab={activeTab} patientId={patient.id} focus={loc.sub} />
+      </main>
+      <ChartActionLauncher patientId={patient.id} sections={searchable} onSelectSection={onSelect} />
     </div>
   );
 }
 
-function ChartNav({
-  sections,
-  activeId,
-  onSelect,
-}: {
-  sections: RecordSection[];
-  activeId?: string;
-  onSelect: (id: string) => void;
-}) {
+function PatientContactLog({ patientId }: { patientId: string }) {
+  const { role, staffId } = useActingStaff();
+  const rows = useEhr(() => listContacts(patientId));
   return (
-    <nav className="space-y-4" aria-label="Chart sections">
-      {GROUP_ORDER.map((group) => {
-        const items = sections.filter((s) => s.group === group);
-        if (items.length === 0) return null;
-        return (
-          <div key={group}>
-            <p className="px-2 text-[10px] font-medium uppercase tracking-wider text-muted-foreground">
-              {GROUP_LABELS[group]}
-            </p>
-            <ul className="mt-1 space-y-0.5">
-              {items.map((s) => {
-                const Icon = s.icon;
-                const isActive = s.id === activeId;
-                return (
-                  <li key={s.id}>
-                    <button
-                      type="button"
-                      onClick={() => onSelect(s.id)}
-                      aria-current={isActive ? "page" : undefined}
-                      className={`flex w-full items-center gap-2 rounded-md px-2 py-1.5 text-left text-sm transition-colors ${
-                        isActive ? "bg-teal/10 text-teal font-medium" : "text-navy hover:bg-muted"
-                      }`}
-                    >
-                      <Icon className="h-4 w-4 shrink-0" />
-                      <span className="min-w-0 flex-1 truncate">{s.label}</span>
-                      {s.count ? (
-                        <Badge
-                          variant={s.urgent ? "destructive" : "secondary"}
-                          className="shrink-0 px-1.5 text-[10px]"
-                        >
-                          {s.count}
-                        </Badge>
-                      ) : null}
-                    </button>
-                  </li>
-                );
-              })}
-            </ul>
-          </div>
-        );
-      })}
-    </nav>
+    <div className="space-y-2 text-sm">
+      {rows.length === 0 ? (
+        <p className="text-muted-foreground">No contacts logged for this patient.</p>
+      ) : (
+        <ul className="space-y-1">
+          {rows.map((c) => (
+            <li key={c.id} className="flex gap-2">
+              <span className="w-24 shrink-0 text-muted-foreground">{c.date}</span>
+              <span className="font-medium">{CONTACT_TYPE_LABEL[c.type]}</span>
+              {c.note && canSeeContactNote(c, { id: staffId, role }) && <span className="text-muted-foreground">— {c.note}</span>}
+            </li>
+          ))}
+        </ul>
+      )}
+      <Link to="/caseload-review" className="text-xs text-teal hover:underline">Open weekly caseload review</Link>
+    </div>
   );
 }
 
