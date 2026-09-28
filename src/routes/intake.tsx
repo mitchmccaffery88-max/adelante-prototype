@@ -1963,7 +1963,9 @@ function IntakePage() {
               Review and submit. Your care team will use this to plan your first session.
             </p>
             <div className="rounded-lg border bg-secondary/30 p-4 space-y-2 text-sm">
-              {activeScreeners.map((s) => {
+              {activeScreeners
+                .filter((s) => askCore || s.key !== "ahc-hrsn")
+                .map((s) => {
                 const raw = answers[s.key] ?? [];
                 const { score, severity } = scoreScreener(
                   s,
@@ -1979,11 +1981,11 @@ function IntakePage() {
                 );
               })}
               <div className="flex justify-between pt-2 border-t">
-                <span>Needs flagged</span>
-                <span className="font-medium text-navy">
-                  {needsPlan.capture.filter((k) => needs[k]).length +
-                    needsPlan.known.filter((r) => knownAnswers[r.intakeKey] === "yes").length}{" "}
-                  of {needsPlan.capture.length + needsPlan.known.length}
+                <span>Everyday needs you picked</span>
+                <span className="font-medium text-navy" data-testid="review-needs-count">
+                  {Object.values(topics).filter(Boolean).length +
+                    needsPlan.capture.filter((k) => needs[k]).length +
+                    needsPlan.known.filter((r) => knownAnswers[r.intakeKey] === "yes").length}
                 </span>
               </div>
               {needsPlan.onFileOnly.length > 0 && (

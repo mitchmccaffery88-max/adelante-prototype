@@ -46,7 +46,11 @@ export function ScreenerItems({
                 if (def.gate && qi === def.gate.itemIndex && opts[idx].value === def.gate.stopWhenValue) {
                   for (let i = 0; i < def.questions.length; i++) if (i !== qi) next[i] = undefined;
                 }
-                const nextChoices = { ...choices, [qi]: idx };
+                const nextChoices: Record<number, number> = { ...choices, [qi]: idx };
+                if (def.gate && qi === def.gate.itemIndex && opts[idx].value === def.gate.stopWhenValue) {
+                  // Clear the shown selection too, so follow-ups never look answered while blank.
+                  for (const k of Object.keys(nextChoices)) if (Number(k) !== qi) delete nextChoices[Number(k)];
+                }
                 onChange(next, nextChoices);
               }}
             >

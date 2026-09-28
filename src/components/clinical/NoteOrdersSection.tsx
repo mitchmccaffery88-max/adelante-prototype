@@ -241,6 +241,8 @@ function ReferralQuickPickDialog({
   const { staffName } = useActingStaff();
   const [firstName, setFirstName] = useState(defaultFirstName);
   const [lastName, setLastName] = useState(defaultLastName);
+  const [refPhone, setRefPhone] = useState(quickPick?.referrerPhone ?? "");
+  const [refEmail, setRefEmail] = useState(quickPick?.referrerEmail ?? "");
   if (!quickPick) return null;
   return (
     <Dialog open onOpenChange={(o) => !o && onClose()}>
@@ -261,6 +263,15 @@ function ReferralQuickPickDialog({
             <Label className="text-xs">Last name</Label>
             <Input value={lastName} onChange={(e) => setLastName(e.target.value)} />
           </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Referrer phone</Label>
+            <Input type="tel" maxLength={30} value={refPhone} onChange={(e) => setRefPhone(e.target.value)} />
+          </div>
+          <div className="space-y-1.5">
+            <Label className="text-xs">Referrer email</Label>
+            <Input type="email" maxLength={255} value={refEmail} onChange={(e) => setRefEmail(e.target.value)} />
+          </div>
+          <p className="text-[11px] text-muted-foreground sm:col-span-2">A referrer phone or email is required.</p>
         </div>
         <p className="text-[11px] text-muted-foreground">
           Agency: {quickPick.referringAgency}
@@ -276,14 +287,18 @@ function ReferralQuickPickDialog({
                 toast.error("A first and last name are required.");
                 return;
               }
+              if (!refPhone.trim() && !refEmail.trim()) {
+                toast.error("Add a referrer phone or email.");
+                return;
+              }
               try {
                 AdelanteEHR.createReferral({
                   firstName: firstName.trim(),
                   lastName: lastName.trim(),
                   referringAgency: quickPick.referringAgency,
                   referrerName: quickPick.referrerName || staffName,
-                  referrerEmail: quickPick.referrerEmail,
-                  referrerPhone: quickPick.referrerPhone,
+                  referrerEmail: refEmail.trim() || undefined,
+                  referrerPhone: refPhone.trim() || undefined,
                   referralSource: (quickPick.referralSource ?? "self") as ReferralSource,
                   countyOfRelease: quickPick.countyOfRelease,
                   consentToContact: false,
