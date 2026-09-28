@@ -4,6 +4,8 @@ import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
+import { refillNeedsCures } from "@/lib/ehr";
+import { RefillCuresStep } from "@/components/clinical/RefillCuresStep";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { useNavigate } from "@tanstack/react-router";
@@ -1437,12 +1439,17 @@ function RefillReviewCardInner() {
                       size="sm"
                       className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
                       onClick={() => {
-                        AdelanteEHR.reviewRefill({
-                          id: r.id,
-                          decision: "approved",
-                          clinicianId: actorId,
-                        });
-                        toast.success("Refill approved and sent to pharmacy");
+                        try {
+                          AdelanteEHR.reviewRefill({
+                            id: r.id,
+                            decision: "approved",
+                            clinicianId: actorId,
+                            actorRole: role,
+                          });
+                          toast.success("Refill approved and sent to pharmacy");
+                        } catch (e) {
+                          toast.error((e as Error).message);
+                        }
                       }}
                     >
                       Approve
@@ -1458,12 +1465,14 @@ function RefillReviewCardInner() {
                   </div>
                 )}
               </div>
+              {canWrite && refillNeedsCures(r) && <RefillCuresStep refill={r} />}
               {canWrite && openId === r.id && (
                 <div className="mt-2 space-y-2">
                   <Textarea
                     value={reason}
                     onChange={(e) => setReason(e.target.value)}
-                    placeholder="Reason (shown to patient)"
+                    aria-label="Reason for denial (required)"
+                    placeholder="Reason for denial (required, shown to patient)"
                     className="min-h-[50px] text-xs"
                   />
                   <div className="flex justify-end gap-2">
@@ -1482,16 +1491,22 @@ function RefillReviewCardInner() {
                       size="sm"
                       variant="destructive"
                       className="h-7 text-[11px]"
+                      disabled={!reason.trim()}
                       onClick={() => {
-                        AdelanteEHR.reviewRefill({
-                          id: r.id,
-                          decision: "denied",
-                          denyReason: reason.trim() || "Please schedule a visit",
-                          clinicianId: actorId,
-                        });
-                        setOpenId(null);
-                        setReason("");
-                        toast.success("Refill denied");
+                        try {
+                          AdelanteEHR.reviewRefill({
+                            id: r.id,
+                            decision: "denied",
+                            denyReason: reason,
+                            clinicianId: actorId,
+                            actorRole: role,
+                          });
+                          setOpenId(null);
+                          setReason("");
+                          toast.success("Refill denied");
+                        } catch (e) {
+                          toast.error((e as Error).message);
+                        }
                       }}
                     >
                       Send denial
