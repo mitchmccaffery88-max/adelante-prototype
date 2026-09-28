@@ -52,7 +52,7 @@ interface Turn {
 const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
-export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
+export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; initialAsk?: string } = {}) {
   const showRecovery = useEhr(() =>
     recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
   );
@@ -119,8 +119,17 @@ export function AdelChat({ resourceId }: { resourceId?: string } = {}) {
     endRef.current?.scrollIntoView({ block: "end" });
   }, [turns, busy]);
 
-  async function send() {
-    const text = draft.trim();
+  // Tile hand-off: send the patient's message once, through `send` below.
+  const askedRef = useRef(false);
+  useEffect(() => {
+    if (!initialAsk || askedRef.current) return;
+    askedRef.current = true;
+    void send(initialAsk);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [initialAsk]);
+
+  async function send(override?: string) {
+    const text = (override ?? draft).trim();
     if (!text || busy) return;
     setDraft("");
     setError(null);

@@ -4,10 +4,12 @@ import { AdelChat } from "@/components/patient/AdelChat";
 export const Route = createFileRoute("/adel")({
   // §Build B — `?resource=<id>` opens Adel with a real directory listing as
   // context, the same shape the library route already uses for `?item=`.
-  validateSearch: (search: Record<string, unknown>): { resource?: string } =>
-    typeof search.resource === "string" && search.resource
-      ? { resource: search.resource }
-      : {},
+  // `?ask=<text>` — sent from the Adel tile on My care; AdelChat sends it once
+  // through its normal path (same crisis scanner, same guardrails).
+  validateSearch: (search: Record<string, unknown>): { resource?: string; ask?: string } => ({
+    ...(typeof search.resource === "string" && search.resource ? { resource: search.resource } : {}),
+    ...(typeof search.ask === "string" && search.ask.trim() ? { ask: search.ask.slice(0, 500) } : {}),
+  }),
   head: () => ({
     meta: [
       { title: "Adel — Adelante" },
@@ -26,6 +28,6 @@ export const Route = createFileRoute("/adel")({
 });
 
 function AdelRoute() {
-  const { resource } = Route.useSearch();
-  return <AdelChat resourceId={resource} />;
+  const { resource, ask } = Route.useSearch();
+  return <AdelChat resourceId={resource} initialAsk={ask} />;
 }
