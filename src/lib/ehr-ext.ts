@@ -1888,8 +1888,8 @@ function seedNoteRevisionDemo() {
     if (typeof console !== "undefined") console.warn(`[demo seed] ${k}`, e);
   };
   try {
-    const add = visitNote("p1", 5, "Reports better sleep this week.");
-    AdelanteEHR.addNoteAddendum("p1", add, {
+    const add = visitNote("p4", 5, "Reports better sleep this week.");
+    AdelanteEHR.addNoteAddendum("p4", add, {
       ...REYES,
       text: "Patient called after the session to confirm next week's time. (Demo addendum)",
     });
