@@ -47,3 +47,18 @@ export function isValidatedScreener(stepKey: string): boolean {
   const k = stepKey.toLowerCase();
   return VALIDATED.some((v) => k.startsWith(v));
 }
+
+/**
+ * Speak-once guard: the same text in the same language requested again within
+ * `windowMs` (e.g. a React effect firing twice) is dropped. Replay after the
+ * window, or different text, always speaks.
+ */
+export function createSpeakGuard(windowMs = 800) {
+  let last: { key: string; at: number } | undefined;
+  return (text: string, lang: VoiceLang, now = Date.now()): boolean => {
+    const key = `${lang}|${text}`;
+    if (last && last.key === key && now - last.at < windowMs) return false;
+    last = { key, at: now };
+    return true;
+  };
+}

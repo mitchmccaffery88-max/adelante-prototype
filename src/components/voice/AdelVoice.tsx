@@ -40,7 +40,7 @@ export function VoiceBar({ voice, lang, text, tapOnly, draft = true }: { voice: 
   return (
     <div className="rounded-lg border border-teal/40 bg-card p-3 space-y-2" data-testid="voice-bar" aria-label="Read aloud">
       <div className="flex flex-wrap items-center gap-2">
-        <Button size="sm" variant="outline" onClick={() => speak(text)} aria-label={c.play}><Play className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.play}</span></Button>
+        <Button size="sm" variant="outline" onClick={() => speak(text, { force: true })} aria-label={c.play}><Play className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.play}</span></Button>
         <Button size="sm" variant="outline" onClick={voice.replay} aria-label={c.replay}><RotateCcw className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.replay}</span></Button>
         <Button size="sm" variant="outline" onClick={voice.stop} aria-label={c.stop}><Pause className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.stop}</span></Button>
         <div className="flex rounded-md border" role="group" aria-label="Speed">
