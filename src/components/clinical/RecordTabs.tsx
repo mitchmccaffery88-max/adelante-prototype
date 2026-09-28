@@ -91,6 +91,7 @@ import {
   type RecordClass,
   noteGateClass,
 } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { SCREENERS, severityFor, screenerByKey } from "@/lib/screeners";
 import {
