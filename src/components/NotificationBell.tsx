@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { cn } from "@/lib/utils";
+import { useI18n } from "@/lib/i18n";
 
 function timeAgo(iso: string): string {
   const mins = Math.max(0, Math.round((Date.now() - new Date(iso).getTime()) / 60000));
@@ -18,13 +19,34 @@ function timeAgo(iso: string): string {
   return `${Math.round(hrs / 24)}d ago`;
 }
 
-export function NotificationBell({ className }: { className?: string }) {
+export function NotificationBell({
+  className,
+  audience = "staff",
+  memberId,
+}: {
+  className?: string;
+  /** Which shell renders the bell. Patient/advocate shells never read staff rows. */
+  audience?: "patient" | "advocate" | "staff";
+  /** Patient id or advocate id for member shells. */
+  memberId?: string | null;
+}) {
   const navigate = useNavigate();
+  const { lang } = useI18n();
   const { staffName, role, staffId } = useActingStaff();
-  const rows = useEhr(() => AdelanteEHR.listNotificationsFor(staffName, role, staffId));
+  const isMember = audience !== "staff";
+  const rows = useEhr(() =>
+    audience === "staff"
+      ? AdelanteEHR.listNotificationsFor(staffName, role, staffId)
+      : AdelanteEHR.listMemberNotifications(audience, memberId),
+  );
   const unread = rows.filter((n) => !n.readAt).length;
 
   const open = (n: AppNotification) => {
+    if (isMember) {
+      if (!n.readAt) n.readAt = new Date().toISOString();
+      if (n.linkRoute) navigate({ to: n.linkRoute });
+      return;
+    }
     AdelanteEHR.markNotificationRead(n.id, staffName);
     if (!n.linkRoute) return;
     const params = n.linkParams ?? {};
@@ -57,21 +79,25 @@ export function NotificationBell({ className }: { className?: string }) {
       </PopoverTrigger>
       <PopoverContent align="end" className="w-80 p-0">
         <div className="flex items-center justify-between border-b px-3 py-2">
-          <span className="text-sm font-semibold text-navy">Notifications</span>
+          <span className="text-sm font-semibold text-navy">{isMember && lang === "es" ? "Avisos" : "Notifications"}</span>
           <Button
             variant="ghost"
             size="sm"
             className="h-7 text-xs"
             disabled={unread === 0}
-            onClick={() => AdelanteEHR.markAllNotificationsRead(staffName, role, staffId)}
+            onClick={() =>
+              isMember
+                ? AdelanteEHR.markMemberNotificationsRead(audience, memberId)
+                : AdelanteEHR.markAllNotificationsRead(staffName, role, staffId)
+            }
           >
-            Mark all read
+            {isMember && lang === "es" ? "Marcar todo leído" : "Mark all read"}
           </Button>
         </div>
         <ScrollArea className="max-h-80">
           {rows.length === 0 ? (
             <p className="px-3 py-6 text-center text-xs text-muted-foreground">
-              No notifications for {staffName}.
+              {isMember ? (lang === "es" ? "No hay avisos nuevos." : "No new notifications.") : `No notifications for ${staffName}.`}
             </p>
           ) : (
             <ul className="divide-y">
@@ -98,7 +124,7 @@ export function NotificationBell({ className }: { className?: string }) {
                     </span>
                     <span className="mt-0.5 block text-[11px] text-muted-foreground">{n.body}</span>
                     <span className="mt-0.5 block text-[10px] uppercase tracking-wide text-muted-foreground">
-                      {n.category.replace(/_/g, " ")} · {timeAgo(n.createdAt)}
+                      {isMember ? "" : `${n.category.replace(/_/g, " ")} · `}{timeAgo(n.createdAt)}
                     </span>
                   </button>
                 </li>
