@@ -32,6 +32,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Checkbox } from "@/components/ui/checkbox";
+import { isSudMedication, SOME_MEDS_HIDDEN } from "@/lib/sudMedClassifier";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { Textarea } from "@/components/ui/textarea";
 import {
   Dialog,
@@ -338,6 +340,15 @@ export function DraftOrderCard({
           </Button>
         </div>
       </div>
+      <label className="flex items-center gap-2 text-xs text-navy">
+        <Checkbox
+          checked={!!order.sudRelated || isSudMedication(order)}
+          disabled={isSudMedication({ ...order, sudRelated: false })}
+          onCheckedChange={(v) => patch({ sudRelated: v === true })}
+          aria-label="SUD-related"
+        />
+        SUD-related (42 CFR Part 2 — hidden from roles without substance-use access)
+      </label>
 
       {duplicate && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500 bg-amber-50/60 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
@@ -568,7 +579,13 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   // Defense in depth: even if a caller forgets to pass readOnly, only roles with
   // meds_erx WRITE may author or sign orders. "read" on meds_erx is view-only.
   const viewOnly = readOnly || canAccess(role, "meds_erx").level !== "write";
-  const orders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const allOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const orderPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const { visible: orders, hidden: hiddenSudOrders } = filterSudMedsForRole(
+    allOrders,
+    role,
+    orderPatient,
+  );
   const problemRows = useEhr(() => AdelanteEHR.listProblems(patientId));
   const problems = useMemo(
     () =>
@@ -794,6 +811,11 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
         </div>
       )}
 
+      {hiddenSudOrders > 0 && (
+        <p className="text-xs text-muted-foreground" data-testid="sud-meds-hidden">
+          {SOME_MEDS_HIDDEN}
+        </p>
+      )}
       {activeTherapy.length > 0 && (
         <div className="space-y-2">
           <div className="text-sm font-medium text-navy">Signed orders</div>

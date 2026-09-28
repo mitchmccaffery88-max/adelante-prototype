@@ -17,6 +17,7 @@ import {
   type ReferralSource,
 } from "@/lib/ehr";
 import { useActingStaff, canAccess } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import {
   validateOrder,
   requiresAttribution,
@@ -57,9 +58,10 @@ export function NoteOrdersSection({
 }) {
   const { role, staffName } = useActingStaff();
   const canOrder = canAccess(role, "meds_erx").level === "write";
-  const orders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const allOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
   const problemRows = useEhr(() => AdelanteEHR.listProblems(patientId));
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const orders = filterSudMedsForRole(allOrders, role, patient).visible;
   const [attested, setAttested] = useState(false);
   const [showIssues, setShowIssues] = useState(false);
   const [referralDraft, setReferralDraft] = useState<QuickPickReferral | null>(null);
