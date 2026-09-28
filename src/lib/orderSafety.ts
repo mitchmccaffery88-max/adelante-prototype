@@ -109,7 +109,7 @@ const SCHEDULED: Record<string, string> = {
 };
 /** DEA schedule II–V, from the order's own flag or the known-ingredient list. */
 export function deaScheduleOf(o: OrderLike): string | undefined {
-  if (o.deaSchedule && /^C?I{2,3}|^C?IV|^C?V/.test(o.deaSchedule.replace(/^C-?/, "C"))) return o.deaSchedule;
+  if (o.deaSchedule) return o.deaSchedule;
   return orderIngredients(o).map((i) => SCHEDULED[i]).find(Boolean);
 }
 export function requiresCuresCheck(o: OrderLike): boolean {
