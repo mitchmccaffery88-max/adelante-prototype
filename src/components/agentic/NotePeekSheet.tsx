@@ -38,12 +38,20 @@ export function NotePeekSheet({
   const note = patient?.progressNotes?.find((n) => n.id === noteId);
   const gate = patient && note ? noteVisibleToRole(role, patient, note) : { visible: false };
   const author = note
-    ? (getStaffMember(note.clinicianId)?.name ?? note.signedBy ?? note.clinicianId)
+    ? (AdelanteEHR.listClinicians().find((c) => c.id === note.clinicianId)?.name ??
+      getStaffMember(note.clinicianId)?.name ??
+      note.signedBy ??
+      note.clinicianId)
     : "";
   return (
     <Sheet open={!!noteId} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-lg" data-testid="note-peek">
         <SheetTitle>Progress note</SheetTitle>
+        {note && (
+          <p className="text-xs text-muted-foreground" data-testid="note-peek-status">
+            {note.signedAt ? "Signed" : "Draft — not signed yet"}
+          </p>
+        )}
         {note && (
           <SheetDescription>
             {author} · <ClientDate value={note.date} /> · {note.sessionType.replace("_", " ")}

@@ -15,6 +15,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
+import { useI18n } from "@/lib/i18n";
 
 const ACTOR = "Patient (asked for their care team)";
 
@@ -23,6 +24,7 @@ export function NotifyCareTeamCard() {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [note, setNote] = useState("");
   const [sent, setSent] = useState(false);
+  const { lang } = useI18n();
 
   if (!patient) return null;
 
@@ -45,7 +47,7 @@ export function NotifyCareTeamCard() {
   return (
     <Card className="soft-shadow p-5" data-testid="notify-care-team-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-        <BellRing className="h-4 w-4" aria-hidden="true" /> Also let my care team know
+        <BellRing className="h-4 w-4" aria-hidden="true" /> {lang === "es" ? "También avisar a mi equipo de cuidado" : "Also let my care team know"}
       </div>
       {sent ? (
         <p className="mt-2 flex items-start gap-2 text-base" data-testid="notify-care-team-sent">
