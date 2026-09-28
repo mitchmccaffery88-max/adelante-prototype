@@ -72,11 +72,11 @@ function CaseloadReviewPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="text-2xl font-semibold">Weekly caseload review</h1>
-          <p className="text-sm text-muted-foreground">
+          <div className="text-sm text-muted-foreground">
             Cadence: one contact every {CONTACT_CADENCE.intensiveIntervalDays} days for the first{" "}
             {CONTACT_CADENCE.intensiveWindowDays} days, then every {CONTACT_CADENCE.maintenanceIntervalDays} days.{" "}
             <Badge variant="outline">{CONTACT_CADENCE.label}</Badge>
-          </p>
+          </div>
         </div>
         {review ? (
           <Badge data-testid="week-reviewed">Week reviewed · {new Date(review.at).toLocaleString()}</Badge>
@@ -130,7 +130,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
           Last contact: {row.lastContact ?? "none"} · Contacts this week: {row.contactsThisWeek} · Attempts this week:{" "}
           {row.attemptsThisWeek}
         </p>
-        <p className="text-sm" data-testid="checkin-summary">
+        <div className="text-sm" data-testid="checkin-summary">
           Check-ins this week: {s.daysThisWeek} of 7 days · Trend: {s.trend}
           <span className="block" data-testid="mood-count">
             Mood check-ins this week: {s.moodDaysThisWeek} of 7 days
@@ -140,7 +140,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
               Clinical follow-up suggested
             </Badge>
           )}
-        </p>
+        </div>
         {recent.length > 0 && (
           <ul className="text-xs text-muted-foreground space-y-0.5">
             {recent.map((c) => (
@@ -222,9 +222,9 @@ function Rollup() {
   return (
     <div className="mx-auto max-w-4xl px-4 py-6 space-y-4">
       <h1 className="text-2xl font-semibold">Caseload review roll-up</h1>
-      <p className="text-sm text-muted-foreground">
+      <div className="text-sm text-muted-foreground">
         Counts by case manager this week. Notes are not shown here. <Badge variant="outline">{CONTACT_CADENCE.label}</Badge>
-      </p>
+      </div>
       <Card className="p-0 overflow-x-auto">
         <table className="w-full text-sm" data-testid="caseload-rollup">
           <thead>

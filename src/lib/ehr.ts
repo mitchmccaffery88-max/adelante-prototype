@@ -25321,6 +25321,9 @@ try {
     refill(bn, { ago: 7, review: "approved" });
     refill(bn, { ago: 1, note: "Weekly pickup" });
   }
+  // Demo sweep — Luis's buprenorphine order carries its CURES record,
+  // recorded and signed through the real safety path (actorRole passed).
+  seedLuisCuresOrder(luis);
   // 2d Jasmine — combination: SSRI + naltrexone (Part 2).
   const jasmine = demoScenarioPatientId("combination");
   if (!already(jasmine)) {
@@ -25418,4 +25421,37 @@ try {
   if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Dr. Marisol Reyes", role: "therapist", id: "s-th1" });
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
+}
+
+/** Demo sweep — idempotent: a signed buprenorphine order with a CURES record for Luis. */
+export function seedLuisCuresOrder(patientId: string | undefined): void {
+  if (!patientId) return;
+  const p = patients.find((x) => x.id === patientId);
+  if (!p) return;
+  if ((p.orders ?? []).some((o) => /buprenorphine/i.test(o.drugName) && o.curesCheck)) return;
+  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. R. Bagga");
+  const draft = AdelanteEHR.addDraftOrder(patientId, {
+    drugName: "Buprenorphine-naloxone",
+    productName: "Buprenorphine 8 MG / Naloxone 2 MG Sublingual Film",
+    strengthText: "8 MG / 2 MG",
+    doseForm: "Sublingual Film",
+    ingredientNames: ["Buprenorphine", "Naloxone"],
+    route: "SL",
+    frequency: "once daily",
+    frequencyCode: "QD",
+    sig: "Dissolve 1 film under the tongue once daily",
+    dispenseRoute: "pharmacy",
+    indicationText: "Opioid use disorder",
+    isControlled: true,
+    sudRelated: true,
+    createdBy: "s-np1",
+  } as unknown as Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">);
+  AdelanteEHR.recordCuresCheck(patientId, draft.id, {
+    checkedAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
+    result: "no_concerns",
+    note: "Demo — placeholder, no live query.",
+    by: "Dr. R. Bagga",
+    role: "pmhnp",
+  });
+  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Bagga");
 }
