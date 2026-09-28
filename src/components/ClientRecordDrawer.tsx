@@ -18,7 +18,7 @@ import { useActingStaff } from "@/lib/roles";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
-import { useRecordSections } from "@/components/clinical/recordSections";
+import { resolveSectionId, useRecordSections } from "@/components/clinical/recordSections";
 import { Maximize2 } from "lucide-react";
 
 interface Props {
@@ -44,7 +44,7 @@ function DrawerBody({ patientId, initialTab }: { patientId: string; initialTab?:
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const { role, staffName } = useActingStaff();
   const sections = useRecordSections(patient!);
-  const [tab, setTab] = useState(initialTab ?? "overview");
+  const [tab, setTab] = useState(resolveSectionId(initialTab) ?? "overview");
   if (!patient) return null;
   const active = sections.find((s) => s.id === tab) ?? sections[0];
 

@@ -85,6 +85,10 @@ export interface RecordSection {
   render: () => ReactNode;
 }
 
+/** Old section ids that were merged into another section. */
+export const SECTION_ALIASES: Record<string, string> = { referrals: "episodes", providers: "coord" };
+export const resolveSectionId = (id?: string) => (id ? (SECTION_ALIASES[id] ?? id) : id);
+
 export const GROUP_LABELS: Record<RecordSectionGroup, string> = {
   chart: "Chart",
   case: "Case management",
@@ -123,10 +127,7 @@ export function useRecordSections(
   patient: Patient,
   opts: { initialNoteTemplateKey?: string } = {},
 ): RecordSection[] {
-  const { role, staffId, clinicianId } = useActingStaff() as ReturnType<typeof useActingStaff> & {
-    staffId?: string;
-    clinicianId?: string;
-  };
+  const { role, staffId, clinicianId } = useActingStaff();
   const { t } = useI18n();
   const counts = useEhr(() => {
     const fresh = AdelanteEHR.getPatient(patient.id) ?? patient;
