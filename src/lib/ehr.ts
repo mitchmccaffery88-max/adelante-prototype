@@ -1685,6 +1685,12 @@ export interface Patient {
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
+  /** Other identifiers, free text (e.g. "County ID 12345"). */
+  otherIds?: string;
+  /** §Demographics — prior values, newest last. */
+  demographicsHistory?: DemographicsChange[];
+  /** Placeholder flag set when CIN or DOB change. */
+  eligibilityRecheck?: { at: string; fields: string[] };
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
   /**
