@@ -295,6 +295,10 @@ export interface Claim {
   patientPortionCents?: number;
   patientPaidCents?: number;
   patientBalanceCents?: number;
+  /** §Signed-note revisions — billing-safe review flag (no clinical detail). */
+  reviewFlag?: { kind: "note_corrected" | "note_voided"; label: string; at: string; noteId: string };
+  /** A voided note blocks this (still unsubmitted) claim from moving forward. */
+  voidBlocked?: boolean;
   /** Payments exceed the current patient portion after a re-price — needs review, never auto-refunded. */
   overpaidReview?: boolean;
   patientPayments?: PatientPayment[];
@@ -1124,6 +1128,9 @@ export const AdelanteEHRExt = {
     const from = c.state;
     if (!CLAIM_TRANSITIONS[from].includes(to))
       return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    // §Signed-note revisions — a voided note blocks an unsubmitted claim.
+    if (c.voidBlocked && ["coded", "generated", "submitted", "signed"].includes(to))
+      return { ok: false, error: CLAIM_BLOCKED_VOIDED };
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
     if (to === "generated" && c.arrangementMissing) return { ok: false, error: ARRANGEMENT_MISSING_MSG };
@@ -1653,6 +1660,34 @@ export const AdelanteEHRExt = {
         noteId,
         attestation: noteStatus(n) === "cosigned" ? n.cosignAttestation : n.attestation,
       });
+    },
+    onNoteRevised: (patientId, noteId, kind) => {
+      const { n } = AdelanteEHR._findNote(patientId, noteId);
+      const c = n?.appointmentId ? claims.find((x) => x.encounterId === n.appointmentId) : undefined;
+      if (!c) return;
+      const unsubmitted = ["documented", "signed", "coded", "generated"].includes(c.state);
+      const label =
+        kind === "voided" && unsubmitted ? CLAIM_BLOCKED_VOIDED : CLAIM_REVIEW_CORRECTED;
+      c.reviewFlag = { kind: kind === "voided" ? "note_voided" : "note_corrected", label, at: iso(), noteId };
+      if (kind === "voided" && unsubmitted) c.voidBlocked = true;
+      c.updatedAt = iso();
+      AdelanteEHR.recordBillingAudit({
+        action: kind === "voided" ? "claim_blocked_note_voided" : "claim_flagged_note_corrected",
+        actorId: "system",
+        actorRole: "system",
+        patientId,
+        detail: { claimId: c.id, state: c.state },
+      });
+      for (const r of ["billing", "billing_coordinator"] as const)
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: kind === "voided" && unsubmitted ? "claim_blocked" : "claim_status",
+          subject: label,
+          body: `${label} (claim ${c.id.slice(-6)}).`,
+          linkRoute: "/admin-claims",
+          patientId,
+        });
+      ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
     },
     bucketFor: (apptId) => {
       const c = claims.find((x) => x.encounterId === apptId);
