@@ -158,7 +158,8 @@ const ORDER: DemoStateId[] = [
   "kayla",
 ];
 
-const SCENARIO_KEYS: ScenarioKey[] = ["mh_only", "medication", "sud_consented", "combination", "ji_self_report", "sud_no_consent"];
+/** Every patient scenario here must also be a case in apply() (see test). */
+export const SCENARIO_KEYS: ScenarioKey[] = ["mh_only", "medication", "sud_consented", "combination", "ji_self_report", "sud_no_consent"];
 
 function preReleasePersonaId(): string | undefined {
   return AdelanteEHR.listPatients().find(
@@ -310,6 +311,7 @@ export function DemoStateSwitcher() {
         case "sud_consented":
         case "combination":
         case "ji_self_report":
+        case "sud_no_consent":
         case "rosa":
         case "marcus": {
           const id =
