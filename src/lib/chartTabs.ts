@@ -12,13 +12,13 @@ export type ChartTabId = "brief" | "notes-docs" | "care-needs" | "medications" |
 
 export const CHART_TABS: { id: ChartTabId; label: string; sections: string[] }[] = [
   { id: "brief", label: "Brief", sections: ["brief"] },
-  { id: "notes-docs", label: "Notes & Documents", sections: ["notes", "peer", "chw", "documents", "outside-records"] },
-  { id: "care-needs", label: "Care plan & Needs", sections: ["care-plan", "problems", "sdoh", "safety-plan", "alerts", "episodes", "reentry-handoff"] },
+  { id: "notes-docs", label: "Notes & Documents", sections: ["notes", "peer", "chw", "documents", "safety-plan"] },
+  { id: "care-needs", label: "Care plan & Needs", sections: ["care-plan", "problems", "sdoh", "alerts", "episodes", "reentry-handoff"] },
   { id: "medications", label: "Medications", sections: ["orders", "labs", "med-recon", "allergies", "mar", "protocols"] },
   { id: "measures", label: "Measures", sections: ["tracking", "asam", "caloms"] },
-  { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "checkins"] },
-  { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts"] },
-  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "coord"] },
+  { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "coord"] },
+  { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts", "checkins"] },
+  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records"] },
 ];
 
 /** In-facility sections: never a tab while the flag is off. */
