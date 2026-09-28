@@ -66,6 +66,30 @@ const drafts: HieDraft[] = [];
 const meds: HieMed[] = [];
 let lastSyncAt: string | null = null;
 
+export interface HieSyncRun {
+  id: string;
+  at: string;
+  received: number;
+  matched: number;
+  held: number;
+  errors: number;
+  note?: string;
+}
+const syncLog: HieSyncRun[] = [];
+export function hieSyncLog(limit = 10): HieSyncRun[] {
+  return [...syncLog].sort((a, b) => b.at.localeCompare(a.at)).slice(0, limit);
+}
+export function _appendHieSyncRun(run: Omit<HieSyncRun, "id">) {
+  syncLog.push({ ...run, id: `sync-${syncLog.length + 1}` });
+}
+export function listAllHieEncounters(): readonly HieEncounter[] {
+  return encounters;
+}
+
+export function hieAudit(action: string, patientId: string | undefined, actor: Actor, detail: Record<string, unknown>) {
+  audit(action, patientId, actor, detail);
+}
+
 function audit(action: string, patientId: string | undefined, actor: Actor, detail: Record<string, unknown>) {
   AdelanteEHR._recordAudit({ category: "hie", action, patientId, actorId: actor.name, actorRole: actor.role, detail: { ...detail, source: HIE_SOURCE } } as never);
 }
@@ -87,7 +111,10 @@ export function runSimulatedHieSync(actor: Actor = { name: "system", role: "sys_
   const feed = MockHieAdapter.fetchFeed(now);
   const find = (first: string) => AdelanteEHR.listPatients().find((p) => p.firstName === first);
   let added = 0;
+  let received = 0;
+  let heldN = 0;
   for (const r of feed.encounters) {
+    received++;
     const p = find(r.patientFirstName);
     if (!p || encounters.some((e) => e.id === r.feedId)) continue;
     const consent = r.sud ? AdelanteEHR.isConsentCategoryAuthorized(p.id, "sud_treatment") : true;
@@ -98,20 +125,65 @@ export function runSimulatedHieSync(actor: Actor = { name: "system", role: "sys_
     };
     encounters.push(e);
     added++;
+    if (e.held) heldN++;
     audit(e.held ? "hie_record_held" : "hie_record_received", p.id, actor, { encounterId: e.id, kind: e.sud ? "protected" : e.kind });
     if (!e.sud && (e.kind === "ed_visit" || e.kind === "discharge"))
       drafts.push({ id: `draft-${e.id}`, encounterId: e.id, patientId: p.id, text: draftText(e), status: "draft" });
   }
   for (const m of feed.medications) {
+    received++;
     const p = find(m.patientFirstName);
     if (!p || meds.some((x) => x.id === m.feedId)) continue;
     meds.push({ id: m.feedId, patientId: p.id, name: m.name, sig: m.sig, prescriber: m.prescriber, status: "review" });
     added++;
   }
   lastSyncAt = now.toISOString();
+  _appendHieSyncRun({ at: lastSyncAt, received, matched: added - heldN, held: heldN, errors: 0 });
   audit("hie_sync", undefined, actor, { added });
   AdelanteEHR._emit();
   return { added, at: lastSyncAt };
+}
+
+/** Attach one already-matched outside record to a chart (matching queue / demo seed). */
+export function _ingestHieEncounter(
+  r: { id: string; patientId: string; kind: HieRecordKind; at: string; facility: string; reason: string; dischargeDiagnosis?: string; sud: boolean },
+  actor: Actor,
+  now = new Date(),
+) {
+  if (encounters.some((e) => e.id === r.id)) return encounters.find((e) => e.id === r.id)!;
+  const consent = r.sud ? AdelanteEHR.isConsentCategoryAuthorized(r.patientId, "sud_treatment") : true;
+  const e: HieEncounter = { ...r, part2Consent: consent, held: r.sud && !consent, receivedAt: now.toISOString() };
+  encounters.push(e);
+  audit(e.held ? "hie_record_held" : "hie_record_received", r.patientId, actor, { encounterId: e.id, kind: e.sud ? "protected" : e.kind });
+  if (!e.sud && (e.kind === "ed_visit" || e.kind === "discharge"))
+    drafts.push({ id: `draft-${e.id}`, encounterId: e.id, patientId: r.patientId, text: draftText(e), status: "draft" });
+  AdelanteEHR._emit();
+  return e;
+}
+
+/** Held Part 2 records, minimal metadata only. */
+export function listHeldHieRecords() {
+  return encounters
+    .filter((e) => e.held)
+    .map((e) => ({
+      id: e.id,
+      patientId: e.patientId,
+      at: e.at,
+      sourceType: KIND_LABEL[e.kind],
+      consentNowOnFile: AdelanteEHR.isConsentCategoryAuthorized(e.patientId, "sud_treatment"),
+    }));
+}
+
+/** Release a held record once Part 2 consent is on file. Audited. */
+export function releaseHeldHieRecord(id: string, actor: Actor) {
+  const e = encounters.find((x) => x.id === id);
+  if (!e || !e.held) throw new Error("Record is not held.");
+  if (!AdelanteEHR.isConsentCategoryAuthorized(e.patientId, "sud_treatment"))
+    throw new Error("Part 2 consent is still required.");
+  e.held = false;
+  e.part2Consent = true;
+  audit("hie_record_released", e.patientId, actor, { encounterId: id, kind: "protected" });
+  AdelanteEHR._emit();
 }
 
 /** What a role may see for one patient. Held records only as a count, and only to Part 2-permitted roles. */
@@ -229,5 +301,6 @@ export function _resetHieForTests() {
   encounters.length = 0;
   drafts.length = 0;
   meds.length = 0;
+  syncLog.length = 0;
   lastSyncAt = null;
 }

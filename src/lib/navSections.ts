@@ -1,6 +1,7 @@
 import { canViewCoordination } from "@/lib/coordinationRoles";
 import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
+import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
 // This is the cross-patient sibling of `recordSections.tsx`: one registry, one
@@ -122,6 +123,8 @@ export type NavGate =
   | { kind: "caseload_review" }
   /** Clinical roles only — the higher-level referral list. */
   | { kind: "clinical_referrals" }
+  /** HIE operations hub — sys_admin / clinical_coordinator only (DATA_EXCHANGE_ROLES). */
+  | { kind: "data_exchange" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -520,6 +523,15 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "coordination_desk" },
   },
   {
+    id: "data-exchange",
+    label: "Data exchange",
+    desc: "Simulated HIE: sync, matching, held records, sharing log",
+    icon: Settings2,
+    to: "/data-exchange",
+    group: "administration",
+    gate: { kind: "data_exchange" },
+  },
+  {
     id: "admin-kpi-targets",
     label: "KPI targets",
     desc: "Targets behind the dashboards",
@@ -669,6 +681,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
+  if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
   if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {
