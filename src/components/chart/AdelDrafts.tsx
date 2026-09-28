@@ -123,7 +123,7 @@ export function RefillDecisionPanel({ patientId }: { patientId: string }) {
     </div>
   );
 }
-const SUGGESTION_LABEL = { approve: "Approve", approve_with_visit: "Approve with visit", deny: "Deny with reason" } as const;
+const SUGGESTION_LABEL = { approve: "Approve 30 days", approve_with_visit: "Needs visit first", deny: "Deny with reason" } as const;
 function RefillCard({ refill }: { refill: RefillRequest }) {
   const { role, actor } = useActor();
   const s = useEhr(() => JSON.stringify(buildRefillSummary(refill, role as StaffRole)));
