@@ -1743,6 +1743,21 @@ export const AdelanteEHRExt = {
       /* demo seed only */
     }
   }
+  // §Signed-note revisions — DEMO DATA through the real store API: one note
+  // with an addendum, one corrected (Superseded version + claim flag), one
+  // voided (requested by the author, approved by the coordinator), one late
+  // entry. Dr. Marisol Reyes (c1) with demo patients p4–p7.
+  seedNoteRevisionDemo();
+  try {
+    AdelanteEHR.updatePatientDemographics(
+      "p4",
+      { preferredName: "Ali", cin: "91234567A" },
+      { staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
+      "CIN corrected from Medi-Cal card (demo)",
+    );
+  } catch {
+    /* demo seed only */
+  }
   // §10d-3 demo — one DMC-ODS treatment encounter each for Luis C. (passes the
   // medical necessity gate) and Jasmine H. (blocked until her counselor-authored
   // ASAM is co-signed). Booked + attended through the real store API; the
