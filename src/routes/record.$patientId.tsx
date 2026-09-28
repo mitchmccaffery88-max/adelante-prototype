@@ -22,9 +22,10 @@ import { canOrderLabs } from "@/lib/chartOrders";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
 import { listContacts, canSeeContactNote, CONTACT_TYPE_LABEL } from "@/lib/caseloadReview";
 import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
+import { ChartConsents, ChartAuditTrail, ChartWeeklyReview, canSeeChartConsents, canSeeChartAudit, canSeeWeeklyReview } from "@/components/chart/ChartExtraSections";
 import { EmptyState } from "@/components/EmptyState";
 import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
-import { ArrowLeft, FlaskConical, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
+import { ArrowLeft, CalendarCheck, FileSignature, FlaskConical, History, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
@@ -114,6 +115,12 @@ function ChartBody({
     extra.push({ id: "labs", label: "Lab orders & results", icon: FlaskConical, group: "chart", render: () => <LabsAndMeasuresTracking patientId={patient.id} role={role} /> });
   if (canOpenCaseloadReview(role))
     extra.push({ id: "contacts", label: "Contact log & weekly review", icon: PhoneCall, group: "case", render: () => <PatientContactLog patientId={patient.id} /> });
+  if (canSeeWeeklyReview(role))
+    extra.push({ id: "weekly-review", label: "Weekly review", icon: CalendarCheck, group: "case", render: () => <ChartWeeklyReview patientId={patient.id} /> });
+  if (canSeeChartConsents(role, patient))
+    extra.push({ id: "consents", label: "Consents & Part 2 disclosures", icon: FileSignature, group: "case", render: () => <ChartConsents patient={patient} /> });
+  if (canSeeChartAudit(role))
+    extra.push({ id: "audit-trail", label: "Audit trail", icon: History, group: "case", render: () => <ChartAuditTrail patientId={patient.id} /> });
   const allSections: RecordSection[] = [
     {
       id: "brief",
@@ -127,7 +134,7 @@ function ChartBody({
     ...sections,
     ...extra,
   ];
-  const tabs = tabsWithSections(allSections);
+  const tabs = tabsWithSections(allSections, role);
   const loc = resolveChartLocation(resolveSectionId(section));
   const activeTab = tabs.find((t) => t.id === loc.tab) ?? tabs[0]!;
   const badges = JSON.parse(badgesJson) as ReturnType<typeof tabBadges>;

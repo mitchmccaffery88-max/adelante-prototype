@@ -5,7 +5,7 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
-import { CHART_TABS, IN_FACILITY_SECTIONS, type ChartTabId } from "@/lib/chartTabs";
+import { CHART_TABS, IN_FACILITY_SECTIONS, orderSectionsForRole, type ChartTabId } from "@/lib/chartTabs";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { staffPlanView, planNeeds } from "@/lib/structuredCarePlan";
@@ -21,8 +21,8 @@ import { reentryDay } from "@/lib/chartBrief";
 import type { RecordSection } from "@/components/clinical/recordSections";
 import { Card } from "@/components/ui/card";
 
-export function tabsWithSections(sections: RecordSection[]) {
-  return CHART_TABS.map((t) => ({ ...t, subs: t.sections.filter((id) => inFacilityEnabled() || !IN_FACILITY_SECTIONS.includes(id)).map((id) => sections.find((s) => s.id === id)).filter(Boolean) as RecordSection[] })).filter(
+export function tabsWithSections(sections: RecordSection[], role?: StaffRole) {
+  return CHART_TABS.map((t) => ({ ...t, subs: (role ? (x: RecordSection[]) => orderSectionsForRole(t.id, x, role) : (x: RecordSection[]) => x)(t.sections.filter((id) => inFacilityEnabled() || !IN_FACILITY_SECTIONS.includes(id)).map((id) => sections.find((s) => s.id === id)).filter(Boolean) as RecordSection[]) })).filter(
     (t) => t.subs.length > 0,
   );
 }
@@ -182,6 +182,18 @@ export function subSummary(s: RecordSection, p: Patient, role: StaffRole): strin
       const m = p.careMessages ?? [];
       const unread = m.filter((x) => x.authorType === "patient" && !x.readByStaffAt).length;
       return m.length ? `${plural(m.length, "message")}${unread ? ` · ${unread} unread` : ""}` : "No messages yet";
+    }
+    case "consents": {
+      const n = AdelanteEHR.listConsentRecords(p.id).length;
+      return n ? plural(n, "consent record") : "No consent records";
+    }
+    case "audit-trail": {
+      const n = AdelanteEHR.listAuditEvents({ patientId: p.id }).length;
+      return n ? plural(n, "audit entry").replace("entrys", "entries") : "No audit entries";
+    }
+    case "weekly-review": {
+      const c = listContacts(p.id).filter((x) => x.type !== "attempt");
+      return c.length ? `Last contact ${dateShort(c[0]!.date)}` : "No contact logged yet";
     }
     case "mar":
     case "protocols":

@@ -19,7 +19,7 @@ import { headerAlerts, measureSeries, openReferrals, visibleMeds } from "@/lib/c
 import { listSideEffectReports } from "@/lib/medAdherence";
 import { hlocSendBlocker, HLOC_TARGET_LABEL, type HlocReferral } from "@/lib/outpatientCare";
 
-export const ADEL_REVIEW_LABEL = "Draft by Adel — review before signing";
+export const ADEL_REVIEW_LABEL = "Draft by Adel — review before saving";
 export const ADEL_SOURCE_RULES = "Rule-based template (no AI)";
 export const ADEL_THRESHOLDS_DRAFT = "Suggestion rules: Draft — pending clinical sign-off";
 const DAY = 86400000;
