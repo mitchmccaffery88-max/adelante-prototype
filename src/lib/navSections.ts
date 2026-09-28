@@ -283,6 +283,16 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["therapy_notes", "staff_supervision"] },
   },
   {
+    // Higher-level-of-care referrals — rows are Part 2-filtered on the page.
+    id: "clinical-referrals",
+    label: "Clinical referrals",
+    desc: "Higher level of care referrals",
+    icon: ClipboardSignature,
+    to: "/clinical-referrals",
+    group: "queues",
+    gate: { kind: "record_class", anyOf: ["therapy_notes"] },
+  },
+  {
     id: "crisis-queue",
     label: "Crisis queue",
     desc: "Escalations & disposition",
