@@ -1,4 +1,5 @@
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
+import { inFacilityEnabled } from "@/lib/inFacility";
 import {
   AdelanteEHR,
   defaultOccurrenceModality,
@@ -137,7 +138,7 @@ export function PatientHome() {
         {/* Pre-release patients often arrive with screening already on file
             before they start intake — show what the team knows here too. */}
         <div className="mx-auto max-w-4xl px-4 sm:px-6 pb-8">
-          <PreReleaseKnownNeedsCard patientId={patient.id} />
+          {inFacilityEnabled() && <PreReleaseKnownNeedsCard patientId={patient.id} />}
         </div>
       </>
     );

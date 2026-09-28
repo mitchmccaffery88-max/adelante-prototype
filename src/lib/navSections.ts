@@ -1,4 +1,5 @@
 import { canViewCoordination } from "@/lib/coordinationRoles";
+import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
 // §Platform nav — RBAC-driven navigation registry (Phase 1).
 //
@@ -660,6 +661,8 @@ export const STAFF_NAV: NavEntry[] = [
 
 /** True when `role` clears an entry's gate. No role lists live here. */
 export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
+  if (!inFacilityEnabled() && (entry.group === "facility" || IN_FACILITY_NAV_IDS.has(entry.id)))
+    return false;
   if (entry.gate.kind === "open") return true;
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";

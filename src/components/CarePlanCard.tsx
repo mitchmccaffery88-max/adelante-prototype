@@ -1,4 +1,5 @@
 import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { inFacilityEnabled } from "@/lib/inFacility";
 import { AdelanteEHR, useEhr, type CarePlanSnapshot } from "@/lib/ehr";
 import { useActingRole, canAccess, type StaffRole } from "@/lib/roles";
 import { useI18n, type Key } from "@/lib/i18n";
@@ -362,7 +363,7 @@ export function CarePlanCard({
             </div>
           )}
 
-          {plan.preRelease && (
+          {plan.preRelease && inFacilityEnabled() && (
             <PreReleaseContinuity
               pre={plan.preRelease}
               audience={audience}

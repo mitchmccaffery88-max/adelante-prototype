@@ -1,6 +1,6 @@
 // The two demo controls, side by side, on every page type. It sits in the
 // sticky page flow above the header, so it stays reachable without covering
-// the 988 bar, "I need help now", the craving button or "Save & continue".
+// the 988 bar, "In crisis now", the craving button or "Save & continue".
 import { FlaskConical } from "lucide-react";
 import { DemoStateSwitcher } from "@/components/DemoStateSwitcher";
 import { StaffRoleSwitcher } from "@/components/StaffRoleSwitcher";

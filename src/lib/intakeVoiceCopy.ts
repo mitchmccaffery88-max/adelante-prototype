@@ -26,7 +26,7 @@ export const INTAKE_VOICE_COPY: Record<VoiceLang, Copy> = {
     noMic: "Voice answers don't work in this browser. You can type or tap instead.",
     typeHere: "Type your answer", tapOnly: "Tap your answer on the screen for this one.",
     privately: "Answer privately (don't read my answer back).",
-    helpNow: "I need help now", saved: "Saved.",
+    helpNow: "In crisis now", saved: "Saved.",
     noteLabel: "Anything else you want your care team to know?",
     noteHint: "Optional. You can type or say it.",
     steps: {
@@ -53,7 +53,7 @@ export const INTAKE_VOICE_COPY: Record<VoiceLang, Copy> = {
     noMic: "Las respuestas por voz no funcionan en este navegador. Puede escribir o tocar.",
     typeHere: "Escriba su respuesta", tapOnly: "Para esta, toque su respuesta en la pantalla.",
     privately: "Responder en privado (no leer mi respuesta en voz alta).",
-    helpNow: "Necesito ayuda ahora", saved: "Guardado.",
+    helpNow: "En crisis ahora", saved: "Guardado.",
     noteLabel: "¿Algo más que quiera que sepa su equipo de cuidado?",
     noteHint: "Opcional. Puede escribirlo o decirlo.",
     steps: {

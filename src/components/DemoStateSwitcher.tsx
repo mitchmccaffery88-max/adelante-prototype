@@ -85,7 +85,7 @@ const STATE_LABEL: Record<DemoStateId, { label: string; hint: string; group: str
   ji_self_report: {
     group: "Justice",
     label: "3 · Victor H. — Previously justice-involved (self-reported)",
-    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez; crisis queue: \"I need help now\" request; same-day ID task in the case manager bell",
+    hint: "Self-reported at intake, not referred; reentry content, no Recovery Journey; optional topic \"ID and documents\" marked Today → same-day task for case manager Lupita Sanchez; crisis queue: \"In crisis now\" request; same-day ID task in the case manager bell",
   },
   sud_no_consent: {
     group: "Intake by need",

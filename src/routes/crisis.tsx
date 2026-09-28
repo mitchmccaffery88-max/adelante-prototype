@@ -5,6 +5,8 @@ import { Button } from "@/components/ui/button";
 import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage";
 import { NotifyCareTeamCard } from "@/components/patient/NotifyCareTeamCard";
 import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
+import { useI18n } from "@/lib/i18n";
+import { OUTSIDE_CRISIS_COPY, COUNTY_CRISIS_LINE } from "@/lib/outsideCrisisResources";
 
 /**
  * §Patient portal Tier 1 Build A — the real crisis landing page.
@@ -15,13 +17,15 @@ import { CRISIS_LIFELINE_NAME, CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
  * real Phase 5 box-breathing exercise and the real Phase 7 safety plan.
  */
 function CrisisPage() {
+  const { lang } = useI18n();
+  const c = OUTSIDE_CRISIS_COPY[lang === "es" ? "es" : "en"];
   return (
     <PatientPage data-testid="crisis-page">
       <PatientPageHeader
         icon={LifeBuoy}
         tone="crisis"
-        title="You are not alone"
-        lede="Let's get you some help right now."
+        title={c.title}
+        lede={c.lede}
         action={
           <Button asChild variant="ghost" size="sm" data-testid="crisis-back-link">
             <Link to="/home">Back to My care</Link>
@@ -34,16 +38,35 @@ function CrisisPage() {
         <Button asChild variant="crisis" size="patientLg" className="soft-shadow w-full">
           <a href={`tel:${CRISIS_LIFELINE_NUMBER}`} data-testid="crisis-call-988">
             <Phone className="h-5 w-5" aria-hidden="true" />
-            Call {CRISIS_LIFELINE_NUMBER}
+            {c.call988}
           </a>
         </Button>
         <Button asChild variant="crisisSoft" size="patientLg" className="w-full">
           <a href={`sms:${CRISIS_LIFELINE_NUMBER}`} data-testid="crisis-text-988">
             <MessageSquare className="h-5 w-5" aria-hidden="true" />
-            Text {CRISIS_LIFELINE_NUMBER}
+            {c.text988}
           </a>
         </Button>
       </div>
+
+      <div className="grid gap-3 sm:grid-cols-2" data-testid="crisis-outside-resources">
+        <Button asChild variant="crisisSoft" size="patientLg" className="w-full">
+          <a href="tel:911" data-testid="crisis-call-911">
+            <Phone className="h-5 w-5" aria-hidden="true" />
+            {c.call911}
+          </a>
+        </Button>
+        <Button asChild variant="outline" size="patientLg" className="w-full">
+          <a href={`tel:${COUNTY_CRISIS_LINE.number}`} data-testid="crisis-county-line">
+            <Phone className="h-5 w-5" aria-hidden="true" />
+            <span>
+              {c.county}
+              <span className="block text-xs font-normal text-muted-foreground">{c.countyPlaceholder}</span>
+            </span>
+          </a>
+        </Button>
+      </div>
+      <p className="px-1 text-sm text-muted-foreground" data-testid="crisis-outside-note">{c.outsideNote}</p>
 
       {/* §Build A item 5 — reuses the existing flagCrisis escalation path. */}
       <NotifyCareTeamCard />

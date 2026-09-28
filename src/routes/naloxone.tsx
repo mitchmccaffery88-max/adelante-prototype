@@ -179,7 +179,7 @@ function NaloxonePage() {
       <div className="grid gap-3 sm:grid-cols-3">
         <Button asChild variant="crisisSoft" size="patient" className="w-full">
           <Link to="/crisis">
-            <LifeBuoy className="h-5 w-5" aria-hidden="true" /> I need help now
+            <LifeBuoy className="h-5 w-5" aria-hidden="true" /> In crisis now
           </Link>
         </Button>
         {showRecovery && (

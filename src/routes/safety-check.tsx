@@ -31,8 +31,8 @@ function SafetyCheck() {
         </h1>
         <p className="text-sm text-muted-foreground">
           {es
-            ? "Si estás en peligro ahora, llama o envía un texto al 988, o usa «Necesito ayuda ahora»."
-            : "If you are in danger right now, call or text 988, or use “I need help now.”"}
+            ? "Si estás en peligro ahora, llama o envía un texto al 988, o usa «En crisis ahora»."
+            : "If you are in danger right now, call or text 988, or use “In crisis now.”"}
         </p>
         {patientId ? (
           <CssrsForm patientId={patientId} mode="patient_self" lang={es ? "es" : "en"} />

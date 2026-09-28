@@ -13,6 +13,8 @@ import {
   SampleBadge,
 } from "@/components/agentic/PrototypeChrome";
 import { EmptyState } from "@/components/EmptyState";
+import { NotePeekSheet, noteVisibleToRole } from "@/components/agentic/NotePeekSheet";
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { ClientDate } from "@/components/ClientDate";
@@ -54,6 +56,7 @@ function GuidedChartReview() {
   const { patientId } = Route.useParams();
   const { role } = useActingStaff();
   const facts = useEhr(() => chartReviewFacts(patientId, role));
+  const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
   if (!facts) {
     return (
@@ -73,6 +76,11 @@ function GuidedChartReview() {
         </Link>
       </Button>
 
+      <NotePeekSheet
+        patientId={patientId}
+        noteId={openNoteId}
+        onOpenChange={(o) => !o && setOpenNoteId(null)}
+      />
       <PrototypeBanner detail="The chart facts below are read from this patient's real record. The synthesis narrative is illustrative sample text written for the walkthrough — no model produced it." />
 
       <header className="mb-5">
@@ -158,7 +166,13 @@ function GuidedChartReview() {
             ) : (
               <ul className="space-y-3">
                 {facts.recentNotes.map((n) => (
-                  <li key={n.id} className="rounded-md border p-3 text-sm">
+                  <li key={n.id}>
+                    <button
+                      type="button"
+                      onClick={() => setOpenNoteId(n.id)}
+                      data-testid={`chart-review-note-${n.id}`}
+                      className="w-full rounded-md border p-3 text-left text-sm hover:bg-secondary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    >
                     <div className="flex flex-wrap items-center gap-2 text-xs text-muted-foreground">
                       <ClientDate value={n.date} />
                       <Badge variant="outline" className="text-[10px] capitalize">
@@ -166,8 +180,12 @@ function GuidedChartReview() {
                       </Badge>
                     </div>
                     <p className="mt-1 line-clamp-3 text-foreground">
-                      {n.assessment || n.subjective || n.plan || "—"}
+                      {noteVisibleToRole(role, p, n).visible
+                        ? n.assessment || n.subjective || n.plan || "—"
+                        : "Protected note — not shown for your role."}
                     </p>
+                    <span className="mt-1 block text-xs font-medium text-primary">Open full note</span>
+                    </button>
                   </li>
                 ))}
               </ul>

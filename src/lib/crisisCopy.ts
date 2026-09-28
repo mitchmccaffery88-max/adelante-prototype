@@ -47,10 +47,10 @@ const EN: CrisisCopy = {
   adelReply:
     "I'm really glad you told me. I want you to talk to a person, not me, right now. Call or text 988 — someone answers any hour, and it's free.",
   careTeamAlerted: "Your care team has been alerted",
-  getHelpNow: "I need help now",
+  getHelpNow: "In crisis now",
   stripPrompt: "Need a person right now?",
   stripCall: "Call",
-  stripSupport: "I need help now",
+  stripSupport: "In crisis now",
   frontDoorHeading: "Help is available right now",
   frontDoorBody:
     "What you wrote sounds heavy. You don't have to finish this form — talk to a person now. The 988 Suicide & Crisis Lifeline answers any hour, free.",
@@ -67,10 +67,10 @@ const ES: CrisisCopy = {
   adelReply:
     "Me alegra mucho que me lo hayas dicho. Ahora mismo quiero que hables con una persona, no conmigo. Llama o envía un mensaje de texto al 988 — alguien contesta a cualquier hora, y es gratis.",
   careTeamAlerted: "Tu equipo de cuidado ya fue avisado",
-  getHelpNow: "Necesito ayuda ahora",
+  getHelpNow: "En crisis ahora",
   stripPrompt: "¿Necesitas hablar con una persona ahora?",
   stripCall: "Llama al",
-  stripSupport: "Necesito ayuda ahora",
+  stripSupport: "En crisis ahora",
   frontDoorHeading: "Hay ayuda para ti ahora mismo",
   frontDoorBody:
     "Lo que escribiste suena muy pesado. No tienes que terminar este formulario — habla con una persona ahora. La Línea 988 de Suicidio y Crisis contesta a cualquier hora, gratis, y en español.",

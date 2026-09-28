@@ -15,6 +15,7 @@
 // Anything that is a POLICY NUMBER rather than a measured fact is declared
 // DRAFT in one place at the top, exactly the way `crisisPolicy.ts` does it, so
 // the real operational answer changes here and nowhere else.
+import { inFacilityEnabled, isInFacilityTask } from "@/lib/inFacility";
 import {
   AdelanteEHR,
   noteStatus,
@@ -179,6 +180,7 @@ export function myOpenItems(actor: ActingIdentity, now: Date = new Date()): MyOp
   const overdueTasks: MyTaskItem[] = AdelanteEHR.listCaseTasks()
     .filter((task) => {
       if (task.status === "done" || task.completedAt) return false;
+      if (!inFacilityEnabled() && isInFacilityTask(task)) return false;
       if (!owns(aliases, task.assignedTo) && !owns(aliases, task.claimedBy)) return false;
       if (task.snoozedUntil && +new Date(task.snoozedUntil) > t) return false;
       return +new Date(task.dueDate) < t;
