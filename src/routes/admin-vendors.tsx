@@ -1,3 +1,4 @@
+import { VoiceGuardrailNotice } from "@/components/voice/VoiceGuardrailNotice";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -65,6 +66,7 @@ function AdminVendorsPage() {
         <ArrowLeft className="h-3 w-3" /> Back to admin
       </Link>
       <h1 className="font-display text-2xl text-navy">Vendor status</h1>
+      <VoiceGuardrailNotice />
       <p className="text-sm text-muted-foreground">
         Adelante Pathways is the EHR of record. Vendors below deliver bounded services (telehealth
         video, eRx).

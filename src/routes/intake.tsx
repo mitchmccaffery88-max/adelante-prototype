@@ -104,6 +104,11 @@ import { Link } from "@tanstack/react-router";
 import { useActingStaff } from "@/lib/roles";
 import { AskAdelHelp } from "@/components/patient/AskAdelHelp";
 import { AdelGuidedIntake } from "@/components/intake/AdelGuidedIntake";
+import { useAdelVoice } from "@/hooks/useAdelVoice";
+import { VoiceAnswer, VoiceBar, VoiceOptIn } from "@/components/voice/AdelVoice";
+import { INTAKE_VOICE_COPY } from "@/lib/intakeVoiceCopy";
+import { isTapOnlyStep, isValidatedScreener } from "@/lib/adelVoice";
+import { detectCrisisLanguage, scanTextForCrisis } from "@/lib/crisisTextDetection";
 import { ADEL_COPY } from "@/lib/adelIntakeScript";
 import {
   LOOKUP_DISCLOSURE,
@@ -218,6 +223,12 @@ function IntakePage() {
   const dueJson = useEhr(() => JSON.stringify(AdelanteEHR.patientReassessmentDue(currentId)));
   const due = JSON.parse(dueJson) as { key: string }[];
   const [step, setStep] = useState(0);
+  // §E5 Phase A — reusable voice layer (off until the patient opts in).
+  const voiceLang = lang9a === "es" ? "es" : "en";
+  const voice = useAdelVoice(voiceLang);
+  const VC = INTAKE_VOICE_COPY[voiceLang];
+  const [intakeNote, setIntakeNote] = useState("");
+  const [voiceCrisis, setVoiceCrisis] = useState(false);
   // §Adel-guided intake (prototype) — opt-in; the form stays the default.
   const [adelMode, setAdelMode] = useState(false);
   const [sudConsent, setSudConsent] = useState<boolean | null>(null);
@@ -510,6 +521,13 @@ function IntakePage() {
   const total = steps.length;
   const current = steps[Math.min(step, total - 1)];
   const pct = Math.round(((step + 1) / total) * 100);
+  const currentScreener = activeScreeners.find((s) => s.key === current.key);
+  const tapOnly = isTapOnlyStep(current.key, { isSud: currentScreener?.isSud });
+  const voiceText = currentScreener && isValidatedScreener(current.key)
+    ? `${tapOnly ? VC.sensitiveIntro : VC.screenerIntro}\n\n${currentScreener.name}\n${currentScreener.questions.map((q, i) => `${i + 1}. ${q}`).join("\n")}`
+    : tapOnly
+      ? `${VC.sensitiveIntro}\n\n${VC.steps[current.key] ?? ""}`
+      : VC.steps[current.key] ?? "";
 
   const next = () => setStep((s) => Math.min(s + 1, total - 1));
   const back = () => setStep((s) => Math.max(s - 1, 0));
@@ -659,6 +677,7 @@ function IntakePage() {
       housingUnstable: askCore && choices["ahc-hrsn"]?.[0] === 2,
     });
     AdelanteEHR.completeIntake(currentId, {
+      intakeNote: intakeNote || undefined,
       // Backward compatibility: the four booleans still reflect what intake
       // learned, including needs confirmed through the "still applies" path.
       needs: {
@@ -1078,7 +1097,7 @@ function IntakePage() {
 
   return (
     <div className="mx-auto max-w-3xl px-4 sm:px-6 py-8">
-      {crisisFlagged && (
+      {(crisisFlagged || voiceCrisis) && (
         <Card className="mb-4 p-4 border-2 border-destructive/40 bg-destructive/5">
           <div className="flex items-start gap-3">
             <Heart className="h-5 w-5 text-destructive shrink-0 mt-0.5" />
@@ -1260,6 +1279,9 @@ function IntakePage() {
       )}
       {!inReassess && (<>
       <Card className="p-6">
+        {!adelMode && current.key !== "welcome" && (
+          <div className="mb-4"><VoiceBar voice={voice} lang={voiceLang} text={voiceText} tapOnly={tapOnly} draft={!currentScreener} /></div>
+        )}
         {current.key === "welcome" && adelMode && (
           <AdelGuidedIntake
             patientId={currentId}
@@ -1278,6 +1300,8 @@ function IntakePage() {
         )}
         {current.key === "welcome" && !adelMode && (
           <div className="space-y-5" data-testid="intake-welcome">
+            <VoiceOptIn voice={voice} lang={voiceLang} />
+            {voice.enabled && <VoiceBar voice={voice} lang={voiceLang} text={VC.steps.welcome} />}
             <p className="text-lg text-foreground">{W.lede}</p>
             <ul className="space-y-3 text-base">
               <li className="flex gap-3">
@@ -1487,6 +1511,13 @@ function IntakePage() {
             {langKey === "es" && H.esPending && (
               <p className="text-xs text-muted-foreground" data-testid="needs-es-pending">{H.esPending}</p>
             )}
+            <VoiceAnswer voice={voice} lang={voiceLang} label={VC.noteLabel} hint={VC.noteHint} value={intakeNote}
+              onConfirm={(t) => {
+                setIntakeNote(t);
+                // Same crisis scanner as typed text; a match opens the crisis path.
+                scanTextForCrisis(currentId, t, { surface: "an intake answer" });
+                if (detectCrisisLanguage(t).matched) setVoiceCrisis(true);
+              }} />
 
             {/* Section A — care you're looking for (existing question + "Not sure yet"). */}
             {!inReassess && (

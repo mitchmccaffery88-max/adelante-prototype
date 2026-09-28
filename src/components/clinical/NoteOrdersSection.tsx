@@ -76,7 +76,10 @@ export function NoteOrdersSection({
   const activeTherapy = orders.filter((o) => o.status === "signed" || o.status === "held");
   const needsAttribution = requiresAttribution(role);
   const issues = drafts.flatMap((o) => validateOrder(o, { needsAttribution }));
-  const gatePasses = drafts.length > 0 && issues.length === 0;
+  const safetyBlockers = drafts
+    .map((d) => AdelanteEHR.orderSigningBlocker(patientId, d))
+    .filter((x): x is string => !!x);
+  const gatePasses = drafts.length > 0 && issues.length === 0 && safetyBlockers.length === 0;
 
   const stageDraft = (
     input: Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">,
@@ -190,6 +193,11 @@ export function NoteOrdersSection({
               activeOrders={activeTherapy}
             />
           ))}
+          {safetyBlockers.length > 0 && (
+            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive">
+              {safetyBlockers.map((b) => <li key={b}>Can&apos;t sign yet: {b}</li>)}
+            </ul>
+          )}
           <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
           <Button
             className="w-full"

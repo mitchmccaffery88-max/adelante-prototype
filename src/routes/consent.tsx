@@ -1,3 +1,8 @@
+import { listLegalDisclosures, revokeLegalDisclosure } from "@/lib/outpatientCare";
+import { useActingStaff } from "@/lib/roles";
+import { Input } from "@/components/ui/input";
+import { Button } from "@/components/ui/button";
+import { ClientDate } from "@/components/ClientDate";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, type ExtendedConsentPurpose, type ConsentPurpose } from "@/lib/ehr";
@@ -119,6 +124,7 @@ function ConsentPage() {
       {patient && state ? (
         <ConsentRecordsPanel patient={patient} />
       ) : null}
+      {patient ? <LegalDisclosureCard patientId={patient.id} focused={search.category === "legal_part2_disclosure"} /> : null}
 
       {patient && state ? (
         <section className="grid gap-3 grid-cols-1 sm:grid-cols-2">
@@ -251,5 +257,36 @@ function ConsentPage() {
         </p>
       </section>
     </div>
+  );
+}
+
+/** Legal / Part 2 disclosures captured on referrals — same consent store. */
+function LegalDisclosureCard({ patientId, focused }: { patientId: string; focused: boolean }) {
+  const { role, staffName, staffId } = useActingStaff();
+  const rows = useEhr(() => listLegalDisclosures(patientId));
+  const [reason, setReason] = useState<Record<string, string>>({});
+  return (
+    <section aria-label="Legal / Part 2 disclosure" className={`rounded-lg border p-4 space-y-2 ${focused ? "border-teal ring-2 ring-teal/30" : "border-border"}`}>
+      <h2 className="font-display text-lg text-navy">Legal / Part 2 disclosure</h2>
+      <p className="text-xs text-muted-foreground">Signed consents to share substance use treatment records with an outside provider (42 CFR Part 2). Captured on a referral.</p>
+      {rows.length === 0 && <p className="text-sm text-muted-foreground">No disclosures on file.</p>}
+      {rows.map((d) => (
+        <div key={d.id} className="rounded-md border border-border p-3 text-sm space-y-1">
+          <div className="font-medium text-navy break-words">To: {d.recipient}</div>
+          <div className="text-xs text-muted-foreground break-words">Purpose: {d.purpose} · recorded <ClientDate value={d.recordedAt} /> by {d.recordedBy}</div>
+          {d.revokedAt ? (
+            <p className="text-xs text-destructive">Revoked <ClientDate value={d.revokedAt} /> by {d.revokedBy} — {d.revokeReason}</p>
+          ) : (
+            <div className="flex flex-col sm:flex-row gap-2">
+              <Input aria-label="Revoke reason" placeholder="Reason for revoking" className="h-9" value={reason[d.id] ?? ""} onChange={(e) => setReason({ ...reason, [d.id]: e.target.value })} />
+              <Button size="sm" variant="outline" onClick={() => {
+                try { revokeLegalDisclosure(d.id, { name: staffName, role, staffId }, reason[d.id] ?? ""); toast.success("Disclosure revoked"); }
+                catch (e) { toast.error((e as Error).message); }
+              }}>Revoke</Button>
+            </div>
+          )}
+        </div>
+      ))}
+    </section>
   );
 }

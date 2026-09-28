@@ -119,6 +119,8 @@ export type NavGate =
   | { kind: "coordination_desk" }
   /** §Item 7 — weekly caseload review; see canOpenCaseloadReview. */
   | { kind: "caseload_review" }
+  /** Clinical roles only — the higher-level referral list. */
+  | { kind: "clinical_referrals" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -281,6 +283,16 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/cosign-inbox",
     group: "queues",
     gate: { kind: "record_class", anyOf: ["therapy_notes", "staff_supervision"] },
+  },
+  {
+    // Higher-level-of-care referrals — rows are Part 2-filtered on the page.
+    id: "clinical-referrals",
+    label: "Clinical referrals",
+    desc: "Higher level of care referrals",
+    icon: ClipboardSignature,
+    to: "/clinical-referrals",
+    group: "queues",
+    gate: { kind: "clinical_referrals" },
   },
   {
     id: "crisis-queue",
@@ -654,6 +666,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
+  if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {
     const min = LEVEL_RANK[gate.minLevelByClass?.[cls] ?? gate.minLevel ?? "read"];
@@ -1029,3 +1042,8 @@ export const ADVOCATE_ROUTES: readonly string[] = ADVOCATE_NAV.map((n) => n.to);
 export function isAdvocateRoute(pathname: string): boolean {
   return pathname === "/advocate" || pathname.startsWith("/advocate/");
 }
+
+/** Clinical roles that see the higher-level referral list (rows still Part 2-filtered). */
+export const CLINICAL_REFERRAL_ROLES: ReadonlySet<string> = new Set([
+  "therapist", "pmhnp", "sud_counselor", "clinical_trainee", "sys_admin",
+]);

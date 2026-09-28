@@ -193,7 +193,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
                   <Link to="/consent" search={{ patientId, category: "legal_part2_disclosure" } as never}>Open consent screen</Link>
                 </Button>
               </div>
-              <ConsentCapture patientId={patientId} />
+              <ConsentCapture patientId={patientId} recipient={r.destination} purpose={`Referral — ${HLOC_TARGET_LABEL[r.target]}`} />
             </div>
           )}
           {canCreate && HLOC_NEXT[r.status].length > 0 && (
@@ -273,7 +273,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
 }
 
 /** Staff capture of the signed 42 CFR Part 2 disclosure form (typed signer + attestation). */
-function ConsentCapture({ patientId }: { patientId: string }) {
+function ConsentCapture({ patientId, recipient, purpose }: { patientId: string; recipient: string; purpose: string }) {
   const { role, staffName, staffId } = useActingStaff();
   const [name, setName] = useState("");
   const [att, setAtt] = useState(false);
@@ -287,7 +287,7 @@ function ConsentCapture({ patientId }: { patientId: string }) {
       <Button size="sm" onClick={() => {
         try {
           if (!att) throw new Error("Confirm you witnessed the signature.");
-          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name);
+          recordLegalDisclosureConsent(patientId, { name: staffName, role, staffId }, name, { recipient, purpose });
           toast.success("Part 2 disclosure consent recorded");
         } catch (e) {
           toast.error((e as Error).message);

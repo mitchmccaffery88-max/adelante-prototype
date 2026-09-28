@@ -1580,6 +1580,8 @@ export interface Patient {
   };
   carePlanSummary: string;
   intakeCompletedAt?: string;
+  /** §E5A — patient's optional "anything else" note from intake (confirmed text). */
+  intakeNote?: string;
   /**
    * §Phase 7d — how a general-population patient pays. Set by billing only
    * (via AdelanteEHRExt.setPaymentArrangement). Unset = not recorded yet.
@@ -8262,10 +8264,13 @@ export const AdelanteEHR = {
       needs: Patient["needs"];
       hipaa: boolean;
       part2Sud: boolean;
+      /** §E5A — confirmed text only (typed or voice); audio is never stored. */
+      intakeNote?: string;
     },
   ) {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return;
+    if (payload.intakeNote) p.intakeNote = payload.intakeNote.slice(0, 500);
     const now = new Date().toISOString();
     // Phase 3: `Patient.needs` stays written for the real consumers that still
     // read it (`needs.substanceUse` in the care-plan SUD signal, the CalOMS
