@@ -2842,7 +2842,10 @@ function ProgressNoteCard({
   });
   const autofill = note.autofillSnapshots ?? liveAutofill;
   const cardOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
-  const noteOrders = cardOrders.filter((o) => o.sourceNoteId === note.id);
+  const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const noteOrders = filterSudMedsForRole(cardOrders, role, cardPatient).visible.filter(
+    (o) => o.sourceNoteId === note.id,
+  );
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
