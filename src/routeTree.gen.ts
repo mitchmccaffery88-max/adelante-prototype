@@ -33,6 +33,7 @@ import { Route as BillingCalaimCodesRouteImport } from './routes/billing-calaim-
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as CaseloadReviewRouteImport } from './routes/caseload-review'
 import { Route as CheckinRouteImport } from './routes/checkin'
+import { Route as ClinicalReferralsRouteImport } from './routes/clinical-referrals'
 import { Route as ClinicianRouteImport } from './routes/clinician'
 import { Route as ClinicianAvailabilityRouteImport } from './routes/clinician-availability'
 import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-credentials'
@@ -229,6 +230,11 @@ const CaseloadReviewRoute = CaseloadReviewRouteImport.update({
 const CheckinRoute = CheckinRouteImport.update({
   id: '/checkin',
   path: '/checkin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ClinicalReferralsRoute = ClinicalReferralsRouteImport.update({
+  id: '/clinical-referrals',
+  path: '/clinical-referrals',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ClinicianRoute = ClinicianRouteImport.update({
@@ -648,6 +654,7 @@ export interface FileRoutesByFullPath {
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
+  '/clinical-referrals': typeof ClinicalReferralsRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -750,6 +757,7 @@ export interface FileRoutesByTo {
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
+  '/clinical-referrals': typeof ClinicalReferralsRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -851,6 +859,7 @@ export interface FileRoutesById {
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
+  '/clinical-referrals': typeof ClinicalReferralsRoute
   '/clinician': typeof ClinicianRoute
   '/clinician-availability': typeof ClinicianAvailabilityRoute
   '/clinician-credentials': typeof ClinicianCredentialsRoute
@@ -956,6 +965,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
+    | '/clinical-referrals'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -1058,6 +1068,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
+    | '/clinical-referrals'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -1158,6 +1169,7 @@ export interface FileRouteTypes {
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
+    | '/clinical-referrals'
     | '/clinician'
     | '/clinician-availability'
     | '/clinician-credentials'
@@ -1262,6 +1274,7 @@ export interface RootRouteChildren {
   CaseManagerRoute: typeof CaseManagerRoute
   CaseloadReviewRoute: typeof CaseloadReviewRoute
   CheckinRoute: typeof CheckinRoute
+  ClinicalReferralsRoute: typeof ClinicalReferralsRoute
   ClinicianRoute: typeof ClinicianRoute
   ClinicianAvailabilityRoute: typeof ClinicianAvailabilityRoute
   ClinicianCredentialsRoute: typeof ClinicianCredentialsRoute
@@ -1487,6 +1500,13 @@ declare module '@tanstack/react-router' {
       path: '/checkin'
       fullPath: '/checkin'
       preLoaderRoute: typeof CheckinRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/clinical-referrals': {
+      id: '/clinical-referrals'
+      path: '/clinical-referrals'
+      fullPath: '/clinical-referrals'
+      preLoaderRoute: typeof ClinicalReferralsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/clinician': {
@@ -2137,6 +2157,7 @@ const rootRouteChildren: RootRouteChildren = {
   CaseManagerRoute: CaseManagerRoute,
   CaseloadReviewRoute: CaseloadReviewRoute,
   CheckinRoute: CheckinRoute,
+  ClinicalReferralsRoute: ClinicalReferralsRoute,
   ClinicianRoute: ClinicianRoute,
   ClinicianAvailabilityRoute: ClinicianAvailabilityRoute,
   ClinicianCredentialsRoute: ClinicianCredentialsRoute,
