@@ -1,4 +1,5 @@
 import { VoiceGuardrailNotice } from "@/components/voice/VoiceGuardrailNotice";
+import { HieStatusCard } from "@/components/hie/OutsideRecords";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useEffect, useState } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -72,6 +73,7 @@ function AdminVendorsPage() {
         video, eRx).
       </p>
 
+      <HieStatusCard />
       <div className="grid md:grid-cols-2 gap-4">
         <VendorPanel
           label="Telehealth video"

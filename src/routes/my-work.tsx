@@ -154,6 +154,8 @@ const CONTACT_LABEL: Record<DisengagementRow["lastContactKind"], string> = {
   none: "nothing recorded",
 };
 
+import { hieFollowUps, KIND_LABEL, HIE_LABEL } from "@/lib/hie";
+
 function MyWorkPage() {
   const actor = useActingStaff();
   const notes = canAccess(actor.role, "therapy_notes");
@@ -186,6 +188,7 @@ function MyWorkPage() {
       : [],
   );
   const planReviews = useEhr(() => myPlanReviewsDue(identity));
+  const outside = useEhr(() => hieFollowUps(myCaseload(identity).map((p) => p.id), actor.role));
   const refills = useEhr(() => myPendingRefills({ ...identity, role: actor.role }));
   const myCrises = useEhr(() => caseloadCrises(identity, actor.role));
   const contactsDue = useEhr(() => (canUseCaseloadReview(actor.role) ? myContactsDue(actor.staffId) : []));
@@ -260,6 +263,33 @@ function MyWorkPage() {
           </div>
         )}
       </section>
+
+      {outside.length > 0 && (
+        <section aria-labelledby="hie-heading" className="space-y-3" data-testid="my-work-hie">
+          <SectionHeading
+            id="hie-heading"
+            icon={CalendarClock}
+            title="Outside event — follow up"
+            purpose={HIE_LABEL}
+            count={outside.length}
+          />
+          <div className="space-y-2">
+            {outside.map(({ draft, encounter }) => {
+              const p = AdelanteEHR.getPatient(encounter.patientId);
+              return (
+                <Row
+                  key={draft.id}
+                  patientId={encounter.patientId}
+                  name={p ? `${p.firstName} ${p.lastName}` : "Patient"}
+                  section="outside-records"
+                  primary={`Outside event — follow up · ${KIND_LABEL[encounter.kind]}, ${new Date(encounter.at).toLocaleDateString()}`}
+                  secondary={`${encounter.facility} · Draft by Adel waiting · ${HIE_LABEL}`}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
 
       {planReviews.length > 0 && (
         <section aria-labelledby="plan-review-heading" className="space-y-3" data-testid="my-work-plan-reviews">
