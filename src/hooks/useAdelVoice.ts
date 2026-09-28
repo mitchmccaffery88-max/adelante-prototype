@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useRef, useState, useSyncExternalStore } from "react";
 import {
   VOICE_RATE_VALUE,
+  createSpeakGuard,
   VOICE_SESSION_KEY,
   pickVoice,
   recognitionCtor,
@@ -23,6 +24,8 @@ export function setAdelVoiceOn(on: boolean) {
   if (!on && ttsSupported()) window.speechSynthesis.cancel();
   listeners.forEach((l) => l());
 }
+// One guard for the whole page so a double-fired effect speaks once.
+const speakGuard = createSpeakGuard();
 const subscribe = (l: () => void) => { listeners.add(l); return () => listeners.delete(l); };
 
 export function useAdelVoice(lang: VoiceLang) {
@@ -42,9 +45,10 @@ export function useAdelVoice(lang: VoiceLang) {
     setSpeaking(false);
   }, []);
 
-  const speak = useCallback((text: string) => {
+  const speak = useCallback((text: string, opts: { force?: boolean } = {}) => {
     setTranscript(text);
     if (!ttsSupported() || !text.trim()) return;
+    if (!speakGuard(text, lang) && !opts.force) return;
     window.speechSynthesis.cancel();
     const u = new window.SpeechSynthesisUtterance(text);
     u.lang = speechLangTag(lang);
@@ -57,7 +61,7 @@ export function useAdelVoice(lang: VoiceLang) {
     window.speechSynthesis.speak(u);
   }, [lang, rate]);
 
-  const replay = useCallback(() => { if (transcript) speak(transcript); }, [speak, transcript]);
+  const replay = useCallback(() => { if (transcript) speak(transcript, { force: true }); }, [speak, transcript]);
 
   /** Speech-to-text. Result is NEVER saved here — the caller confirms first. */
   const listen = useCallback((onHeard: (text: string) => void, onFail?: () => void) => {
