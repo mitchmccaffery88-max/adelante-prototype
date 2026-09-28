@@ -242,7 +242,7 @@ export function CarePlanCard({
               <MyPlan patientId={patientId} />
             </div>
           ) : (
-          <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
+          <div className={(audience as Audience) === "patient" ? "sm:col-span-2" : undefined}>
             <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-navy">
               <span className="inline-flex items-center gap-1.5">
                 <Target className="h-3.5 w-3.5" /> Goals
@@ -252,7 +252,7 @@ export function CarePlanCard({
               </span>
             </div>
             <Progress value={goalsPct} className="mt-2 h-1.5" />
-            {audience === "patient" ? (
+            {(audience as Audience) === "patient" ? (
               <>
                 <p className="mt-2 text-xs text-muted-foreground">{t("patGoalTapHint")}</p>
                 <ul className="mt-2 space-y-2">
