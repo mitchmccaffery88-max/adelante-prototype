@@ -281,7 +281,7 @@ function ChartMoreMenu({ patientId }: { patientId: string }) {
             </Link>
           </Button>
           <Button size="sm" variant="ghost" asChild className="text-xs">
-            <Link to="/agentic/" search={{ patientId }}>
+            <Link to="/agentic" search={{ patientId }}>
               <FlaskConical className="h-3.5 w-3.5" /> Agentic guide (demo)
             </Link>
           </Button>
