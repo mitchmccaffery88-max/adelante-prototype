@@ -242,7 +242,12 @@ import {
 // Patient<->clinician messaging is explicitly out of scope (Phase 2).
 // In-app only: there is no email/SMS/push transport anywhere in this build.
 // ---------------------------------------------------------------------------
+/** §Notification audience — which shell may ever show a notification. */
+export type NotificationAudience = "patient" | "advocate" | "staff";
+
 export type NotificationCategory =
+  // §Patient/advocate-facing updates (visit confirmed, care-team message, plan).
+  | "patient_update"
   | "cosign_request"
   | "crisis_flagged"
   | "mar_witness_needed"
@@ -323,6 +328,14 @@ import {
 
 export interface AppNotification {
   id: string;
+  /** Which shell may show it. Missing = "staff" (every legacy row is staff-facing). */
+  audience?: NotificationAudience;
+  /** Patient-audience recipient (patient id). */
+  recipientPatientId?: string;
+  /** Advocate-audience recipient (advocate link/session id). */
+  recipientAdvocateId?: string;
+  /** Idempotency key: one row per key per recipient, and one per key in any list. */
+  dedupeKey?: string;
   /** Specific staff identity (STAFF_ROSTER id or staff name). */
   recipientStaffId?: string;
   /** OR broadcast to everyone holding this role. Exactly one of the two is set. */
@@ -11404,9 +11417,9 @@ export const AdelanteEHR = {
     const subject = `Void request — progress note — ${vInit}`;
     const body = `${input.byName} asked to void a progress note as entered in error. Open the inbox to approve or reject.`;
     if (own.kind === "owner")
-      AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
+      AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId, dedupeKey: `void:${noteId}:${n.voidRequest.at}` });
     for (const r of VOID_APPROVER_ROLES)
-      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/inbox", patientId });
+      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/inbox", patientId, dedupeKey: `void:${noteId}:${n.voidRequest.at}` });
     emit();
     return n;
   },
@@ -11458,6 +11471,10 @@ export const AdelanteEHR = {
       throw new Error("A reason is required to reject a void request.");
     const req = n.voidRequest;
     n.voidRequest = undefined;
+    // The request is decided — its "please decide" notifications go away, so
+    // the bell holds one row per OPEN void request.
+    const vKey = `void:${noteId}:${req.at}`;
+    for (let i = notifications.length - 1; i >= 0; i--) if (notifications[i]!.dedupeKey === vKey) notifications.splice(i, 1);
     if (!input.approve) {
       AdelanteEHR._logRevision(patientId, n, { action: "void_declined", byName: input.name, role: input.role, reason: input.comment?.trim() || undefined });
       emit();
@@ -15335,10 +15352,22 @@ export const AdelanteEHR = {
     linkRoute?: string;
     linkParams?: Record<string, string>;
     patientId?: string;
+    dedupeKey?: string;
   }): AppNotification | undefined {
     if (!input.recipientStaffId && !input.recipientRole) return undefined;
+    if (input.dedupeKey) {
+      const dup = notifications.find(
+        (n) =>
+          n.dedupeKey === input.dedupeKey &&
+          (n.audience ?? "staff") === "staff" &&
+          (input.recipientStaffId ? n.recipientStaffId === input.recipientStaffId : n.recipientRole === input.recipientRole),
+      );
+      if (dup) return dup;
+    }
     const row: AppNotification = {
       id: uid(),
+      audience: "staff",
+      dedupeKey: input.dedupeKey,
       recipientStaffId: input.recipientStaffId || undefined,
       // Exactly one addressing mode — a specific person wins over a broadcast.
       recipientRole: input.recipientStaffId ? undefined : input.recipientRole,
@@ -15365,14 +15394,72 @@ export const AdelanteEHR = {
   listNotificationsFor(staffName: string, role?: StaffRole, staffId?: string): AppNotification[] {
     const me = (staffName ?? "").trim();
     const myId = (staffId ?? "").trim();
+    const seen = new Set<string>();
     return notifications
+      .filter((n) => (n.audience ?? "staff") === "staff")
       .filter(
         (n) =>
           (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
           (!!n.recipientStaffId && !!myId && n.recipientStaffId === myId) ||
           (!!n.recipientRole && !!role && (n.recipientRole === role || (role === "physician" && n.recipientRole === "pmhnp"))),
       )
+      .sort((a, b) => b.createdAt.localeCompare(a.createdAt))
+      .filter((n) => {
+        if (!n.dedupeKey) return true;
+        if (seen.has(n.dedupeKey)) return false;
+        seen.add(n.dedupeKey);
+        return true;
+      });
+  },
+  /** Patient- or advocate-facing notification. Never reaches a staff list. */
+  notifyMember(input: {
+    audience: "patient" | "advocate";
+    recipientId: string;
+    subject: string;
+    body: string;
+    linkRoute?: string;
+    patientId?: string;
+    dedupeKey?: string;
+    createdAt?: string;
+  }): AppNotification | undefined {
+    if (!input.recipientId) return undefined;
+    const key = input.audience === "patient" ? "recipientPatientId" : "recipientAdvocateId";
+    if (input.dedupeKey) {
+      const dup = notifications.find((n) => n.dedupeKey === input.dedupeKey && n[key] === input.recipientId);
+      if (dup) return dup;
+    }
+    const row: AppNotification = {
+      id: uid(),
+      audience: input.audience,
+      [key]: input.recipientId,
+      category: "patient_update",
+      subject: input.subject,
+      body: input.body,
+      linkRoute: input.linkRoute,
+      patientId: input.patientId,
+      dedupeKey: input.dedupeKey,
+      createdAt: input.createdAt ?? new Date().toISOString(),
+    };
+    notifications.unshift(row);
+    emit();
+    return row;
+  },
+  /**
+   * The ONLY list a patient or advocate shell reads. Filters by audience at
+   * the data layer, so the acting staff role can never leak staff rows here.
+   */
+  listMemberNotifications(audience: "patient" | "advocate", recipientId: string | null | undefined): AppNotification[] {
+    if (!recipientId) return [];
+    const key = audience === "patient" ? "recipientPatientId" : "recipientAdvocateId";
+    return notifications
+      .filter((n) => n.audience === audience && n[key] === recipientId)
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
+  },
+  markMemberNotificationsRead(audience: "patient" | "advocate", recipientId: string | null | undefined): void {
+    const now = new Date().toISOString();
+    let changed = false;
+    for (const r of AdelanteEHR.listMemberNotifications(audience, recipientId)) if (!r.readAt) { r.readAt = now; changed = true; }
+    if (changed) emit();
   },
   markNotificationRead(id: string, staffName: string): void {
     const row = notifications.find((n) => n.id === id);

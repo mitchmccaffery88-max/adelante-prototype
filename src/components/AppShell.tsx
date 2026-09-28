@@ -24,7 +24,7 @@ import { UserNavigationDrawer } from "@/components/UserNavigationDrawer";
 import { CrisisHeader } from "@/components/patient/CrisisHeader";
 import { CravingFab } from "@/components/patient/CravingFab";
 import { StaffBreadcrumbs } from "@/components/StaffBreadcrumbs";
-import { AdvocateContextSwitch } from "@/components/ContextSwitcher";
+import { AdvocateContextSwitch, useAdvocateSessionId } from "@/components/ContextSwitcher";
 import { DemoControlsBar } from "@/components/DemoControlsBar";
 import { RouteAccessGuard } from "@/components/RouteAccessGuard";
 import { OnboardingGuard } from "@/components/OnboardingGuard";
@@ -51,6 +51,7 @@ export function AppShell() {
   const navigate = useNavigate();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const patient = useEhr(() => AdelanteEHR.getPatient(currentId));
+  const advocateId = useAdvocateSessionId();
   // Restore the acting patient after a hard reload. Only ever accepts an id
   // that still exists (runtime-created demo records do not survive a reload),
   // and runs in an effect so SSR and hydration agree on the first paint.
@@ -239,7 +240,12 @@ export function AppShell() {
             {isPatientSurface && !onboarding && <PatientHelpLink className="hidden sm:inline-flex" />}
 
             {/* §Notification feed — operational alerts for the acting staff identity. */}
-            {(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && <NotificationBell />}
+            {(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && (
+              <NotificationBell
+                audience={isPatientSurface ? "patient" : isAdvocateSurface ? "advocate" : "staff"}
+                memberId={isPatientSurface ? currentId : isAdvocateSurface ? advocateId : undefined}
+              />
+            )}
 
             {/* Staff portal belongs only to staff pages. */}
             {isStaffSurface && <DropdownMenu>

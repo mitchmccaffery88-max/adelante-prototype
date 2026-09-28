@@ -4,8 +4,10 @@ import { todaysActivity } from "@/lib/structuredCarePlan";
 // Same patient-private mood store (`recordDailyCheckIn`); nothing reaches
 // staff. Offered once per day: "Not now" hides it until tomorrow, no nagging.
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
-import { Link } from "@tanstack/react-router";
-import { MessageSquare } from "lucide-react";
+import { Link, useNavigate } from "@tanstack/react-router";
+import { MessageSquare, Mic, Send } from "lucide-react";
+import { Input } from "@/components/ui/input";
+import { useAdelVoice } from "@/hooks/useAdelVoice";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { useI18n } from "@/lib/i18n";
@@ -163,9 +165,115 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
               </div>
             </>
           )}
+          <AskAdelBox lang={lang === "es" ? "es" : "en"} />
           <p className="mt-2 text-xs text-muted-foreground">{c.privacy}</p>
         </div>
       </div>
     </Card>
+  );
+}
+
+const ASK_COPY = {
+  en: {
+    placeholder: "Ask Adel anything…",
+    send: "Send to Adel",
+    mic: "Speak to Adel",
+    listening: "Listening…",
+    useVoice: "Use my voice",
+    heard: "Here's what I heard. Change it if needed, then send.",
+    noMic: "Voice isn't available here. Please type instead.",
+  },
+  es: {
+    placeholder: "Pregúntele a Adel lo que quiera…",
+    send: "Enviar a Adel",
+    mic: "Hablar con Adel",
+    listening: "Escuchando…",
+    useVoice: "Usar mi voz",
+    heard: "Esto es lo que escuché. Cámbielo si hace falta y luego envíe.",
+    noMic: "La voz no está disponible aquí. Escriba, por favor.",
+  },
+};
+
+/**
+ * Ask Adel from the tile. Sending opens the existing Adel chat with the
+ * message already sent (same crisis scanner and guardrails). Voice is off
+ * until the patient turns it on; heard text is shown for confirmation first.
+ */
+function AskAdelBox({ lang }: { lang: "en" | "es" }) {
+  const c = ASK_COPY[lang];
+  const navigate = useNavigate();
+  const voice = useAdelVoice(lang);
+  const [text, setText] = useState("");
+  const [heard, setHeard] = useState(false);
+  const [micFailed, setMicFailed] = useState(false);
+  const noMic = !voice.canListen || micFailed;
+  const submit = () => {
+    const t = text.trim();
+    if (!t) return;
+    void navigate({ to: "/adel", search: { ask: t } });
+  };
+  return (
+    <form
+      className="mt-3 space-y-2"
+      data-testid="adel-tile-ask"
+      onSubmit={(e) => {
+        e.preventDefault();
+        submit();
+      }}
+    >
+      <div className="flex items-center gap-2">
+        <Input
+          aria-label={c.placeholder}
+          placeholder={c.placeholder}
+          maxLength={500}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+          className="min-h-11 flex-1"
+          data-testid="adel-tile-input"
+        />
+        {voice.enabled && !noMic ? (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            aria-label={voice.listening ? c.listening : c.mic}
+            data-testid="adel-tile-mic"
+            onClick={() =>
+              voice.listening
+                ? voice.stopListening()
+                : voice.listen(
+                    (t) => {
+                      setText(t);
+                      setHeard(true);
+                    },
+                    () => setMicFailed(true),
+                  )
+            }
+          >
+            <Mic className="h-4 w-4" aria-hidden="true" />
+          </Button>
+        ) : (
+          <Button
+            type="button"
+            variant="outline"
+            size="icon"
+            className="h-11 w-11 shrink-0"
+            aria-label={c.useVoice}
+            title={c.useVoice}
+            data-testid="adel-tile-mic"
+            disabled={voice.enabled && noMic}
+            onClick={() => voice.setEnabled(true)}
+          >
+            <Mic className="h-4 w-4 opacity-60" aria-hidden="true" />
+          </Button>
+        )}
+        <Button type="submit" size="icon" className="h-11 w-11 shrink-0" aria-label={c.send} disabled={!text.trim()} data-testid="adel-tile-send">
+          <Send className="h-4 w-4" aria-hidden="true" />
+        </Button>
+      </div>
+      {heard && <p className="text-xs text-muted-foreground">{c.heard}</p>}
+      {voice.enabled && noMic && <p className="text-xs text-muted-foreground" data-testid="adel-tile-no-mic">{c.noMic}</p>}
+    </form>
   );
 }

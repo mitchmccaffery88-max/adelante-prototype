@@ -10,7 +10,8 @@ describe("public referral shell", () => {
 
   it("does not mount staff-only controls on public pages", () => {
     expect(appShell).toContain("{!isPublicSurface && <RouteAccessGuard />}");
-    expect(appShell).toContain("{(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && <NotificationBell />}");
+    expect(appShell).toContain("{(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && (");
+    expect(appShell).toContain('audience={isPatientSurface ? "patient" : isAdvocateSurface ? "advocate" : "staff"}');
     expect(appShell).toContain("{isStaffSurface && <DropdownMenu>");
   });
 
