@@ -37,6 +37,7 @@ import { COORDINATION_ROLES } from "@/lib/coordinationRoles";
 import { listUnassignedPatients } from "@/lib/coordination";
 import { myAsamWork } from "@/lib/asamReporting";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
+import { OutreachDraftDialog } from "@/components/chart/AdelDrafts";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -174,6 +175,10 @@ function MyWorkPage() {
 
   const open = useEhr(() => myOpenItems(identity));
   const caseload = useEhr(() => myCaseload(identity));
+  const missedVisits = useEhr(() => {
+    const ids = new Set(myCaseload(identity).map((p) => p.id));
+    return AdelanteEHR.listAppointments().filter((a) => ids.has(a.patientId) && a.status === "no_show" && Date.now() - +new Date(a.start) <= 30 * 86400000);
+  });
   const rescreens = useEhr(() => screenerDueRows(myCaseload(identity), { role: actor.role }));
   const quiet = useEhr(() => disengagementFlagged(disengagementRows(myCaseload(identity))));
   // §10d-1 — ASAM group. `null` = the role fails the Part 2 check: hidden.
@@ -287,6 +292,34 @@ function MyWorkPage() {
                   section="outside-records"
                   primary={`Outside event — follow up · ${KIND_LABEL[encounter.kind]}, ${new Date(encounter.at).toLocaleDateString()}`}
                   secondary={`${encounter.facility} · Draft by Adel waiting · ${HIE_LABEL}`}
+                  badge={<OutreachDraftDialog patientId={encounter.patientId} reason="outside_event" />}
+                />
+              );
+            })}
+          </div>
+        </section>
+      )}
+
+      {missedVisits.length > 0 && (
+        <section aria-labelledby="missed-heading" className="space-y-3" data-testid="my-work-missed">
+          <SectionHeading
+            id="missed-heading"
+            icon={CalendarClock}
+            title="Missed visits — reach out"
+            purpose="Caseload patients who missed a visit in the last 30 days. Adel can draft a plain-language message you review and send."
+            count={missedVisits.length}
+          />
+          <div className="space-y-2">
+            {missedVisits.map((a) => {
+              const p = AdelanteEHR.getPatient(a.patientId);
+              return (
+                <Row
+                  key={a.id}
+                  patientId={a.patientId}
+                  name={p ? `${p.firstName} ${p.lastName}` : "Patient"}
+                  section="appointments"
+                  primary={`Missed visit · ${new Date(a.start).toLocaleDateString()}`}
+                  badge={<OutreachDraftDialog patientId={a.patientId} reason="missed_visit" />}
                 />
               );
             })}
@@ -473,9 +506,12 @@ function MyWorkPage() {
                   primary={r.lastContact ? `Last contact ${r.lastContact}` : "No contact logged yet"}
                   secondary={<Link to="/caseload-review" className="underline">Open the weekly caseload review</Link>}
                   badge={
-                    <Badge className={`border-0 text-[10px] ${r.status === "overdue" ? "bg-destructive/15 text-destructive" : "bg-warning/20 text-navy"}`}>
-                      {r.status === "overdue" ? "Overdue" : "Due"}
-                    </Badge>
+                    <span className="flex items-center gap-2">
+                      <OutreachDraftDialog patientId={r.patient.id} reason="contact_due" />
+                      <Badge className={`border-0 text-[10px] ${r.status === "overdue" ? "bg-destructive/15 text-destructive" : "bg-warning/20 text-navy"}`}>
+                        {r.status === "overdue" ? "Overdue" : "Due"}
+                      </Badge>
+                    </span>
                   }
                 />
               ))}
