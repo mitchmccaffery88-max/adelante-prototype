@@ -9,6 +9,7 @@ import { roleSeesAsamSection, SUD_MED_WITHHELD_ROLES } from "@/lib/asamReporting
 import { addStructuredGoal } from "@/lib/structuredCarePlan";
 import { createHlocReferral, dischargeEpisode } from "@/lib/outpatientCare";
 import { logContact } from "@/lib/caseloadReview";
+import { placeLabOrder, recordMetabolic, requestScreener } from "@/lib/chartOrders";
 
 const ROLES = STAFF_ROLES.map((r) => r.key);
 const ROLE_REFUSAL =
@@ -60,6 +61,11 @@ const PROBES: Record<string, (role: StaffRole, p: Patient) => unknown> = {
     }),
   discharge_episode: (role, p) =>
     dischargeEpisode({ patientId: p.id, reason: "x" as never, summary: "", actor: { name: "Probe", role }, confirmCancelVisits: false }),
+  lab_order: (role, p) =>
+    placeLabOrder({ patientId: p.id, testId: "lithium", reason: "", priority: "routine", dueAt: "", actor: { name: "Probe", role } }),
+  screener_request: (role, p) => requestScreener({ patientId: p.id, key: "zz-none", actor: { name: "Probe", role } }),
+  metabolic: (role, p) =>
+    recordMetabolic({ patientId: p.id, bpSystolic: 0, bpDiastolic: 0, weightKg: 0, heightCm: 0, actor: { name: "Probe", role } }),
   contact_log: (role, p) => logContact({ role } as never, { patientId: p.id, type: "zz" as never, date: "" }),
 };
 

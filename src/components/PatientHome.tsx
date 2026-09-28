@@ -1,3 +1,4 @@
+import { openScreenerRequestsForPatient } from "@/lib/chartOrders";
 import { Link, useNavigate, useSearch } from "@tanstack/react-router";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import {
@@ -591,6 +592,8 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
   const due = JSON.parse(dueJson) as { key: string }[];
   // §Phase 10b — an open C-SSRS request folds into this same tile.
   const cssrsOpen = useEhr(() => Boolean(AdelanteEHR.openCssrsRequest(patientId)));
+  // §Chart redesign turn 2 — a staff screener request reads as a team ask.
+  const teamAsked = useEhr(() => openScreenerRequestsForPatient(patientId).length > 0);
   if (due.length === 0 && !cssrsOpen) {
     return (
       <Card
@@ -615,7 +618,13 @@ function ReassessmentOrCompleteTile({ patientId }: { patientId: string }) {
       <div className="flex items-start gap-2">
         <ClipboardList className="h-5 w-5 text-teal mt-0.5" />
         <div>
-          <div className="font-medium text-navy">{c.tileTitle}</div>
+          <div className="font-medium text-navy" data-testid={teamAsked ? "team-asked-title" : undefined}>
+            {teamAsked
+              ? L === "es"
+                ? "Su equipo de atención le pidió llenar esto"
+                : "Your care team asked you to fill this out"
+              : c.tileTitle}
+          </div>
           <div className="text-xs text-muted-foreground">{c.tileBody}</div>
         </div>
       </div>

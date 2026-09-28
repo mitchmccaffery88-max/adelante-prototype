@@ -235,16 +235,17 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   },
   care_plan: {
     // §Chart registry — matches PLAN_EDIT_ROLES (structuredCarePlan.ts):
-    // ECM reads; coordinator and sys_admin edit.
-    ecm_provider: "read",
-    clinical_coordinator: "write",
-    sys_admin: "write",
+    // ECM / care manager edit non-SUD items; coordinator reads (reassigns
+    // owners only); sys_admin reads, no clinical editing.
+    ecm_provider: "write",
+    clinical_coordinator: "read",
+    sys_admin: "read",
     peer_specialist: "read",
     therapist: "write",
     pmhnp: "write",
     sud_counselor: "write",
     clinical_trainee: "write",
-    cf_care_manager: "read",
+    cf_care_manager: "write",
   },
   // A trainee may AUTHOR a note; they can never self-sign it —
   // NOTE_SELF_SIGN_ROLES (ehr.ts) is pmhnp/therapist only, so every trainee

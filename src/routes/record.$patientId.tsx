@@ -23,6 +23,7 @@ import {
   type RecordSectionGroup,
 } from "@/components/clinical/recordSections";
 import { EmptyState } from "@/components/EmptyState";
+import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
 import { ArrowLeft, FlaskConical, MoreHorizontal, PanelLeft } from "lucide-react";
 
 interface ChartSearch {
@@ -182,9 +183,10 @@ function ChartBody({
           </div>
           {/* Full width: wide sections (Orders' dose axes, off-catalog panel)
               lay out as multi-column forms instead of a squeezed stack. */}
-          <Card className="chart-pane p-4">{active?.render()}</Card>
+          <Card className="chart-pane p-4 pb-20">{active?.render()}</Card>
         </main>
       </div>
+      <ChartActionLauncher patientId={patient.id} sections={sections} onSelectSection={onSelect} />
     </div>
   );
 }

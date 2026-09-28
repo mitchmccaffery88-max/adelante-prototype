@@ -1,3 +1,4 @@
+import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
 import { roleSeesAsamSection as roleSeesAsamSectionForGoals } from "@/lib/asamReporting";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { buildTrackingRows, filterTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
@@ -3369,6 +3370,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
   return (
     <div className="space-y-6">
       <TrackingTimeline patient={patient} role={role} />
+      <LabsAndMeasuresTracking patientId={patientId} role={role} />
       <div className="rounded-md border p-3 space-y-2" data-testid="tracking-cssrs">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="font-medium text-navy text-sm flex-1">C-SSRS Screener</h4>

@@ -2,13 +2,14 @@
 // "create / act" action. Each `allowed()` calls the SAME function-level check
 // the store enforces; it never re-types a role list of its own.
 import { AdelanteEHR, APPT_REQUEST_BOOKING_ROLES, REFILL_PRESCRIBER_ROLES, type Patient } from "@/lib/ehr";
-import { canAccess, canFlagCrisis, isPrescriberRole, type RecordClass, type StaffRole } from "@/lib/roles";
+import { canAccess, canFlagCrisis, getStaffMember, isPrescriberRole, type RecordClass, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { ASAM_AUTHOR_ROLES, asamNeedsCosign } from "@/lib/asam";
 import { canSignNotes } from "@/lib/notes";
 import { ADDENDUM_ROLES } from "@/lib/noteRevisions";
 import { editableDemographicFields } from "@/lib/demographics";
-import { canEditPlan } from "@/lib/structuredCarePlan";
+import { canEditPlan, PLAN_COSIGN_ROLES } from "@/lib/structuredCarePlan";
+import { canOrderLabs, canRecordMetabolic, canRequestScreener } from "@/lib/chartOrders";
 import { EPISODE_ROLES, HLOC_REFERRAL_ROLES } from "@/lib/outpatientCare";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 
@@ -45,6 +46,11 @@ const writes = (role: StaffRole, cls: RecordClass, p?: Patient) => {
   return a.level === "write" && !a.locked;
 };
 const inList = (list: readonly string[], role: string) => list.includes(role);
+/** "Routes to [supervisor name] for cosign" — the acting person's supervisor. */
+export function cosignRouteLabel(staffId?: string): string {
+  const sup = getStaffMember(getStaffMember(staffId)?.supervisedBy);
+  return sup ? `Routes to ${sup.name} for cosign` : "Routes to a cosigner";
+}
 
 export const CHART_ACTIONS: ChartAction[] = [
   {
@@ -53,12 +59,12 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     store: "AdelanteEHR.addProgressNote / signProgressNote",
-    allowed: ({ role }, p) => {
+    allowed: ({ role, staffId }, p) => {
       const canWrite = (["therapy_notes", "case_notes", "chw_notes", "peer_notes"] as RecordClass[]).some((c) =>
         writes(role, c, p),
       );
       if (canSignNotes(role)) return ok();
-      if (canWrite) return cosign("Your notes route to a cosigner.");
+      if (canWrite) return cosign(cosignRouteLabel(staffId));
       return hide("Your role doesn't write notes.");
     },
   },
@@ -102,19 +108,24 @@ export const CHART_ACTIONS: ChartAction[] = [
     label: { en: "Lab order", es: "Orden de laboratorio" },
     group: "clinical",
     sectionId: "orders",
-    store: "(turn 2)",
-    pending: true,
-    allowed: ({ role }) => (isPrescriberRole(role) ? ok() : hide("Only a prescriber can order labs.")),
+    store: "placeLabOrder",
+    allowed: ({ role }) => (canOrderLabs(role) ? ok() : hide("Only a prescriber can order labs.")),
   },
   {
     id: "screener_request",
     label: { en: "Request a screener", es: "Pedir un cuestionario" },
     group: "clinical",
     sectionId: "tracking",
-    store: "(turn 2)",
-    pending: true,
-    allowed: ({ role }, p) =>
-      writes(role, "screeners_mh", p) || canSignNotes(role) ? ok() : hide("Your role doesn't request screeners."),
+    store: "requestScreener",
+    allowed: ({ role }, p) => (canRequestScreener(role, p) ? ok() : hide("Your role doesn't request screeners.")),
+  },
+  {
+    id: "metabolic",
+    label: { en: "Metabolic measures", es: "Medidas metabólicas" },
+    group: "clinical",
+    sectionId: "tracking",
+    store: "recordMetabolic",
+    allowed: ({ role }) => (canRecordMetabolic(role) ? ok() : hide("Only a prescriber records metabolic measures.")),
   },
   {
     id: "asam",
@@ -122,10 +133,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "clinical",
     sectionId: "asam",
     store: "AdelanteEHR ASAM draft / signAsam",
-    allowed: ({ role }, p) => {
+    allowed: ({ role, staffId }, p) => {
       if (!roleSeesAsamSection(role, p)) return hide("Not available for your role.");
       if (!inList(ASAM_AUTHOR_ROLES, role)) return hide("Your role can view, not author, an ASAM.");
-      return asamNeedsCosign(role) ? cosign("Needs an LPHA co-signature.") : ok();
+      return asamNeedsCosign(role) ? cosign(cosignRouteLabel(staffId)) : ok();
     },
   },
   {
@@ -134,7 +145,12 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "care",
     sectionId: "care-plan",
     store: "addStructuredGoal",
-    allowed: ({ role }) => (canEditPlan(role) ? ok() : hide("Your role can't change the care plan.")),
+    allowed: ({ role, staffId }) =>
+      !canEditPlan(role)
+        ? hide("Your role can't change the care plan.")
+        : inList(PLAN_COSIGN_ROLES, role)
+          ? cosign(cosignRouteLabel(staffId))
+          : ok(),
   },
   {
     id: "activity_assignment",
@@ -142,7 +158,12 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "care",
     sectionId: "care-plan",
     store: "assignToGoal",
-    allowed: ({ role }) => (canEditPlan(role) ? ok() : hide("Your role can't change the care plan.")),
+    allowed: ({ role, staffId }) =>
+      !canEditPlan(role)
+        ? hide("Your role can't change the care plan.")
+        : inList(PLAN_COSIGN_ROLES, role)
+          ? cosign(cosignRouteLabel(staffId))
+          : ok(),
   },
   {
     id: "sdoh_referral",
