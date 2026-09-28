@@ -45,7 +45,7 @@ export function resolveChartLocation(value?: string): { tab: ChartTabId; sub?: s
 export function tabBadges(p: Patient, role: StaffRole, now = new Date()): Partial<Record<ChartTabId, string>> {
   const out: Partial<Record<ChartTabId, string>> = {};
   if (canAccess(role, "case_notes", p).level !== "none") {
-    const unsigned = (p.progressNotes ?? []).filter((n) => !n.voided && (n.status === "draft" || n.status === "cosign_pending" || !n.status && !n.signedAt)).length;
+    const unsigned = (p.progressNotes ?? []).filter((n) => !n.voidedAt && (n.status === "draft" || n.status === "cosign_pending" || !n.status && !n.signedAt)).length;
     if (unsigned) out["notes-docs"] = `${unsigned} unsigned`;
     const end = new Date(now);
     end.setHours(23, 59, 59, 999);
