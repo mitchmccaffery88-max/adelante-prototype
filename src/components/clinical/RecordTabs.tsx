@@ -1,3 +1,4 @@
+import { roleSeesAsamSection as roleSeesAsamSectionForGoals } from "@/lib/asamReporting";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { buildTrackingRows, filterTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
 import type { Patient } from "@/lib/ehr";
@@ -2221,7 +2222,7 @@ function SuggestedGoalsPanel({ patientId, readOnly }: { patientId: string; readO
     JSON.stringify(
       (AdelanteEHR.getPatient(patientId)?.suggestedGoals ?? []).filter(
         // §Part 2 — ASAM-derived goal suggestions are SUD content.
-        (g) => g.status === "suggested" && (g.reason !== "asam_signed" || roleSeesAsamSection(role, AdelanteEHR.getPatient(patientId))),
+        (g) => g.status === "suggested" && (g.reason !== "asam_signed" || roleSeesAsamSectionForGoals(role, AdelanteEHR.getPatient(patientId))),
       ),
     ),
   );
