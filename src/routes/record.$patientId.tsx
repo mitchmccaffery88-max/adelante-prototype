@@ -17,12 +17,13 @@ import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import {
   GROUP_LABELS,
+  resolveSectionId,
   useRecordSections,
   type RecordSection,
   type RecordSectionGroup,
 } from "@/components/clinical/recordSections";
 import { EmptyState } from "@/components/EmptyState";
-import { ArrowLeft, FlaskConical, PanelLeft } from "lucide-react";
+import { ArrowLeft, FlaskConical, MoreHorizontal, PanelLeft } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
@@ -104,7 +105,7 @@ function ChartBody({
   const { role, staffName } = useActingStaff();
   const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   if (!patient) return null;
-  const active = sections.find((s) => s.id === section) ?? sections[0];
+  const active = sections.find((s) => s.id === resolveSectionId(section)) ?? sections[0];
 
   const nav = (
     <ChartNav
@@ -144,43 +145,7 @@ function ChartBody({
                 Acting as: <span className="text-navy">{staffName}</span> ·{" "}
                 <span className="capitalize">{role.replace("_", " ")}</span>
               </span>
-              <AssignClinicianButton patientId={patient.id} size="sm" variant="outline" />
-              <IssueSignInCodeButton patientId={patient.id} />
-              <Button size="sm" variant="outline" asChild>
-                <Link
-                  to="/print/patient-records/$patientId"
-                  params={{ patientId: patient.id }}
-                  search={{
-                    meds: true,
-                    mar: true,
-                    notes: true,
-                    notesScope: "current" as const,
-                    autoprint: true,
-                  }}
-                >
-                  Print record
-                </Link>
-              </Button>
-              {/* §Agentic Roadmap prototype — walkthrough demos off the real
-                  chart. Clearly flagged; none of them write to this record. */}
-              <div className="flex flex-wrap justify-end gap-1.5">
-                <Button size="sm" variant="ghost" asChild className="text-xs">
-                  <Link to="/agentic/chart-review/$patientId" params={{ patientId: patient.id }}>
-                    <FlaskConical className="h-3.5 w-3.5" /> Guided chart review
-                  </Link>
-                </Button>
-                <Button size="sm" variant="ghost" asChild className="text-xs">
-                  <Link to="/agentic/scribe/$patientId" params={{ patientId: patient.id }}>
-                    <FlaskConical className="h-3.5 w-3.5" /> Scribe copilot
-                  </Link>
-                </Button>
-                <Button size="sm" variant="ghost" asChild className="text-xs">
-                  <Link to="/agentic/dictation/$patientId" params={{ patientId: patient.id }}>
-                    <FlaskConical className="h-3.5 w-3.5" /> Smart dictation
-                  </Link>
-                </Button>
-              </div>
-
+              <ChartMoreMenu patientId={patient.id} />
             </div>
           </div>
 
@@ -276,5 +241,52 @@ function ChartNav({
         );
       })}
     </nav>
+  );
+}
+
+/**
+ * §Chart redesign — "More" menu. Print record, Issue sign-in code and Assign
+ * clinician keep their own permission checks (each component gates itself).
+ * An inline toggle rather than a popover so their dialogs stay mounted.
+ */
+function ChartMoreMenu({ patientId }: { patientId: string }) {
+  const [open, setOpen] = useState(false);
+  return (
+    <div className="flex flex-col items-end gap-2">
+      <Button
+        size="sm"
+        variant="outline"
+        aria-expanded={open}
+        aria-controls="chart-more-menu"
+        onClick={() => setOpen((v) => !v)}
+      >
+        <MoreHorizontal className="h-4 w-4" /> More
+      </Button>
+      {open && (
+        <div
+          id="chart-more-menu"
+          role="group"
+          aria-label="More chart actions"
+          className="flex flex-wrap justify-end gap-2 rounded-md border border-border bg-card p-2 shadow-sm"
+        >
+          <AssignClinicianButton patientId={patientId} size="sm" variant="outline" />
+          <IssueSignInCodeButton patientId={patientId} />
+          <Button size="sm" variant="outline" asChild>
+            <Link
+              to="/print/patient-records/$patientId"
+              params={{ patientId }}
+              search={{ meds: true, mar: true, notes: true, notesScope: "current" as const, autoprint: true }}
+            >
+              Print record
+            </Link>
+          </Button>
+          <Button size="sm" variant="ghost" asChild className="text-xs">
+            <Link to="/agentic" search={{ patientId }}>
+              <FlaskConical className="h-3.5 w-3.5" /> Agentic guide (demo)
+            </Link>
+          </Button>
+        </div>
+      )}
+    </div>
   );
 }

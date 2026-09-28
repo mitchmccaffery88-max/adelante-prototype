@@ -102,16 +102,17 @@ describe("tightened administration gates", () => {
 });
 
 describe("demographics grants", () => {
-  it("clinical_coordinator and sys_admin can read patient identity", () => {
-    expect(canAccess("clinical_coordinator", "demographics").level).toBe("read");
-    expect(canAccess("sys_admin", "demographics").level).toBe("read");
+  // §Chart registry — both are demographics editors (DEMOGRAPHICS_EDITOR_ROLES).
+  it("clinical_coordinator and sys_admin can edit patient identity", () => {
+    expect(canAccess("clinical_coordinator", "demographics").level).toBe("write");
+    expect(canAccess("sys_admin", "demographics").level).toBe("write");
   });
 
   it("leaves every other role's demographics level untouched", () => {
     const expected: Record<string, string> = {
       ecm_provider: "write",
       cf_care_manager: "read",
-      sud_counselor: "write",
+      sud_counselor: "read",
       clinical_trainee: "read",
       medical_assistant: "read",
       peer_specialist: "read",

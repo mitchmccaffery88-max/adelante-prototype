@@ -1,3 +1,4 @@
+import { canDoChartAction } from "@/lib/chartActions";
 // §B3/B4 — outpatient episodes of care + higher-level-of-care referrals on the chart.
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -36,7 +37,6 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
 
 const sel = "mt-0.5 h-9 w-full rounded-md border bg-background px-2 text-sm";
-const CLINICAL = ["therapist", "pmhnp", "physician", "sud_counselor", "sys_admin"];
 
 export function CareEpisodesPanel({ patientId }: { patientId: string }) {
   const { role, staffName } = useActingStaff();
@@ -50,7 +50,7 @@ export function CareEpisodesPanel({ patientId }: { patientId: string }) {
   const [confirming, setConfirming] = useState(false);
   const [program, setProgram] = useState<EpisodeProgram>("outpatient_mh");
   const impact = dischargeImpact(patientId);
-  const canAct = [...CLINICAL, "clinical_coordinator", "ecm_provider"].includes(role) && !activeMasked;
+  const canAct = canDoChartAction("discharge_episode", { role }) && !activeMasked;
   const run = (f: () => unknown, ok: string) => {
     try {
       f();
@@ -145,7 +145,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
   const actor = { name: staffName, role };
   const rows = useEhr(() => visibleHlocReferrals(role, patientId));
   const hidden = hiddenHlocCount(role, patientId);
-  const canCreate = CLINICAL.includes(role);
+  const canCreate = canDoChartAction("hloc_referral", { role });
   const asams = useEhr(() => (canSeeSud(role, patientId) ? AdelanteEHR.getPatient(patientId)?.asamAssessments ?? [] : []));
   const [f, setF] = useState({ target: "residential" as HlocTarget, reason: "", urgency: "routine" as HlocReferral["urgency"], destination: "", outside: false, asamId: "" });
   const [blockFor, setBlockFor] = useState<string | null>(null);
@@ -206,7 +206,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
               ))}
             </div>
           )}
-          {r.status === "admitted" && activeEpisode(patientId) && CLINICAL.includes(role) && (
+          {r.status === "admitted" && activeEpisode(patientId) && canDoChartAction("hloc_referral", { role }) && (
             <Button size="sm" variant="outline" onClick={() => {
               try {
                 dischargeEpisode({ patientId, reason: "higher_level_of_care", summary: `Admitted to ${HLOC_TARGET_LABEL[r.target]} at ${r.destination}.`, actor, confirmCancelVisits: true });

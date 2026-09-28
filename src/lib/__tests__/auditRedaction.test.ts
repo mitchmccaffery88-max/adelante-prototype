@@ -34,7 +34,8 @@ describe("audit redaction", () => {
   });
 
   it("masks the subject identifier when the role cannot read demographics", () => {
-    const r = redactAuditEvent(evt(), "sys_admin");
+    // sys_admin now edits the care plan (PLAN_EDIT_ROLES); billing still has no access.
+    const r = redactAuditEvent(evt(), "billing");
     expect(r.subjectMasked).toBe(true);
     expect(r.subjectLabel).toBe(maskIdentifier(patientId));
     expect(r.subjectLabel).not.toContain(patientId);

@@ -1,3 +1,4 @@
+import { canDoChartAction } from "@/lib/chartActions";
 // §Crisis escalation — shared UI: flag dialog, resolve dialog, and the
 // patient-scoped panel rendered at the top of the Alerts tab.
 //
@@ -12,7 +13,7 @@ import {
   useEhr,
   type CrisisEscalation,
 } from "@/lib/ehr";
-import { canFlagCrisis, useActingStaff } from "@/lib/roles";
+import { useActingStaff } from "@/lib/roles";
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -175,7 +176,7 @@ export function FlagCrisisButton({
   const { role, staffName } = useActingStaff();
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState("");
-  if (!canFlagCrisis(role)) return null;
+  if (!canDoChartAction("crisis_flag", { role })) return null;
 
   const submit = () => {
     try {

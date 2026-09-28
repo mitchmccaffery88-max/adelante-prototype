@@ -1,3 +1,4 @@
+import { canDoChartAction } from "@/lib/chartActions";
 import { asamTaskDueLabel } from "@/lib/asam";
 // §Phase 10c — the chart's ASAM section. Part 2 protected: the section itself
 // is registered under the `screeners_sud` record class in recordSections.tsx,
@@ -12,7 +13,6 @@ import {
   ASAM_DIMENSIONS,
   ASAM_DRAFT_NOTE,
   ASAM_LICENSED_CONTENT_NOTE,
-  ASAM_AUTHOR_ROLES,
   DMC_ODS_LEVELS,
   dmcOdsLevelLabel,
   type AsamAssessment,
@@ -48,7 +48,7 @@ function StatusBadge({ a }: { a: AsamAssessment }) {
 
 export function AsamPanel({ patient }: { patient: Patient }) {
   const acting = useActingStaff();
-  const canAuthor = ASAM_AUTHOR_ROLES.includes(acting.role);
+  const canAuthor = canDoChartAction("asam", { role: acting.role }, patient);
   const [err, setErr] = useState<string | null>(null);
   const [sigDraft, setSigDraft] = useState<AttestationDraft>({ attested: false });
 
