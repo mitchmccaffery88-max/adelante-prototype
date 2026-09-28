@@ -3,7 +3,6 @@ import { useActingStaff } from "@/lib/roles";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
-import { toast } from "sonner";
 import { createFileRoute } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, type ExtendedConsentPurpose, type ConsentPurpose } from "@/lib/ehr";
