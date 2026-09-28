@@ -2021,7 +2021,10 @@ export function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?
   // §Part 2 — ASAM tasks (assessment + reassessment) are hidden from roles
   // failing the ASAM Part 2 check; they see only a generic count.
   const isAsam = (t: (typeof allTasks)[number]) =>
-    t.taskType === "asam_assessment" || Boolean(t.dedupeKey?.startsWith("asam-reassess:"));
+    t.taskType === "asam_assessment" ||
+    t.taskType === "caloms_admission" ||
+    t.origin === "asam_needed" ||
+    Boolean(t.dedupeKey?.startsWith("asam-reassess:") || t.dedupeKey?.startsWith("asam-caloms:"));
   const seesAsam = roleWorksAsamTask(tasksActor.role, patient);
   const tasks = seesAsam ? allTasks : allTasks.filter((t) => !isAsam(t));
   const hiddenProtected = seesAsam ? 0 : allTasks.filter((t) => isAsam(t) && t.status !== "done").length;
