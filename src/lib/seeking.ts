@@ -3,6 +3,7 @@
 // It shapes CONTENT, RESOURCES and RECOMMENDATIONS only. It never changes
 // which screeners are offered (a clinical decision), and it never adds a goal
 // to the care plan (suggestions only, accepted by a clinician).
+import { isJusticeInvolved } from "./justiceInvolvement";
 import type { Patient } from "@/lib/ehr";
 import { DOMAIN_SCREENERS, SCREENERS, type ScreenerDef } from "@/lib/screeners";
 import { canAccess, type StaffRole } from "@/lib/roles";
@@ -72,7 +73,7 @@ export interface Recommendation {
 export function recommendationsFor(p: Patient | undefined): Recommendation[] {
   if (!p) return [];
   const out: Recommendation[] = [];
-  const ji = p.coverage?.justiceInvolvement === "yes";
+  const ji = isJusticeInvolved(p);
   if (p.seeking?.mentalHealth) {
     out.push({
       id: "mh-library",

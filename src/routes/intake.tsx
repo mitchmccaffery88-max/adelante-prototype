@@ -6,6 +6,7 @@ import { INTAKE_WELCOME_COPY, REASSESS_START_COPY } from "@/lib/intakeWelcomeCop
 import { rescreenName } from "@/lib/reassessmentCopy";
 import { intakeScreeners } from "@/lib/seeking";
 import { BACKGROUND_COPY } from "@/lib/intakeBackgroundCopy";
+import type { JusticeAnswer } from "@/lib/justiceInvolvement";
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { Checkbox } from "@/components/ui/checkbox";
@@ -171,7 +172,7 @@ function CoverageCallout({
   county,
 }: {
   coverageType: CoverageType;
-  justiceInvolvement: TriState;
+  justiceInvolvement: JusticeAnswer;
   county: string;
 }) {
   const msg = coverageMessage({ coverageType, justiceInvolvement, county });
@@ -260,7 +261,7 @@ function IntakePage() {
     /** Payer bucket — independent of justice involvement. */
     coverageType: CoverageType;
     /** Justice-involvement history — independent of the payer. */
-    justiceInvolvement: TriState;
+    justiceInvolvement: JusticeAnswer;
     /** CalAIM ECM follow-up; only asked under Medi-Cal / dual. */
     ecmEligible: boolean;
   }>(() => ({
@@ -346,6 +347,9 @@ function IntakePage() {
     channel: "sms" as "sms" | "email",
   });
   const B = BACKGROUND_COPY[lang9a === "es" ? "es" : "en"];
+  // Release questions only for people who are (or are known to be) justice-involved.
+  const showRelease = justiceKnown || coverage.justiceInvolvement === "yes";
+  const profileToSave = () => profilePatch(showRelease ? profile : { ...profile, releaseDate: "" });
   const H = WHAT_HELPS_COPY[lang9a === "es" ? "es" : "en"];
   const langKey: "en" | "es" = lang9a === "es" ? "es" : "en";
   const skipCore = useMemo(() => shouldSkipCoreQuestions(patient), [patient]);
@@ -542,7 +546,7 @@ function IntakePage() {
       return;
     }
     // P1 — persist the About-you patch first.
-    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
+    AdelanteEHR.updateProfile(currentId, profileToSave());
     activeScreeners.forEach((s) => {
       // §Needs step 1 — AHC-HRSN only saved when it was actually asked.
       if (s.key === "ahc-hrsn" && !askCore) return;
@@ -896,19 +900,6 @@ function IntakePage() {
                 </Select>
               </div>
               <div className="space-y-1.5 sm:col-span-2">
-                <Label className="text-sm">Release date (if applicable)</Label>
-                <Input
-                  type="date"
-                  value={profile.releaseDate ? profile.releaseDate.slice(0, 10) : ""}
-                  onChange={(e) => setProfile({ ...profile, releaseDate: e.target.value })}
-                />
-                <ReleaseDateProvenance
-                  patient={patient}
-                  onConfirmed={(date) => setProfile({ ...profile, releaseDate: date })}
-                />
-              </div>
-
-              <div className="space-y-1.5 sm:col-span-2">
                 <Label className="text-sm">Mailing or temporary address</Label>
                 <Input
                   value={profile.address}
@@ -930,23 +921,22 @@ function IntakePage() {
               </div>
             ) : (
             <div className="space-y-1.5">
-              <Label className="text-sm">
-                Have you ever been involved with the justice system — jail, prison, probation, or
-                parole?
-              </Label>
+              <Label className="text-sm">{B.justiceQ}</Label>
+              <p className="text-xs italic text-muted-foreground">{B.justiceDraft}</p>
               <RadioGroup
                 className="grid gap-2"
                 value={coverage.justiceInvolvement}
                 onValueChange={(v) =>
-                  setCoverage({ ...coverage, justiceInvolvement: v as TriState })
+                  setCoverage({ ...coverage, justiceInvolvement: v as JusticeAnswer })
                 }
+                data-testid="justice-question"
               >
                 {(
                   [
-                    { key: "yes", label: "Yes" },
-                    { key: "no", label: "No" },
-                    { key: "unsure", label: "I'm not sure" },
-                  ] as { key: TriState; label: string }[]
+                    { key: "yes", label: B.justiceYes },
+                    { key: "no", label: B.justiceNo },
+                    { key: "prefer_not", label: B.justicePreferNot },
+                  ] as { key: JusticeAnswer; label: string }[]
                 ).map((o) => (
                   <label
                     key={o.key}
@@ -961,6 +951,20 @@ function IntakePage() {
             </div>
             )}
 
+              </div>
+            )}
+            {showRelease && (
+              <div className="space-y-1.5" data-testid="release-date-field">
+                <Label className="text-sm">{B.releaseLabel}</Label>
+                <Input
+                  type="date"
+                  value={profile.releaseDate ? profile.releaseDate.slice(0, 10) : ""}
+                  onChange={(e) => setProfile({ ...profile, releaseDate: e.target.value })}
+                />
+                <ReleaseDateProvenance
+                  patient={patient}
+                  onConfirmed={(date) => setProfile({ ...profile, releaseDate: date })}
+                />
               </div>
             )}
             <div className="rounded-lg border bg-secondary/40 p-4 space-y-3">
@@ -1236,7 +1240,7 @@ function IntakePage() {
                   className="min-h-11 bg-navy text-navy-foreground hover:bg-navy/90"
                   data-testid="reassess-save-about"
                   onClick={() => {
-                    AdelanteEHR.updateProfile(currentId, profilePatch(profile));
+                    AdelanteEHR.updateProfile(currentId, profileToSave());
                     toast.success(R.saved);
                     setReassess("due");
                   }}

@@ -1624,7 +1624,7 @@ export interface Patient {
      * reentry safety-net messaging (never the coverage type — see
      * `coverageMessage` in src/lib/frontDoor.ts).
      */
-    justiceInvolvement?: TriState;
+    justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer;
     ecmEligible?: boolean;
     otherPlanName?: string;
     communitySupports?: {
@@ -10579,7 +10579,7 @@ export const AdelanteEHR = {
    */
   runSafetyNetRecordLookup(
     patientId: string,
-    input: { justiceInvolvement?: TriState } = {},
+    input: { justiceInvolvement?: import("./justiceInvolvement").JusticeAnswer } = {},
   ): LookupResult & { ran: boolean } {
     const p = patients.find((x) => x.id === patientId);
     if (!p) return { ran: false, status: "none", candidateIds: [] };
