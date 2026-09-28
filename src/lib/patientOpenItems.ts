@@ -9,6 +9,9 @@
 // §5d-3 adds open resource referrals (a real, existing per-patient record) and
 // a draft aging read on both needs and referrals. No new tracker.
 import { AdelanteEHR } from "@/lib/ehr";
+import type { StaffRole } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
+import { isSudMedication } from "@/lib/sudMedClassifier";
 import { listUnsignedWork } from "@/lib/unsignedWork";
 import {
   referralAgingState,

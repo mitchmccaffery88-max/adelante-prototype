@@ -6,9 +6,11 @@ import { Card } from "@/components/ui/card";
 import { useEhr } from "@/lib/ehr";
 import { listPatientOpenItems } from "@/lib/patientOpenItems";
 import { Inbox } from "lucide-react";
+import { useActingRole } from "@/lib/roles";
 
 export function PatientOpenItemsCard({ patientId }: { patientId: string }) {
-  const items = useEhr(() => listPatientOpenItems(patientId));
+  const [role] = useActingRole();
+  const items = useEhr(() => listPatientOpenItems(patientId, role));
   if (items.length === 0) return null;
   return (
     <Card className="p-3" data-testid="patient-open-items">
