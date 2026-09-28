@@ -11291,12 +11291,14 @@ export const AdelanteEHR = {
     });
     // Generic copy — never the note content or the reason.
     const own = cosignOwnershipFor(n.signedById ?? n.clinicianId);
-    const subject = "Note void needs approval";
-    const body = `${input.byName} asked to void a note for ${patientLabel(patientId)} as entered in error.`;
+    const vp = patients.find((x) => x.id === patientId);
+    const vInit = vp ? `${vp.firstName?.[0] ?? ""}.${vp.lastName?.[0] ?? ""}.` : "patient";
+    const subject = `Void request — progress note — ${vInit}`;
+    const body = `${input.byName} asked to void a progress note as entered in error. Open the inbox to approve or reject.`;
     if (own.kind === "owner")
       AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
     for (const r of VOID_APPROVER_ROLES)
-      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
+      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/inbox", patientId });
     emit();
     return n;
   },
@@ -11310,6 +11312,31 @@ export const AdelanteEHR = {
     return isCosignOwner(cosignOwnershipFor(n.signedById ?? n.clinicianId), ids);
   },
 
+  /**
+   * Pending void requests this actor may decide — METADATA ONLY (patient
+   * initials, note date, session type, author, author's void reason). Never
+   * the note body, so a coordinator can approve a SUD-protected note's void
+   * without seeing its content.
+   */
+  listPendingNoteVoids(actor: { staffId?: string; clinicianId?: string; name: string; role: string }): Array<{
+    patientId: string; noteId: string; initials: string; noteDate: string; sessionType?: string;
+    authorName: string; requestedAt: string; reason: string; title: string;
+  }> {
+    const out: ReturnType<typeof AdelanteEHR.listPendingNoteVoids> = [];
+    for (const p of patients) {
+      for (const n of p.progressNotes ?? []) {
+        if (!n.voidRequest || !AdelanteEHR.canApproveNoteVoid(n, actor)) continue;
+        const initials = `${p.firstName?.[0] ?? ""}.${p.lastName?.[0] ?? ""}.`;
+        out.push({
+          patientId: p.id, noteId: n.id, initials, noteDate: n.date, sessionType: n.sessionType,
+          authorName: n.voidRequest.byName, requestedAt: n.voidRequest.at, reason: n.voidRequest.reason,
+          title: `Void request — progress note — ${initials}`,
+        });
+      }
+    }
+    return out;
+  },
+
   decideNoteVoid(
     patientId: string,
     noteId: string,
@@ -11319,6 +11346,8 @@ export const AdelanteEHR = {
     if (!n?.voidRequest) throw new Error("There is no void request on this note.");
     if (!AdelanteEHR.canApproveNoteVoid(n, input))
       throw new Error("Only the author's supervisor or a clinical coordinator can decide a void — and never the author.");
+    if (!input.approve && (input.comment ?? "").trim().length < 3)
+      throw new Error("A reason is required to reject a void request.");
     const req = n.voidRequest;
     n.voidRequest = undefined;
     if (!input.approve) {
