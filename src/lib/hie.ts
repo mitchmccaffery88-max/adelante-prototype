@@ -155,7 +155,7 @@ export function acceptHieDraft(id: string, actor: Actor, text?: string, now = ne
     detail: `From ${HIE_SOURCE}. ${ADEL_DRAFT_LABEL}, accepted by ${actor.name}.`,
     dueDate: new Date(now.getTime() + 2 * DAY).toISOString().slice(0, 10),
     dedupeKey: `hie:${d.encounterId}`,
-    priority: "high",
+    priority: "urgent",
     source: "hie",
   });
   d.status = "accepted";
