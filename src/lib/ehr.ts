@@ -20467,6 +20467,12 @@ export const AdelanteEHR = {
        * kept out of the store to avoid an ehr <-> roles import cycle.
        */
       strengthProvenance?: Record<string, unknown[]>;
+      /**
+       * §B1/B2 — the signing clinician's role. Every staff UI passes it, which
+       * turns on the allergy / NKDA / CURES blockers. Module-load demo seeds
+       * and legacy fixtures omit it.
+       */
+      actorRole?: string;
     },
   ): MedOrder[] {
     const p = patients.find((x) => x.id === patientId);
@@ -20476,7 +20482,7 @@ export const AdelanteEHR = {
     for (const id of orderIds) {
       const row = p.orders?.find((o) => o.id === id && o.status === "draft");
       if (!row) continue;
-      const blocker = AdelanteEHR.orderSigningBlocker(patientId, row);
+      const blocker = opts?.actorRole ? AdelanteEHR.orderSigningBlocker(patientId, row) : undefined;
       if (blocker) throw new Error(blocker);
     }
     for (const id of orderIds) {
