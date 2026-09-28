@@ -1847,3 +1847,75 @@ seedNoteRevisionDemo();
   } catch {
     /* demo seed only */
   }
+
+/** §Signed-note revisions demo — real store API only. */
+function seedNoteRevisionDemo() {
+  const REYES = { byId: "c1", byName: "Dr. Marisol Reyes", role: "therapist" };
+  const visitNote = (patientId: string, hoursAgo: number, text: string) => {
+    const start = new Date(Date.now() - hoursAgo * 3600_000);
+    start.setMinutes(0, 0, 0);
+    const a = AdelanteEHR.bookAppointment({
+      patientId,
+      clinicianId: "c1",
+      start: start.toISOString(),
+      durationMin: 50,
+      serviceType: "therapy_individual",
+      modality: "in_person",
+      locationId: "loc-visalia",
+      allowPatientOverlap: true,
+    });
+    AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+    const n = AdelanteEHR.addProgressNote(patientId, {
+      appointmentId: a.id,
+      clinicianId: "c1",
+      date: start.toISOString(),
+      sessionType: "individual",
+      subjective: `${text} Demo note.`,
+      objective: "Calm, engaged, good eye contact.",
+      assessment: "Working on coping skills; no safety concerns today.",
+      plan: "Continue weekly sessions; practice breathing exercise.",
+    })!;
+    AdelanteEHR.signProgressNote(patientId, n.id, {
+      signedBy: REYES.byName,
+      signedById: REYES.byId,
+      role: "therapist",
+      attested: true,
+      cosignRequired: false,
+    });
+    return n.id;
+  };
+  const warn = (k: string, e: unknown) => {
+    if (typeof console !== "undefined") console.warn(`[demo seed] ${k}`, e);
+  };
+  try {
+    const add = visitNote("p5", 5, "Reports better sleep this week.");
+    AdelanteEHR.addNoteAddendum("p5", add, {
+      ...REYES,
+      text: "Patient called after the session to confirm next week's time. (Demo addendum)",
+    });
+  } catch (e) {
+    warn("addendum", e);
+  }
+  try {
+    const am = visitNote("p6", 6, "Discussed job search stress.");
+    AdelanteEHR.amendProgressNote("p6", am, {
+      ...REYES,
+      changes: { plan: "Continue weekly sessions; referral to employment services placed." },
+      reason: "Plan omitted the employment referral made in session (demo)",
+    });
+  } catch (e) {
+    warn("amend", e);
+  }
+  try {
+    const v = visitNote("p7", 7, "Wrong-chart entry.");
+    AdelanteEHR.requestNoteVoid("p7", v, { ...REYES, reason: "Documented on the wrong patient's chart (demo)" });
+    AdelanteEHR.decideNoteVoid("p7", v, { approve: true, staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" });
+  } catch (e) {
+    warn("void", e);
+  }
+  try {
+    visitNote("p4", 72, "Late documentation of Monday's session.");
+  } catch (e) {
+    warn("late entry", e);
+  }
+}
