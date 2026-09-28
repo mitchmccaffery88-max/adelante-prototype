@@ -125,6 +125,7 @@ export function aggregatePatients(role: StaffRole): Patient[] {
 const TEAM_BY_ROLE: Partial<Record<StaffRole, string>> = {
   therapist: "Therapy",
   pmhnp: "Psychiatry",
+  physician: "Psychiatry",
   sud_counselor: "SUD counseling",
   clinical_trainee: "Trainees",
 };
@@ -433,7 +434,7 @@ export function myAsamWork(
   if (!tasks) return null;
   const mine = new Set([actor.staffId, actor.staffName, actor.clinicianId].filter(Boolean) as string[]);
   const cosign = asamCosignRows(actor.role, now) ?? [];
-  const lpha = actor.role === "therapist" || actor.role === "pmhnp";
+  const lpha = actor.role === "therapist" || actor.role === "pmhnp" || actor.role === "physician";
   return {
     tasks: tasks.filter(
       (t) =>

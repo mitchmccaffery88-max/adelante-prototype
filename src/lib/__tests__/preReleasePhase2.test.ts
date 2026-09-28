@@ -216,14 +216,14 @@ describe("Person-Centered Reentry Care Plan", () => {
         {
           kind: "mental_health",
           start: "2026-09-03T15:00:00.000Z",
-          providerName: "Dr. Marisol Reyes",
+          providerName: "Marisol Reyes",
           location: "Adelante Fresno",
           modality: "in_person",
         },
         {
           kind: "med_management",
           start: "2026-09-04T17:00:00.000Z",
-          providerName: "Dr. R. Bagga",
+          providerName: "Dr. M. Bagga",
           location: "Telehealth",
           modality: "video",
         },
@@ -239,7 +239,7 @@ describe("Person-Centered Reentry Care Plan", () => {
     const read = AdelanteEHR.reentryCarePlanForPatient(ep.patientId)!;
     expect(read.appointments).toHaveLength(2);
     expect(read.housing.arrangement).toMatch(/Casa Vista/);
-    expect(read.appointments[0].providerName).toBe("Dr. Marisol Reyes");
+    expect(read.appointments[0].providerName).toBe("Marisol Reyes");
   });
 
   it("rejects referral-style appointments with no real date or provider", () => {

@@ -157,7 +157,7 @@ function AttributionSection({
   blocked: Set<OrderFieldKey>;
   onPatch: (patch: Partial<MedOrder>) => void;
 }) {
-  const prescribers = staffForRole("pmhnp");
+  const prescribers = [...staffForRole("physician"), ...staffForRole("pmhnp")];
   const needsReadBack = order.orderSource === "verbal" || order.orderSource === "telephone";
   return (
     <div className="rounded-lg border border-border bg-muted/40 p-3">
@@ -669,7 +669,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                     (o.orderSource ? ` (${o.orderSource})` : "")
                   : ""}
               </div>
-              {o.curesCheck && ["pmhnp", "therapist", "sud_counselor", "sys_admin", "clinical_trainee"].includes(role) && (
+              {o.curesCheck && ["pmhnp", "physician", "therapist", "sud_counselor", "sys_admin", "clinical_trainee"].includes(role) && (
                 <div className="mt-1 text-xs text-muted-foreground">
                   CURES check (placeholder — no live query):{" "}
                   {o.curesCheck.emergencyOverride ? "Emergency override" : o.curesCheck.result.replace(/_/g, " ")} ·{" "}

@@ -4,7 +4,7 @@ import { AdelanteEHR } from "@/lib/ehr";
 
 const CM = "Luz Herrera";
 const NURSE = "Rosa T., LVN";
-const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+const PMHNP = "Dr. M. Bagga, M.D.";
 
 function newPatient(last: string) {
   const p = AdelanteEHR.createPatient({
@@ -186,7 +186,7 @@ describe("shift count", () => {
       windowEnd,
       schedule: "CIV",
       counterName: NURSE,
-      witnessName: "Dr. Marisol Reyes",
+      witnessName: "Marisol Reyes",
       notes: "End of shift",
     });
     expect(locked.totalGiven).toBe(lines.reduce((n, l) => n + l.given, 0));

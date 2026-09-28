@@ -37,7 +37,7 @@ describe("needs step 3 — appointment requests", () => {
     const p = AdelanteEHR.createPatient({ firstName: "Req", lastName: "Book" });
     const [o] = AdelanteEHR.createAppointmentRequests(p.id, { mentalHealth: true }, PAT(p.id));
     const req = o!.request!;
-    AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: therapist().id, start: slot(22, 13), durationMin: 50, serviceType: "therapy_individual", requestId: req.id, bookedBy: { id: "Dr. Reyes", role: "therapist" } });
+    AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: therapist().id, start: slot(22, 13), durationMin: 50, serviceType: "therapy_individual", requestId: req.id, bookedBy: { id: "Marisol Reyes", role: "therapist" } });
     const after = AdelanteEHR.listAppointmentRequests(p.id)[0]!;
     expect(after.status).toBe("booked");
     expect(after.closedByRole).toBe("therapist");

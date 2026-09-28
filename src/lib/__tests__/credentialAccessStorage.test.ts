@@ -19,7 +19,7 @@ import { AdelanteEHRExt } from "@/lib/ehr-ext";
 const therapist: CredentialActor = {
   role: "therapist",
   staffId: "s-th1",
-  staffName: "Dr. Marisol Reyes",
+  staffName: "Marisol Reyes",
   clinicianId: "c1",
 };
 const peer: CredentialActor = { role: "peer_specialist", staffId: "s-peer1", staffName: "Andre Willis" };
@@ -128,10 +128,10 @@ describe("licence expiry reconciliation", () => {
       fileType: "image/png",
       fileSize: 120,
       fileDataUrl: "data:image/png;base64,AAAA",
-      uploadedBy: "Dr. Marisol Reyes",
+      uploadedBy: "Marisol Reyes",
     });
     const row = AdelanteEHRExt.credentialsForClinician("c1").find((c) => c.kind === "board_cert")!;
     expect(row.fileDataUrl).toContain("data:image/png");
-    expect(row.uploadedBy).toBe("Dr. Marisol Reyes");
+    expect(row.uploadedBy).toBe("Marisol Reyes");
   });
 });

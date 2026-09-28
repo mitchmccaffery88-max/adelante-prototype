@@ -578,7 +578,7 @@ export function advocateHasPermission(
  * satisfy item 4: the determination is a clinical act, and separating the two
  * is the whole point of the gate.
  */
-export const AHCD_DETERMINATION_ROLES = ["pmhnp", "therapist"] as const;
+export const AHCD_DETERMINATION_ROLES = ["pmhnp", "physician", "therapist"] as const;
 export type AhcdDeterminationRole = (typeof AHCD_DETERMINATION_ROLES)[number];
 
 export function isAhcdDeterminationRole(role: string): role is AhcdDeterminationRole {

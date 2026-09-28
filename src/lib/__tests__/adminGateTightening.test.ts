@@ -118,6 +118,7 @@ describe("demographics grants", () => {
       community_health_worker: "read",
       therapist: "read",
       pmhnp: "read",
+      physician: "read",
       billing: "read",
       billing_coordinator: "read",
       credentialing_coordinator: "none",

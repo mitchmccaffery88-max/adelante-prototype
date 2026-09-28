@@ -1546,6 +1546,8 @@ export function requiresDoseWitness(
 
 export interface Patient {
   id: string;
+  /** Staff id of the prescriber of record (physician or PMHNP). Set via `setPrescriberOfRecord`. */
+  prescriberStaffId?: string;
   firstName: string;
   lastName: string;
   dob: string;
@@ -2162,6 +2164,7 @@ export const APPT_REQUEST_MASKED_LABEL = "Protected appointment request";
 export const APPT_REQUEST_BOOKING_ROLES: StaffRole[] = [
   "therapist",
   "pmhnp",
+  "physician",
   "sud_counselor",
   "clinical_trainee",
   "ecm_provider",
@@ -3165,7 +3168,7 @@ export type NoteAuthorSource = "human" | "ai_draft";
 export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "declined";
 
 /** Roles that may sign a note at all, and that may sign without a cosigner. */
-export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "therapist"] as const;
+export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "physician", "therapist"] as const;
 
 // ----- §Cosign routing to the assigned supervisor ---------------------------
 //
@@ -4223,7 +4226,7 @@ const uid = () => Math.random().toString(36).slice(2, 10);
 const clinicians: Clinician[] = [
   {
     id: "c1",
-    name: "Dr. Marisol Reyes",
+    name: "Marisol Reyes",
     credential: "LCSW",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -4239,7 +4242,7 @@ const clinicians: Clinician[] = [
   },
   {
     id: "c2",
-    name: "Dr. James Okafor",
+    name: "James Okafor",
     credential: "PsyD",
     mediCalCredentialed: true,
     mediCalStatus: "active",
@@ -4250,15 +4253,15 @@ const clinicians: Clinician[] = [
   {
     id: "c3",
     name: "Anita Brooks",
-    credential: "LMFT",
-    mediCalCredentialed: false,
-    mediCalStatus: "pending",
-    services: ["therapy_individual", "peer_support", "case_management"],
+    credential: "PMHNP-BC",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["med_management", "intake", "therapy_individual"],
     locationIds: ["loc-porterville"],
     licenseExpiresOn: "2028-12-31",
   },
   {
-    // §Demo — trainee (ASW) supervised by Dr. Reyes; her notes need cosign.
+    // §Demo — trainee (ASW) supervised by Marisol Reyes; her notes need cosign.
     id: "c4",
     name: "Kayla Nguyen",
     credential: "ASW",
@@ -4321,7 +4324,7 @@ const patients: Patient[] = [
         recordedAt: "2026-05-12T16:05:00.000Z",
       },
     },
-    carePlanSummary: "Weekly therapy with Dr. Reyes; housing navigator referral pending.",
+    carePlanSummary: "Weekly therapy with Marisol Reyes; housing navigator referral pending.",
     // §P2 item 3 — the SDOH needs the care manager identified, with the real
     // status the patient surface renders (referred / in-process / receiving).
     sdohPlan: {
@@ -5156,7 +5159,7 @@ if (patients[1]) {
     patientId: patients[1].id,
     requestType: "question",
     context: "Is the patient cleared to restart group therapy this week?",
-    requestedBy: "Dr. R. Bagga",
+    requestedBy: "Dr. M. Bagga",
     requestedByRole: "pmhnp",
     status: "open",
     createdAt: ago(90),
@@ -5178,7 +5181,7 @@ function patientLabel(patientId?: string): string {
  * Duplicated as a value here only because `ehr.ts` may import `roles.ts` for
  * TYPES only (roles.ts imports ehr.ts at runtime).
  */
-export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp"];
+export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp", "physician"];
 
 /**
  * §Part 2 backstop selection — DERIVED from the RBAC matrix, never hardcoded.
@@ -5407,9 +5410,9 @@ import {
     indicationText: "Major depressive disorder",
     startDate,
     status: "signed",
-    attestedBy: "Dr. James Okafor",
+    attestedBy: "James Okafor",
     attestedAt: facilityDayAt(9, 6),
-    createdBy: "Dr. James Okafor",
+    createdBy: "James Okafor",
     createdAt: facilityDayAt(9, 6),
   };
   const refusedDose: DoseAdministration = {
@@ -6701,7 +6704,14 @@ export interface RefillRequest {
   reviewedBy?: string;
   reviewedAt?: string;
   denyReason?: string;
+  /** §Refill safety — CURES check for controlled / MOUD / SUD refills (placeholder, no live query). */
+  curesCheck?: NonNullable<MedOrder["curesCheck"]>;
 }
+/** Controlled (DEA II–V), MOUD or any SUD-list medication needs CURES before approval. */
+export function refillNeedsCures(r: Pick<RefillRequest, "medicationName">): boolean {
+  return requiresCuresCheck({ drugName: r.medicationName } as Parameters<typeof requiresCuresCheck>[0]) || isSudMedicationText(r.medicationName);
+}
+const REFILL_PRESCRIBER_ROLES = ["physician", "pmhnp"];
 const refillRequests: RefillRequest[] = [];
 
 // ----- Telehealth session lifecycle ---------------------------------------
@@ -7431,7 +7441,7 @@ export interface GroupEligibility {
 }
 
 /** Only these roles may set the group-eligibility gate. */
-export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "ecm_provider"] as const;
+export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "physician", "ecm_provider"] as const;
 
 /**
  * Who initiated an enrollment. Deliberately an open shape rather than a
@@ -7727,7 +7737,7 @@ export interface GroupJoinRequest {
 }
 const groupJoinRequests: GroupJoinRequest[] = [];
 /** Roles that may approve a Part 2 (SUD) group request without a consent lookup. */
-export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp"];
+export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp", "physician"];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
 
 // §v3.0 Phase 2 — pre-release episode stores.
@@ -10273,7 +10283,7 @@ export const AdelanteEHR = {
         detail: `${def.name} quick check scored ${score} (cutoff ${def.positiveCutoff}). Administer the full ${def.fullFormKey.toUpperCase()} and document the result.`,
         dueDate: new Date().toISOString().slice(0, 10),
         origin: "screener_flag",
-        allowedRoles: ["ecm_provider", "therapist", "pmhnp", "clinical_trainee"],
+        allowedRoles: ["ecm_provider", "therapist", "pmhnp", "physician", "clinical_trainee"],
         dedupeKey: `shortform:${patientId}:${def.key}:${completedAt.slice(0, 10)}`,
       });
       escalated.push({
@@ -10383,7 +10393,7 @@ export const AdelanteEHR = {
       dueDate: new Date().toISOString().slice(0, 10),
       origin: "med_side_effect",
       priority: report.severity === "severe" ? "urgent" : "routine",
-      allowedRoles: ["pmhnp", "ecm_provider", "therapist", "medical_assistant"],
+      allowedRoles: ["pmhnp", "physician", "ecm_provider", "therapist", "medical_assistant"],
       dedupeKey: `sideeffect:${report.id}`,
     });
     if (task) MedAdherence.attachSideEffectTask(patientId, report.id, task.id);
@@ -13315,7 +13325,7 @@ export const AdelanteEHR = {
         push(AdelanteEHR.createCaseTask({
           ...base,
           assignedTo: p.primaryClinicianId ?? "",
-          ...(p.primaryClinicianId ? {} : { allowedRoles: ["therapist", "pmhnp"] as StaffRole[] }),
+          ...(p.primaryClinicianId ? {} : { allowedRoles: ["therapist", "pmhnp", "physician"] as StaffRole[] }),
           dedupeKey: `sdoh-safety-clin:${item.id}`,
         }));
         continue;
@@ -15276,7 +15286,7 @@ export const AdelanteEHR = {
         (n) =>
           (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
           (!!n.recipientStaffId && !!myId && n.recipientStaffId === myId) ||
-          (!!n.recipientRole && !!role && n.recipientRole === role),
+          (!!n.recipientRole && !!role && (n.recipientRole === role || (role === "physician" && n.recipientRole === "pmhnp"))),
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
@@ -19222,14 +19232,48 @@ export const AdelanteEHR = {
     emit();
     return req;
   },
+  /** §Refill safety — record the CURES check for a refill. Prescribers only; audited. */
+  recordRefillCuresCheck(
+    id: string,
+    input: { checkedAt: string; result: "no_concerns" | "concerns_reviewed" | "unable_to_access"; reason?: string; note?: string; emergencyOverride?: boolean; by: string; role: string },
+  ): RefillRequest {
+    const req = refillRequests.find((r) => r.id === id);
+    if (!req) throw new Error("Refill request not found.");
+    if (!REFILL_PRESCRIBER_ROLES.includes(input.role)) throw new Error("Only a prescriber can record a CURES check.");
+    if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
+      throw new Error("A reason is required when CURES can't be checked or for an emergency override.");
+    if (!input.checkedAt) throw new Error("Enter the date and time CURES was checked.");
+    req.curesCheck = {
+      checkedAt: input.checkedAt, result: input.result, reason: input.reason?.trim() || undefined,
+      note: input.note?.trim() || undefined, by: input.by, recordedAt: new Date().toISOString(),
+      emergencyOverride: input.emergencyOverride || undefined,
+    };
+    appendAudit({
+      category: "rx", action: input.emergencyOverride ? "refill_cures_emergency_override" : "refill_cures_check_recorded",
+      patientId: req.patientId, actorId: input.by,
+      detail: { refillId: id, role: input.role, result: input.result, placeholder: true, sudProtected: isSudMedicationText(req.medicationName) },
+    });
+    emit();
+    return req;
+  },
   reviewRefill(input: {
     id: string;
     decision: "approved" | "denied" | "needs_appointment";
     denyReason?: string;
     clinicianId?: string;
+    /** Staff UIs pass it: turns on the prescriber-only and CURES rules. Module-load seeds omit it. */
+    actorRole?: string;
   }): RefillRequest | undefined {
     const req = refillRequests.find((r) => r.id === input.id);
     if (!req) return undefined;
+    if (input.decision === "denied" && !(input.denyReason ?? "").trim())
+      throw new Error("A reason is required to deny a refill.");
+    if (input.actorRole !== undefined) {
+      if (!REFILL_PRESCRIBER_ROLES.includes(input.actorRole))
+        throw new Error("Only a prescriber (physician or PMHNP) can review a refill.");
+      if (input.decision === "approved" && refillNeedsCures(req) && !req.curesCheck)
+        throw new Error("Record the CURES check before approving this refill.");
+    }
     // Detect a prescriber switch: compare against the most recent *prior* refill
     // (any status) for the same medication that had a different reviewer.
     const priorReviewer = refillRequests
@@ -19498,6 +19542,22 @@ export const AdelanteEHR = {
     });
     emit();
     return s;
+  },
+  /** Prescriber of record (physician / PMHNP). Primary therapist is unchanged. Audited. */
+  setPrescriberOfRecord(patientId: string, staffId: string, by = "system"): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    const prev = p.prescriberStaffId;
+    if (prev === staffId) return true;
+    p.prescriberStaffId = staffId;
+    appendAudit({
+      category: "assignment",
+      action: prev ? "prescriber_reassigned" : "prescriber_assigned",
+      patientId,
+      detail: { from: prev, to: staffId, by },
+    });
+    emit();
+    return true;
   },
   reassignPrimaryClinician(input: {
     patientId: string;
@@ -20454,7 +20514,7 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     const o = p?.orders?.find((x) => x.id === orderId);
     if (!p || !o) throw new Error("Order not found.");
-    if (!["pmhnp", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
+    if (!["pmhnp", "physician", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
       throw new Error("Only a prescriber can record a CURES check.");
     if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
       throw new Error("A reason is required when CURES can't be checked or for an emergency override.");
@@ -20837,7 +20897,7 @@ export const AdelanteEHR = {
     // `witnessCandidates` offers in the MAR UI, so broadcast to both roles.
     const claimedOrder = p.orders?.find((o) => o.id === orderId);
     if (claimedOrder && requiresDoseWitness(claimedOrder)) {
-      for (const r of ["pmhnp", "therapist"] as StaffRole[]) {
+      for (const r of ["pmhnp", "physician", "therapist"] as StaffRole[]) {
         AdelanteEHR.notify({
           recipientRole: r,
           category: "mar_witness_needed",
@@ -24387,7 +24447,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -24472,7 +24532,7 @@ export type { Medication } from "./vendors";
 // ---------------------------------------------------------------------------
 {
   const PATIENT_ID = "p-demo-mar-seed-es";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const tz = "America/Los_Angeles";
   const seedPatient: Patient = {
@@ -24566,7 +24626,7 @@ export function useEhr<T>(selector: () => T): T {
 // ---------------------------------------------------------------------------
 {
   const CM = "Luz Herrera";
-  const PMHNP = "Dr. R. Bagga, PMHNP-BC";
+  const PMHNP = "Dr. M. Bagga, M.D.";
   const NURSE = "Rosa T., LVN";
   const iso = (d: Date) => d.toISOString();
   const daysAgo = (n: number) => iso(new Date(Date.now() - n * 86400_000));
@@ -24697,7 +24757,7 @@ export function useEhr<T>(selector: () => T): T {
       dueDate: day(-2),
       taskType: "med_pass",
       priority: "urgent",
-      allowedRoles: ["pmhnp", "therapist"],
+      allowedRoles: ["pmhnp", "physician", "therapist"],
       facilityId: "fac-fresno-main",
       housingUnit: "Unit 3B",
       source: "manual",
@@ -25137,7 +25197,7 @@ try {
   }
   // §Phase 10c demo seeds — ASAM, all through the real store API.
   const seedAttDraft = { attested: true, signatureDataUrl: "data:image/png;base64,c2VlZA==" };
-  const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
+  const REYES = { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" as StaffRole, clinicianId: "c1" };
   const VARGAS = { staffId: "s-sudc1", name: "Renee Castillo", role: "sud_counselor" as StaffRole };
   const seedDims = (text: string) =>
     ASAM_DIMENSIONS.map((d) => ({ key: d.key, documentation: text, rating: 1 as 0 | 1 | 2 | 3 | 4 }));
@@ -25236,11 +25296,18 @@ try {
 // e-prescribing. OUD/AUD medications are Part 2 protected by name
 // (isSudMedicationName) everywhere they render.
 try {
-  const PRESCRIBER = "Dr. R. Bagga, PMHNP-BC";
+  const PRESCRIBER = "Dr. M. Bagga, M.D.";
   const PRESCRIBER_ID = "s-np1";
   const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const byName = (f: string, l: string) =>
     patients.find((p) => p.firstName === f && p.lastName === l)?.id;
+  // Prescriber of record split: the PMHNP (Anita Brooks) owns these patients'
+  // prescriptions and refill reviews; Dr. M. Bagga owns everyone else's.
+  const NP_PATIENTS = new Set(
+    [demoScenarioPatientId("combination"), demoScenarioPatientId("public_referral"), demoScenarioPatientId("medication")].filter(Boolean) as string[],
+  );
+  const prescriberOf = (pid: string) =>
+    NP_PATIENTS.has(pid) ? { name: "Anita Brooks, PMHNP-BC", id: "s-th3" } : { name: PRESCRIBER, id: PRESCRIBER_ID };
   type Rx = { name: string; dose: string; frequency: string; indication: string; started: number; refills: number; pharmacy: string };
   const rx = (patientId: string | undefined, r: Rx) =>
     patientId
@@ -25250,7 +25317,7 @@ try {
           dose: r.dose,
           route: "oral",
           frequency: r.frequency,
-          prescriber: PRESCRIBER,
+          prescriber: prescriberOf(patientId).name,
           startedOn: daysAgo(r.started),
           refillsRemaining: r.refills,
           pharmacy: r.pharmacy,
@@ -25271,7 +25338,7 @@ try {
       requestedAt: daysAgo(opts.ago),
     });
     if (req && opts.review)
-      AdelanteEHR.reviewRefill({ id: req.id, decision: opts.review, denyReason: opts.reason, clinicianId: PRESCRIBER_ID });
+      AdelanteEHR.reviewRefill({ id: req.id, decision: opts.review, denyReason: opts.reason, clinicianId: prescriberOf(med.patientId).id });
   };
   const CVS = "CVS Pharmacy — Mooney Blvd, Visalia";
   const WAL = "Walgreens — Main St, Visalia";
@@ -25409,7 +25476,7 @@ try {
     AdelanteEHR.bookAppointment({ patientId: tomasP.id, clinicianId: therapist.id, start: slot(12, 14), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "pre_release" });
   }
   // 2c Luis — assessment visit scheduled from his ASAM task (linked, task
-  // stays open until the ASAM is signed). Booked by Dr. Reyes.
+  // stays open until the ASAM is signed). Booked by Marisol Reyes.
   const luisId = demoScenarioPatientId("sud_consented");
   const luisTask = luisId ? AdelanteEHR.openAsamWorkTask(luisId) : undefined;
   // (The linked visit is seeded in demoInboxSeed as a past no-show, so the
@@ -25418,7 +25485,7 @@ try {
   // Marcus (p3) — overdue ASAM task with reason LEGAL (set by a clinician;
   // not derived from justice involvement). No legal-disclosure consent on file.
   const marcusTask = AdelanteEHR.openAsamTask("p3");
-  if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Dr. Marisol Reyes", role: "therapist", id: "s-th1" });
+  if (marcusTask) AdelanteEHR.setAsamReason(marcusTask.id, "legal", { name: "Marisol Reyes", role: "therapist", id: "s-th1" });
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] appointment requests", e);
 }
@@ -25429,7 +25496,7 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
   const p = patients.find((x) => x.id === patientId);
   if (!p) return;
   if ((p.orders ?? []).some((o) => /buprenorphine/i.test(o.drugName) && o.curesCheck)) return;
-  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. R. Bagga");
+  if (!p.allergies?.length) AdelanteEHR.confirmNkda(patientId, "Dr. M. Bagga");
   const draft = AdelanteEHR.addDraftOrder(patientId, {
     drugName: "Buprenorphine-naloxone",
     productName: "Buprenorphine 8 MG / Naloxone 2 MG Sublingual Film",
@@ -25450,8 +25517,21 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
     checkedAt: new Date(Date.now() - 86400000).toISOString().slice(0, 16),
     result: "no_concerns",
     note: "Demo — placeholder, no live query.",
-    by: "Dr. R. Bagga",
-    role: "pmhnp",
+    by: "Dr. M. Bagga",
+    role: "physician",
   });
-  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Bagga");
+  AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
+}
+
+// Demo — prescriber of record (physician / PMHNP), set through the store so
+// "My work" has a real caseload for each prescriber. Primary therapists unchanged.
+try {
+  for (const id of [demoScenarioPatientId("sud_consented"), "p1", "p3"])
+    if (id) AdelanteEHR.setPrescriberOfRecord(id, "s-np1", "demo seed");
+  for (const k of ["combination", "public_referral", "medication"] as const) {
+    const id = demoScenarioPatientId(k);
+    if (id) AdelanteEHR.setPrescriberOfRecord(id, "s-th3", "demo seed");
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] prescribers", e);
 }

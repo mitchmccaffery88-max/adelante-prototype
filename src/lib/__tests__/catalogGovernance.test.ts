@@ -50,7 +50,7 @@ describe("frequency catalog admin", () => {
       frequencyCode: "BID",
       createdBy: ADMIN,
     });
-    AdelanteEHR.signOrders(patientId, [draft.id], "Dr. R. Bagga");
+    AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
 
     expect(AdelanteEHR.frequencyUsage("BID").count).toBeGreaterThan(0);
     expect(() => AdelanteEHR.deleteFrequency("BID", ADMIN)).toThrow(/cannot be deleted/i);

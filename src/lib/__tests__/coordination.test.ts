@@ -21,14 +21,14 @@ describe("clinical coordination (item 6)", () => {
     for (const { key } of STAFF_ROLES) {
       const ok = key === "clinical_coordinator" || key === "sys_admin";
       expect([key, canActOnCoordination(key)]).toEqual([key, ok]);
-      const view = ok || ["therapist", "pmhnp", "ecm_provider"].includes(key);
+      const view = ok || ["therapist", "pmhnp", "physician", "ecm_provider"].includes(key);
       expect([key, canViewCoordination(key)]).toEqual([key, view]);
       expect([key, resolveNavAccess(key, "/admin-coordination").status]).toEqual([key, view ? "allowed" : "denied"]);
     }
   });
 
   it("view-only roles are refused by the actions themselves", () => {
-    for (const role of ["therapist", "pmhnp", "ecm_provider"] as const) {
+    for (const role of ["therapist", "pmhnp", "physician", "ecm_provider"] as const) {
       const a = AdelanteEHR.listAppointments()[0];
       expect(() => coordinationCancel({ apptId: a.id, reason: "other" as never, actor: { name: "x", role } })).toThrow(/coordinator/);
     }
@@ -52,15 +52,15 @@ describe("clinical coordination (item 6)", () => {
     const opts = eligibleReassignTargets(pending);
     expect(opts.some((o) => o.clinicianId === "c2")).toBe(false);
     const kayla = opts.find((o) => o.clinicianId === "c4");
-    expect(kayla?.supervisorName).toBe("Dr. Marisol Reyes");
-    const actor = { name: "Dr. Marisol Reyes", role: "therapist" as const };
+    expect(kayla?.supervisorName).toBe("Marisol Reyes");
+    const actor = { name: "Marisol Reyes", role: "therapist" as const };
     expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "provider_frozen", actor })).toThrow();
     const priya = { name: "Priya Raman", role: "clinical_coordinator" as const };
     expect(() => reassignCoverage({ apptId: pending.id, toClinicianId: "c1", reason: "other", actor: priya })).toThrow(/Other/);
   });
 
   it("formats export names and strips doubled task prefixes", () => {
-    expect(formatClinicianName("Dr. Marisol Reyes", "LCSW")).toBe("Marisol Reyes, LCSW");
+    expect(formatClinicianName("Marisol Reyes", "LCSW")).toBe("Marisol Reyes, LCSW");
     expect(stripTaskPrefix("Task assigned — Coverage needed")).toBe("Coverage needed");
     expect(stripTaskPrefix("Follow up — Task assigned — X")).toBe("X");
   });

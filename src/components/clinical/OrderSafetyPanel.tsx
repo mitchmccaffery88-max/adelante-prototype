@@ -21,7 +21,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 
-const PRESCRIBERS = ["pmhnp", "sys_admin"];
+const PRESCRIBERS = ["pmhnp", "physician", "sys_admin"];
 
 export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patientId: string }) {
   const { role, staffName } = useActingStaff();

@@ -53,10 +53,10 @@ function signedNote(patientId: string, hoursAgo = 2) {
     assessment: "a",
     plan: "p",
   })!;
-  AdelanteEHR.signProgressNote(patientId, n.id, { signedBy: "Dr. Marisol Reyes", signedById: "c1", role: "therapist", attested: true, cosignRequired: false });
+  AdelanteEHR.signProgressNote(patientId, n.id, { signedBy: "Marisol Reyes", signedById: "c1", role: "therapist", attested: true, cosignRequired: false });
   return n.id;
 }
-const REYES = { byId: "c1", byName: "Dr. Marisol Reyes", role: "therapist" };
+const REYES = { byId: "c1", byName: "Marisol Reyes", role: "therapist" };
 const find = (pid: string, id: string) => AdelanteEHR.getPatient(pid)!.progressNotes!.find((n) => n.id === id)!;
 
 describe("A2 signed-note revisions", () => {
@@ -90,7 +90,7 @@ describe("A2 signed-note revisions", () => {
     const p = pid();
     const id = signedNote(p);
     AdelanteEHR.requestNoteVoid(p, id, { ...REYES, reason: "wrong chart" });
-    expect(() => AdelanteEHR.decideNoteVoid(p, id, { approve: true, clinicianId: "c1", name: "Dr. Marisol Reyes", role: "therapist" })).toThrow();
+    expect(() => AdelanteEHR.decideNoteVoid(p, id, { approve: true, clinicianId: "c1", name: "Marisol Reyes", role: "therapist" })).toThrow();
     AdelanteEHR.decideNoteVoid(p, id, { approve: true, staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" });
     const n = find(p, id);
     expect(n.voidedAt).toBeTruthy();

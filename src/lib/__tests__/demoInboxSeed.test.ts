@@ -17,7 +17,7 @@ describe("demo inbox seed — real store functions", () => {
     for (const r of AdelanteEHR.listOpenCrisisEscalations()) expect(r.escalation.triggerDetail).not.toMatch(/substance|alcohol|drug|asam|sud/i);
   });
   it("every staff bell has something, mostly unread; billing sees only the generic DMC-ODS reason", () => {
-    for (const [name, role, id] of [["Anita Brooks", "therapist", "s-th3"], ["Luz Herrera", "ecm_provider", "s-cm1"], ["Tonya Price", "billing", "s-bill1"], ["Priya Raman", "clinical_coordinator", "s-cc1"], ["Dr. R. Bagga", "pmhnp", "s-np1"], ["Renee Castillo", "sud_counselor", "s-sudc1"]] as const) {
+    for (const [name, role, id] of [["Anita Brooks", "therapist", "s-th3"], ["Luz Herrera", "ecm_provider", "s-cm1"], ["Tonya Price", "billing", "s-bill1"], ["Priya Raman", "clinical_coordinator", "s-cc1"], ["Dr. M. Bagga", "pmhnp", "s-np1"], ["Renee Castillo", "sud_counselor", "s-sudc1"]] as const) {
       const rows = AdelanteEHR.listNotificationsFor(name, role, id);
       expect(rows.length).toBeGreaterThan(0);
       expect(rows.filter((n) => !n.readAt).length).toBeGreaterThan(0);

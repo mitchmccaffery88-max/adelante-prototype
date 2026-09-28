@@ -1719,7 +1719,7 @@ export const AdelanteEHRExt = {
   // §Demo — two attended visits still waiting for a note, booked and marked
   // attended through the real store API (claims open at `documented`):
   //  - Kayla Nguyen (trainee, c4) with Rosa T. (p2): note → sign → cosign → billing
-  //  - Dr. Marisol Reyes (c1) with Alicia (p4): note → self-sign → billing
+  //  - Marisol Reyes (c1) with Alicia (p4): note → self-sign → billing
   const demo: { patientId: string; clinicianId: string; hoursAgo: number }[] = [
     { patientId: "p2", clinicianId: "c4", hoursAgo: 26 },
     { patientId: "p4", clinicianId: "c1", hoursAgo: 28 },
@@ -1746,7 +1746,7 @@ export const AdelanteEHRExt = {
   // §Signed-note revisions — DEMO DATA through the real store API: one note
   // with an addendum, one corrected (Superseded version + claim flag), one
   // voided (requested by the author, approved by the coordinator), one late
-  // entry. Dr. Marisol Reyes (c1) with demo patients p4–p7.
+  // entry. Marisol Reyes (c1) with demo patients p4–p7.
   // §10d-3 demo — one DMC-ODS treatment encounter each for Luis C. (passes the
   // medical necessity gate) and Jasmine H. (blocked until her counselor-authored
   // ASAM is co-signed). Booked + attended through the real store API; the
@@ -1851,7 +1851,7 @@ seedNoteRevisionDemo();
 
 /** §Signed-note revisions demo — real store API only. */
 function seedNoteRevisionDemo() {
-  const REYES = { byId: "c1", byName: "Dr. Marisol Reyes", role: "therapist" };
+  const REYES = { byId: "c1", byName: "Marisol Reyes", role: "therapist" };
   const visitNote = (patientId: string, hoursAgo: number, text: string) => {
     const start = new Date(Date.now() - hoursAgo * 3600_000);
     start.setMinutes(0, 0, 0);

@@ -31,7 +31,7 @@
 import type { AttestationRecord } from "@/lib/attestation";
 // Type-only: roles.ts imports ehr.ts at runtime, and ehr.ts value-imports this
 // module — a value import back to roles.ts would close a cycle. The LPHA list
-// below is a literal copy of `LPHA_SUPERVISOR_ROLES` (["therapist", "pmhnp"]);
+// below is a literal copy of `LPHA_SUPERVISOR_ROLES` (["therapist", "pmhnp", "physician"]);
 // a test asserts they stay in sync.
 import type { StaffRole } from "@/lib/roles";
 
@@ -100,6 +100,7 @@ export function dmcOdsLevelLabel(key: string | undefined): string {
 export const ASAM_AUTHOR_ROLES: StaffRole[] = [
   "therapist",
   "pmhnp",
+  "physician",
   "sud_counselor",
   "clinical_trainee",
 ];
@@ -110,7 +111,7 @@ export const ASAM_AUTHOR_ROLES: StaffRole[] = [
  * cycle; a test asserts they match). Counselors and trainees are authors, not
  * final signers: their assessments need an LPHA co-signature.
  */
-export const ASAM_SIGN_ROLES: StaffRole[] = ["therapist", "pmhnp"];
+export const ASAM_SIGN_ROLES: StaffRole[] = ["therapist", "pmhnp", "physician"];
 
 export function asamNeedsCosign(authorRole: StaffRole): boolean {
   return !ASAM_SIGN_ROLES.includes(authorRole);

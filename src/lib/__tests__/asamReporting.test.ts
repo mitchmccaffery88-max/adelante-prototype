@@ -11,7 +11,7 @@ import {
 } from "@/lib/asamReporting";
 import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 
-const THERAPIST = { role: "therapist" as const, staffId: "s-th1", staffName: "Dr. Marisol Reyes", clinicianId: "c1" };
+const THERAPIST = { role: "therapist" as const, staffId: "s-th1", staffName: "Marisol Reyes", clinicianId: "c1" };
 const COUNSELOR = { role: "sud_counselor" as const, staffId: "s-sudc1", staffName: "Renee Castillo" };
 
 describe("10d-1 Part 2 visibility", () => {

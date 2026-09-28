@@ -244,7 +244,7 @@ export function formatClinicianName(name: string, credential?: string): string {
 }
 
 let seeded = false;
-/** Demo: Kayla's profile + credential, Dr. Okafor frozen with two affected patients. */
+/** Demo: Kayla's profile + credential, James Okafor frozen with two affected patients. */
 export function seedCoordinationDemo() {
   if (seeded) return;
   seeded = true;
@@ -275,7 +275,7 @@ export function seedCoordinationDemo() {
     if (!AdelanteEHRExt.credentialsForClinician("c4").length)
       AdelanteEHRExt.addCredential({ clinicianId: "c4", kind: "license", issuingState: "CA", number: "ASW-120455", issuedAt: "2025-08-01", expiresAt: "2027-08-01", fileName: "asw_registration.pdf", uploadedBy: priya.name } as never);
   });
-  // Two patients with upcoming therapy visits on Dr. Okafor, then freeze him.
+  // Two patients with upcoming therapy visits on James Okafor, then freeze him.
   const pts = AdelanteEHR.listPatients().filter((p) => ["p1", "p2"].includes(p.id));
   const booked: string[] = [];
   pts.forEach((p, i) =>
@@ -289,5 +289,5 @@ export function seedCoordinationDemo() {
   );
   safe(() => setClinicianFrozen("c2", true, priya, "Unexpected leave — out through next week"));
   if (booked[0])
-    safe(() => reassignCoverage({ apptId: booked[0]!, toClinicianId: "c1", reason: "provider_frozen", note: "Covering during Dr. Okafor's leave.", actor: priya }));
+    safe(() => reassignCoverage({ apptId: booked[0]!, toClinicianId: "c1", reason: "provider_frozen", note: "Covering during James Okafor's leave.", actor: priya }));
 }

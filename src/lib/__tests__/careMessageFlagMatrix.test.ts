@@ -109,9 +109,9 @@ describe("Part 2 flag notification matrix", () => {
   it("staff flag by a therapist + consent OFF → backstop falls through to pmhnp", () => {
     const pid = patient().id;
     setConsentOn(pid, false);
-    const m = AdelanteEHR.sendStaffMessage(pid, "Dr. Marisol Reyes", "note")!;
+    const m = AdelanteEHR.sendStaffMessage(pid, "Marisol Reyes", "note")!;
     const rows = diff(pid, () =>
-      AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Marisol Reyes", "therapist"),
+      AdelanteEHR.flagMessageAsSud(pid, m.id, "Marisol Reyes", "therapist"),
     );
     expect(rows.length).toBe(2);
     expect(rows.find((n) => !!n.recipientRole)!.recipientRole).toBe("pmhnp");
@@ -159,7 +159,7 @@ describe("Part 2 flag notification matrix", () => {
     expect(diff(pid, () => AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Bagga", "pmhnp")).length,
     ).toBe(2);
     const again = diff(pid, () =>
-      AdelanteEHR.flagMessageAsSud(pid, m.id, "Dr. Marisol Reyes", "therapist"),
+      AdelanteEHR.flagMessageAsSud(pid, m.id, "Marisol Reyes", "therapist"),
     );
     expect(again.length).toBe(0);
   });

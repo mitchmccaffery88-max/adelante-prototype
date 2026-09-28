@@ -11,7 +11,7 @@ export function isLateEntry(visitISO: string | undefined, signedISO: string | un
 }
 
 /** Clinicians with a treatment need to know who may add an addendum to someone else's note. */
-export const ADDENDUM_ROLES = ["pmhnp", "therapist", "sud_counselor", "clinical_trainee"] as const;
+export const ADDENDUM_ROLES = ["pmhnp", "physician", "therapist", "sud_counselor", "clinical_trainee"] as const;
 
 /** Roles that may approve a void (besides the author's assigned supervisor). */
 export const VOID_APPROVER_ROLES = ["clinical_coordinator", "sys_admin"] as const;

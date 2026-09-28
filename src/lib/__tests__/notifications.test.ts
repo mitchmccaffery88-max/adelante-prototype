@@ -21,7 +21,7 @@ describe("notification feed — Phase 1", () => {
       attested: true,
       cosignRole: ["pmhnp"],
     });
-    const forPmhnp = AdelanteEHR.listNotificationsFor("Dr. R. Bagga", "pmhnp");
+    const forPmhnp = AdelanteEHR.listNotificationsFor("Dr. M. Bagga", "pmhnp");
     expect(forPmhnp.some((n) => n.category === "cosign_request" && n.linkRoute === "/cosign-inbox")).toBe(true);
     const forTherapist = AdelanteEHR.listNotificationsFor("Anita Brooks", "therapist");
     expect(forTherapist.some((n) => n.category === "cosign_request" && n.patientId === pid)).toBe(false);

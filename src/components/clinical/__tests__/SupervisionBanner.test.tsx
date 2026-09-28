@@ -25,7 +25,7 @@ describe("SupervisionBanner", () => {
       assignSupervisor("s-tr1", "s-th1");
     });
     render(<SupervisionBanner />);
-    expect(screen.getByTestId("supervision-banner").textContent).toMatch(/Dr. Marisol Reyes/);
+    expect(screen.getByTestId("supervision-banner").textContent).toMatch(/Marisol Reyes/);
     expect(screen.getByTestId("supervision-banner").textContent).toMatch(/billable/i);
 
     act(() => {
@@ -39,6 +39,6 @@ describe("SupervisionBanner", () => {
   it("shows the same status for a Medical Assistant", () => {
     act(() => setActingStaff("s-ma1"));
     render(<SupervisionBanner />);
-    expect(screen.getByTestId("supervision-banner").textContent).toMatch(/Dr. R. Bagga/);
+    expect(screen.getByTestId("supervision-banner").textContent).toMatch(/Dr. M. Bagga/);
   });
 });

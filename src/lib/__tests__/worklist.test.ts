@@ -52,7 +52,7 @@ describe("claim mechanics", () => {
   it("claiming is one-shot — a second claim fails cleanly", () => {
     const t = make();
     expect(AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider")).toBe(true);
-    expect(AdelanteEHR.claimWorklistTask(t.id, "Dr. R. Bagga", "pmhnp")).toBe(false);
+    expect(AdelanteEHR.claimWorklistTask(t.id, "Dr. M. Bagga", "pmhnp")).toBe(false);
     const after = AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!;
     expect(after.claimedBy).toBe("Luz Herrera");
     expect(worklistStatusFor(after)).toBe("in_progress");
@@ -61,12 +61,12 @@ describe("claim mechanics", () => {
   it("only the claimer can release; release returns it to the pool", () => {
     const t = make();
     AdelanteEHR.claimWorklistTask(t.id, "Luz Herrera", "ecm_provider");
-    expect(AdelanteEHR.releaseWorklistTask(t.id, "Dr. R. Bagga", "pmhnp")).toBe(false);
+    expect(AdelanteEHR.releaseWorklistTask(t.id, "Dr. M. Bagga", "pmhnp")).toBe(false);
     expect(AdelanteEHR.releaseWorklistTask(t.id, "Luz Herrera", "ecm_provider")).toBe(true);
     const after = AdelanteEHR.listCaseTasks().find((x) => x.id === t.id)!;
     expect(after.claimedBy).toBeUndefined();
     expect(worklistStatusFor(after)).toBe("pending");
-    expect(AdelanteEHR.claimWorklistTask(t.id, "Dr. R. Bagga", "pmhnp")).toBe(true);
+    expect(AdelanteEHR.claimWorklistTask(t.id, "Dr. M. Bagga", "pmhnp")).toBe(true);
   });
 
   it("a completed task cannot be claimed", () => {

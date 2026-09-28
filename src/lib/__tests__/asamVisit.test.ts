@@ -7,8 +7,8 @@ import { asamClinicalReport } from "@/lib/asamReporting";
 import { patientFirstVisit } from "@/lib/apptRequestStatus";
 import { roleWorksAsamTask, LEGAL_REASON_NOTICE } from "@/components/clinical/AsamTaskWorkItem";
 
-const REYES = { staffId: "s-th1", name: "Dr. Marisol Reyes", role: "therapist" as const, clinicianId: "c1" };
-const BY = { id: "Dr. Marisol Reyes", role: "therapist" };
+const REYES = { staffId: "s-th1", name: "Marisol Reyes", role: "therapist" as const, clinicianId: "c1" };
+const BY = { id: "Marisol Reyes", role: "therapist" };
 const ATT = { attested: true, signatureDataUrl: "data:image/png;base64,dGVzdA==" };
 
 let n = 0;

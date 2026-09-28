@@ -20,7 +20,7 @@ function signedNote(patientId: string, over: Record<string, unknown> = {}) {
     assessment: "",
     plan: "",
     status: "signed",
-    signedBy: "Dr. Marisol Reyes",
+    signedBy: "Marisol Reyes",
     signedAt: new Date().toISOString(),
     ...over,
   } as never) as unknown as { id: string };

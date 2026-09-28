@@ -87,7 +87,7 @@ export function seedDemoInbox(): void {
     safe(() => {
       const r = AdelanteEHR.flagCrisis(
         daniel,
-        "Dr. James Okafor",
+        "James Okafor",
         "Demo: said during session he felt unsafe at home last night; now staying with his sister.",
       );
       AdelanteEHR.resolveCrisisEscalation(daniel, r.id, "Priya Raman", {
@@ -105,7 +105,7 @@ export function seedDemoInbox(): void {
         patientId: elena,
         answers: [1, 1, 1, 0, 0, 0],
         mode: "staff",
-        staffName: "Dr. Marisol Reyes",
+        staffName: "Marisol Reyes",
         staffRole: "therapist",
         trigger: "PHQ-9 item 9 positive",
       });
@@ -170,7 +170,7 @@ export function seedDemoInbox(): void {
   if (elena)
     n({ recipientRole: "therapist", category: "appointment_request", subject: "Appointment request — Elena V.", body: "Requested — waiting for staff confirmation: 1:1 therapy intake.", linkRoute: "/clinician", ...pl(elena) });
   if (marcus)
-    n({ recipientStaffId: "Dr. Marisol Reyes", category: "appointment_rescheduled", subject: "Visit rescheduled — Marcus", body: "Patient moved Tuesday's visit to Thursday 2:00 PM.", linkRoute: "/clinician", ...pl(marcus) });
+    n({ recipientStaffId: "Marisol Reyes", category: "appointment_rescheduled", subject: "Visit rescheduled — Marcus", body: "Patient moved Tuesday's visit to Thursday 2:00 PM.", linkRoute: "/clinician", ...pl(marcus) });
   if (paloma)
     n({ recipientRole: "ecm_provider", category: "connect_request", subject: "\"Connect me\" request — Paloma O.", body: "Patient asked to be connected with food assistance.", linkRoute: "/worklist", ...pl(paloma) });
   if (victor)
@@ -182,7 +182,7 @@ export function seedDemoInbox(): void {
   n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim blocked", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
   n({ recipientRole: "billing", category: "claim_blocked", subject: "Claim denied — Medi-Cal (90834)", body: "Denied: eligibility not active on date of service. Verify coverage and resubmit.", linkRoute: "/admin-claims" });
   n({ recipientRole: "billing_coordinator", category: "claim_blocked", subject: "Claim blocked", body: `${GATE_GENERIC_MESSAGE}.`, linkRoute: "/admin-claims" });
-  n({ recipientRole: "clinical_coordinator", category: "task_assigned", subject: "Coverage needed — Friday clinic", body: "Dr. Okafor is out Friday; 3 visits need a covering clinician.", linkRoute: "/admin-coordination" });
+  n({ recipientRole: "clinical_coordinator", category: "task_assigned", subject: "Coverage needed — Friday clinic", body: "James Okafor is out Friday; 3 visits need a covering clinician.", linkRoute: "/admin-coordination" });
 
   // ---- 3. Messages ----
   if (rosa)
@@ -209,7 +209,7 @@ export function seedDemoInbox(): void {
     AdelanteEHR.createProviderRequest({ patientId: rosa, requestType: "question", context: "Patient asks whether video visits are okay while she starts a new job.", requestedBy: "Andre Willis", requestedByRole: "peer_specialist" });
 
   // ---- 4. Cancels and no-shows (real store functions) ----
-  const reyes = { name: "Dr. Marisol Reyes", role: "therapist" as const, id: "s-th1" };
+  const reyes = { name: "Marisol Reyes", role: "therapist" as const, id: "s-th1" };
   const upcoming = (pid?: string) =>
     pid
       ? AdelanteEHR.appointmentsForPatient(pid)
@@ -264,7 +264,7 @@ export function seedDemoInbox(): void {
       AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
     });
   // Core demo patients get a primary clinician through the normal reassign
-  // path (Rosa/Daniel are then moved to Dr. Okafor by the coordination demo).
+  // path (Rosa/Daniel are then moved to James Okafor by the coordination demo).
   for (const first of ["Rosa", "Daniel", "Luis", "Alicia", "Marcus", "Jordan", "Carmen"]) {
     const pt = AdelanteEHR.listPatients().find((x) => x.firstName === first);
     if (pt && !pt.primaryClinicianId)
@@ -291,7 +291,7 @@ export function seedDemoInbox(): void {
   };
   readOne("Luz Herrera", "ecm_provider");
   readOne("Priya Raman", "clinical_coordinator");
-  readOne("Dr. R. Bagga", "pmhnp");
+  readOne("Dr. M. Bagga", "physician");
 }
 
 seedDemoInbox();

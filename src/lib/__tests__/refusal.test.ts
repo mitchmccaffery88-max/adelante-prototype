@@ -182,7 +182,7 @@ describe("finalize validation (ported canFinalize)", () => {
       refusalFinalizeProblems(form, {
         nurseAttested: true,
         patientMode: "declined",
-        witnessStaffName: "Dr. Marisol Reyes",
+        witnessStaffName: "Marisol Reyes",
         nurseSignatureDataUrl: goodSig,
       }),
     ).toContain("Select why the patient did not sign.");
@@ -250,7 +250,7 @@ describe("finalizeRefusalForm", () => {
         nurseAttested: true,
         patientMode: "declined",
         patientDeclineReason: DECLINE_REASONS[0],
-        witnessStaffName: "Dr. Marisol Reyes",
+        witnessStaffName: "Marisol Reyes",
         nurseSignatureDataUrl: goodSig,
       },
       NURSE,

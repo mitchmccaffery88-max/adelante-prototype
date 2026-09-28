@@ -135,7 +135,7 @@ describe("advocate — authorization-type gates", () => {
     });
     expect(AdelanteEHR.advocateAccess(link.id).denyReason).toBe("ahcd_not_activated");
 
-    activateAhcdForTest(link.id, { clinician: "Dr. Reyes" });
+    activateAhcdForTest(link.id, { clinician: "Marisol Reyes" });
     expect(AdelanteEHR.advocateAccess(link.id).allowed).toBe(true);
   });
 
@@ -148,7 +148,7 @@ describe("advocate — authorization-type gates", () => {
     });
     expect(() =>
       AdelanteEHR.activateAdvocateAhcd(link.id, {
-        determinedBy: "Dr. Reyes",
+        determinedBy: "Marisol Reyes",
         determinedByRole: "pmhnp",
         basis: "Incapacity determination.",
       }),
