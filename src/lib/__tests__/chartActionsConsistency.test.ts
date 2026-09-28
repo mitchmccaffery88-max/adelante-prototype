@@ -2,7 +2,7 @@
 // actually allows. For every role × action with a role-checked store call we
 // ATTEMPT the call and compare: a role refusal must match "hidden".
 import { describe, expect, it } from "vitest";
-import { AdelanteEHR, demoScenarioPatientId, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId, refillNeedsCures, type Patient } from "@/lib/ehr";
 import { STAFF_ROLES, canAccess, canFlagCrisis, CRISIS_FLAG_ROLES, type StaffRole } from "@/lib/roles";
 import { CHART_ACTIONS, chartActionState } from "@/lib/chartActions";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -39,8 +39,13 @@ const PROBES: Record<string, (role: StaffRole, p: Patient) => unknown> = {
       by: "Probe",
       role,
     }),
-  refill_decision: (role) =>
-    AdelanteEHR.reviewRefill({ id: AdelanteEHR.listRefillRequests()[0]?.id ?? "x", decision: "denied", denyReason: "", actorRole: role }),
+  // Approve a CURES-required refill with no CURES record: prescribers hit
+  // the CURES blocker (validation), everyone else the prescriber-only rule.
+  refill_decision: (role) => {
+    const r = AdelanteEHR.listRefillRequests().find((x) => refillNeedsCures(x) && !x.curesCheck);
+    if (!r) throw new Error("no probe refill");
+    return AdelanteEHR.reviewRefill({ id: r.id, decision: "approved", actorRole: role });
+  },
   care_plan_goal: (role, p) =>
     addStructuredGoal({ patientId: p.id, owner: "clinician" as never, measure: "", clinicalText: "", actor: { name: "Probe", role } }),
   hloc_referral: (role, p) =>
