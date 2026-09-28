@@ -5,7 +5,6 @@
 // (bottom sheet on phones) with the existing form or section, so the
 // clinician never leaves the chart.
 import { useEffect, useMemo, useState, type ReactNode } from "react";
-import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Keyboard, Plus, Search } from "lucide-react";
 import { useActingStaff } from "@/lib/roles";
@@ -26,6 +25,8 @@ import {
   CommandList,
 } from "@/components/ui/command";
 import { LabOrderForm, MetabolicForm, ScreenerRequestForm, type FormDone } from "@/components/chart/LabsAndMeasures";
+import { ContactLogForm, DocumentUploadForm } from "@/components/chart/DrawerForms";
+import { CHART_ACTION_EVENT } from "@/lib/chartActionBus";
 
 const GROUPS: { id: ChartActionGroup; label: string }[] = [
   { id: "document", label: "Document" },
@@ -85,6 +86,36 @@ export function ChartActionLauncher({
   };
 
   useEffect(() => {
+    const onOpen = (e: Event) => {
+      const id = (e as CustomEvent<string>).detail;
+      if (!open(id)) toast.error("That action isn't available for your role.");
+    };
+    window.addEventListener(CHART_ACTION_EVENT, onOpen);
+    return () => window.removeEventListener(CHART_ACTION_EVENT, onOpen);
+  });
+
+  // §Turn 3 (b) — actions that render an existing section in the drawer:
+  // when the drawer closes after something was saved (a new audit row for
+  // this patient), the toast links to where the created item lives.
+  const [auditAtOpen, setAuditAtOpen] = useState(0);
+  const auditCount = () => AdelanteEHR.listAuditEvents({ patientId }).length;
+  useEffect(() => {
+    if (drawer) setAuditAtOpen(auditCount());
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [drawer]);
+  const closeDrawer = () => {
+    const d = drawer;
+    setDrawer(null);
+    if (!d || ["lab_order", "screener_request", "metabolic", "document_upload", "contact_log"].includes(d.action.id)) return;
+    if (auditCount() > auditAtOpen && d.action.sectionId) {
+      const sid = d.action.sectionId;
+      recent.unshift({ label: `${d.action.label.en} saved`, sectionId: sid, at: Date.now() });
+      recent.splice(8);
+      toast.success(`${d.action.label.en} saved`, { action: { label: "View", onClick: () => onSelectSection(sid) } });
+    }
+  };
+
+  useEffect(() => {
     if (hideAll) return;
     const onKey = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key.toLowerCase() === "k") {
@@ -123,22 +154,16 @@ export function ChartActionLauncher({
         return <ScreenerRequestForm patientId={patientId} onDone={done} />;
       case "metabolic":
         return <MetabolicForm patientId={patientId} onDone={done} />;
+      case "document_upload":
+        return <DocumentUploadForm patientId={patientId} onDone={done} />;
+      case "contact_log":
+        return <ContactLogForm patientId={patientId} onDone={done} />;
     }
     const sec = sections.find((s) => s.id === a.action.sectionId);
     if (sec) return sec.render();
-    const page: Record<string, { to: "/documents" | "/caseload-review"; label: string }> = {
-      document_upload: { to: "/documents", label: "Open documents" },
-      contact_log: { to: "/caseload-review", label: "Open weekly caseload review" },
-    };
-    const link = page[a.action.id];
     return (
       <div className="space-y-2 text-sm text-muted-foreground">
-        <p>This action opens on its own page.</p>
-        {link && (
-          <Button asChild size="sm" variant="outline">
-            <Link to={link.to}>{link.label}</Link>
-          </Button>
-        )}
+        <p>This action isn't available on this chart for your role.</p>
       </div>
     );
   };
@@ -151,7 +176,7 @@ export function ChartActionLauncher({
         <PopoverTrigger asChild>
           <Button
             data-testid="chart-new-button"
-            className="fixed bottom-16 right-6 z-50 h-12 rounded-full px-5 shadow-lg print:hidden"
+            className="fixed bottom-16 right-4 z-50 sm:right-6 h-12 rounded-full px-5 shadow-lg print:hidden"
             aria-label="New — add to this chart"
           >
             <Plus className="h-5 w-5" /> New
@@ -283,7 +308,7 @@ export function ChartActionLauncher({
         </CommandList>
       </CommandDialog>
 
-      <Sheet open={!!drawer} onOpenChange={(v) => !v && setDrawer(null)}>
+      <Sheet open={!!drawer} onOpenChange={(v) => !v && closeDrawer()}>
         <SheetContent
           side={isMobile ? "bottom" : "right"}
           className={isMobile ? "max-h-[88vh] overflow-y-auto" : "w-full overflow-y-auto sm:max-w-xl"}
