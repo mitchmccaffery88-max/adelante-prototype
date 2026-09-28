@@ -665,6 +665,16 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                     (o.orderSource ? ` (${o.orderSource})` : "")
                   : ""}
               </div>
+              {o.curesCheck && ["pmhnp", "therapist", "sud_counselor", "sys_admin", "clinical_trainee"].includes(role) && (
+                <div className="mt-1 text-xs text-muted-foreground">
+                  CURES check (placeholder — no live query):{" "}
+                  {o.curesCheck.emergencyOverride ? "Emergency override" : o.curesCheck.result.replace(/_/g, " ")} ·{" "}
+                  {o.curesCheck.checkedAt.replace("T", " ")} · {o.curesCheck.by}
+                </div>
+              )}
+              {o.allergyOverride && (
+                <div className="mt-1 text-xs text-destructive">Allergy override: {o.allergyOverride.reason}</div>
+              )}
               {o.status !== "signed" && o.statusChangedBy && (
                 <div className="mt-1 text-xs text-muted-foreground">
                   {ORDER_STATUS_LABEL[o.status]} by {o.statusChangedBy}
