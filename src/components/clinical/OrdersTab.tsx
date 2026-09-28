@@ -613,7 +613,11 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
   );
   const allIssues = drafts.flatMap((o) => validateOrder(o, { needsAttribution }));
   const gatePasses = drafts.length > 0 && allIssues.length === 0;
-  const canSign = !viewOnly && gatePasses && attested;
+  // §B1/B2 — same blockers the store enforces in signOrders.
+  const safetyBlockers = drafts
+    .map((d) => AdelanteEHR.orderSigningBlocker(patientId, d))
+    .filter((x): x is string => !!x);
+  const canSign = !viewOnly && gatePasses && attested && safetyBlockers.length === 0;
 
   const renderReleasedOrder = (o: MedOrder) => (
             <Card key={o.id} className="p-3 text-sm">
@@ -816,6 +820,13 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
       {!viewOnly && drafts.length > 0 && (
         <div className="space-y-3">
+          {safetyBlockers.length > 0 && (
+            <ul role="alert" aria-label="Signing blocked" className="space-y-1 rounded-md border border-destructive/60 bg-destructive/5 p-2 text-xs text-destructive">
+              {safetyBlockers.map((b) => (
+                <li key={b}>Can&apos;t sign yet: {b}</li>
+              ))}
+            </ul>
+          )}
           <SignAttestation checked={attested} onChange={setAttested} staffName={staffName} />
           <Button className="w-full" disabled={!canSign} onClick={sign}>
             Sign {drafts.length} order{drafts.length === 1 ? "" : "s"}
