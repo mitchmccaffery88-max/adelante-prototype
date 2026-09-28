@@ -250,6 +250,26 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
   });
 }
 
+/** B1/B2 demo: an allergy override on Daniel, a CURES check on Luis's buprenorphine. */
+export function seedOrderSafetyDemo(): void {
+  const BAGGA = { by: "Dr. R. Bagga", role: "pmhnp" };
+  try {
+    const daniel = AdelanteEHR.listPatients().find((p) => p.firstName === "Daniel");
+    if (daniel) {
+      const o = AdelanteEHR.addDraftOrder(daniel.id, { drugName: "Amoxicillin 500 MG Oral Capsule", productName: "Amoxicillin 500 MG Oral Capsule", ingredientNames: ["amoxicillin"], createdBy: BAGGA.by } as never) as unknown as { id: string };
+      AdelanteEHR.overrideOrderAllergy(daniel.id, o.id, { reason: "Tolerated amoxicillin in 2025 per outside records; monitoring (demo)", ...BAGGA });
+    }
+    const luis = AdelanteEHR.listPatients().find((p) => p.firstName === "Luis");
+    const bup = luis?.orders?.find((o) => /buprenorph|suboxone/i.test(o.drugName) && o.status === "signed");
+    if (luis && bup && !bup.curesCheck) {
+      const at = new Date(Date.now() - 2 * 86400000);
+      AdelanteEHR.recordCuresCheck(luis.id, bup.id, { checkedAt: at.toISOString().slice(0, 16), result: "no_concerns", note: "No other prescribers in the last 12 months (demo).", ...BAGGA });
+    }
+  } catch (e) {
+    if (typeof console !== "undefined") console.warn("[demo seed] order safety", e);
+  }
+}
+
 /** Demo seed through the functions above. */
 export function seedOutpatientCareDemo(): void {
   const safe = (f: () => void) => {

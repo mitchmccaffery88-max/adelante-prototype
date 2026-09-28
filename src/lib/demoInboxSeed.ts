@@ -1,3 +1,4 @@
+import { seedOrderSafetyDemo, seedOutpatientCareDemo } from "./outpatientCare";
 // §Demo inbox seed (item 2 of 7) — crisis queue, notifications and messages
 // for the demo, created ONLY through real store functions (flag, screener,
 // scanner, notify, message send) so every row carries the same audit trail and
@@ -271,6 +272,8 @@ export function seedDemoInbox(): void {
   }
   safe(() => seedCoordinationDemo());
   safe(() => seedCaseloadDemo());
+  safe(() => seedOutpatientCareDemo());
+  safe(() => seedOrderSafetyDemo());
 
   // §Inbox actions — a claim status move raised by the real audit hook, then
   // claim / assign / done / make-a-task through the inbox action functions.
