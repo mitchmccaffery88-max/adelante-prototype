@@ -70,7 +70,7 @@ export interface HlocReferral {
 const episodes: CareEpisode[] = [];
 const referrals: HlocReferral[] = [];
 const uid = () => Math.random().toString(36).slice(2, 10);
-const CLINICAL = ["therapist", "pmhnp", "sud_counselor", "clinical_trainee", "clinical_coordinator", "sys_admin"];
+const CLINICAL = ["therapist", "pmhnp", "physician", "sud_counselor", "clinical_trainee", "clinical_coordinator", "sys_admin"];
 const EPISODE_ROLES = [...CLINICAL, "ecm_provider"];
 
 type Actor = { name: string; role: StaffRole | string };
@@ -189,7 +189,7 @@ export function createHlocReferral(input: {
   asamId?: string;
   actor: Actor;
 }): HlocReferral {
-  assertRole(input.actor, ["therapist", "pmhnp", "sud_counselor", "sys_admin"], "create a clinical referral");
+  assertRole(input.actor, ["therapist", "pmhnp", "physician", "sud_counselor", "sys_admin"], "create a clinical referral");
   patientOf(input.patientId);
   if ((input.reason ?? "").trim().length < 3) throw new Error("A reason is required.");
   if (!input.destination.trim()) throw new Error("Pick or type a destination provider.");
@@ -211,7 +211,7 @@ export function hlocSendBlocker(r: HlocReferral): string | undefined {
   return undefined;
 }
 export function advanceHlocReferral(id: string, to: HlocStatus, actor: Actor, note?: string): HlocReferral {
-  assertRole(actor, ["therapist", "pmhnp", "sud_counselor", "clinical_coordinator", "sys_admin"], "update a clinical referral");
+  assertRole(actor, ["therapist", "pmhnp", "physician", "sud_counselor", "clinical_coordinator", "sys_admin"], "update a clinical referral");
   const r = referrals.find((x) => x.id === id);
   if (!r) throw new Error("Referral not found.");
   if (!HLOC_NEXT[r.status].includes(to)) throw new Error(`A ${r.status} referral can't move to ${to}.`);

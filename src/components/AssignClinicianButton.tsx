@@ -32,6 +32,7 @@ const ALLOWED_ROLES = new Set([
   "sys_admin",
   "therapist",
   "pmhnp",
+  "physician",
 ]);
 
 export function AssignClinicianButton({

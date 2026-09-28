@@ -36,7 +36,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { ClientDate } from "@/components/ClientDate";
 
 const sel = "mt-0.5 h-9 w-full rounded-md border bg-background px-2 text-sm";
-const CLINICAL = ["therapist", "pmhnp", "sud_counselor", "sys_admin"];
+const CLINICAL = ["therapist", "pmhnp", "physician", "sud_counselor", "sys_admin"];
 
 export function CareEpisodesPanel({ patientId }: { patientId: string }) {
   const { role, staffName } = useActingStaff();

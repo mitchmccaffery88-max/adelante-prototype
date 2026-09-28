@@ -8,7 +8,7 @@ export function canActOnCoordination(role: StaffRole): boolean {
 }
 
 /** Read-only viewers (product owner approved): status, coverage, Unassigned. No actions, no audit list. */
-export const COORDINATION_VIEW_ROLES: StaffRole[] = ["therapist", "pmhnp", "ecm_provider"];
+export const COORDINATION_VIEW_ROLES: StaffRole[] = ["therapist", "pmhnp", "physician", "ecm_provider"];
 export function canViewCoordination(role: StaffRole): boolean {
   return canActOnCoordination(role) || COORDINATION_VIEW_ROLES.includes(role);
 }

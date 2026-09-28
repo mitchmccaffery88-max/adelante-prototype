@@ -844,7 +844,7 @@ export function permissionRole(role: StaffRole): StaffRole {
 }
 
 /** Prescribers: may sign orders, approve refills and record CURES. */
-export const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp"];
+export const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp", "physician"];
 export const isPrescriberRole = (r: string) => (PRESCRIBER_ROLES as string[]).includes(r);
 
 export function canAccess(
@@ -875,6 +875,7 @@ export function canAccess(
  */
 export const CRISIS_FLAG_ROLES: StaffRole[] = [
   "pmhnp",
+  "physician",
   "therapist",
   "ecm_provider",
   "peer_specialist",
@@ -925,7 +926,7 @@ export const ASSISTED_SIGNUP_ROLES: StaffRole[] = STAFF_ROLES.map((r) => r.key).
  * ecm_provider / peer_specialist keep their `worklist` read/write on the rows
  * themselves — they can see and claim rounds, just not start or stop one.
  */
-export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "therapist", "clinical_coordinator"];
+export const PROTOCOL_MANAGE_ROLES: StaffRole[] = ["pmhnp", "physician", "therapist", "clinical_coordinator"];
 
 export function canManageProtocol(role: StaffRole): boolean {
   return PROTOCOL_MANAGE_ROLES.includes(role);
@@ -956,6 +957,7 @@ export const CONTENT_PUBLISHER_ROLES: StaffRole[] = [
   "clinical_coordinator",
   "sys_admin",
   "pmhnp",
+  "physician",
   "therapist",
 ];
 
@@ -1141,7 +1143,7 @@ export function getStaffMember(id: string | null | undefined): StaffMember | und
 // Note cosign continues to work exactly as before and is unaffected.
 
 /** Roles that may hold a supervision link (LPHA tier). */
-export const LPHA_SUPERVISOR_ROLES: StaffRole[] = ["therapist", "pmhnp"];
+export const LPHA_SUPERVISOR_ROLES: StaffRole[] = ["therapist", "pmhnp", "physician"];
 
 /**
  * Roles whose scope of practice REQUIRES documented supervision.

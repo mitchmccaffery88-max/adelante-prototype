@@ -51,8 +51,8 @@ export const TEMPLATE_DEPARTMENTS: TemplateDepartment[] = [
   {
     id: "psychiatry",
     label: "Psychiatry",
-    roles: ["pmhnp"],
-    leadRoles: ["pmhnp"],
+    roles: ["pmhnp", "physician"],
+    leadRoles: ["pmhnp", "physician"],
   },
   {
     id: "sud_services",

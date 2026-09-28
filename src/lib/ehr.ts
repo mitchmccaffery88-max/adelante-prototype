@@ -2162,6 +2162,7 @@ export const APPT_REQUEST_MASKED_LABEL = "Protected appointment request";
 export const APPT_REQUEST_BOOKING_ROLES: StaffRole[] = [
   "therapist",
   "pmhnp",
+  "physician",
   "sud_counselor",
   "clinical_trainee",
   "ecm_provider",
@@ -3165,7 +3166,7 @@ export type NoteAuthorSource = "human" | "ai_draft";
 export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "declined";
 
 /** Roles that may sign a note at all, and that may sign without a cosigner. */
-export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "therapist"] as const;
+export const NOTE_SELF_SIGN_ROLES = ["pmhnp", "physician", "therapist"] as const;
 
 // ----- §Cosign routing to the assigned supervisor ---------------------------
 //
@@ -5178,7 +5179,7 @@ function patientLabel(patientId?: string): string {
  * Duplicated as a value here only because `ehr.ts` may import `roles.ts` for
  * TYPES only (roles.ts imports ehr.ts at runtime).
  */
-export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp"];
+export const MESSAGE_SUD_FLAG_ROLES: StaffRole[] = ["ecm_provider", "therapist", "pmhnp", "physician"];
 
 /**
  * §Part 2 backstop selection — DERIVED from the RBAC matrix, never hardcoded.
@@ -7431,7 +7432,7 @@ export interface GroupEligibility {
 }
 
 /** Only these roles may set the group-eligibility gate. */
-export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "ecm_provider"] as const;
+export const GROUP_ELIGIBILITY_ROLES = ["therapist", "pmhnp", "physician", "ecm_provider"] as const;
 
 /**
  * Who initiated an enrollment. Deliberately an open shape rather than a
@@ -7727,7 +7728,7 @@ export interface GroupJoinRequest {
 }
 const groupJoinRequests: GroupJoinRequest[] = [];
 /** Roles that may approve a Part 2 (SUD) group request without a consent lookup. */
-export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp"];
+export const SUD_GROUP_APPROVER_ROLES: readonly StaffRole[] = ["therapist", "pmhnp", "physician"];
 const groupOccurrences: GroupOccurrenceRecord[] = [];
 
 // §v3.0 Phase 2 — pre-release episode stores.
@@ -10273,7 +10274,7 @@ export const AdelanteEHR = {
         detail: `${def.name} quick check scored ${score} (cutoff ${def.positiveCutoff}). Administer the full ${def.fullFormKey.toUpperCase()} and document the result.`,
         dueDate: new Date().toISOString().slice(0, 10),
         origin: "screener_flag",
-        allowedRoles: ["ecm_provider", "therapist", "pmhnp", "clinical_trainee"],
+        allowedRoles: ["ecm_provider", "therapist", "pmhnp", "physician", "clinical_trainee"],
         dedupeKey: `shortform:${patientId}:${def.key}:${completedAt.slice(0, 10)}`,
       });
       escalated.push({
@@ -10383,7 +10384,7 @@ export const AdelanteEHR = {
       dueDate: new Date().toISOString().slice(0, 10),
       origin: "med_side_effect",
       priority: report.severity === "severe" ? "urgent" : "routine",
-      allowedRoles: ["pmhnp", "ecm_provider", "therapist", "medical_assistant"],
+      allowedRoles: ["pmhnp", "physician", "ecm_provider", "therapist", "medical_assistant"],
       dedupeKey: `sideeffect:${report.id}`,
     });
     if (task) MedAdherence.attachSideEffectTask(patientId, report.id, task.id);
@@ -13315,7 +13316,7 @@ export const AdelanteEHR = {
         push(AdelanteEHR.createCaseTask({
           ...base,
           assignedTo: p.primaryClinicianId ?? "",
-          ...(p.primaryClinicianId ? {} : { allowedRoles: ["therapist", "pmhnp"] as StaffRole[] }),
+          ...(p.primaryClinicianId ? {} : { allowedRoles: ["therapist", "pmhnp", "physician"] as StaffRole[] }),
           dedupeKey: `sdoh-safety-clin:${item.id}`,
         }));
         continue;
@@ -20454,7 +20455,7 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     const o = p?.orders?.find((x) => x.id === orderId);
     if (!p || !o) throw new Error("Order not found.");
-    if (!["pmhnp", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
+    if (!["pmhnp", "physician", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
       throw new Error("Only a prescriber can record a CURES check.");
     if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
       throw new Error("A reason is required when CURES can't be checked or for an emergency override.");
@@ -20837,7 +20838,7 @@ export const AdelanteEHR = {
     // `witnessCandidates` offers in the MAR UI, so broadcast to both roles.
     const claimedOrder = p.orders?.find((o) => o.id === orderId);
     if (claimedOrder && requiresDoseWitness(claimedOrder)) {
-      for (const r of ["pmhnp", "therapist"] as StaffRole[]) {
+      for (const r of ["pmhnp", "physician", "therapist"] as StaffRole[]) {
         AdelanteEHR.notify({
           recipientRole: r,
           category: "mar_witness_needed",
@@ -24697,7 +24698,7 @@ export function useEhr<T>(selector: () => T): T {
       dueDate: day(-2),
       taskType: "med_pass",
       priority: "urgent",
-      allowedRoles: ["pmhnp", "therapist"],
+      allowedRoles: ["pmhnp", "physician", "therapist"],
       facilityId: "fac-fresno-main",
       housingUnit: "Unit 3B",
       source: "manual",

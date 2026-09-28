@@ -1045,5 +1045,5 @@ export function isAdvocateRoute(pathname: string): boolean {
 
 /** Clinical roles that see the higher-level referral list (rows still Part 2-filtered). */
 export const CLINICAL_REFERRAL_ROLES: ReadonlySet<string> = new Set([
-  "therapist", "pmhnp", "sud_counselor", "clinical_trainee", "sys_admin",
+  "therapist", "pmhnp", "physician", "sud_counselor", "clinical_trainee", "sys_admin",
 ]);
