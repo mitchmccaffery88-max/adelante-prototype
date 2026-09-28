@@ -15277,7 +15277,7 @@ export const AdelanteEHR = {
         (n) =>
           (!!n.recipientStaffId && !!me && n.recipientStaffId === me) ||
           (!!n.recipientStaffId && !!myId && n.recipientStaffId === myId) ||
-          (!!n.recipientRole && !!role && n.recipientRole === role),
+          (!!n.recipientRole && !!role && (n.recipientRole === role || (role === "physician" && n.recipientRole === "pmhnp"))),
       )
       .sort((a, b) => b.createdAt.localeCompare(a.createdAt));
   },
