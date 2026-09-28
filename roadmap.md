@@ -207,3 +207,9 @@
 - [x] Kayla profile, role gate, reassign with reason, audit, unassigned list, export names, demo
 ## Section 4 part 2 (done)
 - [x] Advocate page phone width; mood count for case managers; B8 merged care-team thread; E7 Adel greeting check-in
+## Clinical core — turn A (done)
+- [x] A1 SUD-medication masking (single classifier + toggle, every med surface)
+- [x] A2 Note addendum / correction / void / late entry / version history
+- [x] A3 Demographics & identifiers edit with reason + history
+## Clinical core — turn B (next message)
+- [ ] Turn B scope from the medical lead

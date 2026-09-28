@@ -21,6 +21,7 @@ import {
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 
 export interface ChartReviewFacts {
   patient: Patient;
@@ -71,9 +72,11 @@ export function chartReviewFacts(
     .reverse()
     .find((a) => +new Date(a.start) < t && a.status === "attended");
 
-  const activeOrders = AdelanteEHR.listOrders(patientId).filter(
-    (o) => o.status === "signed",
-  );
+  const activeOrders = filterSudMedsForRole(
+    AdelanteEHR.listOrders(patientId),
+    viewerRole,
+    patient,
+  ).visible.filter((o) => o.status === "signed");
 
   const recentDoses = AdelanteEHR.listAdministrations(patientId).filter(
     (d) => !d.voided && t - +new Date(d.scheduledAt) <= 14 * DAY,

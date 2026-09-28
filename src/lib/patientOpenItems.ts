@@ -9,6 +9,9 @@
 // §5d-3 adds open resource referrals (a real, existing per-patient record) and
 // a draft aging read on both needs and referrals. No new tracker.
 import { AdelanteEHR } from "@/lib/ehr";
+import type { StaffRole } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
+import { isSudMedication } from "@/lib/sudMedClassifier";
 import { listUnsignedWork } from "@/lib/unsignedWork";
 import {
   referralAgingState,
@@ -37,7 +40,7 @@ export interface PatientOpenItem {
 
 const UNRESOLVED_SDOH = new Set(["identified", "sent", "accepted", "scheduled"]);
 
-export function listPatientOpenItems(patientId: string): PatientOpenItem[] {
+export function listPatientOpenItems(patientId: string, role?: StaffRole): PatientOpenItem[] {
   const items: PatientOpenItem[] = [];
 
   for (const row of listUnsignedWork().filter((r) => r.patient.id === patientId)) {
@@ -84,7 +87,14 @@ export function listPatientOpenItems(patientId: string): PatientOpenItem[] {
     });
   }
 
-  for (const r of AdelanteEHR.listRefillRequests({ patientId, status: "pending" })) {
+  const refills = AdelanteEHR.listRefillRequests({ patientId, status: "pending" });
+  // §Part 2 — refill rows go through the single medication filter when a
+  // viewer role is known; without one (patient-side / tests) nothing is shown
+  // for protected medications, so the rollup never leaks a drug name.
+  const visibleRefills = role
+    ? filterSudMedsForRole(refills, role, AdelanteEHR.getPatient(patientId)).visible
+    : refills.filter((r) => !isSudMedication(r));
+  for (const r of visibleRefills) {
     items.push({
       kind: "refill_request",
       id: r.id,

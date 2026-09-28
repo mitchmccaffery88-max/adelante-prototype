@@ -43,13 +43,34 @@ export function roleSeesAsam(role: StaffRole, patient?: Patient): boolean {
  * medications or their refill rows, even with a substance-use consent on file.
  * Same rule as the clinical coordinator. No other role changes.
  */
-export const SUD_MED_WITHHELD_ROLES: readonly StaffRole[] = ["ecm_provider", "clinical_coordinator"];
+export const SUD_MED_WITHHELD_ROLES: readonly StaffRole[] = [
+  "ecm_provider",
+  "clinical_coordinator",
+  "billing",
+  "billing_coordinator",
+];
 export const SUD_MED_ACCESS_NOTE =
   "Protected medications hidden for your role until consents can name roles. Access rule: draft pending compliance review.";
 export function roleSeesSudMedication(role: StaffRole, patient?: Patient): boolean {
   if (SUD_MED_WITHHELD_ROLES.includes(role)) return false;
   return roleSeesAsam(role, patient);
 }
+
+/**
+ * §Part 2 — the single medication visibility filter every staff medication
+ * surface routes through. Returns the rows this role may see plus a hidden
+ * count, so the surface can say "Some medications are not shown".
+ */
+export function filterSudMedsForRole<T extends SudClassifiable>(
+  rows: T[],
+  role: StaffRole,
+  patient?: Patient,
+): { visible: T[]; hidden: number } {
+  if (roleSeesSudMedication(role, patient)) return { visible: rows, hidden: 0 };
+  const visible = rows.filter((r) => !isSudMedication(r));
+  return { visible, hidden: rows.length - visible.length };
+}
+import { isSudMedication, type SudClassifiable } from "@/lib/sudMedClassifier";
 
 /**
  * §10d-2 coordinator rule — DRAFT pending compliance review.

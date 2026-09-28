@@ -20,10 +20,11 @@ import { useActingStaff, useActingRole } from "@/lib/roles";
 import { isSudMedicationName } from "@/lib/ehr";
 import { roleSeesSudMedication } from "@/lib/asamReporting";
 
-/** Protected OUD/AUD meds are withheld for ECM case manager / coordinator (draft rule). */
-function useSudMedFilter() {
+/** Protected OUD/AUD meds go through the single Part 2 medication check. */
+function useSudMedFilter(patientId?: string) {
   const [role] = useActingRole();
-  return (name: string) => !isSudMedicationName(name) || roleSeesSudMedication(role);
+  const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
+  return (name: string) => !isSudMedicationName(name) || roleSeesSudMedication(role, patient);
 }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -150,7 +151,7 @@ function ActiveSession({
 }) {
   const { staffName } = useActingStaff();
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
-  const sudOk = useSudMedFilter();
+  const sudOk = useSudMedFilter(patientId);
   const unreviewed = items.filter(
     (i) => i.source === "active_order" && i.decision === "not_reviewed",
   );
@@ -487,7 +488,7 @@ function HistoryRow({
   onToggle: () => void;
 }) {
   const items = useEhr(() => AdelanteEHR.listReconItems(patientId, recon.id));
-  const sudOk = useSudMedFilter();
+  const sudOk = useSudMedFilter(patientId);
   const counts = useMemo(() => {
     const c: Record<string, number> = {};
     for (const i of items) c[i.decision] = (c[i.decision] ?? 0) + 1;

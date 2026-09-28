@@ -267,7 +267,56 @@ export type NotificationCategory =
   // §Inbox actions — billing feed: a claim moved status (billing-safe wording).
   | "claim_status"
   // §E10 — a patient withdrew a sharing consent (generic copy, never names SUD).
-  | "consent_changed";
+  | "consent_changed"
+  // §Signed-note revisions — a note void awaits supervisor/coordinator approval.
+  | "note_void_request"
+  // §Demographics — identity details changed (generic copy for billing).
+  | "demographics_changed";
+
+export interface NoteAddendum {
+  id: string;
+  text: string;
+  at: string;
+  byId: string;
+  byName: string;
+  role: string;
+}
+export interface NoteVersionSnapshot {
+  version: number;
+  supersededAt: string;
+  supersededBy: string;
+  reason: string;
+  subjective: string;
+  objective: string;
+  assessment: string;
+  plan: string;
+  signedBy?: string;
+  signedAt?: string;
+  cosignedBy?: string;
+  cosignedAt?: string;
+}
+export interface NoteRevisionEntry {
+  at: string;
+  action: NoteRevisionAction;
+  byName: string;
+  role: string;
+  reason?: string;
+  changed?: string[];
+}
+import {
+  ADDENDUM_ROLES,
+  VOID_APPROVER_ROLES,
+  isLateEntry,
+  type NoteRevisionAction,
+} from "@/lib/noteRevisions";
+import {
+  DEMOGRAPHIC_LABEL,
+  ELIGIBILITY_FIELDS,
+  REASON_REQUIRED_FIELDS,
+  editableDemographicFields,
+  type DemographicField,
+  type DemographicsChange,
+} from "@/lib/demographics";
 
 export interface AppNotification {
   id: string;
@@ -919,6 +968,11 @@ export interface MedOrder {
   id: string;
   patientId: string;
   drugName: string;
+  /**
+   * §Part 2 — clinician toggle: treat this order as SUD-related even when the
+   * drug name is not on the classifier list (e.g. off-label for AUD).
+   */
+  sudRelated?: boolean;
   dose?: string;
   route?: string;
   frequency?: string;
@@ -1639,6 +1693,12 @@ export interface Patient {
   address?: string;
   /** CIN / Medi-Cal ID (9 characters). Helps disambiguate similar names. */
   cin?: string;
+  /** Other identifiers, free text (e.g. "County ID 12345"). */
+  otherIds?: string;
+  /** §Demographics — prior values, newest last. */
+  demographicsHistory?: DemographicsChange[];
+  /** Placeholder flag set when CIN or DOB change. */
+  eligibilityRecheck?: { at: string; fields: string[] };
   // Link back to the referral that enrolled this patient, if any.
   referralId?: string;
   /**
@@ -2958,6 +3018,23 @@ export interface ProgressNote {
    * before this existed, and non-interactive/test paths, have none.
    */
   attestation?: AttestationRecord;
+  // ----- §Signed-note revisions --------------------------------------------
+  addenda?: NoteAddendum[];
+  /** Superseded versions, oldest first. Current body is version `version`. */
+  priorVersions?: NoteVersionSnapshot[];
+  version?: number;
+  correctedAt?: string;
+  correctedBy?: string;
+  correctionReason?: string;
+  voidRequest?: { at: string; byId: string; byName: string; reason: string };
+  voidedAt?: string;
+  voidedBy?: string;
+  voidedRole?: string;
+  voidReason?: string;
+  voidRequestedBy?: string;
+  /** Set at signing when signed > LATE_ENTRY_HOURS after the visit (draft). */
+  lateEntry?: { visitAt: string; signedAt: string };
+  revisionLog?: NoteRevisionEntry[];
 
   cosignRequired?: boolean;
   /** Roles eligible to cosign. Empty/undefined = any eligible clinical role. */
@@ -6541,6 +6618,8 @@ export interface ClaimBridge {
   onAttended(apptId: string): void;
   /** §Phase 7b.1 — a note reached its FINAL signature (sign or cosign). */
   onNoteFinal(patientId: string, noteId: string): void;
+  /** §Signed-note revisions — a signed note was corrected or voided. */
+  onNoteRevised?(patientId: string, noteId: string, kind: "corrected" | "voided"): void;
   bucketFor(apptId: string): string | undefined;
   chargeFor(apptId: string): number | undefined;
   bucketCounts(): Record<string, number>;
@@ -6590,8 +6669,9 @@ const recoveryStageEntries: RecoveryStageEntry[] = [];
 export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy" | "needs_appointment";
 /** True for medications used to treat opioid/alcohol use disorder (Part 2 protected). */
 export function isSudMedicationName(name: string): boolean {
-  return /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol|sublocade/i.test(name);
+  return isSudMedicationText(name);
 }
+import { isSudMedicationText, isSudMedication as _isSudMed } from "@/lib/sudMedClassifier";
 export interface RefillRequest {
   id: string;
   patientId: string;
@@ -10864,6 +10944,14 @@ export const AdelanteEHR = {
     n.signedById = input.signedById ?? input.signedBy;
     n.signedRole = input.role;
     n.signedAt = new Date().toISOString();
+    {
+      // §Late entry — derived at signing from the linked visit (or the note
+      // date). Threshold is a draft value (noteRevisions.ts).
+      const visitAt =
+        (n.appointmentId && AdelanteEHR.listAppointments().find((a) => a.id === n.appointmentId)?.start) ||
+        n.date;
+      n.lateEntry = isLateEntry(visitAt, n.signedAt) ? { visitAt, signedAt: n.signedAt } : undefined;
+    }
     if (input.attestation) n.attestation = input.attestation;
     if (input.autofillSnapshots) n.autofillSnapshots = input.autofillSnapshots;
     n.cosignRequired = cosignRequired;
@@ -10967,6 +11055,284 @@ export const AdelanteEHR = {
       // inside the claim path when there is no valid attestation).
       _claimBridge?.onNoteFinal(patientId, noteId);
     }
+    emit();
+    return n;
+  },
+
+  // ----- §Demographics & identifiers ---------------------------------------
+  updatePatientDemographics(
+    patientId: string,
+    patch: Partial<Record<DemographicField, string>>,
+    actor: { staffId?: string; clinicianId?: string; name: string; role: StaffRole },
+    reason?: string,
+  ): DemographicsChange {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) throw new Error("Patient not found.");
+    const isPrimary =
+      !!p.primaryClinicianId && [actor.clinicianId, actor.staffId].includes(p.primaryClinicianId);
+    const allowed = editableDemographicFields(actor.role, isPrimary);
+    const read = (f: DemographicField): string => {
+      if (f === "emergencyContactName") return p.emergencyContact?.name ?? "";
+      if (f === "emergencyContactPhone") return p.emergencyContact?.phone ?? "";
+      return String((p as unknown as Record<string, unknown>)[f] ?? "");
+    };
+    const changes = (Object.keys(patch) as DemographicField[])
+      .map((field) => ({ field, before: read(field), after: (patch[field] ?? "").trim() }))
+      .filter((c) => c.before !== c.after);
+    if (changes.length === 0) throw new Error("Nothing changed.");
+    const refused = changes.filter((c) => !allowed.includes(c.field));
+    if (refused.length)
+      throw new Error(
+        allowed.length
+          ? `Your role can edit contact info only (not ${refused.map((c) => DEMOGRAPHIC_LABEL[c.field]).join(", ")}).`
+          : "Your role can't edit this patient's details.",
+      );
+    const needsReason = changes.some((c) => REASON_REQUIRED_FIELDS.includes(c.field));
+    if (needsReason && (reason ?? "").trim().length < 3)
+      throw new Error("A reason is required to change legal name, date of birth or CIN.");
+    for (const c of changes) {
+      if (c.field === "emergencyContactName" || c.field === "emergencyContactPhone") {
+        const ec = p.emergencyContact ?? { name: "", relationship: "", phone: "" };
+        p.emergencyContact = { ...ec, [c.field === "emergencyContactName" ? "name" : "phone"]: c.after };
+      } else if (c.field === "preferredLanguage") {
+        p.preferredLanguage = (c.after === "es" ? "es" : "en") as PreferredLanguage;
+      } else {
+        (p as unknown as Record<string, unknown>)[c.field] = c.after || undefined;
+        if (c.field === "firstName" || c.field === "lastName" || c.field === "dob" || c.field === "phone")
+          (p as unknown as Record<string, unknown>)[c.field] = c.after;
+      }
+    }
+    const row: DemographicsChange = {
+      id: uid(),
+      at: new Date().toISOString(),
+      byName: actor.name,
+      role: actor.role,
+      reason: reason?.trim() || undefined,
+      changes,
+    };
+    p.demographicsHistory = [...(p.demographicsHistory ?? []), row];
+    // Audit carries field names only — prior values live on the record's history.
+    appendAudit({
+      category: "clinical",
+      action: "demographics_updated",
+      patientId,
+      actorId: actor.name,
+      actorRole: actor.role,
+      detail: { fields: changes.map((c) => c.field), reason: row.reason ?? null },
+    });
+    const eligFields = changes.filter((c) => ELIGIBILITY_FIELDS.includes(c.field)).map((c) => c.field);
+    if (eligFields.length) {
+      p.eligibilityRecheck = { at: row.at, fields: eligFields };
+      for (const r of ["billing", "billing_coordinator"] as const)
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: "demographics_changed",
+          subject: "Eligibility re-check needed",
+          body: `Identity details changed for ${patientLabel(patientId)}. Re-check eligibility; open claims may need review.`,
+          linkRoute: "/eligibility-worklist",
+          patientId,
+        });
+    }
+    emit();
+    return row;
+  },
+
+  // ----- §Signed-note revisions: addendum, amendment, void -----------------
+  // The signed body is never edited in place: an addendum appends, an
+  // amendment snapshots the prior version as "Superseded", a void marks the
+  // note "Voided" (still viewable). Every step is attributed and audited;
+  // audit rows carry field NAMES only, never note text (Part 2-safe).
+  _logRevision(
+    patientId: string,
+    n: ProgressNote,
+    entry: Omit<NoteRevisionEntry, "at">,
+    detail: Record<string, unknown> = {},
+  ) {
+    const at = new Date().toISOString();
+    n.revisionLog = [...(n.revisionLog ?? []), { ...entry, at }];
+    appendAudit({
+      category: "clinical",
+      action: `note_${entry.action}`,
+      patientId,
+      actorId: entry.byName,
+      actorRole: entry.role,
+      detail: { noteId: n.id, reason: entry.reason ?? null, changed: entry.changed ?? null, ...detail },
+    });
+  },
+
+  _assertSignedForRevision(n: ProgressNote | undefined): ProgressNote {
+    if (!n) throw new Error("Note not found.");
+    const s = noteStatus(n);
+    if (s === "draft" || s === "declined") throw new Error("Only a signed note can be revised. Edit the draft instead.");
+    if (n.voidedAt) throw new Error("This note was voided (entered in error) and can't be changed.");
+    return n;
+  },
+
+  addNoteAddendum(
+    patientId: string,
+    noteId: string,
+    input: { text: string; byId: string; byName: string; role: string },
+  ): NoteAddendum {
+    const { p, n: raw } = AdelanteEHR._findNote(patientId, noteId);
+    const n = AdelanteEHR._assertSignedForRevision(raw);
+    const text = input.text.trim();
+    if (text.length < 3) throw new Error("Write the addendum text.");
+    const isAuthor = [n.signedById, n.clinicianId, n.signedBy].includes(input.byId) || n.signedBy === input.byName;
+    if (!isAuthor && !(ADDENDUM_ROLES as readonly string[]).includes(input.role))
+      throw new Error("Only the author or a treating clinician can add an addendum.");
+    if (isNoteSudSensitive(n) && p) {
+      const g = canAccess(input.role as StaffRole, "sud_treatment", p);
+      if (g.level === "none" || g.locked) throw new Error("Your role can't view this protected note.");
+    }
+    const row: NoteAddendum = {
+      id: uid(),
+      text,
+      at: new Date().toISOString(),
+      byId: input.byId,
+      byName: input.byName,
+      role: input.role,
+    };
+    n.addenda = [...(n.addenda ?? []), row];
+    AdelanteEHR._logRevision(patientId, n, { action: "addendum", byName: input.byName, role: input.role });
+    emit();
+    return row;
+  },
+
+  amendProgressNote(
+    patientId: string,
+    noteId: string,
+    input: {
+      changes: Partial<Pick<ProgressNote, "subjective" | "objective" | "assessment" | "plan">>;
+      reason: string;
+      byId: string;
+      byName: string;
+      role: string;
+    },
+  ): ProgressNote {
+    const { n: raw } = AdelanteEHR._findNote(patientId, noteId);
+    const n = AdelanteEHR._assertSignedForRevision(raw);
+    const isAuthor = [n.signedById, n.clinicianId].includes(input.byId) || n.signedBy === input.byName;
+    if (!isAuthor) throw new Error("Only the note's author can correct it.");
+    if ((input.reason ?? "").trim().length < 3) throw new Error("A reason is required to correct a signed note.");
+    const keys = ["subjective", "objective", "assessment", "plan"] as const;
+    const changed = keys.filter((k) => input.changes[k] !== undefined && (input.changes[k] ?? "") !== (n[k] ?? ""));
+    if (changed.length === 0) throw new Error("Nothing changed — edit at least one section.");
+    const now = new Date().toISOString();
+    const version = n.version ?? 1;
+    n.priorVersions = [
+      ...(n.priorVersions ?? []),
+      {
+        version,
+        supersededAt: now,
+        supersededBy: input.byName,
+        reason: input.reason.trim(),
+        subjective: n.subjective,
+        objective: n.objective,
+        assessment: n.assessment,
+        plan: n.plan,
+        signedBy: n.signedBy,
+        signedAt: n.signedAt,
+        cosignedBy: n.cosignedBy,
+        cosignedAt: n.cosignedAt,
+      },
+    ];
+    for (const k of changed) n[k] = input.changes[k] ?? "";
+    n.version = version + 1;
+    n.correctedAt = now;
+    n.correctedBy = input.byName;
+    n.correctionReason = input.reason.trim();
+    AdelanteEHR._logRevision(
+      patientId,
+      n,
+      { action: "amended", byName: input.byName, role: input.role, reason: input.reason.trim(), changed },
+      { version: n.version },
+    );
+    // A cosigned note must be re-cosigned: the cosigner attested the old text.
+    if (n.cosignRequired) {
+      n.status = "cosign_pending";
+      n.cosignedBy = undefined;
+      n.cosignedById = undefined;
+      n.cosignedRole = undefined;
+      n.cosignedAt = undefined;
+      n.cosignAttestation = undefined;
+      n.cosignComment = undefined;
+      AdelanteEHR._logRevision(patientId, n, { action: "recosign_required", byName: input.byName, role: input.role });
+      const own = noteCosignOwnership(n);
+      const subject = "Re-cosign needed — corrected note";
+      const body = `${input.byName} corrected a note for ${patientLabel(patientId)} that you need to cosign again.`;
+      if (own.kind === "owner")
+        AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "cosign_request", subject, body, linkRoute: "/cosign-inbox", patientId });
+      else
+        for (const r of (n.cosignRole?.length ? n.cosignRole : NOTE_SELF_SIGN_ROLES) as StaffRole[])
+          AdelanteEHR.notify({ recipientRole: r, category: "cosign_request", subject, body, linkRoute: "/cosign-inbox", patientId });
+    }
+    _claimBridge?.onNoteRevised?.(patientId, noteId, "corrected");
+    emit();
+    return n;
+  },
+
+  requestNoteVoid(
+    patientId: string,
+    noteId: string,
+    input: { reason: string; byId: string; byName: string; role: string },
+  ): ProgressNote {
+    const { n: raw } = AdelanteEHR._findNote(patientId, noteId);
+    const n = AdelanteEHR._assertSignedForRevision(raw);
+    const isAuthor = [n.signedById, n.clinicianId].includes(input.byId) || n.signedBy === input.byName;
+    if (!isAuthor) throw new Error("Only the note's author can ask to void it.");
+    if ((input.reason ?? "").trim().length < 3) throw new Error("A reason is required to void a note.");
+    if (n.voidRequest) throw new Error("A void request is already waiting for approval.");
+    n.voidRequest = { at: new Date().toISOString(), byId: input.byId, byName: input.byName, reason: input.reason.trim() };
+    AdelanteEHR._logRevision(patientId, n, {
+      action: "void_requested",
+      byName: input.byName,
+      role: input.role,
+      reason: input.reason.trim(),
+    });
+    // Generic copy — never the note content or the reason.
+    const own = cosignOwnershipFor(n.signedById ?? n.clinicianId);
+    const subject = "Note void needs approval";
+    const body = `${input.byName} asked to void a note for ${patientLabel(patientId)} as entered in error.`;
+    if (own.kind === "owner")
+      AdelanteEHR.notify({ recipientStaffId: own.staffId, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
+    for (const r of VOID_APPROVER_ROLES)
+      AdelanteEHR.notify({ recipientRole: r as StaffRole, category: "note_void_request", subject, body, linkRoute: "/record/$patientId", linkParams: { patientId, section: "notes" }, patientId });
+    emit();
+    return n;
+  },
+
+  /** Can this actor approve a pending void? Author's supervisor, coordinator or admin — never the author. */
+  canApproveNoteVoid(n: ProgressNote, actor: { staffId?: string; clinicianId?: string; name: string; role: string }): boolean {
+    if (!n.voidRequest) return false;
+    const ids = [actor.staffId, actor.clinicianId, actor.name];
+    if (ids.some((i) => !!i && (i === n.voidRequest!.byId || i === n.signedById || i === n.clinicianId))) return false;
+    if ((VOID_APPROVER_ROLES as readonly string[]).includes(actor.role)) return true;
+    return isCosignOwner(cosignOwnershipFor(n.signedById ?? n.clinicianId), ids);
+  },
+
+  decideNoteVoid(
+    patientId: string,
+    noteId: string,
+    input: { approve: boolean; staffId?: string; clinicianId?: string; name: string; role: string; comment?: string },
+  ): ProgressNote {
+    const { n } = AdelanteEHR._findNote(patientId, noteId);
+    if (!n?.voidRequest) throw new Error("There is no void request on this note.");
+    if (!AdelanteEHR.canApproveNoteVoid(n, input))
+      throw new Error("Only the author's supervisor or a clinical coordinator can decide a void — and never the author.");
+    const req = n.voidRequest;
+    n.voidRequest = undefined;
+    if (!input.approve) {
+      AdelanteEHR._logRevision(patientId, n, { action: "void_declined", byName: input.name, role: input.role, reason: input.comment?.trim() || undefined });
+      emit();
+      return n;
+    }
+    n.voidedAt = new Date().toISOString();
+    n.voidedBy = input.name;
+    n.voidedRole = input.role;
+    n.voidReason = req.reason;
+    n.voidRequestedBy = req.byName;
+    AdelanteEHR._logRevision(patientId, n, { action: "void_approved", byName: input.name, role: input.role, reason: req.reason }, { requestedBy: req.byName });
+    _claimBridge?.onNoteRevised?.(patientId, noteId, "voided");
     emit();
     return n;
   },
@@ -20341,7 +20707,7 @@ export const AdelanteEHR = {
           recipientRole: r,
           category: "mar_witness_needed",
           subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
-          body: `${staffName} staged ${claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          body: `${staffName} staged ${_isSudMed(claimedOrder) ? "a protected medication" : claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
           linkRoute: "/record/$patientId",
           linkParams: { patientId, section: "mar" },
           patientId,

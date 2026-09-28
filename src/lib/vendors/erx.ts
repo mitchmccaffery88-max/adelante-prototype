@@ -5,6 +5,8 @@ export interface Medication {
   id: string;
   patientId: string;
   name: string;
+  /** §Part 2 — clinician "SUD-related" toggle (see sudMedClassifier.ts). */
+  sudRelated?: boolean;
   dose: string;
   route: string;
   frequency: string;

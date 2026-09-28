@@ -6,6 +6,7 @@
 import { useMemo } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import {
   resolveAutofillSections,
   type AutofillContext,
@@ -24,7 +25,11 @@ export function useNoteAutofillSnapshots(
 ): AutofillSnapshot[] {
   const { role } = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const orders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const allOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
+  const orders = useMemo(
+    () => filterSudMedsForRole(allOrders, role, patient).visible,
+    [allOrders, role, patient],
+  );
   const problems = useEhr(() => AdelanteEHR.listProblems(patientId));
   const allergies = useEhr(() => AdelanteEHR.listAllergies(patientId));
   const administrations = useEhr(() => AdelanteEHR.listAdministrations(patientId));

@@ -59,9 +59,10 @@ describe("note PDF export affordance", () => {
     // ecm_provider is still consent_gated for SUD content; therapist is not.
     setActingStaff("s-cm1");
     setActingRole("ecm_provider");
-    const sudPatient = AdelanteEHR.listPatients().find(
-      (p) => !AdelanteEHR.getConsentState(p.id).part2Sud,
-    )!;
+    // A fresh patient with no consent and no other (unmasked) notes — demo
+    // seeds now put signed notes on the early demo patients.
+    const sudPatient = AdelanteEHR.createPatient({ firstName: "Sud", lastName: "Masked" } as never);
+    expect(AdelanteEHR.getConsentState(sudPatient.id).part2Sud).toBeFalsy();
     const note = AdelanteEHR.addProgressNote(sudPatient.id, {
       clinicianId: "c1",
       date: new Date().toISOString(),

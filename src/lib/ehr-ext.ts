@@ -234,6 +234,7 @@ export function claimBillingBucket(state: ClaimState): BillingBucket {
 
 export { BILLING_WRITE_REFUSED } from "./rates";
 import { BILLING_WRITE_REFUSED } from "./rates";
+import { CLAIM_BLOCKED_VOIDED, CLAIM_REVIEW_CORRECTED } from "./noteRevisions";
 
 export interface Claim {
   id: string;
@@ -295,6 +296,10 @@ export interface Claim {
   patientPortionCents?: number;
   patientPaidCents?: number;
   patientBalanceCents?: number;
+  /** §Signed-note revisions — billing-safe review flag (no clinical detail). */
+  reviewFlag?: { kind: "note_corrected" | "note_voided"; label: string; at: string; noteId: string };
+  /** A voided note blocks this (still unsubmitted) claim from moving forward. */
+  voidBlocked?: boolean;
   /** Payments exceed the current patient portion after a re-price — needs review, never auto-refunded. */
   overpaidReview?: boolean;
   patientPayments?: PatientPayment[];
@@ -1124,6 +1129,9 @@ export const AdelanteEHRExt = {
     const from = c.state;
     if (!CLAIM_TRANSITIONS[from].includes(to))
       return { ok: false, error: `Cannot move claim from ${from} to ${to}.` };
+    // §Signed-note revisions — a voided note blocks an unsubmitted claim.
+    if (c.voidBlocked && ["coded", "generated", "submitted", "signed"].includes(to))
+      return { ok: false, error: CLAIM_BLOCKED_VOIDED };
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
     if (to === "generated" && c.arrangementMissing) return { ok: false, error: ARRANGEMENT_MISSING_MSG };
@@ -1654,6 +1662,34 @@ export const AdelanteEHRExt = {
         attestation: noteStatus(n) === "cosigned" ? n.cosignAttestation : n.attestation,
       });
     },
+    onNoteRevised: (patientId, noteId, kind) => {
+      const { n } = AdelanteEHR._findNote(patientId, noteId);
+      const c = n?.appointmentId ? claims.find((x) => x.encounterId === n.appointmentId) : undefined;
+      if (!c) return;
+      const unsubmitted = ["documented", "signed", "coded", "generated"].includes(c.state);
+      const label =
+        kind === "voided" && unsubmitted ? CLAIM_BLOCKED_VOIDED : CLAIM_REVIEW_CORRECTED;
+      c.reviewFlag = { kind: kind === "voided" ? "note_voided" : "note_corrected", label, at: iso(), noteId };
+      if (kind === "voided" && unsubmitted) c.voidBlocked = true;
+      c.updatedAt = iso();
+      AdelanteEHR.recordBillingAudit({
+        action: kind === "voided" ? "claim_blocked_note_voided" : "claim_flagged_note_corrected",
+        actorId: "system",
+        actorRole: "system",
+        patientId,
+        detail: { claimId: c.id, state: c.state },
+      });
+      for (const r of ["billing", "billing_coordinator"] as const)
+        AdelanteEHR.notify({
+          recipientRole: r,
+          category: kind === "voided" && unsubmitted ? "claim_blocked" : "claim_status",
+          subject: label,
+          body: `${label} (claim ${c.id.slice(-6)}).`,
+          linkRoute: "/admin-claims",
+          patientId,
+        });
+      ehrBus.publish({ type: "claim.updated", claimId: c.id, state: c.state });
+    },
     bucketFor: (apptId) => {
       const c = claims.find((x) => x.encounterId === apptId);
       return c ? claimBillingBucket(c.state) : undefined;
@@ -1707,6 +1743,10 @@ export const AdelanteEHRExt = {
       /* demo seed only */
     }
   }
+  // §Signed-note revisions — DEMO DATA through the real store API: one note
+  // with an addendum, one corrected (Superseded version + claim flag), one
+  // voided (requested by the author, approved by the coordinator), one late
+  // entry. Dr. Marisol Reyes (c1) with demo patients p4–p7.
   // §10d-3 demo — one DMC-ODS treatment encounter each for Luis C. (passes the
   // medical necessity gate) and Jasmine H. (blocked until her counselor-authored
   // ASAM is co-signed). Booked + attended through the real store API; the
@@ -1794,4 +1834,88 @@ export function useEhrExt<T>(selector: () => T): T {
     () => version,
   );
   return selector();
+}
+// Runs after the claim bridge IIFE above.
+seedNoteRevisionDemo();
+  try {
+    AdelanteEHR.updatePatientDemographics(
+      "p4",
+      { preferredName: "Ali", cin: "91234567A" },
+      { staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },
+      "CIN corrected from Medi-Cal card (demo)",
+    );
+  } catch {
+    /* demo seed only */
+  }
+
+/** §Signed-note revisions demo — real store API only. */
+function seedNoteRevisionDemo() {
+  const REYES = { byId: "c1", byName: "Dr. Marisol Reyes", role: "therapist" };
+  const visitNote = (patientId: string, hoursAgo: number, text: string) => {
+    const start = new Date(Date.now() - hoursAgo * 3600_000);
+    start.setMinutes(0, 0, 0);
+    const a = AdelanteEHR.bookAppointment({
+      patientId,
+      clinicianId: "c1",
+      start: start.toISOString(),
+      durationMin: 50,
+      serviceType: "therapy_individual",
+      modality: "in_person",
+      locationId: "loc-visalia",
+      allowPatientOverlap: true,
+    });
+    AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+    const n = AdelanteEHR.addProgressNote(patientId, {
+      appointmentId: a.id,
+      clinicianId: "c1",
+      date: start.toISOString(),
+      sessionType: "individual",
+      subjective: `${text} Demo note.`,
+      objective: "Calm, engaged, good eye contact.",
+      assessment: "Working on coping skills; no safety concerns today.",
+      plan: "Continue weekly sessions; practice breathing exercise.",
+    })!;
+    AdelanteEHR.signProgressNote(patientId, n.id, {
+      signedBy: REYES.byName,
+      signedById: REYES.byId,
+      role: "therapist",
+      attested: true,
+      cosignRequired: false,
+    });
+    return n.id;
+  };
+  const warn = (k: string, e: unknown) => {
+    if (typeof console !== "undefined") console.warn(`[demo seed] ${k}`, e);
+  };
+  try {
+    const add = visitNote("p4", 5, "Reports better sleep this week.");
+    AdelanteEHR.addNoteAddendum("p4", add, {
+      ...REYES,
+      text: "Patient called after the session to confirm next week's time. (Demo addendum)",
+    });
+  } catch (e) {
+    warn("addendum", e);
+  }
+  try {
+    const am = visitNote("p2", 6, "Discussed job search stress.");
+    AdelanteEHR.amendProgressNote("p2", am, {
+      ...REYES,
+      changes: { plan: "Continue weekly sessions; referral to employment services placed." },
+      reason: "Plan omitted the employment referral made in session (demo)",
+    });
+  } catch (e) {
+    warn("amend", e);
+  }
+  try {
+    const v = visitNote("p3", 7, "Wrong-chart entry.");
+    AdelanteEHR.requestNoteVoid("p3", v, { ...REYES, reason: "Documented on the wrong patient's chart (demo)" });
+    AdelanteEHR.decideNoteVoid("p3", v, { approve: true, staffId: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" });
+  } catch (e) {
+    warn("void", e);
+  }
+  try {
+    visitNote("p4", 72, "Late documentation of Monday's session.");
+  } catch (e) {
+    warn("late entry", e);
+  }
 }

@@ -91,6 +91,8 @@ import {
   type RecordClass,
   noteGateClass,
 } from "@/lib/roles";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
+import { NoteRevisionPanel } from "@/components/clinical/NoteRevisionPanel";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { SCREENERS, severityFor, screenerByKey } from "@/lib/screeners";
 import {
@@ -2842,7 +2844,9 @@ function ProgressNoteCard({
   });
   const autofill = note.autofillSnapshots ?? liveAutofill;
   const cardOrders = useEhr(() => AdelanteEHR.listOrders(patientId));
-  const noteOrders = cardOrders.filter((o) => o.sourceNoteId === note.id);
+  const noteOrders = filterSudMedsForRole(cardOrders, role, cardPatient).visible.filter(
+    (o) => o.sourceNoteId === note.id,
+  );
   const mustCosign = requiresCosign(role);
   const candidates = cosignerCandidates(staffName);
   const cosigner = candidates.find((c) => c.id === cosignerId);
@@ -3047,6 +3051,7 @@ function ProgressNoteCard({
           {note.cosignComment ? ` — “${note.cosignComment}”` : ""}
         </p>
       )}
+      {!sudLocked && <NoteRevisionPanel patientId={patientId} note={note} canWrite={canWrite} />}
       {note.declineReason && status === "draft" && (
         <p className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
           Cosign declined by {note.declinedBy}: {note.declineReason} — revise and re-sign.
