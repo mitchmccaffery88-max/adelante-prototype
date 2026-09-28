@@ -241,7 +241,7 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     therapist: "write",
     pmhnp: "write",
     sud_counselor: "write",
-    clinical_trainee: "read",
+    clinical_trainee: "write",
     cf_care_manager: "read",
   },
   // A trainee may AUTHOR a note; they can never self-sign it —

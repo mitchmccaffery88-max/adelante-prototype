@@ -40,7 +40,7 @@ const PROBES: Record<string, (role: StaffRole, p: Patient) => unknown> = {
       role,
     }),
   refill_decision: (role) =>
-    AdelanteEHR.reviewRefill({ id: AdelanteEHR.listRefillRequests?.()[0]?.id ?? "x", decision: "denied", denyReason: "", actorRole: role }),
+    AdelanteEHR.reviewRefill({ id: AdelanteEHR.listRefillRequests()[0]?.id ?? "x", decision: "denied", denyReason: "", actorRole: role }),
   care_plan_goal: (role, p) =>
     addStructuredGoal({ patientId: p.id, owner: "clinician" as never, measure: "", clinicalText: "", actor: { name: "Probe", role } }),
   hloc_referral: (role, p) =>
