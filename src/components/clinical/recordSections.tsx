@@ -41,7 +41,7 @@ import { recordSectionVisible } from "@/lib/recordSectionGate";
 import { sectionHasAction } from "@/lib/chartActions";
 import { inFacilityEnabled } from "@/lib/inFacility";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
-import { ChartDocumentsList, visibleChartDocuments } from "@/components/chart/ChartDocumentsList";
+import { ChartDocumentsList } from "@/components/chart/ChartDocumentsList";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
 import { ProblemsTab, AllergiesTab, AlertsTab } from "@/components/clinical/ClinicalRecordTabs";
