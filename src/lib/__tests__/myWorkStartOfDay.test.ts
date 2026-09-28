@@ -12,8 +12,10 @@ describe("My work start-of-day", () => {
   it("gives prescribers today's visits and their own pending refills", () => {
     const bagga = { staffId: "s-np1", staffName: "Dr. M. Bagga", clinicianId: "c5" };
     const brooks = { staffId: "s-th3", staffName: "Anita Brooks", clinicianId: "c3" };
-    expect(myTodayVisits(bagga).length).toBeGreaterThan(0);
-    expect(myTodayVisits(brooks).length).toBeGreaterThan(0);
+    // Time-independent: "today" is the day of one of each clinician's own visits.
+    const dayOf = (cid: string) => new Date(AdelanteEHR.listAppointments().find((a) => a.clinicianId === cid && a.status !== "cancelled" && a.status !== "no_show")!.start);
+    expect(myTodayVisits(bagga, dayOf("c5")).length).toBeGreaterThan(0);
+    expect(myTodayVisits(brooks, dayOf("c3")).length).toBeGreaterThan(0);
     const ids = new Set(myCaseload(brooks).map((p) => p.id));
     const r = myPendingRefills({ ...brooks, role: "pmhnp" });
     expect(r.length).toBeGreaterThan(0);

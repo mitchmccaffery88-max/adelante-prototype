@@ -17,9 +17,29 @@ export const CHART_TABS: { id: ChartTabId; label: string; sections: string[] }[]
   { id: "medications", label: "Medications", sections: ["orders", "labs", "med-recon", "allergies", "mar", "protocols"] },
   { id: "measures", label: "Measures", sections: ["tracking", "asam", "caloms"] },
   { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "coord"] },
-  { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts", "checkins"] },
-  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records"] },
+  { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts", "weekly-review", "checkins"] },
+  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records", "consents", "audit-trail"] },
 ];
+
+/**
+ * Role default: which sub-section leads each tab. Anything not listed keeps
+ * the CHART_TABS order. Arrangement only — gates are untouched.
+ */
+export function roleFirstSections(tab: ChartTabId, role: StaffRole): string[] {
+  const cm = role === "cf_care_manager" || role === "ecm_provider";
+  if (tab === "medications") return isPrescriberRole(role) ? ["orders", "labs"] : ["med-recon", "allergies"];
+  if (tab === "tasks-contacts") return cm ? ["contacts", "weekly-review"] : ["tasks"];
+  if (tab === "care-needs") return cm || role === "peer_specialist" ? ["sdoh", "care-plan"] : ["care-plan", "problems"];
+  if (tab === "record") return role === "billing" || role === "billing_coordinator" ? ["eligibility", "overview"] : [];
+  if (tab === "schedule") return cm ? ["coord", "appointments"] : [];
+  return [];
+}
+
+export function orderSectionsForRole<T extends { id: string }>(tab: ChartTabId, subs: T[], role: StaffRole): T[] {
+  const lead = roleFirstSections(tab, role);
+  const rank = (id: string) => (lead.includes(id) ? lead.indexOf(id) : lead.length + 1);
+  return subs.map((s, i) => ({ s, i })).sort((a, b) => rank(a.s.id) - rank(b.s.id) || a.i - b.i).map((x) => x.s);
+}
 
 /** In-facility sections: never a tab while the flag is off. */
 export const IN_FACILITY_SECTIONS = ["mar", "protocols", "bookings", "housing-moves"];
