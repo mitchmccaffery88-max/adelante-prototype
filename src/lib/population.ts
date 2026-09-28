@@ -18,6 +18,7 @@
 // advocate into the patient's own track.
 import { AdelanteEHR } from "@/lib/ehr";
 import type { HeardAboutSource, TriState } from "@/lib/frontDoor";
+import { isJusticeInvolved } from "@/lib/justiceInvolvement";
 
 export type PopulationTrack =
   /** Track A — in custody, coordination happening before release. */
@@ -59,6 +60,8 @@ export interface PopulationFacts {
    * (rule 1) may claim `pre_release_ji`.
    */
   hasJiReentryFlag?: boolean;
+  /** `isJusticeInvolved` on the record (e.g. active Z65.2 problem, custody). */
+  hasJusticeRecordSignal?: boolean;
 }
 
 export interface PopulationResolution {
@@ -96,6 +99,9 @@ export function resolvePopulationTrack(facts: PopulationFacts): PopulationResolu
   }
   if (facts.justiceInvolvement === "yes") {
     return { track: "post_release_ji", basis: "front-door justice-involvement answer", provisional: false };
+  }
+  if (facts.hasJusticeRecordSignal) {
+    return { track: "post_release_ji", basis: "justice involvement on the record", provisional: false };
   }
   if (facts.hasJiReentryFlag) {
     return {
@@ -148,6 +154,7 @@ export function populationFactsFor(patientId: string): PopulationFacts | undefin
     hasReferralRecord: Boolean(p.referralId),
     hasMissedPreReleaseFlag: Boolean(p.missedPreReleaseCoordination),
     hasJiReentryFlag: Boolean(p.coverage?.jiReentryFlag),
+    hasJusticeRecordSignal: isJusticeInvolved(p),
   };
 }
 
