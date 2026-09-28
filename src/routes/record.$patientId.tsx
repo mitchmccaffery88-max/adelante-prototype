@@ -2,7 +2,8 @@
 // Path is /record/$patientId so it can never collide with the patient-facing
 // self-service view at /patient.
 import { useState } from "react";
-import { EpisodeHeaderBadge } from "@/components/clinical/EpisodeHeaderBadge";
+import { ChartHeader } from "@/components/chart/ChartHeader";
+import { BriefTab } from "@/components/chart/BriefTab";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -12,8 +13,6 @@ import { Card } from "@/components/ui/card";
 import { Sheet, SheetContent, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { IssueSignInCodeButton } from "@/components/clinical/IssueSignInCodeButton";
-import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
-import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import {
   GROUP_LABELS,
@@ -106,11 +105,24 @@ function ChartBody({
   const { role, staffName } = useActingStaff();
   const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   if (!patient) return null;
-  const active = sections.find((s) => s.id === resolveSectionId(section)) ?? sections[0];
+  // §Chart redesign turn 3 — "Brief" is the landing tab (Overview stays).
+  const allSections: RecordSection[] = [
+    {
+      id: "brief",
+      label: "Brief",
+      icon: Zap,
+      group: "chart",
+      render: () => (
+        <BriefTab patientId={patient.id} visibleSections={["brief", ...sections.map((x) => x.id)]} onSelectSection={onSelect} />
+      ),
+    },
+    ...sections,
+  ];
+  const active = allSections.find((s) => s.id === resolveSectionId(section)) ?? allSections[0];
 
   const nav = (
     <ChartNav
-      sections={sections}
+      sections={allSections}
       activeId={active?.id}
       onSelect={(id) => {
         onSelect(id);
@@ -121,39 +133,12 @@ function ChartBody({
 
   return (
     <div className="min-h-screen bg-background">
-      <header className="border-b border-border bg-card">
-        <div className="mx-auto max-w-[1600px] space-y-3 px-4 py-4">
-          <div className="grid grid-cols-[minmax(0,1fr)_auto] items-start gap-4 sm:flex sm:flex-wrap sm:items-center sm:justify-between">
-            <div className="min-w-0">
-              <Link
-                to="/case-manager"
-                className="text-xs text-teal inline-flex items-center gap-1"
-              >
-                <ArrowLeft className="h-3 w-3" /> Back to caseload
-              </Link>
-              <h1 className="truncate font-display text-2xl text-navy sm:text-3xl">
-                {patient.firstName} {patient.lastName}
-              </h1>
-              <p className="font-mono text-xs text-muted-foreground">
-                {patient.programId}
-                {patient.cin ? ` · CIN ••••${patient.cin.slice(-4)}` : ""}
-                {patient.dob ? ` · DOB ${patient.dob}` : ""}
-              </p>
-              <EpisodeHeaderBadge patientId={patient.id} />
-            </div>
-            <div className="flex shrink-0 flex-col items-end gap-2">
-              <span className="text-xs text-muted-foreground">
-                Acting as: <span className="text-navy">{staffName}</span> ·{" "}
-                <span className="capitalize">{role.replace("_", " ")}</span>
-              </span>
-              <ChartMoreMenu patientId={patient.id} />
-            </div>
-          </div>
-
-          <ReferralStatusTimeline patient={patient} />
-          <RecordSafetyBadges patient={patient} />
-
-          {/* Off-canvas section nav below tablet width. */}
+      <ChartHeader
+        patientId={patient.id}
+        visibleSections={allSections.map((x) => x.id)}
+        onSelectSection={onSelect}
+        more={<ChartMoreMenu patientId={patient.id} />}
+        sectionsButton={
           <div className="lg:hidden">
             <Sheet open={navOpen} onOpenChange={setNavOpen}>
               <SheetTrigger asChild>
@@ -167,12 +152,12 @@ function ChartBody({
               </SheetContent>
             </Sheet>
           </div>
-        </div>
-      </header>
+        }
+      />
 
       <div className="mx-auto flex max-w-[1600px] gap-6 px-4 py-6">
         <aside className="hidden w-60 shrink-0 lg:block">
-          <div className="sticky top-6">{nav}</div>
+          <div className="sticky top-40 max-h-[calc(100vh-11rem)] overflow-y-auto">{nav}</div>
         </aside>
         <main className="min-w-0 flex-1">
           {/* §Quality pass Group A — live supervision status for supervised roles. */}
@@ -186,7 +171,7 @@ function ChartBody({
           <Card className="chart-pane p-4 pb-20">{active?.render()}</Card>
         </main>
       </div>
-      <ChartActionLauncher patientId={patient.id} sections={sections} onSelectSection={onSelect} />
+      <ChartActionLauncher patientId={patient.id} sections={allSections} onSelectSection={onSelect} />
     </div>
   );
 }
