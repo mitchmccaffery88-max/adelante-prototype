@@ -25321,6 +25321,9 @@ try {
     refill(bn, { ago: 7, review: "approved" });
     refill(bn, { ago: 1, note: "Weekly pickup" });
   }
+  // Demo sweep — Luis's buprenorphine order carries its CURES record,
+  // recorded and signed through the real safety path (actorRole passed).
+  seedLuisCuresOrder(luis);
   // 2d Jasmine — combination: SSRI + naltrexone (Part 2).
   const jasmine = demoScenarioPatientId("combination");
   if (!already(jasmine)) {
