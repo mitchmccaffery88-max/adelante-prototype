@@ -46,3 +46,15 @@ describe("Legal / Part 2 disclosure card", () => {
     expect(AdelanteEHR.hasLegalDisclosureConsent(p.id)).toBe(false);
   });
 });
+
+import { crisisCopy as __crisisCopy } from "@/lib/crisisCopy";
+describe("intake crisis card copy", () => {
+  it("has Spanish intake crisis text that keeps 988 and differs from English", () => {
+    const es = __crisisCopy("es");
+    const en = __crisisCopy("en");
+    for (const k of ["intakeHeading", "intakeBefore988", "intakeAfter988", "intakeCall"] as const) {
+      expect(es[k].length).toBeGreaterThan(0);
+      expect(es[k]).not.toBe(en[k]);
+    }
+  });
+});
