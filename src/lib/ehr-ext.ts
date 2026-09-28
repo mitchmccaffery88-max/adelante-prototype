@@ -1837,14 +1837,7 @@ export function useEhrExt<T>(selector: () => T): T {
 }
 // Runs after the claim bridge IIFE above.
 seedNoteRevisionDemo();
-// One void request left pending so the coordinator inbox has one to decide.
-try {
-  const mk = AdelanteEHR.getPatient("p3")?.progressNotes?.find((n) => n.signedById === "c1" && !n.voidRequest && !n.voidedAt);
-  if (mk)
-    AdelanteEHR.requestNoteVoid("p3", mk.id, { reason: "Documented under the wrong visit (demo)", byId: "c1", byName: "Dr. Marisol Reyes", role: "therapist" });
-} catch {
-  /* demo seed only */
-}
+
   try {
     AdelanteEHR.updatePatientDemographics(
       "p4",
@@ -1895,6 +1888,13 @@ function seedNoteRevisionDemo() {
   const warn = (k: string, e: unknown) => {
     if (typeof console !== "undefined") console.warn(`[demo seed] ${k}`, e);
   };
+  // One void request left pending so the coordinator inbox has one to decide.
+  try {
+    const pv = visitNote("p3", 30, "Brief check-in call.");
+    AdelanteEHR.requestNoteVoid("p3", pv, { reason: "Documented under the wrong visit (demo)", ...REYES });
+  } catch (e) {
+    warn("pending void", e);
+  }
   try {
     const add = visitNote("p4", 5, "Reports better sleep this week.");
     AdelanteEHR.addNoteAddendum("p4", add, {
