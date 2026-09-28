@@ -48,6 +48,7 @@ import { ProtocolsTab } from "@/components/clinical/ProtocolsTab";
 import { BookingsTab, HousingMovesTab } from "@/components/clinical/CustodyTabs";
 import { ReentryHandoffTab } from "@/components/clinical/ReentryHandoffTab";
 import { SafetyPlanPanel } from "@/components/clinical/SafetyPlanPanel";
+import { CareEpisodesPanel } from "@/components/clinical/CareEpisodesPanel";
 import { AsamPanel } from "@/components/clinical/AsamPanel";
 import { StaffMessagesTab } from "@/components/messages/StaffMessagesTab";
 import { StaffAdvocatesTab } from "@/components/advocate/StaffAdvocatesTab";
@@ -228,6 +229,15 @@ export function useRecordSections(
     icon: ListChecks,
     group: "chart",
     render: (a) => <CalomsProfileCard patientId={pid} readOnly={a.level !== "write"} />,
+  });
+  // §B3/B4 — outpatient episodes + higher-level referrals. SUD rows are
+  // masked inside the panel ("Active in Adelante care").
+  add("therapy_notes", {
+    id: "episodes",
+    label: "Episodes & referrals",
+    icon: ListChecks,
+    group: "chart",
+    render: () => <CareEpisodesPanel patientId={pid} />,
   });
   // §Phase 7 — patient-authored safety plan. Clinical-adjacent, so it lives in
   // the Chart group next to Alerts (where crisis work already happens), gated
