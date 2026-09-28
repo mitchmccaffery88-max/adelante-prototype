@@ -68,6 +68,7 @@ export const ASK_ADEL_GROUP_LABEL: Record<AskAdelGroup, string> = {
 export const ASK_ADEL_GROUP_BY_ROLE: Record<StaffRole, AskAdelGroup> = {
   therapist: "clinical",
   pmhnp: "clinical",
+  physician: "clinical",
   sud_counselor: "clinical",
   clinical_trainee: "clinical",
   medical_assistant: "clinical",

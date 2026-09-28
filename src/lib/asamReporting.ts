@@ -125,6 +125,7 @@ export function aggregatePatients(role: StaffRole): Patient[] {
 const TEAM_BY_ROLE: Partial<Record<StaffRole, string>> = {
   therapist: "Therapy",
   pmhnp: "Psychiatry",
+  physician: "Psychiatry",
   sud_counselor: "SUD counseling",
   clinical_trainee: "Trainees",
 };
