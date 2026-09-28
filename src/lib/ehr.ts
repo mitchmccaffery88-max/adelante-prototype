@@ -1546,6 +1546,8 @@ export function requiresDoseWitness(
 
 export interface Patient {
   id: string;
+  /** Staff id of the prescriber of record (physician or PMHNP). Set via `setPrescriberOfRecord`. */
+  prescriberStaffId?: string;
   firstName: string;
   lastName: string;
   dob: string;
@@ -19499,6 +19501,22 @@ export const AdelanteEHR = {
     });
     emit();
     return s;
+  },
+  /** Prescriber of record (physician / PMHNP). Primary therapist is unchanged. Audited. */
+  setPrescriberOfRecord(patientId: string, staffId: string, by = "system"): boolean {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return false;
+    const prev = p.prescriberStaffId;
+    if (prev === staffId) return true;
+    p.prescriberStaffId = staffId;
+    appendAudit({
+      category: "assignment",
+      action: prev ? "prescriber_reassigned" : "prescriber_assigned",
+      patientId,
+      detail: { from: prev, to: staffId, by },
+    });
+    emit();
+    return true;
   },
   reassignPrimaryClinician(input: {
     patientId: string;

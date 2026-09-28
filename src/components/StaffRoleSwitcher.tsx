@@ -55,7 +55,7 @@ export function StaffRoleSwitcher() {
         <UserCog className="h-3.5 w-3.5 shrink-0 text-teal" />
         <span className="min-w-0 flex-1 truncate text-left sm:max-w-[16rem]">
           <span className="text-muted-foreground">Role: </span>
-          {roleLabel(role)} · {staffName}
+          {roleLabel(role)} · {STAFF_ROSTER.find((x) => x.id === staffId)?.fullName ?? staffName}
         </span>
         <ChevronDown className="h-3 w-3 shrink-0 opacity-60" />
       </DropdownMenuTrigger>

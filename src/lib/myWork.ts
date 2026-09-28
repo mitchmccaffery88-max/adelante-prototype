@@ -263,7 +263,10 @@ export function myOpenItems(actor: ActingIdentity, now: Date = new Date()): MyOp
 export function myCaseload(actor: ActingIdentity): Patient[] {
   const aliases = staffAliases(actor);
   return AdelanteEHR.listPatients().filter(
-    (p) => owns(aliases, p.primaryClinicianId) || owns(aliases, p.caseManagerId),
+    (p) =>
+      owns(aliases, p.primaryClinicianId) ||
+      owns(aliases, p.caseManagerId) ||
+      owns(aliases, p.prescriberStaffId),
   );
 }
 
