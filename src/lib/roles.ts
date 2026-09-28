@@ -1073,6 +1073,7 @@ export const STAFF_ROSTER: StaffMember[] = [
     name: "Owen Tran",
     role: "clinical_trainee",
     credential: "AMFT",
+    clinicianId: "c6",
   },
   {
     // §Phase 3 — CHW services are billed through an ENROLLED supervising
@@ -1107,6 +1108,7 @@ export const STAFF_ROSTER: StaffMember[] = [
     fullName: "Dr. Mandeep Bagga, M.D.",
     role: "physician",
     credential: "M.D.",
+    clinicianId: "c5",
   },
   { id: "s-bill1", name: "Tonya Price", role: "billing" },
   { id: "s-cc1", name: "Priya Raman", role: "clinical_coordinator" },

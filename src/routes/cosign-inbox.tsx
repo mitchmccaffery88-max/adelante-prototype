@@ -467,7 +467,7 @@ function CosignDetail({
 // metadata only (patient, author, owner) — never note content.
 function ownerLabel(own: CosignOwnership): string {
   if (own.kind === "owner")
-    return own.via === "override" ? `${own.name} (reassigned)` : `${own.name} (assigned supervisor)`;
+    return own.via === "override" ? `${own.name} (reassigned)` : own.via === "prescriber" ? `${own.name} (prescriber of record)` : `${own.name} (assigned supervisor)`;
   if (own.kind === "needs_supervisor") return "Needs a supervisor";
   return "Any eligible clinician";
 }

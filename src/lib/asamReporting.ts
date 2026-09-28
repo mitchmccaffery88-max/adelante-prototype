@@ -15,7 +15,7 @@
 //
 // DRAFT: due windows, the reassessment interval and the timeliness windows are
 // drafts pending clinical sign-off (`ASAM_DRAFT_NOTE`).
-import { AdelanteEHR, type CaseTask, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, asamCosignOwnership, isCosignOwner, type CaseTask, type Patient } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { canAccess, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { ASAM_DEDUPE_PREFIX, dmcOdsLevelLabel, type AsamAssessment } from "@/lib/asam";
@@ -442,6 +442,15 @@ export function myAsamWork(
         AdelanteEHR.listCaseTasks().some((ct) => ct.id === t.taskId && mine.has(ct.assignedTo)),
     ),
     myDraftsAwaitingCosign: cosign.filter((c) => c.authorId === actor.staffId),
-    cosignsForMe: lpha ? cosign.filter((c) => c.authorId !== actor.staffId) : [],
+    // Same filter as the Cosign inbox ASAM section: pool-routed, or owned by
+    // me (assigned supervisor, override, or prescriber of record).
+    cosignsForMe: lpha
+      ? cosign.filter((c) => {
+          const row = AdelanteEHR.listAsamAwaitingCosign().find((x) => x.asam.id === c.asamId);
+          if (!row) return false;
+          const own = asamCosignOwnership(row.asam);
+          return own.kind === "pool" || isCosignOwner(own, [actor.staffId, actor.clinicianId]);
+        })
+      : [],
   };
 }
