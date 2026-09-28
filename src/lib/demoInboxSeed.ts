@@ -299,8 +299,8 @@ export function seedDemoInbox(): void {
       const thu = new Date(d); thu.setDate(d.getDate() + ((4 - d.getDay() + 7) % 7 || 7));
       const day = thu.toLocaleDateString("en-US", { weekday: "short", month: "short", day: "numeric" });
       const ago = (h: number) => new Date(Date.now() - h * 3600000).toISOString();
-      AdelanteEHR.notifyMember({ audience: "patient", recipientId: elena, patientId: elena, subject: `Your visit on ${day} is confirmed`, body: "See you then. You can find the details on your appointments page.", linkRoute: "/appointments", dedupeKey: "demo:elena:visit", createdAt: ago(2) });
-      AdelanteEHR.notifyMember({ audience: "patient", recipientId: elena, patientId: elena, subject: "New message from your care team", body: "Your care team sent you a message.", linkRoute: "/messages", dedupeKey: "demo:elena:msg", createdAt: ago(5) });
+      AdelanteEHR.notifyMember({ audience: "patient", recipientId: elena, patientId: elena, subject: `Your visit on ${day} is confirmed`, body: "See you then. You can find the details on your appointments page.", linkRoute: "/home", dedupeKey: "demo:elena:visit", createdAt: ago(2) });
+      AdelanteEHR.notifyMember({ audience: "patient", recipientId: elena, patientId: elena, subject: "New message from your care team", body: "Your care team sent you a message.", linkRoute: "/home", dedupeKey: "demo:elena:msg", createdAt: ago(5) });
       AdelanteEHR.notifyMember({ audience: "patient", recipientId: elena, patientId: elena, subject: "Your plan was updated", body: "Your care team added a new step to your plan.", linkRoute: "/home", dedupeKey: "demo:elena:plan", createdAt: ago(26) });
     });
   // Demo: sign Daniel's draft note by Marisol Reyes and add one addendum.
