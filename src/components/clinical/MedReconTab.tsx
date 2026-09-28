@@ -20,10 +20,11 @@ import { useActingStaff, useActingRole } from "@/lib/roles";
 import { isSudMedicationName } from "@/lib/ehr";
 import { roleSeesSudMedication } from "@/lib/asamReporting";
 
-/** Protected OUD/AUD meds are withheld for ECM case manager / coordinator (draft rule). */
-function useSudMedFilter() {
+/** Protected OUD/AUD meds go through the single Part 2 medication check. */
+function useSudMedFilter(patientId?: string) {
   const [role] = useActingRole();
-  return (name: string) => !isSudMedicationName(name) || roleSeesSudMedication(role);
+  const patient = useEhr(() => (patientId ? AdelanteEHR.getPatient(patientId) : undefined));
+  return (name: string) => !isSudMedicationName(name) || roleSeesSudMedication(role, patient);
 }
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";

@@ -919,6 +919,11 @@ export interface MedOrder {
   id: string;
   patientId: string;
   drugName: string;
+  /**
+   * §Part 2 — clinician toggle: treat this order as SUD-related even when the
+   * drug name is not on the classifier list (e.g. off-label for AUD).
+   */
+  sudRelated?: boolean;
   dose?: string;
   route?: string;
   frequency?: string;
@@ -20342,7 +20347,7 @@ export const AdelanteEHR = {
           recipientRole: r,
           category: "mar_witness_needed",
           subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
-          body: `${staffName} staged ${claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          body: `${staffName} staged ${_isSudMed(claimedOrder) ? "a protected medication" : claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
           linkRoute: "/record/$patientId",
           linkParams: { patientId, section: "mar" },
           patientId,
