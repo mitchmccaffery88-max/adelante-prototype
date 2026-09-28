@@ -20,11 +20,14 @@ export type CaseloadScope = "mine" | "all";
 export interface AssignmentIdentity {
   caseManagerId?: string | undefined;
   clinicianId?: string | undefined;
+  /** Staff id — matches `prescriberStaffId` (prescriber of record). */
+  staffId?: string | undefined;
 }
 
 export interface AssignablePatient {
   caseManagerId?: string | undefined;
   primaryClinicianId?: string | undefined;
+  prescriberStaffId?: string | undefined;
 }
 
 /** Honest label for the toggle — it filters the list, it does not restrict access. */
@@ -34,13 +37,14 @@ export const CASELOAD_SCOPE_NOTE =
 export function assignmentIdentityFor(staff: {
   caseManagerId?: string | undefined;
   clinicianId?: string | undefined;
+  staffId?: string | undefined;
 }): AssignmentIdentity {
-  return { caseManagerId: staff.caseManagerId, clinicianId: staff.clinicianId };
+  return { caseManagerId: staff.caseManagerId, clinicianId: staff.clinicianId, staffId: staff.staffId };
 }
 
 /** True when this staff identity can be matched against assignment fields at all. */
 export function hasAssignmentIdentity(identity: AssignmentIdentity): boolean {
-  return Boolean(identity.caseManagerId || identity.clinicianId);
+  return Boolean(identity.caseManagerId || identity.clinicianId || identity.staffId);
 }
 
 export function isAssignedTo(
@@ -49,6 +53,7 @@ export function isAssignedTo(
 ): boolean {
   if (identity.caseManagerId && patient.caseManagerId === identity.caseManagerId) return true;
   if (identity.clinicianId && patient.primaryClinicianId === identity.clinicianId) return true;
+  if (identity.staffId && patient.prescriberStaffId === identity.staffId) return true;
   return false;
 }
 

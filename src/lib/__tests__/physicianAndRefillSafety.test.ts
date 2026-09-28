@@ -63,3 +63,11 @@ describe("refill safety", () => {
     expect(() => AdelanteEHR.reviewRefill({ id: r.id, decision: "denied", denyReason: "  ", clinicianId: "s-np1", actorRole: "physician" })).toThrow(/reason/);
   });
 });
+
+import { isAssignedTo } from "../caseloadScope";
+describe("prescriber of record counts as 'my patients'", () => {
+  it("matches prescriberStaffId", () => {
+    expect(isAssignedTo({ prescriberStaffId: "s-th3" }, { staffId: "s-th3" })).toBe(true);
+    expect(isAssignedTo({ prescriberStaffId: "s-np1" }, { staffId: "s-th3" })).toBe(false);
+  });
+});
