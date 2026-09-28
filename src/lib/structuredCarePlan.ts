@@ -529,8 +529,8 @@ export function seedStructuredCarePlanDemo(): void {
     const reentryProb = probs.find((x) => x.code === "Z65.2");
     const g3 = addStructuredGoal({ patientId: luis.id, problemIds: reentryProb ? [reentryProb.id] : [], owner: "clinician", measure: "Attend 4 of 4 visits", targetDate: new Date(Date.now() + 30 * DAY).toISOString(), clinicalText: "Maintain engagement through reentry transition", patientText: { en: "Come to my 4 visits this month", es: "Ir a mis 4 citas este mes" }, actor });
     const bb = assignToGoal({ patientId: luis.id, goalId: g1.id, kind: "activity", activityId: "box-breathing", frequency: "daily", actor });
-    const ws = +weekStart(new Date());
-    for (let d = 0; d < 7 && ws + d * DAY < Date.now() - DAY / 2 && bb.completions.length < 2; d++) bb.completions.push(new Date(ws + d * DAY + 10 * 3600000).toISOString());
+    // Two past days of practice (never today, so the patient can tick today).
+    for (const d of [2, 1]) bb.completions.push(new Date(Date.now() - d * DAY).toISOString());
     const sugg = planSuggestions(luis.id);
     const rj = sugg.find((s) => s.id === "reentry-journey");
     if (rj) acceptSuggestion(luis.id, rj.id, g3.id, actor);
