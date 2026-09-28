@@ -6763,7 +6763,7 @@ export interface RefillRequest {
 export function refillNeedsCures(r: Pick<RefillRequest, "medicationName">): boolean {
   return requiresCuresCheck({ drugName: r.medicationName } as Parameters<typeof requiresCuresCheck>[0]) || isSudMedicationText(r.medicationName);
 }
-const REFILL_PRESCRIBER_ROLES = ["physician", "pmhnp"];
+export const REFILL_PRESCRIBER_ROLES = ["physician", "pmhnp"];
 const refillRequests: RefillRequest[] = [];
 
 // ----- Telehealth session lifecycle ---------------------------------------
@@ -20699,7 +20699,7 @@ export const AdelanteEHR = {
     const p = patients.find((x) => x.id === patientId);
     const o = p?.orders?.find((x) => x.id === orderId);
     if (!p || !o) throw new Error("Order not found.");
-    if (!["pmhnp", "physician", "psychiatrist", "sys_admin"].includes(input.role) && !input.role.includes("prescrib"))
+    if (!REFILL_PRESCRIBER_ROLES.includes(input.role))
       throw new Error("Only a prescriber can record a CURES check.");
     if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
       throw new Error("A reason is required when CURES can't be checked or for an emergency override.");

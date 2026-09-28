@@ -178,7 +178,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     // from ecm_provider: cf_care_manager only needs identity to work the
     // pre-release list; clinical_trainee / medical_assistant read only.
     cf_care_manager: "read",
-    sud_counselor: "write",
+    // §Chart registry — matches DEMOGRAPHICS_EDITOR_ROLES (demographics.ts):
+    // the SUD counselor reads; coordinator and sys_admin edit.
+    sud_counselor: "read",
     clinical_trainee: "read",
     medical_assistant: "read",
     peer_specialist: "read",
@@ -191,8 +193,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     // clinical_coordinator dispositions crisis-queue entries and sys_admin
     // corrects consent records; both need to read WHO the patient is. Read
     // only: neither role edits demographics.
-    clinical_coordinator: "read",
-    sys_admin: "read",
+    clinical_coordinator: "write",
+    sys_admin: "write",
   },
   screeners_mh: {
     ecm_provider: "write",
@@ -203,7 +205,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     pmhnp: "read",
   },
   screeners_sud: {
-    ecm_provider: "consent_gated",
+    // §Chart registry — ECM provider never sees SUD screeners/ASAM, even with
+    // consent (SUD_MED_WITHHELD_ROLES / roleSeesAsamSection).
+    ecm_provider: "none",
     peer_specialist: "consent_gated",
     // DMC-ODS: the SUD counselor IS the treating provider for this material,
     // so they sit with therapist/pmhnp, not with coordination roles.
@@ -228,7 +232,11 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_trainee: "read",
   },
   care_plan: {
-    ecm_provider: "write",
+    // §Chart registry — matches PLAN_EDIT_ROLES (structuredCarePlan.ts):
+    // ECM reads; coordinator and sys_admin edit.
+    ecm_provider: "read",
+    clinical_coordinator: "write",
+    sys_admin: "write",
     peer_specialist: "read",
     therapist: "write",
     pmhnp: "write",
@@ -844,7 +852,7 @@ export function permissionRole(role: StaffRole): StaffRole {
 }
 
 /** Prescribers: may sign orders, approve refills and record CURES. */
-export const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp", "physician"];
+export const PRESCRIBER_ROLES: StaffRole[] = ["physician", "pmhnp"];
 export const isPrescriberRole = (r: string) => (PRESCRIBER_ROLES as string[]).includes(r);
 
 export function canAccess(
@@ -874,17 +882,18 @@ export function canAccess(
  * visibility and disposition remain gated by the `crisis_queue` record class.
  */
 export const CRISIS_FLAG_ROLES: StaffRole[] = [
-  "pmhnp",
+  // Every staff role with patient contact. Billing, credentialing and
+  // sys_admin have no patient contact and cannot raise a flag.
   "physician",
+  "pmhnp",
   "therapist",
-  "ecm_provider",
-  "peer_specialist",
-  "clinical_coordinator",
-  "sys_admin",
-  // §v3.0 — clinical-facing roles can raise a flag; cross-patient queue
-  // visibility still comes from the `crisis_queue` class, which they lack.
-  "sud_counselor",
   "clinical_trainee",
+  "sud_counselor",
+  "peer_specialist",
+  "community_health_worker",
+  "ecm_provider",
+  "cf_care_manager",
+  "clinical_coordinator",
 ];
 
 export function canFlagCrisis(role: StaffRole): boolean {

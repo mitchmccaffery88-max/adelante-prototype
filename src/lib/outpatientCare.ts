@@ -71,7 +71,9 @@ const episodes: CareEpisode[] = [];
 const referrals: HlocReferral[] = [];
 const uid = () => Math.random().toString(36).slice(2, 10);
 const CLINICAL = ["therapist", "pmhnp", "physician", "sud_counselor", "clinical_trainee", "clinical_coordinator", "sys_admin"];
-const EPISODE_ROLES = [...CLINICAL, "ecm_provider"];
+export const EPISODE_ROLES = [...CLINICAL, "ecm_provider"];
+/** Roles that may create a higher-level-of-care referral (store-enforced). */
+export const HLOC_REFERRAL_ROLES = ["therapist", "pmhnp", "physician", "sud_counselor", "sys_admin"];
 
 type Actor = { name: string; role: StaffRole | string };
 function assertRole(actor: Actor, roles: string[], what: string) {
@@ -189,7 +191,7 @@ export function createHlocReferral(input: {
   asamId?: string;
   actor: Actor;
 }): HlocReferral {
-  assertRole(input.actor, ["therapist", "pmhnp", "physician", "sud_counselor", "sys_admin"], "create a clinical referral");
+  assertRole(input.actor, HLOC_REFERRAL_ROLES, "create a clinical referral");
   patientOf(input.patientId);
   if ((input.reason ?? "").trim().length < 3) throw new Error("A reason is required.");
   if (!input.destination.trim()) throw new Error("Pick or type a destination provider.");

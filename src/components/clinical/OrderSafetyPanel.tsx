@@ -21,7 +21,8 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { ShieldAlert, ShieldCheck } from "lucide-react";
 
-const PRESCRIBERS = ["pmhnp", "physician", "sys_admin"];
+// CURES recorders — prescribers only (physician, PMHNP), same list the store enforces.
+const PRESCRIBERS = ["pmhnp", "physician"];
 
 export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patientId: string }) {
   const { role, staffName } = useActingStaff();
