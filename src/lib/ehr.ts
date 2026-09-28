@@ -25260,6 +25260,13 @@ try {
   const daysAgo = (n: number) => new Date(Date.now() - n * 86400000).toISOString();
   const byName = (f: string, l: string) =>
     patients.find((p) => p.firstName === f && p.lastName === l)?.id;
+  // Prescriber of record split: the PMHNP (Anita Brooks) owns these patients'
+  // prescriptions and refill reviews; Dr. M. Bagga owns everyone else's.
+  const NP_PATIENTS = new Set(
+    [demoScenarioPatientId("combination"), demoScenarioPatientId("public_referral"), demoScenarioPatientId("medication")].filter(Boolean) as string[],
+  );
+  const prescriberOf = (pid: string) =>
+    NP_PATIENTS.has(pid) ? { name: "Anita Brooks, PMHNP-BC", id: "s-th3" } : { name: PRESCRIBER, id: PRESCRIBER_ID };
   type Rx = { name: string; dose: string; frequency: string; indication: string; started: number; refills: number; pharmacy: string };
   const rx = (patientId: string | undefined, r: Rx) =>
     patientId
@@ -25269,7 +25276,7 @@ try {
           dose: r.dose,
           route: "oral",
           frequency: r.frequency,
-          prescriber: PRESCRIBER,
+          prescriber: prescriberOf(patientId).name,
           startedOn: daysAgo(r.started),
           refillsRemaining: r.refills,
           pharmacy: r.pharmacy,
@@ -25290,7 +25297,7 @@ try {
       requestedAt: daysAgo(opts.ago),
     });
     if (req && opts.review)
-      AdelanteEHR.reviewRefill({ id: req.id, decision: opts.review, denyReason: opts.reason, clinicianId: PRESCRIBER_ID });
+      AdelanteEHR.reviewRefill({ id: req.id, decision: opts.review, denyReason: opts.reason, clinicianId: prescriberOf(med.patientId).id });
   };
   const CVS = "CVS Pharmacy — Mooney Blvd, Visalia";
   const WAL = "Walgreens — Main St, Visalia";
@@ -25473,4 +25480,18 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
     role: "physician",
   });
   AdelanteEHR.signOrders(patientId, [draft.id], "Dr. M. Bagga");
+}
+
+// Demo — prescriber of record (physician / PMHNP), set through the store so
+// "My work" has a real caseload for each prescriber. Primary therapists unchanged.
+try {
+  const byName = (f: string, l: string) => patients.find((p) => p.firstName === f && p.lastName === l)?.id;
+  for (const id of [demoScenarioPatientId("sud_consented"), byName("Daniel", "Reyes") ?? "p1", "p1", "p3"])
+    if (id) AdelanteEHR.setPrescriberOfRecord(id, "s-np1", "demo seed");
+  for (const k of ["combination", "public_referral", "medication"] as const) {
+    const id = demoScenarioPatientId(k);
+    if (id) AdelanteEHR.setPrescriberOfRecord(id, "s-th3", "demo seed");
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] prescribers", e);
 }
