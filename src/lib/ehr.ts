@@ -25485,8 +25485,7 @@ export function seedLuisCuresOrder(patientId: string | undefined): void {
 // Demo — prescriber of record (physician / PMHNP), set through the store so
 // "My work" has a real caseload for each prescriber. Primary therapists unchanged.
 try {
-  const byName = (f: string, l: string) => patients.find((p) => p.firstName === f && p.lastName === l)?.id;
-  for (const id of [demoScenarioPatientId("sud_consented"), byName("Daniel", "Reyes") ?? "p1", "p1", "p3"])
+  for (const id of [demoScenarioPatientId("sud_consented"), "p1", "p3"])
     if (id) AdelanteEHR.setPrescriberOfRecord(id, "s-np1", "demo seed");
   for (const k of ["combination", "public_referral", "medication"] as const) {
     const id = demoScenarioPatientId(k);
