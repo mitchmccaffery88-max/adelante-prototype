@@ -12,6 +12,12 @@ import { staffPlanView, planNeeds } from "@/lib/structuredCarePlan";
 import { measureSeries } from "@/lib/chartBrief";
 import { listLabOrders } from "@/lib/chartOrders";
 import { listContacts } from "@/lib/caseloadReview";
+import { visibleChartDocuments } from "@/components/chart/ChartDocumentsList";
+import { hieChartView, listHieMeds } from "@/lib/hie";
+import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { getSafetyPlan } from "@/lib/safetyPlan";
+import { episodeHeaderLabel, visibleHlocReferrals } from "@/lib/outpatientCare";
+import { reentryDay } from "@/lib/chartBrief";
 import type { RecordSection } from "@/components/clinical/recordSections";
 import { Card } from "@/components/ui/card";
 
@@ -53,6 +59,7 @@ export function ChartTabBar({
   );
 }
 
+const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 const dateShort = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString();
 
 export function subSummary(s: RecordSection, p: Patient, role: StaffRole): string {
@@ -97,8 +104,92 @@ export function subSummary(s: RecordSection, p: Patient, role: StaffRole): strin
       const c = listContacts(p.id);
       return c.length ? `${c.length} contact${c.length === 1 ? "" : "s"} · last ${dateShort(c[0]!.date)}` : "No contacts logged";
     }
+    case "documents": {
+      const { visible } = visibleChartDocuments(p.id, role);
+      const pending = visible.filter((d) => d.verification === "unverified").length;
+      return visible.length ? `${plural(visible.length, "document")}${pending ? ` · ${pending} pending review` : ""}` : "No documents uploaded";
+    }
+    case "outside-records": {
+      const e = hieChartView(p.id, role).encounters;
+      return e.length ? `${plural(e.length, "outside event")} · last ${dateShort(e.map((x) => x.at).sort().at(-1)!)}` : "No outside records";
+    }
+    case "problems": {
+      const sees = roleSeesAsamSection(role, p);
+      const act = (p.problems ?? []).filter((x) => x.status === "active" && (sees || x.category !== "sud"));
+      return act.length ? `${plural(act.length, "active problem")} · ${act[0]!.description}` : "No active problems";
+    }
+    case "alerts": {
+      const a = (p.alerts ?? []).filter((x) => !x.removedAt && x.active !== false).length;
+      return a ? plural(a, "active alert") : "No active alerts";
+    }
+    case "safety-plan": {
+      const sp = getSafetyPlan(p.id);
+      return sp ? (sp.lastReviewedAt ? `Last reviewed ${dateShort(sp.lastReviewedAt)}` : "Started — not yet reviewed") : "No safety plan yet";
+    }
+    case "episodes": {
+      const ep = episodeHeaderLabel(p.id, role);
+      const refs = visibleHlocReferrals(role, p.id).filter((r) => !["closed", "declined", "admitted"].includes(r.status)).length;
+      return `${ep ?? "No open episode"}${refs ? ` · ${plural(refs, "open referral")}` : ""}`;
+    }
+    case "reentry-handoff": {
+      const rd = reentryDay(p);
+      return rd ? `Reentry day ${rd}` : "Outside the 90-day reentry window";
+    }
+    case "med-recon": {
+      const n = listHieMeds(p.id).filter((m) => m.status === "review").length;
+      return n ? `${plural(n, "outside medication")} to review (HIE)` : "Nothing to reconcile";
+    }
+    case "asam": {
+      const a = (p.asamAssessments ?? []).slice().sort((x, y) => (y.authoredAt ?? "").localeCompare(x.authoredAt ?? ""))[0];
+      return a ? `${a.actualLevel ? `Level ${a.actualLevel}` : "Level not set"} · ${a.status.replace(/_/g, " ")}` : "No ASAM on file";
+    }
+    case "caloms":
+      return p.calomsProfile ? "Profile on file" : "No profile yet";
+    case "overview":
+      return [p.dob && `DOB ${p.dob}`, p.preferredLanguage === "es" ? "Spanish" : "English"].filter(Boolean).join(" · ");
+    case "contact":
+      return p.phone ? `Phone on file${(p.emergencyContacts ?? []).length ? ` · ${plural(p.emergencyContacts!.length, "emergency contact")}` : ""}` : "No phone on file";
+    case "checkins": {
+      const c = (p.checkIns ?? []).slice().sort((a, b) => b.date.localeCompare(a.date));
+      return c.length ? `${plural(c.length, "check-in")} · last ${dateShort(c[0]!.date)}` : "No check-ins yet";
+    }
+    case "eligibility": {
+      const c = p.coverage;
+      return c ? `${String(c.status).replace(/_/g, " ")} · ${c.verified === "verified" ? "verified" : c.verified.replace(/_/g, " ")}` : "No coverage on file";
+    }
+    case "advocates": {
+      const n = AdelanteEHR.listAdvocateLinks(p.id).length;
+      return n ? plural(n, "advocate") : "No advocates linked";
+    }
+    case "tasks": {
+      const sees = roleSeesAsamSection(role, p);
+      const open = AdelanteEHR.listCaseTasks().filter((t) => t.patientId === p.id && !t.completedAt && t.status !== "done" && (sees || t.origin !== "asam_needed")).length;
+      return open ? plural(open, "open task") : "No open tasks";
+    }
+    case "peer": {
+      const n = (p.peerNotes ?? []).length;
+      return n ? plural(n, "peer note") : "No peer notes yet";
+    }
+    case "chw": {
+      const n = (p.progressNotes ?? []).filter((x) => x.templateKey === "chw_service" && !x.voidedAt).length;
+      return n ? plural(n, "CHW note") : "No CHW notes yet";
+    }
+    case "coord": {
+      const n = (p.externalContacts ?? []).length;
+      return n ? plural(n, "outside contact") : "No outside providers listed";
+    }
+    case "messages": {
+      const m = p.careMessages ?? [];
+      const unread = m.filter((x) => x.authorType === "patient" && !x.readByStaffAt).length;
+      return m.length ? `${plural(m.length, "message")}${unread ? ` · ${unread} unread` : ""}` : "No messages yet";
+    }
+    case "mar":
+    case "protocols":
+    case "bookings":
+    case "housing-moves":
+      return "In-facility record";
     default:
-      return s.count ? `${s.count} item${s.count === 1 ? "" : "s"}` : "Open to view";
+      return s.count ? plural(s.count, "item") : "Nothing recorded yet";
   }
 }
 
