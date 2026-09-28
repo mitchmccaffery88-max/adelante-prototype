@@ -154,7 +154,7 @@ export function HieMedsPanel({ patientId, readOnly }: { patientId: string; readO
       {rows.map((m) => (
         <div key={m.id} className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2">
           <div>
-            <p className="text-navy">{m.name} <Badge variant="outline" className="ml-1 text-[10px]">From HIE — review</Badge></p>
+            <div className="text-navy">{m.name} <Badge variant="outline" className="ml-1 text-[10px]">From HIE — review</Badge></div>
             <p className="text-muted-foreground">{m.sig} · {m.prescriber}</p>
           </div>
           {m.status === "review" ? (
@@ -180,7 +180,7 @@ export function HieStatusCard() {
     <Card className="space-y-2 p-4" data-testid="hie-status">
       <p className="font-display text-base text-navy">HIE connection</p>
       <HieNotice />
-      <p className="text-xs"><span className="text-muted-foreground">Status:</span> <Badge variant="outline">{s.mode}</Badge></p>
+      <div className="text-xs"><span className="text-muted-foreground">Status:</span> <Badge variant="outline">{s.mode}</Badge></div>
       <p className="text-xs"><span className="text-muted-foreground">Last sync:</span> {s.lastSyncAt ? new Date(s.lastSyncAt).toLocaleString() : "never"}</p>
       <Button
         size="sm"
