@@ -342,7 +342,7 @@ export function seedOutpatientCareDemo(): void {
       } catch {
         /* expected: blocked, audited */
       }
-      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: ref.destination, purpose: "Referral to residential treatment" });
+      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: r.destination, purpose: "Referral to residential treatment" });
       advanceHlocReferral(r.id, "sent", REYES);
     });
 }
