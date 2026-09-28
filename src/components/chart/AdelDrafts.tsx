@@ -1,7 +1,8 @@
 // §Chart redesign turn 5 — "Draft with Adel" surfaces. Adel drafts; a person
 // reviews, edits, and signs / sends / decides. Every draft shows
 // ADEL_REVIEW_LABEL and which engine produced it (rule-based template).
-import { useState } from "react";
+import { useEffect, useState } from "react";
+const loggedRefills = new Set<string>();
 import { toast } from "sonner";
 import { Sparkles } from "lucide-react";
 import { AdelanteEHR, useEhr, type RefillRequest } from "@/lib/ehr";
@@ -128,11 +129,13 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
   const s = useEhr(() => JSON.stringify(buildRefillSummary(refill, role as StaffRole)));
   const sum = JSON.parse(s) as ReturnType<typeof buildRefillSummary>;
   const [reason, setReason] = useState("");
-  const [logged, setLogged] = useState(false);
-  if (!logged) {
-    setLogged(true);
+  useEffect(() => {
+    const k = `${actor.name}:${refill.id}`;
+    if (loggedRefills.has(k)) return;
+    loggedRefills.add(k);
     adelDraftAudit("refill", "drafted", refill.patientId, actor, { refillId: refill.id, suggestion: sum.suggestion });
-  }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [refill.id]);
   const decide = (decision: "approved" | "needs_appointment" | "denied") => {
     try {
       AdelanteEHR.reviewRefill({ id: refill.id, decision, ...(decision === "denied" ? { denyReason: reason } : {}), clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
