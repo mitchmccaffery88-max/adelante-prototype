@@ -14,7 +14,7 @@ import { isJusticeInvolved } from "@/lib/justiceInvolvement";
 import { planReviewDue, getStructuredPlan, staffPlanView, planNeeds } from "@/lib/structuredCarePlan";
 import { getSafetyPlan } from "@/lib/safetyPlan";
 import { mediCalStatusApplies } from "@/lib/coverageStatus";
-import { isInFacilityTask } from "@/lib/inFacility";
+import { isInFacilityTask, inFacilityEnabled } from "@/lib/inFacility";
 import { chartActionState } from "@/lib/chartActions";
 import { listHlocReferrals } from "@/lib/outpatientCare";
 import { isReferralOpen } from "@/lib/noteAutofill";
@@ -184,7 +184,7 @@ export function dueNow(p: Patient, role: StaffRole, now = new Date()): DueRow[] 
   const seesSud = roleSeesAsamSection(role, p);
   if (canAccess(role, "case_notes", p).level !== "none")
     for (const t of AdelanteEHR.listCaseTasks().filter((x) => x.patientId === p.id && !x.completedAt && x.status !== "done")) {
-      if (isInFacilityTask(t as never)) continue;
+      if (!inFacilityEnabled() && (isInFacilityTask(t) || /med_pass/.test(t.taskType ?? "") || /medication pass/i.test(t.title))) continue;
       if (t.origin === "asam_needed" && !seesSud) continue;
       rows.push({ id: `t-${t.id}`, label: t.title, due: t.dueDate, discipline: "case", sectionId: "tasks" });
     }

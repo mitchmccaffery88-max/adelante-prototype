@@ -283,7 +283,7 @@ function AdelBriefPanel({
   const b = json ? (JSON.parse(json) as ReturnType<typeof adelBrief>) : undefined;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
-      <SheetContent side="right" className="w-full overflow-y-auto sm:max-w-md" data-testid="adel-brief-panel">
+      <SheetContent side="right" className="w-full overflow-y-auto pt-14 sm:max-w-md" data-testid="adel-brief-panel">
         <SheetTitle className="text-navy">Adel Brief</SheetTitle>
         <SheetDescription className="text-xs">
           <Badge variant="outline" className="text-[10px]">{BRIEF_DRAFT_LABEL}</Badge> Rule-based, from what this chart shows your role.
