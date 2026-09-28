@@ -240,14 +240,49 @@ export function hiddenHlocCount(role: StaffRole | string, patientId?: string): n
   return listHlocReferrals(patientId).length - visibleHlocReferrals(role, patientId).length;
 }
 
+/** A legal Part 2 disclosure captured on a referral — recipient, purpose, date. */
+export interface LegalDisclosure {
+  id: string; patientId: string; recipient: string; purpose: string; recordedAt: string;
+  recordedBy: string; revokedAt?: string; revokedBy?: string; revokeReason?: string;
+}
+const disclosures: LegalDisclosure[] = [];
+export function listLegalDisclosures(patientId: string): LegalDisclosure[] {
+  return disclosures.filter((d) => d.patientId === patientId).map((d) => ({ ...d }));
+}
+/** Revoke: the ledger stays; a new consent record turns the Part 2 disclosure section off. */
+export function revokeLegalDisclosure(id: string, actor: Actor & { staffId?: string }, reason: string): void {
+  const d = disclosures.find((x) => x.id === id);
+  if (!d) throw new Error("Disclosure not found.");
+  if (d.revokedAt) throw new Error("Already revoked.");
+  if (reason.trim().length < 3) throw new Error("A reason is required to revoke.");
+  d.revokedAt = new Date().toISOString(); d.revokedBy = actor.name; d.revokeReason = reason.trim();
+  if (!disclosures.some((x) => x.patientId === d.patientId && !x.revokedAt)) {
+    const prior = AdelanteEHR.activeConsentRecord(d.patientId);
+    const p = patientOf(d.patientId);
+    const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: false }];
+    AdelanteEHR.createConsentRecord({
+      patientId: d.patientId, formType: prior?.formType ?? "AB133", source: "in person — consent tab", signedByName: `${p.firstName} ${p.lastName}`, attested: true,
+      effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
+    });
+  }
+  audit("legal_disclosure_revoked", d.patientId, actor, { disclosureId: id, reason: d.revokeReason });
+}
+
 /** For the demo: capture a legal Part 2 disclosure section on top of the active consent record. */
-export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string): void {
+export function recordLegalDisclosureConsent(patientId: string, actor: Actor & { staffId?: string }, signedByName: string, meta?: { recipient: string; purpose: string }): void {
   const prior = AdelanteEHR.activeConsentRecord(patientId);
   const sections = [...(prior?.sections ?? []).filter((s) => s.category !== "legal_part2_disclosure"), { category: "legal_part2_disclosure" as const, authorized: true }];
   AdelanteEHR.createConsentRecord({
     patientId, formType: prior?.formType ?? "AB133", source: "in person — consent tab", signedByName, attested: true,
     effectiveDate: new Date().toISOString().slice(0, 10), sections, capturedBy: { staffId: actor.staffId, staffName: actor.name, role: actor.role },
   });
+  const d: LegalDisclosure = {
+    id: `ld-${disclosures.length + 1}-${Date.now().toString(36)}`, patientId,
+    recipient: meta?.recipient ?? "Not specified", purpose: meta?.purpose ?? "Referral for treatment",
+    recordedAt: new Date().toISOString(), recordedBy: actor.name,
+  };
+  disclosures.push(d);
+  audit("legal_disclosure_recorded", patientId, actor, { disclosureId: d.id, recipient: d.recipient });
 }
 
 /** B1/B2 demo: an allergy override on Daniel, a CURES check on Luis's buprenorphine. */
@@ -307,7 +342,7 @@ export function seedOutpatientCareDemo(): void {
       } catch {
         /* expected: blocked, audited */
       }
-      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`);
+      recordLegalDisclosureConsent(jordan.id, REYES, `${jordan.firstName} ${jordan.lastName}`, { recipient: ref.destination, purpose: "Referral to residential treatment" });
       advanceHlocReferral(r.id, "sent", REYES);
     });
 }
