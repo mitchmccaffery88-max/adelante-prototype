@@ -217,6 +217,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     id: "consent_capture",
     label: { en: "Capture consent", es: "Registrar consentimiento" },
     group: "document",
+    sectionId: "advocates",
     store: "AdelanteEHR consent ledger",
     allowed: ({ role }, p) => (writes(role, "consent_ledger", p) ? ok() : hide("Your role can't capture consents.")),
   },
