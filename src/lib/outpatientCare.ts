@@ -258,6 +258,10 @@ export function seedOrderSafetyDemo(): void {
     if (daniel) {
       const o = AdelanteEHR.addDraftOrder(daniel.id, { drugName: "Amoxicillin 500 MG Oral Capsule", productName: "Amoxicillin 500 MG Oral Capsule", ingredientNames: ["amoxicillin"], createdBy: BAGGA.by } as never) as unknown as { id: string };
       AdelanteEHR.overrideOrderAllergy(daniel.id, o.id, { reason: "Tolerated amoxicillin in 2025 per outside records; monitoring (demo)", ...BAGGA });
+      // Walk-through drafts: a same-class allergy match still to decide, and a
+      // Schedule IV draft that can't be signed without the CURES step.
+      AdelanteEHR.addDraftOrder(daniel.id, { drugName: "Ampicillin 500 MG Oral Capsule", productName: "Ampicillin 500 MG Oral Capsule", ingredientNames: ["ampicillin"], createdBy: BAGGA.by } as never);
+      AdelanteEHR.addDraftOrder(daniel.id, { drugName: "Lorazepam 0.5 MG Oral Tablet", productName: "Lorazepam 0.5 MG Oral Tablet", ingredientNames: ["lorazepam"], isControlled: true, deaSchedule: "CIV", createdBy: BAGGA.by } as never);
     }
     const luis = AdelanteEHR.listPatients().find((p) => p.firstName === "Luis");
     const bup = luis?.orders?.find((o) => /buprenorph|suboxone/i.test(o.drugName) && o.status === "signed");
