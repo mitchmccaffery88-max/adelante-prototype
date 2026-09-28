@@ -1,3 +1,5 @@
+import { useEhr } from "@/lib/ehr";
+import { todaysActivity } from "@/lib/structuredCarePlan";
 // §E7 — Today's check-in folded into Adel's greeting on /home.
 // Same patient-private mood store (`recordDailyCheckIn`); nothing reaches
 // staff. Offered once per day: "Not now" hides it until tomorrow, no nagging.
@@ -87,6 +89,7 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
     }
   }, [patientId]);
 
+  const todayAct = useEhr(() => todaysActivity(patientId));
   const label = (id: EmotionId) => {
     const e = CHECK_IN_EMOTIONS.find((x) => x.id === id)!;
     return lang === "es" ? ES_LABEL[id] : e.label;
@@ -101,6 +104,11 @@ export function AdelGreetingCheckIn({ patientId }: { patientId: string }) {
         </span>
         <div className="min-w-0 flex-1">
           <p className="font-display text-xl">{c.hi}</p>
+          {todayAct && (
+            <p className="mt-1 text-sm text-muted-foreground" data-testid="adel-today-activity">
+              {lang === "es" ? `Para hoy en su plan: ${todayAct.label.es}.` : `On your plan today: ${todayAct.label.en}.`}
+            </p>
+          )}
           {!today && !skipped ? (
             <>
               <p className="mt-1 text-base" data-testid="adel-checkin-ask">{c.ask}</p>
