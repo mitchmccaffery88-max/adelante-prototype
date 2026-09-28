@@ -58,7 +58,7 @@ function AgenticGuidePage() {
         </Link>
       )}
       <h1 className="font-display text-2xl text-navy">Agentic guide</h1>
-      <PrototypeBanner />
+      <PrototypeBanner detail="Walkthrough demos using real chart facts. Nothing here writes to the record." />
       {list.map((p) => (
         <Card key={p.id} className="space-y-2 p-4">
           <p className="font-medium text-navy">

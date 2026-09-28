@@ -93,6 +93,7 @@ import { Route as AdvocateMyProfileRouteImport } from './routes/advocate.my-prof
 import { Route as AdvocateNextRouteImport } from './routes/advocate.next'
 import { Route as AdvocateResourcesRouteImport } from './routes/advocate.resources'
 import { Route as AdvocateSupportForMyselfRouteImport } from './routes/advocate.support-for-myself'
+import { Route as AgenticIndexRouteImport } from './routes/agentic.index'
 import { Route as ApiAdelChatRouteImport } from './routes/api/adel-chat'
 import { Route as ApiAdelRecapRouteImport } from './routes/api/adel-recap'
 import { Route as RecordPatientIdRouteImport } from './routes/record.$patientId'
@@ -534,6 +535,11 @@ const AdvocateSupportForMyselfRoute =
     path: '/support-for-myself',
     getParentRoute: () => AdvocateRoute,
   } as any)
+const AgenticIndexRoute = AgenticIndexRouteImport.update({
+  id: '/agentic/',
+  path: '/agentic/',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiAdelChatRoute = ApiAdelChatRouteImport.update({
   id: '/api/adel-chat',
   path: '/api/adel-chat',
@@ -730,6 +736,7 @@ export interface FileRoutesByFullPath {
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/advocate/': typeof AdvocateIndexRoute
+  '/agentic/': typeof AgenticIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
@@ -831,6 +838,7 @@ export interface FileRoutesByTo {
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/advocate': typeof AdvocateIndexRoute
+  '/agentic': typeof AgenticIndexRoute
   '/resources': typeof ResourcesIndexRoute
   '/start': typeof StartIndexRoute
   '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
@@ -937,6 +945,7 @@ export interface FileRoutesById {
   '/start/signup': typeof StartSignupRoute
   '/start/support': typeof StartSupportRoute
   '/advocate/': typeof AdvocateIndexRoute
+  '/agentic/': typeof AgenticIndexRoute
   '/resources/': typeof ResourcesIndexRoute
   '/start/': typeof StartIndexRoute
   '/agentic/chart-review/$patientId': typeof AgenticChartReviewPatientIdRoute
@@ -1044,6 +1053,7 @@ export interface FileRouteTypes {
     | '/start/signup'
     | '/start/support'
     | '/advocate/'
+    | '/agentic/'
     | '/resources/'
     | '/start/'
     | '/agentic/chart-review/$patientId'
@@ -1145,6 +1155,7 @@ export interface FileRouteTypes {
     | '/start/signup'
     | '/start/support'
     | '/advocate'
+    | '/agentic'
     | '/resources'
     | '/start'
     | '/agentic/chart-review/$patientId'
@@ -1250,6 +1261,7 @@ export interface FileRouteTypes {
     | '/start/signup'
     | '/start/support'
     | '/advocate/'
+    | '/agentic/'
     | '/resources/'
     | '/start/'
     | '/agentic/chart-review/$patientId'
@@ -1339,6 +1351,7 @@ export interface RootRouteChildren {
   ApiAdelRecapRoute: typeof ApiAdelRecapRoute
   RecordPatientIdRoute: typeof RecordPatientIdRoute
   RescreenKeyRoute: typeof RescreenKeyRoute
+  AgenticIndexRoute: typeof AgenticIndexRoute
   AgenticChartReviewPatientIdRoute: typeof AgenticChartReviewPatientIdRoute
   AgenticDictationPatientIdRoute: typeof AgenticDictationPatientIdRoute
   AgenticScribePatientIdRoute: typeof AgenticScribePatientIdRoute
@@ -1935,6 +1948,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdvocateSupportForMyselfRouteImport
       parentRoute: typeof AdvocateRoute
     }
+    '/agentic/': {
+      id: '/agentic/'
+      path: '/agentic'
+      fullPath: '/agentic/'
+      preLoaderRoute: typeof AgenticIndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/adel-chat': {
       id: '/api/adel-chat'
       path: '/api/adel-chat'
@@ -2230,6 +2250,7 @@ const rootRouteChildren: RootRouteChildren = {
   ApiAdelRecapRoute: ApiAdelRecapRoute,
   RecordPatientIdRoute: RecordPatientIdRoute,
   RescreenKeyRoute: RescreenKeyRoute,
+  AgenticIndexRoute: AgenticIndexRoute,
   AgenticChartReviewPatientIdRoute: AgenticChartReviewPatientIdRoute,
   AgenticDictationPatientIdRoute: AgenticDictationPatientIdRoute,
   AgenticScribePatientIdRoute: AgenticScribePatientIdRoute,

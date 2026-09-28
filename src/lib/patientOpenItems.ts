@@ -81,7 +81,7 @@ export function listPatientOpenItems(patientId: string, role?: StaffRole): Patie
       // discloses SUD treatment status (42 CFR Part 2, §5d-1).
       label: "Open resource referral",
       detail: `Referral · ${r.status.replace(/_/g, " ")}`,
-      section: "referrals",
+      section: "episodes",
       aging: aging.state,
       agingLabel: sdohAgingLabel(aging),
     });
