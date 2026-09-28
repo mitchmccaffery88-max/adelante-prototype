@@ -296,7 +296,7 @@ export function seedDemoInbox(): void {
   if (daniel)
     safe(() => {
       const pt = AdelanteEHR.getPatient?.(daniel);
-      const draft = pt?.progressNotes?.find((x) => x.status === "draft" && x.clinicianId === "c1");
+      const draft = pt?.progressNotes?.find((x) => (!x.status || x.status === "draft") && x.clinicianId === "c1");
       if (!draft) return;
       AdelanteEHR.signProgressNote(daniel, draft.id, {
         signedBy: "Marisol Reyes",
