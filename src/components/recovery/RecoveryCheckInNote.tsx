@@ -16,7 +16,7 @@ const COPY = {
     saved: "Saved — only you can see this.",
     savedShared: "Saved and shared with your care team.",
     danger: "If you're in danger right now, tap",
-    help: "I need help now",
+    help: "In crisis now",
   },
   es: {
     label: "¿Quiere agregar algo? (opcional, privado)",
@@ -26,7 +26,7 @@ const COPY = {
     saved: "Guardado — solo usted puede verlo.",
     savedShared: "Guardado y compartido con su equipo.",
     danger: "Si está en peligro ahora mismo, toque",
-    help: "Necesito ayuda ahora",
+    help: "En crisis ahora",
   },
 };
 

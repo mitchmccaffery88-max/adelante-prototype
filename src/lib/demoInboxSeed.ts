@@ -126,7 +126,7 @@ export function seedDemoInbox(): void {
         "Demo: missed two visits and his mother called worried he has stopped answering. Needs a same-day welfare call.",
       );
     });
-  // Patient "I need help now" from /crisis.
+  // Patient "In crisis now" from /crisis.
   if (victor)
     safe(() => {
       AdelanteEHR.flagCrisis(victor, "Patient (crisis page)", "I'm having a really hard night and need to talk to someone.", {

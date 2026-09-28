@@ -8,6 +8,7 @@
 // Non-goals in this phase: scheduling rule engine, protocol starting
 // (CIWA/COWS), order-task creation, real-time cross-user sync (same
 // single-session limitation already flagged for MAR).
+import { inFacilityEnabled, isInFacilityTask } from "@/lib/inFacility";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -146,6 +147,7 @@ function WorklistPage() {
     const needle = q.trim().toLowerCase();
     return tasks.filter((t) => {
       if (facilityRoundsOnly && !isFacilityProtocolRound(t)) return false;
+      if (!inFacilityEnabled() && isInFacilityTask(t)) return false;
       if (facilityId !== ANY && t.facilityId !== facilityId) return false;
       if (status !== ANY && worklistStatusFor(t) !== status) return false;
       if (priority !== ANY && taskPriority(t) !== priority) return false;
@@ -328,7 +330,7 @@ function WorklistPage() {
           <label className="flex items-center gap-2 text-xs text-navy">
             <Switch checked={myDiscipline} onCheckedChange={setMyDiscipline} /> My discipline
           </label>
-          {(facilityRoundsOnly || canAccess(role, "custody_tracking").level !== "none") && (
+          {inFacilityEnabled() && (facilityRoundsOnly || canAccess(role, "custody_tracking").level !== "none") && (
             <label className="flex items-center gap-2 text-xs text-navy">
               <Switch
                 checked={facilityRoundsOnly}

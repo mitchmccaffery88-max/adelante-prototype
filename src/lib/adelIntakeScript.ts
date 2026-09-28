@@ -63,7 +63,7 @@ export const ADEL_COPY = {
     backToForm: "Use the form instead",
     placeholder: "Type your answer…",
     send: "Send",
-    getHelp: "I need help now",
+    getHelp: "In crisis now",
   },
   es: {
     banner: "Prototipo · preguntas guiadas, no generadas por IA",
@@ -89,7 +89,7 @@ export const ADEL_COPY = {
     backToForm: "Usar el formulario",
     placeholder: "Escriba su respuesta…",
     send: "Enviar",
-    getHelp: "Necesito ayuda ahora",
+    getHelp: "En crisis ahora",
   },
 } as const;
 

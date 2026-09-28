@@ -214,7 +214,7 @@ function HelpList({ onNavigate, showRecovery }: { onNavigate: () => void; showRe
   );
 }
 
-const TITLE = "I need help now";
+const TITLE = "In crisis now";
 const SUBTITLE = "Pick whatever fits. Nothing here is logged as a crisis unless you say so.";
 
 export function GetHelpNowModal({

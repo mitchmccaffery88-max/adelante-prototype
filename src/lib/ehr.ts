@@ -1571,6 +1571,8 @@ export interface Patient {
   screeners: Record<string, ScreenerResult | undefined>;
   // Longitudinal screener trends (PHQ-9/GAD-7 at intake/30/60/90, AUDIT/DAST/PCL ad hoc)
   screenerHistory?: ScreenerResult[];
+  /** Screeners/assessments that were due and not completed (Tracking). */
+  missedScreeners?: MissedScreener[];
   needs: {
     housing: boolean;
     food: boolean;
@@ -1894,6 +1896,14 @@ export const MED_RECON_DECISION_LABEL: Record<MedReconItem["decision"], string> 
   add: "Add",
   not_reviewed: "Not reviewed",
 };
+
+export interface MissedScreener {
+  key: string;
+  dueAt: string;
+  recordedAt: string;
+  recordedBy: string;
+  reason?: string;
+}
 
 export interface ScreenerResult {
   key: string;
@@ -9164,6 +9174,45 @@ export const AdelanteEHR = {
   /** Pending patient/advocate cancel requests (staff queue). */
   listPendingCancelRequests(): Appointment[] {
     return appointments.filter((a) => a.cancelRequest?.status === "pending" && a.status === "scheduled");
+  },
+  /**
+   * Back-dated result (e.g. imported history). Appends to screenerHistory —
+   * the one source Tracking and the care plan read — and only replaces the
+   * "latest" slot when it is newer. Audited like recordScreener.
+   */
+  recordHistoricalScreener(patientId: string, result: ScreenerResult) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const def = _defForResult(result.key);
+    if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
+    _stampScreenerMeta(result);
+    p.screenerHistory = [...(p.screenerHistory ?? []), result];
+    const cur = p.screeners[result.key];
+    if (!cur || +new Date(cur.completedAt) <= +new Date(result.completedAt)) p.screeners[result.key] = result;
+    appendAudit({
+      category: "clinical",
+      action: "screener_recorded",
+      patientId,
+      actorId: result.administeredBy?.enteredBy?.staffName ?? "system",
+      detail: { screenerKey: result.key, score: result.score, severity: result.severity, historical: true },
+    });
+    emit();
+  },
+  /** A due screener/assessment that was not completed. Audited, key only. */
+  recordMissedScreener(patientId: string, entry: { key: string; dueAt: string; recordedBy: string; reason?: string }) {
+    const p = patients.find((x) => x.id === patientId);
+    if (!p) return;
+    const dup = (p.missedScreeners ?? []).some((m) => m.key === entry.key && m.dueAt.slice(0, 10) === entry.dueAt.slice(0, 10));
+    if (dup) return;
+    p.missedScreeners = [...(p.missedScreeners ?? []), { ...entry, recordedAt: new Date().toISOString() }];
+    appendAudit({
+      category: "clinical",
+      action: "screener_missed",
+      patientId,
+      actorId: entry.recordedBy,
+      detail: { screenerKey: entry.key, dueAt: entry.dueAt },
+    });
+    emit();
   },
   recordScreener(patientId: string, result: ScreenerResult) {
     const p = patients.find((x) => x.id === patientId);
@@ -25639,4 +25688,65 @@ try {
   }
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] rosa phq-9", e);
+}
+
+// Demo — Tracking history: at least 3 points per relevant instrument plus
+// 1–2 missed entries for the core demo patients, through the store functions.
+// Back-dated points sit BEFORE each patient's current latest result, so the
+// care plan (which reads the latest from screenerHistory) is unchanged.
+try {
+  const names = ["Luis", "Rosa", "Daniel", "Marcus", "Jordan", "Carmen"];
+  const plan: Record<string, string[]> = {
+    Luis: ["phq-9", "gad-7", "audit", "dast-10"],
+    Jordan: ["phq-9", "gad-7", "audit", "dast-10"],
+    Rosa: ["phq-9", "gad-7"],
+    Daniel: ["phq-9", "gad-7", "pc-ptsd-5"],
+    Marcus: ["phq-9", "gad-7"],
+    Carmen: ["phq-9", "gad-7", "pc-ptsd-5"],
+  };
+  const DAY = 86400000;
+  for (const n of names) {
+    const p = patients.find((x) => x.firstName === n);
+    if (!p || (p.missedScreeners ?? []).length) continue;
+    for (const key of plan[n]) {
+      const def = _defForResult(key);
+      if (!def || !("bands" in def)) continue;
+      const hist = (p.screenerHistory ?? []).filter((h) => h.key === key);
+      // Points go BETWEEN the first result and the newest one, so the
+      // intake anchor of the re-screen cadence (first result) never moves.
+      const times = hist.map((h) => +new Date(h.completedAt));
+      const oldest = times.length ? Math.min(...times) : Date.now() - 60 * DAY;
+      const newest = times.length > 1 ? Math.max(...times) : Date.now() - 2 * DAY;
+      const need = 3 - hist.length;
+      const top = def.bands[def.bands.length - 1].max;
+      for (let i = hist.length; i < 3; i++) {
+        const k = i - hist.length + 1;
+        const when = oldest + ((newest - oldest) * k) / (need + (times.length > 1 ? 1 : 0));
+        const score = Math.max(0, Math.round(top * (0.25 + 0.12 * (i + 1))));
+        AdelanteEHR.recordHistoricalScreener(p.id, {
+          key,
+          score,
+          severity: _severityFor(def as never, score),
+          completedAt: new Date(when).toISOString(),
+          timepoint: "adhoc",
+          context: "clinic",
+        } as ScreenerResult);
+      }
+    }
+    AdelanteEHR.recordMissedScreener(p.id, {
+      key: "phq-9",
+      dueAt: new Date(Date.now() - 7 * DAY).toISOString(),
+      recordedBy: "Demo seed",
+      reason: "Visit missed — not completed",
+    });
+    if (n === "Luis" || n === "Daniel") {
+      AdelanteEHR.recordMissedScreener(p.id, {
+        key: "gad-7",
+        dueAt: new Date(Date.now() - 40 * DAY).toISOString(),
+        recordedBy: "Demo seed",
+      });
+    }
+  }
+} catch (e) {
+  if (typeof console !== "undefined") console.warn("[demo seed] tracking history", e);
 }

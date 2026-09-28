@@ -1,4 +1,7 @@
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
+import { buildTrackingRows, filterTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
+import type { Patient } from "@/lib/ehr";
+import type { StaffRole } from "@/lib/roles";
 import { staffVisibleRecoveryNotes } from "@/lib/recoveryCheckInNotes";
 import { categoryName, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
@@ -3225,6 +3228,120 @@ function ProgressNoteCard({
 }
 
 // ---------- Tracking tab (screener trends, SUD per-item masked) ----------
+function TrackingTimeline({ patient, role }: { patient: Patient; role: StaffRole }) {
+  const [instrument, setInstrument] = useState<string>("all");
+  const [status, setStatus] = useState<"all" | "completed" | "missed">("all");
+  const [from, setFrom] = useState("");
+  const [to, setTo] = useState("");
+  const all = buildTrackingRows(patient, role);
+  const instruments = Array.from(new Set(all.map((r) => r.label))).sort();
+  const rows = filterTrackingRows(all, {
+    instrument: instrument === "all" ? undefined : instrument,
+    status,
+    from: from || undefined,
+    to: to || undefined,
+  });
+  const trend =
+    instrument !== "all"
+      ? rows
+          .filter((r) => r.status === "completed" && r.trendable && typeof r.score === "number")
+          .slice()
+          .reverse()
+          .map((r) => ({ date: new Date(r.date).toLocaleDateString(), score: r.score }))
+      : [];
+  return (
+    <div className="rounded-md border p-3 space-y-3" data-testid="tracking-timeline">
+      <h4 className="font-medium text-navy text-sm">All screeners &amp; assessments</h4>
+      <div className="flex flex-wrap items-end gap-2 text-xs">
+        <label className="flex flex-col gap-1">
+          Instrument
+          <select
+            data-testid="tracking-filter-instrument"
+            className="h-9 rounded-md border bg-background px-2"
+            value={instrument}
+            onChange={(e) => setInstrument(e.target.value)}
+          >
+            <option value="all">All</option>
+            {instruments.map((i) => (
+              <option key={i} value={i}>{i}</option>
+            ))}
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          Status
+          <select
+            data-testid="tracking-filter-status"
+            className="h-9 rounded-md border bg-background px-2"
+            value={status}
+            onChange={(e) => setStatus(e.target.value as typeof status)}
+          >
+            <option value="all">Completed and missed</option>
+            <option value="completed">Completed</option>
+            <option value="missed">Missed or overdue</option>
+          </select>
+        </label>
+        <label className="flex flex-col gap-1">
+          From
+          <input type="date" data-testid="tracking-filter-from" className="h-9 rounded-md border bg-background px-2" value={from} onChange={(e) => setFrom(e.target.value)} />
+        </label>
+        <label className="flex flex-col gap-1">
+          To
+          <input type="date" data-testid="tracking-filter-to" className="h-9 rounded-md border bg-background px-2" value={to} onChange={(e) => setTo(e.target.value)} />
+        </label>
+      </div>
+      {trend.length >= 2 && (
+        <div className="h-36" data-testid="tracking-timeline-trend">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={trend}>
+              <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+              <XAxis dataKey="date" fontSize={11} />
+              <YAxis fontSize={11} />
+              <RTooltip />
+              <Line type="monotone" dataKey="score" stroke="var(--navy)" strokeWidth={2} dot={{ r: 4 }} />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+      )}
+      {rows.length === 0 ? (
+        <p className="text-xs text-muted-foreground">No entries match these filters.</p>
+      ) : (
+        <div className="overflow-x-auto">
+          <table className="w-full text-xs" data-testid="tracking-timeline-table">
+            <thead className="text-left text-muted-foreground">
+              <tr>
+                <th className="py-1 pr-2">Date</th>
+                <th className="py-1 pr-2">Instrument</th>
+                <th className="py-1 pr-2">Score</th>
+                <th className="py-1 pr-2">Severity / level</th>
+                <th className="py-1">Status</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => (
+                <tr key={`${r.key}-${r.date}-${i}`} className="border-t" data-status={r.status}>
+                  <td className="py-1 pr-2 whitespace-nowrap">{new Date(r.date).toLocaleDateString()}</td>
+                  <td className="py-1 pr-2">{r.label}</td>
+                  <td className="py-1 pr-2 tabular-nums">{r.score ?? "—"}</td>
+                  <td className="py-1 pr-2">{r.level ? `Level ${r.level}` : (r.severity ?? "—")}</td>
+                  <td className="py-1">
+                    {r.status === "completed" ? (
+                      <span className="text-muted-foreground">Completed</span>
+                    ) : (
+                      <span className="rounded bg-destructive/10 px-1.5 py-0.5 font-medium text-destructive">
+                        {r.status === "missed" ? "Missed" : "Overdue"}
+                      </span>
+                    )}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  );
+}
+
 export function TrackingTab({ patientId }: { patientId: string }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [role] = useActingRole();
@@ -3240,8 +3357,10 @@ export function TrackingTab({ patientId }: { patientId: string }) {
     .filter((h) => h.key === CSSRS_KEY)
     .sort((a, b) => +new Date(b.completedAt) - +new Date(a.completedAt));
   const sudGate = canAccess(role, "screeners_sud", patient);
+  const seesSud = roleSeesSudInstruments(role, patient);
   return (
     <div className="space-y-6">
+      <TrackingTimeline patient={patient} role={role} />
       <div className="rounded-md border p-3 space-y-2" data-testid="tracking-cssrs">
         <div className="flex flex-wrap items-center gap-2">
           <h4 className="font-medium text-navy text-sm flex-1">C-SSRS Screener</h4>
@@ -3275,6 +3394,7 @@ export function TrackingTab({ patientId }: { patientId: string }) {
         const title = retired
           ? `${def?.name ?? key} — retired, non-validated form (not trended with validated scores)`
           : (def?.name ?? key);
+        if (def?.isSud && !seesSud) return null;
         if (def?.isSud && sudGate.locked) {
           return (
             <div key={sk}>

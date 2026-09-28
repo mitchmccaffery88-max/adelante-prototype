@@ -45,7 +45,7 @@ export function NotifyCareTeamCard() {
   return (
     <Card className="soft-shadow p-5" data-testid="notify-care-team-card">
       <div className="flex items-center gap-2 text-xs font-medium uppercase tracking-wider text-primary">
-        <BellRing className="h-4 w-4" aria-hidden="true" /> Tell my care team
+        <BellRing className="h-4 w-4" aria-hidden="true" /> Also let my care team know
       </div>
       {sent ? (
         <p className="mt-2 flex items-start gap-2 text-base" data-testid="notify-care-team-sent">

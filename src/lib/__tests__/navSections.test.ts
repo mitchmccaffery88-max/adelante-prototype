@@ -10,6 +10,9 @@ import {
   staffNavGroupsForRole,
 } from "../navSections";
 import { STAFF_ROLES, canAccess, canFlagCrisis, canWorkSdohCrisisLane } from "../roles";
+import { setInFacilityEnabled } from "@/lib/inFacility";
+// These tests cover the in-facility segment, which is off by default.
+setInFacilityEnabled(true);
 
 const ids = (role: Parameters<typeof staffNavForRole>[0]) =>
   staffNavForRole(role).map((e) => e.id);

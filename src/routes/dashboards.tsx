@@ -3,6 +3,7 @@
 // Cross-patient aggregate view gated on the `population_health` record class.
 // Every number here is computed live from real records; metrics with no data
 // source render "No live metric yet" rather than a fabricated zero.
+import { inFacilityEnabled, isInFacilityMetric } from "@/lib/inFacility";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -84,7 +85,10 @@ function DashboardsPage() {
   const period: ReportingPeriodKey = parsePeriod(search.period);
   const days = periodDays(period);
 
-  const targets = useEhr(() => AdelanteEHR.listKpiTargets());
+  const allTargets = useEhr(() => AdelanteEHR.listKpiTargets());
+  const targets = inFacilityEnabled()
+    ? allTargets
+    : allTargets.filter((t) => !isInFacilityMetric(t.metricKey));
   const metrics = useEhr(() => computeLiveMetrics(new Date(), days));
   const qualifyingCodes = useEhr(() => AdelanteEHR.listQualifyingCodes());
   const calaimCaseload = useEhr(() => calaimEligiblePatients());
@@ -98,7 +102,7 @@ function DashboardsPage() {
   // §Facility & Custody split — the facility rollup is only COMPUTED for roles
   // that clear `custody_tracking`. Without access the data never reaches the
   // client component at all.
-  const seesFacility = canAccess(role, "custody_tracking").level !== "none";
+  const seesFacility = inFacilityEnabled() && canAccess(role, "custody_tracking").level !== "none";
   const facilityStats = useEhr(() =>
     seesFacility ? AdelanteEHR.facilityBookingStats() : [],
   );

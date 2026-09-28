@@ -8,6 +8,9 @@ import {
   daysUntilRelease,
   visiblePreReleaseEpisodes,
 } from "@/lib/preReleaseTimeline";
+import { setInFacilityEnabled } from "@/lib/inFacility";
+// These tests cover the in-facility segment, which is off by default.
+setInFacilityEnabled(true);
 
 const entry = STAFF_NAV.find((e) => e.id === "pre-release")!;
 const OWNERS: StaffRole[] = [
