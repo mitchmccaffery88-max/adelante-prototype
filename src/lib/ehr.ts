@@ -6704,7 +6704,14 @@ export interface RefillRequest {
   reviewedBy?: string;
   reviewedAt?: string;
   denyReason?: string;
+  /** §Refill safety — CURES check for controlled / MOUD / SUD refills (placeholder, no live query). */
+  curesCheck?: NonNullable<MedOrder["curesCheck"]>;
 }
+/** Controlled (DEA II–V), MOUD or any SUD-list medication needs CURES before approval. */
+export function refillNeedsCures(r: Pick<RefillRequest, "medicationName">): boolean {
+  return requiresCuresCheck({ drugName: r.medicationName } as Parameters<typeof requiresCuresCheck>[0]) || isSudMedicationText(r.medicationName);
+}
+const REFILL_PRESCRIBER_ROLES = ["physician", "pmhnp"];
 const refillRequests: RefillRequest[] = [];
 
 // ----- Telehealth session lifecycle ---------------------------------------
@@ -19225,14 +19232,48 @@ export const AdelanteEHR = {
     emit();
     return req;
   },
+  /** §Refill safety — record the CURES check for a refill. Prescribers only; audited. */
+  recordRefillCuresCheck(
+    id: string,
+    input: { checkedAt: string; result: "no_concerns" | "concerns_reviewed" | "unable_to_access"; reason?: string; note?: string; emergencyOverride?: boolean; by: string; role: string },
+  ): RefillRequest {
+    const req = refillRequests.find((r) => r.id === id);
+    if (!req) throw new Error("Refill request not found.");
+    if (!REFILL_PRESCRIBER_ROLES.includes(input.role)) throw new Error("Only a prescriber can record a CURES check.");
+    if ((input.result === "unable_to_access" || input.emergencyOverride) && (input.reason ?? "").trim().length < 3)
+      throw new Error("A reason is required when CURES can't be checked or for an emergency override.");
+    if (!input.checkedAt) throw new Error("Enter the date and time CURES was checked.");
+    req.curesCheck = {
+      checkedAt: input.checkedAt, result: input.result, reason: input.reason?.trim() || undefined,
+      note: input.note?.trim() || undefined, by: input.by, recordedAt: new Date().toISOString(),
+      emergencyOverride: input.emergencyOverride || undefined,
+    };
+    appendAudit({
+      category: "rx", action: input.emergencyOverride ? "refill_cures_emergency_override" : "refill_cures_check_recorded",
+      patientId: req.patientId, actorId: input.by,
+      detail: { refillId: id, role: input.role, result: input.result, placeholder: true, sudProtected: isSudMedicationText(req.medicationName) },
+    });
+    emit();
+    return req;
+  },
   reviewRefill(input: {
     id: string;
     decision: "approved" | "denied" | "needs_appointment";
     denyReason?: string;
     clinicianId?: string;
+    /** Staff UIs pass it: turns on the prescriber-only and CURES rules. Module-load seeds omit it. */
+    actorRole?: string;
   }): RefillRequest | undefined {
     const req = refillRequests.find((r) => r.id === input.id);
     if (!req) return undefined;
+    if (input.decision === "denied" && !(input.denyReason ?? "").trim())
+      throw new Error("A reason is required to deny a refill.");
+    if (input.actorRole !== undefined) {
+      if (!REFILL_PRESCRIBER_ROLES.includes(input.actorRole))
+        throw new Error("Only a prescriber (physician or PMHNP) can review a refill.");
+      if (input.decision === "approved" && refillNeedsCures(req) && !req.curesCheck)
+        throw new Error("Record the CURES check before approving this refill.");
+    }
     // Detect a prescriber switch: compare against the most recent *prior* refill
     // (any status) for the same medication that had a different reviewer.
     const priorReviewer = refillRequests
