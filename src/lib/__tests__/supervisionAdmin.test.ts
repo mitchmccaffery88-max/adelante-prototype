@@ -47,7 +47,7 @@ describe("assignSupervisor reuses the LPHA rule", () => {
   });
 
   it("offers only LPHA-tier candidates and supervision-required staff", () => {
-    expect(supervisorCandidates().every((s) => ["therapist", "pmhnp"].includes(s.role))).toBe(true);
+    expect(supervisorCandidates().every((s) => ["therapist", "pmhnp", "physician"].includes(s.role))).toBe(true);
     expect([...new Set(supervisedStaff().map((s) => s.role))].sort()).toEqual(
       ["clinical_trainee", "community_health_worker", "medical_assistant"].sort(),
     );

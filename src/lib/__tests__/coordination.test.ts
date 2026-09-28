@@ -21,14 +21,14 @@ describe("clinical coordination (item 6)", () => {
     for (const { key } of STAFF_ROLES) {
       const ok = key === "clinical_coordinator" || key === "sys_admin";
       expect([key, canActOnCoordination(key)]).toEqual([key, ok]);
-      const view = ok || ["therapist", "pmhnp", "ecm_provider"].includes(key);
+      const view = ok || ["therapist", "pmhnp", "physician", "ecm_provider"].includes(key);
       expect([key, canViewCoordination(key)]).toEqual([key, view]);
       expect([key, resolveNavAccess(key, "/admin-coordination").status]).toEqual([key, view ? "allowed" : "denied"]);
     }
   });
 
   it("view-only roles are refused by the actions themselves", () => {
-    for (const role of ["therapist", "pmhnp", "ecm_provider"] as const) {
+    for (const role of ["therapist", "pmhnp", "physician", "ecm_provider"] as const) {
       const a = AdelanteEHR.listAppointments()[0];
       expect(() => coordinationCancel({ apptId: a.id, reason: "other" as never, actor: { name: "x", role } })).toThrow(/coordinator/);
     }
