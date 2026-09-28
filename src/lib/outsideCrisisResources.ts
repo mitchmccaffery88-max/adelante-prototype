@@ -1,8 +1,26 @@
 // "In crisis now" points patients to OUTSIDE crisis resources first (988 call/
 // text, 911, county crisis line). Telling the Adelante care team is secondary.
-// County line is a labelled placeholder until a real number is verified.
+// County lines verified on the county websites (product owner, Sep 2026).
 // Spanish pending bilingual review.
-export const COUNTY_CRISIS_LINE = { number: "0000000000", verified: false } as const;
+export type CrisisCounty = "Kings" | "Tulare";
+export interface CountyLine { label: { en: string; es: string }; number: string; display: string }
+export const COUNTY_CRISIS_LINES: Record<CrisisCounty, CountyLine[]> = {
+  Kings: [
+    { label: { en: "Kings County Behavioral Health 24-hour crisis line", es: "Línea de crisis 24 horas de Salud del Comportamiento del Condado de Kings" }, number: "5595824481", display: "(559) 582-4481" },
+    { label: { en: "Kings County crisis line (toll-free)", es: "Línea de crisis del Condado de Kings (gratis)" }, number: "18006552553", display: "1-800-655-2553" },
+  ],
+  Tulare: [
+    { label: { en: "Tulare County Mental Health Access & Crisis Line", es: "Línea de Acceso y Crisis de Salud Mental del Condado de Tulare" }, number: "18003201616", display: "1-800-320-1616" },
+    { label: { en: "Tulare County SUD Access Line", es: "Línea de Acceso por uso de sustancias del Condado de Tulare" }, number: "18667324114", display: "1-866-732-4114" },
+  ],
+};
+/** Lines for the patient's county; both counties when unknown. */
+export function countyCrisisLines(county?: string | null): CountyLine[] {
+  const c = (county ?? "").toLowerCase();
+  if (c.includes("kings")) return COUNTY_CRISIS_LINES.Kings;
+  if (c.includes("tulare")) return COUNTY_CRISIS_LINES.Tulare;
+  return [...COUNTY_CRISIS_LINES.Kings, ...COUNTY_CRISIS_LINES.Tulare];
+}
 
 export const OUTSIDE_CRISIS_COPY = {
   en: {

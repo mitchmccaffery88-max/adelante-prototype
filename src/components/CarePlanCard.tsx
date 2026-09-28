@@ -20,6 +20,7 @@ import {
   History,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { MyPlan } from "@/components/careplan/MyPlan";
 
 type Audience = "patient" | "clinician" | "ecm_provider";
 
@@ -236,6 +237,11 @@ export function CarePlanCard({
 
       {!compact && (
         <div className="mt-4 grid gap-4 sm:grid-cols-2">
+          {audience === "patient" ? (
+            <div className="sm:col-span-2">
+              <MyPlan patientId={patientId} />
+            </div>
+          ) : (
           <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
             <div className="flex items-center justify-between text-xs font-medium uppercase tracking-wider text-navy">
               <span className="inline-flex items-center gap-1.5">
@@ -304,6 +310,7 @@ export function CarePlanCard({
               </ul>
             )}
           </div>
+          )}
 
           <div className={audience === "patient" ? "sm:col-span-2" : undefined}>
             <div className="text-xs font-medium uppercase tracking-wider text-navy inline-flex items-center gap-1.5">

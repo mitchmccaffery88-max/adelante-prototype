@@ -154,6 +154,7 @@ import {
 import { TimePicker } from "@/components/TimePicker";
 import { EmptyState } from "@/components/EmptyState";
 import { CarePlanCard } from "@/components/CarePlanCard";
+import { CarePlanEditor } from "@/components/careplan/CarePlanEditor";
 import { AssignClinicianButton } from "@/components/AssignClinicianButton";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { useDraftDirty } from "@/lib/drawer-drafts";
@@ -2267,6 +2268,7 @@ export function CarePlanTab({ patientId, readOnly }: { patientId: string; readOn
   return (
     <div className="space-y-4">
       <CarePlanCard patientId={patient.id} audience="clinician" />
+      <CarePlanEditor patientId={patient.id} readOnly={readOnly} />
       <SuggestedGoalsPanel patientId={patient.id} readOnly={readOnly} />
       {/* §5-stage journey — care-team view of the person-set stage. Same
           component the patient sees, so the model can't drift between them. */}

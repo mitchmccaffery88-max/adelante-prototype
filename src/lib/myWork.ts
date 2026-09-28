@@ -1,3 +1,4 @@
+import { planReviewDue, getStructuredPlan } from "./structuredCarePlan";
 // §Reporting Redesign Tier 3 — REFLEXIVE-NEED REPORTS.
 //
 // Three questions a real staff member asks about their OWN day:
@@ -477,4 +478,11 @@ export function disengagementRows(
 /** Rows worth showing in the early-warning list: watch, at risk, or unknown. */
 export function disengagementFlagged(rows: DisengagementRow[]): DisengagementRow[] {
   return rows.filter((r) => r.level !== "ok");
+}
+
+/** Care plans on the caseload whose review is due today or earlier. */
+export function myPlanReviewsDue(actor: ActingIdentity, now: Date = new Date()) {
+  return myCaseload(actor)
+    .filter((p) => planReviewDue(p.id, now))
+    .map((p) => ({ patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, dueAt: getStructuredPlan(p.id).review.reviewDueAt! }));
 }
