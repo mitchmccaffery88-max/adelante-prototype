@@ -54,6 +54,7 @@ import { MedicationDoseSection } from "@/components/orders/MedicationDoseSection
 import { EmptyState } from "@/components/EmptyState";
 import { ClientDate } from "@/components/ClientDate";
 import { toast } from "sonner";
+import { OrderSafetyPanel } from "./OrderSafetyPanel";
 import { AlertTriangle, ClipboardList, Info, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 
@@ -349,6 +350,8 @@ export function DraftOrderCard({
         />
         SUD-related (42 CFR Part 2 — hidden from roles without substance-use access)
       </label>
+
+      <OrderSafetyPanel order={order} patientId={patientId} />
 
       {duplicate && (
         <div className="flex items-start gap-2 rounded-lg border border-amber-500 bg-amber-50/60 p-3 text-xs text-amber-700 dark:bg-amber-950/20 dark:text-amber-400">
