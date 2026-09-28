@@ -123,13 +123,26 @@ const NEED_CODES: Array<{ re: RegExp; code: string }> = [
 // ---------------------------------------------------------------- store
 const plans = new Map<string, StructuredPlan>();
 type Actor = { name: string; role: StaffRole | string };
-export const PLAN_EDIT_ROLES = ["therapist", "pmhnp", "physician", "sud_counselor", "clinical_trainee", "clinical_coordinator", "sys_admin"];
-export const PLAN_SIGN_ROLES = PLAN_EDIT_ROLES.filter((r) => r !== "clinical_trainee");
+// Product-owner decision (chart redesign turn 2): ECM providers and care
+// managers edit non-SUD items (ECM requires a care plan); trainees edit with
+// cosign (a signer must sign the plan); the clinical coordinator only
+// reassigns owners; sys_admin has no clinical care-plan editing.
+export const PLAN_EDIT_ROLES = ["therapist", "pmhnp", "physician", "sud_counselor", "clinical_trainee", "ecm_provider", "cf_care_manager"];
+export const PLAN_SIGN_ROLES = ["therapist", "pmhnp", "physician", "sud_counselor"];
+/** Trainee plan edits need a signer (their supervisor) to sign the plan. */
+export const PLAN_COSIGN_ROLES = ["clinical_trainee"];
+/** May reassign a goal's owner (coordinator: owners only, no clinical edits). */
+export const PLAN_OWNER_REASSIGN_ROLES = [...PLAN_EDIT_ROLES, "clinical_coordinator"];
 export const canEditPlan = (role: string) => PLAN_EDIT_ROLES.includes(role);
 export const canSignPlan = (role: string) => PLAN_SIGN_ROLES.includes(role);
 
 function assertEdit(actor: Actor) {
   if (!canEditPlan(actor.role)) throw new Error("Your role can't change the care plan.");
+}
+/** SUD-linked items stay masked AND uneditable for roles failing the Part 2 check. */
+function assertSudOk(actor: Actor, patientId: string, sud: boolean) {
+  if (sud && !roleSeesAsamSection(actor.role as StaffRole, patientOf(patientId)))
+    throw new Error("Your role can't change this item.");
 }
 function audit(action: string, patientId: string, actor: Actor, detail: Record<string, unknown>) {
   AdelanteEHR._recordAudit({ category: "care_plan", action, patientId, actorId: actor.name, actorRole: actor.role, detail });
@@ -248,6 +261,7 @@ export function addStructuredGoal(input: {
   const problemIds = (input.problemIds ?? []).filter((id) => problems.some((x) => x.id === id));
   const needIds = input.needIds ?? [];
   const sud = problemIds.some((id) => problems.find((x) => x.id === id)?.sud);
+  assertSudOk(input.actor, input.patientId, sud);
   const plan = getStructuredPlan(input.patientId);
   const en = input.patientText?.en?.trim() || clinical;
   const g: StructuredGoal = {
@@ -280,8 +294,11 @@ export function updateStructuredGoal(
   const plan = getStructuredPlan(patientId);
   const g = plan.goals.find((x) => x.id === goalId);
   if (!g) throw new Error("Goal not found.");
-  Object.assign(g, patch);
+  assertSudOk(actor, patientId, g.sud);
   const problems = buildPlanProblems(patientOf(patientId));
+  const nextIds = patch.problemIds ?? g.problemIds;
+  assertSudOk(actor, patientId, nextIds.some((id) => problems.find((x) => x.id === id)?.sud));
+  Object.assign(g, patch);
   g.sud = g.problemIds.some((id) => problems.find((x) => x.id === id)?.sud);
   touch(plan);
   audit("plan_goal_updated", patientId, actor, { goalId, fields: Object.keys(patch) });
@@ -292,11 +309,26 @@ export function closeStructuredGoal(patientId: string, goalId: string, outcome: 
   const plan = getStructuredPlan(patientId);
   const g = plan.goals.find((x) => x.id === goalId);
   if (!g) throw new Error("Goal not found.");
+  assertSudOk(actor, patientId, g.sud);
   g.status = outcome;
   g.closedReason = reason.trim().slice(0, 300);
   for (const a of plan.assignments) if (a.goalId === goalId) a.active = false;
   touch(plan);
   audit("plan_goal_closed", patientId, actor, { goalId, outcome });
+}
+
+/** Owner reassignment — the coordinator's only care-plan write. Reason required, audited. */
+export function reassignGoalOwner(patientId: string, goalId: string, owner: GoalOwner, reason: string, actor: Actor) {
+  if (!PLAN_OWNER_REASSIGN_ROLES.includes(actor.role)) throw new Error("Your role can't reassign plan owners.");
+  if (reason.trim().length < 3) throw new Error("Give a reason for the reassignment.");
+  const plan = getStructuredPlan(patientId);
+  const g = plan.goals.find((x) => x.id === goalId);
+  if (!g) throw new Error("Goal not found.");
+  assertSudOk(actor, patientId, g.sud);
+  const from = g.owner;
+  g.owner = owner;
+  touch(plan);
+  audit("plan_goal_owner_reassigned", patientId, actor, { goalId, from, to: owner, reason: reason.trim().slice(0, 300) });
 }
 
 // ---------------------------------------------------------------- assignments
@@ -318,6 +350,7 @@ export function assignToGoal(input: {
   const plan = getStructuredPlan(input.patientId);
   const g = plan.goals.find((x) => x.id === input.goalId && x.status === "active");
   if (!g) throw new Error("Pick an open goal.");
+  assertSudOk(input.actor, input.patientId, g.sud);
   const act = activityById(input.activityId);
   if (input.kind === "activity" && !act) throw new Error("Pick an activity.");
   const need = input.needId ? patientOf(input.patientId).sdohPlan?.items.find((i) => i.id === input.needId) : undefined;

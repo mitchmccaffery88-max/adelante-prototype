@@ -25,6 +25,7 @@ import {
   myPendingRefills,
   myTodayVisits,
   myPlanReviewsDue,
+  myPendingLabs,
   screenerDueRows,
   type DisengagementRow,
 } from "@/lib/myWork";
@@ -188,6 +189,8 @@ function MyWorkPage() {
       : [],
   );
   const planReviews = useEhr(() => myPlanReviewsDue(identity));
+  const pendingLabsJson = useEhr(() => JSON.stringify(myPendingLabs(identity, actor.role)));
+  const pendingLabRows = JSON.parse(pendingLabsJson) as ReturnType<typeof myPendingLabs>;
   const outside = useEhr(() => hieFollowUps(myCaseload(identity).map((p) => p.id), actor.role));
   const refills = useEhr(() => myPendingRefills({ ...identity, role: actor.role }));
   const myCrises = useEhr(() => caseloadCrises(identity, actor.role));
@@ -287,6 +290,30 @@ function MyWorkPage() {
                 />
               );
             })}
+          </div>
+        </section>
+      )}
+
+      {pendingLabRows.length > 0 && (
+        <section aria-labelledby="labs-pending-heading" className="space-y-3" data-testid="my-work-labs-pending">
+          <SectionHeading
+            id="labs-pending-heading"
+            icon={CalendarClock}
+            title="Result pending"
+            purpose="Placeholder lab orders (not sent) still waiting on a result."
+            count={pendingLabRows.length}
+          />
+          <div className="space-y-2">
+            {pendingLabRows.map((r) => (
+              <Row
+                key={r.id}
+                patientId={r.patientId}
+                name={r.patientName}
+                section="tracking"
+                primary={`${r.label} — result pending`}
+                secondary={dueLabel(r.dueAt)}
+              />
+            ))}
           </div>
         </section>
       )}

@@ -1,3 +1,4 @@
+import { pendingLabs, labTest } from "@/lib/chartOrders";
 import { planReviewDue, getStructuredPlan } from "./structuredCarePlan";
 // §Reporting Redesign Tier 3 — REFLEXIVE-NEED REPORTS.
 //
@@ -492,4 +493,13 @@ export function myPlanReviewsDue(actor: ActingIdentity, now: Date = new Date()) 
     })
     .filter((p) => planReviewDue(p.id, now))
     .map((p) => ({ patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, dueAt: getStructuredPlan(p.id).review.reviewDueAt! }));
+}
+
+/** §Chart redesign turn 2 — open lab orders on my caseload or ordered by me ("Result pending"). */
+export function myPendingLabs(actor: ActingIdentity, role: StaffRole) {
+  const aliases = staffAliases(actor);
+  return pendingLabs(myCaseload(actor).map((p) => p.id), role, aliases).map((o) => {
+    const p = AdelanteEHR.getPatient(o.patientId);
+    return { ...o, patientName: p ? `${p.firstName} ${p.lastName}` : "", label: labTest(o.testId)?.label ?? o.testId };
+  });
 }

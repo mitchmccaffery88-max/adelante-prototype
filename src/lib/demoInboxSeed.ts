@@ -1,3 +1,4 @@
+import { seedChartOrdersDemo } from "@/lib/chartOrders";
 import { seedStructuredCarePlanDemo } from "./structuredCarePlan";
 import { runSimulatedHieSync } from "./hie";
 import { seedDataExchangeDemo } from "./dataExchange";
@@ -278,6 +279,7 @@ export function seedDemoInbox(): void {
   safe(() => seedOutpatientCareDemo());
   safe(() => seedOrderSafetyDemo());
   safe(() => seedStructuredCarePlanDemo());
+  safe(() => seedChartOrdersDemo());
   safe(() => runSimulatedHieSync());
   // Demo: Luis gets a (clearly fake) Medi-Cal CIN through the normal
   // demographics path so the HIE match reads "same CIN".

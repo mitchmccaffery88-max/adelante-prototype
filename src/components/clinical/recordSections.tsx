@@ -37,6 +37,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { recordSectionVisible } from "@/lib/recordSectionGate";
 import { sectionHasAction } from "@/lib/chartActions";
+import { inFacilityEnabled } from "@/lib/inFacility";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
@@ -484,8 +485,8 @@ export function useRecordSections(
     urgent: counts.unreadMessages > 0,
     render: (a) => <StaffMessagesTab patientId={pid} readOnly={a.level !== "write"} />,
   });
-  // §Custody tracking — coordination data, not clinical charting.
-  add("custody_tracking", {
+  // §Custody tracking — in-facility content, behind the off-by-default flag.
+  if (inFacilityEnabled()) add("custody_tracking", {
     id: "bookings",
     // Custody (jail) bookings — distinct from visit Appointments.
     label: "Custody bookings",
@@ -495,7 +496,7 @@ export function useRecordSections(
     urgent: counts.currentlyBooked,
     render: (a) => <BookingsTab patientId={pid} readOnly={a.level !== "write"} />,
   });
-  add("custody_tracking", {
+  if (inFacilityEnabled()) add("custody_tracking", {
     id: "housing-moves",
     label: "Housing moves",
     icon: MapPin,

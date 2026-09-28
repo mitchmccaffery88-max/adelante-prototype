@@ -10,6 +10,7 @@ import { canAccess } from "@/lib/roles";
 import { screenerByKey, isPart2Screener, rescreenRule } from "@/lib/screeners";
 import { CSSRS_KEY } from "@/lib/cssrs";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { listScreenerRequests, screenerRequestStatus } from "@/lib/chartOrders";
 
 export type TrackingStatus = "completed" | "missed" | "overdue";
 
@@ -73,6 +74,12 @@ export function buildTrackingRows(patient: Patient, role: StaffRole, now = new D
   }
   for (const m of patient.missedScreeners ?? []) {
     rows.push({ key: m.key, label: instrumentLabel(m.key), date: m.dueAt, status: "missed", sud: isSudKey(m.key), trendable: false });
+  }
+  // Staff screener requests past due and not completed count as missed entries.
+  for (const r of listScreenerRequests(patient.id)) {
+    if (screenerRequestStatus(r, now) !== "overdue") continue;
+    const key = r.key === "c-ssrs" ? CSSRS_KEY : r.key;
+    rows.push({ key, label: instrumentLabel(key), date: r.dueAt, status: "missed", sud: isSudKey(key), trendable: false });
   }
   // Overdue: a scheduled instrument whose last result is older than its repeat interval.
   const lastByKey = new Map<string, number>();
