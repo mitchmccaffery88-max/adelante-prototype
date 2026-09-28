@@ -188,14 +188,17 @@ export function buildPlanProblems(patient: Patient, now = new Date()): PlanProbl
     const code = NEED_CODES.find((c) => c.re.test(it.need))?.code;
     out.push({ id: `sd-${it.id}`, source: "sdoh", code, codeDraft: true, label: it.need, sud: false, needId: it.id });
   }
-  if (inReentryWindow(patient, now, 365)) {
+  if (inReentryWindow(patient, now, 365) && !out.some((x) => x.code === "Z65.2")) {
     out.push({ id: "reentry", source: "reentry", code: "Z65.2", codeDraft: true, label: "Reentry adjustment after release", sud: false });
   }
   return out;
 }
+/** Release date, or the onset of an active Z65.2 (release from prison) problem. */
 export function inReentryWindow(patient: Patient, now = new Date(), days = 90): boolean {
-  if (!patient.releaseDate) return false;
-  const t = +new Date(patient.releaseDate);
+  const z = (patient.problems ?? []).find((x) => x.status === "active" && x.icd10Code === "Z65.2");
+  const when = patient.releaseDate || z?.onsetDate || (z ? z.createdAt : undefined);
+  if (!when) return false;
+  const t = +new Date(when);
   return !Number.isNaN(t) && t <= +now && +now - t <= days * DAY;
 }
 
@@ -504,20 +507,26 @@ export function todaysActivity(patientId: string, now = new Date()): PlanAssignm
 
 // ---------------------------------------------------------------- demo seed
 export function seedStructuredCarePlanDemo(): void {
-  const actor = { name: "Marisol Reyes, LCSW", role: "therapist" };
+  const actor = { name: "Marisol Reyes", role: "therapist" };
   const find = (n: string) => AdelanteEHR.listPatients().find((p) => p.firstName === n);
   const luis = find("Luis");
   if (luis && !getStructuredPlan(luis.id).review.signedAt) {
+    // Problem list through the normal function: anxiety + reentry (released 45 days ago).
+    if (!(luis.problems ?? []).some((x) => x.icd10Code === "F41.1"))
+      AdelanteEHR.addProblem(luis.id, { description: "Generalized anxiety disorder", icd10Code: "F41.1", category: "mental_health", onsetDate: new Date(Date.now() - 200 * DAY).toISOString().slice(0, 10), enteredBy: "therapist" });
+    if (!(luis.problems ?? []).some((x) => x.icd10Code === "Z65.2"))
+      AdelanteEHR.addProblem(luis.id, { description: "Reentry adjustment after release from prison", icd10Code: "Z65.2", category: "medical", onsetDate: new Date(Date.now() - 45 * DAY).toISOString().slice(0, 10), enteredBy: "therapist" });
     let housing = luis.sdohPlan?.items.find((i) => /hous/i.test(i.need));
     if (!housing) {
       AdelanteEHR.addSdohItem(luis.id, { need: "Housing", note: "Staying with a cousin; needs a stable place." }, { staffName: actor.name, role: "therapist" });
       housing = AdelanteEHR.getPatient(luis.id)?.sdohPlan?.items.find((i) => /hous/i.test(i.need));
     }
     const probs = buildPlanProblems(AdelanteEHR.getPatient(luis.id)!);
-    const mh = probs.find((x) => x.source === "problem_list" && !x.sud);
+    const mh = probs.find((x) => x.code === "F41.1") ?? probs.find((x) => x.source === "problem_list" && !x.sud && x.code !== "Z65.2");
     const g1 = addStructuredGoal({ patientId: luis.id, problemIds: mh ? [mh.id] : [], owner: "patient", measure: "GAD-7 below 5", targetDate: new Date(Date.now() + 60 * DAY).toISOString(), clinicalText: "Reduce anxiety symptoms using daily coping skills", patientText: { en: "Feel calmer day to day", es: "Sentirme más tranquilo cada día" }, actor });
     const g2 = addStructuredGoal({ patientId: luis.id, problemIds: housing ? [`sd-${housing.id}`] : [], needIds: housing ? [housing.id] : [], owner: "case_manager", measure: "Housing secured", targetDate: new Date(Date.now() + 90 * DAY).toISOString(), clinicalText: "Secure stable housing", patientText: { en: "Have a safe, steady place to live", es: "Tener un lugar seguro y estable para vivir" }, actor });
-    const g3 = addStructuredGoal({ patientId: luis.id, problemIds: probs.some((x) => x.id === "reentry") ? ["reentry"] : [], owner: "clinician", measure: "Attend 4 of 4 visits", targetDate: new Date(Date.now() + 30 * DAY).toISOString(), clinicalText: "Maintain engagement through reentry transition", patientText: { en: "Come to my 4 visits this month", es: "Ir a mis 4 citas este mes" }, actor });
+    const reentryProb = probs.find((x) => x.code === "Z65.2");
+    const g3 = addStructuredGoal({ patientId: luis.id, problemIds: reentryProb ? [reentryProb.id] : [], owner: "clinician", measure: "Attend 4 of 4 visits", targetDate: new Date(Date.now() + 30 * DAY).toISOString(), clinicalText: "Maintain engagement through reentry transition", patientText: { en: "Come to my 4 visits this month", es: "Ir a mis 4 citas este mes" }, actor });
     const bb = assignToGoal({ patientId: luis.id, goalId: g1.id, kind: "activity", activityId: "box-breathing", frequency: "daily", actor });
     const ws = +weekStart(new Date());
     for (let d = 0; d < 7 && ws + d * DAY < Date.now() - DAY / 2 && bb.completions.length < 2; d++) bb.completions.push(new Date(ws + d * DAY + 10 * 3600000).toISOString());

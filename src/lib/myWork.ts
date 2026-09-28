@@ -482,7 +482,14 @@ export function disengagementFlagged(rows: DisengagementRow[]): DisengagementRow
 
 /** Care plans on the caseload whose review is due today or earlier. */
 export function myPlanReviewsDue(actor: ActingIdentity, now: Date = new Date()) {
-  return myCaseload(actor)
+  // Caseload patients, plus plans this person signed (a signer owns the review).
+  const aliases = staffAliases(actor);
+  const mine = new Set(myCaseload(actor).map((p) => p.id));
+  return AdelanteEHR.listPatients()
+    .filter((p) => {
+      const by = getStructuredPlan(p.id).review.signedBy;
+      return mine.has(p.id) || (!!by && (owns(aliases, by) || owns(aliases, by.split(",")[0]!.trim())));
+    })
     .filter((p) => planReviewDue(p.id, now))
     .map((p) => ({ patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, dueAt: getStructuredPlan(p.id).review.reviewDueAt! }));
 }

@@ -192,8 +192,7 @@ export function MyPlan({ patientId }: { patientId: string }) {
         <ul className="mt-2 space-y-1 text-sm">
           {visits.map((v) => (
             <li key={v.id}>
-              <ClientDate value={v.start} />{" "}
-              {new Date(v.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}
+              <ClientDate value={v.start} options={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} />
             </li>
           ))}
         </ul>

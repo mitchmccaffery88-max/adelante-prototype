@@ -91,7 +91,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         <div className="flex flex-wrap items-center gap-2 text-xs">
           {r.reviewDueAt && (
             <Badge variant={due ? "destructive" : "outline"} data-testid="plan-review-due">
-              {due ? "Plan review due" : "Review"} · <ClientDate value={r.reviewDueAt} />
+              {due ? "Plan review due" : "Review due"} · <ClientDate value={r.reviewDueAt} options={{ dateStyle: "medium" }} />
             </Badge>
           )}
           {edit && canSignPlan(role) && (
@@ -181,7 +181,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                     {g.measure && ` · Measure: ${g.measure}`}
                     {g.targetDate && (
                       <>
-                        {" "}· Target <ClientDate value={g.targetDate} />
+                        {" "}· Target <ClientDate value={g.targetDate} options={{ dateStyle: "medium" }} />
                       </>
                     )}
                     {g.problemIds.length > 0 && ` · Linked: ${g.problemIds.map((id) => view.problems.find((p) => p.id === id)?.code ?? view.problems.find((p) => p.id === id)?.label ?? "").filter(Boolean).join(", ")}`}
