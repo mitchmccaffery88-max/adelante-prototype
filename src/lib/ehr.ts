@@ -6590,8 +6590,9 @@ const recoveryStageEntries: RecoveryStageEntry[] = [];
 export type RefillStatus = "pending" | "approved" | "denied" | "sent_to_pharmacy" | "needs_appointment";
 /** True for medications used to treat opioid/alcohol use disorder (Part 2 protected). */
 export function isSudMedicationName(name: string): boolean {
-  return /suboxone|methadone|naltrexone|buprenorphine|acamprosate|disulfiram|vivitrol|sublocade/i.test(name);
+  return isSudMedicationText(name);
 }
+import { isSudMedicationText, isSudMedication as _isSudMed } from "@/lib/sudMedClassifier";
 export interface RefillRequest {
   id: string;
   patientId: string;
