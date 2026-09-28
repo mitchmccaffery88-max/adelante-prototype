@@ -23,7 +23,7 @@ import {
 } from "@/components/clinical/recordSections";
 import { EmptyState } from "@/components/EmptyState";
 import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
-import { ArrowLeft, FlaskConical, MoreHorizontal, PanelLeft } from "lucide-react";
+import { ArrowLeft, FlaskConical, MoreHorizontal, PanelLeft, Zap } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
