@@ -74,7 +74,7 @@ export function buildNoteDraft(p: Patient, role: StaffRole, now = new Date()): N
   for (const e of hieChartView(p.id, role).encounters.filter((e) => e.at > since))
     changes.push(`${KIND_LABEL[e.kind]} at ${e.facility} on ${d(e.at)} (HIE, simulated)`);
   const goals = staffPlanView(p.id, role).goals.filter((g) => g.status === "active");
-  for (const g of goals) changes.push(`Care-plan goal "${g.staffText ?? g.patientText ?? "goal"}": ${goalProgress(p.id, g.id, now)}% progress`);
+  for (const g of goals) changes.push(`Care-plan goal "${g.clinicalText}": ${goalProgress(p.id, g.id, now)}% progress`);
 
   const risk: string[] = [];
   const cs = latestFromHistory(p, CSSRS_KEY);
@@ -260,8 +260,8 @@ export function buildReferralPacket(r: HlocReferral, role: StaffRole, now = new 
     `Referral summary — ${HLOC_TARGET_LABEL[r.target]} at ${r.destination}`,
     `Patient: ${p.firstName} ${p.lastName}${p.dob ? `, DOB ${p.dob}` : ""}`,
     `Urgency: ${r.urgency}. Reason: ${r.reason}`,
-    `Active problems: ${problems.length ? problems.map((x) => `${x.description ?? x.icd10Code}${x.icd10Code ? ` (${x.icd10Code})` : ""}`).join("; ") : "none on file"}`,
-    `Medications: ${meds.visible.length ? meds.visible.map((o) => `${o.drugName}${o.dose ? ` ${o.dose}` : ""}`).join("; ") : "none on file"}${meds.hiddenCount ? " (some medications not shown for your role)" : ""}`,
+    `Active problems: ${problems.length ? problems.map((x) => `${x.description}${x.icd10Code ? ` (${x.icd10Code})` : ""}`).join("; ") : "none on file"}`,
+    `Medications: ${meds.visible.length ? meds.visible.map((o) => `${o.drugName}${o.dose ? ` ${o.dose}` : ""}`).join("; ") : "none on file"}${meds.hidden ? " (some medications not shown for your role)" : ""}`,
     `Recent measures: ${[phq && `PHQ-9 ${phq.score} (${d(phq.date)})`, gad && `GAD-7 ${gad.score} (${d(gad.date)})`, met && `BP ${met.bpSystolic}/${met.bpDiastolic}, BMI ${met.bmi}`].filter(Boolean).join("; ") || "none on file"}`,
   ];
   if (seesSud) {
