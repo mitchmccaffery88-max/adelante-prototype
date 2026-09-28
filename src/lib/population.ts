@@ -154,6 +154,7 @@ export function populationFactsFor(patientId: string): PopulationFacts | undefin
     hasReferralRecord: Boolean(p.referralId),
     hasMissedPreReleaseFlag: Boolean(p.missedPreReleaseCoordination),
     hasJiReentryFlag: Boolean(p.coverage?.jiReentryFlag),
+    hasJusticeRecordSignal: isJusticeInvolved(p),
   };
 }
 
