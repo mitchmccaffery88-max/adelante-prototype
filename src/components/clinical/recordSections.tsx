@@ -36,6 +36,7 @@ import type { LucideIcon } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, canAccess, type RecordClass } from "@/lib/roles";
 import { recordSectionVisible } from "@/lib/recordSectionGate";
+import { sectionHasAction } from "@/lib/chartActions";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { useI18n } from "@/lib/i18n";
 import { isReferralOpen } from "@/lib/noteAutofill";
@@ -122,7 +123,10 @@ export function useRecordSections(
   patient: Patient,
   opts: { initialNoteTemplateKey?: string } = {},
 ): RecordSection[] {
-  const { role } = useActingStaff();
+  const { role, staffId, clinicianId } = useActingStaff() as ReturnType<typeof useActingStaff> & {
+    staffId?: string;
+    clinicianId?: string;
+  };
   const { t } = useI18n();
   const counts = useEhr(() => {
     const fresh = AdelanteEHR.getPatient(patient.id) ?? patient;
@@ -151,6 +155,12 @@ export function useRecordSections(
   });
 
   const gate = (cls: RecordClass) => canAccess(role, cls, patient);
+  const actor = { role, staffId, clinicianId };
+  const anyView = (...cls: RecordClass[]) =>
+    cls.some((c) => {
+      const a = gate(c);
+      return a.level !== "none" && !a.locked;
+    });
   const pid = patient.id;
   const sections: RecordSection[] = [];
 
@@ -162,12 +172,17 @@ export function useRecordSections(
       alwaysVisible?: boolean;
     },
   ) => {
+    // §Chart redesign — a section appears only if the role can view its data
+    // OR act in it (chart action registry). No more locked stubs.
     const access = gate(cls);
-    if (!recordSectionVisible(cls, access, def.alwaysVisible)) return;
+    const canView = recordSectionVisible(cls, access) && !access.locked;
+    const canAct = sectionHasAction(def.id, actor, patient);
+    if (!def.alwaysVisible && !canView && !canAct) return;
     const { render, alwaysVisible: _av, ...rest } = def;
     sections.push({
       ...rest,
-      render: () => (access.locked ? <LockedNote reason={access.reason} /> : render(access)),
+      render: () =>
+        !canView && !canAct && access.locked ? <LockedNote reason={access.reason} /> : render(access),
     });
   };
 
@@ -177,7 +192,6 @@ export function useRecordSections(
     label: "Overview",
     icon: LayoutDashboard,
     group: "chart",
-    alwaysVisible: true,
     render: () => (
       <>
         <DemographicsCard patientId={pid} />
@@ -235,20 +249,13 @@ export function useRecordSections(
   // for any role failing roleSeesAsamSection.
   if (roleSeesAsamSection(role, patient)) add("sud_treatment", {
     id: "caloms",
-    label: "CalOMS data -Data Collection and Reporting System for SUD",
+    label: "CalOMS (SUD data reporting)",
     icon: ListChecks,
     group: "chart",
     render: (a) => <CalomsProfileCard patientId={pid} readOnly={a.level !== "write"} />,
   });
   // §B3/B4 — outpatient episodes + higher-level referrals. SUD rows are
   // masked inside the panel ("Active in Adelante care").
-  add("therapy_notes", {
-    id: "episodes",
-    label: "Episodes & referrals",
-    icon: ListChecks,
-    group: "chart",
-    render: () => <CareEpisodesPanel patientId={pid} />,
-  });
   // §Phase 7 — patient-authored safety plan. Clinical-adjacent, so it lives in
   // the Chart group next to Alerts (where crisis work already happens), gated
   // by its own `safety_plan` class rather than therapy_notes.
@@ -340,10 +347,9 @@ export function useRecordSections(
   // ----- Case management -----
   add("demographics", {
     id: "contact",
-    label: "Contact",
+    label: "Contact info",
     icon: UserRound,
     group: "case",
-    alwaysVisible: true,
     render: (a) => <ContactTab patientId={pid} readOnly={a.level === "read"} />,
   });
   add("case_notes", {
@@ -351,7 +357,6 @@ export function useRecordSections(
     label: "Check-ins",
     icon: CalendarCheck,
     group: "case",
-    alwaysVisible: true,
     render: (a) => <CheckInsTab patientId={pid} readOnly={a.level === "read"} />,
   });
   add("sdoh", {
@@ -359,31 +364,39 @@ export function useRecordSections(
     label: "SDOH",
     icon: Home,
     group: "case",
-    alwaysVisible: true,
     count: counts.sdoh,
     render: (a) => <SdohTab patientId={pid} readOnly={a.level === "read"} />,
   });
-  add("sdoh", {
-    id: "referrals",
-    label: "Referrals",
-    icon: RouteIcon,
-    group: "case",
-    alwaysVisible: true,
-    count: counts.referrals,
-    render: (a) => (
-      <ReferralsTab
-        patientId={pid}
-        sudGated={gate("sud_treatment").locked}
-        readOnly={a.level === "read"}
-      />
-    ),
-  });
+  // §Chart redesign — one "Episodes & referrals" section: outpatient
+  // episodes + higher-level referrals (B3/B4) and SDOH/resource referrals.
+  if (anyView("therapy_notes", "sdoh") || sectionHasAction("episodes", actor, patient)) {
+    const episodesView = anyView("therapy_notes") || sectionHasAction("episodes", actor, patient);
+    const referralsAccess = gate("sdoh");
+    sections.push({
+      id: "episodes",
+      label: "Episodes & referrals",
+      icon: RouteIcon,
+      group: "case",
+      count: counts.referrals,
+      render: () => (
+        <div className="space-y-6">
+          {episodesView && <CareEpisodesPanel patientId={pid} />}
+          {referralsAccess.level !== "none" && !referralsAccess.locked && (
+            <ReferralsTab
+              patientId={pid}
+              sudGated={gate("sud_treatment").locked}
+              readOnly={referralsAccess.level === "read"}
+            />
+          )}
+        </div>
+      ),
+    });
+  }
   add("eligibility", {
     id: "eligibility",
     label: "Eligibility",
     icon: ClipboardCheck,
     group: "case",
-    alwaysVisible: true,
     render: (a) => <EligibilityTab patientId={pid} readOnly={a.level === "read"} />,
   });
   // §Advocate build 1 — advocate connections are consent instruments, so they
@@ -394,7 +407,6 @@ export function useRecordSections(
     label: "Advocates",
     icon: ShieldCheck,
     group: "case",
-    alwaysVisible: true,
     render: (a) => <StaffAdvocatesTab patientId={pid} readOnly={a.level === "read"} />,
   });
   add("case_notes", {
@@ -402,16 +414,23 @@ export function useRecordSections(
     label: "Tasks",
     icon: ListChecks,
     group: "case",
-    alwaysVisible: true,
     count: counts.tasks,
-    render: () => (
-      <div className="space-y-4">
-        <AppointmentRequestsCard patientId={pid} />
-        <PatientVisitsCard patientId={pid} />
-        <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />
-      </div>
-    ),
+    render: () => <TasksTab patientId={pid} readOnly={gate("case_notes").level === "read"} />,
   });
+  // §Chart redesign — visits and appointment requests get their own section.
+  if (anyView("case_notes", "care_coordination", "therapy_notes") || sectionHasAction("appointments", actor, patient))
+    sections.push({
+      id: "appointments",
+      label: "Appointments",
+      icon: CalendarCheck,
+      group: "case",
+      render: () => (
+        <div className="space-y-4">
+          <AppointmentRequestsCard patientId={pid} />
+          <PatientVisitsCard patientId={pid} />
+        </div>
+      ),
+    });
   add("peer_notes", {
     id: "peer",
     label: t("recPeerNotes"),
@@ -436,22 +455,22 @@ export function useRecordSections(
   });
 
   // ----- Coordination -----
-  add("case_notes", {
-    id: "coord",
-    label: "External",
-    icon: Building2,
-    group: "coordination",
-    alwaysVisible: true,
-    render: () => <CoordinationTab patientId={pid} part2Consent={patient.consents.part2Sud} />,
-  });
-  add("care_coordination", {
-    id: "providers",
-    label: "Providers",
-    icon: Stethoscope,
-    group: "coordination",
-    alwaysVisible: true,
-    render: () => <ProviderHistoryTab patientId={pid} />,
-  });
+  // §Chart redesign — "External" + "Providers" merged into one section.
+  if (anyView("case_notes", "care_coordination"))
+    sections.push({
+      id: "coord",
+      label: "Outside providers",
+      icon: Building2,
+      group: "coordination",
+      render: () => (
+        <div className="space-y-6">
+          {anyView("case_notes") && (
+            <CoordinationTab patientId={pid} part2Consent={patient.consents.part2Sud} />
+          )}
+          {anyView("care_coordination") && <ProviderHistoryTab patientId={pid} />}
+        </div>
+      ),
+    });
   // §Messaging Phase 2 — Coordination group: this is a communication channel
   // with the patient, not clinical charting, and it sits next to the other
   // "who is talking to whom" surfaces (External, Providers).
@@ -467,7 +486,8 @@ export function useRecordSections(
   // §Custody tracking — coordination data, not clinical charting.
   add("custody_tracking", {
     id: "bookings",
-    label: "Bookings",
+    // Custody (jail) bookings — distinct from visit Appointments.
+    label: "Custody bookings",
     icon: KeyRound,
     group: "coordination",
     count: counts.bookings,
