@@ -1,3 +1,5 @@
+import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
+import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { DemographicsCard } from "@/components/clinical/DemographicsCard";
 import { PatientVisitsCard } from "@/components/scheduling/VisitActions";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
@@ -196,6 +198,8 @@ export function useRecordSections(
     group: "chart",
     render: () => (
       <>
+        <ReferralStatusTimeline patient={patient} />
+        <RecordSafetyBadges patient={patient} />
         <DemographicsCard patientId={pid} />
         <OverviewTab patientId={pid} />
         <HieTimelineStrip patientId={pid} />
