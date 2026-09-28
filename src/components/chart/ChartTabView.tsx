@@ -5,7 +5,8 @@ import { useEffect, useState } from "react";
 import { ChevronDown } from "lucide-react";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff, type StaffRole } from "@/lib/roles";
-import { CHART_TABS, type ChartTabId } from "@/lib/chartTabs";
+import { CHART_TABS, IN_FACILITY_SECTIONS, type ChartTabId } from "@/lib/chartTabs";
+import { inFacilityEnabled } from "@/lib/inFacility";
 import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { staffPlanView, planNeeds } from "@/lib/structuredCarePlan";
 import { measureSeries } from "@/lib/chartBrief";
@@ -15,7 +16,7 @@ import type { RecordSection } from "@/components/clinical/recordSections";
 import { Card } from "@/components/ui/card";
 
 export function tabsWithSections(sections: RecordSection[]) {
-  return CHART_TABS.map((t) => ({ ...t, subs: t.sections.map((id) => sections.find((s) => s.id === id)).filter(Boolean) as RecordSection[] })).filter(
+  return CHART_TABS.map((t) => ({ ...t, subs: t.sections.filter((id) => inFacilityEnabled() || !IN_FACILITY_SECTIONS.includes(id)).map((id) => sections.find((s) => s.id === id)).filter(Boolean) as RecordSection[] })).filter(
     (t) => t.subs.length > 0,
   );
 }
