@@ -1,12 +1,16 @@
 import { beforeAll, describe, expect, it } from "vitest";
 import { AdelanteEHR, demoScenarioPatientId } from "@/lib/ehr";
 import { seedChartOrdersDemo } from "@/lib/chartOrders";
+import { seedStructuredCarePlanDemo } from "@/lib/structuredCarePlan";
 import {
   adelBrief, briefHasNew, canEditSticky, chartEvents, dueNow, getStickyNote, headerAlerts, markBriefSeen, reentryDay,
   roleCardOrder, setStickyNote, bucketOf,
 } from "@/lib/chartBrief";
 
-beforeAll(() => seedChartOrdersDemo());
+beforeAll(() => {
+  seedStructuredCarePlanDemo();
+  seedChartOrdersDemo();
+});
 const luis = () => AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented")!)!;
 const SUD = /substance|opioid|alcohol|asam|sud\b|drug screen|buprenorph|methadone|naltrex|audit|dast/i;
 
