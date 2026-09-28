@@ -144,3 +144,25 @@ describe("crisis flag — every patient-contact role", () => {
     }
   });
 });
+
+describe("sections with nothing to do are hidden", () => {
+  // Mirrors useRecordSections: visible when the role can view (not locked) OR act.
+  const visible = (role: StaffRole, cls: Parameters<typeof canAccess>[1], sectionId: string, p: Patient) => {
+    const a = canAccess(role, cls, p);
+    return (a.level !== "none" && !a.locked) || CHART_ACTIONS.some(
+      (x) => x.sectionId === sectionId && !x.pending && x.allowed({ role }, p).state !== "hidden",
+    );
+  };
+  it("billing sees no Tasks section; sys_admin and peer see no Eligibility", () => {
+    const p = luis();
+    expect(visible("billing", "case_notes", "tasks", p)).toBe(false);
+    expect(visible("sys_admin", "eligibility", "eligibility", p)).toBe(false);
+    expect(visible("peer_specialist", "eligibility", "eligibility", p)).toBe(false);
+  });
+  it("ECM provider keeps Tasks and Eligibility (she writes both) but never ASAM", () => {
+    const p = luis();
+    expect(visible("ecm_provider", "case_notes", "tasks", p)).toBe(true);
+    expect(visible("ecm_provider", "eligibility", "eligibility", p)).toBe(true);
+    expect(roleSeesAsamSection("ecm_provider", p)).toBe(false);
+  });
+});
