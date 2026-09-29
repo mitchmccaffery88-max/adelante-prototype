@@ -18,7 +18,7 @@ export function ExistingPersonStep({
   onBack,
   onCreated,
 }: {
-  operator: { staffId: string; staffName: string; role: StaffRole };
+  operator: { staffId: string; staffName: string; role: string };
   existingIds: string[];
   input: Record<string, unknown>;
   onBack: () => void;
@@ -27,7 +27,7 @@ export function ExistingPersonStep({
   const [reason, setReason] = useState("");
   const existing = existingIds.map((id) => AdelanteEHR.getPatient(id)).filter((p): p is Patient => Boolean(p));
   const createAnyway = () => {
-    const r = runAction<Patient>("patient_create_anyway", { role: operator.role, staffId: operator.staffId, staffName: operator.staffName }, undefined, {
+    const r = runAction<Patient>("patient_create_anyway", { role: operator.role as StaffRole, staffId: operator.staffId, staffName: operator.staffName }, undefined, {
       args: [{ ...input, createAnyway: { reason, actorId: operator.staffId, actorRole: operator.role } }],
     });
     if (!r.ok) return toast.error(r.reason);
