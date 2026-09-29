@@ -2,6 +2,7 @@ import { describe, expect, it } from "vitest";
 import { CHART_ACTIONS } from "@/lib/chartActions";
 import { scheduleSegments, workspaceActionRows, workspaceTileOrder } from "@/lib/clinicianWorkspace";
 import { getStaffMember } from "@/lib/roles";
+import { isInFacilityTask } from "@/lib/inFacility";
 import type { Appointment } from "@/lib/ehr";
 
 const actor = (id: string) => {
@@ -48,6 +49,13 @@ describe("clinician workspace tiles", () => {
     expect(closing).toHaveLength(1);
     expect(closing[0].group).toBe("now");
     expect(closing[0].action).toBe("Mark attended");
+  });
+
+  it("keeps medication passes and protocol rounds out of the outpatient queue", () => {
+    expect(isInFacilityTask({ taskType: "med_pass" })).toBe(true);
+    expect(isInFacilityTask({ taskType: "protocol_round" })).toBe(true);
+    expect(isInFacilityTask({ taskType: "outpatient_follow_up" })).toBe(false);
+    expect(workspaceActionRows({ actor: actor("s-th1"), needsClosing: [] }).some((row) => /Medication pass — morning/.test(row.label))).toBe(false);
   });
 });
 

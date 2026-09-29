@@ -49,7 +49,7 @@ export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppo
   const strip = [
     { id: "next", label: "Next visit", value: next ? `${new Date(next.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${nextPatient?.firstName ?? "Patient"}` : "None", tile: "schedule" as const, segment: "up_next" as const, zero: !next },
     { id: "left", label: "Visits left today", value: String(segments.up_next.length + segments.in_progress.length), tile: "schedule" as const, segment: "up_next" as const, zero: segments.up_next.length + segments.in_progress.length === 0 },
-    { id: "closing", label: "Needs closing", value: String(rows.filter((r) => r.kind === "closing").length), tile: "actions" as const, zero: needsClosing.length === 0, kind: "closing" as const },
+    { id: "closing", label: "Needs closing", value: String(rows.filter((r) => r.kind === "closing").length), tile: "actions" as const, zero: !rows.some((r) => r.kind === "closing"), kind: "closing" as const },
     { id: "unsigned", label: "Unsigned", value: String(unsigned), tile: "actions" as const, zero: unsigned === 0, kind: "unsigned" as const },
     { id: "cosign", label: "Cosign", value: String(cosign), tile: "actions" as const, zero: cosign === 0, kind: "cosign" as const },
     ...(isPrescriberRole(actor.role) ? [{ id: "refills", label: "Refills", value: String(rows.filter((r) => r.kind === "refill").length), tile: "actions" as const, zero: !rows.some((r) => r.kind === "refill"), kind: "refill" as const }] : []),
