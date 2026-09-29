@@ -128,6 +128,6 @@ function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenCh
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [itemId, setItemId] = useState("");
   const item = patient?.sdohPlan?.items.find((need) => need.id === itemId);
-  const needs = patient?.sdohPlan?.items.filter((need) => need.status !== "resolved" && need.status !== "declined") ?? [];
+  const needs = patient?.sdohPlan?.items.filter((need) => need.status !== "completed" && need.status !== "not_completed") ?? [];
   return <div className="space-y-3"><p className="text-sm font-medium">Select a need for this referral</p>{needs.length ? needs.map((need) => <Button key={need.id} variant="outline" className="h-auto w-full justify-start whitespace-normal text-left" onClick={() => setItemId(need.id)}>{need.need}</Button>) : <p className="text-sm text-muted-foreground">No open needs. Add a need to the care plan first.</p>}<Button variant="link" className="px-0" onClick={() => onOpenChart(patientId, "sdoh")}>Open care plan</Button>{item && <ReferForNeedDialog patientId={patientId} item={item} open={!!itemId} onOpenChange={(open) => { if (!open) setItemId(""); }} />}</div>;
 }
