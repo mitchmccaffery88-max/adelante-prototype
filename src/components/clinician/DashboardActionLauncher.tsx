@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { confirmationFor } from "@/lib/actions/runAction";
 import { act, actFor } from "@/lib/actions/act";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
@@ -84,7 +85,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
   const patientFree = available.filter((x) => x.action.needsPatient === false);
   const patientActions = available.filter((x) => x.action.needsPatient !== false && !["addendum", "cures", "demographics_edit", "discharge_episode"].includes(x.action.id));
   const needsPick = selected && selected.action.needsPatient !== false && !patient;
-  const done = (message: string) => { toast.success(message); setSelected(null); };
+  const done = (message: string) => { toast.success(selected ? confirmationFor(selected.action.id, message) : message); setSelected(null); };
   const body = (): ReactNode => {
     if (!selected) return null;
     if (needsPick) return <PatientStep patients={results} query={query} setQuery={setQuery} choose={(id) => {
