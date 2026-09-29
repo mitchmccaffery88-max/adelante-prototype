@@ -1155,7 +1155,7 @@ export const AdelanteEHRExt = {
     // §Signed-note revisions — a voided note blocks an unsubmitted claim.
     if (c.voidBlocked && ["coded", "generated", "submitted", "signed"].includes(to))
       return { ok: false, error: CLAIM_BLOCKED_VOIDED };
-    if (c.duplicateReview && ["generated", "submitted"].includes(to))
+    if (c.duplicateReview && ["coded", "signed", "generated", "submitted"].includes(to))
       return { ok: false, error: DUPLICATE_CLAIM_BLOCKED };
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
