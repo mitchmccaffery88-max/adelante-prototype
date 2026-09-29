@@ -1,4 +1,5 @@
 import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
+import { actResult, actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -200,7 +201,7 @@ function BillingPage() {
       reason = window.prompt(prompt) ?? undefined;
       if (!reason?.trim()) return;
     }
-    const res = AdelanteEHRExt.transitionClaim(claim.id, to, reason ? { denialReason: reason } : undefined);
+    const res = actResult<ReturnType<typeof AdelanteEHRExt.transitionClaim>>("claim_status", "transitionClaim", claim.patientId, claim.id, to, reason ? { denialReason: reason } : undefined);
     if (!res.ok) {
       toast.error(res.error);
       return;
@@ -209,7 +210,8 @@ function BillingPage() {
   }
 
   function downloadIsl() {
-    const csv = AdelanteEHR.exportIslReport();
+    let csv: string;
+    try { csv = actFor<string>("isl_export", "exportIslReport", undefined); } catch (e) { toast.error((e as Error).message); return; }
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");

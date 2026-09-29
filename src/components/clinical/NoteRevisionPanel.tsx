@@ -1,6 +1,7 @@
 // §Signed-note revisions — addendum, correction (new version), void with
 // approval, late-entry label and version history. The signed body above this
 // panel is never edited in place.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, noteStatus, type ProgressNote } from "@/lib/ehr";
@@ -172,7 +173,7 @@ export function NoteRevisionPanel({
               disabled={text.trim().length < 3}
               onClick={() =>
                 run(
-                  () => AdelanteEHR.addNoteAddendum(patientId, note.id, { text, byId: myId, byName: staffName, role }),
+                  () => act("addendum", "addNoteAddendum", patientId, note.id, { text, byId: myId, byName: staffName, role }),
                   "Addendum added",
                 )
               }

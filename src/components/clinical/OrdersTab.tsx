@@ -7,6 +7,7 @@
 // duplicate-therapy checking, DEA schedule badges. Free-text inputs below are
 // placeholders for those catalogs — keep the field names when swapping them in.
 
+import { act, actFor } from "@/lib/actions/act";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isProblemClinicallyActive, type MedOrder } from "@/lib/ehr";
 import { useActingStaff, staffForRole, getStaffMember, canAccess } from "@/lib/roles";
@@ -749,7 +750,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   const stage = (sel: CatalogSelection) => {
     if (viewOnly) return;
-    AdelanteEHR.addDraftOrder(patientId, {
+    act<MedOrder>("med_order", "addDraftOrder", patientId, {
       drugName: sel.productName,
       productName: sel.productName,
       rxcui: sel.rxcui,
@@ -771,7 +772,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
     );
     let n = 0;
     try {
-      n = AdelanteEHR.signOrders(patientId, drafts.map((d) => d.id), staffName, {
+      n = act<unknown[]>("med_order", "signOrders", patientId, drafts.map((d) => d.id), staffName, {
         strengthProvenance,
         actorRole: role,
       }).length;

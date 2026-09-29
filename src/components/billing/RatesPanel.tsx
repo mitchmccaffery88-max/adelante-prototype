@@ -3,6 +3,7 @@
 // billing corrections). Every write goes through src/lib/rates.ts or
 // `AdelanteEHRExt.correctClaim`, which enforce billing write themselves; the
 // hidden buttons here are only fast feedback.
+import { actResult, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -75,7 +76,7 @@ function CorrectClaim({ claim }: { claim: Claim }) {
     if (code !== (claim.serviceCode ?? "")) change.serviceCode = code;
     if (program !== (claim.program ?? "")) change.program = program;
     if (Number(units) !== (claim.units ?? 1)) change.units = Number(units);
-    const r = AdelanteEHRExt.correctClaim(claim.id, change, reason);
+    const r = actResult<ReturnType<typeof AdelanteEHRExt.correctClaim>>("claim_correct", "correctClaim", claim.patientId, claim.id, change, reason);
     if (!r.ok) return toast.error(r.error);
     toast.success(r.claim.rateStatus === "priced" ? `Re-priced: ${DOLLARS(r.claim.chargeCents)}` : "Corrected — still no rate on file");
     setOpen(false);

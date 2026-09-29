@@ -1,6 +1,7 @@
 // §Phase 7d — who owes what on a claim, the unrecorded-arrangement flag, and
 // manual patient payment recording. Every write goes through ehr-ext, which
 // enforces billing write itself; the page guard is feedback only.
+import { actResult, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AlertTriangle } from "lucide-react";
@@ -74,7 +75,7 @@ function ArrangementPicker({ patientId, current }: { patientId: string; current?
         className={inputCls}
         value={current ?? ""}
         onChange={(e) => {
-          const r = AdelanteEHRExt.setPaymentArrangement(patientId, e.target.value as PaymentArrangement);
+          const r = actResult<ReturnType<typeof AdelanteEHRExt.setPaymentArrangement>>("payment_arrangement", "setPaymentArrangement", patientId, patientId, e.target.value as PaymentArrangement);
           if (!r.ok) return toast.error(r.error);
           toast.success(`Arrangement saved · ${r.repriced.length} open claim(s) re-priced`);
         }}
@@ -100,7 +101,7 @@ function RecordPayment({ claim }: { claim: Claim }) {
   const [ref, setRef] = useState("");
   const save = () => {
     const cents = Math.round(Number(amount) * 100);
-    const r = AdelanteEHRExt.recordPatientPayment({
+    const r = actResult<ReturnType<typeof AdelanteEHRExt.recordPatientPayment>>("payment_record", "recordPatientPayment", claim.patientId, {
       claimId: claim.id,
       amountCents: cents,
       receivedOn: date,
@@ -160,7 +161,7 @@ function VoidPayment({ claimId, paymentId }: { claimId: string; paymentId: strin
       className="ml-1 underline"
       onClick={() => {
         const reason = window.prompt("Reason for voiding this payment?") ?? "";
-        const r = AdelanteEHRExt.voidPatientPayment(claimId, paymentId, reason);
+        const r = actResult<ReturnType<typeof AdelanteEHRExt.voidPatientPayment>>("payment_void", "voidPatientPayment", undefined, claimId, paymentId, reason);
         if (!r.ok) toast.error(r.error);
         else toast.success("Payment voided");
       }}

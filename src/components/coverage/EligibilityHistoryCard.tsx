@@ -1,5 +1,6 @@
 // §Phase 8c — the chart's eligibility history with a source badge on every
 // record, plus the honest "Check electronically" control.
+import { actResult, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -30,7 +31,7 @@ export function EligibilityHistoryCard({
             size="sm"
             variant="outline"
             data-testid="check-electronically"
-            onClick={() => setNotice(checkEligibility(patientId).detail)}
+            onClick={() => { try { setNotice(actFor<ReturnType<typeof checkEligibility>>("eligibility_check", "checkEligibility", patientId, patientId).detail); } catch (e) { setNotice((e as Error).message); } }}
           >
             Check electronically
           </Button>

@@ -5,6 +5,7 @@ import { canDoChartAction } from "@/lib/chartActions";
 // Placement rationale: the escalation IS a PatientAlert, so the Alerts tab is
 // where a clinician already looks for the flag. Keeping both in one place
 // means the flag and its workflow record can never drift visually.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import {
@@ -180,7 +181,7 @@ export function FlagCrisisButton({
 
   const submit = () => {
     try {
-      AdelanteEHR.flagCrisis(patientId, staffName, reason);
+      act("crisis_flag", "flagCrisis", patientId, staffName, reason);
       toast.success("Crisis flagged — critical alert created and added to the crisis queue.");
       setReason("");
       setOpen(false);

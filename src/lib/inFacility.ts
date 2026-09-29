@@ -4,14 +4,15 @@
 // hidden behind ONE segment flag, off by default. The code and tests stay.
 // Connections to inpatient facilities (higher-level referrals, discharge and
 // transfer records) are outpatient work and are NOT behind this flag.
-let enabled = false;
+import { isFeatureEnabled, setFeatureEnabled } from "@/lib/features";
 
+/** Reads the `in_facility` flag from the feature registry (src/lib/features.ts). */
 export function inFacilityEnabled(): boolean {
-  return enabled;
+  return isFeatureEnabled("in_facility");
 }
 /** Test / future-segment hook. */
 export function setInFacilityEnabled(on: boolean): void {
-  enabled = on;
+  setFeatureEnabled("in_facility", on);
 }
 
 /** Staff nav entries that are in-facility only. */

@@ -1,4 +1,5 @@
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
+import { act, actFor } from "@/lib/actions/act";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -120,6 +121,11 @@ function ClinicianPage() {
   useEffect(() => {
     setViewAsId("");
   }, [acting.staffId]);
+  // §Batch D — standard action events record the viewed person under "View as".
+  useEffect(() => {
+    setViewingStaff(ws.viewingAs ? ws.staffId : undefined);
+    return () => setViewingStaff(undefined);
+  }, [ws.viewingAs, ws.staffId]);
   useEffect(() => {
     if (!ws.viewingAs) return;
     AdelanteEHR.recordWorkspaceViewAs({ id: acting.staffId, name: acting.staffName, role: acting.role }, { id: ws.staffId, name: ws.staffName });
@@ -192,7 +198,7 @@ function ClinicianPage() {
       return;
     }
     try {
-      AdelanteEHR.bookAppointment({
+      act("schedule_visit", "bookAppointment", {
         patientId: book.patientId,
         clinicianId,
         start: new Date(book.start).toISOString(),
@@ -1412,7 +1418,7 @@ function RefillReviewCardInner() {
                       className="h-7 text-[11px] bg-teal text-teal-foreground hover:bg-teal/90"
                       onClick={() => {
                         try {
-                          AdelanteEHR.reviewRefill({
+                          actFor("refill_decision", "reviewRefill", r.patientId, {
                             id: r.id,
                             decision: "approved",
                             clinicianId: actorId,
@@ -1466,7 +1472,7 @@ function RefillReviewCardInner() {
                       disabled={!reason.trim()}
                       onClick={() => {
                         try {
-                          AdelanteEHR.reviewRefill({
+                          actFor("refill_decision", "reviewRefill", r.patientId, {
                             id: r.id,
                             decision: "denied",
                             denyReason: reason,

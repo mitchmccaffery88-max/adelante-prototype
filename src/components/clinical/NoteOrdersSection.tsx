@@ -8,6 +8,7 @@
 //
 // A quick pick is a starting point, not a bypass: it stages a plain draft
 // MedOrder that must still clear the same validation gate.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import {
   AdelanteEHR,
@@ -84,7 +85,7 @@ export function NoteOrdersSection({
   const stageDraft = (
     input: Omit<MedOrder, "id" | "patientId" | "status" | "attestedAt" | "attestedBy">,
   ) => {
-    const row = AdelanteEHR.addDraftOrder(patientId, { ...input, sourceNoteId });
+    const row = act<MedOrder>("med_order", "addDraftOrder", patientId, { ...input, sourceNoteId });
     onStage(row.id);
     setShowIssues(true);
   };
@@ -113,7 +114,7 @@ export function NoteOrdersSection({
     );
     let n = 0;
     try {
-      n = AdelanteEHR.signOrders(patientId, drafts.map((d) => d.id), staffName, {
+      n = act<unknown[]>("med_order", "signOrders", patientId, drafts.map((d) => d.id), staffName, {
         strengthProvenance,
         actorRole: role,
       }).length;

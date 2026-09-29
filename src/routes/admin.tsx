@@ -1,4 +1,5 @@
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
+import { actResult, actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isReferralClosed } from "@/lib/ehr";
@@ -665,8 +666,12 @@ function NotificationHealthCard() {
                 variant="ghost"
                 className="h-7 text-[11px]"
                 onClick={() => {
-                  AdelanteEHR.resendNotification(patient.id, notification.id);
-                  toast.success("Retrying delivery");
+                  try {
+                    actFor("notification_resend", "resendNotification", patient.id, patient.id, notification.id);
+                    toast.success("Retrying delivery");
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
                 }}
                 aria-label="Retry delivery"
               >

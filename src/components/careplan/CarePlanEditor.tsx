@@ -1,5 +1,6 @@
 // Staff structured care plan editor. Same access as the chart's care plan
 // section; SUD-linked goals/assignments/problems filtered by staffPlanView.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { useEhr } from "@/lib/ehr";
@@ -215,7 +216,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
                     <option value="weekly">Weekly</option>
                     <option value="once">Once</option>
                   </select>
-                  <Button size="sm" variant="outline" data-testid={`plan-assign-${g.id}`} onClick={() => run(() => assignToGoal({ patientId, goalId: g.id, kind: "activity", activityId: pick.activity, frequency: pick.freq, actor: me }), "Activity assigned")}>
+                  <Button size="sm" variant="outline" data-testid={`plan-assign-${g.id}`} onClick={() => run(() => act("activity_assignment", "assignToGoal", { patientId, goalId: g.id, kind: "activity", activityId: pick.activity, frequency: pick.freq, actor: me }), "Activity assigned")}>
                     Assign
                   </Button>
                   <Button
@@ -267,7 +268,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
             size="sm"
             onClick={() =>
               run(() => {
-                addStructuredGoal({
+                act("care_plan_goal", "addStructuredGoal", {
                   patientId,
                   problemIds: form.problems,
                   needIds: form.problems.map((id) => view.problems.find((p) => p.id === id)?.needId).filter((x): x is string => !!x),
