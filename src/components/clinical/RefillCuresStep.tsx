@@ -1,4 +1,4 @@
-// §Refill safety — CURES step on a controlled / MOUD / SUD refill. The store
+// §Refill safety — CURES step on a controlled (DEA II–V) refill. The store
 // (`reviewRefill` with actorRole) enforces the same rule.
 import { useState } from "react";
 import { toast } from "sonner";

@@ -2,8 +2,10 @@ import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useEffect, useState } from "react";
-import { AdelanteEHR, useEhr, type SessionStatus, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
+import { createContext, useContext, useEffect, useState } from "react";
+import { bucketWorkspaceVisits, resolveWorkspaceActor, viewAsOptions, type WorkspaceActor } from "@/lib/workspaceIdentity";
+import { inFacilityEnabled, isInFacilityTask } from "@/lib/inFacility";
+import { AdelanteEHR, useEhr, type SessionStatus, VISIT_STATUS_LABEL, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
 import { refillNeedsCures } from "@/lib/ehr";
 import { RefillCuresStep } from "@/components/clinical/RefillCuresStep";
 import { AppointmentRequestsCard } from "@/components/scheduling/AppointmentRequestsCard";
@@ -41,6 +43,7 @@ import {
   UserCog,
   Lock,
   FlaskConical,
+  UserCheck,
   Users,
 } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
@@ -87,16 +90,40 @@ export const Route = createFileRoute("/clinician")({
 
 const statusBadge: Record<SessionStatus, string> = {
   scheduled: "bg-teal/15 text-teal",
+  checked_in: "bg-gold/30 text-navy",
   attended: "bg-success/20 text-success",
   no_show: "bg-destructive/15 text-destructive",
   cancelled: "bg-muted text-muted-foreground",
+  late_cancel: "bg-muted text-muted-foreground",
+  rescheduled: "bg-muted text-muted-foreground",
 };
+
+// The ONE person every widget on this page reads (acting person, or "View as").
+const WorkspaceActorContext = createContext<WorkspaceActor | null>(null);
+function useWorkspaceActor(): WorkspaceActor {
+  const acting = useActingStaff();
+  return useContext(WorkspaceActorContext) ?? acting;
+}
 
 function ClinicianPage() {
   const { t } = useI18n();
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const patients = useEhr(() => AdelanteEHR.listPatients());
-  const [clinicianId, setClinicianId] = useState(clinicians[0]?.id ?? "");
+  // Identity — always the acting person from the top-bar switcher, unless a
+  // coordinator / sys_admin / supervisor explicitly picks "View as".
+  const acting = useActingStaff();
+  const [viewAsId, setViewAsId] = useState<string>("");
+  const viewOptions = viewAsOptions(acting);
+  const ws = resolveWorkspaceActor(acting, viewAsId || undefined);
+  useEffect(() => {
+    setViewAsId("");
+  }, [acting.staffId]);
+  useEffect(() => {
+    if (!ws.viewingAs) return;
+    AdelanteEHR.recordWorkspaceViewAs({ id: acting.staffId, name: acting.staffName, role: acting.role }, { id: ws.staffId, name: ws.staffName });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ws.viewingAs, ws.staffId]);
+  const clinicianId = ws.clinicianId ?? "";
   const clinician = clinicians.find((c) => c.id === clinicianId);
   const appts = useEhr(() =>
     clinicianId ? AdelanteEHR.appointmentsForClinician(clinicianId) : [],
@@ -206,29 +233,17 @@ function ClinicianPage() {
       });
   };
 
-  // Bucket appointments by time horizon for the schedule view.
-  const now = Date.now();
-  const endOfToday = (() => {
-    const d = new Date();
-    d.setHours(23, 59, 59, 999);
-    return d.getTime();
-  })();
-  const endOfWeek = (() => {
-    const d = new Date();
-    const dow = d.getDay();
-    const daysUntilSun = 7 - dow;
-    d.setDate(d.getDate() + daysUntilSun);
-    d.setHours(23, 59, 59, 999);
-    return d.getTime();
-  })();
-  const sortedAppts = [...appts].sort((a, b) => +new Date(a.start) - +new Date(b.start));
-  const todayAppts = sortedAppts.filter(
-    (a) => +new Date(a.start) <= endOfToday && +new Date(a.start) >= now - 7 * 24 * 3600 * 1000,
-  );
-  const weekAppts = sortedAppts.filter(
-    (a) => +new Date(a.start) > endOfToday && +new Date(a.start) <= endOfWeek,
-  );
-  const laterAppts = sortedAppts.filter((a) => +new Date(a.start) > endOfWeek);
+  // Today = local midnight to midnight. Past visits still open → Needs closing.
+  const buckets = bucketWorkspaceVisits(appts, (a) => {
+    if ((patients.find((p) => p.id === a.patientId)?.progressNotes ?? []).some((n) => n.appointmentId === a.id)) return true;
+    // A claim past "documented" means the visit was already written up.
+    const c = AdelanteEHRExt.claimForEncounter(a.id);
+    return !!c && c.state !== "documented";
+  });
+  const todayAppts = buckets.today;
+  const closingAppts = buckets.needsClosing;
+  const weekAppts = buckets.week;
+  const laterAppts = buckets.later;
 
   // §Workspace restructure — two explicit modes. "dashboard" is the daily
   // operational view (schedule + queue counts + clinical alerts); "chart" is a
@@ -244,7 +259,7 @@ function ClinicianPage() {
   // §Dashboard Cleanup Phase 6a — tasks are assigned to a case manager. A
   // clinician with no case-manager identity sees their patients' open
   // follow-ups instead, labelled as exactly that.
-  const actingStaff = useActingStaff();
+  const actingStaff = ws;
   const assignmentIdentity = assignmentIdentityFor(actingStaff);
   const taskSource: TaskQueueSource = actingStaff.caseManagerId
     ? { kind: "case_manager", cmId: actingStaff.caseManagerId }
@@ -257,22 +272,28 @@ function ClinicianPage() {
 
 
   return (
+    <WorkspaceActorContext.Provider value={ws}>
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      {ws.viewingAs && (
+        <div role="status" data-testid="view-as-banner" className="mb-4 rounded-md border border-gold/50 bg-gold/15 p-3 text-sm text-navy">
+          Viewing {ws.staffName}'s workspace — actions are recorded as you ({acting.staffName}).
+        </div>
+      )}
       <header className="mb-4 flex flex-wrap items-end justify-between gap-4">
         <div>
           <div className="text-xs font-medium uppercase tracking-wider text-teal">
             {t("navClinician")}
           </div>
           <h1 className="font-display text-3xl text-navy mt-1">{t("clinTitle")}</h1>
-          {clinician && (
-            <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground">
+          <div className="mt-1 flex flex-wrap items-center gap-2 text-sm text-muted-foreground" data-testid="workspace-identity">
               <ShieldCheck className="h-4 w-4 text-teal" aria-hidden="true" />
               <span>
-                Signed in as{" "}
+                {ws.viewingAs ? "Viewing workspace — " : "Your workspace — "}
                 <span className="font-medium text-navy">
-                  {clinician.name}, {clinician.credential}
+                  {clinician ? `${clinician.name}, ${clinician.credential}` : ws.staffName}
                 </span>
               </span>
+          {clinician && (<>
               {/* Provider-side enrollment (NOT patient coverage — patient
                   coverage lives on the chart header in chart mode). */}
               <Badge
@@ -286,21 +307,24 @@ function ClinicianPage() {
               >
                 Medi-Cal enrollment: {clinician.mediCalStatus}
               </Badge>
-            </div>
-          )}
+            </>)}
+          </div>
         </div>
-        <Select value={clinicianId} onValueChange={setClinicianId}>
-          <SelectTrigger className="w-[280px]">
-            <SelectValue placeholder={t("clinPickClinician")} />
-          </SelectTrigger>
-          <SelectContent>
-            {clinicians.map((c) => (
-              <SelectItem key={c.id} value={c.id}>
-                {c.name}, {c.credential}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        {viewOptions.length > 0 && (
+          <Select value={viewAsId || "__self"} onValueChange={(v) => setViewAsId(v === "__self" ? "" : v)}>
+            <SelectTrigger className="w-[280px]" aria-label="View as clinician">
+              <SelectValue placeholder="View as…" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="__self">My own workspace</SelectItem>
+              {viewOptions.map((m) => (
+                <SelectItem key={m.id} value={m.id}>
+                  View as {m.name}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        )}
       </header>
 
       <Tabs value={mode} onValueChange={(v) => setMode(v as "dashboard" | "chart")} className="w-full">
@@ -379,6 +403,15 @@ function ClinicianPage() {
                     />
                   ))}
                 </>
+              )}
+              {closingAppts.length > 0 && (
+                <div data-testid="needs-closing">
+                  <SectionHeader label="Needs closing" count={closingAppts.length} />
+                  <p className="mb-2 text-xs text-muted-foreground">Past visits still open: not marked, or attended with no note.</p>
+                  {closingAppts.map((a) => (
+                    <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} onOpenChart={openChart} t={t} />
+                  ))}
+                </div>
               )}
               {weekAppts.length > 0 && (
                 <>
@@ -703,6 +736,7 @@ function ClinicianPage() {
         initialTab={drawerTab}
       />
     </div>
+    </WorkspaceActorContext.Provider>
   );
 }
 
@@ -720,13 +754,16 @@ function QueueCountRow() {
   const cosign = useEhr(() => AdelanteEHR.listNotesAwaitingCosign().length);
   const messages = useEhr(() => AdelanteEHR.listUnreadMessageThreads().length);
   const refills = useEhr(() => AdelanteEHR.listRefillRequests({ status: "pending" }).length);
-  const refusals = useEhr(() => AdelanteEHR.listPendingRefusalForms({}).length);
+  const refusals = useEhr(() => (inFacilityEnabled() ? AdelanteEHR.listPendingRefusalForms({}).length : 0));
   const worklist = useEhr(
-    () => AdelanteEHR.listCaseTasks().filter((t) => t.status === "open").length,
+    () =>
+      AdelanteEHR.listCaseTasks().filter(
+        (t) => t.status === "open" && (inFacilityEnabled() || !isInFacilityTask(t)),
+      ).length,
   );
-  // §Tier 3 — personal rollup count, scoped to the acting staff member.
-  const actor = useActingStaff();
-  const canSeeRefusals = canAccess(actor.role, "meds_erx").level !== "none";
+  // §Tier 3 — personal rollup count, scoped to the workspace person.
+  const actor = useWorkspaceActor();
+  const canSeeRefusals = inFacilityEnabled() && canAccess(actor.role, "meds_erx").level !== "none";
   // §EHR audit Phase 1a — identical derivation and scope to the Inbox tab this
   // tile links to, so the two can never disagree.
   const unsigned = useEhr(
@@ -803,12 +840,14 @@ function QueueCountRow() {
           {refills}
         </span>
       </a>
-      <Link
-        to="/shift-count"
-        className="inline-flex items-center rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary"
-      >
-        Controlled shift count
-      </Link>
+      {inFacilityEnabled() && (
+        <Link
+          to="/shift-count"
+          className="inline-flex items-center rounded-full border bg-card px-3 py-1.5 text-xs font-medium text-foreground/80 hover:bg-secondary"
+        >
+          Controlled shift count
+        </Link>
+      )}
     </div>
   );
 }
@@ -917,6 +956,7 @@ function ApptCard({
   const p = patients.find((x) => x.id === a.patientId);
   const isFuture = new Date(a.start).getTime() > Date.now();
   const noShowActor = useActingStaff();
+  const sameDay = new Date(a.start).toDateString() === new Date().toDateString();
   return (
     <Card className="p-4">
       <div className="flex flex-wrap items-start justify-between gap-3">
@@ -955,7 +995,7 @@ function ApptCard({
             </div>
             <div className="mt-2 flex flex-wrap gap-1.5">
               <Badge className={`${statusBadge[a.status]} border-0 capitalize`}>
-                {a.status.replace("_", " ")}
+                {VISIT_STATUS_LABEL[a.status]}
               </Badge>
               <Badge variant="outline" className="capitalize">
                 {(t as (k: string) => string)("clinBillingPrefix")}:{" "}
@@ -1043,13 +1083,37 @@ function ApptCard({
               })()}
             </>
           )}
-          {a.status === "scheduled" && !isFuture && (
+          {a.status === "scheduled" && sameDay && (
+            <Button
+              size="sm"
+              variant="outline"
+              className="h-11 flex-1 sm:flex-none min-w-[44px]"
+              onClick={() => {
+                try {
+                  AdelanteEHR.checkInAppointment(a.id, { name: noShowActor.staffName, role: noShowActor.role, id: noShowActor.staffId });
+                  toast.success("Checked in");
+                } catch (e) {
+                  toast.error((e as Error).message);
+                }
+              }}
+            >
+              <UserCheck className="h-4 w-4 mr-1.5" /> Check in
+            </Button>
+          )}
+          {((a.status === "scheduled" && !isFuture) || a.status === "checked_in") && (
             <>
               <Button
                 size="sm"
                 variant="outline"
                 className="h-11 flex-1 sm:flex-none min-w-[44px]"
-                onClick={() => AdelanteEHR.updateAppointmentStatus(a.id, "attended")}
+                onClick={() => {
+                  try {
+                    AdelanteEHR.markAppointmentAttended(a.id, { name: noShowActor.staffName, role: noShowActor.role, id: noShowActor.staffId });
+                    toast.success("Marked attended");
+                  } catch (e) {
+                    toast.error((e as Error).message);
+                  }
+                }}
               >
                 <CheckCircle2 className="h-4 w-4 mr-1.5" />{" "}
                 {(t as (k: string) => string)("clinAttended")}
@@ -1273,7 +1337,7 @@ function RefillReviewCardInner() {
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
   const [role] = useActingRole();
-  const actor = useActingStaff();
+  const actor = useWorkspaceActor();
   const identity = assignmentIdentityFor(actor);
   const iHaveAssignments = hasAssignmentIdentity(identity);
   const actorId = actor.clinicianId ?? actor.staffId;
@@ -1532,7 +1596,7 @@ function RefillReviewCardInner() {
  * uses, so the two always agree.
  */
 function MyCaseloadCard() {
-  const actor = useActingStaff();
+  const actor = useWorkspaceActor();
   const identity = assignmentIdentityFor(actor);
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const mine = scopeCaseload(patients, identity, "mine");

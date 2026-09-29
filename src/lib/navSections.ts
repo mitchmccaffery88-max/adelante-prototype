@@ -199,6 +199,17 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["therapy_notes", "psych_eval"] },
   },
   {
+    // Coordinators / sys_admin open the workspace only to "View as" a clinician.
+    id: "clinician-view-as",
+    label: "Clinician workspaces",
+    desc: "View a clinician's workspace (audited)",
+    search: { view: "as" },
+    icon: Stethoscope,
+    to: "/clinician",
+    group: "care",
+    gate: { kind: "coordination_desk" },
+  },
+  {
     id: "shift-count",
     label: "Shift count",
     desc: "Controlled-substance counts",

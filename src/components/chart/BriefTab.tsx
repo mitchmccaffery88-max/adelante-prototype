@@ -2,7 +2,7 @@
 // order (chartBrief.roleCardOrder); empty cards collapse to one line; every
 // card has "See all" to its full section. Same Part 2 filters as the chart.
 import { useState, type ReactNode } from "react";
-import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { AdelanteEHR, isVisitCancelled, useEhr } from "@/lib/ehr";
 import { canAccess, isPrescriberRole, useActingStaff, type StaffRole } from "@/lib/roles";
 import {
   BANDS_DRAFT_LABEL, bucketOf, dueNow, measureSeries, openReferrals, roleCardOrder, roleDiscipline, scoreBand,
@@ -222,7 +222,7 @@ export function BriefTab({ patientId, visibleSections, onSelectSection }: { pati
       const appts = AdelanteEHR.listAppointments().filter((a) => a.patientId === patientId);
       const now = Date.now();
       const next = appts.find((a) => a.status === "scheduled" && +new Date(a.start) >= now);
-      const last = [...appts].reverse().find((a) => +new Date(a.start) < now && a.status !== "cancelled");
+      const last = [...appts].reverse().find((a) => +new Date(a.start) < now && !isVisitCancelled(a.status));
       return (
         <BriefCardShell id="visits" title="Upcoming and last visits" empty={!next && !last} emptyText="No visits on file." sectionId="appointments" {...common}>
           <ul className="space-y-0.5 text-sm">

@@ -159,7 +159,7 @@ export function buildRefillSummary(r: RefillRequest, role: StaffRole, now = new 
     { label: "Last fill", value: lastFill ? d(lastFill) : "Not on file" },
     { label: "Adherence", value: adherence },
     { label: "Side effects", value: effects.length ? effects.map((e) => `${e.severity}: ${e.note}`).join("; ") : "None reported" },
-    { label: "Controlled / MOUD", value: controlled ? "Yes — CURES required" : "No" },
+    { label: "Controlled substance", value: controlled ? "Yes (DEA II–V) — CURES required" : "No — CURES not required" },
     { label: "CURES", value: !controlled ? "Not required" : cures ? `${cures.emergencyOverride ? "Emergency override" : cures.result.replace(/_/g, " ")} · ${d(cures.checkedAt)}` : "Required — not yet recorded" },
     { label: "Last visit", value: lastVisit ? d(lastVisit) : "None on file" },
     { label: "Relevant labs", value: labText },

@@ -39,7 +39,8 @@ export function entryForPath(pathname: string): NavEntry | undefined {
 
 /** First surface this role may actually open. */
 export function safeLandingFor(role: StaffRole): string {
-  const allowed = STAFF_NAV.filter((e) => canSeeNavEntry(role, e));
+  // Pre-filtered views (entries with `search`) are never a landing page.
+  const allowed = STAFF_NAV.filter((e) => !e.search && canSeeNavEntry(role, e));
   const preferred = PREFERRED_LANDINGS.find((to) =>
     allowed.some((e) => e.to === to),
   );

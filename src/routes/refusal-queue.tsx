@@ -3,6 +3,7 @@ import { FileSignature, Lock } from "lucide-react";
 import { EmptyState } from "@/components/EmptyState";
 import { NurseRefusalWorklist } from "@/components/clinical/refusal/NurseRefusalWorklist";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { inFacilityEnabled } from "@/lib/inFacility";
 
 export const Route = createFileRoute("/refusal-queue")({
   head: () => ({
@@ -27,6 +28,19 @@ export const Route = createFileRoute("/refusal-queue")({
 function RefusalQueuePage() {
   const { role, staffName } = useActingStaff();
   const access = canAccess(role, "meds_erx");
+
+  // Medication refusals come from MAR rounds — in-facility only.
+  if (!inFacilityEnabled()) {
+    return (
+      <div className="mx-auto max-w-5xl px-4 py-8">
+        <EmptyState
+          icon={Lock}
+          title="Not available in outpatient care"
+          description="Refusal documents belong to in-facility medication rounds, which are turned off for Adelante."
+        />
+      </div>
+    );
+  }
 
   if (access.level === "none") {
     return (

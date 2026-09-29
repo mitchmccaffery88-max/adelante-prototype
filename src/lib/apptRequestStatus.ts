@@ -120,8 +120,8 @@ export function appointmentOutcomes(appts: Appointment[], sinceDays?: number, no
     visits: rows.length,
     attended: rows.filter((a) => a.status === "attended").length,
     noShows: rows.filter((a) => a.status === "no_show").length,
-    cancellations: rows.filter((a) => a.status === "cancelled").length,
-    lateCancels: rows.filter((a) => a.status === "cancelled" && a.cancellation?.lateCancel).length,
+    cancellations: rows.filter((a) => a.status === "cancelled" || a.status === "late_cancel").length,
+    lateCancels: rows.filter((a) => a.status === "late_cancel" || (a.status === "cancelled" && a.cancellation?.lateCancel)).length,
     pendingCancelRequests: rows.filter((a) => a.status === "scheduled" && a.cancelRequest?.status === "pending").length,
     ...cohortGuard(rows.length),
   };
