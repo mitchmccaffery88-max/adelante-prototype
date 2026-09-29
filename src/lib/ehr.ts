@@ -15,7 +15,8 @@ import type {
 } from "./templateSchema";
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
-import type { StaffRole } from "./roles";
+import type { StaffRole   rolesReady,
+} from "./roles";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -25423,6 +25424,7 @@ function _seedScreener(patientId: string, key: string, answers: number[], daysAg
   } as ScreenerResult);
 }
 
+function seedQaScenarios() {
 try {
   const P = DEMO_SCENARIO_PERSONAS;
   const baseAnswers = {
@@ -25652,6 +25654,11 @@ try {
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] QA scenarios", e);
 }
+}
+// Module-load order: when roles.ts is still initialising (roles → ehr),
+// run the QA scenarios right after the current module graph settles.
+if (rolesReady()) seedQaScenarios();
+else queueMicrotask(seedQaScenarios);
 // §Outpatient meds — DEMO DATA. Prototype prescriptions and refill requests
 // for outpatient medication management, recorded through the normal store
 // functions (prescribeMedication → requestRefill → reviewRefill). No real
