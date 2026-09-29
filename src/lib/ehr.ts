@@ -15,8 +15,7 @@ import type {
 } from "./templateSchema";
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
-import type { StaffRole   rolesReady,
-} from "./roles";
+import type { StaffRole } from "./roles";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -105,6 +104,7 @@ import {
   STAFF_ROLES,
   STAFF_ROSTER,
   supervisionStatus,
+  rolesReady,
 } from "./roles";
 import {
   referralNeedsOutreachTask,
