@@ -110,7 +110,7 @@ export function workspaceActionRows(input: {
     push({ id: `contact:${r.patient.id}`, kind: "contact", patientId: r.patient.id, patientName: `${r.patient.firstName} ${r.patient.lastName}`, label: "Contact due", dueAt: now.toISOString(), action: "Log contact" });
   for (const t of AdelanteEHR.listCaseTasks().filter((t) => t.status !== "done" && (!t.snoozedUntil || +new Date(t.snoozedUntil) <= +now) && (aliases.has(t.assignedTo) || mineIds.has(t.patientId)) && (inFacilityEnabled() || !isInFacilityTask(t)))) {
     const p = AdelanteEHR.getPatient(t.patientId);
-    if ((t.taskType === "asam_assessment" || t.taskType === "asam_needed") && (!p || !roleSeesAsamSection(actor.role, p))) continue;
+    if (/asam|caloms|sud/i.test(t.taskType ?? "") && (!p || !roleSeesAsamSection(actor.role, p))) continue;
     if (t.allowedRoles?.length && !t.allowedRoles.includes(actor.role)) continue;
     push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
   }
