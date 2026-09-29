@@ -12,7 +12,7 @@ import {
 function newReferral(over: Record<string, unknown> = {}) {
   return AdelanteEHR.createReferral({
     firstName: "Rosa",
-    lastName: "Mendez",
+    lastName: "Mendez" + String(Math.floor(Math.random() * 1e9)),
     dob: "1990-04-02",
     phone: "5595550142",
     referrerName: "Officer Diaz",

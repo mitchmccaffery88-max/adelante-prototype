@@ -253,7 +253,7 @@ describe("advocate as their own patient — the two sides never cross", () => {
     const { link } = connected("conservatorship", advocatedFor);
     const self = AdelanteEHR.startAdvocateSelfCare(link.id, {
       firstName: "Rosa",
-      lastName: "Ibarra",
+      lastName: "Ibarra" + String(Math.floor(Math.random() * 1e9)),
       dob: "1979-04-02",
     });
     return { link, advocatedFor, self };

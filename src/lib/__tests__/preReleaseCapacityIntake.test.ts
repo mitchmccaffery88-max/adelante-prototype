@@ -26,7 +26,7 @@ afterEach(() => {
 function newIntake(first = "Marco", last = "Silva") {
   const r = AdelanteEHR.openPreReleaseEpisodeForNewPatient({
     firstName: first,
-    lastName: last,
+    lastName: last ? last + String(Math.floor(Math.random() * 1e9)) : last,
     dob: "1990-04-02",
     anticipatedReleaseDate: "2026-11-01",
     cfCareManagerStaffId: cf().id,
