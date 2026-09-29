@@ -24,7 +24,7 @@ describe("patient-level booking conflict", () => {
   beforeEach(() => {
     const p = AdelanteEHR.createPatient({
       firstName: "Conflict",
-      lastName: "Test",
+      lastName: "Test" + String(Math.floor(Math.random() * 1e9)),
       dob: "1990-01-01",
     });
     patientId = p.id;

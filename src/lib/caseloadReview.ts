@@ -317,3 +317,8 @@ export function __resetCaseloadReview() {
   reviews.length = 0;
   seeded = false;
 }
+
+/** §Batch E — patient-linked rows a merge moves (patient merge only). */
+export function _mergeRows(): Record<string, { patientId: string }[]> {
+  return { contacts };
+}

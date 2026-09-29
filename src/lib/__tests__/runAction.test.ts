@@ -75,3 +75,11 @@ describe("runAction — one standard event per attempt", () => {
     expect(inFacilityEnabled()).toBe(false);
   });
 });
+
+describe("simulated actions", () => {
+  it("eligibility check records simulated: true, not a plain success", () => {
+    const r = runAction("eligibility_check", { role: "billing", staffId: "s-b1" }, patient, { args: [patient.id] });
+    expect(r.event.detail?.["simulated"]).toBe(true);
+    expect(r.event.detail?.["outcome"]).toBe("simulated");
+  });
+});

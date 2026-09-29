@@ -13,13 +13,16 @@ export interface PatientDraft {
   cin?: string;
 }
 
+let draftSeq = 0;
 export function makePatientDraft(overrides: Partial<PatientDraft> = {}): PatientDraft {
+  // Unique per call: the patient matching engine stops exact duplicates.
+  const n = ++draftSeq;
   return {
     firstName: "Test",
-    lastName: "Patient",
+    lastName: `Patient${n}`,
     dob: "1990-01-01",
     phone: "+15595550000",
-    cin: "99999999A",
+    cin: `${String(90000000 + n).padStart(8, "0")}B`,
     ...overrides,
   };
 }

@@ -596,3 +596,8 @@ export function seedStructuredCarePlanDemo(): void {
 export function _resetStructuredPlans() {
   plans.clear();
 }
+
+/** §Batch E — the plan store a merge re-keys (patient merge only). */
+export function _mergePlanStore(): Map<string, StructuredPlan> {
+  return plans;
+}

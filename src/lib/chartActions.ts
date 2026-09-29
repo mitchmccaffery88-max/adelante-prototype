@@ -20,9 +20,11 @@ import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { checkEligibility } from "@/lib/eligibility/eligibility";
 import type { FeatureId } from "@/lib/features";
+import { mergePatients, unmergePatients } from "@/lib/patientMerge";
+import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.d1";
+export const REGISTRY_VERSION = "2026-09-29.e1";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -65,6 +67,8 @@ export interface ChartAction {
   pending?: boolean;
   /** False for dashboard actions that can begin without a patient context. */
   needsPatient?: boolean;
+  /** The store only simulates the work (no live connection) — the audit records `simulated: true`. */
+  simulated?: boolean;
   allowed: (actor: ChartActor, patient?: Patient) => ChartActionAnswer;
 }
 
@@ -378,6 +382,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "eligibility_check",
+    simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
     group: "billing",
     menu: false,
@@ -445,6 +450,31 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canAccess(population_health) = write",
     store: refs(["resendNotification", (...a: any[]) => (AdelanteEHR.resendNotification as any)(...a)]),
     allowed: ({ role }) => (writes(role, "population_health") ? ok() : hide("Only program administrators can resend notifications.")),
+  },
+  // ---- §Batch E — patient identity (coordinator / sys_admin) ----
+  {
+    id: "patient_merge",
+    label: { en: "Merge patient records", es: "Unir expedientes" },
+    group: "admin",
+    menu: false,
+    check: "canReviewMatches(role)",
+    store: refs(
+      ["mergePatients", (...a: any[]) => (mergePatients as any)(...a)],
+      ["unmergePatients", (...a: any[]) => (unmergePatients as any)(...a)],
+    ),
+    allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can merge records.")),
+  },
+  {
+    id: "patient_match_decide",
+    label: { en: "Decide a possible duplicate", es: "Decidir posible duplicado" },
+    group: "admin",
+    menu: false,
+    check: "canReviewMatches(role)",
+    store: refs(
+      ["markNotSamePerson", (...a: any[]) => (markNotSamePerson as any)(...a)],
+      ["linkAsRelated", (...a: any[]) => (linkAsRelated as any)(...a)],
+    ),
+    allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can decide matches.")),
   },
 ];
 

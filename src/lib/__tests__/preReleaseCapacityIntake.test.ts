@@ -23,11 +23,13 @@ afterEach(() => {
   }
 });
 
+let intakeSeq = 0;
 function newIntake(first = "Marco", last = "Silva") {
   const r = AdelanteEHR.openPreReleaseEpisodeForNewPatient({
     firstName: first,
     lastName: last,
-    dob: "1990-04-02",
+    // Unique DOB per call: the matching engine stops exact duplicates.
+    dob: `19${String(10 + (++intakeSeq % 80)).padStart(2, "0")}-04-02`,
     anticipatedReleaseDate: "2026-11-01",
     cfCareManagerStaffId: cf().id,
     cfCareManagerName: cf().name,

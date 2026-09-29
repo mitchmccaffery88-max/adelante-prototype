@@ -13,7 +13,7 @@ import { canWritePreReleaseEpisode } from "@/lib/roles";
 const newPatient = () =>
   AdelanteEHR.createPatient({
     firstName: "Release",
-    lastName: "Transition",
+    lastName: "Transition" + String(Math.floor(Math.random() * 1e9)),
     dob: "1988-04-02",
   }).id;
 

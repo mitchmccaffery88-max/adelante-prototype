@@ -1585,6 +1585,11 @@ export function requiresDoseWitness(
 
 export interface Patient {
   id: string;
+  /** §Batch E — set when this record was merged into another (read-only; search redirects). */
+  mergedInto?: string;
+  mergedAt?: string;
+  /** §Batch E — flagged by the patient matching engine; open in the review queue. */
+  possibleDuplicate?: { band: string; reviewId: string; otherPatientId: string };
   /** Staff id of the prescriber of record (physician or PMHNP). Set via `setPrescriberOfRecord`. */
   prescriberStaffId?: string;
   firstName: string;
@@ -3519,6 +3524,11 @@ export interface ConsentRecordSection {
 
 export interface ConsentRecord {
   id: string;
+  /**
+   * §Batch E — carried over from a merged record. Not in force for the
+   * survivor until the patient or a clinician re-confirms it.
+   */
+  needsReviewAfterMerge?: { mergeId: string; fromPatientId: string };
   patientId: string;
   formType: ConsentFormType;
   /** How/where this was captured, e.g. "in person — consent tab". */
@@ -5600,7 +5610,9 @@ export type AuditCategory =
   | "advocate"
   // §Batch D — standard registry action events (action.succeeded /
   // action.blocked / action.cosign_routed), written only by runAction.
-  | "action";
+  | "action"
+  // §Batch E — patient matching, merge / unmerge, staff identity.
+  | "identity";
 export interface AuditEvent {
   id: string;
   at: string;
@@ -6782,6 +6794,7 @@ export function isSudMedicationName(name: string): boolean {
   return isSudMedicationText(name);
 }
 import { isSudMedicationText, isSudMedication as _isSudMed } from "@/lib/sudMedClassifier";
+import { afterCreate, matchBeforeCreate, type MatchSource } from "@/lib/patientMatching";
 export interface RefillRequest {
   id: string;
   patientId: string;
@@ -8216,8 +8229,19 @@ export const AdelanteEHR = {
      * Attribution only; it grants nothing and gates nothing.
      */
     signupAssistedBy?: HelperAttribution;
+    /** §Batch E — which creation path this is (drives the matcher's outcome). */
+    matchSource?: MatchSource;
+    /** §Batch E — staff chose "Create anyway" on an exact match (reason required, audited). */
+    createAnyway?: { reason: string; actorId?: string; actorRole?: string };
   }): Patient {
     const assisted = input.signupAssistedBy;
+    const matchSource: MatchSource =
+      input.matchSource ?? (input.signupCredential ? (assisted?.tier === 2 ? "assisted_signup" : "self_signup") : "staff_create");
+    const pre = matchBeforeCreate(
+      { firstName: input.firstName, lastName: input.lastName, dob: input.dob, cin: input.cin, phone: input.phone, email: input.email },
+      matchSource,
+      input.createAnyway,
+    );
     const id = uid();
     const seq = String(patients.length + 1).padStart(3, "0");
     const now = new Date().toISOString();
@@ -8244,6 +8268,7 @@ export const AdelanteEHR = {
       ...(assisted ? { signupAssistedBy: assisted } : {}),
     };
     patients.push(p);
+    afterCreate(p, pre, input.createAnyway);
     // Only the front door audits itself: Track A / referral conversion calls
     // pass no credential and no helper, and stay silent exactly as before.
     if (input.signupCredential) {
@@ -8396,7 +8421,24 @@ export const AdelanteEHR = {
   // Reads
   listReferrals: () =>
     [...referrals].sort((a, b) => +new Date(b.createdAt) - +new Date(a.createdAt)),
-  listPatients: () => patients,
+  /** Active records only — merged-away records are read-only and redirect to the survivor. */
+  listPatients: () => (patients.some((p) => p.mergedInto) ? patients.filter((p) => !p.mergedInto) : patients),
+  /** §Batch E — every record, including merged-away ones (merge / unmerge only). */
+  _allPatientsIncludingMerged: () => patients,
+  /** §Batch E — the record a merged-away id now lives in (itself when not merged). */
+  resolvePatientId(id: string): string {
+    let cur = patients.find((p) => p.id === id);
+    for (let i = 0; cur?.mergedInto && i < 5; i++) cur = patients.find((p) => p.id === cur!.mergedInto);
+    return cur?.id ?? id;
+  },
+  /** §Batch E — module-level stores a merge moves between records. */
+  _mergeStores() {
+    return { appointments, referrals, caseTasks, patientDocuments, refillRequests, consentRecords, providerSwitches, recoveryStageEntries } as Record<string, { patientId?: string }[]>;
+  },
+  /** §Batch E — identity audit (patient matching, merge, staff identity). */
+  _appendIdentityAudit(evt: { action: string; actorRole?: string; actorId?: string; patientId?: string; detail: Record<string, unknown> }) {
+    appendAudit({ category: "identity", ...evt });
+  },
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
@@ -8653,7 +8695,7 @@ export const AdelanteEHR = {
    * source there would change the person's resolved population track, which
    * is a separate concern from recording how they arrived.
    */
-  enrollReferral(id: string) {
+  enrollReferral(id: string, opts?: { createAnyway?: { reason: string; actorId?: string; actorRole?: string } }) {
     const r = referrals.find((x) => x.id === id);
     if (!r) return undefined;
     if (r.status === "enrolled") return r.enrolledPatientId;
@@ -8667,6 +8709,8 @@ export const AdelanteEHR = {
       email: r.email,
       referralId: r.id,
       cin: r.cin,
+      matchSource: "referral",
+      ...(opts?.createAnyway ? { createAnyway: opts.createAnyway } : {}),
     });
     if (r.releaseDate) p.releaseDate = r.releaseDate;
     if (r.countyOfRelease) {
@@ -12130,7 +12174,7 @@ export const AdelanteEHR = {
   /** The single record currently in force for a patient, if any. */
   activeConsentRecord(patientId: string, at = new Date()): ConsentRecord | undefined {
     return consentRecords.find(
-      (r) => r.patientId === patientId && effectiveConsentStatus(r, at) === "active",
+      (r) => r.patientId === patientId && !r.needsReviewAfterMerge && effectiveConsentStatus(r, at) === "active",
     );
   },
   /**
@@ -12143,7 +12187,7 @@ export const AdelanteEHR = {
     category: ConsentCategory,
     at = new Date(),
   ): boolean {
-    const has = consentRecords.some((r) => r.patientId === patientId);
+    const has = consentRecords.some((r) => r.patientId === patientId && !r.needsReviewAfterMerge);
     if (!has) {
       // Legacy fallback: patients with no structured record yet.
       const p = patients.find((x) => x.id === patientId);
@@ -14297,6 +14341,7 @@ export const AdelanteEHR = {
       ...(input.phone ? { phone: input.phone } : {}),
       ...(input.preferredLanguage ? { preferredLanguage: input.preferredLanguage } : {}),
       ...(input.cin ? { cin: input.cin } : {}),
+      matchSource: "intake",
     });
     appendAudit({
       category: "clinical",
@@ -19204,6 +19249,7 @@ export const AdelanteEHR = {
       lastName: input.lastName.trim(),
       ...(input.dob ? { dob: input.dob } : {}),
       ...(input.phone ? { phone: input.phone } : {}),
+      matchSource: "advocate_self",
     });
     if (p.id === link.patientId)
       throw new Error("A self record cannot be the person you are advocating for.");
@@ -25383,7 +25429,7 @@ try {
   ];
   for (const sp of specs) {
     if (patients.some((p) => p.firstName === sp.names.firstName && p.lastName === sp.names.lastName)) continue;
-    const p = AdelanteEHR.createPatient({ ...sp.names, dob: sp.dob, preferredLanguage: "en" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+    const p = AdelanteEHR.createPatient({ ...sp.names, dob: sp.dob, preferredLanguage: "en", matchSource: "seed" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
     // Consent first (Part 2 via the intake payload), so SUD screeners are allowed.
     AdelanteEHR.completeIntake(p.id, { needs: sp.needs, hipaa: true, part2Sud: sp.sud });
     _seedScreener(p.id, "phq-9", baseAnswers["phq-9"], 3);
