@@ -9,6 +9,7 @@ import type { StaffRole } from "@/lib/roles";
 import { canAccess } from "@/lib/roles";
 import { screenerByKey, isPart2Screener, rescreenRule } from "@/lib/screeners";
 import { CSSRS_KEY } from "@/lib/cssrs";
+import { isHeldAfterMerge } from "@/lib/mergePart2";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { listScreenerRequests, screenerRequestStatus } from "@/lib/chartOrders";
 
@@ -61,6 +62,8 @@ export function buildTrackingRows(patient: Patient, role: StaffRole, now = new D
   const rows: TrackingRow[] = [];
   for (const h of patient.screenerHistory ?? []) {
     if (h.retiredForm) continue;
+    // Held after a merge: stays under the original record's consent until re-confirmed.
+    if (isHeldAfterMerge(h)) continue;
     rows.push({
       key: h.key,
       label: instrumentLabel(h.key),
@@ -129,6 +132,6 @@ export function filterTrackingRows(rows: TrackingRow[], f: TrackingFilter): Trac
 /** Latest completed result for an instrument — the value the care plan shows. */
 export function latestFromHistory(patient: Patient, key: string) {
   return [...(patient.screenerHistory ?? [])]
-    .filter((h) => h.key === key && !h.retiredForm)
+    .filter((h) => h.key === key && !h.retiredForm && !isHeldAfterMerge(h))
     .sort((a, b) => +new Date(b.completedAt) - +new Date(a.completedAt))[0];
 }

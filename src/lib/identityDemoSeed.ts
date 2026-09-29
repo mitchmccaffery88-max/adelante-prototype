@@ -58,6 +58,8 @@ export function seedIdentityDemo() {
     sections: [{ category: "mental_health", authorized: true }],
     capturedBy: { staffId: PRIYA.staffId, staffName: PRIYA.name, role: PRIYA.role },
   });
+  // A Part 2 instrument on the merged-away record — stays held until consent is re-confirmed.
+  AdelanteEHR.recordScreener(t2.id, { key: "audit", score: 9, severity: "moderate", completedAt: new Date().toISOString(), timepoint: "intake" });
   const clin = AdelanteEHR.listClinicians()[0]?.id ?? "c1";
   AdelanteEHRExt.createAsamClaim({ asamId: "demo-merge-a", patientId: t1.id, clinicianId: clin, serviceDate: today });
   AdelanteEHRExt.createAsamClaim({ asamId: "demo-merge-b", patientId: t2.id, clinicianId: clin, serviceDate: today });

@@ -21,6 +21,7 @@ import {
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { canReviewMatches } from "@/lib/patientMatching";
 import { runAction } from "@/lib/actions/runAction";
+import { heldItemsFor, listMerges } from "@/lib/patientMerge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -54,6 +55,11 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
   const { role, staffId, staffName } = useActingStaff();
   const records = useEhr(() => AdelanteEHR.listConsentRecords(patient.id));
   const canWrite = canAccess(role, "consent_ledger", patient).level === "write";
+  const heldCount = useEhr(() =>
+    listMerges()
+      .filter((m) => m.survivorId === patient.id && m.status === "active")
+      .reduce((n, m) => n + heldItemsFor(m.id).length, 0),
+  );
 
   const [open, setOpen] = useState(false);
   const [formType, setFormType] = useState<ConsentFormType>("AB133");
@@ -234,6 +240,11 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
         </div>
       ) : null}
 
+      {heldCount > 0 ? (
+        <p className="rounded-xl border border-destructive/30 bg-destructive/5 p-3 text-sm" data-testid="merge-held-count">
+          {heldCount} item{heldCount === 1 ? "" : "s"} from a merged record stay hidden until consent is re-confirmed.
+        </p>
+      ) : null}
       <div className="rounded-xl border bg-card divide-y">
         {records.length === 0 ? (
           <p className="p-4 text-sm text-muted-foreground">

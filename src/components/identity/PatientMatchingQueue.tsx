@@ -2,6 +2,7 @@
 // patient sign-up, staff create, referral, intake). Merge / Not the same
 // person / Link as related all go through runAction and are audited.
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -130,6 +131,11 @@ export function PatientMatchingQueue() {
           {merges.map((m) => (
             <div key={m.id} className="flex flex-wrap items-center gap-2 rounded-md border p-2 text-xs">
               <span>{nm(all(m.otherId))} → {nm(all(m.survivorId))} · {new Date(m.at).toLocaleDateString()} · by {m.by}</span>
+              {m.status === "active" && (
+                <Link to="/record/$patientId" params={{ patientId: m.survivorId }} search={{ section: "consents" } as never} className="text-teal underline">
+                  Open consents
+                </Link>
+              )}
               {m.consentsNeedingReview > 0 && <Badge variant="outline">Consent needs review</Badge>}
               {m.flaggedClaims.length > 0 && <Badge variant="outline">Possible duplicate claim</Badge>}
               {canUnmerge(m) && (

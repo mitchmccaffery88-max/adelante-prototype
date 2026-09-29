@@ -1,4 +1,5 @@
 // §E5 Phase A — reusable voice UI: opt-in card, controls + transcript, voice answer.
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { Mic, Pause, Play, RotateCcw, Volume2, VolumeX, LifeBuoy, Lock } from "lucide-react";
@@ -39,6 +40,7 @@ export function VoiceBar({ voice, lang, text, tapOnly, draft = true }: { voice: 
   }
   return (
     <div className="rounded-lg border border-teal/40 bg-card p-3 space-y-2" data-testid="voice-bar" aria-label="Read aloud">
+      <p className="text-[11px] text-muted-foreground" data-testid="voice-simulated">{simulatedSurfaceLabel("voice_intake")}</p>
       <div className="flex flex-wrap items-center gap-2">
         <Button size="sm" variant="outline" onClick={() => speak(text, { force: true })} aria-label={c.play}><Play className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.play}</span></Button>
         <Button size="sm" variant="outline" onClick={voice.replay} aria-label={c.replay}><RotateCcw className="h-4 w-4" aria-hidden="true" /><span className="ml-1 hidden sm:inline">{c.replay}</span></Button>
