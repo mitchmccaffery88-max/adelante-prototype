@@ -4,6 +4,7 @@
 // cosign actions show who they route to. Each action opens a side drawer
 // (bottom sheet on phones) with the existing form or section, so the
 // clinician never leaves the chart.
+import { confirmationFor } from "@/lib/actions/runAction";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import { Keyboard, Plus, Search } from "lucide-react";
@@ -134,7 +135,7 @@ export function ChartActionLauncher({
       const sid = d.action.sectionId;
       recent.unshift({ label: `${d.action.label.en} saved`, sectionId: sid, at: Date.now() });
       recent.splice(8);
-      toast.success(`${d.action.label.en} saved`, { action: { label: "View", onClick: () => onSelectSection(sid) } });
+      toast.success(confirmationFor(d.action.id, `${d.action.label.en} saved`), { action: { label: "View", onClick: () => onSelectSection(sid) } });
     }
   };
 
@@ -163,6 +164,7 @@ export function ChartActionLauncher({
   if (hideAll || !patient) return null;
 
   const done: FormDone = (message, sectionId) => {
+    if (drawer) message = confirmationFor(drawer.action.id, message);
     recent.unshift({ label: message, sectionId, at: Date.now() });
     recent.splice(8);
     setDrawer(null);
