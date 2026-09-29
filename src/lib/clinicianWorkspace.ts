@@ -112,7 +112,7 @@ export function workspaceActionRows(input: {
     const p = AdelanteEHR.getPatient(t.patientId);
     if ((t.taskType === "asam_assessment" || t.taskType === "asam_needed") && (!p || !roleSeesAsamSection(actor.role, p))) continue;
     if (t.allowedRoles?.length && !t.allowedRoles.includes(actor.role)) continue;
-    push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Complete", sourceId: t.id });
+    push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
   }
   const priority = isPrescriberRole(actor.role) ? ["refill", "crisis"] : isCareRole(actor.role) ? ["contact", "crisis"] : ["crisis"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
