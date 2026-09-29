@@ -234,9 +234,12 @@ function ClinicianPage() {
   };
 
   // Today = local midnight to midnight. Past visits still open → Needs closing.
-  const buckets = bucketWorkspaceVisits(appts, (a) =>
-    (patients.find((p) => p.id === a.patientId)?.progressNotes ?? []).some((n) => n.appointmentId === a.id),
-  );
+  const buckets = bucketWorkspaceVisits(appts, (a) => {
+    if ((patients.find((p) => p.id === a.patientId)?.progressNotes ?? []).some((n) => n.appointmentId === a.id)) return true;
+    // A claim past "documented" means the visit was already written up.
+    const c = AdelanteEHRExt.claimForEncounter(a.id);
+    return !!c && c.state !== "documented";
+  });
   const todayAppts = buckets.today;
   const closingAppts = buckets.needsClosing;
   const weekAppts = buckets.week;
