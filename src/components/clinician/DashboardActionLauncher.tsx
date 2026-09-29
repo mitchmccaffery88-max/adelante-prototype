@@ -10,6 +10,7 @@ import { searchPatients } from "@/lib/patientSearch";
 import { isTypingTarget, CHART_SHORTCUTS } from "@/components/chart/ChartActionLauncher";
 import { NoteDraftPanel, OutreachDraftPanel, RefillDecisionPanel } from "@/components/chart/AdelDrafts";
 import { ContactLogForm } from "@/components/chart/DrawerForms";
+import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
 import { LabOrderForm, MetabolicForm, ScreenerRequestForm } from "@/components/chart/LabsAndMeasures";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -123,4 +124,10 @@ function TaskForm({ patientId, patients, query, setQuery, choose, done }: { pati
 }
 function STAFF_OPTIONS(_role: string) { return STAFF_ROSTER.filter((s) => !["patient", "advocate", "billing", "billing_coordinator"].includes(s.role)).map((s) => ({ id: s.id, name: s.name })); }
 function BookStart({ onBook }: { onBook: () => void }) { return <div className="space-y-3"><Button onClick={onBook}>Open booking form</Button></div>; }
-function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenChart: (id: string, section?: string) => void }) { return <div className="space-y-3"><p className="text-sm text-muted-foreground">Choose an identified need and a directory resource in the patient chart. Part 2 consent is checked before saving.</p><Button onClick={() => onOpenChart(patientId, "episodes")}>Open resource directory referral</Button></div>; }
+function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenChart: (id: string, section?: string) => void }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [itemId, setItemId] = useState("");
+  const item = patient?.sdohPlan?.items.find((need) => need.id === itemId);
+  const needs = patient?.sdohPlan?.items.filter((need) => need.status !== "resolved" && need.status !== "declined") ?? [];
+  return <div className="space-y-3"><p className="text-sm font-medium">Select a need for this referral</p>{needs.length ? needs.map((need) => <Button key={need.id} variant="outline" className="h-auto w-full justify-start whitespace-normal text-left" onClick={() => setItemId(need.id)}>{need.need}</Button>) : <p className="text-sm text-muted-foreground">No open needs. Add a need to the care plan first.</p>}<Button variant="link" className="px-0" onClick={() => onOpenChart(patientId, "sdoh")}>Open care plan</Button>{item && <ReferForNeedDialog patientId={patientId} item={item} open={!!itemId} onOpenChange={(open) => { if (!open) setItemId(""); }} />}</div>;
+}
