@@ -8441,7 +8441,7 @@ export const AdelanteEHR = {
   },
   /** §Batch E — module-level stores a merge moves between records. */
   _mergeStores() {
-    return { appointments, referrals, caseTasks, patientDocuments, refillRequests, consentRecords, providerSwitches, recoveryStageEntries } as Record<string, { patientId?: string }[]>;
+    return { appointments, referrals, caseTasks, patientDocuments, refillRequests, consentRecords, providerSwitches, recoveryStageEntries, rxEvents, telehealthSessions } as Record<string, { patientId?: string }[]>;
   },
   /** §Batch E — identity audit (patient matching, merge, staff identity). */
   _appendIdentityAudit(evt: { action: string; actorRole?: string; actorId?: string; patientId?: string; detail: Record<string, unknown> }) {
