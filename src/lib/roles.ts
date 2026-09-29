@@ -347,6 +347,8 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     // DMC-ODS consent is captured at intake by the counselor too.
     sud_counselor: "write",
     cf_care_manager: "read",
+    // Coordinators merge records and must re-confirm carried-over consents (read only).
+    clinical_coordinator: "read",
   },
   /**
    * §ASCMI psychotherapy-notes tier — SCAFFOLD ONLY, DEFAULT DENY.

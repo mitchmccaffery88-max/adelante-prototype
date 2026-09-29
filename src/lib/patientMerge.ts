@@ -10,7 +10,7 @@ import { _mergeRows as chartOrderRows } from "./chartOrders";
 import { _mergeRows as caseloadRows } from "./caseloadReview";
 import { _mergeRows as outpatientRows } from "./outpatientCare";
 import { _mergePlanStore } from "./structuredCarePlan";
-import { looksPart2, PART2_HOLD } from "./mergePart2";
+import { needsMergeHold, PART2_HOLD } from "./mergePart2";
 import { _closeReviewsForMerge, _reopenReviewAfterUnmerge, canReviewMatches, type MatchActor } from "./patientMatching";
 
 export const UNMERGE_WINDOW_DAYS_DRAFT = 30;
@@ -119,7 +119,7 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
   const at = new Date().toISOString();
   const rec: MergeRecord = { ...summary, id, at, by: actor.name, reason: input.reason.trim(), status: "active", moved: [], embedded: [], planMoved: false, flaggedClaims: [], screenerKeys: [], part2Held: 0 };
   const hold = (item: Row, field?: string) => {
-    if (!looksPart2(item, field)) return;
+    if (!needsMergeHold(item, field)) return;
     (item as Record<string, unknown>)[PART2_HOLD] = { mergeId: id, fromPatientId: o.id };
     rec.part2Held++;
   };
@@ -241,6 +241,7 @@ export function unmergePatients(input: { mergeId: string; reason: string }, acto
 
 /** Re-confirm a consent/disclosure carried over by a merge. */
 export function reconfirmConsentAfterMerge(consentId: string, actor: MatchActor) {
+  requireMerger(actor);
   const st = stores();
   const row = [...(st.consentRecords ?? []), ...(st.disclosures ?? [])].find((r) => r.id === consentId);
   if (!row?.needsReviewAfterMerge) throw new Error("Nothing to re-confirm.");

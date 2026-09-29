@@ -9,6 +9,7 @@
 // Reschedule reuses the existing real flow — `/schedule?reschedule=<id>`
 // prefills the service, modality, clinician and location and rebooks against
 // the clinician's live availability. Nothing new was invented for it.
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { Link } from "@tanstack/react-router";
 import { Building2, CalendarClock, CalendarPlus, MapPin, Phone, Video } from "lucide-react";
 import { AdelanteEHR, isVisitCancelled, useEhr, type Appointment } from "@/lib/ehr";
@@ -132,7 +133,7 @@ function JoinCallButton({ appt }: { appt: Appointment }) {
   return (
     <Button asChild size="sm" className="min-h-11" data-testid="join-call-button">
       <a href={url} target="_blank" rel="noreferrer">
-        <Video className="mr-1.5 h-4 w-4" /> {real ? "Join video call" : "Join video call (demo room)"}
+        <Video className="mr-1.5 h-4 w-4" /> {real ? "Join video call" : `Join video call (${simulatedSurfaceLabel("telehealth_simulated")})`}
       </a>
     </Button>
   );

@@ -1,6 +1,7 @@
 // §Chart redesign turn 5 — "Draft with Adel" surfaces. Adel drafts; a person
 // reviews, edits, and signs / sends / decides. Every draft shows
 // ADEL_REVIEW_LABEL and which engine produced it (rule-based template).
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { act, actFor } from "@/lib/actions/act";
 import { useEffect, useState } from "react";
 const loggedRefills = new Set<string>();
@@ -44,6 +45,7 @@ export function AdelDraftLabel() {
         <Sparkles className="h-3 w-3" /> {ADEL_REVIEW_LABEL}
       </span>
       <span className="text-muted-foreground">{ADEL_SOURCE_RULES}</span>
+      <span className="text-muted-foreground" data-testid="adel-draft-simulated">{simulatedSurfaceLabel("adel_drafts")}</span>
     </p>
   );
 }

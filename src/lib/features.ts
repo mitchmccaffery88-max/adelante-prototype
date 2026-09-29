@@ -159,3 +159,26 @@ export function simulatedFeatureIds(): FeatureId[] {
 }
 /** On-screen label every simulated confirmation must carry. */
 export const SIMULATED_LABEL = "Simulated";
+
+/**
+ * Every file under src/lib/vendors/ (except index.ts) → its feature flag.
+ * Guard test: a new vendor file without an entry here fails the suite.
+ */
+export const VENDOR_FLAGS: Readonly<Record<string, FeatureId>> = {
+  erx: "erx_simulated",
+  hie: "hie_simulated",
+  telehealth: "telehealth_simulated",
+};
+
+/**
+ * On-screen label for simulated integrations that have no registry action of
+ * their own (so `confirmationFor` can't label them). Must contain "Simulated".
+ */
+export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
+  voice_intake: `${SIMULATED_LABEL} speech recognition — no audio is stored`,
+  adel_drafts: `${SIMULATED_LABEL} — rule-based draft, not AI`,
+  telehealth_simulated: `${SIMULATED_LABEL} video vendor`,
+};
+export function simulatedSurfaceLabel(id: FeatureId): string {
+  return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;
+}
