@@ -126,7 +126,6 @@ export const CHART_ACTIONS: ChartAction[] = [
     label: { en: "Refill decision", es: "Decisión de resurtido" },
     group: "clinical",
     sectionId: "orders",
-    flags: ["cures_placeholder"],
     store: refs(["reviewRefill", (...a: any[]) => (AdelanteEHR.reviewRefill as any)(...a)]),
     allowed: ({ role }) =>
       inList(REFILL_PRESCRIBER_ROLES, role) ? ok() : hide("Only a prescriber (physician or PMHNP) can review a refill."),
