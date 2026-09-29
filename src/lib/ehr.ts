@@ -25657,8 +25657,17 @@ try {
 }
 // Module-load order: when roles.ts is still initialising (roles → ehr),
 // run the QA scenarios right after the current module graph settles.
-if (rolesReady()) seedQaScenarios();
-else queueMicrotask(seedQaScenarios);
+{
+  let tries = 0;
+  const trySeed = () => {
+    if (rolesReady() || tries > 5000) seedQaScenarios();
+    else {
+      tries++;
+      queueMicrotask(trySeed);
+    }
+  };
+  trySeed();
+}
 // §Outpatient meds — DEMO DATA. Prototype prescriptions and refill requests
 // for outpatient medication management, recorded through the normal store
 // functions (prescribeMedication → requestRefill → reviewRefill). No real
