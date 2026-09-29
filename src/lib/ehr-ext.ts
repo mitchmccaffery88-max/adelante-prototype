@@ -239,6 +239,11 @@ import { CLAIM_BLOCKED_VOIDED, CLAIM_REVIEW_CORRECTED } from "./noteRevisions";
 
 export interface Claim {
   id: string;
+  /**
+   * §Batch E — after a patient merge, both records had a claim for the same
+   * service and date. Submission is blocked until billing reviews it.
+   */
+  duplicateReview?: { mergeId: string; otherClaimId: string; flaggedAt: string };
   encounterId: string;
   patientId: string;
   clinicianId: string;
@@ -459,6 +464,7 @@ export function claimUnitLabel(c: Claim): string {
 }
 
 const CLAIM_LOCKED: ClaimState[] = ["submitted", "paid", "denied", "partial"];
+export const DUPLICATE_CLAIM_BLOCKED = "Possible duplicate claim — review before submission.";
 
 // ---------- Seed data ----------
 const uid = () => Math.random().toString(36).slice(2, 10);
@@ -1118,6 +1124,20 @@ export const AdelanteEHRExt = {
    * acting staff member (callers cannot pass one); only roles with `billing`
    * write may call it — a read-only role is refused here and nothing changes.
    */
+  /** §Batch E — billing reviewed a post-merge duplicate flag (note required). */
+  clearDuplicateClaimReview(claimId: string, note: string): { ok: true } | { ok: false; error: string } {
+    const role = getActingRole();
+    if (canAccess(role, "billing").level !== "write") return { ok: false, error: BILLING_WRITE_REFUSED };
+    const c = claims.find((x) => x.id === claimId);
+    if (!c?.duplicateReview) return { ok: false, error: "This claim has no duplicate flag." };
+    if (!note.trim()) return { ok: false, error: "Add a review note." };
+    const staff = getActingStaff();
+    c.history.push({ at: iso(), state: c.state, actor: staff.id, actorName: staff.name, role, note: `Duplicate review: ${note.trim()}`, via: "billing" });
+    delete c.duplicateReview;
+    c.updatedAt = iso();
+    emit();
+    return { ok: true };
+  },
   transitionClaim(
     claimId: string,
     to: ClaimState,
@@ -1133,6 +1153,8 @@ export const AdelanteEHRExt = {
     // §Signed-note revisions — a voided note blocks an unsubmitted claim.
     if (c.voidBlocked && ["coded", "generated", "submitted", "signed"].includes(to))
       return { ok: false, error: CLAIM_BLOCKED_VOIDED };
+    if (c.duplicateReview && ["generated", "submitted"].includes(to))
+      return { ok: false, error: DUPLICATE_CLAIM_BLOCKED };
     if (to === "generated" && c.rateStatus !== "priced")
       return { ok: false, error: `${c.noRateReason ?? "No rate on file."} Add a rate, then retry.` };
     if (to === "generated" && c.arrangementMissing) return { ok: false, error: ARRANGEMENT_MISSING_MSG };

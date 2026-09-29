@@ -33,6 +33,8 @@ const CATEGORY_CLASS: Record<AuditCategory, RecordClass> = {
   // §Batch D — standard action events carry no clinical content (text is
   // Part 2-scrubbed at write time); identifiers still follow demographics.
   action: "care_coordination",
+  // §Batch E — matching / merge events carry ids and field names, no clinical content.
+  identity: "demographics",
 };
 
 /**
