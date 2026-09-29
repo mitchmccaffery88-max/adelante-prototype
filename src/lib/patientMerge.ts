@@ -61,7 +61,7 @@ function stores(): Record<string, Row[]> {
     ...(AdelanteEHR._mergeStores() as Record<string, Row[]>),
     ...(chartOrderRows() as unknown as Record<string, Row[]>),
     ...(caseloadRows() as unknown as Record<string, Row[]>),
-    ...(outpatientRows() as unknown as Record<string, Row[]>),
+    ...Object.fromEntries(Object.entries(outpatientRows() as unknown as Record<string, Row[]>).map(([k, v]) => [k === "referrals" ? "hlocReferrals" : k, v])),
     claims: AdelanteEHRExt._mergeClaimRows() as unknown as Row[],
   };
 }

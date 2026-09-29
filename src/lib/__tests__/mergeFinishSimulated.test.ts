@@ -5,7 +5,8 @@ import { mergePatients, releasePart2Holds } from "@/lib/patientMerge";
 import { _mergeRows as chartOrderRows } from "@/lib/chartOrders";
 import { _mergePlanStore } from "@/lib/structuredCarePlan";
 import { isHeldAfterMerge, withoutMergeHeld } from "@/lib/mergePart2";
-import { buildTrackingRows } from "@/lib/trackingTimeline";
+import { buildTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
+import { STAFF_ROLES } from "@/lib/roles";
 import { runAction, actionIsSimulated, confirmationFor } from "@/lib/actions/runAction";
 import { CHART_ACTIONS } from "@/lib/chartActions";
 import { FEATURE_FLAGS, featureFlag } from "@/lib/features";
@@ -98,7 +99,9 @@ describe("Part 2 on merged data", () => {
     const item = a.screenerHistory!.find((h) => h.key === "audit-c")!;
     expect(isHeldAfterMerge(item)).toBe(true);
     // Restricted role (ECM) never sees it.
-    expect(buildTrackingRows(a, "ecm_provider").some((r) => r.key === "audit-c")).toBe(false);
+    const restricted = STAFF_ROLES.map((r) => r.key).find((k) => !roleSeesSudInstruments(k, a))!;
+    expect(restricted).toBeTruthy();
+    expect(buildTrackingRows(a, restricted).some((r) => r.key === "audit-c")).toBe(false);
     // An unconsented disclosure never includes it.
     expect(withoutMergeHeld(a.screenerHistory!)).not.toContain(item);
     releasePart2Holds(rec.id, PRIYA);
@@ -118,7 +121,7 @@ describe("staff exact-match: Create anyway through runAction", () => {
     const r = runAction<Patient>("patient_create_anyway", { role: "clinical_coordinator", staffId: "s-cc1" }, undefined, {
       args: [{ ...base, matchSource: "assisted_signup", createAnyway: { reason: "Different person — ID checked", actorId: "s-cc1" } }],
     });
-    expect(r.ok).toBe(true);
+    expect(r.ok ? "" : r.reason).toBe("");
     expect(r.event.action).toBe("action.succeeded");
     if (r.ok) expect(AdelanteEHR.listAuditEvents().some((e) => e.action === "patient_created_despite_match" && e.patientId === r.value.id)).toBe(true);
     void actor;
