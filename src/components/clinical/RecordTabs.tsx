@@ -1,4 +1,5 @@
 import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
+import { act, actFor } from "@/lib/actions/act";
 import { roleSeesAsamSection as roleSeesAsamSectionForGoals } from "@/lib/asamReporting";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
 import { buildTrackingRows, filterTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
@@ -1112,7 +1113,7 @@ export function ReferralsTab({
               try {
                 // The data layer stamps `sudDisclosureConsent` from the patient's
                 // live consent and refuses Part 2 categories without it.
-                AdelanteEHR.addResourceReferral(
+                act("sdoh_referral", "addResourceReferral",
                   patientId,
                   { category, provider, note, visibleToPatient: true },
                   { staffName, role },
@@ -2076,7 +2077,7 @@ export function TasksTab({ patientId, readOnly }: { patientId: string; readOnly?
             onClick={() => {
               if (!title.trim()) return toast.error("Add a task");
               if (!cmId) return toast.error("Assign a case manager first");
-              AdelanteEHR.createCaseTask({
+              act("task", "createCaseTask", {
                 patientId,
                 assignedTo: cmId,
                 title,
@@ -2515,7 +2516,7 @@ export function NotesTab({
                 canClone={(t) => canCloneTemplate({ role, staffId }, t)}
                 onClone={(t) => {
                   try {
-                    const copy = AdelanteEHR.cloneNoteTemplateToPersonal(t.id, {
+                    const copy = actFor<ReturnType<typeof AdelanteEHR.cloneNoteTemplateToPersonal>>("note_template_clone", "cloneNoteTemplateToPersonal", patientId, t.id, {
                       staffId,
                       staffName,
                     });
@@ -2648,7 +2649,7 @@ export function NotesTab({
                   toast.error("Add at least a subjective entry");
                   return;
                 }
-                const saved = AdelanteEHR.addProgressNote(patient.id, {
+                const saved = act<ReturnType<typeof AdelanteEHR.addProgressNote>>("progress_note", "addProgressNote", patient.id, {
                   clinicianId: authorId,
                   ...(selectedVisitId !== NO_VISIT ? { appointmentId: selectedVisitId } : {}),
                   date: new Date().toISOString(),
@@ -2919,7 +2920,7 @@ function ProgressNoteCard({
         draft: signDraft,
         signedBy: staffName,
       });
-      AdelanteEHR.signProgressNote(patientId, note.id, {
+      act("progress_note", "signProgressNote", patientId, note.id, {
         signedBy: staffName,
         signedById: actingClinicianId ?? actingStaffId ?? staffName,
         role,

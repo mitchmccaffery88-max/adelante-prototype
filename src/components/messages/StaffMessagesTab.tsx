@@ -1,4 +1,5 @@
 // §Messaging Phase 2 — staff side of the patient's care-team thread.
+import { act, actFor } from "@/lib/actions/act";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type CareMessage } from "@/lib/ehr";
@@ -49,7 +50,7 @@ export function StaffMessagesTab({
   const send = () => {
     // Role travels with the message so the member sees WHO answered
     // ("Peer specialist · Andre Willis"), not an anonymous "Care team".
-    const sent = AdelanteEHR.sendStaffMessage(patientId, staffName, draft, role);
+    const sent = act<ReturnType<typeof AdelanteEHR.sendStaffMessage>>("message_patient", "sendStaffMessage", patientId, staffName, draft, role);
     if (sent) {
       setDraft("");
       toast.success("Reply sent");

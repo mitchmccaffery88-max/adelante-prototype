@@ -1,6 +1,7 @@
 // §Chart redesign turn 2 — lab orders, screener requests and metabolic
 // measures: the three drawer forms and their Tracking panel. Every write goes
 // through src/lib/chartOrders.ts (role-checked, audited, Part 2-filtered).
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { CartesianGrid, Line, LineChart, ResponsiveContainer, Tooltip as RTooltip, XAxis, YAxis } from "recharts";
@@ -55,7 +56,7 @@ export function LabOrderForm({ patientId, onDone }: { patientId: string; onDone:
   if (!tests.length) return <p className="text-sm text-muted-foreground">No lab orders for your role.</p>;
   const submit = () => {
     try {
-      const o = placeLabOrder({ patientId, testId, reason, priority, dueAt: new Date(due).toISOString(), actor });
+      const o = act<ReturnType<typeof placeLabOrder>>("lab_order", "placeLabOrder", { patientId, testId, reason, priority, dueAt: new Date(due).toISOString(), actor });
       onDone(`${labTest(o.testId)?.label} ordered (placeholder — not sent)`, "tracking");
     } catch (e) {
       toast.error((e as Error).message);
@@ -104,7 +105,7 @@ export function ScreenerRequestForm({ patientId, onDone }: { patientId: string; 
   if (!options.length) return <p className="text-sm text-muted-foreground">No questionnaires to request.</p>;
   const submit = () => {
     try {
-      requestScreener({ patientId, key, dueAt: new Date(`${due}T23:59:00`).toISOString(), actor });
+      act("screener_request", "requestScreener", { patientId, key, dueAt: new Date(`${due}T23:59:00`).toISOString(), actor });
       onDone(`${options.find((o) => o.key === key)?.label} requested — it's on the patient's home screen`, "tracking");
     } catch (e) {
       toast.error((e as Error).message);
@@ -141,7 +142,7 @@ export function MetabolicForm({ patientId, onDone }: { patientId: string; onDone
   const bmi = Number(wt) > 0 && Number(ht) > 0 ? computeBmi(Number(wt), Number(ht)) : undefined;
   const submit = () => {
     try {
-      recordMetabolic({ patientId, bpSystolic: Number(sys), bpDiastolic: Number(dia), weightKg: Number(wt), heightCm: Number(ht), actor });
+      act("metabolic", "recordMetabolic", { patientId, bpSystolic: Number(sys), bpDiastolic: Number(dia), weightKg: Number(wt), heightCm: Number(ht), actor });
       onDone("Metabolic measures saved", "tracking");
     } catch (e) {
       toast.error((e as Error).message);

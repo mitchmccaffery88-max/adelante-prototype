@@ -30,6 +30,9 @@ const CATEGORY_CLASS: Record<AuditCategory, RecordClass> = {
   // under what legal instrument, is consent-ledger material, and it keeps
   // advocate PHI out of reach of roles that cannot read the ledger.
   advocate: "consent_ledger",
+  // §Batch D — standard action events carry no clinical content (text is
+  // Part 2-scrubbed at write time); identifiers still follow demographics.
+  action: "care_coordination",
 };
 
 /**

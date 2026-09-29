@@ -1,6 +1,7 @@
 // §Chart redesign turn 5 — "Draft with Adel" surfaces. Adel drafts; a person
 // reviews, edits, and signs / sends / decides. Every draft shows
 // ADEL_REVIEW_LABEL and which engine produced it (rule-based template).
+import { act, actFor } from "@/lib/actions/act";
 import { useEffect, useState } from "react";
 const loggedRefills = new Set<string>();
 import { toast } from "sonner";
@@ -89,7 +90,8 @@ export function NoteDraftPanel({ patientId }: { patientId: string }) {
           size="sm"
           data-testid="adel-note-accept"
           onClick={() => {
-            const n = acceptNoteDraft({ patientId, draft, original: orig, actor });
+            let n: ReturnType<typeof acceptNoteDraft> | undefined;
+            try { n = actFor<ReturnType<typeof acceptNoteDraft>>("progress_note", "acceptNoteDraft", patientId, { patientId, draft, original: orig, actor }); } catch (e) { toast.error((e as Error).message); return; }
             setDraft(null);
             toast.success(n ? "Draft note created — review and sign it below" : "Couldn't create the note");
           }}
@@ -141,7 +143,7 @@ function RefillCard({ refill }: { refill: RefillRequest }) {
   }, [refill.id]);
   const decide = (decision: "approved" | "needs_appointment" | "denied") => {
     try {
-      AdelanteEHR.reviewRefill({ id: refill.id, decision, ...(decision === "denied" ? { denyReason: reason } : {}), clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
+      actFor("refill_decision", "reviewRefill", refill.patientId, { id: refill.id, decision, ...(decision === "denied" ? { denyReason: reason } : {}), clinicianId: actor.clinicianId ?? actor.name, actorRole: role });
       const chosen = decision === "approved" ? "approve" : decision === "needs_appointment" ? "approve_with_visit" : "deny";
       adelDraftAudit("refill", chosen === sum.suggestion ? "accepted" : "edited", refill.patientId, actor, { refillId: refill.id, suggestion: sum.suggestion, decision });
       toast.success(`Refill ${decision === "needs_appointment" ? "approved — visit needed" : decision}`);
@@ -230,7 +232,7 @@ export function OutreachDraftPanel({ patientId, reason: fixed }: { patientId: st
           data-testid="adel-outreach-send"
           onClick={() => {
             try {
-              sendOutreach({ patientId, text, original: orig, reason, lang, actor });
+              actFor("message_patient", "sendOutreach", patientId, { patientId, text, original: orig, reason, lang, actor });
               setOrig(null);
               toast.success("Message sent to the patient");
             } catch (e) {

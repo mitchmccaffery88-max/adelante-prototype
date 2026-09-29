@@ -1,5 +1,6 @@
 // §B1/B2 — allergy cross-check, NKDA prompt and the CURES/PDMP step on a
 // draft order. The store (`orderSigningBlocker`) enforces the same rules.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type MedOrder } from "@/lib/ehr";
@@ -123,7 +124,7 @@ export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patien
                 <Label htmlFor={`cnote-${order.id}`} className="text-xs">Note (optional)</Label>
                 <Textarea id={`cnote-${order.id}`} rows={2} value={note} onChange={(e) => setNote(e.target.value)} />
               </div>
-              <Button size="sm" className="w-fit" onClick={() => run(() => AdelanteEHR.recordCuresCheck(patientId, order.id, { checkedAt: at, result, reason, note, emergencyOverride: emergency, by: staffName, role }), "CURES check recorded")}>
+              <Button size="sm" className="w-fit" onClick={() => run(() => act("cures", "recordCuresCheck", patientId, order.id, { checkedAt: at, result, reason, note, emergencyOverride: emergency, by: staffName, role }), "CURES check recorded")}>
                 Record CURES check
               </Button>
             </div>

@@ -8,6 +8,7 @@
 // Assignment is deliberately NOT editable here: reassignment is a caseload
 // decision handled by the real assignment path, which writes provider-switch
 // and audit records. This row shows the assignee and claim state instead.
+import { act, actFor } from "@/lib/actions/act";
 import { useState, type ReactNode } from "react";
 import { toast } from "sonner";
 import {
@@ -269,7 +270,7 @@ export function TaskWorkRow({
                           toast.error("Give the next step a title.");
                           return;
                         }
-                        AdelanteEHR.createCaseTask({
+                        act("task", "createCaseTask", {
                           patientId: task.patientId,
                           assignedTo: task.assignedTo,
                           title: followUp.trim(),

@@ -6,6 +6,7 @@
 // data layer enforces the 42 CFR Part 2 consent gate (this dialog only warns
 // and reports the refusal honestly), every write is attributed, and a referral
 // attached to a staff-only need inherits staff-only visibility.
+import { act, actFor } from "@/lib/actions/act";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
 import { Building2, ExternalLink, Lock } from "lucide-react";
@@ -81,7 +82,7 @@ export function ReferForNeedDialog({
       return toast.error("Add a note for an organization that isn't in the directory.");
     }
     try {
-      AdelanteEHR.addResourceReferral(
+      act("sdoh_referral", "addResourceReferral",
         patientId,
         {
           category,

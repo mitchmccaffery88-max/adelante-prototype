@@ -1,4 +1,5 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
+import { act, actFor } from "@/lib/actions/act";
 import { useMemo, useState } from "react";
 import {
   AdelanteEHR,
@@ -163,7 +164,7 @@ function SchedulePage() {
           description: "Your care team and you have been notified.",
         });
       } else {
-        AdelanteEHR.bookAppointment({
+        act("schedule_visit", "bookAppointment", {
           patientId: patient.id,
           clinicianId: effectiveClinicianId,
           start: selectedStart,

@@ -2,6 +2,7 @@
 // so billing can record it before any claim exists. Writes go through
 // AdelanteEHRExt.setPaymentArrangement, which enforces billing write, audits,
 // and re-prices open unsubmitted claims. Everyone else sees it read-only.
+import { actResult, actFor } from "@/lib/actions/act";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
@@ -31,7 +32,7 @@ export function PaymentArrangementCard({ patientId }: { patientId: string }) {
           className="rounded-md border bg-background px-2 py-1 text-sm"
           value={current ?? ""}
           onChange={(e) => {
-            const r = AdelanteEHRExt.setPaymentArrangement(patientId, e.target.value as PaymentArrangement);
+            const r = actResult<ReturnType<typeof AdelanteEHRExt.setPaymentArrangement>>("payment_arrangement", "setPaymentArrangement", patientId, patientId, e.target.value as PaymentArrangement);
             if (!r.ok) return void toast.error(r.error);
             toast.success(
               r.repriced.length

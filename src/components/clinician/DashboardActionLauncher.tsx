@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useState, type ReactNode } from "react";
+import { act, actFor } from "@/lib/actions/act";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { recordBlockedAttempt } from "@/lib/actions/runAction";
 import { CHART_ACTIONS, type ChartAction, type ChartActionAnswer } from "@/lib/chartActions";
 import { DASHBOARD_ACTION_EVENT, type DashboardActionDetail } from "@/lib/dashboardActionBus";
 import { STAFF_ROSTER, useActingStaff } from "@/lib/roles";
@@ -33,17 +35,25 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
   const [query, setQuery] = useState("");
   const patient = patients.find((p) => p.id === patientId);
   const identity = assignmentIdentityFor(actor);
-  const available = useMemo(() => CHART_ACTIONS.filter((a) => !a.pending).map((action) => ({ action, answer: action.allowed(actor, patient) })).filter((x) => x.answer.state !== "hidden"), [actor, patient]);
+  const available = useMemo(() => CHART_ACTIONS.filter((a) => !a.pending && a.menu !== false).map((action) => ({ action, answer: action.allowed(actor, patient) })).filter((x) => x.answer.state !== "hidden"), [actor, patient]);
   const recent = patients.filter((p) => todayPatientIds.includes(p.id) || isAssignedTo(p, identity)).sort((a, b) => Number(todayPatientIds.includes(b.id)) - Number(todayPatientIds.includes(a.id))).slice(0, 8);
   const results = query.trim().length >= 2 ? searchPatients(patients, query, identity, 8).map((r) => r.patient) : recent;
   const hide = HIDDEN_ROLES.includes(actor.role);
+  const [cmdQuery, setCmdQuery] = useState("");
+  const unavailable = CHART_ACTIONS.filter((a) => !a.pending && a.menu !== false && a.allowed(actor, undefined).state === "hidden");
 
   const open = (actionId: string, pid?: string) => {
     const p = pid ? patients.find((x) => x.id === pid) : patient;
     const action = CHART_ACTIONS.find((x) => x.id === actionId);
-    if (!action || action.pending) return false;
+    if (!action || action.pending || action.menu === false) return false;
     const answer = action.allowed(actor, p);
-    if (answer.state === "hidden") return false;
+    if (answer.state === "hidden") {
+      // §Batch D — a hidden action was attempted (shortcut, command bar): record it.
+      const reason = recordBlockedAttempt(actionId, actor, p);
+      setCmdOpen(false);
+      toast.error(`${reason ?? "That action isn't available for your role."} This attempt was recorded.`);
+      return true;
+    }
     setPatientId(pid ?? "");
     setSelected({ action, answer });
     setMenuOpen(false);
@@ -108,7 +118,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
         {patientFree.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
       </PopoverContent>
     </Popover>
-    <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}><CommandInput placeholder="Search or add anything…" /><CommandList><CommandEmpty>No matches.</CommandEmpty><CommandGroup heading="Patient actions">{patientActions.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup><CommandGroup heading="Without a patient selected">{patientFree.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup></CommandList></CommandDialog>
+    <CommandDialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(""); }}><CommandInput placeholder="Search or add anything…" value={cmdQuery} onValueChange={setCmdQuery} /><CommandList><CommandEmpty>No matches.</CommandEmpty>{cmdQuery.trim().length >= 3 && unavailable.length > 0 && <CommandGroup heading="Not available for your role">{unavailable.map((a) => <CommandItem key={a.id} value={`${a.label.en} unavailable`} className="text-muted-foreground" data-testid={`dashboard-unavailable-${a.id}`} onSelect={() => open(a.id)}><span className="flex-1">{a.label.en}</span><span className="text-[10px]">not available</span></CommandItem>)}</CommandGroup>}<CommandGroup heading="Patient actions">{patientActions.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup><CommandGroup heading="Without a patient selected">{patientFree.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup></CommandList></CommandDialog>
     <Sheet open={!!selected} onOpenChange={(v) => { if (!v) setSelected(null); }}><SheetContent side="right" className="w-full overflow-y-auto sm:max-w-xl" data-testid="dashboard-action-drawer">{selected && <div className="space-y-4"><div><SheetTitle>{selected.action.label.en}</SheetTitle><SheetDescription>{patient ? `${patient.firstName} ${patient.lastName}` : selected.action.needsPatient === false ? "No patient selected" : "Choose a patient first"}</SheetDescription></div>{body()}</div>}</SheetContent></Sheet>
   </>;
 }
@@ -120,7 +130,7 @@ function PatientStep({ patients, query, setQuery, choose }: { patients: ReturnTy
 function TaskForm({ patientId, patients, query, setQuery, choose, done }: { patientId: string; patients: ReturnType<typeof AdelanteEHR.listPatients>; query: string; setQuery: (v: string) => void; choose: (id: string) => void; done: () => void }) {
   const actor = useActingStaff(); const [title, setTitle] = useState(""); const [due, setDue] = useState(() => new Date().toISOString().slice(0, 10)); const [owner, setOwner] = useState(actor.staffId);
   const eligible = STAFF_OPTIONS(actor.role);
-  return <div className="space-y-3" data-testid="dashboard-task-form"><Label>Task</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" /><Label>Owner</Label><Select value={owner} onValueChange={setOwner}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{eligible.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Due</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /><Label>Patient for this task</Label>{patientId ? <p className="text-sm">{patients.find((p) => p.id === patientId)?.firstName ?? "Selected patient"} <Button variant="ghost" size="sm" onClick={() => choose("")}>Change</Button></p> : <PatientStep patients={patients} query={query} setQuery={setQuery} choose={choose} />}<Button disabled={!title.trim() || !due || !patientId} onClick={() => { if (!patientId || !AdelanteEHR.getPatient(patientId)) return; AdelanteEHR.createCaseTask({ patientId, assignedTo: owner, title: title.trim(), dueDate: due, origin: "manual", source: "dashboard" }); done(); }}>Create task</Button></div>;
+  return <div className="space-y-3" data-testid="dashboard-task-form"><Label>Task</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" /><Label>Owner</Label><Select value={owner} onValueChange={setOwner}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{eligible.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Due</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /><Label>Patient for this task</Label>{patientId ? <p className="text-sm">{patients.find((p) => p.id === patientId)?.firstName ?? "Selected patient"} <Button variant="ghost" size="sm" onClick={() => choose("")}>Change</Button></p> : <PatientStep patients={patients} query={query} setQuery={setQuery} choose={choose} />}<Button disabled={!title.trim() || !due || !patientId} onClick={() => { if (!patientId || !AdelanteEHR.getPatient(patientId)) return; try { actFor("dashboard_task", "createCaseTask", patientId, { patientId, assignedTo: owner, title: title.trim(), dueDate: due, origin: "manual", source: "dashboard" }); done(); } catch (e) { toast.error((e as Error).message); } }}>Create task</Button></div>;
 }
 function STAFF_OPTIONS(_role: string) { return STAFF_ROSTER.filter((s) => !["patient", "advocate", "billing", "billing_coordinator"].includes(s.role)).map((s) => ({ id: s.id, name: s.name })); }
 function BookStart({ onBook }: { onBook: () => void }) { return <div className="space-y-3"><Button onClick={onBook}>Open booking form</Button></div>; }

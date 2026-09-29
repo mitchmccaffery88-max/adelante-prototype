@@ -1,4 +1,5 @@
 import { canDoChartAction } from "@/lib/chartActions";
+import { act, actFor } from "@/lib/actions/act";
 import { ReferralPacketDraft } from "@/components/chart/AdelDrafts";
 // §B3/B4 — outpatient episodes of care + higher-level-of-care referrals on the chart.
 import { useState } from "react";
@@ -110,7 +111,7 @@ export function CareEpisodesPanel({ patientId }: { patientId: string }) {
               <div className="space-y-2 rounded-md bg-muted p-2 text-xs">
                 <p>This closes {impact.openTasks} open task(s) with a discharge note and cancels {impact.futureVisits} future visit(s). The care team is notified.</p>
                 <div className="flex flex-wrap gap-2">
-                  <Button size="sm" onClick={() => run(() => dischargeEpisode({ patientId, reason, summary, actor, confirmCancelVisits: true }), "Episode discharged") && (setConfirming(false), setSummary(""))}>
+                  <Button size="sm" onClick={() => run(() => act("discharge_episode", "dischargeEpisode", { patientId, reason, summary, actor, confirmCancelVisits: true }), "Episode discharged") && (setConfirming(false), setSummary(""))}>
                     Confirm discharge
                   </Button>
                   <Button size="sm" variant="ghost" onClick={() => setConfirming(false)}>Keep open</Button>
@@ -211,7 +212,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
           {r.status === "admitted" && activeEpisode(patientId) && canDoChartAction("hloc_referral", { role }) && (
             <Button size="sm" variant="outline" onClick={() => {
               try {
-                dischargeEpisode({ patientId, reason: "higher_level_of_care", summary: `Admitted to ${HLOC_TARGET_LABEL[r.target]} at ${r.destination}.`, actor, confirmCancelVisits: true });
+                act("discharge_episode", "dischargeEpisode", { patientId, reason: "higher_level_of_care", summary: `Admitted to ${HLOC_TARGET_LABEL[r.target]} at ${r.destination}.`, actor, confirmCancelVisits: true });
                 toast.success("Episode discharged — higher level of care");
               } catch (e) {
                 toast.error((e as Error).message);
@@ -259,7 +260,7 @@ function HlocReferralsCard({ patientId }: { patientId: string }) {
           <Textarea id="hl-reason" rows={2} value={f.reason} onChange={(e) => setF({ ...f, reason: e.target.value })} />
           <Button size="sm" onClick={() => {
             try {
-              createHlocReferral({ patientId, target: f.target, reason: f.reason, urgency: f.urgency, destination: f.destination, outsideSudProvider: f.outside, asamId: f.asamId || undefined, actor });
+              act("hloc_referral", "createHlocReferral", { patientId, target: f.target, reason: f.reason, urgency: f.urgency, destination: f.destination, outsideSudProvider: f.outside, asamId: f.asamId || undefined, actor });
               setF({ ...f, reason: "", destination: "" });
               toast.success("Referral drafted");
             } catch (e) {

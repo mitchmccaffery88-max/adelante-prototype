@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { act, actFor } from "@/lib/actions/act";
 import { createFileRoute } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { Card } from "@/components/ui/card";
@@ -192,7 +193,7 @@ function PatientRow({ row, actor }: { row: PatientCaseloadRow; actor: Actor }) {
                 size="sm"
                 onClick={() => {
                   try {
-                    logContact(
+                    actFor("contact_log", "logContact", row.patient.id,
                       { id: actor.id, name: actor.name, role: actor.role },
                       { patientId: row.patient.id, type, date, note },
                     );

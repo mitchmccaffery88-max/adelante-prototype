@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { Keyboard, Plus, Search } from "lucide-react";
 import { useActingStaff } from "@/lib/roles";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { recordBlockedAttempt } from "@/lib/actions/runAction";
 import { CHART_ACTIONS, type ChartAction, type ChartActionAnswer, type ChartActionGroup } from "@/lib/chartActions";
 import type { RecordSection } from "@/components/clinical/recordSections";
 import { useIsMobile } from "@/hooks/use-mobile";
@@ -70,16 +71,37 @@ export function ChartActionLauncher({
 
   const available: Available[] = useMemo(
     () =>
-      CHART_ACTIONS.filter((a) => !a.pending)
+      CHART_ACTIONS.filter((a) => !a.pending && a.menu !== false)
         .map((action) => ({ action, answer: action.allowed({ role, staffId, clinicianId }, patient) }))
         .filter((x) => x.answer.state !== "hidden"),
     [role, staffId, clinicianId, patient],
   );
   const hideAll = NO_BUTTON_ROLES.includes(role);
+  // §Batch D — actions the role can't take. Never listed, but a search that
+  // names one shows it muted; choosing it records a blocked attempt.
+  const [cmdQuery, setCmdQuery] = useState("");
+  const unavailable: ChartAction[] = useMemo(
+    () =>
+      CHART_ACTIONS.filter(
+        (a) => !a.pending && a.menu !== false && a.allowed({ role, staffId, clinicianId }, patient).state === "hidden",
+      ),
+    [role, staffId, clinicianId, patient],
+  );
+  const attemptBlocked = (id: string) => {
+    const reason = recordBlockedAttempt(id, { role, staffId, clinicianId }, patient);
+    setCmdOpen(false);
+    toast.error(`${reason ?? "That action isn't available for your role."} This attempt was recorded.`);
+  };
 
   const open = (id: string) => {
     const hit = available.find((x) => x.action.id === id);
-    if (!hit) return false;
+    if (!hit) {
+      if (unavailable.some((a) => a.id === id)) {
+        attemptBlocked(id);
+        return true;
+      }
+      return false;
+    }
     setMenuOpen(false);
     setCmdOpen(false);
     setDrawer(hit);
@@ -269,8 +291,8 @@ export function ChartActionLauncher({
         </PopoverContent>
       </Popover>
 
-      <CommandDialog open={cmdOpen} onOpenChange={setCmdOpen}>
-        <CommandInput placeholder="Search or add anything…" />
+      <CommandDialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(""); }}>
+        <CommandInput placeholder="Search or add anything…" value={cmdQuery} onValueChange={setCmdQuery} />
         <CommandList data-testid="chart-command-list">
           <CommandEmpty>No matches.</CommandEmpty>
           {available.length > 0 && (
@@ -280,6 +302,22 @@ export function ChartActionLauncher({
                   <Plus className="h-4 w-4" />
                   <span className="flex-1">{x.action.label.en}</span>
                   {x.answer.state === "cosign" && <span className="text-[10px] text-muted-foreground">cosign</span>}
+                </CommandItem>
+              ))}
+            </CommandGroup>
+          )}
+          {cmdQuery.trim().length >= 3 && unavailable.length > 0 && (
+            <CommandGroup heading="Not available for your role">
+              {unavailable.map((a) => (
+                <CommandItem
+                  key={a.id}
+                  value={`add ${a.label.en} unavailable`}
+                  onSelect={() => attemptBlocked(a.id)}
+                  className="text-muted-foreground"
+                  data-testid={`chart-unavailable-${a.id}`}
+                >
+                  <span className="flex-1">{a.label.en}</span>
+                  <span className="text-[10px]">not available</span>
                 </CommandItem>
               ))}
             </CommandGroup>

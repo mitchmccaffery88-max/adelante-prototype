@@ -1,5 +1,6 @@
 // §Refill safety — CURES step on a controlled (DEA II–V) refill. The store
 // (`reviewRefill` with actorRole) enforces the same rule.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, type RefillRequest } from "@/lib/ehr";
@@ -61,7 +62,7 @@ export function RefillCuresStep({ refill }: { refill: RefillRequest }) {
             className="w-fit"
             onClick={() => {
               try {
-                AdelanteEHR.recordRefillCuresCheck(id, { checkedAt: at, result, reason, emergencyOverride: emergency, by: staffName, role });
+                actFor("cures", "recordRefillCuresCheck", refill.patientId, id, { checkedAt: at, result, reason, emergencyOverride: emergency, by: staffName, role });
                 toast.success("CURES check recorded");
               } catch (e) {
                 toast.error((e as Error).message);

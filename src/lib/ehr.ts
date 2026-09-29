@@ -5597,7 +5597,10 @@ export type AuditCategory =
   // §v3.0 Phase 4 — third-party (advocate/family) access. Its own category so
   // every advocate event is separable in the existing audit stream; this is
   // NOT a parallel log.
-  | "advocate";
+  | "advocate"
+  // §Batch D — standard registry action events (action.succeeded /
+  // action.blocked / action.cosign_routed), written only by runAction.
+  | "action";
 export interface AuditEvent {
   id: string;
   at: string;
@@ -19322,6 +19325,12 @@ export const AdelanteEHR = {
       reason: String(hit.detail?.["reason"] ?? ""),
       service: String(hit.detail?.["service"] ?? ""),
     };
+  },
+  /** §Batch D — the one write path for standard `action.*` events (runAction only). */
+  recordActionEvent(evt: { action: string; actorRole?: string; actorId?: string; patientId?: string; detail: Record<string, unknown> }): AuditEvent {
+    appendAudit({ category: "action", ...evt });
+    emit();
+    return auditEvents[0]!;
   },
   listAuditEvents(
     filter: {

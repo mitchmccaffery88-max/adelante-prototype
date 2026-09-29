@@ -1,11 +1,13 @@
 // §Chart redesign turn 3 — document upload and contact log inside the
 // "+ New" drawer. Both call the existing store functions
 // (AdelanteEHR.uploadPatientDocument, logContact); nothing new is enforced here.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR } from "@/lib/ehr";
+import { runAction } from "@/lib/actions/runAction";
 import { useActingStaff } from "@/lib/roles";
-import { logContact, CONTACT_TYPE_LABEL, NOTE_HINT, NOTE_MAX, type ContactType } from "@/lib/caseloadReview";
+import { CONTACT_TYPE_LABEL, NOTE_HINT, NOTE_MAX, type ContactType } from "@/lib/caseloadReview";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -25,14 +27,14 @@ export function DocumentUploadForm({ patientId, onDone }: { patientId: string; o
     if (!file) return toast.error("Choose a file.");
     if (!part2) return toast.error("Say whether this document has substance use (Part 2) information.");
     const sample = file.size < 200_000 ? (await file.text().catch(() => "")).slice(0, 256) : undefined;
-    const r = AdelanteEHR.uploadPatientDocument({
+    const r = runAction<{ ok: true }>("document_upload", { role, staffId, staffName }, AdelanteEHR.getPatient(patientId), { args: [{
       patientId,
       file: { fileName: file.name, mimeType: file.type || "application/octet-stream", sizeBytes: file.size, contentSample: sample },
       uploader: { kind: "staff", name: staffName, role, staffId },
       isPart2: part2 === "yes",
       docType: docType.trim() || undefined,
       note: note.trim() || undefined,
-    });
+    }] });
     if (!r.ok) return toast.error(r.reason);
     onDone(`Document "${file.name}" uploaded`, "overview");
   };
@@ -72,7 +74,7 @@ export function ContactLogForm({ patientId, onDone }: { patientId: string; onDon
   const [note, setNote] = useState("");
   const submit = () => {
     try {
-      logContact({ id: staffId, name: staffName, role }, { patientId, type, date, note });
+      actFor("contact_log", "logContact", patientId, { id: staffId, name: staffName, role }, { patientId, type, date, note });
       onDone(`${CONTACT_TYPE_LABEL[type]} contact logged`, "checkins");
     } catch (e) {
       toast.error((e as Error).message);

@@ -1,4 +1,5 @@
 // §Demographics & identifiers — staff edit with reason + history.
+import { act, actFor } from "@/lib/actions/act";
 import { useState } from "react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -40,7 +41,7 @@ export function DemographicsCard({ patientId }: { patientId: string }) {
     try {
       const patch: Partial<Record<DemographicField, string>> = {};
       for (const f of changed) patch[f] = form[f];
-      AdelanteEHR.updatePatientDemographics(
+      act("demographics_edit", "updatePatientDemographics",
         patientId,
         patch,
         { staffId, clinicianId, name: staffName, role },
