@@ -16,6 +16,8 @@ export const Route = createFileRoute("/")({
         content:
           "Behavioral health and reentry support for your first 90 days back in the community.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: Landing,
