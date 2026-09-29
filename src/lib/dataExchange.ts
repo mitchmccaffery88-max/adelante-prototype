@@ -3,6 +3,7 @@
 // live only here and never reach a chart until "Confirm match".
 import { AdelanteEHR } from "./ehr";
 import type { StaffRole } from "./roles";
+import { DATA_EXCHANGE_ROLES } from "./dataExchangeRoles";
 import {
   _appendHieSyncRun,
   _ingestHieEncounter,
