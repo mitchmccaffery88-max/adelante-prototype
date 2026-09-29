@@ -6756,7 +6756,15 @@ function _referralActor(): ReferralActor {
   return { staffId: staff.id, name: staff.name, role: getActingRole() };
 }
 
+/**
+ * Standing "Simulated" rule (AGENTS.md): audit rows from placeholder / mock
+ * integrations always carry `simulated: true`.
+ */
+export const SIMULATED_AUDIT_CATEGORIES: ReadonlySet<string> = new Set(["hie", "adel_draft", "telehealth", "vendor", "rx"]);
+export const SIMULATED_AUDIT_ACTION_RE = /eligibility|cures|caloms|isl_export|sms|email_sent|notification_(sent|delivered|resend)|clearinghouse|payment|speech|voice/i;
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
+  if (evt.category !== "action" && (SIMULATED_AUDIT_CATEGORIES.has(String(evt.category)) || SIMULATED_AUDIT_ACTION_RE.test(String(evt.action ?? ""))))
+    evt = { ...evt, detail: { ...((evt.detail as Record<string, unknown> | undefined) ?? {}), simulated: true } } as typeof evt;
   const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
     id: `au_${auditEvents.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
