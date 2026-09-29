@@ -1,3 +1,4 @@
+import { seedIdentityDemo } from "./identityDemoSeed";
 import { demoLocalDayAt } from "@/lib/demoTime";
 import { seedChartOrdersDemo } from "@/lib/chartOrders";
 import { seedStructuredCarePlanDemo } from "./structuredCarePlan";
@@ -292,6 +293,7 @@ export function seedDemoInbox(): void {
       ),
     );
   safe(() => seedDataExchangeDemo());
+  safe(() => seedIdentityDemo());
   // Patient-audience notifications for Elena (her own bell only).
   if (elena)
     safe(() => {

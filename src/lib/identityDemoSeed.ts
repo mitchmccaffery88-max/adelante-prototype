@@ -55,7 +55,7 @@ export function seedIdentityDemo() {
     signedByName: "Tomas Reyes",
     attested: true,
     effectiveDate: today,
-    sections: [{ category: "treatment" as never, authorized: true }],
+    sections: [{ category: "mental_health", authorized: true }],
     capturedBy: { staffId: PRIYA.staffId, staffName: PRIYA.name, role: PRIYA.role },
   });
   const clin = AdelanteEHR.listClinicians()[0]?.id ?? "c1";
