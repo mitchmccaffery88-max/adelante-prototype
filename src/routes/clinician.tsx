@@ -65,6 +65,8 @@ import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
 import { listUnsignedWork } from "@/lib/unsignedWork";
+import { WorkspaceDashboard } from "@/components/clinician/WorkspaceDashboard";
+import { DashboardActionLauncher } from "@/components/clinician/DashboardActionLauncher";
 
 
 export const Route = createFileRoute("/clinician")({
@@ -271,6 +273,179 @@ function ClinicianPage() {
       : { kind: "none" };
 
 
+  const requestsAndBooking = (
+    <div className="space-y-3">
+<AppointmentRequestsCard
+  onBook={(pid, kind, requestId) => {
+    const svc = serviceTypes.find((x) => x.id === APPT_REQUEST_BOOK_AS[kind]);
+    setBook({
+      ...book,
+      patientId: pid,
+      serviceType: APPT_REQUEST_BOOK_AS[kind],
+      durationMin: svc?.defaultDurationMin ?? book.durationMin,
+      modality: svc && !svc.allowedModalities.includes(book.modality) ? (svc.allowedModalities[0] ?? "video") : book.modality,
+      locationId: "",
+    });
+    setBookRequestId(requestId);
+    document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+  }}
+/>
+<Card className="p-5" id="book-session">
+  <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
+  {bookAsamTaskId && book.patientId === asamTask?.patientId && (
+    <p className="mt-1 text-xs text-teal" data-testid="booking-from-asam-task">
+      Scheduling the assessment visit for {asamTaskPatient?.firstName}'s ASAM task — linked to the task.
+      Booking does not close the task; signing the ASAM does.
+    </p>
+  )}
+  {bookRequestId && (
+    <p className="mt-1 text-xs text-teal" data-testid="booking-from-request">
+      Booking from an appointment request — booking closes it.
+    </p>
+  )}
+  <div className="mt-4 space-y-3">
+    <div className="space-y-1.5">
+      <Label className="text-sm">{t("clinPatient")}</Label>
+      <Select
+        value={book.patientId}
+        onValueChange={(v) => setBook({ ...book, patientId: v })}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {patients.map((p) => (
+            <SelectItem key={p.id} value={p.id}>
+              {p.firstName} {p.lastName} (day {p.episodeDay}/90)
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    <div className="space-y-1.5">
+      <Label className="text-sm">{t("clinDate")}</Label>
+      <Input
+        type="datetime-local"
+        value={book.start}
+        onChange={(e) => setBook({ ...book, start: e.target.value })}
+      />
+      {bookConflict && (
+        <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
+          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
+          <span>
+            Conflict: you already have a session with{" "}
+            {bookConflictPatient
+              ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
+              : "another patient"}{" "}
+            at this time. Pick a different time.
+          </span>
+        </div>
+      )}
+    </div>
+    <div className="space-y-1.5">
+      <Label className="text-sm">Service type</Label>
+      <Select
+        value={book.serviceType}
+        onValueChange={(v) => {
+          const svc = serviceTypes.find((s) => s.id === v);
+          setBook({
+            ...book,
+            serviceType: v as import("@/lib/ehr").ServiceType,
+            durationMin: svc?.defaultDurationMin ?? book.durationMin,
+            modality:
+              svc && !svc.allowedModalities.includes(book.modality)
+                ? (svc.allowedModalities[0] ?? "video")
+                : book.modality,
+            locationId: "",
+          });
+        }}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {serviceTypes.map((s) => (
+            <SelectItem key={s.id} value={s.id}>
+              {s.label}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+    <div className="space-y-1.5">
+      <Label className="text-sm">Format</Label>
+      <Select
+        value={book.modality}
+        onValueChange={(v) =>
+          setBook({
+            ...book,
+            modality: v as "video" | "phone" | "in_person",
+            locationId: v === "in_person" ? book.locationId : "",
+          })
+        }
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map(
+            (m) => (
+              <SelectItem key={m} value={m}>
+                {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
+              </SelectItem>
+            ),
+          )}
+        </SelectContent>
+      </Select>
+    </div>
+    {book.modality === "in_person" && (
+      <div className="space-y-1.5">
+        <Label className="text-sm">Location</Label>
+        <Select
+          value={book.locationId}
+          onValueChange={(v) => setBook({ ...book, locationId: v })}
+        >
+          <SelectTrigger>
+            <SelectValue placeholder="Pick a location" />
+          </SelectTrigger>
+          <SelectContent>
+            {bookLocations.map((l) => (
+              <SelectItem key={l.id} value={l.id}>
+                {l.name} — {l.city}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+      </div>
+    )}
+    <div className="space-y-1.5">
+      <Label className="text-sm">{t("clinDuration")}</Label>
+      <Select
+        value={String(book.durationMin)}
+        onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}
+      >
+        <SelectTrigger>
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="30">30 min</SelectItem>
+          <SelectItem value="50">50 min</SelectItem>
+          <SelectItem value="60">60 min</SelectItem>
+        </SelectContent>
+      </Select>
+    </div>
+    <Button
+      className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
+      onClick={doBook}
+      disabled={Boolean(bookConflict)}
+    >
+      {t("clinBook")}
+    </Button>
+  </div>
+</Card>
+    </div>
+  );
+
   return (
     <WorkspaceActorContext.Provider value={ws}>
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
@@ -342,306 +517,39 @@ function ClinicianPage() {
         </div>
 
         <TabsContent value="dashboard">
-          {/* §Queue counts — the one canonical at-a-glance row. Replaces the
-              old scattered text links; the sidebar remains canonical nav. */}
-          <QueueCountRow />
-
-          {/* §Quality pass Group A — supervised roles see live supervision status. */}
           <SupervisionBanner />
-
           {clinician?.licenseExpiresOn &&
             (() => {
-              const daysUntil = Math.ceil(
-                (+new Date(clinician.licenseExpiresOn) - Date.now()) / (1000 * 60 * 60 * 24),
-              );
+              const daysUntil = Math.ceil((+new Date(clinician.licenseExpiresOn) - Date.now()) / 86400000);
               if (daysUntil > 30) return null;
-              const expired = daysUntil < 0;
               return (
-                <div
-                  role="alert"
-                  className={
-                    "mb-6 flex items-start gap-2 rounded-md border p-3 text-sm " +
-                    (expired
-                      ? "border-destructive/40 bg-destructive/10 text-destructive"
-                      : "border-gold/40 bg-gold/10 text-navy")
-                  }
-                >
-                  <AlertTriangle className="h-4 w-4 mt-0.5 shrink-0" aria-hidden="true" />
-                  <div>
-                    <div className="font-semibold">
-                      {expired
-                        ? "License expired — booking is blocked"
-                        : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}
-                    </div>
-                    <div className="text-xs opacity-80">
-                      Expires {clinician.licenseExpiresOn.slice(0, 10)}. Contact your credentialing
-                      coordinator to renew.
-                    </div>
-                  </div>
+                <div role="alert" className="mb-4 flex items-start gap-2 rounded-md border border-gold/40 bg-gold/10 p-3 text-sm text-navy">
+                  <AlertTriangle className="mt-0.5 h-4 w-4 shrink-0" />
+                  <span>{daysUntil < 0 ? "License expired — booking is blocked" : `License expires in ${daysUntil} day${daysUntil === 1 ? "" : "s"}`}</span>
                 </div>
               );
             })()}
-
-          <div className="grid lg:grid-cols-3 gap-6">
-            <div className="lg:col-span-2 space-y-3">
-              <h2 className="font-display text-lg text-navy">{t("clinAppointments")}</h2>
-              {appts.length === 0 && (
-                <Card className="p-6 text-sm text-muted-foreground">{t("clinNoAppts")}</Card>
-              )}
-              {todayAppts.length > 0 && (
-                <>
-                  <SectionHeader label={t("clinToday")} count={todayAppts.length} />
-                  {todayAppts.map((a) => (
-                    <ApptCard
-                      key={a.id}
-                      a={a}
-                      patients={patients}
-                      launch={launch}
-                      endSession={endSession}
-                      onOpenChart={openChart}
-                      t={t}
-                    />
-                  ))}
-                </>
-              )}
-              {closingAppts.length > 0 && (
-                <div data-testid="needs-closing">
-                  <SectionHeader label="Needs closing" count={closingAppts.length} />
-                  <p className="mb-2 text-xs text-muted-foreground">Past visits still open: not marked, or attended with no note.</p>
-                  {closingAppts.map((a) => (
-                    <ApptCard key={a.id} a={a} patients={patients} launch={launch} endSession={endSession} onOpenChart={openChart} t={t} />
-                  ))}
-                </div>
-              )}
-              {weekAppts.length > 0 && (
-                <>
-                  <SectionHeader label={t("clinThisWeek")} count={weekAppts.length} />
-                  {weekAppts.map((a) => (
-                    <ApptCard
-                      key={a.id}
-                      a={a}
-                      patients={patients}
-                      launch={launch}
-                      endSession={endSession}
-                      onOpenChart={openChart}
-                      t={t}
-                    />
-                  ))}
-                </>
-              )}
-              {laterAppts.length > 0 && (
-                <>
-                  <SectionHeader label={t("clinLater")} count={laterAppts.length} />
-                  {laterAppts.map((a) => (
-                    <ApptCard
-                      key={a.id}
-                      a={a}
-                      patients={patients}
-                      launch={launch}
-                      endSession={endSession}
-                      onOpenChart={openChart}
-                      t={t}
-                    />
-                  ))}
-                </>
-              )}
-
-              {/* §Dashboard Cleanup Phase 6a — the clinician's own caseload
-                  and open follow-ups, under the day's appointments. */}
-              <MyCaseloadCard />
-              <TaskQueueCard source={taskSource} onOpenPatient={openChart} />
-            </div>
-
-            {/* Action items + booking */}
-            <div className="space-y-3">
-              {/* §Clinical alerts — action items that are NOT appointments. */}
-              <h2 className="font-display text-lg text-navy">Clinical alerts &amp; action items</h2>
-              <RescreenDuePanel
-                patients={patients.filter((p) => appts.some((a) => a.patientId === p.id))}
-              />
-              <ProviderSwitchAlerts
-                clinicianId={clinicianId}
-                onOpen={(pid) => {
-                  if (!confirmDiscardDrawerEdits()) return;
-                  setSelectedPatientId(pid);
-                  setDrawerTab("providers");
-                  setDrawerOpen(true);
-                }}
-              />
-              <div id="refill-requests" className="scroll-mt-32">
-                <RefillReviewCard />
-              </div>
-              <AppointmentRequestsCard
-                onBook={(pid, kind, requestId) => {
-                  const svc = serviceTypes.find((x) => x.id === APPT_REQUEST_BOOK_AS[kind]);
-                  setBook({
-                    ...book,
-                    patientId: pid,
-                    serviceType: APPT_REQUEST_BOOK_AS[kind],
-                    durationMin: svc?.defaultDurationMin ?? book.durationMin,
-                    modality: svc && !svc.allowedModalities.includes(book.modality) ? (svc.allowedModalities[0] ?? "video") : book.modality,
-                    locationId: "",
-                  });
-                  setBookRequestId(requestId);
-                  document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
-                }}
-              />
-              <Card className="p-5" id="book-session">
-                <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
-                {bookAsamTaskId && book.patientId === asamTask?.patientId && (
-                  <p className="mt-1 text-xs text-teal" data-testid="booking-from-asam-task">
-                    Scheduling the assessment visit for {asamTaskPatient?.firstName}'s ASAM task — linked to the task.
-                    Booking does not close the task; signing the ASAM does.
-                  </p>
-                )}
-                {bookRequestId && (
-                  <p className="mt-1 text-xs text-teal" data-testid="booking-from-request">
-                    Booking from an appointment request — booking closes it.
-                  </p>
-                )}
-                <div className="mt-4 space-y-3">
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">{t("clinPatient")}</Label>
-                    <Select
-                      value={book.patientId}
-                      onValueChange={(v) => setBook({ ...book, patientId: v })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {patients.map((p) => (
-                          <SelectItem key={p.id} value={p.id}>
-                            {p.firstName} {p.lastName} (day {p.episodeDay}/90)
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">{t("clinDate")}</Label>
-                    <Input
-                      type="datetime-local"
-                      value={book.start}
-                      onChange={(e) => setBook({ ...book, start: e.target.value })}
-                    />
-                    {bookConflict && (
-                      <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-                        <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-                        <span>
-                          Conflict: you already have a session with{" "}
-                          {bookConflictPatient
-                            ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
-                            : "another patient"}{" "}
-                          at this time. Pick a different time.
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Service type</Label>
-                    <Select
-                      value={book.serviceType}
-                      onValueChange={(v) => {
-                        const svc = serviceTypes.find((s) => s.id === v);
-                        setBook({
-                          ...book,
-                          serviceType: v as import("@/lib/ehr").ServiceType,
-                          durationMin: svc?.defaultDurationMin ?? book.durationMin,
-                          modality:
-                            svc && !svc.allowedModalities.includes(book.modality)
-                              ? (svc.allowedModalities[0] ?? "video")
-                              : book.modality,
-                          locationId: "",
-                        });
-                      }}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {serviceTypes.map((s) => (
-                          <SelectItem key={s.id} value={s.id}>
-                            {s.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">Format</Label>
-                    <Select
-                      value={book.modality}
-                      onValueChange={(v) =>
-                        setBook({
-                          ...book,
-                          modality: v as "video" | "phone" | "in_person",
-                          locationId: v === "in_person" ? book.locationId : "",
-                        })
-                      }
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map(
-                          (m) => (
-                            <SelectItem key={m} value={m}>
-                              {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
-                            </SelectItem>
-                          ),
-                        )}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  {book.modality === "in_person" && (
-                    <div className="space-y-1.5">
-                      <Label className="text-sm">Location</Label>
-                      <Select
-                        value={book.locationId}
-                        onValueChange={(v) => setBook({ ...book, locationId: v })}
-                      >
-                        <SelectTrigger>
-                          <SelectValue placeholder="Pick a location" />
-                        </SelectTrigger>
-                        <SelectContent>
-                          {bookLocations.map((l) => (
-                            <SelectItem key={l.id} value={l.id}>
-                              {l.name} — {l.city}
-                            </SelectItem>
-                          ))}
-                        </SelectContent>
-                      </Select>
-                    </div>
-                  )}
-                  <div className="space-y-1.5">
-                    <Label className="text-sm">{t("clinDuration")}</Label>
-                    <Select
-                      value={String(book.durationMin)}
-                      onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="30">30 min</SelectItem>
-                        <SelectItem value="50">50 min</SelectItem>
-                        <SelectItem value="60">60 min</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
-                  <Button
-                    className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-                    onClick={doBook}
-                    disabled={Boolean(bookConflict)}
-                  >
-                    {t("clinBook")}
-                  </Button>
-                </div>
-              </Card>
-
-            </div>
-          </div>
+          <WorkspaceDashboard
+            actor={ws}
+            appointments={appts}
+            needsClosing={closingAppts}
+            weekAppointments={weekAppts}
+            patients={patients}
+            launch={launch}
+            openChart={openChart}
+            requestsAndBooking={requestsAndBooking}
+          />
+          <DashboardActionLauncher
+            todayPatientIds={todayAppts.map((a) => a.patientId)}
+            onBook={(patientId) => {
+              if (patientId) setBook((b) => ({ ...b, patientId }));
+              document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+            }}
+            onOpenChart={(patientId, section) => {
+              openChart(patientId);
+              if (section) { setDrawerTab(section); setDrawerOpen(true); }
+            }}
+          />
         </TabsContent>
 
         <TabsContent value="chart">

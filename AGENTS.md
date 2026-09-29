@@ -32,3 +32,7 @@
 - Visit check-in / attended / staff reschedule go through `checkInAppointment` / `markAppointmentAttended` / `staffRescheduleAppointment` in `ehr.ts`; only "attended" can bill (`NON_BILLABLE_VISIT_STATUSES`). Why: same role check and audit as no-show.
 - CURES is required only for controlled substances (DEA II–V) via `requiresCuresCheck`; SUD-med masking stays in `sudMedClassifier.ts`. Why: naltrexone/acamprosate/disulfiram are Part 2 but not controlled.
 - Demo seed visit times use `src/lib/demoTime.ts` (Pacific business hours), never `Date#setHours`. Why: the server clock is UTC.
+
+<!-- LOVABLE:BEGIN -->
+- Clinician tiles and merged action rows derive through `clinicianWorkspace.ts`; dashboard “+ New” uses `CHART_ACTIONS` plus `dashboardActionBus.ts`. Why: one acting-person scope, one permission registry, no duplicate queues.
+<!-- LOVABLE:END -->

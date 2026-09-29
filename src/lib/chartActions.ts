@@ -35,6 +35,8 @@ export interface ChartAction {
   store: string;
   /** Not built yet (lab order, screener request — chart redesign turn 2). */
   pending?: boolean;
+  /** False for dashboard actions that can begin without a patient context. */
+  needsPatient?: boolean;
   allowed: (actor: ChartActor, patient?: Patient) => ChartActionAnswer;
 }
 
@@ -257,6 +259,41 @@ export const CHART_ACTIONS: ChartAction[] = [
         ? ok()
         : hide("Your role can't edit this patient's details.");
     },
+  },
+  {
+    id: "dashboard_task",
+    label: { en: "Task for me / my team", es: "Tarea para mí / mi equipo" },
+    group: "coordination",
+    store: "AdelanteEHR.createCaseTask",
+    needsPatient: false,
+    allowed: ({ role }) => {
+      const useful = canAccess(role, "case_notes").level !== "none" || canAccess(role, "care_coordination").level !== "none";
+      return useful ? ok() : hide("Your role doesn't create clinical tasks.");
+    },
+  },
+  {
+    id: "dashboard_book",
+    label: { en: "Book a visit", es: "Programar una cita" },
+    group: "coordination",
+    store: "AdelanteEHR.bookAppointment",
+    needsPatient: false,
+    allowed: ({ role }) => inList(AdelanteEHR.appointmentActionRoles(), role) ? ok() : hide("Your role does not book visits."),
+  },
+  {
+    id: "dashboard_contact",
+    label: { en: "Log contact", es: "Registrar contacto" },
+    group: "coordination",
+    store: "logContact",
+    needsPatient: false,
+    allowed: ({ role }) => canUseCaseloadReview(role) ? ok() : hide("Only case managers and ECM providers can log contacts."),
+  },
+  {
+    id: "dashboard_referral",
+    label: { en: "Referral from resource directory", es: "Referencia del directorio de recursos" },
+    group: "care",
+    store: "AdelanteEHR.addResourceReferral",
+    needsPatient: false,
+    allowed: ({ role }) => writes(role, "sdoh") ? ok() : hide("Your role can't make SDOH referrals."),
   },
 ];
 

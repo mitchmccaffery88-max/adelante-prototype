@@ -1,0 +1,97 @@
+import { useEffect, useState, type ReactNode } from "react";
+import { Link } from "@tanstack/react-router";
+import { AlertTriangle, ChevronDown, Clock3, FileText, MoreHorizontal, Pill } from "lucide-react";
+import { toast } from "sonner";
+import { AdelanteEHR, VISIT_STATUS_LABEL, useEhr, type Appointment, type Patient } from "@/lib/ehr";
+import { listUnsignedWork } from "@/lib/unsignedWork";
+import { myCaseload, myContactsDue, myPendingRefills } from "@/lib/myWork";
+import { attentionCaseload, isCareRole, isCoordinatorRole, notifyNeedsClosing, scheduleSegments, workspaceActionRows, workspaceTileOrder, type ActionGroup, type ScheduleSegment, type WorkspaceActionRow, type WorkspaceTileId } from "@/lib/clinicianWorkspace";
+import type { WorkspaceActor } from "@/lib/workspaceIdentity";
+import { isPrescriberRole, useActingStaff } from "@/lib/roles";
+import { roleSeesApptRequest } from "@/components/scheduling/AppointmentRequestsCard";
+import { openDashboardAction } from "@/lib/dashboardActionBus";
+import { listUnassignedPatients } from "@/lib/coordination";
+import { Card } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from "@/components/ui/dropdown-menu";
+
+const SEGMENT_LABEL: Record<ScheduleSegment, string> = { up_next: "Up next", in_progress: "In progress / checked in", done: "Done today", closed: "Cancelled · no-show · late cancel · rescheduled" };
+const GROUP_LABEL: Record<ActionGroup, string> = { now: "Now", today: "Today", week: "This week" };
+const iconFor = (kind: WorkspaceActionRow["kind"]) => kind === "crisis" ? AlertTriangle : kind === "refill" ? Pill : kind === "closing" || kind === "unsigned" || kind === "cosign" ? FileText : Clock3;
+
+export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppointments, patients, launch, openChart, requestsAndBooking }: { actor: WorkspaceActor; appointments: Appointment[]; needsClosing: Appointment[]; weekAppointments: Appointment[]; patients: Patient[]; launch: (id: string) => void; openChart: (patientId: string) => void; requestsAndBooking: ReactNode }) {
+  const acting = useActingStaff();
+  const actorKey = actor.staffId;
+  const storageKey = `adelante:workspace-tiles:${actorKey}`;
+  const [openTiles, setOpenTiles] = useState<Record<WorkspaceTileId, boolean>>({ schedule: true, actions: true, caseload: false, requests: false, coordinator: true });
+  const [scheduleSegment, setScheduleSegment] = useState<ScheduleSegment>("up_next");
+  const [showWeek, setShowWeek] = useState(false);
+  const [focusGroup, setFocusGroup] = useState<ActionGroup | "all">("all");
+  useEffect(() => { try { const raw = localStorage.getItem(storageKey); if (raw) setOpenTiles((v) => ({ ...v, ...JSON.parse(raw) })); } catch { /* storage optional */ } }, [storageKey]);
+  const toggle = (id: WorkspaceTileId, value: boolean) => { setOpenTiles((v) => { const next = { ...v, [id]: value }; try { localStorage.setItem(storageKey, JSON.stringify(next)); } catch { /* storage optional */ } return next; }); };
+  useEffect(() => notifyNeedsClosing({ ...actor, role: actor.role }, needsClosing), [actor.staffId, actor.role, needsClosing.map((a) => a.id).join("|")]);
+  const segments = scheduleSegments(appointments);
+  const rowsJson = useEhr(() => JSON.stringify(workspaceActionRows({ actor: { ...actor, role: actor.role }, needsClosing })));
+  const rows = JSON.parse(rowsJson) as WorkspaceActionRow[];
+  const caseload = attentionCaseload({ ...actor, role: actor.role }, rows);
+  const contacts = isCareRole(actor.role) ? myContactsDue(actor.staffId).length : 0;
+  const refills = isPrescriberRole(actor.role) ? myPendingRefills({ ...actor, role: actor.role }).length : 0;
+  const unsigned = listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId }).length;
+  const cosign = rows.filter((r) => r.kind === "cosign").length;
+  const crisis = rows.filter((r) => r.kind === "crisis").length;
+  const next = segments.up_next[0];
+  const nextPatient = patients.find((p) => p.id === next?.patientId);
+  const strip = [
+    { id: "next", label: "Next visit", value: next ? `${new Date(next.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })} · ${nextPatient?.firstName ?? "Patient"}` : "None", tile: "schedule" as const, segment: "up_next" as const, zero: !next },
+    { id: "left", label: "Visits left today", value: String(segments.up_next.length + segments.in_progress.length), tile: "schedule" as const, segment: "up_next" as const, zero: segments.up_next.length + segments.in_progress.length === 0 },
+    { id: "closing", label: "Needs closing", value: String(needsClosing.length), tile: "actions" as const, zero: needsClosing.length === 0 },
+    { id: "unsigned", label: "Unsigned", value: String(unsigned), tile: "actions" as const, zero: unsigned === 0 },
+    { id: "cosign", label: "Cosign", value: String(cosign), tile: "actions" as const, zero: cosign === 0 },
+    ...(isPrescriberRole(actor.role) ? [{ id: "refills", label: "Refills", value: String(refills), tile: "actions" as const, zero: refills === 0 }] : []),
+    { id: "crisis", label: "Crisis · my patients", value: String(crisis), tile: "actions" as const, zero: crisis === 0 },
+    ...(isCareRole(actor.role) ? [{ id: "contacts", label: "Contacts due", value: String(contacts), tile: "actions" as const, zero: contacts === 0 }] : []),
+  ];
+  const openFromStrip = (item: typeof strip[number]) => { toggle(item.tile, true); if (item.tile === "schedule" && "segment" in item && item.segment) setScheduleSegment(item.segment); if (item.tile === "actions") setFocusGroup("all"); document.getElementById(`workspace-tile-${item.tile}`)?.scrollIntoView({ behavior: "smooth", block: "start" }); };
+  const order = workspaceTileOrder(actor.role);
+
+  return <div className="space-y-4" data-testid="workspace-dashboard-tiles">
+    <div className="flex gap-1 overflow-x-auto border-y bg-card py-2" aria-label="Today" data-testid="today-strip">
+      <span className="sticky left-0 flex shrink-0 items-center bg-card px-2 text-xs font-semibold uppercase text-teal">Today</span>
+      {strip.map((item) => <Button key={item.id} variant="ghost" className={`h-auto shrink-0 flex-col items-start gap-0 rounded px-3 py-1 text-left ${item.zero ? "opacity-45" : ""}`} onClick={() => openFromStrip(item)}><span className="text-[10px] text-muted-foreground">{item.label}</span><span className="text-sm font-semibold tabular-nums">{item.value}</span></Button>)}
+    </div>
+    {order.map((id) => {
+      if (id === "schedule") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Schedule" summary={`${segments.up_next.length} upcoming · ${segments.in_progress.length} checked in · ${segments.done.length} done`}><ScheduleTile segments={segments} week={weekAppointments} selected={scheduleSegment} setSelected={setScheduleSegment} showWeek={showWeek} setShowWeek={setShowWeek} patients={patients} launch={launch} openChart={openChart} actor={acting} /></WorkspaceTile>;
+      if (id === "actions") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Needs my action" summary={`${rows.length} open · ${rows.filter((r) => r.group === "now").length} now`}><ActionTile rows={rows} focus={focusGroup} setFocus={setFocusGroup} openChart={openChart} actor={acting} /></WorkspaceTile>;
+      if (id === "caseload") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="My caseload" summary={`${caseload.length} patients · ${caseload.filter((x) => x.reasons.length).length} need attention`}><CaseloadTile rows={caseload} /></WorkspaceTile>;
+      if (id === "requests") { const waiting = AdelanteEHR.listOpenAppointmentRequests().filter((r) => roleSeesApptRequest(actor.role, r.patient, r.request)).length; return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Requests & booking" summary={`${waiting} appointment request${waiting === 1 ? "" : "s"} waiting`}>{requestsAndBooking}</WorkspaceTile>; }
+      if (id === "coordinator" && isCoordinatorRole(actor.role)) return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Coordinator queue" summary="Void approvals · unassigned patients · crisis · cosign reassignments"><CoordinatorTile actor={acting} /></WorkspaceTile>;
+      return null;
+    })}
+  </div>;
+}
+
+function WorkspaceTile({ id, title, summary, open, onOpenChange, children }: { id: WorkspaceTileId; title: string; summary: string; open: boolean; onOpenChange: (v: boolean) => void; children: ReactNode }) {
+  return <Collapsible open={open} onOpenChange={onOpenChange}><Card id={`workspace-tile-${id}`} className="scroll-mt-28 overflow-hidden" data-testid={`workspace-tile-${id}`}><CollapsibleTrigger asChild><Button variant="ghost" className="h-auto w-full justify-between rounded-none p-4 text-left"><span><span className="block font-display text-lg text-navy">{title}</span><span className="block text-xs font-normal text-muted-foreground">{summary}</span></span><ChevronDown className={`h-4 w-4 transition-transform ${open ? "rotate-180" : ""}`} /></Button></CollapsibleTrigger><CollapsibleContent><div className="border-t p-3 sm:p-4">{children}</div></CollapsibleContent></Card></Collapsible>;
+}
+
+function ScheduleTile({ segments, week, selected, setSelected, showWeek, setShowWeek, patients, launch, openChart, actor }: { segments: ReturnType<typeof scheduleSegments>; week: Appointment[]; selected: ScheduleSegment; setSelected: (v: ScheduleSegment) => void; showWeek: boolean; setShowWeek: (v: boolean) => void; patients: Patient[]; launch: (id: string) => void; openChart: (id: string) => void; actor: ReturnType<typeof useActingStaff> }) {
+  const rows = showWeek ? week : segments[selected];
+  return <div className="space-y-3"><div className="flex gap-1 overflow-x-auto" role="tablist" aria-label="Schedule view">{(Object.keys(SEGMENT_LABEL) as ScheduleSegment[]).map((id) => <Button key={id} size="sm" variant={!showWeek && selected === id ? "default" : "outline"} className="h-auto shrink-0 py-1.5" onClick={() => { setShowWeek(false); setSelected(id); }}>{SEGMENT_LABEL[id]} <Badge variant="secondary" className="ml-1">{segments[id].length}</Badge></Button>)}<Button size="sm" variant={showWeek ? "default" : "outline"} className="shrink-0" onClick={() => setShowWeek(!showWeek)}>This week · {week.length}</Button></div>{rows.length === 0 ? <p className="py-4 text-sm text-muted-foreground">Nothing in this view.</p> : <div className="divide-y">{rows.map((a) => <ScheduleRow key={a.id} a={a} patient={patients.find((p) => p.id === a.patientId)} launch={launch} openChart={openChart} actor={actor} />)}</div>}</div>;
+}
+function ScheduleRow({ a, patient, launch, openChart, actor }: { a: Appointment; patient?: Patient; launch: (id: string) => void; openChart: (id: string) => void; actor: ReturnType<typeof useActingStaff> }) {
+  const now = Date.now(); const sameDay = new Date(a.start).toDateString() === new Date().toDateString(); const hasNote = patient?.progressNotes?.some((n) => n.appointmentId === a.id);
+  const primary = a.status === "checked_in" ? { label: +new Date(a.start) <= now ? "Mark attended" : "Join", run: () => +new Date(a.start) <= now ? AdelanteEHR.markAppointmentAttended(a.id, { id: actor.staffId, name: actor.staffName, role: actor.role }) : launch(a.id) } : a.status === "attended" && !hasNote ? { label: "Write note", run: () => patient && openDashboardAction("progress_note", patient.id) } : a.status === "scheduled" && sameDay ? { label: +new Date(a.start) <= now ? "Join" : "Check in", run: () => +new Date(a.start) <= now ? launch(a.id) : AdelanteEHR.checkInAppointment(a.id, { id: actor.staffId, name: actor.staffName, role: actor.role }) } : undefined;
+  const run = () => { try { primary?.run(); if (primary?.label === "Check in") toast.success("Checked in"); if (primary?.label === "Mark attended") toast.success("Marked attended"); } catch (e) { toast.error((e as Error).message); } };
+  return <div className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-3" data-testid="schedule-row"><time className="w-16 text-sm font-medium tabular-nums">{new Date(a.start).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" })}</time><div className="min-w-0"><button type="button" className="truncate text-left text-sm font-medium text-navy hover:underline" onClick={() => patient && openChart(patient.id)}>{patient ? `${patient.firstName} ${patient.lastName}` : "Patient"}</button><p className="truncate text-xs text-muted-foreground">{AdelanteEHR.getServiceType(a.serviceType)?.label ?? a.serviceType} · <Badge className="h-5 border-0" variant="secondary">{VISIT_STATUS_LABEL[a.status]}</Badge></p></div><div className="flex items-center gap-1">{primary && <Button size="sm" onClick={run}>{primary.label}</Button>}<DropdownMenu><DropdownMenuTrigger asChild><Button size="icon" variant="ghost" aria-label="More visit actions"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger><DropdownMenuContent align="end">{patient && <><DropdownMenuItem asChild><Link to="/agentic/chart-review/$patientId" params={{ patientId: patient.id }}>Pre-visit review</Link></DropdownMenuItem><DropdownMenuItem asChild><Link to="/agentic/scribe/$patientId" params={{ patientId: patient.id }}>Scribe</Link></DropdownMenuItem></>}<DropdownMenuItem asChild><Link to="/schedule" search={{ reschedule: a.id }}>Reschedule / cancel</Link></DropdownMenuItem>{a.status === "scheduled" && +new Date(a.start) < now && <DropdownMenuItem onSelect={() => AdelanteEHR.markAppointmentNoShow(a.id, { id: actor.staffId, name: actor.staffName, role: actor.role })}>Mark no-show</DropdownMenuItem>}</DropdownMenuContent></DropdownMenu></div></div>;
+}
+
+function ActionTile({ rows, focus, setFocus, openChart, actor }: { rows: WorkspaceActionRow[]; focus: ActionGroup | "all"; setFocus: (v: ActionGroup | "all") => void; openChart: (id: string) => void; actor: ReturnType<typeof useActingStaff> }) {
+  const grouped = { now: rows.filter((r) => r.group === "now"), today: rows.filter((r) => r.group === "today"), week: rows.filter((r) => r.group === "week") };
+  const act = (r: WorkspaceActionRow) => { try { if (r.kind === "closing") { const a = AdelanteEHR.listAppointments().find((x) => `closing:${x.id}` === r.id); if (a?.status === "attended") return openDashboardAction("progress_note", r.patientId); if (a) AdelanteEHR.markAppointmentAttended(a.id, { id: actor.staffId, name: actor.staffName, role: actor.role }); } else if (r.kind === "unsigned") openDashboardAction("progress_note", r.patientId); else if (r.kind === "refill") openDashboardAction("refill_decision", r.patientId); else if (r.kind === "screener" && r.sourceId) AdelanteEHR.sendRescreenTask(r.patientId, r.sourceId); else if (r.kind === "contact") openDashboardAction("dashboard_contact", r.patientId); else if (r.kind === "task" && r.sourceId) AdelanteEHR.completeCaseTask(r.sourceId); else openChart(r.patientId); } catch (e) { toast.error((e as Error).message); } };
+  return <div className="space-y-4"><div className="flex gap-1" role="group" aria-label="Action due group"><Button size="sm" variant={focus === "all" ? "default" : "outline"} onClick={() => setFocus("all")}>All · {rows.length}</Button>{(["now", "today", "week"] as ActionGroup[]).map((g) => <Button key={g} size="sm" variant={focus === g ? "default" : "outline"} onClick={() => setFocus(g)}>{GROUP_LABEL[g]} · {grouped[g].length}</Button>)}</div>{(["now", "today", "week"] as ActionGroup[]).filter((g) => focus === "all" || focus === g).map((g) => <section key={g}><h4 className="mb-1 text-xs font-semibold uppercase text-teal">{GROUP_LABEL[g]} · {grouped[g].length}</h4>{grouped[g].length === 0 ? <p className="py-2 text-xs text-muted-foreground">No items.</p> : <div className="divide-y">{grouped[g].map((r) => { const Icon = iconFor(r.kind); return <div key={r.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 py-2.5" data-testid={`action-row-${r.kind}`}><Icon className={`h-4 w-4 ${r.kind === "crisis" ? "text-destructive" : "text-teal"}`} /><div className="min-w-0"><p className="truncate text-sm font-medium">{r.patientName}</p><p className="truncate text-xs text-muted-foreground">{r.label} · {r.due}</p></div><Button size="sm" variant={r.kind === "crisis" ? "destructive" : "outline"} onClick={() => act(r)}>{r.action}</Button></div>; })}</div>}</section>)}</div>;
+}
+
+function CaseloadTile({ rows }: { rows: ReturnType<typeof attentionCaseload> }) { return <div className="divide-y">{rows.map(({ patient, reasons }) => <div key={patient.id} className="flex items-center justify-between gap-3 py-2"><div className="min-w-0"><p className="truncate text-sm font-medium">{patient.firstName} {patient.lastName}</p><div className="mt-1 flex flex-wrap gap-1">{reasons.slice(0, 3).map((r) => <Badge key={r.id} variant={r.kind === "crisis" ? "destructive" : "secondary"}>{r.label}</Badge>)}{reasons.length === 0 && <span className="text-xs text-muted-foreground">No open attention items</span>}</div></div><Button asChild size="sm" variant="outline"><Link to="/record/$patientId" params={{ patientId: patient.id }} search={{}}>Open chart</Link></Button></div>)}</div>; }
+function CoordinatorTile({ actor }: { actor: ReturnType<typeof useActingStaff> }) { const voids = useEhr(() => AdelanteEHR.listPendingNoteVoids({ staffId: actor.staffId, clinicianId: actor.clinicianId, name: actor.staffName, role: actor.role })); const unassigned = useEhr(() => listUnassignedPatients()); const crisis = useEhr(() => AdelanteEHR.listOpenCrisisEscalations()); const cosigns = useEhr(() => AdelanteEHR.listNotesAwaitingCosign()); const items = [{ label: "Void approvals", count: voids.length, to: "/inbox" as const }, { label: "Unassigned patients", count: unassigned.length, to: "/admin-coordination" as const }, { label: "Crisis", count: crisis.length, to: "/crisis-queue" as const }, { label: "Cosign reassignments", count: cosigns.length, to: "/cosign-inbox" as const }]; return <div className="grid gap-2 sm:grid-cols-2">{items.map((i) => <Button key={i.label} asChild variant="outline" className="h-auto justify-between p-3"><Link to={i.to}><span>{i.label}</span><Badge>{i.count}</Badge></Link></Button>)}</div>; }
