@@ -22,6 +22,9 @@ import { checkEligibility } from "@/lib/eligibility/eligibility";
 import type { FeatureId } from "@/lib/features";
 import { mergePatients, unmergePatients } from "@/lib/patientMerge";
 import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
+import { confirmMatch as confirmHieMatch, rejectMatch as rejectHieMatch } from "@/lib/dataExchange";
+import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
+import { canRunAssistedSignup } from "@/lib/roles";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-09-29.e2";
@@ -484,6 +487,30 @@ export const CHART_ACTIONS: ChartAction[] = [
       ["linkAsRelated", (...a: any[]) => (linkAsRelated as any)(...a)],
     ),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can decide matches.")),
+  },
+  {
+    id: "hie_match_decide",
+    label: { en: "Outside record match", es: "Coincidencia de registro externo" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    flags: ["hie_simulated"],
+    check: "DATA_EXCHANGE_ROLES",
+    store: refs(
+      ["confirmMatch", (...a: any[]) => (confirmHieMatch as any)(...a)],
+      ["rejectMatch", (...a: any[]) => (rejectHieMatch as any)(...a)],
+    ),
+    allowed: ({ role }) => (DATA_EXCHANGE_ROLES.has(role) ? ok() : hide("Only a clinical coordinator or system admin can decide outside-record matches.")),
+  },
+  {
+    id: "patient_create_anyway",
+    label: { en: "Create record despite a match", es: "Crear expediente a pesar de coincidencia" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canRunAssistedSignup(role)",
+    store: refs(["createPatient", (...a: any[]) => (AdelanteEHR.createPatient as any)(...a)]),
+    allowed: ({ role }) => (canRunAssistedSignup(role) ? ok() : hide("Your role can't create patient records.")),
   },
 ];
 

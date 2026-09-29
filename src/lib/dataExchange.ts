@@ -115,6 +115,7 @@ export function listMatchQueue() {
 }
 
 export function confirmMatch(id: string, actor: Actor) {
+  if (!DATA_EXCHANGE_ROLES.has(actor.role as StaffRole)) throw new Error("Only a clinical coordinator or system admin can decide outside-record matches.");
   const q = queue.find((x) => x.id === id && x.status === "pending");
   if (!q) throw new Error("Already decided.");
   q.status = "matched";
@@ -124,6 +125,7 @@ export function confirmMatch(id: string, actor: Actor) {
 }
 
 export function rejectMatch(id: string, reason: string, actor: Actor) {
+  if (!DATA_EXCHANGE_ROLES.has(actor.role as StaffRole)) throw new Error("Only a clinical coordinator or system admin can decide outside-record matches.");
   const q = queue.find((x) => x.id === id && x.status === "pending");
   if (!q) throw new Error("Already decided.");
   if (!reason.trim()) throw new Error("Please give a reason.");
