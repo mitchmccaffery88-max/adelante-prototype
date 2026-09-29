@@ -34,9 +34,20 @@ describe("clinician workspace tiles", () => {
   it("keeps contacts first for ECM and never exposes SUD medication names there", () => {
     const rows = workspaceActionRows({ actor: actor("s-cm1"), needsClosing: [], now: new Date() });
     const contact = rows.findIndex((row) => row.kind === "contact");
-    const nonCrisis = rows.findIndex((row) => row.kind !== "crisis");
-    if (contact >= 0) expect(contact).toBe(nonCrisis);
+    if (contact >= 0) expect(contact).toBe(0);
     expect(rows.map((row) => row.label).join(" ")).not.toMatch(/buprenorphine|naltrexone|acamprosate|disulfiram/i);
+  });
+
+  it("counts each open visit once in Needs closing and puts its work in the same action queue", () => {
+    const pending: Appointment = {
+      id: "closing-example", patientId: "p1", clinicianId: "c1", start: "2026-09-28T18:00:00.000Z", durationMin: 30,
+      serviceType: "therapy_individual", modality: "video", status: "scheduled", source: "staff_scheduled",
+    };
+    const rows = workspaceActionRows({ actor: actor("s-th1"), needsClosing: [pending], now: new Date("2026-09-29T18:00:00.000Z") });
+    const closing = rows.filter((row) => row.id === "closing:closing-example");
+    expect(closing).toHaveLength(1);
+    expect(closing[0].group).toBe("now");
+    expect(closing[0].action).toBe("Mark attended");
   });
 });
 

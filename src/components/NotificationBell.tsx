@@ -1,5 +1,6 @@
 // §Notification feed, Phase 1 — operational alerts only (staff-to-staff,
 // system-generated). In-app only: no email/SMS/push transport exists.
+import { useEffect, useState } from "react";
 import { Bell } from "lucide-react";
 import { useNavigate } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr, type AppNotification } from "@/lib/ehr";
@@ -39,7 +40,9 @@ export function NotificationBell({
       ? AdelanteEHR.listNotificationsFor(staffName, role, staffId)
       : AdelanteEHR.listMemberNotifications(audience, memberId),
   );
-  const unread = rows.filter((n) => !n.readAt).length;
+  const [hydrated, setHydrated] = useState(false);
+  useEffect(() => setHydrated(true), []);
+  const unread = hydrated ? rows.filter((n) => !n.readAt).length : 0;
 
   const open = (n: AppNotification) => {
     if (isMember) {

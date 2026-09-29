@@ -10,6 +10,7 @@ import { searchPatients } from "@/lib/patientSearch";
 import { isTypingTarget, CHART_SHORTCUTS } from "@/components/chart/ChartActionLauncher";
 import { NoteDraftPanel, OutreachDraftPanel, RefillDecisionPanel } from "@/components/chart/AdelDrafts";
 import { ContactLogForm } from "@/components/chart/DrawerForms";
+import { ReferForNeedDialog } from "@/components/clinical/ReferForNeedDialog";
 import { LabOrderForm, MetabolicForm, ScreenerRequestForm } from "@/components/chart/LabsAndMeasures";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -19,7 +20,7 @@ import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList } from "@/components/ui/command";
 
-const HIDDEN_ROLES = ["billing", "billing_coordinator", "credentialing_coordinator", "sys_admin"];
+const HIDDEN_ROLES = ["billing", "billing_coordinator", "credentialing_coordinator"];
 type Available = { action: ChartAction; answer: ChartActionAnswer };
 
 export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds = [] }: { onBook: (patientId?: string) => void; onOpenChart: (patientId: string, section?: string) => void; todayPatientIds?: string[] }) {
@@ -76,10 +77,14 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
   const done = (message: string) => { toast.success(message); setSelected(null); };
   const body = (): ReactNode => {
     if (!selected) return null;
-    if (needsPick) return <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
+    if (needsPick) return <PatientStep patients={results} query={query} setQuery={setQuery} choose={(id) => {
+      const chosen = patients.find((p) => p.id === id);
+      if (chosen && selected.action.allowed(actor, chosen).state !== "hidden") setPatientId(id);
+      else toast.error("That action isn't available for this patient.");
+    }} />;
     switch (selected.action.id) {
-      case "dashboard_book": return <BookStart onBook={onBook} done={() => setSelected(null)} />;
-      case "dashboard_task": return <TaskForm done={() => done("Task created")} />;
+      case "dashboard_book": return <BookStart onBook={() => { setSelected(null); onBook(); }} />;
+      case "dashboard_task": return <TaskForm patientId={patientId} patients={results} query={query} setQuery={setQuery} choose={setPatientId} done={() => done("Task created")} />;
       case "dashboard_contact": return patient ? <ContactLogForm patientId={patient.id} onDone={(m) => done(m)} /> : <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
       case "dashboard_referral": return patient ? <ReferralStart patientId={patient.id} onOpenChart={onOpenChart} /> : <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
       case "progress_note": return patient ? <NoteDraftPanel patientId={patient.id} /> : null;
@@ -94,9 +99,9 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
 
   return <>
     <Popover open={menuOpen} onOpenChange={setMenuOpen}>
-      <PopoverTrigger asChild><Button data-testid="dashboard-new-button" className="fixed bottom-16 right-4 z-50 h-12 rounded-full px-5 shadow-lg sm:right-6"><Plus className="h-5 w-5" /> New</Button></PopoverTrigger>
+       <PopoverTrigger asChild><Button data-testid="dashboard-new-button" className="fixed bottom-24 right-4 z-50 h-12 rounded-full px-5 shadow-lg sm:right-6"><Plus className="h-5 w-5" /> New</Button></PopoverTrigger>
       <PopoverContent align="end" side="top" className="w-80 max-h-[70vh] overflow-y-auto p-2" data-testid="dashboard-add-menu">
-        <button type="button" onClick={() => { setMenuOpen(false); setCmdOpen(true); }} className="mb-2 flex w-full items-center gap-2 rounded-md border px-2 py-2 text-left text-sm"><Search className="h-4 w-4" /><span className="flex-1">Search or add anything…</span><kbd className="rounded border px-1 text-[10px]">⌘K</kbd></button>
+        <Button variant="outline" onClick={() => { setMenuOpen(false); setCmdOpen(true); }} className="mb-2 flex w-full items-center justify-start gap-2"><Search className="h-4 w-4" /><span className="flex-1 text-left">Search or add anything…</span><kbd className="rounded border px-1 text-[10px]">⌘K</kbd></Button>
         <p className="px-2 text-[10px] font-medium uppercase text-muted-foreground">Patient actions</p>
         {patientActions.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
         <p className="mt-2 px-2 text-[10px] font-medium uppercase text-muted-foreground">Without a patient selected</p>
@@ -112,11 +117,17 @@ function PatientStep({ patients, query, setQuery, choose }: { patients: ReturnTy
   return <div className="space-y-3" data-testid="dashboard-patient-picker"><Label htmlFor="dashboard-patient-search">Patient</Label><Input id="dashboard-patient-search" value={query} onChange={(e) => setQuery(e.target.value)} placeholder="Search name, DOB or program ID" /><p className="text-xs text-muted-foreground">Today’s schedule and recent patients appear first.</p><div className="divide-y rounded-md border">{patients.map((p) => <Button key={p.id} variant="ghost" className="h-auto w-full justify-start rounded-none py-2 text-left" onClick={() => choose(p.id)}><span><span className="block font-medium">{p.firstName} {p.lastName}</span><span className="block text-xs text-muted-foreground">DOB {p.dob} · {p.programId}</span></span></Button>)}</div></div>;
 }
 
-function TaskForm({ done }: { done: () => void }) {
+function TaskForm({ patientId, patients, query, setQuery, choose, done }: { patientId: string; patients: ReturnType<typeof AdelanteEHR.listPatients>; query: string; setQuery: (v: string) => void; choose: (id: string) => void; done: () => void }) {
   const actor = useActingStaff(); const [title, setTitle] = useState(""); const [due, setDue] = useState(() => new Date().toISOString().slice(0, 10)); const [owner, setOwner] = useState(actor.staffId);
   const eligible = STAFF_OPTIONS(actor.role);
-  return <div className="space-y-3" data-testid="dashboard-task-form"><Label>Task</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" /><Label>Owner</Label><Select value={owner} onValueChange={setOwner}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{eligible.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Due</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /><Button disabled={!title.trim() || !due} onClick={() => { AdelanteEHR.createCaseTask({ patientId: "", assignedTo: owner, title: title.trim(), dueDate: due, origin: "manual", source: "dashboard" }); done(); }}>Create task</Button></div>;
+  return <div className="space-y-3" data-testid="dashboard-task-form"><Label>Task</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" /><Label>Owner</Label><Select value={owner} onValueChange={setOwner}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{eligible.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Due</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /><Label>Patient for this task</Label>{patientId ? <p className="text-sm">{patients.find((p) => p.id === patientId)?.firstName ?? "Selected patient"} <Button variant="ghost" size="sm" onClick={() => choose("")}>Change</Button></p> : <PatientStep patients={patients} query={query} setQuery={setQuery} choose={choose} />}<Button disabled={!title.trim() || !due || !patientId} onClick={() => { if (!patientId || !AdelanteEHR.getPatient(patientId)) return; AdelanteEHR.createCaseTask({ patientId, assignedTo: owner, title: title.trim(), dueDate: due, origin: "manual", source: "dashboard" }); done(); }}>Create task</Button></div>;
 }
-function STAFF_OPTIONS(role: string) { const all = STAFF_ROSTER.filter((s) => !["patient", "advocate", "billing", "billing_coordinator"].includes(s.role)).map((s) => ({ id: s.id, name: s.name })); return role === "clinical_coordinator" ? all : all; }
-function BookStart({ onBook, done }: { onBook: (patientId?: string) => void; done: () => void }) { return <div className="space-y-3"><p className="text-sm text-muted-foreground">Open the compact booking form in Requests & booking.</p><Button onClick={() => { onBook(); done(); }}>Book a visit</Button></div>; }
-function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenChart: (id: string, section?: string) => void }) { return <div className="space-y-3"><p className="text-sm text-muted-foreground">Choose an identified need and a directory resource in the patient chart. Part 2 consent is checked before saving.</p><Button onClick={() => onOpenChart(patientId, "episodes")}>Open resource directory referral</Button></div>; }
+function STAFF_OPTIONS(_role: string) { return STAFF_ROSTER.filter((s) => !["patient", "advocate", "billing", "billing_coordinator"].includes(s.role)).map((s) => ({ id: s.id, name: s.name })); }
+function BookStart({ onBook }: { onBook: () => void }) { return <div className="space-y-3"><Button onClick={onBook}>Open booking form</Button></div>; }
+function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenChart: (id: string, section?: string) => void }) {
+  const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [itemId, setItemId] = useState("");
+  const item = patient?.sdohPlan?.items.find((need) => need.id === itemId);
+  const needs = patient?.sdohPlan?.items.filter((need) => need.status !== "completed" && need.status !== "not_completed") ?? [];
+  return <div className="space-y-3"><p className="text-sm font-medium">Select a need for this referral</p>{needs.length ? needs.map((need) => <Button key={need.id} variant="outline" className="h-auto w-full justify-start whitespace-normal text-left" onClick={() => setItemId(need.id)}>{need.need}</Button>) : <p className="text-sm text-muted-foreground">No open needs. Add a need to the care plan first.</p>}<Button variant="link" className="px-0" onClick={() => onOpenChart(patientId, "sdoh")}>Open care plan</Button>{item && <ReferForNeedDialog patientId={patientId} item={item} open={!!itemId} onOpenChange={(open) => { if (!open) setItemId(""); }} />}</div>;
+}

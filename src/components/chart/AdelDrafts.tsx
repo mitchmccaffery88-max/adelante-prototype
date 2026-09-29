@@ -28,6 +28,7 @@ import {
   type OutreachReason,
 } from "@/lib/adelDrafts";
 import { RefillCuresStep } from "@/components/clinical/RefillCuresStep";
+import { filterSudMedsForRole } from "@/lib/asamReporting";
 import type { HlocReferral } from "@/lib/outpatientCare";
 import { Button } from "@/components/ui/button";
 import { Textarea } from "@/components/ui/textarea";
@@ -113,11 +114,13 @@ export function NoteDraftPanel({ patientId }: { patientId: string }) {
 
 // ---------------------------------------------------------------- refill
 export function RefillDecisionPanel({ patientId }: { patientId: string }) {
+  const { role } = useActingStaff();
   const refills = useEhr(() => AdelanteEHR.listRefillRequests({ patientId, status: "pending" }));
-  if (!refills.length) return <p className="text-sm text-muted-foreground">No refill requests waiting.</p>;
+  const visible = filterSudMedsForRole(refills, role, AdelanteEHR.getPatient(patientId)).visible;
+  if (!visible.length) return <p className="text-sm text-muted-foreground">No refill requests waiting.</p>;
   return (
     <div className="space-y-3">
-      {refills.map((r) => (
+      {visible.map((r) => (
         <RefillCard key={r.id} refill={r} />
       ))}
     </div>

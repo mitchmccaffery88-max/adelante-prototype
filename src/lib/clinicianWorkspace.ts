@@ -75,8 +75,10 @@ export function workspaceActionRows(input: {
     const p = patients.find((x) => x.id === a.patientId);
     push({ id: `closing:${a.id}`, kind: "closing", patientId: a.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: a.status === "attended" ? "Visit needs a note" : "Past visit needs closing", dueAt: new Date(+new Date(a.start) + a.durationMin * 60000).toISOString(), action: a.status === "attended" ? "Write note" : "Mark attended" });
   }
-  for (const u of listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId }))
-    push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: `${u.patient.firstName} ${u.patient.lastName}`, label: u.kind === "draft_note" ? "Unsigned note" : "Visit needs a note", dueAt: u.date, action: "Write note" });
+  for (const u of listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId })) {
+    if (u.kind === "undocumented_encounter" && needsClosing.some((a) => a.id === u.id)) continue;
+    push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: `${u.patient.firstName} ${u.patient.lastName}`, label: u.kind === "draft_note" ? "Unsigned note" : "Visit needs a note", dueAt: u.date, action: u.kind === "draft_note" ? "Review note" : "Write note", sourceId: u.kind === "draft_note" ? u.id : undefined });
+  }
   for (const { patient, note } of AdelanteEHR.listNotesAwaitingCosign().filter(({ note }) => !note.cosignOwnerOverrideId || aliases.has(note.cosignOwnerOverrideId)))
     if (mineIds.has(patient.id) || (!!note.cosignOwnerOverrideId && aliases.has(note.cosignOwnerOverrideId))) push({ id: `cosign:${note.id}`, kind: "cosign", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Cosign note", dueAt: note.signedAt ?? note.date, action: "Review" });
   for (const r of myPendingRefills(actor)) {
@@ -108,10 +110,11 @@ export function workspaceActionRows(input: {
     push({ id: `contact:${r.patient.id}`, kind: "contact", patientId: r.patient.id, patientName: `${r.patient.firstName} ${r.patient.lastName}`, label: "Contact due", dueAt: now.toISOString(), action: "Log contact" });
   for (const t of AdelanteEHR.listCaseTasks().filter((t) => t.status !== "done" && (!t.snoozedUntil || +new Date(t.snoozedUntil) <= +now) && (aliases.has(t.assignedTo) || mineIds.has(t.patientId)) && (inFacilityEnabled() || !isInFacilityTask(t)))) {
     const p = AdelanteEHR.getPatient(t.patientId);
-    if (t.taskType === "asam_assessment" && (!p || !roleSeesAsamSection(actor.role, p))) continue;
-    push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.allowedRoles && !t.allowedRoles.includes(actor.role) ? "Protected task" : t.title, dueAt: t.dueDate, action: "Complete", sourceId: t.id });
+    if (/asam|caloms|sud/i.test(t.taskType ?? "") && (!p || !roleSeesAsamSection(actor.role, p))) continue;
+    if (t.allowedRoles?.length && !t.allowedRoles.includes(actor.role)) continue;
+    push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
   }
-  const priority = isPrescriberRole(actor.role) ? ["crisis", "refill"] : isCareRole(actor.role) ? ["crisis", "contact"] : ["crisis"];
+  const priority = isPrescriberRole(actor.role) ? ["refill", "crisis"] : isCareRole(actor.role) ? ["contact", "crisis"] : ["crisis"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
     const ai = priority.indexOf(a.kind), bi = priority.indexOf(b.kind);
     if (ai !== bi) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
