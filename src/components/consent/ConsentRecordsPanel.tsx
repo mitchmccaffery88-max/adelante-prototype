@@ -19,6 +19,8 @@ import {
   type Patient,
 } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { canReviewMatches } from "@/lib/patientMatching";
+import { runAction } from "@/lib/actions/runAction";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -243,7 +245,25 @@ export function ConsentRecordsPanel({ patient }: { patient: Patient }) {
               <div className="flex flex-wrap items-center justify-between gap-2">
                 <span className="text-sm font-medium">
                   {r.formType} · {r.status}
+                  {r.needsReviewAfterMerge && (
+                    <span className="ml-2 rounded bg-destructive/10 px-1.5 py-0.5 text-xs text-destructive" data-testid="consent-needs-review">
+                      Consent needs review (merged record — not in effect)
+                    </span>
+                  )}
                 </span>
+                {r.needsReviewAfterMerge && canReviewMatches(role) ? (
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => {
+                      const res = runAction("patient_merge", { role, staffId }, patient, { via: "reconfirmConsentAfterMerge", args: [r.id, { staffId, name: staffName, role }] });
+                      if (res.ok) toast.success("Consent re-confirmed on this record");
+                      else toast.error(res.reason);
+                    }}
+                  >
+                    Re-confirm consent
+                  </Button>
+                ) : null}
                 {canWrite && r.status === "active" ? (
                   <Button size="sm" variant="outline" onClick={() => revoke(r.id)}>
                     Revoke

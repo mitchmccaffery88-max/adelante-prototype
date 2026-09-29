@@ -414,7 +414,12 @@ function ClaimsPage() {
                   const groupRef = parseGroupEncounterId(c.encounterId);
                   return (
                     <TableRow key={c.id} data-testid="claim-row">
-                      <TableCell className="px-2 py-2" data-cell="patient">{pt?.firstName} {pt?.lastName}</TableCell>
+                      <TableCell className="px-2 py-2" data-cell="patient">
+                        {pt?.firstName} {pt?.lastName}
+                        {(c as { duplicateReview?: unknown }).duplicateReview ? (
+                          <Badge variant="destructive" className="ml-1" data-testid="claim-duplicate-review">Possible duplicate after merge — held for billing review</Badge>
+                        ) : null}
+                      </TableCell>
                       <TableCell className="px-2 py-2">
                         {groupRef ? (
                           <Popover>

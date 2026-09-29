@@ -20,7 +20,7 @@ import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { checkEligibility } from "@/lib/eligibility/eligibility";
 import type { FeatureId } from "@/lib/features";
-import { mergePatients, unmergePatients } from "@/lib/patientMerge";
+import { mergePatients, reconfirmConsentAfterMerge, unmergePatients } from "@/lib/patientMerge";
 import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
 import { confirmMatch as confirmHieMatch, rejectMatch as rejectHieMatch } from "@/lib/dataExchange";
 import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
@@ -473,6 +473,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(
       ["mergePatients", (...a: any[]) => (mergePatients as any)(...a)],
       ["unmergePatients", (...a: any[]) => (unmergePatients as any)(...a)],
+      ["reconfirmConsentAfterMerge", (...a: any[]) => (reconfirmConsentAfterMerge as any)(...a)],
     ),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can merge records.")),
   },
