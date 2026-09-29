@@ -222,3 +222,11 @@
 
 - [x] Turn 2: clinician workspace tiles, unified Today/action queues, dashboard + New, carry-over custody gate, and full verification.
 - [x] One-tab Anita, Marisol, Luz, Priya desktop/mobile and dashboard + New checks; outpatient medication-pass filtering fixed; 2,039 tests passed.
+
+## Turn 4 of 6 (batch E) — in progress
+- [ ] Carry-overs: hydration <p> fix, eligibility simulated outcome, turn 2 browser re-proof
+- [ ] patientMatching.ts engine on every creation path (+HIE)
+- [ ] Patient matching review queue (merge / not same / link related)
+- [ ] Merge + unmerge (consents flagged, duplicate claim block)
+- [ ] Multi-role staff identities, dedupe, retire s-cf2, advocate/patient personas
+- [ ] Demo seeds + tests + browser
