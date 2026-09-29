@@ -1,3 +1,5 @@
+import { PossibleExistingPatientError, SignupNeedsVerificationError } from "@/lib/patientMatching";
+import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -147,6 +149,7 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
   if (branch === "code")
     return <RedeemCodePanel operator={operator} onComplete={onComplete} onBack={() => setBranch(null)} />;
 
+  if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
   return (
     <Card className="space-y-5 p-6">
       <div>
@@ -420,6 +423,7 @@ function NewPatientForm({
     setDraft((d) => ({ ...d, [k]: v }));
 
   const isPin = draft.credentialKind === "pin";
+  const [signupHelp, setSignupHelp] = useState(false);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -429,7 +433,9 @@ function NewPatientForm({
       toast.error("Check the highlighted fields");
       return;
     }
-    const created = AdelanteEHR.createPatient({
+    let created;
+    try {
+    created = AdelanteEHR.createPatient({
       firstName: draft.firstName.trim(),
       lastName: draft.lastName.trim(),
       dob: draft.dob,
@@ -440,6 +446,12 @@ function NewPatientForm({
       signupCredential: credentialMeta(draft.credentialKind),
       signupAssistedBy: attributionFor(operator, draft.helperName ?? ""),
     });
+    } catch (err) {
+      // §Batch E — never reveal or confirm another record to an unverified person.
+      if (err instanceof SignupNeedsVerificationError) { setSignupHelp(true); return; }
+      if (err instanceof PossibleExistingPatientError) { toast.error("This person may already exist", { description: "A coordinator will review it in Patient matching. Check the person's record before creating another." }); return; }
+      throw err;
+    }
     // Tier 2 runs on a staff device: never switch the staff member's UI
     // language to the patient's preference.
     if (!operator) setLang(draft.preferredLanguage);

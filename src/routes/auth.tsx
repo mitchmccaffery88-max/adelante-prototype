@@ -1,3 +1,5 @@
+import { SignupNeedsVerificationError } from "@/lib/patientMatching";
+import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -74,19 +76,30 @@ function AuthPage() {
     navigate({ to: "/home" });
   };
 
+  const [signupHelp, setSignupHelp] = useState(false);
   const handleSignUp = (e: React.FormEvent) => {
     e.preventDefault();
     if (!firstName.trim() || !lastName.trim()) {
       toast.error("First and last name are required");
       return;
     }
-    const created = AdelanteEHR.createPatient({
-      firstName: firstName.trim(),
-      lastName: lastName.trim(),
-      dob: dob || undefined,
-      phone: phone || undefined,
-      preferredLanguage: lang,
-    });
+    let created;
+    try {
+      created = AdelanteEHR.createPatient({
+        firstName: firstName.trim(),
+        lastName: lastName.trim(),
+        dob: dob || undefined,
+        phone: phone || undefined,
+        preferredLanguage: lang,
+        matchSource: "self_signup",
+      });
+    } catch (err) {
+      if (err instanceof SignupNeedsVerificationError) {
+        setSignupHelp(true);
+        return;
+      }
+      throw err;
+    }
     AdelanteEHR.setCurrentPatientId(created.id);
     persist(created.id);
     setLang(lang);
