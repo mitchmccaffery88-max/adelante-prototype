@@ -13,6 +13,7 @@ import {
   type HieEncounter,
 } from "./hie";
 import type { HieRecordKind } from "./vendors/hie";
+import { scoreIdentity, type MatchBand, type MatchField } from "./patientMatching";
 
 const DAY = 86400000;
 const HOUR = 3600000;
@@ -22,7 +23,10 @@ export interface MatchCandidate {
   id: string;
   incoming: { name: string; dob: string; cin: string; address: string };
   suggestedPatientId: string;
+  /** Derived from the one matching engine (patientMatching.scoreIdentity). */
   confidence: "High" | "Low";
+  band: MatchBand;
+  fields: MatchField[];
   record: { kind: HieRecordKind; at: string; facility: string; reason: string };
   status: "pending" | "matched" | "rejected";
   reason?: string;
@@ -50,31 +54,48 @@ const shiftDob = (dob: string) => {
   return new Date(d.getTime() + DAY).toISOString().slice(0, 10);
 };
 
+/** Score an incoming HIE identity against the suggested chart — same engine as every creation path. */
+export function scoreHieIncoming(incoming: MatchCandidate["incoming"], patientId: string): { band: MatchBand; fields: MatchField[]; confidence: "High" | "Low" } {
+  const p = AdelanteEHR.getPatient(patientId);
+  if (!p) return { band: "none", fields: [], confidence: "Low" };
+  const parts = incoming.name.replace(/\./g, "").trim().split(/\s+/);
+  const clean = (v: string) => (v === "—" || v === "Unknown" ? undefined : v);
+  const r = scoreIdentity(
+    { firstName: parts[0] ?? "", lastName: parts.slice(1).join(" "), dob: clean(incoming.dob), cin: clean(incoming.cin), address: clean(incoming.address) },
+    { firstName: p.firstName, lastName: p.lastName, dob: p.dob, cin: p.cin, phone: p.phone, email: p.email, address: p.address },
+  );
+  return { band: r.band, fields: r.fields, confidence: r.band === "exact" || r.band === "probable" ? "High" : "Low" };
+}
+
 export function seedDataExchangeDemo(now = new Date()) {
   if (seeded) return;
   seeded = true;
   const sys = { name: "system", role: "sys_admin" };
   _appendHieSyncRun({ at: new Date(now.getTime() - 2 * DAY).toISOString(), received: 3, matched: 2, held: 0, errors: 1, note: "1 message rejected — malformed date" });
   const luis = byFirst("Luis");
-  if (luis)
+  if (luis) {
+    const incoming = { name: "Luis Camacho", dob: shiftDob(luis.dob), cin: luis.cin ?? "—", address: luis.address ?? "—" };
     queue.push({
       id: "match-luis",
-      incoming: { name: "Luis Camacho", dob: shiftDob(luis.dob), cin: luis.cin ?? "—", address: luis.address ?? "—" },
+      incoming,
       suggestedPatientId: luis.id,
-      confidence: "High",
+      ...scoreHieIncoming(incoming, luis.id),
       record: { kind: "ed_visit", at: new Date(now.getTime() - 3 * DAY).toISOString(), facility: "Valley Regional Medical Center (placeholder)", reason: "Anxiety, released same day" },
       status: "pending",
     });
+  }
   const daniel = byFirst("Daniel");
-  if (daniel)
+  if (daniel) {
+    const incoming = { name: "D. Martinez", dob: daniel.dob, cin: "—", address: "Unknown" };
     queue.push({
       id: "match-dmartinez",
-      incoming: { name: "D. Martinez", dob: daniel.dob, cin: "—", address: "Unknown" },
+      incoming,
       suggestedPatientId: daniel.id,
-      confidence: "Low",
+      ...scoreHieIncoming(incoming, daniel.id),
       record: { kind: "ed_visit", at: new Date(now.getTime() - 6 * DAY).toISOString(), facility: "Kings General Hospital (placeholder)", reason: "Ankle sprain" },
       status: "pending",
     });
+  }
   // Held Part 2 record for a patient WITHOUT sud_treatment consent.
   const jordan = byFirst("Jordan");
   if (jordan)
@@ -98,7 +119,7 @@ export function confirmMatch(id: string, actor: Actor) {
   if (!q) throw new Error("Already decided.");
   q.status = "matched";
   q.decidedBy = actor.name;
-  hieAudit("hie_match_confirmed", q.suggestedPatientId, actor, { candidateId: id, confidence: q.confidence });
+  hieAudit("hie_match_confirmed", q.suggestedPatientId, actor, { candidateId: id, confidence: q.confidence, band: q.band });
   return _ingestHieEncounter({ id: `hie-${id}`, patientId: q.suggestedPatientId, ...q.record, sud: false }, actor);
 }
 
