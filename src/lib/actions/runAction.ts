@@ -167,3 +167,20 @@ export function runActionOrThrow<T = unknown>(actionId: string, actor: RunActor,
 export function patientFor(id?: string): Patient | undefined {
   return id ? AdelanteEHR.getPatient(id) : undefined;
 }
+
+/**
+ * A person tried an action their role can't take (shortcut, command bar, a
+ * stale link). Writes the standard `action.blocked` event and never calls the
+ * store. Returns the reason to show, or null if the action is actually allowed.
+ */
+export function recordBlockedAttempt(actionId: string, actor: RunActor, patient?: Patient): string | null {
+  let entry: ChartAction;
+  try {
+    entry = chartAction(actionId);
+  } catch {
+    return runAction(actionId, actor, patient).ok ? null : "Unknown action.";
+  }
+  if (entry.allowed(actor, patient).state !== "hidden") return null;
+  const r = runAction(actionId, actor, patient);
+  return r.ok ? null : r.reason;
+}
