@@ -25,7 +25,7 @@ describe("My work start-of-day", () => {
   it("uses the caseload-review assignment for Darnell", () => {
     ensureCaseloadOwners();
     seedCaseloadDemo();
-    const darnell = { staffId: "s-cf2", staffName: "Darnell Pope (facility contract)" };
+    const darnell = { staffId: "s-cf2", staffName: "Darnell Pope" };
     expect(myCaseload(darnell).length).toBeGreaterThan(0);
     expect(Array.isArray(myContactsDue("s-cf2"))).toBe(true);
   });

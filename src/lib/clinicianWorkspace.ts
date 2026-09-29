@@ -5,12 +5,13 @@ import { hieFollowUps } from "@/lib/hie";
 import { isInFacilityTask, inFacilityEnabled } from "@/lib/inFacility";
 import { myCaseload, myContactsDue, myPendingLabs, myPendingRefills, myPlanReviewsDue, screenerDueRows, staffAliases, type ActingIdentity } from "@/lib/myWork";
 import { listUnsignedWork } from "@/lib/unsignedWork";
+import { listMatchReviews } from "@/lib/patientMatching";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -105,6 +106,12 @@ export function workspaceActionRows(input: {
   for (const s of actor.clinicianId ? AdelanteEHR.listProviderSwitches({ clinicianId: actor.clinicianId, role: "outgoing", status: "pending_review" }) : []) {
     const p = AdelanteEHR.getPatient(s.patientId);
     push({ id: `switch:${s.id}`, kind: "switch", patientId: s.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: "Provider switch review", dueAt: s.createdAt, action: "Review" });
+  }
+  // §Batch E — possible duplicates for coordinator / sys_admin. Label stays generic.
+  if (isCoordinatorRole(actor.role)) for (const r of listMatchReviews("open")) {
+    const pid = r.newPatientId ?? r.existingPatientId;
+    const p = AdelanteEHR.getPatient(pid);
+    push({ id: `match:${r.id}`, kind: "match", patientId: pid, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: r.kind === "signup_attempt" ? "Sign-up matched an existing record" : "Possible duplicate record", dueAt: r.createdAt, action: "Review match", sourceId: r.id });
   }
   if (isCareRole(actor.role)) for (const r of myContactsDue(actor.staffId, now))
     push({ id: `contact:${r.patient.id}`, kind: "contact", patientId: r.patient.id, patientName: `${r.patient.firstName} ${r.patient.lastName}`, label: "Contact due", dueAt: now.toISOString(), action: "Log contact" });

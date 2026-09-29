@@ -7,17 +7,15 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { PatientMatchingQueue } from "@/components/identity/PatientMatchingQueue";
 import { HieNotice, HieStatusCard } from "@/components/hie/OutsideRecords";
 import { KIND_LABEL, hieSyncLog, listHeldHieRecords, releaseHeldHieRecord } from "@/lib/hie";
 import { resolveNavAccess } from "@/lib/navGuard";
 import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
 import {
-  confirmMatch,
   disclosureCsv,
   listIncomingEvents,
-  listMatchQueue,
   listOutboundShares,
-  rejectMatch,
   type FollowUp,
 } from "@/lib/dataExchange";
 
@@ -88,41 +86,9 @@ function Health() {
 }
 
 function Matching() {
-  const actor = useActingStaff();
-  const q = useEhr(() => listMatchQueue());
-  const [reasons, setReasons] = useState<Record<string, string>>({});
-  const a = { name: actor.staffName, role: actor.role };
   return (
-    <Panel title="Patient matching queue" testId="dx-matching">
-      {q.length === 0 && <p className="text-xs text-muted-foreground">No records waiting to be matched.</p>}
-      {q.map((c) => {
-        const p = AdelanteEHR.getPatient(c.suggestedPatientId);
-        const rows: [string, string, string][] = [
-          ["Name", c.incoming.name, p ? `${p.firstName} ${p.lastName}` : "—"],
-          ["DOB", c.incoming.dob, p?.dob ?? "—"],
-          ["CIN", c.incoming.cin, p?.cin ?? "—"],
-          ["Address", c.incoming.address, p?.address ?? "—"],
-        ];
-        return (
-          <div key={c.id} className="space-y-2 rounded-md border p-3" data-testid={`match-${c.id}`}>
-            <div className="flex items-center gap-2 text-xs">
-              <Badge variant="outline">{c.confidence} confidence</Badge>
-              <span className="text-muted-foreground">{KIND_LABEL[c.record.kind]} · {fmt(c.record.at)}</span>
-            </div>
-            <table className="w-full text-xs">
-              <thead><tr className="text-left text-muted-foreground"><th>Field</th><th>Incoming</th><th>Suggested chart</th></tr></thead>
-              <tbody>{rows.map(([f, i, s]) => <tr key={f} className="border-t"><td>{f}</td><td>{i}</td><td>{s}</td></tr>)}</tbody>
-            </table>
-            <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => { confirmMatch(c.id, a); toast.success("Match confirmed", { description: "Added to Outside records (HIE)." }); }}>Confirm match</Button>
-              <Input className="h-8 max-w-xs text-xs" placeholder="Reason (required for Not a match)" value={reasons[c.id] ?? ""} onChange={(e) => setReasons({ ...reasons, [c.id]: e.target.value })} />
-              <Button size="sm" variant="outline" onClick={() => { try { rejectMatch(c.id, reasons[c.id] ?? "", a); toast.success("Marked not a match"); } catch (e) { toast.error((e as Error).message); } }}>Not a match</Button>
-              <Button size="sm" variant="ghost" disabled>Create new person</Button>
-              <span className="text-[11px] text-muted-foreground">Create new person: not in demo</span>
-            </div>
-          </div>
-        );
-      })}
+    <Panel title="Patient matching" testId="dx-matching">
+      <PatientMatchingQueue />
     </Panel>
   );
 }

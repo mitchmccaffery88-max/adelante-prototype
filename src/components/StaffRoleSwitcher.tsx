@@ -5,7 +5,7 @@
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { ChevronDown, UserCog } from "lucide-react";
-import { STAFF_ROLES, STAFF_ROSTER, setActingStaff, useActingStaff } from "@/lib/roles";
+import { STAFF_ROLES, STAFF_ROSTER, roleAssignmentsOf, setActingStaff, useActingStaff, type StaffRole } from "@/lib/roles";
 import { staffNavForRole } from "@/lib/navSections";
 import {
   DropdownMenu,
@@ -23,10 +23,13 @@ export function StaffRoleSwitcher() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { staffId, role, staffName } = useActingStaff();
 
-  function choose(id: string) {
-    const m = STAFF_ROSTER.find((s) => s.id === id);
-    if (!m) return;
-    setActingStaff(m.id);
+  function choose(value: string) {
+    // §Batch E — value is "staffId|role": one identity, pick the active role.
+    const [id, pickedRole] = value.split("|") as [string, StaffRole | undefined];
+    const found = STAFF_ROSTER.find((s) => s.id === id);
+    if (!found) return;
+    const m = { ...found, role: pickedRole ?? found.role };
+    setActingStaff(found.id, m.role);
     const pages = staffNavForRole(m.role);
     const staysHere =
       pages.some((e) => e.to === pathname) ||
@@ -63,13 +66,15 @@ export function StaffRoleSwitcher() {
         <DropdownMenuLabel className="text-xs text-muted-foreground">
           Demo control · act as staff
         </DropdownMenuLabel>
-        <DropdownMenuRadioGroup value={staffId} onValueChange={choose}>
-          {STAFF_ROSTER.map((s) => (
-            <DropdownMenuRadioItem key={s.id} value={s.id} className="text-xs">
-              {s.name}
-              <span className="ml-1 text-muted-foreground">· {roleLabel(s.role)}</span>
-            </DropdownMenuRadioItem>
-          ))}
+        <DropdownMenuRadioGroup value={`${staffId}|${role}`} onValueChange={choose}>
+          {STAFF_ROSTER.flatMap((s) =>
+            roleAssignmentsOf(s).map((a) => (
+              <DropdownMenuRadioItem key={`${s.id}|${a.role}`} value={`${s.id}|${a.role}`} className="text-xs" data-testid={`switch-${s.id}-${a.role}`}>
+                {s.name}
+                <span className="ml-1 text-muted-foreground">· {roleLabel(a.role)}</span>
+              </DropdownMenuRadioItem>
+            )),
+          )}
         </DropdownMenuRadioGroup>
       </DropdownMenuContent>
     </DropdownMenu>

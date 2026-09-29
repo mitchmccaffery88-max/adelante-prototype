@@ -73,6 +73,27 @@ function RecordChartPage() {
       </div>
     );
   }
+  // §Batch E — a merged-away record is read-only and points to the survivor.
+  if (patient.mergedInto) {
+    const survivorId = AdelanteEHR.resolvePatientId(patient.id);
+    const s = AdelanteEHR.getPatient(survivorId);
+    return (
+      <div className="mx-auto max-w-3xl px-4 py-10">
+        <Card className="space-y-3 p-6" data-testid="merged-record-banner">
+          <p className="font-display text-lg text-navy">
+            Merged into {s ? `${s.firstName} ${s.lastName}` : "another record"}
+          </p>
+          <p className="text-sm text-muted-foreground">
+            This record is read-only. Everything on it now lives on the surviving record
+            {patient.mergedAt ? ` (merged ${new Date(patient.mergedAt).toLocaleDateString()})` : ""}.
+          </p>
+          <Button asChild>
+            <Link to="/record/$patientId" params={{ patientId: survivorId }} search={{}}>Open surviving record</Link>
+          </Button>
+        </Card>
+      </div>
+    );
+  }
   return (
     <ChartBody
       patientId={patient.id}

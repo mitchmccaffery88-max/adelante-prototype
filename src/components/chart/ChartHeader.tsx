@@ -89,6 +89,7 @@ export function ChartHeader({
           {/* Care status */}
           <div className="flex min-w-0 flex-wrap items-center gap-1.5" data-testid="chart-header-status">
             {episode && <Badge variant="outline">Episode: {episode}</Badge>}
+            {patient.possibleDuplicate && <Badge variant="outline" className="border-destructive/40 text-destructive" data-testid="possible-duplicate-chip">Possible duplicate — in review</Badge>}
             {rd && (
               <Badge variant="secondary" data-testid="reentry-day">Reentry day {rd}</Badge>
             )}

@@ -275,7 +275,7 @@ export function seedCaseloadDemo(now: Date = new Date()) {
   const find = (first: string, last: string) =>
     AdelanteEHR.listPatients().find((p) => p.firstName === first && p.lastName.startsWith(last));
   const luz: CaseloadActor = { id: "s-cm1", name: "Luz Herrera", role: "ecm_provider" };
-  const darnell: CaseloadActor = { id: "s-cf2", name: "Darnell Pope (facility contract)", role: "cf_care_manager" };
+  const darnell: CaseloadActor = { id: "s-cf2", name: "Darnell Pope", role: "cf_care_manager" };
   const ago = (d: number) => ymd(new Date(+now - d * DAY));
   const plan: [CaseloadActor, string, string, number | null, boolean][] = [
     // actor, first, last, days since last real contact (null = none), add attempt
