@@ -25322,7 +25322,7 @@ try {
       cfCareManagerStaffId: "s-cf2",
       // Matches the staff directory record for s-cf2 exactly (not s-cf1,
       // whose name would collide with the Rosa demo persona).
-      cfCareManagerName: "Darnell Pope (facility contract)",
+      cfCareManagerName: "Darnell Pope",
       facilityName: "Tulare County Adult Pre-Trial Facility",
       openedBy: "s-cf2",
       actorRole: "cf_care_manager",
@@ -25353,7 +25353,7 @@ try {
     AdelanteEHR.issueRecordClaimCode({
       patientId: tomas.id,
       actorStaffId: "s-cf2",
-      actorName: "Darnell Pope (facility contract)",
+      actorName: "Darnell Pope",
       actorRole: "cf_care_manager",
     });
   }
@@ -25497,7 +25497,7 @@ try {
         AdelanteEHR.issueRecordClaimCode({
           patientId: pid,
           actorStaffId: "s-cf2",
-          actorName: "Darnell Pope (facility contract)",
+          actorName: "Darnell Pope",
           actorRole: "cf_care_manager",
         });
     }
