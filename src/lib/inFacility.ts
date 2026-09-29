@@ -43,5 +43,5 @@ export function isInFacilityTask(t: {
   if (t.facilityContext) return true;
   if (t.protocolInstanceId) return true;
   const tt = t.taskType ?? "";
-  return /custody|pre_release|prerelease|mar_|shift_count|census/.test(tt);
+  return /custody|pre_release|prerelease|mar_|med_pass|protocol_round|shift_count|census/.test(tt);
 }
