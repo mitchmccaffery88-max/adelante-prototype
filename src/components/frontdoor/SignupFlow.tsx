@@ -1,5 +1,6 @@
 import { PossibleExistingPatientError, SignupNeedsVerificationError } from "@/lib/patientMatching";
 import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
+import { ExistingPersonStep } from "@/components/identity/ExistingPersonStep";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
@@ -423,6 +424,7 @@ function NewPatientForm({
 
   const isPin = draft.credentialKind === "pin";
   const [signupHelp, setSignupHelp] = useState(false);
+  const [existing, setExisting] = useState<{ ids: string[]; input: Record<string, unknown> } | null>(null);
 
   function submit(e: React.FormEvent) {
     e.preventDefault();
@@ -433,8 +435,7 @@ function NewPatientForm({
       return;
     }
     let created;
-    try {
-    created = AdelanteEHR.createPatient({
+    const payload = {
       firstName: draft.firstName.trim(),
       lastName: draft.lastName.trim(),
       dob: draft.dob,
@@ -444,11 +445,14 @@ function NewPatientForm({
       // Metadata only — the password/PIN itself is intentionally discarded.
       signupCredential: credentialMeta(draft.credentialKind),
       signupAssistedBy: attributionFor(operator, draft.helperName ?? ""),
-    });
+      ...(operator ? { matchSource: "assisted_signup" as const } : { matchSource: "self_signup" as const }),
+    };
+    try {
+      created = AdelanteEHR.createPatient(payload as Parameters<typeof AdelanteEHR.createPatient>[0]);
     } catch (err) {
       // §Batch E — never reveal or confirm another record to an unverified person.
       if (err instanceof SignupNeedsVerificationError) { setSignupHelp(true); return; }
-      if (err instanceof PossibleExistingPatientError) { toast.error("This person may already exist", { description: "A coordinator will review it in Patient matching. Check the person's record before creating another." }); return; }
+      if (err instanceof PossibleExistingPatientError) { setExisting({ ids: err.matches.map((m) => m.patientId), input: payload }); return; }
       throw err;
     }
     // Tier 2 runs on a staff device: never switch the staff member's UI
@@ -465,6 +469,16 @@ function NewPatientForm({
     ) : null;
 
   if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
+  if (existing && operator)
+    return (
+      <ExistingPersonStep
+        operator={operator}
+        existingIds={existing.ids}
+        input={existing.input}
+        onBack={() => setExisting(null)}
+        onCreated={(p) => { setExisting(null); onComplete(p, "created"); }}
+      />
+    );
   return (
     <Card className="space-y-5 p-6">
       <div>

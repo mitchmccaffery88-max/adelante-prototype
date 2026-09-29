@@ -8,7 +8,7 @@
 // for blocked attempts. Event text is Part 2-safe (see part2SafeText).
 import { AdelanteEHR, type AuditEvent, type Patient } from "@/lib/ehr";
 import { chartAction, REGISTRY_VERSION, type ChartAction, type ChartActor } from "@/lib/chartActions";
-import { isFeatureEnabled, type FeatureId } from "@/lib/features";
+import { featureFlag, isFeatureEnabled, SIMULATED_LABEL, type FeatureId } from "@/lib/features";
 import { SUD_MEDICATION_NAMES } from "@/lib/sudMedClassifier";
 
 export const ACTION_EVENTS = ["action.succeeded", "action.blocked", "action.cosign_routed"] as const;
@@ -71,6 +71,23 @@ function flagsFor(a: ChartAction): Record<string, boolean> {
   const out: Record<string, boolean> = {};
   for (const f of a.flags ?? []) out[f] = isFeatureEnabled(f as FeatureId);
   return out;
+}
+
+/** Standing rule: an action is simulated if it says so or depends on any simulated feature flag. */
+export function actionIsSimulated(a: ChartAction): boolean {
+  return Boolean(a.simulated) || (a.flags ?? []).some((f) => featureFlag(f as FeatureId).simulated);
+}
+
+/** The on-screen confirmation for an action: simulated ones always carry "Simulated". */
+export function confirmationFor(actionId: string, message: string): string {
+  let entry: ChartAction | undefined;
+  try {
+    entry = chartAction(actionId);
+  } catch {
+    return message;
+  }
+  if (!actionIsSimulated(entry) || /\bsimulated\b/i.test(message)) return message;
+  return `${SIMULATED_LABEL} — ${message}`;
 }
 
 function write(
@@ -150,11 +167,12 @@ export function runAction<T = unknown>(
   if (refused) {
     return { ok: false, reason: refused, value, event: write("action.blocked", actionId, actor, patient, "blocked", refused, flags, store.name) };
   }
+  const sim = actionIsSimulated(entry);
   if (answer.state === "cosign") {
-    const event = write("action.cosign_routed", actionId, actor, patient, "cosign_routed", answer.reason, flags, store.name);
+    const event = write("action.cosign_routed", actionId, actor, patient, "cosign_routed", answer.reason, flags, store.name, sim);
     return { ok: true, value: value as T, outcome: "cosign_routed", event };
   }
-  const event = entry.simulated
+  const event = sim
     ? write("action.succeeded", actionId, actor, patient, "simulated", "Simulated — no live connection.", flags, store.name, true)
     : write("action.succeeded", actionId, actor, patient, "succeeded", undefined, flags, store.name);
   return { ok: true, value: value as T, outcome: "succeeded", event };

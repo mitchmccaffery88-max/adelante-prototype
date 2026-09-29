@@ -10,6 +10,7 @@ import { _mergeRows as chartOrderRows } from "./chartOrders";
 import { _mergeRows as caseloadRows } from "./caseloadReview";
 import { _mergeRows as outpatientRows } from "./outpatientCare";
 import { _mergePlanStore } from "./structuredCarePlan";
+import { looksPart2, PART2_HOLD } from "./mergePart2";
 import { _closeReviewsForMerge, _reopenReviewAfterUnmerge, canReviewMatches, type MatchActor } from "./patientMatching";
 
 export const UNMERGE_WINDOW_DAYS_DRAFT = 30;
@@ -36,6 +37,10 @@ export interface MergeRecord extends MergeSummary {
   /** Patient-embedded list items moved: [field, item]. */
   embedded: { field: string; item: Row }[];
   planMoved: boolean;
+  /** Screener map entries moved (key → result). */
+  screenerKeys: string[];
+  /** Items held under the original record's consent (Part 2). */
+  part2Held: number;
   flaggedClaims: string[];
 }
 
@@ -56,7 +61,7 @@ function stores(): Record<string, Row[]> {
     ...(AdelanteEHR._mergeStores() as Record<string, Row[]>),
     ...(chartOrderRows() as unknown as Record<string, Row[]>),
     ...(caseloadRows() as unknown as Record<string, Row[]>),
-    ...(outpatientRows() as unknown as Record<string, Row[]>),
+    ...Object.fromEntries(Object.entries(outpatientRows() as unknown as Record<string, Row[]>).map(([k, v]) => [k === "referrals" ? "hlocReferrals" : k, v])),
     claims: AdelanteEHRExt._mergeClaimRows() as unknown as Row[],
   };
 }
@@ -112,7 +117,12 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
   const s = AdelanteEHR.getPatient(input.survivorId)!, o = AdelanteEHR.getPatient(input.otherId)!;
   const id = `merge-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 6)}`;
   const at = new Date().toISOString();
-  const rec: MergeRecord = { ...summary, id, at, by: actor.name, reason: input.reason.trim(), status: "active", moved: [], embedded: [], planMoved: false, flaggedClaims: [] };
+  const rec: MergeRecord = { ...summary, id, at, by: actor.name, reason: input.reason.trim(), status: "active", moved: [], embedded: [], planMoved: false, flaggedClaims: [], screenerKeys: [], part2Held: 0 };
+  const hold = (item: Row, field?: string) => {
+    if (!looksPart2(item, field)) return;
+    (item as Record<string, unknown>)[PART2_HOLD] = { mergeId: id, fromPatientId: o.id };
+    rec.part2Held++;
+  };
   // Duplicate claims are flagged before rows move so both sides are known.
   for (const [x, y] of duplicatePairs(s.id, o.id)) {
     x.duplicateReview = { mergeId: id, otherClaimId: y.id, flaggedAt: at };
@@ -126,6 +136,7 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
       r[TAG] = id;
       if (name === "consentRecords" || name === "disclosures")
         (r as Row).needsReviewAfterMerge = { mergeId: id, fromPatientId: o.id };
+      else hold(r, name);
       rec.moved.push({ store: name, row: r });
     }
   }
@@ -134,10 +145,21 @@ export function mergePatients(input: { survivorId: string; otherId: string; reas
     const target = ((s as unknown as Record<string, Row[] | undefined>)[field] ??= []);
     for (const item of list) {
       item[TAG] = id;
+      hold(item, field);
       target.push(item);
       rec.embedded.push({ field, item });
     }
     list.length = 0;
+  }
+  // Latest-result map: move keys the survivor doesn't have (history already moved).
+  const sm = (s.screeners ??= {} as Patient["screeners"]) as Record<string, unknown>;
+  for (const [k, v] of Object.entries((o.screeners ?? {}) as Record<string, Row | undefined>)) {
+    if (!v || sm[k]) continue;
+    v[TAG] = id;
+    hold(v, k);
+    sm[k] = v;
+    delete (o.screeners as Record<string, unknown>)[k];
+    rec.screenerKeys.push(k);
   }
   const plans = _mergePlanStore();
   if (plans.has(o.id) && !plans.has(s.id)) {
@@ -170,9 +192,11 @@ export function unmergePatients(input: { mergeId: string; reason: string }, acto
   if (!canUnmerge(rec)) throw new Error(`Merges can only be undone within ${UNMERGE_WINDOW_DAYS_DRAFT} days.`);
   const s = AdelanteEHR.getPatient(rec.survivorId)!;
   const o = AdelanteEHR._allPatientsIncludingMerged().find((p) => p.id === rec.otherId)!;
+  const release = (x: Row) => delete (x as Record<string, unknown>)[PART2_HOLD];
   for (const { row } of rec.moved) {
     row.patientId = rec.otherId;
     delete row[TAG];
+    release(row);
     delete (row as Row).needsReviewAfterMerge;
   }
   for (const { field, item } of rec.embedded) {
@@ -182,7 +206,17 @@ export function unmergePatients(input: { mergeId: string; reason: string }, acto
       if (i >= 0) from.splice(i, 1);
     }
     delete item[TAG];
+    release(item);
     ((o as unknown as Record<string, Row[] | undefined>)[field] ??= []).push(item);
+  }
+  for (const k of rec.screenerKeys) {
+    const sm = s.screeners as Record<string, Row | undefined>;
+    const v = sm[k];
+    if (!v) continue;
+    delete sm[k];
+    delete v[TAG];
+    release(v);
+    ((o.screeners ??= {} as Patient["screeners"]) as Record<string, unknown>)[k] = v;
   }
   if (rec.planMoved) {
     const plans = _mergePlanStore();
@@ -206,12 +240,34 @@ export function unmergePatients(input: { mergeId: string; reason: string }, acto
 }
 
 /** Re-confirm a consent/disclosure carried over by a merge. */
-export function reconfirmConsentAfterMerge(consentId: string, actor: { staffId: string; name: string; role: string }) {
+export function reconfirmConsentAfterMerge(consentId: string, actor: MatchActor) {
   const st = stores();
   const row = [...(st.consentRecords ?? []), ...(st.disclosures ?? [])].find((r) => r.id === consentId);
   if (!row?.needsReviewAfterMerge) throw new Error("Nothing to re-confirm.");
+  const mergeId = (row.needsReviewAfterMerge as { mergeId: string }).mergeId;
   delete row.needsReviewAfterMerge;
   audit("consent_reconfirmed_after_merge", String(row.patientId), actor, { consentId });
+  const pending = [...(st.consentRecords ?? []), ...(st.disclosures ?? [])].some((r) => (r.needsReviewAfterMerge as { mergeId?: string } | undefined)?.mergeId === mergeId);
+  if (!pending) releasePart2Holds(mergeId, actor);
+}
+
+/** Every item still held from a merge (for the "Consent needs review" banner). */
+export function heldItemsFor(mergeId: string): Row[] {
+  const rec = M().find((m) => m.id === mergeId);
+  if (!rec) return [];
+  const s = AdelanteEHR.getPatient(rec.survivorId);
+  const scr = s ? Object.values((s.screeners ?? {}) as Record<string, Row | undefined>) : [];
+  return [...rec.moved.map((m) => m.row), ...rec.embedded.map((e) => e.item), ...scr].filter((x): x is Row => Boolean(x && (x as Record<string, unknown>)[PART2_HOLD]));
+}
+
+/** Re-confirm Part 2 consent on the survivor: releases the merge's holds. Coordinator / sys_admin. */
+export function releasePart2Holds(mergeId: string, actor: MatchActor) {
+  requireMerger(actor);
+  const items = heldItemsFor(mergeId);
+  for (const x of items) delete (x as Record<string, unknown>)[PART2_HOLD];
+  const rec = M().find((m) => m.id === mergeId);
+  if (rec) audit("part2_consent_reconfirmed_after_merge", rec.survivorId, actor, { mergeId, released: items.length });
+  AdelanteEHR._emit();
   AdelanteEHR._emit();
 }
 

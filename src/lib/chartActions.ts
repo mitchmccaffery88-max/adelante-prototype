@@ -20,11 +20,14 @@ import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { checkEligibility } from "@/lib/eligibility/eligibility";
 import type { FeatureId } from "@/lib/features";
-import { mergePatients, unmergePatients } from "@/lib/patientMerge";
+import { mergePatients, reconfirmConsentAfterMerge, unmergePatients } from "@/lib/patientMerge";
 import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
+import { confirmMatch as confirmHieMatch, rejectMatch as rejectHieMatch } from "@/lib/dataExchange";
+import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
+import { canRunAssistedSignup } from "@/lib/roles";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.e1";
+export const REGISTRY_VERSION = "2026-09-29.e2";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -113,6 +116,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "med_order",
+    flags: ["erx_simulated"],
     label: { en: "Medication order", es: "Orden de medicamento" },
     group: "clinical",
     sectionId: "orders",
@@ -121,10 +125,10 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "refill_decision",
+    flags: ["cures_placeholder", "erx_simulated"],
     label: { en: "Refill decision", es: "Decisión de resurtido" },
     group: "clinical",
     sectionId: "orders",
-    flags: ["cures_placeholder"],
     store: refs(["reviewRefill", (...a: any[]) => (AdelanteEHR.reviewRefill as any)(...a)]),
     allowed: ({ role }) =>
       inList(REFILL_PRESCRIBER_ROLES, role) ? ok() : hide("Only a prescriber (physician or PMHNP) can review a refill."),
@@ -229,6 +233,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "message_patient",
+    flags: ["notifications_simulated"],
     label: { en: "Message patient", es: "Mensaje al paciente" },
     group: "coordination",
     sectionId: "messages",
@@ -345,6 +350,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "claim_status",
+    flags: ["payments_simulated"],
     label: { en: "Change claim status", es: "Cambiar estado del reclamo" },
     group: "billing",
     menu: false,
@@ -355,6 +361,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_record",
+    flags: ["payments_simulated"],
     label: { en: "Record payment", es: "Registrar pago" },
     group: "billing",
     menu: false,
@@ -364,6 +371,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_void",
+    flags: ["payments_simulated"],
     label: { en: "Void payment", es: "Anular pago" },
     group: "billing",
     menu: false,
@@ -373,6 +381,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_arrangement",
+    flags: ["payments_simulated"],
     label: { en: "Payment arrangement", es: "Acuerdo de pago" },
     group: "billing",
     menu: false,
@@ -382,6 +391,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "eligibility_check",
+    flags: ["eligibility_simulated"],
     simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
     group: "billing",
@@ -395,6 +405,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "isl_export",
+    flags: ["caloms_export_simulated"],
     label: { en: "ISL export", es: "Exportar ISL" },
     group: "billing",
     menu: false,
@@ -444,6 +455,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   })),
   {
     id: "notification_resend",
+    flags: ["notifications_simulated"],
     label: { en: "Resend notification", es: "Reenviar notificación" },
     group: "admin",
     menu: false,
@@ -461,6 +473,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(
       ["mergePatients", (...a: any[]) => (mergePatients as any)(...a)],
       ["unmergePatients", (...a: any[]) => (unmergePatients as any)(...a)],
+      ["reconfirmConsentAfterMerge", (...a: any[]) => (reconfirmConsentAfterMerge as any)(...a)],
     ),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can merge records.")),
   },
@@ -475,6 +488,30 @@ export const CHART_ACTIONS: ChartAction[] = [
       ["linkAsRelated", (...a: any[]) => (linkAsRelated as any)(...a)],
     ),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can decide matches.")),
+  },
+  {
+    id: "hie_match_decide",
+    label: { en: "Outside record match", es: "Coincidencia de registro externo" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    flags: ["hie_simulated"],
+    check: "DATA_EXCHANGE_ROLES",
+    store: refs(
+      ["confirmMatch", (...a: any[]) => (confirmHieMatch as any)(...a)],
+      ["rejectMatch", (...a: any[]) => (rejectHieMatch as any)(...a)],
+    ),
+    allowed: ({ role }) => (DATA_EXCHANGE_ROLES.has(role) ? ok() : hide("Only a clinical coordinator or system admin can decide outside-record matches.")),
+  },
+  {
+    id: "patient_create_anyway",
+    label: { en: "Create record despite a match", es: "Crear expediente a pesar de coincidencia" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canRunAssistedSignup(role)",
+    store: refs(["createPatient", (...a: any[]) => (AdelanteEHR.createPatient as any)(...a)]),
+    allowed: ({ role }) => (canRunAssistedSignup(role) ? ok() : hide("Your role can't create patient records.")),
   },
 ];
 

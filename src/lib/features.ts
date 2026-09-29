@@ -9,7 +9,13 @@ export type FeatureId =
   | "voice_intake"
   | "adel_drafts"
   | "placeholder_lab"
-  | "cures_placeholder";
+  | "cures_placeholder"
+  | "eligibility_simulated"
+  | "erx_simulated"
+  | "telehealth_simulated"
+  | "caloms_export_simulated"
+  | "notifications_simulated"
+  | "payments_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -17,6 +23,13 @@ export interface FeatureFlag {
   owner: string;
   default: boolean;
   scope: FeatureScope;
+  /**
+   * Standing rule (AGENTS.md): a placeholder / mock / demo integration. Until the
+   * persistent backend, security controls and BAA-covered vendors exist, every
+   * action tied to it is labelled "Simulated" on screen and audited with
+   * `simulated: true` — never a plain "succeeded".
+   */
+  simulated: boolean;
 }
 
 export const FEATURE_FLAGS: readonly FeatureFlag[] = [
@@ -26,6 +39,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Clinical operations",
     default: false,
     scope: "global",
+    simulated: false,
   },
   {
     id: "hie_simulated",
@@ -33,6 +47,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Data exchange",
     default: true,
     scope: "global",
+    simulated: true,
   },
   {
     id: "voice_intake",
@@ -40,6 +55,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Patient experience",
     default: true,
     scope: "global",
+    simulated: true,
   },
   {
     id: "adel_drafts",
@@ -47,6 +63,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Clinical informatics",
     default: true,
     scope: "role",
+    simulated: true,
   },
   {
     id: "placeholder_lab",
@@ -54,6 +71,7 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Clinical informatics",
     default: true,
     scope: "program",
+    simulated: true,
   },
   {
     id: "cures_placeholder",
@@ -61,6 +79,55 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     owner: "Pharmacy & prescribing",
     default: true,
     scope: "global",
+    simulated: true,
+  },
+  {
+    id: "eligibility_simulated",
+    description: "Medi-Cal / payer eligibility checks run against a mock adapter; no live 270/271.",
+    owner: "Revenue cycle",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "erx_simulated",
+    description: "eRx / pharmacy send (eScribe mock); prescriptions are recorded, not transmitted.",
+    owner: "Pharmacy & prescribing",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "telehealth_simulated",
+    description: "Telehealth video vendor is a mock; join links are placeholders.",
+    owner: "Clinical operations",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "caloms_export_simulated",
+    description: "CalOMS / ISL exports are files only; nothing is submitted to the state.",
+    owner: "Compliance & reporting",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "notifications_simulated",
+    description: "SMS / email / notification delivery; no BAA-covered sender is connected.",
+    owner: "Patient experience",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
+  {
+    id: "payments_simulated",
+    description: "Payments and clearinghouse submission are recorded locally; no processor or clearinghouse.",
+    owner: "Revenue cycle",
+    default: true,
+    scope: "global",
+    simulated: true,
   },
 ];
 
@@ -85,3 +152,10 @@ export function resetFeatureFlags(): void {
 export function featureSnapshot(): { id: FeatureId; value: boolean; flag: FeatureFlag }[] {
   return FEATURE_FLAGS.map((flag) => ({ id: flag.id, value: isFeatureEnabled(flag.id), flag }));
 }
+
+/** Flags marked simulated (placeholder integrations). */
+export function simulatedFeatureIds(): FeatureId[] {
+  return FEATURE_FLAGS.filter((f) => f.simulated).map((f) => f.id);
+}
+/** On-screen label every simulated confirmation must carry. */
+export const SIMULATED_LABEL = "Simulated";

@@ -104,6 +104,7 @@ import {
   STAFF_ROLES,
   STAFF_ROSTER,
   supervisionStatus,
+  rolesReady,
 } from "./roles";
 import {
   referralNeedsOutreachTask,
@@ -6756,7 +6757,33 @@ function _referralActor(): ReferralActor {
   return { staffId: staff.id, name: staff.name, role: getActingRole() };
 }
 
+/**
+ * Roles that can write care coordination. Module-load demo seeds can run while
+ * roles.ts is still initialising (roles → ehr import order in some entry
+ * points); then the roster isn't readable yet and the list is computed lazily
+ * on first real read instead of throwing inside the seed.
+ */
+function careCoordinationWriterRoles(): StaffRole[] {
+  const roster = (() => {
+    try {
+      return STAFF_ROLES as readonly { key: StaffRole }[] | undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!roster) return [];
+  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");
+}
+
+/**
+ * Standing "Simulated" rule (AGENTS.md): audit rows from placeholder / mock
+ * integrations always carry `simulated: true`.
+ */
+export const SIMULATED_AUDIT_CATEGORIES: ReadonlySet<string> = new Set(["hie", "adel_draft", "telehealth", "vendor", "rx"]);
+export const SIMULATED_AUDIT_ACTION_RE = /eligibility|cures|caloms|isl_export|sms|email_sent|notification_(sent|delivered|resend)|clearinghouse|payment|speech|voice/i;
 function appendAudit(evt: Omit<AuditEvent, "id" | "at"> & { at?: string }) {
+  if (evt.category !== "action" && (SIMULATED_AUDIT_CATEGORIES.has(String(evt.category)) || SIMULATED_AUDIT_ACTION_RE.test(String(evt.action ?? ""))))
+    evt = { ...evt, detail: { ...((evt.detail as Record<string, unknown> | undefined) ?? {}), simulated: true } } as typeof evt;
   const patient = evt.patientId ? patients.find((p) => p.id === evt.patientId) : undefined;
   auditEvents.unshift({
     id: `au_${auditEvents.length + 1}_${Math.random().toString(36).slice(2, 6)}`,
@@ -8433,7 +8460,7 @@ export const AdelanteEHR = {
   },
   /** §Batch E — module-level stores a merge moves between records. */
   _mergeStores() {
-    return { appointments, referrals, caseTasks, patientDocuments, refillRequests, consentRecords, providerSwitches, recoveryStageEntries } as Record<string, { patientId?: string }[]>;
+    return { appointments, referrals, caseTasks, patientDocuments, refillRequests, consentRecords, providerSwitches, recoveryStageEntries, rxEvents, telehealthSessions } as Record<string, { patientId?: string }[]>;
   },
   /** §Batch E — identity audit (patient matching, merge, staff identity). */
   _appendIdentityAudit(evt: { action: string; actorRole?: string; actorId?: string; patientId?: string; detail: Record<string, unknown> }) {
@@ -8515,9 +8542,7 @@ export const AdelanteEHR = {
                 createdAt: now.toISOString(),
                 dueDate: due,
                 status: "open" as const,
-                allowedRoles: STAFF_ROLES.map((r) => r.key).filter(
-                  (role) => canAccess(role, "care_coordination").level === "write",
-                ),
+                allowedRoles: careCoordinationWriterRoles(),
               },
             } satisfies ReferralOutreachState,
           }),
@@ -25399,6 +25424,7 @@ function _seedScreener(patientId: string, key: string, answers: number[], daysAg
   } as ScreenerResult);
 }
 
+function seedQaScenarios() {
 try {
   const P = DEMO_SCENARIO_PERSONAS;
   const baseAnswers = {
@@ -25627,6 +25653,20 @@ try {
   );
 } catch (e) {
   if (typeof console !== "undefined") console.warn("[demo seed] QA scenarios", e);
+}
+}
+// Module-load order: when roles.ts is still initialising (roles → ehr),
+// run the QA scenarios right after the current module graph settles.
+{
+  let tries = 0;
+  const trySeed = () => {
+    if (rolesReady() || tries > 5000) seedQaScenarios();
+    else {
+      tries++;
+      queueMicrotask(trySeed);
+    }
+  };
+  trySeed();
 }
 // §Outpatient meds — DEMO DATA. Prototype prescriptions and refill requests
 // for outpatient medication management, recorded through the normal store

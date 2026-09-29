@@ -1613,3 +1613,12 @@ export function useSupervisionStatus(staffId: string | null | undefined): Superv
   );
   return supervisionStatus(staffId);
 }
+
+// §Batch E — set last: lets ehr.ts detect a circular load where roles.ts is
+// still initialising (a hoisted var reads undefined instead of throwing).
+// eslint-disable-next-line no-var
+var ROLES_READY: boolean | undefined;
+export function rolesReady(): boolean {
+  return ROLES_READY === true;
+}
+ROLES_READY = true;
