@@ -145,6 +145,7 @@ function PermissionsPage() {
             <li key={flag.id} className="flex flex-wrap items-start gap-2 py-2">
               <span className="w-40 font-mono text-xs">{flag.id}</span>
               <span className="min-w-0 flex-1">{flag.description}<span className="block text-xs text-muted-foreground">Owner: {flag.owner} · Scope: {flag.scope} · Default: {flag.default ? "on" : "off"}</span></span>
+              {flag.simulated && <Badge variant="secondary" data-testid={`simulated-${flag.id}`}>Simulated</Badge>}
               <Badge variant={value ? "default" : "outline"}>{value ? "On" : "Off"}</Badge>
             </li>
           ))}
