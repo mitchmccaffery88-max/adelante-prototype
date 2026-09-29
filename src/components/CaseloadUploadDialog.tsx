@@ -1,3 +1,4 @@
+import { PossibleExistingPatientError } from "@/lib/patientMatching";
 import { useMemo, useState } from "react";
 import {
   Dialog,
@@ -228,6 +229,7 @@ export function CaseloadUploadDialog({
     let matched = 0;
     let created = 0;
     let skipped = 0;
+    let held = 0;
     for (const r of rows) {
       if (r.outcome === "skipped") {
         skipped++;
@@ -241,13 +243,21 @@ export function CaseloadUploadDialog({
         });
         matched++;
       } else if (r.outcome === "created" && r.first_name && r.last_name) {
-        const p = AdelanteEHR.createPatient({
-          firstName: r.first_name,
-          lastName: r.last_name,
-          dob: r.dob,
-          phone: r.phone,
-          cin: r.cin,
-        });
+        let p;
+        try {
+          p = AdelanteEHR.createPatient({
+            firstName: r.first_name,
+            lastName: r.last_name,
+            dob: r.dob,
+            phone: r.phone,
+            cin: r.cin,
+            matchSource: "caseload_upload",
+          });
+        } catch (e) {
+          // §Batch E — exact match: don't create; the row is reported as held for review.
+          if (e instanceof PossibleExistingPatientError) { held++; continue; }
+          throw e;
+        }
         AdelanteEHR.assignCaseManager({
           patientId: p.id,
           caseManagerId,
@@ -257,7 +267,7 @@ export function CaseloadUploadDialog({
       }
     }
     toast.success(
-      `Applied: ${matched} matched, ${created} created${skipped ? `, ${skipped} skipped` : ""}${
+      `Applied: ${matched} matched, ${created} created${skipped ? `, ${skipped} skipped` : ""}${held ? `, ${held} may already exist (not created — open the existing record)` : ""}${
         caseManagerName ? ` — assigned to ${caseManagerName}` : ""
       }.`,
     );
