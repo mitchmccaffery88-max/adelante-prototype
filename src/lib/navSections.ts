@@ -203,6 +203,7 @@ export const STAFF_NAV: NavEntry[] = [
     id: "clinician-view-as",
     label: "Clinician workspaces",
     desc: "View a clinician's workspace (audited)",
+    search: { view: "as" },
     icon: Stethoscope,
     to: "/clinician",
     group: "care",
