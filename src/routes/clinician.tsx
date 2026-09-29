@@ -170,7 +170,7 @@ function ClinicianPage() {
       locationId: "",
     }));
     setBookRequestId(undefined);
-    document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+    window.dispatchEvent(new Event("adelante:open-booking"));
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookAsamTaskId]);
   const bookService = serviceTypes.find((s) => s.id === book.serviceType);
@@ -287,7 +287,7 @@ function ClinicianPage() {
       locationId: "",
     });
     setBookRequestId(requestId);
-    document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+    window.dispatchEvent(new Event("adelante:open-booking"));
   }}
 />
 <Card className="p-5" id="book-session">
@@ -543,7 +543,7 @@ function ClinicianPage() {
             todayPatientIds={todayAppts.map((a) => a.patientId)}
             onBook={(patientId) => {
               if (patientId) setBook((b) => ({ ...b, patientId }));
-              document.getElementById("book-session")?.scrollIntoView({ behavior: "smooth" });
+              window.dispatchEvent(new Event("adelante:open-booking"));
             }}
             onOpenChart={(patientId, section) => {
               openChart(patientId);
