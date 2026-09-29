@@ -128,7 +128,7 @@ describe("merge", () => {
     // Duplicate claims blocked until billing reviews.
     expect(c1.duplicateReview?.mergeId).toBe(merged.id);
     const role = getActingRole();
-    setActingStaff("s-bl1");
+    setActingStaff("s-bill1");
     const blocked = AdelanteEHRExt.transitionClaim?.(c1.id, "submitted" as never, "try") as { ok: boolean; error?: string } | undefined;
     if (blocked) expect(blocked.ok === false && /duplicate/i.test(blocked.error ?? DUPLICATE_CLAIM_BLOCKED)).toBe(true);
     setActingStaff(STAFF_ROSTER.find((x) => x.role === role)!.id);
