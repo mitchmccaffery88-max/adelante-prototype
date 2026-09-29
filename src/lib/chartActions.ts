@@ -19,7 +19,8 @@ import { logContact } from "@/lib/caseloadReview";
 import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { checkEligibility } from "@/lib/eligibility/eligibility";
-import type { FeatureId } from "@/lib/features";
+import { setFeatureFlagWithReason, type FeatureId } from "@/lib/features";
+import { exportClaimsCsv } from "@/lib/billingWorkspace";
 import { mergePatients, reconfirmConsentAfterMerge, unmergePatients } from "@/lib/patientMerge";
 import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
 import { confirmMatch as confirmHieMatch, rejectMatch as rejectHieMatch } from "@/lib/dataExchange";
@@ -27,7 +28,7 @@ import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
 import { canRunAssistedSignup } from "@/lib/roles";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.e2";
+export const REGISTRY_VERSION = "2026-09-29.f";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -72,6 +73,10 @@ export interface ChartAction {
   needsPatient?: boolean;
   /** The store only simulates the work (no live connection) — the audit records `simulated: true`. */
   simulated?: boolean;
+  /** §Turn 6 — shown in the billing / admin / coordinator "+ New" (OpsActionLauncher). */
+  opsMenu?: boolean;
+  /** Shown disabled in "+ New" with this label (roadmap item, not built). */
+  comingSoon?: string;
   allowed: (actor: ChartActor, patient?: Patient) => ChartActionAnswer;
 }
 
@@ -340,6 +345,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   // ---- §Batch D — billing actions (hidden from "+ New" until turn 6) ----
   {
     id: "claim_correct",
+    opsMenu: true,
     label: { en: "Correct claim", es: "Corregir reclamo" },
     group: "billing",
     menu: false,
@@ -350,6 +356,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "claim_status",
+    opsMenu: true,
     flags: ["payments_simulated"],
     label: { en: "Change claim status", es: "Cambiar estado del reclamo" },
     group: "billing",
@@ -361,11 +368,13 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_record",
+    opsMenu: true,
     flags: ["payments_simulated"],
     label: { en: "Record payment", es: "Registrar pago" },
     group: "billing",
     menu: false,
     check: "canAccess(billing) = write",
+    needsPatient: false,
     store: refs(["recordPatientPayment", (...a: any[]) => (AdelanteEHRExt.recordPatientPayment as any)(...a)]),
     allowed: ({ role }) => (writes(role, "billing") ? ok() : hide("Only billing staff can record payments.")),
   },
@@ -381,6 +390,8 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_arrangement",
+    opsMenu: true,
+    needsPatient: true,
     flags: ["payments_simulated"],
     label: { en: "Payment arrangement", es: "Acuerdo de pago" },
     group: "billing",
@@ -391,6 +402,8 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "eligibility_check",
+    opsMenu: true,
+    needsPatient: true,
     flags: ["eligibility_simulated"],
     simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
@@ -405,6 +418,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "isl_export",
+    opsMenu: true,
     flags: ["caloms_export_simulated"],
     label: { en: "ISL export", es: "Exportar ISL" },
     group: "billing",
@@ -423,6 +437,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     },
     group: "admin",
     menu: false,
+    opsMenu: k === "create" || k === "clone",
     needsPatient: false,
     check: k === "clone" ? "canAccess(note_templates) ≥ read" : "canAccess(note_templates) = write",
     store: {
@@ -444,6 +459,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     },
     group: "admin",
     menu: false,
+    opsMenu: k === "save",
     needsPatient: false,
     check: "canAccess(scheduling_rules) = write",
     store: {
@@ -455,6 +471,8 @@ export const CHART_ACTIONS: ChartAction[] = [
   })),
   {
     id: "notification_resend",
+    opsMenu: true,
+    needsPatient: false,
     flags: ["notifications_simulated"],
     label: { en: "Resend notification", es: "Reenviar notificación" },
     group: "admin",
@@ -513,6 +531,99 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(["createPatient", (...a: any[]) => (AdelanteEHR.createPatient as any)(...a)]),
     allowed: ({ role }) => (canRunAssistedSignup(role) ? ok() : hide("Your role can't create patient records.")),
   },
+  // ---- §Turn 6 — billing / admin / coordinator "+ New" ----
+  {
+    id: "claim_duplicate_review",
+    opsMenu: true,
+    label: { en: "Review duplicate-claim holds", es: "Revisar reclamos retenidos por duplicado" },
+    group: "billing",
+    menu: false,
+    needsPatient: false,
+    check: "canAccess(billing) = write",
+    store: refs(["clearDuplicateClaimReview", (...a: any[]) => (AdelanteEHRExt.clearDuplicateClaimReview as any)(...a)]),
+    allowed: ({ role }) => (writes(role, "billing") ? ok() : hide("Only billing staff can review claim holds.")),
+  },
+  {
+    id: "claims_export",
+    opsMenu: true,
+    label: { en: "Export (ISL / claims)", es: "Exportar (ISL / reclamos)" },
+    group: "billing",
+    menu: false,
+    needsPatient: false,
+    check: "canAccess(billing) ≥ read",
+    store: refs(["exportClaimsCsv", (...a: any[]) => (exportClaimsCsv as any)(...a)]),
+    allowed: ({ role }) => (canAccess(role, "billing").level !== "none" ? ok() : hide("Your role can't export billing reports.")),
+  },
+  ...([["superbill", "Superbill", "Superfactura"], ["good_faith_estimate", "Good-faith estimate", "Estimado de buena fe"]] as const).map(([id, en, es]): ChartAction => ({
+    id,
+    opsMenu: true,
+    pending: true,
+    comingSoon: "Coming in billing phase 7e",
+    label: { en, es },
+    group: "billing",
+    menu: false,
+    needsPatient: false,
+    check: "canAccess(billing) = write",
+    store: [],
+    allowed: ({ role }) => (writes(role, "billing") ? ok() : hide("Only billing staff.")),
+  })),
+  {
+    id: "feature_flag_set",
+    opsMenu: true,
+    label: { en: "Toggle a feature flag", es: "Cambiar un interruptor" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "role = sys_admin",
+    store: refs(["setFeatureFlagWithReason", (...a: any[]) => (setFeatureFlagWithReason as any)(...a)]),
+    allowed: ({ role }) => (role === "sys_admin" ? ok() : hide("Only a system administrator can change feature flags.")),
+  },
+  {
+    id: "open_permissions",
+    opsMenu: true,
+    label: { en: "Open Permissions & features", es: "Abrir permisos y funciones" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "role = sys_admin",
+    store: refs(["openScreen", () => ({ opened: "/admin-permissions" })]),
+    allowed: ({ role }) => (role === "sys_admin" ? ok() : hide("Opened from the admin menu.")),
+  },
+  {
+    id: "review_matching",
+    opsMenu: true,
+    label: { en: "Review patient matching", es: "Revisar coincidencias de pacientes" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canReviewMatches(role)",
+    store: refs(["openScreen", () => ({ opened: "/data-exchange" })]),
+    allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can review matches.")),
+  },
+  {
+    id: "reconfirm_consent_merged",
+    opsMenu: true,
+    label: { en: "Re-confirm consent (merged records)", es: "Reconfirmar consentimiento (expedientes unidos)" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canReviewMatches(role)",
+    store: refs(["reconfirmConsentAfterMerge", (...a: any[]) => (reconfirmConsentAfterMerge as any)(...a)]),
+    allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can re-confirm consent.")),
+  },
+  ...([["staff_add_user", "Add user", "Agregar usuario"], ["staff_reset_signin", "Reset sign-in", "Restablecer acceso"], ["staff_edit_roles", "Edit staff roles", "Editar roles"]] as const).map(([id, en, es]): ChartAction => ({
+    id,
+    opsMenu: true,
+    pending: true,
+    comingSoon: "Requires identity backend (SculptSoft)",
+    label: { en, es },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "role = sys_admin",
+    store: [],
+    allowed: ({ role }) => (role === "sys_admin" ? ok() : hide("Only a system administrator.")),
+  })),
 ];
 
 function visitActions(): ChartAction[] {

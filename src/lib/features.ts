@@ -148,6 +148,34 @@ export function setFeatureEnabled(id: FeatureId, on: boolean): void {
 }
 export function resetFeatureFlags(): void {
   overrides.clear();
+  flagChanges.length = 0;
+}
+
+/** Shown wherever a simulated flag would be made live. */
+export const REQUIRES_LIVE_VENDOR = "Requires authorized vendor + backend";
+export interface FlagChange { id: FeatureId; on: boolean; reason: string; by?: string; at: string }
+const flagChanges: FlagChange[] = [];
+/** Recent admin flag changes (newest first). */
+export function listFlagChanges(): FlagChange[] {
+  return flagChanges.slice();
+}
+/**
+ * §Turn 6 — admin toggle (runs only through runAction "feature_flag_set").
+ * Reason required. `mode: "live"` on a simulated flag is always refused: it
+ * needs a BAA-covered vendor and the persistent backend.
+ */
+export function setFeatureFlagWithReason(id: FeatureId, mode: "on" | "off" | "live", reason: string, by?: string): FlagChange {
+  const f = featureFlag(id);
+  if (mode === "live") {
+    if (f.simulated) throw new Error(`${REQUIRES_LIVE_VENDOR}.`);
+    mode = "on";
+  }
+  if (!reason.trim()) throw new Error("A reason is required to change a feature flag.");
+  const on = mode === "on";
+  overrides.set(id, on);
+  const row = { id, on, reason: reason.trim(), by, at: new Date().toISOString() };
+  flagChanges.unshift(row);
+  return row;
 }
 export function featureSnapshot(): { id: FeatureId; value: boolean; flag: FeatureFlag }[] {
   return FEATURE_FLAGS.map((flag) => ({ id: flag.id, value: isFeatureEnabled(flag.id), flag }));

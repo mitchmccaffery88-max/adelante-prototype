@@ -4,7 +4,9 @@ import { act, actFor } from "@/lib/actions/act";
 import { Plus, Search } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { recordBlockedAttempt } from "@/lib/actions/runAction";
+import { recordBlockedAttempt, runAction } from "@/lib/actions/runAction";
+import { currentRunActor } from "@/lib/actions/act";
+import { useNavigate } from "@tanstack/react-router";
 import { CHART_ACTIONS, type ChartAction, type ChartActionAnswer } from "@/lib/chartActions";
 import { DASHBOARD_ACTION_EVENT, type DashboardActionDetail } from "@/lib/dashboardActionBus";
 import { STAFF_ROSTER, useActingStaff } from "@/lib/roles";
@@ -28,6 +30,7 @@ type Available = { action: ChartAction; answer: ChartActionAnswer };
 
 export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds = [] }: { onBook: (patientId?: string) => void; onOpenChart: (patientId: string, section?: string) => void; todayPatientIds?: string[] }) {
   const actor = useActingStaff();
+  const navigate = useNavigate();
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const [menuOpen, setMenuOpen] = useState(false);
   const [cmdOpen, setCmdOpen] = useState(false);
@@ -81,6 +84,13 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
     return () => window.removeEventListener("keydown", listener);
   });
   if (hide) return null;
+  const records = CHART_ACTIONS.filter((a) => ["review_matching", "reconfirm_consent_merged"].includes(a.id) && a.allowed(actor, undefined).state !== "hidden");
+  const openRecord = (id: string) => {
+    setMenuOpen(false);
+    // Review matching is audited as an opened screen; re-confirm happens per consent (Recent merges → Open consents).
+    if (id === "review_matching") { const r = runAction(id, currentRunActor(), undefined); if (!r.ok) { toast.error(r.reason); return; } }
+    navigate({ to: "/data-exchange" });
+  };
 
   const patientFree = available.filter((x) => x.action.needsPatient === false);
   const patientActions = available.filter((x) => x.action.needsPatient !== false && !["addendum", "cures", "demographics_edit", "discharge_episode"].includes(x.action.id));
@@ -117,6 +127,8 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
         {patientActions.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
         <p className="mt-2 px-2 text-[10px] font-medium uppercase text-muted-foreground">Without a patient selected</p>
         {patientFree.map((x) => <Button key={x.action.id} variant="ghost" className="h-auto w-full justify-start py-2" onClick={() => open(x.action.id)}>{x.action.label.en}</Button>)}
+        {records.length > 0 && <><p className="mt-2 px-2 text-[10px] font-medium uppercase text-muted-foreground">Records & matching</p>
+        {records.map((a) => <Button key={a.id} variant="ghost" data-testid={`dashboard-item-${a.id}`} className="h-auto w-full justify-start py-2" onClick={() => openRecord(a.id)}>{a.label.en}</Button>)}</>}
       </PopoverContent>
     </Popover>
     <CommandDialog open={cmdOpen} onOpenChange={(v) => { setCmdOpen(v); if (!v) setCmdQuery(""); }}><CommandInput placeholder="Search or add anything…" value={cmdQuery} onValueChange={setCmdQuery} /><CommandList><CommandEmpty>No matches.</CommandEmpty>{cmdQuery.trim().length >= 3 && unavailable.length > 0 && <CommandGroup heading="Not available for your role">{unavailable.map((a) => <CommandItem key={a.id} value={`${a.label.en} unavailable`} className="text-muted-foreground" data-testid={`dashboard-unavailable-${a.id}`} onSelect={() => open(a.id)}><span className="flex-1">{a.label.en}</span><span className="text-[10px]">not available</span></CommandItem>)}</CommandGroup>}<CommandGroup heading="Patient actions">{patientActions.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup><CommandGroup heading="Without a patient selected">{patientFree.map((x) => <CommandItem key={x.action.id} onSelect={() => open(x.action.id)}><Plus className="h-4 w-4" />{x.action.label.en}</CommandItem>)}</CommandGroup></CommandList></CommandDialog>

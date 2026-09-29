@@ -1,3 +1,4 @@
+import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -305,6 +306,7 @@ function ClaimsPage() {
 
   return (
     <div className="mx-auto max-w-6xl px-4 py-8 space-y-6">
+      <OpsActionLauncher />
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-navy">Claims worklist</h1>

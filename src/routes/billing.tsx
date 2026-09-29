@@ -1,3 +1,5 @@
+import { BillingWorkspaceTiles } from "@/components/ops/OpsWorkspace";
+import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
 import { actResult, actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -238,6 +240,9 @@ function BillingPage() {
           Open claims worklist →
         </Link>
       </header>
+
+      {canWrite && <BillingWorkspaceTiles />}
+      <OpsActionLauncher />
 
       {!canWrite && (
         <div className="rounded-xl border bg-card p-3 text-sm text-muted-foreground" data-testid="billing-read-only">
