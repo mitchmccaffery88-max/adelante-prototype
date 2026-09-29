@@ -5,7 +5,7 @@
 // No ASAM wording anywhere: an ASAM-linked visit reads as a plain visit.
 import { useState } from "react";
 import { toast } from "sonner";
-import { CalendarX, UserX } from "lucide-react";
+import { CalendarClock, CalendarX, CheckCircle2, UserCheck, UserX } from "lucide-react";
 import {
   AdelanteEHR,
   STAFF_CANCEL_REASON_LABEL,
@@ -45,14 +45,26 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
   const [open, setOpen] = useState(false);
   const [reason, setReason] = useState<StaffCancelReason | "">("");
   const [note, setNote] = useState("");
+  const [moving, setMoving] = useState(false);
+  const [newStart, setNewStart] = useState("");
   const canAct = AdelanteEHR.appointmentActionRoles().includes(actor.role);
   const past = +new Date(appt.start) <= Date.now();
 
-  if (appt.status === "cancelled")
+  if (appt.status === "rescheduled")
+    return (
+      <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-rescheduled">
+        <Badge variant="secondary" className="text-[10px]">Rescheduled</Badge>
+        {appt.rescheduledToId && (() => {
+          const n = AdelanteEHR.listAppointments().find((x) => x.id === appt.rescheduledToId);
+          return n ? <span>moved to <ClientDate value={n.start} options={{ weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit" }} /></span> : null;
+        })()}
+      </div>
+    );
+  if (appt.status === "cancelled" || appt.status === "late_cancel")
     return (
       <div className="flex flex-wrap items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-cancelled">
-        <Badge variant="secondary" className="text-[10px]">Cancelled</Badge>
-        <LateCancelBadge appt={appt} />
+        <Badge variant="secondary" className="text-[10px]">{appt.status === "late_cancel" ? "Late cancel" : "Cancelled"}</Badge>
+        {appt.status !== "late_cancel" && <LateCancelBadge appt={appt} />}
         {appt.cancellation && (
           <span>
             {STAFF_CANCEL_REASON_LABEL[appt.cancellation.reason]} · {appt.cancellation.byName}
@@ -67,7 +79,25 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
         {appt.noShow && <span>marked by {appt.noShow.byName}</span>}
       </div>
     );
-  if (appt.status !== "scheduled" || !canAct) return null;
+  if (appt.status === "attended")
+    return (
+      <div className="flex items-center gap-1.5 text-xs text-muted-foreground" data-testid="visit-attended">
+        <Badge variant="secondary" className="text-[10px]">Attended</Badge>
+        {appt.attendedBy && <span>marked by {appt.attendedBy.byName}</span>}
+      </div>
+    );
+  if (!canAct) return null;
+  if (appt.status === "checked_in")
+    return (
+      <div className="flex flex-wrap items-center gap-2" data-testid="visit-checked-in">
+        <Badge variant="secondary" className="text-[10px]">Checked in</Badge>
+        <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentAttended(appt.id, who), "Marked attended.")}>
+          <CheckCircle2 className="mr-1.5 h-4 w-4" /> Attended
+        </Button>
+      </div>
+    );
+  if (appt.status !== "scheduled") return null;
+  const sameDay = new Date(appt.start).toDateString() === new Date().toDateString();
 
   const pending = appt.cancelRequest?.status === "pending" ? appt.cancelRequest : undefined;
   return (
@@ -89,6 +119,21 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
         </div>
       )}
       <div className="flex flex-wrap gap-2">
+        {sameDay && (
+          <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.checkInAppointment(appt.id, who), "Checked in.")}>
+            <UserCheck className="mr-1.5 h-4 w-4" /> Check in
+          </Button>
+        )}
+        {past && (
+          <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentAttended(appt.id, who), "Marked attended.")}>
+            <CheckCircle2 className="mr-1.5 h-4 w-4" /> Attended
+          </Button>
+        )}
+        {!past && !pending && (
+          <Button size="sm" variant="outline" className="min-h-9" onClick={() => setMoving((v) => !v)}>
+            <CalendarClock className="mr-1.5 h-4 w-4" /> Reschedule
+          </Button>
+        )}
         {past ? (
           <Button size="sm" variant="outline" className="min-h-9" onClick={() => run(() => AdelanteEHR.markAppointmentNoShow(appt.id, who), "Marked no-show. Patient notified.")}>
             <UserX className="mr-1.5 h-4 w-4" /> No-show
@@ -101,6 +146,27 @@ export function StaffVisitActions({ appt }: { appt: Appointment }) {
           )
         )}
       </div>
+      {moving && !past && (
+        <div className="flex flex-wrap items-end gap-2 rounded-md border p-2" data-testid="staff-reschedule-form">
+          <label className="text-xs font-medium">
+            New date and time
+            <input aria-label="New visit time" type="datetime-local" className="mt-1 block rounded-md border bg-background p-2 text-sm" value={newStart} onChange={(e) => setNewStart(e.target.value)} />
+          </label>
+          <Button
+            size="sm"
+            className="min-h-9"
+            disabled={!newStart}
+            onClick={() =>
+              run(() => {
+                AdelanteEHR.staffRescheduleAppointment(appt.id, new Date(newStart).toISOString(), who);
+                setMoving(false);
+              }, "Visit rescheduled. Patient notified.")
+            }
+          >
+            Confirm reschedule
+          </Button>
+        </div>
+      )}
       {open && !past && (
         <div className="space-y-2 rounded-md border p-2" data-testid="staff-cancel-form">
           <label className="block text-xs font-medium">

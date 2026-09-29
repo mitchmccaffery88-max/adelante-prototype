@@ -21,6 +21,7 @@ export const IN_FACILITY_NAV_IDS: ReadonlySet<string> = new Set([
   "released-search",
   "facility-protocols",
   "admin-facilities",
+  "refusal-queue",
 ]);
 
 /** Dashboard KPI tiles that measure in-facility work. */

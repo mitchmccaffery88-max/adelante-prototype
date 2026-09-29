@@ -1,3 +1,4 @@
+import { demoLocalDayAt } from "@/lib/demoTime";
 // §Item 6 — Clinical Coordination actions. Every coordinator decision goes
 // through here: role check, reason, Part 2-safe notifications, audit.
 import { AdelanteEHR, STAFF_CANCEL_REASON_LABEL, type Appointment, type StaffCancelReason } from "@/lib/ehr";
@@ -280,8 +281,7 @@ export function seedCoordinationDemo() {
   const booked: string[] = [];
   pts.forEach((p, i) =>
     safe(() => {
-      const d = new Date(Date.now() + (3 + i) * 86400000);
-      d.setHours(14 + i, 0, 0, 0);
+      const d = demoLocalDayAt(3 + i, 14 + i);
       const a = AdelanteEHR.bookAppointment({ patientId: p.id, clinicianId: "c2", start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
       AdelanteEHR.reassignPrimaryClinician({ patientId: p.id, clinicianId: "c2", initiatedBy: "admin", context: "Demo setup" });
       booked.push(a.id);

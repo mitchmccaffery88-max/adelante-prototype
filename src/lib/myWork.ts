@@ -300,6 +300,8 @@ export function myTodayVisits(actor: ActingIdentity, now: Date = new Date()) {
         owns(aliases, a.clinicianId) &&
         sameLocalDay(new Date(a.start), now) &&
         a.status !== "cancelled" &&
+        a.status !== "late_cancel" &&
+        a.status !== "rescheduled" &&
         a.status !== "no_show",
     )
     .sort((a, b) => a.start.localeCompare(b.start))

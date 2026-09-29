@@ -456,7 +456,33 @@ export type ReferralProgressStage = (typeof REFERRAL_PROGRESS_STAGES)[number];
 export function isReferralClosed(s: ReferralStatus): boolean {
   return s === "declined" || s === "enrolled";
 }
-export type SessionStatus = "scheduled" | "attended" | "no_show" | "cancelled";
+export type SessionStatus =
+  | "scheduled"
+  | "checked_in"
+  | "attended"
+  | "no_show"
+  | "cancelled"
+  | "late_cancel"
+  | "rescheduled";
+/** Visit is still on the calendar (booked or the patient has arrived). */
+export function isVisitActive(s: SessionStatus): boolean {
+  return s === "scheduled" || s === "checked_in";
+}
+/** Visit was taken off the calendar (cancelled, late cancel, or moved). */
+export function isVisitCancelled(s: SessionStatus): boolean {
+  return s === "cancelled" || s === "late_cancel" || s === "rescheduled";
+}
+/** Only an attended visit can bill. Every other status is blocked from claims. */
+export const NON_BILLABLE_VISIT_STATUSES: readonly SessionStatus[] = ["scheduled", "checked_in", "no_show", "cancelled", "late_cancel", "rescheduled"];
+export const VISIT_STATUS_LABEL: Record<SessionStatus, string> = {
+  scheduled: "Scheduled",
+  checked_in: "Checked in",
+  attended: "Attended",
+  no_show: "No-show",
+  cancelled: "Cancelled",
+  late_cancel: "Late cancel",
+  rescheduled: "Rescheduled",
+};
 export type CoverageStatus =
   | "active"
   | "suspended"
@@ -2071,6 +2097,14 @@ export interface Appointment {
   cancellation?: AppointmentCancellation;
   /** §Cancel/no-show — who marked the no-show and when. */
   noShow?: { at: string; byName: string; byRole: StaffRole; byId?: string };
+  /** Who checked the patient in, and when. */
+  checkIn?: { at: string; byName: string; byRole: StaffRole; byId?: string };
+  /** Who marked the visit attended, and when. */
+  attendedBy?: { at: string; byName: string; byRole: StaffRole; byId?: string };
+  /** Old visit → the new visit it was moved to. */
+  rescheduledToId?: string;
+  /** New visit → the visit it replaced. */
+  rescheduledFromId?: string;
 }
 
 export type StaffCancelReason = "patient_request" | "clinician_unavailable" | "other";
@@ -4879,7 +4913,7 @@ const appointments: Appointment[] = [
     id: "a1",
     patientId: "p1",
     clinicianId: "c1",
-    start: inHours(26),
+    start: demoBusinessTime(inHours(26), 0),
     durationMin: 50,
     status: "scheduled",
     source: "staff_scheduled",
@@ -4888,7 +4922,7 @@ const appointments: Appointment[] = [
     id: "a2",
     patientId: "p1",
     clinicianId: "c1",
-    start: ago(72),
+    start: demoBusinessTime(ago(72), 1),
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
@@ -4897,7 +4931,7 @@ const appointments: Appointment[] = [
     id: "a3",
     patientId: "p2",
     clinicianId: "c2",
-    start: inHours(4),
+    start: demoBusinessTime(inHours(4), 2),
     durationMin: 50,
     status: "scheduled",
     source: "staff_scheduled",
@@ -4906,7 +4940,7 @@ const appointments: Appointment[] = [
     id: "a4",
     patientId: "p3",
     clinicianId: "c1",
-    start: ago(48),
+    start: demoBusinessTime(ago(48), 3),
     durationMin: 50,
     status: "no_show",
     source: "staff_scheduled",
@@ -4915,7 +4949,7 @@ const appointments: Appointment[] = [
     id: "a5",
     patientId: "p3",
     clinicianId: "c1",
-    start: ago(240),
+    start: demoBusinessTime(ago(240), 4),
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
@@ -4929,7 +4963,7 @@ const appointments: Appointment[] = [
     id: "a6",
     patientId: "p2",
     clinicianId: "c2",
-    start: ago(120),
+    start: demoBusinessTime(ago(120), 5),
     durationMin: 50,
     status: "attended",
     source: "staff_scheduled",
@@ -5404,6 +5438,7 @@ const schedulingRules: SchedulingRule[] = [
   },
 ];
 import { facilityDateKey, fromFacilityWallClock, waitLabel } from "./facilityTime";
+import { demoBusinessTime, demoLocalDayAt } from "./demoTime";
 import {
   RISK_TEXT_CATALOG,
   capacityFlagsFrom,
@@ -6759,9 +6794,9 @@ export interface RefillRequest {
   /** §Refill safety — CURES check for controlled / MOUD / SUD refills (placeholder, no live query). */
   curesCheck?: NonNullable<MedOrder["curesCheck"]>;
 }
-/** Controlled (DEA II–V), MOUD or any SUD-list medication needs CURES before approval. */
+/** Only controlled substances (DEA II–V) need CURES before approval. */
 export function refillNeedsCures(r: Pick<RefillRequest, "medicationName">): boolean {
-  return requiresCuresCheck({ drugName: r.medicationName } as Parameters<typeof requiresCuresCheck>[0]) || isSudMedicationText(r.medicationName);
+  return requiresCuresCheck({ drugName: r.medicationName } as Parameters<typeof requiresCuresCheck>[0]);
 }
 export const REFILL_PRESCRIBER_ROLES = ["physician", "pmhnp"];
 const refillRequests: RefillRequest[] = [];
@@ -6834,7 +6869,7 @@ function _previousProviderFor(patientId: string, serviceType?: ServiceType): str
     .filter(
       (a) =>
         a.patientId === patientId &&
-        (a.status === "scheduled" || a.status === "attended") &&
+        (isVisitActive(a.status) || a.status === "attended") &&
         (!serviceType || !a.serviceType || a.serviceType === serviceType),
     )
     .sort((a, b) => +new Date(b.start) - +new Date(a.start));
@@ -6859,7 +6894,7 @@ function _patientOverlap(
   return appointments.find((x) => {
     if (x.id === excludeApptId) return false;
     if (x.patientId !== patientId) return false;
-    if (x.status !== "scheduled") return false;
+    if (!isVisitActive(x.status)) return false;
     const xs = new Date(x.start).getTime();
     if (Number.isNaN(xs)) return false;
     const xe = xs + Math.max(0, x.durationMin) * 60_000;
@@ -8760,7 +8795,7 @@ export const AdelanteEHR = {
     const conflict = appointments.some(
       (x) =>
         x.clinicianId === input.clinicianId &&
-        x.status === "scheduled" &&
+        isVisitActive(x.status) &&
         new Date(x.start).getTime() === new Date(input.start).getTime(),
     );
     if (conflict) {
@@ -8833,7 +8868,7 @@ export const AdelanteEHR = {
       (x) =>
         x.id !== apptId &&
         x.clinicianId === targetClinicianId &&
-        x.status === "scheduled" &&
+        isVisitActive(x.status) &&
         new Date(x.start).getTime() === new Date(newStart).getTime(),
     );
     if (conflict) {
@@ -8892,7 +8927,7 @@ export const AdelanteEHR = {
       (x) =>
         x.id !== excludeApptId &&
         x.clinicianId === clinicianId &&
-        x.status === "scheduled" &&
+        isVisitActive(x.status) &&
         new Date(x.start).getTime() === t,
     );
   },
@@ -8926,7 +8961,7 @@ export const AdelanteEHR = {
           (x) =>
             x.id !== opts?.excludeApptId &&
             x.clinicianId === clinicianId &&
-            x.status === "scheduled" &&
+            isVisitActive(x.status) &&
             new Date(x.start).getTime() === slot.getTime(),
         );
         slots.push({ start: iso, durationMin: 50, taken });
@@ -9034,7 +9069,7 @@ export const AdelanteEHR = {
     // §Cancel/no-show — a cancelled or missed visit must never carry a claim.
     // Claims open only on "attended"; once one exists, the visit cannot be
     // flipped to cancelled/no-show here — billing must correct the claim.
-    if ((status === "cancelled" || status === "no_show") && prev !== status && _claimBridge?.bucketFor(a.id))
+    if (status !== "attended" && NON_BILLABLE_VISIT_STATUSES.includes(status) && status !== "scheduled" && prev !== status && _claimBridge?.bucketFor(a.id))
       throw new Error("A claim already exists for this visit. Correct it in Claims before marking it cancelled or missed.");
     a.status = status;
     if (status === "attended") {
@@ -9123,7 +9158,7 @@ export const AdelanteEHR = {
     if (input.reason === "other" && !input.note?.trim()) throw new Error("Describe the reason when you pick Other.");
     const at = input.now ?? new Date().toISOString();
     const late = isLateCancelWindow(a.start, at);
-    AdelanteEHR.updateAppointmentStatus(a.id, "cancelled");
+    AdelanteEHR.updateAppointmentStatus(a.id, late ? "late_cancel" : "cancelled");
     a.cancellation = {
       at,
       byName: input.actor.name,
@@ -9162,6 +9197,74 @@ export const AdelanteEHR = {
       });
     emit();
     return a;
+  },
+  /** Workspace "View as" — audited every time a viewer opens another clinician's workspace. */
+  recordWorkspaceViewAs(actor: { id: string; name: string; role: StaffRole }, target: { id: string; name: string }) {
+    appendAudit({ category: "access", action: "workspace_view_as", actorId: actor.id, actorRole: actor.role, detail: { viewerName: actor.name, targetStaffId: target.id, targetName: target.name } });
+    emit();
+  },
+  /** Patient has arrived. Same roles as no-show; on the visit day only; audited. */
+  checkInAppointment(apptId: string, actor: { name: string; role: StaffRole; id?: string }, now = Date.now()) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    _assertApptActor(actor);
+    if (a.status !== "scheduled") throw new Error("Only a scheduled visit can be checked in.");
+    const d = new Date(a.start), n = new Date(now);
+    if (d.getFullYear() !== n.getFullYear() || d.getMonth() !== n.getMonth() || d.getDate() !== n.getDate())
+      throw new Error("A visit can be checked in only on the day of the visit.");
+    AdelanteEHR.updateAppointmentStatus(a.id, "checked_in");
+    a.checkIn = { at: n.toISOString(), byName: actor.name, byRole: actor.role, ...(actor.id ? { byId: actor.id } : {}) };
+    appendAudit({ category: "clinical", action: "appointment_checked_in", patientId: a.patientId, actorId: actor.id ?? actor.name, actorRole: actor.role, detail: { apptId, ...(a.asamTaskId ? { protected: true } : {}) } });
+    emit();
+    return a;
+  },
+  /** Visit happened. Same role check as no-show; after start or once checked in; audited. Opens the claim. */
+  markAppointmentAttended(apptId: string, actor: { name: string; role: StaffRole; id?: string }, now = Date.now()) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    _assertApptActor(actor);
+    if (!isVisitActive(a.status)) throw new Error("Only a scheduled or checked-in visit can be marked attended.");
+    if (a.status === "scheduled" && +new Date(a.start) > now) throw new Error("A visit can be marked attended only after it starts or once checked in.");
+    AdelanteEHR.updateAppointmentStatus(a.id, "attended");
+    a.attendedBy = { at: new Date(now).toISOString(), byName: actor.name, byRole: actor.role, ...(actor.id ? { byId: actor.id } : {}) };
+    appendAudit({ category: "clinical", action: "appointment_attended", patientId: a.patientId, actorId: actor.id ?? actor.name, actorRole: actor.role, detail: { apptId, ...(a.asamTaskId ? { protected: true } : {}) } });
+    emit();
+    return a;
+  },
+  /**
+   * Staff reschedule: the old visit is marked "rescheduled" and links to a new
+   * visit at the new time. The patient view shows only the new visit. Audited.
+   */
+  staffRescheduleAppointment(apptId: string, newStart: string, actor: { name: string; role: StaffRole; id?: string }) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    _assertApptActor(actor);
+    if (a.status !== "scheduled") throw new Error("Only a scheduled visit can be rescheduled.");
+    if (+new Date(newStart) <= Date.now()) throw new Error("Pick a future time.");
+    const clash = appointments.some((x) => x.id !== a.id && x.clinicianId === a.clinicianId && isVisitActive(x.status) && +new Date(x.start) === +new Date(newStart));
+    if (clash) throw new Error("That time was just taken. Please pick another slot.");
+    const ownOverlap = _patientOverlap(a.patientId, newStart, a.durationMin, a.id);
+    if (ownOverlap) throw new Error(_patientOverlapMessage(ownOverlap));
+    const n: Appointment = {
+      ...a,
+      id: uid(),
+      start: newStart,
+      status: "scheduled",
+      cancelRequest: undefined,
+      cancellation: undefined,
+      noShow: undefined,
+      checkIn: undefined,
+      attendedBy: undefined,
+      rescheduledToId: undefined,
+      rescheduledFromId: a.id,
+    };
+    appointments.push(n);
+    a.status = "rescheduled";
+    a.rescheduledToId = n.id;
+    appendAudit({ category: "clinical", action: "appointment_rescheduled", patientId: a.patientId, actorId: actor.id ?? actor.name, actorRole: actor.role, detail: { apptId: a.id, newApptId: n.id, ...(a.asamTaskId ? { protected: true } : {}) } });
+    AdelanteEHR.notifyAppointmentChange({ patientId: a.patientId, apptId: n.id, kind: "rescheduled" });
+    emit();
+    return n;
   },
   /** "No-show" on a past, unattended visit. */
   markAppointmentNoShow(apptId: string, actor: { name: string; role: StaffRole; id?: string }, now = Date.now()) {
@@ -9457,7 +9560,7 @@ export const AdelanteEHR = {
       .sort((x, y) => +new Date(x.start) - +new Date(y.start))[0];
     if (next) return { state: "scheduled", start: next.start, apptId: next.id };
     const missed = linked
-      .filter((a) => a.status === "no_show" || a.status === "cancelled")
+      .filter((a) => a.status === "no_show" || isVisitCancelled(a.status))
       .sort((x, y) => +new Date(y.start) - +new Date(x.start))[0];
     return missed ? { state: "not_scheduled", missedOn: missed.start } : { state: "not_scheduled" };
   },
@@ -13496,7 +13599,7 @@ export const AdelanteEHR = {
           (a) =>
             a.patientId === patientId &&
             !a.asamTaskId &&
-            a.status === "scheduled" &&
+            isVisitActive(a.status) &&
             +new Date(a.start) > now &&
             a.serviceType &&
             types.includes(a.serviceType),
@@ -17618,7 +17721,7 @@ export const AdelanteEHR = {
 
     for (const a of AdelanteEHR.appointmentsForPatient(link.patientId)) {
       if (+new Date(a.start) < from) continue;
-      if (a.status === "cancelled") continue;
+      if (isVisitCancelled(a.status)) continue;
       const loc = a.locationId ? AdelanteEHR.getLocation(a.locationId) : undefined;
       items.push({
         kind: "appointment",
@@ -24992,12 +25095,7 @@ withGroupNotificationsSuppressed(() => {
     const THERAPIST = "Marisol Vega, LCSW";
     const facilitator = AdelanteEHR.listClinicians()[0]?.id;
     if (facilitator) {
-      const soon = (days: number, hour: number) => {
-        const d = new Date();
-        d.setDate(d.getDate() + days);
-        d.setHours(hour, 0, 0, 0);
-        return d.toISOString();
-      };
+      const soon = (days: number, hour: number) => demoLocalDayAt(days, hour).toISOString();
 
       const skills = AdelanteEHR.createGroupSession({
         topic: "Skills for everyday life (placeholder curriculum)",
@@ -25639,10 +25737,9 @@ try {
     (c) => (!c.services || c.services.includes("therapy_individual")) && AdelanteEHR.canBook(c.id).ok,
   );
   const slot = (daysAhead: number, hour: number) => {
-    const d = new Date(Date.now() + daysAhead * 86400000);
-    while (d.getDay() === 0 || d.getDay() === 6) d.setDate(d.getDate() + 1);
-    d.setHours(hour, 0, 0, 0);
-    return d.toISOString();
+    let d = demoLocalDayAt(daysAhead, hour);
+    while ([0, 6].includes(new Date(d.getTime() - 8 * 3600000).getUTCDay())) d = new Date(d.getTime() + 86400000);
+    return demoBusinessTime(d);
   };
   // 2a Elena — a pending 1:1 therapy request.
   const elenaId = demoScenarioPatientId("mh_only");
@@ -25724,12 +25821,8 @@ try {
 // Demo — today's visits for the prescribers and the main therapist, plus a
 // small trainee caseload, all through the normal booking / assignment calls.
 try {
-  const at = (mins: number) => {
-    const d = new Date(Date.now() + mins * 60000);
-    d.setSeconds(0, 0);
-    d.setMinutes(Math.ceil(d.getMinutes() / 15) * 15);
-    return d.toISOString();
-  };
+  // Today, Pacific business hours (see demoTime.ts).
+  const at = (mins: number) => demoBusinessTime(Date.now() + mins * 60000, Math.round(mins / 30));
   const book = (patientId: string | undefined, clinicianId: string, mins: number, serviceType: ServiceType) => {
     if (!patientId) return;
     try {

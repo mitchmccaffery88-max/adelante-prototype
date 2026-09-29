@@ -40,7 +40,11 @@ describe("turn B", () => {
     expect(() => AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "unable_to_access", by: "b", role: "pmhnp" })).toThrow(/reason/);
     AdelanteEHR.recordCuresCheck(p.id, o.id, { checkedAt: "2026-09-27T10:00", result: "no_concerns", by: "Dr. M. Bagga", role: "pmhnp" });
     expect(sign()).toHaveLength(1);
-    expect(requiresCuresCheck({ drugName: "Naltrexone 50 MG" })).toBe(true);
+    expect(requiresCuresCheck({ drugName: "Naltrexone 50 MG" })).toBe(false);
+    expect(requiresCuresCheck({ drugName: "Acamprosate 333 MG" })).toBe(false);
+    expect(requiresCuresCheck({ drugName: "Disulfiram 250 MG" })).toBe(false);
+    expect(requiresCuresCheck({ drugName: "Buprenorphine 8 MG" })).toBe(true);
+    expect(requiresCuresCheck({ drugName: "Lorazepam 1 MG" })).toBe(true);
     const log = AdelanteEHR.listAuditEvents?.() ?? [];
     expect(JSON.stringify(log)).toMatch(/order_allergy_override/);
   });

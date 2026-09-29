@@ -11,7 +11,7 @@
 // the clinician's live availability. Nothing new was invented for it.
 import { Link } from "@tanstack/react-router";
 import { Building2, CalendarClock, CalendarPlus, MapPin, Phone, Video } from "lucide-react";
-import { AdelanteEHR, useEhr, type Appointment } from "@/lib/ehr";
+import { AdelanteEHR, isVisitCancelled, useEhr, type Appointment } from "@/lib/ehr";
 import { mapsSearchUrl } from "@/lib/communityResources";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -81,7 +81,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
             </Badge>
           </div>
           {/* §Build A item 4 — real join action for video visits. */}
-          {!past && appt.status !== "cancelled" && (appt.modality ?? "video") === "video" && (
+          {!past && !isVisitCancelled(appt.status) && (appt.modality ?? "video") === "video" && (
             <JoinCallButton appt={appt} />
           )}
           {/* §Small UI gaps batch item 5 — honest directions: a maps SEARCH on
@@ -98,7 +98,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           {!past && appt.status === "scheduled" && (
             <CancelRequestControl appt={appt} onRequest={(r) => AdelanteEHR.patientRequestCancel(appt.patientId, appt.id, r)} />
           )}
-          {!past && appt.status !== "cancelled" && appt.cancelRequest?.status !== "pending" && (
+          {!past && !isVisitCancelled(appt.status) && appt.cancelRequest?.status !== "pending" && (
             <Button asChild size="sm" variant="outline" className="min-h-11">
               <Link to="/schedule" search={{ reschedule: appt.id }}>
                 <CalendarClock className="mr-1.5 h-4 w-4" /> Reschedule
@@ -109,7 +109,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
       </div>
       {/* §Build A item 4 — the same prep tip Home's next-appointment card
           shows, now consistently on every upcoming visit. */}
-      {!past && appt.status !== "cancelled" && (
+      {!past && !isVisitCancelled(appt.status) && (
         <p className="mt-3 rounded-2xl bg-secondary p-3 text-sm" data-testid="appointment-prep-tip">
           {apptPrepTip(appt.modality)}
         </p>
@@ -161,10 +161,10 @@ export function AppointmentsSummary({ patientId }: { patientId: string }) {
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(patientId));
   const now = Date.now();
   const upcoming = [...appts]
-    .filter((a) => new Date(a.start).getTime() > now && a.status !== "cancelled")
+    .filter((a) => a.status !== "rescheduled" && new Date(a.start).getTime() > now && !isVisitCancelled(a.status))
     .sort((a, b) => +new Date(a.start) - +new Date(b.start));
   const past = [...appts]
-    .filter((a) => new Date(a.start).getTime() <= now || a.status === "cancelled")
+    .filter((a) => a.status !== "rescheduled" && (new Date(a.start).getTime() <= now || isVisitCancelled(a.status)))
     .sort((a, b) => +new Date(b.start) - +new Date(a.start))
     .slice(0, 8);
 

@@ -41,7 +41,7 @@ describe("refill safety", () => {
 
   it("classifies controlled and SUD medications", () => {
     expect(refillNeedsCures({ medicationName: "Buprenorphine-naloxone" })).toBe(true);
-    expect(refillNeedsCures({ medicationName: "Naltrexone" })).toBe(true);
+    expect(refillNeedsCures({ medicationName: "Naltrexone" })).toBe(false);
     expect(refillNeedsCures({ medicationName: "Lorazepam" })).toBe(true);
     expect(refillNeedsCures({ medicationName: "Sertraline" })).toBe(false);
   });

@@ -1,3 +1,4 @@
+import { demoLocalDayAt } from "@/lib/demoTime";
 import { seedChartOrdersDemo } from "@/lib/chartOrders";
 import { seedStructuredCarePlanDemo } from "./structuredCarePlan";
 import { runSimulatedHieSync } from "./hie";
@@ -238,9 +239,7 @@ export function seedDemoInbox(): void {
   const luis = demoScenarioPatientId("sud_consented");
   const luisTask = luis ? AdelanteEHR.openAsamWorkTask(luis) : undefined;
   const past = (daysAgo: number) => {
-    const d = new Date(Date.now() - daysAgo * 86400000);
-    d.setHours(10, 0, 0, 0);
-    return d.toISOString();
+    return demoLocalDayAt(-daysAgo, 10).toISOString();
   };
   if (luis && luisTask && clin)
     safe(() => {
@@ -263,8 +262,7 @@ export function seedDemoInbox(): void {
       const link = AdelanteEHR.createAdvocateInvitation({ patientId: victor, advocateName: "Teresa Salinas", relationship: "Sister (conservator)", invitationSentTo: "+15595550188", invitationChannel: "sms", designatedBy: { actor: "ecm_provider", name: "Luz Herrera" }, expectedAuthorizationType: "conservatorship" });
       AdelanteEHR.claimAdvocateInvitation({ code: link.invitationCode!, authorizationType: "conservatorship", attestedName: "Teresa Salinas" });
       AdelanteEHR.recordAdvocateConservatorshipDocs(link.id, { verifiedBy: "Luz Herrera", courtOrderRef: "TUL-PR-2026-0412" });
-      const d = new Date(Date.now() + 5 * 86400000);
-      d.setHours(11, 0, 0, 0);
+      const d = demoLocalDayAt(5, 11);
       AdelanteEHR.bookAppointment({ patientId: victor, clinicianId: clin.id, start: d.toISOString(), durationMin: 50, serviceType: "therapy_individual", modality: "video", source: "staff_scheduled", allowPatientOverlap: true });
     });
   // Core demo patients get a primary clinician through the normal reassign

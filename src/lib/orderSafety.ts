@@ -2,7 +2,7 @@
 //
 // B1 allergy cross-check: same ingredient, or same drug class where our small
 // class map knows both sides. The class map is DRAFT — pending clinical sign-off.
-// B2 CURES/PDMP step: DEA Schedule II–V drugs and all MOUD orders need a
+// B2 CURES/PDMP step: only controlled (DEA Schedule II–V) drugs need a
 // recorded CURES check before signing. CURES integration placeholder — no live query.
 import { SUD_MEDICATION_NAMES } from "./sudMedClassifier";
 
@@ -113,7 +113,9 @@ export function deaScheduleOf(o: OrderLike): string | undefined {
   return orderIngredients(o).map((i) => SCHEDULED[i]).find(Boolean);
 }
 export function requiresCuresCheck(o: OrderLike): boolean {
-  return !!deaScheduleOf(o) || isMoudOrder(o) || (o.isControlled ?? false);
+  // Controlled substances only (DEA II–V: buprenorphine CIII, benzodiazepines CIV…).
+  // Naltrexone, acamprosate and disulfiram stay Part 2 SUD meds for masking but need no CURES.
+  return !!deaScheduleOf(o) || (o.isControlled ?? false);
 }
 
 export type CuresResult = "no_concerns" | "concerns_reviewed" | "unable_to_access";

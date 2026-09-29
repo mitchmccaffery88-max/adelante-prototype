@@ -11,7 +11,6 @@ import {
   allergiesNotRecorded,
   deaScheduleOf,
   findAllergyMatches,
-  isMoudOrder,
   requiresCuresCheck,
   type CuresResult,
 } from "@/lib/orderSafety";
@@ -86,7 +85,7 @@ export function OrderSafetyPanel({ order, patientId }: { order: MedOrder; patien
         <div className="space-y-2 rounded-lg border p-3 text-xs" aria-label="CURES check">
           <div className="flex items-center gap-2 font-medium text-navy">
             {order.curesCheck ? <ShieldCheck className="h-4 w-4 text-teal" /> : <ShieldAlert className="h-4 w-4 text-destructive" />}
-            CURES check required ({[deaScheduleOf(order), isMoudOrder(order) ? "MOUD" : ""].filter(Boolean).join(" · ")})
+            CURES check required ({deaScheduleOf(order) ?? "controlled"})
           </div>
           <p className="rounded bg-muted px-2 py-1 text-muted-foreground">{CURES_PLACEHOLDER_LABEL}</p>
           {order.curesCheck ? (

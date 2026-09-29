@@ -1,3 +1,4 @@
+import { demoBusinessTime } from "./demoTime";
 // §Adelante Expansion — additive EMR extension.
 // Houses: organizations/counties/facilities, clinician profile ext,
 // credentials, payer enrollments, patient coverage spans, availability
@@ -1038,7 +1039,7 @@ export const AdelanteEHRExt = {
     const appt = AdelanteEHR.listAppointments().find((a) => a.id === apptId);
     if (!appt) throw new Error("Appt not found");
     // §Cancel/no-show — a cancelled or missed visit never opens a claim.
-    if (appt.status === "cancelled" || appt.status === "no_show")
+    if (appt.status !== "attended" && appt.status !== "scheduled")
       throw new Error("A cancelled or missed visit cannot create a claim.");
     claim = {
       id: uid(),
@@ -1731,7 +1732,7 @@ export const AdelanteEHRExt = {
       const a = AdelanteEHR.bookAppointment({
         patientId: d.patientId,
         clinicianId: d.clinicianId,
-        start: start.toISOString(),
+        start: demoBusinessTime(start),
         durationMin: 50,
         serviceType: "therapy_individual",
         modality: "in_person",
@@ -1760,7 +1761,7 @@ export const AdelanteEHRExt = {
       const a = AdelanteEHR.bookAppointment({
         patientId: pid,
         clinicianId: "c1",
-        start: start.toISOString(),
+        start: demoBusinessTime(start),
         durationMin: 50,
         serviceType: "therapy_individual",
         modality: "in_person",
@@ -1858,7 +1859,7 @@ function seedNoteRevisionDemo() {
     const a = AdelanteEHR.bookAppointment({
       patientId,
       clinicianId: "c1",
-      start: start.toISOString(),
+      start: demoBusinessTime(start),
       durationMin: 50,
       serviceType: "therapy_individual",
       modality: "in_person",
