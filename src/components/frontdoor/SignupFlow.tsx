@@ -1,5 +1,6 @@
 import { PossibleExistingPatientError, SignupNeedsVerificationError } from "@/lib/patientMatching";
 import { SignupVerificationHelp } from "@/components/identity/SignupVerificationHelp";
+import { ExistingPersonStep } from "@/components/identity/ExistingPersonStep";
 import { Link, useNavigate } from "@tanstack/react-router";
 import { useState } from "react";
 import { Card } from "@/components/ui/card";
