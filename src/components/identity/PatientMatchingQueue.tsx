@@ -9,7 +9,7 @@ import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
-import { confirmMatch, listMatchQueue, rejectMatch } from "@/lib/dataExchange";
+import { listMatchQueue } from "@/lib/dataExchange";
 import { KIND_LABEL } from "@/lib/hie";
 import {
   canReviewMatches,
@@ -117,9 +117,9 @@ export function PatientMatchingQueue() {
               </tbody>
             </table>
             <div className="flex flex-wrap items-center gap-2">
-              <Button size="sm" onClick={() => { confirmMatch(c.id, a); toast.success("Match confirmed"); }}>Confirm match</Button>
+              <Button size="sm" onClick={() => run("hie_match_decide", p, "confirmMatch", [c.id, a], "Simulated — match confirmed")}>Confirm match</Button>
               <Input className="h-8 max-w-xs text-xs" placeholder="Reason (required)" value={reason[c.id] ?? ""} onChange={(e) => setReason({ ...reason, [c.id]: e.target.value })} />
-              <Button size="sm" variant="outline" onClick={() => { try { rejectMatch(c.id, reason[c.id] ?? "", a); toast.success("Marked not the same person"); } catch (e) { toast.error((e as Error).message); } }}>Not the same person</Button>
+              <Button size="sm" variant="outline" onClick={() => run("hie_match_decide", undefined, "rejectMatch", [c.id, reason[c.id] ?? "", a], "Simulated — marked not the same person")}>Not the same person</Button>
             </div>
           </div>
         );
