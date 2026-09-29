@@ -219,3 +219,5 @@
 - [x] (b) Legal / Part 2 disclosure card on consent screen
 - [x] (c) Safety panel on note orders
 - [x] E5A useAdelVoice layer, plain-language intake, tap-only sensitive items, crisis scan, admin guardrail notice, remove homepage placeholder
+
+- [ ] Turn 2: clinician workspace tiles, unified Today/action queues, dashboard + New, carry-over custody gate, and full verification.
