@@ -534,6 +534,15 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "coordination_desk" },
   },
   {
+    id: "admin-permissions",
+    label: "Permissions & features",
+    desc: "Role × action matrix, feature flags, action audit",
+    icon: Settings2,
+    to: "/admin-permissions",
+    group: "administration",
+    gate: { kind: "coordination_desk" },
+  },
+  {
     id: "data-exchange",
     label: "Data exchange",
     desc: "Simulated HIE: sync, matching, held records, sharing log",

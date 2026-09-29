@@ -22,6 +22,7 @@ import { Route as AdminDocumentsAuditRouteImport } from './routes/admin-document
 import { Route as AdminFacilitiesRouteImport } from './routes/admin-facilities'
 import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
+import { Route as AdminPermissionsRouteImport } from './routes/admin-permissions'
 import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
 import { Route as AdminSupervisionRouteImport } from './routes/admin-supervision'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
@@ -177,6 +178,11 @@ const AdminKpiTargetsRoute = AdminKpiTargetsRouteImport.update({
 const AdminNoteTemplatesRoute = AdminNoteTemplatesRouteImport.update({
   id: '/admin-note-templates',
   path: '/admin-note-templates',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AdminPermissionsRoute = AdminPermissionsRouteImport.update({
+  id: '/admin-permissions',
+  path: '/admin-permissions',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminSchedulingRulesRoute = AdminSchedulingRulesRouteImport.update({
@@ -655,6 +661,7 @@ export interface FileRoutesByFullPath {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
@@ -761,6 +768,7 @@ export interface FileRoutesByTo {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
@@ -864,6 +872,7 @@ export interface FileRoutesById {
   '/admin-facilities': typeof AdminFacilitiesRoute
   '/admin-kpi-targets': typeof AdminKpiTargetsRoute
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
+  '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
@@ -972,6 +981,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-supervision'
     | '/admin-vendors'
@@ -1078,6 +1088,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-supervision'
     | '/admin-vendors'
@@ -1180,6 +1191,7 @@ export interface FileRouteTypes {
     | '/admin-facilities'
     | '/admin-kpi-targets'
     | '/admin-note-templates'
+    | '/admin-permissions'
     | '/admin-scheduling-rules'
     | '/admin-supervision'
     | '/admin-vendors'
@@ -1287,6 +1299,7 @@ export interface RootRouteChildren {
   AdminFacilitiesRoute: typeof AdminFacilitiesRoute
   AdminKpiTargetsRoute: typeof AdminKpiTargetsRoute
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
+  AdminPermissionsRoute: typeof AdminPermissionsRoute
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
   AdminSupervisionRoute: typeof AdminSupervisionRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
@@ -1449,6 +1462,13 @@ declare module '@tanstack/react-router' {
       path: '/admin-note-templates'
       fullPath: '/admin-note-templates'
       preLoaderRoute: typeof AdminNoteTemplatesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/admin-permissions': {
+      id: '/admin-permissions'
+      path: '/admin-permissions'
+      fullPath: '/admin-permissions'
+      preLoaderRoute: typeof AdminPermissionsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin-scheduling-rules': {
@@ -2186,6 +2206,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminFacilitiesRoute: AdminFacilitiesRoute,
   AdminKpiTargetsRoute: AdminKpiTargetsRoute,
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
+  AdminPermissionsRoute: AdminPermissionsRoute,
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
   AdminSupervisionRoute: AdminSupervisionRoute,
   AdminVendorsRoute: AdminVendorsRoute,
