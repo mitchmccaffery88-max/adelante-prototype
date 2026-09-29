@@ -7,6 +7,7 @@
 // contain something the acting role can't already see. Nothing reaches the
 // record without a human action, and every step is audited:
 // adel_draft_drafted / _accepted / _edited / _discarded.
+import { withoutMergeHeld } from "./mergePart2";
 import { AdelanteEHR, refillNeedsCures, type Patient, type RefillRequest } from "@/lib/ehr";
 import { canAccess, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -255,8 +256,10 @@ export const referralPacket = (referralId: string) => packets.get(referralId);
 export function buildReferralPacket(r: HlocReferral, role: StaffRole, now = new Date()): string {
   const p = AdelanteEHR.getPatient(r.patientId)!;
   const seesSud = roleSeesAsamSection(role, p);
-  const problems = (p.problems ?? []).filter((x) => x.status === "active" && (seesSud || x.category !== "sud"));
-  const meds = visibleMeds(p, role);
+  // §Batch E — items held after a merge never leave in a disclosure until consent is re-confirmed.
+  const problems = withoutMergeHeld(p.problems ?? []).filter((x) => x.status === "active" && (seesSud || x.category !== "sud"));
+  const medsAll = visibleMeds(p, role);
+  const meds = { ...medsAll, visible: withoutMergeHeld(medsAll.visible) };
   const phq = measureSeries(p, role, "phq-9").at(-1);
   const gad = measureSeries(p, role, "gad-7").at(-1);
   const met = listMetabolic(p.id).at(-1);
@@ -269,7 +272,7 @@ export function buildReferralPacket(r: HlocReferral, role: StaffRole, now = new 
     `Recent measures: ${[phq && `PHQ-9 ${phq.score} (${d(phq.date)})`, gad && `GAD-7 ${gad.score} (${d(gad.date)})`, met && `BP ${met.bpSystolic}/${met.bpDiastolic}, BMI ${met.bmi}`].filter(Boolean).join("; ") || "none on file"}`,
   ];
   if (seesSud) {
-    const asam = (p.asamAssessments ?? []).filter((a) => a.signedAt).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
+    const asam = withoutMergeHeld(p.asamAssessments ?? []).filter((a) => a.signedAt).sort((a, b) => (b.signedAt ?? "").localeCompare(a.signedAt ?? ""))[0];
     lines.push(`ASAM level: ${asam?.actualLevel ? `${asam.actualLevel} (signed ${d(asam.signedAt!)})` : "none signed"}`);
   }
   const blocker = hlocSendBlocker(r);
