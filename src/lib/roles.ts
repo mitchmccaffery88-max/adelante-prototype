@@ -1178,7 +1178,8 @@ export const STAFF_ROSTER: StaffMember[] = [
 ];
 
 export function staffForRole(role: StaffRole): StaffMember[] {
-  return STAFF_ROSTER.filter((s) => s.role === role);
+  // Default-role holders first, then people who hold it as an extra assignment.
+  return [...STAFF_ROSTER.filter((s) => s.role === role), ...STAFF_ROSTER.filter((s) => s.role !== role && hasRoleAssignment(s, role))];
 }
 export function getStaffMember(id: string | null | undefined): StaffMember | undefined {
   return STAFF_ROSTER.find((s) => s.id === id);
