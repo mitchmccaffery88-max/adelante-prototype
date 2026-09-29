@@ -149,7 +149,6 @@ export function SignupFlow({ operator, onComplete }: SignupFlowProps) {
   if (branch === "code")
     return <RedeemCodePanel operator={operator} onComplete={onComplete} onBack={() => setBranch(null)} />;
 
-  if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
   return (
     <Card className="space-y-5 p-6">
       <div>
@@ -465,6 +464,7 @@ function NewPatientForm({
       </p>
     ) : null;
 
+  if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
   return (
     <Card className="space-y-5 p-6">
       <div>
