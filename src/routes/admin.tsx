@@ -52,6 +52,8 @@ import { EmptyState } from "@/components/EmptyState";
 import { PopulationCarePlanStrip } from "@/components/CarePlanCard";
 import { toast } from "sonner";
 import { canAccess, useActingStaff } from "@/lib/roles";
+import { AdminTodayStrip } from "@/components/ops/OpsWorkspace";
+import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { staffNavGroupForRole } from "@/lib/navSections";
 import {
   activeGroupSessions,
@@ -176,6 +178,8 @@ function AdminPage() {
 
   return (
     <div className="mx-auto max-w-7xl px-4 sm:px-6 py-8">
+      {role === "sys_admin" && <div className="mb-4"><AdminTodayStrip /></div>}
+      <OpsActionLauncher />
       <header className="mb-6">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">Administrator</div>
         <h1 className="font-display text-3xl text-navy mt-1">{t("adminTitle")}</h1>
