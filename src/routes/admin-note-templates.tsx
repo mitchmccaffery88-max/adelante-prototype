@@ -4,6 +4,7 @@
 // added/renamed/reordered, fields get type-appropriate editors, and option
 // lists for select/radio/multiselect are edited row by row. Templates are
 // deactivated with a reason, never deleted.
+import { actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useState } from "react";
 import { AdelanteEHR, useEhr, type NoteTemplate } from "@/lib/ehr";
@@ -161,7 +162,7 @@ function AdminNoteTemplatesPage() {
 
   const clone = (t: NoteTemplate) => {
     try {
-      AdelanteEHR.cloneNoteTemplateToPersonal(t.id, { staffId, staffName });
+      actFor("note_template_clone", "cloneNoteTemplateToPersonal", undefined, t.id, { staffId, staffName });
       toast.success("Saved as your own copy — edit it freely, the original is untouched.");
       setTab("personal");
     } catch (e) {
@@ -314,8 +315,12 @@ function AdminNoteTemplatesPage() {
                           size="sm"
                           variant="ghost"
                           onClick={() => {
-                            AdelanteEHR.setNoteTemplateActive(t.id, true, staffName);
-                            toast.success("Template reactivated");
+                            try {
+                              actFor("note_template_activate", "setNoteTemplateActive", undefined, t.id, true, staffName);
+                              toast.success("Template reactivated");
+                            } catch (e) {
+                              toast.error((e as Error).message);
+                            }
                           }}
                         >
                           Reactivate
@@ -365,7 +370,7 @@ function AdminNoteTemplatesPage() {
             <Button
               onClick={() => {
                 try {
-                  AdelanteEHR.setNoteTemplateActive(deactivating!.id, false, staffName, reason);
+                  actFor("note_template_activate", "setNoteTemplateActive", undefined, deactivating!.id, false, staffName, reason);
                   toast.success("Template deactivated");
                   setDeactivating(null);
                 } catch (e) {
@@ -474,14 +479,14 @@ function TemplateBuilderDialog({
           );
           if (!ok) return;
         }
-        AdelanteEHR.updateNoteTemplate(
+        actFor("note_template_update", "updateNoteTemplate", undefined,
           template.id,
           { title, description, encounterType, schema },
           staffName,
         );
         toast.success(schemaChanged ? `Published version ${nextVersion}` : "Template updated");
       } else {
-        AdelanteEHR.createNoteTemplate(
+        actFor("note_template_create", "createNoteTemplate", undefined,
           {
             key: key.trim() || slug(title),
             title,

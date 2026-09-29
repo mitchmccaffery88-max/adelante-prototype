@@ -4,6 +4,7 @@
 // write gate for both); nothing schedules itself. Conditions are two structured AND-matchers over real
 // data (active Problem category, active Order frequency code) — deliberately
 // not a general expression language.
+import { actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { toast } from "sonner";
@@ -144,7 +145,7 @@ function SchedulingRulesPage() {
 
   const save = () => {
     try {
-      AdelanteEHR.saveSchedulingRule(
+      actFor("scheduling_rule_save", "saveSchedulingRule", undefined,
         {
           id: form.id,
           key: form.key,
@@ -174,7 +175,7 @@ function SchedulingRulesPage() {
   const confirmDeactivate = () => {
     if (!deactivating) return;
     try {
-      AdelanteEHR.deactivateSchedulingRule(deactivating.id, staffName, reason, role);
+      actFor("scheduling_rule_deactivate", "deactivateSchedulingRule", undefined, deactivating.id, staffName, reason, role);
       toast.success("Rule deactivated.");
       setDeactivating(null);
       setReason("");
@@ -284,8 +285,12 @@ function SchedulingRulesPage() {
                             size="sm"
                             variant="ghost"
                             onClick={() => {
-                              AdelanteEHR.reactivateSchedulingRule(r.id, staffName, role);
-                              toast.success("Rule reactivated.");
+                              try {
+                                actFor("scheduling_rule_save", "reactivateSchedulingRule", undefined, r.id, staffName, role);
+                                toast.success("Rule reactivated.");
+                              } catch (e) {
+                                toast.error((e as Error).message);
+                              }
                             }}
                           >
                             <RotateCcw className="h-3.5 w-3.5" />
@@ -502,7 +507,7 @@ function RunPreviewCard({
   const commit = () => {
     setRunning(true);
     try {
-      const { total, results } = AdelanteEHR.runSchedulingRulesNow(staffName, role);
+      const { total, results } = actFor<ReturnType<typeof AdelanteEHR.runSchedulingRulesNow>>("scheduling_rule_run", "runSchedulingRulesNow", undefined, staffName, role);
       const detail = results
         .filter((r) => r.tasksCreated > 0)
         .map((r) => `${r.ruleKey}: ${r.tasksCreated}`)

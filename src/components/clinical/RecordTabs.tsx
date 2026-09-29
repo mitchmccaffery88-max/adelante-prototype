@@ -2516,7 +2516,7 @@ export function NotesTab({
                 canClone={(t) => canCloneTemplate({ role, staffId }, t)}
                 onClone={(t) => {
                   try {
-                    const copy = AdelanteEHR.cloneNoteTemplateToPersonal(t.id, {
+                    const copy = actFor<ReturnType<typeof AdelanteEHR.cloneNoteTemplateToPersonal>>("note_template_clone", "cloneNoteTemplateToPersonal", patientId, t.id, {
                       staffId,
                       staffName,
                     });
