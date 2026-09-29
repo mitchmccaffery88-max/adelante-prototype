@@ -1,5 +1,5 @@
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
-import { act, actFor } from "@/lib/actions/act";
+import { act, actFor, setViewingStaff } from "@/lib/actions/act";
 import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
