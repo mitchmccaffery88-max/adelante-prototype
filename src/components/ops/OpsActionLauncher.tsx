@@ -7,12 +7,13 @@ import { Plus } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { AdelanteEHRExt, CLAIM_TRANSITIONS, claimMoveNeedsReason, PAYMENT_METHOD_LABEL, useEhrExt, type Claim, type ClaimState, type PaymentMethod } from "@/lib/ehr-ext";
-import { PAYMENT_ARRANGEMENTS, type PaymentArrangement } from "@/lib/rates";
+import { PAYER_PROGRAMS, PAYMENT_ARRANGEMENTS, type PaymentArrangement } from "@/lib/rates";
+import { BLOCKED_DOCS } from "@/lib/billingWorkspace";
 import { CHART_ACTIONS, type ChartAction } from "@/lib/chartActions";
 import { act, actFor, actResult, currentRunActor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
 import { useActingStaff } from "@/lib/roles";
-import { billingWorkspace, adminToday } from "@/lib/billingWorkspace";
+import { billingWorkspace, adminToday, claimBlockLabel } from "@/lib/billingWorkspace";
 import { featureSnapshot, REQUIRES_LIVE_VENDOR, type FeatureId } from "@/lib/features";
 import { listMerges } from "@/lib/patientMerge";
 import { searchPatients } from "@/lib/patientSearch";
@@ -206,19 +207,24 @@ function result(r: { ok: boolean; error?: string } | unknown, msg: string, done?
 }
 
 function CorrectForm({ claim, done }: { claim: Claim; done: () => void }) {
+  const { role } = useActingStaff();
   const [code, setCode] = useState(claim.serviceCode ?? "");
   const [units, setUnits] = useState(String(claim.units ?? 1));
   const [reason, setReason] = useState("");
+  const [program, setProgram] = useState<string>(claim.program ?? "");
+  const docsBlocked = claimBlockLabel(claim, role) === BLOCKED_DOCS;
   return (
     <div className="space-y-3" data-testid="ops-correct-form">
+      {docsBlocked && <p className="rounded-md border p-2 text-sm" data-testid="ops-docs-blocked">{BLOCKED_DOCS}. The clinician must finish the note; billing can't clear this.</p>}
+      <Label>Payer program</Label>
+      <Select value={program} onValueChange={setProgram}><SelectTrigger aria-label="Payer program"><SelectValue placeholder="Choose program" /></SelectTrigger><SelectContent>{PAYER_PROGRAMS.map((x) => <SelectItem key={x.id} value={x.id}>{x.label}</SelectItem>)}</SelectContent></Select>
       <Label htmlFor="ops-code">Service code</Label>
       <Input id="ops-code" value={code} onChange={(e) => setCode(e.target.value)} />
       <Label htmlFor="ops-units">Units</Label>
       <Input id="ops-units" type="number" min={1} value={units} onChange={(e) => setUnits(e.target.value)} />
       <Label htmlFor="ops-reason">Reason (required)</Label>
       <Input id="ops-reason" value={reason} onChange={(e) => setReason(e.target.value)} placeholder="What was wrong" />
-      <Button disabled={!reason.trim()} onClick={() => result(actResult("claim_correct", "correctClaim", claim.patientId, claim.id, { serviceCode: code, units: Number(units) }, reason), "Claim corrected", done)}>Save correction</Button>
-      <p className="text-xs text-muted-foreground">Documentation blocks are cleared by the clinician; billing sees only “{`Blocked: clinical documentation incomplete`}”.</p>
+      <Button disabled={!reason.trim()} onClick={() => result(actResult("claim_correct", "correctClaim", claim.patientId, claim.id, { serviceCode: code, units: Number(units), ...(program && program !== claim.program ? { program } : {}) }, reason), "Claim corrected", done)}>Save correction</Button>
     </div>
   );
 }
