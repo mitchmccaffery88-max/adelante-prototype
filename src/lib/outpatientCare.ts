@@ -348,3 +348,8 @@ export function seedOutpatientCareDemo(): void {
       advanceHlocReferral(r.id, "sent", REYES);
     });
 }
+
+/** §Batch E — patient-linked rows a merge moves (patient merge only). */
+export function _mergeRows(): Record<string, { patientId: string }[]> {
+  return { episodes, referrals, disclosures };
+}

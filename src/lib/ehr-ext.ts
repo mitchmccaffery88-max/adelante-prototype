@@ -720,6 +720,8 @@ export const AdelanteEHRExt = {
     const all = AdelanteEHR.listAppointments();
     return all.filter((a) => a.status === "attended" && !this.isNoteSigned(a.id));
   },
+  /** §Batch E — raw claim rows a patient merge moves. */
+  _mergeClaimRows: () => claims,
   listClaims: () => claims.slice().sort((a, b) => +new Date(b.updatedAt) - +new Date(a.updatedAt)),
 
   // Mutations

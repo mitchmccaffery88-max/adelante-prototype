@@ -323,3 +323,8 @@ export function _resetChartOrders() {
   screenerRequests.length = 0;
   metabolic.length = 0;
 }
+
+/** §Batch E — patient-linked rows a merge moves (patient merge only). */
+export function _mergeRows(): Record<string, { patientId: string }[]> {
+  return { labs, screenerRequests, metabolic };
+}
