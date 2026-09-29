@@ -19,7 +19,7 @@ describe("turn 6 — ops '+ New'", () => {
       const a = CHART_ACTIONS.find((x) => x.id === id)!;
       expect(a.pending && a.comingSoon).toBeTruthy();
     }
-    for (const a of CHART_ACTIONS.filter((x) => x.opsMenu)) expect(typeof a.needsPatient === "boolean" || a.id === "eligibility_check" || a.id === "payment_arrangement").toBe(true);
+    for (const a of CHART_ACTIONS.filter((x) => x.opsMenu)) expect(typeof a.needsPatient, a.id).toBe("boolean");
   });
 
   it("flag toggle needs a reason, is audited, and simulated flags can't go live", () => {

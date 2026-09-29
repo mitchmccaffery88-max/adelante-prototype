@@ -391,6 +391,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   {
     id: "payment_arrangement",
     opsMenu: true,
+    needsPatient: true,
     flags: ["payments_simulated"],
     label: { en: "Payment arrangement", es: "Acuerdo de pago" },
     group: "billing",
@@ -402,6 +403,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   {
     id: "eligibility_check",
     opsMenu: true,
+    needsPatient: true,
     flags: ["eligibility_simulated"],
     simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
@@ -470,6 +472,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   {
     id: "notification_resend",
     opsMenu: true,
+    needsPatient: false,
     flags: ["notifications_simulated"],
     label: { en: "Resend notification", es: "Reenviar notificación" },
     group: "admin",
