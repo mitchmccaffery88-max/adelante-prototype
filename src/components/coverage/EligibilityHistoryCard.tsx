@@ -31,9 +31,9 @@ export function EligibilityHistoryCard({
             size="sm"
             variant="outline"
             data-testid="check-electronically"
-            onClick={() => { try { setNotice(actFor<ReturnType<typeof checkEligibility>>("eligibility_check", "checkEligibility", patientId, patientId).detail); } catch (e) { setNotice((e as Error).message); } }}
+            onClick={() => { try { setNotice(`Simulated check — ${actFor<ReturnType<typeof checkEligibility>>("eligibility_check", "checkEligibility", patientId, patientId).detail}`); } catch (e) { setNotice((e as Error).message); } }}
           >
-            Check electronically
+            Simulated check
           </Button>
         )}
       </div>

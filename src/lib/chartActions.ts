@@ -22,7 +22,7 @@ import { checkEligibility } from "@/lib/eligibility/eligibility";
 import type { FeatureId } from "@/lib/features";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.d1";
+export const REGISTRY_VERSION = "2026-09-29.e1";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -65,6 +65,8 @@ export interface ChartAction {
   pending?: boolean;
   /** False for dashboard actions that can begin without a patient context. */
   needsPatient?: boolean;
+  /** The store only simulates the work (no live connection) — the audit records `simulated: true`. */
+  simulated?: boolean;
   allowed: (actor: ChartActor, patient?: Patient) => ChartActionAnswer;
 }
 
@@ -378,6 +380,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "eligibility_check",
+    simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
     group: "billing",
     menu: false,
