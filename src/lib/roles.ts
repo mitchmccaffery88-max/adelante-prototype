@@ -1,3 +1,4 @@
+import { isFeatureEnabled } from "@/lib/features";
 // §4 — Acting staff role + record-class RBAC matrix.
 // Additive layer on top of the existing persona routing; never replaces it.
 
@@ -1024,6 +1025,36 @@ export interface StaffMember {
   accessMode?: "direct" | "proxy";
   /** Long display form, e.g. "Dr. Mandeep Bagga, M.D." (header). */
   fullName?: string;
+  /**
+   * §Batch E — one person, one identity, several role assignments. `role` is
+   * the default; the switcher picks the active one and audit records it.
+   * Absent = one assignment (`role`). In-facility assignments hide when the
+   * in-facility flag is off.
+   */
+  roleAssignments?: RoleAssignment[];
+  /** Staff dedupe keys. */
+  npi?: string;
+  email?: string;
+}
+export interface RoleAssignment {
+  role: StaffRole;
+  accessMode?: "direct" | "proxy";
+  inFacility?: boolean;
+}
+/** Role assignments a person can act in right now (in-facility ones only when the flag is on). */
+export function roleAssignmentsOf(m: StaffMember | undefined, opts: { includeHidden?: boolean } = {}): RoleAssignment[] {
+  if (!m) return [];
+  const list = m.roleAssignments ?? [{ role: m.role, accessMode: m.accessMode }];
+  return opts.includeHidden ? list : list.filter((a) => !a.inFacility || isFeatureEnabled("in_facility"));
+}
+export function hasRoleAssignment(m: StaffMember | undefined, role: StaffRole, opts: { includeHidden?: boolean } = {}): boolean {
+  return roleAssignmentsOf(m, opts).some((a) => a.role === role);
+}
+/** Staff dedupe: same NPI or same email = same person. Returns the existing identity. */
+export function findDuplicateStaff(input: { npi?: string; email?: string }, roster: StaffMember[] = STAFF_ROSTER): StaffMember | undefined {
+  const npi = input.npi?.replace(/\D/g, "");
+  const email = input.email?.trim().toLowerCase();
+  return roster.find((m) => (npi && m.npi?.replace(/\D/g, "") === npi) || (email && m.email?.trim().toLowerCase() === email));
 }
 
 export const STAFF_ROSTER: StaffMember[] = [
@@ -1054,12 +1085,19 @@ export const STAFF_ROSTER: StaffMember[] = [
     accessMode: "direct",
   },
   {
-    // Not a platform user — exists so ECM Providers have a real identity to
-    // attribute proxy-entered CF task-list activity to.
+    // §Batch E — ONE identity for Darnell. The old separate "(facility
+    // contract)" entry is retired: its CF care-manager work is now an extra
+    // in-facility role assignment on this identity (hidden while in-facility
+    // is off). Id kept so history, audit and proxy attribution still resolve.
     id: "s-cf2",
-    name: "Darnell Pope (facility contract)",
-    role: "cf_care_manager",
-    accessMode: "proxy",
+    name: "Darnell Pope",
+    role: "ecm_provider",
+    credential: "Care manager",
+    email: "darnell.pope@adelante.example",
+    roleAssignments: [
+      { role: "ecm_provider" },
+      { role: "cf_care_manager", accessMode: "proxy", inFacility: true },
+    ],
   },
   { id: "s-sudc1", name: "Renee Castillo", role: "sud_counselor", credential: "SUDCC-II" },
   {
@@ -1337,9 +1375,10 @@ export function canProxyForCfCareManager(
   const actor = getStaffMember(actorStaffId);
   const subject = getStaffMember(onBehalfOfStaffId);
   if (!actor) return { allowed: false, reason: "Unknown acting staff member." };
-  if (!subject || subject.role !== "cf_care_manager")
+  const cfAssignment = roleAssignmentsOf(subject, { includeHidden: true }).find((a) => a.role === "cf_care_manager");
+  if (!subject || !cfAssignment)
     return { allowed: false, reason: "Proxy entry only applies to CF Care Managers." };
-  if (subject.accessMode !== "proxy")
+  if ((cfAssignment.accessMode ?? subject.accessMode) !== "proxy")
     return {
       allowed: false,
       reason: `${subject.name} logs in directly — their activity cannot be proxy-entered.`,
@@ -1479,8 +1518,9 @@ function persist(key: string, value: string) {
 export function setActingRole(role: StaffRole) {
   acting = role;
   persist(KEY, role);
-  // Keep the acting identity consistent with the acting role.
-  if (getStaffMember(actingStaffId)?.role !== role) {
+  // Keep the acting identity consistent with the acting role (a person with
+  // several role assignments keeps their identity).
+  if (!hasRoleAssignment(getStaffMember(actingStaffId), role)) {
     actingStaffId = staffForRole(role)[0]?.id ?? actingStaffId;
     persist(STAFF_KEY, actingStaffId);
   }
@@ -1488,14 +1528,16 @@ export function setActingRole(role: StaffRole) {
 }
 
 /** Set the acting person; keeps the acting role in sync with their role. */
-export function setActingStaff(staffId: string) {
+export function setActingStaff(staffId: string, activeRole?: StaffRole) {
   const m = getStaffMember(staffId);
   if (!m) return;
   actingStaffId = m.id;
   persist(STAFF_KEY, m.id);
-  if (acting !== m.role) {
-    acting = m.role;
-    persist(KEY, m.role);
+  // §Batch E — the active role must be one of this person's assignments.
+  const next = activeRole && hasRoleAssignment(m, activeRole) ? activeRole : hasRoleAssignment(m, acting) && m.roleAssignments ? acting : m.role;
+  if (acting !== next) {
+    acting = next;
+    persist(KEY, next);
   }
   notify();
 }
