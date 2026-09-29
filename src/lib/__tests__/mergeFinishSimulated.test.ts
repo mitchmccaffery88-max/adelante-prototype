@@ -6,7 +6,7 @@ import { _mergeRows as chartOrderRows } from "@/lib/chartOrders";
 import { _mergePlanStore } from "@/lib/structuredCarePlan";
 import { isHeldAfterMerge, withoutMergeHeld } from "@/lib/mergePart2";
 import { buildTrackingRows, roleSeesSudInstruments } from "@/lib/trackingTimeline";
-import { STAFF_ROLES } from "@/lib/roles";
+import { STAFF_ROLES, canRunAssistedSignup } from "@/lib/roles";
 import { runAction, actionIsSimulated, confirmationFor } from "@/lib/actions/runAction";
 import { CHART_ACTIONS } from "@/lib/chartActions";
 import { FEATURE_FLAGS, featureFlag } from "@/lib/features";
@@ -94,14 +94,14 @@ describe("merge moves every record type, keeping authors, dates and audit", () =
 describe("Part 2 on merged data", () => {
   it("held items: hidden from a restricted role, excluded from disclosures until consent re-confirmed", () => {
     const [a, b] = pair();
-    (b as unknown as Row).screenerHistory = [{ key: "audit-c", score: 7, completedAt: "2026-03-01" }];
+    (b as unknown as Row).screenerHistory = [{ key: "audit", score: 7, completedAt: "2026-03-01" }];
     const rec = merge(a, b);
-    const item = a.screenerHistory!.find((h) => h.key === "audit-c")!;
+    const item = a.screenerHistory!.find((h) => h.key === "audit")!;
     expect(isHeldAfterMerge(item)).toBe(true);
     // Restricted role (ECM) never sees it.
     const restricted = STAFF_ROLES.map((r) => r.key).find((k) => !roleSeesSudInstruments(k, a))!;
     expect(restricted).toBeTruthy();
-    expect(buildTrackingRows(a, restricted).some((r) => r.key === "audit-c")).toBe(false);
+    expect(buildTrackingRows(a, restricted).some((r) => r.key === "audit")).toBe(false);
     // An unconsented disclosure never includes it.
     expect(withoutMergeHeld(a.screenerHistory!)).not.toContain(item);
     releasePart2Holds(rec.id, PRIYA);
@@ -116,9 +116,10 @@ describe("staff exact-match: Create anyway through runAction", () => {
     AdelanteEHR.createPatient({ ...base, matchSource: "seed" } as unknown as In);
     expect(() => AdelanteEHR.createPatient({ ...base, matchSource: "assisted_signup" } as unknown as In)).toThrow(PossibleExistingPatientError);
     const actor = { role: "intake_coordinator" as never, staffId: "s-ic1" };
-    const noReason = runAction("patient_create_anyway", { role: "clinical_coordinator", staffId: "s-cc1" }, undefined, { args: [{ ...base, matchSource: "assisted_signup", createAnyway: { reason: " " } }] });
+    const role = STAFF_ROLES.map((x) => x.key).find((k) => canRunAssistedSignup(k))!;
+    const noReason = runAction("patient_create_anyway", { role, staffId: "s-cc1" }, undefined, { args: [{ ...base, matchSource: "assisted_signup", createAnyway: { reason: " " } }] });
     expect(noReason.ok).toBe(false);
-    const r = runAction<Patient>("patient_create_anyway", { role: "clinical_coordinator", staffId: "s-cc1" }, undefined, {
+    const r = runAction<Patient>("patient_create_anyway", { role, staffId: "s-cc1" }, undefined, {
       args: [{ ...base, matchSource: "assisted_signup", createAnyway: { reason: "Different person — ID checked", actorId: "s-cc1" } }],
     });
     expect(r.ok ? "" : r.reason).toBe("");
