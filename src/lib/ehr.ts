@@ -6757,6 +6757,24 @@ function _referralActor(): ReferralActor {
 }
 
 /**
+ * Roles that can write care coordination. Module-load demo seeds can run while
+ * roles.ts is still initialising (roles → ehr import order in some entry
+ * points); then the roster isn't readable yet and the list is computed lazily
+ * on first real read instead of throwing inside the seed.
+ */
+function careCoordinationWriterRoles(): StaffRole[] {
+  const roster = (() => {
+    try {
+      return STAFF_ROLES as readonly { key: StaffRole }[] | undefined;
+    } catch {
+      return undefined;
+    }
+  })();
+  if (!roster) return [];
+  return roster.map((r) => r.key).filter((role) => canAccess(role, "care_coordination").level === "write");
+}
+
+/**
  * Standing "Simulated" rule (AGENTS.md): audit rows from placeholder / mock
  * integrations always carry `simulated: true`.
  */
@@ -8523,9 +8541,7 @@ export const AdelanteEHR = {
                 createdAt: now.toISOString(),
                 dueDate: due,
                 status: "open" as const,
-                allowedRoles: STAFF_ROLES.map((r) => r.key).filter(
-                  (role) => canAccess(role, "care_coordination").level === "write",
-                ),
+                allowedRoles: careCoordinationWriterRoles(),
               },
             } satisfies ReferralOutreachState,
           }),
