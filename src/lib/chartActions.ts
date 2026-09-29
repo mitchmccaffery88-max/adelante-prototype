@@ -24,7 +24,7 @@ import { mergePatients, unmergePatients } from "@/lib/patientMerge";
 import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patientMatching";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.e1";
+export const REGISTRY_VERSION = "2026-09-29.e2";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -113,6 +113,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "med_order",
+    flags: ["erx_simulated"],
     label: { en: "Medication order", es: "Orden de medicamento" },
     group: "clinical",
     sectionId: "orders",
@@ -121,6 +122,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "refill_decision",
+    flags: ["cures_placeholder", "erx_simulated"],
     label: { en: "Refill decision", es: "Decisión de resurtido" },
     group: "clinical",
     sectionId: "orders",
@@ -229,6 +231,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "message_patient",
+    flags: ["notifications_simulated"],
     label: { en: "Message patient", es: "Mensaje al paciente" },
     group: "coordination",
     sectionId: "messages",
@@ -345,6 +348,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "claim_status",
+    flags: ["payments_simulated"],
     label: { en: "Change claim status", es: "Cambiar estado del reclamo" },
     group: "billing",
     menu: false,
@@ -355,6 +359,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_record",
+    flags: ["payments_simulated"],
     label: { en: "Record payment", es: "Registrar pago" },
     group: "billing",
     menu: false,
@@ -364,6 +369,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_void",
+    flags: ["payments_simulated"],
     label: { en: "Void payment", es: "Anular pago" },
     group: "billing",
     menu: false,
@@ -373,6 +379,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "payment_arrangement",
+    flags: ["payments_simulated"],
     label: { en: "Payment arrangement", es: "Acuerdo de pago" },
     group: "billing",
     menu: false,
@@ -382,6 +389,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "eligibility_check",
+    flags: ["eligibility_simulated"],
     simulated: true,
     label: { en: "Eligibility check", es: "Verificar elegibilidad" },
     group: "billing",
@@ -395,6 +403,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "isl_export",
+    flags: ["caloms_export_simulated"],
     label: { en: "ISL export", es: "Exportar ISL" },
     group: "billing",
     menu: false,
@@ -444,6 +453,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   })),
   {
     id: "notification_resend",
+    flags: ["notifications_simulated"],
     label: { en: "Resend notification", es: "Reenviar notificación" },
     group: "admin",
     menu: false,
