@@ -158,6 +158,7 @@ function AuthPage() {
     navigate({ to: staffRouteFor(staffRole) });
   };
 
+  if (signupHelp) return <SignupVerificationHelp onBack={() => setSignupHelp(false)} />;
   return (
     <div className="mx-auto max-w-md px-4 sm:px-6 py-10">
       <div className="text-center mb-6">
