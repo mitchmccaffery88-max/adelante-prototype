@@ -76,13 +76,14 @@ describe("C4 crisis named owner", () => {
   it("handoff needs owner or coordinator, requires a reason and is audited", () => {
     const p = withClinician();
     const e = AdelanteEHR.flagCrisis(p.id, "Tester", "handoff test");
+    const firstOwner = e.ownerStaffId!;
     const other = STAFF_ROSTER.find((m) => m.id !== e.ownerStaffId && m.role === "therapist")!;
     expect(() => AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "x", byStaffId: e.ownerStaffId!, byName: "Owner", byRole: "therapist" })).toThrow(/reason/);
     expect(() => AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "going on leave", byStaffId: "nobody", byName: "X", byRole: "therapist" })).toThrow(/owner or a clinical coordinator/);
-    const r = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "going on leave", byStaffId: e.ownerStaffId!, byName: "Owner", byRole: "therapist" });
+    const r = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "going on leave", byStaffId: firstOwner, byName: "Owner", byRole: "therapist" });
     expect(r.ownerStaffId).toBe(other.id);
     expect(AdelanteEHR.listAuditEvents({}).some((a: any) => a.action === "crisis_owner_handoff" && a.detail?.escalationId === e.id && a.detail?.reason === "going on leave")).toBe(true);
-    const r2 = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: e.ownerStaffId ?? STAFF_ROSTER[0].id, reason: "coordinator reassign", byStaffId: "coord", byName: "Coord", byRole: "clinical_coordinator" });
+    const r2 = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: firstOwner, reason: "coordinator reassign", byStaffId: "coord", byName: "Coord", byRole: "clinical_coordinator" });
     expect(r2.handoffs?.length).toBe(2);
   });
   it("owner notification is Part 2-neutral", () => {
