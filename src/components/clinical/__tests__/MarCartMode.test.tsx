@@ -4,6 +4,7 @@
 // not a second charting path. This charts the same dose both ways and compares
 // the resulting DoseAdministration records field by field.
 import { afterEach, describe, expect, it } from "vitest";
+import "@/test/freezeClock";
 import { cleanup, fireEvent, render, screen } from "@testing-library/react";
 import { MarTab } from "@/components/clinical/MarTab";
 import { AdelanteEHR, type DoseAdministration } from "@/lib/ehr";

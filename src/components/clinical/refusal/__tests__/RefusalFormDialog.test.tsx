@@ -4,6 +4,7 @@
 // has no canvas, and the stroke-validation logic itself is unit-tested in
 // src/lib/__tests__/refusal.test.ts.
 import { afterEach, describe, expect, it, vi } from "vitest";
+import "@/test/freezeClock";
 import { cleanup, render, screen } from "@testing-library/react";
 import userEvent from "@testing-library/user-event";
 

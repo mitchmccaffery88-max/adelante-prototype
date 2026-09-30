@@ -47,6 +47,7 @@ import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
 import { Route as DashboardsRouteImport } from './routes/dashboards'
 import { Route as DataExchangeRouteImport } from './routes/data-exchange'
+import { Route as DisclosureLogRouteImport } from './routes/disclosure-log'
 import { Route as DmcOdsReadinessRouteImport } from './routes/dmc-ods-readiness'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as EligibilityWorklistRouteImport } from './routes/eligibility-worklist'
@@ -304,6 +305,11 @@ const DashboardsRoute = DashboardsRouteImport.update({
 const DataExchangeRoute = DataExchangeRouteImport.update({
   id: '/data-exchange',
   path: '/data-exchange',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DisclosureLogRoute = DisclosureLogRouteImport.update({
+  id: '/disclosure-log',
+  path: '/disclosure-log',
   getParentRoute: () => rootRouteImport,
 } as any)
 const DmcOdsReadinessRoute = DmcOdsReadinessRouteImport.update({
@@ -692,6 +698,7 @@ export interface FileRoutesByFullPath {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -799,6 +806,7 @@ export interface FileRoutesByTo {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -905,6 +913,7 @@ export interface FileRoutesById {
   '/crisis-queue': typeof CrisisQueueRoute
   '/dashboards': typeof DashboardsRoute
   '/data-exchange': typeof DataExchangeRoute
+  '/disclosure-log': typeof DisclosureLogRoute
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
@@ -1015,6 +1024,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1122,6 +1132,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1227,6 +1238,7 @@ export interface FileRouteTypes {
     | '/crisis-queue'
     | '/dashboards'
     | '/data-exchange'
+    | '/disclosure-log'
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
@@ -1336,6 +1348,7 @@ export interface RootRouteChildren {
   CrisisQueueRoute: typeof CrisisQueueRoute
   DashboardsRoute: typeof DashboardsRoute
   DataExchangeRoute: typeof DataExchangeRoute
+  DisclosureLogRoute: typeof DisclosureLogRoute
   DmcOdsReadinessRoute: typeof DmcOdsReadinessRoute
   DocumentsRoute: typeof DocumentsRoute
   EligibilityWorklistRoute: typeof EligibilityWorklistRoute
@@ -1650,6 +1663,13 @@ declare module '@tanstack/react-router' {
       path: '/data-exchange'
       fullPath: '/data-exchange'
       preLoaderRoute: typeof DataExchangeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/disclosure-log': {
+      id: '/disclosure-log'
+      path: '/disclosure-log'
+      fullPath: '/disclosure-log'
+      preLoaderRoute: typeof DisclosureLogRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/dmc-ods-readiness': {
@@ -2251,6 +2271,7 @@ const rootRouteChildren: RootRouteChildren = {
   CrisisQueueRoute: CrisisQueueRoute,
   DashboardsRoute: DashboardsRoute,
   DataExchangeRoute: DataExchangeRoute,
+  DisclosureLogRoute: DisclosureLogRoute,
   DmcOdsReadinessRoute: DmcOdsReadinessRoute,
   DocumentsRoute: DocumentsRoute,
   EligibilityWorklistRoute: EligibilityWorklistRoute,

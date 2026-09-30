@@ -5,6 +5,8 @@ import { hieFollowUps } from "@/lib/hie";
 import { isInFacilityTask, inFacilityEnabled } from "@/lib/inFacility";
 import { myCaseload, myContactsDue, myPendingLabs, myPendingRefills, myPlanReviewsDue, screenerDueRows, staffAliases, type ActingIdentity } from "@/lib/myWork";
 import { listUnsignedWork } from "@/lib/unsignedWork";
+import { isCrisisNote, noteClock, overdueCrisisNotes } from "@/lib/noteClock";
+import { crisisSlaState, crisisSlaTarget, overdueByLabel } from "@/lib/crisisPolicy";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
@@ -12,7 +14,7 @@ import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -79,8 +81,19 @@ export function workspaceActionRows(input: {
   }
   for (const u of listUnsignedWork({ authorId: actor.clinicianId ?? actor.staffId })) {
     if (u.kind === "undocumented_encounter" && needsClosing.some((a) => a.id === u.id)) continue;
-    push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: `${u.patient.firstName} ${u.patient.lastName}`, label: u.kind === "draft_note" ? "Unsigned note" : "Visit needs a note", dueAt: u.date, action: u.kind === "draft_note" ? "Review note" : "Write note", sourceId: u.kind === "draft_note" ? u.id : undefined });
+    const name = `${u.patient.firstName} ${u.patient.lastName}`;
+    if (u.kind === "draft_note" && u.note) {
+      // §Batch C3 — business-day / crisis clocks (Draft — pending clinical sign-off).
+      const c = noteClock(u.note, now);
+      if (isCrisisNote(u.note)) { rows.push({ id: `crisis_note:${u.id}`, kind: "crisis_note", patientId: u.patient.id, patientName: name, label: "Crisis note to sign", dueAt: c.dueAt, due: c.label, group: "now", action: "Review note", sourceId: u.id }); continue; }
+      rows.push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: name, label: "Unsigned note", dueAt: c.dueAt, due: c.label, group: c.state === "due_later" ? groupFor(c.dueAt, now) : c.state === "overdue" ? "now" : "today", action: "Review note", sourceId: u.id });
+      continue;
+    }
+    push({ id: `unsigned:${u.id}`, kind: "unsigned", patientId: u.patient.id, patientName: name, label: "Visit needs a note", dueAt: u.date, action: "Write note" });
   }
+  // §Batch C3 — overdue crisis notes escalate to the clinical coordinator pool.
+  if (isCoordinatorRole(actor.role)) for (const { patient, note, clock } of overdueCrisisNotes(patients, now))
+    rows.push({ id: `crisis_note:${note.id}`, kind: "crisis_note", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Crisis note overdue — escalated", dueAt: clock.dueAt, due: clock.label, group: "now", action: "Open chart", sourceId: note.id });
   for (const { patient, note } of AdelanteEHR.listNotesAwaitingCosign().filter(({ note }) => !note.cosignOwnerOverrideId || aliases.has(note.cosignOwnerOverrideId)))
     if (mineIds.has(patient.id) || (!!note.cosignOwnerOverrideId && aliases.has(note.cosignOwnerOverrideId))) push({ id: `cosign:${note.id}`, kind: "cosign", patientId: patient.id, patientName: `${patient.firstName} ${patient.lastName}`, label: "Cosign note", dueAt: note.signedAt ?? note.date, action: "Review" });
   for (const r of myPendingRefills(actor)) {
@@ -88,8 +101,20 @@ export function workspaceActionRows(input: {
     if (!patient || filterSudMedsForRole([{ medicationName: r.refill.medicationName }], actor.role, patient).visible.length === 0) continue;
     push({ id: `refill:${r.refill.id}`, kind: "refill", patientId: r.patientId, patientName: r.patientName, label: `Refill — ${r.refill.medicationName}`, dueAt: r.refill.requestedAt, action: "Review refill" });
   }
-  for (const c of AdelanteEHR.listOpenCrisisEscalations().filter(({ patient }) => mineIds.has(patient.id)))
-    push({ id: `crisis:${c.escalation.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label: "Crisis follow-up", dueAt: c.escalation.lastTriggeredAt ?? c.escalation.triggeredAt, action: "Open crisis" });
+  // §Batch C4 — named owner sees it on top with a countdown; pool items go to
+  // coordinators; overdue named items also appear for coordinators to reassign.
+  for (const c of AdelanteEHR.listOpenCrisisEscalations()) {
+    const e = c.escalation;
+    const sla = crisisSlaState(e, +now);
+    const owned = !!e.ownerStaffId && aliases.has(e.ownerStaffId);
+    const pool = e.ownerLane !== "named";
+    const coord = isCoordinatorRole(actor.role);
+    if (!(owned || (coord && (pool || sla.overdue)) || (!e.ownerStaffId && mineIds.has(c.patient.id)))) continue;
+    const left = Math.max(0, crisisSlaTarget(e).ms - sla.ageMs);
+    const countdown = sla.overdue ? overdueByLabel(sla.overdueByMs) : `${Math.floor(left / 3600000)}h ${Math.round((left % 3600000) / 60000)}m left`;
+    const label = owned ? "Crisis follow-up — yours" : pool ? "Crisis follow-up — coordinator pool" : `Crisis overdue — owner ${e.ownerName ?? "assigned"}`;
+    rows.push({ id: `crisis:${e.id}`, kind: "crisis", patientId: c.patient.id, patientName: `${c.patient.firstName} ${c.patient.lastName}`, label, dueAt: e.lastTriggeredAt ?? e.triggeredAt, due: countdown, group: "now", action: coord && !owned ? "Reassign" : "Open crisis", sourceId: e.id });
+  }
   for (const r of screenerDueRows(mine, { role: actor.role }))
     push({ id: `screener:${r.patientId}:${r.screenerKey}`, kind: "screener", patientId: r.patientId, patientName: r.patientName, label: `${r.screenerKey.toUpperCase()} re-screen`, dueAt: now.toISOString(), action: r.taskAlreadySent ? "Open chart" : "Send re-screen", sourceId: r.screenerKey });
   for (const r of asamTaskRows(actor.role, now) ?? []) {
@@ -125,7 +150,8 @@ export function workspaceActionRows(input: {
   // §Batch B2 — referral chase tasks (owner, or coordinator pool). Neutral text only.
   for (const c of chaseRowsFor(actor, now))
     push({ id: `chase:${c.referral.id}`, kind: "chase", patientId: c.referral.enrolledPatientId ?? "", patientName: `${c.referral.firstName} ${c.referral.lastName} (referral)`, label: `${c.lane === "pool" ? (c.task.owner ? "Overdue — reassign · " : "Unassigned · ") : ""}${c.text}`, dueAt: c.task.dueAt, action: c.lane === "pool" && !c.task.owner ? "Claim" : "Open referral", sourceId: c.referral.id });
-  const priority = isPrescriberRole(actor.role) ? ["refill", "crisis"] : isCareRole(actor.role) ? ["contact", "crisis"] : ["crisis"];
+  // Crisis always first, crisis notes pinned right after (top of Needs closing).
+  const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "contact"] : ["crisis", "crisis_note"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
     const ai = priority.indexOf(a.kind), bi = priority.indexOf(b.kind);
     if (ai !== bi) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);

@@ -1,6 +1,7 @@
 // §Data exchange — HIE operations hub store (matching queue, outbound sharing
 // log, demo seed). Built on hie.ts; every action is audited. Unmatched records
 // live only here and never reach a chart until "Confirm match".
+import { disclose } from "./part2Disclosure";
 import { AdelanteEHR } from "./ehr";
 import type { StaffRole } from "./roles";
 import { DATA_EXCHANGE_ROLES } from "./dataExchangeRoles";
@@ -42,6 +43,8 @@ export interface OutboundShare {
   what: string;
   purpose: string;
   consentUsed: string;
+  /** §Batch C1 — Part 2 redisclosure notice attached to the share message. */
+  notice?: string;
 }
 
 const queue: MatchCandidate[] = [];
@@ -105,10 +108,10 @@ export function seedDataExchangeDemo(now = new Date()) {
   const rosa = byFirst("Rosa");
   if (rosa) {
     _ingestHieEncounter({ id: "hie-rosa-ed-1", patientId: rosa.id, kind: "ed_visit", at: new Date(now.getTime() - 4 * DAY).toISOString(), facility: "Valley Regional Medical Center (placeholder)", reason: "Fall at home, x-ray negative", sud: false }, sys, now);
-    outbound.push({ id: "out-rosa-1", patientId: rosa.id, sentAt: new Date(now.getTime() - 7 * DAY).toISOString(), recipient: "Dr. A. Lin, outside PCP (placeholder)", what: "Summary of care", purpose: "Treatment / care coordination", consentUsed: "Rosa's treatment-sharing consent on file" });
+    shareToHie({ patientId: rosa.id, at: new Date(now.getTime() - 7 * DAY).toISOString(), recipient: "Dr. A. Lin, outside PCP (placeholder)", what: "Summary of care", purpose: "Treatment / care coordination", consentUsed: "Rosa's treatment-sharing consent on file", actor: sys });
   }
   if (luis)
-    outbound.push({ id: "out-luis-1", patientId: luis.id, sentAt: new Date(now.getTime() - 10 * DAY).toISOString(), recipient: "Tulare County Housing Navigation (placeholder)", what: "Referral summary (no SUD content)", purpose: "Housing referral", consentUsed: "Luis's release of information on file" });
+    shareToHie({ patientId: luis.id, at: new Date(now.getTime() - 10 * DAY).toISOString(), recipient: "Tulare County Housing Navigation (placeholder)", what: "Referral summary (no SUD content)", purpose: "Housing referral", consentUsed: "Luis's release of information on file", actor: sys });
 }
 
 export function listMatchQueue() {
@@ -152,6 +155,48 @@ export function listIncomingEvents(role: StaffRole, now = new Date()) {
     .filter((e) => hieChartView(e.patientId, role).encounters.includes(e))
     .map((e) => ({ encounter: e, followUp: followUpStatus(e, now) }))
     .sort((a, b) => b.encounter.at.localeCompare(a.encounter.at));
+}
+
+/**
+ * §Batch C1 — Simulated outbound HIE share. SUD content goes through the ONE
+ * disclosure function (consent check + notice + log); non-SUD passes through.
+ */
+export function shareToHie(input: {
+  patientId: string;
+  recipient: string;
+  what: string;
+  purpose: string;
+  consentUsed?: string;
+  actor: Actor;
+  includesSud?: boolean;
+  emergency?: { reason: string };
+  at?: string;
+}): { ok: true; share: OutboundShare; notice?: string } | { ok: false; reason: string } {
+  const res = disclose({
+    patientId: input.patientId,
+    actor: { name: input.actor.name, role: input.actor.role },
+    recipient: { name: input.recipient, type: "hie" },
+    purpose: input.purpose,
+    channel: "hie_share",
+    recordClasses: input.includesSud ? ["SUD treatment notes", "SUD medications"] : [],
+    emergency: input.emergency,
+    simulated: true,
+    at: input.at,
+  });
+  if (!res.ok) return res;
+  const share: OutboundShare = {
+    id: `out-${outbound.length + 1}-${input.patientId}`,
+    patientId: input.patientId,
+    sentAt: input.at ?? new Date().toISOString(),
+    recipient: input.recipient,
+    what: input.what,
+    purpose: input.purpose,
+    consentUsed: input.includesSud ? (res.entry?.consentRef ?? "") : (input.consentUsed ?? "Treatment / care coordination"),
+    ...(res.notice ? { notice: res.notice } : {}),
+  };
+  outbound.push(share);
+  hieAudit("hie_outbound_share", input.patientId, input.actor, { shareId: share.id, part2: !!input.includesSud, simulated: true });
+  return { ok: true, share, notice: res.notice };
 }
 
 export function listOutboundShares() {

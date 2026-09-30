@@ -4,6 +4,7 @@
 import { AdelanteEHR, type Patient } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
+import { disclose, registerLegalDisclosureSource, type Part2RecordClass } from "./part2Disclosure";
 
 export type EpisodeProgram = "outpatient_mh" | "outpatient_sud" | "ecm";
 export const EPISODE_PROGRAM_LABEL: Record<EpisodeProgram, string> = {
@@ -51,6 +52,8 @@ export const HLOC_NEXT: Record<HlocStatus, HlocStatus[]> = {
   closed: [],
 };
 export interface HlocReferral {
+  /** §Batch C1 — redisclosure notice attached to the sent referral. */
+  part2Notice?: string;
   id: string;
   patientId: string;
   target: HlocTarget;
@@ -225,6 +228,24 @@ export function advanceHlocReferral(id: string, to: HlocStatus, actor: Actor, no
     }
   }
   if (to === "declined" && (note ?? "").trim().length < 3) throw new Error("A reason is required when the referral is declined.");
+  // §Batch C1 — sending a SUD-related referral is a Part 2 disclosure.
+  let notice: string | undefined;
+  if (to === "sent") {
+    const res = disclose({
+      patientId: r.patientId,
+      actor: { name: actor.name, role: actor.role },
+      recipient: { name: r.destination, type: "provider" },
+      purpose: "Referral for treatment",
+      channel: "referral_out",
+      recordClasses: r.sudRelated ? ["SUD referral information"] : [],
+    });
+    if (!res.ok) {
+      audit("hloc_referral_send_blocked", r.patientId, actor, { referralId: r.id, why: "part2_disclosure_blocked" });
+      throw new Error(res.reason);
+    }
+    notice = res.notice;
+  }
+  if (notice) r.part2Notice = notice;
   r.status = to;
   r.history.push({ at: new Date().toISOString(), status: to, by: actor.name, note: note?.trim() || undefined });
   audit(`hloc_referral_${to}`, r.patientId, actor, { referralId: r.id, target: r.target });
@@ -251,6 +272,7 @@ const disclosures: LegalDisclosure[] = [];
 export function listLegalDisclosures(patientId: string): LegalDisclosure[] {
   return disclosures.filter((d) => d.patientId === patientId).map((d) => ({ ...d }));
 }
+registerLegalDisclosureSource(listLegalDisclosures);
 /** Revoke: the ledger stays; a new consent record turns the Part 2 disclosure section off. */
 export function revokeLegalDisclosure(id: string, actor: Actor & { staffId?: string }, reason: string): void {
   const d = disclosures.find((x) => x.id === id);
@@ -285,6 +307,31 @@ export function recordLegalDisclosureConsent(patientId: string, actor: Actor & {
   };
   disclosures.push(d);
   audit("legal_disclosure_recorded", patientId, actor, { disclosureId: d.id, recipient: d.recipient });
+}
+
+/**
+ * §Batch C1 — record that records were actually sent under a legal Part 2
+ * disclosure. Goes through the ONE disclosure function (log + notice).
+ */
+export function sendLegalDisclosure(
+  id: string,
+  actor: Actor & { staffId?: string },
+  opts: { recordClasses?: Part2RecordClass[]; emergency?: { reason: string } } = {},
+): { notice?: string } {
+  const d = disclosures.find((x) => x.id === id);
+  if (!d) throw new Error("Disclosure not found.");
+  if (d.revokedAt) throw new Error("This disclosure consent was revoked.");
+  const res = disclose({
+    patientId: d.patientId,
+    actor: { name: actor.name, role: actor.role, staffId: actor.staffId },
+    recipient: { name: d.recipient, type: "legal" },
+    purpose: d.purpose,
+    channel: "legal_disclosure",
+    recordClasses: opts.recordClasses ?? ["SUD treatment notes"],
+    emergency: opts.emergency,
+  });
+  if (!res.ok) throw new Error(res.reason);
+  return { notice: res.notice };
 }
 
 /** B1/B2 demo: an allergy override on Daniel, a CURES check on Luis's buprenorphine. */

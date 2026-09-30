@@ -1034,6 +1034,8 @@ export interface StaffMember {
    * in-facility flag is off.
    */
   roleAssignments?: RoleAssignment[];
+  /** §Batch C4 — false = inactive (never auto-assigned as a crisis owner). */
+  active?: boolean;
   /** Staff dedupe keys. */
   npi?: string;
   email?: string;

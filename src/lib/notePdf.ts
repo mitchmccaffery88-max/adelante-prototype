@@ -9,6 +9,7 @@
 // exact functions the Notes tab uses on-screen — so an export can never show
 // content a role could not read in the UI. `buildProgressNotePdf` re-runs the
 // gate itself and throws, so a caller cannot bypass it by skipping the check.
+import { disclose, type DisclosureActor } from "./part2Disclosure";
 import { jsPDF } from "jspdf";
 import {
   isNoteStrictlyRestricted,
@@ -125,6 +126,8 @@ export function buildNoteDocumentModel(args: {
   role: StaffRole;
   authorLabel?: string;
   exportedBy?: string;
+  /** §Batch C1 — Part 2 redisclosure notice returned by `disclose()`. */
+  part2Notice?: string;
 }): NoteDocBlock[] {
   const { note, patient, role, authorLabel, exportedBy } = args;
   const gate = noteExportGate(note, role, patient);
@@ -205,6 +208,7 @@ export function buildNoteDocumentModel(args: {
     kind: "paragraph",
     text: "This document reproduces the attested clinical record as stored. Signature attestation is captured in the electronic record; the names and timestamps above are the legally binding attestation of record.",
   });
+  if (args.part2Notice) out.push({ kind: "paragraph", text: args.part2Notice });
   out.push({
     kind: "meta",
     text: `Exported ${new Date().toLocaleString()}${exportedBy ? ` by ${exportedBy}` : ""} · acting role ${role}`,
@@ -219,6 +223,7 @@ export function buildProgressNotePdf(args: {
   role: StaffRole;
   authorLabel?: string;
   exportedBy?: string;
+  part2Notice?: string;
 }): jsPDF {
   const blocks = buildNoteDocumentModel(args);
   const doc = new jsPDF({ unit: "pt", format: "a4" });
@@ -300,11 +305,31 @@ export function notePdfFilename(note: ProgressNote, patient: Patient): string {
   return `note-${patient.lastName.toLowerCase()}-${date}-${note.id.slice(0, 6)}.pdf`;
 }
 
+/**
+ * §Batch C1 — route a note export through the ONE disclosure function. SUD
+ * notes need consent and get the redisclosure notice; others pass through.
+ */
+export function prepareNoteExport(
+  args: Parameters<typeof buildProgressNotePdf>[0] & { actor?: DisclosureActor },
+): Parameters<typeof buildProgressNotePdf>[0] {
+  const sud = isNoteSudSensitive(args.note);
+  const res = disclose({
+    patientId: args.patient.id,
+    actor: args.actor ?? { name: args.exportedBy ?? "staff", role: args.role },
+    recipient: { name: "Adelante care team (exported copy)", type: "internal" },
+    purpose: "Treatment — exported note",
+    channel: "note_pdf",
+    recordClasses: sud ? ["SUD treatment notes"] : [],
+  });
+  if (!res.ok) throw new Error(res.reason);
+  return { ...args, part2Notice: res.notice };
+}
+
 /** One-click export: builds and downloads the PDF in the browser. */
 export function downloadProgressNotePdf(
-  args: Parameters<typeof buildProgressNotePdf>[0],
+  args: Parameters<typeof buildProgressNotePdf>[0] & { actor?: DisclosureActor },
 ): string {
-  const doc = buildProgressNotePdf(args);
+  const doc = buildProgressNotePdf(prepareNoteExport(args));
   const filename = notePdfFilename(args.note, args.patient);
   doc.save(filename);
   return filename;

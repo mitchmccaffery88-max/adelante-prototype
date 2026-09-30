@@ -27,6 +27,8 @@ import { facilityDateKey } from "./facilityTime";
 import { buildNoteDocumentModel, noteExportGate, type NoteDocBlock } from "./notePdf";
 import { canAccess, type StaffRole } from "./roles";
 import { filterSudMedsForRole } from "./asamReporting";
+import { isSudMedication } from "./sudMedClassifier";
+import { disclose, type DisclosureActor, type Part2RecordClass } from "./part2Disclosure";
 
 export type NotesScope = "current" | "range" | "all";
 
@@ -108,6 +110,10 @@ export interface PrintRecordDocument {
   printedAt: string;
   sections: PrintSection[];
   denied: PrintDenial[];
+  /** §Batch C1 — Part 2 redisclosure notice (cover + footer) when SUD content is included. */
+  part2Notice?: string;
+  /** §Batch C1 — set when the disclosure function blocked Part 2 content. */
+  part2Blocked?: string;
 }
 
 /** Start of the "current" notes window — the active booking episode. */
@@ -139,6 +145,7 @@ export function buildPrintRecordDocument(args: {
   role: StaffRole;
   flags: PrintFlags;
   now?: Date;
+  actor?: DisclosureActor;
 }): PrintRecordDocument {
   const { patient, role, flags } = args;
   const now = args.now ?? new Date();
@@ -238,18 +245,50 @@ export function buildPrintRecordDocument(args: {
     const disclosedSud = entries.filter(
       (e) => !e.masked && e.note.category === "sud",
     ).length;
-    if (disclosedSud > 0) {
-      AdelanteEHR.recordConsentDisclosure({
-        patientId: patient.id,
-        categories: ["sud_treatment"],
-        purpose: "patient record print/export",
-        role,
-        itemCount: disclosedSud,
-      });
+    // Logged by the ONE disclosure function below (Batch C1).
+    void disclosedSud;
+  }
+
+  // §Batch C1 — one disclosure call for the whole packet (class names only).
+  const classes: Part2RecordClass[] = [];
+  const notesSec = sections.find((x) => x.key === "notes") as { entries?: PrintNoteEntry[] } | undefined;
+  if (notesSec?.entries?.some((e) => !e.masked && e.note.category === "sud")) classes.push("SUD treatment notes");
+  const medsSec = sections.find((x) => x.key === "meds") as { orders?: Parameters<typeof isSudMedication>[0][] } | undefined;
+  const marSec = sections.find((x) => x.key === "mar") as { rows?: { order?: Parameters<typeof isSudMedication>[0] }[] } | undefined;
+  if (medsSec?.orders?.some((o) => isSudMedication(o)) || marSec?.rows?.some((r) => isSudMedication(r.order)))
+    classes.push("SUD medications");
+  let part2Notice: string | undefined;
+  let part2Blocked: string | undefined;
+  if (classes.length) {
+    const res = disclose({
+      patientId: patient.id,
+      actor: args.actor ?? { name: "staff", role },
+      recipient: { name: "Adelante care team (printed copy)", type: "internal" },
+      purpose: "Treatment — printed record",
+      channel: "record_print",
+      recordClasses: classes,
+    });
+    if (res.ok) part2Notice = res.notice;
+    else {
+      part2Blocked = res.reason;
+      // Fail closed: drop SUD content that the disclosure function refused.
+      for (const sec of sections) {
+        const s2 = sec as { key: string; entries?: PrintNoteEntry[]; orders?: unknown[]; rows?: { order?: unknown }[] };
+        if (s2.entries)
+          s2.entries = s2.entries.map((e) =>
+            !e.masked && e.note.category === "sud"
+              ? { note: e.note, masked: true, authorLabel: e.authorLabel, maskReason: "42 CFR Part 2 — consent required" }
+              : e,
+          );
+        if (s2.orders) s2.orders = s2.orders.filter((o) => !isSudMedication(o as never));
+        if (s2.rows) s2.rows = s2.rows.filter((r) => !isSudMedication(r.order as never));
+      }
     }
   }
 
   return {
+    part2Notice,
+    part2Blocked,
     patient,
     facilityName: AdelanteEHR.currentFacility(patient.id)?.name ?? "Adelante Health",
     role,

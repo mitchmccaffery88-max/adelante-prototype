@@ -1,7 +1,8 @@
 // §Clinical record — full-page chart. Primary surface for deep clinical work.
 // Path is /record/$patientId so it can never collide with the patient-facing
 // self-service view at /patient.
-import { useState } from "react";
+import { useEffect, useState } from "react";
+import { recordView, ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { ChartHeader } from "@/components/chart/ChartHeader";
 import { BriefTab } from "@/components/chart/BriefTab";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
@@ -22,7 +23,7 @@ import { canOrderLabs } from "@/lib/chartOrders";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
 import { listContacts, canSeeContactNote, CONTACT_TYPE_LABEL } from "@/lib/caseloadReview";
 import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
-import { ChartConsents, ChartAuditTrail, ChartWeeklyReview, canSeeChartConsents, canSeeChartAudit, canSeeWeeklyReview } from "@/components/chart/ChartExtraSections";
+import { ChartConsents, ChartAuditTrail, ChartWeeklyReview, WhoAccessed, canSeeChartConsents, canSeeChartAudit, canSeeWeeklyReview } from "@/components/chart/ChartExtraSections";
 import { EmptyState } from "@/components/EmptyState";
 import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
 import { ArrowLeft, CalendarCheck, FileSignature, FlaskConical, History, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
@@ -122,12 +123,21 @@ function ChartBody({
   onSelect: (id: string) => void;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { role } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
   const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   const badgesJson = useEhr(() => {
     const p = AdelanteEHR.getPatient(patientId);
     return p ? JSON.stringify(tabBadges(p, role)) : "{}";
   });
+  // §Batch C2 — record.viewed on chart open and on every tab / section switch.
+  const earlyLoc = resolveChartLocation(resolveSectionId(section));
+  const viewedSection = earlyLoc.sub ?? earlyLoc.tab;
+  useEffect(() => {
+    recordView({ actorId: staffId, actorName: staffName, role, patientId, sectionId: "chart", kind: "open" });
+  }, [patientId, staffId, role, staffName]);
+  useEffect(() => {
+    recordView({ actorId: staffId, actorName: staffName, role, patientId, sectionId: viewedSection, kind: "section" });
+  }, [patientId, staffId, role, staffName, viewedSection]);
   if (!patient) return null;
   // §Chart redesign turn 4 — sections arranged into 8 tabs. Extra
   // sub-sections (labs, contact log) reuse existing components and gates.
@@ -140,6 +150,8 @@ function ChartBody({
     extra.push({ id: "weekly-review", label: "Weekly review", icon: CalendarCheck, group: "case", render: () => <ChartWeeklyReview patientId={patient.id} /> });
   if (canSeeChartConsents(role, patient))
     extra.push({ id: "consents", label: "Consents & Part 2 disclosures", icon: FileSignature, group: "case", render: () => <ChartConsents patient={patient} /> });
+  if (ACCESS_LOG_ROLES.includes(role))
+    extra.push({ id: "access-log", label: "Who accessed this record", icon: History, group: "case", render: () => <WhoAccessed patientId={patient.id} /> });
   if (canSeeChartAudit(role))
     extra.push({ id: "audit-trail", label: "Audit trail", icon: History, group: "case", render: () => <ChartAuditTrail patientId={patient.id} /> });
   const allSections: RecordSection[] = [
@@ -159,6 +171,7 @@ function ChartBody({
   const loc = resolveChartLocation(resolveSectionId(section));
   const activeTab = tabs.find((t) => t.id === loc.tab) ?? tabs[0]!;
   const badges = JSON.parse(badgesJson) as ReturnType<typeof tabBadges>;
+
   const searchable = allSections
     .filter((x) => tabs.some((t) => t.subs.includes(x)))
     .map((x) => {

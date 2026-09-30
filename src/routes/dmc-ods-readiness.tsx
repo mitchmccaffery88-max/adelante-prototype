@@ -50,16 +50,16 @@ function ReadinessPage() {
   }
 
   const download = () => {
-    const out = exportDmcOdsCsv({ staffId: acting.staffId, role: acting.role });
+    const out = exportDmcOdsCsv({ staffId: acting.staffId, role: acting.role, name: acting.staffName });
     if (!out) return;
-    const blob = new Blob([out.csv], { type: "text/csv" });
+    const blob = new Blob([out.file], { type: "text/csv" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
     a.download = `dmc-ods-export-prototype-${new Date().toISOString().slice(0, 10)}.csv`;
     a.click();
     URL.revokeObjectURL(url);
-    toast.success(`Exported ${out.rowCount} row(s). Export recorded in the audit log.`);
+    toast.success(`Exported ${out.rowCount} row(s)${out.withheld ? `, ${out.withheld} withheld (no consent)` : ""}. Part 2 notice added; export recorded in the disclosure log.`);
   };
 
   return (
