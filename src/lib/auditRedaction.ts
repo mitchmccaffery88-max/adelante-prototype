@@ -103,7 +103,8 @@ export interface RedactedAuditEvent {
 }
 
 export function redactAuditEvent(event: AuditEvent, role: StaffRole): RedactedAuditEvent {
-  const recordClass = CATEGORY_CLASS[event.category];
+  // Unmapped categories fall back to a clinical class so they stay withheld, never crash.
+  const recordClass: RecordClass = CATEGORY_CLASS[event.category] ?? "case_notes";
   const patient = event.patientId ? AdelanteEHR.getPatient(event.patientId) : undefined;
   const gate = canAccess(role, recordClass, patient);
   const canReadClass = gate.level === "read" || gate.level === "write";

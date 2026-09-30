@@ -31,7 +31,8 @@ describe("billing / billing_coordinator parity", () => {
 
   it("gives both roles the same nav", () => {
     const ids = (r: "billing" | "billing_coordinator") =>
-      STAFF_NAV.filter((e) => canSeeNavEntry(r, e)).map((e) => e.id);
+      // Batch G1: DMC-ODS readiness is the one deliberate difference ("SUD reporting access").
+      STAFF_NAV.filter((e) => e.id !== "dmc-ods-readiness" && canSeeNavEntry(r, e)).map((e) => e.id);
     expect(ids("billing_coordinator")).toEqual(ids("billing"));
   });
 });

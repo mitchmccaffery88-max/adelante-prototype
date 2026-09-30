@@ -11,6 +11,7 @@
 import { AdelanteEHR, type Patient } from "@/lib/ehr";
 import type { StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
+import { recordLegalDisclosureConsent } from "@/lib/outpatientCare";
 import { disclose, part2ConsentFor, type Part2RecordClass } from "@/lib/part2Disclosure";
 
 export const CARE_PARTNER_DRAFT_LABEL = "Draft — pending clinical sign-off";
@@ -273,7 +274,16 @@ export function seedCarePartnersDemo(): void {
   add({ id: "cp-cbo", name: "Porterville Community Resource Center (fictional)", type: "community_org", cluster: "outreach", city: "Porterville" }, [
     { name: "Yesenia Flores", title: "Outreach lead", phone: "(559) 555-0190" },
   ]);
+  // Batch G5 — one signed partner-sharing consent (real consent store function)
+  // so a coordinator can demo linking Daniel M. to the community partner.
+  recordLegalDisclosureConsent(
+    DEMO_PARTNER_CONSENT.patientId,
+    { role: "clinical_coordinator", name: "Priya Raman", staffId: "s-cc1" },
+    "Daniel M.",
+    { recipient: "Porterville Community Resource Center (fictional)", purpose: DEMO_PARTNER_CONSENT.purpose },
+  );
 }
+export const DEMO_PARTNER_CONSENT = { patientId: "p1", orgId: "cp-cbo", purpose: "Reentry coordination" } as const;
 seedCarePartnersDemo();
 
 /** Test hook: link without seed noise. */

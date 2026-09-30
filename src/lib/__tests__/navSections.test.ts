@@ -9,6 +9,7 @@ import {
   staffNavForRole,
   staffNavGroupsForRole,
 } from "../navSections";
+import { hasSudReportingAccess } from "../sudReportingAccess";
 import { STAFF_ROLES, canAccess, canFlagCrisis, canWorkSdohCrisisLane } from "../roles";
 import { setInFacilityEnabled } from "@/lib/inFacility";
 // These tests cover the in-facility segment, which is off by default.
@@ -163,7 +164,7 @@ describe("gating derives from the RBAC matrix", () => {
                  : gate.kind === "data_exchange"
                  ? ["clinical_coordinator", "sys_admin"].includes(role)
                  : gate.kind === "county_reporting"
-                 ? ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", "sud_counselor"].includes(role)
+                 ? ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator"].includes(role)
                  : gate.kind === "nursing_workspace"
                  ? ["nurse_rn", "lvn"].includes(role)
                  : gate.kind === "care_partner_directory"
@@ -173,7 +174,8 @@ describe("gating derives from the RBAC matrix", () => {
                   const min = gate.minLevelByClass?.[cls] ?? gate.minLevel;
                   return min === "write" ? level === "write" : level !== "none";
                 });
-        expect(canSeeNavEntry(role, entry)).toBe(expected);
+        // Batch G1: "SUD reporting access" opens DMC-ODS readiness without widening screeners_sud.
+        expect(canSeeNavEntry(role, entry)).toBe(expected || (entry.id === "dmc-ods-readiness" && hasSudReportingAccess(role)));
       }
     }
   });

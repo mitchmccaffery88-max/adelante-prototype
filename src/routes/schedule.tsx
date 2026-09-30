@@ -1,5 +1,7 @@
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { act, actFor } from "@/lib/actions/act";
+import { runAction } from "@/lib/actions/runAction";
+import { patientBookableClinicians, patientPrecheck, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
 import { useMemo, useState } from "react";
 import {
   AdelanteEHR,
@@ -88,11 +90,9 @@ function SchedulePage() {
     : (allowedModalities[0] ?? "video");
   const locations = useEhr(() => AdelanteEHR.locationsForService(serviceType || undefined));
   const [locationId, setLocationId] = useState<string>(existing?.locationId ?? "");
-  const clinicians = useEhr(() =>
-    AdelanteEHR.cliniciansForService(serviceType || undefined, {
-      locationId: effectiveModality === "in_person" ? locationId : undefined,
-    }),
-  );
+  // §Batch G3 — same engine as staff booking: eligible clinicians, assigned first.
+  const clinicianOptions = useEhr(() => patientBookableClinicians(patient, serviceType, effectiveModality));
+  const clinicians = clinicianOptions.map((o) => o.clinician);
   const [clinicianId, setClinicianId] = useState(existing?.clinicianId ?? "");
   // Reset clinician if the current one isn't in the filtered list.
   const clinicianStillValid = clinicians.some((c) => c.id === clinicianId);
@@ -107,12 +107,15 @@ function SchedulePage() {
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
-    effectiveClinicianId
-      ? AdelanteEHR.getClinicianAvailability(effectiveClinicianId, 14, {
-          excludeApptId: isReschedule ? existing?.id : undefined,
-        })
-      : [],
+    patientSlots(effectiveClinicianId, serviceType, effectiveModality, isReschedule ? existing?.id : undefined).map((start) => ({
+      start,
+      durationMin: activeService?.defaultDurationMin ?? 50,
+      taken: false,
+    })),
   );
+  const clinicianHasHours = clinicianOptions.find((o) => o.clinician.id === effectiveClinicianId)?.hasHours ?? false;
+  const consentCheck = patientPrecheck(patient, effectiveModality);
+  const needsConsent = !consentCheck.ok && consentCheck.reason === "telehealth_consent" && !isReschedule;
 
   // §Scheduling — patient-level awareness: what they already have booked.
   const upcomingAppts = useEhr(() =>
@@ -164,16 +167,25 @@ function SchedulePage() {
           description: "Your care team and you have been notified.",
         });
       } else {
-        act("schedule_visit", "bookAppointment", {
-          patientId: patient.id,
-          clinicianId: effectiveClinicianId,
-          start: selectedStart,
-          durationMin: defaultDuration,
-          serviceType: serviceType as ServiceType,
-          modality: effectiveModality,
-          locationId: effectiveModality === "in_person" ? locationId : undefined,
-          source: "self_scheduled",
-        });
+        const r = runAction(
+          "patient_self_book",
+          { role: PATIENT_ACTOR_ROLE, staffId: patient.id, staffName: "Patient (self)" },
+          patient,
+          {
+            args: [
+              {
+                patientId: patient.id,
+                clinicianId: effectiveClinicianId,
+                start: selectedStart,
+                durationMin: defaultDuration,
+                serviceType: serviceType as ServiceType,
+                modality: effectiveModality,
+                locationId: effectiveModality === "in_person" ? locationId : undefined,
+              },
+            ],
+          },
+        );
+        if (!r.ok) throw new Error(r.reason);
         toast.success(t("schRequested"), {
           description:
             effectiveModality === "in_person" && activeLocation
@@ -429,27 +441,30 @@ function SchedulePage() {
               {clinicians.map((c) => (
                 <SelectItem key={c.id} value={c.id}>
                   {c.name}, {c.credential}
+                  {c.id === patient.primaryClinicianId ? ` · ${t("schAssigned")}` : ""}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {clinicians.length === 0 ? (
-            <p className="text-xs text-muted-foreground pt-1">
-              No counselors match that combination yet. Try another format or location, or contact
-              your case manager.
+            <p className="text-xs text-muted-foreground pt-1" data-testid="sch-no-clinicians">
+              {t("schNoClinicians")}
             </p>
           ) : (
             <p className="text-xs text-muted-foreground flex items-center gap-1.5 pt-1">
-              <CalendarClock className="h-3 w-3 text-teal" /> Times come from your counselor's live
-              calendar. You can only pick what's open.
+              <CalendarClock className="h-3 w-3 text-teal" /> {t("schRealHours")}
             </p>
           )}
         </div>
 
+        {needsConsent && (
+          <div role="alert" className="rounded-lg border border-amber-warm/60 bg-amber-warm/10 p-3 text-sm" data-testid="sch-telehealth-consent">
+            {t("schNeedTelehealthConsent")}
+          </div>
+        )}
         {dayGroups.length === 0 ? (
-          <div className="rounded-lg border border-dashed bg-secondary/30 p-4 text-sm text-muted-foreground">
-            No openings with this counselor in the next two weeks. Try another counselor above, or
-            contact your case manager for help.
+          <div className="rounded-lg border border-dashed bg-secondary/30 p-4 text-sm text-muted-foreground" data-testid="sch-no-openings">
+            {effectiveClinicianId && !clinicianHasHours ? t("schNoHours") : t("schNoOpenings")}
           </div>
         ) : (
           <>
