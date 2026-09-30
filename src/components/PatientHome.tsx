@@ -8,6 +8,7 @@ import {
   useEhr,
 } from "@/lib/ehr";
 import { useI18n } from "@/lib/i18n";
+import { SharedWithCard } from "@/components/patient/SharedWithCard";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -225,6 +226,7 @@ export function PatientHome() {
       </div>
       {/* §Phase 6 — Obligations; justice-involved populations only. */}
       <ObligationsCard patientId={patient.id} />
+      <SharedWithCard patientId={patient.id} />
     </div>
   );
 }
