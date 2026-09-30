@@ -15,20 +15,20 @@ describe("C1 one disclosure function", () => {
   });
   it("non-SUD disclosures pass through without a notice or log entry", () => {
     _resetDisclosureLogForTests();
-    const r = disclose({ patientId: "x", actor, recipient: { name: "Clinic", type: "provider" }, purpose: "care", channel: "print" as never, recordClasses: [] });
+    const r = disclose({ patientId: "x", actor, recipient: { name: "Clinic", type: "provider" }, purpose: "care", channel: "record_print", recordClasses: [] });
     expect(r).toEqual({ ok: true });
     expect(listDisclosureLog()).toHaveLength(0);
   });
   it("missing consent blocks with a plain-language reason", () => {
     const p = noConsentPatient();
-    const r = disclose({ patientId: p.id, actor, recipient: { name: "Outside Clinic", type: "provider" }, purpose: "treatment", channel: "print" as never, recordClasses: ["SUD treatment notes"] });
+    const r = disclose({ patientId: p.id, actor, recipient: { name: "Outside Clinic", type: "provider" }, purpose: "treatment", channel: "record_print", recordClasses: ["SUD treatment notes"] });
     expect(r.ok).toBe(false);
     if (!r.ok) expect(r.reason).toMatch(/consent/i);
   });
   it("emergency disclosure is allowed, logged and flagged for compliance review", () => {
     _resetDisclosureLogForTests();
     const p = noConsentPatient();
-    const r = disclose({ patientId: p.id, actor, recipient: { name: "ER", organization: "Kaweah Health", type: "provider" }, purpose: "medical emergency", channel: "print" as never, recordClasses: ["SUD medications"], emergency: { reason: "unresponsive patient" } });
+    const r = disclose({ patientId: p.id, actor, recipient: { name: "ER", organization: "Kaweah Health", type: "provider" }, purpose: "medical emergency", channel: "record_print", recordClasses: ["SUD medications"], emergency: { reason: "unresponsive patient" } });
     expect(r.ok).toBe(true);
     const e = listDisclosureLog()[0];
     expect(e.emergency).toBe(true);
@@ -39,7 +39,7 @@ describe("C1 one disclosure function", () => {
   });
   it("attaches the draft redisclosure notice and never logs content", () => {
     _resetDisclosureLogForTests();
-    const r = disclose({ patientId: "p", actor, recipient: { name: "Me", type: "patient" }, purpose: "own copy", channel: "print" as never, recordClasses: ["SUD treatment notes"] });
+    const r = disclose({ patientId: "p", actor, recipient: { name: "Me", type: "patient" }, purpose: "own copy", channel: "record_print", recordClasses: ["SUD treatment notes"] });
     expect(r.ok && r.notice).toContain(PART2_NOTICE_DRAFT_LABEL);
     const keys = Object.keys(listDisclosureLog()[0]);
     for (const k of ["body", "content", "text", "subjective", "assessment"]) expect(keys).not.toContain(k);
