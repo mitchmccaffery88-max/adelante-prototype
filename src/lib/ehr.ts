@@ -950,6 +950,15 @@ export interface Referral {
    * enrollment. Part 2 protected once enrolled.
    */
   substanceUseNeed?: boolean;
+  // ----- §Batch B2 non-critical fields (accepted blank, then chased) -------
+  preferredLanguage?: string;
+  address?: string;
+  /** Answered / not answered only — the value is never quoted in tasks or audit. */
+  pendingCharges?: "yes" | "no" | "unknown";
+  priorRecords?: "available" | "none_known";
+  emergencyContact?: string;
+  /** §Batch B2 — the ECM provider / reentry care manager working this referral. */
+  assignedOwner?: ReferralActor;
   /**
    * §Phase 4c — truthful log of status-change texts to the REFERRER. Same
    * honesty rule as `welcomeSms`: an entry only exists if a send was really
@@ -8507,7 +8516,9 @@ export const AdelanteEHR = {
     // here too. Blank strings are normalised away so "   " can't satisfy it.
     rest.referrerPhone = rest.referrerPhone?.trim() || undefined;
     rest.referrerEmail = rest.referrerEmail?.trim() || undefined;
-    if (!referrerHasContact(rest)) throw new Error(REFERRER_CONTACT_REQUIRED_MSG);
+    // §Batch B2 (Draft) — critical: a way to reach the person OR the referrer.
+    const personReachable = !!(rest.phone?.trim() || rest.email?.trim());
+    if (!referrerHasContact(rest) && !personReachable) throw new Error(REFERRER_CONTACT_REQUIRED_MSG);
     const submittedBy: ReferralSubmitter =
       channel === "staff" ? { kind: "staff", actor: _referralActor() } : { kind: "external" };
     // Fallback: no phone, no contact consent, or referrer explicitly requested
