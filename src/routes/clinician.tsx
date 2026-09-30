@@ -61,7 +61,8 @@ import {
   CASELOAD_SCOPE_NOTE,
 } from "@/lib/caseloadScope";
 import { TaskQueueCard, type TaskQueueSource } from "@/components/tasks/TaskQueueCard";
-import { myOpenItems } from "@/lib/myWork";
+import { myCaseload, myOpenItems } from "@/lib/myWork";
+import { openBookVisit } from "@/lib/bookingFlow";
 import { SupervisionBanner } from "@/components/clinical/SupervisionBanner";
 import { ClientRecordDrawer } from "@/components/ClientRecordDrawer";
 import { confirmDiscardDrawerEdits } from "@/lib/drawer-drafts";
@@ -131,28 +132,16 @@ function ClinicianPage() {
     AdelanteEHR.recordWorkspaceViewAs({ id: acting.staffId, name: acting.staffName, role: acting.role }, { id: ws.staffId, name: ws.staffName });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [ws.viewingAs, ws.staffId]);
-  const clinicianId = ws.clinicianId ?? "";
+  // §Scheduling — ws.clinicianId is only "my calendar" for roles that have
+  // one; calendar-less roles see their caseload's upcoming visits instead.
+  const clinicianId = ws.clinicianId;
   const clinician = clinicians.find((c) => c.id === clinicianId);
-  const appts = useEhr(() =>
-    clinicianId ? AdelanteEHR.appointmentsForClinician(clinicianId) : [],
-  );
-
-  const serviceTypes = useEhr(() => AdelanteEHR.listServiceTypes());
-  const [book, setBook] = useState<{
-    patientId: string;
-    start: string;
-    durationMin: number;
-    serviceType: import("@/lib/ehr").ServiceType;
-    modality: "video" | "phone" | "in_person";
-    locationId: string;
-  }>({
-    patientId: patients[0]?.id ?? "",
-    start: "",
-    durationMin: 50,
-    serviceType: "therapy_individual",
-    modality: "video",
-    locationId: "",
+  const appts = useEhr(() => {
+    if (clinicianId) return AdelanteEHR.appointmentsForClinician(clinicianId);
+    const mine = new Set(myCaseload(ws).map((p) => p.id));
+    return AdelanteEHR.listAppointments().filter((a) => mine.has(a.patientId));
   });
+
   const [bookRole] = useActingRole();
   const bookActor = useActingStaff();
   const [bookRequestId, setBookRequestId] = useState<string | undefined>(undefined);
@@ -166,59 +155,14 @@ function ClinicianPage() {
   const bookAsamTaskId = asamTask && roleWorksAsamTask(bookRole, asamTaskPatient) ? asamTask.id : undefined;
   useEffect(() => {
     if (!bookAsamTaskId || !asamTask) return;
-    const svc = serviceTypes.find((x) => x.id === "intake");
-    setBook((b) => ({
-      ...b,
-      patientId: asamTask.patientId,
-      serviceType: "intake",
-      durationMin: svc?.defaultDurationMin ?? b.durationMin,
-      modality: svc && !svc.allowedModalities.includes(b.modality) ? (svc.allowedModalities[0] ?? "video") : b.modality,
-      locationId: "",
-    }));
-    setBookRequestId(undefined);
-    window.dispatchEvent(new Event("adelante:open-booking"));
+    openBookVisit({ patientId: asamTask.patientId, serviceType: "intake", asamTaskId: bookAsamTaskId });
+    navigate({ to: "/clinician", search: {} });
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [bookAsamTaskId]);
-  const bookService = serviceTypes.find((s) => s.id === book.serviceType);
-  const bookConflict = useEhr(() =>
-    book.start && clinicianId
-      ? AdelanteEHR.findApptConflict(clinicianId, new Date(book.start).toISOString())
-      : undefined,
-  );
-  const bookConflictPatient = bookConflict && patients.find((p) => p.id === bookConflict.patientId);
-  const bookLocations = useEhr(() => AdelanteEHR.locationsForService(book.serviceType));
   const [selectedPatientId, setSelectedPatientId] = useState("");
   const selectedPatient = useEhr(() => AdelanteEHR.getPatient(selectedPatientId));
   const [drawerOpen, setDrawerOpen] = useState(false);
   const [drawerTab, setDrawerTab] = useState<string | undefined>(undefined);
-
-  const doBook = () => {
-    if (!book.patientId || !book.start) {
-      toast.error("Pick a patient and a time");
-      return;
-    }
-    try {
-      act("schedule_visit", "bookAppointment", {
-        patientId: book.patientId,
-        clinicianId,
-        start: new Date(book.start).toISOString(),
-        durationMin: book.durationMin,
-        serviceType: book.serviceType,
-        modality: book.modality,
-        locationId: book.modality === "in_person" ? book.locationId : undefined,
-        source: "staff_scheduled",
-        ...(bookRequestId ? { requestId: bookRequestId } : {}),
-        ...(bookAsamTaskId && book.patientId === asamTask?.patientId ? { asamTaskId: bookAsamTaskId } : {}),
-        bookedBy: { id: bookActor.staffName, role: bookRole },
-      });
-      setBookRequestId(undefined);
-      if (bookAsamTaskId) navigate({ to: "/clinician", search: {} });
-      toast.success("Appointment booked", { description: "Synced to provider calendar (mock)" });
-      setBook({ ...book, start: "" });
-    } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not book that time.");
-    }
-  };
 
   const launch = (id: string) => {
     const session = AdelanteEHR.markTelehealthJoin(id, "clinician");
@@ -280,191 +224,11 @@ function ClinicianPage() {
 
 
   const requestsAndBooking = (
-    <div className="space-y-3">
-<AppointmentRequestsCard
-  onBook={(pid, kind, requestId) => {
-    const svc = serviceTypes.find((x) => x.id === APPT_REQUEST_BOOK_AS[kind]);
-    setBook({
-      ...book,
-      patientId: pid,
-      serviceType: APPT_REQUEST_BOOK_AS[kind],
-      durationMin: svc?.defaultDurationMin ?? book.durationMin,
-      modality: svc && !svc.allowedModalities.includes(book.modality) ? (svc.allowedModalities[0] ?? "video") : book.modality,
-      locationId: "",
-    });
-    setBookRequestId(requestId);
-    window.dispatchEvent(new Event("adelante:open-booking"));
-  }}
-/>
-<Card className="p-5" id="book-session">
-  <h3 className="font-display text-lg text-navy">{t("clinBookSession")}</h3>
-  {bookAsamTaskId && book.patientId === asamTask?.patientId && (
-    <p className="mt-1 text-xs text-teal" data-testid="booking-from-asam-task">
-      Scheduling the assessment visit for {asamTaskPatient?.firstName}'s ASAM task — linked to the task.
-      Booking does not close the task; signing the ASAM does.
-    </p>
-  )}
-  {bookRequestId && (
-    <p className="mt-1 text-xs text-teal" data-testid="booking-from-request">
-      Booking from an appointment request — booking closes it.
-    </p>
-  )}
-  <div className="mt-4 space-y-3">
-    <div className="space-y-1.5">
-      <Label className="text-sm">{t("clinPatient")}</Label>
-      <Select
-        value={book.patientId}
-        onValueChange={(v) => setBook({ ...book, patientId: v })}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {patients.map((p) => (
-            <SelectItem key={p.id} value={p.id}>
-              {p.firstName} {p.lastName} (day {p.episodeDay}/90)
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-    <div className="space-y-1.5">
-      <Label className="text-sm">{t("clinDate")}</Label>
-      <Input
-        type="datetime-local"
-        value={book.start}
-        onChange={(e) => setBook({ ...book, start: e.target.value })}
+    <div className="space-y-3" id="book-session">
+      <AppointmentRequestsCard
+        onBook={(pid, kind, requestId) => openBookVisit({ patientId: pid, serviceType: APPT_REQUEST_BOOK_AS[kind], requestId })}
       />
-      {bookConflict && (
-        <div className="flex items-start gap-1.5 rounded-md border border-destructive/40 bg-destructive/10 p-2 text-xs text-destructive">
-          <AlertTriangle className="h-3.5 w-3.5 mt-0.5 shrink-0" />
-          <span>
-            Conflict: you already have a session with{" "}
-            {bookConflictPatient
-              ? `${bookConflictPatient.firstName} ${bookConflictPatient.lastName}`
-              : "another patient"}{" "}
-            at this time. Pick a different time.
-          </span>
-        </div>
-      )}
-    </div>
-    <div className="space-y-1.5">
-      <Label className="text-sm">Service type</Label>
-      <Select
-        value={book.serviceType}
-        onValueChange={(v) => {
-          const svc = serviceTypes.find((s) => s.id === v);
-          setBook({
-            ...book,
-            serviceType: v as import("@/lib/ehr").ServiceType,
-            durationMin: svc?.defaultDurationMin ?? book.durationMin,
-            modality:
-              svc && !svc.allowedModalities.includes(book.modality)
-                ? (svc.allowedModalities[0] ?? "video")
-                : book.modality,
-            locationId: "",
-          });
-        }}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {serviceTypes.map((s) => (
-            <SelectItem key={s.id} value={s.id}>
-              {s.label}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
-    </div>
-    <div className="space-y-1.5">
-      <Label className="text-sm">Format</Label>
-      <Select
-        value={book.modality}
-        onValueChange={(v) =>
-          setBook({
-            ...book,
-            modality: v as "video" | "phone" | "in_person",
-            locationId: v === "in_person" ? book.locationId : "",
-          })
-        }
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {(bookService?.allowedModalities ?? ["video", "phone", "in_person"]).map(
-            (m) => (
-              <SelectItem key={m} value={m}>
-                {m === "video" ? "Video" : m === "phone" ? "Phone" : "In person"}
-              </SelectItem>
-            ),
-          )}
-        </SelectContent>
-      </Select>
-    </div>
-    {book.modality === "in_person" && (
-      <div className="space-y-1.5">
-        <Label className="text-sm">Location</Label>
-        <Select
-          value={book.locationId}
-          onValueChange={(v) => setBook({ ...book, locationId: v })}
-        >
-          <SelectTrigger>
-            <SelectValue placeholder="Pick a location" />
-          </SelectTrigger>
-          <SelectContent>
-            {bookLocations.map((l) => (
-              <SelectItem key={l.id} value={l.id}>
-                {l.name} — {l.city}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-      </div>
-    )}
-    <div className="space-y-1.5">
-      <Label className="text-sm">{t("clinDuration")}</Label>
-      <Select
-        value={String(book.durationMin)}
-        onValueChange={(v) => setBook({ ...book, durationMin: Number(v) })}
-      >
-        <SelectTrigger>
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          <SelectItem value="30">30 min</SelectItem>
-          <SelectItem value="50">50 min</SelectItem>
-          <SelectItem value="60">60 min</SelectItem>
-        </SelectContent>
-      </Select>
-    </div>
-    <Button
-      className="w-full bg-navy text-navy-foreground hover:bg-navy/90"
-      onClick={doBook}
-      disabled={Boolean(bookConflict)}
-    >
-      {t("clinBook")}
-    </Button>
-    <Button
-      variant="outline"
-      className="w-full"
-      data-testid="offer-declined"
-      disabled={!book.patientId || !book.start}
-      onClick={() => {
-        try {
-          act("timely_offer_record", "recordAppointmentOffer", { name: bookActor.staffName, role: bookRole }, { patientId: book.patientId, slotStart: new Date(book.start).toISOString(), clinicianId, outcome: "declined", context: bookRequestId ? "request_response" : "booking" });
-          toast.success("Offer recorded — patient declined this slot");
-        } catch (err) {
-          toast.error(err instanceof Error ? err.message : "Could not record the offer.");
-        }
-      }}
-    >
-      Patient declined this slot
-    </Button>
-  </div>
-</Card>
+      <Button onClick={() => openBookVisit()} data-testid="workspace-book-visit">Book a visit</Button>
     </div>
   );
 
@@ -563,10 +327,7 @@ function ClinicianPage() {
           />
           <DashboardActionLauncher
             todayPatientIds={todayAppts.map((a) => a.patientId)}
-            onBook={(patientId) => {
-              if (patientId) setBook((b) => ({ ...b, patientId }));
-              window.dispatchEvent(new Event("adelante:open-booking"));
-            }}
+            onBook={(patientId) => openBookVisit({ patientId })}
             onOpenChart={(patientId, section) => {
               openChart(patientId);
               if (section) { setDrawerTab(section); setDrawerOpen(true); }

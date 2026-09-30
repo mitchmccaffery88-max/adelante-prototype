@@ -1,3 +1,4 @@
+import { openBookVisit } from "@/lib/bookingFlow";
 import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { confirmationFor } from "@/lib/actions/runAction";
@@ -106,7 +107,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
     }} />;
     switch (selected.action.id) {
       case "afbi_contact": return <AfbiContactForm patientId={patient?.id} onDone={(m) => { toast.success(m); setSelected(null); }} />;
-      case "dashboard_book": return <BookStart onBook={() => { setSelected(null); onBook(); }} />;
+      case "dashboard_book": return <BookStart onBook={() => { setSelected(null); openBookVisit(); }} />;
       case "dashboard_task": return <TaskForm patientId={patientId} patients={results} query={query} setQuery={setQuery} choose={setPatientId} done={() => done("Task created")} />;
       case "dashboard_contact": return patient ? <ContactLogForm patientId={patient.id} onDone={(m) => done(m)} /> : <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
       case "dashboard_referral": return patient ? <ReferralStart patientId={patient.id} onOpenChart={onOpenChart} /> : <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
@@ -148,7 +149,7 @@ function TaskForm({ patientId, patients, query, setQuery, choose, done }: { pati
   return <div className="space-y-3" data-testid="dashboard-task-form"><Label>Task</Label><Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="What needs to be done?" /><Label>Owner</Label><Select value={owner} onValueChange={setOwner}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{eligible.map((s) => <SelectItem key={s.id} value={s.id}>{s.name}</SelectItem>)}</SelectContent></Select><Label>Due</Label><Input type="date" value={due} onChange={(e) => setDue(e.target.value)} /><Label>Patient for this task</Label>{patientId ? <p className="text-sm">{patients.find((p) => p.id === patientId)?.firstName ?? "Selected patient"} <Button variant="ghost" size="sm" onClick={() => choose("")}>Change</Button></p> : <PatientStep patients={patients} query={query} setQuery={setQuery} choose={choose} />}<Button disabled={!title.trim() || !due || !patientId} onClick={() => { if (!patientId || !AdelanteEHR.getPatient(patientId)) return; try { actFor("dashboard_task", "createCaseTask", patientId, { patientId, assignedTo: owner, title: title.trim(), dueDate: due, origin: "manual", source: "dashboard" }); done(); } catch (e) { toast.error((e as Error).message); } }}>Create task</Button></div>;
 }
 function STAFF_OPTIONS(_role: string) { return STAFF_ROSTER.filter((s) => !["patient", "advocate", "billing", "billing_coordinator"].includes(s.role)).map((s) => ({ id: s.id, name: s.name })); }
-function BookStart({ onBook }: { onBook: () => void }) { return <div className="space-y-3"><Button onClick={onBook}>Open booking form</Button></div>; }
+function BookStart({ onBook }: { onBook: () => void }) { return <div className="space-y-3"><Button onClick={onBook}>Open Book a visit</Button></div>; }
 function ReferralStart({ patientId, onOpenChart }: { patientId: string; onOpenChart: (id: string, section?: string) => void }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const [itemId, setItemId] = useState("");

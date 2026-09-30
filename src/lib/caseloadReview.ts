@@ -2,7 +2,7 @@
 // One place for the draft contact cadence, contact logging, the Part 2-safe
 // check-in summary, week sign-off and the coordinator roll-up.
 import { moodCheckInDayCount } from "@/lib/moodCheckInCount";
-import { AdelanteEHR, type Patient } from "@/lib/ehr";
+import { AdelanteEHR, registerCaseManagerResolver, type Patient } from "@/lib/ehr";
 import { STAFF_ROSTER, canAccess, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { isShortFormPositive, shortFormByKey } from "@/lib/screeners";
@@ -49,6 +49,8 @@ const EXTRA_OWNERS: Record<string, { cmId: string; role: "ecm_provider" | "care_
   "s-cm1": { cmId: "cm3", role: "ecm_provider" }, // Luz Herrera
   "s-cf2": { cmId: "cm4", role: "care_manager" }, // Darnell Pope
 };
+
+registerCaseManagerResolver((staffId) => EXTRA_OWNERS[staffId]?.cmId);
 
 export function ensureCaseloadOwners() {
   for (const [staffId, o] of Object.entries(EXTRA_OWNERS)) {

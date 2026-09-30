@@ -1,3 +1,4 @@
+import { openBookVisit } from "@/lib/bookingFlow";
 // §Chart redesign turn 2 — floating "+ New" button, "Add to this chart" menu,
 // command bar (Ctrl/Cmd+K) and single-key shortcuts. Built ENTIRELY from the
 // chart action registry (src/lib/chartActions.ts): hidden actions never show,
@@ -184,6 +185,8 @@ export function ChartActionLauncher({
         return <DocumentUploadForm patientId={patientId} onDone={done} />;
       case "contact_log":
         return <ContactLogForm patientId={patientId} onDone={done} />;
+      case "schedule_visit":
+        return <Button data-testid="chart-open-book-visit" onClick={() => { setDrawer(null); openBookVisit({ patientId }); }}>Open Book a visit</Button>;
       case "afbi_contact":
         return <AfbiContactForm patientId={patientId} onDone={(m) => done(m, "eligibility")} />;
     }

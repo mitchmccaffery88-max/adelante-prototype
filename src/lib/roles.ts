@@ -1103,7 +1103,7 @@ export const STAFF_ROSTER: StaffMember[] = [
       { role: "cf_care_manager", accessMode: "proxy", inFacility: true },
     ],
   },
-  { id: "s-sudc1", name: "Renee Castillo", role: "sud_counselor", credential: "SUDCC-II" },
+  { id: "s-sudc1", name: "Renee Castillo", role: "sud_counselor", credential: "SUDCC-II", clinicianId: "c7" },
   {
     id: "s-tr1",
     name: "Kayla Nguyen",

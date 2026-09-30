@@ -1,3 +1,4 @@
+import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
 // "create / act" action. Each `allowed()` calls the SAME function-level check
 // the store enforces; it never re-types a role list of its own.
@@ -240,7 +241,16 @@ export const CHART_ACTIONS: ChartAction[] = [
     sectionId: "appointments",
     store: refs(["bookAppointment", (...a: any[]) => (AdelanteEHR.bookAppointment as any)(...a)]),
     allowed: ({ role }) =>
-      inList(AdelanteEHR.appointmentActionRoles(), role) ? ok() : hide("Your role does not book visits."),
+      canScheduleRole(role) ? ok() : hide("Your role does not book visits."),
+  },
+  {
+    id: "visit_request_cancel",
+    label: { en: "Request visit cancellation", es: "Solicitar cancelación de cita" },
+    group: "coordination",
+    sectionId: "appointments",
+    store: refs(["staffRequestCancel", (...a: any[]) => (AdelanteEHR.staffRequestCancel as any)(...a)]),
+    allowed: ({ role }) =>
+      bookingRightFor(role).cancel === "request" ? ok() : hide("Your role cancels directly or not at all."),
   },
   {
     id: "message_patient",
@@ -328,7 +338,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "coordination",
     store: refs(["bookAppointment", (...a: any[]) => (AdelanteEHR.bookAppointment as any)(...a)]),
     needsPatient: false,
-    allowed: ({ role }) => inList(AdelanteEHR.appointmentActionRoles(), role) ? ok() : hide("Your role does not book visits."),
+    allowed: ({ role }) => canScheduleRole(role) ? ok() : hide("Your role does not book visits."),
   },
   {
     id: "dashboard_contact",
