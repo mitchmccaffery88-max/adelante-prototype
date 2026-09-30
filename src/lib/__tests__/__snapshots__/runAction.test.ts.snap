@@ -69,6 +69,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "billing_coordinator": {
     "activity_assignment": "hidden",
@@ -137,6 +138,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "cf_care_manager": {
     "activity_assignment": "allowed",
@@ -154,7 +156,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "crisis_flag": "allowed",
     "crisis_handoff": "allowed",
     "cures": "hidden",
-    "dashboard_book": "hidden",
+    "dashboard_book": "allowed",
     "dashboard_contact": "allowed",
     "dashboard_referral": "allowed",
     "dashboard_task": "allowed",
@@ -192,7 +194,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "refill_decision": "hidden",
     "rescreen_send": "hidden",
     "review_matching": "hidden",
-    "schedule_visit": "hidden",
+    "schedule_visit": "allowed",
     "scheduling_rule_deactivate": "hidden",
     "scheduling_rule_run": "hidden",
     "scheduling_rule_save": "hidden",
@@ -205,6 +207,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "clinical_coordinator": {
     "activity_assignment": "hidden",
@@ -273,6 +276,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "clinical_trainee": {
     "activity_assignment": "cosign",
@@ -341,6 +345,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "community_health_worker": {
     "activity_assignment": "hidden",
@@ -358,7 +363,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "crisis_flag": "allowed",
     "crisis_handoff": "allowed",
     "cures": "hidden",
-    "dashboard_book": "hidden",
+    "dashboard_book": "allowed",
     "dashboard_contact": "hidden",
     "dashboard_referral": "allowed",
     "dashboard_task": "allowed",
@@ -396,7 +401,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "refill_decision": "hidden",
     "rescreen_send": "hidden",
     "review_matching": "hidden",
-    "schedule_visit": "hidden",
+    "schedule_visit": "allowed",
     "scheduling_rule_deactivate": "hidden",
     "scheduling_rule_run": "hidden",
     "scheduling_rule_save": "hidden",
@@ -409,6 +414,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "allowed",
   },
   "credentialing_coordinator": {
     "activity_assignment": "hidden",
@@ -477,6 +483,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "ecm_provider": {
     "activity_assignment": "allowed",
@@ -545,6 +552,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "medical_assistant": {
     "activity_assignment": "hidden",
@@ -613,6 +621,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "peer_specialist": {
     "activity_assignment": "hidden",
@@ -681,6 +690,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "allowed",
   },
   "physician": {
     "activity_assignment": "allowed",
@@ -749,6 +759,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "pmhnp": {
     "activity_assignment": "allowed",
@@ -817,6 +828,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "sud_counselor": {
     "activity_assignment": "allowed",
@@ -885,6 +897,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
   "sys_admin": {
     "activity_assignment": "hidden",
@@ -953,6 +966,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "hidden",
     "visit_check_in": "hidden",
     "visit_no_show": "hidden",
+    "visit_request_cancel": "hidden",
   },
   "therapist": {
     "activity_assignment": "allowed",
@@ -1021,6 +1035,7 @@ exports[`runAction — one standard event per attempt > role × action × outcom
     "visit_attended": "allowed",
     "visit_check_in": "allowed",
     "visit_no_show": "allowed",
+    "visit_request_cancel": "hidden",
   },
 }
 `;

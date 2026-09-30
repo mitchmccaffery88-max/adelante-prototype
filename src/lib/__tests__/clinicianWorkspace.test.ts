@@ -15,8 +15,8 @@ describe("clinician workspace tiles", () => {
   it("orders tiles by role", () => {
     expect(workspaceTileOrder("pmhnp")).toEqual(["schedule", "actions", "caseload", "requests"]);
     expect(workspaceTileOrder("therapist")).toEqual(["schedule", "actions", "caseload", "requests"]);
-    expect(workspaceTileOrder("ecm_provider")).toEqual(["actions", "caseload", "schedule", "requests"]);
-    expect(workspaceTileOrder("clinical_coordinator")).toEqual(["coordinator", "actions", "schedule"]);
+    expect(workspaceTileOrder("ecm_provider")).toEqual(["actions", "scheduling", "caseload"]);
+    expect(workspaceTileOrder("clinical_coordinator")).toEqual(["coordinator", "scheduling", "actions"]);
   });
 
   it("segments today's visit statuses without mixing closed rows into Up next", () => {
