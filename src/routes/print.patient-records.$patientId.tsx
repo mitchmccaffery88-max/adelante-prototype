@@ -3,7 +3,7 @@
 // Query-flag driven, browser-print rendered. The document model (RBAC + SUD
 // masking) lives in src/lib/printRecord.ts; this file only renders it and
 // triggers window.print() once the data is on screen.
-import { useEffect, useRef } from "react";
+import { useEffect, useMemo, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
@@ -91,9 +91,16 @@ function PrintRecordPage() {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const printed = useRef(false);
 
-  const doc = patient
-    ? buildPrintRecordDocument({ patient, role, flags: search })
-    : undefined;
+  // Built once per request so the disclosure log gets one entry, not one per render.
+  const searchKey = JSON.stringify(search);
+  const doc = useMemo(
+    () =>
+      patient
+        ? buildPrintRecordDocument({ patient, role, flags: search, actor: { name: staffName, role } })
+        : undefined,
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+    [patient?.id, role, staffName, searchKey],
+  );
   const ready = Boolean(doc && doc.sections.length > 0);
 
   useEffect(() => {
@@ -149,6 +156,14 @@ function PrintRecordPage() {
           </p>
         )}
 
+        {doc.part2Notice && (
+          <p className="print-block mt-4 border border-foreground p-2 text-[10px] leading-snug" data-testid="part2-notice-cover">
+            {doc.part2Notice}
+          </p>
+        )}
+        {doc.part2Blocked && (
+          <p className="mt-4 text-xs italic">Substance-use content not included — {doc.part2Blocked}</p>
+        )}
         {doc.denied.map((d) => (
           <section key={d.key} className="print-block mt-6">
             <h2 className="border-b border-black text-sm font-bold">{d.label}</h2>
