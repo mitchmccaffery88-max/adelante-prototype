@@ -56,6 +56,7 @@ export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   referral_out: "Referral out",
   dmc_ods_csv: "DMC-ODS / CalOMS export",
   county_report: "County reporting file (prototype)",
+  care_partner_handoff: "Care partner handoff",
 };
 
 export type RecipientType = "patient" | "internal" | "advocate" | "provider" | "hie" | "legal" | "county" | "other";
