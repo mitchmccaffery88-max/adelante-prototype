@@ -2980,6 +2980,16 @@ export interface CrisisEscalation {
    * `lastTriggeredAt`, so the repeat is visible instead of silent.
    */
   retriggers?: CrisisRetrigger[];
+  /**
+   * §Batch C4 — NAMED owner. Clinical → assigned primary clinician; social
+   * needs (sdoh) → assigned care manager / ECM provider. No active assigned
+   * person → `ownerLane: "pool"` (clinical coordinator pool, as before).
+   */
+  ownerStaffId?: string;
+  ownerName?: string;
+  ownerLane?: "named" | "pool";
+  ownerAssignedAt?: string;
+  handoffs?: { at: string; fromStaffId?: string; toStaffId: string; toName: string; byName: string; byRole: string; reason: string }[];
   /** Most recent signal on this row — equals `triggeredAt` until a re-trigger. */
   lastTriggeredAt?: string;
   /**
@@ -3061,6 +3071,17 @@ function _ruleCadenceBlocked(rule: SchedulingRule, patientId: string, now: numbe
 }
 
 
+
+/** §Batch C4 — named crisis owner, or undefined → coordinator pool. */
+export function resolveCrisisOwner(p: Patient, category: CrisisCategory | undefined) {
+  const active = (m: (typeof STAFF_ROSTER)[number]) => m.active !== false;
+  if (category === "sdoh") {
+    if (!p.caseManagerId) return undefined;
+    return STAFF_ROSTER.find((m) => m.caseManagerId === p.caseManagerId && active(m));
+  }
+  if (!p.primaryClinicianId) return undefined;
+  return STAFF_ROSTER.find((m) => m.clinicianId === p.primaryClinicianId && active(m) && m.role !== "sys_admin");
+}
 
 export interface ProgressNote {
   id: string;
@@ -20652,7 +20673,28 @@ export const AdelanteEHR = {
       lastTriggeredAt: now,
       retriggers: [],
     };
+    const named = resolveCrisisOwner(p, row.category);
+    row.ownerAssignedAt = now;
+    if (named) { row.ownerStaffId = named.id; row.ownerName = named.name; row.ownerLane = "named"; }
+    else row.ownerLane = "pool";
     p.crisisEscalations = [row, ...(p.crisisEscalations ?? [])];
+    appendAudit({
+      category: "clinical",
+      action: "crisis_owner_assigned",
+      patientId,
+      actorId: "system",
+      detail: { escalationId: row.id, lane: row.ownerLane, ownerStaffId: row.ownerStaffId ?? null, category: row.category },
+    });
+    if (named)
+      AdelanteEHR.notify({
+        recipientStaffId: named.id,
+        category: "crisis_flagged",
+        subject: "Crisis follow-up assigned to you",
+        body: "A crisis needs your follow-up. Open your workspace to see the time left.",
+        linkRoute: "/crisis-queue",
+        patientId,
+        dedupeKey: `crisis-owner:${row.id}:${named.id}`,
+      });
     appendAudit({
       category: "clinical",
       action: "crisis_escalation_flagged",
@@ -20696,6 +20738,53 @@ export const AdelanteEHR = {
     if (row.triggerSource === "message_pattern") {
       AdelanteEHR.requestCssrs(patientId, "Crisis language detected in free text");
     }
+    emit();
+    return row;
+  },
+
+  /**
+   * §Batch C4 — hand a crisis escalation to another NAMED person with a reason.
+   * Current owner may hand off; clinical coordinator / sys_admin may reassign
+   * any open escalation (including pool and overdue ones). Audited; the
+   * notification stays Part 2-neutral.
+   */
+  handOffCrisisEscalation(
+    patientId: string,
+    id: string,
+    input: { toStaffId: string; reason: string; byStaffId: string; byName: string; byRole: StaffRole },
+  ): CrisisEscalation {
+    const reason = input.reason?.trim();
+    if (!reason || reason.length < 3) throw new Error("Give a reason for the handoff.");
+    const p = patients.find((x) => x.id === patientId);
+    const row = p?.crisisEscalations?.find((r) => r.id === id);
+    if (!p || !row) throw new Error("Crisis escalation not found.");
+    if (row.status === "resolved") throw new Error("This escalation is already resolved.");
+    const isCoord = input.byRole === "clinical_coordinator" || input.byRole === "sys_admin";
+    const isOwner = !!row.ownerStaffId && row.ownerStaffId === input.byStaffId;
+    if (!isCoord && !isOwner) throw new Error("Only the owner or a clinical coordinator can hand off this crisis.");
+    const to = STAFF_ROSTER.find((m) => m.id === input.toStaffId);
+    if (!to || to.active === false) throw new Error("Choose an active staff member.");
+    if (to.id === row.ownerStaffId) throw new Error("That person already owns this crisis.");
+    const at = new Date().toISOString();
+    const from = row.ownerStaffId;
+    row.handoffs = [...(row.handoffs ?? []), { at, fromStaffId: from, toStaffId: to.id, toName: to.name, byName: input.byName, byRole: input.byRole, reason }];
+    row.ownerStaffId = to.id; row.ownerName = to.name; row.ownerLane = "named"; row.ownerAssignedAt = at;
+    appendAudit({
+      category: "clinical",
+      action: isOwner ? "crisis_owner_handoff" : "crisis_owner_reassigned",
+      patientId,
+      actorId: input.byName,
+      detail: { escalationId: row.id, fromStaffId: from ?? null, toStaffId: to.id, actingRole: input.byRole, reason },
+    });
+    AdelanteEHR.notify({
+      recipientStaffId: to.id,
+      category: "crisis_flagged",
+      subject: "Crisis follow-up handed to you",
+      body: "A crisis needs your follow-up. Open your workspace to see the time left.",
+      linkRoute: "/crisis-queue",
+      patientId,
+      dedupeKey: `crisis-owner:${row.id}:${to.id}:${at}`,
+    });
     emit();
     return row;
   },
