@@ -49,7 +49,7 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
   const today = new Date().toISOString().slice(0, 10);
   const lang = patient?.preferredLanguage ?? "en";
   return AdelanteEHR.listClinicians()
-    .filter((c) => !c.services || c.services.includes(serviceType))
+    .filter((c) => (c.services ? c.services.includes(serviceType) : !isSudServiceType(serviceType)))
     .filter((c) => !c.licenseExpiresOn || c.licenseExpiresOn >= today)
     .filter((c) => !isPrescriberServiceType(serviceType) || PRESCRIBER_CRED.test(c.credential))
     .filter((c) => modality !== "in_person" || (c.locationIds?.length ?? 0) > 0 || !c.locationIds)

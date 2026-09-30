@@ -2360,6 +2360,10 @@ const LOCATIONS: ClinicLocation[] = [
       "med_management",
       "peer_support",
       "case_management",
+      // §Scheduling S2 — SUD counseling is delivered in person at Visalia.
+      "sud_counseling",
+      "sud_group_odf",
+      "sud_group_iot",
     ],
   },
   {
