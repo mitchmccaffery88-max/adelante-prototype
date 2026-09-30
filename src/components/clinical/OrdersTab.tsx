@@ -58,6 +58,9 @@ import { toast } from "sonner";
 import { OrderSafetyPanel } from "./OrderSafetyPanel";
 import { AlertTriangle, ClipboardList, Info, Plus, Trash2 } from "lucide-react";
 import { cn } from "@/lib/utils";
+import { methadoneOrderBlock, METHADONE_NTP_MESSAGE, METHADONE_GUARD_DRAFT } from "@/lib/methadoneGuard";
+import { openChartAction } from "@/lib/chartActionBus";
+import { ClinicChainBadges } from "@/components/nursing/NursingSection";
 
 const NONE = "__none__";
 
@@ -634,6 +637,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.deaSchedule && <Badge variant="outline">{o.deaSchedule}</Badge>}
                 {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
                 {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
+                {o.clinicAdministered && <ClinicChainBadges orderId={o.id} />}
                 {o.strengthSource === "dailymed" && (
                   <Badge variant="outline">Strength: DailyMed</Badge>
                 )}
@@ -750,6 +754,15 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
 
   const stage = (sel: CatalogSelection) => {
     if (viewOnly) return;
+    // §Batch F1 — methadone for OUD is NTP-only; offer the referral path instead.
+    if (methadoneOrderBlock({ drugName: sel.productName, ingredientNames: sel.ingredientNames })) {
+      toast.error(METHADONE_NTP_MESSAGE, {
+        description: METHADONE_GUARD_DRAFT,
+        action: { label: "Refer to an NTP", onClick: () => openChartAction("ntp_referral") },
+        duration: 12000,
+      });
+      return;
+    }
     act<MedOrder>("med_order", "addDraftOrder", patientId, {
       drugName: sel.productName,
       productName: sel.productName,
