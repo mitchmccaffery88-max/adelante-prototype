@@ -177,7 +177,7 @@ function AdminAuditPage() {
       <ClinicalContentReviewCard />
 
       <div className="flex flex-wrap items-end gap-3">
-        <Select value={cat} onValueChange={(v) => setCat(v as AuditCategory | "all")}>
+        <Select value={cat} onValueChange={(v) => setCat(v as CatFilter)}>
           <SelectTrigger className="w-56">
             <SelectValue />
           </SelectTrigger>
