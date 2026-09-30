@@ -243,3 +243,4 @@ export function classificationDisplay(row: ServiceClassification, role: StaffRol
 export function _resetServiceClassification(): void {
   store.clear();
 }
+startServiceClassification();
