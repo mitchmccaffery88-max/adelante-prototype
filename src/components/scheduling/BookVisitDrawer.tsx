@@ -163,7 +163,7 @@ export function BookVisitDrawerHost() {
                   {suggestions.map((s) => (
                     <button key={s.clinician.id} type="button" role="radio" aria-checked={clinicianId === s.clinician.id} onClick={() => { setClinicianId(s.clinician.id); setSlot(""); setBlocked(null); }} className={`flex w-full items-center justify-between rounded border px-3 py-2 text-left text-sm ${clinicianId === s.clinician.id ? "border-primary bg-accent" : "border-border"}`}>
                       <span className="font-medium">{s.clinician.name}{s.own ? " (my calendar)" : ""}</span>
-                      <span className="text-xs text-muted-foreground">{s.fit.join(" · ")}</span>
+                      <span className={`text-xs ${clinicianId === s.clinician.id ? "text-accent-foreground/80" : "text-muted-foreground"}`}>{s.fit.join(" · ")}</span>
                     </button>
                   ))}
                 </div>

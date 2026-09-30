@@ -45,3 +45,4 @@
 - Chart read events go only through `recordView` in `src/lib/accessLog.ts` (5-minute collapse). Why: one prototype access log, no content.
 - Note signing clocks live only in `src/lib/noteClock.ts` (3 business days standard, 1 calendar day crisis). Why: queue, workspace and coordinator pool share one draft rule.
 - Crisis escalations get a named owner in `flagCrisis` via `resolveCrisisOwner`; handoffs only via `handOffCrisisEscalation` through `runAction("crisis_handoff")`. Why: named accountability, audited, pool fallback.
+- Booking rights (who books/reschedules/cancels, on whose calendar) live only in `src/lib/bookingRights.ts`, enforced inside `bookAppointment` / reschedule / cancel whenever `bookedBy` / an actor is passed; the one "Book a visit" drawer (`BookVisitDrawer.tsx`, opened via `openBookVisit`) reads `bookingFlow.ts`. Why: actor, patient and target calendar are separate and an empty calendar can never be booked.
