@@ -718,6 +718,16 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(["assignReferralOwner", (...a: any[]) => (assignReferralOwner as any)(...a)]),
     allowed: ({ role }) => (canAssignReferralOwner(role) ? ok() : hide("Only a clinical coordinator can assign a referral.")),
   },
+  {
+    id: "crisis_handoff",
+    label: { en: "Hand off crisis", es: "Transferir crisis" },
+    group: "coordination",
+    menu: false,
+    needsPatient: true,
+    check: "crisis owner or clinical coordinator (store-checked)",
+    store: refs(["handOffCrisisEscalation", (...a: any[]) => (AdelanteEHR.handOffCrisisEscalation as any)(...a)]),
+    allowed: ({ role }) => (role === "billing" || role === "credentialing_coordinator" ? hide("Crisis handoff is for the care team.") : ok()),
+  },
   ...([["staff_add_user", "Add user", "Agregar usuario"], ["staff_reset_signin", "Reset sign-in", "Restablecer acceso"], ["staff_edit_roles", "Edit staff roles", "Editar roles"]] as const).map(([id, en, es]): ChartAction => ({
     id,
     opsMenu: true,
