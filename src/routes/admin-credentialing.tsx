@@ -1,5 +1,5 @@
 import { formatClinicianName } from "@/lib/coordination";
-import { Link, createFileRoute, Link } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
