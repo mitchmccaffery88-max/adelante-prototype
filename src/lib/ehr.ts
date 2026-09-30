@@ -8581,6 +8581,34 @@ export const AdelanteEHR = {
     emit();
     return r;
   },
+  /**
+   * §Batch B2 — fill non-critical referral fields (chase items). Only the
+   * listed fields; blank values are ignored so nothing can be erased here.
+   * Role checks live in referralChase.ts / the registry.
+   */
+  updateReferralFields(
+    id: string,
+    fields: Partial<Pick<Referral, "cin" | "releaseDate" | "preferredLanguage" | "address" | "pendingCharges" | "priorRecords" | "emergencyContact" | "phone" | "email">>,
+  ): Referral {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) throw new Error("That referral no longer exists.");
+    if (isReferralClosed(r.status)) throw new Error("This referral is closed.");
+    const allowed = ["cin", "releaseDate", "preferredLanguage", "address", "pendingCharges", "priorRecords", "emergencyContact", "phone", "email"] as const;
+    for (const k of allowed) {
+      const v = fields[k];
+      if (typeof v === "string" && v.trim()) (r as unknown as Record<string, string>)[k] = v.trim();
+    }
+    emit();
+    return r;
+  },
+  /** §Batch B2 — assign (or clear) the ECM provider / reentry care manager on a referral. */
+  setReferralOwner(id: string, owner: ReferralActor | undefined): Referral {
+    const r = referrals.find((x) => x.id === id);
+    if (!r) throw new Error("That referral no longer exists.");
+    r.assignedOwner = owner;
+    emit();
+    return r;
+  },
   /** True when a welcome text should be attempted for this referral. */
   referralWantsWelcomeSms(r: Referral): boolean {
     return !r.outreachTask && !!r.phone && r.consentToContact && !r.welcomeSms;
