@@ -1,5 +1,5 @@
 import { formatClinicianName } from "@/lib/coordination";
-import { createFileRoute, Link } from "@tanstack/react-router";
+import { Link, createFileRoute, Link } from "@tanstack/react-router";
 import { useRef, useState } from "react";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
@@ -499,6 +499,7 @@ function CredentialingAdminPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl text-navy">Credentialing dashboard</h1>
+        <Link to="/provider-reference" className="text-xs text-teal underline" data-testid="cred-provider-ref-link">Provider &amp; site reference</Link>
           <p className="text-sm text-muted-foreground">
             Primary-source verification, expiry tracking, and payer enrollments.
           </p>
