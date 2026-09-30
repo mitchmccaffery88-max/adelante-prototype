@@ -702,6 +702,7 @@ function VendorStatusCard() {
           <ShieldCheck className="h-4 w-4 text-teal" /> Integrated vendors
         </h3>
         <div className="flex items-center gap-2">
+          <Link to="/disclosure-log" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-disclosure-log-link">Disclosure &amp; access log</Link>{" "}
           <Link to="/provider-reference" className="text-[11px] text-teal underline underline-offset-2" data-testid="admin-provider-ref-link">
             Provider &amp; site reference
           </Link>

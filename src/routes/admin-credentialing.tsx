@@ -499,7 +499,8 @@ function CredentialingAdminPage() {
       <header className="flex flex-wrap items-start justify-between gap-3">
         <div>
           <h1 className="font-display text-2xl text-navy">Credentialing dashboard</h1>
-        <Link to="/provider-reference" className="text-xs text-teal underline" data-testid="cred-provider-ref-link">Provider &amp; site reference</Link>
+        <Link to="/disclosure-log" className="text-xs text-teal underline" data-testid="cred-disclosure-log-link">Disclosure &amp; access log</Link>{" "}
+          <Link to="/provider-reference" className="text-xs text-teal underline" data-testid="cred-provider-ref-link">Provider &amp; site reference</Link>
           <p className="text-sm text-muted-foreground">
             Primary-source verification, expiry tracking, and payer enrollments.
           </p>
