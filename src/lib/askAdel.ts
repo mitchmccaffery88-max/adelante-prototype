@@ -72,6 +72,8 @@ export const ASK_ADEL_GROUP_BY_ROLE: Record<StaffRole, AskAdelGroup> = {
   sud_counselor: "clinical",
   clinical_trainee: "clinical",
   medical_assistant: "clinical",
+  nurse_rn: "clinical",
+  lvn: "clinical",
   ecm_provider: "coordination",
   cf_care_manager: "coordination",
   peer_specialist: "coordination",

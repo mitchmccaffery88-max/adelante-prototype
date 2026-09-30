@@ -33,10 +33,13 @@ import { canRecordAfbi, decideAfbiLink, recordAfbiContact, requestAfbiLink } fro
 import { canViewCountyReporting, fixCountyError, generateReport, markTps, resendReport, seesClientLevel, sendTpsLink, setTpsWindow, simulateCountyResponse, submitReport, TPS_ADMIN_ROLES } from "@/lib/countyReporting";
 import { canOverrideClassification, overrideServiceClassification } from "@/lib/serviceClassification";
 import { addTimelyCorrection, canCorrectTimely, canRecordOffer, recordAppointmentOffer, recordServiceRequest } from "@/lib/timelyAccess";
+import { administerClinicDose, canAdministerClinicMed, canCollectSpecimen, canCoordinateRefill, canCosignLvnDose, canNurseReview, canOrderClinicMed, canTriage, collectSpecimen, coordinateRefill, cosignClinicDose, nurseReviewOrder, orderClinicMedication, recordTriageCall } from "@/lib/nursing";
+import { canEditPartnerDirectory, canLinkPartner, endPartnerLink, linkPartner, recordHandoff, savePartnerContact, savePartnerOrg } from "@/lib/carePartners";
+import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-30.b";
+export const REGISTRY_VERSION = "2026-10-01.e";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -156,6 +159,126 @@ export const CHART_ACTIONS: ChartAction[] = [
     allowed: ({ role }) =>
       inList(REFILL_PRESCRIBER_ROLES, role) ? ok() : hide("Only a prescriber can record a CURES check."),
   },
+  // §Batch E1 — outpatient nursing chain. Draft — pending clinical sign-off.
+  {
+    id: "clinic_med_order",
+    label: { en: "Clinic-administered medication", es: "Medicamento administrado en clínica" },
+    group: "clinical",
+    sectionId: "nursing",
+    check: "canOrderClinicMed",
+    store: refs(["orderClinicMedication", (...a: any[]) => (orderClinicMedication as any)(...a)]),
+    allowed: ({ role }) => (canOrderClinicMed(role) ? ok() : hide("Only a prescriber can order medications.")),
+  },
+  {
+    id: "nurse_review",
+    label: { en: "Nurse review of an order", es: "Revisión de enfermería" },
+    group: "clinical",
+    sectionId: "nursing",
+    menu: false,
+    check: "canNurseReview",
+    store: refs(["nurseReviewOrder", (...a: any[]) => (nurseReviewOrder as any)(...a)]),
+    allowed: ({ role }) => (canNurseReview(role) ? ok() : hide("Only a nurse (RN) reviews orders before they are given.")),
+  },
+  {
+    id: "clinic_dose_give",
+    label: { en: "Give clinic dose", es: "Dar dosis en clínica" },
+    group: "clinical",
+    sectionId: "nursing",
+    menu: false,
+    check: "canAdministerClinicMed",
+    store: refs(["administerClinicDose", (...a: any[]) => (administerClinicDose as any)(...a)]),
+    allowed: ({ role, staffId }) =>
+      !canAdministerClinicMed(role) ? hide("Only a nurse (RN) or LVN gives clinic medications.") : role === "lvn" ? cosign(cosignRouteLabel(staffId)) : ok(),
+  },
+  {
+    id: "clinic_dose_cosign",
+    label: { en: "Cosign LVN dose", es: "Cofirmar dosis de LVN" },
+    group: "clinical",
+    sectionId: "nursing",
+    menu: false,
+    check: "canCosignLvnDose",
+    store: refs(["cosignClinicDose", (...a: any[]) => (cosignClinicDose as any)(...a)]),
+    allowed: ({ role }) => (canCosignLvnDose(role) ? ok() : hide("Only the supervising RN, physician or PMHNP cosigns.")),
+  },
+  {
+    id: "specimen_collect",
+    label: { en: "Collect specimen", es: "Tomar muestra" },
+    group: "clinical",
+    sectionId: "nursing",
+    check: "canCollectSpecimen",
+    store: refs(["collectSpecimen", (...a: any[]) => (collectSpecimen as any)(...a)]),
+    allowed: ({ role }) => (canCollectSpecimen(role) ? ok() : hide("Only nursing collects specimens.")),
+  },
+  {
+    id: "triage_call",
+    label: { en: "Triage call", es: "Llamada de triaje" },
+    group: "clinical",
+    sectionId: "nursing",
+    check: "canTriage",
+    store: refs(["recordTriageCall", (...a: any[]) => (recordTriageCall as any)(...a)]),
+    allowed: ({ role }) => (canTriage(role) ? ok() : hide("Only a nurse (RN) triages calls.")),
+  },
+  {
+    id: "refill_coordinate",
+    label: { en: "Coordinate a refill", es: "Coordinar resurtido" },
+    group: "clinical",
+    sectionId: "orders",
+    menu: false,
+    check: "canCoordinateRefill",
+    store: refs(["coordinateRefill", (...a: any[]) => (coordinateRefill as any)(...a)]),
+    allowed: ({ role }) => (canCoordinateRefill(role) ? ok() : hide("Only a nurse (RN) coordinates refills.")),
+  },
+  // §Batch F1 — NTP path (Draft — pending clinical sign-off).
+  {
+    id: "ntp_referral",
+    label: { en: "Refer to an NTP", es: "Referir a un NTP" },
+    group: "care",
+    sectionId: "orders",
+    check: "canReferToNtp + roleSeesAsamSection",
+    store: refs(["referToNtp", (...a: any[]) => (referToNtp as any)(...a)]),
+    allowed: ({ role }, p) =>
+      canReferToNtp(role) && (!p || roleSeesAsamSection(role, p)) ? ok() : hide("Not available for your role."),
+  },
+  {
+    id: "ntp_external_med",
+    label: { en: "Record outside NTP medication", es: "Registrar medicamento de NTP externo" },
+    group: "clinical",
+    sectionId: "orders",
+    check: "canRecordExternalNtp + roleSeesAsamSection",
+    store: refs(["recordExternalNtpMedication", (...a: any[]) => (recordExternalNtpMedication as any)(...a)]),
+    allowed: ({ role }, p) =>
+      canRecordExternalNtp(role) && (!p || roleSeesAsamSection(role, p)) ? ok() : hide("Not available for your role."),
+  },
+  // §Batch E2 — External Care Partners (staff-facing only).
+  {
+    id: "partner_link",
+    label: { en: "Link a care partner", es: "Vincular un socio de atención" },
+    group: "coordination",
+    sectionId: "care-partners",
+    check: "canLinkPartner",
+    store: refs(["linkPartner", (...a: any[]) => (linkPartner as any)(...a)], ["endPartnerLink", (...a: any[]) => (endPartnerLink as any)(...a)]),
+    allowed: ({ role }) => (canLinkPartner(role) ? ok() : hide("Your role doesn't coordinate with care partners.")),
+  },
+  {
+    id: "partner_handoff",
+    label: { en: "Log a partner handoff", es: "Registrar entrega a socio" },
+    group: "coordination",
+    sectionId: "care-partners",
+    menu: false,
+    check: "canLinkPartner",
+    store: refs(["recordHandoff", (...a: any[]) => (recordHandoff as any)(...a)]),
+    allowed: ({ role }) => (canLinkPartner(role) ? ok() : hide("Your role doesn't coordinate with care partners.")),
+  },
+  {
+    id: "partner_directory_edit",
+    label: { en: "Edit care partner directory", es: "Editar directorio de socios" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canEditPartnerDirectory",
+    store: refs(["savePartnerOrg", (...a: any[]) => (savePartnerOrg as any)(...a)], ["savePartnerContact", (...a: any[]) => (savePartnerContact as any)(...a)]),
+    allowed: ({ role }) => (canEditPartnerDirectory(role) ? ok() : hide("Only a system administrator edits the directory.")),
+  },
   {
     id: "lab_order",
     label: { en: "Lab order", es: "Orden de laboratorio" },
@@ -175,11 +298,11 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   {
     id: "metabolic",
-    label: { en: "Metabolic measures", es: "Medidas metabólicas" },
+    label: { en: "Vitals / metabolic measures", es: "Signos vitales / medidas metabólicas" },
     group: "clinical",
     sectionId: "tracking",
     store: refs(["recordMetabolic", (...a: any[]) => (recordMetabolic as any)(...a)]),
-    allowed: ({ role }) => (canRecordMetabolic(role) ? ok() : hide("Only a prescriber records metabolic measures.")),
+    allowed: ({ role }) => (canRecordMetabolic(role) ? ok() : hide("Only a prescriber or nurse records vitals.")),
   },
   {
     id: "asam",

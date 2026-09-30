@@ -48,6 +48,8 @@ import {
   Users,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { NURSING_ROLES } from "@/lib/roles";
+import { canReadPartnerDirectory } from "@/lib/carePartners";
 import {
   canAccess,
   canFlagCrisis,
@@ -127,6 +129,8 @@ export type NavGate =
   /** HIE operations hub — sys_admin / clinical_coordinator only (DATA_EXCHANGE_ROLES). */
   | { kind: "data_exchange" }
   | { kind: "county_reporting" }
+  | { kind: "nursing_workspace" }
+  | { kind: "care_partner_directory" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -190,6 +194,15 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/assisted-signup",
     group: "care",
     gate: { kind: "record_class", anyOf: ["assisted_signup"], minLevel: "write" },
+  },
+  {
+    id: "nurse",
+    label: "Nursing",
+    desc: "Today, order reviews, clinic doses",
+    icon: Stethoscope,
+    to: "/nurse",
+    group: "care",
+    gate: { kind: "nursing_workspace" },
   },
   {
     id: "clinician",
@@ -545,6 +558,15 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "coordination_desk" },
   },
   {
+    id: "care-partners",
+    label: "Care partner directory",
+    desc: "External partners, clusters and contacts (staff-facing)",
+    icon: Settings2,
+    to: "/care-partners",
+    group: "administration",
+    gate: { kind: "care_partner_directory" },
+  },
+  {
     id: "county-reporting",
     label: "County reporting",
     desc: "Prototype: CalOMS, DATAR, ISL, BHOATR, TPS — nothing is submitted",
@@ -714,6 +736,8 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
   if (entry.gate.kind === "county_reporting") return canViewCountyReporting(role);
+  if (entry.gate.kind === "nursing_workspace") return NURSING_ROLES.includes(role);
+  if (entry.gate.kind === "care_partner_directory") return canReadPartnerDirectory(role);
   if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {

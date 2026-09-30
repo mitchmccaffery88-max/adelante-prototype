@@ -26,7 +26,10 @@ import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
 import { ChartConsents, ChartAuditTrail, ChartWeeklyReview, WhoAccessed, canSeeChartConsents, canSeeChartAudit, canSeeWeeklyReview } from "@/components/chart/ChartExtraSections";
 import { EmptyState } from "@/components/EmptyState";
 import { ChartActionLauncher } from "@/components/chart/ChartActionLauncher";
-import { ArrowLeft, CalendarCheck, FileSignature, FlaskConical, History, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
+import { NursingSection } from "@/components/nursing/NursingSection";
+import { CarePartnersSection } from "@/components/carePartners/CarePartnersSection";
+import { canSeeCarePartners } from "@/lib/carePartners";
+import { ArrowLeft, Handshake, Syringe, CalendarCheck, FileSignature, FlaskConical, History, MoreHorizontal, PhoneCall, Zap } from "lucide-react";
 
 interface ChartSearch {
   section?: string;
@@ -152,6 +155,10 @@ function ChartBody({
     extra.push({ id: "consents", label: "Consents & Part 2 disclosures", icon: FileSignature, group: "case", render: () => <ChartConsents patient={patient} /> });
   if (ACCESS_LOG_ROLES.includes(role))
     extra.push({ id: "access-log", label: "Who accessed this record", icon: History, group: "case", render: () => <WhoAccessed patientId={patient.id} /> });
+  if (["nurse_rn", "lvn", "physician", "pmhnp"].includes(role))
+    extra.push({ id: "nursing", label: "Nursing", icon: Syringe, group: "chart", render: () => <NursingSection patientId={patient.id} /> });
+  if (canSeeCarePartners(role))
+    extra.push({ id: "care-partners", label: "Care partners", icon: Handshake, group: "case", render: () => <CarePartnersSection patientId={patient.id} /> });
   if (canSeeChartAudit(role))
     extra.push({ id: "audit-trail", label: "Audit trail", icon: History, group: "case", render: () => <ChartAuditTrail patientId={patient.id} /> });
   const allSections: RecordSection[] = [
