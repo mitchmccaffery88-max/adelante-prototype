@@ -34,7 +34,7 @@ export const CHASE_FIELDS: ChaseField[] = ["cin", "releaseDate", "preferredLangu
 
 export function missingChaseFields(r: Referral): ChaseField[] {
   return CHASE_FIELDS.filter((f) => {
-    if (f === "releaseDate" && r.justiceInvolved !== "yes") return false;
+    if ((f === "releaseDate" || f === "pendingCharges") && r.justiceInvolved !== "yes") return false;
     const v = (r as unknown as Record<string, unknown>)[f];
     return typeof v !== "string" || !v.trim();
   });
