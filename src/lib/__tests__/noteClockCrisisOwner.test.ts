@@ -2,7 +2,7 @@ import { describe, expect, it } from "vitest";
 import { addBusinessDays, businessDaysBetween, isCrisisNote, noteClock, overdueCrisisNotes } from "@/lib/noteClock";
 import { AdelanteEHR, resolveCrisisOwner } from "@/lib/ehr";
 import { STAFF_ROSTER } from "@/lib/roles";
-import { listAudit } from "@/lib/audit";
+
 
 const local = (y: number, m: number, d: number, h = 10) => new Date(y, m - 1, d, h);
 
@@ -81,7 +81,7 @@ describe("C4 crisis named owner", () => {
     expect(() => AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "going on leave", byStaffId: "nobody", byName: "X", byRole: "therapist" })).toThrow(/owner or a clinical coordinator/);
     const r = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: other.id, reason: "going on leave", byStaffId: e.ownerStaffId!, byName: "Owner", byRole: "therapist" });
     expect(r.ownerStaffId).toBe(other.id);
-    expect(listAudit().some((a: any) => a.action === "crisis_owner_handoff" && a.detail?.escalationId === e.id && a.detail?.reason === "going on leave")).toBe(true);
+    expect(AdelanteEHR.listAuditEvents({}).some((a: any) => a.action === "crisis_owner_handoff" && a.detail?.escalationId === e.id && a.detail?.reason === "going on leave")).toBe(true);
     const r2 = AdelanteEHR.handOffCrisisEscalation(p.id, e.id, { toStaffId: e.ownerStaffId ?? STAFF_ROSTER[0].id, reason: "coordinator reassign", byStaffId: "coord", byName: "Coord", byRole: "clinical_coordinator" });
     expect(r2.handoffs?.length).toBe(2);
   });
