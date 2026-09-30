@@ -3,6 +3,7 @@
 // Fields: section id, actor, acting role, viewed-as, patient id, timestamp,
 // simulated flag. Never content.
 import { AdelanteEHR } from "./ehr";
+import { currentRunActor } from "./actions/act";
 
 export const ACCESS_LOG_LABEL = "Prototype access log — production requires immutable storage";
 export const ACCESS_COLLAPSE_MS = 5 * 60_000;
@@ -27,6 +28,7 @@ const lastSeen = new Map<string, number>();
 /** Returns true when a new event was written (false = collapsed duplicate). */
 export function recordView(input: AccessInput): boolean {
   const now = (input.at ?? new Date()).getTime();
+  const viewedAs = input.viewedAs ?? currentRunActor().viewingStaffId;
   const key = `${input.actorId}|${input.patientId}|${input.sectionId}`;
   const prev = lastSeen.get(key);
   if (prev !== undefined && now - prev < ACCESS_COLLAPSE_MS) return false;
@@ -41,7 +43,7 @@ export function recordView(input: AccessInput): boolean {
       sectionId: input.sectionId,
       kind: input.kind,
       actorName: input.actorName,
-      ...(input.viewedAs ? { viewedAs: input.viewedAs } : {}),
+      ...(viewedAs ? { viewedAs } : {}),
       at: new Date(now).toISOString(),
       simulated: true,
     },

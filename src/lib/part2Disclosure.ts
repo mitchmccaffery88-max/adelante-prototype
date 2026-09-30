@@ -13,7 +13,7 @@ import { AdelanteEHR, LEGAL_DISCLOSURE_CONSENT_CATEGORY } from "./ehr";
 
 // Legal disclosure records live in outpatientCare.ts, which registers its
 // reader here (no import: avoids an ehr → outpatientCare load cycle).
-type LegalRow = { id: string; recipient: string; revokedAt?: string };
+type LegalRow = { id: string; recipient: string; purpose?: string; revokedAt?: string };
 let legalSource: (patientId: string) => LegalRow[] = () => [];
 export function registerLegalDisclosureSource(fn: (patientId: string) => LegalRow[]) {
   legalSource = fn;
@@ -124,6 +124,7 @@ const norm = (s: string) => s.trim().toLowerCase();
 export function part2ConsentFor(
   patientId: string,
   recipient: DisclosureRecipient,
+  purpose?: string,
 ): { ok: true; ref: string } | { ok: false; reason: string } {
   if (recipient.type === "patient") return { ok: true, ref: "Patient's own right of access" };
   const rec = AdelanteEHR.activeConsentRecord(patientId);
@@ -134,7 +135,9 @@ export function part2ConsentFor(
     (d) =>
       !d.revokedAt &&
       (norm(d.recipient) === norm(recipient.name) ||
-        (!!recipient.organization && norm(d.recipient) === norm(recipient.organization))),
+        (!!recipient.organization && norm(d.recipient) === norm(recipient.organization))) &&
+      // Recipient AND purpose must match the recorded legal disclosure.
+      (!purpose || !d.purpose || norm(d.purpose) === norm(purpose)),
   );
   switch (recipient.type) {
     case "internal":
@@ -172,7 +175,7 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
       return { ok: false, reason: "Describe the medical emergency before sharing." };
     consentRef = "Medical emergency — no consent (42 CFR 2.51)";
   } else {
-    const c = part2ConsentFor(req.patientId, req.recipient);
+    const c = part2ConsentFor(req.patientId, req.recipient, req.purpose);
     if (!c.ok) {
       AdelanteEHR._recordAudit({
         category: "disclosure",
