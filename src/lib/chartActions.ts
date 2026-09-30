@@ -30,9 +30,11 @@ import { canEditProviderRef, saveOrganization, saveProgram, saveSite } from "@/l
 import { canRecordCustodyDuration, recordCustodyDuration } from "@/lib/fspEligibility";
 import { canRecordAfbi, decideAfbiLink, recordAfbiContact, requestAfbiLink } from "@/lib/afbiOutreach";
 import { canOverrideClassification, overrideServiceClassification } from "@/lib/serviceClassification";
+import { addTimelyCorrection, canCorrectTimely, canRecordOffer, recordAppointmentOffer, recordServiceRequest } from "@/lib/timelyAccess";
+import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-30.a";
+export const REGISTRY_VERSION = "2026-09-30.b";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -664,6 +666,57 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canOverrideClassification(role)",
     store: refs(["overrideServiceClassification", (...a: any[]) => (overrideServiceClassification as any)(...a)]),
     allowed: ({ role }) => (canOverrideClassification(role) ? ok() : hide("Only a billing or clinical coordinator can override funding or category.")),
+  },
+  // ---- §Batch B — intake integrity ----
+  {
+    id: "timely_offer_record",
+    label: { en: "Record appointment offer", es: "Registrar cita ofrecida" },
+    group: "visit",
+    menu: false,
+    needsPatient: false,
+    check: "canRecordOffer(role)",
+    store: refs(["recordAppointmentOffer", (...a: any[]) => (recordAppointmentOffer as any)(...a)], ["recordServiceRequest", (...a: any[]) => (recordServiceRequest as any)(...a)]),
+    allowed: ({ role }) => (canRecordOffer(role) ? ok() : hide("Your role can't record appointment offers.")),
+  },
+  {
+    id: "timely_correction",
+    label: { en: "Timely access correction note", es: "Nota de corrección de acceso oportuno" },
+    group: "admin",
+    menu: false,
+    needsPatient: true,
+    check: "canCorrectTimely(role)",
+    store: refs(["addTimelyCorrection", (...a: any[]) => (addTimelyCorrection as any)(...a)]),
+    allowed: ({ role }) => (canCorrectTimely(role) ? ok() : hide("Only a clinical coordinator or system admin can add a correction note.")),
+  },
+  {
+    id: "referral_chase_fill",
+    label: { en: "Record missing referral detail", es: "Registrar dato faltante de referencia" },
+    group: "coordination",
+    menu: false,
+    needsPatient: false,
+    check: "canFillChase(role)",
+    store: refs(["fillChaseField", (...a: any[]) => (fillChaseField as any)(...a)]),
+    allowed: ({ role }) => (canFillChase(role) ? ok() : hide("Your role can't update referral details.")),
+  },
+  {
+    id: "referral_chase_claim",
+    label: { en: "Take referral follow-up", es: "Tomar seguimiento de referencia" },
+    group: "coordination",
+    menu: false,
+    needsPatient: false,
+    check: "canClaimChase(role)",
+    store: refs(["claimChaseTask", (...a: any[]) => (claimChaseTask as any)(...a)]),
+    allowed: ({ role }) => (canClaimChase(role) ? ok() : hide("Only a clinical coordinator can take a referral follow-up from the pool.")),
+  },
+  {
+    id: "referral_assign_owner",
+    label: { en: "Assign referral", es: "Asignar referencia" },
+    group: "coordination",
+    menu: false,
+    needsPatient: false,
+    check: "canAssignReferralOwner(role)",
+    store: refs(["assignReferralOwner", (...a: any[]) => (assignReferralOwner as any)(...a)]),
+    allowed: ({ role }) => (canAssignReferralOwner(role) ? ok() : hide("Only a clinical coordinator can assign a referral.")),
   },
   ...([["staff_add_user", "Add user", "Agregar usuario"], ["staff_reset_signin", "Reset sign-in", "Restablecer acceso"], ["staff_edit_roles", "Edit staff roles", "Editar roles"]] as const).map(([id, en, es]): ChartAction => ({
     id,

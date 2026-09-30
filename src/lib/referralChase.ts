@@ -1,4 +1,5 @@
 // §Batch B2 — referral chase tasks for missing non-critical fields.
+// (notification category: "task_assigned")
 //
 // Draft field split — pending clinical sign-off:
 //   CRITICAL (blocks submission): name; date of birth OR another identifier;
