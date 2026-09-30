@@ -8615,6 +8615,18 @@ export const AdelanteEHR = {
   },
   getPatient: (id: string) => patients.find((p) => p.id === id),
   listClinicians: () => clinicians,
+  /**
+   * §Batch E1 — registers a provider record (nurses: no bookable services —
+   * `services: []`, so booking never offers them). Audited, idempotent.
+   */
+  registerClinician(c: Clinician, actorId?: string): Clinician {
+    const existing = clinicians.find((x) => x.id === c.id);
+    if (existing) return existing;
+    clinicians.push(c);
+    appendAudit({ category: "admin", action: "clinician_registered", actorId, detail: { clinicianId: c.id, credential: c.credential } });
+    emit();
+    return c;
+  },
   getClinician: (id: string) => clinicians.find((c) => c.id === id),
   listServiceTypes: () => SERVICE_TYPES,
   getServiceType: (id?: ServiceType) => SERVICE_TYPES.find((s) => s.id === id),

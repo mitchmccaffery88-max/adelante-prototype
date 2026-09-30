@@ -855,7 +855,7 @@ export function addStaffMember(actor: { role: StaffRole; staffId?: string }, mem
     actorRole: actor.role,
     actorId: actor.staffId,
     detail: { staffId: member.id, role: member.role },
-  } as never);
+  });
   return member;
 }
 
