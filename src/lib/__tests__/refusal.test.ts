@@ -1,5 +1,6 @@
 // §MAR Phase 3 — Refusal legal document + escalation.
 import { describe, expect, it } from "vitest";
+import "@/test/freezeClock";
 import { AdelanteEHR } from "@/lib/ehr";
 import {
   DECLINE_REASONS,

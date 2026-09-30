@@ -1,5 +1,6 @@
 // §MAR Phase 1 — due-dose derivation + charting/claim/void state machines.
 import { describe, expect, it } from "vitest";
+import "@/test/freezeClock";
 import { AdelanteEHR } from "@/lib/ehr";
 import {
   deriveMarDay,
