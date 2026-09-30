@@ -33,10 +33,12 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { TimelyAccessLine } from "@/components/chart/TimelyAccessLine";
 
 export function CoverageExtras({ patientId }: { patientId: string }) {
   return (
     <div className="mt-4 space-y-4">
+      <TimelyAccessLine patientId={patientId} />
       <FspCard patientId={patientId} />
       <ServiceFundingCard patientId={patientId} />
     </div>

@@ -447,6 +447,22 @@ function ClinicianPage() {
     >
       {t("clinBook")}
     </Button>
+    <Button
+      variant="outline"
+      className="w-full"
+      data-testid="offer-declined"
+      disabled={!book.patientId || !book.start}
+      onClick={() => {
+        try {
+          act("timely_offer_record", "recordAppointmentOffer", { name: bookActor.staffName, role: bookRole }, { patientId: book.patientId, slotStart: new Date(book.start).toISOString(), clinicianId, outcome: "declined", context: bookRequestId ? "request_response" : "booking" });
+          toast.success("Offer recorded — patient declined this slot");
+        } catch (err) {
+          toast.error(err instanceof Error ? err.message : "Could not record the offer.");
+        }
+      }}
+    >
+      Patient declined this slot
+    </Button>
   </div>
 </Card>
     </div>

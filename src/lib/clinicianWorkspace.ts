@@ -6,12 +6,13 @@ import { isInFacilityTask, inFacilityEnabled } from "@/lib/inFacility";
 import { myCaseload, myContactsDue, myPendingLabs, myPendingRefills, myPlanReviewsDue, screenerDueRows, staffAliases, type ActingIdentity } from "@/lib/myWork";
 import { listUnsignedWork } from "@/lib/unsignedWork";
 import { listMatchReviews } from "@/lib/patientMatching";
+import { chaseRowsFor } from "@/lib/referralChase";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -121,6 +122,9 @@ export function workspaceActionRows(input: {
     if (t.allowedRoles?.length && !t.allowedRoles.includes(actor.role)) continue;
     push({ id: `task:${t.id}`, kind: "task", patientId: t.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: t.title, dueAt: t.dueDate, action: "Open task", sourceId: t.id });
   }
+  // §Batch B2 — referral chase tasks (owner, or coordinator pool). Neutral text only.
+  for (const c of chaseRowsFor(actor, now))
+    push({ id: `chase:${c.referral.id}`, kind: "chase", patientId: c.referral.enrolledPatientId ?? "", patientName: `${c.referral.firstName} ${c.referral.lastName} (referral)`, label: `${c.lane === "pool" ? (c.task.owner ? "Overdue — reassign · " : "Unassigned · ") : ""}${c.text}`, dueAt: c.task.dueAt, action: c.lane === "pool" && !c.task.owner ? "Claim" : "Open referral", sourceId: c.referral.id });
   const priority = isPrescriberRole(actor.role) ? ["refill", "crisis"] : isCareRole(actor.role) ? ["contact", "crisis"] : ["crisis"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
     const ai = priority.indexOf(a.kind), bi = priority.indexOf(b.kind);

@@ -41,16 +41,19 @@ export function isValidEmail(v: string) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(v.trim());
 }
 import { REFERRER_CONTACT_REQUIRED_MSG } from "@/lib/referralOutreach";
+import { referralCriticalProblem } from "@/lib/referralChase";
 export { REFERRER_CONTACT_REQUIRED_MSG };
 /** Returns the first validation problem with contact details, or null. */
 export function referralContactProblem(f: {
   referrerPhone: string;
   referrerEmail: string;
   email: string;
+  /** §Batch B2 — a reachable person also satisfies the critical contact rule. */
+  phone?: string;
 }): string | null {
   const rEmail = f.referrerEmail.trim();
   if (rEmail && !isValidEmail(rEmail)) return "Your work email doesn't look like a valid email address.";
-  if (!f.referrerPhone.trim() && !rEmail) return REFERRER_CONTACT_REQUIRED_MSG;
+  if (!f.referrerPhone.trim() && !rEmail && !f.phone?.trim() && !f.email.trim()) return REFERRER_CONTACT_REQUIRED_MSG;
   const email = f.email.trim();
   if (email && !isValidEmail(email)) return "The person's email doesn't look like a valid email address.";
   return null;
@@ -117,6 +120,12 @@ export function ReferralSubmissionForm({
     consentToContact: false,
     noPhone: false,
     notARobot: false,
+    // §Batch B2 — non-critical: accepted blank, then followed up by staff.
+    preferredLanguage: "",
+    address: "",
+    emergencyContact: "",
+    pendingCharges: "" as "" | "yes" | "no" | "unknown",
+    priorRecords: "" as "" | "available" | "none_known",
   });
   // §Phase 8b — optional benefits via the shared step (CIN lives here now).
   const [benefits, setBenefits] = useState<BenefitsFormState>(EMPTY_BENEFITS);
@@ -124,29 +133,28 @@ export function ReferralSubmissionForm({
 
   const onSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!form.firstName || !form.lastName || !form.referrerName || !form.referringAgency) {
+    // §Batch B2 (Draft) — only critical fields block; the rest are chased.
+    const critical = referralCriticalProblem({ ...form, phone: form.noPhone ? "" : form.phone, cin: benefits.cin ?? "" });
+    if (critical) {
+      toast.error(critical);
+      return;
+    }
+    if (!form.referrerName || !form.referringAgency) {
       toast.error("Please complete the required fields");
       return;
     }
-    const contactProblem = referralContactProblem(form);
+    const contactProblem = referralContactProblem({ ...form, phone: form.noPhone ? "" : form.phone });
     if (contactProblem) {
       toast.error(contactProblem);
       return;
     }
-    if (!form.noPhone && !form.phone) {
-      toast.error("Add a phone number, or check 'No reliable phone'");
-      return;
-    }
-    if (!form.noPhone && !form.consentToContact) {
+    const noPhone = form.noPhone || !form.phone.trim();
+    if (!noPhone && !form.consentToContact) {
       toast.error("Please confirm consent to contact");
       return;
     }
     if (!form.notARobot) {
       toast.error("Please verify you're not a robot");
-      return;
-    }
-    if (!form.justiceInvolved) {
-      toast.error("Please answer whether this individual is justice-involved");
       return;
     }
     if (benefitsCinProblem(benefits)) {
@@ -159,22 +167,27 @@ export function ReferralSubmissionForm({
     const result = AdelanteEHR.createReferral({
       firstName: form.firstName,
       lastName: form.lastName,
-      phone: form.noPhone ? undefined : form.phone,
+      phone: noPhone ? undefined : form.phone,
+      preferredLanguage: form.preferredLanguage.trim() || undefined,
+      address: form.address.trim() || undefined,
+      emergencyContact: form.emergencyContact.trim() || undefined,
+      pendingCharges: ji ? form.pendingCharges || undefined : undefined,
+      priorRecords: form.priorRecords || undefined,
       email: form.email.trim().toLowerCase() || undefined,
       // Medi-Cal ID writes to the EXISTING `Referral.cin` — no parallel field.
       cin: reportedCin ? normalizeCin(reportedCin) : undefined,
       ...(reportedRest.coverageType ? { reportedBenefits: reportedRest } : {}),
       dob: form.dob || undefined,
       releaseDate: ji ? form.releaseDate || undefined : undefined,
-      justiceInvolved: form.justiceInvolved,
+      justiceInvolved: form.justiceInvolved || undefined,
       referringAgency: form.referringAgency,
       referrerName: form.referrerName,
       referrerEmail: form.referrerEmail || undefined,
       referrerPhone: form.referrerPhone || undefined,
       referralSource: form.referralSource,
       countyOfRelease: ji ? form.countyOfRelease || undefined : undefined,
-      consentToContact: form.noPhone ? false : form.consentToContact,
-      requestManualOutreach: form.noPhone,
+      consentToContact: noPhone ? false : form.consentToContact,
+      requestManualOutreach: noPhone,
       channel: staff ? "staff" : "public",
     });
     if (!staff) {
@@ -348,7 +361,7 @@ export function ReferralSubmissionForm({
               onChange={(e) => setForm({ ...form, lastName: e.target.value })}
             />
           </Field>
-          <Field label={form.noPhone ? "Phone (skipped)" : "Phone *"}>
+          <Field label={form.noPhone ? "Phone (skipped)" : "Phone"}>
             <Input
               type="tel"
               placeholder="+1 555 555 0100"
@@ -365,7 +378,7 @@ export function ReferralSubmissionForm({
               onChange={(e) => setForm({ ...form, email: e.target.value })}
             />
           </Field>
-          <Field label="Date of birth">
+          <Field label="Date of birth (or Medi-Cal ID below) *">
             <Input
               type="date"
               value={form.dob}
@@ -377,7 +390,7 @@ export function ReferralSubmissionForm({
         {/* §Phase 4c — one form, conditional fields. Unanswered by default:
             we never assume someone is not justice-involved. */}
         <div className="rounded-lg border p-4 space-y-3">
-          <Label className="text-sm">Is this individual justice-involved? *</Label>
+          <Label className="text-sm">Is this individual justice-involved?</Label>
           <p className="text-xs text-muted-foreground -mt-1">
             Currently or recently in custody, on probation or parole, or in a reentry program.
           </p>
@@ -417,6 +430,40 @@ export function ReferralSubmissionForm({
               </Field>
             </div>
           )}
+        </div>
+        {/* §Batch B2 — optional details. Blank is fine; staff follow up. */}
+        <div className="rounded-lg border p-4 space-y-3" data-testid="referral-optional-details">
+          <div>
+            <Label className="text-sm">Optional details</Label>
+            <p className="text-xs text-muted-foreground">Leave blank if you don&apos;t know — our team will follow up. (Draft — pending clinical sign-off)</p>
+          </div>
+          <div className="grid sm:grid-cols-2 gap-4">
+            <Field label="Preferred language">
+              <Input value={form.preferredLanguage} onChange={(e) => setForm({ ...form, preferredLanguage: e.target.value })} />
+            </Field>
+            <Field label="Address">
+              <Input value={form.address} onChange={(e) => setForm({ ...form, address: e.target.value })} />
+            </Field>
+            <Field label="Emergency contact">
+              <Input value={form.emergencyContact} onChange={(e) => setForm({ ...form, emergencyContact: e.target.value })} />
+            </Field>
+            <Field label="Prior behavioral health records">
+              <div className="flex flex-wrap gap-2">
+                {([{ v: "available", l: "Available" }, { v: "none_known", l: "None known" }] as const).map((o) => (
+                  <Button key={o.v} type="button" size="sm" variant={form.priorRecords === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, priorRecords: o.v })}>{o.l}</Button>
+                ))}
+              </div>
+            </Field>
+            {form.justiceInvolved === "yes" && (
+              <Field label="Pending charges">
+                <div className="flex flex-wrap gap-2">
+                  {([{ v: "yes", l: "Yes" }, { v: "no", l: "No" }, { v: "unknown", l: "Unknown" }] as const).map((o) => (
+                    <Button key={o.v} type="button" size="sm" variant={form.pendingCharges === o.v ? "default" : "outline"} onClick={() => setForm({ ...form, pendingCharges: o.v })}>{o.l}</Button>
+                  ))}
+                </div>
+              </Field>
+            )}
+          </div>
         </div>
         {/* §Phase 8b — optional: a referrer who doesn't know can skip it. */}
         <div className="rounded-lg border p-4" data-testid="referral-benefits">

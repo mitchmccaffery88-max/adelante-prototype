@@ -70,6 +70,7 @@ import {
 import { REFERRAL_AGING_DRAFT } from "@/lib/referralAging";
 import { TOTALS_ONLY_NOTE, ASAM_REPORTING_ASSOCIATION_NOTE, ASAM_TIMELINESS_DRAFT, asamClinicalReport } from "@/lib/asamReporting";
 import { PopulationHealthSection } from "@/components/reporting/PopulationHealthSection";
+import { TimelyAccessReport } from "@/components/reporting/TimelyAccessReport";
 import { ASAM_DRAFT_NOTE } from "@/lib/asam";
 import { ProvenanceBadge } from "@/components/ProvenanceBadge";
 import { PeriodSelector } from "@/components/dashboards/PeriodSelector";
@@ -850,6 +851,7 @@ function ReportingHome() {
         </Area>
       )}
 
+      <TimelyAccessReport />
       <PopulationHealthSection role={role} />
 
       {seesPopulation && (

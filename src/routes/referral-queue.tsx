@@ -19,6 +19,7 @@ import { canAccess, useActingStaff } from "@/lib/roles";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
 import { PostEnrollmentSetupCard } from "@/components/PostEnrollmentSetupCard";
 import { ReferralSubmissionForm } from "@/components/referral/ReferralSubmissionForm";
+import { ReferralChasePanel } from "@/components/referral/ReferralChasePanel";
 import { hasOpenOutreachTask } from "@/lib/referralOutreach";
 import { Lock, Plus } from "lucide-react";
 
@@ -82,6 +83,8 @@ function ReferralQueuePage() {
           text could be sent. Filter by &ldquo;Outreach needed&rdquo; to work them.
         </Card>
       )}
+
+      <ReferralChasePanel />
 
       <ReferralTrackerCard referrals={referrals} title="Referral queue" limit={100} />
 
