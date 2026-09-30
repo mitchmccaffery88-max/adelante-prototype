@@ -18,7 +18,7 @@ export const CHART_TABS: { id: ChartTabId; label: string; sections: string[] }[]
   { id: "measures", label: "Measures", sections: ["tracking", "asam", "caloms"] },
   { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "coord"] },
   { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts", "weekly-review", "checkins"] },
-  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records", "consents", "audit-trail"] },
+  { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records", "consents", "audit-trail", "access-log"] },
 ];
 
 /**

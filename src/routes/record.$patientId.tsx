@@ -122,7 +122,7 @@ function ChartBody({
   onSelect: (id: string) => void;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { role } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
   const sections = useRecordSections(patient!, { initialNoteTemplateKey: templateKey });
   const badgesJson = useEhr(() => {
     const p = AdelanteEHR.getPatient(patientId);
@@ -140,6 +140,8 @@ function ChartBody({
     extra.push({ id: "weekly-review", label: "Weekly review", icon: CalendarCheck, group: "case", render: () => <ChartWeeklyReview patientId={patient.id} /> });
   if (canSeeChartConsents(role, patient))
     extra.push({ id: "consents", label: "Consents & Part 2 disclosures", icon: FileSignature, group: "case", render: () => <ChartConsents patient={patient} /> });
+  if (ACCESS_LOG_ROLES.includes(role))
+    extra.push({ id: "access-log", label: "Who accessed this record", icon: History, group: "case", render: () => <WhoAccessed patientId={patient.id} /> });
   if (canSeeChartAudit(role))
     extra.push({ id: "audit-trail", label: "Audit trail", icon: History, group: "case", render: () => <ChartAuditTrail patientId={patient.id} /> });
   const allSections: RecordSection[] = [
@@ -159,6 +161,16 @@ function ChartBody({
   const loc = resolveChartLocation(resolveSectionId(section));
   const activeTab = tabs.find((t) => t.id === loc.tab) ?? tabs[0]!;
   const badges = JSON.parse(badgesJson) as ReturnType<typeof tabBadges>;
+  // §Batch C2 — record.viewed on chart open and on every tab / section switch.
+  const viewedSection = loc.sub ?? activeTab.id;
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    recordView({ actorId: staffId, actorName: staffName, role, patientId: patient.id, sectionId: "chart", kind: "open" });
+  }, [patient.id, staffId, role, staffName]);
+  // eslint-disable-next-line react-hooks/rules-of-hooks
+  useEffect(() => {
+    recordView({ actorId: staffId, actorName: staffName, role, patientId: patient.id, sectionId: viewedSection, kind: "section" });
+  }, [patient.id, staffId, role, staffName, viewedSection]);
   const searchable = allSections
     .filter((x) => tabs.some((t) => t.subs.includes(x)))
     .map((x) => {
