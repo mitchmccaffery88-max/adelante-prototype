@@ -39,7 +39,9 @@ export function StaffRoleSwitcher() {
       const preferred =
         m.role === "billing" || m.role === "billing_coordinator"
           ? ["/billing"]
-          : m.role === "sys_admin"
+          : m.role === "nurse_rn" || m.role === "lvn"
+            ? ["/nurse", "/my-work"]
+            : m.role === "sys_admin"
             ? ["/admin"]
             : ["/my-work", "/clinician", "/case-manager"];
       const dest = preferred.find((to) => pages.some((e) => e.to === to)) ?? pages[0]?.to;
