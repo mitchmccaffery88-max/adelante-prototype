@@ -1,4 +1,5 @@
 import { LabsAndMeasuresTracking } from "@/components/chart/LabsAndMeasures";
+import { recordView } from "@/lib/accessLog";
 import { act, actFor } from "@/lib/actions/act";
 import { roleSeesAsamSection as roleSeesAsamSectionForGoals } from "@/lib/asamReporting";
 import { roleWorksAsamTask } from "@/components/clinical/AsamTaskWorkItem";
@@ -2741,7 +2742,7 @@ function NoteExportButton({
   authorLabel: string;
 }) {
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   if (!patient) return null;
   if (!noteExportGate(note, role, patient).allowed) return null;
   return (
