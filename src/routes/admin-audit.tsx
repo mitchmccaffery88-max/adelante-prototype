@@ -40,8 +40,11 @@ export const Route = createFileRoute("/admin-audit")({
   component: AdminAuditPage,
 });
 
-const CATEGORIES: { value: AuditCategory | "all"; label: string }[] = [
+type CatFilter = AuditCategory | "all" | "record.viewed";
+const CATEGORIES: { value: CatFilter; label: string }[] = [
   { value: "all", label: "All categories" },
+  { value: "record.viewed", label: "Record access (reads)" },
+  { value: "disclosure", label: "Disclosures (Part 2)" },
   { value: "consent", label: "Consent" },
   { value: "rx", label: "Medications / eRx" },
   { value: "telehealth", label: "Telehealth" },
@@ -55,7 +58,7 @@ const CATEGORIES: { value: AuditCategory | "all"; label: string }[] = [
 
 function AdminAuditPage() {
   const [role] = useActingRole();
-  const [cat, setCat] = useState<AuditCategory | "all">("all");
+  const [cat, setCat] = useState<CatFilter>("all");
   const [patientId, setPatientId] = useState<string>("all");
   const [actorRole, setActorRole] = useState<string>("all");
   const [from, setFrom] = useState<string>("");
@@ -75,13 +78,13 @@ function AdminAuditPage() {
   const events = useEhr(() =>
     redactAuditEvents(
       AdelanteEHR.listAuditEvents({
-        category: cat === "all" ? undefined : cat,
+        category: cat === "all" ? undefined : cat === "record.viewed" ? "access" : cat,
         patientId: patientId === "all" ? undefined : patientId,
         actorRole: actorRole === "all" ? undefined : actorRole,
         since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
         until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
         limit: 200,
-      }),
+      }).filter((e) => cat !== "record.viewed" || e.action === "record.viewed"),
       role,
     ),
   );
