@@ -2545,6 +2545,15 @@ export function NotesTab({
                   <SelectItem value="check_in">Check-in</SelectItem>
                 </SelectContent>
               </Select>
+              <label className="flex items-center gap-2 text-xs" title="Draft — pending clinical sign-off. Crisis notes must be signed within 1 calendar day.">
+                <input
+                  type="checkbox"
+                  aria-label="Crisis intervention"
+                  checked={(note as { serviceType?: string }).serviceType === "crisis_intervention"}
+                  onChange={(e) => setNote({ ...note, serviceType: e.target.checked ? "crisis_intervention" : undefined } as never)}
+                />
+                Crisis intervention (1-day signing clock)
+              </label>
             </div>
             <div className="space-y-1.5">
               <Label className="text-xs">Sensitivity context</Label>
