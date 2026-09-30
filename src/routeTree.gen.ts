@@ -31,6 +31,7 @@ import { Route as AssistedSignupRouteImport } from './routes/assisted-signup'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BillingRouteImport } from './routes/billing'
 import { Route as BillingCalaimCodesRouteImport } from './routes/billing-calaim-codes'
+import { Route as CarePartnersRouteImport } from './routes/care-partners'
 import { Route as CaseManagerRouteImport } from './routes/case-manager'
 import { Route as CaseloadReviewRouteImport } from './routes/caseload-review'
 import { Route as CheckinRouteImport } from './routes/checkin'
@@ -64,6 +65,7 @@ import { Route as MyWorkRouteImport } from './routes/my-work'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NextStepsRouteImport } from './routes/next-steps'
 import { Route as NotesQueueRouteImport } from './routes/notes-queue'
+import { Route as NurseRouteImport } from './routes/nurse'
 import { Route as PatientRouteImport } from './routes/patient'
 import { Route as PeerRouteImport } from './routes/peer'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
@@ -226,6 +228,11 @@ const BillingRoute = BillingRouteImport.update({
 const BillingCalaimCodesRoute = BillingCalaimCodesRouteImport.update({
   id: '/billing-calaim-codes',
   path: '/billing-calaim-codes',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CarePartnersRoute = CarePartnersRouteImport.update({
+  id: '/care-partners',
+  path: '/care-partners',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CaseManagerRoute = CaseManagerRouteImport.update({
@@ -391,6 +398,11 @@ const NextStepsRoute = NextStepsRouteImport.update({
 const NotesQueueRoute = NotesQueueRouteImport.update({
   id: '/notes-queue',
   path: '/notes-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NurseRoute = NurseRouteImport.update({
+  id: '/nurse',
+  path: '/nurse',
   getParentRoute: () => rootRouteImport,
 } as any)
 const PatientRoute = PatientRouteImport.update({
@@ -688,6 +700,7 @@ export interface FileRoutesByFullPath {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
+  '/care-partners': typeof CarePartnersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -721,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
+  '/nurse': typeof NurseRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
@@ -797,6 +811,7 @@ export interface FileRoutesByTo {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
+  '/care-partners': typeof CarePartnersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -830,6 +845,7 @@ export interface FileRoutesByTo {
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
+  '/nurse': typeof NurseRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
@@ -905,6 +921,7 @@ export interface FileRoutesById {
   '/auth': typeof AuthRoute
   '/billing': typeof BillingRoute
   '/billing-calaim-codes': typeof BillingCalaimCodesRoute
+  '/care-partners': typeof CarePartnersRoute
   '/case-manager': typeof CaseManagerRoute
   '/caseload-review': typeof CaseloadReviewRoute
   '/checkin': typeof CheckinRoute
@@ -938,6 +955,7 @@ export interface FileRoutesById {
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
   '/notes-queue': typeof NotesQueueRoute
+  '/nurse': typeof NurseRoute
   '/patient': typeof PatientRoute
   '/peer': typeof PeerRoute
   '/pre-release': typeof PreReleaseRoute
@@ -1017,6 +1035,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/billing-calaim-codes'
+    | '/care-partners'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1050,6 +1069,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/next-steps'
     | '/notes-queue'
+    | '/nurse'
     | '/patient'
     | '/peer'
     | '/pre-release'
@@ -1126,6 +1146,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/billing-calaim-codes'
+    | '/care-partners'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1159,6 +1180,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/next-steps'
     | '/notes-queue'
+    | '/nurse'
     | '/patient'
     | '/peer'
     | '/pre-release'
@@ -1233,6 +1255,7 @@ export interface FileRouteTypes {
     | '/auth'
     | '/billing'
     | '/billing-calaim-codes'
+    | '/care-partners'
     | '/case-manager'
     | '/caseload-review'
     | '/checkin'
@@ -1266,6 +1289,7 @@ export interface FileRouteTypes {
     | '/naloxone'
     | '/next-steps'
     | '/notes-queue'
+    | '/nurse'
     | '/patient'
     | '/peer'
     | '/pre-release'
@@ -1344,6 +1368,7 @@ export interface RootRouteChildren {
   AuthRoute: typeof AuthRoute
   BillingRoute: typeof BillingRoute
   BillingCalaimCodesRoute: typeof BillingCalaimCodesRoute
+  CarePartnersRoute: typeof CarePartnersRoute
   CaseManagerRoute: typeof CaseManagerRoute
   CaseloadReviewRoute: typeof CaseloadReviewRoute
   CheckinRoute: typeof CheckinRoute
@@ -1377,6 +1402,7 @@ export interface RootRouteChildren {
   NaloxoneRoute: typeof NaloxoneRoute
   NextStepsRoute: typeof NextStepsRoute
   NotesQueueRoute: typeof NotesQueueRoute
+  NurseRoute: typeof NurseRoute
   PatientRoute: typeof PatientRoute
   PeerRoute: typeof PeerRoute
   PreReleaseRoute: typeof PreReleaseRoute
@@ -1564,6 +1590,13 @@ declare module '@tanstack/react-router' {
       path: '/billing-calaim-codes'
       fullPath: '/billing-calaim-codes'
       preLoaderRoute: typeof BillingCalaimCodesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/care-partners': {
+      id: '/care-partners'
+      path: '/care-partners'
+      fullPath: '/care-partners'
+      preLoaderRoute: typeof CarePartnersRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/case-manager': {
@@ -1795,6 +1828,13 @@ declare module '@tanstack/react-router' {
       path: '/notes-queue'
       fullPath: '/notes-queue'
       preLoaderRoute: typeof NotesQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/nurse': {
+      id: '/nurse'
+      path: '/nurse'
+      fullPath: '/nurse'
+      preLoaderRoute: typeof NurseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/patient': {
@@ -2275,6 +2315,7 @@ const rootRouteChildren: RootRouteChildren = {
   AuthRoute: AuthRoute,
   BillingRoute: BillingRoute,
   BillingCalaimCodesRoute: BillingCalaimCodesRoute,
+  CarePartnersRoute: CarePartnersRoute,
   CaseManagerRoute: CaseManagerRoute,
   CaseloadReviewRoute: CaseloadReviewRoute,
   CheckinRoute: CheckinRoute,
@@ -2308,6 +2349,7 @@ const rootRouteChildren: RootRouteChildren = {
   NaloxoneRoute: NaloxoneRoute,
   NextStepsRoute: NextStepsRoute,
   NotesQueueRoute: NotesQueueRoute,
+  NurseRoute: NurseRoute,
   PatientRoute: PatientRoute,
   PeerRoute: PeerRoute,
   PreReleaseRoute: PreReleaseRoute,
