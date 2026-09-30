@@ -7,6 +7,7 @@ import { useEffect, useMemo, useRef } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
+import { recordView } from "@/lib/accessLog";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
@@ -87,7 +88,7 @@ const PRINT_CSS = `
 function PrintRecordPage() {
   const { patientId } = Route.useParams();
   const search = Route.useSearch();
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const printed = useRef(false);
 
@@ -95,7 +96,7 @@ function PrintRecordPage() {
   const searchKey = JSON.stringify(search);
   const doc = useMemo(
     () =>
-      patient
+      patient && recordView({ actorId: staffId, actorName: staffName, role, patientId: patient.id, sectionId: "print-record", kind: "print" }) !== undefined
         ? buildPrintRecordDocument({ patient, role, flags: search, actor: { name: staffName, role } })
         : undefined,
     // eslint-disable-next-line react-hooks/exhaustive-deps

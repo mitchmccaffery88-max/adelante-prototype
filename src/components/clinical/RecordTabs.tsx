@@ -2758,6 +2758,7 @@ function NoteExportButton({
             authorLabel,
             exportedBy: staffName,
           });
+          recordView({ actorId: staffId, actorName: staffName, role, patientId: patient.id, sectionId: `note-pdf:${note.id}`, kind: "export" });
           toast.success(`Exported ${filename}`);
         } catch (e) {
           toast.error((e as Error).message);
