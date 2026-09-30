@@ -245,15 +245,8 @@ export function buildPrintRecordDocument(args: {
     const disclosedSud = entries.filter(
       (e) => !e.masked && e.note.category === "sud",
     ).length;
-    if (disclosedSud > 0) {
-      AdelanteEHR.recordConsentDisclosure({
-        patientId: patient.id,
-        categories: ["sud_treatment"],
-        purpose: "patient record print/export",
-        role,
-        itemCount: disclosedSud,
-      });
-    }
+    // Logged by the ONE disclosure function below (Batch C1).
+    void disclosedSud;
   }
 
   // §Batch C1 — one disclosure call for the whole packet (class names only).

@@ -138,7 +138,12 @@ export function part2ConsentFor(
   );
   switch (recipient.type) {
     case "internal":
+      // Communications within the program's own treatment team (42 CFR 2.12(c)(3)).
+      return { ok: true, ref: "Internal program use — 42 CFR 2.12(c)(3)" };
     case "advocate":
+      return has("advocate_sud_disclosure" as never) || has(LEGAL_DISCLOSURE_CONSENT_CATEGORY)
+        ? { ok: true, ref: `${recRef} (advocate disclosure)` }
+        : { ok: false, reason: "No substance-use disclosure consent covers this advocate, so this can't be shared." };
     case "county":
       return has("sud_treatment")
         ? { ok: true, ref: recRef }
@@ -211,6 +216,9 @@ export function disclose(req: DisclosureRequest): DisclosureResult {
       recipientType: entry.recipient.type,
       recordClasses: entry.recordClasses,
       consentRef,
+      consentRecordId: AdelanteEHR.activeConsentRecord(req.patientId)?.id,
+      categories: ["sud_treatment"],
+      purpose: entry.purpose,
       simulated: entry.simulated,
       ...(emergency ? { complianceReview: "pending" } : {}),
     },
