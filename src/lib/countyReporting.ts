@@ -31,7 +31,7 @@ export const ISL_PRIVATE_PAY_NOTE = "Private pay excluded (Draft — Christi to 
 
 // ------------------------------------------------------------------ access
 /** Hub roles. sud_counselor added as the SUD-authorised client-level preparer (decision, Draft). */
-export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", "sud_counselor"];
+export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", "sud_counselor"];
 export const canViewCountyReporting = (role: StaffRole) => COUNTY_REPORTING_ROLES.includes(role);
 /** Client-level rows (files, worklists) — SUD-authorised roles only. */
 export const seesClientLevel = (role: StaffRole) => canViewCountyReporting(role) && roleSeesAsam(role);
