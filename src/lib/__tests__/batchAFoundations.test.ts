@@ -151,7 +151,7 @@ describe("A4 funding source + care continuum on every service", () => {
     expect(a.fundingSource).toBeTruthy();
     expect(a.careContinuum).toBeTruthy();
     expect(a.source).toBe("rule");
-    const contact = logContact({ id: "s-ecm", name: "Luz", role: "ecm_provider" } as never, { patientId: p.id, type: "phone" as never, date: "2026-09-01" });
+    const contact = logContact({ id: "s-ecm", name: "Luz", role: "ecm_provider" } as never, { patientId: p.id, type: "call", date: "2026-09-01" });
     expect(getServiceClassification({ kind: "case_contact", id: contact.id })!.careContinuum).toBe("case_management");
     const withPeer = AdelanteEHR.listPatients().find((x) => (x.peerNotes ?? []).length)!;
     if (withPeer) expect(getServiceClassification({ kind: "peer_contact", id: withPeer.peerNotes![0]!.id })!.careContinuum).toBe("recovery_support");
