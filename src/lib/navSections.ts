@@ -1,3 +1,4 @@
+import { canViewCountyReporting } from "@/lib/countyReporting";
 import { canViewCoordination } from "@/lib/coordinationRoles";
 import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
 import { canOpenCaseloadReview } from "@/lib/caseloadRoles";
@@ -125,6 +126,7 @@ export type NavGate =
   | { kind: "clinical_referrals" }
   /** HIE operations hub — sys_admin / clinical_coordinator only (DATA_EXCHANGE_ROLES). */
   | { kind: "data_exchange" }
+  | { kind: "county_reporting" }
   | { kind: "open" };
 
 export interface NavEntry {
@@ -543,6 +545,15 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "coordination_desk" },
   },
   {
+    id: "county-reporting",
+    label: "County reporting",
+    desc: "Prototype: CalOMS, DATAR, ISL, BHOATR, TPS — nothing is submitted",
+    icon: Settings2,
+    to: "/county-reporting",
+    group: "administration",
+    gate: { kind: "county_reporting" },
+  },
+  {
     id: "data-exchange",
     label: "Data exchange",
     desc: "Simulated HIE: sync, matching, held records, sharing log",
@@ -702,6 +713,7 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
+  if (entry.gate.kind === "county_reporting") return canViewCountyReporting(role);
   if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {

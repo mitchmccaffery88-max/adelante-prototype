@@ -30,6 +30,7 @@ import { canRunAssistedSignup } from "@/lib/roles";
 import { canEditProviderRef, saveOrganization, saveProgram, saveSite } from "@/lib/providerReference";
 import { canRecordCustodyDuration, recordCustodyDuration } from "@/lib/fspEligibility";
 import { canRecordAfbi, decideAfbiLink, recordAfbiContact, requestAfbiLink } from "@/lib/afbiOutreach";
+import { canViewCountyReporting, fixCountyError, generateReport, markTps, resendReport, seesClientLevel, sendTpsLink, setTpsWindow, simulateCountyResponse, submitReport, TPS_ADMIN_ROLES } from "@/lib/countyReporting";
 import { canOverrideClassification, overrideServiceClassification } from "@/lib/serviceClassification";
 import { addTimelyCorrection, canCorrectTimely, canRecordOffer, recordAppointmentOffer, recordServiceRequest } from "@/lib/timelyAccess";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
@@ -626,6 +627,55 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canReviewMatches(role)",
     store: refs(["reconfirmConsentAfterMerge", (...a: any[]) => (reconfirmConsentAfterMerge as any)(...a)]),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can re-confirm consent.")),
+  },
+  // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
+  ...([
+    ["county_generate", "Generate county report draft", "Generar borrador de informe al condado", "generateReport", generateReport, "canViewCountyReporting(role); CalOMS needs roleSeesAsam"],
+    ["county_submit", "Submit county report (Simulated)", "Enviar informe al condado (simulado)", "submitReport", submitReport, "canViewCountyReporting(role)"],
+    ["county_simulate_response", "Simulate county response", "Simular respuesta del condado", "simulateCountyResponse", simulateCountyResponse, "canViewCountyReporting(role)"],
+    ["county_fix_error", "Mark county error fixed", "Marcar error del condado corregido", "fixCountyError", fixCountyError, "canViewCountyReporting(role)"],
+    ["county_resend", "Resend county report (Simulated)", "Reenviar informe al condado (simulado)", "resendReport", resendReport, "canViewCountyReporting(role)"],
+  ] as const).map(([id, en, es, name, fn, check]): ChartAction => ({
+    id,
+    label: { en, es },
+    group: "admin" as const,
+    menu: false,
+    needsPatient: false,
+    check,
+    flags: ["caloms_export_simulated"] as FeatureId[],
+    store: refs([name, (...a: any[]) => (fn as any)(...a)]),
+    allowed: ({ role }) => (canViewCountyReporting(role) ? ok() : hide("Your role can't use county reporting.")),
+  })),
+  {
+    id: "tps_set_window",
+    label: { en: "Set Treatment Perception Survey window", es: "Fijar periodo de la encuesta TPS" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "TPS_ADMIN_ROLES (sys_admin)",
+    store: refs(["setTpsWindow", (...a: any[]) => (setTpsWindow as any)(...a)]),
+    allowed: ({ role }) => (TPS_ADMIN_ROLES.includes(role) ? ok() : hide("Only a system administrator sets the survey window.")),
+  },
+  {
+    id: "tps_mark",
+    label: { en: "Mark survey offered / completed / declined", es: "Marcar encuesta ofrecida / completada / rechazada" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "seesClientLevel(role)",
+    store: refs(["markTps", (...a: any[]) => (markTps as any)(...a)]),
+    allowed: ({ role }) => (seesClientLevel(role) ? ok() : hide("Client-level survey tracking needs substance-use record access.")),
+  },
+  {
+    id: "tps_send_link",
+    label: { en: "Send survey link (Simulated)", es: "Enviar enlace de encuesta (simulado)" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "seesClientLevel(role)",
+    flags: ["caloms_export_simulated"],
+    store: refs(["sendTpsLink", (...a: any[]) => (sendTpsLink as any)(...a)]),
+    allowed: ({ role }) => (seesClientLevel(role) ? ok() : hide("Client-level survey tracking needs substance-use record access.")),
   },
   // §Batch A — data foundations (Premier DMC-ODS gaps).
   {

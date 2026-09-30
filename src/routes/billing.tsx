@@ -2,7 +2,8 @@ import { BillingWorkspaceTiles } from "@/components/ops/OpsWorkspace";
 import { afbiCounts } from "@/lib/afbiOutreach";
 import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
-import { actResult, actFor } from "@/lib/actions/act";
+import { actResult, actFor, currentRunActor } from "@/lib/actions/act";
+import "@/lib/countyReporting";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import {
@@ -214,7 +215,7 @@ function BillingPage() {
 
   function downloadIsl() {
     let csv: string;
-    try { csv = actFor<string>("isl_export", "exportIslReport", undefined); } catch (e) { toast.error((e as Error).message); return; }
+    try { const a = currentRunActor(); csv = actFor<string>("isl_export", "exportIslReport", undefined, undefined, { staffId: a.staffId, name: a.staffName, role: a.role }); } catch (e) { toast.error((e as Error).message); return; }
     const blob = new Blob([csv], { type: "text/csv;charset=utf-8" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
@@ -236,6 +237,9 @@ function BillingPage() {
         </div>
         <Link to="/provider-reference" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-provider-ref-link">
           Provider &amp; site reference
+        </Link>
+        <Link to="/county-reporting" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-county-reporting-link">
+          County reporting
         </Link>
         <Link
           to="/admin-claims"
