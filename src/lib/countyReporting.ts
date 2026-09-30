@@ -30,8 +30,11 @@ export const BHOATR_DOLLARS_NOTE = "Dollar amounts added when billing is re-enab
 export const ISL_PRIVATE_PAY_NOTE = "Private pay excluded (Draft — Christi to confirm)";
 
 // ------------------------------------------------------------------ access
-/** Hub roles. sud_counselor added as the SUD-authorised client-level preparer (decision, Draft). */
-export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", "sud_counselor"];
+/** Interim CalOMS/TPS client-level preparer — change this ONE line when the decision is made. */
+export const COUNTY_INTERIM_PREPARER_ROLE: StaffRole = "sud_counselor";
+export const COUNTY_INTERIM_PREPARER_LABEL = "Interim — pending decision";
+/** Hub roles (plus the interim preparer above). */
+export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", COUNTY_INTERIM_PREPARER_ROLE];
 export const canViewCountyReporting = (role: StaffRole) => COUNTY_REPORTING_ROLES.includes(role);
 /** Client-level rows (files, worklists) — SUD-authorised roles only. */
 export const seesClientLevel = (role: StaffRole) => canViewCountyReporting(role) && roleSeesAsam(role);
