@@ -172,9 +172,11 @@ function OverrideForm({ row, patientId, onDone }: { row: ServiceClassification; 
   const [funding, setFunding] = useState<FundingLane>(row.fundingSource);
   const [cat, setCat] = useState<CareContinuum>(row.careContinuum);
   const [reason, setReason] = useState("");
+  const patient = AdelanteEHR.getPatient(patientId);
+  const catLocked = classificationDisplay(row, me.role, patient).continuum === "Restricted";
   const save = () => {
     try {
-      actFor("service_classification_override", "overrideServiceClassification", patientId, { role: me.role, name: me.staffName }, row.ref, { fundingSource: funding, careContinuum: cat, reason });
+      actFor("service_classification_override", "overrideServiceClassification", patientId, { role: me.role, name: me.staffName }, row.ref, { fundingSource: funding, careContinuum: catLocked ? undefined : cat, reason });
       toast.success("Override saved");
       onDone();
     } catch (e) {
@@ -191,9 +193,9 @@ function OverrideForm({ row, patientId, onDone }: { row: ServiceClassification; 
       </div>
       <div className="space-y-1">
         <Label htmlFor="oc">Category (draft list)</Label>
-        <select id="oc" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={cat} onChange={(e) => setCat(e.target.value as CareContinuum)}>
+        {catLocked ? <p className="text-sm text-muted-foreground">Restricted</p> : <select id="oc" className="h-9 w-full rounded-md border bg-background px-2 text-sm" value={cat} onChange={(e) => setCat(e.target.value as CareContinuum)}>
           {CARE_CONTINUUM.map((c) => <option key={c.id} value={c.id}>{c.label}</option>)}
-        </select>
+        </select>}
       </div>
       <div className="space-y-1"><Label htmlFor="or">Reason</Label><Input id="or" value={reason} onChange={(e) => setReason(e.target.value)} /></div>
       <Button className="w-full" onClick={save}>Save override</Button>

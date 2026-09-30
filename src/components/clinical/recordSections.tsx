@@ -1,4 +1,5 @@
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
+import { CoverageExtras } from "@/components/chart/CoverageExtras";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
 import { DemographicsCard } from "@/components/clinical/DemographicsCard";
 import { PatientVisitsCard } from "@/components/scheduling/VisitActions";
@@ -413,7 +414,12 @@ export function useRecordSections(
     label: "Eligibility",
     icon: ClipboardCheck,
     group: "case",
-    render: (a) => <EligibilityTab patientId={pid} readOnly={a.level === "read"} />,
+    render: (a) => (
+      <>
+        <EligibilityTab patientId={pid} readOnly={a.level === "read"} />
+        <CoverageExtras patientId={pid} />
+      </>
+    ),
   });
   // §Advocate build 1 — advocate connections are consent instruments, so they
   // ride the consent-ledger class: ECM Provider and Administrator write (the

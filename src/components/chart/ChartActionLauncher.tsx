@@ -4,6 +4,7 @@
 // cosign actions show who they route to. Each action opens a side drawer
 // (bottom sheet on phones) with the existing form or section, so the
 // clinician never leaves the chart.
+import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
 import { confirmationFor } from "@/lib/actions/runAction";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -183,6 +184,8 @@ export function ChartActionLauncher({
         return <DocumentUploadForm patientId={patientId} onDone={done} />;
       case "contact_log":
         return <ContactLogForm patientId={patientId} onDone={done} />;
+      case "afbi_contact":
+        return <AfbiContactForm patientId={patientId} onDone={(m) => done(m, "eligibility")} />;
     }
     const sec = sections.find((s) => s.id === a.action.sectionId);
     // §Turn 5 — "Draft with Adel" sits above the existing form.

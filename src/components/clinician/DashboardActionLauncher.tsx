@@ -1,3 +1,4 @@
+import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { confirmationFor } from "@/lib/actions/runAction";
 import { act, actFor } from "@/lib/actions/act";
@@ -104,6 +105,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
       else toast.error("That action isn't available for this patient.");
     }} />;
     switch (selected.action.id) {
+      case "afbi_contact": return <AfbiContactForm patientId={patient?.id} onDone={(m) => { toast.success(m); setSelected(null); }} />;
       case "dashboard_book": return <BookStart onBook={() => { setSelected(null); onBook(); }} />;
       case "dashboard_task": return <TaskForm patientId={patientId} patients={results} query={query} setQuery={setQuery} choose={setPatientId} done={() => done("Task created")} />;
       case "dashboard_contact": return patient ? <ContactLogForm patientId={patient.id} onDone={(m) => done(m)} /> : <PatientStep patients={results} query={query} setQuery={setQuery} choose={setPatientId} />;
