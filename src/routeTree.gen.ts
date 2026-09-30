@@ -67,6 +67,7 @@ import { Route as PeerRouteImport } from './routes/peer'
 import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as PreReleaseImportRouteImport } from './routes/pre-release-import'
 import { Route as ProfileRouteImport } from './routes/profile'
+import { Route as ProviderReferenceRouteImport } from './routes/provider-reference'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReferralQueueRouteImport } from './routes/referral-queue'
@@ -405,6 +406,11 @@ const ProfileRoute = ProfileRouteImport.update({
   path: '/profile',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ProviderReferenceRoute = ProviderReferenceRouteImport.update({
+  id: '/provider-reference',
+  path: '/provider-reference',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecoveryJourneyRoute = RecoveryJourneyRouteImport.update({
   id: '/recovery-journey',
   path: '/recovery-journey',
@@ -706,6 +712,7 @@ export interface FileRoutesByFullPath {
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
+  '/provider-reference': typeof ProviderReferenceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -812,6 +819,7 @@ export interface FileRoutesByTo {
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
+  '/provider-reference': typeof ProviderReferenceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -917,6 +925,7 @@ export interface FileRoutesById {
   '/pre-release': typeof PreReleaseRoute
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
+  '/provider-reference': typeof ProviderReferenceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -1026,6 +1035,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/pre-release-import'
     | '/profile'
+    | '/provider-reference'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1132,6 +1142,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/pre-release-import'
     | '/profile'
+    | '/provider-reference'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1236,6 +1247,7 @@ export interface FileRouteTypes {
     | '/pre-release'
     | '/pre-release-import'
     | '/profile'
+    | '/provider-reference'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1344,6 +1356,7 @@ export interface RootRouteChildren {
   PreReleaseRoute: typeof PreReleaseRoute
   PreReleaseImportRoute: typeof PreReleaseImportRoute
   ProfileRoute: typeof ProfileRoute
+  ProviderReferenceRoute: typeof ProviderReferenceRoute
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReferralQueueRoute: typeof ReferralQueueRoute
@@ -1777,6 +1790,13 @@ declare module '@tanstack/react-router' {
       path: '/profile'
       fullPath: '/profile'
       preLoaderRoute: typeof ProfileRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/provider-reference': {
+      id: '/provider-reference'
+      path: '/provider-reference'
+      fullPath: '/provider-reference'
+      preLoaderRoute: typeof ProviderReferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recovery-journey': {
@@ -2251,6 +2271,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreReleaseRoute: PreReleaseRoute,
   PreReleaseImportRoute: PreReleaseImportRoute,
   ProfileRoute: ProfileRoute,
+  ProviderReferenceRoute: ProviderReferenceRoute,
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReferralQueueRoute: ReferralQueueRoute,

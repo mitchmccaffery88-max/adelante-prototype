@@ -11,6 +11,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import { runAction } from "@/lib/actions/runAction";
 import { listMatchQueue } from "@/lib/dataExchange";
+import { getAfbiContact, listAfbiLinkRequests } from "@/lib/afbiOutreach";
 import { KIND_LABEL } from "@/lib/hie";
 import {
   canReviewMatches,
@@ -33,6 +34,7 @@ export function PatientMatchingQueue() {
   const me = { staffId: actor.staffId, name: actor.staffName, role: actor.role };
   const reviews = useEhr(() => listMatchReviews("open"));
   const hie = useEhr(() => listMatchQueue());
+  const afbiLinks = useEhr(() => listAfbiLinkRequests("open"));
   const merges = useEhr(() => listMerges().filter((m) => m.status === "active"));
   const [reason, setReason] = useState<Record<string, string>>({});
   const [preview, setPreview] = useState<{ reviewId: string; summary: MergeSummary } | null>(null);
@@ -97,8 +99,22 @@ export function PatientMatchingQueue() {
   return (
     <div className="space-y-3" data-testid="patient-matching">
       <p className="text-[11px] text-muted-foreground">{matchThresholdsDraft().label}</p>
-      {reviews.length === 0 && hie.length === 0 && <p className="text-xs text-muted-foreground">Nothing waiting for review.</p>}
+      {reviews.length === 0 && hie.length === 0 && afbiLinks.length === 0 && <p className="text-xs text-muted-foreground">Nothing waiting for review.</p>}
       {reviews.map((r) => <Pair key={r.id} r={r} />)}
+      {afbiLinks.map((l) => {
+        const c = getAfbiContact(l.contactId);
+        const p = AdelanteEHR.getPatient(l.patientId);
+        return (
+          <div key={l.id} className="space-y-2 rounded-md border p-3 text-xs" data-testid={`afbi-link-${l.id}`}>
+            <div className="flex flex-wrap items-center gap-2"><Badge variant="outline">Field outreach (AFBI)</Badge><span className="text-muted-foreground">Asked by {l.requestedBy} · {new Date(l.requestedAt).toLocaleDateString()}</span></div>
+            <p>Contact with <span className="font-medium">{c?.initials ?? "—"}</span> on {c ? new Date(c.at).toLocaleDateString() : "—"} → link to <span className="font-medium">{nm(p)}</span> (DOB {p?.dob ?? "—"}). Never merged — only the outreach contact is attached.</p>
+            <div className="flex gap-2">
+              <Button size="sm" onClick={() => run("afbi_link_decide", p, "decideAfbiLink", [me, l.id, true], "Contact linked to the chart")}>Link to chart</Button>
+              <Button size="sm" variant="outline" onClick={() => run("afbi_link_decide", p, "decideAfbiLink", [me, l.id, false], "Link declined")}>Not this person</Button>
+            </div>
+          </div>
+        );
+      })}
       {hie.map((c) => {
         const p = AdelanteEHR.getPatient(c.suggestedPatientId);
         const a = { name: actor.staffName, role: actor.role };

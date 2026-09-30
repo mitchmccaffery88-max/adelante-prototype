@@ -1,4 +1,5 @@
 import { BillingWorkspaceTiles } from "@/components/ops/OpsWorkspace";
+import { afbiCounts } from "@/lib/afbiOutreach";
 import { OpsActionLauncher } from "@/components/ops/OpsActionLauncher";
 import { ManagedCarePlansPanel } from "@/components/billing/ManagedCarePlansPanel";
 import { actResult, actFor } from "@/lib/actions/act";
@@ -233,6 +234,9 @@ function BillingPage() {
             Tulare County pilot · 7 funding lanes tracked separately from billing status.
           </p>
         </div>
+        <Link to="/provider-reference" className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary" data-testid="billing-provider-ref-link">
+          Provider &amp; site reference
+        </Link>
         <Link
           to="/admin-claims"
           className="text-xs rounded-md border bg-card px-3 py-2 hover:bg-secondary"
@@ -489,6 +493,7 @@ function BillingPage() {
                 Charges shown at demo rates; export includes appt id, program id, clinician,
                 service, and lane.
               </div>
+              <AfbiCountsLine />
             </div>
             <button
               onClick={downloadIsl}
@@ -700,6 +705,17 @@ function ClaimActions({
           Reverse write-off
         </button>
       )}
+    </div>
+  );
+}
+
+// §Batch A3 — billing sees AFBI counts only, never details; cohort guard 11.
+function AfbiCountsLine() {
+  const c = useEhr(() => afbiCounts());
+  return (
+    <div className="text-xs text-muted-foreground" data-testid="billing-afbi-counts">
+      Field outreach (AFBI): {c.contacts} contact{c.contacts === 1 ? "" : "s"}, {c.minutes} min — ISL only, never claimed.
+      {c.guard.belowMinimumCohort && ` Fewer than ${c.guard.minimumCohortSize} people — small numbers, do not publish.`}
     </div>
   );
 }
