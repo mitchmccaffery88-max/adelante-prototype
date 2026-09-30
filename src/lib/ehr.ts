@@ -1018,10 +1018,13 @@ export type ReferralSubmitter = { kind: "staff"; actor: ReferralActor } | { kind
  * therapy checking, DEA schedule (only the coarse `isControlled` flag exists).
  * When those land, extend this interface additively — do not reshape it.
  */
+import { methadoneOrderBlock } from "./methadoneGuard";
 export interface MedOrder {
   id: string;
   patientId: string;
   drugName: string;
+  /** §Batch E1 — given in clinic by nursing (RN review → RN/LVN administer). */
+  clinicAdministered?: boolean;
   /**
    * §Part 2 — clinician toggle: treat this order as SUD-related even when the
    * drug name is not on the classifier list (e.g. off-label for AUD).
@@ -17148,6 +17151,8 @@ export const AdelanteEHR = {
   },
   /** PROTOTYPE — records a prescription in the mock eRx. No real e-prescribing. */
   prescribeMedication(input: Parameters<typeof _vendors.erx.addMedication>[0]) {
+    const ntpBlock = methadoneOrderBlock(input as never);
+    if (ntpBlock) throw new Error(ntpBlock);
     const med = _vendors.erx.addMedication(input);
     appendAudit({
       category: "rx",
@@ -21075,6 +21080,9 @@ export const AdelanteEHR = {
   ): MedOrder {
     const p = patients.find((x) => x.id === patientId);
     if (!p) throw new Error("Patient not found");
+    // §Batch F1 — outpatient methadone for OUD is an NTP-only medication.
+    const ntpBlock = methadoneOrderBlock(input);
+    if (ntpBlock) throw new Error(ntpBlock);
     const row: MedOrder = {
       ...input,
       id: uid(),
@@ -21153,6 +21161,8 @@ export const AdelanteEHR = {
    * `signOrders`, not just the UI.
    */
   orderSigningBlocker(patientId: string, o: MedOrder): string | undefined {
+    const ntpBlock = methadoneOrderBlock(o);
+    if (ntpBlock) return ntpBlock;
     const p = patients.find((x) => x.id === patientId);
     const allergies = p?.allergies ?? [];
     if (allergiesNotRecorded(allergies))
@@ -21248,7 +21258,7 @@ export const AdelanteEHR = {
     for (const id of orderIds) {
       const row = p.orders?.find((o) => o.id === id && o.status === "draft");
       if (!row) continue;
-      const blocker = opts?.actorRole ? AdelanteEHR.orderSigningBlocker(patientId, row) : undefined;
+      const blocker = methadoneOrderBlock(row) ?? (opts?.actorRole ? AdelanteEHR.orderSigningBlocker(patientId, row) : undefined);
       if (blocker) throw new Error(blocker);
     }
     for (const id of orderIds) {
