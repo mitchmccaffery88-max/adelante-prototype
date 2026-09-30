@@ -176,6 +176,11 @@ function AdminAuditPage() {
       <RiskTextReviewPanel />
       <ClinicalContentReviewCard />
 
+      {cat === "record.viewed" && (
+        <p className="rounded-md border border-border bg-muted px-3 py-2 text-xs" data-testid="access-log-label">
+          Prototype access log — production requires immutable storage
+        </p>
+      )}
       <div className="flex flex-wrap items-end gap-3">
         <Select value={cat} onValueChange={(v) => setCat(v as CatFilter)}>
           <SelectTrigger className="w-56">
