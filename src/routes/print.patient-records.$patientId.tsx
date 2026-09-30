@@ -161,6 +161,11 @@ function PrintRecordPage() {
             {doc.part2Notice}
           </p>
         )}
+        {doc.part2Notice && (
+          <p className="fixed inset-x-0 bottom-0 hidden px-4 text-[8px] leading-tight print:block" data-testid="part2-notice-footer">
+            42 CFR part 2 prohibits unauthorized use or disclosure of these records. (Draft wording — pending counsel review)
+          </p>
+        )}
         {doc.part2Blocked && (
           <p className="mt-4 text-xs italic">Substance-use content not included — {doc.part2Blocked}</p>
         )}
