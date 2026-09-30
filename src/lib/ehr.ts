@@ -8127,6 +8127,11 @@ function _assertApptActor(actor: { name: string; role: StaffRole }, op?: "attend
 // §Scheduling S2 — caseload for booking rights. Staff aliases: roster id, id
 // without "s-", name, clinicianId, caseManagerId, plus a registered resolver
 // (caseloadReview adds extra case-manager owners, e.g. Luz → cm3).
+// §Batch D3 — registered by countyReporting.ts (avoids an import cycle).
+let _islExportBuilder: ((range?: { from?: string; to?: string }, actor?: { staffId?: string; name?: string; role: StaffRole }) => string) | undefined;
+export function registerIslExportBuilder(fn: typeof _islExportBuilder) {
+  _islExportBuilder = fn;
+}
 let _extraCaseManagerIds: (staffId: string) => string | undefined = () => undefined;
 export function registerCaseManagerResolver(fn: (staffId: string) => string | undefined) {
   _extraCaseManagerIds = fn;
@@ -17017,8 +17022,14 @@ export const AdelanteEHR = {
     }
     emit();
   },
-  /** ISL/self-pay export: all appointments on ISL lane in the given range. */
-  exportIslReport(range?: { from?: string; to?: string }): string {
+  /**
+   * §Batch D3 — ISL export. When the county reporting module is loaded it
+   * builds the file from the Batch A funding lanes (ISL / BHSA, attended only,
+   * AFBI included, private pay excluded, Part 2 rows gated). The legacy
+   * appointment-only body below remains only as a fallback.
+   */
+  exportIslReport(range?: { from?: string; to?: string }, actor?: { staffId?: string; name?: string; role: StaffRole }): string {
+    if (_islExportBuilder) return _islExportBuilder(range, actor);
     const rows = appointments
       .filter((a) => a.fundingLane === "isl_non_medi_cal" || a.fundingLane === "private_pay")
       .filter((a) => (range?.from ? a.start >= range.from : true))

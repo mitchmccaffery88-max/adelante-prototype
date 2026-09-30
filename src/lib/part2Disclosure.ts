@@ -42,7 +42,8 @@ export type DisclosureChannel =
   | "advocate_share"
   | "legal_disclosure"
   | "referral_out"
-  | "dmc_ods_csv";
+  | "dmc_ods_csv"
+  | "county_report";
 
 export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   hie_share: "HIE share (Simulated)",
@@ -53,6 +54,7 @@ export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   legal_disclosure: "Legal disclosure",
   referral_out: "Referral out",
   dmc_ods_csv: "DMC-ODS / CalOMS export",
+  county_report: "County reporting file (prototype)",
 };
 
 export type RecipientType = "patient" | "internal" | "advocate" | "provider" | "hie" | "legal" | "county" | "other";

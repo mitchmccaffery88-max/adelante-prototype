@@ -12,6 +12,7 @@ import { openOpsAction } from "@/components/ops/OpsActionLauncher";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
+import { countyReminders } from "@/lib/countyReporting";
 
 type TileId = "action" | "pipeline" | "payments";
 
@@ -48,7 +49,8 @@ export function BillingWorkspaceTiles() {
   const set = (id: TileId, v: boolean) => setOpen((o) => { const n = { ...o, [id]: v }; try { localStorage.setItem(key, JSON.stringify(n)); } catch { /* optional */ } return n; });
   const name = (pid: string) => { const p = patients.find((x) => x.id === pid); return p ? `${p.firstName} ${p.lastName}` : pid; };
   const counts = claimBucketCounts(claims);
-  const actionCount = ws.blocked.length + ws.holds.length + ws.eligibilityDue.length;
+  const reminders = useEhr(() => countyReminders(role));
+  const actionCount = ws.blocked.length + ws.holds.length + ws.eligibilityDue.length + reminders.length;
 
   return (
     <section className="space-y-3" data-testid="billing-workspace">
@@ -60,6 +62,16 @@ export function BillingWorkspaceTiles() {
         <StripCount testId="strip-holds" label="Duplicate holds" n={ws.holds.length} onClick={() => set("action", true)} />
       </div>
       <Tile id="action" title="Needs my action" summary={`${actionCount} items`} open={open.action} onOpenChange={(v) => set("action", v)}>
+        {reminders.length > 0 && (
+          <ul className="mb-3 divide-y text-sm" data-testid="county-reminders">
+            {reminders.map((r) => (
+              <li key={r.id} className="flex items-center gap-2 py-1.5">
+                <span className="flex-1">{r.label}<span className="block text-xs text-muted-foreground">County reporting · Prototype — not submitted anywhere</span></span>
+                <Link to="/county-reporting" className="text-xs text-teal underline">Open</Link>
+              </li>
+            ))}
+          </ul>
+        )}
         <h3 className="text-xs font-medium uppercase text-muted-foreground">Blocked claims · <span data-testid="tile-blocked-count">{ws.blocked.length}</span></h3>
         <ul className="mb-3 divide-y text-sm">
           {ws.blocked.map(({ claim, reason }) => (

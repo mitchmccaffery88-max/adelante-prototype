@@ -42,6 +42,7 @@ import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
+import { Route as CountyReportingRouteImport } from './routes/county-reporting'
 import { Route as CravingRouteImport } from './routes/craving'
 import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
@@ -280,6 +281,11 @@ const ConsentAuditRoute = ConsentAuditRouteImport.update({
 const CosignInboxRoute = CosignInboxRouteImport.update({
   id: '/cosign-inbox',
   path: '/cosign-inbox',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CountyReportingRoute = CountyReportingRouteImport.update({
+  id: '/county-reporting',
+  path: '/county-reporting',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CravingRoute = CravingRouteImport.update({
@@ -693,6 +699,7 @@ export interface FileRoutesByFullPath {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/county-reporting': typeof CountyReportingRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -801,6 +808,7 @@ export interface FileRoutesByTo {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/county-reporting': typeof CountyReportingRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -908,6 +916,7 @@ export interface FileRoutesById {
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
+  '/county-reporting': typeof CountyReportingRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -1019,6 +1028,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/county-reporting'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1127,6 +1137,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/county-reporting'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1233,6 +1244,7 @@ export interface FileRouteTypes {
     | '/consent'
     | '/consent-audit'
     | '/cosign-inbox'
+    | '/county-reporting'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1343,6 +1355,7 @@ export interface RootRouteChildren {
   ConsentRoute: typeof ConsentRoute
   ConsentAuditRoute: typeof ConsentAuditRoute
   CosignInboxRoute: typeof CosignInboxRoute
+  CountyReportingRoute: typeof CountyReportingRoute
   CravingRoute: typeof CravingRoute
   CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
@@ -1628,6 +1641,13 @@ declare module '@tanstack/react-router' {
       path: '/cosign-inbox'
       fullPath: '/cosign-inbox'
       preLoaderRoute: typeof CosignInboxRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/county-reporting': {
+      id: '/county-reporting'
+      path: '/county-reporting'
+      fullPath: '/county-reporting'
+      preLoaderRoute: typeof CountyReportingRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/craving': {
@@ -2266,6 +2286,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentRoute: ConsentRoute,
   ConsentAuditRoute: ConsentAuditRoute,
   CosignInboxRoute: CosignInboxRoute,
+  CountyReportingRoute: CountyReportingRoute,
   CravingRoute: CravingRoute,
   CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,

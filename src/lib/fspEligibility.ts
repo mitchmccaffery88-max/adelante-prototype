@@ -120,6 +120,16 @@ export function reportingAgeBand(dob: string, serviceDate: string): ReportingAge
   return age <= 25 ? "25_and_under" : "26_and_older";
 }
 
+/** §Batch D4 — aggregate-only: ids of justice-involved people currently FSP presumptive-eligible. */
+export function fspPresumptiveEligibleIds(today?: string): string[] {
+  const out: string[] = [];
+  for (const [pid, r] of records) {
+    const p = AdelanteEHR.getPatient(pid);
+    if (p && isJusticeInvolved(p) && custodyMonths(r, today) >= FSP_MIN_MONTHS) out.push(pid);
+  }
+  return out;
+}
+
 export function _resetFsp(): void {
   records.clear();
 }
