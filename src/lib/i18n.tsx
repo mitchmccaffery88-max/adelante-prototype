@@ -296,6 +296,12 @@ const dict = {
     schSubtitle:
       "Pick a time that works for you. Sessions are private video or phone — your choice.",
     schCounselor: "Counselor",
+    schAssigned: "Your clinician",
+    schNoHours: "This clinician hasn't set their hours yet. Pick another clinician, or message your care team.",
+    schNoOpenings: "No open times with this clinician in the next two weeks. Try another clinician or format, or message your care team.",
+    schRealHours: "Times come from your clinician's weekly hours. You can only pick what's open.",
+    schNoClinicians: "No clinicians offer this visit type in that format. Try another format, or message your care team.",
+    schNeedTelehealthConsent: "Video and phone visits need a telehealth consent on file. Choose In person, or ask your care team to go over the consent with you.",
     schDate: "Date & time",
     schLength: "Length",
     schAvailable: "Counselors are available Mon–Fri, 9:00–17:00 (your local time).",
@@ -696,6 +702,12 @@ const dict = {
     schSubtitle:
       "Elige un horario que te convenga. Las sesiones son privadas, por video o teléfono — tú decides.",
     schCounselor: "Consejero",
+    schAssigned: "Tu clínico",
+    schNoHours: "Este clínico aún no ha puesto su horario. Elige otro clínico o escribe a tu equipo de atención.",
+    schNoOpenings: "No hay horarios libres con este clínico en las próximas dos semanas. Prueba otro clínico u otro formato, o escribe a tu equipo.",
+    schRealHours: "Los horarios vienen del horario semanal de tu clínico. Solo puedes elegir lo que está libre.",
+    schNoClinicians: "Ningún clínico ofrece este tipo de cita en ese formato. Prueba otro formato o escribe a tu equipo.",
+    schNeedTelehealthConsent: "Las citas por video o teléfono necesitan un consentimiento de telesalud en tu expediente. Elige En persona o pide a tu equipo que lo revise contigo.",
     schDate: "Fecha y hora",
     schLength: "Duración",
     schAvailable:

@@ -16,6 +16,7 @@ import { AdelanteEHR, type Patient } from "./ehr";
 import type { AsamAssessment } from "./asam";
 import { dmcOdsLevelLabel } from "./asam";
 import { roleSeesAsam } from "./asamReporting";
+import { hasSudReportingAccess } from "./sudReportingAccess";
 import type { StaffRole } from "./roles";
 import {
   DISCHARGE_REASON_LABEL,
@@ -172,10 +173,10 @@ export interface CalomsWorklistRow {
 
 /** Incomplete CalOMS records the role may see. `null` = hidden for this role. */
 export function calomsWorklist(role: StaffRole): CalomsWorklistRow[] | null {
-  if (!roleSeesAsam(role)) return null;
+  if (!roleSeesAsam(role) && !hasSudReportingAccess(role)) return null;
   const rows: CalomsWorklistRow[] = [];
   for (const p of AdelanteEHR.listPatients()) {
-    if (!roleSeesAsam(role, p)) continue;
+    if (!roleSeesAsam(role, p) && !hasSudReportingAccess(role)) continue;
     const c = calomsCompletenessFor(p);
     if (!c.inScope) continue;
     const dm = c.dischargeMissing ?? [];
@@ -215,10 +216,10 @@ export type ExportRow = Record<(typeof EXPORT_COLUMNS)[number], string>;
 
 /** Per-episode rows. `null` = hidden for this role (no data at all). */
 export function dmcOdsExportRows(role: StaffRole): ExportRow[] | null {
-  if (!roleSeesAsam(role)) return null;
+  if (!roleSeesAsam(role) && !hasSudReportingAccess(role)) return null;
   const rows: ExportRow[] = [];
   for (const p of AdelanteEHR.listPatients()) {
-    if (!roleSeesAsam(role, p)) continue;
+    if (!roleSeesAsam(role, p) && !hasSudReportingAccess(role)) continue;
     const eps = (p.episodes ?? []).filter((e) => e.type === "sud_dmc_ods");
     if (!eps.length) continue;
     const signed = (p.asamAssessments ?? []).filter((a) => a.status === "signed").sort((a, b) => b.version - a.version);

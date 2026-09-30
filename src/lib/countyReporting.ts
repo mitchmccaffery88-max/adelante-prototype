@@ -5,12 +5,12 @@
 // sign-off" (to be validated against the official DHCS specs).
 //
 // Part 2: client-level rows (files, worklists, TPS list) only for roles that
-// pass `roleSeesAsam`; everyone else gets aggregates. Every file that leaves
+// hold "SUD reporting access" (sudReportingAccess.ts); everyone else gets aggregates. Every file that leaves
 // goes through `disclose()` (one check per client in the file). Every
 // displayed aggregate cell is suppressed below the cohort minimum (11).
 import { AdelanteEHR, registerIslExportBuilder, type Patient } from "@/lib/ehr";
 import type { StaffRole } from "@/lib/roles";
-import { roleSeesAsam } from "@/lib/asamReporting";
+import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { MIN_COHORT_SIZE } from "@/lib/cohortGuard";
 import { calomsCompletenessFor, calomsWorklist } from "@/lib/dmcOdsReadiness";
 import { disclose, PART2_NOTICE_BLOCK, type Part2RecordClass } from "@/lib/part2Disclosure";
@@ -30,14 +30,13 @@ export const BHOATR_DOLLARS_NOTE = "Dollar amounts added when billing is re-enab
 export const ISL_PRIVATE_PAY_NOTE = "Private pay excluded (Draft — Christi to confirm)";
 
 // ------------------------------------------------------------------ access
-/** Interim CalOMS/TPS client-level preparer — change this ONE line when the decision is made. */
-export const COUNTY_INTERIM_PREPARER_ROLE: StaffRole = "sud_counselor";
-export const COUNTY_INTERIM_PREPARER_LABEL = "Interim — pending decision";
-/** Hub roles (plus the interim preparer above). */
-export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", COUNTY_INTERIM_PREPARER_ROLE];
+/** CalOMS/TPS client-level preparer (Batch G1 decision). Returned CalOMS errors route here too. */
+export const COUNTY_PREPARER_ROLE: StaffRole = "billing_coordinator";
+/** Hub roles. The SUD counselor keeps clinical access but no longer prepares county files. */
+export const COUNTY_REPORTING_ROLES: readonly StaffRole[] = ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator"];
 export const canViewCountyReporting = (role: StaffRole) => COUNTY_REPORTING_ROLES.includes(role);
-/** Client-level rows (files, worklists) — SUD-authorised roles only. */
-export const seesClientLevel = (role: StaffRole) => canViewCountyReporting(role) && roleSeesAsam(role);
+/** Client-level rows (files, worklists) — holders of the "SUD reporting access" capability only. */
+export const seesClientLevel = (role: StaffRole) => canViewCountyReporting(role) && hasSudReportingAccess(role);
 /** Who gets the due-date reminders (Draft). */
 export const REMINDER_OWNER_ROLE: StaffRole = "billing_coordinator";
 
@@ -51,7 +50,7 @@ function assertHub(actor: CountyActor) {
 }
 function assertClientLevel(actor: CountyActor) {
   assertHub(actor);
-  if (!roleSeesAsam(actor.role)) throw new Error("Client-level county files need substance-use record access. You can see the counts.");
+  if (!hasSudReportingAccess(actor.role)) throw new Error("Client-level county files need SUD reporting access (substance-use reporting). You can see the counts.");
 }
 
 // ------------------------------------------------------------------ cohort guard
@@ -301,7 +300,7 @@ export interface CountyFile {
 /** Builds the ISL file: SUD rows only for SUD-authorised roles and only after disclose(). */
 export function buildIslFile(actor: CountyActor, range: DateRange): CountyFile {
   const rows = islRows(range);
-  const clientLevelSud = roleSeesAsam(actor.role);
+  const clientLevelSud = seesClientLevel(actor.role);
   const keep: ServiceRow[] = [];
   let withheld = 0;
   let checks = 0;
@@ -603,7 +602,7 @@ export function submitReport(actor: CountyActor, submissionId: string, now = new
   if (!s) throw new Error("That report run no longer exists.");
   if (s.status === "submitted") throw new Error("Already submitted (Simulated).");
   if (s.status !== "ready") throw new Error("Fix the blockers first — the file isn't ready.");
-  if ((s.report === "caloms") && !roleSeesAsam(actor.role)) throw new Error("Client-level county files need substance-use record access.");
+  if ((s.report === "caloms") && !seesClientLevel(actor.role)) throw new Error("Client-level county files need SUD reporting access (substance-use reporting).");
   s.status = "submitted";
   s.submittedAt = now.toISOString();
   audit(actor, "county_report_submitted", { submissionId: s.id, report: s.report, period: s.periodKey, rowCount: s.rowCount });
@@ -628,7 +627,7 @@ export function simulateCountyResponse(actor: CountyActor, submissionId: string)
       patientId: pid && AdelanteEHR.getPatient(pid) ? pid : undefined,
       recordRef: s.report === "caloms" ? `${cells[0]} ${cells[2]}` : s.report === "isl" ? cells[0] ?? "row" : cells[0] ?? "summary",
       detail: s.report === "caloms" ? "Primary substance / route not accepted (Simulated county edit check)." : s.report === "isl" ? "Service date outside contract period (Simulated county edit check)." : "Count does not match prior month (Simulated county edit check).",
-      ownerRole: s.report === "caloms" ? "sud_counselor" : REMINDER_OWNER_ROLE,
+      ownerRole: s.report === "caloms" ? COUNTY_PREPARER_ROLE : REMINDER_OWNER_ROLE,
       status: "open",
       simulated: true,
     };
@@ -643,7 +642,7 @@ export function fixCountyError(actor: CountyActor, errorId: string): CountyError
   assertHub(actor);
   const e = errors.find((x) => x.id === errorId);
   if (!e) throw new Error("That error no longer exists.");
-  if (e.patientId && e.report === "caloms" && !roleSeesAsam(actor.role)) throw new Error("This correction needs substance-use record access.");
+  if (e.patientId && e.report === "caloms" && !seesClientLevel(actor.role)) throw new Error("This correction needs SUD reporting access (substance-use reporting).");
   e.status = "fixed";
   audit(actor, "county_error_fixed", { errorId: e.id, submissionId: e.submissionId });
   AdelanteEHR._emit?.();
@@ -668,7 +667,7 @@ export function listSubmissions(report?: CountyReportId): Submission[] {
 }
 /** Error queue, Part 2-neutral text + no client link for non-SUD roles. */
 export function listCountyErrors(role: StaffRole): (Omit<CountyError, "detail" | "patientId"> & { text: string; patientId?: string })[] {
-  const full = roleSeesAsam(role);
+  const full = seesClientLevel(role);
   return errors.map(({ detail, patientId, ...e }) => ({ ...e, text: full ? detail : NEUTRAL_ERROR_TEXT, ...(full && patientId ? { patientId } : {}), recordRef: full ? e.recordRef : `Row in ${REPORT_LABEL[e.report]}` }));
 }
 
@@ -703,8 +702,8 @@ export function reportCards(role: StaffRole, now = new Date()): ReportCard[] {
       status === "errors_returned" ? "Fix returned errors, then resend"
         : status === "submitted" ? "Wait for county response (Simulated)"
           : status === "draft_ready" ? "Submit (Simulated)"
-            : status === "blockers" ? (seesClientLevel(role) ? "Fix blocker records in the chart" : "Ask a SUD-authorised preparer to fix blockers")
-              : clientOnly && !seesClientLevel(role) ? "A SUD-authorised preparer generates this file"
+            : status === "blockers" ? (seesClientLevel(role) ? "Fix blocker records in the chart" : "Ask the billing coordinator (SUD reporting access) to fix blockers")
+              : clientOnly && !seesClientLevel(role) ? "The billing coordinator (SUD reporting access) generates this file"
                 : report === "tps" && !tpsWindow() ? "Set the survey window (admin)"
                   : "Generate the draft";
     return { report, label: REPORT_LABEL[report], due: due ? due.toISOString().slice(0, 10) : null, status, blockers, nextAction, latest };

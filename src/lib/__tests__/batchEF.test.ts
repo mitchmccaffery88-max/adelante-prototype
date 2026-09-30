@@ -11,7 +11,6 @@ import { METHADONE_NTP_MESSAGE } from "@/lib/methadoneGuard";
 import { recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
 import { ASAM_AUTHOR_ROLES } from "@/lib/asam";
-import { COUNTY_INTERIM_PREPARER_LABEL, COUNTY_INTERIM_PREPARER_ROLE, COUNTY_REPORTING_ROLES } from "@/lib/countyReporting";
 import { REFILL_PRESCRIBER_ROLES } from "@/lib/ehr";
 
 const staff = (id: string) => {
@@ -117,13 +116,5 @@ describe("E2 external care partners", () => {
       expect(listDisclosureLog({ patientId: withConsent.id } as never).length).toBe(before + 1);
       expect(visiblePartnerLinks(withConsent.id, "clinical_coordinator").some((x) => x.orgId === DEMO_NTP_ID)).toBe(false);
     }
-  });
-});
-
-describe("county interim preparer", () => {
-  it("lives in one constant with the interim label", () => {
-    expect(COUNTY_INTERIM_PREPARER_ROLE).toBe("sud_counselor");
-    expect(COUNTY_INTERIM_PREPARER_LABEL).toBe("Interim — pending decision");
-    expect(COUNTY_REPORTING_ROLES).toContain(COUNTY_INTERIM_PREPARER_ROLE);
   });
 });

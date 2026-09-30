@@ -13,6 +13,7 @@ import { featureSnapshot } from "@/lib/features";
 import { flagsCsv, matrixCsv, permissionMatrix } from "@/lib/actions/permissionMatrix";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { redactAuditEvent } from "@/lib/auditRedaction";
+import { SUD_REPORTING_ACCESS_LABEL, SUD_REPORTING_ACCESS_ROLES, SUD_REPORTING_POST_MVP_NOTE } from "@/lib/sudReportingAccess";
 
 export const Route = createFileRoute("/admin-permissions")({
   head: () => ({
@@ -135,6 +136,18 @@ function PermissionsPage() {
               ))}
             </tbody>
           </table>
+        </div>
+      </Card>
+
+      <Card className="space-y-2 p-4" data-testid="capabilities">
+        <h2 className="text-lg font-medium text-navy">Capabilities</h2>
+        <div className="flex flex-wrap items-start gap-2 border-t py-2 text-sm" data-testid="capability-sud-reporting">
+          <span className="w-40 font-medium">{SUD_REPORTING_ACCESS_LABEL}</span>
+          <span className="min-w-0 flex-1">
+            Client-level county reporting only: CalOMS fields and blockers, DMC-ODS export rows, TPS client list, returned CalOMS error detail. Never notes, therapy content, ASAM narrative or ratings, care plans or medication detail.
+            <span className="block text-xs text-muted-foreground">Holders: {SUD_REPORTING_ACCESS_ROLES.map((r) => STAFF_ROLES.find((x) => x.key === r)?.label ?? r).join(", ")}</span>
+            <span className="block text-xs text-muted-foreground" data-testid="sud-reporting-post-mvp">{SUD_REPORTING_POST_MVP_NOTE}</span>
+          </span>
         </div>
       </Card>
 

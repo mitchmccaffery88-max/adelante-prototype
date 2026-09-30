@@ -14,6 +14,7 @@ import { useEhr } from "@/lib/ehr";
 import { myOpenItems } from "@/lib/myWork";
 import { StaffPatientSearch } from "@/components/StaffPatientSearch";
 import { AskAdelPanel } from "@/components/AskAdelPanel";
+import { HydratedCount } from "@/components/HydratedCount";
 
 /**
  * §Dashboard Standardization Phase 5b — the shared staff top bar.
@@ -106,7 +107,7 @@ export function StaffBreadcrumbs() {
             <ListChecks className="h-3.5 w-3.5 text-teal" aria-hidden="true" />
             My work
             <span className="rounded-full bg-secondary px-1.5 py-0.5 text-[10px] font-semibold text-foreground">
-              {myWorkCount}
+              <HydratedCount value={myWorkCount} />
             </span>
           </Link>
         )}

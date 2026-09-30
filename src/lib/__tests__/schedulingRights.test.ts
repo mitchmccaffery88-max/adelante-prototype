@@ -16,7 +16,7 @@ function patient(opts: { cm?: string; primary?: string } = {}) {
 const staff = (id: string) => STAFF_ROSTER.find((s) => s.id === id)!;
 const by = (id: string) => ({ id: staff(id).name, role: staff(id).role as StaffRole });
 let slotN = 0;
-const slot = (clinicianId: string) => openSlots(clinicianId, 20)[slotN++ % 40]!;
+const slot = (clinicianId: string) => openSlots(clinicianId, { days: 42 })[slotN++ % 40]!;
 const book = (patientId: string, bookedBy: { id: string; role: StaffRole }, extra: Record<string, unknown> = {}) =>
   AdelanteEHR.bookAppointment({
     patientId,

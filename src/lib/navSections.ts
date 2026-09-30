@@ -1,3 +1,4 @@
+import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { canViewCountyReporting } from "@/lib/countyReporting";
 import { canViewCoordination } from "@/lib/coordinationRoles";
 import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
@@ -739,6 +740,8 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "nursing_workspace") return NURSING_ROLES.includes(role);
   if (entry.gate.kind === "care_partner_directory") return canReadPartnerDirectory(role);
   if (entry.gate.kind === "clinical_referrals") return CLINICAL_REFERRAL_ROLES.has(role);
+  // Batch G1: the reporting-only capability opens DMC-ODS readiness without widening screeners_sud.
+  if (entry.id === "dmc-ods-readiness" && hasSudReportingAccess(role)) return true;
   const gate = entry.gate;
   return gate.anyOf.some((cls) => {
     const min = LEVEL_RANK[gate.minLevelByClass?.[cls] ?? gate.minLevel ?? "read"];

@@ -7,6 +7,7 @@ import { AdelanteEHR, TELEHEALTH_CONSENT_CATEGORY, type Appointment, type Clinic
 import type { StaffRole } from "./roles";
 import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType } from "./bookingRights";
 import { myCaseload, type ActingIdentity } from "./myWork";
+import { availableSlots } from "./clinicianAvailability";
 
 export interface BookingActor extends ActingIdentity {
   role: StaffRole;
@@ -61,25 +62,9 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
     .sort((a, b) => Number(b.own) - Number(a.own) || Number(b.languageFit) - Number(a.languageFit) || a.clinician.name.localeCompare(b.clinician.name));
 }
 
-/** Open weekday slots (9:00–16:00, hourly) over the next `days` business days, skipping calendar conflicts. */
-export function openSlots(clinicianId: string, days = 5, now = new Date()): string[] {
-  const out: string[] = [];
-  const d = new Date(now);
-  d.setDate(d.getDate() + 1);
-  let found = 0;
-  while (found < days) {
-    if (d.getDay() !== 0 && d.getDay() !== 6) {
-      found++;
-      for (let h = 9; h <= 16; h++) {
-        const s = new Date(d);
-        s.setHours(h, 0, 0, 0);
-        const iso = s.toISOString();
-        if (!AdelanteEHR.findApptConflict(clinicianId, iso)) out.push(iso);
-      }
-    }
-    d.setDate(d.getDate() + 1);
-  }
-  return out;
+/** Open slots from the clinician's real weekly availability (clinicianAvailability.ts), conflicts skipped. */
+export function openSlots(clinicianId: string, opts: { serviceType?: ServiceType; modality?: "video" | "phone" | "in_person"; now?: Date; days?: number } = {}): string[] {
+  return availableSlots(clinicianId, opts);
 }
 
 export type BookingPrecheck = { ok: true } | { ok: false; reason: string; next: string };

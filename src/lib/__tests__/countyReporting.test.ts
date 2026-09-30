@@ -27,19 +27,19 @@ import {
 } from "@/lib/countyReporting";
 
 const WIDE = { from: "2000-01-01T00:00:00.000Z", to: "2100-01-01T00:00:00.000Z" };
-const sud = { role: "sud_counselor" as const, name: "Renee Castillo", staffId: "s-sudc1" };
-const billing = { role: "billing_coordinator" as const, name: "Billing", staffId: "s-bc1" };
+const sud = { role: "billing_coordinator" as const, name: "Billing coordinator", staffId: "s-bc1" };
+const billing = { role: "billing" as const, name: "Billing", staffId: "s-b1" };
 
 beforeEach(() => _resetCountyReporting());
 
 describe("county reporting — Part 2 gating", () => {
   it("non-SUD roles never get client-level rows", () => {
-    for (const role of ["billing_coordinator", "clinical_coordinator", "sys_admin", "credentialing_coordinator"] as const) {
+    for (const role of ["billing", "clinical_coordinator", "sys_admin", "credentialing_coordinator", "sud_counselor"] as const) {
       expect(calomsBlockerRows(role)).toBeNull();
       expect(tpsList(role)).toBeNull();
-      expect(() => generateReport({ role, name: "x" }, "caloms", "30")).toThrow(/substance-use/);
+      expect(() => generateReport({ role, name: "x" }, "caloms", "30")).toThrow(/county reporting|SUD reporting access/);
     }
-    expect(calomsBlockerRows("sud_counselor")).not.toBeNull();
+    expect(calomsBlockerRows("billing_coordinator")).not.toBeNull();
   });
   it("ISL for a non-SUD role withholds SUD rows", () => {
     const s = generateReport(billing, "isl", "30");
@@ -49,7 +49,7 @@ describe("county reporting — Part 2 gating", () => {
     const s = generateReport(sud, "isl", "30");
     submitReport(sud, s.id);
     simulateCountyResponse(sud, s.id);
-    for (const e of listCountyErrors("billing_coordinator")) {
+    for (const e of listCountyErrors("billing")) {
       expect(e.text).toBe(NEUTRAL_ERROR_TEXT);
       expect(e.patientId).toBeUndefined();
     }
@@ -116,10 +116,10 @@ describe("submission lifecycle", () => {
     errs.forEach((e) => fixCountyError(sud, e.id));
     const next = resendReport(sud, s.id);
     expect(next.resendOf).toBe(s.id);
-    expect(listCountyErrors("sud_counselor").filter((e) => e.submissionId === s.id).every((e) => e.status === "resent")).toBe(true);
+    expect(listCountyErrors("billing_coordinator").filter((e) => e.submissionId === s.id).every((e) => e.status === "resent")).toBe(true);
   });
   it("runs through runAction with a simulated audit", () => {
-    const r = runAction("county_generate", { role: "sud_counselor", staffId: "s-sudc1", staffName: "Renee" }, undefined, { via: "generateReport", args: [sud, "datar", "30"] });
+    const r = runAction("county_generate", { role: "billing_coordinator", staffId: "s-bc1", staffName: "Billing coordinator" }, undefined, { via: "generateReport", args: [sud, "datar", "30"] });
     expect(r.ok).toBe(true);
     const blocked = runAction("county_generate", { role: "therapist", staffId: "s-t1" }, undefined, { via: "generateReport", args: [sud, "datar", "30"] });
     expect(blocked.ok).toBe(false);

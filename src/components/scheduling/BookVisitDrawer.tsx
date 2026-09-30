@@ -13,6 +13,7 @@ import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle } from "
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Button } from "@/components/ui/button";
 import { Label } from "@/components/ui/label";
+import { hasAvailabilitySet, NO_AVAILABILITY_FOR_TYPE, NO_AVAILABILITY_NEXT, NO_AVAILABILITY_TEXT } from "@/lib/clinicianAvailability";
 
 type Modality = "video" | "phone" | "in_person";
 
@@ -34,7 +35,8 @@ export function BookVisitDrawerHost() {
   const patient = patients.find((p) => p.id === patientId);
   const svc = AdelanteEHR.getServiceType(serviceType);
   const suggestions = useEhr(() => eligibleClinicians(serviceType, patient, actor, modality));
-  const slots = useEhr(() => (clinicianId ? openSlots(clinicianId).slice(0, 12) : []));
+  const slots = useEhr(() => (clinicianId ? openSlots(clinicianId, { serviceType, modality }).slice(0, 12) : []));
+  const hasHours = useEhr(() => (clinicianId ? hasAvailabilitySet(clinicianId) : true));
   const locations = useEhr(() => AdelanteEHR.locationsForService(serviceType));
 
   useEffect(() => {
@@ -172,6 +174,11 @@ export function BookVisitDrawerHost() {
             {clinicianId && (
               <div className="space-y-1.5">
                 <Label>Open times</Label>
+                {!hasHours ? (
+                  <p className="rounded border border-dashed p-2 text-sm text-muted-foreground" data-testid="book-no-availability"><span className="font-medium text-foreground">{NO_AVAILABILITY_TEXT}.</span> {NO_AVAILABILITY_NEXT}</p>
+                ) : slots.length === 0 ? (
+                  <p className="rounded border border-dashed p-2 text-sm text-muted-foreground" data-testid="book-no-slots">{NO_AVAILABILITY_FOR_TYPE}. Try another visit type, how, or clinician.</p>
+                ) : null}
                 <div className="grid grid-cols-2 gap-1.5" data-testid="book-slots">
                   {slots.map((s) => (
                     <Button key={s} type="button" size="sm" variant={slot === s ? "default" : "outline"} onClick={() => { setSlot(s); setBlocked(null); }}>

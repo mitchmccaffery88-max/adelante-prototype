@@ -1,3 +1,4 @@
+import { patientSelfBook, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
 // "create / act" action. Each `allowed()` calls the SAME function-level check
@@ -39,7 +40,7 @@ import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, refer
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-01.e";
+export const REGISTRY_VERSION = "2026-10-01.g";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -366,6 +367,15 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(["bookAppointment", (...a: any[]) => (AdelanteEHR.bookAppointment as any)(...a)]),
     allowed: ({ role }) =>
       canScheduleRole(role) ? ok() : hide("Your role does not book visits."),
+  },
+  {
+    id: "patient_self_book",
+    label: { en: "Book my visit", es: "Reservar mi cita" },
+    group: "coordination",
+    sectionId: "appointments",
+    check: "patient acting for self; patientSelfBook re-checks eligible clinician, real availability, telehealth consent, conflicts",
+    store: refs(["patientSelfBook", (...a: any[]) => (patientSelfBook as any)(...a)]),
+    allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient books their own visit here.")),
   },
   {
     id: "visit_request_cancel",
@@ -753,7 +763,7 @@ export const CHART_ACTIONS: ChartAction[] = [
   },
   // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
   ...([
-    ["county_generate", "Generate county report draft", "Generar borrador de informe al condado", "generateReport", generateReport, "canViewCountyReporting(role); CalOMS needs roleSeesAsam"],
+    ["county_generate", "Generate county report draft", "Generar borrador de informe al condado", "generateReport", generateReport, "canViewCountyReporting(role); CalOMS needs hasSudReportingAccess"],
     ["county_submit", "Submit county report (Simulated)", "Enviar informe al condado (simulado)", "submitReport", submitReport, "canViewCountyReporting(role)"],
     ["county_simulate_response", "Simulate county response", "Simular respuesta del condado", "simulateCountyResponse", simulateCountyResponse, "canViewCountyReporting(role)"],
     ["county_fix_error", "Mark county error fixed", "Marcar error del condado corregido", "fixCountyError", fixCountyError, "canViewCountyReporting(role)"],
