@@ -5,7 +5,8 @@ import { runAction } from "@/lib/actions/runAction";
 import { chartAction } from "@/lib/chartActions";
 import { administerClinicDose, cosignClinicDose, dosesFor, nurseQueue, nurseReviewFor, nurseReviewOrder, orderClinicMedication, recordTriageCall } from "@/lib/nursing";
 import { linkPartner, listPartnerOrgs, recordHandoff, visiblePartnerLinks, DEMO_NTP_ID, PARTNER_CLUSTERS } from "@/lib/carePartners";
-import { listDisclosures } from "@/lib/part2Disclosure";
+import { listDisclosureLog } from "@/lib/part2Disclosure";
+import { recordLegalDisclosureConsent } from "@/lib/outpatientCare";
 import { METHADONE_NTP_MESSAGE } from "@/lib/methadoneGuard";
 import { recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
 import { roleSeesAsamSection } from "@/lib/asamReporting";
@@ -99,21 +100,21 @@ describe("E2 external care partners", () => {
     expect(new Set(listPartnerOrgs().map((o) => o.cluster))).toEqual(new Set(Object.keys(PARTNER_CLUSTERS)));
   });
   it("requires consent, enforces the cluster slice, excludes therapy notes, discloses and masks SUD links", () => {
-    const withConsent = patients().find((p) => AdelanteEHR.isConsentCategoryAuthorized(p.id, "information_sharing_disclosure" as never) || AdelanteEHR.hasLegalDisclosureConsent(p.id));
-    const without = patients().find((p) => !AdelanteEHR.isConsentCategoryAuthorized(p.id, "information_sharing_disclosure" as never) && !AdelanteEHR.hasLegalDisclosureConsent(p.id) && !AdelanteEHR.isConsentCategoryAuthorized(p.id, "part2_disclosure" as never));
-    const coord = staff("s-cc1") ?? staff("s-coord1");
-    if (without) expect(() => linkPartner({ patientId: without.id, orgId: "cp-plan", purpose: "Enrollment", actor: coord })).toThrow(/consent/i);
-    if (!withConsent) return;
+    const [without, withConsent] = [patients()[2], patients()[3]];
+    const coord = staff("s-cc1");
+    expect(() => linkPartner({ patientId: without.id, orgId: "cp-plan", purpose: "Enrollment", actor: coord })).toThrow(/consent/i);
+    recordLegalDisclosureConsent(withConsent.id, { name: "Dr", role: "physician" }, withConsent.firstName, { recipient: "Sequoia Valley Treatment Program (fictional NTP)", purpose: "Medication continuity" });
+    expect(roleSeesAsamSection("physician", withConsent)).toBe(true);
     const l = linkPartner({ patientId: withConsent.id, orgId: "cp-plan", purpose: "Enrollment", actor: coord });
     expect(() => recordHandoff({ linkId: l.id, classes: ["Medications"], actor: coord })).toThrow(/can't receive/);
     expect(() => recordHandoff({ linkId: l.id, classes: ["Therapy notes"], actor: coord })).toThrow(/never shared/);
     const h = recordHandoff({ linkId: l.id, classes: ["Enrollment status"], actor: coord });
     expect(h.classes).toEqual(["Enrollment status"]);
-    if (roleSeesAsamSection("physician", withConsent)) {
-      const before = listDisclosures({ patientId: withConsent.id } as never).length;
+    {
+      const before = listDisclosureLog({ patientId: withConsent.id } as never).length;
       const ntp = linkPartner({ patientId: withConsent.id, orgId: DEMO_NTP_ID, purpose: "Medication continuity", actor: doc() });
       recordHandoff({ linkId: ntp.id, classes: ["MAT status"], actor: doc() });
-      expect(listDisclosures({ patientId: withConsent.id } as never).length).toBe(before + 1);
+      expect(listDisclosureLog({ patientId: withConsent.id } as never).length).toBe(before + 1);
       expect(visiblePartnerLinks(withConsent.id, "clinical_coordinator").some((x) => x.orgId === DEMO_NTP_ID)).toBe(false);
     }
   });
