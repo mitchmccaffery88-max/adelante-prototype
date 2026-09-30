@@ -26,9 +26,13 @@ import { canReviewMatches, linkAsRelated, markNotSamePerson } from "@/lib/patien
 import { confirmMatch as confirmHieMatch, rejectMatch as rejectHieMatch } from "@/lib/dataExchange";
 import { DATA_EXCHANGE_ROLES } from "@/lib/dataExchangeRoles";
 import { canRunAssistedSignup } from "@/lib/roles";
+import { canEditProviderRef, saveOrganization, saveProgram, saveSite } from "@/lib/providerReference";
+import { canRecordCustodyDuration, recordCustodyDuration } from "@/lib/fspEligibility";
+import { canRecordAfbi, decideAfbiLink, recordAfbiContact, requestAfbiLink } from "@/lib/afbiOutreach";
+import { canOverrideClassification, overrideServiceClassification } from "@/lib/serviceClassification";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-09-29.f";
+export const REGISTRY_VERSION = "2026-09-30.a";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -610,6 +614,56 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canReviewMatches(role)",
     store: refs(["reconfirmConsentAfterMerge", (...a: any[]) => (reconfirmConsentAfterMerge as any)(...a)]),
     allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can re-confirm consent.")),
+  },
+  // §Batch A — data foundations (Premier DMC-ODS gaps).
+  {
+    id: "provider_ref_save",
+    label: { en: "Edit provider & site reference", es: "Editar referencia de proveedor y sitio" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canEditProviderRef(role)",
+    store: refs(["saveSite", (...a: any[]) => (saveSite as any)(...a)], ["saveProgram", (...a: any[]) => (saveProgram as any)(...a)], ["saveOrganization", (...a: any[]) => (saveOrganization as any)(...a)]),
+    allowed: ({ role }) => (canEditProviderRef(role) ? ok() : hide("Only a system administrator can edit provider & site reference.")),
+  },
+  {
+    id: "fsp_custody_record",
+    label: { en: "Record custody duration (FSP)", es: "Registrar tiempo en custodia (FSP)" },
+    group: "care",
+    menu: false,
+    needsPatient: true,
+    check: "custody_tracking write + isJusticeInvolved",
+    store: refs(["recordCustodyDuration", (...a: any[]) => (recordCustodyDuration as any)(...a)]),
+    allowed: ({ role }, p) => (canRecordCustodyDuration(role, p) ? ok() : hide("Your role can't record custody information for this patient.")),
+  },
+  {
+    id: "afbi_contact",
+    label: { en: "Field outreach contact (AFBI)", es: "Contacto de alcance en campo (AFBI)" },
+    group: "coordination",
+    needsPatient: false,
+    check: "canRecordAfbi(role)",
+    store: refs(["recordAfbiContact", (...a: any[]) => (recordAfbiContact as any)(...a)], ["requestAfbiLink", (...a: any[]) => (requestAfbiLink as any)(...a)]),
+    allowed: ({ role }) => (canRecordAfbi(role) ? ok() : hide("Only outreach, case management and clinical roles record field outreach.")),
+  },
+  {
+    id: "afbi_link_decide",
+    label: { en: "Confirm field outreach link", es: "Confirmar vínculo de alcance" },
+    group: "admin",
+    menu: false,
+    needsPatient: false,
+    check: "canReviewMatches(role)",
+    store: refs(["decideAfbiLink", (...a: any[]) => (decideAfbiLink as any)(...a)]),
+    allowed: ({ role }) => (canReviewMatches(role) ? ok() : hide("Only a clinical coordinator or system admin can confirm a link.")),
+  },
+  {
+    id: "service_classification_override",
+    label: { en: "Override funding / category", es: "Cambiar financiamiento / categoría" },
+    group: "billing",
+    menu: false,
+    needsPatient: false,
+    check: "canOverrideClassification(role)",
+    store: refs(["overrideServiceClassification", (...a: any[]) => (overrideServiceClassification as any)(...a)]),
+    allowed: ({ role }) => (canOverrideClassification(role) ? ok() : hide("Only a billing or clinical coordinator can override funding or category.")),
   },
   ...([["staff_add_user", "Add user", "Agregar usuario"], ["staff_reset_signin", "Reset sign-in", "Restablecer acceso"], ["staff_edit_roles", "Edit staff roles", "Editar roles"]] as const).map(([id, en, es]): ChartAction => ({
     id,
