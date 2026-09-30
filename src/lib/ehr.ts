@@ -1,4 +1,5 @@
 // AdelanteEHR — single seam for all clinical-backend reads/writes.
+import { disclose } from "./part2Disclosure";
 import { allergiesNotRecorded, findAllergyMatches, requiresCuresCheck } from "./orderSafety";
 import {
   crisisTriggeringScores,
@@ -18883,6 +18884,33 @@ export const AdelanteEHR = {
       return { ok: false, reason: decision.reason, restricted: decision.restricted };
     }
 
+    // §Batch C1 — Part 2 documents leave only through the ONE disclosure function.
+    let part2Notice: string | undefined;
+    if (doc.isPart2) {
+      const v = input.viewer;
+      const res = disclose({
+        patientId: doc.patientId,
+        actor:
+          v.kind === "advocate"
+            ? { name: "Advocate (portal)", role: "advocate" }
+            : { name: v.name, role: v.kind === "staff" ? (v.role ?? "staff") : "patient" },
+        recipient:
+          v.kind === "advocate"
+            ? { name: link?.advocateName ?? "Patient's advocate", type: "advocate" }
+            : v.kind === "patient"
+              ? { name: "The patient", type: "patient" }
+              : { name: "Adelante care team (downloaded copy)", type: "internal" },
+        purpose: v.kind === "advocate" ? "Advocate support (release on file)" : v.kind === "patient" ? "Patient's own copy" : "Treatment — downloaded document",
+        channel: v.kind === "advocate" ? "advocate_share" : "document_download",
+        recordClasses: ["SUD documents"],
+      });
+      if (!res.ok) {
+        emit();
+        return { ok: false, reason: res.reason, restricted: true };
+      }
+      part2Notice = res.notice;
+    }
+
     const payload = documentDownloadPayload({
       id: doc.id,
       fileName: doc.fileName,
@@ -18910,7 +18938,7 @@ export const AdelanteEHR = {
         detail: { documentId: doc.id, fileName: doc.fileName, isPart2: doc.isPart2 },
       });
     emit();
-    return { ok: true, ...payload };
+    return { ok: true, ...payload, ...(part2Notice ? { text: `${part2Notice}\n\n${payload.text}` } : {}) };
   },
 
   /** §Group E item 1 — this advocate's own in-app notices, newest first. */
