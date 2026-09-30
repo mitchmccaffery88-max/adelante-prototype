@@ -32,6 +32,9 @@ export type StaffRole =
   // Physician (psychiatrist / medical director). Holds every clinical
   // permission the PMHNP holds — resolved through `permissionRole()`.
   | "physician"
+  // §Batch E1 — outpatient nursing. Draft — pending clinical sign-off.
+  | "nurse_rn"
+  | "lvn"
   | "billing"
   | "clinical_coordinator"
   | "credentialing_coordinator"
@@ -49,6 +52,8 @@ export const STAFF_ROLES: { key: StaffRole; label: string }[] = [
   { key: "therapist", label: "Therapist" },
   { key: "physician", label: "Physician (psychiatrist / medical director)" },
   { key: "pmhnp", label: "PMHNP" },
+  { key: "nurse_rn", label: "Nurse (RN)" },
+  { key: "lvn", label: "LVN" },
   { key: "billing", label: "Billing coordinator" },
   { key: "clinical_coordinator", label: "Clinical coordinator" },
   { key: "credentialing_coordinator", label: "Credentialing coordinator" },
@@ -808,6 +813,51 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
     clinical_trainee: "consent_gated",
   },
 };
+
+// §Batch E1 — nurse (RN) and LVN grants. Draft — pending clinical sign-off.
+// Outpatient only. [RN, LVN]. Both read medications and SUD records (they
+// administer MOUD); neither sees therapy/psychotherapy notes or the psych
+// evaluation, and neither prescribes (meds_erx is read — prescribing is
+// PRESCRIBER_ROLES, enforced in the store).
+const NURSE_GRANTS: Partial<Record<RecordClass, [AccessLevel, AccessLevel]>> = {
+  demographics: ["read", "read"],
+  screeners_mh: ["read", "read"],
+  screeners_sud: ["read", "read"],
+  sud_treatment: ["read", "read"],
+  care_plan: ["read", "read"],
+  meds_erx: ["read", "read"],
+  problems: ["read", "read"],
+  allergies: ["write", "read"],
+  alerts: ["read", "read"],
+  documents: ["read", "read"],
+  worklist: ["read", "read"],
+  provider_requests: ["write", "none"],
+  consent_ledger: ["read", "none"],
+};
+for (const [cls, [rn, lvn]] of Object.entries(NURSE_GRANTS) as [RecordClass, [AccessLevel, AccessLevel]][]) {
+  MATRIX[cls] = { ...MATRIX[cls], nurse_rn: rn, lvn };
+}
+
+/** §Batch E1 — outpatient nursing roles. */
+export const NURSING_ROLES: StaffRole[] = ["nurse_rn", "lvn"];
+
+/**
+ * §Batch E1 — adds a staff member through one audited path (used by demo
+ * seeds too; there is no identity backend yet). sys_admin only.
+ */
+export function addStaffMember(actor: { role: StaffRole; staffId?: string }, member: StaffMember): StaffMember {
+  if (actor.role !== "sys_admin") throw new Error("Only a system admin can add staff.");
+  const existing = STAFF_ROSTER.find((s) => s.id === member.id);
+  if (existing) return existing;
+  STAFF_ROSTER.push(member);
+  AdelanteEHR.recordActionEvent({
+    action: "staff.added",
+    actorRole: actor.role,
+    actorId: actor.staffId,
+    detail: { staffId: member.id, role: member.role },
+  } as never);
+  return member;
+}
 
 /**
  * §ASCMI — which structured consent category unlocks each consent-gated
