@@ -34,13 +34,14 @@ export interface CareEpisode {
   dischargeSummary?: string;
 }
 
-export type HlocTarget = "iop" | "residential" | "withdrawal_management" | "inpatient_psych" | "crisis_stabilization";
+export type HlocTarget = "iop" | "residential" | "withdrawal_management" | "inpatient_psych" | "crisis_stabilization" | "ntp";
 export const HLOC_TARGET_LABEL: Record<HlocTarget, string> = {
   iop: "Intensive outpatient (IOP)",
   residential: "Residential",
   withdrawal_management: "Withdrawal management",
   inpatient_psych: "Inpatient psychiatric",
   crisis_stabilization: "Crisis stabilization",
+  ntp: "Narcotic Treatment Program (NTP)",
 };
 export type HlocStatus = "drafted" | "sent" | "accepted" | "declined" | "admitted" | "closed";
 export const HLOC_NEXT: Record<HlocStatus, HlocStatus[]> = {
@@ -183,7 +184,7 @@ export function visibleEpisodes(patientId: string, role: StaffRole | string): Ca
 }
 
 // ---------- Higher-level-of-care referrals ----------
-const SUD_TARGETS: HlocTarget[] = ["residential", "withdrawal_management"];
+const SUD_TARGETS: HlocTarget[] = ["residential", "withdrawal_management", "ntp"];
 export function createHlocReferral(input: {
   patientId: string;
   target: HlocTarget;

@@ -43,7 +43,8 @@ export type DisclosureChannel =
   | "legal_disclosure"
   | "referral_out"
   | "dmc_ods_csv"
-  | "county_report";
+  | "county_report"
+  | "care_partner_handoff";
 
 export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   hie_share: "HIE share (Simulated)",
