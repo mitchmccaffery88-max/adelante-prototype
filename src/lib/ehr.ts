@@ -8623,7 +8623,7 @@ export const AdelanteEHR = {
     const existing = clinicians.find((x) => x.id === c.id);
     if (existing) return existing;
     clinicians.push(c);
-    appendAudit({ category: "admin", action: "clinician_registered", actorId, detail: { clinicianId: c.id, credential: c.credential } });
+    appendAudit({ category: "identity", action: "clinician_registered", actorId, detail: { clinicianId: c.id, credential: c.credential } });
     emit();
     return c;
   },
