@@ -3065,6 +3065,10 @@ function _ruleCadenceBlocked(rule: SchedulingRule, patientId: string, now: numbe
 export interface ProgressNote {
   id: string;
   appointmentId?: string;
+  /** §Batch C3 — note documents this crisis escalation (1-calendar-day clock). */
+  crisisEscalationId?: string;
+  /** §Batch C3 — service type; "crisis_intervention" puts the note on the crisis clock. */
+  serviceType?: "crisis_intervention";
   clinicianId: string;
   date: string;
   sessionType: "individual" | "group" | "phone" | "check_in";
