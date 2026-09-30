@@ -2664,6 +2664,7 @@ export function NotesTab({
                   ...(selectedVisitId !== NO_VISIT ? { appointmentId: selectedVisitId } : {}),
                   date: new Date().toISOString(),
                   sessionType: note.sessionType,
+                  ...((note as { serviceType?: string }).serviceType === "crisis_intervention" ? { serviceType: "crisis_intervention" as const } : {}),
                   subjective: note.subjective,
                   objective: note.objective,
                   assessment: note.assessment,
