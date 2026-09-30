@@ -164,6 +164,10 @@ describe("gating derives from the RBAC matrix", () => {
                  ? ["clinical_coordinator", "sys_admin"].includes(role)
                  : gate.kind === "county_reporting"
                  ? ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator", "sud_counselor"].includes(role)
+                 : gate.kind === "nursing_workspace"
+                 ? ["nurse_rn", "lvn"].includes(role)
+                 : gate.kind === "care_partner_directory"
+                 ? ["sys_admin", "clinical_coordinator", "ecm_provider", "cf_care_manager"].includes(role)
                  : gate.anyOf.some((cls) => {
                   const level = canAccess(role, cls).level;
                   const min = gate.minLevelByClass?.[cls] ?? gate.minLevel;
