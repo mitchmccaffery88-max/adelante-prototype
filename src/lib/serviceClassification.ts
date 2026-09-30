@@ -43,7 +43,6 @@ export const MEDI_CAL_LANES: readonly FundingLane[] = ["medi_cal_ffs", "dmc_ods"
 
 /** Categories that reveal SUD treatment (42 CFR Part 2). */
 const PART2_CONTINUUM: readonly CareContinuum[] = ["mat"];
-const PART2_LANES: readonly FundingLane[] = ["dmc_ods"];
 
 export type ServiceKind = "appointment" | "group_attendance" | "case_contact" | "peer_contact" | "afbi_contact";
 export const SERVICE_KINDS: readonly ServiceKind[] = ["appointment", "group_attendance", "case_contact", "peer_contact", "afbi_contact"];
@@ -234,7 +233,8 @@ export function classificationDisplay(row: ServiceClassification, role: StaffRol
   const sees = roleSeesPart2Classification(role, patient);
   const restricted = "Restricted";
   return {
-    funding: !sees && PART2_LANES.includes(row.fundingSource) ? restricted : FUNDING_LABEL[row.fundingSource],
+    // Funding lane is billing data already shown on claims; only the SUD category is masked.
+    funding: FUNDING_LABEL[row.fundingSource],
     continuum: !sees && PART2_CONTINUUM.includes(row.careContinuum) ? restricted : CARE_CONTINUUM.find((c) => c.id === row.careContinuum)!.label,
     provenance: row.source === "rule" ? "Set by rule" : "Overridden",
   };
