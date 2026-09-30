@@ -11,6 +11,7 @@
 //
 // Part 2: every patient-level read goes through `roleSeesAsam` (the existing
 // `canAccess(role, "screeners_sud", patient)` check). No role is widened.
+import { disclose, PART2_NOTICE_BLOCK } from "./part2Disclosure";
 import { AdelanteEHR, type Patient } from "./ehr";
 import type { AsamAssessment } from "./asam";
 import { dmcOdsLevelLabel } from "./asam";
@@ -267,9 +268,35 @@ export function exportRowsToCsv(rows: ExportRow[]): string {
  * Returns null for a role that fails the Part 2 check; nothing is audited
  * because nothing left.
  */
-export function exportDmcOdsCsv(actor: { staffId: string; role: StaffRole }): { csv: string; rowCount: number } | null {
-  const rows = dmcOdsExportRows(actor.role);
-  if (!rows) return null;
+export function exportDmcOdsCsv(actor: { staffId: string; role: StaffRole; name?: string }): {
+  csv: string;
+  rowCount: number;
+  /** Downloadable file: Part 2 notice header lines + the CSV. */
+  file: string;
+  notice: string;
+  withheld: number;
+} | null {
+  const all = dmcOdsExportRows(actor.role);
+  if (!all) return null;
+  // §Batch C1 — every client in the file is a Part 2 disclosure to the county.
+  const ok = new Set<string>();
+  let withheld = 0;
+  for (const pid of new Set(all.map((r) => r["Client record ID"]))) {
+    const res = disclose({
+      patientId: pid,
+      actor: { name: actor.name ?? actor.staffId, role: actor.role, staffId: actor.staffId },
+      recipient: { name: "County DMC-ODS / DHCS CalOMS reporting", organization: "Tulare County (prototype)", type: "county" },
+      purpose: "DMC-ODS / CalOMS reporting (prototype)",
+      channel: "dmc_ods_csv",
+      recordClasses: ["SUD episode / CalOMS data", "SUD diagnoses"],
+    });
+    if (res.ok) ok.add(pid);
+    else withheld += all.filter((r) => r["Client record ID"] === pid).length;
+  }
+  const rows = all.filter((r) => ok.has(r["Client record ID"]));
   AdelanteEHR.recordDmcOdsExport({ actorId: actor.staffId, actorRole: actor.role, rowCount: rows.length });
-  return { csv: exportRowsToCsv(rows), rowCount: rows.length };
+  const csv = exportRowsToCsv(rows);
+  const header = [`# ${PART2_NOTICE_BLOCK.replace(/\n/g, " ")}`];
+  if (withheld) header.push(`# ${withheld} row(s) withheld — no Part 2 consent on file.`);
+  return { csv, rowCount: rows.length, file: `${header.join("\n")}\n${csv}`, notice: PART2_NOTICE_BLOCK, withheld };
 }
