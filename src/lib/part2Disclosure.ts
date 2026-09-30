@@ -10,7 +10,15 @@
 //   (c) writes a disclosure-log entry that never contains clinical content.
 // Non-SUD disclosures pass straight through (no notice, no log entry).
 import { AdelanteEHR, LEGAL_DISCLOSURE_CONSENT_CATEGORY } from "./ehr";
-import { listLegalDisclosures } from "./outpatientCare";
+
+// Legal disclosure records live in outpatientCare.ts, which registers its
+// reader here (no import: avoids an ehr → outpatientCare load cycle).
+type LegalRow = { id: string; recipient: string; revokedAt?: string };
+let legalSource: (patientId: string) => LegalRow[] = () => [];
+export function registerLegalDisclosureSource(fn: (patientId: string) => LegalRow[]) {
+  legalSource = fn;
+}
+const listLegalDisclosures = (pid: string) => legalSource(pid);
 
 export const PART2_NOTICE_DRAFT_LABEL = "Draft wording — pending counsel review";
 

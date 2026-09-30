@@ -4,7 +4,7 @@
 import { AdelanteEHR, type Patient } from "./ehr";
 import type { StaffRole } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
-import { disclose, type Part2RecordClass } from "./part2Disclosure";
+import { disclose, registerLegalDisclosureSource, type Part2RecordClass } from "./part2Disclosure";
 
 export type EpisodeProgram = "outpatient_mh" | "outpatient_sud" | "ecm";
 export const EPISODE_PROGRAM_LABEL: Record<EpisodeProgram, string> = {
@@ -272,6 +272,7 @@ const disclosures: LegalDisclosure[] = [];
 export function listLegalDisclosures(patientId: string): LegalDisclosure[] {
   return disclosures.filter((d) => d.patientId === patientId).map((d) => ({ ...d }));
 }
+registerLegalDisclosureSource(listLegalDisclosures);
 /** Revoke: the ledger stays; a new consent record turns the Part 2 disclosure section off. */
 export function revokeLegalDisclosure(id: string, actor: Actor & { staffId?: string }, reason: string): void {
   const d = disclosures.find((x) => x.id === id);
