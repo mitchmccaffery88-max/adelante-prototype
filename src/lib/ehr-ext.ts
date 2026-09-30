@@ -1,3 +1,4 @@
+import { assertNotAfbiSource } from "./afbiGuard";
 import { demoBusinessTime } from "./demoTime";
 // §Adelante Expansion — additive EMR extension.
 // Houses: organizations/counties/facilities, clinician profile ext,
@@ -1042,6 +1043,7 @@ export const AdelanteEHRExt = {
 
 
   upsertClaimFromEncounter(apptId: string): Claim {
+    assertNotAfbiSource(apptId);
     let claim = claims.find((c) => c.encounterId === apptId);
     if (claim) return claim;
     const appt = AdelanteEHR.listAppointments().find((a) => a.id === apptId);
@@ -1091,6 +1093,7 @@ export const AdelanteEHRExt = {
     clinicianId: string;
     serviceDate: string;
   }): Claim {
+    assertNotAfbiSource(input.asamId, input.patientId);
     const encounterId = `asam:${input.asamId}`;
     const existing = claims.find((c) => c.encounterId === encounterId);
     if (existing) return existing;
@@ -1432,6 +1435,7 @@ export const AdelanteEHRExt = {
     renderingProviderId?: string;
     noteId: string;
   }): Claim | null {
+    assertNotAfbiSource(input.sessionId, input.patientId);
     // HARD SPLIT 1 (category): `open_psychoeducational` occurrences never
     // create a claim. Enforced here, at the single write point, so no caller
     // can bypass it by forgetting to filter. Their attendance is
@@ -1510,6 +1514,7 @@ export const AdelanteEHRExt = {
     minutes: number;
     mode?: string;
   }): Claim | null {
+    assertNotAfbiSource(input.peerNoteId, input.patientId);
     const decision = peerBillingDecision({
       staffId: input.staffId,
       mode: input.mode,
@@ -1573,6 +1578,7 @@ export const AdelanteEHRExt = {
     /** Provider picked in the note UI; `null` means "asked, none picked". */
     supervisingStaffId?: string | null;
   }): Claim | null {
+    assertNotAfbiSource(input.noteId, input.patientId);
     const patient = AdelanteEHR.getPatient(input.patientId);
     if (!patient) return null;
     const dayKey = input.dateISO.slice(0, 10);
