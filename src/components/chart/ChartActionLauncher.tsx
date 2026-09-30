@@ -1,3 +1,5 @@
+import { ClinicMedOrderForm, SpecimenForm, TriageForm, NtpReferralForm, ExternalNtpForm } from "@/components/nursing/NursingSection";
+import { CarePartnersSection } from "@/components/carePartners/CarePartnersSection";
 import { openBookVisit } from "@/lib/bookingFlow";
 // §Chart redesign turn 2 — floating "+ New" button, "Add to this chart" menu,
 // command bar (Ctrl/Cmd+K) and single-key shortcuts. Built ENTIRELY from the
@@ -132,7 +134,7 @@ export function ChartActionLauncher({
   const closeDrawer = () => {
     const d = drawer;
     setDrawer(null);
-    if (!d || ["lab_order", "screener_request", "metabolic", "document_upload", "contact_log"].includes(d.action.id)) return;
+    if (!d || ["lab_order", "screener_request", "metabolic", "document_upload", "contact_log", "clinic_med_order", "specimen_collect", "triage_call", "ntp_referral", "ntp_external_med"].includes(d.action.id)) return;
     if (auditCount() > auditAtOpen && d.action.sectionId) {
       const sid = d.action.sectionId;
       recent.unshift({ label: `${d.action.label.en} saved`, sectionId: sid, at: Date.now() });
@@ -187,6 +189,18 @@ export function ChartActionLauncher({
         return <ContactLogForm patientId={patientId} onDone={done} />;
       case "schedule_visit":
         return <Button data-testid="chart-open-book-visit" onClick={() => { setDrawer(null); openBookVisit({ patientId }); }}>Open Book a visit</Button>;
+      case "clinic_med_order":
+        return <ClinicMedOrderForm patientId={patientId} onDone={done} />;
+      case "specimen_collect":
+        return <SpecimenForm patientId={patientId} onDone={done} />;
+      case "triage_call":
+        return <TriageForm patientId={patientId} onDone={done} />;
+      case "ntp_referral":
+        return <NtpReferralForm patientId={patientId} onDone={done} />;
+      case "ntp_external_med":
+        return <ExternalNtpForm patientId={patientId} onDone={done} />;
+      case "partner_link":
+        return <CarePartnersSection patientId={patientId} />;
       case "afbi_contact":
         return <AfbiContactForm patientId={patientId} onDone={(m) => done(m, "eligibility")} />;
     }

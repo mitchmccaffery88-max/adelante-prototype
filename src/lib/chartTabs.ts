@@ -14,9 +14,9 @@ export const CHART_TABS: { id: ChartTabId; label: string; sections: string[] }[]
   { id: "brief", label: "Brief", sections: ["brief"] },
   { id: "notes-docs", label: "Notes & Documents", sections: ["notes", "peer", "chw", "documents", "safety-plan"] },
   { id: "care-needs", label: "Care plan & Needs", sections: ["care-plan", "problems", "sdoh", "alerts", "episodes", "reentry-handoff"] },
-  { id: "medications", label: "Medications", sections: ["orders", "labs", "med-recon", "allergies", "mar", "protocols"] },
+  { id: "medications", label: "Medications", sections: ["orders", "nursing", "labs", "med-recon", "allergies", "mar", "protocols"] },
   { id: "measures", label: "Measures", sections: ["tracking", "asam", "caloms"] },
-  { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "coord"] },
+  { id: "schedule", label: "Schedule & Messages", sections: ["appointments", "messages", "coord", "care-partners"] },
   { id: "tasks-contacts", label: "Tasks & Contacts", sections: ["tasks", "contacts", "weekly-review", "checkins"] },
   { id: "record", label: "Record & Admin", sections: ["overview", "contact", "eligibility", "advocates", "outside-records", "consents", "audit-trail", "access-log"] },
 ];
@@ -27,7 +27,7 @@ export const CHART_TABS: { id: ChartTabId; label: string; sections: string[] }[]
  */
 export function roleFirstSections(tab: ChartTabId, role: StaffRole): string[] {
   const cm = role === "cf_care_manager" || role === "ecm_provider";
-  if (tab === "medications") return isPrescriberRole(role) ? ["orders", "labs"] : ["med-recon", "allergies"];
+  if (tab === "medications") return isPrescriberRole(role) ? ["orders", "labs"] : role === "nurse_rn" || role === "lvn" ? ["nursing", "orders"] : ["med-recon", "allergies"];
   if (tab === "tasks-contacts") return cm ? ["contacts", "weekly-review"] : ["tasks"];
   if (tab === "care-needs") return cm || role === "peer_specialist" ? ["sdoh", "care-plan"] : ["care-plan", "problems"];
   if (tab === "record") return role === "billing" || role === "billing_coordinator" ? ["eligibility", "overview"] : [];
