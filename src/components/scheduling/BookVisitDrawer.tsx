@@ -52,6 +52,13 @@ export function BookVisitDrawerHost() {
     return () => window.removeEventListener(BOOK_VISIT_EVENT, onOpen);
   }, []);
 
+  // Default visit type: my own calendar's first service (e.g. SUD counselor → SUD counseling).
+  useEffect(() => {
+    if (!open || req.serviceType) return;
+    const own = AdelanteEHR.listClinicians().find((c) => c.id === actor.clinicianId);
+    const first = own?.services?.find((sv) => types.some((t) => t.id === sv));
+    if (first) setServiceType(first);
+  }, [open, req.serviceType, actor.clinicianId, types]);
   // Default to my own calendar when I have one and it fits.
   useEffect(() => {
     if (clinicianId && suggestions.some((s) => s.clinician.id === clinicianId)) return;
