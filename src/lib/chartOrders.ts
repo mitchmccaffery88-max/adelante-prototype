@@ -253,7 +253,8 @@ export interface MetabolicSet {
 }
 const metabolic: MetabolicSet[] = [];
 /** Prescribers only — the app has no nurse role. */
-export const canRecordMetabolic = (role: string) => isPrescriberRole(role as StaffRole);
+/** §Batch E1 — nurses (RN, LVN) record vitals too. Draft — pending clinical sign-off. */
+export const canRecordMetabolic = (role: string) => isPrescriberRole(role as StaffRole) || role === "nurse_rn" || role === "lvn";
 export const computeBmi = (weightKg: number, heightCm: number) =>
   Math.round((weightKg / Math.pow(heightCm / 100, 2)) * 10) / 10;
 /** Draft thresholds — pending clinical sign-off. */
@@ -273,7 +274,7 @@ export function recordMetabolic(input: {
   actor: Actor;
   at?: string;
 }): MetabolicSet {
-  if (!canRecordMetabolic(input.actor.role)) throw new Error("Only a prescriber can record metabolic measures.");
+  if (!canRecordMetabolic(input.actor.role)) throw new Error("Only a prescriber or nurse can record vitals.");
   const p = patientOf(input.patientId);
   const ok = (n: number, lo: number, hi: number) => Number.isFinite(n) && n >= lo && n <= hi;
   if (!ok(input.bpSystolic, 60, 260) || !ok(input.bpDiastolic, 30, 160)) throw new Error("Enter a valid blood pressure.");
