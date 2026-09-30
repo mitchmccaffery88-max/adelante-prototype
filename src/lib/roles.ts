@@ -833,6 +833,8 @@ const NURSE_GRANTS: Partial<Record<RecordClass, [AccessLevel, AccessLevel]>> = {
   worklist: ["read", "read"],
   provider_requests: ["write", "none"],
   consent_ledger: ["read", "none"],
+  // Same level as meds_erx (shift-count stock rule).
+  controlled_substance_custody: ["read", "read"],
 };
 for (const [cls, [rn, lvn]] of Object.entries(NURSE_GRANTS) as [RecordClass, [AccessLevel, AccessLevel]][]) {
   MATRIX[cls] = { ...MATRIX[cls], nurse_rn: rn, lvn };

@@ -16,7 +16,7 @@ describe("tightened administration gates", () => {
   it("no administration surface is `open` any more", () => {
     for (const entry of STAFF_NAV.filter((e) => e.group === "administration")) {
       // §Item 6 — Clinical Coordination is a named-role desk, not open.
-      const expected = entry.id === "data-exchange" ? "data_exchange" : entry.id === "county-reporting" ? "county_reporting" : entry.id === "admin-coordination" || entry.id === "admin-permissions" ? "coordination_desk" : "record_class";
+      const expected = entry.id === "data-exchange" ? "data_exchange" : entry.id === "county-reporting" ? "county_reporting" : entry.id === "care-partners" ? "care_partner_directory" : entry.id === "admin-coordination" || entry.id === "admin-permissions" ? "coordination_desk" : "record_class";
       expect([entry.id, entry.gate.kind]).toEqual([entry.id, expected]);
     }
   });
@@ -123,6 +123,8 @@ describe("demographics grants", () => {
       billing: "read",
       billing_coordinator: "read",
       credentialing_coordinator: "none",
+      nurse_rn: "read",
+      lvn: "read",
     };
     for (const { key } of STAFF_ROLES) {
       if (key === "clinical_coordinator" || key === "sys_admin") continue;
