@@ -45,3 +45,7 @@
 - FSP presumptive eligibility lives only in `src/lib/fspEligibility.ts`, gated by `isJusticeInvolved` + the existing `custody_tracking` class. Why: no role widened, staff-only.
 - AFBI field outreach lives only in `src/lib/afbiOutreach.ts`; every claim creator calls `assertNotAfbiSource` (`afbiGuard.ts`) and chart links go only through the Patient matching queue. Why: AFBI can never become a Medi-Cal claim or auto-merge.
 - Funding source + care continuum category are stamped by rule only in `src/lib/serviceClassification.ts` (store sweep on every change), overridden only via `runAction("service_classification_override")`. Why: one rule, audited overrides.
+- Every outbound path carrying Part 2 content (HIE share, note PDF, record print, document download/advocate share, legal disclosure, referral-out, DMC-ODS CSV) calls `disclose()` in `src/lib/part2Disclosure.ts`. Why: one consent check, one draft notice, one content-free disclosure log.
+- Chart read events go only through `recordView` in `src/lib/accessLog.ts` (5-minute collapse). Why: one prototype access log, no content.
+- Note signing clocks live only in `src/lib/noteClock.ts` (3 business days standard, 1 calendar day crisis). Why: queue, workspace and coordinator pool share one draft rule.
+- Crisis escalations get a named owner in `flagCrisis` via `resolveCrisisOwner`; handoffs only via `handOffCrisisEscalation` through `runAction("crisis_handoff")`. Why: named accountability, audited, pool fallback.
