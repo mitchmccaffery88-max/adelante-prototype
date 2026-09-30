@@ -1,3 +1,4 @@
+import { BookVisitDrawerHost } from "@/components/scheduling/BookVisitDrawer";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import {
   Link,
@@ -246,6 +247,7 @@ function RootComponent() {
     <QueryClientProvider client={queryClient}>
       <I18nProvider>
         <AppShell />
+        <BookVisitDrawerHost />
         <Toaster richColors position="top-right" />
       </I18nProvider>
     </QueryClientProvider>

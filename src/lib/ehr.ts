@@ -17,6 +17,7 @@ import type {
 // Type-only (erased at build) — roles.ts imports ehr.ts at runtime, so a value
 // import here would create a cycle.
 import type { StaffRole } from "./roles";
+import { bookingRightFor, canScheduleRole, checkBookingRights, isPrescriberServiceType } from "./bookingRights";
 import { isLateCancelWindow } from "./lateCancel";
 // §EHR audit Phase 1d — persisted attestation artifact. Type-only: the
 // primitive is a leaf module and must never pull the store in.
@@ -2038,6 +2039,8 @@ export interface Clinician {
   locationIds?: string[];
   /** Credentialing hard-stop (YYYY-MM-DD). Booking is blocked when past. */
   licenseExpiresOn?: string;
+  /** §Scheduling S1 — languages the clinician sees patients in (language fit). */
+  languages?: PreferredLanguage[];
 }
 
 /**
@@ -2253,7 +2256,12 @@ export type ServiceType =
   | "med_management"
   | "peer_support"
   | "case_management"
-  | "care_coordination";
+  | "care_coordination"
+  // §Scheduling S2 — substance-use counseling visit types (Part 2; masked as
+  // "Clinical visit" to roles without SUD access).
+  | "sud_counseling"
+  | "sud_group_odf"
+  | "sud_group_iot";
 
 export interface ServiceTypeInfo {
   id: ServiceType;
@@ -2261,6 +2269,8 @@ export interface ServiceTypeInfo {
   helper: string;
   allowedModalities: ("video" | "phone" | "in_person")[];
   defaultDurationMin: number;
+  /** Substance-use visit type (42 CFR Part 2). */
+  sud?: boolean;
 }
 
 export interface ClinicLocation {
@@ -2330,6 +2340,9 @@ const SERVICE_TYPES: ServiceTypeInfo[] = [
     allowedModalities: ["video", "phone"],
     defaultDurationMin: 30,
   },
+  { id: "sud_counseling", label: "Individual counseling (SUD)", helper: "One-on-one substance-use counseling.", allowedModalities: ["video", "phone", "in_person"], defaultDurationMin: 50, sud: true },
+  { id: "sud_group_odf", label: "ODF group", helper: "Outpatient drug-free group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 90, sud: true },
+  { id: "sud_group_iot", label: "IOT group", helper: "Intensive outpatient group.", allowedModalities: ["in_person", "video"], defaultDurationMin: 180, sud: true },
 ];
 
 const LOCATIONS: ClinicLocation[] = [
@@ -2347,6 +2360,10 @@ const LOCATIONS: ClinicLocation[] = [
       "med_management",
       "peer_support",
       "case_management",
+      // §Scheduling S2 — SUD counseling is delivered in person at Visalia.
+      "sud_counseling",
+      "sud_group_odf",
+      "sud_group_iot",
     ],
   },
   {
@@ -4350,6 +4367,7 @@ const clinicians: Clinician[] = [
     ],
     locationIds: ["loc-visalia", "loc-porterville"],
     licenseExpiresOn: "2028-12-31",
+    languages: ["en", "es"],
   },
   {
     id: "c2",
@@ -4402,6 +4420,18 @@ const clinicians: Clinician[] = [
     services: ["therapy_individual"],
     locationIds: ["loc-visalia"],
     licenseExpiresOn: "2028-12-31",
+  },
+  {
+    // §Scheduling S2 — SUD counselor with her own calendar (Renee Castillo, s-sudc1).
+    id: "c7",
+    name: "Renee Castillo",
+    credential: "SUDCC-II",
+    mediCalCredentialed: true,
+    mediCalStatus: "active",
+    services: ["sud_counseling", "sud_group_odf", "sud_group_iot"],
+    locationIds: ["loc-visalia"],
+    licenseExpiresOn: "2028-12-31",
+    languages: ["en", "es"],
   },
 ];
 
@@ -8086,10 +8116,87 @@ function _assertGroupJoinReviewer(r: GroupJoinRequest, actor: { name: string; ro
 }
 
 // §Cancel/no-show helpers.
-function _assertApptActor(actor: { name: string; role: StaffRole }) {
+function _assertApptActor(actor: { name: string; role: StaffRole }, op?: "attend") {
   if (!actor?.name?.trim()) throw new Error("Sign in as a staff member first.");
-  if (![...APPT_REQUEST_BOOKING_ROLES, "clinical_coordinator"].includes(actor.role))
+  if (![...APPT_REQUEST_BOOKING_ROLES, "clinical_coordinator"].includes(actor.role) && !canScheduleRole(actor.role))
     throw new Error("Your role does not book or cancel visits.");
+  // §Scheduling S2 (Draft) — coordinators schedule but never mark attended.
+  if (op === "attend" && actor.role === "clinical_coordinator")
+    throw new Error("Clinical coordinators schedule visits but can't mark them attended.");
+}
+// §Scheduling S2 — caseload for booking rights. Staff aliases: roster id, id
+// without "s-", name, clinicianId, caseManagerId, plus a registered resolver
+// (caseloadReview adds extra case-manager owners, e.g. Luz → cm3).
+let _extraCaseManagerIds: (staffId: string) => string | undefined = () => undefined;
+export function registerCaseManagerResolver(fn: (staffId: string) => string | undefined) {
+  _extraCaseManagerIds = fn;
+}
+function _inStaffCaseload(actor: { id?: string; name?: string; staffId?: string }, patientId: string): boolean {
+  const p = patients.find((x) => x.id === patientId);
+  if (!p) return false;
+  const m = STAFF_ROSTER.find((s) => s.id === (actor.staffId ?? actor.id) || s.name === actor.name || s.name === actor.id);
+  const aliases = new Set([m?.id, m?.id?.replace(/^s-/, ""), m?.name, m?.clinicianId, m?.caseManagerId, m ? _extraCaseManagerIds(m.id) : undefined].filter(Boolean) as string[]);
+  return [p.primaryClinicianId, p.caseManagerId, p.prescriberStaffId].some((v) => !!v && aliases.has(v));
+}
+function _assertBookingOp(actor: { name: string; role: StaffRole; id?: string }, a: Appointment, op: "reschedule" | "cancel") {
+  const chk = checkBookingRights({ role: actor.role, op, inCaseload: _inStaffCaseload(actor, a.patientId), serviceType: a.serviceType, asam: !!a.asamTaskId });
+  if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
+}
+/** Prescriber / MAT visits → physician or PMHNP calendars; SUD types → a calendar that offers them. */
+function _assertClinicianFit(clinicianId: string, serviceType?: ServiceType) {
+  const c = clinicians.find((x) => x.id === clinicianId);
+  if (!c || !serviceType) return;
+  if (c.services && !c.services.includes(serviceType))
+    throw new Error(`${c.name} doesn't offer this visit type. Pick a suggested clinician.`);
+  if (isPrescriberServiceType(serviceType)) {
+    const role = STAFF_ROSTER.find((s) => s.clinicianId === clinicianId)?.role;
+    const prescriber = role === "pmhnp" || role === "physician" || /PMHNP|M\.D\.|MD|DO/.test(c.credential);
+    if (!prescriber) throw new Error("Medication visits can only be booked with a physician or PMHNP.");
+  }
+}
+/** Audit + clinician + patient notices for a staff booking. Part 2-neutral. */
+function _announceStaffBooking(a: Appointment, by: { id: string; role: string; staffId?: string }) {
+  const c = clinicians.find((x) => x.id === a.clinicianId);
+  const p = patients.find((x) => x.id === a.patientId);
+  appendAudit({
+    category: "clinical",
+    action: "appointment_booked",
+    patientId: a.patientId,
+    actorId: by.staffId ?? by.id,
+    actorRole: by.role as StaffRole,
+    detail: {
+      apptId: a.id,
+      targetClinicianId: a.clinicianId,
+      summary: `Booked by ${by.id} on behalf of ${c?.name ?? "clinician"}'s calendar`,
+      ...(SERVICE_TYPES.find((s) => s.id === a.serviceType)?.sud || a.asamTaskId ? { protected: true } : {}),
+    },
+  });
+  const staff = STAFF_ROSTER.find((s) => s.clinicianId === a.clinicianId);
+  if (staff)
+    AdelanteEHR.notify({
+      recipientStaffId: staff.id,
+      category: "task_assigned",
+      subject: "New visit on your calendar",
+      body: "A visit was booked on your calendar. Open your schedule for details.",
+      patientId: a.patientId,
+      linkRoute: "/clinician",
+      dedupeKey: `booked:${a.id}`,
+    });
+  if (p) {
+    const es = p.preferredLanguage === "es";
+    const when = new Date(a.start).toLocaleString(es ? "es-US" : "en-US", { weekday: "short", month: "short", day: "numeric", hour: "numeric", minute: "2-digit", timeZone: "America/Los_Angeles" });
+    AdelanteEHR.notifyMember({
+      audience: "patient",
+      recipientId: p.id,
+      subject: es ? "Su equipo de atención programó una cita" : "Your care team scheduled a visit",
+      body: es
+        ? `Su equipo de atención programó una cita con ${c?.name ?? "su clínico"} el ${when}. (Borrador de traducción — pendiente de revisión bilingüe)`
+        : `Your care team scheduled a visit with ${c?.name ?? "your clinician"} on ${when}.`,
+      patientId: p.id,
+      linkRoute: "/schedule",
+      dedupeKey: `booked-patient:${a.id}`,
+    });
+  }
 }
 function _requestCancel(
   a: Appointment,
@@ -8917,8 +9024,25 @@ export const AdelanteEHR = {
       if (!role || !ASAM_TASK_ROLES.includes(role) || !g || g.level === "none" || g.locked)
         throw new Error("Your role does not have 42 CFR Part 2 access for this patient.");
     }
+    // §Scheduling — a booking always names a target clinician's calendar.
+    if (!input.clinicianId?.trim()) throw new Error("Choose whose calendar to book on.");
     const cred = AdelanteEHR.canBook(input.clinicianId);
     if (!cred.ok) throw new Error(cred.reason);
+    const bookRole = input.bookedBy?.role as StaffRole | undefined;
+    const isStaffBooking = !!bookRole && input.source !== "self_scheduled" && bookRole !== ("patient" as StaffRole);
+    if (isStaffBooking) {
+      const chk = checkBookingRights({
+        role: bookRole!,
+        op: "book",
+        inCaseload: _inStaffCaseload(input.bookedBy!, input.patientId),
+        serviceType: input.serviceType,
+        asam: !!input.asamTaskId,
+      });
+      if (!chk.ok) throw new Error(`${chk.reason} ${chk.next}`);
+      _assertClinicianFit(input.clinicianId, input.serviceType);
+      if (input.modality && input.modality !== "in_person" && +new Date(input.start) > Date.now() && !AdelanteEHR.isConsentCategoryAuthorized(input.patientId, TELEHEALTH_CONSENT_CATEGORY))
+        throw new Error("No telehealth consent on file. Capture telehealth consent first, or book in person.");
+    }
     if (input.modality === "in_person" && !input.locationId) {
       throw new Error("Pick a location for the in-person visit.");
     }
@@ -8983,8 +9107,21 @@ export const AdelanteEHR = {
       apptId: a.id,
       kind: "booked",
     });
+    if (isStaffBooking) _announceStaffBooking(a, input.bookedBy!);
     emit();
     return a;
+  },
+  /**
+   * §Scheduling S2 — peer / CHW "request cancellation": a coordinator confirms
+   * through the existing resolveCancelRequest. Caseload-only; reason optional.
+   */
+  staffRequestCancel(apptId: string, actor: { name: string; role: StaffRole; id?: string }, reason?: string) {
+    const a = appointments.find((x) => x.id === apptId);
+    if (!a) throw new Error("That visit no longer exists.");
+    if (!canScheduleRole(actor.role)) throw new Error("Your role does not book visits.");
+    if (bookingRightFor(actor.role).scope === "caseload" && !_inStaffCaseload(actor, a.patientId))
+      throw new Error("This person isn't on your caseload.");
+    return _requestCancel(a, { kind: "advocate", name: `${actor.name} (staff)` }, reason);
   },
   rescheduleAppointment(
     apptId: string,
@@ -9290,6 +9427,7 @@ export const AdelanteEHR = {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) throw new Error("That visit no longer exists.");
     _assertApptActor(input.actor);
+    if (!input.fromRequest) _assertBookingOp(input.actor, a, "cancel");
     if (a.status !== "scheduled") throw new Error("Only a scheduled visit can be cancelled.");
     if (!input.reason || !STAFF_CANCEL_REASON_LABEL[input.reason]) throw new Error("Pick a reason for cancelling.");
     if (input.reason === "other" && !input.note?.trim()) throw new Error("Describe the reason when you pick Other.");
@@ -9359,7 +9497,7 @@ export const AdelanteEHR = {
   markAppointmentAttended(apptId: string, actor: { name: string; role: StaffRole; id?: string }, now = Date.now()) {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) throw new Error("That visit no longer exists.");
-    _assertApptActor(actor);
+    _assertApptActor(actor, "attend");
     if (!isVisitActive(a.status)) throw new Error("Only a scheduled or checked-in visit can be marked attended.");
     if (a.status === "scheduled" && +new Date(a.start) > now) throw new Error("A visit can be marked attended only after it starts or once checked in.");
     AdelanteEHR.updateAppointmentStatus(a.id, "attended");
@@ -9376,6 +9514,7 @@ export const AdelanteEHR = {
     const a = appointments.find((x) => x.id === apptId);
     if (!a) throw new Error("That visit no longer exists.");
     _assertApptActor(actor);
+    _assertBookingOp(actor, a, "reschedule");
     if (a.status !== "scheduled") throw new Error("Only a scheduled visit can be rescheduled.");
     if (+new Date(newStart) <= Date.now()) throw new Error("Pick a future time.");
     const clash = appointments.some((x) => x.id !== a.id && x.clinicianId === a.clinicianId && isVisitActive(x.status) && +new Date(x.start) === +new Date(newStart));
@@ -20717,7 +20856,7 @@ export const AdelanteEHR = {
       recipientRole: owner,
       category: "crisis_flagged",
       subject: `Crisis flagged — ${patientLabel(patientId)}`,
-      body: `${staffName} flagged a crisis (${row.triggerSource === "screener_score" ? "screener score" : row.triggerSource === "assisted_signup" ? "manual — sign-up assistance" : row.triggerSource === "message_pattern" ? "automated — crisis language in free text" : row.triggerSource === "patient_request" ? "patient asked for their care team" : "manual"}): ${detail}`,
+      body: "Crisis follow-up needed — open the crisis queue.",
       linkRoute: "/crisis-queue",
       patientId,
     });

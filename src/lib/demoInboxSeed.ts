@@ -273,6 +273,13 @@ export function seedDemoInbox(): void {
     if (pt && !pt.primaryClinicianId)
       safe(() => AdelanteEHR.reassignPrimaryClinician({ patientId: pt.id, clinicianId: "c1", initiatedBy: "admin", context: "Demo setup — primary clinician" }));
   }
+  // §Scheduling S2 — the SUD counselor (Renee Castillo, calendar c7) gets a
+  // caseload through the normal reassign path so she can book for it.
+  safe(() => {
+    if (AdelanteEHR.listPatients().some((x) => x.primaryClinicianId === "c7")) return;
+    const pt = AdelanteEHR.createPatient({ firstName: "Mateo", lastName: "Ibarra", dob: "1988-04-12", preferredLanguage: "es" } as Parameters<typeof AdelanteEHR.createPatient>[0]);
+    AdelanteEHR.reassignPrimaryClinician({ patientId: pt.id, clinicianId: "c7", initiatedBy: "admin", context: "Demo setup — SUD counselor caseload" } as Parameters<typeof AdelanteEHR.reassignPrimaryClinician>[0]);
+  });
   safe(() => seedCoordinationDemo());
   safe(() => seedCaseloadDemo());
   safe(() => seedOutpatientCareDemo());

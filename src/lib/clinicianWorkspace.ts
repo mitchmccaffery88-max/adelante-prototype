@@ -11,7 +11,7 @@ import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 
-export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator";
+export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
 export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note";
@@ -33,8 +33,10 @@ export const isCareRole = (role: StaffRole) => CARE_ROLES.includes(role);
 export const isCoordinatorRole = (role: StaffRole) => role === "clinical_coordinator" || role === "sys_admin";
 
 export function workspaceTileOrder(role: StaffRole): WorkspaceTileId[] {
-  if (isCoordinatorRole(role)) return ["coordinator", "actions", "schedule"];
-  if (isCareRole(role)) return ["actions", "caseload", "schedule", "requests"];
+  // §Scheduling S4 — coordination roles schedule from the Scheduling tile
+  // (caseload / all-clinician visits, requests, "Book a visit").
+  if (isCoordinatorRole(role)) return ["coordinator", "scheduling", "actions"];
+  if (isCareRole(role)) return ["actions", "scheduling", "caseload"];
   return ["schedule", "actions", "caseload", "requests"];
 }
 

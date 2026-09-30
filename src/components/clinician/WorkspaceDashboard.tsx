@@ -1,3 +1,4 @@
+import { SchedulingTile } from "@/components/scheduling/SchedulingTile";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { useEffect, useState, type ReactNode } from "react";
 import { act as runAct, actFor } from "@/lib/actions/act";
@@ -27,7 +28,7 @@ export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppo
   const acting = useActingStaff();
   const actorKey = actor.staffId;
   const storageKey = `adelante:workspace-tiles:${actorKey}`;
-  const [openTiles, setOpenTiles] = useState<Record<WorkspaceTileId, boolean>>({ schedule: true, actions: true, caseload: false, requests: false, coordinator: true });
+  const [openTiles, setOpenTiles] = useState<Record<WorkspaceTileId, boolean>>({ schedule: true, actions: true, caseload: false, requests: false, coordinator: true, scheduling: true });
   const [scheduleSegment, setScheduleSegment] = useState<ScheduleSegment>("up_next");
   const [showWeek, setShowWeek] = useState(false);
   const [focusGroup, setFocusGroup] = useState<ActionGroup | "all">("all");
@@ -71,6 +72,7 @@ export function WorkspaceDashboard({ actor, appointments, needsClosing, weekAppo
        if (id === "actions") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Needs my action" summary={`${rows.length} open · ${rows.filter((r) => r.group === "now").length} now`}><ActionTile rows={rows} focus={focusGroup} setFocus={setFocusGroup} focusKind={focusKind} setFocusKind={setFocusKind} openChart={openChart} actor={acting} /></WorkspaceTile>;
       if (id === "caseload") return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="My caseload" summary={`${caseload.length} patients · ${caseload.filter((x) => x.reasons.length).length} need attention`}><CaseloadTile rows={caseload} /></WorkspaceTile>;
       if (id === "requests") { const waiting = AdelanteEHR.listOpenAppointmentRequests().filter((r) => roleSeesApptRequest(actor.role, r.patient, r.request)).length; return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Requests & booking" summary={`${waiting} appointment request${waiting === 1 ? "" : "s"} waiting`}>{requestsAndBooking}</WorkspaceTile>; }
+      if (id === "scheduling") return <WorkspaceTile key={id} id={id} open={openTiles[id] ?? true} onOpenChange={(v) => toggle(id, v)} title="Scheduling" summary="Upcoming visits · appointment requests · Book a visit"><SchedulingTile actor={{ staffId: actor.staffId, staffName: actor.staffName, clinicianId: actor.clinicianId, role: actor.role }} /></WorkspaceTile>;
       if (id === "coordinator" && isCoordinatorRole(actor.role)) return <WorkspaceTile key={id} id={id} open={openTiles[id]} onOpenChange={(v) => toggle(id, v)} title="Coordinator queue" summary="Void approvals · unassigned patients · crisis · cosign reassignments"><CoordinatorTile actor={acting} /></WorkspaceTile>;
       return null;
     })}

@@ -39,7 +39,9 @@ const book = (patientId: string, taskId: string, days = 30 + n) =>
     start: slot(days),
     durationMin: 60,
     serviceType: "intake",
-    modality: "video",
+    // In person: staff telehealth bookings now require telehealth consent.
+    modality: "in_person",
+    locationId: "loc-visalia",
     asamTaskId: taskId,
     bookedBy: BY,
     allowPatientOverlap: true,

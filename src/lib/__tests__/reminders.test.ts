@@ -62,6 +62,10 @@ describe("reminder coverage", () => {
         "peer_support",
         "case_management",
         "care_coordination",
+        // §Scheduling S2 — SUD counseling visit types (deliberate addition).
+        "sud_counseling",
+        "sud_group_odf",
+        "sud_group_iot",
       ].sort(),
     );
   });
