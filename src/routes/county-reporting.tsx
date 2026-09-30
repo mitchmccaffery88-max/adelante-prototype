@@ -1,3 +1,4 @@
+import { STAFF_ROLES } from "@/lib/roles";
 // §Batch D — County reporting hub (prototype; nothing is submitted anywhere).
 import { useState } from "react";
 import { createFileRoute, Link } from "@tanstack/react-router";
@@ -14,6 +15,8 @@ import {
   CARD_STATUS_LABEL,
   COUNTY_DRAFT_LABEL,
   COUNTY_PROTOTYPE_LABEL,
+  COUNTY_INTERIM_PREPARER_ROLE,
+  COUNTY_INTERIM_PREPARER_LABEL,
   COUNTY_SIMULATED_LABEL,
   datarCounts,
   ISL_DEADLINE_NOTE,
@@ -111,6 +114,9 @@ function CountyReportingPage() {
           <Badge variant="destructive">{COUNTY_PROTOTYPE_LABEL}</Badge>
           <Badge variant="outline">{COUNTY_SIMULATED_LABEL}</Badge>
           <Badge variant="outline">Layouts and rules: {COUNTY_DRAFT_LABEL}</Badge>
+          <Badge variant="outline" data-testid="interim-preparer">
+            CalOMS / TPS preparer: {STAFF_ROLES.find((r) => r.key === COUNTY_INTERIM_PREPARER_ROLE)?.label} — {COUNTY_INTERIM_PREPARER_LABEL}
+          </Badge>
           {!client && <Badge variant="secondary" data-testid="aggregate-only">Counts only — client-level rows need substance-use access</Badge>}
         </div>
         <label className="flex items-center gap-2 pt-2 text-sm">
