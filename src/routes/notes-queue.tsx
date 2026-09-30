@@ -29,6 +29,7 @@ import { SignBlockerList } from "@/components/signature/SignBlockerList";
 import { canAccess, useActingStaff, type StaffRole } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { Lock } from "lucide-react";
+import { noteClock, noteClockTone, NOTE_CLOCK_HOLIDAY_TOOLTIP, NOTE_CLOCK_DRAFT_LABEL } from "@/lib/noteClock";
 
 
 export const Route = createFileRoute("/notes-queue")({
@@ -41,10 +42,14 @@ export const Route = createFileRoute("/notes-queue")({
   component: NotesQueuePage,
 });
 
-function ageBadge(days: number) {
-  if (days <= 2) return "bg-muted text-muted-foreground";
-  if (days <= 6) return "bg-gold/20 text-navy";
-  return "bg-destructive/15 text-destructive";
+/** §Batch C3 — signing clock badge (Draft — pending clinical sign-off). */
+function ClockBadge({ row }: { row: UnsignedWorkRow }) {
+  const c = noteClock(row.note ?? { date: row.date });
+  return (
+    <Badge className={noteClockTone(c)} title={`${NOTE_CLOCK_DRAFT_LABEL}. ${c.kind === "crisis" ? "Crisis notes: 1 calendar day." : `3 business days. ${NOTE_CLOCK_HOLIDAY_TOOLTIP}`}`} data-testid={c.kind === "crisis" ? "crisis-note-badge" : "note-clock-badge"}>
+      {c.kind === "crisis" ? `Crisis · ${c.label}` : c.label}
+    </Badge>
+  );
 }
 
 /**
@@ -169,7 +174,7 @@ function NotesQueuePage() {
                     )}
                   </div>
                   <div className="flex items-center gap-2 shrink-0">
-                    <Badge className={ageBadge(row.ageDays)}>{row.ageDays}d</Badge>
+                    <ClockBadge row={row} />
                     {row.kind === "draft_note" && auth?.allowed ? (
                       <Button size="sm" onClick={() => setSigningId(row.id)}>
                         {auth.asSupervisor ? "Sign as supervisor" : "Sign"}
