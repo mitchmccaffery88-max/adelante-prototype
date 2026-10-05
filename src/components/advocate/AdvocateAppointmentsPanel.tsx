@@ -13,6 +13,8 @@ import { useState } from "react";
 import { toast } from "sonner";
 import { CalendarClock, Users, Check, X, Info, Unlock, History } from "lucide-react";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
+import { runAction } from "@/lib/actions/runAction";
+import { ADVOCATE_ACTOR_ROLE, advocateRescheduleSlots } from "@/lib/patientBooking";
 import { Card } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
@@ -38,7 +40,7 @@ function Part2Notice() {
 function RescheduleControl({ linkId, apptId }: { linkId: string; apptId: string }) {
   const [open, setOpen] = useState(false);
   const options = useEhr(() =>
-    open ? AdelanteEHR.advocateRescheduleOptions(linkId, apptId) : undefined,
+    open ? advocateRescheduleSlots(linkId, apptId) : undefined,
   );
 
   if (!open) {
@@ -65,7 +67,14 @@ function RescheduleControl({ linkId, apptId }: { linkId: string; apptId: string 
               variant="secondary"
               onClick={() => {
                 try {
-                  AdelanteEHR.advocateRescheduleAppointment(linkId, apptId, s);
+                  const appt = AdelanteEHR.listAppointments().find((a) => a.id === apptId);
+                  const r = runAction(
+                    "advocate_reschedule",
+                    { role: ADVOCATE_ACTOR_ROLE, staffId: linkId, staffName: "Advocate" },
+                    appt ? AdelanteEHR.getPatient(appt.patientId) : undefined,
+                    { args: [{ linkId, apptId, start: s }] },
+                  );
+                  if (!r.ok) throw new Error(r.reason);
                   toast.success("Appointment moved.");
                   setOpen(false);
                 } catch (e) {

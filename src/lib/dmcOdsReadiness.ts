@@ -212,12 +212,28 @@ export const EXPORT_COLUMNS = [
   "CalOMS admission complete",
   "CalOMS discharge complete",
 ] as const;
-export type ExportRow = Record<(typeof EXPORT_COLUMNS)[number], string>;
+export type ExportColumn = (typeof EXPORT_COLUMNS)[number];
+export type ExportRow = Partial<Record<ExportColumn, string>> & { "Episode ID": string; "Client record ID": string };
+
+/** ASAM clinical columns withheld from reporting-only holders (SUD reporting access without roleSeesAsam). */
+export const ASAM_CLINICAL_COLUMNS: readonly ExportColumn[] = ["ASAM version", "ASAM final signature date", "LPHA co-signed", "Medical necessity (draft rule)"];
+export const REPORTING_ONLY_LAYOUT_LABEL = "Draft — Christi to confirm required fields";
+
+/** True when the role reaches the export only through SUD reporting access. */
+export function isReportingOnly(role: StaffRole): boolean {
+  return !roleSeesAsam(role) && hasSudReportingAccess(role);
+}
+
+/** Columns this role's export carries: the county-file subset for reporting-only holders. */
+export function exportColumnsFor(role: StaffRole): readonly ExportColumn[] {
+  return isReportingOnly(role) ? EXPORT_COLUMNS.filter((c) => !ASAM_CLINICAL_COLUMNS.includes(c)) : EXPORT_COLUMNS;
+}
 
 /** Per-episode rows. `null` = hidden for this role (no data at all). */
 export function dmcOdsExportRows(role: StaffRole): ExportRow[] | null {
   if (!roleSeesAsam(role) && !hasSudReportingAccess(role)) return null;
   const rows: ExportRow[] = [];
+  const narrow = isReportingOnly(role);
   for (const p of AdelanteEHR.listPatients()) {
     if (!roleSeesAsam(role, p) && !hasSudReportingAccess(role)) continue;
     const eps = (p.episodes ?? []).filter((e) => e.type === "sud_dmc_ods");
@@ -230,7 +246,7 @@ export function dmcOdsExportRows(role: StaffRole): ExportRow[] | null {
     const comp = calomsCompletenessFor(p);
     for (const ep of eps) {
       const level = (ep as { dmcOdsLevel?: string }).dmcOdsLevel ?? latest?.actualLevel;
-      rows.push({
+      const row: ExportRow = {
         "Episode ID": ep.id,
         "Client record ID": p.id,
         "Episode opened": ep.openedAt.slice(0, 10),
@@ -251,7 +267,9 @@ export function dmcOdsExportRows(role: StaffRole): ExportRow[] | null {
         "Discharge reason": d?.reason ? (d.reason === "other" ? d.otherReason || "Other (text missing)" : DISCHARGE_REASON_LABEL[d.reason]) : "",
         "CalOMS admission complete": comp.admissionMissing.length === 0 ? "Yes" : "No",
         "CalOMS discharge complete": comp.dischargeMissing === null ? "No discharge" : comp.dischargeMissing.length === 0 ? "Yes" : "No",
-      });
+      };
+      if (narrow) for (const c of ASAM_CLINICAL_COLUMNS) delete row[c];
+      rows.push(row);
     }
   }
   return rows;
@@ -259,8 +277,8 @@ export function dmcOdsExportRows(role: StaffRole): ExportRow[] | null {
 
 const csvCell = (v: string) => (/[",\n]/.test(v) ? `"${v.replace(/"/g, '""')}"` : v);
 
-export function exportRowsToCsv(rows: ExportRow[]): string {
-  const lines = [EXPORT_COLUMNS.join(","), ...rows.map((r) => EXPORT_COLUMNS.map((c) => csvCell(r[c])).join(","))];
+export function exportRowsToCsv(rows: ExportRow[], columns: readonly ExportColumn[] = EXPORT_COLUMNS): string {
+  const lines = [columns.join(","), ...rows.map((r) => columns.map((c) => csvCell(r[c] ?? "")).join(","))];
   return lines.join("\n");
 }
 
@@ -296,8 +314,9 @@ export function exportDmcOdsCsv(actor: { staffId: string; role: StaffRole; name?
   }
   const rows = all.filter((r) => ok.has(r["Client record ID"]));
   AdelanteEHR.recordDmcOdsExport({ actorId: actor.staffId, actorRole: actor.role, rowCount: rows.length });
-  const csv = exportRowsToCsv(rows);
+  const csv = exportRowsToCsv(rows, exportColumnsFor(actor.role));
   const header = [`# ${PART2_NOTICE_BLOCK.replace(/\n/g, " ")}`];
+  if (isReportingOnly(actor.role)) header.push(`# Layout: ${REPORTING_ONLY_LAYOUT_LABEL}`);
   if (withheld) header.push(`# ${withheld} row(s) withheld — no Part 2 consent on file.`);
   return { csv, rowCount: rows.length, file: `${header.join("\n")}\n${csv}`, notice: PART2_NOTICE_BLOCK, withheld };
 }

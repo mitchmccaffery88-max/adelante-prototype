@@ -1,8 +1,9 @@
+import { scheduleCopy, serviceLabel, serviceHelper, SCHEDULE_ES_DRAFT } from "@/lib/scheduleCopy";
 import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { act, actFor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
 import { patientBookableClinicians, patientPrecheck, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AdelanteEHR,
   APPOINTMENT_SOURCE_LABEL,
@@ -66,7 +67,8 @@ export const Route = createFileRoute("/schedule")({
 });
 
 function SchedulePage() {
-  const { t } = useI18n();
+  const { t, lang } = useI18n();
+  const sc = scheduleCopy(lang);
   const navigate = useNavigate();
   const { reschedule: rescheduleId, tab: tabParam } = Route.useSearch();
   const currentId = useEhr(() => AdelanteEHR.getCurrentPatientId());
@@ -104,6 +106,18 @@ function SchedulePage() {
   const [tab, setTab] = useState<ScheduleTab>(
     tabParam ?? (rescheduleId ? "one_to_one" : "yours"),
   );
+  // Clicking "Reschedule" from the list changes the search in place — jump to the picker.
+  useEffect(() => {
+    if (!rescheduleId) return;
+    setTab("one_to_one");
+    if (existing) {
+      setServiceType(existing.serviceType ?? "");
+      setClinicianId(existing.clinicianId);
+      setLocationId(existing.locationId ?? "");
+      if (existing.modality) setModality(existing.modality);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [rescheduleId]);
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
@@ -115,7 +129,7 @@ function SchedulePage() {
   );
   const clinicianHasHours = clinicianOptions.find((o) => o.clinician.id === effectiveClinicianId)?.hasHours ?? false;
   const consentCheck = patientPrecheck(patient, effectiveModality);
-  const needsConsent = !consentCheck.ok && consentCheck.reason === "telehealth_consent" && !isReschedule;
+  const needsConsent = !consentCheck.ok && consentCheck.reason === "telehealth_consent";
 
   // §Scheduling — patient-level awareness: what they already have booked.
   const upcomingAppts = useEhr(() =>
@@ -144,27 +158,40 @@ function SchedulePage() {
 
   const submit = () => {
     if (!serviceType) {
-      toast.error("Pick a service to continue.");
+      toast.error(sc.pickService);
       return;
     }
     if (effectiveModality === "in_person" && !locationId) {
-      toast.error("Pick a location for the in-person visit.");
+      toast.error(sc.pickLocationErr);
       return;
     }
     if (!selectedStart || !effectiveClinicianId) {
-      toast.error("Pick a time that works for you.");
+      toast.error(sc.pickTime);
       return;
     }
     try {
       if (isReschedule && existing) {
-        AdelanteEHR.rescheduleAppointment(existing.id, selectedStart, {
-          serviceType: serviceType as ServiceType,
-          modality: effectiveModality,
-          locationId: effectiveModality === "in_person" ? locationId : undefined,
-          clinicianId: effectiveClinicianId,
-        });
-        toast.success("Session rescheduled", {
-          description: "Your care team and you have been notified.",
+        const rr = runAction(
+          "patient_reschedule",
+          { role: PATIENT_ACTOR_ROLE, staffId: patient.id, staffName: "Patient (self)" },
+          patient,
+          {
+            args: [
+              {
+                patientId: patient.id,
+                apptId: existing.id,
+                start: selectedStart,
+                serviceType: serviceType as ServiceType,
+                modality: effectiveModality,
+                locationId: effectiveModality === "in_person" ? locationId : undefined,
+                clinicianId: effectiveClinicianId,
+              },
+            ],
+          },
+        );
+        if (!rr.ok) throw new Error(rr.reason);
+        toast.success(sc.rescheduled, {
+          description: sc.rescheduledDesc,
         });
       } else {
         const r = runAction(
@@ -189,14 +216,14 @@ function SchedulePage() {
         toast.success(t("schRequested"), {
           description:
             effectiveModality === "in_person" && activeLocation
-              ? `In person at ${activeLocation.name}.`
+              ? sc.inPersonAt(activeLocation.name)
               : t("schRequestedDesc"),
         });
       }
       // Land on the summary so the new booking is immediately visible.
       navigate({ to: "/schedule", search: { tab: "yours" } });
     } catch (err) {
-      toast.error(err instanceof Error ? err.message : "Could not book that slot.");
+      toast.error(err instanceof Error ? err.message : sc.couldNotBook);
     }
   };
 
@@ -209,16 +236,17 @@ function SchedulePage() {
       </Button>
       <header className="mb-5">
         <div className="text-xs font-medium uppercase tracking-wider text-teal">
-          {isReschedule ? "Reschedule" : "Appointments"}
+          {isReschedule ? sc.eyebrowReschedule : sc.eyebrowBook}
         </div>
         <h1 className="font-display text-2xl sm:text-3xl text-navy mt-1">
-          {isReschedule ? "Pick a new time" : "My appointments"}
+          {isReschedule ? sc.titleReschedule : sc.titleBook}
         </h1>
         <p className="text-muted-foreground mt-1 text-sm">
           {isReschedule
-            ? "These are your counselor's open times pulled from their live calendar."
-            : "Everything you have booked, plus a place to book something new."}
+            ? sc.subReschedule
+            : sc.subBook}
         </p>
+        {lang === "es" && <p className="mt-1 text-[11px] text-muted-foreground" data-testid="schedule-es-draft">{SCHEDULE_ES_DRAFT}</p>}
       </header>
 
       <div className="mb-4 flex gap-2" role="tablist" aria-label="Scheduling type">
@@ -232,7 +260,7 @@ function SchedulePage() {
             (tab === "yours" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
           }
         >
-          Your appointments
+          {sc.tabYours}
         </button>
         <button
           type="button"
@@ -244,7 +272,7 @@ function SchedulePage() {
             (tab === "one_to_one" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
           }
         >
-          Book one-on-one
+          {sc.tabOne}
         </button>
         <button
           type="button"
@@ -256,7 +284,7 @@ function SchedulePage() {
             (tab === "groups" ? "border-teal bg-teal/10 text-navy font-medium" : "bg-card")
           }
         >
-          Groups
+          {sc.tabGroups}
         </button>
       </div>
 
@@ -272,7 +300,7 @@ function SchedulePage() {
           <div className="flex items-start gap-2.5">
             <CalendarClock className="mt-0.5 h-4 w-4 shrink-0 text-teal" />
             <div className="min-w-0 text-sm">
-              <p className="font-medium text-navy">You already have an appointment booked</p>
+              <p className="font-medium text-navy">{sc.alreadyBooked}</p>
               <ul className="mt-1 space-y-0.5 text-muted-foreground">
                 {upcomingAppts.slice(0, 3).map((a) => {
                   const c = AdelanteEHR.getClinician(a.clinicianId);
@@ -292,8 +320,7 @@ function SchedulePage() {
                 })}
               </ul>
               <p className="mt-1.5 text-muted-foreground">
-                Booking a time that overlaps one of these won't go through. If you need to move a
-                visit, reschedule it instead.
+                {sc.overlapWarn}
               </p>
               <Button
                 variant="outline"
@@ -301,7 +328,7 @@ function SchedulePage() {
                 className="mt-2 min-h-11"
                 onClick={() => setTab("yours")}
               >
-                See your appointments
+                {sc.seeAppts}
               </Button>
             </div>
           </div>
@@ -311,7 +338,7 @@ function SchedulePage() {
       {tab === "one_to_one" && (
       <Card className="p-6 space-y-4">
         <div className="space-y-1.5">
-          <Label className="text-sm">What kind of visit?</Label>
+          <Label className="text-sm">{sc.whatKind}</Label>
           <Select
             value={serviceType}
             onValueChange={(v) => {
@@ -323,18 +350,18 @@ function SchedulePage() {
             }}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Pick a visit type" />
+              <SelectValue placeholder={sc.pickType} />
             </SelectTrigger>
             <SelectContent>
               {serviceTypes.map((s) => (
                 <SelectItem key={s.id} value={s.id}>
-                  {s.label}
+                  {serviceLabel(s.id, s.label, lang)}
                 </SelectItem>
               ))}
             </SelectContent>
           </Select>
           {activeService && (
-            <p className="text-xs text-muted-foreground pt-0.5">{activeService.helper}</p>
+            <p className="text-xs text-muted-foreground pt-0.5">{serviceHelper(activeService.id, activeService.helper, lang)}</p>
           )}
         </div>
 
@@ -385,7 +412,7 @@ function SchedulePage() {
                     : "bg-card hover:border-teal/60 text-foreground/70")
                 }
               >
-                <Building2 className="h-4 w-4" /> In person
+                <Building2 className="h-4 w-4" /> {sc.inPerson}
               </button>
             )}
           </div>
@@ -393,7 +420,7 @@ function SchedulePage() {
 
         {effectiveModality === "in_person" && (
           <div className="space-y-1.5">
-            <Label className="text-sm">Where would you like to meet?</Label>
+            <Label className="text-sm">{sc.whereMeet}</Label>
             <Select
               value={locationId}
               onValueChange={(v) => {
@@ -403,7 +430,7 @@ function SchedulePage() {
               }}
             >
               <SelectTrigger>
-                <SelectValue placeholder="Pick a location" />
+                <SelectValue placeholder={sc.pickLocation} />
               </SelectTrigger>
               <SelectContent>
                 {locations.map((l) => (
@@ -435,7 +462,7 @@ function SchedulePage() {
             disabled={clinicians.length === 0}
           >
             <SelectTrigger>
-              <SelectValue placeholder="Pick a counselor" />
+              <SelectValue placeholder={sc.pickCounselor} />
             </SelectTrigger>
             <SelectContent>
               {clinicians.map((c) => (
@@ -469,7 +496,7 @@ function SchedulePage() {
         ) : (
           <>
             <div className="space-y-1.5">
-              <Label className="text-sm">Pick a day</Label>
+              <Label className="text-sm">{sc.pickDay}</Label>
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-px-4">
                 {dayGroups.map((g) => {
                   const key = g.date.toDateString();
@@ -494,13 +521,13 @@ function SchedulePage() {
                       }
                     >
                       <div className="font-medium">
-                        {g.date.toLocaleDateString(undefined, {
+                        {g.date.toLocaleDateString(lang === "es" ? "es-US" : undefined, {
                           weekday: "short",
                         })}
                       </div>
                       <div className="text-base text-navy font-display">{g.date.getDate()}</div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {open === 0 ? "Full" : `${open} open`}
+                        {open === 0 ? sc.full : sc.nOpen(open)}
                       </div>
                     </button>
                   );
@@ -509,15 +536,15 @@ function SchedulePage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm">Pick a time</Label>
+              <Label className="text-sm">{sc.pickTimeLabel}</Label>
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-block h-2 w-2 rounded-sm border border-teal bg-teal/20" />
-                  Open
+                  {sc.open}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-block h-2 w-2 rounded-sm border bg-muted" />
-                  <span className="line-through">Taken</span>
+                  <span className="line-through">{sc.taken}</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
@@ -530,7 +557,7 @@ function SchedulePage() {
                       onClick={() => !s.taken && setSelectedStart(s.start)}
                       disabled={s.taken}
                       aria-label={
-                        (s.taken ? "Taken: " : "Open: ") +
+                        (s.taken ? `${sc.taken}: ` : `${sc.open}: `) +
                         new Date(s.start).toLocaleTimeString(undefined, {
                           hour: "numeric",
                           minute: "2-digit",
@@ -556,7 +583,7 @@ function SchedulePage() {
                           "text-[10px] " + (s.taken ? "text-muted-foreground" : "text-teal")
                         }
                       >
-                        {s.taken ? "Taken" : "Open"}
+                        {s.taken ? sc.taken : sc.open}
                       </span>
                     </button>
                   );
@@ -569,8 +596,7 @@ function SchedulePage() {
         <div className="rounded-md border bg-secondary/30 p-3 text-xs text-muted-foreground flex items-start gap-2">
           <CalendarClock className="h-3.5 w-3.5 text-teal mt-0.5" />
           <span>
-            Session length is {defaultDuration} minutes. Your care team sets this — call your case
-            manager if you need it changed.
+            {sc.sessionLength(defaultDuration)}
           </span>
         </div>
         <Button
@@ -580,7 +606,7 @@ function SchedulePage() {
         >
           {isReschedule ? (
             <>
-              <CalendarClock className="h-4 w-4 mr-1.5" /> Confirm new time
+              <CalendarClock className="h-4 w-4 mr-1.5" /> {sc.confirmNew}
             </>
           ) : (
             <>

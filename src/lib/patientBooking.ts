@@ -74,3 +74,69 @@ export function patientSelfBook(input: PatientSelfBookInput): Appointment {
     bookedBy: { id: patient.id, role: "patient" },
   });
 }
+
+// §Cleanup — rescheduling on the same engine. Patient and advocate moves both
+// re-check real availability (current visit excluded), eligible clinician,
+// telehealth consent and conflicts before the store moves the visit.
+
+/** Pseudo-role used in audit rows when an authorised advocate acts. */
+export const ADVOCATE_ACTOR_ROLE = "advocate" as StaffRole;
+
+export interface PatientRescheduleInput {
+  patientId: string;
+  apptId: string;
+  start: string;
+  clinicianId?: string;
+  serviceType?: ServiceType;
+  modality?: BookingModality;
+  locationId?: string;
+}
+
+function engineCheck(patient: Patient, appt: Appointment, start: string, clinicianId: string, serviceType: ServiceType, modality: BookingModality) {
+  if (!patientBookableClinicians(patient, serviceType, modality).some((o) => o.clinician.id === clinicianId))
+    throw new Error("That clinician can't be booked for this visit type.");
+  if (!patientPrecheck(patient, modality).ok) throw new Error("No telehealth consent on file. Choose in person, or ask your care team.");
+  if (!patientSlots(clinicianId, serviceType, modality, appt.id).includes(new Date(start).toISOString()))
+    throw new Error("That time isn't open on this clinician's schedule. Please pick another time.");
+}
+
+function apptModality(a: Appointment): BookingModality {
+  return ((a as { modality?: BookingModality }).modality ?? "in_person") as BookingModality;
+}
+
+/** Store function for `patient_reschedule`. */
+export function patientReschedule(input: PatientRescheduleInput): Appointment | undefined {
+  const patient = AdelanteEHR.getPatient(input.patientId);
+  if (!patient) throw new Error("That person isn't in the record.");
+  const appt = AdelanteEHR.appointmentsForPatient(patient.id).find((a) => a.id === input.apptId);
+  if (!appt) throw new Error("That appointment is not available.");
+  const clinicianId = input.clinicianId ?? appt.clinicianId;
+  const serviceType = (input.serviceType ?? appt.serviceType) as ServiceType;
+  const modality = input.modality ?? apptModality(appt);
+  engineCheck(patient, appt, input.start, clinicianId, serviceType, modality);
+  return AdelanteEHR.rescheduleAppointment(appt.id, input.start, {
+    serviceType,
+    modality,
+    locationId: modality === "in_person" ? input.locationId ?? appt.locationId : undefined,
+    clinicianId,
+  });
+}
+
+/** Reschedule times for an advocate: tier-gated, same engine, times only. */
+export function advocateRescheduleSlots(linkId: string, apptId: string): { allowed: boolean; reason: string; slots: string[] } {
+  const base = AdelanteEHR.advocateRescheduleOptions(linkId, apptId);
+  if (!base.allowed) return base;
+  const appt = AdelanteEHR.listAppointments().find((a) => a.id === apptId);
+  if (!appt?.serviceType) return { ...base, slots: [] };
+  return { ...base, slots: patientSlots(appt.clinicianId, appt.serviceType, apptModality(appt), appt.id) };
+}
+
+/** Store function for `advocate_reschedule`. Tier gate stays in the store (advocateCanActOnSchedule). */
+export function advocateReschedule(input: { linkId: string; apptId: string; start: string }): void {
+  if (!AdelanteEHR.advocateCanActOnSchedule(input.linkId)) throw new Error("Your access doesn't include changing appointments.");
+  const appt = AdelanteEHR.listAppointments().find((a) => a.id === input.apptId);
+  const patient = appt && AdelanteEHR.getPatient(appt.patientId);
+  if (!appt || !patient || !appt.serviceType) throw new Error("That appointment is not available.");
+  engineCheck(patient, appt, input.start, appt.clinicianId, appt.serviceType, apptModality(appt));
+  AdelanteEHR.advocateRescheduleAppointment(input.linkId, input.apptId, input.start);
+}
