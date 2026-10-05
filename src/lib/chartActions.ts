@@ -1,4 +1,4 @@
-import { patientSelfBook, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
+import { patientSelfBook, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
 // "create / act" action. Each `allowed()` calls the SAME function-level check
@@ -40,7 +40,7 @@ import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, refer
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-01.g";
+export const REGISTRY_VERSION = "2026-10-05.h";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -376,6 +376,24 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "patient acting for self; patientSelfBook re-checks eligible clinician, real availability, telehealth consent, conflicts",
     store: refs(["patientSelfBook", (...a: any[]) => (patientSelfBook as any)(...a)]),
     allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient books their own visit here.")),
+  },
+  {
+    id: "patient_reschedule",
+    label: { en: "Reschedule my visit", es: "Cambiar mi cita" },
+    group: "coordination",
+    sectionId: "appointments",
+    check: "patient acting for self; patientReschedule re-checks real availability, eligible clinician, telehealth consent, conflicts",
+    store: refs(["patientReschedule", (...a: any[]) => (patientReschedule as any)(...a)]),
+    allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient reschedules their own visit here.")),
+  },
+  {
+    id: "advocate_reschedule",
+    label: { en: "Reschedule (advocate)", es: "Cambiar cita (representante)" },
+    group: "coordination",
+    sectionId: "appointments",
+    check: "authorised advocate; tier gate advocateCanActOnSchedule (AHCD agent / conservator) + same booking engine",
+    store: refs(["advocateReschedule", (...a: any[]) => (advocateReschedule as any)(...a)]),
+    allowed: ({ role }) => (role === ADVOCATE_ACTOR_ROLE ? ok() : hide("Only an authorised advocate uses this path.")),
   },
   {
     id: "visit_request_cancel",
