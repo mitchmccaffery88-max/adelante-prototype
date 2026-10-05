@@ -3,7 +3,7 @@ import { createFileRoute, Link, useNavigate } from "@tanstack/react-router";
 import { act, actFor } from "@/lib/actions/act";
 import { runAction } from "@/lib/actions/runAction";
 import { patientBookableClinicians, patientPrecheck, patientSlots, PATIENT_ACTOR_ROLE } from "@/lib/patientBooking";
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   AdelanteEHR,
   APPOINTMENT_SOURCE_LABEL,
@@ -121,7 +121,7 @@ function SchedulePage() {
   );
   const clinicianHasHours = clinicianOptions.find((o) => o.clinician.id === effectiveClinicianId)?.hasHours ?? false;
   const consentCheck = patientPrecheck(patient, effectiveModality);
-  const needsConsent = !consentCheck.ok && consentCheck.reason === "telehealth_consent" && !isReschedule;
+  const needsConsent = !consentCheck.ok && consentCheck.reason === "telehealth_consent";
 
   // §Scheduling — patient-level awareness: what they already have booked.
   const upcomingAppts = useEhr(() =>
