@@ -9,6 +9,8 @@
 // Reschedule reuses the existing real flow — `/schedule?reschedule=<id>`
 // prefills the service, modality, clinician and location and rebooks against
 // the clinician's live availability. Nothing new was invented for it.
+import { useI18n } from "@/lib/i18n";
+import { scheduleCopy, serviceLabel } from "@/lib/scheduleCopy";
 import { simulatedSurfaceLabel } from "@/lib/features";
 import { Link } from "@tanstack/react-router";
 import { Building2, CalendarClock, CalendarPlus, MapPin, Phone, Video } from "lucide-react";
@@ -37,6 +39,8 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
   const clinician = AdelanteEHR.getClinician(appt.clinicianId);
   const service = appt.serviceType ? AdelanteEHR.getServiceType(appt.serviceType) : undefined;
   const location = appt.locationId ? AdelanteEHR.getLocation(appt.locationId) : undefined;
+  const { lang } = useI18n();
+  const sc = scheduleCopy(lang);
   const mod = MODALITY[(appt.modality ?? "video") as ApptModality] ?? MODALITY.video;
   const ModIcon = mod.icon;
   const directions = location
@@ -59,8 +63,8 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
             />
           </div>
           <div className="mt-0.5 text-xs text-muted-foreground">
-            {service?.label ?? "Visit"}
-            {clinician ? ` · ${clinician.name}` : ""} · {appt.durationMin} min
+            {serviceLabel(appt.serviceType, service?.label, lang)}
+            {clinician ? ` · ${clinician.name}` : ""} · {appt.durationMin} {sc.min}
           </div>
           {appt.modality === "in_person" && location && (
             <div className="mt-1 flex items-start gap-1.5 text-xs text-muted-foreground">
@@ -75,10 +79,10 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
         <div className="flex shrink-0 flex-col items-end gap-2">
           <div className="flex items-center gap-1.5">
             <Badge variant="outline" className="gap-1 text-[10px]">
-              <ModIcon className="h-3 w-3" /> {mod.label}
+              <ModIcon className="h-3 w-3" /> {modLabel(sc, appt.modality ?? "video")}
             </Badge>
             <Badge variant="outline" className="text-[10px] capitalize">
-              {appt.status.replace(/_/g, " ")}
+              {sc.status[appt.status] ?? appt.status.replace(/_/g, " ")}
             </Badge>
           </div>
           {/* §Build A item 4 — real join action for video visits. */}
@@ -91,7 +95,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           {appt.modality === "in_person" && directions && (
             <Button asChild size="sm" variant="outline" className="min-h-11" data-testid="appt-directions">
               <a href={directions} target="_blank" rel="noreferrer">
-                <MapPin className="mr-1.5 h-4 w-4" /> Directions
+                <MapPin className="mr-1.5 h-4 w-4" /> {sc.directions}
               </a>
             </Button>
           )}
@@ -102,7 +106,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           {!past && !isVisitCancelled(appt.status) && appt.cancelRequest?.status !== "pending" && (
             <Button asChild size="sm" variant="outline" className="min-h-11">
               <Link to="/schedule" search={{ reschedule: appt.id }}>
-                <CalendarClock className="mr-1.5 h-4 w-4" /> Reschedule
+                <CalendarClock className="mr-1.5 h-4 w-4" /> {sc.reschedule}
               </Link>
             </Button>
           )}
@@ -112,7 +116,7 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
           shows, now consistently on every upcoming visit. */}
       {!past && !isVisitCancelled(appt.status) && (
         <p className="mt-3 rounded-2xl bg-secondary p-3 text-sm" data-testid="appointment-prep-tip">
-          {apptPrepTip(appt.modality)}
+          {lang === "es" ? (appt.modality === "in_person" ? sc.prepInPerson : appt.modality === "phone" ? sc.prepPhone : sc.prepVideo) : apptPrepTip(appt.modality)}
         </p>
       )}
     </Card>
@@ -120,20 +124,21 @@ function ApptRow({ appt, past }: { appt: Appointment; past?: boolean }) {
 }
 
 function JoinCallButton({ appt }: { appt: Appointment }) {
+  const sc = scheduleCopy(useI18n().lang);
   const state = joinWindowState(appt.start, appt.durationMin);
   const { url, real } = apptJoinUrl(appt);
   if (state === "over") return null;
   if (state === "early") {
     return (
       <Button size="sm" variant="outline" className="min-h-11" disabled data-testid="join-call-early">
-        <Video className="mr-1.5 h-4 w-4" /> Join opens 15 min before
+        <Video className="mr-1.5 h-4 w-4" /> {sc.joinEarly}
       </Button>
     );
   }
   return (
     <Button asChild size="sm" className="min-h-11" data-testid="join-call-button">
       <a href={url} target="_blank" rel="noreferrer">
-        <Video className="mr-1.5 h-4 w-4" /> {real ? "Join video call" : `Join video call (${simulatedSurfaceLabel("telehealth_simulated")})`}
+        <Video className="mr-1.5 h-4 w-4" /> {real ? sc.join : `${sc.join} (${simulatedSurfaceLabel("telehealth_simulated")})`}
       </a>
     </Button>
   );
@@ -141,6 +146,7 @@ function JoinCallButton({ appt }: { appt: Appointment }) {
 
 /** Group upcoming visits by modality so "what kind, and how" reads at a glance. */
 function ModalityGroup({ appts, modality }: { appts: Appointment[]; modality: ApptModality }) {
+  const sc = scheduleCopy(useI18n().lang);
   const rows = appts.filter((a) => (a.modality ?? "video") === modality);
   if (rows.length === 0) return null;
   const mod = MODALITY[modality];
@@ -148,7 +154,7 @@ function ModalityGroup({ appts, modality }: { appts: Appointment[]; modality: Ap
   return (
     <section className="space-y-2">
       <h3 className="flex items-center gap-1.5 text-xs font-medium uppercase tracking-wider text-muted-foreground">
-        <Icon className="h-3.5 w-3.5" /> {mod.label}
+        <Icon className="h-3.5 w-3.5" /> {modLabel(sc, modality)}
         <span className="font-normal normal-case tracking-normal">({rows.length})</span>
       </h3>
       {rows.map((a) => (
@@ -159,6 +165,7 @@ function ModalityGroup({ appts, modality }: { appts: Appointment[]; modality: Ap
 }
 
 export function AppointmentsSummary({ patientId }: { patientId: string }) {
+  const sc = scheduleCopy(useI18n().lang);
   const appts = useEhr(() => AdelanteEHR.appointmentsForPatient(patientId));
   const now = Date.now();
   const upcoming = [...appts]
@@ -173,17 +180,17 @@ export function AppointmentsSummary({ patientId }: { patientId: string }) {
     <div className="space-y-6" data-testid="appointments-summary">
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
-          <h2 className="font-display text-lg text-navy">Upcoming</h2>
+          <h2 className="font-display text-lg text-navy">{sc.upcoming}</h2>
           <Badge variant="outline" className="text-[10px]">
-            {upcoming.length} scheduled
+            {sc.scheduled(upcoming.length)}
           </Badge>
         </div>
         {upcoming.length === 0 ? (
           <EmptyState
             compact
             icon={CalendarPlus}
-            title="Nothing scheduled yet"
-            description="Use One-on-one visit or Groups above to book a time."
+            title={sc.nothingYet}
+            description={sc.nothingYetDesc}
           />
         ) : (
           <div className="space-y-5">
@@ -195,13 +202,17 @@ export function AppointmentsSummary({ patientId }: { patientId: string }) {
       </div>
 
       <div className="space-y-3">
-        <h2 className="font-display text-lg text-navy">Past visits</h2>
+        <h2 className="font-display text-lg text-navy">{sc.past}</h2>
         {past.length === 0 ? (
-          <EmptyState compact title="No past visits yet" />
+          <EmptyState compact title={sc.noPast} />
         ) : (
           past.map((a) => <ApptRow key={a.id} appt={a} past />)
         )}
       </div>
     </div>
   );
+}
+
+function modLabel(sc: ReturnType<typeof scheduleCopy>, m: string): string {
+  return m === "in_person" ? sc.inPerson : m === "phone" ? sc.phone : sc.video;
 }
