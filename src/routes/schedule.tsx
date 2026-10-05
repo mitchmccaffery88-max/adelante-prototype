@@ -157,12 +157,25 @@ function SchedulePage() {
     }
     try {
       if (isReschedule && existing) {
-        AdelanteEHR.rescheduleAppointment(existing.id, selectedStart, {
-          serviceType: serviceType as ServiceType,
-          modality: effectiveModality,
-          locationId: effectiveModality === "in_person" ? locationId : undefined,
-          clinicianId: effectiveClinicianId,
-        });
+        const rr = runAction(
+          "patient_reschedule",
+          { role: PATIENT_ACTOR_ROLE, staffId: patient.id, staffName: "Patient (self)" },
+          patient,
+          {
+            args: [
+              {
+                patientId: patient.id,
+                apptId: existing.id,
+                start: selectedStart,
+                serviceType: serviceType as ServiceType,
+                modality: effectiveModality,
+                locationId: effectiveModality === "in_person" ? locationId : undefined,
+                clinicianId: effectiveClinicianId,
+              },
+            ],
+          },
+        );
+        if (!rr.ok) throw new Error(rr.reason);
         toast.success("Session rescheduled", {
           description: "Your care team and you have been notified.",
         });
