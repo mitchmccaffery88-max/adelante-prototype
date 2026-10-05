@@ -108,7 +108,15 @@ function SchedulePage() {
   );
   // Clicking "Reschedule" from the list changes the search in place — jump to the picker.
   useEffect(() => {
-    if (rescheduleId) setTab("one_to_one");
+    if (!rescheduleId) return;
+    setTab("one_to_one");
+    if (existing) {
+      setServiceType(existing.serviceType ?? "");
+      setClinicianId(existing.clinicianId);
+      setLocationId(existing.locationId ?? "");
+      if (existing.modality) setModality(existing.modality);
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [rescheduleId]);
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
