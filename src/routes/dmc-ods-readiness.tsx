@@ -9,7 +9,9 @@ import {
   CALOMS_DISCHARGE_REQUIRED_DRAFT,
   DMC_ODS_DRAFT_NOTE,
   DMC_ODS_PROTOTYPE_BANNER,
-  EXPORT_COLUMNS,
+  REPORTING_ONLY_LAYOUT_LABEL,
+  exportColumnsFor,
+  isReportingOnly,
   MEDICAL_NECESSITY_GATE_DRAFT,
   calomsWorklist,
   dmcOdsExportRows,
@@ -38,6 +40,7 @@ function ReadinessPage() {
   const acting = useActingStaff();
   const worklist = useEhr(() => calomsWorklist(acting.role));
   const rows = useEhr(() => dmcOdsExportRows(acting.role));
+  const cols = exportColumnsFor(acting.role);
 
   if (!worklist || !rows) {
     return (
@@ -105,15 +108,16 @@ function ReadinessPage() {
           <h2 className="text-sm font-medium text-navy">Export-ready view — {rows.length} episode(s)</h2>
           <Button size="sm" onClick={download} data-testid="dmc-ods-download">Download CSV (prototype)</Button>
         </div>
+        {isReportingOnly(acting.role) && <Badge variant="outline" data-testid="reporting-only-layout">Reporting-access layout · {REPORTING_ONLY_LAYOUT_LABEL}</Badge>}
         <p className="text-[11px] text-muted-foreground">Every download is audited (who, when, row count — never the values).</p>
         <div className="overflow-x-auto">
           <table className="w-full text-xs">
             <thead>
-              <tr>{EXPORT_COLUMNS.map((c) => <th key={c} className="whitespace-nowrap border-b border-border px-2 py-1 text-left font-medium">{c}</th>)}</tr>
+              <tr>{cols.map((c) => <th key={c} className="whitespace-nowrap border-b border-border px-2 py-1 text-left font-medium">{c}</th>)}</tr>
             </thead>
             <tbody>
               {rows.map((r) => (
-                <tr key={r["Episode ID"]}>{EXPORT_COLUMNS.map((c) => <td key={c} className="whitespace-nowrap border-b border-border/50 px-2 py-1">{r[c] || "—"}</td>)}</tr>
+                <tr key={r["Episode ID"]}>{cols.map((c) => <td key={c} className="whitespace-nowrap border-b border-border/50 px-2 py-1">{r[c] || "—"}</td>)}</tr>
               ))}
             </tbody>
           </table>
