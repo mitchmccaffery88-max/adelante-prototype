@@ -412,7 +412,7 @@ function SchedulePage() {
                     : "bg-card hover:border-teal/60 text-foreground/70")
                 }
               >
-                <Building2 className="h-4 w-4" /> In person
+                <Building2 className="h-4 w-4" /> {sc.inPerson}
               </button>
             )}
           </div>
@@ -420,7 +420,7 @@ function SchedulePage() {
 
         {effectiveModality === "in_person" && (
           <div className="space-y-1.5">
-            <Label className="text-sm">Where would you like to meet?</Label>
+            <Label className="text-sm">{sc.whereMeet}</Label>
             <Select
               value={locationId}
               onValueChange={(v) => {
@@ -496,7 +496,7 @@ function SchedulePage() {
         ) : (
           <>
             <div className="space-y-1.5">
-              <Label className="text-sm">Pick a day</Label>
+              <Label className="text-sm">{sc.pickDay}</Label>
               <div className="flex gap-2 overflow-x-auto pb-1 -mx-4 px-4 sm:mx-0 sm:px-0 snap-x snap-mandatory scroll-px-4">
                 {dayGroups.map((g) => {
                   const key = g.date.toDateString();
@@ -521,13 +521,13 @@ function SchedulePage() {
                       }
                     >
                       <div className="font-medium">
-                        {g.date.toLocaleDateString(undefined, {
+                        {g.date.toLocaleDateString(lang === "es" ? "es-US" : undefined, {
                           weekday: "short",
                         })}
                       </div>
                       <div className="text-base text-navy font-display">{g.date.getDate()}</div>
                       <div className="text-[10px] text-muted-foreground mt-0.5">
-                        {open === 0 ? "Full" : `${open} open`}
+                        {open === 0 ? sc.full : sc.nOpen(open)}
                       </div>
                     </button>
                   );
@@ -536,15 +536,15 @@ function SchedulePage() {
             </div>
 
             <div className="space-y-1.5">
-              <Label className="text-sm">Pick a time</Label>
+              <Label className="text-sm">{sc.pickTimeLabel}</Label>
               <div className="flex items-center gap-3 text-[11px] text-muted-foreground">
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-block h-2 w-2 rounded-sm border border-teal bg-teal/20" />
-                  Open
+                  {sc.open}
                 </span>
                 <span className="inline-flex items-center gap-1">
                   <span className="inline-block h-2 w-2 rounded-sm border bg-muted" />
-                  <span className="line-through">Taken</span>
+                  <span className="line-through">{sc.taken}</span>
                 </span>
               </div>
               <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">

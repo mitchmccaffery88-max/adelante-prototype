@@ -51,6 +51,11 @@ const EN = {
   prepPhone: "Prep tip: pick somewhere you won't be overheard, and keep your phone charged.",
   prepVideo: "Prep tip: test your camera a few minutes early and find a private spot.",
   status: {} as Record<string, string>,
+  whereMeet: "Where would you like to meet?",
+  pickDay: "Pick a day",
+  pickTimeLabel: "Pick a time",
+  full: "Full",
+  nOpen: (n: number) => `${n} open`,
 };
 
 type Copy = typeof EN;
@@ -102,6 +107,11 @@ const ES: Copy = {
   prepPhone: "Consejo: busca un lugar donde no te escuchen y ten tu teléfono cargado.",
   prepVideo: "Consejo: prueba tu cámara unos minutos antes y busca un lugar privado.",
   status: { scheduled: "Programada", attended: "Asistió", no_show: "No asistió", cancelled: "Cancelada", late_cancel: "Cancelada tarde", check_in: "Llegó", rescheduled: "Cambiada" },
+  whereMeet: "¿Dónde prefieres reunirte?",
+  pickDay: "Elige un día",
+  pickTimeLabel: "Elige una hora",
+  full: "Lleno",
+  nOpen: (n) => `${n} libre(s)`,
 };
 
 export function scheduleCopy(lang: string): Copy {
