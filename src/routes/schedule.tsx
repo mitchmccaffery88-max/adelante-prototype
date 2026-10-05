@@ -106,6 +106,10 @@ function SchedulePage() {
   const [tab, setTab] = useState<ScheduleTab>(
     tabParam ?? (rescheduleId ? "one_to_one" : "yours"),
   );
+  // Clicking "Reschedule" from the list changes the search in place — jump to the picker.
+  useEffect(() => {
+    if (rescheduleId) setTab("one_to_one");
+  }, [rescheduleId]);
   const [activeDayKey, setActiveDayKey] = useState<string>("");
 
   const availability = useEhr(() =>
