@@ -77,11 +77,12 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 
   const drafts = listScribeSessions(pid || undefined).filter((s) => s.state === "drafted" && s.target === target.kind && (s.target === "note" || !s.afbiContactId) && (pid || s.startedBy.name === staff.staffName));
   const inPerson = setting !== "telehealth";
-  // Thumb-zone bar on phones; inline inside the AFBI drawer.
-  const bar = isAfbi ? "flex gap-2" : "fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t bg-background p-3 sm:static sm:border-0 sm:p-0";
+  // Thumb-zone bar on phones; inline inside the AFBI drawer. Sits ABOVE the
+  // persistent 988 crisis banner (bottom-10) so neither covers the other.
+  const bar = isAfbi ? "flex gap-2" : "fixed inset-x-0 bottom-10 z-30 flex gap-2 border-t bg-background p-3 sm:static sm:border-0 sm:p-0";
 
   return (
-    <div className={isAfbi ? "space-y-4" : "space-y-4 pb-24 sm:pb-0"}>
+    <div className={isAfbi ? "space-y-4" : "space-y-4 pb-36 sm:pb-0"}>
       {!live && (
         <Card className="p-4 space-y-3" data-testid="scribe-start">
           <h2 className="font-display text-lg text-navy">{canLive ? "Start AI scribe" : "Dictate after the encounter"} <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
@@ -156,8 +157,8 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
           </div>
           {/* Thumb zone on phones. */}
           <div className={bar}>
-            {canLive && <Button className="h-14 flex-1 text-base sm:h-10 sm:flex-none" disabled={!!block} onClick={start} data-testid="scribe-start-btn">Start AI scribe</Button>}
-            <Button variant={canLive ? "outline" : "default"} className="h-14 flex-1 text-base sm:h-10 sm:flex-none" disabled={!!dictBlock} onClick={dictate} data-testid="scribe-dictate-btn">Dictate after the encounter</Button>
+            {canLive && <Button className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" disabled={!!block} onClick={start} data-testid="scribe-start-btn">Start AI scribe</Button>}
+            <Button variant={canLive ? "outline" : "default"} className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" disabled={!!dictBlock} onClick={dictate} data-testid="scribe-dictate-btn">Dictate after the encounter</Button>
           </div>
         </Card>
       )}
@@ -185,8 +186,8 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
             <Button size="sm" variant="ghost" onClick={withdrew}>Patient withdrew consent</Button>
           </div>
           <div className={bar}>
-            {live.setting !== "telehealth" && <Button variant="outline" className="h-14 flex-1 text-base sm:h-10 sm:flex-none" onClick={pause} data-testid="scribe-pause">{live.paused ? "Resume" : "Pause"}</Button>}
-            <Button className="h-14 flex-1 text-base sm:h-10 sm:flex-none" onClick={end} data-testid="scribe-end">End session</Button>
+            {live.setting !== "telehealth" && <Button variant="outline" className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" onClick={pause} data-testid="scribe-pause">{live.paused ? "Resume" : "Pause"}</Button>}
+            <Button className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" onClick={end} data-testid="scribe-end">End session</Button>
           </div>
         </Card>
       )}
