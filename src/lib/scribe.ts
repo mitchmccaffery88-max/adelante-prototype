@@ -8,7 +8,7 @@
 // Every mutation runs through the registry (runAction) — see chartActions.ts.
 import { AdelanteEHR, type ConsentRecordSection, type Patient, type ProgressNote } from "./ehr";
 import type { StaffRole } from "./roles";
-import { canAccess } from "./roles";
+import { canAccess, noteBodyRestricted } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { isSudMedication, type SudClassifiable } from "./sudMedClassifier";
 import { cohortGuard } from "./cohortGuard";

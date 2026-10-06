@@ -198,7 +198,7 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; compact?: boolean }) {
   const staff = useActingStaff();
   const actor = { name: staff.staffName, role: staff.role, staffId: staff.staffId, clinicianId: staff.clinicianId };
-  const view = useEhr(() => scribeView(sessionId, staff.role));
+  const view = useEhr(() => scribeView(sessionId, staff.role, [staff.staffId, staff.clinicianId]));
   const s = view.session;
   const noteRaw = useEhr(() => (s?.noteId ? AdelanteEHR._findNote(s.patientId, s.noteId).n : undefined));
   const isAfbi = s?.target === "afbi";
