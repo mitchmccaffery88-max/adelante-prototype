@@ -85,3 +85,22 @@ Part 2 masking applies everywhere: roles that can't see substance-use content ne
 4. RN triage notes: where they are reviewed and signed in the chart.
 5. Is the 7-day unsigned retention right?
 6. Are the noisy-setting thresholds right?
+
+## Device layout check (prototype viewport only — real device/mic testing is a SculptSoft item)
+
+Checked in a desktop browser at tablet portrait (820×1180) and phone (390×844) as the SUD counselor (Renee Castillo) on Luis Camacho, capture Simulated. Run 6 Oct 2026.
+
+| Walk | Tablet 820 | Phone 390 |
+|---|---|---|
+| Field session: privacy check, named bystander (name + relationship + agreed), all-party confirmation, Start | Works, nothing clipped | Works after fix (below) |
+| Pause → "Paused — nothing is captured" → Resume; gap line in transcript | Works, 1 gap shown | Works, 1 gap shown; large Pause / End buttons in the thumb zone |
+| End → draft in chart | Works | Works |
+| Clinic session with interpreter as a named party | Works; Pause available | Works |
+| Offline toggle | Start disabled with "No connection — capture can't run offline" and the dictation next step | Same |
+
+Fixed in this pass:
+- **Phone: "Dictate after the encounter" button ran off the right edge** (label couldn't wrap). Buttons now wrap to two lines.
+- **Phone: the button bar sat under the 988 crisis banner**, which blocked taps on Resume / End when scrolled to the bottom. The bar now rides just above the crisis banner and settles at the end of its card; the crisis banner stays on top and visible.
+- **Named people carried over to the next session** after End or Stop and discard. Each new session now starts with an empty people list, privacy check and all-party confirmation, so agreement is collected fresh every time.
+
+Notes: at tablet width the controls use the desktop layout (buttons inline, 40 px tall). Real touch, microphone, noise and screen-reader testing on physical devices is a SculptSoft item.

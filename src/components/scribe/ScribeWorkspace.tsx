@@ -69,19 +69,22 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 
   const run = (fn: () => void) => { try { fn(); } catch (e) { toast.error((e as Error).message); } };
   const start = () => run(() => { const s = actFor<ScribeSession>("scribe_start", "startScribeSession", pid, req); setLiveId(s.id); });
-  const end = () => run(() => { actFor("scribe_end", "endScribeSession", pid, liveId, actor); toast.success(isAfbi ? `AFBI draft ready · ${AI_DRAFT_LABEL}` : `Draft created in the chart · ${AI_DRAFT_LABEL}`); setLiveId(null); setConfirmed(false); setPrivateOk(false); });
+  const end = () => run(() => { actFor("scribe_end", "endScribeSession", pid, liveId, actor); toast.success(isAfbi ? `AFBI draft ready · ${AI_DRAFT_LABEL}` : `Draft created in the chart · ${AI_DRAFT_LABEL}`); setLiveId(null); setConfirmed(false); setPrivateOk(false); setOthers([]); });
   const pause = () => run(() => { actFor(live?.paused ? "scribe_resume" : "scribe_pause", live?.paused ? "resumeScribeSession" : "pauseScribeSession", pid, liveId, actor); force((n) => n + 1); });
-  const discard = () => run(() => { actFor("scribe_discard", "discardScribeSession", pid, liveId, actor, "stopped"); });
+  const discard = () => run(() => { actFor("scribe_discard", "discardScribeSession", pid, liveId, actor, "stopped"); setConfirmed(false); setPrivateOk(false); setOthers([]); });
   const withdrew = () => run(() => { actFor("scribe_consent_withdraw", "withdrawAiRecordingConsent", pid, { patientId: pid, by: staff.staffName, role: staff.role, staffId: staff.staffId }); });
   const dictate = () => run(() => { actFor("scribe_dictate", "createDictationDraft", pid || undefined, dictReq); toast.success(`Dictation draft ready · ${AI_DRAFT_LABEL}`); });
 
   const drafts = listScribeSessions(pid || undefined).filter((s) => s.state === "drafted" && s.target === target.kind && (s.target === "note" || !s.afbiContactId) && (pid || s.startedBy.name === staff.staffName));
   const inPerson = setting !== "telehealth";
-  // Thumb-zone bar on phones; inline inside the AFBI drawer.
-  const bar = isAfbi ? "flex gap-2" : "fixed inset-x-0 bottom-0 z-30 flex gap-2 border-t bg-background p-3 sm:static sm:border-0 sm:p-0";
+  // Thumb-zone bar on phones; inline inside the AFBI drawer. Sticky (not
+  // fixed) and 2.5rem up, so it rides just ABOVE the persistent 988 crisis
+  // banner while scrolling and settles at the end of its card — the two
+  // never cover each other.
+  const bar = isAfbi ? "flex gap-2" : "sticky bottom-10 z-30 flex gap-2 border-t bg-background py-3 sm:static sm:border-0 sm:py-0";
 
   return (
-    <div className={isAfbi ? "space-y-4" : "space-y-4 pb-24 sm:pb-0"}>
+    <div className={isAfbi ? "space-y-4" : "space-y-4"}>
       {!live && (
         <Card className="p-4 space-y-3" data-testid="scribe-start">
           <h2 className="font-display text-lg text-navy">{canLive ? "Start AI scribe" : "Dictate after the encounter"} <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
@@ -156,8 +159,8 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
           </div>
           {/* Thumb zone on phones. */}
           <div className={bar}>
-            {canLive && <Button className="h-14 flex-1 text-base sm:h-10 sm:flex-none" disabled={!!block} onClick={start} data-testid="scribe-start-btn">Start AI scribe</Button>}
-            <Button variant={canLive ? "outline" : "default"} className="h-14 flex-1 text-base sm:h-10 sm:flex-none" disabled={!!dictBlock} onClick={dictate} data-testid="scribe-dictate-btn">Dictate after the encounter</Button>
+            {canLive && <Button className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" disabled={!!block} onClick={start} data-testid="scribe-start-btn">Start AI scribe</Button>}
+            <Button variant={canLive ? "outline" : "default"} className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" disabled={!!dictBlock} onClick={dictate} data-testid="scribe-dictate-btn">Dictate after the encounter</Button>
           </div>
         </Card>
       )}
@@ -185,8 +188,8 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
             <Button size="sm" variant="ghost" onClick={withdrew}>Patient withdrew consent</Button>
           </div>
           <div className={bar}>
-            {live.setting !== "telehealth" && <Button variant="outline" className="h-14 flex-1 text-base sm:h-10 sm:flex-none" onClick={pause} data-testid="scribe-pause">{live.paused ? "Resume" : "Pause"}</Button>}
-            <Button className="h-14 flex-1 text-base sm:h-10 sm:flex-none" onClick={end} data-testid="scribe-end">End session</Button>
+            {live.setting !== "telehealth" && <Button variant="outline" className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" onClick={pause} data-testid="scribe-pause">{live.paused ? "Resume" : "Pause"}</Button>}
+            <Button className="h-14 min-w-0 flex-1 whitespace-normal px-2 text-base leading-tight sm:h-10 sm:flex-none sm:px-4" onClick={end} data-testid="scribe-end">End session</Button>
           </div>
         </Card>
       )}

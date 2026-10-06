@@ -10,7 +10,9 @@ export const ACCESS_COLLAPSE_MS = 5 * 60_000;
 /** sys_admin + the compliance stand-in (credentialing coordinator). */
 export const ACCESS_LOG_ROLES: readonly string[] = ["sys_admin", "credentialing_coordinator"];
 
-export type AccessKind = "open" | "section" | "print" | "export";
+export type AccessKind = "open" | "section" | "print" | "export" | "brief" | "compute";
+/** Actions shown in "Who accessed this record" and the admin access filter. */
+export const ACCESS_LOG_ACTIONS: readonly string[] = ["record.viewed", "brief.viewed", "brief.section_computed"];
 
 export interface AccessInput {
   actorId: string;
@@ -21,6 +23,8 @@ export interface AccessInput {
   kind: AccessKind;
   viewedAs?: string;
   at?: Date;
+  /** Defaults to "record.viewed"; the Adel Brief uses "brief.viewed". */
+  action?: "record.viewed" | "brief.viewed";
 }
 
 const lastSeen = new Map<string, number>();
@@ -29,13 +33,14 @@ const lastSeen = new Map<string, number>();
 export function recordView(input: AccessInput): boolean {
   const now = (input.at ?? new Date()).getTime();
   const viewedAs = input.viewedAs ?? currentRunActor().viewingStaffId;
-  const key = `${input.actorId}|${input.patientId}|${input.sectionId}`;
+  const action = input.action ?? "record.viewed";
+  const key = `${action}|${input.actorId}|${input.patientId}|${input.sectionId}`;
   const prev = lastSeen.get(key);
   if (prev !== undefined && now - prev < ACCESS_COLLAPSE_MS) return false;
   lastSeen.set(key, now);
   AdelanteEHR._recordAudit({
     category: "access",
-    action: "record.viewed",
+    action,
     patientId: input.patientId,
     actorId: input.actorId,
     actorRole: input.role,
@@ -60,11 +65,20 @@ export interface AccessRow {
   sectionId: string;
   kind: AccessKind;
   viewedAs?: string;
+  action: string;
+  /** System events (Brief computes) — never a person viewing. */
+  system?: boolean;
+  triggeredBy?: string[];
+}
+
+/** V2 — the staff member opened the Adel Brief. Same 5-minute collapse as record views. */
+export function recordBriefView(input: Omit<AccessInput, "sectionId" | "kind" | "action">): boolean {
+  return recordView({ ...input, sectionId: "brief", kind: "brief", action: "brief.viewed" });
 }
 
 export function accessEventsFor(patientId?: string): AccessRow[] {
   return AdelanteEHR.listAuditEvents(patientId ? { patientId } : {})
-    .filter((e) => e.action === "record.viewed")
+    .filter((e) => ACCESS_LOG_ACTIONS.includes(e.action))
     .map((e) => {
       const d = (e.detail ?? {}) as Record<string, unknown>;
       return {
@@ -76,6 +90,9 @@ export function accessEventsFor(patientId?: string): AccessRow[] {
         sectionId: (d["sectionId"] as string) ?? "",
         kind: ((d["kind"] as AccessKind) ?? "section"),
         viewedAs: d["viewedAs"] as string | undefined,
+        action: e.action,
+        system: d["system"] === true || undefined,
+        triggeredBy: d["triggeredBy"] as string[] | undefined,
       };
     });
 }
