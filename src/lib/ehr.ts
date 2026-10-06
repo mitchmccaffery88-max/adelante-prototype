@@ -21252,6 +21252,14 @@ export const AdelanteEHR = {
     appendAudit(evt as never);
     emit();
   },
+  /**
+   * Append an audit row WITHOUT notifying subscribers. Only for system
+   * events written during a derived-cache compute (Adel Brief), where an
+   * emit would re-trigger the cache it came from or update React mid-render.
+   */
+  _recordAuditQuiet(evt: { category: string; action: string; patientId?: string; actorId?: string; actorRole?: string; detail?: Record<string, unknown> }): void {
+    appendAudit(evt as never);
+  },
   _emit(): void {
     emit();
   },
