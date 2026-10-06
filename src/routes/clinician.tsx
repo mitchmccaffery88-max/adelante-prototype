@@ -4,6 +4,7 @@ import { coverageStatusLabel, verifiedLabel } from "@/lib/coverageStatus";
 import { coverageKind } from "@/lib/billingLane";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { createContext, useContext, useEffect, useState } from "react";
+import { warmAdelBriefs, workspaceBriefTargets } from "@/lib/adelBrief";
 import { bucketWorkspaceVisits, resolveWorkspaceActor, viewAsOptions, type WorkspaceActor } from "@/lib/workspaceIdentity";
 import { inFacilityEnabled, isInFacilityTask } from "@/lib/inFacility";
 import { AdelanteEHR, useEhr, type SessionStatus, VISIT_STATUS_LABEL, isSudMedicationName, APPT_REQUEST_BOOK_AS } from "@/lib/ehr";
@@ -141,6 +142,11 @@ function ClinicianPage() {
     const mine = new Set(myCaseload(ws).map((p) => p.id));
     return AdelanteEHR.listAppointments().filter((a) => mine.has(a.patientId));
   });
+  // §Faster Adel Brief — warm the Brief cache for today's visits + caseload in idle time.
+  useEffect(() => {
+    warmAdelBriefs([...workspaceBriefTargets(ws.staffId, clinicianId), ...myCaseload(ws).map((p) => p.id)], acting.role);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [ws.staffId, acting.role, clinicianId]);
 
   const [bookRole] = useActingRole();
   const bookActor = useActingStaff();
