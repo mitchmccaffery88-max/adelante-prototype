@@ -102,7 +102,7 @@ describe("print record — SUD masking parity with the on-screen gate", () => {
 
     const gated = buildPrintRecordDocument({
       patient,
-      role: "ecm_provider",
+      role: "clinical_trainee",
       flags: { ...FLAGS, meds: false, mar: false },
     });
     const section = gated.sections.find((s) => s.key === "notes");

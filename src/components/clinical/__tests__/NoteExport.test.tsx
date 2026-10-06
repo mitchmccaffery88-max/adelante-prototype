@@ -56,9 +56,9 @@ describe("note PDF export affordance", () => {
   });
 
   it("hides export for a SUD-masked note and refuses to render its content", () => {
-    // ecm_provider is still consent_gated for SUD content; therapist is not.
+    // clinical_trainee (full note access) is consent_gated for SUD content; therapist is not.
     setActingStaff("s-cm1");
-    setActingRole("ecm_provider");
+    setActingRole("clinical_trainee");
     // A fresh patient with no consent and no other (unmasked) notes — demo
     // seeds now put signed notes on the early demo patients.
     const sudPatient = AdelanteEHR.createPatient({ firstName: "Sud", lastName: "Masked" } as never);
@@ -83,7 +83,7 @@ describe("note PDF export affordance", () => {
       (n) => n.category === "sud",
     )!;
     expect(() =>
-      buildNoteDocumentModel({ note: stored, patient: sudPatient, role: "ecm_provider" }),
+      buildNoteDocumentModel({ note: stored, patient: sudPatient, role: "clinical_trainee" }),
     ).toThrow(/42 CFR Part 2/i);
   });
 });

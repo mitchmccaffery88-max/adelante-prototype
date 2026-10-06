@@ -28,7 +28,8 @@ describe("rename: ecm_provider", () => {
     expect(canAccess("ecm_provider", "case_notes").level).toBe("write");
     expect(canAccess("ecm_provider", "consent_ledger").level).toBe("write");
     expect(canAccess("ecm_provider", "custody_tracking").level).toBe("write");
-    expect(canAccess("ecm_provider", "therapy_notes").level).toBe("read");
+    // Draft — pending executive RBAC review: clinical-note METADATA only.
+    expect(canAccess("ecm_provider", "therapy_notes").level).toBe("summary");
     expect(canAccess("ecm_provider", "controlled_substance_custody").level).toBe("read");
   });
 });
