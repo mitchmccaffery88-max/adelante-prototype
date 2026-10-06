@@ -343,10 +343,14 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           onClick={() =>
             run(
               () => {
-                const pid = AdelanteEHR.enrollReferral(referral.id);
-                if (pid) {
-                  setEnrolledPatientId(pid);
-                  setAdvocateStep("ask");
+                try {
+                  tryEnroll();
+                } catch (err) {
+                  if (err instanceof PossibleExistingPatientError) {
+                    setExactMatches(err.matches);
+                    return;
+                  }
+                  throw err;
                 }
               },
               "Enrolled — a client record has been created",
