@@ -265,10 +265,10 @@ export const PART2_ITEMS: J7Item[] = ["asam_section", "sud_meds", "sud_instrumen
 describe("J7 Part 2 sweep", () => {
   it("every staff role × item matches the registry; no leak in task, notification or audit text", () => {
     at(FROZEN_NOW);
-    const p = AdelanteEHR.getPatient("p-demo-mar-seed")!; // Marcus Whitfield — signed ASAM in seed
-    expect(roleSeesAsamSection("physician", p)).toBe(true);
-    // SUD med, scribe draft, care-partner link + disclosure-log entry — all through real store functions.
-    AdelanteEHR.prescribeMedication({ patientId: p.id, name: "Naltrexone 50 mg", dose: "50 mg", route: "PO", frequency: "daily", prescriber: DR().name, startedOn: "2026-09-01" } as never);
+    // Luis Camacho — seeded with signed ASAMs and buprenorphine-naloxone (no SUD problem row).
+    const p = AdelanteEHR.listPatients().find((x) => x.firstName === "Luis" && x.lastName === "Camacho")!;
+    expect(AdelanteEHR.listAsamAssessments(p.id).length).toBeGreaterThan(0);
+    // Scribe draft, care-partner link + disclosure-log entry — all through real store functions.
     grantAiRecordingConsent({ patientId: p.id, signedByName: "M W", attested: true, part2: true, capturedBy: { staffName: "x", role: "therapist" } });
     const dr: ScribeActor = { name: DR().name, role: "physician", staffId: "s-np1", clinicianId: DR().clinicianId };
     const s = startScribeSession({ actor: dr, patientId: p.id, format: "soap", allPartyConfirmed: true });
@@ -279,7 +279,8 @@ describe("J7 Part 2 sweep", () => {
     expect(listDisclosureLog({ patientId: p.id } as never).length).toBeGreaterThan(0);
 
     const pt = AdelanteEHR.getPatient(p.id)!;
-    const meds = pt.medications ?? [];
+    const meds = AdelanteEHR.listMedications(pt.id) as { name?: string }[];
+    expect(meds.some((m) => /buprenorphine/i.test(m.name ?? ""))).toBe(true);
     const matrix: Record<string, Record<J7Item, boolean>> = {};
     const leaks: string[] = [];
     for (const { key: role } of STAFF_ROLES) {
@@ -307,6 +308,7 @@ describe("J7 Part 2 sweep", () => {
     mkdirSync("/tmp/cross-role", { recursive: true });
     const header = `| Role | ${J7_ITEMS.join(" | ")} |\n|---|${J7_ITEMS.map(() => "---").join("|")}|`;
     const body = Object.entries(matrix).map(([r, row]) => `| ${r} | ${J7_ITEMS.map((i) => (row[i] ? "sees" : "hidden")).join(" | ")} |`).join("\n");
+    writeFileSync("/tmp/cross-role/j7-patient.txt", pt.id);
     writeFileSync("/tmp/cross-role/j7-matrix.md", `${header}\n${body}\n`);
     writeFileSync("/tmp/cross-role/j7-leaks.json", JSON.stringify(leaks, null, 2));
     expect(leaks).toEqual([]);
