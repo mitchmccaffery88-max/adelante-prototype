@@ -20,23 +20,24 @@ async function actAs(page: Page, role: StaffRole) {
   );
 }
 
+/** DOB of the Luis Camacho who has signed ASAM data (there is a near-duplicate for matching demos). */
 async function luisId(page: Page): Promise<string> {
   await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante, null, { timeout: 60_000 });
   return page.evaluate(() => {
     const ehr = (window as unknown as { __adelante: { AdelanteEHR: { listPatients(): { id: string; firstName: string; lastName: string }[] } } }).__adelante.AdelanteEHR;
-    return ehr.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!.id;
+    const all = ehr.listPatients() as unknown as { id: string; firstName: string; lastName: string; dob: string; asamAssessments?: unknown[] }[];
+    return all.find((p) => p.firstName === "Luis" && p.lastName === "Camacho" && (p.asamAssessments ?? []).length > 0)!.dob;
   });
 }
 
 /** Opens Luis's chart through the top-bar patient search (in-app, no reload), then a tab. */
-async function openChartTab(page: Page, tab: RegExp) {
-  const box = page.getByRole("combobox", { name: /Search patients/ });
+async function openChartTab(page: Page, tab: RegExp, dob: string) {
+  const box = page.getByPlaceholder(/Search patients/);
   await box.click();
   await box.fill("Camacho");
-  await page.getByRole("listbox").getByText(/Luis Camacho/).first().click();
+  await page.getByRole("option").filter({ hasText: dob }).first().click();
   await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
-  const t = page.getByRole("tab", { name: tab }).or(page.getByRole("link", { name: tab })).or(page.getByRole("button", { name: tab }));
-  if (await t.count()) await t.first().click();
+  await page.getByRole("tab", { name: tab }).first().click();
   await page.waitForTimeout(800);
 }
 
@@ -48,9 +49,8 @@ const ASAM_SEES: Partial<Record<StaffRole, boolean>> = {
 for (const [role, sees] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) {
   test(`J7 chart ASAM section — ${role} ${sees ? "sees" : "hidden"}`, async ({ page }) => {
     await actAs(page, role);
-    await page.goto("/home");
-    await luisId(page);
-    await openChartTab(page, /^Measures/);
+    await page.goto("/clinician");
+    await openChartTab(page, /^Measures/, await luisId(page));
     await expect(page.getByText(/Luis/).first()).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/j7-${role}.png` });
     const body = await page.locator("main").innerText().catch(() => "");
@@ -63,9 +63,8 @@ for (const [role, sees] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) 
 for (const role of ["lvn", "billing", "sys_admin"] as StaffRole[]) {
   test(`J4 no scribe entry — ${role}`, async ({ page }) => {
     await actAs(page, role);
-    await page.goto("/home");
-    await luisId(page);
-    await openChartTab(page, /^Notes & Documents/);
+    await page.goto("/clinician");
+    await openChartTab(page, /^Notes & Documents/, await luisId(page));
     await expect(page.getByText(/Luis/).first()).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/j4-${role}.png` });
     await expect(page.getByTestId("notes-start-scribe")).toHaveCount(0);
