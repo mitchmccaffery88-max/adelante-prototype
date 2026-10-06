@@ -13,6 +13,7 @@ import {
   editAiSentence,
   endScribeSession,
   getScribeSession,
+  ingestScribeSegments,
   grantAiRecordingConsent,
   keepAiSentence,
   openAiDraft,
@@ -72,7 +73,8 @@ describe("Scribe S1 — consent gate", () => {
     const p = newPatient();
     grant(p.id);
     const s = start(p.id);
-    expect(s.transcript?.length).toBeGreaterThan(0);
+    ingestScribeSegments(s.id, 3);
+    expect(s.transcript?.length).toBe(3);
     withdrawAiRecordingConsent({ patientId: p.id, by: "Pat", role: "patient" });
     const after = getScribeSession(s.id)!;
     expect(after.state).toBe("discarded");
@@ -89,10 +91,11 @@ describe("Scribe S1 — consent gate", () => {
     expect(r?.reason).toContain("S.T.");
     expect(r?.reason).not.toContain(b.lastName);
   });
-  it("roles outside Phase 1 can't capture", () => {
+  it("LVN has no scribe access; dictation-only roles can't live-capture (Phase 1b)", () => {
     const p = newPatient();
     grant(p.id);
-    expect(captureBlocker({ actor: { name: "x", role: "lvn" }, patientId: p.id, format: "soap", allPartyConfirmed: true })?.reason).toMatch(/Phase|phase/);
+    expect(captureBlocker({ actor: { name: "x", role: "lvn" }, patientId: p.id, format: "soap", allPartyConfirmed: true })?.reason).toMatch(/doesn't use the AI scribe/);
+    expect(captureBlocker({ actor: { name: "x", role: "peer_specialist" }, patientId: p.id, format: "soap", allPartyConfirmed: true })?.reason).toMatch(/dictation only/);
   });
 });
 
