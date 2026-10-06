@@ -104,6 +104,7 @@ export interface BriefSectionResult {
 const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
 const md = (iso: string) => new Date(iso.length === 10 ? `${iso}T12:00:00` : iso).toLocaleDateString([], { month: "short", day: "numeric" });
 const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
+export const _briefFmt = { md: (iso: string) => md(iso), plural: (n: number, w: string) => plural(n, w) };
 const maxAt = (xs: (string | undefined)[], fallback: string) => xs.filter(Boolean).sort().at(-1) ?? fallback;
 const seesVisits = (role: StaffRole, p: Patient) => canAccess(role, "case_notes", p).level !== "none";
 const apptsFor = (pid: string) => AdelanteEHR.listAppointments().filter((a) => a.patientId === pid);
