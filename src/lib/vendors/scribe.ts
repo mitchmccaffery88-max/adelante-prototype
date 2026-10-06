@@ -143,6 +143,71 @@ export const MockScribeAdapter: ScribeAdapter = {
       ],
     };
   },
+  dictation(ctx) {
+    const src = ctx.enrolled ? DICTATION_ENROLLED : DICTATION_UNENROLLED;
+    return src.map((s, i) => ({ ...s, id: `d${i + 1}` }));
+  },
+  dictationDraft(_segments, format) {
+    const report = [
+      { text: "Client reports a hard week with poor sleep.", sourceIds: ["d2"] },
+      { text: "Client kept their work shifts.", sourceIds: ["d2"] },
+    ];
+    const intervention = [{ text: "Reviewed the coping plan; naloxone kit provided with a refresher on use.", sourceIds: ["d3"] }];
+    // Hallucination-guard demo: unsupported.
+    const assessment = [{ text: "Client appears motivated to stay engaged.", sourceIds: [] as string[] }];
+    const plan = [{ text: "Clinic visit next week; staff to call Monday to confirm.", sourceIds: ["d4", "d5"] }];
+    return {
+      sections: {
+        ...byFormat(format, { report, intervention, assessment, plan, goal: [{ text: "Goal: stay connected to care after a hard week.", sourceIds: ["d2", "d4"] }] }),
+        client_response: [{ text: "Client agreed to a clinic visit next week.", sourceIds: ["d4"] }],
+        next_steps: [{ text: "Call Monday to confirm the visit and the bus pass.", sourceIds: ["d5"] }],
+      },
+      followUps: [{ id: "fu-visit", kind: "book_visit", label: "Book the clinic visit next week" }],
+    };
+  },
+  afbiDraft(segments) {
+    if (!isDictation(segments)) {
+      return {
+        sections: {
+          afbi_summary: [
+            { text: "Person reports a hard week with anxiety and poor sleep.", sourceIds: ["s3"] },
+            { text: "Practiced grounding together.", sourceIds: ["s7"] },
+          ],
+          afbi_next_step: [{ text: "Follow up in two weeks.", sourceIds: ["s9", "s10"] }],
+        },
+        followUps: [],
+        afbi: { activities: ["engagement"], minutes: 15, outcome: "engaged", nextStep: "Follow up in two weeks.", locationType: "community_site" },
+      };
+    }
+    if (unenrolledScript(segments)) {
+      return {
+        sections: {
+          afbi_summary: [
+            // Identifying-detail guard demo (pre-enrollment = initials only).
+            { text: "He said his name is Robert Diaz and he has been out about two weeks.", sourceIds: ["d2"] },
+            { text: "Talked about available help; naloxone kit provided.", sourceIds: ["d3"] },
+            { text: "Person is interested and took a clinic card.", sourceIds: ["d4"] },
+          ],
+          afbi_next_step: [{ text: "Look for him at the shelter on Thursday.", sourceIds: ["d5"] }],
+        },
+        followUps: [],
+        afbi: { activities: ["engagement", "naloxone"], minutes: 15, outcome: "engaged", nextStep: "Look for him at the shelter on Thursday.", locationType: "shelter" },
+      };
+    }
+    return {
+      sections: {
+        afbi_summary: [
+          { text: "Client reports a hard week with poor sleep but kept work shifts.", sourceIds: ["d2"] },
+          { text: "Reviewed the coping plan; naloxone kit provided.", sourceIds: ["d3"] },
+          // Hallucination-guard demo.
+          { text: "Client was linked to housing services.", sourceIds: [] },
+        ],
+        afbi_next_step: [{ text: "Call Monday to confirm next week's clinic visit.", sourceIds: ["d5"] }],
+      },
+      followUps: [],
+      afbi: { activities: ["engagement", "naloxone"], minutes: 30, outcome: "engaged", nextStep: "Call Monday to confirm next week's clinic visit.", locationType: "community_site" },
+    };
+  },
 };
 
 export const scribe: ScribeAdapter = MockScribeAdapter;
