@@ -10,10 +10,9 @@ import { STAFF_ROLES, useActingStaff } from "@/lib/roles";
 import { canViewCoordination } from "@/lib/coordinationRoles";
 import { REGISTRY_VERSION, type ChartActionGroup } from "@/lib/chartActions";
 import { featureSnapshot } from "@/lib/features";
-import { flagsCsv, matrixCsv, permissionMatrix } from "@/lib/actions/permissionMatrix";
+import { flagsCsv, matrixCsv, noteContentByRole, permissionMatrix } from "@/lib/actions/permissionMatrix";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { redactAuditEvent } from "@/lib/auditRedaction";
-import { noteContentByRole } from "@/lib/actions/permissionMatrix";
 import { NOTE_CONTENT_RBAC_DRAFT } from "@/lib/roles";
 import { SUD_REPORTING_ACCESS_LABEL, SUD_REPORTING_ACCESS_ROLES, SUD_REPORTING_POST_MVP_NOTE } from "@/lib/sudReportingAccess";
 
