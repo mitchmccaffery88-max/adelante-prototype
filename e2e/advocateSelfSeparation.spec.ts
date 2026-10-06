@@ -94,13 +94,18 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   await page.getByRole("button", { name: "Connect" }).click();
 
   // Direction 1 — the advocate view is scoped to Patient A.
-  await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
+  // The advocate home is now a summary ("Supporting <first name>"); the full
+  // schedule lives on /advocate/appointments since the advocate redesign.
+  await expect(page.getByRole("heading", { name: /^Supporting / })).toBeVisible();
+  await spaGoto(page, "/advocate/appointments");
+  await expect(page.getByTestId("advocate-upcoming")).toBeVisible();
   // The advocate surface deliberately never prints the patient's name, so
   // "scoped to Patient A" is asserted on the schedule the data layer returned
   // for that link — captured here and compared again after the round trip.
   const upcomingBefore = await page.getByTestId("advocate-upcoming").innerText();
 
   // ---- the same person opens care of their OWN ---------------------------
+  await spaGoto(page, "/advocate");
   await page.getByRole("button", { name: /support for me too/i }).click();
   await page.getByLabel("First name").fill(SELF_FIRST);
   await page.getByLabel("Last name").fill(SELF_LAST);
@@ -115,10 +120,14 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
 
   // Direction 2 — back on the advocate surface, nothing from their own record
   // bleeds in.
-  await spaGoto(page, "/advocate");
-  await expect(page.getByRole("heading", { name: "Upcoming" })).toBeVisible();
+  await spaGoto(page, "/advocate/appointments");
+  await expect(page.getByTestId("advocate-upcoming")).toBeVisible();
   expect(await page.getByTestId("advocate-upcoming").innerText()).toBe(upcomingBefore);
-  const advocateBody = await page.locator("body").innerText();
-  expect(advocateBody).not.toContain(SELF_FIRST);
-  expect(advocateBody).not.toContain(SELF_LAST);
+  for (const path of ["/advocate/appointments", "/advocate"]) {
+    await spaGoto(page, path);
+    await page.waitForTimeout(300);
+    const advocateBody = await page.locator("body").innerText();
+    expect(advocateBody).not.toContain(SELF_FIRST);
+    expect(advocateBody).not.toContain(SELF_LAST);
+  }
 });
