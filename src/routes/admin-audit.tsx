@@ -13,6 +13,7 @@ import {
 import { ArrowLeft, Download, ShieldCheck } from "lucide-react";
 import { toast } from "sonner";
 import { useActingRole } from "@/lib/roles";
+import { ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { EyeOff } from "lucide-react";
 import { Input } from "@/components/ui/input";
@@ -85,7 +86,7 @@ function AdminAuditPage() {
         since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
         until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
         limit: 200,
-      }).filter((e) => (cat !== "record.viewed" || e.action === "record.viewed") && (cat !== "brief" || e.action.startsWith("brief."))),
+      }).filter((e) => (cat !== "record.viewed" || e.action === "record.viewed") && (cat !== "brief" || e.action.startsWith("brief.")) && (ACCESS_LOG_ROLES.includes(role) || !e.action.startsWith("brief."))),
       role,
     ),
   );
@@ -188,7 +189,7 @@ function AdminAuditPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.map((c) => (
+            {CATEGORIES.filter((c) => (c.value !== "brief" && c.value !== "record.viewed") || ACCESS_LOG_ROLES.includes(role)).map((c) => (
               <SelectItem key={c.value} value={c.value}>
                 {c.label}
               </SelectItem>
