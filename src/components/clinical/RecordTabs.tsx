@@ -2494,7 +2494,7 @@ export function NotesTab({
   );
   return (
     <div className="space-y-4">
-      {canWrite && !restrictToTemplateKey && canCaptureScribe(role) && (
+      {!readOnly && !restrictToTemplateKey && canCaptureScribe(role) && (
         <StartScribeLink patientId={patientId} />
       )}
       {canWrite && (
