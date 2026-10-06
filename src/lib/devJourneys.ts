@@ -12,3 +12,4 @@ export { createDictationDraft, openAiDraft, deleteAiSentence, keepAiSentence, co
 export { requestAfbiLink, getAfbiContact } from "@/lib/afbiOutreach";
 export { buildIslFile, serviceRows, generateReport, reportCards } from "@/lib/countyReporting";
 export { dmcOdsExportRows, exportColumnsFor } from "@/lib/dmcOdsReadiness";
+export { canAccess } from "@/lib/roles";
