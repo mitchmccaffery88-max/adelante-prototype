@@ -189,7 +189,7 @@ function AdminAuditPage() {
             <SelectValue />
           </SelectTrigger>
           <SelectContent>
-            {CATEGORIES.filter((c) => (c.value !== "brief" && c.value !== "record.viewed") || ACCESS_LOG_ROLES.includes(role)).map((c) => (
+            {CATEGORIES.filter((c) => c.value !== "brief" || ACCESS_LOG_ROLES.includes(role)).map((c) => (
               <SelectItem key={c.value} value={c.value}>
                 {c.label}
               </SelectItem>
