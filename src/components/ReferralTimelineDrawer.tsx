@@ -369,6 +369,67 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
           Decline
         </Button>
       </div>
+      {exactMatches && (
+        <div className="space-y-2 rounded-md border p-3" data-testid="referral-exact-match">
+          <p className="text-sm font-medium text-navy">This person may already exist</p>
+          <p className="text-xs text-muted-foreground">
+            An existing record matches exactly. Open it instead of creating a second one — or link
+            this referral to it from Patient matching.
+          </p>
+          <ul className="space-y-2">
+            {exactMatches.map((m) => {
+              const p = AdelanteEHR.getPatient(m.patientId);
+              if (!p) return null;
+              return (
+                <li
+                  key={m.patientId}
+                  className="flex flex-wrap items-center justify-between gap-2 rounded-md border p-2 text-sm"
+                >
+                  <span>
+                    {p.firstName} {p.lastName} · DOB {p.dob} · {p.programId ?? p.id}
+                  </span>
+                  <Button asChild size="sm" variant="outline">
+                    <Link to="/record/$patientId" params={{ patientId: p.id }}>
+                      Open existing
+                    </Link>
+                  </Button>
+                </li>
+              );
+            })}
+          </ul>
+          <div className="space-y-1.5">
+            <Label htmlFor="ref-ca-reason" className="text-xs">
+              Reason to create anyway (required)
+            </Label>
+            <Textarea
+              id="ref-ca-reason"
+              value={createReason}
+              onChange={(e) => setCreateReason(e.target.value)}
+              placeholder="e.g. Different person — confirmed by photo ID"
+              className="text-sm"
+              rows={2}
+            />
+          </div>
+          <div className="flex gap-2">
+            <Button
+              size="sm"
+              disabled={!createReason.trim() || busy}
+              onClick={() =>
+                run(
+                  () => tryEnroll({ reason: createReason }),
+                  "Enrolled — a new record was created and the match is queued for review",
+                  "enrolled",
+                )
+              }
+            >
+              Create anyway
+            </Button>
+            <Button size="sm" variant="ghost" onClick={() => setExactMatches(null)}>
+              Cancel
+            </Button>
+          </div>
+        </div>
+      )}
       {!mayContact && (
         <p className="text-[11px] text-muted-foreground">
           {referralActionDeniedReason("contact")}
