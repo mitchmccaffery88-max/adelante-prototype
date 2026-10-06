@@ -8,7 +8,7 @@ export { availableSlots } from "@/lib/clinicianAvailability";
 export { timelyAccessFor, timelyLine } from "@/lib/timelyAccess";
 export { orderSignatureTrail, cosignClinicDose, dosesFor, nurseQueue } from "@/lib/nursing";
 export { workspaceActionRows } from "@/lib/clinicianWorkspace";
-export { createDictationDraft, openAiDraft, deleteAiSentence, keepAiSentence, confirmAiReview, saveAfbiFromScribe } from "@/lib/scribe";
+export { createDictationDraft, openAiDraft, deleteAiSentence, keepAiSentence, confirmAiReview, saveAfbiFromScribe, grantAiRecordingConsent } from "@/lib/scribe";
 export { requestAfbiLink, getAfbiContact } from "@/lib/afbiOutreach";
 export { buildIslFile, serviceRows, generateReport, reportCards } from "@/lib/countyReporting";
 export { dmcOdsExportRows, exportColumnsFor } from "@/lib/dmcOdsReadiness";
