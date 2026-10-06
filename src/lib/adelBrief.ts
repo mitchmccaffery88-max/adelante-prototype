@@ -138,18 +138,18 @@ export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefB
       const name = o.drugName;
       if (!r || r.tone === "ok") continue;
       if (isMatOrder(o) && seesSud && r.tone === "out")
-        out.push({ id: `mat-${o.id}`, text: `MAT continuity gap — ${name} supply ran out ${md(r.runsOutOn)}.`, at: r.runsOutOn, sectionId: "medications" });
-      else out.push({ id: `run-${o.id}`, text: r.tone === "out" ? `${name} supply ran out ${md(r.runsOutOn)}.` : `${name} runs out in ${plural(r.daysLeft, "day")}.`, at: o.startDate ?? nowIso, sectionId: "medications" });
+        out.push({ id: `mat-${o.id}`, text: `MAT continuity gap — ${name} supply ran out ${md(r.runsOutOn)}.`, at: r.runsOutOn, sectionId: "medications", sources: src("order", [o.id]) });
+      else out.push({ id: `run-${o.id}`, text: r.tone === "out" ? `${name} supply ran out ${md(r.runsOutOn)}.` : `${name} runs out in ${plural(r.daysLeft, "day")}.`, at: o.startDate ?? nowIso, sectionId: "medications", sources: src("order", [o.id]) });
     }
     const ids = new Set(meds.map((o) => o.id));
     const since = +now - 14 * DAY;
     const missed = listSelfReports(p.id).filter((s) => ids.has(s.orderId) && s.status === "not_taken" && +new Date(s.scheduledAt) >= since && +new Date(s.scheduledAt) <= +now);
     if (missed.length)
-      out.push({ id: "missed", text: `${plural(missed.length, "missed dose")} self-reported in the last 14 days.`, at: maxAt(missed.map((m) => m.scheduledAt), nowIso), sectionId: "medications" });
+      out.push({ id: "missed", text: `${plural(missed.length, "missed dose")} self-reported in the last 14 days.`, at: maxAt(missed.map((m) => m.scheduledAt), nowIso), sectionId: "medications", sources: src("dose_report", missed.map((m) => `${m.orderId}@${m.scheduledAt}`)) });
   }
   const overdue = listScreenerRequests(p.id, role).filter((r) => screenerRequestStatus(r, now) === "overdue");
   if (overdue.length)
-    out.push({ id: "rescreen-overdue", text: `Overdue re-screen: ${overdue.map((r) => r.key.toUpperCase()).join(", ")}.`, at: maxAt(overdue.map((r) => r.dueAt), nowIso), sectionId: "tracking" });
+    out.push({ id: "rescreen-overdue", text: `Overdue re-screen: ${overdue.map((r) => r.key.toUpperCase()).join(", ")}.`, at: maxAt(overdue.map((r) => r.dueAt), nowIso), sectionId: "tracking", sources: src("screener_request", overdue.map((r) => r.id)) });
   return out.slice(0, BRIEF_SECTION_CAP);
 }
 
@@ -164,16 +164,16 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
     const att = (xs: typeof past) => xs.filter((a) => a.status === "attended").length;
     const miss = (xs: typeof past) => xs.filter((a) => a.status === "no_show").length;
     if (a60.length)
-      out.push({ id: "visits", text: `Visits: ${att(a30)} attended / ${miss(a30)} missed (30 d); ${att(a60)} / ${miss(a60)} (60 d).`, at: maxAt(a60.map((a) => a.start), nowIso), sectionId: "appointments" });
+      out.push({ id: "visits", text: `Visits: ${att(a30)} attended / ${miss(a30)} missed (30 d); ${att(a60)} / ${miss(a60)} (60 d).`, at: maxAt(a60.map((a) => a.start), nowIso), sectionId: "appointments", sources: src("appointment", a60.map((a) => a.id)) });
   }
   const rd = reentryDay(p, now);
-  if (rd) out.push({ id: "reentry", text: `Reentry day ${rd}.`, at: new Date(+now - (rd - 1) * DAY).toISOString(), sectionId: "demographics" });
+  if (rd) out.push({ id: "reentry", text: `Reentry day ${rd}.`, at: new Date(+now - (rd - 1) * DAY).toISOString(), sectionId: "demographics", sources: src("patient_release", [p.id]) });
   const msgs = seesVisits(role, p) ? AdelanteEHR.listCareMessages(p.id) : [];
   const lastAttended = past.filter((a) => a.status === "attended").map((a) => a.start).sort().at(-1);
   const lastStaffMsg = msgs.filter((m) => m.authorType === "staff").map((m) => m.createdAt).sort().at(-1);
   const lastContact = [lastAttended, lastStaffMsg].filter(Boolean).sort().at(-1);
   if (lastContact)
-    out.push({ id: "contact", text: `${plural(Math.max(0, Math.floor((+now - +new Date(lastContact)) / DAY)), "day")} since last contact.`, at: lastContact, sectionId: lastContact === lastStaffMsg ? "messages" : "appointments" });
+    out.push({ id: "contact", text: `${plural(Math.max(0, Math.floor((+now - +new Date(lastContact)) / DAY)), "day")} since last contact.`, at: lastContact, sectionId: lastContact === lastStaffMsg ? "messages" : "appointments", sources: lastContact === lastStaffMsg ? src("message", [msgs.find((m) => m.authorType === "staff" && m.createdAt === lastStaffMsg)!.id]) : src("appointment", [past.find((a) => a.status === "attended" && a.start === lastAttended)!.id]) });
   // Check-in participation: day COUNTS only (moodCheckInCount) — never mood content.
   const keys: string[] = [];
   for (let i = 0; i < 30; i++) {
@@ -182,11 +182,11 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
   }
   if (keys.length) {
     const n = computeCheckInStreak(keys, ymd(now)).days;
-    out.push({ id: "checkins", text: `Check-ins: ${plural(keys.length, "day")} in last 30${n ? `; ${n}-day streak` : ""}.`, at: `${keys[0]}T12:00:00`, sectionId: "tracking" });
+    out.push({ id: "checkins", text: `Check-ins: ${plural(keys.length, "day")} in last 30${n ? `; ${n}-day streak` : ""}.`, at: `${keys[0]}T12:00:00`, sectionId: "tracking", sources: src("checkin_day", keys) });
   }
   const fromPt = msgs.filter((m) => m.authorType === "patient" && +now - +new Date(m.createdAt) <= 30 * DAY);
   if (fromPt.length)
-    out.push({ id: "msgs", text: `${plural(fromPt.length, "message")} from the patient in the last 30 days.`, at: maxAt(fromPt.map((m) => m.createdAt), nowIso), sectionId: "messages" });
+    out.push({ id: "msgs", text: `${plural(fromPt.length, "message")} from the patient in the last 30 days.`, at: maxAt(fromPt.map((m) => m.createdAt), nowIso), sectionId: "messages", sources: src("message", fromPt.map((m) => m.id)) });
   return out.slice(0, BRIEF_SECTION_CAP);
 }
 
@@ -202,27 +202,27 @@ export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): Brief
     if (prev && prev.score !== undefined) {
       const d = last.score! - prev.score;
       const dir = d < 0 ? "improving" : d > 0 ? "worsening" : "no change";
-      out.push({ id: `m-${key}`, text: `${label} ${prev.score} → ${last.score} (${d > 0 ? "+" : ""}${d}, ${dir}).`, at: last.date, sectionId: "tracking" });
-    } else out.push({ id: `m-${key}`, text: `${label} ${last.score} — first score on file.`, at: last.date, sectionId: "tracking" });
+      out.push({ id: `m-${key}`, text: `${label} ${prev.score} → ${last.score} (${d > 0 ? "+" : ""}${d}, ${dir}).`, at: last.date, sectionId: "tracking", sources: src("screening", [`${key}@${prev.date}`, `${key}@${last.date}`]) });
+    } else out.push({ id: `m-${key}`, text: `${label} ${last.score} — first score on file.`, at: last.date, sectionId: "tracking", sources: src("screening", [`${key}@${last.date}`]) });
   }
   if (isPrescriberRole(role) || canAccess(role, "meds_erx", p).level !== "none") {
     const refills = visibleRefills(p, role);
     if (refills.length)
-      out.push({ id: "refills", text: `Open refill request: ${refills.map((r) => r.medicationName).join(", ")}.`, at: maxAt(refills.map((r) => r.requestedAt), nowIso), sectionId: "medications" });
+      out.push({ id: "refills", text: `Open refill request: ${refills.map((r) => r.medicationName).join(", ")}.`, at: maxAt(refills.map((r) => r.requestedAt), nowIso), sectionId: "medications", sources: src("refill_request", refills.map((r) => r.id)) });
   }
   const pending = listLabOrders(p.id, role).filter((o) => o.status === "pending");
   if (pending.length)
-    out.push({ id: "labs", text: `Pending result: ${pending.map((o) => labTest(o.testId)?.label ?? "lab").join(", ")}.`, at: maxAt(pending.map((o) => o.orderedAt), nowIso), sectionId: "tracking" });
+    out.push({ id: "labs", text: `Pending result: ${pending.map((o) => labTest(o.testId)?.label ?? "lab").join(", ")}.`, at: maxAt(pending.map((o) => o.orderedAt), nowIso), sectionId: "tracking", sources: src("lab_order", pending.map((o) => o.id)) });
   const enc = hieChartView(p.id, role).encounters.filter((e) => +now - +new Date(e.at) <= 30 * DAY && +new Date(e.at) <= +now);
   if (enc.length) {
     const e = [...enc].sort((a, b) => b.at.localeCompare(a.at))[0];
-    out.push({ id: "hie", text: `Outside event: ${e.kind.replace(/_/g, " ")} at ${e.facility} (HIE).`, at: e.at, sectionId: "outside-records" });
+    out.push({ id: "hie", text: `Outside event: ${e.kind.replace(/_/g, " ")} at ${e.facility} (HIE).`, at: e.at, sectionId: "outside-records", sources: src("hie_encounter", [e.id]) });
   }
   if (canAccess(role, "care_plan", p).level !== "none") {
     const goals = staffPlanView(p.id, role).goals.filter((g) => g.status === "active");
     if (goals.length) {
       const g = goals[0];
-      out.push({ id: `goal-${g.id}`, text: `Check progress on goal: ${g.clinicalText}${goals.length > 1 ? ` (+${goals.length - 1} more)` : ""}.`, at: (g as { updatedAt?: string; createdAt?: string }).updatedAt ?? (g as { createdAt?: string }).createdAt ?? nowIso, sectionId: "care-plan" });
+      out.push({ id: `goal-${g.id}`, text: `Check progress on goal: ${g.clinicalText}${goals.length > 1 ? ` (+${goals.length - 1} more)` : ""}.`, at: (g as { updatedAt?: string; createdAt?: string }).updatedAt ?? (g as { createdAt?: string }).createdAt ?? nowIso, sectionId: "care-plan", sources: src("goal", goals.map((x) => x.id)) });
     }
   }
   return out.slice(0, BRIEF_SECTION_CAP);
@@ -234,39 +234,40 @@ export function computeCareGaps(p: Patient, role: StaffRole, now: Date): BriefBu
   const nowIso = now.toISOString();
   const phq = series(p, role, "phq-9").at(-1);
   if (phq && +now - +new Date(phq.date) > 30 * DAY)
-    out.push({ id: "phq-due", text: `PHQ-9 re-screen due (last ${md(phq.date)}).`, at: phq.date, sectionId: "tracking" });
+    out.push({ id: "phq-due", text: `PHQ-9 re-screen due (last ${md(phq.date)}).`, at: phq.date, sectionId: "tracking", sources: src("screening", [`phq-9@${phq.date}`]) });
   if (canAccess(role, "care_plan", p).level !== "none") {
     if (planReviewDue(p.id, now)) {
       const due = getStructuredPlan(p.id).review.reviewDueAt ?? nowIso;
-      out.push({ id: "plan-review", text: `Care-plan review due ${md(due)}.`, at: due, sectionId: "care-plan" });
+      out.push({ id: "plan-review", text: `Care-plan review due ${md(due)}.`, at: due, sectionId: "care-plan", sources: src("care_plan", [p.id]) });
     }
   }
   if (canAccess(role, "safety_plan", p).level !== "none") {
     const sp = getSafetyPlan(p.id);
     const last = sp?.lastReviewedAt ?? sp?.updatedAt;
     if (last && +now - +new Date(last) > 90 * DAY)
-      out.push({ id: "safety-review", text: `Safety plan review due (last ${md(last)}).`, at: last, sectionId: "safety-plan" });
+      out.push({ id: "safety-review", text: `Safety plan review due (last ${md(last)}).`, at: last, sectionId: "safety-plan", sources: src("safety_plan", [p.id]) });
   }
   if (canAccess(role, "sdoh", p).level !== "none") {
-    const n = planNeeds(p.id).filter((x) => x.step !== "Completed").length;
-    if (n) out.push({ id: "sdoh", text: `${plural(n, "open social need")}.`, at: (p as { sdohPlan?: { updatedAt?: string } }).sdohPlan?.updatedAt ?? nowIso, sectionId: "care-plan" });
+    const open = planNeeds(p.id).filter((x) => x.step !== "Completed");
+    const n = open.length;
+    if (n) out.push({ id: "sdoh", text: `${plural(n, "open social need")}.`, at: (p as { sdohPlan?: { updatedAt?: string } }).sdohPlan?.updatedAt ?? nowIso, sectionId: "care-plan", sources: src("sdoh_need", open.map((x) => x.id)) });
   }
   if (seesVisits(role, p)) {
     // COUNT only — note bodies are never read here.
     const unsigned = (p.progressNotes ?? []).filter((n) => n.status !== "signed" && !n.signedAt);
-    if (unsigned.length) out.push({ id: "unsigned", text: `${plural(unsigned.length, "unsigned note")}.`, at: maxAt(unsigned.map((n) => n.date), nowIso), sectionId: "notes" });
+    if (unsigned.length) out.push({ id: "unsigned", text: `${plural(unsigned.length, "unsigned note")}.`, at: maxAt(unsigned.map((n) => n.date), nowIso), sectionId: "notes", sources: src("progress_note", unsigned.map((n) => n.id)) });
   }
   const seesSud = roleSeesAsamSection(role, p);
   const hloc = listHlocReferrals(p.id).filter((r) => !["declined", "closed", "admitted"].includes(r.status) && (seesSud || !r.sudRelated));
   const res = canAccess(role, "sdoh", p).level !== "none" ? (p.resourceReferrals ?? []).filter((r) => isReferralOpen(r)) : [];
   if (hloc.length + res.length)
-    out.push({ id: "referrals", text: `${plural(hloc.length + res.length, "open referral")}.`, at: maxAt([...hloc.map((r) => (r as { createdAt?: string }).createdAt), ...res.map((r) => (r as { createdAt?: string }).createdAt)], nowIso), sectionId: "episodes" });
+    out.push({ id: "referrals", text: `${plural(hloc.length + res.length, "open referral")}.`, at: maxAt([...hloc.map((r) => (r as { createdAt?: string }).createdAt), ...res.map((r) => (r as { createdAt?: string }).createdAt)], nowIso), sectionId: "episodes", sources: [...src("hloc_referral", hloc.map((r) => r.id)), ...src("resource_referral", res.map((r) => r.id))] });
   if (canAccess(role, "demographics", p).level !== "none") {
     const missing: string[] = [];
     if (aiConsentStatus(p.id, now).state !== "active") missing.push("AI recording");
     // Part 2 consent gap is itself SUD information — only for roles that pass the Part 2 check.
     if (seesSud && !AdelanteEHR.getConsentState(p.id).part2Sud) missing.push("Part 2");
-    if (missing.length) out.push({ id: "consents", text: `Consent not on file: ${missing.join(", ")}.`, at: nowIso, sectionId: "consents" });
+    if (missing.length) out.push({ id: "consents", text: `Consent not on file: ${missing.join(", ")}.`, at: nowIso, sectionId: "consents", sources: src("consent", missing.map((m) => (m === "Part 2" ? "part2" : "ai_recording"))) });
   }
   return out.slice(0, BRIEF_SECTION_CAP);
 }
