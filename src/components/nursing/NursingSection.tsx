@@ -41,13 +41,14 @@ function useActor() {
 }
 const fail = (e: unknown) => toast.error((e as Error).message);
 
-export function ClinicChainBadges({ orderId }: { orderId: string }) {
+export function ClinicChainBadges({ orderId, orderedBy }: { orderId: string; orderedBy?: string }) {
   useEhr(() => 0);
   const rv = nurseReviewFor(orderId);
   const given = dosesFor(orderId)[0];
   return (
     <>
       <Badge variant="outline">Given in clinic</Badge>
+      {orderedBy && <Badge variant="outline" data-testid="ordered-by-badge">Ordered by {orderedBy}</Badge>}
       {!rv && <Badge variant="secondary">Awaiting nurse review</Badge>}
       {rv?.decision === "verified" && <Badge variant="outline">Verified by {rv.by}</Badge>}
       {rv?.decision === "returned" && <Badge variant="destructive">Returned by {rv.by}</Badge>}
@@ -145,7 +146,7 @@ export function NursingSection({ patientId }: { patientId: string }) {
           <Card key={o.id} className="flex flex-wrap items-center gap-2 p-3 text-sm">
             <span className="font-medium">{o.drugName}</span>
             <span className="text-muted-foreground">{[o.dose, o.route].filter(Boolean).join(" · ")}</span>
-            <ClinicChainBadges orderId={o.id} />
+            <ClinicChainBadges orderId={o.id} orderedBy={(o as { signedBy?: string }).signedBy ?? o.createdBy} />
           </Card>
         ))}
       </section>
