@@ -4,6 +4,14 @@
 // "Book a visit" drawer and the patient's own booking (G3). No 9–4 grid.
 import { AdelanteEHR, type ServiceType } from "./ehr";
 import { AdelanteEHRExt, type AvailabilityBlock } from "./ehr-ext";
+import { DEFAULT_FACILITY_TZ, fromFacilityWallClock, startOfFacilityDay, toFacilityParts } from "./facilityTime";
+
+/**
+ * Weekly hours are FACILITY wall-clock (America/Los_Angeles), never the
+ * device's or server's zone — otherwise a 9:00 block became 9:00 UTC (2 AM
+ * Pacific) on the server and for anyone outside Pacific.
+ */
+export const AVAILABILITY_TZ = DEFAULT_FACILITY_TZ;
 
 export type BookingModality = "video" | "phone" | "in_person";
 
@@ -15,7 +23,7 @@ const toMin = (hhmm: string) => {
   const [h, m] = hhmm.split(":").map(Number);
   return (h || 0) * 60 + (m || 0);
 };
-const ymd = (d: Date) => `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
+const pad = (n: number) => String(n).padStart(2, "0");
 
 function modalityFits(block: AvailabilityBlock["modality"], m?: BookingModality): boolean {
   if (!m) return true;
@@ -48,13 +56,16 @@ export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[]
   const blocks = AdelanteEHRExt.availabilityBlocksForClinician(clinicianId);
   const exceptions = AdelanteEHRExt.availabilityExceptionsForClinician(clinicianId);
   const out: string[] = [];
+  const today = toFacilityParts(now, AVAILABILITY_TZ);
   for (let i = 1; i <= days; i++) {
-    const day = new Date(now.getFullYear(), now.getMonth(), now.getDate() + i);
-    const date = ymd(day);
+    const noon = new Date(Date.UTC(today.year, today.month - 1, today.day + i, 12));
+    const Y = noon.getUTCFullYear(), M = noon.getUTCMonth() + 1, D = noon.getUTCDate();
+    const weekday = noon.getUTCDay();
+    const date = `${Y}-${pad(M)}-${pad(D)}`;
     if (exceptions.some((e) => e.date === date && e.kind === "off")) continue;
     const windows: { start: number; end: number }[] = [];
     for (const b of blocks) {
-      if (b.weekday !== day.getDay()) continue;
+      if (b.weekday !== weekday) continue;
       if (!modalityFits(b.modality, q.modality)) continue;
       if (q.serviceType && b.careTypes.length && !b.careTypes.includes(q.serviceType)) continue;
       windows.push({ start: toMin(b.start), end: toMin(b.end) });
@@ -65,8 +76,7 @@ export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[]
       for (let t = w.start; t + step <= w.end; t += step) {
         if (seen.has(t)) continue;
         seen.add(t);
-        const s = new Date(day);
-        s.setHours(Math.floor(t / 60), t % 60, 0, 0);
+        const s = fromFacilityWallClock({ year: Y, month: M, day: D, hour: Math.floor(t / 60), minute: t % 60 }, AVAILABILITY_TZ);
         if (s.getTime() <= now.getTime()) continue;
         const iso = s.toISOString();
         if (AdelanteEHR.findApptConflict(clinicianId, iso, q.excludeApptId)) continue;
@@ -81,7 +91,7 @@ export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[]
 export function isWithinAvailability(clinicianId: string, startISO: string, q: Omit<SlotQuery, "now" | "days"> = {}): boolean {
   if (!hasAvailabilitySet(clinicianId)) return false;
   const t = new Date(startISO);
-  const dayBefore = new Date(t.getFullYear(), t.getMonth(), t.getDate() - 1, 23, 59);
+  const dayBefore = new Date(+startOfFacilityDay(t, AVAILABILITY_TZ) - 60_000);
   return availableSlots(clinicianId, { ...q, now: dayBefore, days: 1 }).includes(t.toISOString());
 }
 
