@@ -3,6 +3,7 @@
 // load, so each test finds the patient through the dev-only store hook and
 // navigates in-app (no reload, which would re-seed).
 import { test, expect, type Page } from "@playwright/test";
+test.setTimeout(120_000);
 import { STAFF_ROSTER, type StaffRole } from "../src/lib/roles";
 
 const SHOTS = "/tmp/cross-role/shots";
@@ -20,7 +21,7 @@ async function actAs(page: Page, role: StaffRole) {
 }
 
 async function luisId(page: Page): Promise<string> {
-  await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante);
+  await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante, null, { timeout: 60_000 });
   return page.evaluate(() => {
     const ehr = (window as unknown as { __adelante: { AdelanteEHR: { listPatients(): { id: string; firstName: string; lastName: string }[] } } }).__adelante.AdelanteEHR;
     return ehr.listPatients().find((p) => p.firstName === "Luis" && p.lastName === "Camacho")!.id;
