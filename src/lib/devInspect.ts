@@ -3,6 +3,7 @@
 import { AdelanteEHR } from "@/lib/ehr";
 import { coverageWorklistRows } from "@/lib/coverageWorklist";
 import { setActingRole, setActingStaff } from "@/lib/roles";
+import { setInFacilityEnabled } from "@/lib/inFacility";
 
 export function installDevInspect(navigate?: (to: string) => void) {
   if (!import.meta.env.DEV || typeof window === "undefined") return;
@@ -11,6 +12,8 @@ export function installDevInspect(navigate?: (to: string) => void) {
     coverageWorklistRows,
     setActingRole,
     setActingStaff,
+    // In-memory only; resets on reload, so the product default (OFF) is untouched.
+    setInFacilityEnabled,
     go: (to: string) => navigate?.(to),
     j: null as unknown,
   };
