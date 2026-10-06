@@ -37,10 +37,11 @@ import { addTimelyCorrection, canCorrectTimely, canRecordOffer, recordAppointmen
 import { administerClinicDose, canAdministerClinicMed, canCollectSpecimen, canCoordinateRefill, canCosignLvnDose, canNurseReview, canOrderClinicMed, canTriage, collectSpecimen, coordinateRefill, cosignClinicDose, nurseReviewOrder, orderClinicMedication, recordTriageCall } from "@/lib/nursing";
 import { canEditPartnerDirectory, canLinkPartner, endPartnerLink, linkPartner, recordHandoff, savePartnerContact, savePartnerOrg } from "@/lib/carePartners";
 import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
+import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview, deleteAiSentence, discardScribeSession, editAiSentence, endScribeSession, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-05.h";
+export const REGISTRY_VERSION = "2026-10-06.scribe1";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -385,6 +386,127 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "patient acting for self; patientReschedule re-checks real availability, eligible clinician, telehealth consent, conflicts",
     store: refs(["patientReschedule", (...a: any[]) => (patientReschedule as any)(...a)]),
     allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE ? ok() : hide("Only the patient reschedules their own visit here.")),
+  },
+  {
+    id: "scribe_consent_grant",
+    label: { en: "AI recording consent", es: "Consentimiento de grabación con IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "patient for self, or canRecordAiConsent (assisted); Part 2 line required for SUD patients",
+    
+    store: refs(["grantAiRecordingConsent", (...a: any[]) => (grantAiRecordingConsent as any)(...a)]),
+    allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE || canRecordAiConsent(role) ? ok() : hide("Your role doesn't record AI recording consent.")),
+  },
+  {
+    id: "scribe_consent_withdraw",
+    label: { en: "Withdraw AI recording consent", es: "Retirar consentimiento de grabación con IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "patient for self, or canRecordAiConsent; discards live capture",
+    
+    store: refs(["withdrawAiRecordingConsent", (...a: any[]) => (withdrawAiRecordingConsent as any)(...a)]),
+    allowed: ({ role }) => (role === PATIENT_ACTOR_ROLE || canRecordAiConsent(role) ? ok() : hide("Your role doesn't record AI recording consent.")),
+  },
+  {
+    id: "scribe_start",
+    label: { en: "Start AI scribe", es: "Iniciar escriba IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe (captureBlocker re-checks consent + all-party in the store)",
+    flags: ["scribe_simulated"],
+    store: refs(["startScribeSession", (...a: any[]) => (startScribeSession as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_discard",
+    label: { en: "Stop and discard capture", es: "Detener y descartar" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["discardScribeSession", (...a: any[]) => (discardScribeSession as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_end",
+    label: { en: "End session (AI draft)", es: "Terminar sesión (borrador IA)" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    flags: ["scribe_simulated"],
+    store: refs(["endScribeSession", (...a: any[]) => (endScribeSession as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_open_draft",
+    label: { en: "Open AI draft", es: "Abrir borrador IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["openAiDraft", (...a: any[]) => (openAiDraft as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_sentence_edit",
+    label: { en: "Edit AI sentence", es: "Editar oración IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["editAiSentence", (...a: any[]) => (editAiSentence as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_sentence_keep",
+    label: { en: "Keep AI sentence with reason", es: "Conservar oración IA con motivo" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["keepAiSentence", (...a: any[]) => (keepAiSentence as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_sentence_delete",
+    label: { en: "Delete AI sentence", es: "Borrar oración IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["deleteAiSentence", (...a: any[]) => (deleteAiSentence as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_review_confirm",
+    label: { en: "Confirm AI draft review", es: "Confirmar revisión del borrador IA" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["confirmAiReview", (...a: any[]) => (confirmAiReview as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_followup_accept",
+    label: { en: "Accept suggested follow-up", es: "Aceptar seguimiento sugerido" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["acceptAiFollowUp", (...a: any[]) => (acceptAiFollowUp as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
   },
   {
     id: "advocate_reschedule",

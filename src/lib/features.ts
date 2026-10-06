@@ -15,7 +15,8 @@ export type FeatureId =
   | "telehealth_simulated"
   | "caloms_export_simulated"
   | "notifications_simulated"
-  | "payments_simulated";
+  | "payments_simulated"
+  | "scribe_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -129,6 +130,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     scope: "global",
     simulated: true,
   },
+  {
+    id: "scribe_simulated",
+    description: "AI scribe vendor is a mock: scripted transcript and draft; no microphone, speech-to-text or AI model. No audio is stored.",
+    owner: "Clinical informatics",
+    default: true,
+    scope: "role",
+    simulated: true,
+  },
 ];
 
 const overrides = new Map<FeatureId, boolean>();
@@ -196,6 +205,7 @@ export const VENDOR_FLAGS: Readonly<Record<string, FeatureId>> = {
   erx: "erx_simulated",
   hie: "hie_simulated",
   telehealth: "telehealth_simulated",
+  scribe: "scribe_simulated",
 };
 
 /**
@@ -206,6 +216,7 @@ export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
   voice_intake: `${SIMULATED_LABEL} speech recognition — no audio is stored`,
   adel_drafts: `${SIMULATED_LABEL} — rule-based draft, not AI`,
   telehealth_simulated: `${SIMULATED_LABEL} video vendor`,
+  scribe_simulated: `${SIMULATED_LABEL} AI scribe — scripted transcript and draft, no audio stored`,
 };
 export function simulatedSurfaceLabel(id: FeatureId): string {
   return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;
