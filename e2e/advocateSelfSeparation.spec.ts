@@ -115,7 +115,17 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
 
   await spaGoto(page, "/home");
   await expect(page.locator("h1").first()).toContainText(SELF_FIRST);
-  const selfBody = await page.locator("body").innerText();
+  // The only intended mention is the deliberate context-switch chip
+  // ("Advocating for <first name>", Advocate Build 2) — a link back to the
+  // advocate shell carrying first name only. Everything else on the page is
+  // the advocate's own care and must not contain Patient A.
+  const chips = page.getByTestId("switch-to-advocate");
+  for (const t of await chips.allInnerTexts()) expect(t.trim()).toMatch(/^Advocating for \S+$|^Advocate access/);
+  const selfBody = await page.evaluate(() => {
+    const clone = document.body.cloneNode(true) as HTMLElement;
+    clone.querySelectorAll('[data-testid="switch-to-advocate"]').forEach((n) => n.remove());
+    return clone.innerText;
+  });
   // Patient A does not exist on the advocate's own care screen.
   expect(selfBody).not.toContain(PATIENT_A);
 
