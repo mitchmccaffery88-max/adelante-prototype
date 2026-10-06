@@ -69,9 +69,9 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 
   const run = (fn: () => void) => { try { fn(); } catch (e) { toast.error((e as Error).message); } };
   const start = () => run(() => { const s = actFor<ScribeSession>("scribe_start", "startScribeSession", pid, req); setLiveId(s.id); });
-  const end = () => run(() => { actFor("scribe_end", "endScribeSession", pid, liveId, actor); toast.success(isAfbi ? `AFBI draft ready · ${AI_DRAFT_LABEL}` : `Draft created in the chart · ${AI_DRAFT_LABEL}`); setLiveId(null); setConfirmed(false); setPrivateOk(false); });
+  const end = () => run(() => { actFor("scribe_end", "endScribeSession", pid, liveId, actor); toast.success(isAfbi ? `AFBI draft ready · ${AI_DRAFT_LABEL}` : `Draft created in the chart · ${AI_DRAFT_LABEL}`); setLiveId(null); setConfirmed(false); setPrivateOk(false); setOthers([]); });
   const pause = () => run(() => { actFor(live?.paused ? "scribe_resume" : "scribe_pause", live?.paused ? "resumeScribeSession" : "pauseScribeSession", pid, liveId, actor); force((n) => n + 1); });
-  const discard = () => run(() => { actFor("scribe_discard", "discardScribeSession", pid, liveId, actor, "stopped"); });
+  const discard = () => run(() => { actFor("scribe_discard", "discardScribeSession", pid, liveId, actor, "stopped"); setConfirmed(false); setPrivateOk(false); setOthers([]); });
   const withdrew = () => run(() => { actFor("scribe_consent_withdraw", "withdrawAiRecordingConsent", pid, { patientId: pid, by: staff.staffName, role: staff.role, staffId: staff.staffId }); });
   const dictate = () => run(() => { actFor("scribe_dictate", "createDictationDraft", pid || undefined, dictReq); toast.success(`Dictation draft ready · ${AI_DRAFT_LABEL}`); });
 
