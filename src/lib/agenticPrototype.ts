@@ -84,9 +84,11 @@ export function chartReviewFacts(
   const dosesGiven = recentDoses.filter((d) => d.action === "given").length;
   const dosesRefusedOrHeld = recentDoses.length - dosesGiven;
 
+  // Metadata-only roles get the header with an empty body — never the text.
   const recentNotes = [...(patient.progressNotes ?? [])]
     .sort((a, b) => +new Date(b.date) - +new Date(a.date))
-    .slice(0, 3);
+    .slice(0, 3)
+    .map((n) => (noteBodyRestricted(viewerRole, patient, n) ? { ...n, subjective: "", objective: "", assessment: "", plan: "", templateAnswers: undefined } : n));
 
   // §Part 2 — per-instrument, the same precedent the chart's Tracking tab and
   // the /my-work re-screen list already follow.
