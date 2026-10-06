@@ -247,7 +247,7 @@ export function checkBriefFor(p: Patient, role: StaffRole, now = new Date()): Br
       if (bodies.some((x) => b.text.includes(x))) add("note_body_leak", "note body text in a bullet");
       const srcs = b.sources ?? [];
       if (!srcs.length) { add("no_source", "bullet has no source records"); continue; }
-      if (srcs.some((s) => !CHIP[s.kind].includes(b.sectionId)) && !(b.id === "contact")) add("wrong_chip", `chip ${b.sectionId} vs ${srcs.map((s) => s.kind).join(",")}`);
+      if (srcs.some((s) => !CHIP[s.kind].includes(b.sectionId))) add("wrong_chip", `chip ${b.sectionId} vs ${srcs.map((s) => s.kind).join(",")}`);
       const recs = srcs.map((s) => resolve(s, p, role, now));
       const missing = srcs.filter((_, i) => recs[i] === undefined);
       if (missing.length) { add("unresolved_source", `not visible/not found: ${missing.map((m) => `${m.kind}:${m.id}`).join(", ")}`); continue; }

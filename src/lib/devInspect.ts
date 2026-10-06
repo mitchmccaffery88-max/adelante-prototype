@@ -16,6 +16,11 @@ export function installDevInspect(navigate?: (to: string) => void) {
     setInFacilityEnabled,
     go: (to: string) => navigate?.(to),
     j: null as unknown,
+    /** V1 — Brief consistency check over every patient × staff role. */
+    checkBrief: async () => {
+      const [{ checkAllBriefs }, { STAFF_ROLES }] = await Promise.all([import("@/lib/adelBriefCheck"), import("@/lib/roles")]);
+      return checkAllBriefs(STAFF_ROLES.map((r) => r.key));
+    },
   };
   void import("@/lib/devJourneys").then((m) => {
     (window as unknown as { __adelante: { j: unknown } }).__adelante.j = m;
