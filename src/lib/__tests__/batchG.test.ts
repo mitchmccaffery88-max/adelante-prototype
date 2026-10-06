@@ -15,7 +15,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { startTimelyAccess, timelyAccessFor } from "@/lib/timelyAccess";
 import { DEMO_PARTNER_CONSENT, linkPartner } from "@/lib/carePartners";
 import { canSeeNavEntry, STAFF_NAV } from "@/lib/navSections";
-import { toFacilityParts } from "@/lib/facilityTime";
+import { fromFacilityWallClock, toFacilityParts } from "@/lib/facilityTime";
 
 const bc = { role: "billing_coordinator" as const, name: "Billing coordinator", staffId: "s-bc1" };
 
@@ -115,8 +115,8 @@ describe("G3 — patient self-booking", () => {
 
   it("rejects times outside availability and video without telehealth consent", () => {
     const p = free();
-    const bad = new Date(Date.now() + 3 * 864e5);
-    bad.setHours(3, 0, 0, 0);
+    const w = toFacilityParts(new Date(Date.now() + 3 * 864e5), "America/Los_Angeles");
+    const bad = fromFacilityWallClock({ year: w.year, month: w.month, day: w.day, hour: 3 }, "America/Los_Angeles"); // 3 AM Pacific
     expect(() => patientSelfBook({ patientId: p.id, clinicianId: "c1", start: bad.toISOString(), serviceType: "therapy_individual", modality: "in_person", locationId: "loc-visalia" })).toThrow(/isn't open/);
     const noConsent = AdelanteEHR.listPatients().find((x) => !AdelanteEHR.isConsentCategoryAuthorized(x.id, TELEHEALTH_CONSENT_CATEGORY));
     if (noConsent) {
