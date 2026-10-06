@@ -19,7 +19,7 @@ import {
   type ScreenerResult,
 } from "@/lib/ehr";
 import { isReferralOpen } from "@/lib/noteAutofill";
-import { canAccess, noteBodyRestricted, type StaffRole } from "@/lib/roles";
+import { canAccess, noteBodyRestricted, redactNoteBodies, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 
@@ -174,7 +174,7 @@ export function chartReviewFacts(
   if (!lastAppointment) careGaps.push("No attended visit recorded yet for this episode.");
 
   return {
-    patient,
+    patient: redactNoteBodies(viewerRole, patient),
     nextAppointment,
     lastAppointment,
     activeOrders,

@@ -1701,3 +1701,17 @@ export function noteBodyRestricted(
   const mine = actorTokens.filter(Boolean) as string[];
   return !(note.clinicianId && mine.includes(note.clinicianId));
 }
+
+/** Patient copy with restricted note bodies blanked — for read models that carry the whole patient. */
+export function redactNoteBodies<P extends Patient>(role: StaffRole, patient: P, actorTokens: (string | undefined)[] = []): P {
+  const notes = patient.progressNotes;
+  if (!notes?.some((n) => noteBodyRestricted(role, patient, n, actorTokens))) return patient;
+  return {
+    ...patient,
+    progressNotes: notes.map((n) =>
+      noteBodyRestricted(role, patient, n, actorTokens)
+        ? { ...n, subjective: "", objective: "", assessment: "", plan: "", templateAnswers: undefined }
+        : n,
+    ),
+  };
+}

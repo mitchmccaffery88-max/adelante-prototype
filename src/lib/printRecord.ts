@@ -289,7 +289,7 @@ export function buildPrintRecordDocument(args: {
   return {
     part2Notice,
     part2Blocked,
-    patient,
+    patient: redactNoteBodies(role, patient, [args.actor?.staffId]),
     facilityName: AdelanteEHR.currentFacility(patient.id)?.name ?? "Adelante Health",
     role,
     printedAt: now.toISOString(),
