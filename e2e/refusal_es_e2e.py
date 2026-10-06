@@ -55,7 +55,16 @@ async def main() -> None:
             "localStorage.setItem('adelante.actingRole','pmhnp');"
             "localStorage.setItem('adelante.actingStaffId','s-np1')"
         )
-        await page.goto(f"{BASE}/record/{PATIENT}?section=mar", wait_until="networkidle")
+        # The MAR is an in-facility surface, OFF by default since the
+        # outpatient-only change. Turn it on in memory for this page load only
+        # (dev hook), then route client-side so the store is not reset.
+        await page.goto(f"{BASE}/record/{PATIENT}", wait_until="networkidle")
+        await page.wait_for_function("() => !!window.__adelante", timeout=60000)
+        await page.evaluate(
+            "() => { window.__adelante.setInFacilityEnabled(true);"
+            f" window.__adelante.go('/record/{PATIENT}?section=mar'); }}"
+        )
+        await page.wait_for_timeout(1500)
         await page.get_by_role("button", name="Open document").first.click()
         await page.wait_for_timeout(800)
         dlg = page.locator("[role=dialog]")

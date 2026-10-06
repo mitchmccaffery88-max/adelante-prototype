@@ -9,7 +9,10 @@ describe("public referral shell", () => {
   });
 
   it("does not mount staff-only controls on public pages", () => {
-    expect(appShell).toContain("{!isPublicSurface && <RouteAccessGuard />}");
+    // The guard stays off pure public pages (/, /auth, /referral, /start*) but
+    // MUST run on a staff-registered path that renders the public shell
+    // (/assisted-signup) — otherwise denied roles were never redirected.
+    expect(appShell).toContain("{(!isPublicSurface || STAFF_ROUTES.includes(pathname)) && <RouteAccessGuard />}");
     expect(appShell).toContain("{(isPatientSurface || isAdvocateSurface || isStaffSurface) && !onboarding && (");
     expect(appShell).toContain('audience={isPatientSurface ? "patient" : isAdvocateSurface ? "advocate" : "staff"}');
     expect(appShell).toContain("{isStaffSurface && <DropdownMenu>");

@@ -71,3 +71,17 @@ Steps run the real store/registry functions as each acting person through a dev-
 
 ## Test counts
 Unit 2,255/2,255 · type check clean · e2e crossRole 13/13 + journeys 5/5. Other older e2e specs: 7 failures (staffNav deep links landing on /assisted-signup, cfProxyMode and advocateSelfSeparation patient picker) — not related to this batch, not yet investigated.
+
+## Older browser specs — 7 failures fixed (Oct 6 2026)
+
+None were caused by the scheduling, scribe, nurse/LVN, partner-seeding or ECM batches. All were older drift.
+
+| # | Spec | Real cause (introduced) | Fix |
+|---|---|---|---|
+| 1–3 | `staffNav.rbac` therapist, PMHNP, clinical coordinator | **Product bug.** `/assisted-signup` is a gated staff tool but also in `PUBLIC_ROUTES`; the 19 Sep public-referral change skipped `RouteAccessGuard` on every public-shell page, so denied roles stayed on the page (only a per-page lock card showed). | `AppShell` mounts the guard when the path is not public **or** is a registered staff path (`STAFF_ROUTES`). Pure public pages are unchanged. `publicReferralShell.test.ts` updated to the new line. |
+| 4 | `staffNav.rbac` peer | **Stale test.** 29 Sep added the "Clinician workspaces" (View as) entry, which also points at `/clinician`. The test built "denied" per entry, but the guard decides per path (any visible variant opens it) and the peer lands on `/clinician`. | Denied list is now built per path. Still checks redirect + "Access restricted" for every denied path. |
+| 5–6 | `cfProxyMode` (direct + proxy) | **Stale test + one product bug.** (a) Pre-release is in-facility, off by default since 28 Sep, so the guard redirected away. (b) The form defaults to "New person in custody" (11 Aug). (c) The header patient search (23 Sep) took combobox #0. (d) **Product bug:** an ECM Provider who opened an episode wasn't recorded as its receiving ECM, so the episode disappeared from their own list. | Tests turn the in-facility flag on in memory only, through the dev hook (`__adelante.setInFacilityEnabled`; resets on reload, product default stays OFF). They click "Existing record" and are scoped to `data-testid="open-episode-form"`. Fix: the form passes `receivingEcmStaffId` when the opener is an ECM Provider. Every proxy/direct assertion is unchanged. |
+| 7 | `advocateSelfSeparation` | **Stale test.** Same pre-release causes, plus advocate redesigns: (a) since 25 Sep the invitation code goes straight to the advocate and is never shown to staff; (b) the schedule moved to `/advocate/appointments` and the self-care offer to `/advocate/support-for-myself`; (c) the intended switch chips ("Advocating for <first>", "Back to my care (<first>)") name the other context. | The test now also asserts that **no code is shown on the staff screen**, then reads the code the advocate received from the store. It uses the new pages. The leak checks run on the whole page except the two switch chips, and each chip is checked to carry a first name only. |
+| — | `refusal_es_e2e.py` (also failing) | Stale: the MAR is in-facility, off by default. | Turns the flag on in memory through the dev hook. All 14 checks pass. |
+
+Final: unit 2,255/2,255; typecheck clean; Playwright 43/43; `refusal_es_e2e.py` ALL PASSED.

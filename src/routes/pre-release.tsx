@@ -218,8 +218,11 @@ function PreReleasePage() {
 }
 
 function OpenEpisodeForm() {
-  const { role, staffName } = useActingStaff();
+  const { role, staffName, staffId } = useActingStaff();
   const patients = useEhr(() => AdelanteEHR.listPatients());
+  // An ECM Provider who opens an episode is its receiving ECM Provider —
+  // otherwise the episode vanishes from their own (receiving-only) list.
+  const receiving = role === "ecm_provider" && staffId ? { receivingEcmStaffId: staffId } : {};
   const cfStaff = staffForRole("cf_care_manager");
   // In-custody profile creation is the DEFAULT: for this population the CF
   // Care Manager usually meets someone who has no record here yet.
@@ -248,6 +251,7 @@ function OpenEpisodeForm() {
           cfCareManagerName: cf.name,
           openedBy: staffName,
           actorRole: role,
+          ...receiving,
         });
         setFirstName("");
         setLastName("");
@@ -262,6 +266,7 @@ function OpenEpisodeForm() {
         cfCareManagerName: cf.name,
         openedBy: staffName,
         actorRole: role,
+        ...receiving,
       });
       toast.success("Pre-release episode opened — task list generated.");
     } catch (e) {
@@ -270,7 +275,7 @@ function OpenEpisodeForm() {
   };
 
   return (
-    <div className="mt-4 space-y-2 border-t pt-3">
+    <div className="mt-4 space-y-2 border-t pt-3" data-testid="open-episode-form">
       <div className="text-sm font-medium">Open an episode</div>
       <div className="flex gap-1">
         <Button

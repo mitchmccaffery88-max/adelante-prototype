@@ -14,8 +14,21 @@ const PROXY_CF = "Darnell Pope"; // accessMode: "proxy"
  * Radix selects open on keyboard here; a synthetic pointer click does not
  * trip their pointer-capture path in headless Chromium.
  */
+/** Pre-release is an in-facility surface (off by default). Turn the flag on
+ *  in-memory for this page load only, then route client-side to it. */
+async function openPreRelease(page: Page) {
+  await page.goto("/case-manager");
+  await page.waitForFunction(() => !!(window as unknown as { __adelante?: unknown }).__adelante, null, { timeout: 60_000 });
+  await page.evaluate(() => {
+    const a = (window as unknown as { __adelante: { setInFacilityEnabled: (on: boolean) => void; go: (to: string) => void } }).__adelante;
+    a.setInFacilityEnabled(true);
+    a.go("/pre-release");
+  });
+}
+
 async function pickOption(page: Page, comboIndex: number, label: RegExp) {
-  const combo = page.getByRole("combobox").nth(comboIndex);
+  // Scoped to the episode form: the staff header also has a patient-search combobox.
+  const combo = page.getByTestId("open-episode-form").getByRole("combobox").nth(comboIndex);
   const option = page.getByRole("option", { name: label }).first();
   await expect(async () => {
     await combo.press("Enter");
@@ -41,14 +54,16 @@ async function actAsEcmProvider(page: Page) {
  * Manager. The store is in-memory per page load, so each test builds its own.
  */
 async function openEpisode(page: Page, cfName: string, patientIndex = 0) {
-  await page.goto("/pre-release");
+  await openPreRelease(page);
   await expect(page.getByRole("heading", { name: "Pre-release list" })).toBeVisible();
+  // "New person in custody" is the intended default; these journeys use a seeded record.
+  await page.getByTestId("episode-mode-existing").click();
 
   const patientLabels = [/^Daniel M\./, /^Rosa T\./];
   await pickOption(page, 0, patientLabels[patientIndex]!);
   await pickOption(page, 1, new RegExp(cfName));
 
-  await page.locator('input[type="date"]').fill("2026-12-01");
+  await page.getByTestId("open-episode-form").locator('input[type="date"]').fill("2026-12-01");
   await page.getByRole("button", { name: "Open episode" }).click();
   await expect(page.getByText("Anticipated release 2026-12-01")).toBeVisible();
 }
