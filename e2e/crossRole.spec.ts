@@ -41,7 +41,7 @@ async function openChartTab(page: Page, tab: RegExp, dob: string): Promise<boole
   await opt.click();
   await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
   const t = page.getByRole("tab", { name: tab }).first();
-  if (!(await t.isVisible({ timeout: 8_000 }).catch(() => false))) return true;
+  if (!(await t.waitFor({ state: "visible", timeout: 15_000 }).then(() => true).catch(() => false))) return true;
   // The chart hydrates after the URL changes; retry until the tab is selected.
   await expect(async () => {
     await t.click();
