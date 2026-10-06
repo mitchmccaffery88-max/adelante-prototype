@@ -2,7 +2,7 @@
 // Used by the Permissions & features page, its CSV export and the committed
 // snapshot test (any permission change shows up as a diff in review).
 import { CHART_ACTIONS, REGISTRY_VERSION, type ChartActionGroup, type ChartActionState } from "@/lib/chartActions";
-import { STAFF_ROLES, getStaffMember, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
+import { STAFF_ROLES, canAccess, getStaffMember, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { featureSnapshot } from "@/lib/features";
 
@@ -45,9 +45,21 @@ export function permissionMatrix(): MatrixRow[] {
 }
 
 /** Compact role → actionId → state map for the snapshot test. */
-export function permissionSnapshot(): Record<string, Record<string, ChartActionState>> {
-  const out: Record<string, Record<string, ChartActionState>> = {};
+export function permissionSnapshot(): Record<string, Record<string, string>> {
+  const out: Record<string, Record<string, string>> = {};
   for (const r of permissionMatrix()) (out[r.role] ??= {})[r.actionId] = r.state;
+  // Clinical-note content per role (Draft — pending executive RBAC review).
+  out["_clinical_note_content"] = noteContentByRole();
+  return out;
+}
+
+/** full = list + read bodies; metadata = list only (date, type, author, status, visit); none = not listed. */
+export function noteContentByRole(): Record<string, "full" | "metadata" | "none"> {
+  const out: Record<string, "full" | "metadata" | "none"> = {};
+  for (const { key } of STAFF_ROLES) {
+    const level = canAccess(key, "therapy_notes").level;
+    out[key] = level === "none" ? "none" : level === "summary" ? "metadata" : "full";
+  }
   return out;
 }
 

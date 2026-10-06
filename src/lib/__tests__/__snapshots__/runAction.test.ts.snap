@@ -2,6 +2,25 @@
 
 exports[`runAction — one standard event per attempt > role × action × outcome matrix matches the committed snapshot 1`] = `
 {
+  "_clinical_note_content": {
+    "billing": "none",
+    "billing_coordinator": "none",
+    "cf_care_manager": "none",
+    "clinical_coordinator": "none",
+    "clinical_trainee": "full",
+    "community_health_worker": "none",
+    "credentialing_coordinator": "none",
+    "ecm_provider": "metadata",
+    "lvn": "none",
+    "medical_assistant": "none",
+    "nurse_rn": "none",
+    "peer_specialist": "none",
+    "physician": "full",
+    "pmhnp": "full",
+    "sud_counselor": "full",
+    "sys_admin": "none",
+    "therapist": "full",
+  },
   "billing": {
     "activity_assignment": "hidden",
     "addendum": "hidden",

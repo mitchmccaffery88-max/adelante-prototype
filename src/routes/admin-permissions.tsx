@@ -13,6 +13,8 @@ import { featureSnapshot } from "@/lib/features";
 import { flagsCsv, matrixCsv, permissionMatrix } from "@/lib/actions/permissionMatrix";
 import { ACTION_EVENTS } from "@/lib/actions/runAction";
 import { redactAuditEvent } from "@/lib/auditRedaction";
+import { noteContentByRole } from "@/lib/actions/permissionMatrix";
+import { NOTE_CONTENT_RBAC_DRAFT } from "@/lib/roles";
 import { SUD_REPORTING_ACCESS_LABEL, SUD_REPORTING_ACCESS_ROLES, SUD_REPORTING_POST_MVP_NOTE } from "@/lib/sudReportingAccess";
 
 export const Route = createFileRoute("/admin-permissions")({
@@ -147,6 +149,14 @@ function PermissionsPage() {
             Client-level county reporting only: CalOMS fields and blockers, DMC-ODS export rows, TPS client list, returned CalOMS error detail. Never notes, therapy content, ASAM narrative or ratings, care plans or medication detail.
             <span className="block text-xs text-muted-foreground">Holders: {SUD_REPORTING_ACCESS_ROLES.map((r) => STAFF_ROLES.find((x) => x.key === r)?.label ?? r).join(", ")}</span>
             <span className="block text-xs text-muted-foreground" data-testid="sud-reporting-post-mvp">{SUD_REPORTING_POST_MVP_NOTE}</span>
+          </span>
+        </div>
+        <div className="flex flex-wrap items-start gap-2 border-t py-2 text-sm" data-testid="capability-note-content">
+          <span className="w-40 font-medium">Clinical-note content</span>
+          <span className="min-w-0 flex-1">
+            Metadata only (date, note type, author, signed status, linked visit) — no body of therapy, psychiatric or counseling notes, scribe drafts or transcripts. Own and coordination notes stay fully readable.
+            <span className="block text-xs text-muted-foreground">Metadata-only roles: {Object.entries(noteContentByRole()).filter(([, v]) => v === "metadata").map(([r]) => STAFF_ROLES.find((x) => x.key === r)?.label ?? r).join(", ") || "none"}</span>
+            <span className="block text-xs text-muted-foreground">{NOTE_CONTENT_RBAC_DRAFT}</span>
           </span>
         </div>
       </Card>
