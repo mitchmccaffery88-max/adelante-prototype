@@ -77,12 +77,14 @@ export function ScribeWorkspace({ patientId, appointmentId, target = { kind: "no
 
   const drafts = listScribeSessions(pid || undefined).filter((s) => s.state === "drafted" && s.target === target.kind && (s.target === "note" || !s.afbiContactId) && (pid || s.startedBy.name === staff.staffName));
   const inPerson = setting !== "telehealth";
-  // Thumb-zone bar on phones; inline inside the AFBI drawer. Sits ABOVE the
-  // persistent 988 crisis banner (bottom-10) so neither covers the other.
-  const bar = isAfbi ? "flex gap-2" : "fixed inset-x-0 bottom-10 z-30 flex gap-2 border-t bg-background p-3 sm:static sm:border-0 sm:p-0";
+  // Thumb-zone bar on phones; inline inside the AFBI drawer. Sticky (not
+  // fixed) and 2.5rem up, so it rides just ABOVE the persistent 988 crisis
+  // banner while scrolling and settles at the end of its card — the two
+  // never cover each other.
+  const bar = isAfbi ? "flex gap-2" : "sticky bottom-10 z-30 flex gap-2 border-t bg-background py-3 sm:static sm:border-0 sm:py-0";
 
   return (
-    <div className={isAfbi ? "space-y-4" : "space-y-4 pb-36 sm:pb-0"}>
+    <div className={isAfbi ? "space-y-4" : "space-y-4"}>
       {!live && (
         <Card className="p-4 space-y-3" data-testid="scribe-start">
           <h2 className="font-display text-lg text-navy">{canLive ? "Start AI scribe" : "Dictate after the encounter"} <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
