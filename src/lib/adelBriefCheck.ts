@@ -10,7 +10,7 @@ import { canAccess, isPrescriberRole, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection, filterSudMedsForRole } from "@/lib/asamReporting";
 import { buildTrackingRows } from "@/lib/trackingTimeline";
 import { hieChartView } from "@/lib/hie";
-import { listLabOrders, listScreenerRequests, screenerRequestStatus, labTest } from "@/lib/chartOrders";
+import { listLabOrders, listScreenerRequests, screenerRequestStatus, labTest, canOrderLabs } from "@/lib/chartOrders";
 import { getStructuredPlan, planNeeds, planReviewDue, staffPlanView } from "@/lib/structuredCarePlan";
 import { getSafetyPlan } from "@/lib/safetyPlan";
 import { listHlocReferrals } from "@/lib/outpatientCare";
@@ -40,13 +40,16 @@ export interface BriefIssue {
 /** Chip each source kind must link to. */
 const CHIP: Record<BriefSourceKind, string[]> = {
   order: ["medications"], dose_report: ["medications"], refill_request: ["medications"],
-  screener_request: ["tracking"], screening: ["tracking"], lab_order: ["tracking"], checkin_day: ["tracking"],
+  screener_request: ["tracking"], screening: ["tracking"], lab_order: ["labs"], checkin_day: ["tracking"],
   appointment: ["appointments"], message: ["messages"], patient_release: ["demographics"],
   hie_encounter: ["outside-records"], goal: ["care-plan"], care_plan: ["care-plan"], sdoh_need: ["care-plan"],
   safety_plan: ["safety-plan"], progress_note: ["notes"], hloc_referral: ["episodes"], resource_referral: ["episodes"], consent: ["consents"],
 };
 
 const seesVisits = (r: StaffRole, p: Patient) => canAccess(r, "case_notes", p).level !== "none";
+// Independent copies of the chart-section gates (deliberately not imported from adelBrief).
+const seesScores = (r: StaffRole, p: Patient) => canAccess(r, "screeners_mh", p).level !== "none";
+const seesLabs = (r: StaffRole, p: Patient) => canAccess(r, "meds_erx", p).level !== "none" || canOrderLabs(r);
 const meds = (p: Patient, r: StaffRole) =>
   canAccess(r, "meds_erx", p).level === "none" ? [] : filterSudMedsForRole((p.orders ?? []).filter((o) => o.status === "signed"), r, p).visible;
 const completed = (p: Patient, r: StaffRole, key: string) =>
@@ -68,17 +71,18 @@ function resolve(ref: BriefSourceRef, p: Patient, role: StaffRole, now: Date): u
       const ok = new Set(meds(p, role).map((o) => o.id));
       return listSelfReports(p.id).find((s) => `${s.orderId}@${s.scheduledAt}` === id && ok.has(s.orderId));
     }
-    case "screener_request": return listScreenerRequests(p.id, role).find((r) => r.id === id);
+    case "screener_request": if (!seesScores(role, p)) return undefined; return listScreenerRequests(p.id, role).find((r) => r.id === id);
     case "screening": {
+      if (!seesScores(role, p)) return undefined;
       const [key, date] = [id.slice(0, id.indexOf("@")), id.slice(id.indexOf("@") + 1)];
       return buildTrackingRows(p, role).find((r) => r.key === key && r.date === date && r.status === "completed");
     }
     case "appointment": return seesVisits(role, p) ? AdelanteEHR.listAppointments().find((a) => a.id === id && a.patientId === p.id) : undefined;
     case "message": return seesVisits(role, p) ? AdelanteEHR.listCareMessages(p.id).find((m) => m.id === id) : undefined;
     case "patient_release": return id === p.id && reentryDay(p, now) ? p : undefined;
-    case "checkin_day": return moodCheckInDayCount(p.id, id, id) > 0 ? id : undefined;
+    case "checkin_day": return seesVisits(role, p) && moodCheckInDayCount(p.id, id, id) > 0 ? id : undefined;
     case "refill_request": return visibleRefills(p, role).find((r) => r.id === id);
-    case "lab_order": return listLabOrders(p.id, role).find((o) => o.id === id);
+    case "lab_order": return !seesLabs(role, p) ? undefined : listLabOrders(p.id, role).find((o) => o.id === id);
     case "hie_encounter": return hieChartView(p.id, role).encounters.find((e) => e.id === id);
     case "goal": return canAccess(role, "care_plan", p).level === "none" ? undefined : staffPlanView(p.id, role).goals.find((g) => g.id === id);
     case "care_plan": return id === p.id && canAccess(role, "care_plan", p).level !== "none" ? getStructuredPlan(p.id) : undefined;
@@ -88,7 +92,7 @@ function resolve(ref: BriefSourceRef, p: Patient, role: StaffRole, now: Date): u
     case "hloc_referral": return listHlocReferrals(p.id).find((r) => r.id === id && (roleSeesAsamSection(role, p) || !r.sudRelated));
     case "resource_referral": return canAccess(role, "sdoh", p).level === "none" ? undefined : (p.resourceReferrals ?? []).find((r) => r.id === id);
     case "consent":
-      if (canAccess(role, "demographics", p).level === "none") return undefined;
+      if (canAccess(role, "consent_ledger", p).level === "none") return undefined;
       if (id === "part2") return roleSeesAsamSection(role, p) ? { id } : undefined;
       return id === "ai_recording" ? { id } : undefined;
   }

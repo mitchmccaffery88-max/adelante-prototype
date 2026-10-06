@@ -20,7 +20,7 @@ import { canAccess, isPrescriberRole, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection, filterSudMedsForRole } from "@/lib/asamReporting";
 import { buildTrackingRows } from "@/lib/trackingTimeline";
 import { hieChartView, hieDraftFor } from "@/lib/hie";
-import { listLabOrders, listScreenerRequests, screenerRequestStatus, labTest } from "@/lib/chartOrders";
+import { listLabOrders, listScreenerRequests, screenerRequestStatus, labTest, canOrderLabs } from "@/lib/chartOrders";
 import { getStructuredPlan, planNeeds, planReviewDue, staffPlanView } from "@/lib/structuredCarePlan";
 import { getSafetyPlan } from "@/lib/safetyPlan";
 import { listHlocReferrals } from "@/lib/outpatientCare";
@@ -69,7 +69,7 @@ const ACTION_DEPS: BriefSource[] = ["day", "refills", "screeners", "plan", "sdoh
 const SECTION_LABEL: Record<string, string> = {
   medications: "Medications", tracking: "Tracking", appointments: "Visits", messages: "Messages",
   "care-plan": "Care plan", "safety-plan": "Safety plan", notes: "Notes", episodes: "Referrals",
-  consents: "Consents", "outside-records": "Outside records", demographics: "Profile", sdoh: "Social needs",
+  consents: "Consents", labs: "Lab orders", "outside-records": "Outside records", demographics: "Profile", sdoh: "Social needs",
 };
 export const sourceChipLabel = (sectionId: string) => SECTION_LABEL[sectionId] ?? sectionId;
 
@@ -107,6 +107,10 @@ const plural = (n: number, w: string) => `${n} ${w}${n === 1 ? "" : "s"}`;
 export const _briefFmt = { md: (iso: string) => md(iso), plural: (n: number, w: string) => plural(n, w) };
 const maxAt = (xs: (string | undefined)[], fallback: string) => xs.filter(Boolean).sort().at(-1) ?? fallback;
 const seesVisits = (role: StaffRole, p: Patient) => canAccess(role, "case_notes", p).level !== "none";
+/** V1 — same gates as the chart sections the chips open (Tracking scores, Lab orders, Consents). */
+export const seesScreenerScores = (role: StaffRole, p: Patient) => canAccess(role, "screeners_mh", p).level !== "none";
+export const seesLabs = (role: StaffRole, p: Patient) => canAccess(role, "meds_erx", p).level !== "none" || canOrderLabs(role);
+export const seesConsents = (role: StaffRole, p: Patient) => canAccess(role, "consent_ledger", p).level !== "none";
 const apptsFor = (pid: string) => AdelanteEHR.listAppointments().filter((a) => a.patientId === pid);
 function visibleOrders(p: Patient, role: StaffRole) {
   return filterSudMedsForRole((p.orders ?? []).filter((o) => o.status === "signed"), role, p).visible;
@@ -121,6 +125,7 @@ function visibleRefills(p: Patient, role: StaffRole) {
   );
 }
 function series(p: Patient, role: StaffRole, key: string) {
+  if (!seesScreenerScores(role, p)) return [];
   return buildTrackingRows(p, role)
     .filter((r) => r.key === key && r.status === "completed" && r.score !== undefined)
     .sort((a, b) => a.date.localeCompare(b.date));
@@ -148,7 +153,7 @@ export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefB
     if (missed.length)
       out.push({ id: "missed", text: `${plural(missed.length, "missed dose")} self-reported in the last 14 days.`, at: maxAt(missed.map((m) => m.scheduledAt), nowIso), sectionId: "medications", sources: src("dose_report", missed.map((m) => `${m.orderId}@${m.scheduledAt}`)) });
   }
-  const overdue = listScreenerRequests(p.id, role).filter((r) => screenerRequestStatus(r, now) === "overdue");
+  const overdue = (seesScreenerScores(role, p) ? listScreenerRequests(p.id, role) : []).filter((r) => screenerRequestStatus(r, now) === "overdue");
   if (overdue.length)
     out.push({ id: "rescreen-overdue", text: `Overdue re-screen: ${overdue.map((r) => r.key.toUpperCase()).join(", ")}.`, at: maxAt(overdue.map((r) => r.dueAt), nowIso), sectionId: "tracking", sources: src("screener_request", overdue.map((r) => r.id)) });
   return out.slice(0, BRIEF_SECTION_CAP);
@@ -181,7 +186,7 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
     const d = ymd(new Date(+now - i * DAY));
     if (moodCheckInDayCount(p.id, d, d) > 0) keys.push(d);
   }
-  if (keys.length) {
+  if (keys.length && seesVisits(role, p)) {
     const n = computeCheckInStreak(keys, ymd(now)).days;
     out.push({ id: "checkins", text: `Check-ins: ${plural(keys.length, "day")} in last 30${n ? `; ${n}-day streak` : ""}.`, at: `${keys[0]}T12:00:00`, sectionId: "tracking", sources: src("checkin_day", keys) });
   }
@@ -211,9 +216,9 @@ export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): Brief
     if (refills.length)
       out.push({ id: "refills", text: `Open refill request: ${refills.map((r) => r.medicationName).join(", ")}.`, at: maxAt(refills.map((r) => r.requestedAt), nowIso), sectionId: "medications", sources: src("refill_request", refills.map((r) => r.id)) });
   }
-  const pending = listLabOrders(p.id, role).filter((o) => o.status === "pending");
+  const pending = seesLabs(role, p) ? listLabOrders(p.id, role).filter((o) => o.status === "pending") : [];
   if (pending.length)
-    out.push({ id: "labs", text: `Pending result: ${pending.map((o) => labTest(o.testId)?.label ?? "lab").join(", ")}.`, at: maxAt(pending.map((o) => o.orderedAt), nowIso), sectionId: "tracking", sources: src("lab_order", pending.map((o) => o.id)) });
+    out.push({ id: "labs", text: `Pending result: ${pending.map((o) => labTest(o.testId)?.label ?? "lab").join(", ")}.`, at: maxAt(pending.map((o) => o.orderedAt), nowIso), sectionId: "labs", sources: src("lab_order", pending.map((o) => o.id)) });
   const enc = hieChartView(p.id, role).encounters.filter((e) => +now - +new Date(e.at) <= 30 * DAY && +new Date(e.at) <= +now);
   if (enc.length) {
     const e = [...enc].sort((a, b) => b.at.localeCompare(a.at))[0];
@@ -263,7 +268,7 @@ export function computeCareGaps(p: Patient, role: StaffRole, now: Date): BriefBu
   const res = canAccess(role, "sdoh", p).level !== "none" ? (p.resourceReferrals ?? []).filter((r) => isReferralOpen(r)) : [];
   if (hloc.length + res.length)
     out.push({ id: "referrals", text: `${plural(hloc.length + res.length, "open referral")}.`, at: maxAt([...hloc.map((r) => (r as { createdAt?: string }).createdAt), ...res.map((r) => (r as { createdAt?: string }).createdAt)], nowIso), sectionId: "episodes", sources: [...src("hloc_referral", hloc.map((r) => r.id)), ...src("resource_referral", res.map((r) => r.id))] });
-  if (canAccess(role, "demographics", p).level !== "none") {
+  if (seesConsents(role, p)) {
     const missing: string[] = [];
     if (aiConsentStatus(p.id, now).state !== "active") missing.push("AI recording");
     // Part 2 consent gap is itself SUD information — only for roles that pass the Part 2 check.
