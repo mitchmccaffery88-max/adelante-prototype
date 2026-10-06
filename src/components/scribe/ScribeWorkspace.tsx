@@ -1,6 +1,6 @@
 // §Scribe Phase 1 — capture (consent gate → simulated live transcript → end)
 // and AI draft review (provenance, flags, resolve, confirm). All via runAction.
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
@@ -127,7 +127,7 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
   const [rating, setRating] = useState(0);
   const [reviewed, setReviewed] = useState(false);
   const [editing, setEditing] = useState<{ id: string; text: string; mode: "edit" | "keep" } | null>(null);
-  const summary = useMemo(() => (s ? reviewSummary(s) : null), [s, note]);
+  const summary = s ? reviewSummary(s) : null;
   const isSigned = Boolean(note?.signedAt);
   // Retention: the transcript is deleted once the note is signed (audited stub).
   useEffect(() => { if (isSigned) sweepScribeRetention(); }, [isSigned]);

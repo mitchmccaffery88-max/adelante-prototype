@@ -70,7 +70,7 @@ export function AiConsentCard({ patient, mode }: { patient: Patient; mode: "pati
       <div className="flex flex-wrap items-center justify-between gap-2">
         <h3 className="font-display text-base text-navy">{c.title}</h3>
         <Badge variant={active ? "default" : "outline"} data-testid="ai-consent-state">
-          {active ? c.active : c.notActive}
+          {mode === "staff" ? (active ? "Active" : "Not active") : active ? c.active : c.notActive}
           {mode === "staff" && st.state !== "active" && st.state !== "none" ? ` (${st.state.replace("_", " ")})` : ""}
         </Badge>
       </div>
