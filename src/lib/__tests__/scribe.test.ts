@@ -31,7 +31,7 @@ const DR: ScribeActor = { name: "Dr. M. Bagga", role: "physician", staffId: "s-n
 const staff = { staffId: "s-np1", staffName: "Dr. M. Bagga", role: "physician" };
 
 function newPatient(sud = false) {
-  const p = AdelanteEHR.addPatient({ firstName: "Scribe", lastName: `Test${Math.random().toString(36).slice(2, 6)}`, dob: "1990-01-01", phone: "5595550100" } as never) as { id: string };
+  const p = AdelanteEHR.createPatient({ firstName: "Scribe", lastName: `Test${Math.random().toString(36).slice(2, 6)}` } as never) as { id: string };
   const pt = AdelanteEHR.getPatient(p.id)!;
   if (sud) pt.problems = [...(pt.problems ?? []), { id: "pr-sud", code: "F11.20", description: "x", category: "sud", status: "active" } as never];
   return pt;
