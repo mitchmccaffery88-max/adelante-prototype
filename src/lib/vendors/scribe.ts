@@ -55,7 +55,7 @@ const SEGMENTS: Omit<TranscriptSegment, "id">[] = [
   { speaker: "patient", text: "Better, mostly. I went to work every day this week.", lang: "en", atSec: 9, speakerConfidence: 0.96, asrConfidence: 0.95 },
   { speaker: "patient", text: "Pero el sábado me sentí muy ansioso, no podía dormir.", lang: "es", atSec: 15, speakerConfidence: 0.95, asrConfidence: 0.9 },
   { speaker: "clinician", text: "Thank you for telling me. What helped when you couldn't sleep?", lang: "en", atSec: 22, speakerConfidence: 0.97, asrConfidence: 0.96 },
-  { speaker: "patient", text: "I used the breathing exercise, la respiración, and called my sister.", lang: "mixed", atSec: 28, speakerConfidence: 0.93, asrConfidence: 0.88 },
+  { speaker: "patient", text: "I used the breathing exercise, la respiración, and called my sister.", lang: "mixed", atSec: 28, speakerConfidence: 0.78, asrConfidence: 0.8 },
   { speaker: "other", text: "She did call me Saturday night, around eleven.", lang: "en", atSec: 35, speakerConfidence: 0.55, asrConfidence: 0.9 },
   { speaker: "clinician", text: "We practiced grounding together today and reviewed your sleep routine.", lang: "en", atSec: 44, speakerConfidence: 0.97, asrConfidence: 0.95 },
   { speaker: "patient", text: "Sí, quiero seguir con eso. It makes sense.", lang: "mixed", atSec: 52, speakerConfidence: 0.94, asrConfidence: 0.62 },
