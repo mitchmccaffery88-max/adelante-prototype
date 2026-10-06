@@ -219,6 +219,24 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
   // invite form is open against the just-created record.
   const [advocateStep, setAdvocateStep] = useState<"none" | "ask" | "invite">("none");
   const [enrolledPatientId, setEnrolledPatientId] = useState<string | undefined>();
+  // Exact-match resolution: enrolling hit "This person may already exist."
+  const [exactMatches, setExactMatches] = useState<PatientMatch[] | null>(null);
+  const [createReason, setCreateReason] = useState("");
+
+  const tryEnroll = (createAnyway?: { reason: string }) => {
+    const staff = getActingStaff();
+    const pid = AdelanteEHR.enrollReferral(
+      referral.id,
+      createAnyway
+        ? { createAnyway: { reason: createAnyway.reason, actorId: staff?.id, actorRole: role } }
+        : undefined,
+    );
+    if (pid) {
+      setExactMatches(null);
+      setEnrolledPatientId(pid);
+      setAdvocateStep("ask");
+    }
+  };
 
   const mayContact = canPerformReferralAction(role, "contact");
   const mayDispose = canPerformReferralAction(role, "enroll");
