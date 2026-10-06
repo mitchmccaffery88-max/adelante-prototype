@@ -322,6 +322,8 @@ export interface ScribeSession {
   afbiInitials?: string;
   afbiFields?: AfbiDraftFields;
   afbiContactId?: string;
+  /** Dictation onto an existing AFBI contact (owner-only). */
+  afbiTargetContactId?: string;
   /** AFBI target review state (notes keep it on the note). */
   openedAt?: string;
   reviewConfirmedAt?: string;
@@ -712,6 +714,7 @@ export function createDictationDraft(req: DictationRequest): ScribeSession | Pro
     target: req.target,
     pauses: [],
     afbiInitials: p ? undefined : (req.initials ?? "").replace(/\./g, "").trim().toUpperCase().slice(0, 4),
+    ...(req.afbiContactId ? { afbiTargetContactId: req.afbiContactId } : {}),
   };
   sessions.unshift(s);
   buildSentences(s, req.target === "afbi" ? scribe.afbiDraft(transcript) : scribe.dictationDraft(transcript, format));
@@ -881,7 +884,10 @@ export function saveAfbiFromScribe(sessionId: string, actor: ScribeActor): AfbiC
   const okActs = f.activities.filter((a) => AFBI_ACTIVITIES.some((x) => x.id === a)) as AfbiActivity[];
   const loc = (AFBI_LOCATION_TYPES.some((l) => l.id === f.locationType) ? f.locationType : "other") as AfbiLocationType;
   const out = (AFBI_OUTCOMES.some((o) => o.id === f.outcome) ? f.outcome : "engaged") as AfbiOutcome;
-  const c = recordAfbiContact(
+  if (s.afbiTargetContactId && !ownsAfbiContact(s.afbiTargetContactId, actor.staffId)) throw new Error(OWN_CONTACT_BLOCK);
+  const c = s.afbiTargetContactId
+    ? updateAfbiContactFromDraft(s.afbiTargetContactId, { role: actor.role as StaffRole, name: actor.name, staffId: actor.staffId }, { locationType: loc, activities: okActs, minutes: f.minutes, outcome: out, nextStep: f.nextStep })
+    : recordAfbiContact(
     { role: actor.role as StaffRole, name: actor.name, staffId: actor.staffId },
     { locationType: loc, patientId: s.patientId || undefined, initials: s.afbiInitials, activities: okActs, minutes: f.minutes, outcome: out, nextStep: f.nextStep },
   );

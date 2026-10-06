@@ -127,6 +127,23 @@ export function ownsAfbiContact(contactId: string, staffId?: string): boolean {
   return Boolean(c && staffId && c.staffId === staffId);
 }
 
+/** Owner-only update of an existing contact from a reviewed dictation draft. */
+export function updateAfbiContactFromDraft(
+  contactId: string,
+  actor: AfbiActor,
+  f: { locationType: AfbiLocationType; activities: AfbiActivity[]; minutes: number; outcome: AfbiOutcome; nextStep?: string },
+): AfbiContact {
+  const c = contacts.find((x) => x.id === contactId);
+  if (!c) throw new Error("Contact not found.");
+  if (!actor.staffId || c.staffId !== actor.staffId) throw new Error("You can only dictate on your own contacts");
+  if (f.activities.length) c.activities = f.activities;
+  c.locationType = f.locationType;
+  c.outcome = f.outcome;
+  if (f.minutes >= 1 && f.minutes <= 600) c.minutes = Math.round(f.minutes);
+  if (f.nextStep) c.nextStep = f.nextStep;
+  return c;
+}
+
 export function recordAfbiContact(
   actor: AfbiActor,
   input: {
