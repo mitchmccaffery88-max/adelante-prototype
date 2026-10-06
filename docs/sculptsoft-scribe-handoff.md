@@ -56,3 +56,14 @@ Dependency key: **BAA** (signed BAA with Part 2 / 42 CFR 2.11 QSOA terms), **Ven
 - [ ] **Chart note editing for physicians/PMHNP**: they have read-level chart notes; the prototype lets the author sign their own reviewed AI draft only. AC: confirm this rule or widen note write rights. Dep: Clinical.
 - [ ] **Accepted follow-ups**: "Send GAD-7" currently points to Tracking. AC: one-tap screener request through its registry action. Dep: none.
 - [ ] **Holidays** for any business-day clocks the signed note joins. AC: holiday calendar config. Dep: Backend.
+
+## 10. Phase 1b — in-person and field use
+- [ ] **Device and microphone testing** on clinic tablets and staff phones (iOS + Android, built-in and headset mics, far-field in a counselling room). AC: test matrix passed; minimum supported devices published. Dep: Vendor.
+- [ ] **Decision on encrypted on-device buffering** (default: **none**). AC: written decision; if "none", capture refuses to start offline (as in the prototype); if allowed, encrypted, time-boxed and wiped on upload, with counsel sign-off. Dep: Counsel, Backend.
+- [ ] **Accuracy evaluation on noisy, real-world field recordings** (street, shelter, car, release gate; Spanish and code-switched). AC: WER and diarization error reported per setting; the noisy-setting thresholds (Draft 0.8 / 0.85) re-tuned. Dep: Vendor, Clinical.
+- [ ] **Counsel guidance on recording in semi-public places** and on named bystanders. AC: written guidance reflected in the field privacy check and party rules. Dep: Counsel.
+- [ ] **Offline / connectivity UX**. AC: Start is disabled with "No connection — capture can't run offline" when the network drops; a mid-session drop stops capture and keeps only what the server already received; "Dictate after the encounter" is offered once back online; no audio is ever written to the device. Dep: Backend.
+- [ ] **Pause / Resume at the source**. AC: while paused, no audio leaves the device (mic stream closed, not just muted server-side); gaps are recorded with timestamps. Dep: Vendor.
+- [ ] **Post-encounter dictation pipeline** (staff voice only, single speaker). AC: same grounding, flags, review and retention as a session; patient-consent requirement driven by the one counsel flag. Dep: Vendor, Counsel.
+- [ ] **Identifying-detail detection for pre-enrollment AFBI** (names, birth dates, phones, addresses). AC: NER-based detector replaces the prototype regex; flagged sentences can't be kept. Dep: Vendor.
+- [ ] **Setting dimension in pilot metrics** on the server. AC: per-setting metrics with cohort guard 11. Dep: Backend.
