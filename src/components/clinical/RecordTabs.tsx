@@ -2850,6 +2850,8 @@ function ProgressNoteCard({
   const { staffName, role, staffId: actingStaffId, clinicianId: actingClinicianId } =
     useActingStaff();
   const status = noteStatus(note);
+  // §Scribe Phase 1 — the clinician who ran the scribe signs their own reviewed AI draft here.
+  const ownAiDraft = Boolean(note.aiScribe) && canCaptureScribe(role) && (note.clinicianId === actingClinicianId || note.clinicianId === actingStaffId);
   // Same language source of truth as the Refusal risk text: the patient record.
   const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
