@@ -10,7 +10,7 @@ import { toast } from "sonner";
 import { ShieldCheck, Video, Pill, ArrowLeft } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
 import { scribe as scribeVendor } from "@/lib/vendors/scribe";
-import { scribePilotMetrics, SCRIBE_PHASE2_ROLES, SCRIBE_CAPTURE_ROLES, sweepScribeRetention } from "@/lib/scribe";
+import { scribePilotMetrics, SCRIBE_DICTATION_ONLY_ROLES, SCRIBE_NO_ACCESS_ROLES, SCRIBE_SETTINGS, SCRIBE_SETTING_LABEL, ROLE_SCOPE_DRAFT_LABEL, SCRIBE_CAPTURE_ROLES, sweepScribeRetention } from "@/lib/scribe";
 import { simulatedSurfaceLabel } from "@/lib/features";
 
 function ScribeVendorCard() {
@@ -22,7 +22,7 @@ function ScribeVendorCard() {
         <h2 className="font-display text-base text-navy">AI scribe · {scribeVendor.name}</h2>
         <Badge variant="outline">{simulatedSurfaceLabel("scribe_simulated")}</Badge>
       </div>
-      <p className="text-xs text-muted-foreground">Capture roles: {SCRIBE_CAPTURE_ROLES.join(", ")}. Phase 2 decision: {SCRIBE_PHASE2_ROLES.join(", ")}.</p>
+      <p className="text-xs text-muted-foreground">Full scribe (all settings): {SCRIBE_CAPTURE_ROLES.join(", ")}. Post-encounter dictation only (AFBI + own contact notes): {SCRIBE_DICTATION_ONLY_ROLES.join(", ")}. No access: {SCRIBE_NO_ACCESS_ROLES.join(", ")}. {ROLE_SCOPE_DRAFT_LABEL}.</p>
       <h3 className="text-sm font-medium">Pilot metrics (prototype, aggregate only)</h3>
       {m.belowMinimumCohort ? (
         <p className="text-sm text-muted-foreground" data-testid="scribe-metrics-suppressed">Hidden until at least 11 signed scribe notes exist.</p>
@@ -34,6 +34,13 @@ function ScribeVendorCard() {
           <div><dt className="text-[11px] text-muted-foreground">Clinician rating (1–5)</dt><dd>{m.meanRating ?? "—"}</dd></div>
         </dl>
       )}
+      <h3 className="text-sm font-medium">By setting</h3>
+      <ul className="text-sm" data-testid="scribe-metrics-by-setting">
+        {SCRIBE_SETTINGS.map((k) => {
+          const x = scribePilotMetrics({ setting: k });
+          return <li key={k}>{SCRIBE_SETTING_LABEL[k]}: {x.belowMinimumCohort ? "hidden (fewer than 11)" : `median ${x.medianEndToSignMin} min to sign · ${x.meanEditPct}% edited · rating ${x.meanRating ?? "—"}`}</li>;
+        })}
+      </ul>
     </Card>
   );
 }

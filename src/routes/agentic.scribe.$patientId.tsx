@@ -8,7 +8,7 @@ import { z } from "zod";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { chartReviewFacts } from "@/lib/agenticPrototype";
 import { useActingStaff } from "@/lib/roles";
-import { canCaptureScribe, SCRIBE_PHASE2_ROLES } from "@/lib/scribe";
+import { canDictateScribe } from "@/lib/scribe";
 import { simulatedSurfaceLabel } from "@/lib/features";
 import { ScribeWorkspace } from "@/components/scribe/ScribeWorkspace";
 import { EmptyState } from "@/components/EmptyState";
@@ -51,10 +51,9 @@ function ScribePage() {
         <h1 className="font-display text-2xl text-navy">AI scribe — {name}</h1>
         <Badge variant="outline" className="mt-1 text-[10px]" data-testid="scribe-simulated">{simulatedSurfaceLabel("scribe_simulated")}</Badge>
       </header>
-      {!canCaptureScribe(staff.role) ? (
+      {!canDictateScribe(staff.role) ? (
         <Card className="p-4 text-sm" data-testid="scribe-role-blocked">
-          Your role doesn't use the AI scribe in this phase. Write the note in the chart.
-          {SCRIBE_PHASE2_ROLES.includes(staff.role) && " Scribe for this role is a Phase 2 decision."}
+          Your role doesn't use the AI scribe or dictation. Write the note in the chart.
         </Card>
       ) : (
         <ScribeWorkspace patientId={patientId} appointmentId={appt} />
