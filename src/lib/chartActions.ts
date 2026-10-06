@@ -461,7 +461,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     sectionId: "notes",
     menu: false,
     needsPatient: false,
-    check: "canDictateScribe (+ scope in dictationBlocker)",
+    check: "canDictateScribe (+ own-contact scope in dictationBlocker, refused as action.blocked)",
     flags: ["scribe_simulated"],
     store: refs(["createDictationDraft", (...a: any[]) => (createDictationDraft as any)(...a)]),
     allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
