@@ -6,7 +6,8 @@ import { test, expect, type Page } from "@playwright/test";
 import { STAFF_ROSTER, type StaffRole } from "../src/lib/roles";
 
 const SHOTS = "/tmp/cross-role/shots";
-const staffIdFor = (role: StaffRole) => STAFF_ROSTER.find((s) => s.role === role)!.id;
+const SEEDED: Partial<Record<StaffRole, string>> = { nurse_rn: "s-rn1", lvn: "s-lvn1" };
+const staffIdFor = (role: StaffRole) => SEEDED[role] ?? STAFF_ROSTER.find((s) => s.role === role)!.id;
 
 async function actAs(page: Page, role: StaffRole) {
   await page.addInitScript(
