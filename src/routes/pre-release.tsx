@@ -270,7 +270,7 @@ function OpenEpisodeForm() {
   };
 
   return (
-    <div className="mt-4 space-y-2 border-t pt-3">
+    <div className="mt-4 space-y-2 border-t pt-3" data-testid="open-episode-form">
       <div className="text-sm font-medium">Open an episode</div>
       <div className="flex gap-1">
         <Button

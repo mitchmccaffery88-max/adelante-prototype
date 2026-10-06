@@ -91,13 +91,16 @@ test.describe("deep links honour the same gates", () => {
       await actAs(page, role);
 
       const allowed = STAFF_NAV.filter((e) => canSeeNavEntry(role, e));
-      const denied = STAFF_NAV.filter((e) => !canSeeNavEntry(role, e));
+      // The guard decides per PATH: a path with several entries (e.g. /clinician
+      // and its "View as" variant) is open if ANY variant is visible.
+      const allowedPaths = new Set(allowed.map((e) => e.to));
+      const denied = STAFF_NAV.filter((e) => !allowedPaths.has(e.to));
       const landing = safeLandingFor(role);
 
       // Sample to keep the run bounded but still cover both ends of the list.
       const sample = <T,>(xs: T[]) => (xs.length <= 4 ? xs : [xs[0], xs[1], xs[xs.length - 2], xs[xs.length - 1]]);
 
-      for (const entry of sample(allowed)) {
+      for (const entry of sample(allowed.filter((e) => !e.search))) {
         await page.goto(entry.to);
         await expect(page).toHaveURL(new RegExp(`${entry.to}$`));
       }

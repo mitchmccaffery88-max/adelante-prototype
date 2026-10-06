@@ -28,7 +28,8 @@ async function spaGoto(page: Page, to: string) {
 }
 
 async function pickOption(page: Page, comboIndex: number, label: RegExp) {
-  const combo = page.getByRole("combobox").nth(comboIndex);
+  // Scoped to the episode form: the staff header also has a patient-search combobox.
+  const combo = page.getByTestId("open-episode-form").getByRole("combobox").nth(comboIndex);
   const option = page.getByRole("option", { name: label }).first();
   await expect(async () => {
     await combo.press("Enter");
@@ -48,9 +49,11 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   // ---- the care team designates an advocate for Patient A ---------------
   await page.goto("/pre-release");
   await expect(page.getByRole("heading", { name: "Pre-release list" })).toBeVisible();
+  // "New person in custody" is the intended default; these journeys use a seeded record.
+  await page.getByTestId("episode-mode-existing").click();
   await pickOption(page, 0, /^Daniel M\./);
   await pickOption(page, 1, /Darnell Pope/);
-  await page.locator('input[type="date"]').fill("2026-12-01");
+  await page.getByTestId("open-episode-form").locator('input[type="date"]').fill("2026-12-01");
   await page.getByRole("button", { name: "Open episode" }).click();
   await expect(page.getByText("Anticipated release 2026-12-01")).toBeVisible();
 
