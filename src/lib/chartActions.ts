@@ -37,7 +37,8 @@ import { addTimelyCorrection, canCorrectTimely, canRecordOffer, recordAppointmen
 import { administerClinicDose, canAdministerClinicMed, canCollectSpecimen, canCoordinateRefill, canCosignLvnDose, canNurseReview, canOrderClinicMed, canTriage, collectSpecimen, coordinateRefill, cosignClinicDose, nurseReviewOrder, orderClinicMedication, recordTriageCall } from "@/lib/nursing";
 import { canEditPartnerDirectory, canLinkPartner, endPartnerLink, linkPartner, recordHandoff, savePartnerContact, savePartnerOrg } from "@/lib/carePartners";
 import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
-import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview, deleteAiSentence, discardScribeSession, editAiSentence, endScribeSession, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
+import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview, deleteAiSentence, discardScribeSession, editAiSentence,
+  setAiDraftVisitField, endScribeSession, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
@@ -462,6 +463,17 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canCaptureScribe",
     
     store: refs(["editAiSentence", (...a: any[]) => (editAiSentence as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+  },
+  {
+    id: "scribe_visit_field",
+    label: { en: "Fill AI draft visit details", es: "Completar datos de la visita (borrador IA)" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    
+    store: refs(["setAiDraftVisitField", (...a: any[]) => (setAiDraftVisitField as any)(...a)]),
     allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
   },
   {

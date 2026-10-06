@@ -445,7 +445,7 @@ function sessionAndNote(sessionId: string) {
 }
 function sync(s: ScribeSession) {
   AdelanteEHR._patchAiDraftNote(s.patientId, s.noteId!, {
-    templateAnswers: bodyFor(s) as never,
+    templateAnswers: { ...(AdelanteEHR._findNote(s.patientId, s.noteId!).n?.templateAnswers ?? {}), ...bodyFor(s) } as never,
     aiScribe: { unresolved: unresolvedCount(s), reviewConfirmedAt: undefined, reviewConfirmedBy: undefined },
   });
 }
@@ -474,6 +474,19 @@ export function editAiSentence(sessionId: string, sentenceId: string, text: stri
   sync(s);
   audit("scribe_sentence_edited", s.patientId, actor, { sessionId, sentenceId, wasUnsupported: x.unsupported });
   return x;
+}
+/** Visit-fact fields the clinician fills on the AI draft (never narrative, never codes). */
+export const AI_DRAFT_VISIT_FIELDS = ["service_type", "service_date", "service_minutes", "modality", "location"] as const;
+/** Store function for `scribe_visit_field` — fills a DMC-ODS visit fact on the draft. Clears review confirmation. */
+export function setAiDraftVisitField(sessionId: string, key: string, value: string | number, actor: ScribeActor) {
+  const { s, n } = sessionAndNote(sessionId);
+  if (!(AI_DRAFT_VISIT_FIELDS as readonly string[]).includes(key)) throw new Error("Edit narrative sentences in the AI draft review.");
+  AdelanteEHR._patchAiDraftNote(s.patientId, n.id, {
+    templateAnswers: { ...(n.templateAnswers ?? {}), [key]: value } as never,
+    aiScribe: { reviewConfirmedAt: undefined, reviewConfirmedBy: undefined },
+  });
+  audit("scribe_visit_field_set", s.patientId, actor, { sessionId, field: key });
+  return n;
 }
 /** Store function for `scribe_sentence_keep` — keep an unsupported sentence with a reason. */
 export function keepAiSentence(sessionId: string, sentenceId: string, reason: string, actor: ScribeActor) {

@@ -9,6 +9,34 @@ import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { ShieldCheck, Video, Pill, ArrowLeft } from "lucide-react";
 import { ClientDate } from "@/components/ClientDate";
+import { scribe as scribeVendor } from "@/lib/vendors/scribe";
+import { scribePilotMetrics, SCRIBE_PHASE2_ROLES, SCRIBE_CAPTURE_ROLES, sweepScribeRetention } from "@/lib/scribe";
+import { simulatedSurfaceLabel } from "@/lib/features";
+
+function ScribeVendorCard() {
+  const m = JSON.parse(useEhr(() => JSON.stringify(scribePilotMetrics()))) as ReturnType<typeof scribePilotMetrics>;
+  useEffect(() => { sweepScribeRetention(); }, []);
+  return (
+    <Card className="space-y-2 p-4" data-testid="scribe-vendor-card">
+      <div className="flex flex-wrap items-center justify-between gap-2">
+        <h2 className="font-display text-base text-navy">AI scribe · {scribeVendor.name}</h2>
+        <Badge variant="outline">{simulatedSurfaceLabel("scribe_simulated")}</Badge>
+      </div>
+      <p className="text-xs text-muted-foreground">Capture roles: {SCRIBE_CAPTURE_ROLES.join(", ")}. Phase 2 decision: {SCRIBE_PHASE2_ROLES.join(", ")}.</p>
+      <h3 className="text-sm font-medium">Pilot metrics (prototype, aggregate only)</h3>
+      {m.belowMinimumCohort ? (
+        <p className="text-sm text-muted-foreground" data-testid="scribe-metrics-suppressed">Hidden until at least 11 signed scribe notes exist.</p>
+      ) : (
+        <dl className="grid grid-cols-2 gap-2 text-sm sm:grid-cols-4" data-testid="scribe-metrics">
+          <div><dt className="text-[11px] text-muted-foreground">Session end → sign (median min)</dt><dd>{m.medianEndToSignMin}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Draft text edited (mean %)</dt><dd>{m.meanEditPct}%</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Unsupported sentences</dt><dd>{m.unsupportedTotal}</dd></div>
+          <div><dt className="text-[11px] text-muted-foreground">Clinician rating (1–5)</dt><dd>{m.meanRating ?? "—"}</dd></div>
+        </dl>
+      )}
+    </Card>
+  );
+}
 
 export const Route = createFileRoute("/admin-vendors")({
   head: () => ({
@@ -74,6 +102,7 @@ function AdminVendorsPage() {
       </p>
 
       <HieStatusCard />
+      <ScribeVendorCard />
       <div className="grid md:grid-cols-2 gap-4">
         <VendorPanel
           label="Telehealth video"

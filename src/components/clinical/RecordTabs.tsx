@@ -100,6 +100,16 @@ import {
 } from "@/lib/roles";
 import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { NoteRevisionPanel } from "@/components/clinical/NoteRevisionPanel";
+import { ScribeDraftReview } from "@/components/scribe/ScribeWorkspace";
+import { canCaptureScribe } from "@/lib/scribe";
+import { Link, useRouter } from "@tanstack/react-router";
+
+/** Renders only inside a router (unit tests mount the notes tab without one). */
+function StartScribeLink({ patientId }: { patientId: string }) {
+  const router = useRouter({ warn: false });
+  if (!router) return null;
+  return <Link to="/agentic/scribe/$patientId" params={{ patientId }} search={{}} className="inline-flex items-center rounded-md border px-3 py-1.5 text-sm text-teal" data-testid="notes-start-scribe">Start AI scribe</Link>;
+}
 import { AdelanteEHRExt } from "@/lib/ehr-ext";
 import { SCREENERS, severityFor, screenerByKey } from "@/lib/screeners";
 import {
@@ -2484,6 +2494,9 @@ export function NotesTab({
   );
   return (
     <div className="space-y-4">
+      {!restrictToTemplateKey && canCaptureScribe(role) && (
+        <StartScribeLink patientId={patientId} />
+      )}
       {canWrite && (
         <Card className="p-4">
           <h4 className="font-display text-sm text-navy" data-testid="note-composer-heading">
@@ -2837,6 +2850,8 @@ function ProgressNoteCard({
   const { staffName, role, staffId: actingStaffId, clinicianId: actingClinicianId } =
     useActingStaff();
   const status = noteStatus(note);
+  // §Scribe Phase 1 — the clinician who ran the scribe signs their own reviewed AI draft here.
+  const ownAiDraft = Boolean(note.aiScribe) && canCaptureScribe(role) && (note.clinicianId === actingClinicianId || note.clinicianId === actingStaffId);
   // Same language source of truth as the Refusal risk text: the patient record.
   const cardPatient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const noteLanguage = cardPatient?.preferredLanguage === "es" ? "es" : "en";
@@ -2918,6 +2933,14 @@ function ProgressNoteCard({
     });
   if (mustCosign && !cosignerId)
     domainBlockers.push({ code: "cosigner_missing", message: "Choose a cosigner for this note." });
+  // §Scribe Phase 1 — mirrors the store gate in signProgressNote.
+  if (note.aiScribe) {
+    if (!note.aiScribe.openedAt) domainBlockers.push({ code: "ai_draft_unopened", message: "Open the AI draft and review it." });
+    if (note.aiScribe.unresolved > 0)
+      domainBlockers.push({ code: "ai_draft_unsupported", message: `Resolve ${note.aiScribe.unresolved} sentence(s) marked "Not found in transcript".` });
+    if (!note.aiScribe.reviewConfirmedAt)
+      domainBlockers.push({ code: "ai_draft_unconfirmed", message: "Confirm \"I reviewed and edited this note\"." });
+  }
   const signBlockers = mergeBlockers(domainBlockers, attestationBlockers(signDraft));
 
 
@@ -2998,8 +3021,8 @@ function ProgressNoteCard({
             </Badge>
           )}
           {note.authorSource === "ai_draft" && (
-            <Badge className="bg-muted text-muted-foreground border-0 text-[10px]">
-              Machine draft
+            <Badge className="bg-muted text-muted-foreground border-0 text-[10px]" data-testid="ai-draft-badge">
+              {note.aiScribe ? (note.status === "draft" || !note.status ? "AI draft — review required" : "AI-assisted") : "Machine draft"}
             </Badge>
           )}
         </div>
@@ -3079,6 +3102,7 @@ function ProgressNoteCard({
           {note.cosignComment ? ` — “${note.cosignComment}”` : ""}
         </p>
       )}
+      {!sudLocked && note.aiScribe?.sessionId && <div className="mt-2"><ScribeDraftReview sessionId={note.aiScribe.sessionId} compact /></div>}
       {!sudLocked && <NoteRevisionPanel patientId={patientId} note={note} canWrite={canWrite} />}
       {note.declineReason && status === "draft" && (
         <p className="mt-2 rounded border border-destructive/40 bg-destructive/5 p-2 text-[11px] text-destructive">
@@ -3120,7 +3144,7 @@ function ProgressNoteCard({
           </p>
         </div>
       )}
-      {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
+      {(canWrite || ownAiDraft) && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           {isChwBiller && (
             <div className="space-y-1.5" data-testid="chw-supervisor-picker">
