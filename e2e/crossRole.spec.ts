@@ -28,12 +28,16 @@ async function luisId(page: Page): Promise<string> {
   });
 }
 
-async function go(page: Page, path: string) {
-  await page.evaluate((p) => {
-    window.history.pushState({}, "", p);
-    window.dispatchEvent(new PopStateEvent("popstate"));
-  }, path);
-  await page.waitForTimeout(600);
+/** Opens Luis's chart through the top-bar patient search (in-app, no reload), then a tab. */
+async function openChartTab(page: Page, tab: RegExp) {
+  const box = page.getByRole("combobox", { name: /Search patients/ });
+  await box.click();
+  await box.fill("Camacho");
+  await page.getByRole("listbox").getByText(/Luis Camacho/).first().click();
+  await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
+  const t = page.getByRole("tab", { name: tab }).or(page.getByRole("link", { name: tab })).or(page.getByRole("button", { name: tab }));
+  if (await t.count()) await t.first().click();
+  await page.waitForTimeout(800);
 }
 
 // J7 — chart ASAM section per role, against the registry (roleSeesAsamSection).
@@ -45,8 +49,9 @@ for (const [role, sees] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) 
   test(`J7 chart ASAM section — ${role} ${sees ? "sees" : "hidden"}`, async ({ page }) => {
     await actAs(page, role);
     await page.goto("/home");
-    const id = await luisId(page);
-    await go(page, `/record/${id}?section=asam`);
+    await luisId(page);
+    await openChartTab(page, /^Measures/);
+    await expect(page.getByText(/Luis/).first()).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/j7-${role}.png` });
     const body = await page.locator("main").innerText().catch(() => "");
     if (sees) expect(body).toMatch(/ASAM/);
@@ -59,8 +64,9 @@ for (const role of ["lvn", "billing", "sys_admin"] as StaffRole[]) {
   test(`J4 no scribe entry — ${role}`, async ({ page }) => {
     await actAs(page, role);
     await page.goto("/home");
-    const id = await luisId(page);
-    await go(page, `/record/${id}?section=notes`);
+    await luisId(page);
+    await openChartTab(page, /^Notes & Documents/);
+    await expect(page.getByText(/Luis/).first()).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/j4-${role}.png` });
     await expect(page.getByTestId("notes-start-scribe")).toHaveCount(0);
   });
