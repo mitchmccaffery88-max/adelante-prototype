@@ -25,7 +25,7 @@ import {
 } from "./ehr";
 import { facilityDateKey } from "./facilityTime";
 import { buildNoteDocumentModel, noteExportGate, type NoteDocBlock } from "./notePdf";
-import { canAccess, redactNoteBodies, type StaffRole } from "./roles";
+import { canAccess, getStaffMember, redactNoteBodies, type StaffRole } from "./roles";
 import { filterSudMedsForRole } from "./asamReporting";
 import { isSudMedication } from "./sudMedClassifier";
 import { disclose, type DisclosureActor, type Part2RecordClass } from "./part2Disclosure";
@@ -218,7 +218,7 @@ export function buildPrintRecordDocument(args: {
           category: note.category,
           signedBy: note.signedBy,
         };
-        const exportGate = noteExportGate(note, role, patient);
+        const exportGate = noteExportGate(note, role, patient, [args.actor?.staffId, getStaffMember(args.actor?.staffId)?.clinicianId]);
         if (!exportGate.allowed) {
           const entry: PrintNoteEntry = {
             note: header,
@@ -289,7 +289,7 @@ export function buildPrintRecordDocument(args: {
   return {
     part2Notice,
     part2Blocked,
-    patient: redactNoteBodies(role, patient, [args.actor?.staffId]),
+    patient: redactNoteBodies(role, patient, [args.actor?.staffId, getStaffMember(args.actor?.staffId)?.clinicianId]),
     facilityName: AdelanteEHR.currentFacility(patient.id)?.name ?? "Adelante Health",
     role,
     printedAt: now.toISOString(),
