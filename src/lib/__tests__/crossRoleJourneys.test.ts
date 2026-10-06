@@ -21,7 +21,7 @@ import {
   sweepScribeRetention, type ScribeActor, type ScribeSession,
 } from "@/lib/scribe";
 import { decideAfbiLink, getAfbiContact, requestAfbiLink } from "@/lib/afbiOutreach";
-import { buildIslFile, calomsBlockerRows, generateReport, suppressCell, tpsCounts, _resetCountyReporting, reportCards } from "@/lib/countyReporting";
+import { serviceRows as serviceRowsDbg, buildIslFile, calomsBlockerRows, generateReport, suppressCell, tpsCounts, _resetCountyReporting, reportCards } from "@/lib/countyReporting";
 import { dmcOdsExportRows, exportColumnsFor, ASAM_CLINICAL_COLUMNS } from "@/lib/dmcOdsReadiness";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 import { roleSeesSudInstruments } from "@/lib/trackingTimeline";
@@ -236,6 +236,7 @@ describe("J5 AFBI → ISL", () => {
     expect(getAfbiContact(c.id)!.patientId).toBe(p.id);
     const isl = buildIslFile({ role: "billing_coordinator", name: "Deneen Ford", staffId: "s-bc1" } as never, { from: "2026-01-01", to: "2026-12-31" });
     const line = isl.file.split("\n").find((l) => l.includes(`afbi_contact:${c.id}`));
+    if (!line) console.log('DBG', c.id, JSON.stringify(serviceRowsDbg({ from: "2026-01-01", to: "2026-12-31" }).filter((r) => r.cls.ref.id === c.id)), isl.file.slice(0, 600));
     expect(line).toBeTruthy();
     expect(line).toContain(p.id);
     expect(AdelanteEHRExt.listClaims().some((cl) => JSON.stringify(cl).includes(c.id))).toBe(false);
