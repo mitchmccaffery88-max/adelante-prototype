@@ -137,7 +137,15 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   for (const path of ["/advocate/appointments", "/advocate"]) {
     await spaGoto(page, path);
     await page.waitForTimeout(300);
-    const advocateBody = await page.locator("body").innerText();
+    // Mirror of the chip above: "Back to my care (<first name>)" is the
+    // deliberate switch to the person's own shell; nothing else may mention them.
+    for (const t of await page.getByTestId("switch-to-my-care").allInnerTexts())
+      expect(t.trim()).toMatch(/^Back to my care \(\S+\)$/);
+    const advocateBody = await page.evaluate(() => {
+      const clone = document.body.cloneNode(true) as HTMLElement;
+      clone.querySelectorAll('[data-testid="switch-to-my-care"]').forEach((n) => n.remove());
+      return clone.innerText;
+    });
     expect(advocateBody).not.toContain(SELF_FIRST);
     expect(advocateBody).not.toContain(SELF_LAST);
   }
