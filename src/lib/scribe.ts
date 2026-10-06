@@ -10,9 +10,10 @@ import { AdelanteEHR, type ConsentRecordSection, type Patient, type ProgressNote
 import type { StaffRole } from "./roles";
 import { canAccess } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
+import { isSudMedication, type SudClassifiable } from "./sudMedClassifier";
 import { cohortGuard } from "./cohortGuard";
 import { scribe, type AfbiDraftFields, type DraftSentence, type ScribeDraftOutput, type ScribeSpeaker, type TranscriptSegment } from "./vendors/scribe";
-import { canRecordAfbi, recordAfbiContact, roleSeesAfbiDetail, AFBI_ACTIVITIES, AFBI_LOCATION_TYPES, AFBI_OUTCOMES, type AfbiActivity, type AfbiContact, type AfbiLocationType, type AfbiOutcome } from "./afbiOutreach";
+import { canRecordAfbi, recordAfbiContact, ownsAfbiContact, updateAfbiContactFromDraft, roleSeesAfbiDetail, AFBI_ACTIVITIES, AFBI_LOCATION_TYPES, AFBI_OUTCOMES, type AfbiActivity, type AfbiContact, type AfbiLocationType, type AfbiOutcome } from "./afbiOutreach";
 import { defaultFormat, DMC_NARRATIVE_KEYS, FORMAT_SECTIONS, SCRIBE_FORMAT_LABEL, templateKeyFor, type ScribeFormat } from "./scribeFormats";
 
 export const AI_CONSENT_CATEGORY = "ai_session_recording" as const;
@@ -149,9 +150,18 @@ export const ALL_PARTY_REMINDER =
 
 // ------------------------------------------------------------------ Part 2
 const SUD_SERVICE = /^sud_/;
-/** Patient has SUD context: an active SUD problem, a SUD note, or a SUD visit type. */
+/**
+ * Patient has SUD context (structured signals only): an active SUD problem, a
+ * SUD note, a SUD visit type, any ASAM assessment, or a SUD medication / order
+ * (the one classifier). The ASAM + medication signals were missing, so a
+ * patient with a signed ASAM and buprenorphine but no SUD problem row got an
+ * unmasked scribe draft (found by the J7 Part 2 sweep).
+ */
 export function patientNeedsPart2(p: Patient): boolean {
   if ((p.problems ?? []).some((x) => x.category === "sud" && !(x as { removedAt?: string }).removedAt)) return true;
+  if (AdelanteEHR.listAsamAssessments(p.id).length) return true;
+  if ((AdelanteEHR.listMedications(p.id) as SudClassifiable[]).some((m) => isSudMedication(m))) return true;
+  if (AdelanteEHR.listOrders(p.id).some((o) => isSudMedication(o as SudClassifiable))) return true;
   if ((p.progressNotes ?? []).some((n) => n.category === "sud")) return true;
   return AdelanteEHR.listAppointments().some((a) => a.patientId === p.id && SUD_SERVICE.test(a.serviceType ?? ""));
 }
@@ -322,6 +332,8 @@ export interface ScribeSession {
   afbiInitials?: string;
   afbiFields?: AfbiDraftFields;
   afbiContactId?: string;
+  /** Dictation onto an existing AFBI contact (owner-only). */
+  afbiTargetContactId?: string;
   /** AFBI target review state (notes keep it on the note). */
   openedAt?: string;
   reviewConfirmedAt?: string;
@@ -638,6 +650,16 @@ export interface DictationRequest {
   /** AFBI pre-enrollment only. */
   initials?: string;
   setting?: ScribeSetting;
+  /** Dictating onto an EXISTING AFBI contact — only its recorder (or reassigned owner). */
+  afbiContactId?: string;
+}
+
+export const OWN_CONTACT_BLOCK = "You can only dictate on your own contacts";
+
+/** Rendering (own calendar) or assigned staff on the visit. */
+export function isOwnContactVisit(a: { clinicianId: string; assignedStaffId?: string }, actor: ScribeActor): boolean {
+  if (actor.staffId && a.assignedStaffId === actor.staffId) return true;
+  return Boolean(actor.clinicianId && a.clinicianId === actor.clinicianId);
 }
 /** Why post-encounter dictation can't run, or null. */
 export function dictationBlocker(req: DictationRequest, at = new Date()): ScribeBlock | null {
@@ -648,7 +670,9 @@ export function dictationBlocker(req: DictationRequest, at = new Date()): Scribe
   if (req.patientId && !p) return { reason: "Patient not found.", next: "Pick the person again." };
   if (req.target === "afbi") {
     if (!canRecordAfbi(role as StaffRole)) return { reason: "Your role doesn't record field outreach (AFBI) contacts.", next: "Dictate a contact note from a visit instead." };
-    if (!p && !/^[A-Za-z]{1,4}$/.test((req.initials ?? "").replace(/\./g, "").trim()))
+    if (req.afbiContactId && !ownsAfbiContact(req.afbiContactId, req.actor.staffId))
+      return { reason: OWN_CONTACT_BLOCK, next: "Ask the staff member who recorded this contact, or a clinical coordinator to reassign it to you." };
+    if (!p && !req.afbiContactId && !/^[A-Za-z]{1,4}$/.test((req.initials ?? "").replace(/\./g, "").trim()))
       return { reason: "Enter the person's initials first.", next: PRE_ENROLLMENT_RULE };
   } else {
     if (!p) return { reason: "Pick a patient.", next: "Open dictation from a chart or a visit." };
@@ -656,6 +680,8 @@ export function dictationBlocker(req: DictationRequest, at = new Date()): Scribe
       const a = req.appointmentId ? AdelanteEHR.listAppointments().find((x) => x.id === req.appointmentId && x.patientId === p.id) : undefined;
       if (!a || !CONTACT_NOTE_SERVICE_TYPES.includes(String(a.serviceType)))
         return { reason: "Dictation for your role is limited to AFBI contacts and your own contact notes.", next: "Pick a case management, care coordination or peer support visit — or use the AFBI form." };
+      if (!isOwnContactVisit(a, req.actor))
+        return { reason: OWN_CONTACT_BLOCK, next: "Only the staff member rendering or assigned to this visit can dictate on it." };
     }
   }
   if (p) {
@@ -698,6 +724,7 @@ export function createDictationDraft(req: DictationRequest): ScribeSession | Pro
     target: req.target,
     pauses: [],
     afbiInitials: p ? undefined : (req.initials ?? "").replace(/\./g, "").trim().toUpperCase().slice(0, 4),
+    ...(req.afbiContactId ? { afbiTargetContactId: req.afbiContactId } : {}),
   };
   sessions.unshift(s);
   buildSentences(s, req.target === "afbi" ? scribe.afbiDraft(transcript) : scribe.dictationDraft(transcript, format));
@@ -867,7 +894,10 @@ export function saveAfbiFromScribe(sessionId: string, actor: ScribeActor): AfbiC
   const okActs = f.activities.filter((a) => AFBI_ACTIVITIES.some((x) => x.id === a)) as AfbiActivity[];
   const loc = (AFBI_LOCATION_TYPES.some((l) => l.id === f.locationType) ? f.locationType : "other") as AfbiLocationType;
   const out = (AFBI_OUTCOMES.some((o) => o.id === f.outcome) ? f.outcome : "engaged") as AfbiOutcome;
-  const c = recordAfbiContact(
+  if (s.afbiTargetContactId && !ownsAfbiContact(s.afbiTargetContactId, actor.staffId)) throw new Error(OWN_CONTACT_BLOCK);
+  const c = s.afbiTargetContactId
+    ? updateAfbiContactFromDraft(s.afbiTargetContactId, { role: actor.role as StaffRole, name: actor.name, staffId: actor.staffId }, { locationType: loc, activities: okActs, minutes: f.minutes, outcome: out, nextStep: f.nextStep })
+    : recordAfbiContact(
     { role: actor.role as StaffRole, name: actor.name, staffId: actor.staffId },
     { locationType: loc, patientId: s.patientId || undefined, initials: s.afbiInitials, activities: okActs, minutes: f.minutes, outcome: out, nextStep: f.nextStep },
   );

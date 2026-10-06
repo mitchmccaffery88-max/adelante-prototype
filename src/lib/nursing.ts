@@ -367,3 +367,18 @@ export function seedNursingDemo(): void {
   }
 }
 seedNursingDemo();
+
+/** One line per signature on a clinic order: ordered → reviewed → given → cosigned. */
+export interface OrderSignature { step: "ordered" | "reviewed" | "given" | "cosigned"; by: string; at?: string; pending?: boolean }
+export function orderSignatureTrail(patientId: string, orderId: string): OrderSignature[] {
+  const o = AdelanteEHR.listOrders(patientId).find((x) => x.id === orderId) as (MedOrder & { signedBy?: string; signedAt?: string; createdBy?: string }) | undefined;
+  if (!o) return [];
+  const out: OrderSignature[] = [{ step: "ordered", by: o.signedBy ?? o.createdBy ?? "Prescriber", at: o.signedAt }];
+  const r = reviews.get(orderId);
+  if (r?.decision === "verified") out.push({ step: "reviewed", by: r.by, at: r.at });
+  for (const d of doses.filter((x) => x.orderId === orderId)) {
+    out.push({ step: "given", by: d.by, at: d.at });
+    if (d.cosign) out.push({ step: "cosigned", by: d.cosign.by ?? "Supervisor", at: d.cosign.at, pending: d.cosign.status !== "signed" });
+  }
+  return out;
+}

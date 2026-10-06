@@ -637,7 +637,7 @@ export function OrdersTab({ patientId, readOnly }: { patientId: string; readOnly
                 {o.deaSchedule && <Badge variant="outline">{o.deaSchedule}</Badge>}
                 {o.offCatalog && <Badge variant="destructive">Off-catalog</Badge>}
                 {o.manualDose && <Badge variant="destructive">Manual dose</Badge>}
-                {o.clinicAdministered && <ClinicChainBadges orderId={o.id} />}
+                {o.clinicAdministered && <ClinicChainBadges orderId={o.id} orderedBy={(o as { signedBy?: string }).signedBy ?? o.createdBy} />}
                 {o.strengthSource === "dailymed" && (
                   <Badge variant="outline">Strength: DailyMed</Badge>
                 )}

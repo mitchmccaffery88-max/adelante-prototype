@@ -269,7 +269,7 @@ export function serviceRows(range: DateRange): ServiceRow[] {
       minutes = p?.peerNotes?.find((n) => n.id === c.ref.id)?.minutes ?? 15;
       label = "Peer contact";
     }
-    out.push({ cls: c, patientId: c.patientId, date: c.serviceDate.slice(0, 10), minutes, completed, serviceLabel: label, program: programFor(c, sud), sud });
+    out.push({ cls: c, patientId: c.ref.kind === "afbi_contact" ? getAfbiContact(c.ref.id)?.patientId ?? c.patientId : c.patientId, date: c.serviceDate.slice(0, 10), minutes, completed, serviceLabel: label, program: programFor(c, sud), sud });
   }
   return out;
 }

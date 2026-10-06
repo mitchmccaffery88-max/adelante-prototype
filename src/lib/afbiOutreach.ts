@@ -98,6 +98,52 @@ export interface AfbiActor {
   staffId?: string;
 }
 
+/**
+ * A clinical coordinator reassigns an AFBI contact to another outreach staff
+ * member (e.g. the recorder left). Audited; the new owner may then dictate onto it.
+ */
+export function reassignAfbiContact(
+  contactId: string,
+  to: { staffId: string; name: string; role: StaffRole },
+  coordinator: { role: StaffRole; name: string; staffId?: string },
+  reason: string,
+): AfbiContact {
+  if (coordinator.role !== "clinical_coordinator" && coordinator.role !== "sys_admin") throw new Error("Only a clinical coordinator can reassign a contact.");
+  if (!reason?.trim()) throw new Error("Give a reason for the reassignment.");
+  if (!canRecordAfbi(to.role)) throw new Error("That person doesn't record field outreach.");
+  const c = contacts.find((x) => x.id === contactId);
+  if (!c) throw new Error("Contact not found.");
+  const from = c.staffId;
+  c.staffId = to.staffId;
+  c.staffName = to.name;
+  c.staffRole = to.role;
+  AdelanteEHR._recordAudit({ category: "assignment", action: "afbi_contact_reassigned", patientId: c.patientId, actorId: coordinator.name, actorRole: coordinator.role, detail: { contactId, fromStaffId: from, toStaffId: to.staffId } });
+  return c;
+}
+
+/** Only the contact's recorder (or whoever a coordinator reassigned it to) owns it. */
+export function ownsAfbiContact(contactId: string, staffId?: string): boolean {
+  const c = contacts.find((x) => x.id === contactId);
+  return Boolean(c && staffId && c.staffId === staffId);
+}
+
+/** Owner-only update of an existing contact from a reviewed dictation draft. */
+export function updateAfbiContactFromDraft(
+  contactId: string,
+  actor: AfbiActor,
+  f: { locationType: AfbiLocationType; activities: AfbiActivity[]; minutes: number; outcome: AfbiOutcome; nextStep?: string },
+): AfbiContact {
+  const c = contacts.find((x) => x.id === contactId);
+  if (!c) throw new Error("Contact not found.");
+  if (!actor.staffId || c.staffId !== actor.staffId) throw new Error("You can only dictate on your own contacts");
+  if (f.activities.length) c.activities = f.activities;
+  c.locationType = f.locationType;
+  c.outcome = f.outcome;
+  if (f.minutes >= 1 && f.minutes <= 600) c.minutes = Math.round(f.minutes);
+  if (f.nextStep) c.nextStep = f.nextStep;
+  return c;
+}
+
 export function recordAfbiContact(
   actor: AfbiActor,
   input: {
