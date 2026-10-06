@@ -105,7 +105,8 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   const upcomingBefore = await page.getByTestId("advocate-upcoming").innerText();
 
   // ---- the same person opens care of their OWN ---------------------------
-  await spaGoto(page, "/advocate");
+  // The self-care offer has its own page since the advocate redesign.
+  await spaGoto(page, "/advocate/support-for-myself");
   await page.getByRole("button", { name: /support for me too/i }).click();
   await page.getByLabel("First name").fill(SELF_FIRST);
   await page.getByLabel("Last name").fill(SELF_LAST);
