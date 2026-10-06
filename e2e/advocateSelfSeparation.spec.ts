@@ -74,7 +74,15 @@ test("Patient A's data never appears in the advocate's own care view, and vice v
   await page.getByLabel("Their email or mobile number").fill("marisol@example.org");
   await page.getByRole("button", { name: /send invitation/i }).click();
 
-  const code = (await page.getByText(/ADV-[A-Z0-9-]+/).first().innerText()).trim();
+  // Since the advocate-access redesign the code goes straight to the advocate
+  // (after consent) and is never painted on the staff screen. Assert that,
+  // then read the code the advocate received from the in-memory store.
+  await expect(page.getByText(/invitation pending/i).first()).toBeVisible();
+  await expect(page.getByText(/ADV-[A-Z0-9]{4}-/)).toHaveCount(0);
+  const code = await page.evaluate((name) => {
+    const ehr = (window as unknown as { __adelante: { AdelanteEHR: { listAdvocateLinks: () => { advocateName: string; invitationCode: string }[] } } }).__adelante.AdelanteEHR;
+    return ehr.listAdvocateLinks().filter((l) => l.advocateName === name).at(-1)!.invitationCode;
+  }, ADVOCATE_NAME);
   expect(code).toMatch(/^ADV-/);
 
   // ---- the advocate connects on their own surface ------------------------
