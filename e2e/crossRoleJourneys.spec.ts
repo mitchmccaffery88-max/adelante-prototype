@@ -283,11 +283,10 @@ test("J6 billing coordinator CalOMS draft (no ASAM signature / medical-necessity
 
   // No notes / ASAM / care plan for the billing coordinator.
   const access = await page.evaluate(() => {
-    const { AdelanteEHR } = (window as unknown as W).__adelante;
-    void AdelanteEHR;
-    return null;
+    const { j } = (window as unknown as W).__adelante;
+    return ["therapy_notes", "screeners_sud", "care_plan"].map((c) => (j.canAccess("billing_coordinator", c) as { level: string }).level);
   });
-  void access;
+  expect(access).toEqual(["none", "none", "none"]);
 
   await as(page, "s-bill1", "billing");
   await go(page, "/clinician");
