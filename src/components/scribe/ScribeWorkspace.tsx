@@ -66,6 +66,12 @@ export function ScribeWorkspace({ patientId, appointmentId }: { patientId: strin
       {!live && (
         <Card className="p-4 space-y-3" data-testid="scribe-start">
           <h2 className="font-display text-lg text-navy">Start AI scribe <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
+          {block && (
+            <div role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm" data-testid="scribe-blocked">
+              <p className="font-medium text-destructive">{block.reason}</p>
+              <p className="mt-1 text-muted-foreground">What to do: {block.next}</p>
+            </div>
+          )}
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-xs">Visit
               <select className="mt-1 w-full rounded border bg-background p-2 text-sm" value={apptId} onChange={(e) => setApptId(e.target.value)} data-testid="scribe-visit">
@@ -90,12 +96,6 @@ export function ScribeWorkspace({ patientId, appointmentId }: { patientId: strin
             <div className="flex gap-1">{(["advocate", "interpreter", "family"] as const).map((k) => <Button key={k} size="sm" variant="ghost" onClick={() => setOthers([...others, { kind: k, agreed: false }])}>+ {k}</Button>)}</div>
             <label className="flex items-center gap-2"><Checkbox checked={confirmed} onCheckedChange={(v) => setConfirmed(v === true)} data-testid="scribe-all-party" /> Everyone present has agreed to recording</label>
           </div>
-          {block && (
-            <div role="alert" className="rounded border border-destructive/40 bg-destructive/5 p-3 text-sm" data-testid="scribe-blocked">
-              <p className="font-medium text-destructive">{block.reason}</p>
-              <p className="mt-1 text-muted-foreground">What to do: {block.next}</p>
-            </div>
-          )}
           <Button className="w-full sm:w-auto" disabled={!!block} onClick={start} data-testid="scribe-start-btn">Start AI scribe</Button>
         </Card>
       )}
