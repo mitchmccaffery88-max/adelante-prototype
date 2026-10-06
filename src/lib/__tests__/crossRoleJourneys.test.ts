@@ -12,7 +12,7 @@ import { canAccess, getStaffMember, STAFF_ROLES, type StaffRole } from "@/lib/ro
 import { chaseRowsFor, chaseTaskFor } from "@/lib/referralChase";
 import { availableSlots } from "@/lib/clinicianAvailability";
 import { timelyAccessFor, timelyLine } from "@/lib/timelyAccess";
-import { cosignClinicDose, dosesFor, nurseQueue, nurseReviewFor, nurseReviewOrder, orderClinicMedication } from "@/lib/nursing";
+import { orderSignatureTrail, cosignClinicDose, dosesFor, nurseQueue, nurseReviewFor, nurseReviewOrder, orderClinicMedication } from "@/lib/nursing";
 import { workspaceActionRows } from "@/lib/clinicianWorkspace";
 import { noteClock } from "@/lib/noteClock";
 import {
@@ -59,10 +59,10 @@ describe("J1 referral → first visit", () => {
     at(plusDays(FROZEN_NOW, 2));
     const pid = AdelanteEHR.enrollReferral(r.id)!;
     const p = AdelanteEHR.getPatient(pid)!;
-    const slot = availableSlots("c3", { serviceType: "med_management", modality: "phone" })[0]!;
+    const slot = availableSlots("c3", { serviceType: "med_management", modality: "in_person" })[0]!;
     expect(slot).toBeTruthy();
     const book = runAction<{ id: string }>("dashboard_book", COORD(), p, {
-      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "phone", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
+      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "in_person", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
     });
     expect(book.ok, book.ok ? "" : book.reason).toBe(true);
     const appt = book.ok ? book.value : undefined!;
@@ -105,7 +105,10 @@ describe("J2 medication chain", () => {
     // All three signatures on the order trail.
     const o2 = AdelanteEHR.listOrders(pid).find((x) => x.id === order.id) as unknown as { signedBy?: string; createdBy?: string };
     expect(o2.signedBy ?? o2.createdBy).toMatch(/Bagga/);
-    expect(nurseReviewFor(order.id)?.actor?.name ?? (nurseReviewFor(order.id) as { byName?: string })?.byName).toMatch(/Marisol/);
+    expect(nurseReviewFor(order.id)?.by).toMatch(/Marisol/);
+    const trail = orderSignatureTrail(pid, order.id);
+    expect(trail.map((x) => x.step)).toEqual(["ordered", "reviewed", "given", "cosigned"]);
+    expect(trail.every((x) => !x.pending)).toBe(true);
     const dose = dosesFor(order.id)[0] as unknown as { givenBy?: { name: string }; byName?: string; cosign?: { status: string; byName?: string; by?: { name: string } } };
     expect(JSON.stringify(dose)).toMatch(/Kevin/);
     expect(dose.cosign?.status).toBe("signed");
@@ -179,6 +182,12 @@ describe("J4 scribe by role", () => {
       }
       confirmAiReview(s.id, actor, 4);
       AdelanteEHR.signProgressNote(p.id, note.id, { signedBy: actor.name, role: m.role, attested: true });
+      // Existing policy: SUD counselor and RN notes route to a licensed cosigner after the author signs.
+      const st = AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status;
+      if (role === "sud_counselor" || role === "nurse_rn") {
+        expect(st).toBe("cosign_pending");
+        AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Bagga", cosignedById: "s-np1", role: "pmhnp" });
+      }
       expect(AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status).toBe("signed");
       sweepScribeRetention();
       expect(getScribeSession(s.id)!.transcriptDeleted?.reason).toBe("signed");
