@@ -20,6 +20,7 @@ import { Badge } from "@/components/ui/badge";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Input } from "@/components/ui/input";
 
+const VISIT_FIELD_LABELS = [["service_type", "Service type"], ["service_date", "Date of service"], ["service_minutes", "Minutes"], ["modality", "Modality"], ["location", "Location"]] as const;
 const SPEAKER = { clinician: "Clinician", patient: "Patient", other: "Other" } as const;
 
 export function ScribeWorkspace({ patientId, appointmentId }: { patientId: string; appointmentId?: string }) {
@@ -160,6 +161,27 @@ export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; c
         <Button onClick={() => run(() => actFor("scribe_open_draft", "openAiDraft", pid, sessionId, actor))} data-testid="scribe-open">Open AI draft to review</Button>
       ) : (
         <>
+          {!signed && (
+            <div className="rounded border p-2" data-testid="scribe-visit-fields">
+              <h4 className="text-xs font-medium text-navy">Visit details (DMC-ODS)</h4>
+              <div className="mt-1 grid gap-2 sm:grid-cols-2">
+                {VISIT_FIELD_LABELS.map(([k, label]) => (
+                  <label key={k} className="text-[11px]">{label}
+                    <Input
+                      aria-label={label}
+                      type={k === "service_minutes" ? "number" : k === "service_date" ? "date" : "text"}
+                      defaultValue={String((note.templateAnswers as Record<string, unknown> | undefined)?.[k] ?? "")}
+                      onBlur={(e) => {
+                        const v = e.target.value.trim();
+                        const cur = String((note.templateAnswers as Record<string, unknown> | undefined)?.[k] ?? "");
+                        if (v && v !== cur) run(() => { actFor("scribe_visit_field", "setAiDraftVisitField", pid, sessionId, k, k === "service_minutes" ? Number(v) : v, actor); setReviewed(false); });
+                      }}
+                    />
+                  </label>
+                ))}
+              </div>
+            </div>
+          )}
           {sections.map((sec) => (
             <div key={sec.key}>
               <h4 className="text-xs font-medium text-navy">{sec.label}</h4>
