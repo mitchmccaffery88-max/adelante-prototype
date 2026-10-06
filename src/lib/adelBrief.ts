@@ -385,10 +385,33 @@ function devLog(label: string, ms: number) {
 }
 const nowMs = () => (typeof performance !== "undefined" ? performance.now() : Date.now());
 
-function computeSection(entry: BriefCacheEntry, p: Patient, id: BriefSectionId, now: Date) {
+export type BriefComputeTrigger = "view" | "background" | "warm";
+let currentTrigger: BriefComputeTrigger = "view";
+function computeSection(entry: BriefCacheEntry, p: Patient, id: BriefSectionId, now: Date, triggeredBy: BriefSource[] = []) {
   const t = nowMs();
   briefStats.sectionComputes[id]++;
   entry.sections[id] = { id, bullets: COMPUTE[id](p, entry.role, now).slice(0, BRIEF_SECTION_CAP), computedAt: now.toISOString() };
+  // V2 — a SYSTEM event in the existing record-access log (never a view):
+  // which sources triggered it, never any bullet text. Quiet append so the
+  // log write can't re-trigger this cache or update React mid-render.
+  AdelanteEHR._recordAuditQuiet({
+    category: "access",
+    action: "brief.section_computed",
+    patientId: p.id,
+    actorId: "system",
+    actorRole: "system",
+    detail: {
+      sectionId: `brief:${id}`,
+      kind: "compute",
+      actorName: "System (Adel Brief)",
+      visibilityClass: entry.key.split("|").slice(1).join("|"),
+      triggeredBy: triggeredBy.length ? triggeredBy : ["initial"],
+      trigger: currentTrigger,
+      system: true,
+      at: new Date().toISOString(),
+      simulated: true,
+    },
+  });
   devLog(`section ${id} (${p.id}, ${entry.role})`, nowMs() - t);
 }
 function fingerprints(p: Patient, role: StaffRole, now: Date) {
@@ -396,6 +419,10 @@ function fingerprints(p: Patient, role: StaffRole, now: Date) {
   const fp: Partial<Record<BriefSource, string>> = {};
   for (const s of ALL_SOURCES) fp[s] = sourceFingerprint(s, p, role, now);
   return fp;
+}
+function changedSources(entry: BriefCacheEntry, fp: Partial<Record<BriefSource, string>>, id: BriefSectionId): BriefSource[] {
+  if (!entry.sections[id]) return [];
+  return SECTION_DEPS[id].filter((s) => entry.fingerprint[s] !== fp[s]);
 }
 function changedSections(entry: BriefCacheEntry, fp: Partial<Record<BriefSource, string>>): BriefSectionId[] {
   const out = new Set<BriefSectionId>();
@@ -425,7 +452,7 @@ export function getAdelBrief(p: Patient, role: StaffRole, now = new Date()): Bri
     briefStats.fullComputes++;
   }
   const fp = fingerprints(p, role, now);
-  for (const id of changedSections(entry, fp)) computeSection(entry, p, id, now);
+  for (const id of changedSections(entry, fp)) computeSection(entry, p, id, now, changedSources(entry, fp, id));
   entry.fingerprint = fp;
   entry.version = storeVersion;
   entry.refreshing.clear();
@@ -514,7 +541,9 @@ function refreshEntryStepwise(entry: BriefCacheEntry, p: Patient) {
       notify();
       return;
     }
-    computeSection(entry, p, id, now);
+    const prev = currentTrigger;
+    currentTrigger = "background";
+    try { computeSection(entry, p, id, now, changedSources(entry, fp, id)); } finally { currentTrigger = prev; }
     entry.refreshing.delete(id);
     notify();
     idle(step);
@@ -536,7 +565,9 @@ export function warmAdelBriefs(patientIds: string[], role: StaffRole): void {
     const p = AdelanteEHR.getPatient(id);
     if (p && !cache.has(keyOf(p, role))) {
       const t = nowMs();
-      getAdelBrief(p, role);
+      const prev = currentTrigger;
+      currentTrigger = "warm";
+      try { getAdelBrief(p, role); } finally { currentTrigger = prev; }
       devLog(`warm (${id}, ${role})`, nowMs() - t);
       notify();
     }
