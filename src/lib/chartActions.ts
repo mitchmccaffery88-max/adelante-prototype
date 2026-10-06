@@ -38,11 +38,11 @@ import { administerClinicDose, canAdministerClinicMed, canCollectSpecimen, canCo
 import { canEditPartnerDirectory, canLinkPartner, endPartnerLink, linkPartner, recordHandoff, savePartnerContact, savePartnerOrg } from "@/lib/carePartners";
 import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, referToNtp } from "@/lib/ntpReferral";
 import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview, deleteAiSentence, discardScribeSession, editAiSentence,
-  setAiDraftVisitField, endScribeSession, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
+  setAiDraftVisitField, endScribeSession, canDictateScribe, createDictationDraft, pauseScribeSession, resumeScribeSession, saveAfbiFromScribe, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-06.scribe1";
+export const REGISTRY_VERSION = "2026-10-06.scribe1b";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -433,6 +433,51 @@ export const CHART_ACTIONS: ChartAction[] = [
     allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
   },
   {
+    id: "scribe_pause",
+    label: { en: "Pause capture", es: "Pausar captura" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    flags: ["scribe_simulated"],
+    store: refs(["pauseScribeSession", (...a: any[]) => (pauseScribeSession as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Live capture isn't available for your role.")),
+  },
+  {
+    id: "scribe_resume",
+    label: { en: "Resume capture", es: "Reanudar captura" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    check: "canCaptureScribe",
+    flags: ["scribe_simulated"],
+    store: refs(["resumeScribeSession", (...a: any[]) => (resumeScribeSession as any)(...a)]),
+    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Live capture isn't available for your role.")),
+  },
+  {
+    id: "scribe_dictate",
+    label: { en: "Dictate after the encounter", es: "Dictar después del encuentro" },
+    group: "document",
+    sectionId: "notes",
+    menu: false,
+    needsPatient: false,
+    check: "canDictateScribe (+ scope in dictationBlocker)",
+    flags: ["scribe_simulated"],
+    store: refs(["createDictationDraft", (...a: any[]) => (createDictationDraft as any)(...a)]),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
+  },
+  {
+    id: "scribe_afbi_save",
+    label: { en: "Save AFBI contact from AI draft", es: "Guardar contacto AFBI del borrador IA" },
+    group: "coordination",
+    menu: false,
+    needsPatient: false,
+    check: "canDictateScribe && canRecordAfbi",
+    flags: ["scribe_simulated"],
+    store: refs(["saveAfbiFromScribe", (...a: any[]) => (saveAfbiFromScribe as any)(...a)]),
+    allowed: ({ role }) => (canDictateScribe(role) && canRecordAfbi(role) ? ok() : hide("Only outreach roles that use the scribe save AFBI drafts.")),
+  },
+  {
     id: "scribe_end",
     label: { en: "End session (AI draft)", es: "Terminar sesión (borrador IA)" },
     group: "document",
@@ -449,10 +494,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["openAiDraft", (...a: any[]) => (openAiDraft as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_sentence_edit",
@@ -460,10 +505,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["editAiSentence", (...a: any[]) => (editAiSentence as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_visit_field",
@@ -471,10 +516,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["setAiDraftVisitField", (...a: any[]) => (setAiDraftVisitField as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_sentence_keep",
@@ -482,10 +527,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["keepAiSentence", (...a: any[]) => (keepAiSentence as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_sentence_delete",
@@ -493,10 +538,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["deleteAiSentence", (...a: any[]) => (deleteAiSentence as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_review_confirm",
@@ -504,10 +549,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["confirmAiReview", (...a: any[]) => (confirmAiReview as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "scribe_followup_accept",
@@ -515,10 +560,10 @@ export const CHART_ACTIONS: ChartAction[] = [
     group: "document",
     sectionId: "notes",
     menu: false,
-    check: "canCaptureScribe",
+    check: "canDictateScribe",
     
     store: refs(["acceptAiFollowUp", (...a: any[]) => (acceptAiFollowUp as any)(...a)]),
-    allowed: ({ role }) => (canCaptureScribe(role) ? ok() : hide("Your role doesn't use the AI scribe in this phase (Phase 2 decision).")),
+    allowed: ({ role }) => (canDictateScribe(role) ? ok() : hide("Your role doesn't use the AI scribe or dictation.")),
   },
   {
     id: "advocate_reschedule",
