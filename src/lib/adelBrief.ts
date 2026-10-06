@@ -73,6 +73,16 @@ const SECTION_LABEL: Record<string, string> = {
 };
 export const sourceChipLabel = (sectionId: string) => SECTION_LABEL[sectionId] ?? sectionId;
 
+/** Kind of source record behind a bullet (resolved by adelBriefCheck.ts). */
+export type BriefSourceKind =
+  | "order" | "dose_report" | "screener_request" | "appointment" | "patient_release" | "message"
+  | "checkin_day" | "screening" | "refill_request" | "lab_order" | "hie_encounter" | "goal"
+  | "care_plan" | "safety_plan" | "sdoh_need" | "resource_referral" | "hloc_referral" | "progress_note" | "consent";
+export interface BriefSourceRef {
+  kind: BriefSourceKind;
+  /** Record id (screenings: `key@date`; dose reports: `orderId@scheduledAt`; check-in days: `YYYY-MM-DD`). */
+  id: string;
+}
 export interface BriefBullet {
   id: string;
   text: string;
@@ -80,7 +90,10 @@ export interface BriefBullet {
   at: string;
   /** Chart section the source chip links to. */
   sectionId: string;
+  /** Exact source records behind this bullet — the consistency check resolves these. */
+  sources?: BriefSourceRef[];
 }
+const src = (kind: BriefSourceKind, ids: string[]): BriefSourceRef[] => ids.map((id) => ({ kind, id }));
 export interface BriefSectionResult {
   id: BriefSectionId;
   bullets: BriefBullet[];
