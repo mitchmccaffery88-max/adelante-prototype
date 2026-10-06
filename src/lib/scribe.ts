@@ -10,6 +10,7 @@ import { AdelanteEHR, type ConsentRecordSection, type Patient, type ProgressNote
 import type { StaffRole } from "./roles";
 import { canAccess } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
+import { isSudMedication, type SudClassifiable } from "./sudMedClassifier";
 import { cohortGuard } from "./cohortGuard";
 import { scribe, type AfbiDraftFields, type DraftSentence, type ScribeDraftOutput, type ScribeSpeaker, type TranscriptSegment } from "./vendors/scribe";
 import { canRecordAfbi, recordAfbiContact, ownsAfbiContact, updateAfbiContactFromDraft, roleSeesAfbiDetail, AFBI_ACTIVITIES, AFBI_LOCATION_TYPES, AFBI_OUTCOMES, type AfbiActivity, type AfbiContact, type AfbiLocationType, type AfbiOutcome } from "./afbiOutreach";
@@ -149,9 +150,18 @@ export const ALL_PARTY_REMINDER =
 
 // ------------------------------------------------------------------ Part 2
 const SUD_SERVICE = /^sud_/;
-/** Patient has SUD context: an active SUD problem, a SUD note, or a SUD visit type. */
+/**
+ * Patient has SUD context (structured signals only): an active SUD problem, a
+ * SUD note, a SUD visit type, any ASAM assessment, or a SUD medication / order
+ * (the one classifier). The ASAM + medication signals were missing, so a
+ * patient with a signed ASAM and buprenorphine but no SUD problem row got an
+ * unmasked scribe draft (found by the J7 Part 2 sweep).
+ */
 export function patientNeedsPart2(p: Patient): boolean {
   if ((p.problems ?? []).some((x) => x.category === "sud" && !(x as { removedAt?: string }).removedAt)) return true;
+  if (AdelanteEHR.listAsamAssessments(p.id).length) return true;
+  if ((AdelanteEHR.listMedications(p.id) as SudClassifiable[]).some((m) => isSudMedication(m))) return true;
+  if (AdelanteEHR.listOrders(p.id).some((o) => isSudMedication(o as SudClassifiable))) return true;
   if ((p.progressNotes ?? []).some((n) => n.category === "sud")) return true;
   return AdelanteEHR.listAppointments().some((a) => a.patientId === p.id && SUD_SERVICE.test(a.serviceType ?? ""));
 }
