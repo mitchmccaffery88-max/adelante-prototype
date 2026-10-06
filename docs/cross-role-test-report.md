@@ -22,7 +22,7 @@ Store-level journeys: `src/lib/__tests__/crossRoleJourneys.test.ts` (15 tests). 
 ## J7 role × item matrix
 | Role | asam_section | sud_meds | sud_instruments | scribe_draft | partner_sud_link | disclosure_log | therapy_notes |
 |---|---|---|---|---|---|---|---|
-| ecm_provider | hidden | hidden | hidden | hidden | hidden | hidden | sees |
+| ecm_provider | hidden | hidden | hidden | hidden | hidden | hidden | metadata only |
 | cf_care_manager | hidden | hidden | hidden | hidden | hidden | hidden | hidden |
 | sud_counselor | sees | sees | sees | sees | sees | hidden | sees |
 | clinical_trainee | hidden | hidden | hidden | hidden | hidden | hidden | sees |
@@ -40,6 +40,20 @@ Store-level journeys: `src/lib/__tests__/crossRoleJourneys.test.ts` (15 tests). 
 | billing_coordinator | hidden | hidden | hidden | hidden | hidden | hidden | hidden |
 | sys_admin | hidden | hidden | hidden | hidden | hidden | sees | hidden |
 
+## ECM / care manager note-content restriction (follow-up)
+Draft — pending executive RBAC review. `therapy_notes` for `ecm_provider` is now `summary` (metadata: date, type, author, signed status, visit). Bodies, scribe drafts and transcripts show "Clinical note — content restricted for your role"; own-authored and coordination notes stay readable. `cf_care_manager` already had no access. Enforced in `noteBodyRestricted` / `redactNoteBodies` (roles.ts) on chart, note peek, chart review, Adel Brief data, note PDF, print record, scribe view, and the inbox unsigned tab. Test: `ecmNoteContent.test.ts`.
+Permissions snapshot: no action changed state; new `_clinical_note_content` block (ecm_provider = metadata). ECM loses Notes queue and Cosign inbox menu entries (could not sign anyway).
+
+## Browser journeys (follow-up) — `e2e/crossRoleJourneys.spec.ts`, clock fixed with page.clock
+Steps run the real store/registry functions as each acting person through a dev-only bundle; each hand-off switches person and opens their screen in-app (no reloads).
+| # | Result | Screenshots (/tmp/cross-role/shots) |
+|---|---|---|
+| J1 | Pass | j1-1-coordinator-pool, j1-2-timely-line (offered 2d, kept 7d) |
+| J2 | Pass | j2-1-rn-review-queue, j2-2-lvn-administer-queue, j2-3-rn-cosign-queue |
+| J3 | Pass | j3-1-owner-countdown, j3-2-new-owner-crisis-note, j3-3-coordinator-reassign |
+| J5 | Pass | j5-isl-hub (row held without county consent; not in claims) |
+| J6 | Pass | j6-1-billing-coordinator-hub, j6-2-billing-aggregates |
+
 ## Bugs found and fixed
 1. **Clinician availability used the server's time zone** — 9 AM hours became 9 AM UTC off-Pacific. Now facility time zone.
 2. **Task notifications leaked Part 2 text** — subjects like "Task assigned — ASAM reassessment due" / "CALOMS admission prompt". SUD tasks now notify neutrally ("Task assigned", open the chart).
@@ -47,10 +61,13 @@ Store-level journeys: `src/lib/__tests__/crossRoleJourneys.test.ts` (15 tests). 
 4. **ISL export kept "not-yet-enrolled" after an AFBI link was confirmed** — now uses the linked person (and so goes through disclose()).
 5. **No single signature trail on clinic orders** — added; badge shows Ordered by / Verified by / Given by / cosign.
 
+6. **Print record and chart review carried the whole patient object**, note bodies included, for roles that could not read them. Now redacted.
+7. **"Needs closing" button hid crisis notes** — the count included them, the list it opened didn't.
+8. **Flaky browser helper** — `isVisible({timeout})` doesn't wait; J7 sometimes never clicked the tab. J7 peer expectation now follows that load's Part 2 consent (registry rule).
+
 ## Open decisions
 - Pre-enrollment AFBI rows with SUD activities export by initials without a consent check (no identity). Confirm that is acceptable to counsel.
 - J4: SUD counselor and RN notes route to a licensed cosigner; the brief said "sign". Kept existing policy — confirm.
-- ECM provider sees therapy-note content in the current matrix (matches registry); confirm intended.
 
 ## Test counts
-Unit 2,250/2,250 · type check clean · e2e crossRole 13/13.
+Unit 2,255/2,255 · type check clean · e2e crossRole 13/13 + journeys 5/5. Other older e2e specs: 7 failures (staffNav deep links landing on /assisted-signup, cfProxyMode and advocateSelfSeparation patient picker) — not related to this batch, not yet investigated.

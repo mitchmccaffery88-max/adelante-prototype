@@ -97,6 +97,8 @@ import {
   canAccess,
   type RecordClass,
   noteGateClass,
+  noteBodyRestricted,
+  NOTE_CONTENT_RESTRICTED,
 } from "@/lib/roles";
 import { filterSudMedsForRole } from "@/lib/asamReporting";
 import { NoteRevisionPanel } from "@/components/clinical/NoteRevisionPanel";
@@ -2486,6 +2488,8 @@ export function NotesTab({
     clinicians.find((c) => c.id === id)?.name ?? getStaffMember(id)?.name ?? id;
   // Same 42 CFR Part 2 gate that hides SUD problem entries — one mechanism.
   const noteGate = (n: ProgressNote) => {
+    // Draft — pending executive RBAC review: metadata-only roles see the header, not the body.
+    if (noteBodyRestricted(role, patient, n, [staffId, clinicianId])) return { locked: true, reason: NOTE_CONTENT_RESTRICTED };
     const cls = noteGateClass(n);
     return cls ? canAccess(role, cls, patient) : { locked: false, reason: undefined };
   };

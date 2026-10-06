@@ -18,7 +18,7 @@ import {
   type Patient,
   type ProgressNote,
 } from "./ehr";
-import { canAccess, noteGateClass, type StaffRole } from "./roles";
+import { canAccess, noteBodyRestricted, noteGateClass, NOTE_CONTENT_RESTRICTED, type StaffRole } from "./roles";
 import { computeScore, isAnswered, isFieldVisible, isSectionVisible } from "./templateSchema";
 import type { AnswerValue } from "./templateSchema";
 
@@ -46,6 +46,7 @@ export function noteExportGate(
   note: ProgressNote,
   role: StaffRole,
   patient?: Patient,
+  actorTokens: (string | undefined)[] = [],
 ): NoteExportGate {
   const status = noteStatus(note);
   if (!(EXPORTABLE_NOTE_STATUSES as readonly string[]).includes(status)) {
@@ -54,6 +55,9 @@ export function noteExportGate(
   const rbac = canAccess(role, "therapy_notes", patient);
   if (rbac.level === "none") {
     return { allowed: false, reason: rbac.reason ?? "No access to clinical notes." };
+  }
+  if (noteBodyRestricted(role, patient, note, actorTokens)) {
+    return { allowed: false, reason: NOTE_CONTENT_RESTRICTED };
   }
   // §ASCMI psychotherapy-notes tier — strictly more restrictive than the SUD
   // gate and checked BEFORE it: SUD consent does not unlock this tier.

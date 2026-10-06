@@ -107,7 +107,7 @@ function InboxPage() {
           </TabsContent>
         )}
         <TabsContent value="unsigned" className="pt-3">
-          {notes.level === "none" ? (
+          {notes.level === "none" || notes.level === "summary" ? (
             <Card className="p-6 text-sm text-muted-foreground flex items-center gap-2">
               <Lock className="h-4 w-4" /> Your role can&apos;t view clinical notes.
             </Card>

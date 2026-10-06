@@ -19,7 +19,7 @@ import {
   type ScreenerResult,
 } from "@/lib/ehr";
 import { isReferralOpen } from "@/lib/noteAutofill";
-import { canAccess, type StaffRole } from "@/lib/roles";
+import { canAccess, redactNoteBodies, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 
@@ -84,7 +84,8 @@ export function chartReviewFacts(
   const dosesGiven = recentDoses.filter((d) => d.action === "given").length;
   const dosesRefusedOrHeld = recentDoses.length - dosesGiven;
 
-  const recentNotes = [...(patient.progressNotes ?? [])]
+  // Metadata-only roles get the header with an empty body — never the text.
+  const recentNotes = [...(redactNoteBodies(viewerRole, patient).progressNotes ?? [])]
     .sort((a, b) => +new Date(b.date) - +new Date(a.date))
     .slice(0, 3);
 
@@ -172,7 +173,7 @@ export function chartReviewFacts(
   if (!lastAppointment) careGaps.push("No attended visit recorded yet for this episode.");
 
   return {
-    patient,
+    patient: redactNoteBodies(viewerRole, patient),
     nextAppointment,
     lastAppointment,
     activeOrders,

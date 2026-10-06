@@ -172,7 +172,8 @@ describe("gating derives from the RBAC matrix", () => {
                  : gate.anyOf.some((cls) => {
                   const level = canAccess(role, cls).level;
                   const min = gate.minLevelByClass?.[cls] ?? gate.minLevel;
-                  return min === "write" ? level === "write" : level !== "none";
+                  // "summary" = metadata only (clinical-note content restriction) — below read.
+                  return min === "write" ? level === "write" : level !== "none" && level !== "summary";
                 });
         // Batch G1: "SUD reporting access" opens DMC-ODS readiness without widening screeners_sud.
         expect(canSeeNavEntry(role, entry)).toBe(expected || (entry.id === "dmc-ods-readiness" && hasSudReportingAccess(role)));

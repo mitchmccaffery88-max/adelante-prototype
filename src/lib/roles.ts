@@ -259,7 +259,9 @@ const MATRIX: Record<RecordClass, Partial<Record<StaffRole, AccessLevel>>> = {
   therapy_notes: {
     therapist: "write",
     pmhnp: "read",
-    ecm_provider: "read",
+    // Draft — pending executive RBAC review: ECM sees clinical-note METADATA
+    // only (date, type, author, status, visit); bodies via noteBodyRestricted().
+    ecm_provider: "summary",
     sud_counselor: "read",
     clinical_trainee: "write",
   },
@@ -1678,3 +1680,42 @@ export function rolesReady(): boolean {
   return ROLES_READY === true;
 }
 ROLES_READY = true;
+
+
+// ---- Clinical-note content restriction (Draft — pending executive RBAC review)
+export const NOTE_CONTENT_RESTRICTED = "Clinical note — content restricted for your role";
+export const NOTE_CONTENT_RBAC_DRAFT = "Draft — pending executive RBAC review";
+/**
+ * True when the role may list a clinical (therapy / psychiatric / counseling)
+ * note but not read its body: `therapy_notes` at "summary". A note the actor
+ * authored stays fully readable. The one rule for chart, peek, chart review,
+ * PDF/print, scribe drafts and Adel summaries.
+ */
+export function noteBodyRestricted(
+  role: StaffRole,
+  patient: Patient | undefined,
+  note: { clinicianId?: string },
+  actorTokens: (string | undefined)[] = [],
+): boolean {
+  if (canAccess(role, "therapy_notes", patient).level !== "summary") return false;
+  const mine = actorTokens.filter(Boolean) as string[];
+  return !(note.clinicianId && mine.includes(note.clinicianId));
+}
+
+/** Patient copy with restricted note bodies blanked — for read models that carry the whole patient. */
+export function redactNoteBodies<P extends Patient>(role: StaffRole, patient: P, actorTokens: (string | undefined)[] = []): P {
+  const notes = patient.progressNotes;
+  const none = canAccess(role, "therapy_notes", patient).level === "none";
+  const mine = actorTokens.filter(Boolean) as string[];
+  const hide = (n: { clinicianId?: string }) =>
+    none ? !(n.clinicianId && mine.includes(n.clinicianId)) : noteBodyRestricted(role, patient, n, actorTokens);
+  if (!notes?.some(hide)) return patient;
+  return {
+    ...patient,
+    progressNotes: notes.map((n) =>
+      hide(n)
+        ? { ...n, subjective: "", objective: "", assessment: "", plan: "", templateAnswers: undefined }
+        : n,
+    ),
+  };
+}

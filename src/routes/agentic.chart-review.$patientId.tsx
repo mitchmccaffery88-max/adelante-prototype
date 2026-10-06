@@ -54,7 +54,7 @@ export const Route = createFileRoute("/agentic/chart-review/$patientId")({
 
 function GuidedChartReview() {
   const { patientId } = Route.useParams();
-  const { role } = useActingStaff();
+  const { role, staffId, clinicianId } = useActingStaff();
   const facts = useEhr(() => chartReviewFacts(patientId, role));
   const [openNoteId, setOpenNoteId] = useState<string | null>(null);
 
@@ -180,7 +180,7 @@ function GuidedChartReview() {
                       </Badge>
                     </div>
                     <p className="mt-1 line-clamp-3 text-foreground">
-                      {noteVisibleToRole(role, p, n).visible
+                      {noteVisibleToRole(role, p, n, [staffId, clinicianId]).visible
                         ? n.assessment || n.subjective || n.plan || "—"
                         : "Protected note — not shown for your role."}
                     </p>

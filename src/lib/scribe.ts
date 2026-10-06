@@ -8,7 +8,7 @@
 // Every mutation runs through the registry (runAction) — see chartActions.ts.
 import { AdelanteEHR, type ConsentRecordSection, type Patient, type ProgressNote } from "./ehr";
 import type { StaffRole } from "./roles";
-import { canAccess } from "./roles";
+import { canAccess, noteBodyRestricted } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { isSudMedication, type SudClassifiable } from "./sudMedClassifier";
 import { cohortGuard } from "./cohortGuard";
@@ -998,12 +998,21 @@ export interface ScribeView {
   session: ScribeSession | null;
 }
 /** Transcripts and drafts inherit the patient's SUD classification. */
-export function scribeView(sessionId: string, role: StaffRole): ScribeView {
+/** Coordination authors — their dictations are coordination notes, not clinical notes. */
+const COORDINATION_AUTHOR_ROLES = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager"];
+export function scribeView(sessionId: string, role: StaffRole, actorTokens: (string | undefined)[] = []): ScribeView {
   const s = getScribeSession(sessionId);
   if (!s) return { masked: false, session: null };
   const p = s.patientId ? AdelanteEHR.getPatient(s.patientId) : undefined;
   if (s.target === "afbi") return roleSeesAfbiDetail(role, p) ? { masked: false, session: s } : { masked: true, session: null };
   if (s.sud && p && !roleSeesSudScribe(role, p)) return { masked: true, session: null };
+  // Draft — pending executive RBAC review: metadata-only roles never see a
+  // clinical scribe draft or transcript they didn't start.
+  if (!COORDINATION_AUTHOR_ROLES.includes(s.startedBy.role)) {
+    const author = s.startedBy.clinicianId ?? s.startedBy.staffId;
+    if (noteBodyRestricted(role, p, { clinicianId: author }, actorTokens) &&
+        !(s.startedBy.staffId && actorTokens.includes(s.startedBy.staffId))) return { masked: true, session: null };
+  }
   return { masked: false, session: s };
 }
 export function segmentText(s: ScribeSession, segmentId: string): TranscriptSegment | undefined {
