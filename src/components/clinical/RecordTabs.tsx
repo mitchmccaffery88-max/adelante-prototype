@@ -3142,7 +3142,7 @@ function ProgressNoteCard({
           </p>
         </div>
       )}
-      {canWrite && !sudLocked && (status === "draft" || status === "declined") && (
+      {(canWrite || ownAiDraft) && !sudLocked && (status === "draft" || status === "declined") && (
         <div className="mt-3 space-y-2 border-t border-border pt-3">
           {isChwBiller && (
             <div className="space-y-1.5" data-testid="chw-supervisor-picker">
