@@ -249,3 +249,24 @@ describe("Scribe — pilot metrics", () => {
     expect(m.meanRating).toBe(4);
   });
 });
+
+describe("Scribe — visit details on the AI draft", () => {
+  it("fills only visit facts, audits the field name (no value), and clears review confirmation", async () => {
+    const { setAiDraftVisitField } = await import("@/lib/scribe");
+    const p = newPatient();
+    grant(p.id);
+    const s = start(p.id);
+    const note = endScribeSession(s.id, DR);
+    openAiDraft(s.id, DR);
+    const unsupported = getScribeSession(s.id)!.sentences.filter((x) => x.unsupported);
+    for (const x of unsupported) deleteAiSentence(s.id, x.id, DR);
+    confirmAiReview(s.id, DR, 4);
+    setAiDraftVisitField(s.id, "location", "Visalia clinic", DR);
+    const { n } = AdelanteEHR._findNote(p.id, note.id);
+    expect(n!.templateAnswers?.location).toBe("Visalia clinic");
+    expect(n!.aiScribe?.reviewConfirmedAt).toBeUndefined();
+    expect(() => setAiDraftVisitField(s.id, "soap_plan", "x", DR)).toThrow(/narrative/);
+    const ev = auditsWith(p.id).find((e) => (e as { action?: string }).action === "scribe_visit_field_set");
+    expect(JSON.stringify(ev ?? {})).not.toMatch(/Visalia/);
+  });
+});
