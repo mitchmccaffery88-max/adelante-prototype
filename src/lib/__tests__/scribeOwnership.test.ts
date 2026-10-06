@@ -5,7 +5,7 @@ import { AdelanteEHR } from "@/lib/ehr";
 import { runAction } from "@/lib/actions/runAction";
 import { _resetAfbi, getAfbiContact, reassignAfbiContact, recordAfbiContact } from "@/lib/afbiOutreach";
 import {
-  _resetScribe, confirmAiReview, createDictationDraft, dictationBlocker, grantAiRecordingConsent, OWN_CONTACT_BLOCK,
+  _resetScribe, confirmAiReview, deleteAiSentence, keepAiSentence, openAiDraft, createDictationDraft, dictationBlocker, grantAiRecordingConsent, OWN_CONTACT_BLOCK,
   saveAfbiFromScribe, type ScribeActor, type ScribeSession,
 } from "@/lib/scribe";
 
@@ -77,8 +77,10 @@ describe("ownership — AFBI contacts", () => {
     expect(dictationBlocker({ actor: OTHER_PEER, target: "afbi", afbiContactId: c.id })?.reason).toBe(OWN_CONTACT_BLOCK);
     // New owner's reviewed draft updates the same contact (no second contact, still ISL).
     const s = createDictationDraft({ actor: PEER, target: "afbi", afbiContactId: c.id }) as ScribeSession;
-    for (const x of s.sentences) (x as { flags?: unknown[] }).flags = [];
-    confirmAiReview(s.id, PEER);
+    openAiDraft(s.id, PEER);
+    for (const x of s.sentences.filter((y) => y.identifying)) deleteAiSentence(s.id, x.id, PEER);
+    for (const x of s.sentences.filter((y) => y.unsupported && !y.deleted)) keepAiSentence(s.id, x.id, "I did that myself", PEER);
+    confirmAiReview(s.id, PEER, 5);
     const saved = saveAfbiFromScribe(s.id, PEER);
     expect(saved.id).toBe(c.id);
     expect(getAfbiContact(c.id)?.fundingLane).toBe("isl_non_medi_cal");
