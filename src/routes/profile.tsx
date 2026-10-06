@@ -9,6 +9,7 @@ import { PatientPage, PatientPageHeader } from "@/components/patient/PatientPage
 import { MyProfileCard, PrivacyConsentCard, SignOutCard } from "@/components/patient/ProfilePanels";
 import { RecoveryDateCard } from "@/components/patient/RecoveryDateCard";
 import { PatientConsentStatusCard } from "@/components/consent/PatientConsentStatusCard";
+import { AiConsentCard } from "@/components/scribe/AiConsentCard";
 import { PoDisclosureCard } from "@/components/consent/PoDisclosureCard";
 import { EmptyState } from "@/components/EmptyState";
 import { Button } from "@/components/ui/button";
@@ -69,6 +70,7 @@ function ProfilePage() {
       <PrivacyConsentCard patientId={patient.id} />
       {/* Reused consent-ledger tooling: read-only per-person form record. */}
       <PatientConsentStatusCard patientId={patient.id} />
+      <AiConsentCard patient={patient} mode="patient" />
       {/* Justice-involved only — the gate lives inside the component. */}
       <PoDisclosureCard patientId={patient.id} />
       <Card className="flex flex-wrap items-center justify-between gap-3 p-5">

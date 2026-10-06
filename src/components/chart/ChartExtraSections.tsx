@@ -5,6 +5,7 @@ import { AdelanteEHR, useEhr, type Patient } from "@/lib/ehr";
 import { canAccess, useActingStaff, type StaffRole } from "@/lib/roles";
 import { redactAuditEvents } from "@/lib/auditRedaction";
 import { ConsentRecordsPanel } from "@/components/consent/ConsentRecordsPanel";
+import { AiConsentCard } from "@/components/scribe/AiConsentCard";
 import { accountingOfDisclosures, CHANNEL_LABEL } from "@/lib/part2Disclosure";
 import { accessEventsFor, ACCESS_LOG_LABEL, ACCESS_LOG_ROLES } from "@/lib/accessLog";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
@@ -18,6 +19,7 @@ export function ChartConsents({ patient }: { patient: Patient }) {
   return (
     <div className="space-y-2">
       <ConsentRecordsPanel patient={patient} />
+      <AiConsentCard patient={patient} mode="staff" />
       <Link to="/consent" className="text-xs text-teal hover:underline">Part 2 disclosures — view or revoke on the consent screen</Link>
       <DisclosureAccounting patientId={patient.id} />
     </div>

@@ -13,6 +13,7 @@ import {
   type ScribeParty, type ScribeSession,
 } from "@/lib/scribe";
 import { defaultFormat, FORMAT_SECTIONS, SCRIBE_FORMAT_DRAFT, SCRIBE_FORMAT_LABEL, SCRIBE_FORMATS, type ScribeFormat } from "@/lib/scribeFormats";
+import { simulatedSurfaceLabel } from "@/lib/features";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,11 +22,11 @@ import { Input } from "@/components/ui/input";
 
 const SPEAKER = { clinician: "Clinician", patient: "Patient", other: "Other" } as const;
 
-export function ScribeWorkspace({ patientId }: { patientId: string }) {
+export function ScribeWorkspace({ patientId, appointmentId }: { patientId: string; appointmentId?: string }) {
   const staff = useActingStaff();
   const actor = { name: staff.staffName, role: staff.role, staffId: staff.staffId, clinicianId: staff.clinicianId };
   const appts = useEhr(() => AdelanteEHR.listAppointments().filter((a) => a.patientId === patientId && Math.abs(+new Date(a.start) - Date.now()) < 2 * 86400000));
-  const [apptId, setApptId] = useState<string>("");
+  const [apptId, setApptId] = useState<string>(appointmentId ?? "");
   const appt = appts.find((a) => a.id === apptId);
   const [format, setFormat] = useState<ScribeFormat>("soap");
   useEffect(() => setFormat(defaultFormat({ serviceType: appt?.serviceType })), [appt?.serviceType]);
@@ -33,8 +34,8 @@ export function ScribeWorkspace({ patientId }: { patientId: string }) {
   const [confirmed, setConfirmed] = useState(false);
   const [liveId, setLiveId] = useState<string | null>(null);
   const [shown, setShown] = useState(0);
-  const sessions = useEhr(() => { sweepScribeRetention(); return listScribeSessions(patientId).map((s) => s.id + s.state).join(","); });
-  void sessions;
+  const sessions = useEhr(() => listScribeSessions(patientId).map((s) => s.id + s.state).join(","));
+  useEffect(() => { sweepScribeRetention(); }, [sessions]);
   const parties: ScribeParty[] = [{ kind: "patient", agreed: true }, ...others];
   const block = useEhr(() => captureBlocker({ actor, patientId, appointmentId: apptId || undefined, format, allPartyConfirmed: confirmed, parties }));
   const live = liveId ? listScribeSessions(patientId).find((s) => s.id === liveId) : undefined;
@@ -63,7 +64,7 @@ export function ScribeWorkspace({ patientId }: { patientId: string }) {
     <div className="space-y-4">
       {!live && (
         <Card className="p-4 space-y-3" data-testid="scribe-start">
-          <h2 className="font-display text-lg text-navy">Start AI scribe <Badge variant="outline" className="ml-1 text-[10px]">Simulated</Badge></h2>
+          <h2 className="font-display text-lg text-navy">Start AI scribe <Badge variant="outline" className="ml-1 text-[10px]">{simulatedSurfaceLabel("scribe_simulated")}</Badge></h2>
           <div className="grid gap-2 sm:grid-cols-2">
             <label className="text-xs">Visit
               <select className="mt-1 w-full rounded border bg-background p-2 text-sm" value={apptId} onChange={(e) => setApptId(e.target.value)} data-testid="scribe-visit">
@@ -99,7 +100,7 @@ export function ScribeWorkspace({ patientId }: { patientId: string }) {
       )}
       {live && live.state === "capturing" && (
         <Card className="p-4 space-y-3" data-testid="scribe-live">
-          <div className="flex items-center justify-between"><h2 className="font-display text-lg text-navy">Capturing…</h2><Badge variant="outline">Simulated — no audio stored</Badge></div>
+          <div className="flex items-center justify-between"><h2 className="font-display text-lg text-navy">Capturing…</h2><Badge variant="outline">{simulatedSurfaceLabel("scribe_simulated")}</Badge></div>
           <div className="max-h-80 space-y-2 overflow-y-auto text-sm">
             {(live.transcript ?? []).slice(0, shown).map((t) => (
               <div key={t.id}><span className="text-[11px] uppercase text-muted-foreground">{SPEAKER[t.speaker]}{t.speakerConfidence < 0.7 ? " (?)" : ""}</span><p className={t.asrConfidence < 0.75 ? "underline decoration-dotted" : ""}>{t.text}</p></div>
@@ -117,7 +118,7 @@ export function ScribeWorkspace({ patientId }: { patientId: string }) {
   );
 }
 
-export function ScribeDraftReview({ sessionId }: { sessionId: string }) {
+export function ScribeDraftReview({ sessionId, compact }: { sessionId: string; compact?: boolean }) {
   const staff = useActingStaff();
   const actor = { name: staff.staffName, role: staff.role, staffId: staff.staffId, clinicianId: staff.clinicianId };
   const view = useEhr(() => scribeView(sessionId, staff.role));
@@ -127,7 +128,11 @@ export function ScribeDraftReview({ sessionId }: { sessionId: string }) {
   const [reviewed, setReviewed] = useState(false);
   const [editing, setEditing] = useState<{ id: string; text: string; mode: "edit" | "keep" } | null>(null);
   const summary = useMemo(() => (s ? reviewSummary(s) : null), [s, note]);
-  if (view.masked) return <Card className="p-4 text-sm text-muted-foreground">AI draft hidden — 42 CFR Part 2.</Card>;
+  const isSigned = Boolean(note?.signedAt);
+  // Retention: the transcript is deleted once the note is signed (audited stub).
+  useEffect(() => { if (isSigned) sweepScribeRetention(); }, [isSigned]);
+  // Part 2: hidden, not stubbed.
+  if (view.masked) return null;
   if (!s || !note || !summary) return null;
   const run = (fn: () => void) => { try { fn(); } catch (e) { toast.error((e as Error).message); } };
   const pid = s.patientId;
@@ -140,9 +145,16 @@ export function ScribeDraftReview({ sessionId }: { sessionId: string }) {
         <Badge className="border-0 bg-destructive/15 text-destructive">{signed ? "Signed" : AI_DRAFT_LABEL}</Badge>
         <Badge variant="outline">{SCRIBE_FORMAT_LABEL[s.format]}</Badge>
         {s.includedSpanish && <Badge variant="outline">{SPANISH_MARKER}</Badge>}
-        <Link to="/record/$patientId" params={{ patientId: pid }} search={{ section: "notes" }} className="text-xs text-teal underline">Open in chart notes</Link>
+        {!compact && <Link to="/record/$patientId" params={{ patientId: pid }} search={{ section: "notes" } as never} className="text-xs text-teal underline">Open in chart notes</Link>}
       </div>
-      <p className="text-sm" data-testid="scribe-summary">{summary.total} sentences · {summary.sourced} sourced · {summary.unsupported} unsupported · {summary.speakerUncertain} speaker uncertain{summary.unsure ? ` · ${summary.unsure} unsure` : ""}</p>
+      <p className="text-sm font-medium" data-testid="scribe-summary">{summary.total} sentences · {summary.sourced} sourced · {summary.unsupported} unsupported · {summary.speakerUncertain} speaker uncertain{summary.unsure ? ` · ${summary.unsure} unsure` : ""}</p>
+      {opened && !signed && (
+        <div className="flex flex-wrap gap-1 text-[11px]" data-testid="scribe-flag-jumps">
+          {s.sentences.filter((x) => x.resolution?.kind !== "deleted" && ((x.unsupported && !x.resolution) || x.speakerUncertain)).map((x, i) => (
+            <a key={x.id} href={`#snt-${x.id}`} className="rounded border px-1.5 py-0.5 text-teal">Flag {i + 1}: {x.unsupported && !x.resolution ? "unsupported" : "speaker"}</a>
+          ))}
+        </div>
+      )}
       <p className="text-[11px] text-muted-foreground">{s.transcriptDeleted ? `Transcript deleted ${new Date(s.transcriptDeleted.at).toLocaleString()} by ${s.transcriptDeleted.by} (${s.transcriptDeleted.reason}).` : RETENTION_DRAFT_LABEL}</p>
       {!opened && !signed ? (
         <Button onClick={() => run(() => actFor("scribe_open_draft", "openAiDraft", pid, sessionId, actor))} data-testid="scribe-open">Open AI draft to review</Button>
