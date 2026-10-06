@@ -225,7 +225,7 @@ describe("J5 AFBI → ISL", () => {
     const s = createDictationDraft({ actor, target: "afbi", initials: "J.Q." }) as ScribeSession;
     openAiDraft(s.id, actor);
     for (const x of s.sentences.filter((y) => y.identifying)) deleteAiSentence(s.id, x.id, actor);
-    for (const x of s.sentences.filter((y) => y.unsupported && !y.deleted)) keepAiSentence(s.id, x.id, "I did that myself", actor);
+    for (const x of s.sentences.filter((y) => y.unsupported && y.resolution?.kind !== "deleted")) keepAiSentence(s.id, x.id, "I did that myself", actor);
     confirmAiReview(s.id, actor, 5);
     const c = saveAfbiFromScribe(s.id, actor);
     expect(c.initials).toBe("JQ");

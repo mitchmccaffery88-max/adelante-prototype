@@ -79,7 +79,7 @@ describe("ownership — AFBI contacts", () => {
     const s = createDictationDraft({ actor: PEER, target: "afbi", afbiContactId: c.id }) as ScribeSession;
     openAiDraft(s.id, PEER);
     for (const x of s.sentences.filter((y) => y.identifying)) deleteAiSentence(s.id, x.id, PEER);
-    for (const x of s.sentences.filter((y) => y.unsupported && !y.deleted)) keepAiSentence(s.id, x.id, "I did that myself", PEER);
+    for (const x of s.sentences.filter((y) => y.unsupported && y.resolution?.kind !== "deleted")) keepAiSentence(s.id, x.id, "I did that myself", PEER);
     confirmAiReview(s.id, PEER, 5);
     const saved = saveAfbiFromScribe(s.id, PEER);
     expect(saved.id).toBe(c.id);
