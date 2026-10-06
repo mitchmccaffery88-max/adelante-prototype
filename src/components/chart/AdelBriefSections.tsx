@@ -2,7 +2,8 @@
 // background cache (peekAdelBrief never blocks on a recompute). Each bullet:
 // source chip → chart section, data date, "New" when newer than the viewer's
 // last view. Optional "Adel summary (Simulated)" narrative with provenance.
-import { useState, useSyncExternalStore } from "react";
+import { useEffect, useState, useSyncExternalStore } from "react";
+import { recordBriefView } from "@/lib/accessLog";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
 import {
@@ -28,7 +29,11 @@ export function AdelBriefSections({
   onSelectSection: (id: string) => void;
   onNavigate?: () => void;
 }) {
-  const { role, staffId } = useActingStaff();
+  const { role, staffId, staffName } = useActingStaff();
+  // V2 — "brief.viewed" in the record-access log (5-minute collapse). Content-free.
+  useEffect(() => {
+    recordBriefView({ actorId: staffId, actorName: staffName, role, patientId });
+  }, [patientId, staffId, role, staffName]);
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   useSyncExternalStore(subscribeBrief, briefSnapshot, briefSnapshot);
   const [summaryOn, setSummaryOn] = useState(false);
