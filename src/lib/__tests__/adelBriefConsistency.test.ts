@@ -40,3 +40,14 @@ describe("V1 — every Brief bullet matches the chart section it links to", () =
     expect(probs.some((x) => x === "mismatch" || x === "unresolved_source")).toBe(true);
   });
 });
+
+describe("V1 fixes — bullets only for chart sections the role can open", () => {
+  it("billing / admin / coordinators get no PHQ-9/GAD-7 scores or pending lab results", async () => {
+    const { getAdelBrief, briefBulletsFlat } = await import("@/lib/adelBrief");
+    const p = AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented")!)!;
+    for (const role of ["billing", "sys_admin", "clinical_coordinator", "billing_coordinator", "community_health_worker", "cf_care_manager"] as StaffRole[]) {
+      const text = briefBulletsFlat(getAdelBrief(p, role)).map((b) => b.text).join(" | ");
+      expect(text, role).not.toMatch(/PHQ-9|GAD-7|Pending result/);
+    }
+  });
+});
