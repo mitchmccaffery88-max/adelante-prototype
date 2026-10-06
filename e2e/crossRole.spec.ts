@@ -42,8 +42,12 @@ async function openChartTab(page: Page, tab: RegExp, dob: string): Promise<boole
   await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
   const t = page.getByRole("tab", { name: tab }).first();
   if (!(await t.isVisible({ timeout: 8_000 }).catch(() => false))) return true;
-  await t.click();
-  await page.waitForTimeout(800);
+  // The chart hydrates after the URL changes; retry until the tab is selected.
+  await expect(async () => {
+    await t.click();
+    await expect(t).toHaveAttribute("aria-selected", "true", { timeout: 1_500 });
+  }).toPass({ timeout: 20_000 });
+  await page.waitForTimeout(500);
   return true;
 }
 
