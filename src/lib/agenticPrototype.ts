@@ -19,7 +19,7 @@ import {
   type ScreenerResult,
 } from "@/lib/ehr";
 import { isReferralOpen } from "@/lib/noteAutofill";
-import { canAccess, noteBodyRestricted, redactNoteBodies, type StaffRole } from "@/lib/roles";
+import { canAccess, redactNoteBodies, type StaffRole } from "@/lib/roles";
 import { isPart2Screener } from "@/lib/screeners";
 import { filterSudMedsForRole, roleSeesAsamSection } from "@/lib/asamReporting";
 
@@ -85,10 +85,9 @@ export function chartReviewFacts(
   const dosesRefusedOrHeld = recentDoses.length - dosesGiven;
 
   // Metadata-only roles get the header with an empty body — never the text.
-  const recentNotes = [...(patient.progressNotes ?? [])]
+  const recentNotes = [...(redactNoteBodies(viewerRole, patient).progressNotes ?? [])]
     .sort((a, b) => +new Date(b.date) - +new Date(a.date))
-    .slice(0, 3)
-    .map((n) => (noteBodyRestricted(viewerRole, patient, n) ? { ...n, subjective: "", objective: "", assessment: "", plan: "", templateAnswers: undefined } : n));
+    .slice(0, 3);
 
   // §Part 2 — per-instrument, the same precedent the chart's Tracking tab and
   // the /my-work re-screen list already follow.
