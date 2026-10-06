@@ -100,7 +100,7 @@ test.describe("deep links honour the same gates", () => {
       // Sample to keep the run bounded but still cover both ends of the list.
       const sample = <T,>(xs: T[]) => (xs.length <= 4 ? xs : [xs[0], xs[1], xs[xs.length - 2], xs[xs.length - 1]]);
 
-      for (const entry of sample(allowed.filter((e) => !e.search))) {
+      for (const entry of sample(allowed)) {
         await page.goto(entry.to);
         await expect(page).toHaveURL(new RegExp(`${entry.to}$`));
       }
