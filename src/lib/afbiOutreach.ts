@@ -117,7 +117,7 @@ export function reassignAfbiContact(
   c.staffId = to.staffId;
   c.staffName = to.name;
   c.staffRole = to.role;
-  AdelanteEHR._recordAudit({ category: "afbi", action: "afbi_contact_reassigned", patientId: c.patientId, actorId: coordinator.name, actorRole: coordinator.role, detail: { contactId, fromStaffId: from, toStaffId: to.staffId } });
+  AdelanteEHR._recordAudit({ category: "assignment", action: "afbi_contact_reassigned", patientId: c.patientId, actorId: coordinator.name, actorRole: coordinator.role, detail: { contactId, fromStaffId: from, toStaffId: to.staffId } });
   return c;
 }
 

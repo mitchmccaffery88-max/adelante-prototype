@@ -638,6 +638,16 @@ export interface DictationRequest {
   /** AFBI pre-enrollment only. */
   initials?: string;
   setting?: ScribeSetting;
+  /** Dictating onto an EXISTING AFBI contact — only its recorder (or reassigned owner). */
+  afbiContactId?: string;
+}
+
+export const OWN_CONTACT_BLOCK = "You can only dictate on your own contacts";
+
+/** Rendering (own calendar) or assigned staff on the visit. */
+export function isOwnContactVisit(a: { clinicianId: string; assignedStaffId?: string }, actor: ScribeActor): boolean {
+  if (actor.staffId && a.assignedStaffId === actor.staffId) return true;
+  return Boolean(actor.clinicianId && a.clinicianId === actor.clinicianId);
 }
 /** Why post-encounter dictation can't run, or null. */
 export function dictationBlocker(req: DictationRequest, at = new Date()): ScribeBlock | null {
@@ -648,7 +658,9 @@ export function dictationBlocker(req: DictationRequest, at = new Date()): Scribe
   if (req.patientId && !p) return { reason: "Patient not found.", next: "Pick the person again." };
   if (req.target === "afbi") {
     if (!canRecordAfbi(role as StaffRole)) return { reason: "Your role doesn't record field outreach (AFBI) contacts.", next: "Dictate a contact note from a visit instead." };
-    if (!p && !/^[A-Za-z]{1,4}$/.test((req.initials ?? "").replace(/\./g, "").trim()))
+    if (req.afbiContactId && !ownsAfbiContact(req.afbiContactId, req.actor.staffId))
+      return { reason: OWN_CONTACT_BLOCK, next: "Ask the staff member who recorded this contact, or a clinical coordinator to reassign it to you." };
+    if (!p && !req.afbiContactId && !/^[A-Za-z]{1,4}$/.test((req.initials ?? "").replace(/\./g, "").trim()))
       return { reason: "Enter the person's initials first.", next: PRE_ENROLLMENT_RULE };
   } else {
     if (!p) return { reason: "Pick a patient.", next: "Open dictation from a chart or a visit." };
@@ -656,6 +668,8 @@ export function dictationBlocker(req: DictationRequest, at = new Date()): Scribe
       const a = req.appointmentId ? AdelanteEHR.listAppointments().find((x) => x.id === req.appointmentId && x.patientId === p.id) : undefined;
       if (!a || !CONTACT_NOTE_SERVICE_TYPES.includes(String(a.serviceType)))
         return { reason: "Dictation for your role is limited to AFBI contacts and your own contact notes.", next: "Pick a case management, care coordination or peer support visit — or use the AFBI form." };
+      if (!isOwnContactVisit(a, req.actor))
+        return { reason: OWN_CONTACT_BLOCK, next: "Only the staff member rendering or assigned to this visit can dictate on it." };
     }
   }
   if (p) {
