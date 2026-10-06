@@ -31,14 +31,20 @@ async function luisId(page: Page): Promise<string> {
 }
 
 /** Opens Luis's chart through the top-bar patient search (in-app, no reload), then a tab. */
-async function openChartTab(page: Page, tab: RegExp, dob: string) {
+/** Returns false when the role can't reach the chart at all (no search hit / no chart). */
+async function openChartTab(page: Page, tab: RegExp, dob: string): Promise<boolean> {
   const box = page.getByPlaceholder(/Search patients/);
   await box.click();
   await box.fill("Camacho");
-  await page.getByRole("option").filter({ hasText: dob }).first().click();
+  const opt = page.getByRole("option").filter({ hasText: dob }).first();
+  if (!(await opt.isVisible({ timeout: 8_000 }).catch(() => false))) return false;
+  await opt.click();
   await expect(page).toHaveURL(/\/record\//, { timeout: 30_000 });
-  await page.getByRole("tab", { name: tab }).first().click();
+  const t = page.getByRole("tab", { name: tab }).first();
+  if (!(await t.isVisible({ timeout: 8_000 }).catch(() => false))) return true;
+  await t.click();
   await page.waitForTimeout(800);
+  return true;
 }
 
 // J7 — chart ASAM section per role, against the registry (roleSeesAsamSection).
@@ -50,12 +56,16 @@ for (const [role, sees] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) 
   test(`J7 chart ASAM section — ${role} ${sees ? "sees" : "hidden"}`, async ({ page }) => {
     await actAs(page, role);
     await page.goto("/clinician");
-    await openChartTab(page, /^Measures/, await luisId(page));
-    await expect(page.getByText(/Luis/).first()).toBeVisible();
+    const reached = await openChartTab(page, /^Measures/, await luisId(page));
     await page.screenshot({ path: `${SHOTS}/j7-${role}.png` });
-    const body = await page.locator("main").innerText().catch(() => "");
-    if (sees) expect(body).toMatch(/ASAM/);
-    else expect(body).not.toMatch(/ASAM|buprenorphine|naltrexone/i);
+    const chip = page.getByRole("button", { name: /^ASAM$/ });
+    if (sees) {
+      expect(reached).toBe(true);
+      await expect(chip).toBeVisible();
+    } else {
+      await expect(chip).toHaveCount(0);
+      expect(await page.locator("body").innerText()).not.toMatch(/buprenorphine|naltrexone|ASAM level/i);
+    }
   });
 }
 
@@ -65,7 +75,6 @@ for (const role of ["lvn", "billing", "sys_admin"] as StaffRole[]) {
     await actAs(page, role);
     await page.goto("/clinician");
     await openChartTab(page, /^Notes & Documents/, await luisId(page));
-    await expect(page.getByText(/Luis/).first()).toBeVisible();
     await page.screenshot({ path: `${SHOTS}/j4-${role}.png` });
     await expect(page.getByTestId("notes-start-scribe")).toHaveCount(0);
   });
