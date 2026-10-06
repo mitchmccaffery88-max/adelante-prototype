@@ -3,7 +3,8 @@
 // Every format carries the same DMC-ODS required elements block the chart
 // note form uses (service type, date, minutes, modality, location, response,
 // next steps). Structure is product-authored: Draft — pending clinical sign-off.
-import type { NoteTemplate, TemplateSchema } from "./ehr";
+import type { NoteTemplate } from "./ehr";
+import type { TemplateSchema } from "./templateSchema";
 
 export type ScribeFormat = "soap" | "dap" | "birp" | "girp";
 export const SCRIBE_FORMATS: readonly ScribeFormat[] = ["soap", "dap", "birp", "girp"];
