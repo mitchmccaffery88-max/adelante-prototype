@@ -13,7 +13,7 @@ const FROZEN = new Date("2026-09-29T15:00:00.000Z");
 type W = Window & { __adelante: { j: Record<string, (...a: unknown[]) => unknown>; AdelanteEHR: Record<string, (...a: unknown[]) => unknown>; setActingStaff: (id: string, r?: string) => void; go: (to: string) => void } };
 
 async function boot(page: Page, staffId: string, role: string) {
-  await page.clock.install({ time: FROZEN });
+  await page.clock.setFixedTime(FROZEN);
   await page.addInitScript(([r, id]) => {
     window.localStorage.setItem("adelante.actingRole", r as string);
     window.localStorage.setItem("adelante.actingStaffId", id as string);
@@ -65,7 +65,7 @@ test("J1 referral → chase task → peer fill → coordinator books on Anita �
   expect(after.missing).toBe(r.before - 1);
 
   // Two days later the coordinator enrolls and books on Anita's real availability.
-  await page.clock.setSystemTime(new Date(+FROZEN + 2 * 86400000));
+  await page.clock.setFixedTime(new Date(+FROZEN + 2 * 86400000));
   await as(page, "s-cc1", "clinical_coordinator");
   const b = await page.evaluate((id) => {
     const { j, AdelanteEHR } = (window as unknown as W).__adelante;
@@ -83,7 +83,7 @@ test("J1 referral → chase task → peer fill → coordinator books on Anita �
   expect(b.notified).toBe(true);
 
   // Anita marks it attended 10 minutes after the start.
-  await page.clock.setSystemTime(new Date(+new Date(b.slot) + 10 * 60000));
+  await page.clock.setFixedTime(new Date(+new Date(b.slot) + 10 * 60000));
   await as(page, "s-th3", "pmhnp");
   const att = await page.evaluate(([pid, apptId]) => {
     const { j, AdelanteEHR } = (window as unknown as W).__adelante;
@@ -206,11 +206,13 @@ test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock �
   await go(page, "/clinician");
   await openCrisis(page);
   await expect(page.getByText("Crisis follow-up — yours").first()).toBeVisible({ timeout: 20_000 });
+  await page.getByTestId("today-strip").getByRole("button", { name: /Needs closing/ }).click();
+  await page.waitForTimeout(600);
   await expect(page.getByText(/crisis note/i).first()).toBeVisible();
   await shot(page, "j3-2-new-owner-crisis-note");
 
   // Two days later: overdue → coordinator pool with Reassign.
-  await page.clock.setSystemTime(new Date(+FROZEN + 2 * 86400000));
+  await page.clock.setFixedTime(new Date(+FROZEN + 2 * 86400000));
   await as(page, "s-cc1", "clinical_coordinator");
   await go(page, "/inbox");
   await go(page, "/clinician");
