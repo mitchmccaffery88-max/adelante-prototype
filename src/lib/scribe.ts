@@ -601,7 +601,8 @@ function auditDraft(s: ScribeSession, actor: ScribeActor) {
 }
 
 /** Store function for `scribe_end` — creates the unsigned AI draft (chart note, or AFBI fields). */
-export function endScribeSession(sessionId: string, actor: ScribeActor): ProgressNote | ScribeSession {
+/** Returns the draft note (target note) or the session (target AFBI). */
+export function endScribeSession<T extends ProgressNote | ScribeSession = ProgressNote>(sessionId: string, actor: ScribeActor): T {
   const s = getScribeSession(sessionId);
   if (!s) throw new Error("Session not found.");
   if (s.state !== "capturing" || !s.transcript) throw new Error("This session is not capturing.");
@@ -620,11 +621,11 @@ export function endScribeSession(sessionId: string, actor: ScribeActor): Progres
   s.state = "drafted";
   if (s.target === "afbi") {
     auditDraft(s, actor);
-    return s;
+    return s as T;
   }
   const note = createDraftNote(s, actor);
   auditDraft(s, actor);
-  return note;
+  return note as T;
 }
 
 // ------------------------------------------------------------------ §1b post-encounter dictation
