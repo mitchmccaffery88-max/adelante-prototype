@@ -2086,6 +2086,9 @@ export const SUGGESTED_GOAL_TEXT: Record<SuggestedGoal["reason"], string> = {
 /** Contact roles whose own bookings make them the visit's assigned staff. */
 const _CONTACT_ROLES: string[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager"];
 
+/** Part 2 terms that must never appear in task-assignment notification text. */
+const _TASK_PART2_RE = /\b(asam|caloms|sud|substance|opioid|alcohol|naltrexone|buprenorphine|suboxone|methadone|acamprosate|disulfiram|audit-c|dast)/i;
+
 export interface Appointment {
   id: string;
   patientId: string;
@@ -16272,11 +16275,16 @@ export const AdelanteEHR = {
     // role). `assignedTo` is a caseManagerId; the roster identity token is the
     // person's display name, so resolve it when we can.
     const assigneeName = caseManagers.find((c) => c.id === task.assignedTo)?.name;
+    // Part 2 — notification text stays neutral: SUD task titles/detail (ASAM,
+    // CalOMS, SUD meds…) never ride in a subject or body (found by J7 sweep).
+    const protectedTask = _TASK_PART2_RE.test(`${task.taskType ?? ""} ${task.title} ${task.detail ?? ""}`);
     AdelanteEHR.notify({
       recipientStaffId: assigneeName || task.assignedTo,
       category: "task_assigned",
-      subject: `Task assigned — ${task.title}`,
-      body: `${task.detail ?? `New task for ${patientLabel(task.patientId)}`} (due ${task.dueDate})`,
+      subject: protectedTask ? "Task assigned" : `Task assigned — ${task.title}`,
+      body: protectedTask
+        ? `New task for ${patientLabel(task.patientId)} (due ${task.dueDate}). Open the chart for details.`
+        : `${task.detail ?? `New task for ${patientLabel(task.patientId)}`} (due ${task.dueDate})`,
       linkRoute: "/record/$patientId",
       linkParams: { patientId: task.patientId, section: "tasks" },
       patientId: task.patientId,
