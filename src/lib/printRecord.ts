@@ -25,7 +25,7 @@ import {
 } from "./ehr";
 import { facilityDateKey } from "./facilityTime";
 import { buildNoteDocumentModel, noteExportGate, type NoteDocBlock } from "./notePdf";
-import { canAccess, type StaffRole } from "./roles";
+import { canAccess, redactNoteBodies, type StaffRole } from "./roles";
 import { filterSudMedsForRole } from "./asamReporting";
 import { isSudMedication } from "./sudMedClassifier";
 import { disclose, type DisclosureActor, type Part2RecordClass } from "./part2Disclosure";
