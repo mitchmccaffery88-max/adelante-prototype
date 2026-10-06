@@ -56,11 +56,20 @@ const ASAM_SEES: Partial<Record<StaffRole, boolean>> = {
   physician: true, pmhnp: true, therapist: true, sud_counselor: true, nurse_rn: true,
   peer_specialist: false, billing: false, billing_coordinator: false, clinical_coordinator: false, sys_admin: false,
 };
-for (const [role, sees] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) {
-  test(`J7 chart ASAM section — ${role} ${sees ? "sees" : "hidden"}`, async ({ page }) => {
+for (const [role, seesDefault] of Object.entries(ASAM_SEES) as [StaffRole, boolean][]) {
+  test(`J7 chart ASAM section — ${role} ${seesDefault ? "sees" : "hidden"}`, async ({ page }) => {
+    let sees = seesDefault;
     await actAs(page, role);
     await page.goto("/clinician");
-    const reached = await openChartTab(page, /^Measures/, await luisId(page));
+    const dob = await luisId(page);
+    // Consent-gated roles (peer) see ASAM only when this load's Luis has a Part 2 consent — same rule as the registry.
+    const consented = await page.evaluate((d) => {
+      const ehr = (window as unknown as { __adelante: { AdelanteEHR: { listPatients(): { id: string; dob: string; firstName: string }[]; getConsentState(id: string): { part2Sud?: boolean } } } }).__adelante.AdelanteEHR;
+      const p = ehr.listPatients().find((x) => x.firstName === "Luis" && x.dob === d)!;
+      return !!ehr.getConsentState(p.id).part2Sud;
+    }, dob);
+    if (role === "peer_specialist") sees = consented;
+    const reached = await openChartTab(page, /^Measures/, dob);
     await page.screenshot({ path: `${SHOTS}/j7-${role}.png` });
     const chip = page.getByRole("button", { name: /^ASAM$/ });
     if (sees) {
