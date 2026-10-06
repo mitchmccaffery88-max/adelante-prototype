@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { Link } from "@tanstack/react-router";
 import {
   Sheet,
   SheetContent,
@@ -43,6 +44,7 @@ import {
   type ReferralOutreachOutcome,
 } from "@/lib/referralOutreach";
 import { AdvocateInviteForm } from "@/components/advocate/AdvocateInviteForm";
+import { PossibleExistingPatientError, type PatientMatch } from "@/lib/patientMatching";
 
 interface Props {
   referralId: string | null;
