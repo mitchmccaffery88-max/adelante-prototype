@@ -40,10 +40,11 @@ export const Route = createFileRoute("/admin-audit")({
   component: AdminAuditPage,
 });
 
-type CatFilter = AuditCategory | "all" | "record.viewed";
+type CatFilter = AuditCategory | "all" | "record.viewed" | "brief";
 const CATEGORIES: { value: CatFilter; label: string }[] = [
   { value: "all", label: "All categories" },
   { value: "record.viewed", label: "Record access (reads)" },
+  { value: "brief", label: "Adel Brief (views & system computes)" },
   { value: "disclosure", label: "Disclosures (Part 2)" },
   { value: "consent", label: "Consent" },
   { value: "rx", label: "Medications / eRx" },
@@ -78,13 +79,13 @@ function AdminAuditPage() {
   const events = useEhr(() =>
     redactAuditEvents(
       AdelanteEHR.listAuditEvents({
-        category: cat === "all" ? undefined : cat === "record.viewed" ? "access" : cat,
+        category: cat === "all" ? undefined : cat === "record.viewed" || cat === "brief" ? "access" : cat,
         patientId: patientId === "all" ? undefined : patientId,
         actorRole: actorRole === "all" ? undefined : actorRole,
         since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
         until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
         limit: 200,
-      }).filter((e) => cat !== "record.viewed" || e.action === "record.viewed"),
+      }).filter((e) => (cat !== "record.viewed" || e.action === "record.viewed") && (cat !== "brief" || e.action.startsWith("brief."))),
       role,
     ),
   );
@@ -176,7 +177,7 @@ function AdminAuditPage() {
       <RiskTextReviewPanel />
       <ClinicalContentReviewCard />
 
-      {cat === "record.viewed" && (
+      {(cat === "record.viewed" || cat === "brief") && (
         <p className="rounded-md border border-border bg-muted px-3 py-2 text-xs" data-testid="access-log-label">
           Prototype access log — production requires immutable storage
         </p>

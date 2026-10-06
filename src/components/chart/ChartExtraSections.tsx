@@ -68,7 +68,11 @@ export function WhoAccessed({ patientId }: { patientId: string }) {
             <li key={r.id} className="flex flex-wrap gap-x-2">
               <span className="w-36 shrink-0 text-muted-foreground">{new Date(r.at).toLocaleString()}</span>
               <span className="font-medium">{r.actorName}</span>
-              <span className="text-muted-foreground">{(r.role ?? "").replace(/_/g, " ")} · {r.kind} · {r.sectionId}{r.viewedAs ? ` · viewed as ${r.viewedAs}` : ""}</span>
+              {r.system ? (
+                <span className="text-muted-foreground" data-testid="access-row-system">system event · {r.sectionId} · triggered by {(r.triggeredBy ?? []).join(", ")}</span>
+              ) : (
+                <span className="text-muted-foreground">{(r.role ?? "").replace(/_/g, " ")} · {r.kind} · {r.sectionId}{r.viewedAs ? ` · viewed as ${r.viewedAs}` : ""}</span>
+              )}
             </li>
           ))}
         </ul>
