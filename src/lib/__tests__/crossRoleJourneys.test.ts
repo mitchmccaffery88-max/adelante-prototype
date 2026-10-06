@@ -2,6 +2,7 @@
 // runAction). Clock frozen (Tue 29 Sep 2026 08:00 Pacific); advanced explicitly.
 // The browser side lives in e2e/crossRole.spec.ts; report in docs/cross-role-test-report.md.
 import { FROZEN_NOW } from "@/test/freezeClock";
+import { attest } from "@/test/claimSigning";
 import { describe, expect, it, vi } from "vitest";
 import { writeFileSync, mkdirSync } from "node:fs";
 import { AdelanteEHR, type Patient } from "@/lib/ehr";
@@ -62,7 +63,7 @@ describe("J1 referral → first visit", () => {
     const slot = availableSlots("c3", { serviceType: "med_management", modality: "in_person" })[0]!;
     expect(slot).toBeTruthy();
     const book = runAction<{ id: string }>("dashboard_book", COORD(), p, {
-      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "in_person", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
+      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "in_person", locationId: AdelanteEHR.listLocations?.()[0]?.id ?? "loc-1", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
     });
     expect(book.ok, book.ok ? "" : book.reason).toBe(true);
     const appt = book.ok ? book.value : undefined!;
@@ -186,7 +187,7 @@ describe("J4 scribe by role", () => {
       const st = AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status;
       if (role === "sud_counselor" || role === "nurse_rn") {
         expect(st).toBe("cosign_pending");
-        AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Bagga", cosignedById: "s-np1", role: "pmhnp" });
+        AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Bagga", cosignedById: "s-np1", role: "pmhnp", attestation: attest("progress_note_supervisor_sign", "Dr. Bagga") });
       }
       expect(AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status).toBe("signed");
       sweepScribeRetention();
@@ -235,10 +236,18 @@ describe("J5 AFBI → ISL", () => {
     expect(runAction("afbi_link_decide", COORD(), AdelanteEHR.getPatient(p.id), { args: [{ role: "clinical_coordinator", name: "Priya Raman" }, req.id, true] }).ok).toBe(true);
     expect(getAfbiContact(c.id)!.patientId).toBe(p.id);
     const isl = buildIslFile({ role: "billing_coordinator", name: "Deneen Ford", staffId: "s-bc1" } as never, { from: "2026-01-01", to: "2026-12-31" });
-    const line = isl.file.split("\n").find((l) => l.includes(`afbi_contact:${c.id}`));
-    if (!line) console.log('DBG', c.id, JSON.stringify(serviceRowsDbg({ from: "2026-01-01", to: "2026-12-31" }).filter((r) => r.cls.ref.id === c.id)), isl.file.slice(0, 600));
-    expect(line).toBeTruthy();
-    expect(line).toContain(p.id);
+    // The linked contact is an ISL row under the person's record (never Medi-Cal)…
+    const row = serviceRowsDbg({ from: "2026-01-01", to: "2026-12-31" }).find((r) => r.cls.ref.kind === "afbi_contact" && r.cls.ref.id === c.id)!;
+    expect(row.patientId).toBe(p.id);
+    expect(row.cls.fundingSource).toBe("isl_non_medi_cal");
+    // …and because the dictated activities are SUD-related, the named row goes
+    // through disclose(): with no county consent on file it is withheld, not leaked.
+    if (row.sud) {
+      expect(isl.file).not.toContain(`afbi_contact:${c.id},`);
+      expect(isl.withheld).toBeGreaterThan(0);
+    } else {
+      expect(isl.file).toContain(`afbi_contact:${c.id},2026-09-29,${p.id}`);
+    }
     expect(AdelanteEHRExt.listClaims().some((cl) => JSON.stringify(cl).includes(c.id))).toBe(false);
   });
 });
