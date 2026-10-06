@@ -206,7 +206,6 @@ test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock �
   await go(page, "/clinician");
   await openCrisis(page);
   await expect(page.getByText("Crisis follow-up — yours").first()).toBeVisible({ timeout: 20_000 });
-  console.log("ROWS", await page.evaluate(() => { const { j } = (window as unknown as W).__adelante; return JSON.stringify((j.workspaceActionRows({ actor: { role: "therapist", staffId: "s-th1", name: "Marisol Reyes", staffName: "Marisol Reyes", clinicianId: "c1" }, needsClosing: [] }) as { kind: string; label: string }[]).map((r) => r.kind + ":" + r.label)); }));
   await page.getByTestId("today-strip").getByRole("button", { name: /Needs closing/ }).click();
   await page.waitForTimeout(600);
   await expect(page.getByText(/crisis note/i).first()).toBeVisible();
