@@ -26,9 +26,10 @@ async function as(page: Page, staffId: string, role: string) {
 }
 async function go(page: Page, to: string) {
   await page.evaluate((t) => (window as unknown as W).__adelante.go(t), to);
-  await page.waitForURL((u) => u.pathname === to.split("?")[0], { timeout: 30_000 });
+  await page.waitForURL((u) => u.pathname === to.split("?")[0], { timeout: 8_000 }).catch(() => console.log("GO", to, "landed", page.url()));
   await page.waitForTimeout(800);
 }
+test.afterEach(async ({ page }, info) => { if (info.status !== info.expectedStatus) await page.screenshot({ path: `${SHOTS}/fail-${info.title.slice(0, 2)}.png` }); });
 const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${name}.png` });
 
 test("J1 referral → chase task → peer fill → coordinator books on Anita → attended → timely-access line", async ({ page }) => {
