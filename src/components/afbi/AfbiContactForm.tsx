@@ -22,6 +22,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
+import { ScribeWorkspace } from "@/components/scribe/ScribeWorkspace";
+import { canDictateScribe } from "@/lib/scribe";
 
 const chip = (on: boolean) => (on ? "default" : "outline") as "default" | "outline";
 
@@ -76,6 +78,14 @@ export function AfbiContactForm({ patientId, onDone }: { patientId?: string; onD
           <div className="space-y-1.5"><Label htmlFor="afbi-desc">Short description</Label><Input id="afbi-desc" value={description} maxLength={140} placeholder="e.g. red backpack, near the bus stop" onChange={(e) => setDescription(e.target.value)} /></div>
           <p className="col-span-2 text-xs text-muted-foreground">Not enrolled yet. You can ask to link this contact to their chart after they enroll.</p>
         </div>
+      )}
+      {canDictateScribe(me.role) && (
+        <details className="rounded-md border p-2" data-testid="afbi-scribe">
+          <summary className="cursor-pointer text-sm font-medium">Use AI scribe or dictation instead</summary>
+          <div className="mt-2">
+            <ScribeWorkspace patientId={patientId} target={{ kind: "afbi", initials }} />
+          </div>
+        </details>
       )}
       <div className="space-y-1.5">
         <Label>What happened</Label>
