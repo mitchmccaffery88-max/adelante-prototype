@@ -3,7 +3,7 @@
 // load, so each test finds the patient through the dev-only store hook and
 // navigates in-app (no reload, which would re-seed).
 import { test, expect, type Page } from "@playwright/test";
-test.setTimeout(120_000);
+test.describe.configure({ timeout: 120_000 });
 import { STAFF_ROSTER, type StaffRole } from "../src/lib/roles";
 
 const SHOTS = "/tmp/cross-role/shots";
