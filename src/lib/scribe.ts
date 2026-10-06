@@ -12,7 +12,7 @@ import { canAccess } from "./roles";
 import { roleSeesAsamSection } from "./asamReporting";
 import { cohortGuard } from "./cohortGuard";
 import { scribe, type AfbiDraftFields, type DraftSentence, type ScribeDraftOutput, type ScribeSpeaker, type TranscriptSegment } from "./vendors/scribe";
-import { canRecordAfbi, recordAfbiContact, roleSeesAfbiDetail, AFBI_ACTIVITIES, AFBI_LOCATION_TYPES, AFBI_OUTCOMES, type AfbiActivity, type AfbiContact, type AfbiLocationType, type AfbiOutcome } from "./afbiOutreach";
+import { canRecordAfbi, recordAfbiContact, ownsAfbiContact, updateAfbiContactFromDraft, roleSeesAfbiDetail, AFBI_ACTIVITIES, AFBI_LOCATION_TYPES, AFBI_OUTCOMES, type AfbiActivity, type AfbiContact, type AfbiLocationType, type AfbiOutcome } from "./afbiOutreach";
 import { defaultFormat, DMC_NARRATIVE_KEYS, FORMAT_SECTIONS, SCRIBE_FORMAT_LABEL, templateKeyFor, type ScribeFormat } from "./scribeFormats";
 
 export const AI_CONSENT_CATEGORY = "ai_session_recording" as const;
