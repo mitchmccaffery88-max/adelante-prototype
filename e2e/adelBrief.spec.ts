@@ -53,7 +53,7 @@ test("Brief: instant render, Part 2 masking per role, New after PHQ-9", async ({
   }, pid);
   await openBrief(page, "s-np1", "physician", pid, "4-bagga-after-phq9");
   await expect(page.getByTestId("adel-brief-panel").getByTestId("brief-new").first()).toBeVisible({ timeout: 5000 });
-  await page.getByTestId("adel-summary-toggle").click();
-  await expect(page.getByTestId("adel-summary")).toBeVisible();
+  await page.getByTestId("adel-brief-panel").getByTestId("adel-summary-toggle").click();
+  await expect(page.getByTestId("adel-brief-panel").getByTestId("adel-summary")).toBeVisible();
   await page.screenshot({ path: `${SHOTS}/5-summary.png` });
 });
