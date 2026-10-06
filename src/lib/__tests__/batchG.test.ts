@@ -15,6 +15,7 @@ import { runAction } from "@/lib/actions/runAction";
 import { startTimelyAccess, timelyAccessFor } from "@/lib/timelyAccess";
 import { DEMO_PARTNER_CONSENT, linkPartner } from "@/lib/carePartners";
 import { canSeeNavEntry, STAFF_NAV } from "@/lib/navSections";
+import { toFacilityParts } from "@/lib/facilityTime";
 
 const bc = { role: "billing_coordinator" as const, name: "Billing coordinator", staffId: "s-bc1" };
 
@@ -73,9 +74,11 @@ describe("G2 — real clinician availability", () => {
     const slots = availableSlots("c1", { days: 14 });
     expect(slots.length).toBeGreaterThan(0);
     for (const s of slots) {
-      const d = new Date(s);
-      const hhmm = `${String(d.getHours()).padStart(2, "0")}:${String(d.getMinutes()).padStart(2, "0")}`;
-      expect(blocks.some((b) => b.weekday === d.getDay() && b.start <= hhmm && hhmm < b.end)).toBe(true);
+      // Weekly hours are facility (Pacific) wall clock, whatever zone the test runs in.
+      const w = toFacilityParts(new Date(s), "America/Los_Angeles");
+      const wd = new Date(Date.UTC(w.year, w.month - 1, w.day)).getUTCDay();
+      const hhmm = `${String(w.hour).padStart(2, "0")}:${String(w.minute).padStart(2, "0")}`;
+      expect(blocks.some((b) => b.weekday === wd && b.start <= hhmm && hhmm < b.end)).toBe(true);
     }
   });
   it("a clinician with no hours has no slots", () => {
