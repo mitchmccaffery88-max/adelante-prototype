@@ -64,7 +64,7 @@ describe("J1 referral → first visit", () => {
     const book = runAction<{ id: string }>("dashboard_book", COORD(), p, {
       args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "phone", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
     });
-    expect(book.ok).toBe(true);
+    expect(book.ok, book.ok ? "" : book.reason).toBe(true);
     const appt = book.ok ? book.value : undefined!;
     expect(AdelanteEHR.listMemberNotifications("patient", pid).some((n) => n.dedupeKey === `booked-patient:${appt.id}`)).toBe(true);
 
