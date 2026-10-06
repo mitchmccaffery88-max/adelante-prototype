@@ -30,6 +30,10 @@ async function go(page: Page, to: string) {
   await page.waitForTimeout(800);
 }
 test.afterEach(async ({ page }, info) => { if (info.status !== info.expectedStatus) await page.screenshot({ path: `${SHOTS}/fail-${info.title.slice(0, 2)}.png` }); });
+async function openCrisis(page: Page) {
+  await page.getByTestId("today-strip").getByRole("button", { name: /Crisis/ }).click();
+  await page.waitForTimeout(600);
+}
 const shot = (page: Page, name: string) => page.screenshot({ path: `${SHOTS}/${name}.png` });
 
 test("J1 referral → chase task → peer fill → coordinator books on Anita → attended → timely-access line", async ({ page }) => {
@@ -89,7 +93,7 @@ test("J1 referral → chase task → peer fill → coordinator books on Anita �
 
   const kept = Math.floor((+new Date(b.slot) + 10 * 60000 - +FROZEN) / 86400000);
   await as(page, "s-cc1", "clinical_coordinator");
-  await go(page, `/record/${b.pid}`);
+  await go(page, `/record/${b.pid}?section=eligibility`);
   await expect(page.getByText(new RegExp(`First offered .*\\(2d\\).*First kept .*\\(${kept}d\\)`)).first()).toBeVisible({ timeout: 20_000 });
   await shot(page, "j1-2-timely-line");
 });
@@ -180,6 +184,7 @@ test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock �
   expect(e.owner).toBe("s-tr1");
   await go(page, "/inbox");
   await go(page, "/clinician");
+  await openCrisis(page);
   await expect(page.getByText("Crisis follow-up — yours").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/left/).first()).toBeVisible();
   await shot(page, "j3-1-owner-countdown");
@@ -197,6 +202,7 @@ test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock �
   await as(page, "s-th1", thRole);
   await go(page, "/inbox");
   await go(page, "/clinician");
+  await openCrisis(page);
   await expect(page.getByText("Crisis follow-up — yours").first()).toBeVisible({ timeout: 20_000 });
   await expect(page.getByText(/crisis note/i).first()).toBeVisible();
   await shot(page, "j3-2-new-owner-crisis-note");
@@ -206,6 +212,7 @@ test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock �
   await as(page, "s-cc1", "clinical_coordinator");
   await go(page, "/inbox");
   await go(page, "/clinician");
+  await openCrisis(page);
   await expect(page.getByRole("button", { name: /Reassign/ }).first()).toBeVisible({ timeout: 20_000 });
   await shot(page, "j3-3-coordinator-reassign");
   expect(await page.locator("body").innerText()).not.toMatch(/oxycodone|pills|overdose/i);
