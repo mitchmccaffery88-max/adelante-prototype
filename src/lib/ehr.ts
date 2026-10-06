@@ -2083,6 +2083,9 @@ export const SUGGESTED_GOAL_TEXT: Record<SuggestedGoal["reason"], string> = {
   asam_signed: "Engage in substance use treatment at the clinician-selected level",
 };
 
+/** Contact roles whose own bookings make them the visit's assigned staff. */
+const _CONTACT_ROLES: string[] = ["peer_specialist", "community_health_worker", "ecm_provider", "cf_care_manager"];
+
 export interface Appointment {
   id: string;
   patientId: string;
@@ -2128,6 +2131,11 @@ export interface Appointment {
   rescheduledToId?: string;
   /** New visit → the visit it replaced. */
   rescheduledFromId?: string;
+  /**
+   * Staff member assigned to render a visit that isn't on their own calendar
+   * (a case manager / peer / CHW contact they booked). Drives dictation ownership.
+   */
+  assignedStaffId?: string;
 }
 
 export type StaffCancelReason = "patient_request" | "clinician_unavailable" | "other";
@@ -9061,6 +9069,8 @@ export const AdelanteEHR = {
     requestId?: string;
     /** Who booked (for request-close attribution). */
     bookedBy?: { id: string; role: string };
+    /** Staff member who renders a contact visit (defaults to a contact-role booker). */
+    assignedStaffId?: string;
     /** §ASAM visit — link to the open ASAM task. Linking never closes it. */
     asamTaskId?: string;
   }) {
@@ -9125,6 +9135,7 @@ export const AdelanteEHR = {
       source: input.source ?? "staff_scheduled",
       id: uid(),
       status: "scheduled",
+      ...(bookedBy?.id && !fields.assignedStaffId && _CONTACT_ROLES.includes(bookedBy.role) ? { assignedStaffId: bookedBy.id } : {}),
     };
     appointments.push(a);
     // An ASAM visit is a generic intake visit to everyone else — it must not
