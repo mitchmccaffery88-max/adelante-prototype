@@ -154,7 +154,7 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
       out.push({ id: "visits", text: `Visits: ${att(a30)} attended / ${miss(a30)} missed (30 d); ${att(a60)} / ${miss(a60)} (60 d).`, at: maxAt(a60.map((a) => a.start), nowIso), sectionId: "appointments" });
   }
   const rd = reentryDay(p, now);
-  if (rd) out.push({ id: "reentry", text: `Reentry day ${rd}.`, at: p.releaseDate ?? nowIso, sectionId: "demographics" });
+  if (rd) out.push({ id: "reentry", text: `Reentry day ${rd}.`, at: new Date(+now - (rd - 1) * DAY).toISOString(), sectionId: "demographics" });
   const msgs = seesVisits(role, p) ? AdelanteEHR.listCareMessages(p.id) : [];
   const lastAttended = past.filter((a) => a.status === "attended").map((a) => a.start).sort().at(-1);
   const lastStaffMsg = msgs.filter((m) => m.authorType === "staff").map((m) => m.createdAt).sort().at(-1);
