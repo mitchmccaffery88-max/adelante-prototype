@@ -16,7 +16,8 @@ export type FeatureId =
   | "caloms_export_simulated"
   | "notifications_simulated"
   | "payments_simulated"
-  | "scribe_simulated";
+  | "scribe_simulated"
+  | "llm_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -138,6 +139,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     scope: "role",
     simulated: true,
   },
+  {
+    id: "llm_simulated",
+    description: "Adel summary (Simulated): template-based narrative built only from the Brief bullets; no AI model. Off by default per viewer.",
+    owner: "Clinical informatics",
+    default: true,
+    scope: "role",
+    simulated: true,
+  },
 ];
 
 const overrides = new Map<FeatureId, boolean>();
@@ -206,6 +215,7 @@ export const VENDOR_FLAGS: Readonly<Record<string, FeatureId>> = {
   hie: "hie_simulated",
   telehealth: "telehealth_simulated",
   scribe: "scribe_simulated",
+  llm: "llm_simulated",
 };
 
 /**
@@ -217,6 +227,7 @@ export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
   adel_drafts: `${SIMULATED_LABEL} — rule-based draft, not AI`,
   telehealth_simulated: `${SIMULATED_LABEL} video vendor`,
   scribe_simulated: `${SIMULATED_LABEL} AI scribe — scripted transcript and draft, no audio stored`,
+  llm_simulated: `${SIMULATED_LABEL} — template summary from the bullets, no AI model`,
 };
 export function simulatedSurfaceLabel(id: FeatureId): string {
   return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;

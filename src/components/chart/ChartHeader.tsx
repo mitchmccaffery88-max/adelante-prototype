@@ -10,7 +10,7 @@ import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { canAccess, useActingStaff } from "@/lib/roles";
 import { episodeHeaderLabel } from "@/lib/outpatientCare";
 import {
-  BRIEF_DRAFT_LABEL, STICKY_HINT, adelBrief, ageFromDob, briefHasNew, canEditSticky, canReadSticky, careTeam,
+  STICKY_HINT, ageFromDob, briefLastSeen, briefHasNew, canEditSticky, canReadSticky, careTeam,
   chartEvents, getStickyNote, headerAlerts, markBriefSeen, mediCalChip, reentryDay, setStickyNote,
 } from "@/lib/chartBrief";
 import { openChartAction } from "@/lib/chartActionBus";
@@ -19,6 +19,7 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Sheet, SheetContent, SheetDescription, SheetTitle } from "@/components/ui/sheet";
+import { AdelBriefSections } from "@/components/chart/AdelBriefSections";
 import { AllergiesTab } from "@/components/clinical/ClinicalRecordTabs";
 
 const LANG: Record<string, string> = { en: "English", es: "Spanish" };
@@ -40,6 +41,7 @@ export function ChartHeader({
   const { role, staffId, staffName } = useActingStaff();
   const [condensed, setCondensed] = useState(false);
   const [briefOpen, setBriefOpen] = useState(false);
+  const [briefSince, setBriefSince] = useState<string | undefined>();
   useEffect(() => {
     const on = () => setCondensed(window.scrollY > 140);
     on();
@@ -126,6 +128,7 @@ export function ChartHeader({
               data-testid="adel-brief-button"
               data-glow={glow ? "true" : "false"}
               onClick={() => {
+                setBriefSince(briefLastSeen(staffId, patientId));
                 setBriefOpen(true);
                 markBriefSeen(staffId, patientId);
               }}
@@ -186,7 +189,7 @@ export function ChartHeader({
         )}
       </div>
       {tabBar && <div className="mx-auto max-w-[1600px] px-4">{tabBar}</div>}
-      <AdelBriefPanel open={briefOpen} onOpenChange={setBriefOpen} patientId={patientId} episode={episode} onSelectSection={onSelectSection} />
+      <AdelBriefPanel open={briefOpen} onOpenChange={setBriefOpen} patientId={patientId} episode={episode} lastSeen={briefSince} onSelectSection={onSelectSection} />
     </header>
   );
 }
@@ -271,60 +274,23 @@ function RecentActivity({ patientId, onSelectSection }: { patientId: string; onS
 }
 
 function AdelBriefPanel({
-  open, onOpenChange, patientId, episode, onSelectSection,
+  open, onOpenChange, patientId, onSelectSection, lastSeen,
 }: {
   open: boolean;
   onOpenChange: (v: boolean) => void;
   patientId: string;
   episode?: string;
+  lastSeen?: string;
   onSelectSection: (id: string) => void;
 }) {
-  const { role, staffId } = useActingStaff();
-  const json = useEhr(() => (open ? JSON.stringify(adelBrief(AdelanteEHR.getPatient(patientId)!, role, staffId, episode)) : ""));
-  const b = json ? (JSON.parse(json) as ReturnType<typeof adelBrief>) : undefined;
   return (
     <Sheet open={open} onOpenChange={onOpenChange}>
       <SheetContent side="right" className="w-full overflow-y-auto pt-14 sm:max-w-md" data-testid="adel-brief-panel">
         <SheetTitle className="text-navy">Adel Brief</SheetTitle>
-        <SheetDescription className="text-xs">
-          <Badge variant="outline" className="text-[10px]">{BRIEF_DRAFT_LABEL}</Badge> Rule-based, from what this chart shows your role.
-        </SheetDescription>
-        {b && (
-          <div className="mt-4 space-y-5 text-sm">
-            <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Summary</h3>
-              <ul className="list-disc space-y-1 pl-5">
-                {b.bullets.length ? b.bullets.map((x, i) => <li key={i}>{x}</li>) : <li>Not much on file yet.</li>}
-              </ul>
-            </section>
-            <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                What changed since the last visit ({new Date(b.since).toLocaleDateString()})
-              </h3>
-              {b.changed.length === 0 ? (
-                <p className="text-xs text-muted-foreground">No changes.</p>
-              ) : (
-                <ul className="space-y-1 text-xs">
-                  {b.changed.map((e, i) => (
-                    <li key={i}>
-                      <button type="button" className="text-left hover:underline" onClick={() => { onOpenChange(false); onSelectSection(e.sectionId); }}>
-                        {new Date(e.at).toLocaleDateString()} — {e.label}
-                      </button>
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </section>
-            <section>
-              <h3 className="mb-1 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Suggested next actions</h3>
-              <div className="flex flex-wrap gap-2">
-                {b.actions.map((a) => (
-                  <Button key={a.actionId} size="sm" variant="outline" data-testid={`brief-action-${a.actionId}`} onClick={() => { onOpenChange(false); openChartAction(a.actionId); }}>
-                    {a.label}
-                  </Button>
-                ))}
-              </div>
-            </section>
+        <SheetDescription className="text-xs">Four fixed checks, from what this chart shows your role.</SheetDescription>
+        {open && (
+          <div className="mt-4">
+            <AdelBriefSections patientId={patientId} lastSeen={lastSeen} onSelectSection={onSelectSection} onNavigate={() => onOpenChange(false)} />
           </div>
         )}
       </SheetContent>

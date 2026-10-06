@@ -15,6 +15,8 @@ import { staffPlanView, goalProgress, planNeeds, NEED_LADDER } from "@/lib/struc
 import { hieChartView, HIE_LABEL } from "@/lib/hie";
 import { openChartAction } from "@/lib/chartActionBus";
 import { Card } from "@/components/ui/card";
+import { AdelBriefSections } from "@/components/chart/AdelBriefSections";
+import { briefLastSeen } from "@/lib/chartBrief";
 import { Badge } from "@/components/ui/badge";
 import { Switch } from "@/components/ui/switch";
 
@@ -70,8 +72,9 @@ function Spark({ values }: { values: number[] }) {
 }
 
 export function BriefTab({ patientId, visibleSections, onSelectSection }: { patientId: string; visibleSections: string[]; onSelectSection: (id: string) => void }) {
-  const { role } = useActingStaff();
+  const { role, staffId } = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
+  const [tabSince] = useState(() => briefLastSeen(staffId, patientId));
   const [mineOnly, setMineOnly] = useState(false);
   const [bucket, setBucket] = useState<Bucket | undefined>();
   useEhr(() => AdelanteEHR.listAuditEvents({ patientId }).length);
@@ -281,6 +284,10 @@ export function BriefTab({ patientId, visibleSections, onSelectSection }: { pati
 
   return (
     <div className="space-y-2" data-testid="brief-tab" data-card-order={order.join(",")}>
+      <Card className="p-3" data-testid="brief-tab-adel">
+        <h2 className="mb-2 font-display text-base text-navy">Adel Brief</h2>
+        <AdelBriefSections patientId={patientId} lastSeen={tabSince} onSelectSection={onSelectSection} />
+      </Card>
       {order.map((c) => <div key={c}>{cards[c]()}</div>)}
     </div>
   );
