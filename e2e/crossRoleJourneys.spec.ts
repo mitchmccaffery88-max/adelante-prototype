@@ -94,7 +94,9 @@ test("J1 referral → chase task → peer fill → coordinator books on Anita �
   const kept = Math.floor((+new Date(b.slot) + 10 * 60000 - +FROZEN) / 86400000);
   await as(page, "s-cc1", "clinical_coordinator");
   await go(page, `/record/${b.pid}?section=eligibility`);
-  await expect(page.getByText(new RegExp(`First offered .*\\(2d\\).*First kept .*\\(${kept}d\\)`)).first()).toBeVisible({ timeout: 20_000 });
+  const line = page.getByTestId("timely-access");
+  await line.scrollIntoViewIfNeeded({ timeout: 20_000 });
+  await expect(line).toContainText(new RegExp(`First offered .*\\(2d\\).*First kept .*\\(${kept}d\\)`));
   await shot(page, "j1-2-timely-line");
 });
 
@@ -171,7 +173,7 @@ test("J2 Dr. Bagga order → RN review → LVN gives → RN cosign; each step in
 });
 
 test("J3 crisis owned by clinician → hand-off → crisis note on 1-day clock → overdue → coordinator Reassign; neutral text", async ({ page }) => {
-  await boot(page, "s-tr1", "therapist");
+  await boot(page, "s-tr1", "clinical_trainee");
   const e = await page.evaluate(() => {
     const { j, AdelanteEHR } = (window as unknown as W).__adelante;
     const p = (AdelanteEHR.listPatients() as { id: string; primaryClinicianId?: string; firstName: string; lastName: string }[]).find((x) => x.primaryClinicianId === "c4")!;
