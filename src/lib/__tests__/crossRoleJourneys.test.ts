@@ -312,11 +312,11 @@ describe("J7 Part 2 sweep", () => {
         scribe_draft: !scribeView(s.id, role).masked,
         partner_sud_link: visiblePartnerLinks(pt.id, role).some((l) => l.orgId === DEMO_NTP_ID),
         disclosure_log: DISCLOSURE_LOG_ROLES.includes(role),
-        therapy_notes: canAccess(role, "therapy_notes", pt).level !== "none",
+        therapy_notes: !["none", "summary"].includes(canAccess(role, "therapy_notes", pt).level),
       };
       matrix[role] = row;
       for (const it of PART2_ITEMS) if (row[it] && !registryPart2) leaks.push(`${role} sees ${it} but registry screeners_sud=${sud.level}${sud.locked ? "/locked" : ""}`);
-      if (row.therapy_notes !== (canAccess(role, "therapy_notes", pt).level !== "none")) leaks.push(`${role} therapy_notes mismatch`);
+      if (row.therapy_notes !== !["none", "summary"].includes(canAccess(role, "therapy_notes", pt).level)) leaks.push(`${role} therapy_notes mismatch`);
     }
     const banned = new RegExp(`\\b(${[...SUD_MEDICATION_NAMES, "asam", "opioid", "alcohol", "substance use"].join("|")})\\b`, "i");
     for (const n of AdelanteEHR.listNotifications().filter((x) => x.patientId === pt.id)) if (banned.test(`${n.subject} ${n.body}`)) leaks.push(`notification: ${n.subject}`);
