@@ -18,7 +18,7 @@ import {
   type Patient,
   type ProgressNote,
 } from "./ehr";
-import { canAccess, noteGateClass, type StaffRole } from "./roles";
+import { canAccess, noteBodyRestricted, noteGateClass, NOTE_CONTENT_RESTRICTED, type StaffRole } from "./roles";
 import { computeScore, isAnswered, isFieldVisible, isSectionVisible } from "./templateSchema";
 import type { AnswerValue } from "./templateSchema";
 

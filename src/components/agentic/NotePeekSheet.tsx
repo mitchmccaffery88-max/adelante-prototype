@@ -3,7 +3,7 @@
 // whose gate class is locked for this role shows only a protected notice.
 import { Link } from "@tanstack/react-router";
 import { AdelanteEHR, useEhr, type ProgressNote } from "@/lib/ehr";
-import { canAccess, getStaffMember, noteGateClass, useActingStaff } from "@/lib/roles";
+import { canAccess, getStaffMember, noteBodyRestricted, noteGateClass, NOTE_CONTENT_RESTRICTED, useActingStaff } from "@/lib/roles";
 import { Sheet, SheetContent, SheetTitle, SheetDescription } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { ClientDate } from "@/components/ClientDate";
@@ -13,9 +13,11 @@ export function noteVisibleToRole(
   role: Parameters<typeof canAccess>[0],
   patient: Parameters<typeof canAccess>[2],
   note: ProgressNote,
+  actorTokens: (string | undefined)[] = [],
 ): { visible: boolean; reason?: string } {
   const base = canAccess(role, "therapy_notes", patient);
   if (base.level === "none" || base.locked) return { visible: false, reason: base.reason };
+  if (noteBodyRestricted(role, patient, note, actorTokens)) return { visible: false, reason: NOTE_CONTENT_RESTRICTED };
   const cls = noteGateClass(note);
   if (cls) {
     const g = canAccess(role, cls, patient);
@@ -33,10 +35,10 @@ export function NotePeekSheet({
   noteId: string | null;
   onOpenChange: (open: boolean) => void;
 }) {
-  const { role } = useActingStaff();
+  const { role, staffId, clinicianId } = useActingStaff();
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
   const note = patient?.progressNotes?.find((n) => n.id === noteId);
-  const gate = patient && note ? noteVisibleToRole(role, patient, note) : { visible: false };
+  const gate = patient && note ? noteVisibleToRole(role, patient, note, [staffId, clinicianId]) : { visible: false };
   const author = note
     ? (AdelanteEHR.listClinicians().find((c) => c.id === note.clinicianId)?.name ??
       getStaffMember(note.clinicianId)?.name ??
@@ -61,7 +63,7 @@ export function NotePeekSheet({
           <p className="mt-4 text-sm text-muted-foreground">This note is not available.</p>
         ) : !gate.visible ? (
           <p className="mt-4 rounded-md border p-3 text-sm text-muted-foreground" data-testid="note-peek-locked">
-            This note is protected and is not shown for your role.
+            {gate.reason === NOTE_CONTENT_RESTRICTED ? NOTE_CONTENT_RESTRICTED : "This note is protected and is not shown for your role."}
           </p>
         ) : (
           <div className="mt-4 space-y-3 text-sm" data-testid="note-peek-body">
