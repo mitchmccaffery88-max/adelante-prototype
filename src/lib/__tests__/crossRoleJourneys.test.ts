@@ -260,7 +260,7 @@ describe("J6 county reporting", () => {
 // ------------------------------------------------------------------ J7
 export type J7Item = "asam_section" | "sud_meds" | "sud_instruments" | "scribe_draft" | "partner_sud_link" | "disclosure_log" | "therapy_notes";
 export const J7_ITEMS: J7Item[] = ["asam_section", "sud_meds", "sud_instruments", "scribe_draft", "partner_sud_link", "disclosure_log", "therapy_notes"];
-const PART2_ITEMS: J7Item[] = ["asam_section", "sud_meds", "sud_instruments", "scribe_draft", "partner_sud_link"];
+export const PART2_ITEMS: J7Item[] = ["asam_section", "sud_meds", "sud_instruments", "scribe_draft", "partner_sud_link"];
 
 describe("J7 Part 2 sweep", () => {
   it("every staff role × item matches the registry; no leak in task, notification or audit text", () => {
@@ -297,9 +297,6 @@ describe("J7 Part 2 sweep", () => {
       matrix[role] = row;
       for (const it of PART2_ITEMS) if (row[it] && !registryPart2) leaks.push(`${role} sees ${it} but registry screeners_sud=${sud.level}${sud.locked ? "/locked" : ""}`);
       if (row.therapy_notes !== (canAccess(role, "therapy_notes", pt).level !== "none")) leaks.push(`${role} therapy_notes mismatch`);
-      // Work-queue text for this role must never name SUD content.
-      const m = getStaffMember((STAFF_ROLES.find((r) => r.key === role) && AdelanteEHR && undefined) ?? "") ;
-      void m;
     }
     const banned = new RegExp(`\\b(${[...SUD_MEDICATION_NAMES, "asam", "opioid", "alcohol", "substance use"].join("|")})\\b`, "i");
     for (const n of AdelanteEHR.listNotifications().filter((x) => x.patientId === pt.id)) if (banned.test(`${n.subject} ${n.body}`)) leaks.push(`notification: ${n.subject}`);
