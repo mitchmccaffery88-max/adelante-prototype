@@ -54,7 +54,7 @@ describe("ownership — contact-note dictation", () => {
     expect(dictationBlocker({ actor: ECM, target: "note", patientId: pid, appointmentId: a.id })?.reason).toBe(OWN_CONTACT_BLOCK);
   });
 
-  it("a contact-role booker becomes the visit's assigned staff", () => {
+  it("a visit booked without a contact-role booker has no assigned staff", () => {
     const pid = patientWithConsent();
     const a = AdelanteEHR.bookAppointment({
       patientId: pid, clinicianId: "c1", start: new Date(Date.UTC(2026, 8, 25, 17)).toISOString(), durationMin: 30,
