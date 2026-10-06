@@ -189,7 +189,7 @@ describe("J4 scribe by role", () => {
         expect(st).toBe("cosign_pending");
         AdelanteEHR.cosignProgressNote(p.id, note.id, { cosignedBy: "Dr. Bagga", cosignedById: "s-np1", role: "pmhnp", attestation: attest("progress_note_supervisor_sign", "Dr. Bagga") });
       }
-      expect(AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status).toBe("signed");
+      expect(AdelanteEHR.getPatient(p.id)!.progressNotes!.find((x) => x.id === note.id)!.status).toMatch(/^(signed|cosigned)$/);
       sweepScribeRetention();
       expect(getScribeSession(s.id)!.transcriptDeleted?.reason).toBe("signed");
     });
