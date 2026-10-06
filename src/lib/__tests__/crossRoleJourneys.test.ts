@@ -63,7 +63,7 @@ describe("J1 referral → first visit", () => {
     const slot = availableSlots("c3", { serviceType: "med_management", modality: "in_person" })[0]!;
     expect(slot).toBeTruthy();
     const book = runAction<{ id: string }>("dashboard_book", COORD(), p, {
-      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "in_person", locationId: AdelanteEHR.listLocations?.()[0]?.id ?? "loc-1", bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
+      args: [{ patientId: pid, clinicianId: "c3", start: slot, durationMin: 60, serviceType: "med_management", modality: "in_person", locationId: AdelanteEHR.listLocations()[0]!.id, bookedBy: { id: "s-cc1", role: "clinical_coordinator" } }],
     });
     expect(book.ok, book.ok ? "" : book.reason).toBe(true);
     const appt = book.ok ? book.value : undefined!;
