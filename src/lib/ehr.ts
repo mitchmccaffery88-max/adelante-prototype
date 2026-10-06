@@ -8,6 +8,7 @@ import {
   schemaContentEquals,
   summarizeAutomation,
 } from "./templateSchema";
+import { scribeTemplates } from "./scribeFormats";
 import type {
   Automation,
   AutofillSnapshot,
@@ -3221,6 +3222,8 @@ export interface ProgressNote {
    * Automation output is never auto-signed: this note is a draft like any
    * other and a human must author and sign it.
    */
+  /** §Scribe Phase 1 — review state of an AI scribe draft (see src/lib/scribe.ts). */
+  aiScribe?: AiScribeNoteState;
   automationOrigin?: {
     sourceNoteId: string;
     automationId: string;
@@ -3283,6 +3286,18 @@ export interface NoteTemplate {
 }
 
 export type NoteAuthorSource = "human" | "ai_draft";
+/** §Scribe Phase 1 — sign gate state carried on the note itself (no store↔scribe cycle). */
+export interface AiScribeNoteState {
+  sessionId: string;
+  format: string;
+  openedAt?: string;
+  reviewConfirmedAt?: string;
+  reviewConfirmedBy?: string;
+  /** Unsupported sentences not yet kept-with-reason, edited or deleted. */
+  unresolved: number;
+  includedSpanish: boolean;
+  rating?: number;
+}
 export type NoteStatus = "draft" | "signed" | "cosign_pending" | "cosigned" | "declined";
 
 /** Roles that may sign a note at all, and that may sign without a cosigner. */
@@ -3480,7 +3495,11 @@ export type ConsentCategory =
   // §ASAM reason — 42 CFR Part 2 authorization for a SPECIFIC disclosure of
   // assessment results to a court, attorney, DMV or probation. PLACEHOLDER key
   // and label (draft — pending compliance review). No disclosure workflow.
-  | "legal_part2_disclosure";
+  | "legal_part2_disclosure"
+  // §Scribe Phase 1 — AI-assisted session documentation (recording). The
+  // Part 2 line is a separate section so the ledger records it explicitly.
+  | "ai_session_recording"
+  | "ai_session_recording_part2";
 
 // §Adelante Journey Phase 3 — the category the PO two-tier split
 // needs. It covers ONLY voluntary, patient-controlled care-coordination
@@ -3525,6 +3544,11 @@ export const CONSENT_CATEGORIES: { key: ConsentCategory; label: string }[] = [
   {
     key: "legal_part2_disclosure",
     label: "Part 2 disclosure of assessment results to court / attorney / DMV / probation (placeholder)",
+  },
+  { key: "ai_session_recording", label: "AI-assisted session documentation (recording) (placeholder wording)" },
+  {
+    key: "ai_session_recording_part2",
+    label: "AI-assisted session documentation — covers substance use (42 CFR Part 2) sessions (placeholder wording)",
   },
 ];
 
@@ -3576,6 +3600,9 @@ export type ConsentRecordStatus = "active" | "expired" | "revoked" | "superseded
 export interface ConsentRecordSection {
   category: ConsentCategory;
   authorized: boolean;
+  /** §Scribe — optional per-section window (AI recording consent). */
+  effectiveOn?: string;
+  expiresOn?: string;
 }
 
 export interface ConsentRecord {
@@ -6566,6 +6593,9 @@ const noteTemplates: NoteTemplate[] = [
     },
   },
 ];
+
+// §Scribe Phase 1 — SOAP / DAP / BIRP / GIRP formats with DMC-ODS elements.
+noteTemplates.push(...scribeTemplates());
 
 /**
  * §Discharge summary — seeded template.
@@ -11389,6 +11419,23 @@ export const AdelanteEHR = {
     return row;
   },
 
+  /** §Scribe Phase 1 — patch an unsigned AI scribe draft (body answers + review state). Called only by src/lib/scribe.ts. */
+  _patchAiDraftNote(
+    patientId: string,
+    noteId: string,
+    patch: { templateAnswers?: TemplateAnswers; aiScribe?: Partial<AiScribeNoteState>; priorVersion?: NoteVersionSnapshot },
+  ): ProgressNote {
+    const p = patients.find((x) => x.id === patientId);
+    const n = p?.progressNotes?.find((x) => x.id === noteId);
+    if (!n || !n.aiScribe) throw new Error("AI draft not found.");
+    if ((n.status ?? "draft") !== "draft") throw new Error("This note is no longer a draft.");
+    if (patch.templateAnswers) n.templateAnswers = { ...(n.templateAnswers ?? {}), ...patch.templateAnswers };
+    if (patch.aiScribe) n.aiScribe = { ...n.aiScribe, ...patch.aiScribe };
+    if (patch.priorVersion) n.priorVersions = [patch.priorVersion, ...(n.priorVersions ?? [])];
+    emit();
+    return n;
+  },
+
   // ----- Note sign / cosign lifecycle -------------------------------------
   // TODO(auth): attestation is checkbox-only, exactly like Orders / MAR /
   // Refusal. Signer eligibility is ROLE-based; Adelante has no credentialing
@@ -11439,6 +11486,12 @@ export const AdelanteEHR = {
     if (status !== "draft" && status !== "declined")
       throw new Error("Only a draft note can be signed.");
     if (!input.attested) throw new Error("Attestation is required to sign a note.");
+    if (n.aiScribe) {
+      if (!n.aiScribe.openedAt) throw new Error("Open the AI draft and review it before signing.");
+      if (n.aiScribe.unresolved > 0)
+        throw new Error("Resolve every sentence marked \"Not found in transcript\" before signing.");
+      if (!n.aiScribe.reviewConfirmedAt) throw new Error("Confirm \"I reviewed and edited this note\" before signing.");
+    }
     if (input.attestation && !input.attestation.signatureDataUrl)
       throw new Error("The attestation record is missing its signature.");
 
