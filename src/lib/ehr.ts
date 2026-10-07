@@ -9,6 +9,7 @@ import {
   summarizeAutomation,
 } from "./templateSchema";
 import { scribeTemplates } from "./scribeFormats";
+import { evaluateSeverity, type SeverityFlag } from "./severityRules";
 import type {
   Automation,
   AutofillSnapshot,
@@ -1737,6 +1738,8 @@ export interface Patient {
   appointmentRequests?: AppointmentRequest[];
   /** §Phase 10c — ASAM assessments (Part 2 protected; see src/lib/asam.ts). */
   asamAssessments?: AsamAssessment[];
+  /** §C3 — re-screen severity flags / improving notes, one per result (src/lib/severityRules.ts). */
+  severityFlags?: SeverityFlag[];
   progressNotes?: ProgressNote[];
   // Per-purpose consent state (revocable) + append-only audit trail
   consentState?: {
@@ -9677,8 +9680,25 @@ export const AdelanteEHR = {
     // §Phase 10a — retired forms can never produce NEW results.
     if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
     _stampScreenerMeta(result);
+    // §C3 — severity flag vs the previous result of the same instrument
+    // (Draft rules in severityRules.ts). One flag per result, ever.
+    const prevResult = (p.screenerHistory ?? [])
+      .filter((h) => h.key === result.key && h.completedAt < result.completedAt)
+      .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
     p.screeners[result.key] = result;
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
+    const sev = evaluateSeverity(prevResult, result);
+    if (sev && !(p.severityFlags ?? []).some((f) => f.resultRef === sev.resultRef)) {
+      const flag: SeverityFlag = { ...sev, id: uid(), createdAt: new Date().toISOString() };
+      p.severityFlags = [...(p.severityFlags ?? []), flag];
+      appendAudit({
+        category: "clinical",
+        action: flag.kind === "flag" ? "severity_flag_raised" : "severity_improving_noted",
+        patientId,
+        actorId: "system",
+        detail: { flagId: flag.id, screenerKey: flag.key, reasons: flag.reasons },
+      });
+    }
     if (result.crisisFlag) {
       p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
       if (p.caseManagerId) {

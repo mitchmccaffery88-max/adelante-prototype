@@ -3,6 +3,7 @@
 // Part 2 rules (roleSeesAsamSection, trackingTimeline, hieChartView,
 // filterSudMedsForRole, chartOrders). The only new stores are the sticky note
 // (audited) and a per-user "last opened Adel Brief" stamp.
+import { openSeverityFlags } from "./severityFlags";
 import { AdelanteEHR, type Patient, type MedOrder } from "@/lib/ehr";
 import { canAccess, CRISIS_FLAG_ROLES, STAFF_ROSTER, isPrescriberRole, type StaffRole } from "@/lib/roles";
 import { roleSeesAsamSection, filterSudMedsForRole } from "@/lib/asamReporting";
@@ -146,6 +147,9 @@ export function headerAlerts(p: Patient, role: StaffRole, visibleSections: strin
   const cs = latestFromHistory(p, CSSRS_KEY);
   if (cs && /high|moderate/i.test(cs.severity))
     out.push({ id: "cssrs", label: `C-SSRS ${/high/i.test(cs.severity) ? "high" : "moderate"} risk ${md(cs.completedAt)}`, sectionId: "tracking", tone: /high/i.test(cs.severity) ? "red" : "amber" });
+  // §C3 — open re-screen severity flags (Draft rules). Neutral wording.
+  for (const f of openSeverityFlags(p, role).slice(0, 2))
+    out.push({ id: `sev-${f.id}`, label: `Severity change — ${f.text.replace(/\.$/, "")}`, sectionId: "tracking", tone: f.reasons.some((r) => r === "item9" || r === "cssrs") ? "red" : "amber" });
   for (const e of hieChartView(p.id, role).encounters) {
     const days = Math.floor((+now - +new Date(e.at)) / DAY);
     if ((e.kind === "ed_visit" || e.kind === "admission") && days <= 14) {

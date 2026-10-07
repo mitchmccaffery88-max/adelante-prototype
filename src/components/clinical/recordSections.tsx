@@ -1,3 +1,4 @@
+import { SeverityFlagsPanel } from "@/components/chart/SeverityFlagsPanel";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { CoverageExtras } from "@/components/chart/CoverageExtras";
 import { RecordSafetyBadges } from "@/components/clinical/RecordSafetyBadges";
@@ -308,7 +309,7 @@ export function useRecordSections(
     label: "Tracking",
     icon: TrendingUp,
     group: "chart",
-    render: () => <TrackingTab patientId={pid} />,
+    render: () => <><SeverityFlagsPanel patientId={pid} /><TrackingTab patientId={pid} /></>,
   });
   // §Phase 10c — ASAM. Part 2 protected: gated by `screeners_sud`, so
   // advocates and Part 2-restricted staff never see the section at all.

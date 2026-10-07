@@ -33,6 +33,7 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { ClientDate } from "@/components/ClientDate";
 import { Sparkles, Target } from "lucide-react";
+import { AsamSuggestions, AsamGoalChips } from "@/components/careplan/AsamSuggestions";
 
 const OWNER_LABEL: Record<GoalOwner, string> = { patient: "Patient", clinician: "Clinician", case_manager: "Case manager" };
 const selectCls = "h-9 rounded-md border bg-background px-2 text-sm";
@@ -164,6 +165,8 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
         </section>
       )}
 
+      {edit && <AsamSuggestions patientId={patientId} />}
+
       <section className="space-y-3">
         <h5 className="text-xs font-medium uppercase tracking-wider text-navy">Goals</h5>
         {view.goals.length === 0 && <p className="text-xs text-muted-foreground">No goals yet.</p>}
@@ -176,6 +179,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
               <div className="flex flex-wrap items-start justify-between gap-2">
                 <div className="min-w-0 flex-1">
                   <p className="font-medium text-navy">{g.clinicalText}</p>
+                  <AsamGoalChips patientId={patientId} goal={g} canEdit={edit} />
                   <p className="text-xs text-muted-foreground">Patient sees: “{g.patientText.en}”</p>
                   <p className="text-[11px] text-muted-foreground">
                     Owner: {OWNER_LABEL[g.owner]}
@@ -207,7 +211,7 @@ export function CarePlanEditor({ patientId, readOnly }: { patientId: string; rea
               {edit && g.status === "active" && (
                 <div className="mt-2 flex flex-wrap items-center gap-2">
                   <select aria-label="Activity" className={selectCls} value={pick.activity} onChange={(e) => setAssign({ ...assign, [g.id]: { ...pick, activity: e.target.value } })}>
-                    {PLAN_ACTIVITIES.map((a) => (
+                    {PLAN_ACTIVITIES.filter((a) => !a.sud || view.seesSud).map((a) => (
                       <option key={a.id} value={a.id}>{a.label.en}</option>
                     ))}
                   </select>

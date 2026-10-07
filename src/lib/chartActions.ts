@@ -16,6 +16,8 @@ import { EPISODE_ROLES, HLOC_REFERRAL_ROLES } from "@/lib/outpatientCare";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 import { placeLabOrder, requestScreener, recordMetabolic } from "@/lib/chartOrders";
 import { addStructuredGoal, assignToGoal } from "@/lib/structuredCarePlan";
+import { acceptAsamSuggestion, dismissAsamSuggestion, editAsamSuggestion, markAsamGoalReviewed } from "@/lib/asamCarePlan";
+import { canReviewSeverity, reviewSeverityFlag } from "@/lib/severityFlags";
 import { createHlocReferral, dischargeEpisode } from "@/lib/outpatientCare";
 import { logContact } from "@/lib/caseloadReview";
 import { acceptNoteDraft, sendOutreach } from "@/lib/adelDrafts";
@@ -42,7 +44,7 @@ import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-06.scribe1b";
+export const REGISTRY_VERSION = "2026-10-07.asamPlan";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -344,6 +346,37 @@ export const CHART_ACTIONS: ChartAction[] = [
         : inList(PLAN_COSIGN_ROLES, role)
           ? cosign(cosignRouteLabel(staffId))
           : ok(),
+  },
+  {
+    // §C1 — Adel's ASAM-derived care-plan suggestions: accept (optionally edited), edit, dismiss, clear "Review — ASAM changed".
+    id: "asam_plan_suggestion",
+    label: { en: "Care plan suggestion", es: "Sugerencia del plan" },
+    group: "care",
+    sectionId: "care-plan",
+    menu: false,
+    store: refs(
+      ["acceptAsamSuggestion", (...a: any[]) => (acceptAsamSuggestion as any)(...a)],
+      ["editAsamSuggestion", (...a: any[]) => (editAsamSuggestion as any)(...a)],
+      ["dismissAsamSuggestion", (...a: any[]) => (dismissAsamSuggestion as any)(...a)],
+      ["markAsamGoalReviewed", (...a: any[]) => (markAsamGoalReviewed as any)(...a)],
+    ),
+    check: "canEditPlan + roleSeesAsamSection",
+    allowed: ({ role, staffId }, p) => {
+      if (!roleSeesAsamSection(role, p)) return hide("Not available for your role.");
+      if (!canEditPlan(role)) return hide("Your role can't change the care plan.");
+      return inList(PLAN_COSIGN_ROLES, role) ? cosign(cosignRouteLabel(staffId)) : ok();
+    },
+  },
+  {
+    // §C3 — mark a re-screen severity flag reviewed (clears the Needs my action row).
+    id: "severity_flag_review",
+    label: { en: "Review score change", es: "Revisar cambio de puntaje" },
+    group: "clinical",
+    sectionId: "tracking",
+    menu: false,
+    store: refs(["reviewSeverityFlag", (...a: any[]) => (reviewSeverityFlag as any)(...a)]),
+    check: "canReviewSeverity",
+    allowed: ({ role }, p) => (canReviewSeverity(role, p) ? ok() : hide("Your role can't review score changes.")),
   },
   {
     id: "sdoh_referral",

@@ -18,7 +18,8 @@ import {
 import { Button } from "@/components/ui/button";
 import { Progress } from "@/components/ui/progress";
 import { ClientDate } from "@/components/ClientDate";
-import { CheckCircle2, Circle } from "lucide-react";
+import { CheckCircle2, Circle, Volume2 } from "lucide-react";
+import { useAdelVoice } from "@/hooks/useAdelVoice";
 
 const COPY = {
   en: {
@@ -43,6 +44,9 @@ const COPY = {
     once: "once",
     marked: "Nice work — marked done.",
     thanks: "Thanks — your care team will see that you reviewed your plan.",
+    willDo: "What I'll do",
+    readAloud: "Read aloud",
+    draft: "",
   },
   es: {
     title: "Mi plan",
@@ -66,6 +70,9 @@ const COPY = {
     once: "una vez",
     marked: "¡Buen trabajo! Marcado como hecho.",
     thanks: "Gracias. Su equipo verá que revisó su plan.",
+    willDo: "Lo que voy a hacer",
+    readAloud: "Leer en voz alta",
+    draft: "Borrador — traducción pendiente de revisión.",
   },
 } as const;
 
@@ -73,6 +80,7 @@ export function MyPlan({ patientId }: { patientId: string }) {
   const { lang } = useI18n();
   const L = lang === "es" ? "es" : "en";
   const c = COPY[L];
+  const voice = useAdelVoice(L);
   const plan = useEhr(() => getStructuredPlan(patientId));
   const needs = useEhr(() => planNeeds(patientId).filter((n) => n.visibleToPatient));
   const patient = useEhr(() => AdelanteEHR.getPatient(patientId));
@@ -112,13 +120,39 @@ export function MyPlan({ patientId }: { patientId: string }) {
                     }
                   : {})}
               >
-                <p className={g.status === "met" ? "line-through text-muted-foreground" : undefined}>{g.patientText[L]}</p>
+                <div className="flex items-start gap-2">
+                  <p className={`min-w-0 flex-1 ${g.status === "met" ? "line-through text-muted-foreground" : ""}`}>{g.patientText[L]}</p>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="h-8 shrink-0 px-2"
+                    aria-label={c.readAloud}
+                    data-testid="my-plan-read-aloud"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      const steps = g.steps?.[L] ?? [];
+                      voice.speak([g.patientText[L], ...(steps.length ? [`${c.willDo}:`, ...steps] : [])].join(" "), { force: true });
+                    }}
+                  >
+                    <Volume2 className="h-4 w-4" aria-hidden />
+                  </Button>
+                </div>
+                {g.steps && g.steps[L].length > 0 && (
+                  <div className="mt-2" data-testid="my-plan-steps">
+                    <p className="text-xs font-medium text-navy">{c.willDo}</p>
+                    <ul className="mt-1 list-disc space-y-0.5 pl-5 text-sm">
+                      {g.steps[L].map((st) => <li key={st}>{st}</li>)}
+                    </ul>
+                  </div>
+                )}
                 <Progress value={pct} className="mt-2 h-1.5" aria-label={`${pct}%`} />
               </li>
             );
           })}
         </ul>
       </section>
+
+      {L === "es" && <p className="text-[11px] text-muted-foreground">{c.draft}</p>}
 
       <section data-testid="my-plan-week">
         <h3 className="font-display text-base text-navy">{c.week}</h3>
