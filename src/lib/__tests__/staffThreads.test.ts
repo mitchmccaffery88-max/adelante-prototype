@@ -22,6 +22,7 @@ import {
 const COORD = { role: "clinical_coordinator" as const, staffId: "s-cc1", name: "Priya Raman" };
 const ANITA = STAFF_ROSTER.find((m) => m.id === "s-th3")!;
 const anita = { role: ANITA.role, staffId: ANITA.id, name: ANITA.name };
+const anitaPatient = () => AdelanteEHR.listPatients().find((p) => p.prescriberStaffId === "s-th3" || p.primaryClinicianId === "c3")!;
 const luis = () => AdelanteEHR.getPatient(demoScenarioPatientId("sud_consented")!)!;
 const run = <T,>(id: string, actor: typeof COORD | typeof anita, patientId: string | undefined, ...args: unknown[]) => {
   const r = runAction<T>(id, actor, patientId ? AdelanteEHR.getPatient(patientId) : undefined, { args });
@@ -45,7 +46,7 @@ describe("U2 staff-to-staff messaging", () => {
   });
 
   it("SUD thread blocks participants without SUD access", () => {
-    const p = luis();
+    const p = anitaPatient();
     const noSud = STAFF_ROSTER.find((m) => m.active !== false && ["clinical_coordinator", "sys_admin"].includes(m.role) && !roleSeesAsamSection(m.role, p))!;
     expect(participantBlockReason({ kind: "care_team", patientId: p.id, containsSud: true }, noSud.id)).toBe(SUD_BLOCK_REASON);
     const t = run<StaffThread>("message_team", anita, p.id, { kind: "care_team", patientId: p.id, participantIds: [], fromSudContent: true }, anita);
@@ -59,7 +60,7 @@ describe("U2 staff-to-staff messaging", () => {
   });
 
   it("@mention → Reply needed in Needs my action → cleared on reply; neutral notification, no preview", () => {
-    const p = luis();
+    const p = anitaPatient();
     const t = run<StaffThread>("message_team", COORD, p.id, { kind: "care_team", patientId: p.id, participantIds: [anita.staffId] }, COORD);
     run("staff_thread_post", COORD, p.id, t.id, { body: "@Anita can you call him back about the new dose?" }, COORD);
     expect(openMentionsFor(anita.staffId)).toHaveLength(1);
@@ -85,7 +86,7 @@ describe("U2 staff-to-staff messaging", () => {
   });
 
   it("patients and advocates never see staff threads; audits carry no content", () => {
-    const p = luis();
+    const p = anitaPatient();
     const t = run<StaffThread>("message_team", COORD, p.id, { kind: "care_team", patientId: p.id, participantIds: [anita.staffId] }, COORD);
     run("staff_thread_post", COORD, p.id, t.id, { body: "Secret clinical detail XYZZY" }, COORD);
     // Patient/advocate feeds never carry it.
