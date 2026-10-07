@@ -77,7 +77,7 @@ export const sourceChipLabel = (sectionId: string) => SECTION_LABEL[sectionId] ?
 export type BriefSourceKind =
   | "order" | "dose_report" | "screener_request" | "appointment" | "patient_release" | "message"
   | "checkin_day" | "screening" | "refill_request" | "lab_order" | "hie_encounter" | "goal"
-  | "care_plan" | "safety_plan" | "sdoh_need" | "resource_referral" | "hloc_referral" | "progress_note" | "consent";
+  | "care_plan" | "safety_plan" | "sdoh_need" | "resource_referral" | "hloc_referral" | "progress_note" | "consent" | "severity_flag";
 export interface BriefSourceRef {
   kind: BriefSourceKind;
   /** Record id (screenings: `key@date`; dose reports: `orderId@scheduledAt`; check-in days: `YYYY-MM-DD`). */
@@ -200,6 +200,14 @@ export function computeEngagement(p: Patient, role: StaffRole, now: Date): Brief
 export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): BriefBullet[] {
   const out: BriefBullet[] = [];
   const nowIso = now.toISOString();
+  // §C3 — newest open severity flag first; else a recent "improving" note (Draft rules).
+  if (seesScreenerScores(role, p)) {
+    const flags = [...(p.severityFlags ?? [])].sort((a, b) => b.resultAt.localeCompare(a.resultAt));
+    const open = flags.find((f) => f.kind === "flag" && !f.reviewedAt);
+    const better = flags.find((f) => f.kind === "improving" && +now - +new Date(f.resultAt) <= 30 * DAY);
+    if (open) out.push({ id: `sev-${open.id}`, text: `Severity change: ${open.text}`, at: open.resultAt, sectionId: "tracking", sources: src("severity_flag", [open.id]) });
+    else if (better) out.push({ id: `sev-${better.id}`, text: `Improving: ${better.text}`, at: better.resultAt, sectionId: "tracking", sources: src("severity_flag", [better.id]) });
+  }
   for (const key of ["phq-9", "gad-7"]) {
     const s = series(p, role, key);
     const last = s.at(-1), prev = s.at(-2);
@@ -317,7 +325,7 @@ function sourceFingerprint(src: BriefSource, p: Patient, role: StaffRole, now: D
     case "orders": return h((p.orders ?? []).map((o) => `${o.id}|${o.status}|${o.startDate}|${o.daysSupply}`).join(","));
     case "refills": return h(AdelanteEHR.listRefillRequests({ patientId: p.id }).map((r) => `${r.id}|${r.status}`).join(","));
     case "dose_reports": return h(listSelfReports(p.id).map((s) => `${s.orderId}|${s.scheduledAt}|${s.status}`).join(","));
-    case "screeners": return h(`${(p.screenerHistory ?? []).map((s) => `${(s as { key?: string }).key}|${(s as { date?: string; completedAt?: string }).date ?? (s as { completedAt?: string }).completedAt}`).join(",")}#${(p.missedScreeners ?? []).length}#${listScreenerRequests(p.id).map((r) => r.id).join(",")}`);
+    case "screeners": return h(`${(p.screenerHistory ?? []).map((s) => `${(s as { key?: string }).key}|${(s as { date?: string; completedAt?: string }).date ?? (s as { completedAt?: string }).completedAt}`).join(",")}#${(p.missedScreeners ?? []).length}#${listScreenerRequests(p.id).map((r) => r.id).join(",")}#${(p.severityFlags ?? []).map((f) => `${f.id}${f.reviewedAt ? "r" : ""}`).join(",")}`);
     case "appointments": return h(apptsFor(p.id).map((a) => `${a.id}|${a.status}|${a.start}`).join(","));
     case "messages": { const m = p.careMessages ?? []; return `${m.length}|${m.at(-1)?.createdAt ?? ""}`; }
     case "checkins": return String(moodCheckInDayCount(p.id, ymd(new Date(+now - 30 * DAY)), ymd(now)));

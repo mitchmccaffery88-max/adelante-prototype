@@ -9,12 +9,13 @@ import { isCrisisNote, noteClock, overdueCrisisNotes } from "@/lib/noteClock";
 import { crisisSlaState, crisisSlaTarget, overdueByLabel } from "@/lib/crisisPolicy";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
+import { openSeverityFlags, severityAssignee, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -152,8 +153,15 @@ export function workspaceActionRows(input: {
   // §Batch B2 — referral chase tasks (owner, or coordinator pool). Neutral text only.
   for (const c of chaseRowsFor(actor, now))
     push({ id: `chase:${c.referral.id}`, kind: "chase", patientId: c.referral.enrolledPatientId ?? "", patientName: `${c.referral.firstName} ${c.referral.lastName} (referral)`, label: `${c.lane === "pool" ? (c.task.owner ? "Overdue — reassign · " : "Unassigned · ") : ""}${c.text}`, dueAt: c.task.dueAt, action: c.lane === "pool" && !c.task.owner ? "Claim" : "Open referral", sourceId: c.referral.id });
+  // §C3 — re-screen severity flags go to the patient's assigned clinician. Neutral label.
+  for (const p of patients) {
+    const who = severityAssignee(p);
+    if (!who || !aliases.has(who)) continue;
+    for (const f of openSeverityFlags(p, actor.role))
+      rows.push({ id: `severity:${f.id}`, kind: "severity", patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, label: `${SEVERITY_ROW_LABEL} — ${f.text}`, dueAt: f.createdAt, due: "Review", group: "now", action: "Review", sourceId: f.id });
+  }
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
-  const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "contact"] : ["crisis", "crisis_note"];
+  const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "contact"] : ["crisis", "crisis_note", "severity"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
     const ai = priority.indexOf(a.kind), bi = priority.indexOf(b.kind);
     if (ai !== bi) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);

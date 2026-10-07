@@ -47,6 +47,14 @@ export interface StructuredGoal {
   createdBy: string;
   /** Set when migrated from the old plain-text goal list. */
   legacyGoalId?: string;
+  /** §C1 — provenance when accepted from an ASAM-derived suggestion (Part 2). */
+  source?: { kind: "asam"; suggestionId: string; asamId: string; asamVersion: number; dimensionKey: string; dimensionName: string; rating: number };
+  /** §C1 — set when a newer signed ASAM version changed the source dimension's rating. */
+  reviewFlag?: { label: string; asamVersion: number; fromRating: number; toRating: number; at: string };
+  problemStatement?: string;
+  interventions?: string[];
+  /** Plain-language "what I'll do" steps for the patient (EN/ES). */
+  steps?: { en: string[]; es: string[] };
 }
 export type Frequency = "daily" | "weekly" | "once";
 export type AssignmentKind = "activity" | "sdoh_referral" | "visit_cadence";
@@ -108,6 +116,12 @@ export const PLAN_ACTIVITIES: PlanActivity[] = [
   { id: "behavioral-activation", label: { en: "Do one thing you enjoy", es: "Haga una cosa que disfrute" }, to: "/library", sud: false },
   { id: "reentry-journey", label: { en: "Re-entry Journey", es: "Camino de regreso" }, to: "/recovery-journey", sud: false },
   { id: "first-days-out", label: { en: "My First Days Out", es: "Mis primeros días afuera" }, to: "/recovery-journey", sud: false },
+  // §C1 — recovery modules offered as interventions on ASAM-derived goals (Part 2).
+  { id: "understanding-my-addiction", label: { en: "Recovery lesson: Understanding My Addiction", es: "Lección: Entender mi adicción" }, to: "/recovery-journey", sud: true },
+  { id: "when-recovery-gets-hard", label: { en: "Recovery lesson: When Recovery Gets Hard", es: "Lección: Cuando la recuperación se pone difícil" }, to: "/recovery-journey", sud: true },
+  { id: "finding-my-people", label: { en: "Recovery lesson: Finding My People", es: "Lección: Encontrar a mi gente" }, to: "/recovery-journey", sud: true },
+  { id: "changing-my-everyday-life", label: { en: "Recovery lesson: Changing My Everyday Life", es: "Lección: Cambiar mi vida diaria" }, to: "/recovery-journey", sud: true },
+  { id: "building-a-life-that-works", label: { en: "Recovery lesson: Building a Life That Works", es: "Lección: Construir una vida que funcione" }, to: "/recovery-journey", sud: true },
 ];
 export const activityById = (id?: string) => PLAN_ACTIVITIES.find((a) => a.id === id);
 
@@ -353,6 +367,7 @@ export function assignToGoal(input: {
   assertSudOk(input.actor, input.patientId, g.sud);
   const act = activityById(input.activityId);
   if (input.kind === "activity" && !act) throw new Error("Pick an activity.");
+  assertSudOk(input.actor, input.patientId, !!act?.sud);
   const need = input.needId ? patientOf(input.patientId).sdohPlan?.items.find((i) => i.id === input.needId) : undefined;
   if (input.kind === "sdoh_referral" && !need) throw new Error("Pick a need.");
   const label =

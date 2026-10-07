@@ -43,7 +43,7 @@ const CHIP: Record<BriefSourceKind, string[]> = {
   screener_request: ["tracking"], screening: ["tracking"], lab_order: ["labs"], checkin_day: ["tracking"],
   appointment: ["appointments"], message: ["messages"], patient_release: ["demographics"],
   hie_encounter: ["outside-records"], goal: ["care-plan"], care_plan: ["care-plan"], sdoh_need: ["care-plan"],
-  safety_plan: ["safety-plan"], progress_note: ["notes"], hloc_referral: ["episodes"], resource_referral: ["episodes"], consent: ["consents"],
+  safety_plan: ["safety-plan"], progress_note: ["notes"], severity_flag: ["tracking"], hloc_referral: ["episodes"], resource_referral: ["episodes"], consent: ["consents"],
 };
 
 const seesVisits = (r: StaffRole, p: Patient) => canAccess(r, "case_notes", p).level !== "none";
@@ -91,6 +91,7 @@ function resolve(ref: BriefSourceRef, p: Patient, role: StaffRole, now: Date): u
     case "progress_note": return seesVisits(role, p) ? (p.progressNotes ?? []).find((n) => n.id === id) : undefined;
     case "hloc_referral": return listHlocReferrals(p.id).find((r) => r.id === id && (roleSeesAsamSection(role, p) || !r.sudRelated));
     case "resource_referral": return canAccess(role, "sdoh", p).level === "none" ? undefined : (p.resourceReferrals ?? []).find((r) => r.id === id);
+    case "severity_flag": return seesScores(role, p) ? (p.severityFlags ?? []).find((f) => f.id === id) : undefined;
     case "consent":
       if (canAccess(role, "consent_ledger", p).level === "none") return undefined;
       if (id === "part2") return roleSeesAsamSection(role, p) ? { id } : undefined;
@@ -116,6 +117,23 @@ function rebuild(b: BriefBullet, recs: unknown[], p: Patient, role: StaffRole, n
     }
     if (left > 7) return { error: "runway bullet for a medication with >7 days left" };
     return { expected: left <= 0 ? `${o.drugName} supply ran out ${md(out)}.` : `${o.drugName} runs out in ${plural(left, "day")}.` };
+  }
+  if (b.id.startsWith("sev-")) {
+    const f = R[0];
+    // The flag must match its source result in the tracking history exactly.
+    const hist = (p.screenerHistory ?? []).find((h) => `${h.key}@${h.completedAt}` === f.resultRef);
+    if (!hist) return { error: "severity flag has no source result" };
+    if (f.toScore !== undefined && hist.score !== f.toScore) return { error: `flag score ${f.toScore} ≠ result ${hist.score}` };
+    if (f.toRisk !== undefined && hist.cssrsRisk !== f.toRisk) return { error: "flag risk ≠ result risk" };
+    const prev = (p.screenerHistory ?? []).filter((h) => h.key === f.key && h.completedAt < hist.completedAt).sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+    if (f.fromScore !== undefined && prev?.score !== f.fromScore) return { error: `flag 'from' score ${f.fromScore} ≠ previous result ${prev?.score}` };
+    if (f.kind === "improving" || f.reasons.includes("rise")) for (const n of [f.fromScore, f.toScore]) if (n !== undefined && !f.text.includes(String(n))) return { error: "flag text is missing its score" };
+    if (f.kind === "flag") {
+      if (f.reviewedAt) return { error: "flag already reviewed" };
+      return { expected: `Severity change: ${f.text}` };
+    }
+    if (+now - +new Date(f.resultAt) > 30 * DAY) return { error: "improving note older than 30 days" };
+    return { expected: `Improving: ${f.text}` };
   }
   if (b.id === "missed") {
     const ok = new Set(meds(p, role).map((o) => o.id));
