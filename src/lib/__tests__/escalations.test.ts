@@ -1,5 +1,5 @@
 import { beforeEach, describe, expect, it } from "vitest";
-import { AdelanteEHR, type ScreenerResult } from "@/lib/ehr";
+import { AdelanteEHR, demoScenarioPatientId, type ScreenerResult } from "@/lib/ehr";
 import { setInFacilityEnabled, inFacilityEnabled } from "@/lib/inFacility";
 import {
   _resetEscalationOverlays,
@@ -19,7 +19,7 @@ import { Route as CrisisQueueRoute } from "@/routes/crisis-queue";
 const COORD = { role: "clinical_coordinator" as const, staffId: "s-cc1", name: "Priya Raman" };
 const ANITA = STAFF_ROSTER.find((m) => m.id === "s-th3")!;
 const pats = () => AdelanteEHR.listPatients();
-const patientWithClinician = () => pats().find((p) => p.primaryClinicianId && (p.severityFlags ?? []).length === 0)!;
+const patientWithClinician = () => pats().find((p) => p.primaryClinicianId)!;
 
 function seedAll() {
   const [a, b, c, d] = pats();
@@ -102,7 +102,7 @@ describe("U1 unified escalations", () => {
   });
 
   it("SUD-derived rows are neutral with no detail for roles without SUD access", () => {
-    const p = pats()[5];
+    const p = AdelanteEHR.getPatient(demoScenarioPatientId("sud_no_consent")!)!;
     const e = AdelanteEHR.flagCrisis(p.id, "Priya Raman", "Relapse on alcohol after AUDIT rescreen");
     const coordRow = listEscalations(COORD).find((r) => r.sourceId === e.id)!; // coordinator has no SUD access
     expect(coordRow.sud).toBe(true);
