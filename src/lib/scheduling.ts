@@ -4,7 +4,7 @@ import { AdelanteEHR, type Appointment, type ServiceType } from "./ehr";
 import { AdelanteEHRExt } from "./ehr-ext";
 import { isLateCancelWindow } from "./lateCancel";
 import { facilityDateKey } from "./facilityTime";
-import { siteClosedDay, siteForLocation, primarySiteFor, siteTimezone, staffTimeOffOn } from "./workingCalendar";
+import { siteClosedDay, siteForLocation, primarySiteFor, siteTimezone, staffTimeOffOn, fitsStaffHours } from "./workingCalendar";
 
 export type ConstraintReasonCode =
   | "clinician_inactive"
