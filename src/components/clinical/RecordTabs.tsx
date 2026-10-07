@@ -11,6 +11,7 @@ import { categoryName, URGENCY_LABEL } from "@/lib/whatWouldHelp";
 import { matchResourcesForNeed } from "@/lib/sdohResourceMatch";
 import { SDOH_SOURCE_LABEL as _SRC } from "@/lib/ehr";
 import { CssrsStaffControl } from "@/components/screeners/CssrsStaffControl";
+import { listScreenerDrafts, SCREENER_DRAFT_IN_PROGRESS_LABEL } from "@/lib/screenerDrafts";
 import { CSSRS_KEY } from "@/lib/cssrs";
 // §Clinical record tab bodies — extracted from ClientRecordDrawer so the
 // quick-peek drawer and the full-page chart render the SAME components.
@@ -3408,9 +3409,23 @@ export function TrackingTab({ patientId }: { patientId: string }) {
     .sort((a, b) => +new Date(b.completedAt) - +new Date(a.completedAt));
   const sudGate = canAccess(role, "screeners_sud", patient);
   const seesSud = roleSeesSudInstruments(role, patient);
+  const drafts = listScreenerDrafts(patientId);
   return (
     <div className="space-y-6">
       <TrackingTimeline patient={patient} role={role} />
+      {drafts.length > 0 && (
+        <div className="flex flex-wrap gap-2" data-testid="tracking-screener-drafts">
+          {drafts.map((d) => (
+            <span
+              key={d.key}
+              className="rounded-full bg-amber-500/15 px-2.5 py-1 text-xs font-medium text-amber-700"
+              data-testid={`tracking-draft-${d.key}`}
+            >
+              {screenerByKey(d.key)?.name ?? (d.key === CSSRS_KEY ? "C-SSRS Screener" : d.key)} — {SCREENER_DRAFT_IN_PROGRESS_LABEL}
+            </span>
+          ))}
+        </div>
+      )}
       <LabsAndMeasuresTracking patientId={patientId} role={role} />
       <div className="rounded-md border p-3 space-y-2" data-testid="tracking-cssrs">
         <div className="flex flex-wrap items-center gap-2">

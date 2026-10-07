@@ -1,4 +1,5 @@
 import { assertNotAfbiSource } from "./afbiGuard";
+import { assertClaimable, isClaimable } from "./claimGuard";
 import { demoBusinessTime } from "./demoTime";
 // §Adelante Expansion — additive EMR extension.
 // Houses: organizations/counties/facilities, clinician profile ext,
@@ -1078,6 +1079,7 @@ export const AdelanteEHRExt = {
     // §Cancel/no-show — a cancelled or missed visit never opens a claim.
     if (appt.status !== "attended" && appt.status !== "scheduled")
       throw new Error("A cancelled or missed visit cannot create a claim.");
+    assertClaimable({ entry: "upsertClaimFromEncounter", patientId: appt.patientId, sourceIds: [apptId], appointment: appt });
     claim = {
       id: uid(),
       encounterId: apptId,
@@ -1121,6 +1123,7 @@ export const AdelanteEHRExt = {
     serviceDate: string;
   }): Claim {
     assertNotAfbiSource(input.asamId, input.patientId);
+    assertClaimable({ entry: "createAsamClaim", patientId: input.patientId, sourceIds: [input.asamId], renderingId: input.clinicianId });
     const encounterId = `asam:${input.asamId}`;
     const existing = claims.find((c) => c.encounterId === encounterId);
     if (existing) return existing;
@@ -1478,6 +1481,7 @@ export const AdelanteEHRExt = {
       ).filter((a) => a.status !== "absent");
       if (present.length < GROUP_MIN_BILLABLE_ATTENDEES) return null;
     }
+    if (!isClaimable({ entry: "upsertClaimFromGroupAttendee", patientId: input.patientId, sourceIds: [input.sessionId, input.noteId], group: { sessionId: input.sessionId, occurrenceStart: input.occurrenceStart }, renderingId: input.renderingProviderId ?? input.facilitatorId })) return null;
     const encounterId = `group:${input.sessionId}:${input.occurrenceStart}:${input.patientId}`;
     // NOTE (DHCS Short-Doyle): more than one group service for the same
     // beneficiary, same provider, same DAY is explicitly allowed. The
@@ -1542,6 +1546,7 @@ export const AdelanteEHRExt = {
     mode?: string;
   }): Claim | null {
     assertNotAfbiSource(input.peerNoteId, input.patientId);
+    if (!isClaimable({ entry: "upsertClaimFromPeerNote", patientId: input.patientId, sourceIds: [input.peerNoteId], renderingId: input.staffId })) return null;
     const decision = peerBillingDecision({
       staffId: input.staffId,
       mode: input.mode,
@@ -1606,6 +1611,7 @@ export const AdelanteEHRExt = {
     supervisingStaffId?: string | null;
   }): Claim | null {
     assertNotAfbiSource(input.noteId, input.patientId);
+    if (!isClaimable({ entry: "upsertClaimFromChwNote", patientId: input.patientId, sourceIds: [input.noteId], renderingId: input.staffId })) return null;
     const patient = AdelanteEHR.getPatient(input.patientId);
     if (!patient) return null;
     const dayKey = input.dateISO.slice(0, 10);

@@ -1,9 +1,11 @@
+import { CoverageReleaseAggregate } from "@/components/coverage/CoverageReleaseAggregate";
 import { AdelanteEHRExt, useEhrExt } from "@/lib/ehr-ext";
 import { actResult, actFor } from "@/lib/actions/act";
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useMemo, useState } from "react";
 import { AdelanteEHR, useEhr, isReferralClosed } from "@/lib/ehr";
 import { ReferralTrackerCard } from "@/components/admin/ReferralTrackerCard";
+import { intakeVelocityMedian } from "@/lib/referralFunnel";
 import {
   BillingStatusList,
   BILLING_STATUS_NOTE,
@@ -99,6 +101,7 @@ function AdminPage() {
   const billingCounts = useMemo(() => billingStatusCounts(allClaims), [allClaims]);
   const patients = useEhr(() => AdelanteEHR.listPatients());
   const referrals = useEhr(() => AdelanteEHR.listReferrals());
+  const intakeVelocity = useEhr(() => intakeVelocityMedian());
   const consentEvents = useEhr(() => AdelanteEHR.listAllConsentEvents());
   const [openPatientId, setOpenPatientId] = useState<string | null>(null);
   const verifiedPct = Math.round(
@@ -231,8 +234,16 @@ function AdminPage() {
         <Kpi
           icon={Timer}
           label="Intake velocity"
-          value={`${stats.intakeVelocityDays}d`}
-          sub="referral → 1st session"
+          value={
+            intakeVelocity.belowMinimumCohort
+              ? "Too few referrals to report"
+              : `${intakeVelocity.medianDays ?? "—"}d median`
+          }
+          sub={
+            intakeVelocity.belowMinimumCohort
+              ? `Fewer than ${intakeVelocity.minimumCohortSize} referrals (${intakeVelocity.periodLabel})`
+              : `referral → 1st attended session · n=${intakeVelocity.n} · ${intakeVelocity.periodLabel}`
+          }
           accent="gold"
         />
         <Kpi
@@ -254,6 +265,8 @@ function AdminPage() {
       <div className="mb-6">
         <GroupActivityKpi />
       </div>
+
+      <CoverageReleaseAggregate />
 
       <PopulationCarePlanStrip className="mb-6" />
 

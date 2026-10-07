@@ -11,6 +11,9 @@ export default defineConfig({
   testDir: "./e2e",
   globalSetup: "./e2e/global-setup.ts",
   fullyParallel: true,
+  // The dev server renders the whole in-memory demo on every load; above ~3
+  // parallel browsers the redirect/expand checks start timing out.
+  workers: 3,
   forbidOnly: !!process.env["CI"],
   retries: process.env["CI"] ? 1 : 0,
   reporter: [["list"]],

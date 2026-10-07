@@ -1,3 +1,4 @@
+import { continuityBriefText, continuityForPatient } from "./medContinuity";
 // §Faster Adel Brief (Demo 2) — four fixed, narrow sections computed in the
 // background and refreshed incrementally.
 //
@@ -139,6 +140,11 @@ export function computeAdherence(p: Patient, role: StaffRole, now: Date): BriefB
   if (canAccess(role, "meds_erx", p).level !== "none") {
     const meds = visibleOrders(p, role);
     const seesSud = roleSeesAsamSection(role, p);
+    // §B1 — the continuity alert itself, with its source. Neutral text without SUD access.
+    const visibleIds = new Set(meds.map((o) => o.id));
+    if (seesSud)
+      for (const a of continuityForPatient(p.id, now).filter((x) => !x.orderId || visibleIds.has(x.orderId)))
+        out.push({ id: `continuity-${a.key}`, text: continuityBriefText(a), at: nowIso, sectionId: "medications", sources: src("order", a.orderId ? [a.orderId] : []) });
     for (const o of meds) {
       const r = refillRunway(o, now);
       const name = o.drugName;

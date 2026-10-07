@@ -1,3 +1,4 @@
+import { continuityForPatient, continuityTaskLabel } from "./medContinuity";
 // §Chart redesign turn 3 — compact header + "Brief" landing tab. Everything
 // here is DERIVED from data the chart already shows, filtered with the same
 // Part 2 rules (roleSeesAsamSection, trackingTimeline, hieChartView,
@@ -157,6 +158,10 @@ export function headerAlerts(p: Patient, role: StaffRole, visibleSections: strin
       break;
     }
   }
+  // §B1 — MAT continuity alert, with its source; neutral without SUD access.
+  if (canAccess(role, "meds_erx", p).level !== "none")
+    for (const a of continuityForPatient(p.id, now).slice(0, 1))
+      out.push({ id: `mat-cont-${a.kind}`, label: roleSeesAsamSection(role, p) ? `${a.escalation ? "Medication continuity" : continuityTaskLabel(a)} — ${a.source}` : "Follow-up needed", sectionId: "medications", tone: a.escalation ? "red" : "amber" });
   const missed = AdelanteEHR.listAppointments().filter((a) => a.patientId === p.id && a.status === "no_show" && +now - +new Date(a.start) <= 60 * DAY).length;
   if (missed > 0) out.push({ id: "missed", label: `${missed} missed visit${missed === 1 ? "" : "s"}`, sectionId: "appointments", tone: "amber" });
   const sp = getSafetyPlan(p.id);

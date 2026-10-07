@@ -4,6 +4,7 @@ import { demoLocalDayAt } from "@/lib/demoTime";
 import { AdelanteEHR, STAFF_CANCEL_REASON_LABEL, type Appointment, type StaffCancelReason } from "@/lib/ehr";
 import { AdelanteEHRExt, type ClinicianProfileExt } from "@/lib/ehr-ext";
 import { STAFF_ROSTER, getSupervisor, requiresSupervision, type StaffRole } from "@/lib/roles";
+import { assertAssignableStaff, isActiveStaff } from "@/lib/staffLifecycle";
 
 import { canActOnCoordination } from "@/lib/coordinationRoles";
 export { COORDINATION_ROLES, COORDINATION_VIEW_ROLES, canActOnCoordination, canViewCoordination } from "@/lib/coordinationRoles";
@@ -57,6 +58,7 @@ export function eligibleReassignTargets(appt: Appointment): ReassignOption[] {
   for (const c of AdelanteEHR.listClinicians()) {
     if (c.id === appt.clinicianId) continue;
     if (AdelanteEHRExt.getClinicianProfile(c.id)?.active === false) continue;
+    if (!isActiveStaff(c.id)) continue;
     if (!AdelanteEHR.canBook(c.id).ok) continue;
     if (appt.serviceType && !(c.services ?? []).includes(appt.serviceType)) continue;
     const load = upcomingLoad(c.id);
@@ -100,6 +102,7 @@ export function reassignCoverage(input: {
   if (input.reason === "other" && !input.note?.trim()) throw new Error("Describe the reason when you pick Other.");
   const target = eligibleReassignTargets(a).find((o) => o.clinicianId === input.toClinicianId);
   if (!target) throw new Error("That clinician isn't eligible for this visit.");
+  assertAssignableStaff(target.clinicianId);
   const from = a.clinicianId;
   const fromName = AdelanteEHR.listClinicians().find((c) => c.id === from)?.name ?? "the previous clinician";
   AdelanteEHR.rescheduleAppointment(a.id, a.start, { clinicianId: target.clinicianId });

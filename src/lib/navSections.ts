@@ -438,6 +438,17 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "record_class", anyOf: ["pre_release"] },
   },
   {
+    id: "coverage-release",
+    label: "Coverage at release",
+    desc: "Medi-Cal pre-release / reactivation tracker",
+    icon: ClipboardSignature,
+    to: "/coverage-release",
+    // Outpatient view (Facility & Custody is hidden while in_facility is OFF).
+    group: "population",
+    // §B2 — same matrix row as the pre-release workspace.
+    gate: { kind: "record_class", anyOf: ["pre_release"] },
+  },
+  {
     id: "released-search",
     label: "Released patient search",
     desc: "Post-release follow-up",
@@ -709,6 +720,16 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/admin-supervision",
     group: "administration",
     gate: { kind: "record_class", anyOf: ["staff_supervision"] },
+  },
+  {
+    id: "admin-staff",
+    label: "Staff members",
+    desc: "Add, change roles/sites, deactivate",
+    icon: UserCog,
+    to: "/admin-staff",
+    group: "administration",
+    // §B6 — sys_admin only (staffLifecycle.ts does the same check on every write).
+    gate: { kind: "record_class", anyOf: ["platform_administration"], minLevel: "write" },
   },
   {
     id: "admin-vendors",

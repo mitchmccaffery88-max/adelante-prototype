@@ -14,11 +14,15 @@ import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { myOpenEscalations } from "@/lib/escalations";
 import { listRescheduleItems } from "@/lib/workingCalendar";
 import { listThreadsFor, openMentionsFor } from "@/lib/staffThreads";
+import { continuityTasks, continuityTaskLabel } from "@/lib/medContinuity";
+import { releaseCoverageRows, releaseCoverageDueAt, dayOffsetLabel } from "@/lib/coverageRelease";
+import { reassignNeededItems } from "@/lib/staffLifecycle";
+import { NEUTRAL_TYPE_LABEL } from "@/lib/escalations";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule" | "continuity" | "coverage" | "reassign_needed";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -178,6 +182,25 @@ export function workspaceActionRows(input: {
       const p = patients.find((x) => x.id === r.patientId);
       rows.push({ id: `reschedule:${r.id}`, kind: "reschedule", patientId: r.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: `Reschedule needed — ${r.cause === "site_closed" ? "clinic closed" : "clinician out"}`, dueAt: r.start, due: new Date(r.start).toLocaleDateString("en-US", { month: "short", day: "numeric" }), group: "today", action: "Mark handled", sourceId: r.id });
     }
+  }
+  // §B1 — MAT refill needed / missed dose → prescriber (pool → coordinator). Part 2-masked label.
+  for (const a of continuityTasks(now)) {
+    const mineRow = a.ownerStaffId ? aliases.has(a.ownerStaffId) : isCoordinatorRole(actor.role);
+    if (!mineRow) continue;
+    const p = patients.find((x) => x.id === a.patientId);
+    const label = p && roleSeesAsamSection(actor.role, p) ? continuityTaskLabel(a) : NEUTRAL_TYPE_LABEL;
+    rows.push({ id: `continuity:${a.key}`, kind: "continuity", patientId: a.patientId, patientName: a.patientName, label, dueAt: a.dueAt, due: "Same business day (Draft)", group: "today", action: "Open chart", sourceId: a.key });
+  }
+  // §B2 — 30 days before release, nothing submitted → CF care manager / ECM (pool → coordinator).
+  for (const r of releaseCoverageRows(now)) {
+    if (!r.task) continue;
+    if (!(r.ownerStaffId ? aliases.has(r.ownerStaffId) : isCoordinatorRole(actor.role))) continue;
+    rows.push({ id: `coverage:${r.episodeId}`, kind: "coverage", patientId: r.patientId, patientName: r.patientName, label: `Medi-Cal not submitted — ${dayOffsetLabel(r.dayOffset)}`, dueAt: releaseCoverageDueAt(r, now), due: "Draft", group: "week", action: "Open coverage", sourceId: r.episodeId });
+  }
+  // §B6 — deactivated staff still owning open items: one item each, counts only.
+  if (isCoordinatorRole(actor.role)) for (const r of reassignNeededItems()) {
+    const c = r.counts;
+    rows.push({ id: `reassign_needed:${r.staffId}`, kind: "reassign_needed", patientId: "", patientName: r.name, label: `Reassign needed — ${c.notesToSign} notes to sign · ${c.tasks} tasks · ${c.escalations} escalations · ${c.caseload} caseload`, dueAt: now.toISOString(), due: "Nothing reassigned automatically", group: "today", action: "Open staff", sourceId: r.staffId });
   }
   // §U2 — @mentions in team threads: "Reply needed" until replied or marked done.
   const myThreads = listThreadsFor({ staffId: actor.staffId, role: actor.role });

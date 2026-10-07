@@ -1,3 +1,4 @@
+import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §v3.0 Phase 2 — CF Care Manager pre-release surface.
 //
 // PLACEHOLDER CONTENT WARNING: every form label and field below comes from
@@ -152,6 +153,7 @@ function PreReleasePage() {
           </Button>
         )}
       </div>
+      <CoverageAtReleasePanel compact />
 
       <div className="grid gap-4 lg:grid-cols-[280px_1fr]">
         <Card className="p-3">
