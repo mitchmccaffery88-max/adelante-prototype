@@ -44,7 +44,7 @@ describe("Adel chat persistence", () => {
     const stubs = adelDeletionStubs();
     expect(stubs.map((s) => s.reason)).toEqual(["patient_deleted", "patient_cleared_all"]);
     expect(JSON.stringify(stubs)).not.toMatch(/sleep|job/);
-    const audits = JSON.stringify(AdelanteEHR.getAuditLog().filter((e) => e.action.startsWith("adel_")));
+    const audits = JSON.stringify(AdelanteEHR.listAuditEvents({}).filter((e) => e.action.startsWith("adel_")));
     expect(audits).not.toMatch(/sleep is hard|job interview/);
   });
 
