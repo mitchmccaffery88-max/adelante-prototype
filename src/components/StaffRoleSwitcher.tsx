@@ -69,7 +69,7 @@ export function StaffRoleSwitcher() {
           Demo control · act as staff
         </DropdownMenuLabel>
         <DropdownMenuRadioGroup value={`${staffId}|${role}`} onValueChange={choose}>
-          {STAFF_ROSTER.flatMap((s) =>
+          {STAFF_ROSTER.filter((s) => s.active !== false).flatMap((s) =>
             roleAssignmentsOf(s).map((a) => (
               <DropdownMenuRadioItem key={`${s.id}|${a.role}`} value={`${s.id}|${a.role}`} className="text-xs" data-testid={`switch-${s.id}-${a.role}`}>
                 {s.name}

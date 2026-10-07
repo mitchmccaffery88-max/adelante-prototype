@@ -18,6 +18,8 @@ import { overdueCrisisNotes } from "./noteClock";
 import { inFacilityEnabled } from "./inFacility";
 import { roleSeesAsamSection } from "./asamReporting";
 import { isSudMedication } from "./sudMedClassifier";
+import { continuityEscalations, continuityLine } from "./medContinuity";
+import { releaseCoverageRows, releaseCoverageDueAt, dayOffsetLabel } from "./coverageRelease";
 import { part2SafeText } from "./actions/runAction";
 import { STAFF_ROSTER, type StaffMember, type StaffRole } from "./roles";
 import { severityAssignee, seesSeverity } from "./severityFlags";
@@ -31,7 +33,7 @@ export const ESCALATION_SLA_DRAFT = {
   refusal: { ms: 72 * HOUR, label: "72 hour (draft)" },
 } as const;
 
-export type EscalationType = "crisis" | "score_change" | "crisis_note" | "urgent_social_need" | "missed_handoff" | "refusal";
+export type EscalationType = "crisis" | "score_change" | "crisis_note" | "urgent_social_need" | "missed_handoff" | "refusal" | "med_continuity" | "coverage_release";
 export type EscalationStatus = "new" | "acknowledged" | "handed_off" | "overdue" | "resolved";
 
 export const ESCALATION_TYPE_LABEL: Record<EscalationType, string> = {
@@ -41,6 +43,8 @@ export const ESCALATION_TYPE_LABEL: Record<EscalationType, string> = {
   urgent_social_need: "Urgent social need",
   missed_handoff: "Missed handoff",
   refusal: "Medication refusal",
+  med_continuity: "Medication continuity",
+  coverage_release: "Coverage at release",
 };
 /** Shown instead of the type for SUD-derived rows when the viewer lacks SUD access. */
 export const NEUTRAL_TYPE_LABEL = "Follow-up needed";
@@ -224,6 +228,19 @@ function rawRows(now: number): { raw: Raw; patient: Patient }[] {
         });
       }
   }
+  // §B1 — MAT continuity (runway ≤ 2 days / out, or released with no bridge). Owner = prescriber; SUD-masked.
+  for (const a of continuityEscalations(new Date(now))) {
+    const patient = AdelanteEHR.getPatient(a.patientId);
+    if (!patient) continue;
+    out.push({ patient, raw: { key: a.key, type: "med_continuity", sourceId: a.orderId ?? a.key, patientId: a.patientId, patientName: a.patientName, ownerStaffId: a.ownerStaffId, ownerName: a.ownerName, dueAt: a.dueAt, sud: true, detail: continuityLine(a) } });
+  }
+  // §B2 — release + 3 days and coverage not Active → coordinator pool.
+  for (const r of releaseCoverageRows(new Date(now))) {
+    if (!r.escalation) continue;
+    const patient = AdelanteEHR.getPatient(r.patientId);
+    if (!patient) continue;
+    out.push({ patient, raw: { key: `coverage_release:${r.episodeId}`, type: "coverage_release", sourceId: r.episodeId, patientId: r.patientId, patientName: r.patientName, dueAt: releaseCoverageDueAt(r, new Date(now)), sud: false, detail: `${r.statusLabel} · ${dayOffsetLabel(r.dayOffset)}${r.flagged ? " · 10+ days" : ""} (Draft)` } });
+  }
   // crisis notes past the 1-day clock (noteClock); owner = note author.
   for (const { patient, note, clock } of overdueCrisisNotes(AdelanteEHR.listPatients(), new Date(now))) {
     const owner = staffFor(note.clinicianId);
@@ -254,6 +271,8 @@ const PRIMARY: Record<EscalationType, string> = {
   crisis_note: "Open note",
   missed_handoff: "Open chart",
   refusal: "Open chart",
+  med_continuity: "Open chart",
+  coverage_release: "Open coverage",
 };
 
 /** Every escalation, Part 2-masked for this viewer, overdue first then by due time. */

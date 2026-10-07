@@ -13638,9 +13638,8 @@ export const AdelanteEHR = {
     const completed = appointments.filter((a) => a.status === "attended").length;
     const total = appointments.filter((a) => a.status !== "scheduled").length;
     const completionRate = total === 0 ? 0 : Math.round((completed / total) * 100);
-    const intakeVelocityDays = 2.4; // mock: avg referral → first session
     const billing = _claimBridge?.bucketCounts() ?? {};
-    return { enrolled, completionRate, intakeVelocityDays, billing };
+    return { enrolled, completionRate, billing };
   },
 
   // ----- §3c — T-minus helper (days until release; negative = post-release) -----

@@ -15,6 +15,7 @@ import { canOrderLabs, canRecordMetabolic, canRequestScreener } from "@/lib/char
 import { EPISODE_ROLES, HLOC_REFERRAL_ROLES } from "@/lib/outpatientCare";
 import { canUseCaseloadReview } from "@/lib/caseloadRoles";
 import { placeLabOrder, requestScreener, recordMetabolic } from "@/lib/chartOrders";
+import { saveScreenerDraft } from "@/lib/screenerDrafts";
 import { addStructuredGoal, assignToGoal } from "@/lib/structuredCarePlan";
 import { acceptAsamSuggestion, dismissAsamSuggestion, editAsamSuggestion, markAsamGoalReviewed } from "@/lib/asamCarePlan";
 import { canReviewSeverity, reviewSeverityFlag } from "@/lib/severityFlags";
@@ -43,12 +44,14 @@ import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview
   setAiDraftVisitField, endScribeSession, canDictateScribe, createDictationDraft, pauseScribeSession, resumeScribeSession, saveAfbiFromScribe, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 import { acknowledgeEscalation, canUseEscalations, handOffEscalation, isCoordinator as isEscalationCoordinator, reassignEscalation } from "@/lib/escalations";
+import { canSetReleaseCoverage, setReleaseCoverageStatus, simulateEligibilityCheck } from "@/lib/coverageRelease";
 import { addSiteClosedDay, addTimeOff, canEditSiteCalendar, canManageStaffCalendars, createSiteCalendarFromDefaults, markRescheduleHandled, removeSiteClosedDay, removeStaffHours, removeTimeOff, saveSiteHours, saveStaffHours, setExternalCalendarId } from "@/lib/workingCalendar";
 import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
+import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember, updateStaffMember } from "@/lib/staffLifecycle";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-07.calendars";
+export const REGISTRY_VERSION = "2026-10-08.continuity";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -304,6 +307,14 @@ export const CHART_ACTIONS: ChartAction[] = [
     sectionId: "tracking",
     store: refs(["requestScreener", (...a: any[]) => (requestScreener as any)(...a)]),
     allowed: ({ role }, p) => (canRequestScreener(role, p) ? ok() : hide("Your role doesn't request screeners.")),
+  },
+  {
+    id: "screener_draft_save",
+    label: { en: "Save screener draft (in progress)", es: "Guardar borrador del cuestionario (en curso)" },
+    group: "clinical",
+    sectionId: "tracking",
+    store: refs(["saveScreenerDraft", (...a: any[]) => (saveScreenerDraft as any)(...a)]),
+    allowed: ({ role }, p) => (canRequestScreener(role, p) ? ok() : hide("Your role doesn't enter screeners.")),
   },
   {
     id: "metabolic",
@@ -903,6 +914,32 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(["calendarSync.sync", ((...a: Parameters<typeof calendarSync.sync>) => calendarSync.sync(...a)) as StoreFn]),
     allowed: ({ role }) => (canManageStaffCalendars(role) ? ok() : hide("Only a coordinator or system administrator can run calendar sync.")),
   },
+  // ---- §B2 — coverage at release ----
+  {
+    id: "coverage_release_status_set", label: { en: "Update coverage at release", es: "Actualizar cobertura al salir" }, group: "admin", menu: false, needsPatient: false,
+    check: "canSetReleaseCoverage (coordinator / sys_admin / CF care manager / ECM)",
+    store: refs(["setReleaseCoverageStatus", setReleaseCoverageStatus as StoreFn]),
+    allowed: ({ role }) => (canSetReleaseCoverage(role) ? ok() : hide("Your role can't update coverage at release.")),
+  },
+  {
+    id: "coverage_release_check", label: { en: "Check eligibility (Simulated)", es: "Verificar elegibilidad (Simulado)" }, group: "admin", menu: false, needsPatient: false,
+    simulated: true,
+    check: "canSetReleaseCoverage (coordinator / sys_admin / CF care manager / ECM)",
+    store: refs(["simulateEligibilityCheck", simulateEligibilityCheck as StoreFn]),
+    allowed: ({ role }) => (canSetReleaseCoverage(role) ? ok() : hide("Your role can't check eligibility.")),
+  },
+  // ---- §B6 — staff lifecycle (sys_admin only, reason required, audited) ----
+  ...([
+    ["staff_add", "Add staff member", "Agregar miembro del personal", "addStaffMemberWithReason", addStaffMemberWithReason],
+    ["staff_update", "Change staff role / sites", "Cambiar rol / sedes", "updateStaffMember", updateStaffMember],
+    ["staff_deactivate", "Deactivate staff member", "Desactivar miembro del personal", "deactivateStaffMember", deactivateStaffMember],
+    ["staff_reactivate", "Reactivate staff member", "Reactivar miembro del personal", "reactivateStaffMember", reactivateStaffMember],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id, label: { en, es }, group: "admin", menu: false, needsPatient: false,
+    check: "actor.role === sys_admin (staffLifecycle.ts)",
+    store: refs([name, fn as StoreFn]),
+    allowed: ({ role }) => (role === "sys_admin" ? ok() : hide("Only a system administrator can manage staff.")),
+  })),
   // ---- §Batch E — patient identity (coordinator / sys_admin) ----
   {
     id: "patient_merge",

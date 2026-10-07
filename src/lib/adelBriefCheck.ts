@@ -1,3 +1,4 @@
+import { continuityBriefText, continuityForPatient } from "./medContinuity";
 // V1 — Adel Brief consistency checker. For every bullet, resolve each source
 // record (through the SAME role-filtered chart views the linked section uses),
 // rebuild the bullet's numbers / dates / labels from those records alone, and
@@ -106,6 +107,12 @@ function rebuild(b: BriefBullet, recs: unknown[], p: Patient, role: StaffRole, n
   const ids = (b.sources ?? []).map((s) => s.id);
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   const R = recs as any[];
+  if (b.id.startsWith("continuity-")) {
+    const a = continuityForPatient(p.id, now).find((x) => `continuity-${x.key}` === b.id);
+    if (!a) return { error: "continuity bullet without a live alert" };
+    if (a.orderId && !R[0]) return { error: "continuity bullet source order not visible" };
+    return { expected: continuityBriefText(a) };
+  }
   if (b.id.startsWith("run-") || b.id.startsWith("mat-")) {
     const o = R[0];
     const end = new Date(new Date(`${o.startDate}T00:00:00`).getTime() + o.daysSupply * DAY);

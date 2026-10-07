@@ -196,6 +196,42 @@ export function referralFunnel(
   };
 }
 
+export interface IntakeVelocity extends CohortGuard {
+  /** Median days from referral submission to the first ATTENDED session. */
+  medianDays: number | null;
+  /** Referrals contributing a value — the cohort-guarded n, not `submitted`. */
+  n: number;
+  /** Human label for the window used, e.g. "last 90 days" or "all time". */
+  periodLabel: string;
+}
+
+/**
+ * Intake velocity — referral → first ATTENDED session, reusing the same
+ * attendance rule as `referralFunnel` (a booking is not an intake). Returns
+ * a cohort-guarded median so a thin dashboard tile never invents its own
+ * referral→intake arithmetic.
+ */
+export function intakeVelocityMedian(
+  opts: { periodDays?: number; now?: Date } = {},
+): IntakeVelocity {
+  const rs = referralsInWindow(opts.periodDays, opts.now);
+  const enrolled = rs.filter((r) => !!enrolledPatientId(r) && !!r.enrolledAt);
+  const toAttended: number[] = [];
+  for (const r of enrolled) {
+    const pid = enrolledPatientId(r)!;
+    const first = firstAttendedAppointment(pid);
+    if (!first) continue;
+    const d = days(r.createdAt, first.start);
+    if (d !== null) toAttended.push(d);
+  }
+  return {
+    medianDays: median(toAttended),
+    n: toAttended.length,
+    periodLabel: opts.periodDays ? `last ${opts.periodDays} days` : "all time",
+    ...cohortGuard(toAttended.length),
+  };
+}
+
 // ---------------------------------------------------------------------------
 // Slices
 // ---------------------------------------------------------------------------

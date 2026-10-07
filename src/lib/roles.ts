@@ -1090,6 +1090,10 @@ export interface StaffMember {
   roleAssignments?: RoleAssignment[];
   /** §Batch C4 — false = inactive (never auto-assigned as a crisis owner). */
   active?: boolean;
+  /** §B6 — sites this person is assigned to (admin-set, not an access grant). */
+  siteIds?: string[];
+  /** §B6 — when `active` was last set to false, via staffLifecycle.ts. */
+  deactivatedAt?: string;
   /** Staff dedupe keys. */
   npi?: string;
   email?: string;

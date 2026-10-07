@@ -24,6 +24,7 @@ import { Route as AdminKpiTargetsRouteImport } from './routes/admin-kpi-targets'
 import { Route as AdminNoteTemplatesRouteImport } from './routes/admin-note-templates'
 import { Route as AdminPermissionsRouteImport } from './routes/admin-permissions'
 import { Route as AdminSchedulingRulesRouteImport } from './routes/admin-scheduling-rules'
+import { Route as AdminStaffRouteImport } from './routes/admin-staff'
 import { Route as AdminSupervisionRouteImport } from './routes/admin-supervision'
 import { Route as AdminVendorsRouteImport } from './routes/admin-vendors'
 import { Route as AdvocateRouteImport } from './routes/advocate'
@@ -44,6 +45,7 @@ import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
 import { Route as CountyReportingRouteImport } from './routes/county-reporting'
+import { Route as CoverageReleaseRouteImport } from './routes/coverage-release'
 import { Route as CravingRouteImport } from './routes/craving'
 import { Route as CrisisRouteImport } from './routes/crisis'
 import { Route as CrisisQueueRouteImport } from './routes/crisis-queue'
@@ -200,6 +202,11 @@ const AdminSchedulingRulesRoute = AdminSchedulingRulesRouteImport.update({
   path: '/admin-scheduling-rules',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminStaffRoute = AdminStaffRouteImport.update({
+  id: '/admin-staff',
+  path: '/admin-staff',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const AdminSupervisionRoute = AdminSupervisionRouteImport.update({
   id: '/admin-supervision',
   path: '/admin-supervision',
@@ -298,6 +305,11 @@ const CosignInboxRoute = CosignInboxRouteImport.update({
 const CountyReportingRoute = CountyReportingRouteImport.update({
   id: '/county-reporting',
   path: '/county-reporting',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const CoverageReleaseRoute = CoverageReleaseRouteImport.update({
+  id: '/coverage-release',
+  path: '/coverage-release',
   getParentRoute: () => rootRouteImport,
 } as any)
 const CravingRoute = CravingRouteImport.update({
@@ -723,6 +735,7 @@ export interface FileRoutesByFullPath {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-staff': typeof AdminStaffRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRouteWithChildren
@@ -743,6 +756,7 @@ export interface FileRoutesByFullPath {
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
+  '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -840,6 +854,7 @@ export interface FileRoutesByTo {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-staff': typeof AdminStaffRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/assisted-signup': typeof AssistedSignupRoute
@@ -859,6 +874,7 @@ export interface FileRoutesByTo {
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
+  '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -954,6 +970,7 @@ export interface FileRoutesById {
   '/admin-note-templates': typeof AdminNoteTemplatesRoute
   '/admin-permissions': typeof AdminPermissionsRoute
   '/admin-scheduling-rules': typeof AdminSchedulingRulesRoute
+  '/admin-staff': typeof AdminStaffRoute
   '/admin-supervision': typeof AdminSupervisionRoute
   '/admin-vendors': typeof AdminVendorsRoute
   '/advocate': typeof AdvocateRouteWithChildren
@@ -974,6 +991,7 @@ export interface FileRoutesById {
   '/consent-audit': typeof ConsentAuditRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
+  '/coverage-release': typeof CoverageReleaseRoute
   '/craving': typeof CravingRoute
   '/crisis': typeof CrisisRoute
   '/crisis-queue': typeof CrisisQueueRoute
@@ -1073,6 +1091,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
+    | '/admin-staff'
     | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
@@ -1093,6 +1112,7 @@ export interface FileRouteTypes {
     | '/consent-audit'
     | '/cosign-inbox'
     | '/county-reporting'
+    | '/coverage-release'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1190,6 +1210,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
+    | '/admin-staff'
     | '/admin-supervision'
     | '/admin-vendors'
     | '/assisted-signup'
@@ -1209,6 +1230,7 @@ export interface FileRouteTypes {
     | '/consent-audit'
     | '/cosign-inbox'
     | '/county-reporting'
+    | '/coverage-release'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1303,6 +1325,7 @@ export interface FileRouteTypes {
     | '/admin-note-templates'
     | '/admin-permissions'
     | '/admin-scheduling-rules'
+    | '/admin-staff'
     | '/admin-supervision'
     | '/admin-vendors'
     | '/advocate'
@@ -1323,6 +1346,7 @@ export interface FileRouteTypes {
     | '/consent-audit'
     | '/cosign-inbox'
     | '/county-reporting'
+    | '/coverage-release'
     | '/craving'
     | '/crisis'
     | '/crisis-queue'
@@ -1421,6 +1445,7 @@ export interface RootRouteChildren {
   AdminNoteTemplatesRoute: typeof AdminNoteTemplatesRoute
   AdminPermissionsRoute: typeof AdminPermissionsRoute
   AdminSchedulingRulesRoute: typeof AdminSchedulingRulesRoute
+  AdminStaffRoute: typeof AdminStaffRoute
   AdminSupervisionRoute: typeof AdminSupervisionRoute
   AdminVendorsRoute: typeof AdminVendorsRoute
   AdvocateRoute: typeof AdvocateRouteWithChildren
@@ -1441,6 +1466,7 @@ export interface RootRouteChildren {
   ConsentAuditRoute: typeof ConsentAuditRoute
   CosignInboxRoute: typeof CosignInboxRoute
   CountyReportingRoute: typeof CountyReportingRoute
+  CoverageReleaseRoute: typeof CoverageReleaseRoute
   CravingRoute: typeof CravingRoute
   CrisisRoute: typeof CrisisRoute
   CrisisQueueRoute: typeof CrisisQueueRoute
@@ -1608,6 +1634,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof AdminSchedulingRulesRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin-staff': {
+      id: '/admin-staff'
+      path: '/admin-staff'
+      fullPath: '/admin-staff'
+      preLoaderRoute: typeof AdminStaffRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/admin-supervision': {
       id: '/admin-supervision'
       path: '/admin-supervision'
@@ -1746,6 +1779,13 @@ declare module '@tanstack/react-router' {
       path: '/county-reporting'
       fullPath: '/county-reporting'
       preLoaderRoute: typeof CountyReportingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/coverage-release': {
+      id: '/coverage-release'
+      path: '/coverage-release'
+      fullPath: '/coverage-release'
+      preLoaderRoute: typeof CoverageReleaseRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/craving': {
@@ -2408,6 +2448,7 @@ const rootRouteChildren: RootRouteChildren = {
   AdminNoteTemplatesRoute: AdminNoteTemplatesRoute,
   AdminPermissionsRoute: AdminPermissionsRoute,
   AdminSchedulingRulesRoute: AdminSchedulingRulesRoute,
+  AdminStaffRoute: AdminStaffRoute,
   AdminSupervisionRoute: AdminSupervisionRoute,
   AdminVendorsRoute: AdminVendorsRoute,
   AdvocateRoute: AdvocateRouteWithChildren,
@@ -2428,6 +2469,7 @@ const rootRouteChildren: RootRouteChildren = {
   ConsentAuditRoute: ConsentAuditRoute,
   CosignInboxRoute: CosignInboxRoute,
   CountyReportingRoute: CountyReportingRoute,
+  CoverageReleaseRoute: CoverageReleaseRoute,
   CravingRoute: CravingRoute,
   CrisisRoute: CrisisRoute,
   CrisisQueueRoute: CrisisQueueRoute,

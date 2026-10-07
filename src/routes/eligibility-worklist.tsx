@@ -1,3 +1,4 @@
+import { CoverageAtReleasePanel } from "@/components/coverage/CoverageAtReleasePanel";
 // §Phase 3c — program-level Medi-Cal verification worklist.
 //
 // PLACEMENT: its own page in the Revenue & consent group, gated on the real
@@ -122,6 +123,7 @@ function EligibilityWorklistPage() {
           transaction in this app, so nothing on this list updates itself.
         </p>
       </div>
+      <CoverageAtReleasePanel compact />
 
       <Card className="p-3 text-xs text-muted-foreground" data-testid="staleness-policy">
         <strong className="text-navy">{COVERAGE_STALENESS_DRAFT.label}.</strong>{" "}

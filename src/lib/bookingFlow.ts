@@ -8,6 +8,7 @@ import type { StaffRole } from "./roles";
 import { bookingRightFor, checkBookingRights, isPrescriberServiceType, isSudServiceType } from "./bookingRights";
 import { myCaseload, type ActingIdentity } from "./myWork";
 import { availableSlots } from "./clinicianAvailability";
+import { isActiveStaff } from "./staffLifecycle";
 
 export interface BookingActor extends ActingIdentity {
   role: StaffRole;
@@ -50,6 +51,7 @@ export function eligibleClinicians(serviceType: ServiceType, patient: Patient | 
   const today = new Date().toISOString().slice(0, 10);
   const lang = patient?.preferredLanguage ?? "en";
   return AdelanteEHR.listClinicians()
+    .filter((c) => isActiveStaff(c.id))
     .filter((c) => (c.services ? c.services.includes(serviceType) : !isSudServiceType(serviceType)))
     .filter((c) => !c.licenseExpiresOn || c.licenseExpiresOn >= today)
     .filter((c) => !isPrescriberServiceType(serviceType) || PRESCRIBER_CRED.test(c.credential))
