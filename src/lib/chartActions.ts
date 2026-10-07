@@ -43,10 +43,12 @@ import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview
   setAiDraftVisitField, endScribeSession, canDictateScribe, createDictationDraft, pauseScribeSession, resumeScribeSession, saveAfbiFromScribe, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
 import { acknowledgeEscalation, canUseEscalations, handOffEscalation, isCoordinator as isEscalationCoordinator, reassignEscalation } from "@/lib/escalations";
+import { addSiteClosedDay, addTimeOff, canEditSiteCalendar, canManageStaffCalendars, createSiteCalendarFromDefaults, markRescheduleHandled, removeSiteClosedDay, removeStaffHours, removeTimeOff, saveSiteHours, saveStaffHours, setExternalCalendarId } from "@/lib/workingCalendar";
+import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
-export const REGISTRY_VERSION = "2026-10-07.asamPlan";
+export const REGISTRY_VERSION = "2026-10-07.calendars";
 
 export type ChartActionGroup = "document" | "clinical" | "care" | "coordination" | "visit" | "billing" | "admin";
 /** Groups shown in the chart / dashboard "+ New" menus. Visit, billing and admin actions run from their own screens. */
@@ -862,6 +864,44 @@ export const CHART_ACTIONS: ChartAction[] = [
     check: "canAccess(population_health) = write",
     store: refs(["resendNotification", (...a: any[]) => (AdelanteEHR.resendNotification as any)(...a)]),
     allowed: ({ role }) => (writes(role, "population_health") ? ok() : hide("Only program administrators can resend notifications.")),
+  },
+  // ---- §Calendars — location + staff calendars (store re-checks roles) ----
+  ...([
+    ["calendar_site_hours_save", "Save location hours", "Guardar horario de la sede", "saveSiteHours", saveSiteHours],
+    ["calendar_site_closed_add", "Add clinic closed day", "Agregar día cerrado", "addSiteClosedDay", addSiteClosedDay],
+    ["calendar_site_closed_remove", "Remove clinic closed day", "Quitar día cerrado", "removeSiteClosedDay", removeSiteClosedDay],
+    ["calendar_site_create", "Create location calendar", "Crear calendario de sede", "createSiteCalendarFromDefaults", createSiteCalendarFromDefaults],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id, label: { en, es }, group: "admin", menu: false, needsPatient: false,
+    check: "canEditSiteCalendar (sys_admin)",
+    store: refs([name, fn as StoreFn]),
+    allowed: ({ role }) => (canEditSiteCalendar(role) ? ok() : hide("Only a system administrator can change a location calendar.")),
+  })),
+  ...([
+    ["calendar_staff_hours_save", "Save working hours", "Guardar horario", "saveStaffHours", saveStaffHours],
+    ["calendar_staff_hours_remove", "Remove working hours", "Quitar horario", "removeStaffHours", removeStaffHours],
+    ["calendar_time_off_add", "Enter time off", "Registrar tiempo libre", "addTimeOff", addTimeOff],
+    ["calendar_time_off_remove", "Withdraw time off", "Retirar tiempo libre", "removeTimeOff", removeTimeOff],
+    ["calendar_external_id_set", "Set external calendar id", "Definir calendario externo", "setExternalCalendarId", setExternalCalendarId],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id, label: { en, es }, group: "admin", menu: false, needsPatient: false,
+    check: "own calendar, or canManageStaffCalendars (coordinator / sys_admin)",
+    store: refs([name, fn as StoreFn]),
+    // Every staff member has a calendar; the store refuses edits to someone else's.
+    allowed: () => ok(),
+  })),
+  {
+    id: "calendar_reschedule_done", label: { en: "Mark reschedule handled", es: "Marcar reprogramación atendida" }, group: "admin", menu: false, needsPatient: false,
+    check: "canManageStaffCalendars (coordinator / sys_admin)",
+    store: refs(["markRescheduleHandled", markRescheduleHandled as StoreFn]),
+    allowed: ({ role }) => (canManageStaffCalendars(role) ? ok() : hide("Only a coordinator can close a reschedule item.")),
+  },
+  {
+    id: "calendar_sync_run", label: { en: "Sync calendar (Simulated)", es: "Sincronizar calendario (Simulado)" }, group: "admin", menu: false, needsPatient: false,
+    simulated: true, flags: ["calendar_sync_simulated"],
+    check: "canManageStaffCalendars (coordinator / sys_admin)",
+    store: refs(["calendarSync.sync", ((...a: Parameters<typeof calendarSync.sync>) => calendarSync.sync(...a)) as StoreFn]),
+    allowed: ({ role }) => (canManageStaffCalendars(role) ? ok() : hide("Only a coordinator or system administrator can run calendar sync.")),
   },
   // ---- §Batch E — patient identity (coordinator / sys_admin) ----
   {

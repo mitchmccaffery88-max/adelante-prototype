@@ -10,6 +10,8 @@
 // prefills the service, modality, clinician and location and rebooks against
 // the clinician's live availability. Nothing new was invented for it.
 import { useI18n } from "@/lib/i18n";
+import { defaultSiteId, nextClosedDays, siteForAppointment } from "@/lib/workingCalendar";
+import { useEhrExt } from "@/lib/ehr-ext";
 import { scheduleCopy, serviceLabel } from "@/lib/scheduleCopy";
 import { simulatedSurfaceLabel } from "@/lib/features";
 import { Link } from "@tanstack/react-router";
@@ -176,8 +178,19 @@ export function AppointmentsSummary({ patientId }: { patientId: string }) {
     .sort((a, b) => +new Date(b.start) - +new Date(a.start))
     .slice(0, 8);
 
+  // §Calendars L5 — clinic closed days in the next two weeks at the patient's site.
+  const lang = useI18n().lang;
+  const site = (upcoming[0] && siteForAppointment(upcoming[0])) ?? defaultSiteId();
+  const closed = useEhrExt(() => (site ? nextClosedDays(site, 5) : [])).filter((d) => +new Date(`${d.date}T12:00:00Z`) - now < 14 * 86400000);
   return (
     <div className="space-y-6" data-testid="appointments-summary">
+      {closed.map((d) => (
+        <div key={d.id} className="rounded-md border border-gold/40 bg-gold/10 px-3 py-2 text-sm text-navy" data-testid="clinic-closed-notice">
+          {lang === "es" ? `Clínica cerrada — ${d.nameEs ?? d.name}` : `Clinic closed — ${d.name}`} ·{" "}
+          {new Date(`${d.date}T12:00:00Z`).toLocaleDateString(lang === "es" ? "es-US" : "en-US", { weekday: "short", month: "short", day: "numeric", timeZone: "UTC" })}
+          {lang === "es" && <span className="ml-1 text-[10px] text-muted-foreground">(Borrador — traducción pendiente de revisión)</span>}
+        </div>
+      ))}
       <div className="space-y-4">
         <div className="flex items-center justify-between gap-3">
           <h2 className="font-display text-lg text-navy">{sc.upcoming}</h2>

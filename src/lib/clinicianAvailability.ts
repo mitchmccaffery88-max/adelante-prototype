@@ -5,6 +5,7 @@
 import { AdelanteEHR, type ServiceType } from "./ehr";
 import { AdelanteEHRExt, type AvailabilityBlock } from "./ehr-ext";
 import { DEFAULT_FACILITY_TZ, fromFacilityWallClock, startOfFacilityDay, toFacilityParts } from "./facilityTime";
+import { isWorkingDay, siteForBlock } from "./workingCalendar";
 
 /**
  * Weekly hours are FACILITY wall-clock (America/Los_Angeles), never the
@@ -62,14 +63,17 @@ export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[]
     const Y = noon.getUTCFullYear(), M = noon.getUTCMonth() + 1, D = noon.getUTCDate();
     const weekday = noon.getUTCDay();
     const date = `${Y}-${pad(M)}-${pad(D)}`;
-    if (exceptions.some((e) => e.date === date && e.kind === "off")) continue;
+    // §Calendars L5 — the one working-day service: site closed days and the
+    // clinician's time off (date ranges) remove the whole day for that site.
     const windows: { start: number; end: number }[] = [];
     for (const b of blocks) {
       if (b.weekday !== weekday) continue;
+      if (!isWorkingDay(date, { siteId: siteForBlock(b), ownerId: clinicianId })) continue;
       if (!modalityFits(b.modality, q.modality)) continue;
       if (q.serviceType && b.careTypes.length && !b.careTypes.includes(q.serviceType)) continue;
       windows.push({ start: toMin(b.start), end: toMin(b.end) });
     }
+    if (exceptions.some((e) => e.kind === "off" && e.date <= date && (e.endDate ?? e.date) >= date)) continue;
     for (const e of exceptions) if (e.date === date && e.kind === "added" && e.start && e.end) windows.push({ start: toMin(e.start), end: toMin(e.end) });
     const seen = new Set<number>();
     for (const w of windows) {

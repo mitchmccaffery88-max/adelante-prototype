@@ -126,7 +126,7 @@ describe("nav registry integrity", () => {
       "/notes-queue",
       "/refusal-queue",
       "/clinician-profile",
-      "/clinician-availability",
+      "/my-calendar",
       "/clinician-credentials",
       "/admin",
     ]) {
@@ -169,6 +169,8 @@ describe("gating derives from the RBAC matrix", () => {
                  ? ["nurse_rn", "lvn"].includes(role)
                  : gate.kind === "escalations" || gate.kind === "staff_messaging"
                  ? !["billing", "billing_coordinator", "credentialing_coordinator"].includes(role)
+                 : gate.kind === "site_calendar" || gate.kind === "team_calendar"
+                 ? ["sys_admin", "clinical_coordinator"].includes(role)
                  : gate.kind === "care_partner_directory"
                  ? ["sys_admin", "clinical_coordinator", "ecm_provider", "cf_care_manager"].includes(role)
                  : gate.anyOf.some((cls) => {

@@ -17,7 +17,8 @@ export type FeatureId =
   | "notifications_simulated"
   | "payments_simulated"
   | "scribe_simulated"
-  | "llm_simulated";
+  | "llm_simulated"
+  | "calendar_sync_simulated";
 
 export interface FeatureFlag {
   id: FeatureId;
@@ -147,6 +148,14 @@ export const FEATURE_FLAGS: readonly FeatureFlag[] = [
     scope: "role",
     simulated: true,
   },
+  {
+    id: "calendar_sync_simulated",
+    description: "Calendar sync (Google / Microsoft 365) is a mock: nothing is read from or written to an external calendar.",
+    owner: "Clinical operations",
+    default: true,
+    scope: "global",
+    simulated: true,
+  },
 ];
 
 const overrides = new Map<FeatureId, boolean>();
@@ -216,6 +225,7 @@ export const VENDOR_FLAGS: Readonly<Record<string, FeatureId>> = {
   telehealth: "telehealth_simulated",
   scribe: "scribe_simulated",
   llm: "llm_simulated",
+  calendarSync: "calendar_sync_simulated",
 };
 
 /**
@@ -228,6 +238,7 @@ export const SIMULATED_SURFACE_LABELS: Partial<Record<FeatureId, string>> = {
   telehealth_simulated: `${SIMULATED_LABEL} video vendor`,
   scribe_simulated: `${SIMULATED_LABEL} AI scribe — scripted transcript and draft, no audio stored`,
   llm_simulated: `${SIMULATED_LABEL} — template summary from the bullets, no AI model`,
+  calendar_sync_simulated: `${SIMULATED_LABEL} calendar sync — nothing leaves Adelante`,
 };
 export function simulatedSurfaceLabel(id: FeatureId): string {
   return SIMULATED_SURFACE_LABELS[id] ?? SIMULATED_LABEL;

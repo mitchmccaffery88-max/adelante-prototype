@@ -3,6 +3,8 @@
 import { AdelanteEHR, type Appointment, type ServiceType } from "./ehr";
 import { AdelanteEHRExt } from "./ehr-ext";
 import { isLateCancelWindow } from "./lateCancel";
+import { facilityDateKey } from "./facilityTime";
+import { siteClosedDay, siteForLocation, primarySiteFor, siteTimezone, staffTimeOffOn } from "./workingCalendar";
 
 export type ConstraintReasonCode =
   | "clinician_inactive"
@@ -102,11 +104,13 @@ export const SchedulingConstraints = {
     if (blocksForDay.length && !blocksForDay.some((b) => inWindow(startAt, input.durationMin, b.start, b.end))) {
       warnings.push({ code: "outside_availability_window", message: "Outside clinician's standard hours.", severity: "warn" });
     }
-    const dayKey = startAt.toISOString().slice(0, 10);
-    const off = AdelanteEHRExt.availabilityExceptionsForClinician(input.clinicianId).find(
-      (e) => e.date === dayKey && e.kind === "off",
-    );
-    if (off) blocks.push({ code: "availability_exception_off", message: off.note || "Clinician is off that day.", severity: "block" });
+    // §Calendars L5 — site closed day and time off through the one working-day service.
+    const siteId = siteForLocation(input.locationId) ?? primarySiteFor(input.clinicianId);
+    const dayKey = isNaN(+startAt) ? "" : facilityDateKey(startAt, siteTimezone(siteId));
+    const closed = dayKey ? siteClosedDay(siteId, dayKey) : undefined;
+    if (closed) blocks.push({ code: "availability_exception_off", message: `Clinic closed — ${closed.name}.`, severity: "block" });
+    // Never the time-off type here (other staff see only "Out").
+    if (dayKey && staffTimeOffOn(input.clinicianId, dayKey)) blocks.push({ code: "availability_exception_off", message: "Clinician is out that day.", severity: "block" });
 
     // Payer enrollment — reads the one coverage model (§Phase 3b).
     if (input.patientId) {

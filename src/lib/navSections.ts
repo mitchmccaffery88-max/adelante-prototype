@@ -1,5 +1,6 @@
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
 import { canUseEscalations } from "./escalations";
+import { canManageStaffCalendars, canReadSiteCalendar } from "./workingCalendar";
 import { canMessageStaff } from "./staffThreads";
 import { canViewCountyReporting } from "@/lib/countyReporting";
 import { canViewCoordination } from "@/lib/coordinationRoles";
@@ -127,6 +128,10 @@ export type NavGate =
   | { kind: "escalations" }
   /** §U2 — staff-to-staff team messaging; see canMessageStaff. */
   | { kind: "staff_messaging" }
+  /** §Calendars — location calendars (sys_admin edits, coordinator reads); see canReadSiteCalendar. */
+  | { kind: "site_calendar" }
+  /** §Calendars — team calendar (coordinator / sys_admin); see canManageStaffCalendars. */
+  | { kind: "team_calendar" }
   /** §Item 6 — Clinical Coordination desk; see canActOnCoordination. */
   | { kind: "coordination_desk" }
   /** §Item 7 — weekly caseload review; see canOpenCaseloadReview. */
@@ -730,13 +735,31 @@ export const STAFF_NAV: NavEntry[] = [
     gate: { kind: "open" },
   },
   {
-    id: "clinician-availability",
-    label: "My availability",
-    desc: "Weekly hours & time off",
+    id: "my-calendar",
+    label: "My calendar",
+    desc: "Working hours & time off",
     icon: CalendarClock,
-    to: "/clinician-availability",
+    to: "/my-calendar",
     group: "account",
     gate: { kind: "open" },
+  },
+  {
+    id: "team-calendar",
+    label: "Team calendar",
+    desc: "Who's out this week, by site",
+    icon: CalendarClock,
+    to: "/team-calendar",
+    group: "administration",
+    gate: { kind: "team_calendar" },
+  },
+  {
+    id: "location-calendars",
+    label: "Location calendars",
+    desc: "Clinic hours, holidays & closures",
+    icon: CalendarClock,
+    to: "/location-calendars",
+    group: "administration",
+    gate: { kind: "site_calendar" },
   },
   {
     id: "clinician-credentials",
@@ -759,6 +782,8 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
   if (entry.gate.kind === "escalations") return canUseEscalations(role);
   if (entry.gate.kind === "staff_messaging") return canMessageStaff(role);
+  if (entry.gate.kind === "site_calendar") return canReadSiteCalendar(role);
+  if (entry.gate.kind === "team_calendar") return canManageStaffCalendars(role);
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
