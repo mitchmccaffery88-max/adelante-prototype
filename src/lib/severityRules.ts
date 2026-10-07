@@ -22,7 +22,14 @@ export const SEVERITY_RULES = {
   /** C-SSRS key and the risk levels that flag when moved INTO from a lower level. */
   cssrsKey: "c-ssrs-screener",
   cssrsFlagLevels: ["moderate", "high"] as const,
+  /** Results dated within this many days create a task + notification; older ones update history only. */
+  actionWindowDays: 30,
 } as const;
+
+/** Staff notification text — Part 2-neutral, no instrument, no scores. */
+export const SEVERITY_NOTIFY_SUBJECT = "Score change to review — open chart";
+export const SEVERITY_FYI_SUBJECT = "FYI: score change for a patient you prescribe for — open chart";
+export const SEVERITY_HISTORICAL_LABEL = "Historical change — no action created";
 
 export type SeverityReason = "rise" | "band" | "item9" | "cssrs";
 export interface SeverityFlag {
@@ -42,6 +49,8 @@ export interface SeverityFlag {
   createdAt: string;
   reviewedAt?: string;
   reviewedBy?: string;
+  /** Result older than the action window: trend/history only, never a task or notification. */
+  historical?: boolean;
 }
 
 const RISK_ORDER = ["none", "low", "moderate", "high"];

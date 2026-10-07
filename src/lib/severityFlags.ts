@@ -7,7 +7,7 @@ import { AdelanteEHR, type Patient } from "./ehr";
 import { canAccess, type StaffRole } from "./roles";
 import type { SeverityFlag } from "./severityRules";
 
-export { SEVERITY_DRAFT_LABEL, SEVERITY_RULES } from "./severityRules";
+export { SEVERITY_DRAFT_LABEL, SEVERITY_RULES, SEVERITY_HISTORICAL_LABEL } from "./severityRules";
 export const SEVERITY_ROW_LABEL = "Severity change";
 
 export const seesSeverity = (role: StaffRole, p: Patient) => canAccess(role, "screeners_mh", p).level !== "none";
@@ -19,7 +19,7 @@ export function listSeverityFlags(p: Patient, role: StaffRole): SeverityFlag[] {
 }
 /** Open (unreviewed) flags — the ones that create a Needs my action row. */
 export function openSeverityFlags(p: Patient, role: StaffRole): SeverityFlag[] {
-  return listSeverityFlags(p, role).filter((f) => f.kind === "flag" && !f.reviewedAt);
+  return listSeverityFlags(p, role).filter((f) => f.kind === "flag" && !f.reviewedAt && !f.historical);
 }
 /** The clinician a flag routes to: primary clinician, else prescriber. */
 export function severityAssignee(p: Patient): string | undefined {
@@ -38,7 +38,7 @@ export function reviewSeverityFlag(patientId: string, flagId: string, actor: { n
   if (!p) throw new Error("Patient not found.");
   if (!canReviewSeverity(actor.role, p)) throw new Error("Your role can't review score changes.");
   const f = (p.severityFlags ?? []).find((x) => x.id === flagId);
-  if (!f || f.kind !== "flag") throw new Error("Flag not found.");
+  if (!f || f.kind !== "flag" || f.historical) throw new Error("Flag not found.");
   if (f.reviewedAt) throw new Error("Already reviewed.");
   f.reviewedAt = new Date().toISOString();
   f.reviewedBy = actor.name;

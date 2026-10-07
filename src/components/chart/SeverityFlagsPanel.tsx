@@ -4,7 +4,7 @@ import { toast } from "sonner";
 import { actFor } from "@/lib/actions/act";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { useActingStaff } from "@/lib/roles";
-import { canReviewSeverity, listSeverityFlags, SEVERITY_DRAFT_LABEL, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
+import { canReviewSeverity, listSeverityFlags, SEVERITY_DRAFT_LABEL, SEVERITY_HISTORICAL_LABEL, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 
@@ -12,16 +12,16 @@ export function SeverityFlagsPanel({ patientId }: { patientId: string }) {
   const a = useActingStaff();
   const p = useEhr(() => AdelanteEHR.getPatient(patientId));
   if (!p) return null;
-  const flags = listSeverityFlags(p, a.role).filter((f) => (f.kind === "flag" && !f.reviewedAt) || (f.kind === "improving" && Date.now() - +new Date(f.resultAt) <= 30 * 86400000)).slice(0, 4);
+  const flags = listSeverityFlags(p, a.role).filter((f) => f.historical || (f.kind === "flag" && !f.reviewedAt) || (f.kind === "improving" && Date.now() - +new Date(f.resultAt) <= 30 * 86400000)).slice(0, 4);
   if (!flags.length) return null;
   const can = canReviewSeverity(a.role, p);
   return (
     <div className="mb-3 space-y-2 rounded-md border p-3 text-sm" data-testid="severity-flags">
       {flags.map((f) => (
         <div key={f.id} className="flex flex-wrap items-center gap-2" data-testid={`severity-flag-${f.kind}`}>
-          <Badge variant={f.kind === "flag" ? "destructive" : "secondary"} className="text-[10px]">{f.kind === "flag" ? SEVERITY_ROW_LABEL : "Improving"}</Badge>
-          <span className="min-w-0 flex-1">{f.text}</span>
-          {f.kind === "flag" && can && (
+          <Badge variant={f.kind === "flag" && !f.historical ? "destructive" : "secondary"} className="text-[10px]">{f.historical ? (f.kind === "flag" ? "Worsening" : "Improving") : f.kind === "flag" ? SEVERITY_ROW_LABEL : "Improving"}</Badge>
+          <span className="min-w-0 flex-1">{f.text}{f.historical && <span className="ml-1 text-xs text-muted-foreground" data-testid="severity-historical">· {SEVERITY_HISTORICAL_LABEL}</span>}</span>
+          {f.kind === "flag" && !f.historical && can && (
             <Button size="sm" variant="outline" onClick={() => { try { actFor("severity_flag_review", "reviewSeverityFlag", patientId, patientId, f.id, { name: a.staffName, role: a.role, staffId: a.staffId }); toast.success("Marked reviewed"); } catch (e) { toast.error((e as Error).message); } }}>
               Mark reviewed
             </Button>
