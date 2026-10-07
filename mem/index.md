@@ -6,6 +6,7 @@ Never fork the sign-up form: `SignupFlow.tsx` is shared by public and staff-oper
 Staff surfaces are gated by the `roles.ts` record-class matrix and registered in `navSections.ts` — no hidden URLs, no second permission list.
 
 ## Memories
+- [Working calendars](mem://features/working-calendars) — holiday list, working-day note clock, author-out, reschedule-needed, time-off privacy
 - [Advocate access](mem://features/advocate-access)
 - [ASCMI consent](mem://features/ascmi-consent)
 - [Group sessions](mem://features/group-sessions)

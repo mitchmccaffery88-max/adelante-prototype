@@ -131,6 +131,7 @@ function CountyReportingPage() {
           <Card key={c.report} className="space-y-2 p-3" data-testid={`county-card-${c.report}`}>
             <div className="text-sm font-medium text-navy">{c.label}</div>
             <div className="text-xs text-muted-foreground">Next due: {c.due ?? "On request"}</div>
+            {c.dueOnClosedDay && <div className="text-xs text-destructive" data-testid="due-closed-day-warning">Due date falls on a clinic closed day ({c.dueOnClosedDay})</div>}
             <Badge variant={c.status === "errors_returned" || c.status === "blockers" ? "destructive" : "outline"} data-testid="card-status">{CARD_STATUS_LABEL[c.status]}</Badge>
             <div className="text-xs">Blockers: {c.blockers}</div>
             <div className="text-xs font-medium" data-testid="card-next">{c.nextAction}</div>

@@ -21,8 +21,8 @@ describe("C3 business-day math", () => {
   });
   it("labels due in N / due today / overdue", () => {
     const n = { date: local(2026, 10, 1).toISOString() };
-    expect(noteClock(n, local(2026, 10, 2)).label).toBe("Due in 2 business days");
-    expect(noteClock(n, local(2026, 10, 5)).label).toBe("Due in 1 business day");
+    expect(noteClock(n, local(2026, 10, 2)).label).toBe("Due in 2 working days");
+    expect(noteClock(n, local(2026, 10, 5)).label).toBe("Due in 1 working day");
     expect(noteClock(n, local(2026, 10, 6, 15)).label).toBe("Due today");
     expect(noteClock(n, local(2026, 10, 7)).state).toBe("overdue");
     expect(noteClock(n, local(2026, 10, 2)).draftLabel).toMatch(/Draft — pending clinical sign-off/);

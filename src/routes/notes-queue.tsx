@@ -29,7 +29,7 @@ import { SignBlockerList } from "@/components/signature/SignBlockerList";
 import { canAccess, useActingStaff, type StaffRole } from "@/lib/roles";
 import { ClientDate } from "@/components/ClientDate";
 import { Lock } from "lucide-react";
-import { noteClock, noteClockTone, NOTE_CLOCK_HOLIDAY_TOOLTIP, NOTE_CLOCK_DRAFT_LABEL } from "@/lib/noteClock";
+import { noteOnTimeRate, noteClock, noteClockTone, NOTE_CLOCK_HOLIDAY_TOOLTIP, NOTE_CLOCK_DRAFT_LABEL } from "@/lib/noteClock";
 
 
 export const Route = createFileRoute("/notes-queue")({
@@ -44,9 +44,10 @@ export const Route = createFileRoute("/notes-queue")({
 
 /** §Batch C3 — signing clock badge (Draft — pending clinical sign-off). */
 function ClockBadge({ row }: { row: UnsignedWorkRow }) {
-  const c = noteClock(row.note ?? { date: row.date });
+  const c = noteClock(row.note ?? { date: row.date, clinicianId: row.authorId });
+  void NOTE_CLOCK_HOLIDAY_TOOLTIP;
   return (
-    <Badge className={noteClockTone(c)} title={`${NOTE_CLOCK_DRAFT_LABEL}. ${c.kind === "crisis" ? "Crisis notes: 1 calendar day." : `3 business days. ${NOTE_CLOCK_HOLIDAY_TOOLTIP}`}`} data-testid={c.kind === "crisis" ? "crisis-note-badge" : "note-clock-badge"}>
+    <Badge className={noteClockTone(c)} title={`${c.tooltip} · ${NOTE_CLOCK_DRAFT_LABEL}`} data-testid={c.kind === "crisis" ? "crisis-note-badge" : "note-clock-badge"}>
       {c.kind === "crisis" ? `Crisis · ${c.label}` : c.label}
     </Badge>
   );
@@ -117,6 +118,7 @@ function NotesQueuePage() {
   const access = canAccess(actor.role, "therapy_notes");
   const rows = useEhr(() => listUnsignedWork());
   const clinicians = useEhr(() => AdelanteEHR.listClinicians());
+  const onTime = useEhr(() => noteOnTimeRate(AdelanteEHR.listPatients()));
   const [signingId, setSigningId] = useState<string | null>(null);
   const signingRow = rows.find((r) => r.id === signingId);
 
@@ -136,6 +138,7 @@ function NotesQueuePage() {
       <header className="flex items-center justify-between">
         <div>
           <h1 className="font-display text-2xl text-navy">Unsigned notes</h1>
+          <p className="text-xs text-muted-foreground" data-testid="on-time-rate">Quality · signed on time: {onTime.rate === null ? `hidden until ${onTime.minimumCohortSize} signed notes` : `${onTime.rate}% of ${onTime.signed}`} (working-day deadlines, {NOTE_CLOCK_DRAFT_LABEL})</p>
           <p className="text-sm text-muted-foreground">
             Everyone&apos;s unfinished documentation. Signing releases the claim. Your own work is
             also in your inbox.

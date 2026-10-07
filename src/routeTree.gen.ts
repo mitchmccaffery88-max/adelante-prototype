@@ -60,8 +60,10 @@ import { Route as HomeRouteImport } from './routes/home'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
 import { Route as LibraryRouteImport } from './routes/library'
+import { Route as LocationCalendarsRouteImport } from './routes/location-calendars'
 import { Route as MedicationsRouteImport } from './routes/medications'
 import { Route as MessageQueueRouteImport } from './routes/message-queue'
+import { Route as MyCalendarRouteImport } from './routes/my-calendar'
 import { Route as MyWorkRouteImport } from './routes/my-work'
 import { Route as NaloxoneRouteImport } from './routes/naloxone'
 import { Route as NextStepsRouteImport } from './routes/next-steps'
@@ -86,6 +88,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as TeamCalendarRouteImport } from './routes/team-calendar'
 import { Route as TeamMessagesRouteImport } from './routes/team-messages'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as WeeklyRecapRouteImport } from './routes/weekly-recap'
@@ -377,6 +380,11 @@ const LibraryRoute = LibraryRouteImport.update({
   path: '/library',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LocationCalendarsRoute = LocationCalendarsRouteImport.update({
+  id: '/location-calendars',
+  path: '/location-calendars',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MedicationsRoute = MedicationsRouteImport.update({
   id: '/medications',
   path: '/medications',
@@ -385,6 +393,11 @@ const MedicationsRoute = MedicationsRouteImport.update({
 const MessageQueueRoute = MessageQueueRouteImport.update({
   id: '/message-queue',
   path: '/message-queue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MyCalendarRoute = MyCalendarRouteImport.update({
+  id: '/my-calendar',
+  path: '/my-calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MyWorkRoute = MyWorkRouteImport.update({
@@ -505,6 +518,11 @@ const SlipRoute = SlipRouteImport.update({
 const StartRoute = StartRouteImport.update({
   id: '/start',
   path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamCalendarRoute = TeamCalendarRouteImport.update({
+  id: '/team-calendar',
+  path: '/team-calendar',
   getParentRoute: () => rootRouteImport,
 } as any)
 const TeamMessagesRoute = TeamMessagesRouteImport.update({
@@ -741,8 +759,10 @@ export interface FileRoutesByFullPath {
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-calendar': typeof MyCalendarRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
@@ -767,6 +787,7 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
@@ -854,8 +875,10 @@ export interface FileRoutesByTo {
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-calendar': typeof MyCalendarRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
@@ -878,6 +901,7 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
+  '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
@@ -966,8 +990,10 @@ export interface FileRoutesById {
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
   '/library': typeof LibraryRoute
+  '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
   '/message-queue': typeof MessageQueueRoute
+  '/my-calendar': typeof MyCalendarRoute
   '/my-work': typeof MyWorkRoute
   '/naloxone': typeof NaloxoneRoute
   '/next-steps': typeof NextStepsRoute
@@ -992,6 +1018,7 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team-calendar': typeof TeamCalendarRoute
   '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
@@ -1082,8 +1109,10 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/location-calendars'
     | '/medications'
     | '/message-queue'
+    | '/my-calendar'
     | '/my-work'
     | '/naloxone'
     | '/next-steps'
@@ -1108,6 +1137,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
@@ -1195,8 +1225,10 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/location-calendars'
     | '/medications'
     | '/message-queue'
+    | '/my-calendar'
     | '/my-work'
     | '/naloxone'
     | '/next-steps'
@@ -1219,6 +1251,7 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/shift-count'
     | '/slip'
+    | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
@@ -1306,8 +1339,10 @@ export interface FileRouteTypes {
     | '/inbox'
     | '/intake'
     | '/library'
+    | '/location-calendars'
     | '/medications'
     | '/message-queue'
+    | '/my-calendar'
     | '/my-work'
     | '/naloxone'
     | '/next-steps'
@@ -1332,6 +1367,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team-calendar'
     | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
@@ -1421,8 +1457,10 @@ export interface RootRouteChildren {
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
   LibraryRoute: typeof LibraryRoute
+  LocationCalendarsRoute: typeof LocationCalendarsRoute
   MedicationsRoute: typeof MedicationsRoute
   MessageQueueRoute: typeof MessageQueueRoute
+  MyCalendarRoute: typeof MyCalendarRoute
   MyWorkRoute: typeof MyWorkRoute
   NaloxoneRoute: typeof NaloxoneRoute
   NextStepsRoute: typeof NextStepsRoute
@@ -1447,6 +1485,7 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
+  TeamCalendarRoute: typeof TeamCalendarRoute
   TeamMessagesRoute: typeof TeamMessagesRoute
   ToolkitRoute: typeof ToolkitRoute
   WeeklyRecapRoute: typeof WeeklyRecapRoute
@@ -1821,6 +1860,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LibraryRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/location-calendars': {
+      id: '/location-calendars'
+      path: '/location-calendars'
+      fullPath: '/location-calendars'
+      preLoaderRoute: typeof LocationCalendarsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/medications': {
       id: '/medications'
       path: '/medications'
@@ -1833,6 +1879,13 @@ declare module '@tanstack/react-router' {
       path: '/message-queue'
       fullPath: '/message-queue'
       preLoaderRoute: typeof MessageQueueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/my-calendar': {
+      id: '/my-calendar'
+      path: '/my-calendar'
+      fullPath: '/my-calendar'
+      preLoaderRoute: typeof MyCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/my-work': {
@@ -2001,6 +2054,13 @@ declare module '@tanstack/react-router' {
       path: '/start'
       fullPath: '/start'
       preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team-calendar': {
+      id: '/team-calendar'
+      path: '/team-calendar'
+      fullPath: '/team-calendar'
+      preLoaderRoute: typeof TeamCalendarRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/team-messages': {
@@ -2384,8 +2444,10 @@ const rootRouteChildren: RootRouteChildren = {
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
   LibraryRoute: LibraryRoute,
+  LocationCalendarsRoute: LocationCalendarsRoute,
   MedicationsRoute: MedicationsRoute,
   MessageQueueRoute: MessageQueueRoute,
+  MyCalendarRoute: MyCalendarRoute,
   MyWorkRoute: MyWorkRoute,
   NaloxoneRoute: NaloxoneRoute,
   NextStepsRoute: NextStepsRoute,
@@ -2410,6 +2472,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
+  TeamCalendarRoute: TeamCalendarRoute,
   TeamMessagesRoute: TeamMessagesRoute,
   ToolkitRoute: ToolkitRoute,
   WeeklyRecapRoute: WeeklyRecapRoute,

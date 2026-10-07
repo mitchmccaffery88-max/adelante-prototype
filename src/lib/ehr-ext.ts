@@ -136,16 +136,32 @@ export interface AvailabilityBlock {
   end: string; // HH:MM
   modality: AppointmentModality;
   locationId?: string;
+  /**
+   * §Calendars L2 — the provider-reference Site these hours belong to. For
+   * telehealth hours this is the site they bill under. Absent = resolved from
+   * `locationId` (workingCalendar.siteForLocation) or the org's first site.
+   */
+  siteId?: string;
   careTypes: ServiceType[];
 }
+/** §Calendars L2 — time-off types. Private: other staff only ever see "Out". */
+export type TimeOffType = "vacation" | "sick" | "training";
 export interface AvailabilityException {
   id: string;
+  /** Calendar owner: the clinician id, or the staff id for staff without one. */
   clinicianId: string;
-  date: string; // YYYY-MM-DD
+  date: string; // YYYY-MM-DD (first day)
+  /** §Calendars L2 — last day of a time-off range (inclusive). Absent = one day. */
+  endDate?: string;
   kind: "off" | "added";
+  /** §Calendars L2 — only on kind "off". */
+  timeOffType?: TimeOffType;
   start?: string;
   end?: string;
   note?: string;
+  /** §Calendars L3 — when it was entered / withdrawn (signed history reads the calendar as of its own time). */
+  addedAt?: string;
+  removedAt?: string;
 }
 
 export type AppointmentStateExt =
@@ -709,7 +725,9 @@ export const AdelanteEHRExt = {
 
 
   availabilityBlocksForClinician: (id: string) => availabilityBlocks.filter((b) => b.clinicianId === id),
-  availabilityExceptionsForClinician: (id: string) => availabilityExceptions.filter((e) => e.clinicianId === id),
+  availabilityExceptionsForClinician: (id: string) => availabilityExceptions.filter((e) => e.clinicianId === id && !e.removedAt),
+  /** §Calendars L3 — including withdrawn rows, for "as of" reads of signed history. */
+  allAvailabilityExceptionsForClinician: (id: string) => availabilityExceptions.filter((e) => e.clinicianId === id),
 
   apptStateHistoryFor: (apptId: string) => apptStateHistory.filter((h) => h.apptId === apptId),
   currentApptState(apptId: string): AppointmentStateExt {
@@ -904,8 +922,17 @@ export const AdelanteEHRExt = {
     }
   },
   addAvailabilityException(input: Omit<AvailabilityException, "id">) {
-    availabilityExceptions.push({ ...input, id: uid() });
+    const row = { addedAt: new Date().toISOString(), ...input, id: uid() };
+    availabilityExceptions.push(row);
     ehrBus.publish({ type: "availability.updated", clinicianId: input.clinicianId });
+    return row;
+  },
+  /** §Calendars — soft-withdraw (kept for "as of" history). */
+  removeAvailabilityException(id: string) {
+    const e = availabilityExceptions.find((x) => x.id === id);
+    if (!e || e.removedAt) return;
+    e.removedAt = new Date().toISOString();
+    ehrBus.publish({ type: "availability.updated", clinicianId: e.clinicianId });
   },
 
   transitionAppointment(apptId: string, next: AppointmentStateExt, actor?: string, reason?: string) {

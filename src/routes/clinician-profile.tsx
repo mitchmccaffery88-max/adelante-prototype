@@ -131,7 +131,7 @@ function ClinicianProfilePage() {
 
       <p className="text-xs text-muted-foreground">
         Need to update availability or upload credentials? See{" "}
-        <Link className="underline" to="/clinician-availability">Availability</Link> ·{" "}
+        <Link className="underline" to="/my-calendar">My calendar</Link> ·{" "}
         <Link className="underline" to="/clinician-credentials">Credentials</Link>.
       </p>
     </div>

@@ -1,3 +1,4 @@
+import { defaultSiteId, siteClosedDay } from "./workingCalendar";
 // §Batch D — County reporting hub for Premier (Tulare DMC-ODS).
 //
 // PROTOTYPE — NOT SUBMITTED ANYWHERE. Every county response is Simulated.
@@ -688,6 +689,8 @@ export interface ReportCard {
   blockers: number;
   nextAction: string;
   latest?: Submission;
+  /** §Calendars L6 — the due date lands on a clinic closed day (due dates stay calendar days). */
+  dueOnClosedDay?: string;
 }
 export function reportCards(role: StaffRole, now = new Date()): ReportCard[] {
   return (Object.keys(REPORT_LABEL) as CountyReportId[]).map((report) => {
@@ -706,7 +709,9 @@ export function reportCards(role: StaffRole, now = new Date()): ReportCard[] {
               : clientOnly && !seesClientLevel(role) ? "The billing coordinator (SUD reporting access) generates this file"
                 : report === "tps" && !tpsWindow() ? "Set the survey window (admin)"
                   : "Generate the draft";
-    return { report, label: REPORT_LABEL[report], due: due ? due.toISOString().slice(0, 10) : null, status, blockers, nextAction, latest };
+    const dueKey = due ? due.toISOString().slice(0, 10) : null;
+    const closed = dueKey ? siteClosedDay(defaultSiteId(), dueKey) : undefined;
+    return { report, label: REPORT_LABEL[report], due: dueKey, status, blockers, nextAction, latest, ...(closed ? { dueOnClosedDay: closed.name } : {}) };
   });
 }
 export interface CountyReminder {

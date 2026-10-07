@@ -5,19 +5,20 @@ import { hieFollowUps } from "@/lib/hie";
 import { isInFacilityTask, inFacilityEnabled } from "@/lib/inFacility";
 import { myCaseload, myContactsDue, myPendingLabs, myPendingRefills, myPlanReviewsDue, screenerDueRows, staffAliases, type ActingIdentity } from "@/lib/myWork";
 import { listUnsignedWork } from "@/lib/unsignedWork";
-import { isCrisisNote, noteClock, overdueCrisisNotes } from "@/lib/noteClock";
+import { authorOutItems, AUTHOR_OUT_LABEL, isCrisisNote, noteClock, overdueCrisisNotes } from "@/lib/noteClock";
 import { crisisSlaState, crisisSlaTarget, overdueByLabel } from "@/lib/crisisPolicy";
 import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
 import { openSeverityFlags, severityAssignee, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
 import { myOpenEscalations } from "@/lib/escalations";
+import { listRescheduleItems } from "@/lib/workingCalendar";
 import { listThreadsFor, openMentionsFor } from "@/lib/staffThreads";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -167,6 +168,16 @@ export function workspaceActionRows(input: {
   for (const e of myOpenEscalations({ role: actor.role, staffId: actor.staffId }, +now)) {
     if (listed.has(e.sourceId)) continue;
     rows.push({ id: `escalation:${e.key}`, kind: "escalation", patientId: e.patientId, patientName: e.patientName, label: `${e.typeLabel} — escalation`, dueAt: e.dueAt, due: e.countdown, group: "now", action: "Open escalations", sourceId: e.key });
+  }
+  // §Calendars L4/L5 — coordinator items: authors out with notes waiting, and
+  // booked visits hit by a new closed day / time off. Neutral text, no type.
+  if (isCoordinatorRole(actor.role)) {
+    for (const a of authorOutItems(patients, now))
+      rows.push({ id: `author_out:${a.authorId}`, kind: "author_out", patientId: "", patientName: a.authorName, label: `${AUTHOR_OUT_LABEL} (${a.openNotes}) · out ${a.outFrom}${a.outTo !== a.outFrom ? ` – ${a.outTo}` : ""}`, dueAt: now.toISOString(), due: "Reassign or arrange a cosigner", group: "today", action: "Open team calendar", sourceId: a.authorId });
+    for (const r of listRescheduleItems("open")) {
+      const p = patients.find((x) => x.id === r.patientId);
+      rows.push({ id: `reschedule:${r.id}`, kind: "reschedule", patientId: r.patientId, patientName: p ? `${p.firstName} ${p.lastName}` : "Patient", label: `Reschedule needed — ${r.cause === "site_closed" ? "clinic closed" : "clinician out"}`, dueAt: r.start, due: new Date(r.start).toLocaleDateString("en-US", { month: "short", day: "numeric" }), group: "today", action: "Mark handled", sourceId: r.id });
+    }
   }
   // §U2 — @mentions in team threads: "Reply needed" until replied or marked done.
   const myThreads = listThreadsFor({ staffId: actor.staffId, role: actor.role });
