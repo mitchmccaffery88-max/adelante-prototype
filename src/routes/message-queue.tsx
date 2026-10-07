@@ -13,7 +13,7 @@ import { Card } from "@/components/ui/card";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
 import { isMessageBodyMasked, MASKED_MESSAGE_BODY } from "@/lib/careMessageMasking";
-import { MessagesTabs } from "./team-messages";
+import { MessagesTabs } from "@/components/team/MessagesTabs";
 import { ArrowLeft, Lock, MessageSquare, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/message-queue")({
@@ -50,6 +50,7 @@ function MessageQueuePage() {
         </Link>
       </Button>
       <header>
+        <MessagesTabs active="patients" />
         <h1 className="flex items-center gap-2 font-display text-2xl text-navy">
           <MessageSquare className="h-5 w-5 text-teal" /> Message queue
         </h1>
