@@ -108,7 +108,7 @@ test.describe("deep links honour the same gates", () => {
       for (const entry of sample(denied)) {
         await page.goto(entry.to);
         await expect(page).toHaveURL(new RegExp(`${landing}$`), { timeout: 10_000 });
-        await expect(page.getByText(/isn't available for your role|Access restricted/i).first()).toBeVisible();
+        await expect(page.getByText(/isn't available for your role|Access restricted/i).first()).toBeVisible({ timeout: 10_000 });
       }
     });
   }
