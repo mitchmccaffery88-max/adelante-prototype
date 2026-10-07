@@ -13,6 +13,7 @@ import { Card } from "@/components/ui/card";
 import { ClientDate } from "@/components/ClientDate";
 import { EmptyState } from "@/components/EmptyState";
 import { isMessageBodyMasked, MASKED_MESSAGE_BODY } from "@/lib/careMessageMasking";
+import { MessagesTabs } from "./team-messages";
 import { ArrowLeft, Lock, MessageSquare, ShieldAlert } from "lucide-react";
 
 export const Route = createFileRoute("/message-queue")({

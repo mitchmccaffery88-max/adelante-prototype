@@ -53,6 +53,7 @@ import { Route as DisclosureLogRouteImport } from './routes/disclosure-log'
 import { Route as DmcOdsReadinessRouteImport } from './routes/dmc-ods-readiness'
 import { Route as DocumentsRouteImport } from './routes/documents'
 import { Route as EligibilityWorklistRouteImport } from './routes/eligibility-worklist'
+import { Route as EscalationsRouteImport } from './routes/escalations'
 import { Route as GroupAuditRouteImport } from './routes/group-audit'
 import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
@@ -85,6 +86,7 @@ import { Route as ScheduleRouteImport } from './routes/schedule'
 import { Route as ShiftCountRouteImport } from './routes/shift-count'
 import { Route as SlipRouteImport } from './routes/slip'
 import { Route as StartRouteImport } from './routes/start'
+import { Route as TeamMessagesRouteImport } from './routes/team-messages'
 import { Route as ToolkitRouteImport } from './routes/toolkit'
 import { Route as WeeklyRecapRouteImport } from './routes/weekly-recap'
 import { Route as WorklistRouteImport } from './routes/worklist'
@@ -340,6 +342,11 @@ const EligibilityWorklistRoute = EligibilityWorklistRouteImport.update({
   path: '/eligibility-worklist',
   getParentRoute: () => rootRouteImport,
 } as any)
+const EscalationsRoute = EscalationsRouteImport.update({
+  id: '/escalations',
+  path: '/escalations',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GroupAuditRoute = GroupAuditRouteImport.update({
   id: '/group-audit',
   path: '/group-audit',
@@ -498,6 +505,11 @@ const SlipRoute = SlipRouteImport.update({
 const StartRoute = StartRouteImport.update({
   id: '/start',
   path: '/start',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const TeamMessagesRoute = TeamMessagesRouteImport.update({
+  id: '/team-messages',
+  path: '/team-messages',
   getParentRoute: () => rootRouteImport,
 } as any)
 const ToolkitRoute = ToolkitRouteImport.update({
@@ -722,6 +734,7 @@ export interface FileRoutesByFullPath {
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
+  '/escalations': typeof EscalationsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -754,6 +767,7 @@ export interface FileRoutesByFullPath {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
@@ -833,6 +847,7 @@ export interface FileRoutesByTo {
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
+  '/escalations': typeof EscalationsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -863,6 +878,7 @@ export interface FileRoutesByTo {
   '/schedule': typeof ScheduleRoute
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
+  '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
@@ -943,6 +959,7 @@ export interface FileRoutesById {
   '/dmc-ods-readiness': typeof DmcOdsReadinessRoute
   '/documents': typeof DocumentsRoute
   '/eligibility-worklist': typeof EligibilityWorklistRoute
+  '/escalations': typeof EscalationsRoute
   '/group-audit': typeof GroupAuditRoute
   '/group-sessions': typeof GroupSessionsRoute
   '/home': typeof HomeRoute
@@ -975,6 +992,7 @@ export interface FileRoutesById {
   '/shift-count': typeof ShiftCountRoute
   '/slip': typeof SlipRoute
   '/start': typeof StartRouteWithChildren
+  '/team-messages': typeof TeamMessagesRoute
   '/toolkit': typeof ToolkitRoute
   '/weekly-recap': typeof WeeklyRecapRoute
   '/worklist': typeof WorklistRoute
@@ -1057,6 +1075,7 @@ export interface FileRouteTypes {
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
+    | '/escalations'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -1089,6 +1108,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
@@ -1168,6 +1188,7 @@ export interface FileRouteTypes {
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
+    | '/escalations'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -1198,6 +1219,7 @@ export interface FileRouteTypes {
     | '/schedule'
     | '/shift-count'
     | '/slip'
+    | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
@@ -1277,6 +1299,7 @@ export interface FileRouteTypes {
     | '/dmc-ods-readiness'
     | '/documents'
     | '/eligibility-worklist'
+    | '/escalations'
     | '/group-audit'
     | '/group-sessions'
     | '/home'
@@ -1309,6 +1332,7 @@ export interface FileRouteTypes {
     | '/shift-count'
     | '/slip'
     | '/start'
+    | '/team-messages'
     | '/toolkit'
     | '/weekly-recap'
     | '/worklist'
@@ -1390,6 +1414,7 @@ export interface RootRouteChildren {
   DmcOdsReadinessRoute: typeof DmcOdsReadinessRoute
   DocumentsRoute: typeof DocumentsRoute
   EligibilityWorklistRoute: typeof EligibilityWorklistRoute
+  EscalationsRoute: typeof EscalationsRoute
   GroupAuditRoute: typeof GroupAuditRoute
   GroupSessionsRoute: typeof GroupSessionsRoute
   HomeRoute: typeof HomeRoute
@@ -1422,6 +1447,7 @@ export interface RootRouteChildren {
   ShiftCountRoute: typeof ShiftCountRoute
   SlipRoute: typeof SlipRoute
   StartRoute: typeof StartRouteWithChildren
+  TeamMessagesRoute: typeof TeamMessagesRoute
   ToolkitRoute: typeof ToolkitRoute
   WeeklyRecapRoute: typeof WeeklyRecapRoute
   WorklistRoute: typeof WorklistRoute
@@ -1746,6 +1772,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof EligibilityWorklistRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/escalations': {
+      id: '/escalations'
+      path: '/escalations'
+      fullPath: '/escalations'
+      preLoaderRoute: typeof EscalationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/group-audit': {
       id: '/group-audit'
       path: '/group-audit'
@@ -1968,6 +2001,13 @@ declare module '@tanstack/react-router' {
       path: '/start'
       fullPath: '/start'
       preLoaderRoute: typeof StartRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/team-messages': {
+      id: '/team-messages'
+      path: '/team-messages'
+      fullPath: '/team-messages'
+      preLoaderRoute: typeof TeamMessagesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/toolkit': {
@@ -2337,6 +2377,7 @@ const rootRouteChildren: RootRouteChildren = {
   DmcOdsReadinessRoute: DmcOdsReadinessRoute,
   DocumentsRoute: DocumentsRoute,
   EligibilityWorklistRoute: EligibilityWorklistRoute,
+  EscalationsRoute: EscalationsRoute,
   GroupAuditRoute: GroupAuditRoute,
   GroupSessionsRoute: GroupSessionsRoute,
   HomeRoute: HomeRoute,
@@ -2369,6 +2410,7 @@ const rootRouteChildren: RootRouteChildren = {
   ShiftCountRoute: ShiftCountRoute,
   SlipRoute: SlipRoute,
   StartRoute: StartRouteWithChildren,
+  TeamMessagesRoute: TeamMessagesRoute,
   ToolkitRoute: ToolkitRoute,
   WeeklyRecapRoute: WeeklyRecapRoute,
   WorklistRoute: WorklistRoute,
