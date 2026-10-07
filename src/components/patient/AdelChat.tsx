@@ -4,11 +4,9 @@
 // (detectCrisisLanguage / scanTextForCrisis). There is deliberately no second
 // regex here. A tripped message never reaches the LLM.
 //
-// LOGGING / RETENTION — OPEN, FLAGGED, NOT DECIDED HERE:
-// this conversation is held in memory for the session only. It is NOT written
-// to the record, because whether an assistant transcript is Part 2-covered
-// treatment information (and who may read it) is a consent/policy decision for
-// Christi / Dr. Bagga, not a code decision. Do not add persistence until then.
+// PERSISTENCE: turns are saved per patient in `src/lib/adelHistory.ts` (the
+// patient's own store — no staff read path; 90-day Draft retention). The crisis
+// check still runs first, unchanged, before anything is saved or sent.
 import { useEffect, useRef, useState } from "react";
 import { Link } from "@tanstack/react-router";
 import { BookOpen, Compass, LifeBuoy, Loader2, MapPin, MessageCircle, MessageSquare, Phone, Send, ShieldAlert, UserRound, Wind } from "lucide-react";
@@ -26,6 +24,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { cn } from "@/lib/utils";
 import { CRISIS_LIFELINE_NUMBER } from "@/lib/safetyPlan";
 import { recoveryJourneyVisible } from "@/lib/seeking";
+import { ADEL_HISTORY_COPY, adelHistoryContext, adelRecallLine, getAdelThread, saveAdelTurn, type AdelOwner } from "@/lib/adelHistory";
 
 // §Small UI gaps batch item 4 — chip rendering is differentiated BY KIND only.
 // Destinations still come from the real `resolveAdelAction` resolver; nothing
@@ -52,22 +51,37 @@ interface Turn {
 const GREETING =
   "Hi — I'm Adel. I'm here to listen and help you find your way around the app. What's going on today?";
 
-export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; initialAsk?: string } = {}) {
+export function AdelChat({ resourceId, initialAsk, threadId: resumeId }: { resourceId?: string; initialAsk?: string; threadId?: string } = {}) {
+  const { lang: uiLang } = useI18n();
+  const hl = uiLang === "es" ? "es" : "en";
+  const hc = ADEL_HISTORY_COPY[hl];
+  const currentPatientId = AdelanteEHR.getCurrentPatientId();
+  const owner: AdelOwner | undefined = currentPatientId ? { kind: "patient", patientId: currentPatientId } : undefined;
+  const resumed = owner && resumeId ? getAdelThread(owner, resumeId) : undefined;
+  const threadRef = useRef<string | undefined>(resumed?.id);
+  const persist = (turn: { role: "user" | "assistant"; content: string; crisis?: boolean }) => {
+    if (!owner || !turn.content) return;
+    threadRef.current = saveAdelTurn(owner, threadRef.current, turn).id;
+  };
   const showRecovery = useEhr(() =>
     recoveryJourneyVisible(AdelanteEHR.getPatient(AdelanteEHR.getCurrentPatientId())),
   );
   // A resource-contextual open: Adel starts on that organisation instead of a
   // cold greeting, and the patient's first message is pre-written for them.
   const contextResource = resourceId ? patientVisibleResource(resourceId) : undefined;
-  const [turns, setTurns] = useState<Turn[]>([
-    {
-      role: "assistant",
-      content: contextResource
-        ? `Hi — I'm Adel. You were just looking at ${contextResource.name}. Want help figuring out whether they're a fit, what to ask when you call, or how to get there?`
-        : GREETING,
-      actions: [],
-    },
-  ]);
+  const [turns, setTurns] = useState<Turn[]>(() =>
+    resumed
+      ? resumed.turns.map((t) => ({ role: t.role, content: t.content, ...(t.crisis ? { crisis: true } : {}), actions: [] }))
+      : [
+          {
+            role: "assistant",
+            content: contextResource
+              ? `Hi — I'm Adel. You were just looking at ${contextResource.name}. Want help figuring out whether they're a fit, what to ask when you call, or how to get there?`
+              : ((owner && adelRecallLine(owner, hl)) ?? GREETING),
+            actions: [],
+          },
+        ],
+  );
   const [draft, setDraft] = useState(
     contextResource ? `Can you tell me more about ${contextResource.name}?` : "",
   );
@@ -154,8 +168,11 @@ export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; init
         },
       ]);
       setInDistress(true);
+      persist({ role: "user", content: text, crisis: true });
+      persist({ role: "assistant", content: copy.adelReply, crisis: true });
       return;
     }
+    persist({ role: "user", content: text });
 
     const history: Turn[] = [...turns, { role: "user", content: text }];
     setTurns([...history, { role: "assistant", content: "" }]);
@@ -172,7 +189,12 @@ export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; init
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
-          system: buildAdelSystemPrompt(),
+          system: (() => {
+            const ctx = owner ? adelHistoryContext(owner, threadRef.current) : [];
+            return ctx.length
+              ? `${buildAdelSystemPrompt()}\n\nEarlier topics this same person raised with you (their own history only): ${ctx.join(", ")}. You may gently follow up on one.`
+              : buildAdelSystemPrompt();
+          })(),
           messages: history
             .filter((t, i) => !(i === 0 && t.role === "assistant"))
             .map((t) => ({ role: t.role, content: t.content })),
@@ -228,6 +250,7 @@ export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; init
       if (!showRecovery) {
         actions.splice(0, actions.length, ...actions.filter((a) => !(a.kind === "resources" && a.id === "recovery_meetings")));
       }
+      persist({ role: "assistant", content: body || "I'm here — say a little more?" });
       setTurns((t) => {
         const next = [...t];
         next[next.length - 1] = {
@@ -370,9 +393,12 @@ export function AdelChat({ resourceId, initialAsk }: { resourceId?: string; init
           <Send className="h-5 w-5" />
         </Button>
       </div>
-      <p className="text-xs text-muted-foreground">
-        This conversation isn&apos;t saved to your record yet — it clears when you leave the page.
-      </p>
+      <div className="flex flex-wrap items-center justify-between gap-2 text-xs text-muted-foreground" data-testid="adel-privacy-note">
+        <p className="max-w-md">{hc.privacy} {hc.retention}</p>
+        <Button asChild size="sm" variant="ghost" className="h-9 rounded-full">
+          <Link to="/peer" search={{ tab: "adel" }} data-testid="adel-history-link">{hc.history}</Link>
+        </Button>
+      </div>
     </div>
   );
 }
