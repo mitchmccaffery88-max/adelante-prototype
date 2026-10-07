@@ -1,3 +1,4 @@
+import { NewThreadForm } from "@/components/team/TeamThreads";
 import { openBookVisit } from "@/lib/bookingFlow";
 import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
@@ -106,6 +107,7 @@ export function DashboardActionLauncher({ onBook, onOpenChart, todayPatientIds =
       else toast.error("That action isn't available for this patient.");
     }} />;
     switch (selected.action.id) {
+      case "message_team": return <NewThreadForm patientId={patient?.id} />;
       case "afbi_contact": return <AfbiContactForm patientId={patient?.id} onDone={(m) => { toast.success(m); setSelected(null); }} />;
       case "dashboard_book": return <BookStart onBook={() => { setSelected(null); openBookVisit(); }} />;
       case "dashboard_task": return <TaskForm patientId={patientId} patients={results} query={query} setQuery={setQuery} choose={setPatientId} done={() => done("Task created")} />;

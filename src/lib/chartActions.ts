@@ -42,6 +42,8 @@ import { canRecordExternalNtp, canReferToNtp, recordExternalNtpMedication, refer
 import { acceptAiFollowUp, canCaptureScribe, canRecordAiConsent, confirmAiReview, deleteAiSentence, discardScribeSession, editAiSentence,
   setAiDraftVisitField, endScribeSession, canDictateScribe, createDictationDraft, pauseScribeSession, resumeScribeSession, saveAfbiFromScribe, grantAiRecordingConsent, keepAiSentence, openAiDraft, startScribeSession, withdrawAiRecordingConsent } from "@/lib/scribe";
 import { assignReferralOwner, canAssignReferralOwner, canClaimChase, canFillChase, claimChaseTask, fillChaseField } from "@/lib/referralChase";
+import { acknowledgeEscalation, canUseEscalations, handOffEscalation, isCoordinator as isEscalationCoordinator, reassignEscalation } from "@/lib/escalations";
+import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
 export const REGISTRY_VERSION = "2026-10-07.asamPlan";
@@ -1151,6 +1153,58 @@ export const CHART_ACTIONS: ChartAction[] = [
     store: refs(["handOffCrisisEscalation", (...a: any[]) => (AdelanteEHR.handOffCrisisEscalation as any)(...a)]),
     allowed: ({ role }) => (role === "billing" || role === "credentialing_coordinator" ? hide("Crisis handoff is for the care team.") : ok()),
   },
+  // §U1 — shared escalation actions (crisis rows delegate to the crisis store).
+  ...([
+    ["escalation_acknowledge", "Acknowledge escalation", "Reconocer escalamiento", "acknowledgeEscalation", acknowledgeEscalation, "owner or clinical coordinator (store-checked)"],
+    ["escalation_handoff", "Hand off escalation", "Transferir escalamiento", "handOffEscalation", handOffEscalation, "owner or clinical coordinator (store-checked)"],
+  ] as const).map(([id, en, es, name, fn, check]): ChartAction => ({
+    id,
+    label: { en, es },
+    group: "coordination",
+    menu: false,
+    needsPatient: true,
+    check,
+    store: refs([name, (...a: any[]) => (fn as any)(...a)]),
+    allowed: ({ role }) => (canUseEscalations(role) ? ok() : hide("Escalations are for the care team.")),
+  })),
+  {
+    id: "escalation_reassign",
+    label: { en: "Reassign escalation", es: "Reasignar escalamiento" },
+    group: "coordination",
+    menu: false,
+    needsPatient: true,
+    check: "clinical_coordinator / sys_admin",
+    store: refs(["reassignEscalation", (...a: any[]) => (reassignEscalation as any)(...a)]),
+    allowed: ({ role }) => (isEscalationCoordinator(role) ? ok() : hide("Only a clinical coordinator can reassign an escalation.")),
+  },
+  // §U2 — staff-to-staff messaging. "Message team" shows in "+ New".
+  {
+    id: "message_team",
+    label: { en: "Message team", es: "Mensaje al equipo" },
+    group: "coordination",
+    needsPatient: false,
+    check: "canMessageStaff(role) + patient scope (store-checked)",
+    store: refs(["startStaffThread", (...a: any[]) => (startStaffThread as any)(...a)]),
+    allowed: ({ role }) => (canMessageStaff(role) ? ok() : hide("Your role doesn't use team messaging.")),
+  },
+  ...([
+    ["staff_thread_post", "Reply in team thread", "Responder en hilo", "postThreadMessage", postThreadMessage],
+    ["staff_thread_add_participant", "Add to team thread", "Agregar al hilo", "addThreadParticipant", addThreadParticipant],
+    ["staff_thread_flag_sud", "Flag thread as SUD", "Marcar hilo como SUD", "flagThreadSud", flagThreadSud],
+    ["staff_thread_resolve", "Resolve team thread", "Resolver hilo", "resolveStaffThread", resolveStaffThread],
+    ["staff_thread_reopen", "Reopen team thread", "Reabrir hilo", "reopenStaffThread", reopenStaffThread],
+    ["staff_thread_read", "Mark team thread read", "Marcar hilo leído", "markThreadRead", markThreadRead],
+    ["staff_thread_mention_done", "Mark reply done", "Marcar respuesta hecha", "markMentionDone", markMentionDone],
+  ] as const).map(([id, en, es, name, fn]): ChartAction => ({
+    id,
+    label: { en, es },
+    group: "coordination",
+    menu: false,
+    needsPatient: false,
+    check: "thread participant (store-checked)",
+    store: refs([name, (...a: any[]) => (fn as any)(...a)]),
+    allowed: ({ role }) => (canMessageStaff(role) ? ok() : hide("Your role doesn't use team messaging.")),
+  })),
   ...([["staff_add_user", "Add user", "Agregar usuario"], ["staff_reset_signin", "Reset sign-in", "Restablecer acceso"], ["staff_edit_roles", "Edit staff roles", "Editar roles"]] as const).map(([id, en, es]): ChartAction => ({
     id,
     opsMenu: true,

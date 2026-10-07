@@ -8,6 +8,7 @@ import { openBookVisit } from "@/lib/bookingFlow";
 // (bottom sheet on phones) with the existing form or section, so the
 // clinician never leaves the chart.
 import { AfbiContactForm } from "@/components/afbi/AfbiContactForm";
+import { NewThreadForm } from "@/components/team/TeamThreads";
 import { confirmationFor } from "@/lib/actions/runAction";
 import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { toast } from "sonner";
@@ -201,6 +202,8 @@ export function ChartActionLauncher({
         return <ExternalNtpForm patientId={patientId} onDone={done} />;
       case "partner_link":
         return <CarePartnersSection patientId={patientId} />;
+      case "message_team":
+        return <NewThreadForm patientId={patientId} />;
       case "afbi_contact":
         return <AfbiContactForm patientId={patientId} onDone={(m) => done(m, "eligibility")} />;
     }
