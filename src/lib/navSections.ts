@@ -1,4 +1,6 @@
 import { hasSudReportingAccess } from "@/lib/sudReportingAccess";
+import { canUseEscalations } from "./escalations";
+import { canMessageStaff } from "./staffThreads";
 import { canViewCountyReporting } from "@/lib/countyReporting";
 import { canViewCoordination } from "@/lib/coordinationRoles";
 import { IN_FACILITY_NAV_IDS, inFacilityEnabled } from "@/lib/inFacility";
@@ -121,6 +123,10 @@ export type NavGate =
   | { kind: "crisis_flag_only" }
   /** §Crisis Redesign Phase 2 — the SDOH-urgent lane; see canWorkSdohCrisisLane. */
   | { kind: "sdoh_crisis_lane" }
+  /** §U1 — unified escalation queue; see canUseEscalations. */
+  | { kind: "escalations" }
+  /** §U2 — staff-to-staff team messaging; see canMessageStaff. */
+  | { kind: "staff_messaging" }
   /** §Item 6 — Clinical Coordination desk; see canActOnCoordination. */
   | { kind: "coordination_desk" }
   /** §Item 7 — weekly caseload review; see canOpenCaseloadReview. */
@@ -324,6 +330,24 @@ export const STAFF_NAV: NavEntry[] = [
     to: "/clinical-referrals",
     group: "queues",
     gate: { kind: "clinical_referrals" },
+  },
+  {
+    id: "escalations",
+    label: "Escalations",
+    desc: "Crisis, score changes, overdue crisis notes, urgent needs",
+    icon: Siren,
+    to: "/escalations",
+    group: "queues",
+    gate: { kind: "escalations" },
+  },
+  {
+    id: "team-messages",
+    label: "Team messages",
+    desc: "Staff-to-staff care team threads",
+    icon: MessageSquare,
+    to: "/team-messages",
+    group: "queues",
+    gate: { kind: "staff_messaging" },
   },
   {
     id: "crisis-queue",
@@ -733,6 +757,8 @@ export function canSeeNavEntry(role: StaffRole, entry: NavEntry): boolean {
   if (entry.gate.kind === "crisis_flag_only")
     return canFlagCrisis(role) && canAccess(role, "crisis_queue").level === "none";
   if (entry.gate.kind === "sdoh_crisis_lane") return canWorkSdohCrisisLane(role);
+  if (entry.gate.kind === "escalations") return canUseEscalations(role);
+  if (entry.gate.kind === "staff_messaging") return canMessageStaff(role);
   if (entry.gate.kind === "coordination_desk") return canViewCoordination(role);
   if (entry.gate.kind === "caseload_review") return canOpenCaseloadReview(role);
   if (entry.gate.kind === "data_exchange") return DATA_EXCHANGE_ROLES.has(role);
