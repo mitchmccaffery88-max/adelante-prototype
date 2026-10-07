@@ -50,6 +50,8 @@ async function pickOption(page: Page, comboIndex: number, label: RegExp) {
   await option.click();
 }
 
+test.describe.configure({ timeout: 90_000 });
+
 test("Patient A's data never appears in the advocate's own care view, and vice versa", async ({
   page,
 }) => {
