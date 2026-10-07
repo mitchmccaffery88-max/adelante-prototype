@@ -230,3 +230,7 @@
 - [ ] Merge + unmerge (consents flagged, duplicate claim block)
 - [ ] Multi-role staff identities, dedupe, retire s-cf2, advocate/patient personas
 - [ ] Demo seeds + tests + browser
+## U1/U2 — Escalations + team messaging (done)
+- [x] advocateSelfSeparation stable in full suite (cold-start warm-up)
+- [x] Unified Escalations queue, crisis-queue redirect, Needs my action link
+- [x] Staff-to-staff threads, mentions, read receipts, Discuss from escalation
