@@ -321,6 +321,26 @@ export function isWorkingHour(instant: Date, opts: { ownerId: string; siteId?: s
     return b.weekday === wd && m >= toMin(b.start) && m < toMin(b.end) && isWorkingDay(dk, { siteId: s, ownerId: opts.ownerId });
   });
 }
+/**
+ * Booking-warning check: does [instant, instant+duration) fit one of the
+ * person's weekly blocks at that site, read on the SITE's wall clock (never
+ * the device's)? `hasHours` is false when they have no block that weekday.
+ */
+export function fitsStaffHours(
+  instant: Date,
+  durationMin: number,
+  opts: { ownerId: string; siteId?: string },
+): { hasHours: boolean; fits: boolean } {
+  const siteId = opts.siteId ?? primarySiteFor(opts.ownerId);
+  const tz = siteTimezone(siteId);
+  const wd = weekdayOf(facilityDateKey(instant, tz));
+  const p = toFacilityParts(instant, tz);
+  const s = p.hour * 60 + p.minute;
+  const day = AdelanteEHRExt.availabilityBlocksForClinician(opts.ownerId).filter(
+    (b) => b.weekday === wd && (!siteId || !siteForBlock(b) || siteForBlock(b) === siteId),
+  );
+  return { hasHours: day.length > 0, fits: day.some((b) => s >= toMin(b.start) && s + durationMin <= toMin(b.end)) };
+}
 /** Add N working days after `fromKey` (the from-day itself never counts). */
 export function addWorkingDays(fromKey: string, n: number, opts: WorkingOpts = {}): string {
   let d = fromKey;
