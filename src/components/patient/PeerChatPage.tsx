@@ -12,7 +12,8 @@
 // looking for Andre can read that strand without scrolling the whole thread.
 // A permanent banner + a link to the full thread keep that honest.
 import { useMemo, useState } from "react";
-import { Link } from "@tanstack/react-router";
+import { Link, useSearch } from "@tanstack/react-router";
+import { AdelHistoryPanel } from "@/components/patient/AdelHistoryPanel";
 import { ArrowLeft, HeartHandshake } from "lucide-react";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr, type CareMessage } from "@/lib/ehr";
@@ -45,6 +46,8 @@ export function PeerChatPage() {
   // §B8 — merged: the whole care-team thread, peer replies included.
   const strand = useMemo(() => messages, [messages]);
 
+  const search = useSearch({ strict: false }) as { tab?: string };
+  const tab = search.tab === "adel" ? "adel" : "team";
   if (!patientId) return null;
 
   const send = () => {
@@ -73,6 +76,16 @@ export function PeerChatPage() {
       />
 
 
+      <div role="tablist" className="flex gap-2" data-testid="messages-tabs">
+        <Button asChild size="sm" role="tab" aria-selected={tab === "team"} variant={tab === "team" ? "default" : "outline"} className="min-h-11 rounded-full">
+          <Link to="/peer" search={{}}>{t("msgCareTeam")}</Link>
+        </Button>
+        <Button asChild size="sm" role="tab" aria-selected={tab === "adel"} variant={tab === "adel" ? "default" : "outline"} className="min-h-11 rounded-full" data-testid="messages-tab-adel">
+          <Link to="/peer" search={{ tab: "adel" }}>Adel</Link>
+        </Button>
+      </div>
+
+      {tab === "adel" ? <AdelHistoryPanel patientId={patientId} /> : (
       <Card className="p-5" data-testid="peer-thread">
         <CareMessageThread
           messages={strand}
@@ -104,6 +117,7 @@ t("msgNoneYet")
           </div>
         </div>
       </Card>
+      )}
 
       <Button asChild variant="ghost" className="min-h-11 rounded-2xl">
         <Link to="/home">

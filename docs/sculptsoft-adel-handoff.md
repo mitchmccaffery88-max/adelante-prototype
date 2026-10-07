@@ -17,3 +17,15 @@ The prototype computes the Brief in the browser (`src/lib/adelBrief.ts`): four f
 | 11 | Clinical sign-off | Section scope, thresholds (30 d re-screen, 90 d safety-plan review, 7 d refill runway) signed off; Draft label removed after. | Clinical sign-off |
 
 Prototype timings (seeded demo, Node, ms): Luis old 1.90 → cache hit 0.17; Daniel 0.85 → 0.09; Rosa 1.26 → 0.10. Incremental PHQ-9 update ≈ 1 ms, touching only Adherence / Visit focus / Care gaps.
+
+## Patient Adel chat persistence
+
+The prototype saves patient (and advocate-own) Adel chats in `src/lib/adelHistory.ts`, in browser memory, keyed by owner. There is no staff read path. Sharing sends a **Simulated** topic-only summary (`SimulatedAdelMemoryAdapter`, `src/lib/vendors/llm.ts`) to the care-team thread, through `disclose()` when the chat is Part 2-classified. Retention is 90 days (Draft — counsel to confirm).
+
+| # | Item | Acceptance criterion | Dependency |
+|---|------|----------------------|------------|
+| 12 | Encrypted server-side chat storage | Threads stored server-side per owner (patient or advocate link), encrypted at rest with KMS-managed keys and TLS 1.2+ in transit; no browser storage of chat text; API returns threads only to the authenticated owner. A test proves no staff role can read a thread. | Backend |
+| 13 | Retention and deletion jobs with proof | A scheduled job deletes threads 90 days after last activity (value confirmed by counsel). Patient delete-one / delete-all are hard deletes. Each deletion leaves a content-free stub (thread id, owner, time, reason). Vendor-side deletion is confirmed and stored with the stub; backups expire inside the window. A monthly report compares deletions with threads. | Backend, Counsel |
+| 14 | LLM vendor no-training and zero-retention terms | BAA with 42 CFR Part 2 terms covers chat, memory and summary calls; contract terms: no training on our data, zero data retention, subprocessors listed. Replaces `SimulatedAdelMemoryAdapter`. The model receives only the owner's own recent history. | Vendor choice, BAA, Counsel |
+| 15 | Part 2 classification on stored chats | Every stored thread carries a Part 2 flag set by a server-side classifier (substance-use mention, replacing the prototype keyword list). Shared summaries from flagged threads go through `disclose()` and are SUD-flagged so existing message masking applies. Classifier precision/recall are reported on a labelled EN/ES set. | Backend, Clinical, Counsel |
+| 16 | Crisis path unchanged | The Phase 1 crisis scan runs before save or model call. Escalations keep the crisis policy's minimal snippet and never attach the stored thread. | Backend |

@@ -5,6 +5,7 @@ export const Route = createFileRoute("/peer")({
   // Same reason as /checkin and /patient: the acting patient is a client-only
   // session, so there is nothing meaningful to render on the server.
   ssr: false,
+  validateSearch: (s: Record<string, unknown>): { tab?: "adel" } => (s.tab === "adel" ? { tab: "adel" } : {}),
   head: () => ({
     meta: [
       { title: "My care team — Adelante" },

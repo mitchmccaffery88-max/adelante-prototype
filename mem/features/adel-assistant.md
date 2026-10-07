@@ -7,4 +7,5 @@ type: feature
 - Prompt rules are clinical policy: non-diagnostic, <120 words, 5th-grade reading level, never shames, 2–4 turns before one (max) suggestion, no scored/clinical words ("elevated", "PHQ").
 - Crisis: chat calls the REAL Phase 1 `detectCrisisLanguage`/`scanTextForCrisis`. Never add a second crisis regex. A tripped message never reaches the LLM.
 - ACTION tokens must resolve to real destinations (`resolveAdelAction`); unresolvable tokens are dropped, never rendered.
-- HELD: warm-handoff auto-notification and Adel transcript logging/retention (Part 2 coverage) are open decisions for Christi / Dr. Bagga. Until resolved: never auto-notify, never persist the transcript.
+- Chats ARE saved per patient (decided Oct 2026): patient-only, 90-day retention (Draft — counsel to confirm), delete-one/all with content-free stubs; staff see only a patient-shared topic summary; SUD-mentioning chats are Part 2; advocates' own chats separate.
+- Still HELD: warm-handoff auto-notification. Never auto-notify.

@@ -6,7 +6,8 @@ export const Route = createFileRoute("/adel")({
   // context, the same shape the library route already uses for `?item=`.
   // `?ask=<text>` — sent from the Adel tile on My care; AdelChat sends it once
   // through its normal path (same crisis scanner, same guardrails).
-  validateSearch: (search: Record<string, unknown>): { resource?: string; ask?: string } => ({
+  validateSearch: (search: Record<string, unknown>): { resource?: string; ask?: string; thread?: string } => ({
+    ...(typeof search.thread === "string" && search.thread ? { thread: search.thread } : {}),
     ...(typeof search.resource === "string" && search.resource ? { resource: search.resource } : {}),
     ...(typeof search.ask === "string" && search.ask.trim() ? { ask: search.ask.slice(0, 500) } : {}),
   }),
@@ -28,6 +29,7 @@ export const Route = createFileRoute("/adel")({
 });
 
 function AdelRoute() {
-  const { resource, ask } = Route.useSearch();
-  return <AdelChat resourceId={resource} initialAsk={ask} />;
+  const { resource, ask, thread } = Route.useSearch();
+  // key: switching threads remounts the chat with that thread's saved turns.
+  return <AdelChat key={thread ?? "new"} resourceId={resource} initialAsk={ask} threadId={thread} />;
 }
