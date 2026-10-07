@@ -234,3 +234,5 @@
 - [x] advocateSelfSeparation stable in full suite (cold-start warm-up)
 - [x] Unified Escalations queue, crisis-queue redirect, Needs my action link
 - [x] Staff-to-staff threads, mentions, read receipts, Discuss from escalation
+## Adel chat persistence (done)
+- [x] History/continue, delete/clear, 90-day retention, share summary via disclose(), advocate isolation, EN/ES, handoff rows 12–16
