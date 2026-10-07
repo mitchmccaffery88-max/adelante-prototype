@@ -1886,16 +1886,25 @@ function seedNoteRevisionDemo() {
   const visitNote = (patientId: string, hoursAgo: number, text: string) => {
     const start = new Date(Date.now() - hoursAgo * 3600_000);
     start.setMinutes(0, 0, 0);
-    const a = AdelanteEHR.bookAppointment({
-      patientId,
-      clinicianId: "c1",
-      start: demoBusinessTime(start),
-      durationMin: 50,
-      serviceType: "therapy_individual",
-      modality: "in_person",
-      locationId: "loc-visalia",
-      allowPatientOverlap: true,
-    });
+    // demoBusinessTime clamps late-evening runs onto the same business slot,
+    // so step an hour back on a clinician conflict (time-of-day independent).
+    let a: ReturnType<typeof AdelanteEHR.bookAppointment> | undefined;
+    for (let step = 0; !a; step++) {
+      try {
+        a = AdelanteEHR.bookAppointment({
+          patientId,
+          clinicianId: "c1",
+          start: demoBusinessTime(new Date(+start - step * 3600_000)),
+          durationMin: 50,
+          serviceType: "therapy_individual",
+          modality: "in_person",
+          locationId: "loc-visalia",
+          allowPatientOverlap: true,
+        });
+      } catch (e) {
+        if (step >= 48 || !/just taken|conflict|overlap/i.test(String(e))) throw e;
+      }
+    }
     AdelanteEHR.updateAppointmentStatus(a.id, "attended");
     const n = AdelanteEHR.addProgressNote(patientId, {
       appointmentId: a.id,
