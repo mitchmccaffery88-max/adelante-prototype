@@ -44,16 +44,6 @@ export interface EvaluateResult {
   warnings: ConstraintReason[];
 }
 
-function inWindow(start: Date, durationMin: number, weekdayStart: string, weekdayEnd: string) {
-  const [sh, sm] = weekdayStart.split(":").map(Number);
-  const [eh, em] = weekdayEnd.split(":").map(Number);
-  const s = start.getHours() * 60 + start.getMinutes();
-  const e = s + durationMin;
-  const ws = sh * 60 + sm;
-  const we = eh * 60 + em;
-  return s >= ws && e <= we;
-}
-
 export const SchedulingConstraints = {
   evaluate(input: EvaluateInput): EvaluateResult {
     const blocks: ConstraintReason[] = [];
@@ -97,12 +87,12 @@ export const SchedulingConstraints = {
       blocks.push({ code: "location_not_supported", message: "Clinician isn't staffed at this location.", severity: "block" });
     }
 
-    // Availability
-    const blocksForDay = AdelanteEHRExt.availabilityBlocksForClinician(input.clinicianId).filter(
-      (b) => b.weekday === startAt.getDay(),
-    );
-    if (blocksForDay.length && !blocksForDay.some((b) => inWindow(startAt, input.durationMin, b.start, b.end))) {
-      warnings.push({ code: "outside_availability_window", message: "Outside clinician's standard hours.", severity: "warn" });
+    // Availability — site wall clock + the clinician's hours at that site (§P1).
+    if (!isNaN(+startAt)) {
+      const site = siteForLocation(input.locationId) ?? primarySiteFor(input.clinicianId);
+      const h = fitsStaffHours(startAt, input.durationMin, { ownerId: input.clinicianId, siteId: site });
+      if (h.hasHours && !h.fits)
+        warnings.push({ code: "outside_availability_window", message: "Outside clinician's standard hours.", severity: "warn" });
     }
     // §Calendars L5 — site closed day and time off through the one working-day service.
     const siteId = siteForLocation(input.locationId) ?? primarySiteFor(input.clinicianId);
