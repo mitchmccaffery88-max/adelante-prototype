@@ -203,8 +203,8 @@ export function computeVisitFocus(p: Patient, role: StaffRole, now: Date): Brief
   // §C3 — newest open severity flag first; else a recent "improving" note (Draft rules).
   if (seesScreenerScores(role, p)) {
     const flags = [...(p.severityFlags ?? [])].sort((a, b) => b.resultAt.localeCompare(a.resultAt));
-    const open = flags.find((f) => f.kind === "flag" && !f.reviewedAt);
-    const better = flags.find((f) => f.kind === "improving" && +now - +new Date(f.resultAt) <= 30 * DAY);
+    const open = flags.find((f) => f.kind === "flag" && !f.reviewedAt && !f.historical);
+    const better = flags.find((f) => f.kind === "improving" && !f.historical && +now - +new Date(f.resultAt) <= 30 * DAY);
     if (open) out.push({ id: `sev-${open.id}`, text: `Severity change: ${open.text}`, at: open.resultAt, sectionId: "tracking", sources: src("severity_flag", [open.id]) });
     else if (better) out.push({ id: `sev-${better.id}`, text: `Improving: ${better.text}`, at: better.resultAt, sectionId: "tracking", sources: src("severity_flag", [better.id]) });
   }

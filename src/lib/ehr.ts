@@ -9,7 +9,7 @@ import {
   summarizeAutomation,
 } from "./templateSchema";
 import { scribeTemplates } from "./scribeFormats";
-import { evaluateSeverity, type SeverityFlag } from "./severityRules";
+import { evaluateSeverity, SEVERITY_FYI_SUBJECT, SEVERITY_NOTIFY_SUBJECT, SEVERITY_RULES, type SeverityFlag } from "./severityRules";
 import type {
   Automation,
   AutofillSnapshot,
@@ -8099,6 +8099,43 @@ function _defForResult(key: string) {
  * rule, re-score exactly (prior score kept in `rescoredFrom`). AUDIT results
  * with only a total cannot be re-scored and are labelled instead.
  */
+// §C3/F2 — severity flags in date order, idempotent per result (key@completedAt).
+// Within SEVERITY_RULES.actionWindowDays → task (Needs my action) + staff
+// notifications; older → history only (historical: true), no task/notification.
+// True while module-load demo seeds run; cleared on the next tick.
+let _severitySeedQuiet = true;
+if (typeof setTimeout !== "undefined") setTimeout(() => { _severitySeedQuiet = false; }, 0);
+else _severitySeedQuiet = false;
+function _prevScreener(p: Patient, result: ScreenerResult): ScreenerResult | undefined {
+  return (p.screenerHistory ?? [])
+    .filter((h) => h.key === result.key && h.completedAt < result.completedAt)
+    .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+}
+function _applySeverity(p: Patient, prev: ScreenerResult | undefined, result: ScreenerResult) {
+  const sev = evaluateSeverity(prev, result);
+  if (!sev || (p.severityFlags ?? []).some((f) => f.resultRef === sev.resultRef)) return;
+  // Demo seeds (module load) never create tasks/notifications: history only.
+  const historical = _severitySeedQuiet || Date.now() - +new Date(result.completedAt) > SEVERITY_RULES.actionWindowDays * 86_400_000;
+  const flag: SeverityFlag = { ...sev, id: uid(), createdAt: new Date().toISOString(), ...(historical ? { historical: true } : {}) };
+  p.severityFlags = [...(p.severityFlags ?? []), flag];
+  appendAudit({
+    category: "clinical",
+    action: historical ? "severity_history_noted" : flag.kind === "flag" ? "severity_flag_raised" : "severity_improving_noted",
+    patientId: p.id,
+    actorId: "system",
+    detail: { flagId: flag.id, screenerKey: flag.key, reasons: flag.reasons, historical },
+  });
+  if (historical || flag.kind !== "flag") return;
+  const staffOf = (a?: string) => (a ? STAFF_ROSTER.find((m) => (m.id === a || m.clinicianId === a) && m.active !== false) : undefined);
+  const owner = staffOf(p.primaryClinicianId ?? p.prescriberStaffId);
+  const prescriber = staffOf(p.prescriberStaffId);
+  const base = { category: "task_assigned" as const, body: "Open the chart's Tracking section to review.", patientId: p.id, linkRoute: "/record/$patientId", linkParams: { patientId: p.id, section: "tracking" } };
+  if (owner) AdelanteEHR.notify({ ...base, recipientStaffId: owner.id, subject: SEVERITY_NOTIFY_SUBJECT, dedupeKey: `severity:${flag.id}:owner` });
+  const psychActive = (p.orders ?? []).some((o) => o.status === "signed" && !_isSudMed(o));
+  if (prescriber && psychActive && prescriber.id !== owner?.id)
+    AdelanteEHR.notify({ ...base, recipientStaffId: prescriber.id, subject: SEVERITY_FYI_SUBJECT, body: "FYI only — no action item was created for you.", dedupeKey: `severity:${flag.id}:fyi` });
+}
+
 function _stampScreenerMeta(r: ScreenerResult): ScreenerResult {
   const def = _defForResult(r.key);
   if (!def) return r;
@@ -9645,7 +9682,9 @@ export const AdelanteEHR = {
     const def = _defForResult(result.key);
     if (def?.retired) throw new Error(`${def.name} is retired and cannot be recorded.`);
     _stampScreenerMeta(result);
+    const prevHist = _prevScreener(p, result);
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
+    _applySeverity(p, prevHist, result);
     const cur = p.screeners[result.key];
     if (!cur || +new Date(cur.completedAt) <= +new Date(result.completedAt)) p.screeners[result.key] = result;
     appendAudit({
@@ -9682,23 +9721,10 @@ export const AdelanteEHR = {
     _stampScreenerMeta(result);
     // §C3 — severity flag vs the previous result of the same instrument
     // (Draft rules in severityRules.ts). One flag per result, ever.
-    const prevResult = (p.screenerHistory ?? [])
-      .filter((h) => h.key === result.key && h.completedAt < result.completedAt)
-      .sort((a, b) => b.completedAt.localeCompare(a.completedAt))[0];
+    const prevResult = _prevScreener(p, result);
     p.screeners[result.key] = result;
     p.screenerHistory = [...(p.screenerHistory ?? []), result];
-    const sev = evaluateSeverity(prevResult, result);
-    if (sev && !(p.severityFlags ?? []).some((f) => f.resultRef === sev.resultRef)) {
-      const flag: SeverityFlag = { ...sev, id: uid(), createdAt: new Date().toISOString() };
-      p.severityFlags = [...(p.severityFlags ?? []), flag];
-      appendAudit({
-        category: "clinical",
-        action: flag.kind === "flag" ? "severity_flag_raised" : "severity_improving_noted",
-        patientId,
-        actorId: "system",
-        detail: { flagId: flag.id, screenerKey: flag.key, reasons: flag.reasons },
-      });
-    }
+    _applySeverity(p, prevResult, result);
     if (result.crisisFlag) {
       p.crisisFlag = { source: result.key, raisedAt: result.completedAt };
       if (p.caseManagerId) {
