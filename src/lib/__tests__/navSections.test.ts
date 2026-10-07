@@ -167,6 +167,8 @@ describe("gating derives from the RBAC matrix", () => {
                  ? ["sys_admin", "billing", "billing_coordinator", "credentialing_coordinator", "clinical_coordinator"].includes(role)
                  : gate.kind === "nursing_workspace"
                  ? ["nurse_rn", "lvn"].includes(role)
+                 : gate.kind === "escalations" || gate.kind === "staff_messaging"
+                 ? !["billing", "billing_coordinator", "credentialing_coordinator"].includes(role)
                  : gate.kind === "care_partner_directory"
                  ? ["sys_admin", "clinical_coordinator", "ecm_provider", "cf_care_manager"].includes(role)
                  : gate.anyOf.some((cls) => {
