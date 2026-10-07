@@ -3,6 +3,7 @@
 // device's zone. The device here is pinned to America/Chicago.
 import { afterAll, beforeAll, describe, expect, it, vi } from "vitest";
 import { SchedulingConstraints } from "@/lib/scheduling";
+import "@/lib/clinicianAvailability"; // seeds demo weekly hours
 import { fitsStaffHours, siteForLocation } from "@/lib/workingCalendar";
 
 const prevTz = process.env.TZ;
