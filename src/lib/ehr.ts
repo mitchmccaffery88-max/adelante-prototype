@@ -8102,6 +8102,10 @@ function _defForResult(key: string) {
 // §C3/F2 — severity flags in date order, idempotent per result (key@completedAt).
 // Within SEVERITY_RULES.actionWindowDays → task (Needs my action) + staff
 // notifications; older → history only (historical: true), no task/notification.
+// True while module-load demo seeds run; cleared on the next tick.
+let _severitySeedQuiet = true;
+if (typeof setTimeout !== "undefined") setTimeout(() => { _severitySeedQuiet = false; }, 0);
+else _severitySeedQuiet = false;
 function _prevScreener(p: Patient, result: ScreenerResult): ScreenerResult | undefined {
   return (p.screenerHistory ?? [])
     .filter((h) => h.key === result.key && h.completedAt < result.completedAt)
@@ -8110,7 +8114,8 @@ function _prevScreener(p: Patient, result: ScreenerResult): ScreenerResult | und
 function _applySeverity(p: Patient, prev: ScreenerResult | undefined, result: ScreenerResult) {
   const sev = evaluateSeverity(prev, result);
   if (!sev || (p.severityFlags ?? []).some((f) => f.resultRef === sev.resultRef)) return;
-  const historical = Date.now() - +new Date(result.completedAt) > SEVERITY_RULES.actionWindowDays * 86_400_000;
+  // Demo seeds (module load) never create tasks/notifications: history only.
+  const historical = _severitySeedQuiet || Date.now() - +new Date(result.completedAt) > SEVERITY_RULES.actionWindowDays * 86_400_000;
   const flag: SeverityFlag = { ...sev, id: uid(), createdAt: new Date().toISOString(), ...(historical ? { historical: true } : {}) };
   p.severityFlags = [...(p.severityFlags ?? []), flag];
   appendAudit({
