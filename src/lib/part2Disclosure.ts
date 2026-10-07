@@ -44,7 +44,8 @@ export type DisclosureChannel =
   | "referral_out"
   | "dmc_ods_csv"
   | "county_report"
-  | "care_partner_handoff";
+  | "care_partner_handoff"
+  | "adel_share";
 
 export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   hie_share: "HIE share (Simulated)",
@@ -57,6 +58,7 @@ export const CHANNEL_LABEL: Record<DisclosureChannel, string> = {
   dmc_ods_csv: "DMC-ODS / CalOMS export",
   county_report: "County reporting file (prototype)",
   care_partner_handoff: "Care partner handoff",
+  adel_share: "Patient share from Adel (Simulated summary)",
 };
 
 export type RecipientType = "patient" | "internal" | "advocate" | "provider" | "hie" | "legal" | "county" | "other";
@@ -75,7 +77,8 @@ export type Part2RecordClass =
   | "SUD diagnoses"
   | "SUD documents"
   | "SUD referral information"
-  | "SUD episode / CalOMS data";
+  | "SUD episode / CalOMS data"
+  | "SUD-related Adel conversation summary";
 
 export interface DisclosureActor {
   name: string;
