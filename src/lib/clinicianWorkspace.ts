@@ -11,11 +11,13 @@ import { listMatchReviews } from "@/lib/patientMatching";
 import { chaseRowsFor } from "@/lib/referralChase";
 import { openSeverityFlags, severityAssignee, SEVERITY_ROW_LABEL } from "@/lib/severityFlags";
 import { isPrescriberRole, STAFF_ROSTER, type StaffRole } from "@/lib/roles";
+import { myOpenEscalations } from "@/lib/escalations";
+import { listThreadsFor, openMentionsFor } from "@/lib/staffThreads";
 
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -160,8 +162,22 @@ export function workspaceActionRows(input: {
     for (const f of openSeverityFlags(p, actor.role))
       rows.push({ id: `severity:${f.id}`, kind: "severity", patientId: p.id, patientName: `${p.firstName} ${p.lastName}`, label: `${SEVERITY_ROW_LABEL} — ${f.text}`, dueAt: f.createdAt, due: "Review", group: "now", action: "Review", sourceId: f.id });
   }
+  // §U1 — my other escalations (handed to me, missed handoffs, social needs) not already listed above.
+  const listed = new Set(rows.map((r) => r.sourceId).filter(Boolean));
+  for (const e of myOpenEscalations({ role: actor.role, staffId: actor.staffId }, +now)) {
+    if (listed.has(e.sourceId)) continue;
+    rows.push({ id: `escalation:${e.key}`, kind: "escalation", patientId: e.patientId, patientName: e.patientName, label: `${e.typeLabel} — escalation`, dueAt: e.dueAt, due: e.countdown, group: "now", action: "Open escalations", sourceId: e.key });
+  }
+  // §U2 — @mentions in team threads: "Reply needed" until replied or marked done.
+  const myThreads = listThreadsFor({ staffId: actor.staffId, role: actor.role });
+  for (const m of openMentionsFor(actor.staffId)) {
+    const t = myThreads.find((x) => x.id === m.threadId);
+    if (!t) continue;
+    const p = t.patientId ? patients.find((x) => x.id === t.patientId) : undefined;
+    rows.push({ id: `reply:${m.id}`, kind: "reply", patientId: t.patientId ?? "", patientName: p ? `${p.firstName} ${p.lastName}` : "Team thread", label: "Reply needed — team thread", dueAt: m.createdAt, due: "Reply", group: "now", action: "Reply", sourceId: m.id });
+  }
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
-  const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "contact"] : ["crisis", "crisis_note", "severity"];
+  const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "contact"] : ["crisis", "crisis_note", "severity", "escalation", "reply"];
   return rows.filter((r, i, all) => all.findIndex((x) => x.id === r.id) === i).sort((a, b) => {
     const ai = priority.indexOf(a.kind), bi = priority.indexOf(b.kind);
     if (ai !== bi) return (ai < 0 ? 99 : ai) - (bi < 0 ? 99 : bi);
