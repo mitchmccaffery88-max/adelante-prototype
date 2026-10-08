@@ -274,3 +274,8 @@
 - [x] A2 search only for chart-entry roles on staff work pages; results limited to enterable patients
 - [x] A3 per-person read state; task pointers linked to My work; bell filters; new events; narrowed LVN cosign + HLOC routing; four text leaks fixed; Part 2 text lint; seeded broadcasts ≤5 per role
 - [x] A4 Spanish screener resume fixed at source; all browser specs green together (56/56, live preview)
+
+## Group 1 (8 Oct) — profile, availability, flag journeys (Draft)
+- [x] K1 chartAccess comment · [x] K2 event + routing tests (notificationEvents.test.ts)
+- [x] P1–P4, A1–A4, C2 with unit tests (group1Profile.test.ts)
+- [ ] Browser walkthrough spec for Group 1 flows (not yet written)
