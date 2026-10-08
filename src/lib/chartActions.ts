@@ -1,3 +1,4 @@
+import { markContentReviewed } from "./contentPublishing";
 import { patientSelfBook, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
 // §Chart redesign — single action registry. Source of truth for every chart
@@ -120,6 +121,7 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "content_mark_reviewed", label: { en: "Mark content reviewed", es: "Marcar contenido revisado" }, group: "admin", menu: false, needsPatient: false, check: "canAuthorContent", store: refs(["markContentReviewed", markContentReviewed]), allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("Content author access required.") },
   { id: "patient_lesson_response", label: { en: "Save lesson response", es: "Guardar respuesta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveLessonResponse", AdelanteEHR.saveLessonResponse]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
   { id: "patient_toolkit_save", label: { en: "Save toolkit", es: "Guardar herramienta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveToolkitItem", AdelanteEHR.saveToolkitItem]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
   { id: "patient_lesson_complete", label: { en: "Complete lesson", es: "Completar lección" }, group: "care", menu: false, check: "patient self only", store: refs(["completeExercise", AdelanteEHR.completeExercise], ["completeLibraryItem", AdelanteEHR.completeLibraryItem], ["completeRecoveryLesson", AdelanteEHR.completeRecoveryLesson]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },

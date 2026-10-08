@@ -1,3 +1,5 @@
+import { useState } from "react";
+import { useContentPreviewMode } from "@/lib/contentPreviewMode";
 // §Adelante Journey Phase 5 — one Library lesson, expressed as the eight-step
 // instructional sequence the schema encodes. This file is now an ADAPTER only:
 // it maps `LibraryItem` fields onto the shared `ModuleTemplate` steps. The
@@ -34,13 +36,21 @@ export function LibraryLesson({
   onDone?: () => void;
 }) {
   const { t, lang } = useI18n();
+  const preview = useContentPreviewMode();
+  const [previewResponse, setPreviewResponse] = useState<import("@/lib/engagement").LessonResponse>();
+  const saveResponse: typeof savePlayerResponse = (pid, surface, id, patch) => {
+    if (!preview) return savePlayerResponse(pid, surface, id, patch);
+    setPreviewResponse((prev) => ({ ...prev, ...patch, text: { ...prev?.text, ...patch.text }, updatedAt: new Date().toISOString() }));
+    return { ...previewResponse, ...patch, updatedAt: new Date().toISOString() };
+  };
   // Translation overlays never alter the content identity or saved answer keys.
   const es = publishedContent("library_lesson", item.id)?.es;
   if (lang === "es" && es && typeof es === "object") item = { ...item, ...es as Partial<LibraryItem>, id: item.id };
-  const completed = useEhr(() => AdelanteEHR.completedLibraryItems(patientId).includes(item.id));
+  const completed = useEhr(() => !preview && AdelanteEHR.completedLibraryItems(patientId).includes(item.id));
   // §Build 2 — the patient's saved work for this lesson, read through the same
   // subscribed facade every other engagement read uses.
-  const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, "library", item.id));
+  const savedResponse = useEhr(() => preview ? undefined : AdelanteEHR.lessonResponse(patientId, "library", item.id));
+  const response = preview ? previewResponse : savedResponse;
   const checkInOptions = item.checkInOptions?.filter((o) => o.trim()) ?? [];
   // §Phase C — dimensions derived from the lesson's OWN check-in text, and
   // recommendation chips derived from its category. No new authored content.
@@ -61,11 +71,12 @@ export function LibraryLesson({
 
 
   function complete() {
+    if (preview) { onDone?.(); return; }
     completePlayerLesson(patientId, item.id, "library", undefined, lang);
   }
 
   const match = matchExerciseForLibraryLesson(item);
-  const write = (patch: import("@/lib/engagement").LessonResponsePatch) => savePlayerResponse(patientId, "library", item.id, patch);
+  const write = (patch: import("@/lib/engagement").LessonResponsePatch) => saveResponse(patientId, "library", item.id, patch);
   const steps: ModuleStep[] = [
     { kind: "text", label: t("libStepProblem"), body: item.problem },
     // §Build 3 — per-item check-in when authored, the shared line when not.
@@ -80,7 +91,7 @@ export function LibraryLesson({
           max: checkInOptions.length,
           value: response?.checkIn ?? [],
           onChange: (next: string[]) =>
-            savePlayerResponse(patientId, "library", item.id, { checkIn: next }),
+            saveResponse(patientId, "library", item.id, { checkIn: next }),
         }
       : {
           kind: "text" as const,
@@ -108,7 +119,7 @@ export function LibraryLesson({
             ifPicks: response?.ifThen?.ifPicks ?? [],
             thenPicks: response?.ifThen?.thenPicks ?? [],
             onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
-              savePlayerResponse(patientId, "library", item.id, { ifThen: next }),
+              saveResponse(patientId, "library", item.id, { ifThen: next }),
           },
         ]
       : []),
@@ -147,7 +158,7 @@ export function LibraryLesson({
       steps={steps}
       response={response}
       onResponseChange={(patch) =>
-        savePlayerResponse(patientId, "library", item.id, patch)
+        saveResponse(patientId, "library", item.id, patch)
       }
       completeLabel={t("playerFinish")}
       onComplete={complete}

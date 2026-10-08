@@ -1,3 +1,5 @@
+import { isPart2Content } from "./contentGovernance";
+import { AdelanteEHR } from "./ehr";
 // §Content Management admin tooling — THE SHARED CONTENT LIFECYCLE STORE.
 //
 // WHY THIS EXISTS. Four features had each hand-rolled their own review state:
@@ -49,7 +51,9 @@ export type ContentTypeId =
   // the same entries feed the website, the patient portal, intake, onboarding
   // and SDOH-needs alignment. They belong on the same lifecycle as lessons.
   | "community_resource"
-  | "naloxone_access_point";
+  | "naloxone_access_point"
+  | "exercise"
+  | "journey";
 
 /** A content body is whatever the type descriptor says it is. */
 export type ContentBody = Record<string, unknown>;
@@ -273,6 +277,7 @@ function appendRevision(
     ...(note ? { note } : {}),
   };
   e.revisions.push(rev);
+  AdelanteEHR._recordAudit({ category: "content", action: `content.${action}`, actorId: actor.staffId ?? actor.name, actorRole: actor.role, detail: { typeId: e.typeId, contentId: isPart2Content(e.typeId, e.body) ? "protected-content" : e.id, revision: rev.rev, reason: isPart2Content(e.typeId, e.body) ? "Protected content change — reason retained in gated revision history" : note ?? "Draft content lifecycle" } });
   return rev;
 }
 
@@ -317,6 +322,10 @@ export function saveContentDraft(input: SaveDraftInput): ContentResult {
   };
   const created = !existing;
   e.body = clone(input.body);
+  e.body.id = input.id;
+  const meta = e.body.meta as Record<string, unknown> | undefined;
+  if (meta) e.body.part2Sensitive = meta.part2 === true || e.body.part2Sensitive === true;
+  if (input.typeId === "exercise") e.body.type = (e.body.content as Record<string, unknown> | undefined)?.type;
   if (input.overridesBaseline !== undefined) e.overridesBaseline = input.overridesBaseline;
   // A published entry that is edited goes back to `draft` as its WORKING
   // status. Patients keep seeing `publishedBody` until the new revision is
@@ -570,6 +579,7 @@ export function seedPublishedContent(input: SeedPublishedInput): ContentResult {
     ...(input.note ? { note: input.note } : {}),
   };
   e.revisions.push(rev);
+
   e.publishedBody = clone(input.body);
   e.publishedRev = rev.rev;
   e.publishedAt = input.atISO;
@@ -627,4 +637,12 @@ export function __resetContent(): void {
 export function __resetContentOfType(typeId: ContentTypeId): void {
   for (const [k, e] of [...entries.entries()]) if (e.typeId === typeId) entries.delete(k);
   notify();
+}
+
+export function markContentReviewed(input: { typeId: ContentTypeId; ids: string[]; actor: ContentActor; note: string }): ContentResult {
+  if (!canAuthorContent(input.actor.role) || !input.note.trim()) return { ok: false, reason: "Author access and a review reason are required." };
+  const records = input.ids.map((id) => entries.get(key(input.typeId, id)));
+  if (!records.length || records.some((e) => !e)) return { ok: false, reason: "Select existing content." };
+  for (const e of records) { if (!e) continue; e.body.meta = { ...(e.body.meta as ContentBody ?? {}), lastReviewed: new Date().toISOString().slice(0, 10) }; appendRevision(e, "edited", input.actor, e.status, input.note); }
+  notify(); return { ok: true, entry: clone(records[0]!) };
 }

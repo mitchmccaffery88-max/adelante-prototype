@@ -43,6 +43,7 @@ import { Route as ClinicianCredentialsRouteImport } from './routes/clinician-cre
 import { Route as ClinicianProfileRouteImport } from './routes/clinician-profile'
 import { Route as ConsentRouteImport } from './routes/consent'
 import { Route as ConsentAuditRouteImport } from './routes/consent-audit'
+import { Route as ContentLibraryRouteImport } from './routes/content-library'
 import { Route as CosignInboxRouteImport } from './routes/cosign-inbox'
 import { Route as CountyReportingRouteImport } from './routes/county-reporting'
 import { Route as CoverageReleaseRouteImport } from './routes/coverage-release'
@@ -61,6 +62,7 @@ import { Route as GroupSessionsRouteImport } from './routes/group-sessions'
 import { Route as HomeRouteImport } from './routes/home'
 import { Route as InboxRouteImport } from './routes/inbox'
 import { Route as IntakeRouteImport } from './routes/intake'
+import { Route as JourneysRouteImport } from './routes/journeys'
 import { Route as LibraryRouteImport } from './routes/library'
 import { Route as LocationCalendarsRouteImport } from './routes/location-calendars'
 import { Route as MedicationsRouteImport } from './routes/medications'
@@ -297,6 +299,11 @@ const ConsentAuditRoute = ConsentAuditRouteImport.update({
   path: '/consent-audit',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ContentLibraryRoute = ContentLibraryRouteImport.update({
+  id: '/content-library',
+  path: '/content-library',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const CosignInboxRoute = CosignInboxRouteImport.update({
   id: '/cosign-inbox',
   path: '/cosign-inbox',
@@ -385,6 +392,11 @@ const InboxRoute = InboxRouteImport.update({
 const IntakeRoute = IntakeRouteImport.update({
   id: '/intake',
   path: '/intake',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const JourneysRoute = JourneysRouteImport.update({
+  id: '/journeys',
+  path: '/journeys',
   getParentRoute: () => rootRouteImport,
 } as any)
 const LibraryRoute = LibraryRouteImport.update({
@@ -754,6 +766,7 @@ export interface FileRoutesByFullPath {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
@@ -772,6 +785,7 @@ export interface FileRoutesByFullPath {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
@@ -872,6 +886,7 @@ export interface FileRoutesByTo {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
@@ -890,6 +905,7 @@ export interface FileRoutesByTo {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
@@ -989,6 +1005,7 @@ export interface FileRoutesById {
   '/clinician-profile': typeof ClinicianProfileRoute
   '/consent': typeof ConsentRoute
   '/consent-audit': typeof ConsentAuditRoute
+  '/content-library': typeof ContentLibraryRoute
   '/cosign-inbox': typeof CosignInboxRoute
   '/county-reporting': typeof CountyReportingRoute
   '/coverage-release': typeof CoverageReleaseRoute
@@ -1007,6 +1024,7 @@ export interface FileRoutesById {
   '/home': typeof HomeRoute
   '/inbox': typeof InboxRoute
   '/intake': typeof IntakeRoute
+  '/journeys': typeof JourneysRoute
   '/library': typeof LibraryRoute
   '/location-calendars': typeof LocationCalendarsRoute
   '/medications': typeof MedicationsRoute
@@ -1110,6 +1128,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/content-library'
     | '/cosign-inbox'
     | '/county-reporting'
     | '/coverage-release'
@@ -1128,6 +1147,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/journeys'
     | '/library'
     | '/location-calendars'
     | '/medications'
@@ -1228,6 +1248,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/content-library'
     | '/cosign-inbox'
     | '/county-reporting'
     | '/coverage-release'
@@ -1246,6 +1267,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/journeys'
     | '/library'
     | '/location-calendars'
     | '/medications'
@@ -1344,6 +1366,7 @@ export interface FileRouteTypes {
     | '/clinician-profile'
     | '/consent'
     | '/consent-audit'
+    | '/content-library'
     | '/cosign-inbox'
     | '/county-reporting'
     | '/coverage-release'
@@ -1362,6 +1385,7 @@ export interface FileRouteTypes {
     | '/home'
     | '/inbox'
     | '/intake'
+    | '/journeys'
     | '/library'
     | '/location-calendars'
     | '/medications'
@@ -1464,6 +1488,7 @@ export interface RootRouteChildren {
   ClinicianProfileRoute: typeof ClinicianProfileRoute
   ConsentRoute: typeof ConsentRoute
   ConsentAuditRoute: typeof ConsentAuditRoute
+  ContentLibraryRoute: typeof ContentLibraryRoute
   CosignInboxRoute: typeof CosignInboxRoute
   CountyReportingRoute: typeof CountyReportingRoute
   CoverageReleaseRoute: typeof CoverageReleaseRoute
@@ -1482,6 +1507,7 @@ export interface RootRouteChildren {
   HomeRoute: typeof HomeRoute
   InboxRoute: typeof InboxRoute
   IntakeRoute: typeof IntakeRoute
+  JourneysRoute: typeof JourneysRoute
   LibraryRoute: typeof LibraryRoute
   LocationCalendarsRoute: typeof LocationCalendarsRoute
   MedicationsRoute: typeof MedicationsRoute
@@ -1767,6 +1793,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ConsentAuditRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/content-library': {
+      id: '/content-library'
+      path: '/content-library'
+      fullPath: '/content-library'
+      preLoaderRoute: typeof ContentLibraryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/cosign-inbox': {
       id: '/cosign-inbox'
       path: '/cosign-inbox'
@@ -1891,6 +1924,13 @@ declare module '@tanstack/react-router' {
       path: '/intake'
       fullPath: '/intake'
       preLoaderRoute: typeof IntakeRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/journeys': {
+      id: '/journeys'
+      path: '/journeys'
+      fullPath: '/journeys'
+      preLoaderRoute: typeof JourneysRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/library': {
@@ -2467,6 +2507,7 @@ const rootRouteChildren: RootRouteChildren = {
   ClinicianProfileRoute: ClinicianProfileRoute,
   ConsentRoute: ConsentRoute,
   ConsentAuditRoute: ConsentAuditRoute,
+  ContentLibraryRoute: ContentLibraryRoute,
   CosignInboxRoute: CosignInboxRoute,
   CountyReportingRoute: CountyReportingRoute,
   CoverageReleaseRoute: CoverageReleaseRoute,
@@ -2485,6 +2526,7 @@ const rootRouteChildren: RootRouteChildren = {
   HomeRoute: HomeRoute,
   InboxRoute: InboxRoute,
   IntakeRoute: IntakeRoute,
+  JourneysRoute: JourneysRoute,
   LibraryRoute: LibraryRoute,
   LocationCalendarsRoute: LocationCalendarsRoute,
   MedicationsRoute: MedicationsRoute,

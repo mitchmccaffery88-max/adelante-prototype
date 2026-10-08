@@ -1,3 +1,4 @@
+import { useContentPreviewMode } from "@/lib/contentPreviewMode";
 // §B7 — optional private text box under the recovery check-in question.
 import { useState } from "react";
 import { Link } from "@tanstack/react-router";
@@ -33,7 +34,8 @@ const COPY = {
 export function RecoveryCheckInNote({ patientId, lessonId }: { patientId: string; lessonId: string }) {
   const { lang } = useI18n();
   const c = lang === "es" ? COPY.es : COPY.en;
-  const prev = myRecoveryCheckInNote(patientId, lessonId);
+  const preview = useContentPreviewMode();
+  const prev = preview ? undefined : myRecoveryCheckInNote(patientId, lessonId);
   const [text, setText] = useState(prev?.text ?? "");
   const [shared, setShared] = useState(prev?.shared ?? false);
   return (
@@ -66,8 +68,9 @@ export function RecoveryCheckInNote({ patientId, lessonId }: { patientId: string
       <Button
         size="sm"
         variant="outline"
-        disabled={!text.trim()}
+        disabled={preview || !text.trim()}
         onClick={() => {
+          if (preview) return;
           saveRecoveryCheckInNote({ patientId, lessonId, text, shared });
           toast.success(shared ? c.savedShared : c.saved);
         }}

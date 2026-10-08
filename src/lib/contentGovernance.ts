@@ -53,10 +53,12 @@ const PATIENT_TYPES = new Set([
   "recovery_module",
   "community_resource",
   "naloxone_access_point",
+  "exercise",
+  "journey",
 ]);
 
 /** Draft: the Spanish block applies to lessons; directory names and containers are exempt. */
-export const SPANISH_REQUIRED_TYPES = new Set(["library_lesson", "recovery_lesson"]);
+export const SPANISH_REQUIRED_TYPES = new Set(["library_lesson", "recovery_lesson", "exercise", "journey"]);
 
 export function isPatientFacingType(typeId: string): boolean {
   return PATIENT_TYPES.has(typeId);
@@ -73,14 +75,14 @@ function textOf(body: Record<string, unknown>): string {
 
 /** Part 2 is REQUIRED on recovery lessons/modules and auto-suggested on SUD topics. */
 export function part2Required(typeId: string): boolean {
-  return typeId === "recovery_lesson";
+  return typeId === "recovery_lesson" || typeId === "recovery_module";
 }
 export function part2Suggested(typeId: string, body: Record<string, unknown>): boolean {
-  return part2Required(typeId) || (typeId === "library_lesson" && SUD_WORDS.test(textOf(body)));
+  return part2Required(typeId) || (["library_lesson", "exercise", "journey"].includes(typeId) && SUD_WORDS.test(textOf(body)));
 }
 
 export function isPart2Content(typeId: string, body: Record<string, unknown>): boolean {
-  return part2Required(typeId) || metaOf(body).part2 === true;
+  return part2Required(typeId) || metaOf(body).part2 === true || body.part2Sensitive === true;
 }
 
 export function spanishStatusOf(body: Record<string, unknown>): SpanishStatus {

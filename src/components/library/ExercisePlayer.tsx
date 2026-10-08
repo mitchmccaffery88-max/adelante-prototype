@@ -1,3 +1,4 @@
+import { useContentPreviewMode } from "@/lib/contentPreviewMode";
 // §Adelante Journey Phase 5 — exercise renderer.
 //
 // One component per content variant of the `ExerciseContent` discriminated
@@ -354,12 +355,14 @@ export function exerciseSummary(exercise: Exercise, values: Record<string, strin
   return Object.values(values).filter(Boolean).join(" · ") || exercise.title;
 }
 export function ExerciseBody({ exercise, patientId: provided, lessonId, surface = "exercise" }: { exercise: Exercise; patientId?: string; lessonId?: string; surface?: LessonSurface }) {
-  const patientId = useEhr(() => provided ?? AdelanteEHR.getCurrentPatientId());
+  const preview = useContentPreviewMode();
+  const [previewValues, setPreviewValues] = useState<Record<string, string>>({});
+  const patientId = useEhr(() => preview ? "" : provided ?? AdelanteEHR.getCurrentPatientId());
   const { t, lang } = useI18n();
   const id = lessonId ?? exercise.id;
-  const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, surface, id));
-  const values = response?.exerciseInputs?.[exercise.id] ?? {};
-  const set = (key: string, value: string) => savePlayerResponse(patientId, surface, id, { exerciseInputs: { [exercise.id]: { [key]: value } } });
+  const response = useEhr(() => preview ? undefined : AdelanteEHR.lessonResponse(patientId, surface, id));
+  const values = preview ? previewValues : response?.exerciseInputs?.[exercise.id] ?? {};
+  const set = (key: string, value: string) => { if (preview) { setPreviewValues((prev) => ({ ...prev, [key]: value })); return; } savePlayerResponse(patientId, surface, id, { exerciseInputs: { [exercise.id]: { [key]: value } } }); };
   const raw = exerciseSummary(exercise, values);
   const summary = exercise.content.type === "breathing" ? `${Number(values.cycles ?? 0)} ${t("playerRounds")}` : exercise.content.type === "calculator" ? raw.replace("In", t("playerMoneyIn")).replace("out", t("playerMoneyOut")).replace("left", t("playerMoneyLeft")) : exercise.content.type === "timer" ? raw.replace("seconds", t("playerSeconds")) : raw;
   const types = { breathing: "playerBreathingType", timer: "playerTimerType", checklist: "playerChecklistType", worksheet: "playerWorksheetType", mapper: "playerMapperType", calculator: "playerCalculatorType", scale: "playerScaleType" } as const;
@@ -369,6 +372,6 @@ export function ExerciseBody({ exercise, patientId: provided, lessonId, surface 
     {lang === "es" && <p>{t("playerDraft")}</p>}
     <VariantBody exercise={exercise} />
     <p className="rounded-xl bg-secondary p-3" data-testid="exercise-summary">{summary}</p>
-    <Button className="min-h-11 rounded-full" onClick={() => { savePlayerToolkit(patientId, exercise.id, `${exercise.title} — ${summary}`, "exercise"); toast.success(t("playerSaved")); }}>{t("playerSave")}</Button>
+    <Button className="min-h-11 rounded-full" disabled={preview} onClick={() => { if (preview) return; savePlayerToolkit(patientId, exercise.id, `${exercise.title} — ${summary}`, "exercise"); toast.success(t("playerSaved")); }}>{t("playerSave")}</Button>
   </section></InputContext.Provider>;
 }

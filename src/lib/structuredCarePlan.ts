@@ -109,12 +109,12 @@ export interface PlanActivity {
   id: string;
   label: { en: string; es: string };
   /** Where the patient opens it. */
-  to: "/library" | "/recovery-journey";
+  to: "/library" | "/recovery-journey" | "/journeys";
   exercise?: string;
   sud: boolean;
   /** §C5 deep link: `{ item }`, `{ lesson }`, `{ module }` or `{ exercise }`. */
   search?: Record<string, string>;
-  kind?: "lesson" | "module" | "exercise";
+  kind?: "lesson" | "module" | "exercise" | "journey";
 }
 export const PLAN_ACTIVITIES: PlanActivity[] = [
   { id: "box-breathing", label: { en: "Box breathing", es: "Respiración en caja" }, to: "/library", exercise: "box-breathing", sud: false },

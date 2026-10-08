@@ -59,3 +59,14 @@ below are **Draft — pending clinical sign-off**.
 - Verify now stamps the current managed revision (CMS edits are never
   overwritten by the shipped copy). Needed: a pre-launch audit that re-calls
   each provider and records a fresh verification.
+
+## Staff reference, curriculum and audit (S1–S6, Draft)
+- `/content-library` provides the role-gated Care reference view; `/admin-content` retains Browse, Manage, Review, Audit and its existing authoring gates. Part 2 catalog rows are omitted, not teased. Enforce these gates server-side.
+- Preview uses a local boundary and local language/response state; never patient progress, toolkit, crisis or shared-note writes. Render patient players inside `.patient-theme` while the staff shell keeps staff tokens.
+- Exercise and Journey are CMS types with versioned structured bodies, tags, audience gates, ES Draft variants, clinical/non-author approval and inventory export. Shipped exercises and curricula migrate through `seedPublishedContent`.
+- Curriculum steps reference module/lesson/exercise ids; sequential required steps lock following steps. Live Journeys block retiring referenced content; replace the reference first, with an audited reason.
+- New response/completion records pin `publishedRev`; legacy revision gaps are explicitly unknown, never guessed. Server storage must pin the actual full published snapshot and revision in the response transaction.
+- Audit metrics/CSV are aggregates only; every cell below 11 suppressed. No patient-level export, private text, supports or contact data. Period filtering applies to starts/completion dates. Journey rating-change aggregation needs validated cross-step methodology before launch.
+- Main audit receives content lifecycle records; registry mutation attempts remain action events. Bulk review requires a reason. Review-overdue work routes to the metadata owner without auto-reassignment.
+- Production-bundle browser CI remains the accepted SculptSoft/CI follow-up; the prototype checks use the running dev server with one-time warm-up.
+- Journey analytics are Draft derived engagement cohorts: first observed activity among expanded lesson/module steps, completion only when required steps are complete, rating change = per-person average paired dimension change then cohort median. No fabricated Journey-start events; validate attribution where a lesson belongs to multiple Journeys. Rates additionally suppress small non-completer cohorts to avoid subtraction leakage.

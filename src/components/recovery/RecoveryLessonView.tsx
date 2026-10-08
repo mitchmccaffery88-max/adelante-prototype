@@ -1,3 +1,4 @@
+import { useContentPreviewMode } from "@/lib/contentPreviewMode";
 // §Adelante Journey Phase 5b — one Recovery lesson. ADAPTER ONLY, exactly like
 // `LibraryLesson`: it maps `RecoveryLesson` onto the SHARED `ModuleTemplate`.
 // The three extra steps (7–9) are the real tool flow, rendered by the shared
@@ -90,14 +91,22 @@ export function RecoveryLessonView({
   onDone?: () => void;
 }) {
   const { t, lang } = useI18n();
+  const preview = useContentPreviewMode();
+  const [previewResponse, setPreviewResponse] = useState<import("@/lib/engagement").LessonResponse>();
+  const saveResponse: typeof savePlayerResponse = (pid, surface, id, patch) => {
+    if (!preview) return savePlayerResponse(pid, surface, id, patch);
+    setPreviewResponse((prev) => ({ ...prev, ...patch, text: { ...prev?.text, ...patch.text }, updatedAt: new Date().toISOString() }));
+    return { ...previewResponse, ...patch, updatedAt: new Date().toISOString() };
+  };
   const { rt, esPending } = useRecoveryText();
   const completed = useEhr(() =>
-    AdelanteEHR.completedRecoveryLessons(patientId).includes(lesson.id),
+    !preview && AdelanteEHR.completedRecoveryLessons(patientId).includes(lesson.id),
   );
-  const saved = useEhr(() => AdelanteEHR.recoveryToolFlow(patientId, lesson.id));
+  const saved = useEhr(() => preview ? undefined : AdelanteEHR.recoveryToolFlow(patientId, lesson.id));
   // §Build 2 — free text + activity selections for this lesson. Separate from
   // the tool flow above, which was already persisted and stays as it is.
-  const response = useEhr(() => AdelanteEHR.lessonResponse(patientId, "recovery", lesson.id));
+  const savedResponse = useEhr(() => preview ? undefined : AdelanteEHR.lessonResponse(patientId, "recovery", lesson.id));
+  const response = preview ? previewResponse : savedResponse;
   const id = lesson.id;
   /** Selections the patient already saved, restored into the same controls. */
   const hasSaved =
@@ -113,6 +122,7 @@ export function RecoveryLessonView({
   );
 
   function complete() {
+    if (preview) { onDone?.(); return; }
     const res = completePlayerLesson(patientId, lesson.id, "recovery", {
       warningSigns,
       supportPeople,
@@ -129,7 +139,7 @@ export function RecoveryLessonView({
   const subIndex = response?.subIndex ?? 0;
   const setSubIndex = (i: number) => {
     setPart("b");
-    savePlayerResponse(patientId, "recovery", lesson.id, { subIndex: i });
+    saveResponse(patientId, "recovery", lesson.id, { subIndex: i });
   };
   const match = matchExerciseForLesson(lesson);
   const groups: ToolGroup[] = [
@@ -161,7 +171,7 @@ export function RecoveryLessonView({
       labelFor: (opt, i) => rt(`rec.${id}.todo.${i}`, opt),
       max: TOOL_FLOW_LIMITS.todayActions,
       value: todayAction,
-      onChange: (next) => { setTodayAction(next); savePlayerResponse(patientId, "recovery", lesson.id, { todayAction: next[0] }); },
+      onChange: (next) => { setTodayAction(next); saveResponse(patientId, "recovery", lesson.id, { todayAction: next[0] }); },
     },
   ];
   const toolsDone = subIndex >= groups.length;
@@ -221,7 +231,7 @@ export function RecoveryLessonView({
             ifPicks: response?.ifThen?.ifPicks ?? [],
             thenPicks: response?.ifThen?.thenPicks ?? [],
             onChange: (next: { ifPicks: string[]; thenPicks: string[] }) =>
-              savePlayerResponse(patientId, "recovery", lesson.id, { ifThen: next }),
+              saveResponse(patientId, "recovery", lesson.id, { ifThen: next }),
           },
         ]
       : []),
@@ -251,7 +261,7 @@ export function RecoveryLessonView({
           match={match}
           groups={groups}
           part={part}
-          onPartChange={(next) => { setPart(next); savePlayerResponse(patientId, "recovery", lesson.id, { toolPart: next }); }}
+          onPartChange={(next) => { setPart(next); saveResponse(patientId, "recovery", lesson.id, { toolPart: next }); }}
           subIndex={subIndex}
           onSubIndexChange={setSubIndex}
         />
@@ -260,7 +270,7 @@ export function RecoveryLessonView({
     // §Phase C — "after" ratings, same dimensions, delta tiles.
     { kind: "rating", label: t("modRateAfterLabel"), phase: "after", dimensions },
     {
-      kind: "custom", label: t("playerPreview"), content: <ClosingPreview tool={rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)} response={response} supports={supportPeople} onChange={(patch) => savePlayerResponse(patientId, "recovery", lesson.id, patch)} />,
+      kind: "custom", label: t("playerPreview"), content: <ClosingPreview tool={rt(`rec.${id}.toolkitLabel`, lesson.toolkitLabel)} response={response} supports={supportPeople} onChange={(patch) => saveResponse(patientId, "recovery", lesson.id, patch)} />,
     },
   ];
 
@@ -313,7 +323,7 @@ export function RecoveryLessonView({
       steps={steps}
       response={response}
       onResponseChange={(patch) =>
-        savePlayerResponse(patientId, "recovery", lesson.id, patch)
+        saveResponse(patientId, "recovery", lesson.id, patch)
       }
       completeLabel={completed ? t("recUpdatePlan") : t("recFinishSave")}
       onComplete={complete}

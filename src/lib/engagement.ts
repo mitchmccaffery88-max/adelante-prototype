@@ -44,6 +44,7 @@ export interface ContentResolver {
   libraryItems?: () => LibraryItem[];
   exercises?: () => import("./library").Exercise[];
   protectedId?: (id: string) => boolean;
+  revision?: (surface: LessonSurface, id: string) => number | undefined;
 }
 
 let contentResolver: ContentResolver | undefined;
@@ -119,6 +120,7 @@ export interface PatientEngagement {
    * rather than assume a date.
    */
   completedAt?: Record<string, string>;
+  completedRevisions?: Record<string, number>;
   firstActivityAt?: string;
 
   lastActivityAt?: string;
@@ -140,6 +142,8 @@ export function lessonResponseKey(surface: LessonSurface, lessonId: string): str
  * one-for-one so nothing a patient touches is thrown away on unmount.
  */
 export interface LessonResponse {
+  publishedRev?: number;
+  startedAt?: string;
   /** Last step the patient was on (0-based). */
   stepIndex?: number;
   stepTotal?: number;
@@ -280,6 +284,8 @@ export function completionKey(ns: CompletionNamespace, id: string): string {
 function markCompletedAt(r: PatientEngagement, ns: CompletionNamespace, id: string) {
   r.completedAt ??= {};
   r.completedAt[completionKey(ns, id)] ??= new Date().toISOString();
+  const rev = r.lessonResponses[completionKey(ns, id)]?.publishedRev ?? contentResolver?.revision?.(ns, id);
+  if (rev !== undefined) { r.completedRevisions ??= {}; r.completedRevisions[completionKey(ns, id)] ??= rev; }
 }
 
 export interface CompletionEvent {
@@ -375,6 +381,7 @@ export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
     completedLibraryItems: r.completedLibraryItems.filter((id) => !contentResolver?.protectedId?.(id)),
     completedExercises: r.completedExercises.filter((id) => !contentResolver?.protectedId?.(id)),
     completedRecoveryLessons: [],
+    completedRevisions: Object.fromEntries(Object.entries(r.completedRevisions ?? {}).filter(([key]) => !contentResolver?.protectedId?.(key.slice(key.indexOf(":") + 1)))),
     completedAt: Object.fromEntries(Object.entries(r.completedAt ?? {}).filter(([key]) => !contentResolver?.protectedId?.(key.slice(key.indexOf(":") + 1)))),
     savedToolkitItems: r.savedToolkitItems.map((t) => ({ ...t, id: contentResolver?.protectedId?.(t.id) ? "protected-content" : t.id, label: "Saved tool" })),
   }));
@@ -461,6 +468,8 @@ export function saveLessonResponse(
   const next: LessonResponse = {
     ...(prev ?? {}),
     ...patch,
+    startedAt: prev?.startedAt ?? new Date().toISOString(),
+    publishedRev: prev?.publishedRev ?? contentResolver?.revision?.(surface, lessonId),
     ...(patch.text ? { text: { ...(prev?.text ?? {}), ...patch.text } } : {}),
     ...(patch.exerciseInputs ? { exerciseInputs: { ...(prev?.exerciseInputs ?? {}), ...Object.fromEntries(Object.entries(patch.exerciseInputs).map(([id, values]) => [id, { ...(prev?.exerciseInputs?.[id] ?? {}), ...values }])) } } : {}),
     // §Phase C — rating maps merge per-dimension, like `text` does per-field.

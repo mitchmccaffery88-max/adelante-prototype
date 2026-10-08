@@ -261,3 +261,10 @@
 - [x] Staff-to-staff threads, mentions, read receipts, Discuss from escalation
 ## Adel chat persistence (done)
 - [x] History/continue, delete/clear, 90-day retention, share summary via disclose(), advocate isolation, EN/ES, handoff rows 12–16
+
+## Staff content center S1–S6
+- [ ] Private real-player Browse + care plan preview
+- [ ] Structured Manage forms + exercises/journeys CMS
+- [ ] Journey patient progress/assignment integrity
+- [ ] Revision-pinned engagement + suppressed Audit/history/stale queue
+- [ ] Full unit and browser validation + handoff

@@ -1,3 +1,4 @@
+import { RealContentPreview } from "./RealContentPreview";
 // §Content Management admin tooling — PREVIEW BEFORE PUBLISH.
 //
 // Renders the working body in the patient's step order, using the type
@@ -48,105 +49,6 @@ function ActivityPreview({ activity }: { activity: unknown }) {
   );
 }
 
-export function ContentPreview({
-  descriptor,
-  body,
-}: {
-  descriptor: ContentTypeDescriptor;
-  body: ContentBody;
-}) {
-  // Lessons carry a numbered instructional sequence; a community resource or a
-  // naloxone access point does not. Preview whichever shape this type is,
-  // rather than pretending every managed type is a lesson.
-  const allFields = descriptorFields(descriptor);
-  const stepped = allFields.filter((f) => f.step);
-  const shown = stepped.length > 0 ? stepped : allFields;
-  const minutes = readField(body, "minutes");
-  return (
-    <Card className="space-y-4 p-5" data-testid="content-preview">
-      <div>
-        <p className="text-xs font-medium uppercase tracking-wider text-teal">
-          Preview — what a patient would see
-        </p>
-        <h3 className="font-display text-2xl text-navy">{descriptor.titleOf(body)}</h3>
-        {typeof minutes === "number" && (
-          <p className="text-xs text-muted-foreground">About {minutes} minutes</p>
-        )}
-      </div>
-      {shown.map((f) => {
-          const value = readField(body, f.key);
-          if (f.kind === "activity") return <ActivityPreview key={f.key} activity={value} />;
-          // §Phase D — optional structures. An unauthored one is skipped
-          // entirely rather than shown as "— empty —" on every lesson.
-          if (f.kind === "stages") {
-            const stages = Array.isArray(value)
-              ? (value as { title?: string; body?: string }[])
-              : [];
-            if (stages.length === 0) return null;
-            return (
-              <div key={f.key} className="space-y-1">
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {f.step ? `${f.step}. ` : ""}
-                  {f.label}
-                </p>
-                {stages.map((s, n) => (
-                  <div key={n} className="rounded-lg border border-border p-2">
-                    <p className="text-sm font-medium text-navy">{s.title}</p>
-                    <p className="whitespace-pre-wrap text-sm text-muted-foreground">{s.body}</p>
-                  </div>
-                ))}
-              </div>
-            );
-          }
-          if (f.kind === "toggle") {
-            if (value !== true) return null;
-            return (
-              <p key={f.key} className="text-xs text-muted-foreground">
-                {f.label}: yes
-              </p>
-            );
-          }
-          if (f.kind === "list") {
-            const items = Array.isArray(value) ? (value as string[]) : [];
-            return (
-              <div key={f.key}>
-                <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                  {f.step ? `${f.step}. ` : ""}
-                  {f.label}
-                </p>
-                <ul className="mt-1 flex flex-wrap gap-1.5">
-                  {items.filter(Boolean).map((i, n) => (
-                    <li key={n} className="rounded-full border border-border px-2 py-0.5 text-xs">
-                      {i}
-                    </li>
-                  ))}
-                  {items.length === 0 && (
-                    <li className="text-xs text-muted-foreground">Nothing to choose from yet.</li>
-                  )}
-                </ul>
-              </div>
-            );
-          }
-          // A number field (order, minutes) is a real authored value; rendering
-          // it as "empty" made a filled-in form look unsaved.
-          const text =
-            typeof value === "string"
-              ? value
-              : typeof value === "number"
-                ? String(value)
-                : "";
-          return (
-            <div key={f.key}>
-              <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">
-                {f.step ? `${f.step}. ` : ""}
-                {f.label}
-              </p>
-              <p className="whitespace-pre-wrap text-sm text-foreground">
-                {text || <span className="text-muted-foreground">— empty —</span>}
-              </p>
-            </div>
-          );
-        })}
-    </Card>
-  );
+export function ContentPreview({ descriptor, body }: { descriptor: ContentTypeDescriptor; body: ContentBody }) {
+  return <RealContentPreview typeId={descriptor.typeId} id={String(body.id ?? "preview")} body={body} />;
 }

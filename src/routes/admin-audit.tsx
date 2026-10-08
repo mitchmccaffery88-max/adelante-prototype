@@ -36,14 +36,17 @@ export const Route = createFileRoute("/admin-audit")({
         property: "og:description",
         content: "Cross-cutting activity trail for consent, medications, telehealth, and vendors.",
       },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary" },
     ],
   }),
   component: AdminAuditPage,
 });
 
-type CatFilter = AuditCategory | "all" | "record.viewed" | "brief";
+type CatFilter = AuditCategory | "all" | "record.viewed" | "brief" | "content";
 const CATEGORIES: { value: CatFilter; label: string }[] = [
   { value: "all", label: "All categories" },
+  { value: "content", label: "Content changes" },
   { value: "record.viewed", label: "Record access (reads)" },
   { value: "brief", label: "Adel Brief (views & system computes)" },
   { value: "disclosure", label: "Disclosures (Part 2)" },
@@ -80,13 +83,13 @@ function AdminAuditPage() {
   const events = useEhr(() =>
     redactAuditEvents(
       AdelanteEHR.listAuditEvents({
-        category: cat === "all" ? undefined : cat === "record.viewed" || cat === "brief" ? "access" : cat,
+        category: cat === "all" || cat === "content" ? undefined : cat === "record.viewed" || cat === "brief" ? "access" : cat,
         patientId: patientId === "all" ? undefined : patientId,
         actorRole: actorRole === "all" ? undefined : actorRole,
         since: from ? new Date(`${from}T00:00:00`).toISOString() : undefined,
         until: to ? new Date(`${to}T23:59:59.999`).toISOString() : undefined,
         limit: 200,
-      }).filter((e) => (cat !== "record.viewed" || e.action === "record.viewed") && (cat !== "brief" || e.action.startsWith("brief.")) && (ACCESS_LOG_ROLES.includes(role) || !e.action.startsWith("brief."))),
+      }).filter((e) => (cat !== "content" || String(e.category) === "content" || String(e.detail?.actionId ?? "").startsWith("content_") || e.detail?.actionId === "resource_verify") && (cat !== "record.viewed" || e.action === "record.viewed") && (cat !== "brief" || e.action.startsWith("brief.")) && (ACCESS_LOG_ROLES.includes(role) || !e.action.startsWith("brief."))),
       role,
     ),
   );

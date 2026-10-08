@@ -49,7 +49,9 @@ export type ContentFieldKind =
   // repeatable title+body list (the sub-paginated teaching block); `toggle` is
   // a real boolean (the rating scale's direction), not a string "true".
   | "stages"
-  | "toggle";
+  | "toggle"
+  | "exercise"
+  | "curriculum";
 
 export interface ContentField {
   /** Dotted path into the body, e.g. `toolFlow.warningSigns`. */
@@ -185,6 +187,11 @@ export const ACTIVITY_KINDS = [
   { value: "timeline", label: "Order-the-steps timeline" },
   { value: "sort", label: "Sort into buckets" },
   { value: "write", label: "Write" },
+  { value: "breathing", label: "Breathing" },
+  { value: "sliders", label: "Sliders" },
+  { value: "grounding", label: "Grounding" },
+  { value: "decision", label: "Decision" },
+  { value: "rate", label: "Rate" },
 ] as const;
 
 export type EditableActivityKind = (typeof ACTIVITY_KINDS)[number]["value"];
@@ -209,6 +216,11 @@ export function emptyActivity(kind: EditableActivityKind): LibraryActivity {
       return { kind: "sort", prompt: "", buckets: ["", ""], cards: [] };
     case "write":
       return { kind: "write", prompt: "", lines: 4 };
+    case "breathing": return { kind: "breathing", title: "", prompt: "", inhaleSec: 4, holdSec: 4, exhaleSec: 4, rounds: 3 };
+    case "sliders": return { kind: "sliders", title: "", prompt: "", sliders: [] };
+    case "grounding": return { kind: "grounding", title: "", prompt: "", senses: [] };
+    case "decision": return { kind: "decision", title: "", prompt: "", choices: [] };
+    case "rate": return { kind: "rate", prompt: "", min: 0, max: 10, minLabel: "", maxLabel: "" };
   }
 }
 
@@ -218,10 +230,10 @@ function validateActivity(body: ContentBody): string[] {
   const act = a as Record<string, unknown>;
   const kind = act["kind"];
   if (typeof kind !== "string") return ["Pick an activity type."];
-  // Kinds the form cannot edit (breathing, sliders, grounding, decision, rate)
-  // are carried through untouched from the baseline rather than being
-  // rewritten by a form that does not understand them.
-  if (!ACTIVITY_KINDS.some((k) => k.value === kind)) return [];
+  if (!["checklist", "reflection", "timeline", "sort", "write"].includes(kind)) {
+    if (kind === "breathing" && (!(Number(act.inhaleSec) > 0) || !(Number(act.exhaleSec) > 0))) return ["Breathing needs positive inhale and exhale phases."];
+    return [];
+  }
   const prompt = typeof act["prompt"] === "string" ? act["prompt"].trim() : "";
   if (!prompt) return ["The activity needs a prompt."];
   const arrayKey =
@@ -843,6 +855,9 @@ export const RECOVERY_MODULE_TYPE: ContentTypeDescriptor = {
 // so there is no cycle back into this module.
 import "@/lib/library.advocateCategory.seed";
 
+import { EXERCISE_CONTENT_TYPE, JOURNEY_CONTENT_TYPE, initializePracticeContent } from "./curriculumTypes";
+initializePracticeContent();
+
 export const CONTENT_TYPES: ContentTypeDescriptor[] = [
 
   LIBRARY_LESSON_TYPE,
@@ -851,6 +866,8 @@ export const CONTENT_TYPES: ContentTypeDescriptor[] = [
   RECOVERY_MODULE_TYPE,
   COMMUNITY_RESOURCE_TYPE,
   NALOXONE_ACCESS_TYPE,
+  EXERCISE_CONTENT_TYPE,
+  JOURNEY_CONTENT_TYPE,
 ];
 
 export function contentType(typeId: ContentTypeId): ContentTypeDescriptor {
@@ -861,7 +878,11 @@ export function contentType(typeId: ContentTypeId): ContentTypeDescriptor {
 
 /** The real field list for a descriptor, live options included. */
 export function descriptorFields(d: ContentTypeDescriptor): ContentField[] {
-  return d.fieldsFor ? d.fieldsFor() : d.fields;
+  const fields = d.fieldsFor ? d.fieldsFor() : d.fields;
+  const extra: ContentField[] = [];
+  if (["library_lesson", "recovery_lesson"].includes(d.typeId)) extra.push({ key: "populations", label: "Population gates", kind: "list" }, { key: "part2Sensitive", label: "Part 2 sensitive", kind: "toggle" }, ...["title", "problem", "learnTitle", "learnBody", "action", "toolkitLabel"].map((key) => ({ key: `es.${key}`, label: `Spanish ${key} (Draft)`, kind: "textarea" as const })));
+  if (d.typeId === "recovery_module") extra.push({ key: "reentryFocus", label: "Reentry focus", kind: "toggle" });
+  return [...fields, ...extra];
 }
 
 /** Typed casts used by the catalog once a body has passed `validate`. */
