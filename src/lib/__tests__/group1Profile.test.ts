@@ -34,7 +34,7 @@ describe("P1 bookable roles", () => {
       expect(availableSlots(ma.clinicianId)).toEqual([]);
     }
     const p = AdelanteEHR.listPatients()[0];
-    const ids = eligibleClinicians("therapy_individual", p, { role: "clinical_coordinator" } as never).map((c) => c.clinicianId ?? (c as { id?: string }).id);
+    const ids = eligibleClinicians("therapy_individual", p, { role: "clinical_coordinator" } as never).map((c) => c.clinician.id);
     for (const id of ids) if (id) expect(isBookableClinician(id)).toBe(true);
   });
   it("page label follows the role", () => {
