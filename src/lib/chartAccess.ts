@@ -4,8 +4,9 @@
 // and tests:
 //   1. the role must be a clinical delivery / coordination role (CHART_ENTRY_ROLES);
 //   2. the patient must be enrolled at a site where the person works (staff
-//      calendar sites; Premier Visalia / the org default when none), OR the
-//      person is on the patient's assigned care team;
+//      calendar sites — weekly hours; Premier Visalia / the org default when
+//      none). Care-team membership never grants entry across sites; profile
+//      "secondary locations" with no hours yet don't either;
 //   3. a "Restricted record" is hidden from search for everyone off the care
 //      team, and opening it asks for a reason, is logged and raises a
 //      compliance item.

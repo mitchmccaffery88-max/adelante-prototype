@@ -7,6 +7,7 @@ import { AdelanteEHRExt, type AvailabilityBlock } from "./ehr-ext";
 import { DEFAULT_FACILITY_TZ, fromFacilityWallClock, startOfFacilityDay, toFacilityParts } from "./facilityTime";
 import { isWorkingDay, siteForBlock } from "./workingCalendar";
 import { isActiveStaff } from "./staffLifecycle";
+import { blockOffersService, isBookableClinician } from "./staffProfile";
 
 /**
  * Weekly hours are FACILITY wall-clock (America/Los_Angeles), never the
@@ -52,7 +53,7 @@ export interface SlotQuery {
 
 /** Open slot starts (ISO) inside the clinician's real availability; conflicts and past times skipped. */
 export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[] {
-  if (!isActiveStaff(clinicianId)) return [];
+  if (!isActiveStaff(clinicianId) || !isBookableClinician(clinicianId)) return [];
   const now = q.now ?? new Date();
   const days = q.days ?? 14;
   const step = q.stepMin ?? 60;
@@ -72,7 +73,8 @@ export function availableSlots(clinicianId: string, q: SlotQuery = {}): string[]
       if (b.weekday !== weekday) continue;
       if (!isWorkingDay(date, { siteId: siteForBlock(b), ownerId: clinicianId })) continue;
       if (!modalityFits(b.modality, q.modality)) continue;
-      if (q.serviceType && b.careTypes.length && !b.careTypes.includes(q.serviceType)) continue;
+      // §Group 1 A3 — visit type ∩ block care types ∩ site services.
+      if (!blockOffersService(b, siteForBlock(b), q.serviceType)) continue;
       windows.push({ start: toMin(b.start), end: toMin(b.end) });
     }
     if (exceptions.some((e) => e.kind === "off" && e.date <= date && (e.endDate ?? e.date) >= date)) continue;

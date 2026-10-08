@@ -77,7 +77,12 @@ export interface PlanAssignment {
   completionSources?: { at: string; source: string }[];
   active: boolean;
   sud: boolean;
+  /** §Group 1 C2 — added automatically by a specialty flag (no staff accept step). */
+  autoAdded?: { flag: SpecialtyFlag; trigger: string; at: string };
+  /** §C2 — the flag was later removed: assigned clinician keeps or retires it. */
+  flagReview?: { flag: SpecialtyFlag; at: string; resolved?: "kept" | "retired"; by?: string; reason?: string };
 }
+export type SpecialtyFlag = "justice_involved" | "sud";
 export interface PlanVersion {
   version: number;
   at: string;
@@ -513,7 +518,8 @@ export function planSuggestions(patientId: string, now = new Date()): PlanSugges
     const phq = latestScore(p, "phq-9");
     if (phq !== undefined && phq >= SUGGESTION_THRESHOLDS.phq9 && !has("ss-daily-rhythm"))
       out.push({ id: "phq9-activation", rule: `PHQ-9 ≥ ${SUGGESTION_THRESHOLDS.phq9}`, why: `Latest PHQ-9 is ${phq}.`, kind: "activity", activityId: "ss-daily-rhythm", frequency: "weekly", label: "Creating My Daily Rhythm (weekly)" });
-    if (inReentryWindow(p, now, SUGGESTION_THRESHOLDS.reentryDays) && !has("first-days-out"))
+    // §C2 — the justice-involved flag now adds the journey automatically.
+    if (inReentryWindow(p, now, SUGGESTION_THRESHOLDS.reentryDays) && !has("first-days-out") && !plan.assignments.some((x) => x.autoAdded?.flag === "justice_involved"))
       out.push({ id: "reentry-journey", rule: `Within ${SUGGESTION_THRESHOLDS.reentryDays} days of release`, why: "Released recently.", kind: "activity", activityId: "first-days-out", frequency: "weekly", label: "My First Days Out (weekly)" });
   }
   for (const it of p.sdohPlan?.items ?? []) {
@@ -653,4 +659,54 @@ export function _resetStructuredPlans() {
 /** §Batch E — the plan store a merge re-keys (patient merge only). */
 export function _mergePlanStore(): Map<string, StructuredPlan> {
   return plans;
+}
+
+// ---------------------------------------------------------------- §Group 1 C2 flag-driven journeys
+const FLAG_GOAL_TEXT: Record<SpecialtyFlag, { clinical: string; en: string; es: string }> = {
+  justice_involved: { clinical: "Reentry support — content added automatically (Draft)", en: "Settle in after release, one step at a time", es: "Borrador — Adaptarme después de salir, un paso a la vez" },
+  sud: { clinical: "Recovery support — content added automatically (Draft)", en: "Build my recovery, one step at a time", es: "Borrador — Construir mi recuperación, un paso a la vez" },
+};
+/**
+ * System add (no staff accept step). Idempotent per journey id; returns
+ * undefined when the journey is already on the plan.
+ */
+export function autoAddJourneyAssignment(input: { patientId: string; journeyId: string; label: { en: string; es: string }; flag: SpecialtyFlag; trigger: string; part2: boolean; at?: string }): PlanAssignment | undefined {
+  const plan = getStructuredPlan(input.patientId);
+  if (plan.assignments.some((a) => a.activityId === input.journeyId && a.active)) return undefined;
+  const at = input.at ?? new Date().toISOString();
+  const sud = input.flag === "sud" || input.part2;
+  let g = plan.goals.find((x) => x.status === "active" && x.source === undefined && x.clinicalText === FLAG_GOAL_TEXT[input.flag].clinical);
+  if (!g) {
+    const problems = buildPlanProblems(patientOf(input.patientId));
+    const problemIds = problems.filter((x) => (input.flag === "sud" ? x.sud : x.source === "reentry" || x.code === "Z65.2")).map((x) => x.id);
+    const t = FLAG_GOAL_TEXT[input.flag];
+    g = { id: uid(), patientId: input.patientId, problemIds, needIds: [], owner: "patient", measure: "Journey steps done", clinicalText: t.clinical, patientText: { en: t.en, es: t.es }, status: "active", sud, createdAt: at, createdBy: "Adelante (automatic)" };
+    plan.goals.push(g);
+  }
+  const a: PlanAssignment = { id: uid(), patientId: input.patientId, goalId: g.id, kind: "activity", activityId: input.journeyId, label: input.label, frequency: "weekly", startAt: at, assignedBy: "Adelante (automatic)", reason: "rule", completions: [], active: true, sud: sud || g.sud, autoAdded: { flag: input.flag, trigger: input.trigger, at } };
+  plan.assignments.push(a);
+  plan.review.changedSinceSigned = !!plan.review.signedAt;
+  audit("plan_journey_auto_added", input.patientId, { name: "Adelante (automatic)", role: "system" }, { assignmentId: a.id, journeyId: input.journeyId, reason: input.trigger, part2: a.sud });
+  return a;
+}
+/** Flag removed: never delete or lose progress — mark for the assigned clinician to review. */
+export function markFlagRemovedForReview(patientId: string, flag: SpecialtyFlag, at = new Date().toISOString()): PlanAssignment[] {
+  const plan = getStructuredPlan(patientId);
+  const hit = plan.assignments.filter((a) => a.active && a.autoAdded?.flag === flag && (!a.flagReview || a.flagReview.resolved));
+  for (const a of hit) a.flagReview = { flag, at };
+  if (hit.length) audit("plan_journey_flag_removed", patientId, { name: "Adelante (automatic)", role: "system" }, { assignmentIds: hit.map((a) => a.id), reason: "Flag removed — review" });
+  return hit;
+}
+export const FLAG_REVIEW_LABEL = "Flag removed — review";
+/** Keep or retire an auto-added item after its flag was removed (reason required). */
+export function resolveFlagReview(patientId: string, assignmentId: string, decision: "kept" | "retired", reason: string, actor: Actor): PlanAssignment {
+  assertEdit(actor);
+  const a = getStructuredPlan(patientId).assignments.find((x) => x.id === assignmentId);
+  if (!a?.flagReview || a.flagReview.resolved) throw new Error("Nothing to review on this item.");
+  assertSudOk(actor, patientId, a.sud);
+  if (reason.trim().length < 3) throw new Error("Give a reason.");
+  a.flagReview = { ...a.flagReview, resolved: decision, by: actor.name, reason: reason.trim().slice(0, 300) };
+  if (decision === "retired") a.active = false;
+  audit("plan_journey_flag_review", patientId, actor, { assignmentId, decision, reason: a.flagReview.reason });
+  return a;
 }
