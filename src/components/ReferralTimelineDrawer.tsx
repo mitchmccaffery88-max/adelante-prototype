@@ -303,10 +303,12 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
     else toast.message("No text was sent to the referrer — texting isn't connected here.");
   };
 
-  const run = (fn: () => void, ok: string, notify?: "contacted" | "enrolled" | "declined") => {
+  const run = (fn: () => boolean | void, ok: string, notify?: "contacted" | "enrolled" | "declined") => {
     setBusy(true);
     try {
-      fn();
+      // fn returns false when it handled the outcome itself (e.g. a duplicate
+      // match opened the review step) — no success toast, no referrer text.
+      if (fn() === false) return;
       toast.success(ok);
       if (notify) void notifyReferrer(notify);
     } catch (err) {
@@ -348,7 +350,7 @@ function ReferralActionsCard({ referral }: { referral: Referral }) {
                 } catch (err) {
                   if (err instanceof PossibleExistingPatientError) {
                     setExactMatches(err.matches);
-                    return;
+                    return false;
                   }
                   throw err;
                 }
