@@ -268,3 +268,9 @@
 - [x] Journey patient progress/assignment integrity
 - [x] Revision-pinned engagement + suppressed Audit/history/stale queue
 - [x] Full unit (2,458) + typecheck; browser 54/55 together — continuity.spec screener-resume step intermittent under parallel load only (passes standalone)
+
+## Access & notifications batch (Draft — pending exec RBAC review)
+- [x] A1 chart entry by role + enrolled site; /record + print gated; restricted record (reason, audit, compliance item); outside-caseload + unusual-volume reports
+- [x] A2 search only for chart-entry roles on staff work pages; results limited to enterable patients
+- [x] A3 per-person read state; task pointers linked to My work; bell filters; new events; narrowed LVN cosign + HLOC routing; four text leaks fixed; Part 2 text lint; seeded broadcasts ≤5 per role
+- [x] A4 Spanish screener resume fixed at source; all browser specs green together (56/56, live preview)
