@@ -114,8 +114,7 @@ function StaffProfilePage() {
         )}
         <div className="flex justify-end">
           <Button onClick={() => {
-            if (!run("profile_save", "saveStaffProfile", { ownerId, specialtyTags: d.tags, primarySiteId: d.primary, secondarySiteIds: d.secondary, reason: "Profile updated" }, "Profile saved")) return;
-            if (ext && (langs !== null || bio !== null)) AdelanteEHRExt.upsertClinicianProfile({ ...ext, languages: (langs ?? ext.languages.join(",")).split(",").map((x) => x.trim()).filter(Boolean), bio: bio ?? ext.bio });
+            if (!run("profile_save", "saveStaffProfile", { ownerId, specialtyTags: d.tags, primarySiteId: d.primary, secondarySiteIds: d.secondary, languages: langs !== null ? langs.split(",") : undefined, bio: bio ?? undefined, reason: "Profile updated" }, "Profile saved")) return;
             setDraft(null);
           }}>Save profile</Button>
         </div>

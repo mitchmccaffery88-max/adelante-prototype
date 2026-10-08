@@ -176,13 +176,17 @@ export function getStaffProfile(staffIdOrOwner: string): StaffProfileView {
 export const canEditProfileOf = (actor: ProfileActor, ownerId: string) =>
   canEditTagList(actor.role) || profileOwnerFor(actor.staffId ?? "") === ownerId || actor.clinicianId === ownerId;
 
-export function saveStaffProfile(actor: ProfileActor, input: { ownerId: string; specialtyTags: string[]; primarySiteId?: string; secondarySiteIds?: string[]; reason?: string }): StaffProfileView {
+export function saveStaffProfile(actor: ProfileActor, input: { ownerId: string; specialtyTags: string[]; primarySiteId?: string; secondarySiteIds?: string[]; languages?: string[]; bio?: string; reason?: string }): StaffProfileView {
   if (!canEditProfileOf(actor, input.ownerId)) throw new Error("You can only change your own profile.");
   const known = new Set(listCareTags().map((t) => t.id));
   const sites = new Set(listSites().map((s) => s.id));
   if (input.primarySiteId && !sites.has(input.primarySiteId)) throw new Error("Pick a primary facility.");
   const secondary = [...new Set((input.secondarySiteIds ?? []).filter((s) => sites.has(s) && s !== input.primarySiteId))];
   profiles.set(input.ownerId, { ownerId: input.ownerId, specialtyTags: [...new Set(input.specialtyTags.filter((t) => known.has(t)))], primarySiteId: input.primarySiteId, secondarySiteIds: secondary });
+  // Patient-visible languages / bio live on the clinician profile; same registered action.
+  const ext = AdelanteEHRExt.getClinicianProfile(input.ownerId);
+  if (ext && (input.languages || input.bio !== undefined))
+    AdelanteEHRExt.upsertClinicianProfile({ ...ext, languages: input.languages ? input.languages.map((x) => x.trim()).filter(Boolean) : ext.languages, bio: input.bio ?? ext.bio });
   audit(actor, "profile_saved", { ownerId: input.ownerId, tags: input.specialtyTags.length, secondary: secondary.length, reason: input.reason?.trim() || "Profile updated" });
   changed(input.ownerId);
   return getStaffProfile(input.ownerId);
