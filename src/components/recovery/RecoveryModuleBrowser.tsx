@@ -27,6 +27,20 @@ import {
   usePublishedContentVersion,
 } from "@/lib/contentCatalog";
 import { RecoveryLessonView } from "./RecoveryLessonView";
+import { liveCurricula, REENTRY_JOURNEY_ID } from "@/lib/curriculumTypes";
+
+/**
+ * §F6 The patient's module list IS the live "Re-entry Journey": staff edits
+ * to its steps (order, removals) change what this page shows. Falls back to
+ * every live module only when the Journey has no module steps at all.
+ */
+export function reentryJourneyModules() {
+  const mods = liveRecoveryModules();
+  const j = liveCurricula().find((c) => c.id === REENTRY_JOURNEY_ID);
+  const ids = (j?.steps ?? []).filter((s) => s.type === "recovery_module").map((s) => s.id);
+  if (!ids.length) return mods;
+  return ids.map((id) => mods.find((m) => m.id === id)).filter((m): m is (typeof mods)[number] => !!m);
+}
 import { DaysSoberLine } from "@/components/patient/RecoveryDateCard";
 
 export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: string } = {}) {
@@ -88,7 +102,7 @@ export function RecoveryModuleBrowser({ initialLesson }: { initialLesson?: strin
       </PatientPageHeader>
 
 
-      {liveRecoveryModules().map((mod) => {
+      {reentryJourneyModules().map((mod) => {
         const gated = !isLibraryItemVisible(mod, population);
         const lessons = liveLessonsInModule(mod.id);
         const prog = liveModuleProgress(mod.id, completed);

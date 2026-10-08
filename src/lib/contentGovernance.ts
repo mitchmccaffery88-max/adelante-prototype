@@ -36,6 +36,32 @@ export interface ContentMeta {
 
 export const CLINICAL_REVIEWER_ROLES: StaffRole[] = ["pmhnp", "physician", "clinical_coordinator"];
 export const READING_LEVEL_TARGET = 6;
+
+/**
+ * §F1 Draft review intervals (days) per content kind — pending clinical
+ * sign-off. Crisis lines and safety text 90, directory listings 180,
+ * consent text 365. Editorial content has no fixed interval: marking it
+ * reviewed clears the next-review date until an owner sets one.
+ */
+export const REVIEW_INTERVAL_DAYS: Readonly<Record<string, number>> = {
+  crisis_line: 90,
+  safety_text: 90,
+  community_resource: 180,
+  naloxone_access_point: 180,
+  consent: 365,
+};
+export function nextReviewAfter(typeId: string, fromISODate: string): string | undefined {
+  const days = REVIEW_INTERVAL_DAYS[typeId];
+  if (!days) return undefined;
+  const d = new Date(`${fromISODate}T00:00:00Z`);
+  d.setUTCDate(d.getUTCDate() + days);
+  return d.toISOString().slice(0, 10);
+}
+/** Draft: reading-grade estimate on the English text, and whether it is above target. */
+export function readingLevelOf(typeId: string, body: Record<string, unknown>): { grade: number; aboveTarget: boolean } {
+  const grade = bodyReadingGrade(body);
+  return { grade, aboveTarget: isPatientFacingType(typeId) && grade > READING_LEVEL_TARGET };
+}
 export const GOVERNANCE_DRAFT_LABEL = "Draft — pending clinical sign-off";
 
 const SUD_WORDS =

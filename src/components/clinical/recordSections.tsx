@@ -1,3 +1,4 @@
+import { LearningHistory } from "@/components/careplan/LearningHistory";
 import { SeverityFlagsPanel } from "@/components/chart/SeverityFlagsPanel";
 import { ReferralStatusTimeline } from "@/components/ReferralStatusTimeline";
 import { CoverageExtras } from "@/components/chart/CoverageExtras";
@@ -258,6 +259,14 @@ export function useRecordSections(
     icon: ClipboardCheck,
     group: "chart",
     render: (a) => <CarePlanTab patientId={pid} readOnly={a.level === "read"} />,
+  });
+  // §F8 Lessons & practice history — its own section, gated like the care plan.
+  add("care_plan", {
+    id: "learning-history",
+    label: "Lessons & practice",
+    icon: ClipboardCheck,
+    group: "chart",
+    render: () => <LearningHistory patientId={pid} />,
   });
   // §Reporting Tier 2 — structured CalOMS history. Gated by `sud_treatment`,
   // not `demographics`: substance-use and prior-treatment detail is 42 CFR

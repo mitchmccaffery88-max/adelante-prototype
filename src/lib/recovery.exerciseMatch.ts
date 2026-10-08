@@ -13,7 +13,8 @@
 //
 // The tier is returned so the UI can be honest about a generic match rather
 // than implying the tool was authored for that lesson.
-import { EXERCISES, getExercise, type Exercise } from "@/lib/library";
+import type { Exercise } from "@/lib/library";
+import { liveExercise as getExercise, liveExercises } from "@/lib/contentCatalog";
 import type { RecoveryLesson } from "@/lib/recovery";
 
 export type ExerciseMatchTier = "keyword" | "module" | "fallback";
@@ -95,6 +96,6 @@ export function matchExerciseForLesson(lesson: RecoveryLesson): ExerciseMatch {
     const ex = getExercise(moduleId);
     if (ex) return { exercise: ex, tier: "module" };
   }
-  const fallback = getExercise(FALLBACK_EXERCISE_ID) ?? EXERCISES[0]!;
+  const fallback = getExercise(FALLBACK_EXERCISE_ID) ?? liveExercises()[0]!;
   return { exercise: fallback, tier: "fallback" };
 }

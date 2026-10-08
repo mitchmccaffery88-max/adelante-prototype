@@ -1,3 +1,5 @@
+import { seedSimulatedContentSample } from "@/lib/contentAnalytics";
+import { canBrowseContent } from "@/lib/contentStaff";
 import { markContentReviewed } from "./contentPublishing";
 import { patientSelfBook, patientReschedule, advocateReschedule, PATIENT_ACTOR_ROLE, ADVOCATE_ACTOR_ROLE } from "@/lib/patientBooking";
 import { bookingRightFor, canScheduleRole } from "./bookingRights";
@@ -121,6 +123,7 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  { id: "content_simulated_sample", label: { en: "Load Simulated sample metrics", es: "Load Simulated sample metrics" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canBrowseContent", store: refs(["seedSimulatedContentSample", seedSimulatedContentSample]), allowed: ({ role }) => canBrowseContent(role) ? ok() : hide("Content library access required.") },
   { id: "content_mark_reviewed", label: { en: "Mark content reviewed", es: "Marcar contenido revisado" }, group: "admin", menu: false, needsPatient: false, check: "canAuthorContent", store: refs(["markContentReviewed", markContentReviewed]), allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("Content author access required.") },
   { id: "patient_lesson_response", label: { en: "Save lesson response", es: "Guardar respuesta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveLessonResponse", AdelanteEHR.saveLessonResponse]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },
   { id: "patient_toolkit_save", label: { en: "Save toolkit", es: "Guardar herramienta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveToolkitItem", AdelanteEHR.saveToolkitItem]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },

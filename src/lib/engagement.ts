@@ -374,7 +374,7 @@ export function engagementRecords(patientIds?: string[]): PatientEngagement[] {
   // health counts activity, it never needs what a patient wrote. The only
   // read that returns free text is `lessonResponse` (the patient's own
   // player) and `getEngagement` (single-row, patient-scoped).
-  const all = [...records.values()].map((r) => ({
+  const all = [...records.values()].filter((r) => patientIds?.includes(r.patientId) || !r.patientId.startsWith("sim-sample-")).map((r) => ({
     ...structuredClone(r),
     lessonResponses: {},
     recoveryToolFlows: {},

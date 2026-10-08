@@ -15,7 +15,7 @@ import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
 import { toast } from "sonner";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
-import { getExercise } from "@/lib/library";
+import { liveExercise as getExercise } from "@/lib/contentCatalog";
 import { completeExercise } from "@/lib/engagement";
 import { ExerciseTimer } from "@/components/library/ExercisePlayer";
 import { completeCravingLog, startCravingLog } from "@/lib/selfTracking";
@@ -26,7 +26,7 @@ type Step = "arrive" | "before" | "surf" | "after" | "done";
 export function CravingFlow() {
   const patientId = useEhr(() => AdelanteEHR.getCurrentPatientId());
   const navigate = useNavigate();
-  const exercise = useMemo(() => getExercise("urge-surfing-timer"), []);
+  const exercise = useEhr(() => getExercise("urge-surfing-timer"));
   const [step, setStep] = useState<Step>("arrive");
   const [before, setBefore] = useState(5);
   const [after, setAfter] = useState(5);

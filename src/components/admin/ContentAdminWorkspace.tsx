@@ -1,6 +1,6 @@
 import { ContentInventoryTable } from "./ContentInventoryTable";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
-import { contentVisibleToStaff } from "@/lib/contentStaff";
+import { contentVisibleToStaff, staffContentInventory, defaultContentMode } from "@/lib/contentStaff";
 import { ContentBrowse } from "./ContentBrowse";
 import { ContentAudit } from "./ContentAudit";
 import { generatedContentId } from "@/lib/contentStaff";
@@ -258,7 +258,7 @@ function MetaPanel({
         </div>
       </div>
       <p className="text-[11px] text-muted-foreground" data-testid="reading-level">
-        Reading level ≈ grade {grade} (Draft target: grade {READING_LEVEL_TARGET} for patient text)
+        Reading level (Draft estimate) ≈ grade {grade}{grade > READING_LEVEL_TARGET ? ` — above grade ${READING_LEVEL_TARGET} for patient text` : ""}
       </p>
     </div>
   );
@@ -367,11 +367,7 @@ function ManageTab({ version }: { version: number }) {
   const [body, setBody] = useState<ContentBody | null>(null);
   const [submitNote, setSubmitNote] = useState("");
 
-  const managed = useMemo(() => listContent(typeId).filter((e) => contentVisibleToStaff(role, e.typeId, e.body)), [typeId, version, role]);
-  const baselineOnly = useMemo(
-    () => descriptor.baselineIds().filter((id) => !getContentEntry(typeId, id) && contentVisibleToStaff(role, typeId, descriptor.baselineBody(id) ?? {})),
-    [descriptor, typeId, version, role],
-  );
+  const allRows = useMemo(() => staffContentInventory(role).filter((e) => e.typeId === typeId), [typeId, version, role]);
 
   const actor = { staffId: staffId ?? undefined, name: staffName, role };
 
@@ -628,37 +624,12 @@ function ManageTab({ version }: { version: number }) {
         <div className="space-y-4">
           <Card className="p-5">
             <p className="text-xs font-medium uppercase tracking-wider text-teal">
-              Managed {descriptor.labelPlural.toLowerCase()}
-            </p>
-            <ContentInventoryTable entries={managed.filter((e) => displayTitle(descriptor, e.id, e.body).toLowerCase().includes(manageQuery.toLowerCase()))} edit={openManaged} canReview={mayAuthor} review={(ids, note) => { const res = contentAction("content_mark_reviewed", { typeId, ids, note, actor }); if (!res.ok) toast.error(res.reason); else toast.success("Review recorded with reason."); }} />
-          </Card>
-          <Card className="p-5">
-            <p className="text-xs font-medium uppercase tracking-wider text-teal">
-              Shipped in code — bring under management to edit
+              {descriptor.labelPlural} — shipped and managed
             </p>
             <p className="mt-1 text-xs text-muted-foreground">
-              These are still served from the shipped baseline. Editing one creates a managed draft;
-              patients keep seeing the shipped version until you publish the edit.
+              Shipped items show as "Live (shipped)". Editing one creates a managed draft; patients keep seeing the shipped version until the edit is published.
             </p>
-            <ul className="mt-3 space-y-1.5">
-              {baselineOnly.map((id) => (
-                <li key={id} className="flex items-center justify-between gap-2 text-sm">
-                  <span className="text-sm text-foreground">{displayTitle(descriptor, id)}</span>
-                  <Button
-                    type="button"
-                    size="sm"
-                    variant="ghost"
-                    onClick={() => openBaseline(id)}
-                    disabled={!mayAuthor}
-                  >
-                    Edit
-                  </Button>
-                </li>
-              ))}
-              {baselineOnly.length === 0 && (
-                <li className="text-sm text-muted-foreground">All shipped lessons are managed.</li>
-              )}
-            </ul>
+            <ContentInventoryTable entries={allRows.filter((e) => displayTitle(descriptor, e.id, e.body).toLowerCase().includes(manageQuery.toLowerCase()))} edit={(id) => (getContentEntry(typeId, id) ? openManaged(id) : openBaseline(id))} canEdit={mayAuthor} canReview={mayAuthor} review={(ids, note) => { const res = contentAction("content_mark_reviewed", { typeId, ids, note, actor }); if (!res.ok) toast.error(res.reason); else toast.success("Review recorded with reason. Next review date updated."); }} />
           </Card>
         </div>
       ))}
@@ -909,7 +880,7 @@ export function ContentAdminWorkspace({ browseOnly = false }: { browseOnly?: boo
         </p>
       </div>
       <HomeDigest version={version} />
-      <Tabs defaultValue={!browseOnly && role === "sys_admin" ? "manage" : "browse"}>
+      <Tabs key={role} defaultValue={browseOnly ? "browse" : defaultContentMode(role, queueCount, canAuthorContent(role))}>
         <TabsList>
           <TabsTrigger value="browse">Browse</TabsTrigger>
           {!browseOnly && <TabsTrigger value="manage">Manage</TabsTrigger>}

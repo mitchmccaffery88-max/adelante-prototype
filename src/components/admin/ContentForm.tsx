@@ -1,4 +1,4 @@
-import { StructuredFields, ExerciseEditor, CurriculumEditor } from "./StructuredPracticeEditor";
+import { RichActivityFields, ExerciseEditor, CurriculumEditor } from "./StructuredPracticeEditor";
 // §Content Management admin tooling — THE STRUCTURED CRUD FORM.
 //
 // Driven entirely by the type descriptor's field spec, so the form matches
@@ -217,7 +217,7 @@ function ActivityEditor({
           />
         </div>
       )}
-      {rich && <StructuredFields value={Object.fromEntries(Object.entries(a).filter(([key]) => !["title", "prompt"].includes(key)))} onChange={(next) => set(next)} />}
+      {rich && <RichActivityFields kind={kind} value={a} onChange={(next) => set(next)} />}
       {listKey && (
         <div className="space-y-1">
           <Label className="text-xs">Options</Label>

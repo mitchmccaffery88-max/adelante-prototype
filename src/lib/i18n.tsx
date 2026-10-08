@@ -97,6 +97,7 @@ const dict = {
     navMore: "More",
     navAdel: "Adel",
     navRecoveryJourney: "Recovery journey",
+    navMyJourneys: "My journeys",
     navWeeklyRecap: "My week",
     navObligations: "Obligations",
     navPeerNavigator: "Peer Specialist",
@@ -501,6 +502,7 @@ const dict = {
     navCrisisSupport: "En crisis ahora", // pending review
     navAdel: "Adel",
     navRecoveryJourney: "Mi recuperación",
+    navMyJourneys: "Mis caminos",
     navWeeklyRecap: "Mi semana",
     navObligations: "Obligaciones",
     navPeerNavigator: "Especialista de pares",

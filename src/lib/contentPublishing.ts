@@ -32,7 +32,7 @@ import { AdelanteEHR } from "./ehr";
 // approved one, and every transition is appended to `revisions` with a real
 // actor and timestamp. "Which version did the patient see" is answerable.
 import { CONTENT_PUBLISHER_ROLES, canAccess, getStaffMember, type StaffRole } from "@/lib/roles";
-import { CLINICAL_REVIEWER_ROLES, publishBlocker } from "@/lib/contentGovernance";
+import { CLINICAL_REVIEWER_ROLES, publishBlocker, nextReviewAfter } from "@/lib/contentGovernance";
 
 /** draft → pending_review → published. There is no fourth state. */
 export type ContentStatus = "draft" | "pending_review" | "published";
@@ -643,6 +643,14 @@ export function markContentReviewed(input: { typeId: ContentTypeId; ids: string[
   if (!canAuthorContent(input.actor.role) || !input.note.trim()) return { ok: false, reason: "Author access and a review reason are required." };
   const records = input.ids.map((id) => entries.get(key(input.typeId, id)));
   if (!records.length || records.some((e) => !e)) return { ok: false, reason: "Select existing content." };
-  for (const e of records) { if (!e) continue; e.body.meta = { ...(e.body.meta as ContentBody ?? {}), lastReviewed: new Date().toISOString().slice(0, 10) }; appendRevision(e, "edited", input.actor, e.status, input.note); }
+  const today = new Date().toISOString().slice(0, 10);
+  for (const e of records) {
+    if (!e) continue;
+    const meta: ContentBody = { ...((e.body.meta as ContentBody | undefined) ?? {}), lastReviewed: today };
+    const next = nextReviewAfter(input.typeId, today);
+    if (next) meta.nextReview = next; else delete meta.nextReview;
+    e.body.meta = meta;
+    appendRevision(e, "edited", input.actor, e.status, input.note);
+  }
   notify(); return { ok: true, entry: clone(records[0]!) };
 }
