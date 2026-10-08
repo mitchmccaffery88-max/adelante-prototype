@@ -136,7 +136,7 @@ function MyCalendarPage() {
           <Select value={String(draft.weekday)} onValueChange={(v) => setDraft({ ...draft, weekday: Number(v) as AvailabilityBlock["weekday"] })}><SelectTrigger><SelectValue /></SelectTrigger><SelectContent>{[1, 2, 3, 4, 5, 6, 0].map((d) => <SelectItem key={d} value={String(d)}>{DAYS[d]}</SelectItem>)}</SelectContent></Select>
           <div className="grid grid-cols-2 gap-2"><div><Label>Start</Label><Input type="time" value={draft.start} onChange={(e) => setDraft({ ...draft, start: e.target.value })} /></div><div><Label>End</Label><Input type="time" value={draft.end} onChange={(e) => setDraft({ ...draft, end: e.target.value })} /></div></div>
           <Label>Site (telehealth: the site you bill under)</Label>
-          <Select value={draft.siteId} onValueChange={(v) => setDraft({ ...draft, siteId: v })}><SelectTrigger><SelectValue placeholder="Pick a site" /></SelectTrigger><SelectContent>{sites.map((s) => <SelectItem key={s.site.id} value={s.site.id}>{s.site.name}</SelectItem>)}</SelectContent></Select>
+          <Select value={draft.siteId} onValueChange={(v) => setDraft({ ...draft, siteId: v, careTags: (draft.careTags ?? []).filter((x) => siteServices(v).includes(x)) })}><SelectTrigger><SelectValue placeholder="Pick a site" /></SelectTrigger><SelectContent>{sites.map((s) => <SelectItem key={s.site.id} value={s.site.id}>{s.site.name}</SelectItem>)}</SelectContent></Select>
           {sites.length < listSiteCalendars().filter((x) => x.calendar).length && <p className="text-xs text-muted-foreground">Only your primary facility and secondary locations (My profile).</p>}
           {clinical && <>
           <Label>Type</Label>

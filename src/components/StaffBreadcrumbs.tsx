@@ -8,6 +8,7 @@
 import { Link, useRouterState } from "@tanstack/react-router";
 import { ChevronRight, Home, ListChecks } from "lucide-react";
 import { entryForPath } from "@/lib/navGuard";
+import { labelForRole } from "@/lib/navSections";
 import { NAV_GROUP_LABELS, STAFF_NAV, canSeeNavEntry } from "@/lib/navSections";
 import { useActingStaff } from "@/lib/roles";
 import { useEhr } from "@/lib/ehr";
@@ -43,7 +44,7 @@ export function StaffBreadcrumbs() {
 
 
   const entry = entryForPath(pathname);
-  const visible = entry && canSeeNavEntry(role, entry) ? entry : undefined;
+  const visible = entry && canSeeNavEntry(role, entry) ? labelForRole(entry, role) : undefined;
 
   const isRecord = pathname.startsWith("/record/");
   const groupLabel = visible ? NAV_GROUP_LABELS[visible.group] : isRecord ? "Care" : undefined;
