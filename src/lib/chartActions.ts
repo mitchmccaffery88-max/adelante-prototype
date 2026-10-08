@@ -976,7 +976,7 @@ export const CHART_ACTIONS: ChartAction[] = [
     allowed: ({ role }) => (canEditTagList(role) ? ok() : hide("Only a system administrator or clinical coordinator can edit this list.")),
   })),
   {
-    id: "plan_flag_review", label: { en: "Keep or retire after flag removed", es: "Mantener o retirar tras quitar la marca" }, group: "care_plan" as never, menu: false, needsPatient: true,
+    id: "plan_flag_review", label: { en: "Keep or retire after flag removed", es: "Mantener o retirar tras quitar la marca" }, group: "care", menu: false, needsPatient: true,
     check: "canEditPlan + Part 2 (store)",
     store: refs(["resolveFlagReview", resolveFlagReview as StoreFn]),
     allowed: ({ role }) => (canEditPlan(role) ? ok() : hide("Your role can't change the care plan.")),
