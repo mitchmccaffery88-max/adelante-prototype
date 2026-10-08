@@ -5,8 +5,9 @@
  * inside the Clinician Workspace chart tab (inline mode → selects into the
  * tab), so the app has a single lookup pattern instead of one per page.
  *
- * HONESTY: searches the whole program. Assigned rows sort first, nothing is
- * hidden, and this grants no access — the chart still enforces role access.
+ * §Access A2 — a real restriction now: only roles with chart entry see the
+ * field, and results are limited to patients the person may enter (site rule;
+ * restricted records only for their care team). Assigned rows sort first.
  */
 import { useEffect, useMemo, useRef, useState } from "react";
 import { useNavigate } from "@tanstack/react-router";
@@ -15,15 +16,13 @@ import { Input } from "@/components/ui/input";
 import { AdelanteEHR, useEhr } from "@/lib/ehr";
 import { searchPatients } from "@/lib/patientSearch";
 import { assignmentIdentityFor } from "@/lib/caseloadScope";
-import { canAccess, useActingStaff } from "@/lib/roles";
+import { useActingStaff, type StaffRole } from "@/lib/roles";
+import { roleHasChartEntry, searchablePatientsFor } from "@/lib/chartAccess";
 import { cn } from "@/lib/utils";
 
-export const PATIENT_SEARCH_SCOPE_NOTE =
-  "Searches all patients. Your assigned clients are listed first — this is a shortcut, not an access restriction.";
-
-/** True when the acting role may see patient identity at all. */
-export function canUsePatientSearch(role: Parameters<typeof canAccess>[0]): boolean {
-  return canAccess(role, "demographics").level !== "none";
+/** §Access A2 — only roles with chart entry (A1) get patient search. */
+export function canUsePatientSearch(role: StaffRole): boolean {
+  return roleHasChartEntry(role);
 }
 
 export function StaffPatientSearch({
@@ -39,7 +38,8 @@ export function StaffPatientSearch({
 }) {
   const navigate = useNavigate();
   const { role, ...staff } = useActingStaff();
-  const patients = useEhr(() => AdelanteEHR.listPatients());
+  const patientsKey = useEhr(() => searchablePatientsFor(role, staff.staffId).map((p) => p.id).join(","));
+  const patients = useMemo(() => patientsKey.split(",").filter(Boolean).map((id) => AdelanteEHR.getPatient(id)!).filter(Boolean), [patientsKey]);
   const [query, setQuery] = useState("");
   const [open, setOpen] = useState(false);
   const [active, setActive] = useState(0);
@@ -168,9 +168,6 @@ export function StaffPatientSearch({
               ))}
             </ul>
           )}
-          <p className="border-t px-3 py-2 text-[10px] leading-snug text-muted-foreground">
-            {PATIENT_SEARCH_SCOPE_NOTE}
-          </p>
         </div>
       )}
     </div>

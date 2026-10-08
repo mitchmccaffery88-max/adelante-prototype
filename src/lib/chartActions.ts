@@ -53,6 +53,7 @@ import { calendarSync } from "@/lib/vendors/calendarSync";
 import { addThreadParticipant, canMessageStaff, flagThreadSud, markMentionDone, markThreadRead, postThreadMessage, reopenStaffThread, resolveStaffThread, startStaffThread } from "@/lib/staffThreads";
 import { addStaffMemberWithReason, deactivateStaffMember, reactivateStaffMember, updateStaffMember } from "@/lib/staffLifecycle";
 import { canAuthorContent, canPublishContent, saveContentDraft, submitContentForReview, publishContent, returnContentForChanges, retireContent, discardContentDraft } from "@/lib/contentPublishing";
+import { RESTRICT_ROLES, COMPLIANCE_ROLES, roleHasChartEntry, setRecordRestricted, openRestrictedChart, acknowledgeRestrictedOpen } from "@/lib/chartAccess";
 import { RESOURCE_VERIFIER_ROLES, updateResourceDetails, verifyResource, type VerifyInput } from "@/lib/communityResources";
 
 /** Bumped whenever an action, its check or its store function changes. Recorded on every standard event. */
@@ -123,6 +124,10 @@ export function cosignRouteLabel(staffId?: string): string {
 }
 
 export const CHART_ACTIONS: ChartAction[] = [
+  // §Access A1 — Restricted record (Draft — pending exec RBAC review).
+  { id: "chart_restrict", label: { en: "Restricted record", es: "Restricted record" }, group: "admin", menu: false, check: "RESTRICT_ROLES", store: refs(["setRecordRestricted", setRecordRestricted]), allowed: ({ role }) => RESTRICT_ROLES.includes(role) ? ok() : hide("Only sys_admin or the clinical coordinator can restrict a record.") },
+  { id: "chart_restricted_open", label: { en: "Open restricted record", es: "Open restricted record" }, group: "admin", menu: false, check: "roleHasChartEntry", store: refs(["openRestrictedChart", openRestrictedChart]), allowed: ({ role }) => roleHasChartEntry(role) ? ok() : hide("This chart isn't available for your role") },
+  { id: "compliance_restricted_review", label: { en: "Review restricted-record open", es: "Review restricted-record open" }, group: "admin", menu: false, needsPatient: false, check: "COMPLIANCE_ROLES", store: refs(["acknowledgeRestrictedOpen", acknowledgeRestrictedOpen]), allowed: ({ role }) => COMPLIANCE_ROLES.includes(role) ? ok() : hide("Compliance review only.") },
   { id: "content_simulated_sample", label: { en: "Load Simulated sample metrics", es: "Load Simulated sample metrics" }, group: "admin", menu: false, needsPatient: false, simulated: true, check: "canBrowseContent", store: refs(["seedSimulatedContentSample", seedSimulatedContentSample]), allowed: ({ role }) => canBrowseContent(role) ? ok() : hide("Content library access required.") },
   { id: "content_mark_reviewed", label: { en: "Mark content reviewed", es: "Marcar contenido revisado" }, group: "admin", menu: false, needsPatient: false, check: "canAuthorContent", store: refs(["markContentReviewed", markContentReviewed]), allowed: ({ role }) => canAuthorContent(role) ? ok() : hide("Content author access required.") },
   { id: "patient_lesson_response", label: { en: "Save lesson response", es: "Guardar respuesta" }, group: "care", menu: false, check: "patient self only", store: refs(["saveLessonResponse", AdelanteEHR.saveLessonResponse]), allowed: ({ role }, p) => role === PATIENT_ACTOR_ROLE && p?.id === AdelanteEHR.getCurrentPatientId() ? ok() : hide("Patient-only engagement action.") },

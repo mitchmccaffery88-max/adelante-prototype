@@ -15,6 +15,7 @@ import {
   SUD_BLOCK_REASON,
   THREAD_NOTIFY_BODY,
   THREAD_NOTIFY_SUBJECT,
+  MENTION_NOTIFY_SUBJECT,
   threadsForEscalation,
   type StaffThread,
 } from "@/lib/staffThreads";
@@ -66,7 +67,7 @@ describe("U2 staff-to-staff messaging", () => {
     expect(openMentionsFor(anita.staffId)).toHaveLength(1);
     const rows = () => workspaceActionRows({ actor: { staffId: ANITA.id, staffName: ANITA.name, clinicianId: ANITA.clinicianId, role: ANITA.role } as never, needsClosing: [] });
     expect(rows().some((r) => r.kind === "reply")).toBe(true);
-    const n = AdelanteEHR.listNotificationsFor(ANITA.name, ANITA.role, ANITA.id).find((x) => x.subject === THREAD_NOTIFY_SUBJECT)!;
+    const n = AdelanteEHR.listNotificationsFor(ANITA.name, ANITA.role, ANITA.id).find((x) => x.subject === MENTION_NOTIFY_SUBJECT)!;
     expect(n.body).toBe(THREAD_NOTIFY_BODY);
     expect(JSON.stringify(n)).not.toMatch(/dose|call him/);
     expect(n.audience ?? "staff").toBe("staff");

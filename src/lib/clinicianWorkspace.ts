@@ -1,3 +1,9 @@
+import { listRestrictedOpenItems } from "@/lib/chartAccess";
+import { countyReminders } from "@/lib/countyReporting";
+import { contentReviewQueue } from "@/lib/contentPublishing";
+import { contentVisibleToStaff } from "@/lib/contentStaff";
+/** §A3 — clinical reviewers who get "Content review waiting". */
+export const CONTENT_REVIEWER_ROLES: StaffRole[] = ["pmhnp", "physician", "clinical_coordinator"];
 import { staleContentFor } from "./contentStaff";
 import { contentType } from "./contentTypes";
 import { AdelanteEHR, type Appointment } from "@/lib/ehr";
@@ -24,7 +30,7 @@ import { NEUTRAL_TYPE_LABEL } from "@/lib/escalations";
 export type WorkspaceTileId = "schedule" | "actions" | "caseload" | "requests" | "coordinator" | "scheduling";
 export type ScheduleSegment = "up_next" | "in_progress" | "done" | "closed";
 export type ActionGroup = "now" | "today" | "week";
-export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule" | "continuity" | "coverage" | "reassign_needed" | "content_review";
+export type WorkspaceActionKind = "closing" | "unsigned" | "cosign" | "refill" | "crisis" | "screener" | "asam" | "lab" | "plan" | "outside" | "switch" | "contact" | "task" | "match" | "chase" | "crisis_note" | "severity" | "escalation" | "reply" | "author_out" | "reschedule" | "continuity" | "coverage" | "reassign_needed" | "content_review" | "restricted_open" | "county_reminder" | "content_waiting";
 export interface WorkspaceActionRow {
   id: string;
   kind: WorkspaceActionKind;
@@ -212,6 +218,15 @@ export function workspaceActionRows(input: {
     const p = t.patientId ? patients.find((x) => x.id === t.patientId) : undefined;
     rows.push({ id: `reply:${m.id}`, kind: "reply", patientId: t.patientId ?? "", patientName: p ? `${p.firstName} ${p.lastName}` : "Team thread", label: "Reply needed — team thread", dueAt: m.createdAt, due: "Reply", group: "now", action: "Reply", sourceId: m.id });
   }
+  // §Access A3 — restricted-record opens → compliance stand-in (credentialing coordinator).
+  if (actor.role === "credentialing_coordinator") for (const i of listRestrictedOpenItems())
+    rows.push({ id: `restricted_open:${i.id}`, kind: "restricted_open", patientId: "", patientName: i.actorName, label: "Restricted record opened", dueAt: i.at, due: "Review", group: "today", action: "Open Quality & compliance", sourceId: i.id });
+  // §A3 — county report reminders (Draft owner: billing coordinator).
+  for (const r of countyReminders(actor.role, now))
+    rows.push({ id: `county:${r.id}`, kind: "county_reminder", patientId: "", patientName: "County reporting", label: r.label, dueAt: r.due, due: r.kind === "1_day" ? "1 day" : "5 days", group: "week", action: "Open county reporting", sourceId: r.id });
+  // §A3 — content waiting for a clinical reviewer.
+  if (CONTENT_REVIEWER_ROLES.includes(actor.role)) for (const e of contentReviewQueue().filter((x) => contentVisibleToStaff(actor.role, x.typeId, x.body)))
+    rows.push({ id: `content-waiting:${e.typeId}:${e.id}`, kind: "content_waiting", patientId: "", patientName: "Patient content", label: `Content review waiting — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Review", group: "week", action: "Review content", sourceId: e.id });
   for (const e of staleContentFor(actor.staffId ?? "", actor.staffName, actor.role, now)) rows.push({ id: `content-review:${e.typeId}:${e.id}`, kind: "content_review", patientId: "", patientName: "Patient content", label: `Review overdue — ${contentType(e.typeId).titleOf(e.body)}`, dueAt: now.toISOString(), due: "Past review date", group: "today", action: "Review content", sourceId: e.id });
   // Crisis always first, crisis notes pinned right after (top of Needs closing).
   const priority = isPrescriberRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "refill"] : isCareRole(actor.role) ? ["crisis", "crisis_note", "severity", "escalation", "reply", "contact"] : ["crisis", "crisis_note", "severity", "escalation", "reply"];

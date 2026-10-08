@@ -2,7 +2,7 @@ import { useEffect, useRef } from "react";
 import { useNavigate, useRouterState } from "@tanstack/react-router";
 import { toast } from "sonner";
 import { useActingStaff } from "@/lib/roles";
-import { resolveNavAccess } from "@/lib/navGuard";
+import { resolveNavAccess, resolveChartRouteAccess } from "@/lib/navGuard";
 import { AdelanteEHR } from "@/lib/ehr";
 
 /**
@@ -17,7 +17,7 @@ export function RouteAccessGuard() {
   const lastWarned = useRef<string | null>(null);
 
   useEffect(() => {
-    const access = resolveNavAccess(role, pathname);
+    const access = resolveChartRouteAccess(role, staffId, pathname) ?? resolveNavAccess(role, pathname);
     if (access.status !== "denied") {
       lastWarned.current = null;
       return;

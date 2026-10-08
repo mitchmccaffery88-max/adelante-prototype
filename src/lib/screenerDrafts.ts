@@ -44,14 +44,26 @@ function persistDrafts(): void {
     /* storage unavailable — in-memory only */
   }
 }
-try {
-  if (typeof window !== "undefined") {
+// §A4 root cause — the tab's sessionStorage is the source of truth, not this
+// module's Map. A dev re-optimise / stale-chunk reload can evaluate a second
+// copy of this module whose Map was filled at ITS load time, before later
+// answers were saved by the first copy; reading only memory then misses them
+// (the intermittent Spanish-resume failure). Every read merges storage in,
+// newest savedAt wins, so all copies agree.
+function syncFromSession(): void {
+  try {
+    if (typeof window === "undefined") return;
     const raw = window.sessionStorage.getItem(SESSION_KEY);
-    if (raw) for (const [k, v] of JSON.parse(raw) as [string, ScreenerDraft][]) drafts.set(k, v);
+    if (!raw) return;
+    for (const [k, v] of JSON.parse(raw) as [string, ScreenerDraft][]) {
+      const cur = drafts.get(k);
+      if (!cur || (v.savedAt ?? "") > (cur.savedAt ?? "")) drafts.set(k, v);
+    }
+  } catch {
+    /* ignore corrupt storage */
   }
-} catch {
-  /* ignore corrupt storage */
 }
+syncFromSession();
 const draftId = (patientId: string, key: string) => `${patientId}::${key}`;
 
 /** Safety first — mirrors the existing PHQ-9 item 9 / C-SSRS positive rule. Idempotent per draft. */
@@ -76,6 +88,7 @@ export function saveScreenerDraft(
   data: { answers: (number | undefined)[]; choices?: Record<number, number> },
   enteredBy: "patient" | string,
 ): ScreenerDraft {
+  syncFromSession();
   const id = draftId(patientId, key);
   const existing = drafts.get(id);
   const draft: ScreenerDraft = {
@@ -95,17 +108,20 @@ export function saveScreenerDraft(
 
 /** Undefined once expired or never started — callers never see a stub's (empty) answers as live. */
 export function getScreenerDraft(patientId: string, key: string): ScreenerDraft | undefined {
+  syncFromSession();
   const d = drafts.get(draftId(patientId, key));
   return d && !d.expired ? d : undefined;
 }
 
 export function discardScreenerDraft(patientId: string, key: string): void {
+  syncFromSession();
   drafts.delete(draftId(patientId, key));
   persistDrafts();
 }
 
 /** Active (non-expired) drafts for a patient, across instruments. */
 export function listScreenerDrafts(patientId: string): ScreenerDraft[] {
+  syncFromSession();
   return Array.from(drafts.values()).filter((d) => d.patientId === patientId && !d.expired);
 }
 
@@ -115,6 +131,7 @@ export function listScreenerDrafts(patientId: string): ScreenerDraft[] {
  * ids expired, for tests.
  */
 export function expireScreenerDrafts(now: Date = new Date()): string[] {
+  syncFromSession();
   const expiredIds: string[] = [];
   for (const [id, d] of drafts.entries()) {
     if (d.expired) continue;

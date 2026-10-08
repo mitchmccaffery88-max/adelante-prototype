@@ -353,7 +353,23 @@ export interface AppNotification {
   /** Context/traceability only — never used for access control. */
   patientId?: string;
   createdAt: string;
+  /** Read state for a DIRECT row (one recipient). */
   readAt?: string;
+  /** §Access A3 — per-person read state for ROLE broadcasts (staff id or name → time). */
+  readBy?: Record<string, string>;
+  /** §A3 — two lanes: "task" rows are pointers into My work; "update" is FYI; "mention" is @you. */
+  kind?: "task" | "update" | "mention";
+  /** §A3 — My work key this pointer links to; closing the task closes the pointer. */
+  taskKey?: string;
+  /** §A3 — set when the linked task was completed: read for everyone. */
+  closedAt?: string;
+}
+
+/** §Access A3 — per-person read check. Role broadcasts never share read state. */
+export function isNotificationReadBy(n: AppNotification, staffName: string, staffId?: string): boolean {
+  if (n.closedAt) return true;
+  if (n.recipientRole) return !!(n.readBy && ((staffId && n.readBy[staffId]) || n.readBy[staffName]));
+  return !!n.readAt;
 }
 
 // §Messaging Phase 2 — patient<->clinician care-team thread.
@@ -1602,6 +1618,8 @@ export function requiresDoseWitness(
 
 export interface Patient {
   id: string;
+  /** §Access A1 — site the client is enrolled at (else primary clinician's site, else org default). */
+  enrolledSiteId?: string;
   /** §Batch E — set when this record was merged into another (read-only; search redirects). */
   mergedInto?: string;
   mergedAt?: string;
@@ -5448,8 +5466,9 @@ function setCareMessageSudFlag(
         recipientStaffId: cmName || undefined,
         recipientRole: cmName ? undefined : "ecm_provider",
         category: "patient_message",
-        subject: `Message visibility changed — ${patientLabel(patientId)}`,
-        body: `A message for ${patientLabel(patientId)} was flagged for Part 2 protection and may no longer be visible to you.`,
+        // §A3 leak fix — neutral text: no "Part 2", no flag reason.
+        subject: "A message needs your review",
+        body: "A message needs your review. Open the chart for details.",
         linkRoute: "/record/$patientId",
         linkParams: { patientId, section: "messages" },
         patientId,
@@ -11622,7 +11641,7 @@ export const AdelanteEHR = {
       AdelanteEHR.notify({
         recipientStaffId: cosignOwn.staffId,
         category: "cosign_request",
-        subject: `Cosignature needed — ${n.templateTitle ?? "progress note"}`,
+        subject: "Note to co-sign",
         body: `${input.signedBy} (you supervise) signed a note for ${patientLabel(patientId)} that requires your cosignature.`,
         linkRoute: "/cosign-inbox",
         patientId,
@@ -11641,7 +11660,8 @@ export const AdelanteEHR = {
       const roles = (
         n.cosignRole?.length ? n.cosignRole : (NOTE_SELF_SIGN_ROLES as readonly string[])
       ) as StaffRole[];
-      const subject = `Cosignature needed — ${n.templateTitle ?? "progress note"}`;
+      // §A3 leak fix — neutral "Note to co-sign", never the template title.
+      const subject = "Note to co-sign";
       const body = `${input.signedBy} signed a note for ${patientLabel(patientId)} that requires your cosignature.`;
       for (const r of roles) {
         AdelanteEHR.notify({
@@ -15865,8 +15885,15 @@ export const AdelanteEHR = {
     linkParams?: Record<string, string>;
     patientId?: string;
     dedupeKey?: string;
+    kind?: AppNotification["kind"];
+    taskKey?: string;
   }): AppNotification | undefined {
     if (!input.recipientStaffId && !input.recipientRole) return undefined;
+    // §A3 — at most one bell pointer per task per recipient.
+    if (input.taskKey) {
+      const dup = notifications.find((n) => n.taskKey === input.taskKey && !n.closedAt && (input.recipientStaffId ? n.recipientStaffId === input.recipientStaffId : n.recipientRole === input.recipientRole));
+      if (dup) return dup;
+    }
     if (input.dedupeKey) {
       const dup = notifications.find(
         (n) =>
@@ -15890,10 +15917,39 @@ export const AdelanteEHR = {
       linkParams: input.linkParams,
       patientId: input.patientId,
       createdAt: new Date().toISOString(),
+      kind: input.kind ?? (input.taskKey ? "task" : "update"),
+      taskKey: input.taskKey,
     };
     notifications.unshift(row);
     emit();
     return row;
+  },
+  /** §A3 — the linked task is done: its bell pointer(s) read for everyone. */
+  closeTaskPointer(taskKey: string): number {
+    const now = new Date().toISOString();
+    let n = 0;
+    for (const r of notifications) if (r.taskKey === taskKey && !r.closedAt) { r.closedAt = now; n++; }
+    if (n) emit();
+    return n;
+  },
+  /**
+   * §A3 demo noise — keep only the newest `max` role-broadcast updates per
+   * role (task pointers and direct messages untouched). Called once by the
+   * demo seed so a fresh preview reads 3–5 per role, not "9+".
+   */
+  trimRoleBroadcasts(max = 5): number {
+    const seen = new Map<string, number>();
+    const before = notifications.length;
+    for (let i = 0; i < notifications.length; i++) {
+      const r = notifications[i]!;
+      if (!r.recipientRole || r.taskKey) continue;
+      const c = (seen.get(r.recipientRole) ?? 0) + 1;
+      seen.set(r.recipientRole, c);
+      if (c > max) { notifications.splice(i, 1); i--; }
+    }
+    const removed = before - notifications.length;
+    if (removed) emit();
+    return removed;
   },
   listNotifications(): AppNotification[] {
     return [...notifications];
@@ -15973,10 +16029,12 @@ export const AdelanteEHR = {
     for (const r of AdelanteEHR.listMemberNotifications(audience, recipientId)) if (!r.readAt) { r.readAt = now; changed = true; }
     if (changed) emit();
   },
-  markNotificationRead(id: string, staffName: string): void {
+  markNotificationRead(id: string, staffName: string, staffId?: string): void {
     const row = notifications.find((n) => n.id === id);
-    if (!row || row.readAt) return;
-    row.readAt = new Date().toISOString();
+    if (!row || isNotificationReadBy(row, staffName, staffId)) return;
+    const at = new Date().toISOString();
+    if (row.recipientRole) row.readBy = { ...(row.readBy ?? {}), [staffId || staffName]: at };
+    else row.readAt = at;
     appendAudit({
       category: "access",
       action: "notification_read",
@@ -15987,10 +16045,13 @@ export const AdelanteEHR = {
     emit();
   },
   markAllNotificationsRead(staffName: string, role?: StaffRole, staffId?: string): void {
-    const rows = AdelanteEHR.listNotificationsFor(staffName, role, staffId).filter((n) => !n.readAt);
+    const rows = AdelanteEHR.listNotificationsFor(staffName, role, staffId).filter((n) => !isNotificationReadBy(n, staffName, staffId));
     if (!rows.length) return;
     const now = new Date().toISOString();
-    for (const r of rows) r.readAt = now;
+    for (const r of rows) {
+      if (r.recipientRole) r.readBy = { ...(r.readBy ?? {}), [staffId || staffName]: now };
+      else r.readAt = now;
+    }
     appendAudit({
       category: "access",
       action: "notifications_all_read",
@@ -16326,7 +16387,9 @@ export const AdelanteEHR = {
     AdelanteEHR.notify({
       recipientStaffId: assigneeName || task.assignedTo,
       category: "task_assigned",
-      subject: protectedTask ? "Task assigned" : `Task assigned — ${task.title}`,
+      kind: "task",
+      taskKey: `task:${task.id}`,
+      subject: protectedTask ? "New task" : `New task: ${task.title}`,
       body: protectedTask
         ? `New task for ${patientLabel(task.patientId)} (due ${task.dueDate}). Open the chart for details.`
         : `${task.detail ?? `New task for ${patientLabel(task.patientId)}`} (due ${task.dueDate})`,
@@ -16343,6 +16406,7 @@ export const AdelanteEHR = {
     t.status = "done";
     t.completedAt = new Date().toISOString();
     t.worklistStatus = "completed";
+    AdelanteEHR.closeTaskPointer(`task:${t.id}`);
     emit();
   },
   reopenCaseTask(id: string) {
@@ -20741,9 +20805,10 @@ export const AdelanteEHR = {
     AdelanteEHR.notify({
       recipientRole: "clinical_coordinator",
       category: "crisis_flagged",
+      // §A3 leak fix — no free-text detail; link to the escalation instead.
       subject: `Crisis re-triggered — ${patientLabel(patientId)}`,
-      body: `A further crisis signal arrived on an already-open escalation (${row.retriggers.length} repeat${row.retriggers.length === 1 ? "" : "s"}): ${detail}`,
-      linkRoute: "/crisis-queue",
+      body: `A further crisis signal arrived on an already-open escalation (${row.retriggers.length} repeat${row.retriggers.length === 1 ? "" : "s"}). Open the escalation for details.`,
+      linkRoute: "/escalations",
       patientId,
     });
     dispatchStaffAlert({
@@ -21726,8 +21791,9 @@ export const AdelanteEHR = {
         AdelanteEHR.notify({
           recipientRole: r,
           category: "mar_witness_needed",
-          subject: `Witness needed — Schedule II dose for ${patientLabel(patientId)}`,
-          body: `${staffName} staged ${_isSudMed(claimedOrder) ? "a protected medication" : claimedOrder.drugName || "a controlled medication"} scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
+          // §A3 leak fix — no schedule class, no drug name.
+          subject: "Dose needs a witness",
+          body: `${staffName} staged a dose scheduled ${new Date(scheduledAt).toLocaleString()}. A second clinician must witness administration.`,
           linkRoute: "/record/$patientId",
           linkParams: { patientId, section: "mar" },
           patientId,

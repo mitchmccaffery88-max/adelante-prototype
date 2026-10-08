@@ -11,7 +11,7 @@ import { AdelanteEHR } from "@/lib/ehr";
 import { canAccess } from "@/lib/roles";
 
 const GENERIC_BODY = "A patient sent a message to their care team.";
-const VISIBILITY_COPY = /flagged for Part 2 protection/;
+const VISIBILITY_COPY = /A message needs your review/;
 
 // A patient with a resolvable assigned case manager, so the direct-address
 // path (not the role broadcast) is the one under test.
@@ -99,7 +99,7 @@ describe("Part 2 flag notification matrix", () => {
     const cmRow = rows.find((n) => n.recipientStaffId === cmName())!;
     expect(cmRow).toBeTruthy();
     expect(cmRow.body).toMatch(VISIBILITY_COPY);
-    expect(cmRow.subject).toMatch(/visibility changed/i);
+    expect(cmRow.subject).toMatch(/A message needs your review/);
 
     const backstop = rows.find((n) => !!n.recipientRole)!;
     expect(backstop.recipientRole).toBe("therapist"); // flagger's own role excluded

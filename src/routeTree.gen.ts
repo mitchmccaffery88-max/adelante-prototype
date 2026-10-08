@@ -79,6 +79,7 @@ import { Route as PreReleaseRouteImport } from './routes/pre-release'
 import { Route as PreReleaseImportRouteImport } from './routes/pre-release-import'
 import { Route as ProfileRouteImport } from './routes/profile'
 import { Route as ProviderReferenceRouteImport } from './routes/provider-reference'
+import { Route as QualityComplianceRouteImport } from './routes/quality-compliance'
 import { Route as RecoveryJourneyRouteImport } from './routes/recovery-journey'
 import { Route as ReferralRouteImport } from './routes/referral'
 import { Route as ReferralQueueRouteImport } from './routes/referral-queue'
@@ -479,6 +480,11 @@ const ProviderReferenceRoute = ProviderReferenceRouteImport.update({
   path: '/provider-reference',
   getParentRoute: () => rootRouteImport,
 } as any)
+const QualityComplianceRoute = QualityComplianceRouteImport.update({
+  id: '/quality-compliance',
+  path: '/quality-compliance',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const RecoveryJourneyRoute = RecoveryJourneyRouteImport.update({
   id: '/recovery-journey',
   path: '/recovery-journey',
@@ -802,6 +808,7 @@ export interface FileRoutesByFullPath {
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
+  '/quality-compliance': typeof QualityComplianceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -922,6 +929,7 @@ export interface FileRoutesByTo {
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
+  '/quality-compliance': typeof QualityComplianceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -1041,6 +1049,7 @@ export interface FileRoutesById {
   '/pre-release-import': typeof PreReleaseImportRoute
   '/profile': typeof ProfileRoute
   '/provider-reference': typeof ProviderReferenceRoute
+  '/quality-compliance': typeof QualityComplianceRoute
   '/recovery-journey': typeof RecoveryJourneyRoute
   '/referral': typeof ReferralRoute
   '/referral-queue': typeof ReferralQueueRoute
@@ -1164,6 +1173,7 @@ export interface FileRouteTypes {
     | '/pre-release-import'
     | '/profile'
     | '/provider-reference'
+    | '/quality-compliance'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1284,6 +1294,7 @@ export interface FileRouteTypes {
     | '/pre-release-import'
     | '/profile'
     | '/provider-reference'
+    | '/quality-compliance'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1402,6 +1413,7 @@ export interface FileRouteTypes {
     | '/pre-release-import'
     | '/profile'
     | '/provider-reference'
+    | '/quality-compliance'
     | '/recovery-journey'
     | '/referral'
     | '/referral-queue'
@@ -1524,6 +1536,7 @@ export interface RootRouteChildren {
   PreReleaseImportRoute: typeof PreReleaseImportRoute
   ProfileRoute: typeof ProfileRoute
   ProviderReferenceRoute: typeof ProviderReferenceRoute
+  QualityComplianceRoute: typeof QualityComplianceRoute
   RecoveryJourneyRoute: typeof RecoveryJourneyRoute
   ReferralRoute: typeof ReferralRoute
   ReferralQueueRoute: typeof ReferralQueueRoute
@@ -2045,6 +2058,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof ProviderReferenceRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/quality-compliance': {
+      id: '/quality-compliance'
+      path: '/quality-compliance'
+      fullPath: '/quality-compliance'
+      preLoaderRoute: typeof QualityComplianceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/recovery-journey': {
       id: '/recovery-journey'
       path: '/recovery-journey'
@@ -2543,6 +2563,7 @@ const rootRouteChildren: RootRouteChildren = {
   PreReleaseImportRoute: PreReleaseImportRoute,
   ProfileRoute: ProfileRoute,
   ProviderReferenceRoute: ProviderReferenceRoute,
+  QualityComplianceRoute: QualityComplianceRoute,
   RecoveryJourneyRoute: RecoveryJourneyRoute,
   ReferralRoute: ReferralRoute,
   ReferralQueueRoute: ReferralQueueRoute,

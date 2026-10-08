@@ -33,8 +33,13 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   );
   const def = rescreenRule(screenerKey) ? activeScreenerByKey(screenerKey) : undefined;
   const draft = patientId ? getScreenerDraft(patientId, screenerKey) : undefined;
-  const hasDraft = (d: typeof draft) => Boolean(d && d.answers.some((a) => typeof a === "number"));
+  const hasDraft = (d: typeof draft) => Boolean(d && (d.answers.some((a) => typeof a === "number") || Object.keys(d.choices ?? {}).length > 0));
   const [resumed, setResumed] = useState(() => hasDraft(draft));
+  // §A4 — answers typed during THIS visit. The banner reflects "these answers
+  // came from an earlier visit", derived from the draft itself, so it can't be
+  // lost when the draft (patient id / storage) arrives after the first render.
+  const [enteredHere, setEnteredHere] = useState(false);
+  const showResume = resumed || (!enteredHere && hasDraft(draft));
   const [answers, setAnswers] = useState<(number | undefined)[]>(() => (draft ? [...draft.answers] : []));
   const [choices, setChoices] = useState<Record<number, number>>(() => (draft ? { ...draft.choices } : {}));
   // The draft can become readable after first render (hydration, patient id
@@ -81,6 +86,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
   const handleAnswerChange = (next: (number | undefined)[], ch: Record<number, number>) => {
     setAnswers(next);
     setChoices(ch);
+    setEnteredHere(true);
     if (patientId && def) saveScreenerDraft(patientId, def.key, { answers: next, choices: ch }, "patient");
   };
 
@@ -94,7 +100,7 @@ export function RescreenForm({ screenerKey }: { screenerKey: string }) {
           {def.isSud && <Badge className="ml-2 border-0 bg-teal/15 text-teal">{c.part2}</Badge>}
           <p className="mt-2 text-sm text-muted-foreground">{def.description}</p>
         </div>
-        {resumed && (
+        {showResume && (
           <div
             className="rounded-md border border-teal/40 bg-teal/5 p-3 text-sm"
             data-testid="screener-draft-resume-banner"
