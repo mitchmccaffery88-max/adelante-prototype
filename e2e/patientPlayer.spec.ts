@@ -76,10 +76,13 @@ test("Spanish lesson controls and protected advocate progress contain no private
     const e = (window as any).__adelante.AdelanteEHR;
     eng.saveLessonResponse(pid, "recovery", "fdo-first-72-hours", { text: { support: "Secret support" }, todayAction: "Private action" });
     eng.completeRecoveryLesson(pid, "fdo-first-72-hours", {});
-    const link = e.listAdvocateLinks(pid)[0];
-    return { cohort: JSON.stringify(eng.engagementRecords([pid])), progress: link ? JSON.stringify(e.advocateLibraryProgress(link.id)) : null };
+    const link = e.createAdvocateInvitation({ patientId: pid, advocateName: "Player Test Advocate", invitationSentTo: "player-advocate@example.org", invitationChannel: "email", designatedBy: { actor: "patient", name: "Luis Camacho" } });
+    e.claimAdvocateInvitation({ code: link.invitationCode, authorizationType: "hipaa_authorization", attestedName: "Player Test Advocate" });
+    const progress = e.advocateLibraryProgress(link.id);
+    return { cohort: JSON.stringify(eng.engagementRecords([pid])), progress: JSON.stringify(progress), allowed: progress.allowed };
   }, patientId);
   expect(privacy.cohort).not.toMatch(/Secret support|Private action|fdo-first-72-hours/);
   expect(privacy.progress).not.toBeNull();
+  expect(privacy.allowed).toBe(true);
   expect(privacy.progress).not.toMatch(/Secret support|Private action|fdo-first-72-hours/);
 });
